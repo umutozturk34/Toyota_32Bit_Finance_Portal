@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: finance-portal-backend
+  
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/finance_db
+    username: finance_user
+    password: finance_pass
+    driver-class-name: org.postgresql.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        '[format_sql]': true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health

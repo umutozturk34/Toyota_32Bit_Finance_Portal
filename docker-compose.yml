@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: finance-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: finance_user
+      POSTGRES_PASSWORD: finance_pass
+      POSTGRES_DB: finance_db
+    volumes:
+      - postgres_data_v2:/var/lib/postgresql/data  # <-- BURAYI DEĞİŞTİR (Sonuna _v2 ekle)
+
+volumes:
+  postgres_data_v2:  # <-- BURAYI DA DEĞİŞTİR (Yukarıdakiyle aynı olmalı)

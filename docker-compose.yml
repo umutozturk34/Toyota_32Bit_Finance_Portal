@@ -1,8 +1,11 @@
 version: '3.8'
+
 services:
+  # PostgreSQL Database
   db:
     image: postgres:15-alpine
     container_name: finance-postgres
+    restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
@@ -10,7 +13,52 @@ services:
       POSTGRES_PASSWORD: finance_pass
       POSTGRES_DB: finance_db
     volumes:
-      - postgres_data_v2:/var/lib/postgresql/data  # <-- BURAYI DEĞİŞTİR (Sonuna _v2 ekle)
+      - postgres_data_v2:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finance_user -d finance_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - finance-network
+
+  # Spring Boot Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: finance-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/finance_db
+      SPRING_DATASOURCE_USERNAME: finance_user
+      SPRING_DATASOURCE_PASSWORD: finance_pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - finance-network
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: finance-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - finance-network
 
 volumes:
-  postgres_data_v2:  # <-- BURAYI DA DEĞİŞTİR (Yukarıdakiyle aynı olmalı)
+  postgres_data_v2:
+
+networks:
+  finance-network:
+    driver: bridge

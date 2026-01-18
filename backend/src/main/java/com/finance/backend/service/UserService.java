@@ -51,7 +51,7 @@ public class UserService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword()); // TODO: Hash password in v0.2.0
+        user.setPassword(request.getPassword());
         user.setRole(request.getRole() != null ? request.getRole() : "USER");
         user.setActive(true);
 

@@ -10,17 +10,17 @@ Each version represents a stable and completed development milestone.
 ### Development Tasks
 - [x] Initialize Spring Boot project structure
 - [x] Configure layered architecture (controller, service, repository)
-- [ ] Initialize React project structure
-- [ ] Setup basic routing and layout
+- [x] Initialize React project structure
+- [x] Setup basic routing and layout
 - [x] Add PostgreSQL configuration
-- [ ] Create Dockerfile for backend
-- [ ] Create Dockerfile for frontend
-- [x] Add docker-compose configuration (PostgreSQL)
+- [x] Create Dockerfile for backend
+- [x] Create Dockerfile for frontend
+- [x] Add docker-compose configuration (PostgreSQL + Backend + Frontend)
 - [x] Configure application.yml profiles
 - [x] Add backend health check endpoint
 
 ### Version Release
-- [ ] v0.1.0 – Infrastructure and base architecture completed (~60% done)
+- [x] v0.1.0 – Infrastructure and base architecture completed ✅
 
 ---
 

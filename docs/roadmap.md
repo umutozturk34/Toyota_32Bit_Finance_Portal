@@ -5,8 +5,7 @@ Each version represents a stable and completed development milestone.
 
 ---
 
-## 🔵 v0.1.0 – Infrastructure & Architecture (Month 1)
-
+## 🔵 v0.1.0 – Infrastructure & Architecture
 ### Development Tasks
 - [x] Initialize Spring Boot project structure
 - [x] Configure layered architecture (controller, service, repository)
@@ -24,24 +23,33 @@ Each version represents a stable and completed development milestone.
 
 ---
 
-## 🔵 v0.2.0 – Authentication & Security (Month 2)
+## 🔵 v0.2.0 – Authentication & Security
 
 ### Development Tasks
-- [ ] Add Keycloak service to docker-compose
-- [ ] Configure Keycloak realm and clients
-- [ ] Integrate Spring Security with Keycloak
-- [ ] Implement JWT-based authentication
-- [ ] Add role-based authorization
-- [ ] Create login and logout endpoints
-- [ ] Implement frontend login page
-- [ ] Add protected routes on frontend
+- [x] Add Keycloak service to docker-compose
+- [x] Configure Keycloak realm and clients
+- [x] Integrate Spring Security with Keycloak
+- [x] Implement JWT-based authentication
+- [x] Add role-based authorization (@PreAuthorize)
+- [x] Create Keycloak setup automation script
+- [x] Add OpenLDAP integration to Keycloak
+- [x] Implement frontend Keycloak.js integration
+- [x] Create AuthContext with React Context API
+- [x] Add protected routes with role checking
+- [x] Implement Login page with Keycloak redirect
+- [x] Implement Register page (requires manual Keycloak activation)
+- [x] Add JWT interceptor to Axios
+- [x] Configure CORS for multiple origins
+- [x] Add silent SSO check support
+- [ ] Implement 2FA/TOTP backend endpoints
+- [ ] Implement 2FA/TOTP frontend UI
 
 ### Version Release
-- [ ] v0.2.0 – Authentication and authorization implemented
+- [ ] v0.2.0 – Authentication and authorization completed
 
 ---
 
-## 🔵 v0.3.0 – News & Market Data (Month 3)
+## 🔵 v0.3.0 – News & Market Data
 
 ### Development Tasks
 - [ ] Add external news API client
@@ -58,7 +66,7 @@ Each version represents a stable and completed development milestone.
 
 ---
 
-## 🔵 v0.4.0 – Historical Data & Analysis (Month 4)
+## 🔵 v0.4.0 – Historical Data & Analysis
 
 ### Development Tasks
 - [ ] Add historical data API client
@@ -74,7 +82,7 @@ Each version represents a stable and completed development milestone.
 
 ---
 
-## 🟠 v0.5.0 – Portfolio, Kafka & Observability (Month 5)
+## 🟠 v0.5.0 – Portfolio, Kafka & Observability
 
 ### Development Tasks
 - [ ] Create portfolio domain model
@@ -96,7 +104,7 @@ Each version represents a stable and completed development milestone.
 
 ---
 
-## 🔵 v1.0.0 – Mobile & Finalization (Month 6)
+## 🔵 v1.0.0 – Mobile & Finalization
 
 ### Development Tasks
 - [ ] Initialize React Native project

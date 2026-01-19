@@ -14,6 +14,7 @@ services:
       POSTGRES_DB: finance_db
     volumes:
       - postgres_data_v2:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U finance_user -d finance_db"]
       interval: 10s
@@ -42,6 +43,81 @@ services:
     networks:
       - finance-network
 
+  # OpenLDAP Directory Server
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: finance-openldap
+    restart: unless-stopped
+    ports:
+      - "389:389"   # LDAP port
+      - "636:636"   # LDAPS port (SSL)
+    environment:
+      LDAP_ORGANISATION: "Toyota Finance"
+      LDAP_DOMAIN: "finance.com"
+      LDAP_ADMIN_PASSWORD: "admin123"
+      LDAP_CONFIG_PASSWORD: "config123"
+      LDAP_RFC2307BIS_SCHEMA: "true"
+      LDAP_REMOVE_CONFIG_AFTER_SETUP: "true"
+      LDAP_TLS_VERIFY_CLIENT: "never"
+    volumes:
+      - openldap_data:/var/lib/ldap
+      - openldap_config:/etc/ldap/slapd.d
+    networks:
+      - finance-network
+
+  # phpLDAPadmin (LDAP Web UI)
+  phpldapadmin:
+    image: osixia/phpldapadmin:0.9.0
+    container_name: finance-phpldapadmin
+    restart: unless-stopped
+    ports:
+      - "6443:443"
+    environment:
+      PHPLDAPADMIN_LDAP_HOSTS: "openldap"
+      PHPLDAPADMIN_HTTPS: "false"
+    depends_on:
+      - openldap
+    networks:
+      - finance-network
+
+  # Keycloak Authentication Server
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: finance-keycloak
+    restart: unless-stopped
+    ports:
+      - "8180:8080"  # Keycloak admin console
+    environment:
+      # Admin credentials
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+      
+      # Database configuration
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/keycloak_db
+      KC_DB_USERNAME: finance_user
+      KC_DB_PASSWORD: finance_pass
+      
+      # Hostname configuration
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      
+      # Proxy configuration
+      KC_PROXY: edge
+    command:
+      - start-dev
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      openldap:
+        condition: service_started
+    networks:
+      - finance-network
+
   # React Frontend
   frontend:
     build:
@@ -53,11 +129,15 @@ services:
       - "80:80"
     depends_on:
       - backend
+      - keycloak
     networks:
       - finance-network
 
 volumes:
   postgres_data_v2:
+  openldap_data:
+  openldap_config:
+  keycloak_data:
 
 networks:
   finance-network:

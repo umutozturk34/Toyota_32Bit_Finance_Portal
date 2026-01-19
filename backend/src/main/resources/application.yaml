@@ -16,6 +16,12 @@ spring:
       hibernate:
         '[format_sql]': true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://keycloak:8080/realms/finance-realm/protocol/openid-connect/certs
 
 management:
   endpoint:

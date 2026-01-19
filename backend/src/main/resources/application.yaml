@@ -23,6 +23,14 @@ spring:
         jwt:
           jwk-set-uri: http://keycloak:8080/realms/finance-realm/protocol/openid-connect/certs
 
+keycloak:
+  auth-server-url: http://keycloak:8080
+  server-url: http://keycloak:8080
+  realm: finance-realm
+  admin:
+    username: admin
+    password: admin123
+
 management:
   endpoint:
     health:

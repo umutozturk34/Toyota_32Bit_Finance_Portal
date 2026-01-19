@@ -41,11 +41,11 @@ Each version represents a stable and completed development milestone.
 - [x] Add JWT interceptor to Axios
 - [x] Configure CORS for multiple origins
 - [x] Add silent SSO check support
-- [ ] Implement 2FA/TOTP backend endpoints
-- [ ] Implement 2FA/TOTP frontend UI
+- [x] Implement 2FA/TOTP backend endpoints
+- [x] Implement 2FA/TOTP frontend UI
 
 ### Version Release
-- [ ] v0.2.0 – Authentication and authorization completed
+- [x] v0.2.0 – Authentication and authorization completed ✅
 
 ---
 

@@ -7,6 +7,7 @@ import Users from './pages/Users';
 import About from './pages/About';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import TwoFactorSetup from './pages/TwoFactorSetup';
 import './App.css';
 
 function App() {
@@ -23,6 +24,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Users />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="2fa" 
+              element={
+                <ProtectedRoute>
+                  <TwoFactorSetup />
                 </ProtectedRoute>
               } 
             />

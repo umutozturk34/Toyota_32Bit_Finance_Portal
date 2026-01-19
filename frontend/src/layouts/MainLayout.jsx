@@ -17,6 +17,7 @@ const MainLayout = () => {
             <nav className="nav">
               <Link to="/">Home</Link>
               <Link to="/users">Users</Link>
+              <Link to="/2fa">🔐 2FA</Link>
               <Link to="/about">About</Link>
             </nav>
 

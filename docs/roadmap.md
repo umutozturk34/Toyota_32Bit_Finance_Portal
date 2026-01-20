@@ -5,6 +5,33 @@ Each version represents a stable and completed development milestone.
 
 ---
 
+## � API Reference Table
+
+| API | Purpose | Endpoint/Data | Redis Cache | TTL | Rate Limit |
+|-----|---------|---------------|-------------|-----|------------|
+| **Twelve Data** | US Stocks (Primary) | 20 US stocks (AAPL, MSFT, NVDA...) | `stocks` | 24h | 800/day, 8/min |
+| **AlphaVantage** | US Stocks (Fallback) | US stock quotes | `stocks` | 24h | 25/day, 5/min |
+| **CollectAPI** | BIST Stocks + Funds | 20 BIST stocks + 10 GYO funds | `collectapi` | 24h | 100/day |
+| **İş Yatırım** | BIST Stocks (Fallback) | BIST stock prices | `bist-stocks` | 24h | - |
+| **Yahoo Finance** | BIST Stocks (Fallback) | Manual fallback only | `bist-stocks` | 24h | - |
+| **Google Sheets** | BIST Stocks (Fallback) | Custom GOOGLEFINANCE data | `bist-stocks` | 24h | - |
+| **CoinGecko** | Cryptocurrency | Top 20 crypto prices | `crypto` | 24h | 30/min |
+| **CoinGecko** | Precious Metals | PAXG, XAUT, KAG | `metals` | 24h | 30/min |
+| **NewsAPI** | Financial News | Business news articles | `news` | 24h | 100/day |
+| **TCMB** | Exchange Rates | USD, EUR, GBP etc. | `exchange-rates` | 24h | - |
+
+### Scheduled Tasks
+| Task | Frequency | Description |
+|------|-----------|-------------|
+| US Stocks Fetch | Every 12h | Twelve Data → AlphaVantage fallback |
+| BIST Stocks Fetch | 09:00 Mon-Fri | CollectAPI → İş Yatırım fallback |
+| Crypto Fetch | Every 12h | CoinGecko top 20 |
+| Metals Fetch | Every 12h | CoinGecko tokenized metals |
+| News Fetch | Every 12h | NewsAPI business news |
+| Exchange Rates | 15:00 daily | TCMB official rates |
+
+---
+
 ## 🔵 v0.1.0 – Infrastructure & Architecture
 ### Development Tasks
 - [x] Initialize Spring Boot project structure
@@ -52,17 +79,24 @@ Each version represents a stable and completed development milestone.
 ## 🔵 v0.3.0 – News & Market Data
 
 ### Development Tasks
-- [ ] Add external news API client
-- [ ] Implement news fetch service
-- [ ] Create news REST endpoints
-- [ ] Add news list view
-- [ ] Add news detail page
-- [ ] Add market data API client
-- [ ] Create exchange rate endpoints
-- [ ] Implement market data UI
+- [x] Add external news API client (NewsAPI)
+- [x] Implement news fetch service with scheduling
+- [x] Create news REST endpoints (public access)
+- [x] Add news list view with category filtering
+- [x] Implement frontend keyword-based categorization
+- [x] Add market data API clients (Twelve Data, AlphaVantage, CollectAPI)
+- [x] Create exchange rate endpoints (TCMB)
+- [x] Implement cryptocurrency service (CoinGecko)
+- [x] Add precious metals service (CoinGecko tokenized)
+- [x] Create US stocks service with multi-source support
+- [x] Create BIST stocks service with fallback chain
+- [x] Add BIST-FUND (GYO) support
+- [x] Implement Redis caching (24h TTL)
+- [x] Add dark mode toggle
+- [x] Create market data UI (Stocks, Crypto, Metals pages)
 
 ### Version Release
-- [ ] v0.3.0 – News and market data modules completed
+- [x] v0.3.0 – News and market data modules completed ✅
 
 ---
 

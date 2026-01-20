@@ -1,0 +1,228 @@
+.crypto-container {
+    padding: 1rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.crypto-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.crypto-header h1 {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.refresh-btn {
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: transform 0.2s ease;
+}
+
+.refresh-btn:hover {
+    transform: translateY(-2px);
+}
+
+.crypto-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.crypto-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 1rem;
+    color: white;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.crypto-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.crypto-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px var(--shadow-color);
+}
+
+.crypto-card:hover::before {
+    opacity: 1;
+}
+
+.crypto-rank {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.2rem 0.6rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.crypto-header-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.crypto-icon {
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+}
+
+.crypto-name-info h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.crypto-full-name {
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+.crypto-prices {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.75rem;
+    border-radius: 10px;
+    margin: 0.75rem 0;
+}
+
+.price-usd, .price-try {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+}
+
+.price-label {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    font-weight: 600;
+}
+
+.price-value {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.crypto-change {
+    text-align: center;
+    font-size: 1.25rem;
+    font-weight: 700;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    margin: 0.75rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.crypto-change.positive {
+    background: rgba(16, 185, 129, 0.3);
+}
+
+.crypto-change.negative {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+.change-period {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    font-weight: 500;
+}
+
+.crypto-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.detail-item {
+    text-align: center;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.detail-label {
+    display: block;
+    font-size: 0.7rem;
+    opacity: 0.8;
+    margin-bottom: 0.2rem;
+}
+
+.detail-value {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.crypto-timestamp {
+    margin-top: 0.75rem;
+    text-align: center;
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+.loading, .error {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+}
+
+.error {
+    color: #ef4444;
+}
+
+@media (max-width: 768px) {
+    .crypto-container {
+        padding: 0.75rem;
+    }
+
+    .crypto-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .crypto-header {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}

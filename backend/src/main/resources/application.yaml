@@ -17,11 +17,36 @@ spring:
         '[format_sql]': true
         dialect: org.hibernate.dialect.PostgreSQLDialect
   
+  data:
+    redis:
+      host: redis
+      port: 6379
+      timeout: 60000ms
+  
   security:
     oauth2:
       resourceserver:
         jwt:
           jwk-set-uri: http://keycloak:8080/realms/finance-realm/protocol/openid-connect/certs
+
+newsapi:
+  api-key: ${NEWSAPI_KEY:demo_key}
+  base-url: https://newsapi.org/v2
+
+alphavantage:
+  api-key: ${ALPHAVANTAGE_KEY:demo}
+  base-url: https://www.alphavantage.co
+
+twelvedata:
+  api-key: ${TWELVEDATA_KEY:demo}
+
+coingecko:
+  api-key: ${COINGECKO_KEY:demo}
+  base-url: https://api.coingecko.com/api/v3
+
+collectapi:
+  api-key: ${COLLECTAPI_KEY:demo}
+  base-url: https://api.collectapi.com
 
 keycloak:
   auth-server-url: http://keycloak:8080

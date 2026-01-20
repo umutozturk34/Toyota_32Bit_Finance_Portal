@@ -35,6 +35,12 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/error").permitAll()
+                // Public API endpoints
+                .requestMatchers("/api/stocks/**").permitAll()
+                .requestMatchers("/api/crypto/**").permitAll()
+                .requestMatchers("/api/metals/**").permitAll()
+                .requestMatchers("/api/exchange/**").permitAll()
+                .requestMatchers("/api/news/**").permitAll()
                 
                 .anyRequest().authenticated()
             )

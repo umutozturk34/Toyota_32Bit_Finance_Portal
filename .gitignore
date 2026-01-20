@@ -9,6 +9,9 @@
 *.ear
 *.nar
 
+# Environment variables (API keys)
+.env
+
 # Maven
 target/
 pom.xml.tag

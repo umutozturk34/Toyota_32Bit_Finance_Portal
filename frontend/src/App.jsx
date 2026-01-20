@@ -8,6 +8,11 @@ import About from './pages/About';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import TwoFactorSetup from './pages/TwoFactorSetup';
+import News from './pages/News';
+import MarketData from './pages/MarketData';
+import Stocks from './pages/Stocks';
+import Crypto from './pages/Crypto';
+import Metals from './pages/Metals';
 import './App.css';
 
 function App() {
@@ -32,6 +37,46 @@ function App() {
               element={
                 <ProtectedRoute>
                   <TwoFactorSetup />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="news" 
+              element={
+                <ProtectedRoute>
+                  <News />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="market" 
+              element={
+                <ProtectedRoute>
+                  <MarketData />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="stocks" 
+              element={
+                <ProtectedRoute>
+                  <Stocks />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="crypto" 
+              element={
+                <ProtectedRoute>
+                  <Crypto />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="metals" 
+              element={
+                <ProtectedRoute>
+                  <Metals />
                 </ProtectedRoute>
               } 
             />

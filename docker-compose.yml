@@ -37,6 +37,12 @@ services:
       SPRING_DATASOURCE_USERNAME: finance_user
       SPRING_DATASOURCE_PASSWORD: finance_pass
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      # API Keys from .env file
+      NEWSAPI_KEY: ${NEWSAPI_KEY:-demo_key}
+      ALPHAVANTAGE_KEY: ${ALPHAVANTAGE_KEY:-demo}
+      TWELVEDATA_KEY: ${TWELVEDATA_KEY:-demo}
+      COINGECKO_KEY: ${COINGECKO_KEY:-demo}
+      COLLECTAPI_KEY: ${COLLECTAPI_KEY:-demo}
     depends_on:
       db:
         condition: service_healthy
@@ -118,6 +124,24 @@ services:
     networks:
       - finance-network
 
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: finance-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - finance-network
+
   # React Frontend
   frontend:
     build:
@@ -138,6 +162,7 @@ volumes:
   openldap_data:
   openldap_config:
   keycloak_data:
+  redis_data:
 
 networks:
   finance-network:

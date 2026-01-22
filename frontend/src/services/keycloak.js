@@ -1,9 +1,9 @@
 import Keycloak from 'keycloak-js';
 
 const keycloak = new Keycloak({
-  url: 'http://localhost:8180',
-  realm: 'finance-realm',
-  clientId: 'finance-frontend',
+  url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8180',
+  realm: import.meta.env.VITE_KEYCLOAK_REALM || 'finance-realm',
+  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'finance-frontend',
 });
 
 export const initKeycloak = (onAuthenticatedCallback) => {
@@ -11,8 +11,9 @@ export const initKeycloak = (onAuthenticatedCallback) => {
     .init({
       onLoad: 'check-sso',
       silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
-      checkLoginIframe: true,
+      checkLoginIframe: false,
       pkceMethod: 'S256',
+      enableLogging: true,
     })
     .then((authenticated) => {
       if (authenticated) {
@@ -53,14 +54,21 @@ export const doLogout = () => {
 
 export const getToken = () => {
   return new Promise((resolve, reject) => {
+    // Eğer Keycloak authenticate değilse null döndür (login tetikleme!)
+    if (!keycloak.authenticated) {
+      resolve(null);
+      return;
+    }
+    
     keycloak
       .updateToken(30)
       .then(() => {
         resolve(keycloak.token);
       })
-      .catch(() => {
-        doLogin();
-        reject('Failed to refresh token');
+      .catch((error) => {
+        console.error('❌ Token refresh failed:', error);
+        // Token yenilenemezse null döndür, doLogin çağırma
+        resolve(null);
       });
   });
 };

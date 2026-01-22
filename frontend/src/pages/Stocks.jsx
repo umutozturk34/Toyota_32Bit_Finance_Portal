@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { stockService } from '../services/marketService';
 import './Stocks.css';
 
 function Stocks() {
+    const navigate = useNavigate();
     const [stocks, setStocks] = useState([]);
     const [market, setMarket] = useState('all');
     const [loading, setLoading] = useState(true);
@@ -193,9 +195,21 @@ function Stocks() {
                                 <h3>{stock.symbol}</h3>
                                 <span className="stock-name">{stock.name}</span>
                             </div>
-                            <span className={`market-badge ${stock.market.toLowerCase()}`}>
-                                {stock.market}
-                            </span>
+                            <div className="header-actions">
+                                <span className={`market-badge ${stock.market.toLowerCase()}`}>
+                                    {stock.market}
+                                </span>
+                                <button 
+                                    className="chart-btn"
+                                    onClick={() => {
+                                        const type = (stock.market === 'BIST' || stock.market === 'BIST-FUND') ? 'BIST' : 'US';
+                                        navigate(`/charts?type=${type}&symbol=${stock.symbol}&range=3M`);
+                                    }}
+                                    title="Grafiği Görüntüle"
+                                >
+                                    📊
+                                </button>
+                            </div>
                         </div>
                         
                         <div className="stock-price">

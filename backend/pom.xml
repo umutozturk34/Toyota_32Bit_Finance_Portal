@@ -62,9 +62,8 @@
 		<artifactId>spring-boot-starter-webflux</artifactId>
 	</dependency>
 	<dependency>
-		<groupId>com.yahoofinance-api</groupId>
-		<artifactId>YahooFinanceAPI</artifactId>
-		<version>3.17.0</version>
+		<groupId>com.fasterxml.jackson.datatype</groupId>
+		<artifactId>jackson-datatype-jsr310</artifactId>
 	</dependency>
 		<dependency>
 			<groupId>org.postgresql</groupId>

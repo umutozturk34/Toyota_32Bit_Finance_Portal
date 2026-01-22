@@ -1,0 +1,57 @@
+{
+  "realm": "finance-realm",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": false,
+  "clients": [
+    {
+      "clientId": "finance-frontend",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["http://localhost/*", "http://localhost:3000/*", "http://localhost:5173/*", "http://127.0.0.1/*"],
+      "webOrigins": ["+"],
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      }
+    },
+    {
+      "clientId": "finance-backend",
+      "enabled": true,
+      "bearerOnly": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true
+    }
+  ],
+  "roles": {
+    "realm": [
+      {"name": "USER"},
+      {"name": "ADMIN"}
+    ]
+  },
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@finance.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "realmRoles": ["USER", "ADMIN"]
+    },
+    {
+      "username": "user",
+      "enabled": true,
+      "email": "user@finance.com",
+      "firstName": "Test",
+      "lastName": "User",
+      "realmRoles": ["USER"]
+    }
+  ]
+}

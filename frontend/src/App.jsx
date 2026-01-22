@@ -13,6 +13,7 @@ import MarketData from './pages/MarketData';
 import Stocks from './pages/Stocks';
 import Crypto from './pages/Crypto';
 import Metals from './pages/Metals';
+import ChartView from './pages/ChartView';
 import './App.css';
 
 function App() {
@@ -77,6 +78,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Metals />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="charts" 
+              element={
+                <ProtectedRoute>
+                  <ChartView />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="chart/:coinId" 
+              element={
+                <ProtectedRoute>
+                  <ChartView />
                 </ProtectedRoute>
               } 
             />

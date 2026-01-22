@@ -1,25 +1,25 @@
 import { useState, useEffect } from 'react';
-import { cryptoService } from '../services/marketService';
+import { useNavigate } from 'react-router-dom';
+import { getMultipleCryptos } from '../services/marketService';
+import { getCoinIds, getCoinIcon, getCoinIdBySymbol } from '../constants/coins';
 import './Crypto.css';
 
 function Crypto() {
+    const navigate = useNavigate();
     const [cryptos, setCryptos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [page, setPage] = useState(0);
 
     useEffect(() => {
         fetchCryptos();
-    }, [page]);
+    }, []);
 
     const fetchCryptos = async () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await cryptoService.getLatestCryptos(page);
-            if (response.data && response.data.success) {
-                setCryptos(response.data.data.content || []);
-            }
+            const data = await getMultipleCryptos(getCoinIds());
+            setCryptos(data);
         } catch (err) {
             setError('Kripto para verileri yüklenirken hata oluştu');
             console.error(err);
@@ -35,6 +35,7 @@ function Crypto() {
     };
 
     const formatPrice = (price, currency = 'USD') => {
+        if (price === null || price === undefined) return 'N/A';
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: currency,
@@ -44,6 +45,7 @@ function Crypto() {
     };
 
     const formatPriceTRY = (price) => {
+        if (price === null || price === undefined) return 'N/A';
         return new Intl.NumberFormat('tr-TR', {
             style: 'currency',
             currency: 'TRY',
@@ -53,6 +55,7 @@ function Crypto() {
     };
 
     const formatMarketCap = (marketCap) => {
+        if (marketCap === null || marketCap === undefined) return 'N/A';
         if (marketCap >= 1000000000000) {
             return `$${(marketCap / 1000000000000).toFixed(2)}T`;
         } else if (marketCap >= 1000000000) {
@@ -61,22 +64,6 @@ function Crypto() {
             return `$${(marketCap / 1000000).toFixed(2)}M`;
         }
         return `$${marketCap.toFixed(0)}`;
-    };
-
-    const getCryptoIcon = (symbol) => {
-        const icons = {
-            'BTC': '₿',
-            'ETH': 'Ξ',
-            'BNB': '🔶',
-            'XRP': '✕',
-            'ADA': '₳',
-            'SOL': '◎',
-            'DOT': '●',
-            'DOGE': 'Ð',
-            'MATIC': '◆',
-            'LTC': 'Ł'
-        };
-        return icons[symbol.toUpperCase()] || '₿';
     };
 
     if (loading) {
@@ -99,10 +86,29 @@ function Crypto() {
             <div className="crypto-grid">
                 {cryptos.map((crypto) => (
                     <div key={crypto.id} className="crypto-card">
-                        <div className="crypto-rank">#{crypto.marketCapRank}</div>
+                        <div className="crypto-header-row">
+                            <div className="crypto-rank">#{crypto.symbol}</div>
+                            <button 
+                                className="chart-btn"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const coinId = getCoinIdBySymbol(crypto.symbol);
+                                    const chartUrl = `/chart/${coinId}?type=CRYPTO&symbol=${crypto.symbol}&range=1M`;
+                                    navigate(chartUrl);
+                                }}
+                                title="Grafiği Görüntüle"
+                                style={{
+                                    cursor: 'pointer',
+                                    pointerEvents: 'auto'
+                                }}
+                            >
+                                📊
+                            </button>
+                        </div>
                         
                         <div className="crypto-header-info">
-                            <div className="crypto-icon">{getCryptoIcon(crypto.symbol)}</div>
+                            <div className="crypto-icon">{getCoinIcon(crypto.symbol)}</div>
                             <div className="crypto-name-info">
                                 <h3>{crypto.symbol}</h3>
                                 <span className="crypto-full-name">{crypto.name}</span>
@@ -112,33 +118,31 @@ function Crypto() {
                         <div className="crypto-prices">
                             <div className="price-usd">
                                 <span className="price-label">USD:</span>
-                                <span className="price-value">{formatPrice(crypto.priceUsd)}</span>
+                                <span className="price-value">{formatPrice(crypto.currentPrice, 'USD')}</span>
                             </div>
                             <div className="price-try">
                                 <span className="price-label">TRY:</span>
-                                <span className="price-value">{formatPriceTRY(crypto.priceTry)}</span>
+                                <span className="price-value">{formatPriceTRY(crypto.currentPriceTry)}</span>
                             </div>
                         </div>
 
-                        <div className={`crypto-change ${getChangeClass(crypto.changePercent24h)}`}>
-                            {crypto.changePercent24h > 0 ? '▲' : '▼'} 
-                            {Math.abs(crypto.changePercent24h).toFixed(2)}%
-                            <span className="change-period">24h</span>
-                        </div>
+                        {crypto.changePercent !== null && crypto.changePercent !== undefined && (
+                            <div className={`crypto-change ${getChangeClass(crypto.changePercent)}`}>
+                                {crypto.changePercent > 0 ? '▲' : '▼'} 
+                                {Math.abs(crypto.changePercent).toFixed(2)}%
+                                <span className="change-period">24h</span>
+                            </div>
+                        )}
 
                         <div className="crypto-details">
-                            <div className="detail-item">
-                                <span className="detail-label">Market Cap</span>
-                                <span className="detail-value">{formatMarketCap(crypto.marketCapUsd)}</span>
-                            </div>
-                            <div className="detail-item">
-                                <span className="detail-label">24h Hacim</span>
-                                <span className="detail-value">{formatMarketCap(crypto.volume24hUsd)}</span>
+                            <div className="detail-item change-amount-highlight">
+                                <span className="detail-label">Change Amount</span>
+                                <span className="detail-value">{formatPrice(crypto.changeAmount, crypto.currency)}</span>
                             </div>
                         </div>
 
                         <div className="crypto-timestamp">
-                            {new Date(crypto.timestamp).toLocaleString('tr-TR')}
+                            {new Date(crypto.lastUpdated).toLocaleString('tr-TR')}
                         </div>
                     </div>
                 ))}

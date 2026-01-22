@@ -5,9 +5,14 @@
 
 set -e
 
+# Load environment variables from .env
+if [ -f "../.env" ]; then
+    export $(grep -v '^#' ../.env | xargs)
+fi
+
 KEYCLOAK_URL="http://localhost:8180"
 ADMIN_USER="admin"
-ADMIN_PASS="admin123"
+ADMIN_PASS="${KEYCLOAK_ADMIN_PASSWORD:-admin123}"
 REALM_NAME="finance-realm"
 
 echo "🔐 Keycloak Admin Token alınıyor..."

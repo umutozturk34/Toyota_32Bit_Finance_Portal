@@ -3,14 +3,14 @@ spring:
     name: finance-portal-backend
   
   datasource:
-    url: jdbc:postgresql://127.0.0.1:5432/finance_db
+    url: jdbc:postgresql://db:5432/finance_db
     username: finance_user
-    password: finance_pass
+    password: ${DB_PASSWORD:finance_pass}
     driver-class-name: org.postgresql.Driver
-  
+
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
     show-sql: true
     properties:
       hibernate:
@@ -29,32 +29,18 @@ spring:
         jwt:
           jwk-set-uri: http://keycloak:8080/realms/finance-realm/protocol/openid-connect/certs
 
-newsapi:
-  api-key: ${NEWSAPI_KEY:demo_key}
-  base-url: https://newsapi.org/v2
-
-alphavantage:
-  api-key: ${ALPHAVANTAGE_KEY:demo}
-  base-url: https://www.alphavantage.co
-
-twelvedata:
-  api-key: ${TWELVEDATA_KEY:demo}
-
 coingecko:
-  api-key: ${COINGECKO_KEY:demo}
-  base-url: https://api.coingecko.com/api/v3
+  api:
+    key: ${COINGECKO_API_KEY:demo-key}
 
-collectapi:
-  api-key: ${COLLECTAPI_KEY:demo}
-  base-url: https://api.collectapi.com
-
+# API key loaded from environment variable (.env file)
 keycloak:
   auth-server-url: http://keycloak:8080
   server-url: http://keycloak:8080
   realm: finance-realm
   admin:
     username: admin
-    password: admin123
+    password: ${KEYCLOAK_ADMIN_PASSWORD:admin123}
 
 management:
   endpoint:

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { metalService } from '../services/dataService';
 import './Metals.css';
 
 const Metals = () => {
+    const navigate = useNavigate();
     const [metals, setMetals] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -114,6 +116,13 @@ const Metals = () => {
                                     <h3>{metal.symbol}</h3>
                                     <span className="metal-name">{metal.name}</span>
                                 </div>
+                                <button 
+                                    className="chart-btn"
+                                    onClick={() => navigate(`/charts?type=METAL&symbol=${metal.symbol}&range=1M`)}
+                                    title="Grafiği Görüntüle"
+                                >
+                                    📊
+                                </button>
                             </div>
                             
                             <div className="metal-price">

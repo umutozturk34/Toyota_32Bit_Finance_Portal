@@ -56,13 +56,17 @@ const Login = () => {
           </button>
 
           <div className="test-accounts">
-            <h4>Test Accounts:</h4>
+            <h4>Demo Accounts:</h4>
+            <p className="demo-note">
+              Default credentials are configured via environment variables.
+              Check .env.example for setup instructions.
+            </p>
             <div className="account">
-              <strong>Admin:</strong> admin / admin123 
+              <strong>Admin Role:</strong> admin / [see .env]
               <span className="badge">ADMIN + USER</span>
             </div>
             <div className="account">
-              <strong>User:</strong> user / user123
+              <strong>User Role:</strong> user / [see .env]
               <span className="badge">USER</span>
             </div>
           </div>

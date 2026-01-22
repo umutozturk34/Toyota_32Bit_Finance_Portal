@@ -5,33 +5,6 @@ Each version represents a stable and completed development milestone.
 
 ---
 
-## � API Reference Table
-
-| API | Purpose | Endpoint/Data | Redis Cache | TTL | Rate Limit |
-|-----|---------|---------------|-------------|-----|------------|
-| **Twelve Data** | US Stocks (Primary) | 20 US stocks (AAPL, MSFT, NVDA...) | `stocks` | 24h | 800/day, 8/min |
-| **AlphaVantage** | US Stocks (Fallback) | US stock quotes | `stocks` | 24h | 25/day, 5/min |
-| **CollectAPI** | BIST Stocks + Funds | 20 BIST stocks + 10 GYO funds | `collectapi` | 24h | 100/day |
-| **İş Yatırım** | BIST Stocks (Fallback) | BIST stock prices | `bist-stocks` | 24h | - |
-| **Yahoo Finance** | BIST Stocks (Fallback) | Manual fallback only | `bist-stocks` | 24h | - |
-| **Google Sheets** | BIST Stocks (Fallback) | Custom GOOGLEFINANCE data | `bist-stocks` | 24h | - |
-| **CoinGecko** | Cryptocurrency | Top 20 crypto prices | `crypto` | 24h | 30/min |
-| **CoinGecko** | Precious Metals | PAXG, XAUT, KAG | `metals` | 24h | 30/min |
-| **NewsAPI** | Financial News | Business news articles | `news` | 24h | 100/day |
-| **TCMB** | Exchange Rates | USD, EUR, GBP etc. | `exchange-rates` | 24h | - |
-
-### Scheduled Tasks
-| Task | Frequency | Description |
-|------|-----------|-------------|
-| US Stocks Fetch | Every 12h | Twelve Data → AlphaVantage fallback |
-| BIST Stocks Fetch | 09:00 Mon-Fri | CollectAPI → İş Yatırım fallback |
-| Crypto Fetch | Every 12h | CoinGecko top 20 |
-| Metals Fetch | Every 12h | CoinGecko tokenized metals |
-| News Fetch | Every 12h | NewsAPI business news |
-| Exchange Rates | 15:00 daily | TCMB official rates |
-
----
-
 ## 🔵 v0.1.0 – Infrastructure & Architecture
 ### Development Tasks
 - [x] Initialize Spring Boot project structure
@@ -100,41 +73,100 @@ Each version represents a stable and completed development milestone.
 
 ---
 
-## 🔵 v0.4.0 – Historical Data & Analysis
+## � v0.4.0 – Historical Data & Analysis (Partial Implementation)
 
 ### Development Tasks
-- [ ] Add historical data API client
-- [ ] Implement date-range query support
-- [ ] Create historical data REST endpoints
-- [ ] Add line chart visualization
-- [ ] Implement multi-instrument comparison
-- [ ] Add moving average calculation
-- [ ] Add basic trend visualization
+- [x] Add historical data API client (CoinGecko only)
+- [x] Implement date-range query support (Crypto only)
+- [x] Create historical data REST endpoints (Crypto only)
+- [x] Add ApexCharts candlestick visualization (Crypto only)
+- [x] Implement interactive chart with zoom/pan functionality
+- [x] Add time range controls (1M/3M/1Y)
+- [x] Create ChartView page with crypto chart navigation
+- [x] Add symbol-to-ID mapping for crypto navigation
+- [ ] **PENDING**: Historical data for BIST stocks
+- [ ] **PENDING**: Historical data for US stocks
+- [ ] **PENDING**: Historical data for metals
+- [ ] **PENDING**: Multi-instrument comparison
+- [ ] **PENDING**: Moving average calculation
+- [ ] **PENDING**: Technical analysis features
 
-### Version Release
-- [ ] v0.4.0 – Historical data visualization and analysis completed
+### Technical Implementation (Crypto Only)
+- **CryptoHistoryService**: Fetches OHLCV candle data from CoinGecko API
+- **Candle Entity/DTO**: OHLCV data structure for crypto historical data
+- **Redis Caching**: 4,380 candles cached with self-healing mechanism
+- **REST Endpoints**: 
+  - `GET /api/v1/crypto/{coinId}/history` - Returns OHLCV candles
+- **Supported Cryptos**: 12 major cryptocurrencies (BTC, ETH, USDT, BNB, SOL, XRP, USDC, ADA, AVAX, DOGE, TRX, DOT)
+- **Frontend Components**:
+  - **HistoricalChart.jsx**: ApexCharts candlestick chart with interactive features
+  - **ChartView.jsx**: Chart page with time range buttons and crypto analysis
+  - **Crypto.jsx**: Crypto list page with chart button navigation
+  - **Route**: `/chart/:coinId` - Chart visualization for specific cryptocurrency
+  - **Features**: Interactive candlestick charts, zoom/pan functionality, time range selection, chart button navigation from crypto cards
+
+### Known Limitations
+- Only cryptocurrency historical data is implemented
+- BIST, US stocks, and metals historical data not yet available
+- Technical analysis and comparison features are not implemented
+- Chart functionality limited to crypto assets only
+
+### Version Status
+- [ ] v0.4.0 – **PARTIAL** - Historical data for cryptocurrency completed ⚠️
 
 ---
 
-## 🟠 v0.5.0 – Portfolio, Kafka & Observability
+## � v0.5.0 – Complete Historical Data & Technical Analysis
 
-### Development Tasks
-- [ ] Create portfolio domain model
-- [ ] Implement portfolio CRUD operations
-- [ ] Add profit and loss calculation logic
-- [ ] Add portfolio distribution charts
-- [ ] Add Log4j2 configuration
-- [ ] Setup Kafka broker via Docker
-- [ ] Configure Kafka topics for logs
-- [ ] Add Kafka appender to Log4j2
-- [ ] Create Kafka log consumer service
-- [ ] Integrate OpenSearch for log storage
-- [ ] Add OpenTelemetry dependencies
-- [ ] Configure tracing and metrics
-- [ ] Create observability dashboards
+### Development Tasks (Historical Data Expansion)
+- [ ] Add BIST stocks historical data API integration
+- [ ] Add US stocks historical data API integration  
+- [ ] Add metals historical data API integration
+- [ ] Implement unified historical data REST endpoints
+- [ ] Add technical analysis service (SMA, EMA, RSI, MACD)
+- [ ] Implement multi-asset comparison charts
+- [ ] Add trend analysis and pattern recognition
+- [ ] Create portfolio performance tracking
+- [ ] Add watchlist functionality
+
+### Technical Implementation Goals
+- **Unified HistoricalDataService**: Support for all asset types (BIST, US, Crypto, Metals)
+- **TechnicalAnalysisService**: Calculate SMA20/50, EMA, RSI, MACD indicators
+- **ComparisonService**: Multi-asset chart overlays and correlation analysis
+- **Portfolio Domain**: User portfolio tracking with P&L calculations
+- **REST Endpoints**: 
+  - `GET /api/v1/history/{type}/{symbol}?range=1M` - All asset types
+  - `GET /api/v1/analysis/technical/{symbol}` - Technical indicators
+  - `GET /api/v1/portfolio/{userId}` - Portfolio management
+- **Frontend Features**:
+  - Multi-asset chart comparison
+  - Technical indicator overlays
+  - Portfolio dashboard
+  - Advanced time range selections
+  - Correlation matrix views
 
 ### Version Release
-- [ ] v0.5.0 – Portfolio management and Kafka-based observability completed
+- [ ] v0.5.0 – Complete historical data and technical analysis
+
+---
+
+## 🟠 v0.6.0 – Observability & Monitoring
+
+### Development Tasks
+- [ ] Add Log4j2 configuration with structured logging
+- [ ] Setup Kafka broker via Docker Compose
+- [ ] Configure Kafka topics for application logs
+- [ ] Add Kafka appender to Log4j2
+- [ ] Create Kafka log consumer service
+- [ ] Integrate OpenSearch for log storage and indexing
+- [ ] Add OpenTelemetry dependencies for tracing
+- [ ] Configure metrics collection (Micrometer + Prometheus)
+- [ ] Create observability dashboards (Grafana)
+- [ ] Add application health monitoring
+- [ ] Implement distributed tracing across microservices
+
+### Version Release
+- [ ] v0.6.0 – Monitoring and observability infrastructure completed
 
 ---
 

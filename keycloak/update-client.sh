@@ -1,11 +1,18 @@
 #!/bin/bash
 # Frontend client'i güncelle
 
+# Load environment variables from .env
+if [ -f "../.env" ]; then
+    export $(grep -v '^#' ../.env | xargs)
+fi
+
 KEYCLOAK_URL="http://localhost:8180"
+ADMIN_PASS="${KEYCLOAK_ADMIN_PASSWORD:-admin123}"
+
 TOKEN=$(curl -s -X POST "$KEYCLOAK_URL/realms/master/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=admin" \
-  -d "password=admin123" \
+  -d "password=$ADMIN_PASS" \
   -d "grant_type=password" \
   -d "client_id=admin-cli" | jq -r '.access_token')
 

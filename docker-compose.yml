@@ -10,7 +10,7 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_USER: finance_user
-      POSTGRES_PASSWORD: finance_pass
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: finance_db
     volumes:
       - postgres_data_v2:/var/lib/postgresql/data
@@ -35,14 +35,12 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/finance_db
       SPRING_DATASOURCE_USERNAME: finance_user
-      SPRING_DATASOURCE_PASSWORD: finance_pass
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      # API Keys from .env file
-      NEWSAPI_KEY: ${NEWSAPI_KEY:-demo_key}
-      ALPHAVANTAGE_KEY: ${ALPHAVANTAGE_KEY:-demo}
-      TWELVEDATA_KEY: ${TWELVEDATA_KEY:-demo}
-      COINGECKO_KEY: ${COINGECKO_KEY:-demo}
-      COLLECTAPI_KEY: ${COLLECTAPI_KEY:-demo}
+      COINGECKO_API_KEY: ${COINGECKO_KEY}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    env_file:
+      - .env
     depends_on:
       db:
         condition: service_healthy
@@ -60,8 +58,8 @@ services:
     environment:
       LDAP_ORGANISATION: "Toyota Finance"
       LDAP_DOMAIN: "finance.com"
-      LDAP_ADMIN_PASSWORD: "admin123"
-      LDAP_CONFIG_PASSWORD: "config123"
+      LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD}
+      LDAP_CONFIG_PASSWORD: ${LDAP_CONFIG_PASSWORD}
       LDAP_RFC2307BIS_SCHEMA: "true"
       LDAP_REMOVE_CONFIG_AFTER_SETUP: "true"
       LDAP_TLS_VERIFY_CLIENT: "never"
@@ -96,26 +94,31 @@ services:
     environment:
       # Admin credentials
       KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin123
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       
       # Database configuration
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://db:5432/keycloak_db
       KC_DB_USERNAME: finance_user
-      KC_DB_PASSWORD: finance_pass
+      KC_DB_PASSWORD: ${DB_PASSWORD}
       
       # Hostname configuration
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT_BACKCHANNEL: "false"
       
       # Proxy configuration
       KC_PROXY: edge
+      
+      # Development settings
+      KC_LOG_LEVEL: INFO
     command:
       - start-dev
+      - --import-realm
     volumes:
       - keycloak_data:/opt/keycloak/data
-      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./keycloak/realm-simple.json:/opt/keycloak/data/import/realm.json:ro
     depends_on:
       db:
         condition: service_healthy

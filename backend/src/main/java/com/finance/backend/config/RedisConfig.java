@@ -1,60 +1,84 @@
 package com.finance.backend.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
+/**
+ * Redis configuration for caching with JSON serialization
+ * Ensures data is readable in Redis GUI tools
+ */
 @Configuration
 @EnableCaching
 public class RedisConfig {
-    
+
+    /**
+     * Configure ObjectMapper bean for Redis and general JSON operations
+     * Supports LocalDateTime serialization for BaseCandle.candleDate
+     */
     @Bean
-    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        // Default config - 24 saat (API çağrılarını minimize et)
-        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(24));
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return mapper;
+    }
+
+    /**
+     * Configure RedisTemplate for Cache-Aside pattern
+     * Key: String (human-readable prefixed keys)
+     * Value: JSON (readable in Redis GUI, supports complex objects)
+     */
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory, ObjectMapper objectMapper) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
         
-        // Tüm cache'ler için 24 saat TTL (günde 1 kez güncelleme - API limitlerini korumak için)
-        Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
+        // Use String serializer for keys (e.g., "market:crypto:snapshot:bitcoin")
+        StringRedisSerializer stringSerializer = new StringRedisSerializer();
+        template.setKeySerializer(stringSerializer);
+        template.setHashKeySerializer(stringSerializer);
         
-        // US Stocks - Günde 1 kez güncelleniyor, TTL 24 saat
-        cacheConfigs.put("stocks", RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(24)));
+        // Use JSON serializer for values (readable format, supports nested objects)
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+        template.setValueSerializer(jsonSerializer);
+        template.setHashValueSerializer(jsonSerializer);
         
-        // BIST Funds (GYO) - Günde 1 kez güncelleniyor, TTL 24 saat
-        cacheConfigs.put("bist-funds", RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(24)));
-        
-        // Crypto - Günde 1 kez güncelleniyor, TTL 24 saat
-        cacheConfigs.put("crypto", RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(24)));
-        
-        // Metals - Günde 1 kez güncelleniyor, TTL 24 saat
-        cacheConfigs.put("metals", RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(24)));
-        
-        // News - Günde 1 kez güncelleniyor, TTL 24 saat
-        cacheConfigs.put("news", RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(24)));
-        
-        // Exchange rates - Günde bir güncelleniyor, TTL 24 saat
-        cacheConfigs.put("exchange-rates", RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(24)));
-        
-        // CollectAPI - Günde 1 kez, TTL 24 saat
-        cacheConfigs.put("collectapi", RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(24)));
-        
+        template.afterPropertiesSet();
+        return template;
+    }
+
+    /**
+     * Configure cache manager for @Cacheable annotations
+     * Default TTL: 24 hours for market data
+     */
+    @Bean
+    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory, ObjectMapper objectMapper) {
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofHours(24))
+                .serializeKeysWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer())
+                )
+                .serializeValuesWith(
+                        RedisSerializationContext.SerializationPair.fromSerializer(
+                                new GenericJackson2JsonRedisSerializer(objectMapper)
+                        )
+                );
+
         return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(defaultConfig)
-                .withInitialCacheConfigurations(cacheConfigs)
+                .cacheDefaults(config)
                 .build();
     }
 }

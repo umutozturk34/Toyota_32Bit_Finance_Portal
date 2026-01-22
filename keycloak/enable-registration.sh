@@ -3,6 +3,13 @@
 # Keycloak Self-Registration Aktivasyonu
 # Bu script Keycloak realm'inde self-registration özelliğini aktif eder
 
+# Load environment variables
+if [ -f "../.env" ]; then
+    export $(grep -v '^#' ../.env | xargs)
+fi
+
+ADMIN_PASS="${KEYCLOAK_ADMIN_PASSWORD:-admin123}"
+
 echo "🔧 Keycloak self-registration aktif ediliyor..."
 
 # Keycloak admin token al
@@ -10,7 +17,7 @@ echo "🔑 Admin token alınıyor..."
 TOKEN=$(curl -s -X POST "http://localhost:8180/realms/master/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=admin" \
-  -d "password=admin123" \
+  -d "password=$ADMIN_PASS" \
   -d "grant_type=password" \
   -d "client_id=admin-cli" | jq -r '.access_token')
 

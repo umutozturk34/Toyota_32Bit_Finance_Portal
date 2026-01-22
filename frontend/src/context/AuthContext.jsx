@@ -16,20 +16,31 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Keycloak init ile 5 saniyelik timeout
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn('⚠️ Keycloak init timeout - proceeding without auth');
+        setLoading(false);
+      }
+    }, 5000);
+    
     initKeycloak((auth) => {
+      clearTimeout(timeoutId);
       setAuthenticated(auth);
       
       if (auth) {
         const userInfo = getUserInfo();
         setUser(userInfo);
         
-        console.log('👤 User Info:', userInfo);
-        console.log('🔑 Has ADMIN role:', hasRole('ADMIN'));
-        console.log('🔑 Has USER role:', hasRole('USER'));
+        console.log('👤 User authenticated:', userInfo);
+      } else {
+        console.log('❌ User not authenticated');
       }
       
       setLoading(false);
     });
+    
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const login = (options) => {

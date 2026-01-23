@@ -12,18 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Admin Controller - Manual Market Data Triggers
- * Allows administrators to manually update market data
- * 
- * Security: Requires ADMIN role for all endpoints
- * All operations run asynchronously to prevent UI blocking
- */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/admin/trigger")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")  // Class-level security - applies to ALL methods
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
     
     private final MarketDataService marketDataService;

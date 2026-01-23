@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import ReactApexChart from 'react-apexcharts';
 
 const HistoricalChart = ({ data, symbol, onHoverCandle }) => {
+  const isZoomingRef = useRef(false);
+  const isPanningRef = useRef(false);
+  const hoverTimeoutRef = useRef(null);
+
   if (!data || !data.candles || data.candles.length === 0) {
     return <div className="chart-empty">No data available</div>;
   }
@@ -22,13 +26,12 @@ const HistoricalChart = ({ data, symbol, onHoverCandle }) => {
     });
   };
 
-  // --- YENİ PROFESYONEL RENK PALETİ ---
   const colors = {
-    candleUp: '#26a69a',    // Zümrüt Yeşili
-    candleDown: '#ef5350',  // Gül Kırmızısı
-    sma20: '#3498db',       // Okyanus Mavisi (Kısa Vade)
-    sma50: '#f39c12',       // Günbatımı Turuncusu (Orta Vade)
-    sma200: '#9b59b6'       // Kraliyet Moru (Uzun Vade)
+    candleUp: '#26a69a',
+    candleDown: '#ef5350',
+    sma20: '#3498db',
+    sma50: '#f39c12',
+    sma200: '#9b59b6'
   };
 
   const series = [
@@ -54,31 +57,85 @@ const HistoricalChart = ({ data, symbol, onHoverCandle }) => {
     }
   ];
 
+  const handleHover = useCallback((candle) => {
+    if (isZoomingRef.current || isPanningRef.current || !onHoverCandle) return;
+    
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    
+    hoverTimeoutRef.current = setTimeout(() => {
+      onHoverCandle(candle);
+    }, 50);
+  }, [onHoverCandle]);
+
   const options = {
     chart: {
       type: 'candlestick',
       height: 450,
       background: 'transparent',
-      toolbar: { show: false },
+      toolbar: { 
+        show: true,
+        tools: {
+          download: false,
+          selection: false,
+          zoom: true,
+          zoomin: true,
+          zoomout: true,
+          pan: true,
+          reset: true
+        },
+        autoSelected: 'pan'
+      },
       animations: { enabled: false },
+      zoom: {
+        enabled: true,
+        type: 'x',
+        autoScaleYaxis: true
+      },
       events: {
+        beforeZoom: function(chartContext, { xaxis }) {
+          isZoomingRef.current = true;
+          return { xaxis };
+        },
+        zoomed: function() {
+          setTimeout(() => {
+            isZoomingRef.current = false;
+          }, 200);
+        },
+        mouseDown: function() {
+          isPanningRef.current = true;
+        },
+        mouseUp: function() {
+          setTimeout(() => {
+            isPanningRef.current = false;
+          }, 100);
+        },
         mouseMove: function(event, chartContext, config) {
+          if (isZoomingRef.current || isPanningRef.current) return;
+          
           const dataPointIndex = config.dataPointIndex;
-          if (onHoverCandle && dataPointIndex >= 0 && data.candles[dataPointIndex]) {
-            onHoverCandle(data.candles[dataPointIndex]);
+          if (dataPointIndex >= 0 && data.candles[dataPointIndex]) {
+            handleHover(data.candles[dataPointIndex]);
           }
         },
         mouseLeave: function() {
-          if (onHoverCandle && data.candles.length > 0) {
-            onHoverCandle(data.candles[data.candles.length - 1]);
+          if (!isZoomingRef.current && !isPanningRef.current && data.candles.length > 0) {
+            handleHover(data.candles[data.candles.length - 1]);
           }
+        },
+        scroll: function() {
+          isZoomingRef.current = true;
+          setTimeout(() => {
+            isZoomingRef.current = false;
+          }, 300);
         }
       }
     },
     colors: [colors.candleUp, colors.sma20, colors.sma50, colors.sma200],
     stroke: {
-      width: [1, 2, 2, 2.5], // SMA 200 biraz daha kalın ve baskın
-      dashArray: [0, 0, 0, 0] // Hepsini düz çizgi yaptık, daha ciddi durur
+      width: [1, 2, 2, 2.5],
+      dashArray: [0, 0, 0, 0]
     },
     legend: {
       show: true,
@@ -88,7 +145,7 @@ const HistoricalChart = ({ data, symbol, onHoverCandle }) => {
       fontWeight: 700,
       fontFamily: 'Inter, sans-serif',
       labels: {
-        colors: '#bdc3c7' // Soft gri yazı rengi
+        colors: '#bdc3c7'
       },
       markers: {
         width: 10,
@@ -143,4 +200,6 @@ const HistoricalChart = ({ data, symbol, onHoverCandle }) => {
   );
 };
 
-export default HistoricalChart;
+export default React.memo(HistoricalChart, (prevProps, nextProps) => {
+  return prevProps.data === nextProps.data && prevProps.symbol === nextProps.symbol;
+});

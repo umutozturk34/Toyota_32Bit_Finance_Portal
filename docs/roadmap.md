@@ -116,7 +116,7 @@ Each version represents a stable and completed development milestone.
 
 ---
 
-## � v0.5.0 – Complete Historical Data & Technical Analysis
+## v0.5.0 – Complete Historical Data & Technical Analysis
 
 ### Development Tasks (Historical Data Expansion)
 - [ ] Add BIST stocks historical data API integration

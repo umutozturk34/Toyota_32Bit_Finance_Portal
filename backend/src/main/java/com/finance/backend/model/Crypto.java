@@ -42,25 +42,15 @@ public class Crypto extends BaseAsset {
      */
     private BigDecimal currentPriceTry;
     
-    /**
-     * Price change amount (+0.72)
-     */
     private BigDecimal changeAmount;
     
-    /**
-     * Price change percentage (+1.72)
-     */
     private BigDecimal changePercent;
     
-    // --- Label/Tag Information ---
+    private BigDecimal marketCap;
     
-    /**
-     * Exchange name (e.g., NASDAQ, BIST, Binance)
-     */
+    private BigDecimal totalVolume;
+    
     private String exchange;
     
-    /**
-     * Currency code (e.g., USD, TRY, EUR)
-     */
     private String currency;
 }

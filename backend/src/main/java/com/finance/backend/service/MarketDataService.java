@@ -93,6 +93,8 @@ public class MarketDataService {
                         .currentPriceTry(tryPriceMap.getOrDefault(coinId, BigDecimal.ZERO))
                         .changeAmount(BigDecimal.valueOf(market.get("price_change_24h").asDouble()))
                         .changePercent(BigDecimal.valueOf(market.get("price_change_percentage_24h").asDouble()))
+                        .marketCap(market.has("market_cap") ? BigDecimal.valueOf(market.get("market_cap").asDouble()) : null)
+                        .totalVolume(market.has("total_volume") ? BigDecimal.valueOf(market.get("total_volume").asDouble()) : null)
                         .exchange("CoinGecko")
                         .currency("USD")
                         .lastUpdated(LocalDateTime.now())

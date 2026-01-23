@@ -54,16 +54,16 @@ function Crypto() {
         }).format(price);
     };
 
-    const formatMarketCap = (marketCap) => {
-        if (marketCap === null || marketCap === undefined) return 'N/A';
-        if (marketCap >= 1000000000000) {
-            return `$${(marketCap / 1000000000000).toFixed(2)}T`;
-        } else if (marketCap >= 1000000000) {
-            return `$${(marketCap / 1000000000).toFixed(2)}B`;
-        } else if (marketCap >= 1000000) {
-            return `$${(marketCap / 1000000).toFixed(2)}M`;
-        }
-        return `$${marketCap.toFixed(0)}`;
+    const formatCompactNumber = (number) => {
+        if (number === null || number === undefined) return 'N/A';
+        return new Intl.NumberFormat('en-US', {
+            notation: 'compact',
+            compactDisplay: 'short',
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 2
+        }).format(number);
     };
 
     if (loading) {
@@ -135,9 +135,17 @@ function Crypto() {
                         )}
 
                         <div className="crypto-details">
-                            <div className="detail-item change-amount-highlight">
-                                <span className="detail-label">Change Amount</span>
+                            <div className="detail-item">
+                                <span className="detail-label">Change</span>
                                 <span className="detail-value">{formatPrice(crypto.changeAmount, crypto.currency)}</span>
+                            </div>
+                            <div className="detail-item">
+                                <span className="detail-label">Volume</span>
+                                <span className="detail-value">{formatCompactNumber(crypto.totalVolume)}</span>
+                            </div>
+                            <div className="detail-item">
+                                <span className="detail-label">Market Cap</span>
+                                <span className="detail-value">{formatCompactNumber(crypto.marketCap)}</span>
                             </div>
                         </div>
 

@@ -30,8 +30,8 @@ services:
       dockerfile: Dockerfile
     container_name: finance-backend
     restart: unless-stopped
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/finance_db
       SPRING_DATASOURCE_USERNAME: finance_user
@@ -53,72 +53,67 @@ services:
     container_name: finance-openldap
     restart: unless-stopped
     ports:
-      - "389:389"   # LDAP port
-      - "636:636"   # LDAPS port (SSL)
+      - "389:389"
+      - "636:636"
     environment:
+      LDAP_REMOVE_CONFIG_AFTER_SETUP: "false"
       LDAP_ORGANISATION: "Toyota Finance"
       LDAP_DOMAIN: "finance.com"
       LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD}
       LDAP_CONFIG_PASSWORD: ${LDAP_CONFIG_PASSWORD}
-      LDAP_RFC2307BIS_SCHEMA: "true"
-      LDAP_REMOVE_CONFIG_AFTER_SETUP: "true"
-      LDAP_TLS_VERIFY_CLIENT: "never"
+      LDAP_TLS: "false"
     volumes:
+      - ./ldap-init:/container/service/slapd/assets/config/bootstrap/ldif/custom
       - openldap_data:/var/lib/ldap
       - openldap_config:/etc/ldap/slapd.d
     networks:
       - finance-network
 
-  # phpLDAPadmin (LDAP Web UI)
+  # phpLDAPadmin
   phpldapadmin:
     image: osixia/phpldapadmin:0.9.0
     container_name: finance-phpldapadmin
     restart: unless-stopped
     ports:
-      - "6443:443"
+      - "8081:80"
     environment:
       PHPLDAPADMIN_LDAP_HOSTS: "openldap"
       PHPLDAPADMIN_HTTPS: "false"
+      PHPLDAPADMIN_TRUST_PROXY_NETWORKS: "true"
+      PHPLDAPADMIN_SERVER_ADMIN: "admin@finance.com"
     depends_on:
       - openldap
     networks:
       - finance-network
 
-  # Keycloak Authentication Server
+  # Keycloak (GÜVENLİ MOD - SSL PROXY ARKASINDA)
   keycloak:
     image: quay.io/keycloak/keycloak:23.0
     container_name: finance-keycloak
     restart: unless-stopped
     ports:
-      - "8180:8080"  # Keycloak admin console
+      - "8180:8080"
     environment:
-      # Admin credentials
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       
-      # Database configuration
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://db:5432/keycloak_db
       KC_DB_USERNAME: finance_user
       KC_DB_PASSWORD: ${DB_PASSWORD}
-      
-      # Hostname configuration
-      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME: localhost         
+      KC_PROXY: edge                  
       KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_HTTP_ENABLED: "true"
-      KC_HOSTNAME_STRICT_BACKCHANNEL: "false"
-      
-      # Proxy configuration
-      KC_PROXY: edge
-      
-      # Development settings
-      KC_LOG_LEVEL: INFO
+      KC_HTTP_ENABLED: "true"         
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_PORT: "8180"
+      KC_SPI_REALM_DEFAULT_SSL_REQUIRED: NONE
     command:
       - start-dev
       - --import-realm
     volumes:
       - keycloak_data:/opt/keycloak/data
-      - ./keycloak/realm-simple.json:/opt/keycloak/data/import/realm.json:ro
+      - ./keycloak/realm-simple.json:/opt/keycloak/data/import/realm-finance.json:ro
     depends_on:
       db:
         condition: service_healthy
@@ -145,7 +140,6 @@ services:
     networks:
       - finance-network
 
-  # React Frontend
   frontend:
     build:
       context: ./frontend
@@ -154,6 +148,8 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+    environment:
+      - CHOKIDAR_USEPOLLING=true 
     depends_on:
       - backend
       - keycloak

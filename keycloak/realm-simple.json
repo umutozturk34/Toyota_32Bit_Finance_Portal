@@ -1,39 +1,94 @@
 {
   "realm": "finance-realm",
   "enabled": true,
-  "sslRequired": "none",
+  "displayName": "Toyota Finance Portal",
+  "displayNameHtml": "<b>Toyota Finance Portal</b>",
   "registrationAllowed": true,
+  "resetPasswordAllowed": true,
+  "rememberMe": true,
+  "verifyEmail": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
-  "resetPasswordAllowed": true,
-  "editUsernameAllowed": false,
+  "sslRequired": "none",
+  "accessTokenLifespan": 3600,
+  "refreshTokenMaxReuse": 0,
   "bruteForceProtected": false,
-  "clients": [
+  "accessCodeLifespan": 60,
+  "accessCodeLifespanLogin": 1800,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "offlineSessionIdleTimeout": 2592000,
+  "requiredActions": [
     {
-      "clientId": "finance-frontend",
+      "alias": "CONFIGURE_TOTP",
+      "name": "Configure OTP",
+      "providerId": "CONFIGURE_TOTP",
       "enabled": true,
-      "publicClient": true,
-      "redirectUris": ["http://localhost/*", "http://localhost:3000/*", "http://localhost:5173/*", "http://127.0.0.1/*"],
-      "webOrigins": ["+"],
-      "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": true,
-      "attributes": {
-        "pkce.code.challenge.method": "S256"
-      }
-    },
+      "defaultAction": false,
+      "priority": 10,
+      "config": {}
+    }
+  ],
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyInitialCounter": 0,
+  "otpPolicyDigits": 6,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyPeriod": 30,
+  "clients": [
     {
       "clientId": "finance-backend",
       "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
       "bearerOnly": true,
       "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": true
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "attributes": {
+        "access.token.lifespan": "3600"
+      }
+    },
+    {
+      "clientId": "finance-frontend",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "bearerOnly": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost/*",
+        "http://localhost:3000/*",
+        "http://localhost:5173/*",
+        "http://127.0.0.1/*"
+      ],
+      "webOrigins": [
+        "http://localhost",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1",
+        "*"
+      ],
+      "attributes": {
+        "access.token.lifespan": "3600",
+        "pkce.code.challenge.method": "S256"
+      }
     }
   ],
   "roles": {
     "realm": [
-      {"name": "USER"},
-      {"name": "ADMIN"}
+      {
+        "name": "USER",
+        "description": "Normal user role"
+      },
+      {
+        "name": "ADMIN",
+        "description": "Administrator role"
+      }
     ]
   },
   "users": [
@@ -43,15 +98,119 @@
       "email": "admin@finance.com",
       "firstName": "Admin",
       "lastName": "User",
-      "realmRoles": ["USER", "ADMIN"]
-    },
-    {
-      "username": "user",
-      "enabled": true,
-      "email": "user@finance.com",
-      "firstName": "Test",
-      "lastName": "User",
-      "realmRoles": ["USER"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${env.KEYCLOAK_ADMIN_PASSWORD}",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["ADMIN", "USER"],
+      "requiredActions": []
     }
-  ]
+  ],
+  "components": {
+    "org.keycloak.storage.UserStorageProvider": [
+      {
+        "name": "ldap-provider",
+        "providerId": "ldap",
+        "config": {
+          "enabled": ["true"],
+          "priority": ["1"],
+          "fullSyncPeriod": ["-1"],
+          "changedSyncPeriod": ["-1"],
+          "cachePolicy": ["DEFAULT"],
+          "batchSizeForSync": ["1000"],
+          "editMode": ["WRITABLE"],
+          "importEnabled": ["false"],
+          "syncRegistrations": ["true"],
+          "vendor": ["other"],
+          "usernameLDAPAttribute": ["uid"],
+          "rdnLDAPAttribute": ["uid"],
+          "uuidLDAPAttribute": ["entryUUID"],
+          "userObjectClasses": ["inetOrgPerson, organizationalPerson"],
+          "connectionUrl": ["ldap://openldap:389"],
+          "usersDn": ["ou=users,dc=finance,dc=com"],
+          "authType": ["simple"],
+          "bindDn": ["cn=admin,dc=finance,dc=com"],
+          "bindCredential": ["${env.LDAP_ADMIN_PASSWORD}"],
+          "searchScope": ["1"],
+          "useTruststoreSpi": ["never"],
+          "connectionPooling": ["true"],
+          "pagination": ["true"],
+          "allowKerberosAuthentication": ["false"],
+          "debug": ["false"],
+          "useKerberosForPasswordAuthentication": ["false"]
+        },
+        "subComponents": {
+          "org.keycloak.storage.ldap.mappers.LDAPStorageMapper": [
+            {
+              "name": "username",
+              "providerId": "user-attribute-ldap-mapper",
+              "config": {
+                "ldap.attribute": ["uid"],
+                "user.model.attribute": ["username"],
+                "read.only": ["false"],
+                "always.read.value.from.ldap": ["false"],
+                "is.mandatory.in.ldap": ["true"]
+              }
+            },
+            {
+              "name": "common name",
+              "providerId": "full-name-ldap-mapper",
+              "config": {
+                "ldap.full.name.attribute": ["cn"],
+                "read.only": ["false"],
+                "write.only": ["false"]
+              }
+            },
+            {
+              "name": "first name",
+              "providerId": "user-attribute-ldap-mapper",
+              "config": {
+                "ldap.attribute": ["givenName"],
+                "user.model.attribute": ["firstName"],
+                "read.only": ["false"],
+                "always.read.value.from.ldap": ["false"],
+                "is.mandatory.in.ldap": ["true"]
+              }
+            },
+            {
+              "name": "last name",
+              "providerId": "user-attribute-ldap-mapper",
+              "config": {
+                "ldap.attribute": ["sn"],
+                "user.model.attribute": ["lastName"],
+                "read.only": ["false"],
+                "always.read.value.from.ldap": ["false"],
+                "is.mandatory.in.ldap": ["true"]
+              }
+            },
+            {
+              "name": "email",
+              "providerId": "user-attribute-ldap-mapper",
+              "config": {
+                "ldap.attribute": ["mail"],
+                "user.model.attribute": ["email"],
+                "read.only": ["false"],
+                "always.read.value.from.ldap": ["false"],
+                "is.mandatory.in.ldap": ["true"]
+              }
+            },
+            {
+              "name": "username",
+              "providerId": "user-attribute-ldap-mapper",
+              "config": {
+                "ldap.attribute": ["uid"],
+                "user.model.attribute": ["username"],
+                "read.only": ["false"],
+                "always.read.value.from.ldap": ["false"],
+                "is.mandatory.in.ldap": ["true"]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
 }

@@ -1,0 +1,7 @@
+dn: ou=users,dc=finance,dc=com
+objectClass: organizationalUnit
+ou: users
+
+dn: ou=groups,dc=finance,dc=com
+objectClass: organizationalUnit
+ou: groups

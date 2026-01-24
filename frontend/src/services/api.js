@@ -3,7 +3,8 @@ import { getToken } from './keycloak';
 
 // Axios instance oluştur
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1/market',
+  // Nginx üzerinden backend'e erişim (port belirtme!)
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1/market',
   headers: {
     'Content-Type': 'application/json',
   },

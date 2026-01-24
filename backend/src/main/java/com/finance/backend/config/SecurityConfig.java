@@ -72,9 +72,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+        // Sadece Nginx üzerinden gelen isteklere izin ver (Frontend)
         configuration.setAllowedOriginPatterns(List.of(
-            "http://localhost*",
-            "http://127.0.0.1*"
+            "http://localhost",
+            "http://localhost:*",    // Port 80, 3000, 5173 vb.
+            "http://127.0.0.1",
+            "http://127.0.0.1:*"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control", "X-Requested-With"));

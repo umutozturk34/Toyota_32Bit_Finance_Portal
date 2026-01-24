@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import axios from 'axios';
+import { getToken } from '../services/keycloak';
 import './TwoFactorSetup.css';
 
 const TwoFactorSetup = () => {
@@ -16,26 +17,36 @@ const TwoFactorSetup = () => {
 
   const fetchTotpStatus = async () => {
     try {
-      const response = await api.get('/totp/status');
-      setTotpStatus(response.data.data);
+      const token = await getToken();
+      const realm = 'finance-realm';
+      
+      // Direkt Keycloak Account API kullan
+      const response = await axios.get(
+        `http://localhost:8180/realms/${realm}/account/credentials`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      // TOTP configured mi kontrol et
+      const hasTotp = response.data.some(cred => cred.type === 'otp');
+      setTotpStatus({ configured: hasTotp });
     } catch (error) {
       console.error('Failed to fetch TOTP status:', error);
+      setTotpStatus({ configured: false });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSetup2FA = async () => {
-    try {
-      setMessage('Opening Keycloak Account Console...');
-      const response = await api.get('/totp/setup-url');
-      const url = response.data.data.url;
-      setSetupUrl(url);
-      window.location.href = url;
-    } catch (error) {
-      console.error('Failed to fetch setup URL:', error);
-      setMessage('Failed to get setup URL. Please try again.');
-    }
+  const handleSetup2FA = () => {
+    // Direkt Keycloak Account Console'a redirect
+    const realm = 'finance-realm';
+    const accountUrl = `http://localhost:8180/realms/${realm}/account/#/security/signingin`;
+    window.location.href = accountUrl;
   };
 
   if (loading) {

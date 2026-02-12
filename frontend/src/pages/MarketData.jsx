@@ -19,7 +19,7 @@ const MarketData = () => {
         
         try {
             const [ratesResponse, metalsResponse] = await Promise.all([
-                exchangeRateService.getLatestRates(),
+                exchangeRateService.getRates(),
                 metalService.getLatestPrices().catch(() => ({ success: false, data: [] }))
             ]);
             

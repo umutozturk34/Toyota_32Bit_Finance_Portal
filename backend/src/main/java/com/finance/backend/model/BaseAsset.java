@@ -8,10 +8,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
-/**
- * Base class for all asset entities (Crypto, Stock, etc.)
- * Contains common fields like symbol, name, image, and last update time
- */
+
 @Data
 @SuperBuilder
 @NoArgsConstructor
@@ -19,23 +16,9 @@ import java.time.LocalDateTime;
 @MappedSuperclass
 public abstract class BaseAsset {
     
-    /**
-     * Asset symbol (e.g., VSAT, BTC, AAPL)
-     */
-    private String symbol;
-    
-    /**
-     * Asset full name (e.g., ViaSat Inc, Bitcoin)
-     */
     private String name;
     
-    /**
-     * Logo/image URL
-     */
     private String image;
     
-    /**
-     * Last update timestamp
-     */
     private LocalDateTime lastUpdated;
 }

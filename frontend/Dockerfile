@@ -1,6 +1,14 @@
-# Build stage
+  # Build stage
 FROM node:20-alpine AS build
 WORKDIR /app
+
+# Accept build arguments
+ARG VITE_BIST_STOCKS
+ARG VITE_TRACKED_CRYPTOS
+
+# Set environment variables for Vite
+ENV VITE_BIST_STOCKS=$VITE_BIST_STOCKS
+ENV VITE_TRACKED_CRYPTOS=$VITE_TRACKED_CRYPTOS
 
 # Copy package files
 COPY package*.json ./
@@ -11,7 +19,7 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build application
+# Build application (env vars baked into build)
 RUN npm run build
 
 # Run stage

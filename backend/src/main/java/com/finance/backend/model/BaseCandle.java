@@ -1,5 +1,6 @@
 package com.finance.backend.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,28 +21,21 @@ import java.time.LocalDateTime;
 @MappedSuperclass
 public abstract class BaseCandle {
     
-    /**
-     * Candle date/timestamp
-     */
+    @Column(name = "candle_date", nullable = false)
     private LocalDateTime candleDate;
     
-    /**
-     * Opening price
-     */
+    @Column(name = "open", nullable = false)
     private BigDecimal open;
     
-    /**
-     * Highest price
-     */
+    @Column(name = "high", nullable = false)
     private BigDecimal high;
     
-    /**
-     * Lowest price
-     */
+    @Column(name = "low", nullable = false)
     private BigDecimal low;
     
-    /**
-     * Closing price
-     */
+    @Column(name = "close", nullable = false)
     private BigDecimal close;
+    
+    @Column(name = "volume", nullable = true)
+    private Long volume;
 }

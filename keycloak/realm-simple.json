@@ -101,7 +101,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "${env.KEYCLOAK_ADMIN_PASSWORD}",
+          "value": "admin123",
           "temporary": false
         }
       ],
@@ -133,7 +133,7 @@
           "usersDn": ["ou=users,dc=finance,dc=com"],
           "authType": ["simple"],
           "bindDn": ["cn=admin,dc=finance,dc=com"],
-          "bindCredential": ["${env.LDAP_ADMIN_PASSWORD}"],
+          "bindCredential": ["admin123"],
           "searchScope": ["1"],
           "useTruststoreSpi": ["never"],
           "connectionPooling": ["true"],

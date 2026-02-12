@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.model.Crypto;
 import com.finance.backend.model.CryptoCandle;
 import com.finance.backend.repository.CryptoCandleRepository;
@@ -15,9 +16,6 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Cache-Aside pattern for Crypto data - Redis + Database
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -32,83 +30,70 @@ public class CryptoCacheService {
     private static final String PREFIX_HISTORY = "market:crypto:history:";
     private static final Duration TTL = Duration.ofHours(24);
     
-    /**
-     * Get crypto snapshot by ID with cache
-     */
     public Crypto getCryptoById(String id) {
         String cacheKey = PREFIX_SNAPSHOT + id;
         
-        // 1. Try cache first (hot data)
         Object cached = redisTemplate.opsForValue().get(cacheKey);
         if (cached != null) {
-            log.info("🔥 Cache HIT (Redis): {}", cacheKey);
-            // Convert LinkedHashMap to Crypto using ObjectMapper
+            log.info("Cache HIT (Redis): {}", cacheKey);
             return objectMapper.convertValue(cached, Crypto.class);
         }
         
-        // 2. Cache miss - fetch from database (cold data)
-        log.info("❄️ Cache MISS (PostgreSQL): {} - Fetching from DB", cacheKey);
+        log.info("Cache MISS (PostgreSQL): {} - Fetching from DB", cacheKey);
         Optional<Crypto> crypto = cryptoRepository.findById(id);
         
         if (crypto.isPresent()) {
-            // 3. Store in cache for future requests
             redisTemplate.opsForValue().set(cacheKey, crypto.get(), TTL);
-            log.info("✅ Cached to Redis: {} (TTL: 24h)", cacheKey);
+            log.info("Cached to Redis: {} (TTL: 24h)", cacheKey);
             return crypto.get();
         }
         
-        log.warn("⚠️ Crypto not found: {}", id);
-        return null;
+        throw new ResourceNotFoundException("Crypto not found: " + id);
     }
     
-    /**
-     * Get crypto candle history with cache
-     */
-    @SuppressWarnings("unchecked")
     public List<CryptoCandle> getCandleHistory(String id) {
         String cacheKey = PREFIX_HISTORY + id;
         
-        // 1. Try cache first
         Object cached = redisTemplate.opsForValue().get(cacheKey);
         if (cached != null) {
-            log.info("🔥 Cache HIT (Redis): {}", cacheKey);
-            // Convert LinkedHashMap list to CryptoCandle list using ObjectMapper
+            log.info("Cache HIT (Redis): {}", cacheKey);
             return objectMapper.convertValue(cached, new TypeReference<List<CryptoCandle>>() {});
         }
         
-        // 2. Cache miss - fetch from database
-        log.info("❄️ Cache MISS (PostgreSQL): {} - Fetching from DB", cacheKey);
+        log.info("Cache MISS (PostgreSQL): {} - Fetching from DB", cacheKey);
         List<CryptoCandle> candles = cryptoCandleRepository.findByCryptoIdOrderByCandleDateAsc(id);
         
         if (!candles.isEmpty()) {
-            // 3. Store in cache
             redisTemplate.opsForValue().set(cacheKey, candles, TTL);
-            log.info("✅ Cached to Redis: {} ({} candles, TTL: 24h)", cacheKey, candles.size());
+            log.info("Cached to Redis: {} ({} candles, TTL: 24h)", cacheKey, candles.size());
         }
         
         return candles;
     }
     
-    /**
-     * Clear cache for specific crypto
-     */
-    public void clearCache(String id) {
-        String snapshotKey = PREFIX_SNAPSHOT + id;
-        String historyKey = PREFIX_HISTORY + id;
+    public void clearSnapshotCache() {
+        var snapshotKeys = redisTemplate.keys(PREFIX_SNAPSHOT + "*");
         
-        // Delete both keys
-        Boolean snapshotDeleted = redisTemplate.delete(snapshotKey);
-        Boolean historyDeleted = redisTemplate.delete(historyKey);
+        int deleted = 0;
+        if (snapshotKeys != null && !snapshotKeys.isEmpty()) {
+            deleted = redisTemplate.delete(snapshotKeys).intValue();
+        }
         
-        log.info("🗑️ Cache cleared for: {} (snapshot: {}, history: {})", 
-                id, snapshotDeleted, historyDeleted);
+        log.info("Cleared crypto snapshot cache: {} keys deleted", deleted);
     }
     
-    /**
-     * Clear all crypto cache
-     */
+    public void clearHistoryCache() {
+        var historyKeys = redisTemplate.keys(PREFIX_HISTORY + "*");
+        
+        int deleted = 0;
+        if (historyKeys != null && !historyKeys.isEmpty()) {
+            deleted = redisTemplate.delete(historyKeys).intValue();
+        }
+        
+        log.info("Cleared crypto history/candle cache: {} keys deleted", deleted);
+    }
+    
     public void clearAllCache() {
-        // Delete all keys with crypto prefix
         var snapshotKeys = redisTemplate.keys(PREFIX_SNAPSHOT + "*");
         var historyKeys = redisTemplate.keys(PREFIX_HISTORY + "*");
         
@@ -122,6 +107,6 @@ public class CryptoCacheService {
             totalDeleted += redisTemplate.delete(historyKeys).intValue();
         }
         
-        log.info("🗑️ Cleared all crypto cache: {} keys deleted", totalDeleted);
+        log.info("Cleared all crypto cache: {} keys deleted", totalDeleted);
     }
 }

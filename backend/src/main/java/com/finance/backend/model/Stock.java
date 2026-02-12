@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 
 /**
- * Crypto snapshot entity - stores current crypto asset information
+ * Stock (BIST) snapshot entity - stores current stock asset information
  * Extends BaseAsset for common asset fields
  */
 @Data
@@ -21,25 +21,27 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Table(name = "cryptos")
-public class Crypto extends BaseAsset {
+@Table(name = "stocks")
+public class Stock extends BaseAsset {
     
     @Id
-    private String id;
-
     private String symbol;
     
     private BigDecimal currentPrice;
+
+    private BigDecimal previousClose;
     
-    private BigDecimal currentPriceTry;
+    private BigDecimal openPrice;
     
-    private BigDecimal changeAmount;
+    private BigDecimal dayHigh;
     
-    private BigDecimal changePercent;
+    private BigDecimal dayLow;
     
-    private BigDecimal marketCap;
+    private Long volume;
     
-    private BigDecimal totalVolume;
+    private BigDecimal priceChangePercent;
+    
+    private BigDecimal priceChangeAmount;
     
     private String exchange;
     

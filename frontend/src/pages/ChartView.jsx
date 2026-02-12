@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import HistoricalChart from '../components/HistoricalChart';
-import { getCryptoHistory } from '../services/marketService';
+import { getCryptoHistory, stockService } from '../services/marketService';
 import { getCoinIds } from '../constants/coins';
+import { getBistSymbols, getBistDisplayName } from '../constants/stocks';
 import './ChartView.css';
 
 const ChartView = () => {
@@ -21,13 +22,8 @@ const ChartView = () => {
 
   // Frontend sayfalarında görünen EXACT AYNI varlık listeleri
   const presetSymbols = {
-    // BIST sayfasında görünen 20 hisse
-    BIST: [
-      'AKBNK', 'ASELS', 'ASTOR', 'BIMAS', 'EREGL',
-      'GARAN', 'GMSTR', 'HALKS', 'ISCTR', 'ISIST',
-      'KCHOL', 'PGSUS', 'SAHOL', 'SASA', 'TCELL',
-      'TERA', 'THYAO', 'TRALT', 'TUPRS', 'YKBNK'
-    ],
+    // BIST sayfasında görünen hisseler - env'den okunuyor
+    BIST: getBistSymbols().map(symbol => getBistDisplayName(symbol)),
     // US Stocks sayfasında görünen 20 hisse
     US: [
       'AAPL', 'AMD', 'AMZN', 'BAC', 'DIS',
@@ -58,8 +54,13 @@ const ChartView = () => {
         cutoffDate = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000));
         break;
       case '1Y':
+        cutoffDate = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000));
+        break;
+      case '5Y':
+        cutoffDate = new Date(now.getTime() - (5 * 365 * 24 * 60 * 60 * 1000));
+        break;
       default:
-        return candles; // Show all data for 1Y
+        return candles; // Show all data
     }
     
     return candles.filter(candle => {
@@ -129,15 +130,34 @@ const ChartView = () => {
     try {
       console.log('Fetching chart data for:', { symbol, assetType });
       
-      // Only fetch for CRYPTO type currently
-      if (assetType !== 'CRYPTO') {
+      let data;
+      
+      if (assetType === 'CRYPTO') {
+        data = await getCryptoHistory(symbol);
+      } else if (assetType === 'BIST') {
+        const symbolWithSuffix = symbol.endsWith('.IS') ? symbol : `${symbol}.IS`;
+        data = await stockService.getStockHistory(symbolWithSuffix);
+      } else {
         setError(`${assetType} historical data not yet implemented`);
         setChartData(null);
         return;
       }
       
-      const data = await getCryptoHistory(symbol);
       console.log('Received candle data:', data);
+      
+      // Validate data is an array
+      if (!data || !Array.isArray(data)) {
+        console.error('Invalid data format:', data);
+        setError('No historical data available for this symbol');
+        setChartData(null);
+        return;
+      }
+      
+      if (data.length === 0) {
+        setError('No historical data available for this symbol');
+        setChartData(null);
+        return;
+      }
       
       // Transform backend data format to chart format
       const transformedCandles = data.map(candle => ({
@@ -146,7 +166,8 @@ const ChartView = () => {
         open: candle.open,
         high: candle.high,
         low: candle.low,
-        close: candle.close
+        close: candle.close,
+        volume: candle.volume
       }));
       
       // Create chart data structure that HistoricalChart expects
@@ -266,7 +287,7 @@ const ChartView = () => {
                   <span className="summary-value">
                     {new Intl.NumberFormat('tr-TR', {
                       style: 'currency',
-                      currency: 'USD'
+                      currency: assetType === 'BIST' ? 'TRY' : 'USD'
                     }).format(displayCandle.open)}
                   </span>
                 </div>
@@ -275,7 +296,7 @@ const ChartView = () => {
                   <span className="summary-value">
                     {new Intl.NumberFormat('tr-TR', {
                       style: 'currency',
-                      currency: 'USD'
+                      currency: assetType === 'BIST' ? 'TRY' : 'USD'
                     }).format(displayCandle.high)}
                   </span>
                 </div>
@@ -284,7 +305,7 @@ const ChartView = () => {
                   <span className="summary-value">
                     {new Intl.NumberFormat('tr-TR', {
                       style: 'currency',
-                      currency: 'USD'
+                      currency: assetType === 'BIST' ? 'TRY' : 'USD'
                     }).format(displayCandle.low)}
                   </span>
                 </div>
@@ -293,7 +314,7 @@ const ChartView = () => {
                   <span className="summary-value">
                     {new Intl.NumberFormat('tr-TR', {
                       style: 'currency',
-                      currency: 'USD'
+                      currency: assetType === 'BIST' ? 'TRY' : 'USD'
                     }).format(displayCandle.close)}
                   </span>
                 </div>
@@ -303,7 +324,7 @@ const ChartView = () => {
                     <span className="summary-value">
                       {new Intl.NumberFormat('tr-TR', {
                         style: 'currency',
-                        currency: 'USD'
+                        currency: assetType === 'BIST' ? 'TRY' : 'USD'
                       }).format(sma20)}
                     </span>
                   </div>
@@ -314,7 +335,7 @@ const ChartView = () => {
                     <span className="summary-value">
                       {new Intl.NumberFormat('tr-TR', {
                         style: 'currency',
-                        currency: 'USD'
+                        currency: assetType === 'BIST' ? 'TRY' : 'USD'
                       }).format(sma50)}
                     </span>
                   </div>
@@ -325,7 +346,7 @@ const ChartView = () => {
                     <span className="summary-value">
                       {new Intl.NumberFormat('tr-TR', {
                         style: 'currency',
-                        currency: 'USD'
+                        currency: assetType === 'BIST' ? 'TRY' : 'USD'
                       }).format(sma200)}
                     </span>
                   </div>
@@ -341,6 +362,15 @@ const ChartView = () => {
         {/* Time Range Vertical Buttons */}
         <div className="time-range-vertical">
           <label className="range-label">Time</label>
+          {/* Show 5Y only for BIST stocks */}
+          {assetType === 'BIST' && (
+            <button
+              className={`range-btn ${timeRange === '5Y' ? 'active' : ''}`}
+              onClick={() => setTimeRange('5Y')}
+            >
+              5Y
+            </button>
+          )}
           {['1Y', '3M', '1M'].map(range => (
             <button
               key={range}
@@ -371,6 +401,7 @@ const ChartView = () => {
           <HistoricalChart 
             data={filteredData} 
             symbol={symbol}
+            assetType={assetType}
             onHoverCandle={setHoveredCandle}
           />
         )}

@@ -3,6 +3,7 @@ package com.finance.backend.model;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Index;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -10,18 +11,19 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
-
-/**
- * Crypto snapshot entity - stores current crypto asset information
- * Extends BaseAsset for common asset fields
- */
 @Data
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Table(name = "cryptos")
+@Table(
+    name = "cryptos",
+    indexes = {
+        @Index(name = "idx_crypto_id", columnList = "id"),
+        @Index(name = "idx_crypto_symbol", columnList = "symbol")
+    }
+)
 public class Crypto extends BaseAsset {
     
     @Id

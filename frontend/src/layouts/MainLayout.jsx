@@ -22,6 +22,7 @@ const MainLayout = () => {
               <Link to="/market">💱 Market</Link>
               <Link to="/stocks">📈 Stocks</Link>
               <Link to="/crypto">₿ Crypto</Link>
+              <Link to="/forex">💱 Forex</Link>
               <Link to="/metals">🥇 Metals</Link>
               <Link to="/charts">📊 Charts</Link>
               {hasRole('ADMIN') && <Link to="/users">👥 Users</Link>}

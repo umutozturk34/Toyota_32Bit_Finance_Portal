@@ -53,12 +53,6 @@ docker-compose up -d
 - Keycloak Admin: http://localhost:8080/admin
 
 ### API Keys Required
-The application requires API keys from:
-- **NewsAPI** (newsapi.org) - For financial news
-- **Twelve Data** (twelvedata.com) - For US stock data  
-- **AlphaVantage** (alphavantage.co) - Stock data fallback
-- **CoinGecko** (coingecko.com) - Cryptocurrency data
-- **CollectAPI** (collectapi.com) - Turkish market data
 
 Add your keys to `.env` file based on `.env.example` template.
 

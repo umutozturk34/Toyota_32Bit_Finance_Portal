@@ -103,7 +103,9 @@ public class MarketDataService {
         
         cryptoRepository.saveAll(cryptos);
         
-        cryptoCacheService.clearSnapshotCache();
+        for (Crypto crypto : cryptos) {
+            cryptoCacheService.clearSnapshotCache(crypto.getId());
+        }
         
         log.info("Snapshot update completed: {} coins saved (USD + TRY)", cryptos.size());
     }
@@ -273,7 +275,10 @@ public class MarketDataService {
                     }
                 }
                 
-                if (!candles.isEmpty()) processed++;
+                if (!candles.isEmpty()) {
+                    processed++;
+                    cryptoCacheService.clearHistoryCache(coinId);
+                }
                 
             } catch (Exception e) {
                 failed++;
@@ -285,7 +290,6 @@ public class MarketDataService {
         LocalDateTime cutoffDate = LocalDateTime.now().truncatedTo(ChronoUnit.DAYS).minusDays(364);
         cryptoCandleRepository.deleteByCandleDateBefore(cutoffDate);
         
-        cryptoCacheService.clearHistoryCache();
         log.info("Candle update completed: {} success, {} failed", processed, failed);
         
         if (failed > 0 && failed >= trackedCoins.size() / 2) {

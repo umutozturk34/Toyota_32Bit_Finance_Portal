@@ -2,6 +2,8 @@ package com.finance.backend.controller;
 
 import com.finance.backend.service.MarketDataService;
 import com.finance.backend.service.StockDataService;
+import com.finance.backend.service.TcmbForexService;
+import com.finance.backend.service.YahooForexService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,8 @@ public class AdminController {
     
     private final MarketDataService marketDataService;
     private final StockDataService stockDataService;
+    private final TcmbForexService tcmbForexService;
+    private final YahooForexService yahooForexService;
     
     @PostMapping("/trigger/crypto/snapshot")
     public ResponseEntity<Map<String, String>> triggerCryptoSnapshotUpdate() {
@@ -138,6 +142,70 @@ public class AdminController {
         response.put("status", "started");
         response.put("message", "Full stock market update started in background");
         response.put("type", "stock-full");
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/trigger/forex/snapshot")
+    public ResponseEntity<Map<String, String>> triggerForexSnapshotUpdate() {
+        log.info("Admin triggered: TCMB + Yahoo Forex SNAPSHOT update");
+        
+        new Thread(() -> {
+            try {
+                tcmbForexService.fetchAndSaveTcmbRates();
+                yahooForexService.syncAllYahooSnapshots();
+            } catch (Exception e) {
+                log.error("Async forex snapshot update failed", e);
+            }
+        }).start();
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "started");
+        response.put("message", "TCMB + Yahoo snapshot update started (~2 min)");
+        response.put("type", "forex-snapshot");
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/trigger/forex/candles")
+    public ResponseEntity<Map<String, String>> triggerForexCandleUpdate() {
+        log.info("Admin triggered: Yahoo Finance CANDLES-ONLY update");
+        
+        new Thread(() -> {
+            try {
+                yahooForexService.syncAllYahooCandles();
+            } catch (Exception e) {
+                log.error("Async Yahoo forex candle update failed", e);
+            }
+        }).start();
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "started");
+        response.put("message", "Yahoo Finance candles update started (~10 min, 5 years OHLC)");
+        response.put("type", "forex-candles");
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    
+    @PostMapping("/trigger/forex/full")
+    public ResponseEntity<Map<String, String>> triggerFullForexUpdate() {
+        log.info("Admin triggered: FULL forex update");
+        
+        new Thread(() -> {
+            try {
+                tcmbForexService.fetchAndSaveTcmbRates();
+                yahooForexService.syncAllYahooSnapshots();
+                yahooForexService.syncAllYahooCandles();
+            } catch (Exception e) {
+                log.error("Async full forex update failed", e);
+            }
+        }).start();
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "started");
+        response.put("message", "Full forex update started (TCMB + Yahoo snapshots + 5y candles)");
+        response.put("type", "forex-full");
         
         return ResponseEntity.ok(response);
     }

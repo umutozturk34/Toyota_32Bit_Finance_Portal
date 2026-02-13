@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useParams } from 'react-router-dom';
 import HistoricalChart from '../components/HistoricalChart';
-import { getCryptoHistory, stockService } from '../services/marketService';
+import { getCryptoHistory, stockService, forexService } from '../services/marketService';
 import { getCoinIds } from '../constants/coins';
 import { getBistSymbols, getBistDisplayName } from '../constants/stocks';
+import { getForexPairs } from '../constants/forex';
 import './ChartView.css';
 
 const ChartView = () => {
@@ -33,6 +34,8 @@ const ChartView = () => {
     ],
     // Crypto sayfasında görünen cryptolar (API ID'leri olarak) - Tüm 12 coin
     CRYPTO: getCoinIds(),
+    // Forex sayfasında görünen döviz çiftleri
+    FOREX: getForexPairs(),
     // Metals sayfasında görünen metaller
     METAL: [
       'PAXG', 'XAUT', 'KAG'
@@ -81,7 +84,7 @@ const ChartView = () => {
     const urlSymbol = searchParams.get('symbol');
     const urlRange = searchParams.get('range');
     
-    if (urlType && ['BIST', 'US', 'CRYPTO', 'METAL'].includes(urlType)) {
+    if (urlType && ['BIST', 'US', 'CRYPTO', 'FOREX', 'METAL'].includes(urlType)) {
       setAssetType(urlType);
     }
     if (urlSymbol && !coinId) {
@@ -137,6 +140,8 @@ const ChartView = () => {
       } else if (assetType === 'BIST') {
         const symbolWithSuffix = symbol.endsWith('.IS') ? symbol : `${symbol}.IS`;
         data = await stockService.getStockHistory(symbolWithSuffix);
+      } else if (assetType === 'FOREX') {
+        data = await forexService.getForexHistory(symbol);
       } else {
         setError(`${assetType} historical data not yet implemented`);
         setChartData(null);
@@ -214,7 +219,7 @@ const ChartView = () => {
         <div className="control-group">
           <label>Asset Type</label>
           <div className="button-group">
-            {['BIST', 'US', 'CRYPTO', 'METAL'].map(type => (
+            {['BIST', 'US', 'CRYPTO', 'FOREX', 'METAL'].map(type => (
               <button
                 key={type}
                 className={assetType === type ? 'active' : ''}
@@ -223,6 +228,7 @@ const ChartView = () => {
                 {type === 'BIST' ? '🇹🇷 BIST' : 
                  type === 'US' ? '🇺🇸 US' : 
                  type === 'CRYPTO' ? '₿ Crypto' :
+                 type === 'FOREX' ? '💱 Forex' :
                  '🪙 Metal'}
               </button>
             ))}
@@ -287,7 +293,7 @@ const ChartView = () => {
                   <span className="summary-value">
                     {new Intl.NumberFormat('tr-TR', {
                       style: 'currency',
-                      currency: assetType === 'BIST' ? 'TRY' : 'USD'
+                      currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
                     }).format(displayCandle.open)}
                   </span>
                 </div>
@@ -296,7 +302,7 @@ const ChartView = () => {
                   <span className="summary-value">
                     {new Intl.NumberFormat('tr-TR', {
                       style: 'currency',
-                      currency: assetType === 'BIST' ? 'TRY' : 'USD'
+                      currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
                     }).format(displayCandle.high)}
                   </span>
                 </div>
@@ -305,7 +311,7 @@ const ChartView = () => {
                   <span className="summary-value">
                     {new Intl.NumberFormat('tr-TR', {
                       style: 'currency',
-                      currency: assetType === 'BIST' ? 'TRY' : 'USD'
+                      currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
                     }).format(displayCandle.low)}
                   </span>
                 </div>
@@ -314,7 +320,7 @@ const ChartView = () => {
                   <span className="summary-value">
                     {new Intl.NumberFormat('tr-TR', {
                       style: 'currency',
-                      currency: assetType === 'BIST' ? 'TRY' : 'USD'
+                      currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
                     }).format(displayCandle.close)}
                   </span>
                 </div>
@@ -324,7 +330,7 @@ const ChartView = () => {
                     <span className="summary-value">
                       {new Intl.NumberFormat('tr-TR', {
                         style: 'currency',
-                        currency: assetType === 'BIST' ? 'TRY' : 'USD'
+                        currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
                       }).format(sma20)}
                     </span>
                   </div>
@@ -335,7 +341,7 @@ const ChartView = () => {
                     <span className="summary-value">
                       {new Intl.NumberFormat('tr-TR', {
                         style: 'currency',
-                        currency: assetType === 'BIST' ? 'TRY' : 'USD'
+                        currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
                       }).format(sma50)}
                     </span>
                   </div>
@@ -346,7 +352,7 @@ const ChartView = () => {
                     <span className="summary-value">
                       {new Intl.NumberFormat('tr-TR', {
                         style: 'currency',
-                        currency: assetType === 'BIST' ? 'TRY' : 'USD'
+                        currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
                       }).format(sma200)}
                     </span>
                   </div>

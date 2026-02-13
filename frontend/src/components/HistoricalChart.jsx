@@ -16,8 +16,8 @@ const HistoricalChart = ({ data, symbol, onHoverCandle, assetType = 'CRYPTO' }) 
   }
 
   // Determine currency based on asset type
-  const currency = assetType === 'BIST' ? 'TRY' : 'USD';
-  const currencySymbol = assetType === 'BIST' ? '₺' : '$';
+  const currency = (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD';
+  const currencySymbol = (assetType === 'BIST' || assetType === 'FOREX') ? '₺' : '$';
 
   // Create categories (formatted dates) for x-axis
   const categories = data.candles.map(candle => {

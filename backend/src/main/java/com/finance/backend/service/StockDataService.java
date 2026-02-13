@@ -68,6 +68,7 @@ public class StockDataService {
         for (String symbol : bistStocks) {
             try {
                 updateSingleStockSnapshot(symbol);
+                stockCacheService.clearSnapshotCache(symbol);
                 successCount++;
                 
                 try {
@@ -98,8 +99,6 @@ public class StockDataService {
         if (!failedSymbols.isEmpty()) {
             log.warn("Failed symbols: {}", failedSymbols);
         }
-        
-        stockCacheService.clearSnapshotCache();
     }
     
     @Transactional
@@ -139,6 +138,7 @@ public class StockDataService {
         for (String symbol : bistStocks) {
             try {
                 int candleCount = updateCandlesForStockTransactional(symbol);
+                stockCacheService.clearHistoryCache(symbol);
                 totalCandles += candleCount;
                 successCount++;
                 
@@ -170,8 +170,6 @@ public class StockDataService {
         if (!failedSymbols.isEmpty()) {
             log.warn("Failed symbols: {}", failedSymbols);
         }
-        
-        stockCacheService.clearHistoryCache();
     }
     
     @Transactional

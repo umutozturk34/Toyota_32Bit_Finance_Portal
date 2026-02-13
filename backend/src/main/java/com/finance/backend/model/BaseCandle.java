@@ -10,10 +10,6 @@ import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * Base class for all candle/OHLC chart data entities
- * Contains OHLC (Open, High, Low, Close) price data
- */
 @Data
 @SuperBuilder
 @NoArgsConstructor

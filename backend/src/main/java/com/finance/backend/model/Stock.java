@@ -3,6 +3,7 @@ package com.finance.backend.model;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Index;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -11,17 +12,19 @@ import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 
-/**
- * Stock (BIST) snapshot entity - stores current stock asset information
- * Extends BaseAsset for common asset fields
- */
 @Data
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Table(name = "stocks")
+@Table(
+    name = "stocks",
+    indexes = {
+        @Index(name = "idx_stock_symbol", columnList = "symbol"),
+        @Index(name = "idx_stock_exchange", columnList = "exchange")
+    }
+)
 public class Stock extends BaseAsset {
     
     @Id

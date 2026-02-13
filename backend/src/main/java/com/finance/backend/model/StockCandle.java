@@ -15,7 +15,12 @@ import lombok.experimental.SuperBuilder;
 @Entity
 @Table(
     name = "stock_candles",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"stock_symbol", "candle_date"})
+    uniqueConstraints = @UniqueConstraint(columnNames = {"stock_symbol", "candle_date"}),
+    indexes = {
+        @Index(name = "idx_stock_candle_symbol", columnList = "stock_symbol"),
+        @Index(name = "idx_stock_candle_date", columnList = "candle_date"),
+        @Index(name = "idx_stock_candle_symbol_date", columnList = "stock_symbol, candle_date")
+    }
 )
 public class StockCandle extends BaseCandle {
     

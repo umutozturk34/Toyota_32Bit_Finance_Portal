@@ -71,42 +71,24 @@ public class CryptoCacheService {
         return candles;
     }
     
-    public void clearSnapshotCache() {
-        var snapshotKeys = redisTemplate.keys(PREFIX_SNAPSHOT + "*");
-        
-        int deleted = 0;
-        if (snapshotKeys != null && !snapshotKeys.isEmpty()) {
-            deleted = redisTemplate.delete(snapshotKeys).intValue();
+    public void clearSnapshotCache(String cryptoId) {
+        String cacheKey = PREFIX_SNAPSHOT + cryptoId;
+        Boolean deleted = redisTemplate.delete(cacheKey);
+        if (Boolean.TRUE.equals(deleted)) {
+            log.info("Cleared crypto snapshot cache: {}", cacheKey);
         }
-        
-        log.info("Cleared crypto snapshot cache: {} keys deleted", deleted);
     }
     
-    public void clearHistoryCache() {
-        var historyKeys = redisTemplate.keys(PREFIX_HISTORY + "*");
-        
-        int deleted = 0;
-        if (historyKeys != null && !historyKeys.isEmpty()) {
-            deleted = redisTemplate.delete(historyKeys).intValue();
+    public void clearHistoryCache(String cryptoId) {
+        String cacheKey = PREFIX_HISTORY + cryptoId;
+        Boolean deleted = redisTemplate.delete(cacheKey);
+        if (Boolean.TRUE.equals(deleted)) {
+            log.info("Cleared crypto history cache: {}", cacheKey);
         }
-        
-        log.info("Cleared crypto history/candle cache: {} keys deleted", deleted);
     }
     
-    public void clearAllCache() {
-        var snapshotKeys = redisTemplate.keys(PREFIX_SNAPSHOT + "*");
-        var historyKeys = redisTemplate.keys(PREFIX_HISTORY + "*");
-        
-        int totalDeleted = 0;
-        
-        if (snapshotKeys != null && !snapshotKeys.isEmpty()) {
-            totalDeleted += redisTemplate.delete(snapshotKeys).intValue();
-        }
-        
-        if (historyKeys != null && !historyKeys.isEmpty()) {
-            totalDeleted += redisTemplate.delete(historyKeys).intValue();
-        }
-        
-        log.info("Cleared all crypto cache: {} keys deleted", totalDeleted);
+    public void clearCache(String cryptoId) {
+        clearSnapshotCache(cryptoId);
+        clearHistoryCache(cryptoId);
     }
 }

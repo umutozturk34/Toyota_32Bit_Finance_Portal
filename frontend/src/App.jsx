@@ -12,6 +12,7 @@ import News from './pages/News';
 import MarketData from './pages/MarketData';
 import Stocks from './pages/Stocks';
 import Crypto from './pages/Crypto';
+import Forex from './pages/Forex';
 import Metals from './pages/Metals';
 import ChartView from './pages/ChartView';
 import './App.css';
@@ -70,6 +71,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Crypto />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="forex" 
+              element={
+                <ProtectedRoute>
+                  <Forex />
                 </ProtectedRoute>
               } 
             />

@@ -13,8 +13,15 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Table(name = "crypto_candles", 
-       uniqueConstraints = @UniqueConstraint(columnNames = {"crypto_id", "candle_date"}))
+@Table(
+    name = "crypto_candles", 
+    uniqueConstraints = @UniqueConstraint(columnNames = {"crypto_id", "candle_date"}),
+    indexes = {
+        @Index(name = "idx_crypto_candle_id", columnList = "crypto_id"),
+        @Index(name = "idx_crypto_candle_date", columnList = "candle_date"),
+        @Index(name = "idx_crypto_candle_id_date", columnList = "crypto_id, candle_date")
+    }
+)
 public class CryptoCandle extends BaseCandle {
     
     @Id

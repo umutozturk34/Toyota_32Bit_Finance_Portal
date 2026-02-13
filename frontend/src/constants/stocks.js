@@ -9,7 +9,7 @@ const getBistStocks = () => {
   const bistStocksEnv = import.meta.env.VITE_BIST_STOCKS || '';
   
   if (!bistStocksEnv) {
-    console.warn('⚠️ VITE_BIST_STOCKS environment variable not set');
+    console.warn(' VITE_BIST_STOCKS environment variable not set');
     return [];
   }
   

@@ -47,12 +47,14 @@ function Stocks() {
         }
     };
 
+    const indices = stocks.filter(s => ['XU030.IS', 'XU100.IS', 'XU500.IS'].includes(s.symbol));
+    const regularStocks = stocks.filter(s => !['XU030.IS', 'XU100.IS', 'XU500.IS'].includes(s.symbol));
+
     const handleStockSnapshotUpdate = async () => {
         setUpdating(prev => ({ ...prev, snapshot: true }));
         try {
             const response = await adminService.triggerStockSnapshot();
             alert(response.message || 'Hisse snapshot güncelleme başlatıldı');
-            setTimeout(fetchStocks, 5000); // 5 saniye sonra yenile
         } catch (err) {
             alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
         } finally {
@@ -77,7 +79,6 @@ function Stocks() {
         try {
             const response = await adminService.triggerStockFull();
             alert(response.message || 'Hisse tam güncelleme başlatıldı (Bu işlem 15-20 dakika sürebilir)');
-            setTimeout(fetchStocks, 10000); // 10 saniye sonra yenile
         } catch (err) {
             alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
         } finally {
@@ -112,7 +113,7 @@ function Stocks() {
     return (
         <div className="stocks-container">
             <div className="stocks-header">
-                <h1>📈 BIST Hisse Senetleri <span className="stock-count">({stocks.length} hisse)</span></h1>
+                <h1>� Borsa İstanbul (BIST)</h1>
                 <div style={{ display: 'flex', gap: '10px' }}>
                     <button className="refresh-btn" onClick={fetchStocks} disabled={loading}>
                         🔄 Yenile
@@ -159,10 +160,63 @@ function Stocks() {
                     ⚠️ {error}
                 </div>
             )}
+
+            {/* BIST Endeksleri */}
+            {!loading && stocks.length > 0 && indices.length === 0 && (
+                <div className="info" style={{ margin: '20px', padding: '15px', backgroundColor: '#fff3cd', border: '1px solid #ffc107', borderRadius: '5px', color: '#856404' }}>
+                    ℹ️ Endeks verileri bulunamadı. Admin snapshot güncellemesi ile endeksler (BIST 30, BIST 100, BIST 500) çekilebilir.
+                </div>
+            )}
+            
+            {!loading && indices.length > 0 && (
+                <>
+                    <div className="indices-header">
+                        <h2>📊 BIST Endeksleri</h2>
+                    </div>
+                    <div className="indices-grid">
+                        {indices.map((index) => (
+                            <div key={index.symbol} className="index-card">
+                                <div className="index-info">
+                                    <h3>
+                                        {index.symbol === 'XU030.IS' ? 'BIST 30' : 
+                                         index.symbol === 'XU100.IS' ? 'BIST 100' : 
+                                         'BIST 500'}
+                                    </h3>
+                                    <span className="index-code">{index.symbol}</span>
+                                </div>
+                                <button 
+                                    className="chart-btn"
+                                    onClick={() => {
+                                        navigate(`/chart/${index.symbol}?type=STOCK&symbol=${index.symbol}&range=3M`);
+                                    }}
+                                    title="Grafiği Görüntüle"
+                                    style={{ position: 'absolute', top: '15px', right: '15px' }}
+                                >
+                                    📊
+                                </button>
+                                <div className="index-price">
+                                    {formatPrice(index.currentPrice)}
+                                </div>
+                                <div className={`index-change ${getChangeClass(index.priceChangePercent)}`}>
+                                    {index.priceChangePercent > 0 ? '▲' : '▼'} 
+                                    {Math.abs(index.priceChangePercent || 0).toFixed(2)}%
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            )}
+            
+            {/* BIST Hisse Senetleri */}
+            {!loading && regularStocks.length > 0 && (
+                <div className="indices-header" style={{ marginTop: '2rem' }}>
+                    <h2>📈 BIST Hisse Senetleri <span className="stock-count">({regularStocks.length} hisse)</span></h2>
+                </div>
+            )}
             
             <div className="stocks-grid">
-                {!loading && stocks.length > 0 ? 
-                    stocks.map((stock) => (
+                {!loading && regularStocks.length > 0 ? 
+                    regularStocks.map((stock) => (
                         <div key={stock.symbol} className="stock-card">
                             <div className="stock-header">
                                 <div className="stock-info">

@@ -49,6 +49,51 @@ export const getMultipleCryptos = async (ids) => {
 };
 
 /**
+ * Forex market data services
+ */
+export const forexService = {
+  // Get single forex by currency code (uses cache)
+  getForexByCode: async (currencyCode) => {
+    try {
+      const response = await api.get(`/forex/${currencyCode}`, { baseURL: '/api/v1' });
+      return response.data;
+    } catch (error) {
+      // 404 means no data yet - return null instead of throwing
+      if (error.response?.status === 404) {
+        console.log(`Forex ${currencyCode} not found (404) - no data yet`);
+        return null;
+      }
+      console.error(`Error fetching forex ${currencyCode}:`, error);
+      throw error;
+    }
+  },
+  
+  // Fetch multiple forex pairs at once (uses cache for each)
+  getMultipleForex: async (currencyCodes) => {
+    try {
+      const promises = currencyCodes.map(code => forexService.getForexByCode(code));
+      const results = await Promise.all(promises);
+      // Filter out null values (404s)
+      return results.filter(forex => forex !== null);
+    } catch (error) {
+      console.error('Error fetching multiple forex:', error);
+      throw error;
+    }
+  },
+  
+  // Get forex history
+  getForexHistory: async (currencyCode) => {
+    try {
+      const response = await api.get(`/forex/${currencyCode}/history`, { baseURL: '/api/v1' });
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching history for ${currencyCode}:`, error);
+      throw error;
+    }
+  },
+};
+
+/**
  * Stock market data services
  */
 export const stockService = {
@@ -155,6 +200,38 @@ export const adminService = {
       return response.data;
     } catch (error) {
       console.error('Error triggering stock full update:', error);
+      throw error;
+    }
+  },
+  
+  // Forex triggers
+  
+  triggerForexSnapshot: async () => {
+    try {
+      const response = await api.post('/admin/trigger/forex/snapshot', {}, { baseURL: '/api/v1' });
+      return response.data;
+    } catch (error) {
+      console.error('Error triggering forex snapshot update:', error);
+      throw error;
+    }
+  },
+  
+  triggerForexCandles: async () => {
+    try {
+      const response = await api.post('/admin/trigger/forex/candles', {}, { baseURL: '/api/v1' });
+      return response.data;
+    } catch (error) {
+      console.error('Error triggering forex candles update:', error);
+      throw error;
+    }
+  },
+  
+  triggerForexFull: async () => {
+    try {
+      const response = await api.post('/admin/trigger/forex/full', {}, { baseURL: '/api/v1' });
+      return response.data;
+    } catch (error) {
+      console.error('Error triggering forex full update:', error);
       throw error;
     }
   },

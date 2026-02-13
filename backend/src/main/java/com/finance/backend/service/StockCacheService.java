@@ -69,46 +69,25 @@ public class StockCacheService {
         
         return candles;
     }
-
-    public void clearSnapshotCache() {
-        var snapshotKeys = redisTemplate.keys(SNAPSHOT_KEY_PREFIX + "*");
-        
-        int deleted = 0;
-        if (snapshotKeys != null && !snapshotKeys.isEmpty()) {
-            redisTemplate.delete(snapshotKeys);
-            deleted = snapshotKeys.size();
+    
+    public void clearSnapshotCache(String symbol) {
+        String cacheKey = SNAPSHOT_KEY_PREFIX + symbol;
+        Boolean deleted = redisTemplate.delete(cacheKey);
+        if (Boolean.TRUE.equals(deleted)) {
+            log.info("Cleared stock snapshot cache: {}", cacheKey);
         }
-        
-        log.info("Cleared stock snapshot cache: {} keys deleted", deleted);
     }
-
-    public void clearHistoryCache() {
-        var historyKeys = redisTemplate.keys(HISTORY_KEY_PREFIX + "*");
-        
-        int deleted = 0;
-        if (historyKeys != null && !historyKeys.isEmpty()) {
-            redisTemplate.delete(historyKeys);
-            deleted = historyKeys.size();
+    
+    public void clearHistoryCache(String symbol) {
+        String cacheKey = HISTORY_KEY_PREFIX + symbol;
+        Boolean deleted = redisTemplate.delete(cacheKey);
+        if (Boolean.TRUE.equals(deleted)) {
+            log.info("Cleared stock history cache: {}", cacheKey);
         }
-        
-        log.info("Cleared stock history/candle cache: {} keys deleted", deleted);
     }
-    public void clearAllCache() {
-        var snapshotKeys = redisTemplate.keys(SNAPSHOT_KEY_PREFIX + "*");
-        var historyKeys = redisTemplate.keys(HISTORY_KEY_PREFIX + "*");
-        
-        int totalDeleted = 0;
-        
-        if (snapshotKeys != null && !snapshotKeys.isEmpty()) {
-            redisTemplate.delete(snapshotKeys);
-            totalDeleted += snapshotKeys.size();
-        }
-        
-        if (historyKeys != null && !historyKeys.isEmpty()) {
-            redisTemplate.delete(historyKeys);
-            totalDeleted += historyKeys.size();
-        }
-        
-        log.info("Cleared all stock cache: {} keys deleted", totalDeleted);
+    
+    public void clearCache(String symbol) {
+        clearSnapshotCache(symbol);
+        clearHistoryCache(symbol);
     }
 }

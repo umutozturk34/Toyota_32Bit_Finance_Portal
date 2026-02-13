@@ -57,12 +57,11 @@ Each version represents a stable and completed development milestone.
 - [x] Create news REST endpoints (public access)
 - [x] Add news list view with category filtering
 - [x] Implement frontend keyword-based categorization
-- [x] Add market data API clients (Twelve Data, AlphaVantage, CollectAPI)
-- [x] Create exchange rate endpoints (TCMB)
+- [x] Add market data API clients (Yahoo Finance, CoinGecko, TCMB)
 - [x] Implement cryptocurrency service (CoinGecko)
 - [x] Add precious metals service (CoinGecko tokenized)
-- [x] Create US stocks service with multi-source support
-- [x] Create BIST stocks service with fallback chain
+- [x] Create BIST stocks service (Yahoo Finance)
+- [x] Create forex service (TCMB + Yahoo Finance)
 - [x] Add BIST-FUND (GYO) support
 - [x] Implement Redis caching (24h TTL)
 - [x] Add dark mode toggle
@@ -73,80 +72,74 @@ Each version represents a stable and completed development milestone.
 
 ---
 
-## � v0.4.0 – Historical Data & Analysis (Partial Implementation)
+## � v0.4.0 – Historical Data & Candlestick Charts
 
 ### Development Tasks
-- [x] Add historical data API client (CoinGecko only)
-- [x] Implement date-range query support (Crypto only)
-- [x] Create historical data REST endpoints (Crypto only)
-- [x] Add ApexCharts candlestick visualization (Crypto only)
-- [x] Implement interactive chart with zoom/pan functionality
-- [x] Add time range controls (1M/3M/1Y)
-- [x] Create ChartView page with crypto chart navigation
-- [x] Add symbol-to-ID mapping for crypto navigation
-- [ ] **PENDING**: Historical data for BIST stocks
-- [ ] **PENDING**: Historical data for US stocks
-- [ ] **PENDING**: Historical data for metals
-- [ ] **PENDING**: Multi-instrument comparison
-- [ ] **PENDING**: Moving average calculation
-- [ ] **PENDING**: Technical analysis features
+- [x] Add historical data API clients (CoinGecko, Yahoo Finance, TCMB)
+- [x] Implement OHLCV candle storage with PostgreSQL + Flyway
+- [x] Create REST endpoints for crypto, stocks, and forex history
+- [x] Add ApexCharts candlestick visualization component
+- [x] Implement interactive chart features (zoom, pan, time ranges)
+- [x] Create ChartView page with universal asset support
+- [x] Historical data for Cryptocurrency (12 major coins)
+- [x] Historical data for BIST stocks (XU30 constituents)
+- [x] Historical data for Forex pairs (major currency pairs)
+- [x] Add 365-day data retention with automated cleanup
+- [ ] Historical data for US stocks
+- [ ] Historical data for VİOP instruments
+- [ ] Historical data for Funds (GYO, ETF)
+- [ ] Historical data for Precious Metals
 
-### Technical Implementation (Crypto Only)
-- **CryptoHistoryService**: Fetches OHLCV candle data from CoinGecko API
-- **Candle Entity/DTO**: OHLCV data structure for crypto historical data
-- **Redis Caching**: 4,380 candles cached with self-healing mechanism
-- **REST Endpoints**: 
-  - `GET /api/v1/crypto/{coinId}/history` - Returns OHLCV candles
-- **Supported Cryptos**: 12 major cryptocurrencies (BTC, ETH, USDT, BNB, SOL, XRP, USDC, ADA, AVAX, DOGE, TRX, DOT)
-- **Frontend Components**:
-  - **HistoricalChart.jsx**: ApexCharts candlestick chart with interactive features
-  - **ChartView.jsx**: Chart page with time range buttons and crypto analysis
-  - **Crypto.jsx**: Crypto list page with chart button navigation
-  - **Route**: `/chart/:coinId` - Chart visualization for specific cryptocurrency
-  - **Features**: Interactive candlestick charts, zoom/pan functionality, time range selection, chart button navigation from crypto cards
+### Technical Implementation
 
-### Known Limitations
-- Only cryptocurrency historical data is implemented
-- BIST, US stocks, and metals historical data not yet available
-- Technical analysis and comparison features are not implemented
-- Chart functionality limited to crypto assets only
+**Backend Services:**
+- **CryptoHistoryService**: 365-day OHLCV data from CoinGecko API (12 major cryptocurrencies)
+- **StockHistoryService**: 5 year OHLCV data from Yahoo Finance (BIST XU30 stocks)
+- **ForexHistoryService**: 5 year OHLCV data from Yahoo and TCMB (major currency pairs)
+- **Database**: PostgreSQL with Flyway migrations for candle storage
+- **Caching Strategy**: Redis with 24-hour TTL and self-healing mechanism
+- **Data Retention**: Automated cleanup keeps exactly 365 days of historical data
+- **Scheduler**: Daily Istanbul time sync for all data sources
 
-### Version Status
-- [ ] v0.4.0 – **PARTIAL** - Historical data for cryptocurrency completed ⚠️
+**REST API Endpoints:**
+- `GET /api/v1/crypto/{coinId}/history` - Cryptocurrency OHLCV candles
+- `GET /api/v1/stocks/{symbol}/history` - BIST stock OHLCV candles
+- `GET /api/v1/forex/{pair}/history` - Forex pair OHLCV candles
+
+**Frontend Components:**
+- **HistoricalChart.jsx**: ApexCharts candlestick with zoom, pan, and time range controls
+- **ChartView.jsx**: Universal chart page supporting crypto, stocks, and forex
+- **Navigation**: Chart button integration in Crypto, Stocks, and Forex list pages
+- **Routes**: `/chart/:assetType/:assetId` - Dynamic chart routing for all asset types
+
+**Supported Assets:**
+- **Cryptocurrency**: 12 major coins (BTC, ETH, USDT, BNB, SOL, XRP, USDC, ADA, AVAX, DOGE, TRX, DOT)
+- **BIST Stocks**: XU30 index constituents
+- **Forex**: Major currency pairs (USD, EUR, GBP, JPY, TRY crosses)
+
+### Scope & Limitations
+- **Completed**: Crypto, BIST Stocks, and Forex historical data with candlestick charts
+- **Pending**: US stocks, VİOP instruments, Funds (GYO/ETF), and Precious Metals historical data
+- **Future Features**: Technical indicators, multi-asset comparison, portfolio tracking
+
+### Version Release
+- [ ] v0.4.0 – Historical data for all asset types (Crypto [✅], BIST [✅], Forex [✅], US Stocks [⏳], VİOP [⏳], Funds [⏳], Metals [⏳]) ⚠️
 
 ---
 
-## v0.5.0 – Complete Historical Data & Technical Analysis
+## ⚪ v0.5.0 – Technical Analysis & Advanced Features
 
-### Development Tasks (Historical Data Expansion)
-- [ ] Add BIST stocks historical data API integration
-- [ ] Add US stocks historical data API integration  
-- [ ] Add metals historical data API integration
-- [ ] Implement unified historical data REST endpoints
-- [ ] Add technical analysis service (SMA, EMA, RSI, MACD)
+### Development Tasks
+- [ ] Implement technical analysis service (SMA, EMA, RSI, MACD, Bollinger Bands)
+- [ ] Add technical indicators overlay on charts
 - [ ] Implement multi-asset comparison charts
 - [ ] Add trend analysis and pattern recognition
 - [ ] Create portfolio performance tracking
-- [ ] Add watchlist functionality
-
-### Technical Implementation Goals
-- **Unified HistoricalDataService**: Support for all asset types (BIST, US, Crypto, Metals)
-- **TechnicalAnalysisService**: Calculate SMA20/50, EMA, RSI, MACD indicators
-- **ComparisonService**: Multi-asset chart overlays and correlation analysis
-- **Portfolio Domain**: User portfolio tracking with P&L calculations
-- **REST Endpoints**: 
-  - `GET /api/v1/history/{type}/{symbol}?range=1M` - All asset types
-  - `GET /api/v1/analysis/technical/{symbol}` - Technical indicators
-  - `GET /api/v1/portfolio/{userId}` - Portfolio management
-- **Frontend Features**:
-  - Multi-asset chart comparison
-  - Technical indicator overlays
-  - Portfolio dashboard
-  - Advanced time range selections
-  - Correlation matrix views
+- [ ] Implement watchlist functionality with alerts
+- [ ] Add export functionality (CSV, Excel)
 
 ### Version Release
-- [ ] v0.5.0 – Complete historical data and technical analysis
+- [ ] v0.5.0 – Technical analysis tools and advanced trading features
 
 ---
 

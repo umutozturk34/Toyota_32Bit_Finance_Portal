@@ -15,8 +15,6 @@ import Crypto from './pages/Crypto';
 import Forex from './pages/Forex';
 import Metals from './pages/Metals';
 import ChartView from './pages/ChartView';
-import './App.css';
-
 function App() {
   return (
     <AuthProvider>
@@ -113,5 +111,4 @@ function App() {
     </AuthProvider>
   );
 }
-
 export default App;

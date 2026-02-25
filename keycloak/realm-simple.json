@@ -196,17 +196,6 @@
                 "always.read.value.from.ldap": ["false"],
                 "is.mandatory.in.ldap": ["true"]
               }
-            },
-            {
-              "name": "username",
-              "providerId": "user-attribute-ldap-mapper",
-              "config": {
-                "ldap.attribute": ["uid"],
-                "user.model.attribute": ["username"],
-                "read.only": ["false"],
-                "always.read.value.from.ldap": ["false"],
-                "is.mandatory.in.ldap": ["true"]
-              }
             }
           ]
         }

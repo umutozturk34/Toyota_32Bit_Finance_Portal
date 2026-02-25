@@ -1,71 +1,66 @@
 package com.finance.backend.model;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
+import java.util.Objects;
 @Entity
-@Table(name = "forex_candles", 
+@EntityListeners(AuditingEntityListener.class)
+@Table(name = "forex_candles",
     uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"currency_code", "candle_date"})
+        @UniqueConstraint(name = "uc_forex_currency_date",
+                columnNames = {"currency_code", "candle_date"})
     },
     indexes = {
         @Index(name = "idx_forex_candle_currency", columnList = "currency_code"),
-        @Index(name = "idx_forex_candle_date", columnList = "candle_date")
+        @Index(name = "idx_forex_candle_date", columnList = "candle_date"),
+        @Index(name = "idx_forex_candle_currency_date", columnList = "currency_code, candle_date")
     }
 )
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = "forex")
-@EqualsAndHashCode(exclude = "forex")
+@Builder
 public class ForexCandle {
-    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
-    @Column(name = "currency_code", nullable = false, length = 10, insertable = false, updatable = false)
-    private String currencyCode;  // USD, EUR, GBP, etc.
-    
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "currency_code", referencedColumnName = "currency_code", nullable = false)
+    @JoinColumn(name = "currency_code", referencedColumnName = "currency_code", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_forex_candle_currency"))
     @JsonIgnore
     private Forex forex;
-    
+    @Column(name = "currency_code", insertable = false, updatable = false, nullable = false)
+    private String currencyCode;
     @Column(name = "candle_date", nullable = false)
     private LocalDateTime candleDate;
-    
-    // OHLC Data (Yahoo Finance'den)
-    @Column(name = "open", precision = 18, scale = 4)
+    @Column(name = "open", precision = 19, scale = 4)
     private BigDecimal open;
-    
-    @Column(name = "high", precision = 18, scale = 4)
+    @Column(name = "high", precision = 19, scale = 4)
     private BigDecimal high;
-    
-    @Column(name = "low", precision = 18, scale = 4)
+    @Column(name = "low", precision = 19, scale = 4)
     private BigDecimal low;
-    
-    @Column(name = "close", precision = 18, scale = 4)
+    @Column(name = "close", precision = 19, scale = 4)
     private BigDecimal close;
-    
-    @Column(name = "created_at")
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-    
+    @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ForexCandle that)) return false;
+        return id != null && Objects.equals(id, that.id);
     }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

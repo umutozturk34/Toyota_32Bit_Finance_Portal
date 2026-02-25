@@ -1,5 +1,3 @@
-
-
 const FOREX_METADATA = {
   'USDTRY': { name: 'ABD Doları', icon: '🇺🇸', flag: '🇺🇸' },
   'EURTRY': { name: 'Euro', icon: '🇪🇺', flag: '🇪🇺' },
@@ -23,13 +21,9 @@ const FOREX_METADATA = {
   'AEDTRY': { name: 'BAE Dirhemi', icon: '🇦🇪', flag: '🇦🇪' },
   'KZTTRY': { name: 'Kazakistan Tengesi', icon: '🇰🇿', flag: '🇰🇿' }
 };
-
-
 export const getForexPairs = () => {
   return Object.keys(FOREX_METADATA);
 };
-
-
 export const getForexMetadata = (currencyCode) => {
   return FOREX_METADATA[currencyCode] || {
     name: currencyCode,
@@ -37,28 +31,21 @@ export const getForexMetadata = (currencyCode) => {
     flag: '💱'
   };
 };
-
 export const getForexDisplayName = (currencyCode) => {
   const metadata = getForexMetadata(currencyCode);
   return metadata.name;
 };
-
 export const getForexIcon = (currencyCode) => {
   const metadata = getForexMetadata(currencyCode);
   return metadata.icon;
 };
-
-
 export const getForexFlag = (currencyCode) => {
   const metadata = getForexMetadata(currencyCode);
   return metadata.flag;
 };
-
-
 export const getBaseCurrency = (currencyCode) => {
   return currencyCode.replace('TRY', '');
 };
-
 export default {
   getForexPairs,
   getForexMetadata,

@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initKeycloak, isAuthenticated, getUserInfo, doLogin, doLogout, hasRole } from '../services/keycloak';
-
 const AuthContext = createContext({
   isAuthenticated: false,
   user: null,
@@ -9,54 +8,42 @@ const AuthContext = createContext({
   logout: () => {},
   hasRole: () => false,
 });
-
 export const AuthProvider = ({ children }) => {
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
-    // Keycloak init ile 5 saniyelik timeout
     const timeoutId = setTimeout(() => {
       if (loading) {
         console.warn('⚠️ Keycloak init timeout - proceeding without auth');
         setLoading(false);
       }
     }, 5000);
-    
     initKeycloak((auth) => {
       clearTimeout(timeoutId);
       setAuthenticated(auth);
-      
       if (auth) {
         const userInfo = getUserInfo();
         setUser(userInfo);
-        
         console.log('👤 User authenticated:', userInfo);
       } else {
         console.log('❌ User not authenticated');
       }
-      
       setLoading(false);
     });
-    
     return () => clearTimeout(timeoutId);
   }, []);
-
   const login = (options) => {
     doLogin(options);
   };
-
   const logout = () => {
     doLogout();
     setAuthenticated(false);
     setUser(null);
   };
-
   const checkRole = (role) => {
     return hasRole(role);
   };
-
   const value = {
     isAuthenticated: authenticated,
     user,
@@ -65,16 +52,12 @@ export const AuthProvider = ({ children }) => {
     logout,
     hasRole: checkRole,
   };
-
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  
   if (!context) {
     throw new Error('useAuth must be used within AuthProvider');
   }
-  
   return context;
 };

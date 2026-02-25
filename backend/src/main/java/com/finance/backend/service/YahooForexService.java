@@ -1,414 +1,223 @@
 package com.finance.backend.service;
-
+import com.finance.backend.client.YahooForexClient;
+import com.finance.backend.dto.external.YahooCandleDto;
+import com.finance.backend.dto.external.YahooQuoteDto;
+import com.finance.backend.mapper.ForexMapper;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
-import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.repository.ForexCandleRepository;
-import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
+import com.finance.backend.repository.ForexRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class YahooForexService {
-    
+    private static final int YEARS_TO_KEEP = 5;
+    private static final int MIN_CANDLES_FOR_INCREMENTAL = 1200;
+    private final YahooForexClient yahooForexClient;
+    private final ForexMapper forexMapper;
     private final ForexRepository forexRepository;
     private final ForexCandleRepository forexCandleRepository;
     private final ForexCacheService forexCacheService;
-    private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    
-    private static final String YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/";
-    private static final int YEARS_TO_KEEP = 5;
-    private static final int MIN_CANDLES_FOR_INCREMENTAL = 1200;
-    private static final BigDecimal SPREAD_RATE = new BigDecimal("0.01");
-    
-    @PostConstruct
-    public void init() {
-        restTemplate.getInterceptors().add((request, body, execution) -> {
-            request.getHeaders().add("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36");
-            return execution.execute(request, body);
-        });
-        log.info("YahooForexService initialized with User-Agent header");
+    public YahooForexService(YahooForexClient yahooForexClient,
+                             ForexMapper forexMapper,
+                             ForexRepository forexRepository,
+                             ForexCandleRepository forexCandleRepository,
+                             ForexCacheService forexCacheService) {
+        this.yahooForexClient = yahooForexClient;
+        this.forexMapper = forexMapper;
+        this.forexRepository = forexRepository;
+        this.forexCandleRepository = forexCandleRepository;
+        this.forexCacheService = forexCacheService;
     }
-    
-    @Transactional
     public void syncAllYahooSnapshots() {
-        log.info("Starting Yahoo Finance SNAPSHOT-ONLY sync...");
-        
+        log.info("Starting Yahoo Finance snapshot sync...");
         List<Forex> allForex = forexRepository.findAll();
-        
         for (Forex forex : allForex) {
             try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
+                updateForexSnapshot(forex);
+                Thread.sleep(2000); 
+            } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                log.warn("Rate limiting interrupted");
+                log.warn("Interrupted during snapshot sync");
+                break;
+            } catch (Exception e) {
+                log.error("[SNAPSHOT] Failed for {}: {}", forex.getCurrencyCode(), e.getMessage());
             }
-            
-            updateForexSnapshot(forex);
         }
-        
-        forexCacheService.clearAllSnapshotCache();
-        log.info("Completed Yahoo Finance SNAPSHOT-ONLY sync");
+        log.info("Completed Yahoo Finance snapshot sync");
     }
-    
-    @Transactional
     public void syncAllYahooCandles() {
-        log.info("Starting Yahoo Finance CANDLES-ONLY sync...");
-        
+        log.info("Starting Yahoo Finance candles sync...");
         LocalDateTime cutoffDate = LocalDateTime.now().minusYears(YEARS_TO_KEEP);
         forexCandleRepository.deleteByCandleDateBefore(cutoffDate);
-        
         List<Forex> allForex = forexRepository.findAll();
-        
         Forex usdtry = allForex.stream()
-            .filter(f -> "USDTRY".equals(f.getCurrencyCode()))
-            .findFirst()
-            .orElse(null);
-        
+                .filter(f -> "USDTRY".equals(f.getCurrencyCode()))
+                .findFirst()
+                .orElse(null);
         if (usdtry == null) {
             log.error("USDTRY not found in database");
             return;
         }
-        
         updateForexCandles(usdtry);
-        
+        forexCacheService.clearHistoryCache("USDTRY");
         for (Forex forex : allForex) {
             if ("USDTRY".equals(forex.getCurrencyCode())) {
                 continue;
             }
-            
             try {
+                updateForexCandles(forex);
+                forexCacheService.clearHistoryCache(forex.getCurrencyCode());
                 Thread.sleep(2000);
-            } catch (InterruptedException e) {
+            } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                log.warn("Rate limiting interrupted");
+                log.warn("Interrupted during candle sync");
+                break;
+            } catch (Exception e) {
+                log.error("[CANDLES] Failed for {}: {}", forex.getCurrencyCode(), e.getMessage());
             }
-            
-            updateForexCandles(forex);
         }
-        
-        forexCacheService.clearAllHistoryCache();
-        log.info("Completed Yahoo Finance CANDLES-ONLY sync");
+        log.info("Completed Yahoo Finance candles sync");
     }
-    
-    
-    @Transactional
     public void updateForexSnapshot(Forex forex) {
         String baseSymbol = forex.getCurrencyCode();
         String yahooSymbol = baseSymbol + "=X";
-        
         try {
-            String url = YAHOO_CHART_URL + yahooSymbol + "?range=1d&interval=1m";
-            String response = restTemplate.getForObject(url, String.class);
-            JsonNode root = objectMapper.readTree(response);
-            JsonNode result = root.path("chart").path("result").get(0);
-            
-            if (result != null && !result.isMissingNode()) {
-                JsonNode meta = result.path("meta");
-                BigDecimal currentPrice = getDecimal(meta.path("regularMarketPrice"));
-                BigDecimal previousClose = getDecimal(meta.path("previousClose"));
-                
-                if (currentPrice != null) {
-                    BigDecimal sellingPrice = currentPrice.multiply(BigDecimal.ONE.add(SPREAD_RATE));
-                    
-                    forex.setCurrentPrice(currentPrice.setScale(4, RoundingMode.HALF_UP));
-                    forex.setSellingPrice(sellingPrice.setScale(4, RoundingMode.HALF_UP));
-                    
-                    if (previousClose != null) {
-                        BigDecimal change = currentPrice.subtract(previousClose);
-                        BigDecimal changePercent = change.divide(previousClose, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100"));
-                        forex.setChange24h(change.setScale(4, RoundingMode.HALF_UP));
-                        forex.setChangePercent24h(changePercent.setScale(4, RoundingMode.HALF_UP));
-                    }
-                    
-                    forex.setUpdatedAt(LocalDateTime.now());
-                    forex.setYahooUpdatedAt(LocalDateTime.now());
-                    forexRepository.save(forex);
-                    log.info("[SNAPSHOT] Updated {} price: {}", forex.getCurrencyCode(), currentPrice);
-                    return;
-                }
+            YahooQuoteDto quote = yahooForexClient.fetchQuote(yahooSymbol);
+            if (quote != null && quote.regularMarketPrice() != null) {
+                forexMapper.applyYahooSnapshot(forex, quote, LocalDateTime.now());
+                forexRepository.save(forex);
+                forexCacheService.clearSnapshotCache(baseSymbol);
+                log.info("[SNAPSHOT] Updated {} price: {}", baseSymbol, quote.regularMarketPrice());
+                return;
             }
         } catch (Exception e) {
-            log.warn("[SNAPSHOT] Direct fetch failed for {}: {}", yahooSymbol, e.getMessage());
+            log.warn("[SNAPSHOT] Direct fetch failed for {}: {} - trying synthetic", baseSymbol, e.getMessage());
         }
-        
         if (!"USDTRY".equals(baseSymbol)) {
-            Forex usdtry = forexRepository.findByCurrencyCode("USDTRY").orElse(null);
-            if (usdtry != null && usdtry.getCurrentPrice() != null) {
-                String baseCurrency = forex.getCurrencyCode().replace("TRY", "");
-                String[] attempts = {
-                    baseCurrency + "USD=X",
-                    "USD" + baseCurrency + "=X"
-                };
-                
-                for (String symbol : attempts) {
-                    try {
-                        String url = YAHOO_CHART_URL + symbol + "?range=1d&interval=1m";
-                        String response = restTemplate.getForObject(url, String.class);
-                        JsonNode root = objectMapper.readTree(response);
-                        JsonNode result = root.path("chart").path("result").get(0);
-                        
-                        if (result != null && !result.isMissingNode()) {
-                            JsonNode meta = result.path("meta");
-                            BigDecimal pairPrice = getDecimal(meta.path("regularMarketPrice"));
-                            BigDecimal pairPreviousClose = getDecimal(meta.path("previousClose"));
-                            
-                            if (pairPrice != null) {
-                                boolean isUsdBase = symbol.startsWith("USD");
-                                BigDecimal syntheticPrice = isUsdBase 
-                                    ? usdtry.getCurrentPrice().divide(pairPrice, 4, RoundingMode.HALF_UP)
-                                    : usdtry.getCurrentPrice().multiply(pairPrice);
-                                
-                                BigDecimal sellingPrice = syntheticPrice.multiply(BigDecimal.ONE.add(SPREAD_RATE));
-                                
-                                forex.setCurrentPrice(syntheticPrice.setScale(4, RoundingMode.HALF_UP));
-                                forex.setSellingPrice(sellingPrice.setScale(4, RoundingMode.HALF_UP));
-                                
-                                if (pairPreviousClose != null && usdtry.getChange24h() != null) {
-                                    BigDecimal usdtryPreviousClose = usdtry.getCurrentPrice().subtract(usdtry.getChange24h());
-                                    BigDecimal syntheticPreviousClose = isUsdBase
-                                        ? usdtryPreviousClose.divide(pairPreviousClose, 4, RoundingMode.HALF_UP)
-                                        : usdtryPreviousClose.multiply(pairPreviousClose);
-                                    
-                                    BigDecimal change = syntheticPrice.subtract(syntheticPreviousClose);
-                                    BigDecimal changePercent = change.divide(syntheticPreviousClose, 4, RoundingMode.HALF_UP)
-                                            .multiply(new BigDecimal("100"));
-                                    forex.setChange24h(change.setScale(4, RoundingMode.HALF_UP));
-                                    forex.setChangePercent24h(changePercent.setScale(4, RoundingMode.HALF_UP));
-                                } else if (pairPreviousClose != null) {
-                                    BigDecimal syntheticPreviousClose = isUsdBase
-                                        ? usdtry.getCurrentPrice().divide(pairPreviousClose, 4, RoundingMode.HALF_UP)
-                                        : usdtry.getCurrentPrice().multiply(pairPreviousClose);
-                                    
-                                    BigDecimal change = syntheticPrice.subtract(syntheticPreviousClose);
-                                    BigDecimal changePercent = change.divide(syntheticPreviousClose, 4, RoundingMode.HALF_UP)
-                                            .multiply(new BigDecimal("100"));
-                                    forex.setChange24h(change.setScale(4, RoundingMode.HALF_UP));
-                                    forex.setChangePercent24h(changePercent.setScale(4, RoundingMode.HALF_UP));
-                                }
-                                
-                                forex.setUpdatedAt(LocalDateTime.now());
-                                forex.setYahooUpdatedAt(LocalDateTime.now());
-                                forexRepository.save(forex);
-                                log.info("[SNAPSHOT-SYNTHETIC] Updated {} price: {} change: {}", 
-                                    forex.getCurrencyCode(), syntheticPrice, forex.getChangePercent24h());
-                                return;
-                            }
-                        }
-                    } catch (Exception e) {
-                        log.debug("[SNAPSHOT-SYNTHETIC] Failed for {}: {}", symbol, e.getMessage());
-                    }
-                }
-            }
+            trySyntheticSnapshot(forex);
+        } else {
+            log.error("[SNAPSHOT] All attempts failed for {}", baseSymbol);
         }
-        
-        log.error("[SNAPSHOT] All attempts failed for {}", baseSymbol);
     }
-    
-    @Transactional
     public void updateForexCandles(Forex forex) {
         String baseSymbol = forex.getCurrencyCode();
         String yahooSymbol = baseSymbol + "=X";
-        
         long candleCount = forexCandleRepository.countByCurrencyCode(baseSymbol);
-        String range = candleCount >= MIN_CANDLES_FOR_INCREMENTAL ? "1d" : "5y";
-        String interval = "1d".equals(range) ? "1m" : "1d";
-        
+        String range = candleCount >= MIN_CANDLES_FOR_INCREMENTAL ? "1mo" : "5y";
+        String interval = "1d";
         try {
-            String url = YAHOO_CHART_URL + yahooSymbol + "?range=" + range + "&interval=" + interval;
-            String response = restTemplate.getForObject(url, String.class);
-            JsonNode root = objectMapper.readTree(response);
-            JsonNode result = root.path("chart").path("result").get(0);
-            
-            if (result != null && !result.isMissingNode()) {
-                int candlesSaved = saveForexCandles(forex, result, false, null, null);
-                
-                if (candlesSaved >= 100 || "1d".equals(range)) {
-                    log.info("[CANDLES-DIRECT] ✅ Saved {} candles for {}", candlesSaved, baseSymbol);
+            List<YahooCandleDto> candles = yahooForexClient.fetchCandles(yahooSymbol, range, interval);
+            if (!candles.isEmpty()) {
+                int saved = saveCandleBatch(forex, candles);
+                if (saved >= 100 || "1mo".equals(range)) {
+                    log.info("[CANDLES-DIRECT] Saved {} candles for {}", saved, baseSymbol);
                     return;
                 }
-                
                 if ("5y".equals(range)) {
-                    log.warn("[CANDLES-DIRECT] Only {} candles, trying synthetic", candlesSaved);
+                    log.warn("[CANDLES-DIRECT] Only {} candles for {}, trying synthetic", saved, baseSymbol);
                 }
             }
         } catch (Exception e) {
-            log.warn("[CANDLES-DIRECT] Fetch failed for {}: {}", yahooSymbol, e.getMessage());
+            log.warn("[CANDLES] Direct fetch failed for {}: {} - trying synthetic", baseSymbol, e.getMessage());
         }
-        
         if (!"USDTRY".equals(baseSymbol)) {
-            Forex usdtry = forexRepository.findByCurrencyCode("USDTRY").orElse(null);
-            if (usdtry == null) {
-                log.error("[CANDLES-SYNTHETIC] USDTRY not available for {}", baseSymbol);
-                return;
-            }
-            
-            List<ForexCandle> usdtryCandles = forexCandleRepository.findTop1825ByCurrencyCodeOrderByCandleDateDesc("USDTRY");
-            if (usdtryCandles.isEmpty()) {
-                log.error("[CANDLES-SYNTHETIC] USDTRY candles not available for {}", baseSymbol);
-                return;
-            }
-            
-            String baseCurrency = forex.getCurrencyCode().replace("TRY", "");
-            String[] attempts = {
-                baseCurrency + "USD=X",
-                "USD" + baseCurrency + "=X"
-            };
-            
-            for (String symbol : attempts) {
-                try {
-                    String url = YAHOO_CHART_URL + symbol + "?range=5y&interval=1d";
-                    String response = restTemplate.getForObject(url, String.class);
-                    JsonNode root = objectMapper.readTree(response);
-                    JsonNode result = root.path("chart").path("result").get(0);
-                    
-                    if (result != null && !result.isMissingNode()) {
-                        boolean isUsdBase = symbol.startsWith("USD");
-                        int candlesSaved = saveForexCandles(forex, result, true, usdtryCandles, isUsdBase);
-                        log.info("[CANDLES-SYNTHETIC] ✅ Saved {} candles for {}", candlesSaved, baseSymbol);
-                        return;
-                    }
-                } catch (Exception e) {
-                    log.debug("[CANDLES-SYNTHETIC] Failed for {}: {}", symbol, e.getMessage());
+            trySyntheticCandles(forex);
+        } else {
+            log.error("[CANDLES] All attempts failed for {}", baseSymbol);
+        }
+    }
+    private void trySyntheticSnapshot(Forex forex) {
+        Forex usdtry = forexRepository.findById("USDTRY").orElse(null);
+        if (usdtry == null || usdtry.getCurrentPrice() == null) {
+            log.error("[SNAPSHOT] USDTRY not available for synthetic calculation");
+            return;
+        }
+        String baseCurrency = forex.getCurrencyCode().replace("TRY", "");
+        String[] attempts = { baseCurrency + "USD=X", "USD" + baseCurrency + "=X" };
+        for (String symbol : attempts) {
+            try {
+                YahooQuoteDto pairQuote = yahooForexClient.fetchQuote(symbol);
+                if (pairQuote != null && pairQuote.regularMarketPrice() != null) {
+                    boolean isUsdBase = symbol.startsWith("USD");
+                    forexMapper.applySyntheticSnapshot(forex, pairQuote,
+                            usdtry.getCurrentPrice(), usdtry.getChange24h(), isUsdBase,
+                            LocalDateTime.now());
+                    forexRepository.save(forex);
+                    forexCacheService.clearSnapshotCache(forex.getCurrencyCode());
+                    log.info("[SNAPSHOT-SYNTHETIC] Updated {} via {} price: {}", forex.getCurrencyCode(), symbol, forex.getCurrentPrice());
+                    return;
                 }
+            } catch (Exception e) {
+                log.warn("[SNAPSHOT-SYNTHETIC] {} failed for {}: {}", symbol, forex.getCurrencyCode(), e.getMessage());
             }
         }
-        
-        log.error("[CANDLES] All attempts failed for {}", baseSymbol);
+        log.error("[SNAPSHOT] All attempts failed for {}", forex.getCurrencyCode());
     }
-
-    
-    private int saveForexCandles(Forex forex, JsonNode result, boolean isSynthetic, 
-                                  List<ForexCandle> usdtryCandles, Boolean isUsdBase) {
-        try {
-            JsonNode timestamps = result.path("timestamp");
-            JsonNode quotes = result.path("indicators").path("quote").get(0);
-            
-            String mode = isSynthetic ? "SYNTHETIC" : "DIRECT";
-            log.info("[CANDLES-{}] Processing for {}: timestamps={}, quotes={}", 
-                mode,
-                forex.getCurrencyCode(), 
-                timestamps.isMissingNode() ? "MISSING" : timestamps.size() + " items",
-                (quotes == null || quotes.isMissingNode()) ? "MISSING" : "OK");
-            
-            if (timestamps.isMissingNode() || quotes == null || quotes.isMissingNode()) {
-                log.warn("[CANDLES-{}] No valid data for {}", mode, forex.getCurrencyCode());
-                return 0;
+    private void trySyntheticCandles(Forex forex) {
+        Forex usdtry = forexRepository.findById("USDTRY").orElse(null);
+        if (usdtry == null) {
+            log.error("[CANDLES-SYNTHETIC] USDTRY not available for {}", forex.getCurrencyCode());
+            return;
+        }
+        List<ForexCandle> usdtryCandles = forexCandleRepository
+                .findTop1825ByCurrencyCodeOrderByCandleDateDesc("USDTRY");
+        if (usdtryCandles.isEmpty()) {
+            log.error("[CANDLES-SYNTHETIC] USDTRY candles not available for {}", forex.getCurrencyCode());
+            return;
+        }
+        Map<String, ForexCandle> usdtryCandleByDate = usdtryCandles.stream()
+                .collect(Collectors.toMap(
+                        c -> c.getCandleDate().toLocalDate().toString(),
+                        c -> c,
+                        (a, b) -> a));
+        String baseCurrency = forex.getCurrencyCode().replace("TRY", "");
+        String[] attempts = { baseCurrency + "USD=X", "USD" + baseCurrency + "=X" };
+        for (String symbol : attempts) {
+            try {
+                List<YahooCandleDto> pairCandles = yahooForexClient.fetchCandles(symbol, "5y", "1d");
+                if (!pairCandles.isEmpty()) {
+                    boolean isUsdBase = symbol.startsWith("USD");
+                    List<YahooCandleDto> syntheticCandles = forexMapper.buildSyntheticCandles(
+                            pairCandles, usdtryCandleByDate, forex.getCurrentPrice(), isUsdBase);
+                    int saved = saveCandleBatch(forex, syntheticCandles);
+                    log.info("[CANDLES-SYNTHETIC] Saved {} candles for {} via {}", saved, forex.getCurrencyCode(), symbol);
+                    return;
+                }
+            } catch (Exception e) {
+                log.warn("[CANDLES-SYNTHETIC] {} failed for {}: {}", symbol, forex.getCurrencyCode(), e.getMessage());
             }
-            
-            JsonNode opens = quotes.path("open");
-            JsonNode highs = quotes.path("high");
-            JsonNode lows = quotes.path("low");
-            JsonNode closes = quotes.path("close");
-            
-            List<ForexCandle> candlesToSave = new ArrayList<>();
-            BigDecimal usdtryCurrentPrice = forex.getCurrentPrice();
-            
-            for (int i = 0; i < timestamps.size(); i++) {
-                long timestamp = timestamps.get(i).asLong();
-                LocalDateTime candleDate = LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.systemDefault());
-                
-                BigDecimal open = getDecimal(opens.get(i));
-                BigDecimal high = getDecimal(highs.get(i));
-                BigDecimal low = getDecimal(lows.get(i));
-                BigDecimal close = getDecimal(closes.get(i));
-                
-                if (open == null || high == null || low == null || close == null) {
-                    continue;
-                }
-                
-                if (isSynthetic && usdtryCandles != null && isUsdBase != null) {
-                    BigDecimal usdtryPrice = usdtryCandles.stream()
-                        .filter(c -> c.getCandleDate().toLocalDate().equals(candleDate.toLocalDate()))
-                        .map(ForexCandle::getClose)
-                        .findFirst()
-                        .orElse(usdtryCurrentPrice);
-                    
-                    if (isUsdBase) {
-                        open = usdtryPrice.divide(open, 4, RoundingMode.HALF_UP);
-                        high = usdtryPrice.divide(low, 4, RoundingMode.HALF_UP);  // Inverse
-                        low = usdtryPrice.divide(high, 4, RoundingMode.HALF_UP);
-                        close = usdtryPrice.divide(close, 4, RoundingMode.HALF_UP);
-                    } else {
-                        open = usdtryPrice.multiply(open);
-                        high = usdtryPrice.multiply(high);
-                        low = usdtryPrice.multiply(low);
-                        close = usdtryPrice.multiply(close);
-                    }
-                }
-                
-                open = open.setScale(4, RoundingMode.HALF_UP);
-                high = high.setScale(4, RoundingMode.HALF_UP);
-                low = low.setScale(4, RoundingMode.HALF_UP);
-                close = close.setScale(4, RoundingMode.HALF_UP);
-                
-                Optional<ForexCandle> existingCandle = forexCandleRepository.findByCurrencyCodeAndCandleDate(
-                    forex.getCurrencyCode(), candleDate);
-                
-                ForexCandle candle;
-                if (existingCandle.isPresent()) {
-                    candle = existingCandle.get();
-                    candle.setOpen(open);
-                    candle.setHigh(high);
-                    candle.setLow(low);
-                    candle.setClose(close);
-                    candle.setUpdatedAt(LocalDateTime.now());
-                } else {
-                    candle = new ForexCandle();
-                    candle.setCurrencyCode(forex.getCurrencyCode());
-                    candle.setForex(forex);
-                    candle.setCandleDate(candleDate);
-                    candle.setOpen(open);
-                    candle.setHigh(high);
-                    candle.setLow(low);
-                    candle.setClose(close);
-                    candle.setCreatedAt(LocalDateTime.now());
-                    candle.setUpdatedAt(LocalDateTime.now());
-                }
-                
-                candlesToSave.add(candle);
-            }
-            
-            if (!candlesToSave.isEmpty()) {
-                forexCandleRepository.saveAll(candlesToSave);
-                log.info("[CANDLES-{}]  Saved {} candles for {}", mode, candlesToSave.size(), forex.getCurrencyCode());
-                return candlesToSave.size();
+        }
+        log.error("[CANDLES] All attempts failed for {}", forex.getCurrencyCode());
+    }
+    private int saveCandleBatch(Forex forex, List<YahooCandleDto> candleDtos) {
+        Map<LocalDateTime, ForexCandle> existingMap = forexCandleRepository
+                .findByCurrencyCodeOrderByCandleDateDesc(forex.getCurrencyCode())
+                .stream()
+                .collect(Collectors.toMap(
+                        ForexCandle::getCandleDate,
+                        Function.identity(),
+                        (a, b) -> a));
+        List<ForexCandle> toSave = new ArrayList<>(candleDtos.size());
+        for (YahooCandleDto dto : candleDtos) {
+            ForexCandle existing = existingMap.get(dto.candleDate());
+            if (existing != null) {
+                forexMapper.updateCandleEntity(existing, dto);
+                toSave.add(existing);
             } else {
-                log.warn("[CANDLES-{}]  No valid candles to save for {}", mode, forex.getCurrencyCode());
-                return 0;
+                toSave.add(forexMapper.toCandleEntity(dto, forex.getCurrencyCode(), forex));
             }
-            
-        } catch (Exception e) {
-            log.error("[CANDLES] Failed to save for {}: {}", forex.getCurrencyCode(), e.getMessage(), e);
-            return 0;
         }
-    }
-    
-    private BigDecimal getDecimal(JsonNode node) {
-        if (node == null || node.isNull() || node.isMissingNode()) {
-            return null;
+        if (!toSave.isEmpty()) {
+            forexCandleRepository.saveAll(toSave);
         }
-        try {
-            return new BigDecimal(node.asText());
-        } catch (Exception e) {
-            return null;
-        }
+        return toSave.size();
     }
 }

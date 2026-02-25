@@ -1,439 +1,392 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams, useParams } from 'react-router-dom';
-import HistoricalChart from '../components/HistoricalChart';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  LineChart, ArrowLeft, Clock, BarChart2, Loader2,
+  AlertTriangle, TrendingUp, RefreshCw, Activity
+} from 'lucide-react';
+import LightweightChart from '../components/LightweightChart';
 import { getCryptoHistory, stockService, forexService } from '../services/marketService';
 import { getCoinIds } from '../constants/coins';
 import { getBistSymbols, getBistDisplayName } from '../constants/stocks';
 import { getForexPairs } from '../constants/forex';
-import './ChartView.css';
-
+const ASSET_ICONS = {
+  BIST: <BarChart2 className="w-4 h-4" />,
+  US: <TrendingUp className="w-4 h-4" />,
+  CRYPTO: <Activity className="w-4 h-4" />,
+  FOREX: <RefreshCw className="w-4 h-4" />,
+  METAL: <LineChart className="w-4 h-4" />,
+};
+const ASSET_LABELS = {
+  BIST: 'BIST',
+  US: 'US',
+  CRYPTO: 'Crypto',
+  FOREX: 'Forex',
+  METAL: 'Metal',
+};
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
+};
 const ChartView = () => {
-  const { coinId } = useParams(); // Get coinId from URL params like /chart/bitcoin
+  const { coinId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [chartData, setChartData] = useState(null);
   const [filteredData, setFilteredData] = useState(null);
-  const [hoveredCandle, setHoveredCandle] = useState(null); // Track hovered candle
-  
-  const [assetType, setAssetType] = useState('CRYPTO');
-  const [symbol, setSymbol] = useState(coinId || searchParams.get('symbol') || 'bitcoin');
-  const [timeRange, setTimeRange] = useState(searchParams.get('range') || '1Y');
+  const [assetType, setAssetType] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlType = params.get('type');
+    if (urlType && ['BIST', 'US', 'CRYPTO', 'FOREX', 'METAL'].includes(urlType)) return urlType;
+    return 'CRYPTO';
+  });
+  const [symbol, setSymbol] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('symbol') || coinId || 'bitcoin';
+  });
+  const [timeRange, setTimeRange] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const r = params.get('range');
+    return (r && ['1M', '3M', '1Y', '5Y'].includes(r)) ? r : '1Y';
+  });
   const [customSymbol, setCustomSymbol] = useState('');
-
-  // Frontend sayfalarında görünen EXACT AYNI varlık listeleri
+  const [retryKey, setRetryKey] = useState(0);
   const presetSymbols = {
-    // BIST sayfasında görünen hisseler - env'den okunuyor
     BIST: getBistSymbols().map(symbol => getBistDisplayName(symbol)),
-    // US Stocks sayfasında görünen 20 hisse
     US: [
       'AAPL', 'AMD', 'AMZN', 'BAC', 'DIS',
       'GOOGL', 'GS', 'INTC', 'JNJ', 'JPM',
       'KO', 'MA', 'META', 'MSFT', 'NFLX',
       'NVDA', 'TSLA', 'V', 'WMT', 'XOM'
     ],
-    // Crypto sayfasında görünen cryptolar (API ID'leri olarak) - Tüm 12 coin
     CRYPTO: getCoinIds(),
-    // Forex sayfasında görünen döviz çiftleri
     FOREX: getForexPairs(),
-    // Metals sayfasında görünen metaller
-    METAL: [
-      'PAXG', 'XAUT', 'KAG'
-    ]
+    METAL: ['PAXG', 'XAUT', 'KAG']
   };
-
-  // Date filtering function
   const filterDataByTimeRange = (candles, range) => {
     if (!candles || candles.length === 0) return candles;
-    
     const now = new Date();
     let cutoffDate;
-    
     switch (range) {
-      case '1M':
-        cutoffDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-        break;
-      case '3M':
-        cutoffDate = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000));
-        break;
-      case '1Y':
-        cutoffDate = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000));
-        break;
-      case '5Y':
-        cutoffDate = new Date(now.getTime() - (5 * 365 * 24 * 60 * 60 * 1000));
-        break;
-      default:
-        return candles; // Show all data
+      case '1M': cutoffDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)); break;
+      case '3M': cutoffDate = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000)); break;
+      case '1Y': cutoffDate = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000)); break;
+      case '5Y': cutoffDate = new Date(now.getTime() - (5 * 365 * 24 * 60 * 60 * 1000)); break;
+      default: return candles;
     }
-    
-    return candles.filter(candle => {
-      const candleDate = new Date(candle.date);
-      return candleDate >= cutoffDate;
-    });
+    return candles.filter(candle => new Date(candle.date) >= cutoffDate);
   };
-
-  // Initialize from URL params
   useEffect(() => {
-    // If we have a coinId from URL params, use it
-    if (coinId) {
+    const params = new URLSearchParams(window.location.search);
+    const urlType = params.get('type');
+    const urlSymbol = params.get('symbol');
+    const urlRange = params.get('range');
+    if (urlType && ['BIST', 'US', 'CRYPTO', 'FOREX', 'METAL'].includes(urlType)) {
+      setAssetType(urlType);
+      if (urlSymbol) setSymbol(urlSymbol);
+    } else if (coinId) {
       setSymbol(coinId);
       setAssetType('CRYPTO');
     }
-    
-    const urlType = searchParams.get('type');
-    const urlSymbol = searchParams.get('symbol');
-    const urlRange = searchParams.get('range');
-    
-    if (urlType && ['BIST', 'US', 'CRYPTO', 'FOREX', 'METAL'].includes(urlType)) {
-      setAssetType(urlType);
-    }
-    if (urlSymbol && !coinId) {
-      setSymbol(urlSymbol);
-    }
-    if (urlRange && ['1M', '3M', '1Y'].includes(urlRange)) {
-      setTimeRange(urlRange);
-    }
-  }, [coinId]);
-
+    if (urlRange && ['1M', '3M', '1Y', '5Y'].includes(urlRange)) setTimeRange(urlRange);
+  }, [location.search]);
+  const initialAssetTypeRef = useRef(assetType);
   useEffect(() => {
-    // Reset to first preset symbol when asset type changes (unless URL has symbol)
-    if (!searchParams.get('symbol')) {
-      setSymbol(presetSymbols[assetType][0]);
+    if (initialAssetTypeRef.current === assetType) {
+      initialAssetTypeRef.current = null; 
+      return;
     }
+    setSymbol(presetSymbols[assetType][0]);
     setCustomSymbol('');
+    if ((assetType === 'CRYPTO' || assetType === 'METAL') && timeRange === '5Y') {
+      setTimeRange('1Y');
+    }
   }, [assetType]);
-
   useEffect(() => {
     if (symbol) {
-      // Update URL params
       setSearchParams({ type: assetType, symbol, range: timeRange });
-      fetchData();
     }
   }, [symbol, assetType, timeRange]);
-
-  // Update filtered data when chartData or timeRange changes
+  useEffect(() => {
+    if (!symbol) return;
+    let cancelled = false;
+    const doFetch = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        let data;
+        if (assetType === 'CRYPTO') {
+          data = await getCryptoHistory(symbol);
+        } else if (assetType === 'BIST') {
+          const symbolWithSuffix = symbol.endsWith('.IS') ? symbol : `${symbol}.IS`;
+          data = await stockService.getStockHistory(symbolWithSuffix);
+        } else if (assetType === 'FOREX') {
+          data = await forexService.getForexHistory(symbol);
+        } else {
+          if (!cancelled) { setError(`${assetType} historical data not yet implemented`); setChartData(null); }
+          return;
+        }
+        if (cancelled) return;
+        if (!data || !Array.isArray(data) || data.length === 0) {
+          setError('No historical data available');
+          setChartData(null);
+          return;
+        }
+        const transformedCandles = data.map(candle => ({
+          date: candle.candleDate,
+          candleDate: candle.candleDate,
+          price: candle.close,
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+          volume: candle.volume,
+        }));
+        setChartData({ candles: transformedCandles });
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || 'Failed to load historical data');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    doFetch();
+    return () => { cancelled = true; };
+  }, [symbol, assetType, retryKey]);
   useEffect(() => {
     if (chartData && chartData.candles) {
       const filtered = filterDataByTimeRange(chartData.candles, timeRange);
-      setFilteredData({
-        ...chartData,
-        candles: filtered
-      });
-      // Initialize SMA calculation by setting the first candle as hovered
-      if (filtered.length > 0 && !hoveredCandle) {
-        setHoveredCandle(filtered[filtered.length - 1]);
-      }
+      setFilteredData({ ...chartData, candles: filtered });
     }
   }, [chartData, timeRange]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      console.log('Fetching chart data for:', { symbol, assetType });
-      
-      let data;
-      
-      if (assetType === 'CRYPTO') {
-        data = await getCryptoHistory(symbol);
-      } else if (assetType === 'BIST') {
-        const symbolWithSuffix = symbol.endsWith('.IS') ? symbol : `${symbol}.IS`;
-        data = await stockService.getStockHistory(symbolWithSuffix);
-      } else if (assetType === 'FOREX') {
-        data = await forexService.getForexHistory(symbol);
-      } else {
-        setError(`${assetType} historical data not yet implemented`);
-        setChartData(null);
-        return;
-      }
-      
-      console.log('Received candle data:', data);
-      
-      // Validate data is an array
-      if (!data || !Array.isArray(data)) {
-        console.error('Invalid data format:', data);
-        setError('No historical data available for this symbol');
-        setChartData(null);
-        return;
-      }
-      
-      if (data.length === 0) {
-        setError('No historical data available for this symbol');
-        setChartData(null);
-        return;
-      }
-      
-      // Transform backend data format to chart format
-      const transformedCandles = data.map(candle => ({
-        date: candle.candleDate,
-        price: candle.close,
-        open: candle.open,
-        high: candle.high,
-        low: candle.low,
-        close: candle.close,
-        volume: candle.volume
-      }));
-      
-      // Create chart data structure that HistoricalChart expects
-      setChartData({
-        candles: transformedCandles,
-        currentTrend: transformedCandles.length > 0 && transformedCandles[transformedCandles.length - 1].close > transformedCandles[0].close ? 'UP' : 'DOWN',
-        analysis: {
-          sma20: true,
-          sma50: true
-        }
-      });
-    } catch (err) {
-      console.error('Error fetching historical data:', err);
-      setError(err.message || 'Failed to load historical data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCustomSymbol = (e) => {
     e.preventDefault();
-    if (customSymbol.trim()) {
-      setSymbol(customSymbol.trim().toUpperCase());
-    }
+    if (customSymbol.trim()) setSymbol(customSymbol.trim().toUpperCase());
   };
-
-  const getTrendBadgeClass = (trend) => {
-    switch (trend) {
-      case 'UP': return 'trend-badge trend-up';
-      case 'DOWN': return 'trend-badge trend-down';
-      default: return 'trend-badge trend-neutral';
-    }
-  };
-
+  const timeRanges = (assetType === 'BIST' || assetType === 'US' || assetType === 'FOREX')
+    ? ['5Y', '1Y', '3M', '1M']
+    : ['1Y', '3M', '1M'];
   return (
-    <div className="chart-view">
-      <div className="chart-header">
-        <h1>📈 Historical Analysis</h1>
-        <p>Analyze price trends with technical indicators</p>
-      </div>
-
-      <div className="chart-controls">
-        {/* Asset Type Selector */}
-        <div className="control-group">
-          <label>Asset Type</label>
-          <div className="button-group">
-            {['BIST', 'US', 'CRYPTO', 'FOREX', 'METAL'].map(type => (
-              <button
-                key={type}
-                className={assetType === type ? 'active' : ''}
-                onClick={() => setAssetType(type)}
+    <motion.div
+      className="py-8"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      <div className="mx-auto max-w-7xl space-y-6">
+        {}
+        <motion.div variants={itemVariants} className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center justify-center w-10 h-10 rounded-lg border border-border-default bg-bg-base text-fg-muted hover:text-fg hover:bg-surface transition-colors duration-150"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="flex items-center gap-3 text-2xl font-bold tracking-[-0.025em] text-fg">
+                <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10 text-accent">
+                    <LineChart className="w-5 h-5" />
+                </span>
+                Historical Analysis
+              </h1>
+              <p className="mt-1 text-sm text-fg-muted">
+                Analyze price trends with technical indicators
+              </p>
+            </div>
+          </div>
+        </motion.div>
+        {}
+        <motion.div
+          variants={itemVariants}
+          className="rounded-xl border border-border-default bg-bg-elevated p-5 space-y-5"
+        >
+          {}
+          <div className="space-y-2">
+            <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
+              Asset Type
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {['BIST', 'US', 'CRYPTO', 'FOREX', 'METAL'].map(type => (
+                <button
+                  key={type}
+                  onClick={() => setAssetType(type)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 border ${assetType === type
+                    ? 'bg-accent text-white border-accent'
+                    : 'bg-bg-base text-fg-muted border-border-default hover:bg-surface hover:text-fg'
+                    }`}
+                >
+                  {ASSET_ICONS[type]}
+                  {ASSET_LABELS[type]}
+                </button>
+              ))}
+            </div>
+          </div>
+          {}
+          <div className="space-y-2">
+            <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
+              Symbol
+            </label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <select
+                value={symbol}
+                onChange={(e) => setSymbol(e.target.value)}
+                className="flex-1 rounded-lg border border-border-default bg-bg-elevated px-4 py-2.5 text-sm text-fg outline-none focus:border-accent focus:ring-1 focus:ring-accent-glow transition-all duration-200 appearance-none cursor-pointer"
               >
-                {type === 'BIST' ? '🇹🇷 BIST' : 
-                 type === 'US' ? '🇺🇸 US' : 
-                 type === 'CRYPTO' ? '₿ Crypto' :
-                 type === 'FOREX' ? '💱 Forex' :
-                 '🪙 Metal'}
+                {presetSymbols[assetType].map(sym => (
+                  <option key={sym} value={sym}>{sym}</option>
+                ))}
+              </select>
+              <form onSubmit={handleCustomSymbol} className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Custom symbol..."
+                  value={customSymbol}
+                  onChange={(e) => setCustomSymbol(e.target.value)}
+                  className="w-44 rounded-lg border border-border-default bg-bg-elevated px-4 py-2.5 text-sm text-fg placeholder:text-fg-subtle outline-none focus:border-accent focus:ring-1 focus:ring-accent-glow transition-all duration-200"
+                />
+                <button
+                  type="submit"
+                  className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-bright transition-colors duration-150"
+                >
+                  Go
+                </button>
+              </form>
+            </div>
+          </div>
+        </motion.div>
+        {}
+        <motion.div variants={itemVariants} className="flex gap-4">
+          {}
+          <div className="flex flex-col items-center gap-2 pt-2">
+            <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-fg-muted mb-1">
+              <Clock className="w-3 h-3" />
+              Time
+            </span>
+            {timeRanges.map(range => (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={`w-12 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 border ${timeRange === range
+                  ? 'bg-accent text-white border-accent'
+                  : 'bg-bg-base border-border-default text-fg-muted hover:bg-surface hover:text-fg'
+                  }`}
+              >
+                {range}
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Symbol Selector */}
-        <div className="control-group">
-          <label>Symbol</label>
-          <div className="symbol-selector">
-            <select value={symbol} onChange={(e) => setSymbol(e.target.value)}>
-              {presetSymbols[assetType].map(sym => (
-                <option key={sym} value={sym}>{sym}</option>
-              ))}
-            </select>
-            <form onSubmit={handleCustomSymbol} className="custom-symbol">
-              <input
-                type="text"
-                placeholder="Custom symbol..."
-                value={customSymbol}
-                onChange={(e) => setCustomSymbol(e.target.value)}
-              />
-              <button type="submit">Go</button>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      {/* Analysis Summary */}
-      {filteredData && !loading && (
-        <div className="analysis-summary">
-          <h2 className="crypto-name-prominent">{symbol.toUpperCase()} - Live Chart Data</h2>
-          {(() => {
-            // Use hovered candle or latest candle
-            const displayCandle = hoveredCandle || (filteredData.candles.length > 0 ? filteredData.candles[filteredData.candles.length - 1] : null);
-            const candles = filteredData.candles;
-            
-            if (!displayCandle) return null;
-            
-            // Calculate SMAs for current position
-            const candleIndex = hoveredCandle ? candles.indexOf(hoveredCandle) : candles.length - 1;
-            const calculateSMA = (period) => {
-              if (candleIndex < period - 1) return null;
-              const sum = candles.slice(candleIndex - period + 1, candleIndex + 1).reduce((acc, c) => acc + c.close, 0);
-              return sum / period;
-            };
-            
-            const sma20 = calculateSMA(20);
-            const sma50 = calculateSMA(50);
-            const sma200 = calculateSMA(200);
-            
-            return (
-              <div className="summary-grid">
-                <div className="summary-item">
-                  <span className="summary-label">Date</span>
-                  <span className="summary-value">
-                    {new Date(displayCandle.date).toLocaleDateString('tr-TR')}
-                  </span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">Open</span>
-                  <span className="summary-value">
-                    {new Intl.NumberFormat('tr-TR', {
-                      style: 'currency',
-                      currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
-                    }).format(displayCandle.open)}
-                  </span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">High</span>
-                  <span className="summary-value">
-                    {new Intl.NumberFormat('tr-TR', {
-                      style: 'currency',
-                      currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
-                    }).format(displayCandle.high)}
-                  </span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">Low</span>
-                  <span className="summary-value">
-                    {new Intl.NumberFormat('tr-TR', {
-                      style: 'currency',
-                      currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
-                    }).format(displayCandle.low)}
-                  </span>
-                </div>
-                <div className="summary-item">
-                  <span className="summary-label">Close</span>
-                  <span className="summary-value">
-                    {new Intl.NumberFormat('tr-TR', {
-                      style: 'currency',
-                      currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
-                    }).format(displayCandle.close)}
-                  </span>
-                </div>
-                {sma20 && (
-                  <div className="summary-item">
-                    <span className="summary-label">SMA 20</span>
-                    <span className="summary-value">
-                      {new Intl.NumberFormat('tr-TR', {
-                        style: 'currency',
-                        currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
-                      }).format(sma20)}
-                    </span>
+          {}
+          <div className="flex-1 rounded-xl border border-border-default bg-bg-elevated overflow-hidden min-h-[500px] relative">
+            <AnimatePresence mode="wait">
+              {loading && (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-bg-base/80 z-10"
+                >
+                  <Loader2 className="w-8 h-8 text-accent animate-spin" />
+                  <p className="text-sm text-fg-muted">Loading historical data...</p>
+                </motion.div>
+              )}
+              {error && !loading && (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10"
+                >
+                  <div className="flex items-center gap-2 text-danger">
+                    <AlertTriangle className="w-5 h-5" />
+                    <span className="text-sm font-medium">{error}</span>
                   </div>
-                )}
-                {sma50 && (
-                  <div className="summary-item">
-                    <span className="summary-label">SMA 50</span>
-                    <span className="summary-value">
-                      {new Intl.NumberFormat('tr-TR', {
-                        style: 'currency',
-                        currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
-                      }).format(sma50)}
-                    </span>
-                  </div>
-                )}
-                {sma200 && (
-                  <div className="summary-item">
-                    <span className="summary-label">SMA 200</span>
-                    <span className="summary-value">
-                      {new Intl.NumberFormat('tr-TR', {
-                        style: 'currency',
-                        currency: (assetType === 'BIST' || assetType === 'FOREX') ? 'TRY' : 'USD'
-                      }).format(sma200)}
-                    </span>
-                  </div>
-                )}
+                  <button
+                    onClick={() => setRetryKey(k => k + 1)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent-bright transition-colors duration-150"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Retry
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            {!loading && !error && filteredData && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
+                className="w-full h-full"
+              >
+                <LightweightChart data={filteredData} symbol={symbol} />
+              </motion.div>
+            )}
+            {!loading && !error && !filteredData && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-fg-subtle">
+                <BarChart2 className="w-10 h-10 opacity-40" />
+                <p className="text-sm">Select a symbol to view chart data</p>
               </div>
-            );
-          })()}
-        </div>
-      )}
-
-      {/* Chart Area with Time Range */}
-      <div className="chart-with-controls">
-        {/* Time Range Vertical Buttons */}
-        <div className="time-range-vertical">
-          <label className="range-label">Time</label>
-          {/* Show 5Y only for BIST stocks */}
-          {assetType === 'BIST' && (
-            <button
-              className={`range-btn ${timeRange === '5Y' ? 'active' : ''}`}
-              onClick={() => setTimeRange('5Y')}
-            >
-              5Y
-            </button>
-          )}
-          {['1Y', '3M', '1M'].map(range => (
-            <button
-              key={range}
-              className={`range-btn ${timeRange === range ? 'active' : ''}`}
-              onClick={() => setTimeRange(range)}
-            >
-              {range}
-            </button>
-          ))}
-        </div>
-
-        <div className="chart-container">
-        {loading && (
-          <div className="chart-loading">
-            <div className="spinner"></div>
-            <p>Loading historical data...</p>
+            )}
           </div>
-        )}
-        
-        {error && (
-          <div className="chart-error">
-            <p>❌ {error}</p>
-            <button onClick={fetchData}>Retry</button>
+        </motion.div>
+        {}
+        <motion.div variants={itemVariants} className="space-y-4">
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-fg">
+            <Activity className="w-5 h-5 text-fg-subtle" />
+            About Technical Indicators
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              {
+                icon: TrendingUp,
+                title: 'SMA 20 (Simple Moving Average)',
+                desc: '20-day average price. Short-term trend indicator. Price above SMA20 suggests uptrend.',
+              },
+              {
+                icon: LineChart,
+                title: 'EMA 50 (Exponential Moving Average)',
+                desc: '50-day weighted average. Reacts faster to recent price changes than SMA.',
+              },
+              {
+                icon: BarChart2,
+                title: 'Drawing Tools',
+                desc: 'Use trend lines, Fibonacci retracements, and freehand drawings for custom analysis.',
+              },
+            ].map((card, i) => {
+              const Icon = card.icon;
+              return (
+                <motion.div
+                  key={card.title}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + i * 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="group rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <Icon className="w-5 h-5 text-fg-subtle group-hover:text-accent transition-colors duration-150" />
+                    <h4 className="text-sm font-semibold text-fg">{card.title}</h4>
+                  </div>
+                  <p className="text-sm leading-relaxed text-fg-muted">{card.desc}</p>
+                </motion.div>
+              );
+            })}
           </div>
-        )}
-        
-        {!loading && !error && filteredData && (
-          <HistoricalChart 
-            data={filteredData} 
-            symbol={symbol}
-            assetType={assetType}
-            onHoverCandle={setHoveredCandle}
-          />
-        )}
-        </div>
+        </motion.div>
       </div>
-
-      {/* Info Section */}
-      <div className="chart-info">
-        <h3>About Technical Indicators</h3>
-        <div className="info-grid">
-          <div className="info-card">
-            <h4>SMA 20 (Simple Moving Average)</h4>
-            <p>20-day average price. Short-term trend indicator. Price above SMA20 suggests uptrend.</p>
-          </div>
-          <div className="info-card">
-            <h4>SMA 50 (Simple Moving Average)</h4>
-            <p>50-day average price. Medium-term trend indicator. Golden cross (SMA20 &gt; SMA50) is bullish.</p>
-          </div>
-          <div className="info-card">
-            <h4>Trend Analysis</h4>
-            <p>Uptrend: Price &gt; SMA20 | Downtrend: Price &lt; SMA20 | Neutral: Close to SMA20</p>
-          </div>
-        </div>
-      </div>
-    </div>
+    </motion.div>
   );
 };
-
 export default ChartView;

@@ -1,5 +1,4 @@
 package com.finance.backend.config;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
@@ -16,26 +15,21 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-
 import java.time.Duration;
 @Configuration
 @EnableCaching
 public class RedisConfig {
-
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        
         PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
                 .allowIfBaseType(Object.class)
                 .build();
         mapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL);
-        
         return mapper;
     }
-
     private RedisSerializer<Object> jsonRedisSerializer(ObjectMapper objectMapper) {
         return new RedisSerializer<>() {
             @Override
@@ -47,7 +41,6 @@ public class RedisConfig {
                     throw new SerializationException("Error serializing object to JSON: " + e.getMessage(), e);
                 }
             }
-
             @Override
             public Object deserialize(byte[] bytes) throws SerializationException {
                 if (bytes == null || bytes.length == 0) return null;
@@ -59,28 +52,22 @@ public class RedisConfig {
             }
         };
     }
-
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory, ObjectMapper objectMapper) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
-        
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
         template.setKeySerializer(stringSerializer);
         template.setHashKeySerializer(stringSerializer);
-        
         RedisSerializer<Object> jsonSerializer = jsonRedisSerializer(objectMapper);
         template.setValueSerializer(jsonSerializer);
         template.setHashValueSerializer(jsonSerializer);
-        
         template.afterPropertiesSet();
         return template;
     }
-
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory, ObjectMapper objectMapper) {
         RedisSerializer<Object> jsonSerializer = jsonRedisSerializer(objectMapper);
-        
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofHours(24))
                 .serializeKeysWith(
@@ -89,7 +76,6 @@ public class RedisConfig {
                 .serializeValuesWith(
                         RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer)
                 );
-
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
                 .build();

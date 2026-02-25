@@ -1,212 +1,125 @@
 package com.finance.backend.controller;
-
 import com.finance.backend.service.MarketDataService;
 import com.finance.backend.service.StockDataService;
 import com.finance.backend.service.TcmbForexService;
 import com.finance.backend.service.YahooForexService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
 import java.util.Map;
-
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
-    
     private final MarketDataService marketDataService;
     private final StockDataService stockDataService;
     private final TcmbForexService tcmbForexService;
     private final YahooForexService yahooForexService;
-    
+    private final Executor taskExecutor;
+    private final Set<String> runningTasks = ConcurrentHashMap.newKeySet();
     @PostMapping("/trigger/crypto/snapshot")
     public ResponseEntity<Map<String, String>> triggerCryptoSnapshotUpdate() {
-        log.info("Admin triggered: Crypto snapshot update");
-        
-        new Thread(() -> {
-            try {
-                marketDataService.updateOnlySnapshots();
-            } catch (Exception e) {
-                log.error("Async crypto snapshot update failed", e);
-            }
-        }).start();
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "started");
-        response.put("message", "Crypto snapshot update started in background");
-        response.put("type", "crypto-snapshot");
-        
-        return ResponseEntity.ok(response);
+        return triggerAsync("crypto-snapshot",
+                "Crypto snapshot update started in background",
+                marketDataService::updateOnlySnapshots);
     }
-    
     @PostMapping("/trigger/crypto/candles")
     public ResponseEntity<Map<String, String>> triggerCryptoCandleUpdate() {
-        log.info("Admin triggered: Crypto candle update");
-        
-        new Thread(() -> {
-            try {
-                marketDataService.updateOnlyCandles();
-            } catch (Exception e) {
-                log.error("Async crypto candle update failed", e);
-            }
-        }).start();
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "started");
-        response.put("message", "Crypto candle update started in background");
-        response.put("type", "crypto-candles");
-        
-        return ResponseEntity.ok(response);
+        return triggerAsync("crypto-candles",
+                "Crypto candle update started in background",
+                marketDataService::updateOnlyCandles);
     }
-    
     @PostMapping("/trigger/crypto/full")
     public ResponseEntity<Map<String, String>> triggerFullCryptoUpdate() {
-        log.info("Admin triggered: FULL crypto market update");
-        
-        new Thread(() -> {
-            try {
-                marketDataService.fullMarketUpdate();
-            } catch (Exception e) {
-                log.error("Async full crypto update failed", e);
-            }
-        }).start();
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "started");
-        response.put("message", "Full crypto market update started in background");
-        response.put("type", "crypto-full");
-        
-        return ResponseEntity.ok(response);
+        return triggerAsync("crypto-full",
+                "Full crypto market update started in background",
+                marketDataService::fullMarketUpdate);
     }
-    
     @PostMapping("/trigger/stock/snapshot")
     public ResponseEntity<Map<String, String>> triggerStockSnapshotUpdate() {
-        log.info("Admin triggered: Stock snapshot update");
-        
-        new Thread(() -> {
-            try {
-                stockDataService.updateStockSnapshots();
-            } catch (Exception e) {
-                log.error("Async stock snapshot update failed", e);
-            }
-        }).start();
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "started");
-        response.put("message", "Stock snapshot update started in background");
-        response.put("type", "stock-snapshot");
-        
-        return ResponseEntity.ok(response);
+        return triggerAsync("stock-snapshot",
+                "Stock snapshot update started in background",
+                stockDataService::updateStockSnapshots);
     }
-
     @PostMapping("/trigger/stock/candles")
     public ResponseEntity<Map<String, String>> triggerStockCandleUpdate() {
-        log.info("Admin triggered: Stock candle update");
-        
-        new Thread(() -> {
-            try {
-                stockDataService.updateStockCandles();
-            } catch (Exception e) {
-                log.error("Async stock candle update failed", e);
-            }
-        }).start();
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "started");
-        response.put("message", "Stock candle update started in background (5 years data)");
-        response.put("type", "stock-candles");
-        
-        return ResponseEntity.ok(response);
+        return triggerAsync("stock-candles",
+                "Stock candle update started in background (5 years data)",
+                stockDataService::updateStockCandles);
     }
-    
     @PostMapping("/trigger/stock/full")
     public ResponseEntity<Map<String, String>> triggerFullStockUpdate() {
-        log.info("Admin triggered: FULL stock market update");
-        
-        new Thread(() -> {
-            try {
-                stockDataService.updateStockSnapshots();
-                stockDataService.updateStockCandles();
-            } catch (Exception e) {
-                log.error("Async full stock update failed", e);
-            }
-        }).start();
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "started");
-        response.put("message", "Full stock market update started in background");
-        response.put("type", "stock-full");
-        
-        return ResponseEntity.ok(response);
+        return triggerAsync("stock-full",
+                "Full stock market update started in background",
+                () -> {
+                    stockDataService.updateStockSnapshots();
+                    stockDataService.updateStockCandles();
+                });
     }
-    
     @PostMapping("/trigger/forex/snapshot")
     public ResponseEntity<Map<String, String>> triggerForexSnapshotUpdate() {
-        log.info("Admin triggered: TCMB + Yahoo Forex SNAPSHOT update");
-        
-        new Thread(() -> {
-            try {
-                tcmbForexService.fetchAndSaveTcmbRates();
-                yahooForexService.syncAllYahooSnapshots();
-            } catch (Exception e) {
-                log.error("Async forex snapshot update failed", e);
-            }
-        }).start();
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "started");
-        response.put("message", "TCMB + Yahoo snapshot update started (~2 min)");
-        response.put("type", "forex-snapshot");
-        
-        return ResponseEntity.ok(response);
+        return triggerAsync("forex-snapshot",
+                "TCMB + Yahoo snapshot update started (~2 min)",
+                () -> {
+                    tcmbForexService.fetchAndSaveTcmbRates();
+                    yahooForexService.syncAllYahooSnapshots();
+                });
     }
-    
     @PostMapping("/trigger/forex/candles")
     public ResponseEntity<Map<String, String>> triggerForexCandleUpdate() {
-        log.info("Admin triggered: Yahoo Finance CANDLES-ONLY update");
-        
-        new Thread(() -> {
-            try {
-                yahooForexService.syncAllYahooCandles();
-            } catch (Exception e) {
-                log.error("Async Yahoo forex candle update failed", e);
-            }
-        }).start();
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "started");
-        response.put("message", "Yahoo Finance candles update started (~10 min, 5 years OHLC)");
-        response.put("type", "forex-candles");
-        
-        return ResponseEntity.ok(response);
+        return triggerAsync("forex-candles",
+                "Yahoo Finance candles update started (~10 min, 5 years OHLC)",
+                yahooForexService::syncAllYahooCandles);
     }
-    
-    
     @PostMapping("/trigger/forex/full")
     public ResponseEntity<Map<String, String>> triggerFullForexUpdate() {
-        log.info("Admin triggered: FULL forex update");
-        
-        new Thread(() -> {
+        return triggerAsync("forex-full",
+                "Full forex update started (TCMB + Yahoo snapshots + 5y candles)",
+                () -> {
+                    tcmbForexService.fetchAndSaveTcmbRates();
+                    yahooForexService.syncAllYahooSnapshots();
+                    yahooForexService.syncAllYahooCandles();
+                });
+    }
+    @GetMapping("/tasks/status")
+    public ResponseEntity<Map<String, Object>> getRunningTasks() {
+        return ResponseEntity.ok(Map.of(
+                "runningTasks", runningTasks,
+                "count", runningTasks.size()));
+    }
+    private ResponseEntity<Map<String, String>> triggerAsync(String taskType,
+                                                             String message,
+                                                             Runnable task) {
+        if (!runningTasks.add(taskType)) {
+            log.warn("Rejected duplicate trigger: {}", taskType);
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "status", "already_running",
+                            "message", taskType + " is already running, please wait",
+                            "type", taskType));
+        }
+        log.info("Admin triggered: {}", taskType);
+        taskExecutor.execute(() -> {
             try {
-                tcmbForexService.fetchAndSaveTcmbRates();
-                yahooForexService.syncAllYahooSnapshots();
-                yahooForexService.syncAllYahooCandles();
+                task.run();
+                log.info("Task completed: {}", taskType);
             } catch (Exception e) {
-                log.error("Async full forex update failed", e);
+                log.error("Task failed: {}", taskType, e);
+            } finally {
+                runningTasks.remove(taskType);
             }
-        }).start();
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "started");
-        response.put("message", "Full forex update started (TCMB + Yahoo snapshots + 5y candles)");
-        response.put("type", "forex-full");
-        
-        return ResponseEntity.ok(response);
+        });
+        return ResponseEntity.ok(Map.of(
+                "status", "started",
+                "message", message,
+                "type", taskType));
     }
 }

@@ -1,35 +1,30 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-
-const ThemeContext = createContext();
-
+import React, { createContext, useContext, useState, useEffect } from 'react';
+const ThemeContext = createContext({
+    theme: 'dark',
+    toggleTheme: () => { },
+    isDark: true,
+});
 export function ThemeProvider({ children }) {
-    const [darkMode, setDarkMode] = useState(() => {
-        const saved = localStorage.getItem('darkMode');
-        return saved ? JSON.parse(saved) : false;
+    const [theme, setTheme] = useState(() => {
+        try {
+            const saved = localStorage.getItem('finance-theme');
+            if (saved === 'light' || saved === 'dark') return saved;
+        } catch {  }
+        return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     });
-
     useEffect(() => {
-        localStorage.setItem('darkMode', JSON.stringify(darkMode));
-        if (darkMode) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    }, [darkMode]);
-
-    const toggleDarkMode = () => setDarkMode(!darkMode);
-
+        document.documentElement.setAttribute('data-theme', theme);
+        try { localStorage.setItem('finance-theme', theme); } catch {  }
+    }, [theme]);
+    const toggleTheme = () => setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
     return (
-        <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
+        <ThemeContext.Provider value={{ theme, toggleTheme, isDark: theme === 'dark' }}>
             {children}
         </ThemeContext.Provider>
     );
 }
-
 export function useTheme() {
     const context = useContext(ThemeContext);
-    if (!context) {
-        throw new Error('useTheme must be used within a ThemeProvider');
-    }
+    if (!context) throw new Error('useTheme must be used within a ThemeProvider');
     return context;
 }

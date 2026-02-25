@@ -36,6 +36,14 @@ spring:
         jwt:
           jwk-set-uri: http://keycloak:8080/realms/finance-realm/protocol/openid-connect/certs
 
+app:
+  api:
+    coingecko:
+      base-url: https://api.coingecko.com/api/v3
+    yahoo:
+      base-url: https://query1.finance.yahoo.com/v8/finance/chart/
+  tcmb-xml-url: ${TCMB_XML_URL:https://www.tcmb.gov.tr/kurlar/today.xml}
+
 management:
   endpoint:
     health:

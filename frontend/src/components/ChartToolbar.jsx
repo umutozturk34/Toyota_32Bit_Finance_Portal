@@ -15,7 +15,7 @@ const ChartToolbar = ({
     cancelAllDrawing,
 }) => (
     <>
-        <div className="flex items-center gap-3 px-3 py-2 border-b" style={{ background: isDark ? '#0a0a0c' : '#f3f4f6', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
+        <div className="flex items-center gap-3 px-3 py-2 border-b" style={{ background: isDark ? '#0a0a0c' : '#eef1f6', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
             <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-1.5 rounded-md border-none cursor-pointer text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent"
@@ -42,7 +42,7 @@ const ChartToolbar = ({
                     style={{
                         background: chartType === 'candle' ? 'rgba(94,106,210,0.15)' : 'transparent',
                         color: chartType === 'candle' ? '#6872D9' : 'var(--color-fg-muted)',
-                        borderLeftColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                        borderLeftColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
                     }}
                     title="Candlestick chart"
                 >

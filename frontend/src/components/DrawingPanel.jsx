@@ -39,15 +39,13 @@ const DrawingPanel = ({
     clearDrawings,
     selectedIcon,
     setSelectedIcon,
-    textInput,
-    setTextInput,
-    textSize,
-    setTextSize,
+    iconSize,
+    setIconSize,
 }) => {
     const { isDark } = useTheme();
     return (
         <div className="space-y-2">
-            {}
+            { }
             <div className="grid grid-cols-3 gap-1">
                 {DRAWING_TOOLS.map(({ id, label, Icon, color }) => {
                     const isActive = activeTool === id;
@@ -75,68 +73,54 @@ const DrawingPanel = ({
                     );
                 })}
             </div>
-            {}
-            {activeTool === 'TEXT' && (
-                <div className="p-2 rounded-lg border space-y-2" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)' }}>
+            { }
+            {activeTool === 'ICON' && (
+                <div className="p-2 rounded-lg border space-y-2" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
                     <div>
-                        <label className="block text-[10px] text-fg-muted uppercase tracking-wider font-medium mb-1">Text Content</label>
-                        <input
-                            type="text"
-                            value={textInput}
-                            onChange={e => setTextInput(e.target.value)}
-                            placeholder="Type text..."
-                            className="w-full px-2.5 py-1.5 rounded-md border text-xs outline-none focus:border-accent"
-                            style={{ background: isDark ? '#0F0F12' : '#f3f4f6', borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.12)', color: isDark ? '#EDEDEF' : '#1a1a2e' }}
-                        />
+                        <label className="block text-[10px] text-fg-muted uppercase tracking-wider font-medium mb-1.5">Select Icon</label>
+                        <div className="grid grid-cols-5 gap-1">
+                            {ICON_OPTIONS.map(({ id, emoji, label }) => (
+                                <button
+                                    key={id}
+                                    onClick={() => setSelectedIcon(id)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-md border cursor-pointer group transition-all duration-150"
+                                    style={{
+                                        background: selectedIcon === id ? 'rgba(94,106,210,0.2)' : 'transparent',
+                                        borderColor: selectedIcon === id ? 'rgba(94,106,210,0.4)' : (isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'),
+                                        boxShadow: selectedIcon === id ? '0 0 8px rgba(94,106,210,0.3)' : 'none',
+                                    }}
+                                    title={label}
+                                >
+                                    <span className="text-base transition-all duration-150 group-hover:scale-125" style={{ filter: selectedIcon === id ? 'drop-shadow(0 0 4px rgba(94,106,210,0.5))' : 'none' }}>
+                                        {emoji}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                     <div>
                         <label className="block text-[10px] text-fg-muted uppercase tracking-wider font-medium mb-1">
-                            Font Size: <span className="text-fg">{textSize}px</span>
+                            Size: <span className="text-fg">{iconSize}px</span>
                         </label>
                         <input
                             type="range"
-                            min="10"
-                            max="28"
-                            step="1"
-                            value={textSize}
-                            onChange={e => setTextSize(Number(e.target.value))}
+                            min="12"
+                            max="64"
+                            step="2"
+                            value={iconSize}
+                            onChange={e => setIconSize(Number(e.target.value))}
                             className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
-                            style={{ accentColor: '#5E6AD2', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}
+                            style={{ accentColor: '#f97316', background: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }}
                         />
                     </div>
                 </div>
             )}
-            {}
-            {activeTool === 'ICON' && (
-                <div className="p-2 rounded-lg border" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)' }}>
-                    <label className="block text-[10px] text-fg-muted uppercase tracking-wider font-medium mb-1.5">Select Icon</label>
-                    <div className="grid grid-cols-5 gap-1">
-                        {ICON_OPTIONS.map(({ id, emoji, label }) => (
-                            <button
-                                key={id}
-                                onClick={() => setSelectedIcon(id)}
-                                className="w-8 h-8 flex items-center justify-center rounded-md border cursor-pointer group transition-all duration-150"
-                                style={{
-                                    background: selectedIcon === id ? 'rgba(94,106,210,0.2)' : 'transparent',
-                                    borderColor: selectedIcon === id ? 'rgba(94,106,210,0.4)' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'),
-                                    boxShadow: selectedIcon === id ? '0 0 8px rgba(94,106,210,0.3)' : 'none',
-                                }}
-                                title={label}
-                            >
-                                <span className="text-base transition-all duration-150 group-hover:scale-125" style={{ filter: selectedIcon === id ? 'drop-shadow(0 0 4px rgba(94,106,210,0.5))' : 'none' }}>
-                                    {emoji}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-            {}
+            { }
             {activeTool && (
                 <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-[rgba(94,106,210,0.08)] border border-[rgba(94,106,210,0.15)]">
                     <span className="text-[11px] text-[#6872D9]">
                         {activeTool === 'FREEHAND' ? 'Click & drag to draw' :
-                            activeTool === 'TEXT' ? 'Click to place text' :
+                            activeTool === 'TEXT' ? 'Click to type on chart' :
                                 activeTool === 'ICON' ? 'Click to place icon' :
                                     activeTool === 'HORIZONTAL_LINE' ? 'Click to place line' :
                                         activeTool === 'VERTICAL_LINE' ? 'Click to place line' :
@@ -150,7 +134,7 @@ const DrawingPanel = ({
                     </button>
                 </div>
             )}
-            {}
+            { }
             {drawings.length > 0 && (
                 <div className="space-y-0.5 pt-1 border-t border-border-default">
                     <div className="flex items-center justify-between px-1 mb-1">

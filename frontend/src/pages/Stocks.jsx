@@ -4,13 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     TrendingUp,
     TrendingDown,
-    RefreshCw,
     BarChart2,
-    LineChart,
-    Download,
-    Wrench,
-    Loader2,
-    AlertTriangle,
     Info,
     ChevronUp,
     ChevronDown,
@@ -20,14 +14,12 @@ import {
 import { stockService, adminService } from '../services/marketService';
 import { getBistSymbols } from '../constants/stocks';
 import { useAuth } from '../context/AuthContext';
-const container = {
-    hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.05 } },
-};
-const card = {
-    hidden: { opacity: 0, y: 24 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
-};
+import { getChangeClass, changeColors, changeBg, formatPrice, formatVolume } from '../utils/formatters';
+import { containerVariants, cardVariants } from '../utils/animations';
+import LoadingState from '../components/LoadingState';
+import ErrorState from '../components/ErrorState';
+import EmptyState from '../components/EmptyState';
+import PageHeader from '../components/PageHeader';
 function Stocks() {
     const navigate = useNavigate();
     const { hasRole } = useAuth();
@@ -98,129 +90,27 @@ function Stocks() {
             setUpdating(prev => ({ ...prev, full: false }));
         }
     };
-    const getChangeClass = (change) => {
-        if (change > 0) return 'positive';
-        if (change < 0) return 'negative';
-        return 'neutral';
-    };
-    const formatPrice = (price) => {
-        if (price === null || price === undefined) return 'N/A';
-        return new Intl.NumberFormat('tr-TR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(price);
-    };
-    const formatVolume = (volume) => {
-        if (!volume) return 'N/A';
-        if (volume >= 1000000) {
-            return `${(volume / 1000000).toFixed(1)}M`;
-        } else if (volume >= 1000) {
-            return `${(volume / 1000).toFixed(1)}K`;
-        }
-        return volume;
-    };
-    const changeColors = {
-        positive: 'text-success',
-        negative: 'text-danger',
-        neutral: 'text-fg-muted',
-    };
-    const changeBg = {
-        positive: 'bg-success/10',
-        negative: 'bg-danger/10',
-        neutral: 'bg-fg-muted/10',
-    };
-        if (loading) {
-        return (
-            <div className="flex min-h-[60vh] items-center justify-center">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center gap-3"
-                >
-                    <Loader2 className="h-8 w-8 animate-spin text-accent" />
-                    <span className="text-fg-muted text-sm">Hisse verileri yükleniyor…</span>
-                </motion.div>
-            </div>
-        );
-    }
-        if (error) {
-        return (
-            <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col items-center gap-3 rounded-lg border border-danger/30 bg-danger/5 px-6 py-5"
-                >
-                    <AlertTriangle className="h-7 w-7 text-danger" />
-                    <p className="text-fg text-sm">{error}</p>
-                </motion.div>
-                <button
-                    onClick={fetchStocks}
-                    className="flex items-center gap-2 rounded-md border border-border-default bg-bg-base px-4 py-2 text-sm text-fg transition-colors duration-150 hover:bg-surface"
-                >
-                    <RefreshCw className="h-4 w-4" />
-                    Tekrar Dene
-                </button>
-            </div>
-        );
-    }
+    const formatStockPrice = (price) => formatPrice(price, { locale: 'tr-TR' });
+
+    const adminActions = [
+        { key: 'snapshot', label: 'Snapshot', title: 'Hisse snapshot verilerini güncelle (fiyat, hacim vb.)', handler: handleStockSnapshotUpdate },
+        { key: 'candles', label: 'Candles (5y)', title: '5 yıllık OHLC verilerini güncelle (10-15 dakika)', handler: handleStockCandlesUpdate },
+        { key: 'full', label: 'Full Update', title: 'Tam güncelleme (snapshot + 5y candles, 15-20 dakika)', handler: handleStockFullUpdate },
+    ];
+    if (loading) return <LoadingState message="Hisse verileri yükleniyor…" />;
+    if (error) return <ErrorState message={error} onRetry={fetchStocks} />;
         return (
         <div className="space-y-6 py-6">
             {}
-            <motion.div
-                initial={{ opacity: 0, y: -16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-                <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-[-0.025em] text-fg sm:text-3xl">
-                    <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10 text-accent">
-                        <Activity className="h-5 w-5" />
-                    </span>
-                    Borsa İstanbul (BIST)
-                </h1>
-                <div className="flex flex-wrap items-center gap-2">
-                    <button
-                        onClick={fetchStocks}
-                        disabled={loading}
-                        className="flex items-center gap-2 rounded-md border border-border-default bg-bg-base px-4 py-2 text-sm text-fg-muted transition-colors duration-150 hover:bg-surface hover:text-fg disabled:opacity-50"
-                    >
-                        <RefreshCw className="h-4 w-4" />
-                        Yenile
-                    </button>
-                    {isAdmin && (
-                        <>
-                            <button
-                                onClick={handleStockSnapshotUpdate}
-                                disabled={updating.snapshot || loading}
-                                title="Hisse snapshot verilerini güncelle (fiyat, hacim vb.)"
-                                className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/10 px-4 py-2 text-sm text-accent-bright transition-colors duration-150 hover:bg-accent/20 disabled:opacity-50"
-                            >
-                                {updating.snapshot ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                                Snapshot
-                            </button>
-                            <button
-                                onClick={handleStockCandlesUpdate}
-                                disabled={updating.candles || loading}
-                                title="5 yıllık OHLC verilerini güncelle (10-15 dakika)"
-                                className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/10 px-4 py-2 text-sm text-accent-bright transition-colors duration-150 hover:bg-accent/20 disabled:opacity-50"
-                            >
-                                {updating.candles ? <Loader2 className="h-4 w-4 animate-spin" /> : <LineChart className="h-4 w-4" />}
-                                Candles (5y)
-                            </button>
-                            <button
-                                onClick={handleStockFullUpdate}
-                                disabled={updating.full || loading}
-                                title="Tam güncelleme (snapshot + 5y candles, 15-20 dakika)"
-                                className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/10 px-4 py-2 text-sm text-accent-bright transition-colors duration-150 hover:bg-accent/20 disabled:opacity-50"
-                            >
-                                {updating.full ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
-                                Full Update
-                            </button>
-                        </>
-                    )}
-                </div>
-            </motion.div>
+            <PageHeader
+                icon={<Activity className="h-5 w-5" />}
+                title="Borsa İstanbul (BIST)"
+                onRefresh={fetchStocks}
+                loading={loading}
+                isAdmin={isAdmin}
+                adminActions={adminActions}
+                updating={updating}
+            />
             {}
             {stocks.length > 0 && indices.length === 0 && (
                 <motion.div
@@ -247,7 +137,7 @@ function Stocks() {
                             BIST Endeksleri
                         </h2>
                         <motion.div
-                            variants={container}
+                            variants={containerVariants()}
                             initial="hidden"
                             animate="show"
                             className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
@@ -257,7 +147,7 @@ function Stocks() {
                                 return (
                                     <motion.div
                                         key={index.symbol}
-                                        variants={card}
+                                        variants={cardVariants}
                                         className="group rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover"
                                     >
                                         <div className="flex items-start justify-between">
@@ -280,7 +170,7 @@ function Stocks() {
                                             </button>
                                         </div>
                                         <p className="mt-3 font-mono text-2xl font-bold text-fg">
-                                            {formatPrice(index.currentPrice)}
+                                            {formatStockPrice(index.currentPrice)}
                                         </p>
                                         <div className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
                                             {index.priceChangePercent > 0 ? (
@@ -311,7 +201,7 @@ function Stocks() {
                         <span className="ml-1 text-sm font-normal text-fg-muted">({regularStocks.length} hisse)</span>
                     </h2>
                     <motion.div
-                        variants={container}
+                        variants={containerVariants()}
                         initial="hidden"
                         animate="show"
                         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
@@ -321,7 +211,7 @@ function Stocks() {
                             return (
                                 <motion.div
                                     key={stock.symbol}
-                                    variants={card}
+                                    variants={cardVariants}
                                     className="group rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover"
                                 >
                                     {}
@@ -348,7 +238,7 @@ function Stocks() {
                                     {}
                                     <div className="mt-3">
                                         <p className="font-mono text-xl font-bold text-fg">
-                                            ₺{formatPrice(stock.currentPrice)}
+                                            ₺{formatStockPrice(stock.currentPrice)}
                                         </p>
                                         <div className={`mt-1 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
                                             {stock.priceChangePercent > 0 ? (
@@ -358,7 +248,7 @@ function Stocks() {
                                             ) : null}
                                             {Math.abs(stock.priceChangePercent || 0).toFixed(2)}%
                                             <span className="ml-1 opacity-75">
-                                                ({stock.priceChangeAmount > 0 ? '+' : ''}₺{formatPrice(stock.priceChangeAmount)})
+                                                ({stock.priceChangeAmount > 0 ? '+' : ''}₺{formatStockPrice(stock.priceChangeAmount)})
                                             </span>
                                         </div>
                                     </div>
@@ -367,7 +257,7 @@ function Stocks() {
                                         {stock.openPrice != null && (
                                             <div className="flex items-center justify-between text-xs">
                                                 <span className="text-fg-muted">Açılış</span>
-                                                <span className="font-mono text-fg">₺{formatPrice(stock.openPrice)}</span>
+                                                <span className="font-mono text-fg">₺{formatStockPrice(stock.openPrice)}</span>
                                             </div>
                                         )}
                                         {stock.dayHigh != null && (
@@ -376,7 +266,7 @@ function Stocks() {
                                                     <ChevronUp className="h-3 w-3 text-success" />
                                                     En Yüksek
                                                 </span>
-                                                <span className="font-mono text-fg">₺{formatPrice(stock.dayHigh)}</span>
+                                                <span className="font-mono text-fg">₺{formatStockPrice(stock.dayHigh)}</span>
                                             </div>
                                         )}
                                         {stock.dayLow != null && (
@@ -385,7 +275,7 @@ function Stocks() {
                                                     <ChevronDown className="h-3 w-3 text-danger" />
                                                     En Düşük
                                                 </span>
-                                                <span className="font-mono text-fg">₺{formatPrice(stock.dayLow)}</span>
+                                                <span className="font-mono text-fg">₺{formatStockPrice(stock.dayLow)}</span>
                                             </div>
                                         )}
                                         <div className="flex items-center justify-between text-xs">
@@ -406,19 +296,11 @@ function Stocks() {
             )}
             {}
             {regularStocks.length === 0 && stocks.length === 0 && (
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border-default bg-bg-base py-14"
-                >
-                    <BarChart2 className="h-7 w-7 text-fg-subtle" />
-                    <p className="text-sm text-fg-muted">
-                        Henüz hisse senedi verisi yok.
-                    </p>
-                    <p className="text-xs text-fg-subtle">
-                        {isAdmin ? 'Admin butonlarını kullanarak veri çekebilirsiniz.' : 'Admin veri güncellemesini bekleyin.'}
-                    </p>
-                </motion.div>
+                <EmptyState
+                    icon={<BarChart2 className="h-7 w-7 text-fg-subtle" />}
+                    message="Henüz hisse senedi verisi yok."
+                    hint={isAdmin ? 'Admin butonlarını kullanarak veri çekebilirsiniz.' : 'Admin veri güncellemesini bekleyin.'}
+                />
             )}
         </div>
     );

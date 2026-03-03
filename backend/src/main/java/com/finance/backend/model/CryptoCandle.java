@@ -35,6 +35,9 @@ public class CryptoCandle extends BaseCandle {
     private Crypto crypto;
     @Column(name = "crypto_id", insertable = false, updatable = false, nullable = false)
     private String cryptoId;
+
+    @Column(name = "volume")
+    private Long volume;
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

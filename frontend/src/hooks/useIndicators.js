@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react';
 let nextId = 1;
 const genId = () => `ind-${nextId++}`;
 const DEFAULT_INDICATORS = [
-    { id: genId(), type: 'SMA', period: 20, color: '#f59e0b', visible: true },
-    { id: genId(), type: 'EMA', period: 50, color: '#8b5cf6', visible: true },
+    { id: genId(), type: 'SMA', period: 20, color: '#f59e0b', visible: false },
+    { id: genId(), type: 'EMA', period: 50, color: '#8b5cf6', visible: false },
 ];
 export default function useIndicators() {
     const [indicators, setIndicators] = useState(DEFAULT_INDICATORS);

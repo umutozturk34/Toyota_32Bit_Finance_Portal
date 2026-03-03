@@ -3,15 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     DollarSign,
-    TrendingUp,
-    TrendingDown,
-    RefreshCw,
     BarChart2,
-    LineChart,
-    Download,
-    Wrench,
-    Loader2,
-    AlertTriangle,
     Activity,
     Clock,
     ArrowUpRight,
@@ -21,14 +13,12 @@ import {
 import { forexService, adminService } from '../services/marketService';
 import { getForexPairs, getForexDisplayName, getForexFlag, getBaseCurrency } from '../constants/forex';
 import { useAuth } from '../context/AuthContext';
-const container = {
-    hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.05 } },
-};
-const card = {
-    hidden: { opacity: 0, y: 24 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
-};
+import { getChangeClass, changeColors, changeBg, formatPrice, formatChange, formatPercent } from '../utils/formatters';
+import { containerVariants, cardVariants } from '../utils/animations';
+import LoadingState from '../components/LoadingState';
+import ErrorState from '../components/ErrorState';
+import EmptyState from '../components/EmptyState';
+import PageHeader from '../components/PageHeader';
 function Forex() {
     const navigate = useNavigate();
     const { hasRole } = useAuth();
@@ -99,138 +89,31 @@ function Forex() {
             setUpdating(prev => ({ ...prev, full: false }));
         }
     };
-    const getChangeClass = (change) => {
-        if (change > 0) return 'positive';
-        if (change < 0) return 'negative';
-        return 'neutral';
-    };
-    const formatPrice = (price) => {
-        if (price === null || price === undefined) return 'N/A';
-        return new Intl.NumberFormat('tr-TR', {
-            minimumFractionDigits: 4,
-            maximumFractionDigits: 4
-        }).format(price);
-    };
-    const formatChange = (change) => {
-        if (change === null || change === undefined) return 'N/A';
-        const prefix = change > 0 ? '+' : '';
-        return prefix + new Intl.NumberFormat('tr-TR', {
-            minimumFractionDigits: 4,
-            maximumFractionDigits: 4
-        }).format(change);
-    };
-    const formatPercent = (percent) => {
-        if (percent === null || percent === undefined) return 'N/A';
-        const prefix = percent > 0 ? '+' : '';
-        return prefix + percent.toFixed(2) + '%';
-    };
+    const formatForexPrice = (price) => formatPrice(price, { locale: 'tr-TR', minDecimals: 4, maxDecimals: 4 });
+
     const handleCardClick = (currencyCode) => {
         navigate(`/charts?type=FOREX&symbol=${currencyCode}&range=3M`);
     };
-    const changeColors = {
-        positive: 'text-success',
-        negative: 'text-danger',
-        neutral: 'text-fg-muted',
-    };
-    const changeBg = {
-        positive: 'bg-success/10',
-        negative: 'bg-danger/10',
-        neutral: 'bg-fg-muted/10',
-    };
-        if (loading) {
-        return (
-            <div className="flex min-h-[60vh] items-center justify-center">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center gap-4"
-                >
-                    <Loader2 className="h-10 w-10 animate-spin text-accent" />
-                    <span className="text-fg-muted text-sm tracking-wide">Döviz kurları yükleniyor…</span>
-                </motion.div>
-            </div>
-        );
-    }
-        if (error) {
-        return (
-            <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6">
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col items-center gap-3 rounded-lg border border-danger/30 bg-danger/5 px-8 py-6"
-                >
-                    <AlertTriangle className="h-8 w-8 text-danger" />
-                    <p className="text-fg text-sm">{error}</p>
-                </motion.div>
-                <button
-                    onClick={fetchForexData}
-                    className="flex items-center gap-2 rounded-md border border-border-default bg-surface px-5 py-2.5 text-sm text-fg transition-colors duration-150 hover:bg-surface-hover"
-                >
-                    <RefreshCw className="h-4 w-4" />
-                    Tekrar Dene
-                </button>
-            </div>
-        );
-    }
+
+    const adminActions = [
+        { key: 'snapshot', label: 'Snapshot', title: 'TCMB + Yahoo snapshot güncelle (~1 dakika, 21 forex × 2sn)', handler: handleForexSnapshotUpdate },
+        { key: 'candles', label: 'Candles (5y)', title: 'Yahoo Finance candles güncelle (~10 dakika, 20 forex × 5y OHLC)', handler: handleForexCandlesUpdate },
+        { key: 'full', label: 'Full Update', title: 'Yahoo Finance FULL update (~12 dakika, snapshot + 5y candles)', handler: handleForexFullUpdate },
+    ];
+    if (loading) return <LoadingState message="Döviz kurları yükleniyor…" />;
+    if (error) return <ErrorState message={error} onRetry={fetchForexData} />;
         return (
         <div className="space-y-6 py-6">
             {}
-            <motion.div
-                initial={{ opacity: 0, y: -16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-            >
-                <div className="space-y-1">
-                    <h1 className="flex items-center gap-3 text-2xl font-bold tracking-[-0.025em] text-fg sm:text-3xl">
-                        <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10 text-accent">
-                            <Coins className="h-5 w-5" />
-                        </span>
-                        Döviz Kurları
-                    </h1>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                    <button
-                        onClick={fetchForexData}
-                        disabled={loading}
-                        className="flex items-center gap-2 rounded-md border border-border-default bg-surface px-4 py-2 text-sm text-fg-muted transition-colors duration-150 hover:bg-surface-hover hover:text-fg disabled:opacity-50"
-                    >
-                        <RefreshCw className="h-4 w-4" />
-                        Yenile
-                    </button>
-                    {isAdmin && (
-                        <>
-                            <button
-                                onClick={handleForexSnapshotUpdate}
-                                disabled={updating.snapshot || loading}
-                                title="TCMB + Yahoo snapshot güncelle (~1 dakika, 21 forex × 2sn)"
-                                className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/10 px-4 py-2 text-sm text-accent-bright transition-colors duration-150 hover:bg-accent/20 disabled:opacity-50"
-                            >
-                                {updating.snapshot ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                                Snapshot
-                            </button>
-                            <button
-                                onClick={handleForexCandlesUpdate}
-                                disabled={updating.candles || loading}
-                                title="Yahoo Finance candles güncelle (~10 dakika, 20 forex × 5y OHLC)"
-                                className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/10 px-4 py-2 text-sm text-accent-bright transition-colors duration-150 hover:bg-accent/20 disabled:opacity-50"
-                            >
-                                {updating.candles ? <Loader2 className="h-4 w-4 animate-spin" /> : <LineChart className="h-4 w-4" />}
-                                Candles (5y)
-                            </button>
-                            <button
-                                onClick={handleForexFullUpdate}
-                                disabled={updating.full || loading}
-                                title="Yahoo Finance FULL update (~12 dakika, snapshot + 5y candles)"
-                                className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/10 px-4 py-2 text-sm text-accent-bright transition-colors duration-150 hover:bg-accent/20 disabled:opacity-50"
-                            >
-                                {updating.full ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
-                                Full Update
-                            </button>
-                        </>
-                    )}
-                </div>
-            </motion.div>
+            <PageHeader
+                icon={<Coins className="h-5 w-5" />}
+                title="Döviz Kurları"
+                onRefresh={fetchForexData}
+                loading={loading}
+                isAdmin={isAdmin}
+                adminActions={adminActions}
+                updating={updating}
+            />
             {}
             {forexData.length > 0 && (
                 <motion.section
@@ -245,7 +128,7 @@ function Forex() {
                         <span className="ml-1 text-sm font-normal text-fg-muted">({forexData.length} çift)</span>
                     </h2>
                     <motion.div
-                        variants={container}
+                        variants={containerVariants()}
                         initial="hidden"
                         animate="show"
                         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
@@ -259,7 +142,7 @@ function Forex() {
                             return (
                                 <motion.div
                                     key={forex.currencyCode}
-                                    variants={card}
+                                    variants={cardVariants}
                                     onClick={() => handleCardClick(forex.currencyCode)}
                                     className="group cursor-pointer rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover"
                                 >
@@ -310,12 +193,12 @@ function Forex() {
                                     <div className="mt-3 space-y-1">
                                         <div className="flex items-center justify-between">
                                             <span className="text-xs text-fg-muted">Alış:</span>
-                                            <span className="font-mono text-xl font-bold text-fg">₺ {formatPrice(forex.currentPrice)}</span>
+                                            <span className="font-mono text-xl font-bold text-fg">₺ {formatForexPrice(forex.currentPrice)}</span>
                                         </div>
                                         {forex.sellingPrice && (
                                             <div className="flex items-center justify-between">
                                                 <span className="text-xs text-fg-muted">Satış:</span>
-                                                <span className="font-mono text-base font-semibold text-fg-muted">₺ {formatPrice(forex.sellingPrice)}</span>
+                                                <span className="font-mono text-base font-semibold text-fg-muted">₺ {formatForexPrice(forex.sellingPrice)}</span>
                                             </div>
                                         )}
                                     </div>
@@ -342,25 +225,25 @@ function Forex() {
                                             {forex.forexBuying && (
                                                 <div className="flex items-center justify-between text-xs">
                                                     <span className="text-fg-muted">Döviz Alış:</span>
-                                                    <span className="font-mono text-fg">₺ {formatPrice(forex.forexBuying)}</span>
+                                                    <span className="font-mono text-fg">₺ {formatForexPrice(forex.forexBuying)}</span>
                                                 </div>
                                             )}
                                             {forex.forexSelling && (
                                                 <div className="flex items-center justify-between text-xs">
                                                     <span className="text-fg-muted">Döviz Satış:</span>
-                                                    <span className="font-mono text-fg">₺ {formatPrice(forex.forexSelling)}</span>
+                                                    <span className="font-mono text-fg">₺ {formatForexPrice(forex.forexSelling)}</span>
                                                 </div>
                                             )}
                                             {forex.banknoteBuying && (
                                                 <div className="flex items-center justify-between text-xs">
                                                     <span className="text-fg-muted">Efektif Alış:</span>
-                                                    <span className="font-mono text-fg">₺ {formatPrice(forex.banknoteBuying)}</span>
+                                                    <span className="font-mono text-fg">₺ {formatForexPrice(forex.banknoteBuying)}</span>
                                                 </div>
                                             )}
                                             {forex.banknoteSelling && (
                                                 <div className="flex items-center justify-between text-xs">
                                                     <span className="text-fg-muted">Efektif Satış:</span>
-                                                    <span className="font-mono text-fg">₺ {formatPrice(forex.banknoteSelling)}</span>
+                                                    <span className="font-mono text-fg">₺ {formatForexPrice(forex.banknoteSelling)}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -387,19 +270,11 @@ function Forex() {
             )}
             {}
             {forexData.length === 0 && (
-                <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col items-center justify-center gap-3 rounded-lg border border-border-default bg-bg-base py-16"
-                >
-                    <Coins className="h-8 w-8 text-fg-subtle" />
-                    <p className="text-sm text-fg-muted">
-                        Henüz döviz kuru verisi bulunmuyor.
-                    </p>
-                    <p className="text-xs text-fg-subtle">
-                        {isAdmin ? 'Admin butonlarını kullanarak veri çekebilirsiniz.' : 'Admin veri güncellemesini bekleyin.'}
-                    </p>
-                </motion.div>
+                <EmptyState
+                    icon={<Coins className="h-8 w-8 text-fg-subtle" />}
+                    message="Henüz döviz kuru verisi bulunmuyor."
+                    hint={isAdmin ? 'Admin butonlarını kullanarak veri çekebilirsiniz.' : 'Admin veri güncellemesini bekleyin.'}
+                />
             )}
         </div>
     );

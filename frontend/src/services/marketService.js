@@ -1,7 +1,7 @@
 import api from './api';
 export const getCryptoById = async (id) => {
   try {
-    const response = await api.get(`/${id}`);
+    const response = await api.get(`/market/${id}`);
     return response.data;
   } catch (error) {
     if (error.response?.status === 404) {
@@ -14,7 +14,7 @@ export const getCryptoById = async (id) => {
 };
 export const getCryptoHistory = async (id) => {
   try {
-    const response = await api.get(`/${id}/history`);
+    const response = await api.get(`/market/${id}/history`);
     return response.data;
   } catch (error) {
     console.error(`Error fetching history for ${id}:`, error);
@@ -34,7 +34,7 @@ export const getMultipleCryptos = async (ids) => {
 export const forexService = {
   getForexByCode: async (currencyCode) => {
     try {
-      const response = await api.get(`/forex/${currencyCode}`, { baseURL: '/api/v1' });
+      const response = await api.get(`/forex/${currencyCode}`);
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
@@ -57,7 +57,7 @@ export const forexService = {
   },
   getForexHistory: async (currencyCode) => {
     try {
-      const response = await api.get(`/forex/${currencyCode}/history`, { baseURL: '/api/v1' });
+      const response = await api.get(`/forex/${currencyCode}/history`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching history for ${currencyCode}:`, error);
@@ -68,7 +68,7 @@ export const forexService = {
 export const stockService = {
   getStockBySymbol: async (symbol) => {
     try {
-      const response = await api.get(`/stocks/${symbol}`, { baseURL: '/api/v1' });
+      const response = await api.get(`/stocks/${symbol}`);
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
@@ -91,7 +91,7 @@ export const stockService = {
   },
   getStockHistory: async (symbol) => {
     try {
-      const response = await api.get(`/stocks/${symbol}/history`, { baseURL: '/api/v1' });
+      const response = await api.get(`/stocks/${symbol}/history`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching history for ${symbol}:`, error);
@@ -102,7 +102,7 @@ export const stockService = {
 export const adminService = {
   triggerCryptoSnapshot: async () => {
     try {
-      const response = await api.post('/admin/trigger/crypto/snapshot', {}, { baseURL: '/api/v1' });
+      const response = await api.post('/admin/trigger/crypto/snapshot');
       return response.data;
     } catch (error) {
       console.error('Error triggering crypto snapshot:', error);
@@ -111,7 +111,7 @@ export const adminService = {
   },
   triggerCryptoCandles: async () => {
     try {
-      const response = await api.post('/admin/trigger/crypto/candles', {}, { baseURL: '/api/v1' });
+      const response = await api.post('/admin/trigger/crypto/candles');
       return response.data;
     } catch (error) {
       console.error('Error triggering crypto candles:', error);
@@ -120,7 +120,7 @@ export const adminService = {
   },
   triggerCryptoFull: async () => {
     try {
-      const response = await api.post('/admin/trigger/crypto/full', {}, { baseURL: '/api/v1' });
+      const response = await api.post('/admin/trigger/crypto/full');
       return response.data;
     } catch (error) {
       console.error('Error triggering crypto full update:', error);
@@ -129,7 +129,7 @@ export const adminService = {
   },
   triggerStockSnapshot: async () => {
     try {
-      const response = await api.post('/admin/trigger/stock/snapshot', {}, { baseURL: '/api/v1' });
+      const response = await api.post('/admin/trigger/stock/snapshot');
       return response.data;
     } catch (error) {
       console.error('Error triggering stock snapshot:', error);
@@ -138,7 +138,7 @@ export const adminService = {
   },
   triggerStockCandles: async () => {
     try {
-      const response = await api.post('/admin/trigger/stock/candles', {}, { baseURL: '/api/v1' });
+      const response = await api.post('/admin/trigger/stock/candles');
       return response.data;
     } catch (error) {
       console.error('Error triggering stock candles:', error);
@@ -147,7 +147,7 @@ export const adminService = {
   },
   triggerStockFull: async () => {
     try {
-      const response = await api.post('/admin/trigger/stock/full', {}, { baseURL: '/api/v1' });
+      const response = await api.post('/admin/trigger/stock/full');
       return response.data;
     } catch (error) {
       console.error('Error triggering stock full update:', error);
@@ -156,7 +156,7 @@ export const adminService = {
   },
   triggerForexSnapshot: async () => {
     try {
-      const response = await api.post('/admin/trigger/forex/snapshot', {}, { baseURL: '/api/v1' });
+      const response = await api.post('/admin/trigger/forex/snapshot');
       return response.data;
     } catch (error) {
       console.error('Error triggering forex snapshot update:', error);
@@ -165,7 +165,7 @@ export const adminService = {
   },
   triggerForexCandles: async () => {
     try {
-      const response = await api.post('/admin/trigger/forex/candles', {}, { baseURL: '/api/v1' });
+      const response = await api.post('/admin/trigger/forex/candles');
       return response.data;
     } catch (error) {
       console.error('Error triggering forex candles update:', error);
@@ -174,7 +174,7 @@ export const adminService = {
   },
   triggerForexFull: async () => {
     try {
-      const response = await api.post('/admin/trigger/forex/full', {}, { baseURL: '/api/v1' });
+      const response = await api.post('/admin/trigger/forex/full');
       return response.data;
     } catch (error) {
       console.error('Error triggering forex full update:', error);

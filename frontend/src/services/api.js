@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getToken } from './keycloak';
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1/market',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -18,7 +18,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
+  (error) => {  
     return Promise.reject(error);
   }
 );

@@ -1,7 +1,10 @@
 package com.finance.backend.controller;
+import com.finance.backend.dto.response.CandleResponse;
+import com.finance.backend.dto.response.ForexResponse;
+import com.finance.backend.mapper.ResponseMapper;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
-import com.finance.backend.service.ForexCacheService;
+import com.finance.backend.service.MarketCacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -13,19 +16,20 @@ import java.util.List;
 @RequestMapping("/api/v1/forex")
 @RequiredArgsConstructor
 public class ForexController {
-    private final ForexCacheService forexCacheService;
+    private final MarketCacheService<Forex, ForexCandle> forexCacheService;
+    private final ResponseMapper responseMapper;
     @GetMapping("/{currencyCode}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Forex> getForexByCurrencyCode(@PathVariable String currencyCode) {
+    public ResponseEntity<ForexResponse> getForexByCurrencyCode(@PathVariable String currencyCode) {
         String normalized = currencyCode.strip().toUpperCase();
         log.debug("Get forex snapshot: {}", normalized);
-        return ResponseEntity.ok(forexCacheService.getForexSnapshot(normalized));
+        return ResponseEntity.ok(responseMapper.toForexResponse(forexCacheService.getSnapshot(normalized)));
     }
     @GetMapping("/{currencyCode}/history")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<ForexCandle>> getForexHistory(@PathVariable String currencyCode) {
+    public ResponseEntity<List<CandleResponse>> getForexHistory(@PathVariable String currencyCode) {
         String normalized = currencyCode.strip().toUpperCase();
         log.debug("Get forex history: {}", normalized);
-        return ResponseEntity.ok(forexCacheService.getForexHistory(normalized));
+        return ResponseEntity.ok(responseMapper.toForexCandleResponses(forexCacheService.getHistory(normalized)));
     }
 }

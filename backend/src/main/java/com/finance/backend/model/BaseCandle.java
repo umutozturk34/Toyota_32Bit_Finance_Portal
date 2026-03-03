@@ -25,6 +25,4 @@ public abstract class BaseCandle {
     private BigDecimal low;
     @Column(name = "close", nullable = false, precision = 19, scale = 4)
     private BigDecimal close;
-    @Column(name = "volume")
-    private Long volume;
 }

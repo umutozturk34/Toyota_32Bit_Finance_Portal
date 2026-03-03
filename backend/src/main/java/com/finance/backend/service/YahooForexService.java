@@ -8,7 +8,9 @@ import com.finance.backend.model.ForexCandle;
 import com.finance.backend.repository.ForexCandleRepository;
 import com.finance.backend.repository.ForexRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,24 +26,27 @@ public class YahooForexService {
     private final ForexMapper forexMapper;
     private final ForexRepository forexRepository;
     private final ForexCandleRepository forexCandleRepository;
-    private final ForexCacheService forexCacheService;
+    private final MarketCacheService<Forex, ForexCandle> forexCacheService;
+    private final YahooForexService self;
     public YahooForexService(YahooForexClient yahooForexClient,
                              ForexMapper forexMapper,
                              ForexRepository forexRepository,
                              ForexCandleRepository forexCandleRepository,
-                             ForexCacheService forexCacheService) {
+                             MarketCacheService<Forex, ForexCandle> forexCacheService,
+                             @Lazy YahooForexService self) {
         this.yahooForexClient = yahooForexClient;
         this.forexMapper = forexMapper;
         this.forexRepository = forexRepository;
         this.forexCandleRepository = forexCandleRepository;
         this.forexCacheService = forexCacheService;
+        this.self = self;
     }
     public void syncAllYahooSnapshots() {
         log.info("Starting Yahoo Finance snapshot sync...");
         List<Forex> allForex = forexRepository.findAll();
         for (Forex forex : allForex) {
             try {
-                updateForexSnapshot(forex);
+                self.updateForexSnapshot(forex);
                 Thread.sleep(2000); 
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
@@ -55,8 +60,7 @@ public class YahooForexService {
     }
     public void syncAllYahooCandles() {
         log.info("Starting Yahoo Finance candles sync...");
-        LocalDateTime cutoffDate = LocalDateTime.now().minusYears(YEARS_TO_KEEP);
-        forexCandleRepository.deleteByCandleDateBefore(cutoffDate);
+        self.pruneOldForexCandles();
         List<Forex> allForex = forexRepository.findAll();
         Forex usdtry = allForex.stream()
                 .filter(f -> "USDTRY".equals(f.getCurrencyCode()))
@@ -66,14 +70,14 @@ public class YahooForexService {
             log.error("USDTRY not found in database");
             return;
         }
-        updateForexCandles(usdtry);
+        self.updateForexCandles(usdtry);
         forexCacheService.clearHistoryCache("USDTRY");
         for (Forex forex : allForex) {
             if ("USDTRY".equals(forex.getCurrencyCode())) {
                 continue;
             }
             try {
-                updateForexCandles(forex);
+                self.updateForexCandles(forex);
                 forexCacheService.clearHistoryCache(forex.getCurrencyCode());
                 Thread.sleep(2000);
             } catch (InterruptedException ie) {
@@ -86,6 +90,7 @@ public class YahooForexService {
         }
         log.info("Completed Yahoo Finance candles sync");
     }
+    @Transactional
     public void updateForexSnapshot(Forex forex) {
         String baseSymbol = forex.getCurrencyCode();
         String yahooSymbol = baseSymbol + "=X";
@@ -107,6 +112,7 @@ public class YahooForexService {
             log.error("[SNAPSHOT] All attempts failed for {}", baseSymbol);
         }
     }
+    @Transactional
     public void updateForexCandles(Forex forex) {
         String baseSymbol = forex.getCurrencyCode();
         String yahooSymbol = baseSymbol + "=X";
@@ -149,7 +155,7 @@ public class YahooForexService {
                     boolean isUsdBase = symbol.startsWith("USD");
                     forexMapper.applySyntheticSnapshot(forex, pairQuote,
                             usdtry.getCurrentPrice(), usdtry.getChange24h(), isUsdBase,
-                            LocalDateTime.now());
+                            LocalDateTime.now()); 
                     forexRepository.save(forex);
                     forexCacheService.clearSnapshotCache(forex.getCurrencyCode());
                     log.info("[SNAPSHOT-SYNTHETIC] Updated {} via {} price: {}", forex.getCurrencyCode(), symbol, forex.getCurrentPrice());
@@ -219,5 +225,11 @@ public class YahooForexService {
             forexCandleRepository.saveAll(toSave);
         }
         return toSave.size();
+    }
+
+    @Transactional
+    public void pruneOldForexCandles() {
+        LocalDateTime cutoffDate = LocalDateTime.now().minusYears(YEARS_TO_KEEP);
+        forexCandleRepository.deleteByCandleDateBefore(cutoffDate);
     }
 }

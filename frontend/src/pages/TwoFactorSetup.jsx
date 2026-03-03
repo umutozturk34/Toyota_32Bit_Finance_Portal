@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import axios from 'axios';
 import { getToken } from '../services/keycloak';
+import keycloak from '../services/keycloak';
 const TwoFactorSetup = () => {
     const { user } = useAuth();
     const { isDark } = useTheme();
@@ -50,9 +51,10 @@ const TwoFactorSetup = () => {
         }
     };
     const handleSetup2FA = () => {
-        const realm = 'finance-realm';
-        const accountUrl = `http://localhost:8180/realms/${realm}/account/#/security/signingin`;
-        window.location.href = accountUrl;
+        keycloak.login({
+            action: 'CONFIGURE_TOTP',
+            redirectUri: window.location.origin + '/2fa',
+        });
     };
         if (loading) {
         return (

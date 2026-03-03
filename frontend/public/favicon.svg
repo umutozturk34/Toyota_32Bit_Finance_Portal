@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="chart" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="candle" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="32" height="32" rx="6" fill="url(#bg)"/>
+  <!-- Chart line -->
+  <polyline points="4,22 9,18 13,20 17,12 21,14 25,8 28,10" fill="none" stroke="url(#chart)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Candlesticks -->
+  <line x1="9" y1="16" x2="9" y2="20" stroke="#34d399" stroke-width="1" stroke-linecap="round"/>
+  <rect x="7.5" y="17" width="3" height="2" rx="0.5" fill="url(#candle)"/>
+  <line x1="17" y1="10" x2="17" y2="15" stroke="#34d399" stroke-width="1" stroke-linecap="round"/>
+  <rect x="15.5" y="11" width="3" height="3" rx="0.5" fill="url(#candle)"/>
+  <line x1="25" y1="6" x2="25" y2="11" stroke="#f87171" stroke-width="1" stroke-linecap="round"/>
+  <rect x="23.5" y="7" width="3" height="3" rx="0.5" fill="#f87171"/>
+  <!-- Arrow up -->
+  <polygon points="27,5 29,8 25,8" fill="#34d399" opacity="0.8"/>
+</svg>

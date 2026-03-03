@@ -10,7 +10,9 @@ import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.repository.StockCandleRepository;
 import com.finance.backend.repository.StockRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -29,20 +31,23 @@ public class StockDataService {
     private final StockMapper stockMapper;
     private final StockRepository stockRepository;
     private final StockCandleRepository stockCandleRepository;
-    private final StockCacheService stockCacheService;
+    private final MarketCacheService<Stock, StockCandle> stockCacheService;
     private final MarketConstants marketConstants;
+    private final StockDataService self;
     public StockDataService(YahooStockClient yahooStockClient,
                             StockMapper stockMapper,
                             StockRepository stockRepository,
                             StockCandleRepository stockCandleRepository,
-                            StockCacheService stockCacheService,
-                            MarketConstants marketConstants) {
+                            MarketCacheService<Stock, StockCandle> stockCacheService,
+                            MarketConstants marketConstants,
+                            @Lazy StockDataService self) {
         this.yahooStockClient = yahooStockClient;
         this.stockMapper = stockMapper;
         this.stockRepository = stockRepository;
         this.stockCandleRepository = stockCandleRepository;
         this.stockCacheService = stockCacheService;
         this.marketConstants = marketConstants;
+        this.self = self;
     }
     public void updateStockSnapshots() {
         List<String> bistStocks = marketConstants.getTrackedBistStocks();
@@ -56,7 +61,7 @@ public class StockDataService {
         List<String> failedSymbols = new ArrayList<>();
         for (String symbol : bistStocks) {
             try {
-                updateSingleStockSnapshot(symbol);
+                self.updateSingleStockSnapshot(symbol);
                 stockCacheService.clearSnapshotCache(symbol);
                 successCount++;
             } catch (Exception e) {
@@ -71,6 +76,7 @@ public class StockDataService {
             log.warn("Failed symbols: {}", failedSymbols);
         }
     }
+    @Transactional
     public void updateSingleStockSnapshot(String symbol) {
         YahooStockQuoteDto dto = yahooStockClient.fetchSnapshot(symbol);
         if (dto == null) {
@@ -106,7 +112,7 @@ public class StockDataService {
         List<String> failedSymbols = new ArrayList<>();
         for (String symbol : bistStocks) {
             try {
-                int candleCount = updateCandlesForStock(symbol);
+                int candleCount = self.updateCandlesForStock(symbol);
                 stockCacheService.clearHistoryCache(symbol);
                 totalCandles += candleCount;
                 successCount++;
@@ -122,6 +128,7 @@ public class StockDataService {
             log.warn("Failed symbols: {}", failedSymbols);
         }
     }
+    @Transactional
     public int updateCandlesForStock(String symbol) {
         Stock stock = stockRepository.getReferenceById(symbol);
         long existingCount = stockCandleRepository.countByStockSymbol(symbol);

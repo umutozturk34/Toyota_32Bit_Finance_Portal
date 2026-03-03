@@ -3,6 +3,36 @@ import { createChart, LineSeries, HistogramSeries } from 'lightweight-charts';
 import { calculateRSI, calculateMACD } from '../utils/indicators';
 import { getChartOptions } from '../utils/chartOptions';
 
+const createSubChart = (container, isDark, height) => {
+    const opts = getChartOptions(isDark);
+    return createChart(container, {
+        ...opts,
+        width: container.clientWidth,
+        height,
+        timeScale: { ...opts.timeScale, visible: false },
+    });
+};
+
+const syncTimeScales = (mainChart, subChart) => {
+    if (!mainChart) return;
+    const syncToSub = () => {
+        const r = mainChart.timeScale().getVisibleLogicalRange();
+        if (r) subChart.timeScale().setVisibleLogicalRange(r);
+    };
+    mainChart.timeScale().subscribeVisibleLogicalRangeChange(syncToSub);
+    syncToSub();
+    subChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+        if (range) mainChart.timeScale().setVisibleLogicalRange(range);
+    });
+};
+
+const cleanupChart = (chartRef) => {
+    if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+    }
+};
+
 const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, rsiIndicator, hasMACD, macdIndicator, showVolume, data }) => {
     const rsiChartRef = useRef(null);
     const rsiContainerRef = useRef(null);
@@ -14,17 +44,11 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
 
     useEffect(() => {
         if (!hasRSI || !rsiContainerRef.current || !candleDataRef.current.length) {
-            if (rsiChartRef.current) { rsiChartRef.current.remove(); rsiChartRef.current = null; }
+            cleanupChart(rsiChartRef);
             return;
         }
-        if (rsiChartRef.current) { rsiChartRef.current.remove(); rsiChartRef.current = null; }
-        const opts = getChartOptions(isDark);
-        const rsiChart = createChart(rsiContainerRef.current, {
-            ...opts,
-            width: rsiContainerRef.current.clientWidth,
-            height: 150,
-            timeScale: { ...opts.timeScale, visible: false },
-        });
+        cleanupChart(rsiChartRef);
+        const rsiChart = createSubChart(rsiContainerRef.current, isDark, 150);
         rsiChartRef.current = rsiChart;
         const period = rsiIndicator?.period || 14;
         const rsiData = calculateRSI(candleDataRef.current, period);
@@ -40,21 +64,8 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
             scaleMargins: { top: 0.05, bottom: 0.05 },
             autoScale: false,
         });
-        const mainChart = chartRef.current;
-        if (mainChart) {
-            const syncRange = () => {
-                const r = mainChart.timeScale().getVisibleLogicalRange();
-                if (r) rsiChart.timeScale().setVisibleLogicalRange(r);
-            };
-            mainChart.timeScale().subscribeVisibleLogicalRangeChange(syncRange);
-            syncRange();
-            rsiChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
-                if (range) mainChart.timeScale().setVisibleLogicalRange(range);
-            });
-        }
-        return () => {
-            if (rsiChartRef.current) { rsiChartRef.current.remove(); rsiChartRef.current = null; }
-        };
+        syncTimeScales(chartRef.current, rsiChart);
+        return () => cleanupChart(rsiChartRef);
     }, [hasRSI, rsiIndicator, data]);
 
     useEffect(() => {
@@ -63,17 +74,11 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
 
     useEffect(() => {
         if (!hasMACD || !macdContainerRef.current || !candleDataRef.current.length) {
-            if (macdChartRef.current) { macdChartRef.current.remove(); macdChartRef.current = null; }
+            cleanupChart(macdChartRef);
             return;
         }
-        if (macdChartRef.current) { macdChartRef.current.remove(); macdChartRef.current = null; }
-        const opts = getChartOptions(isDark);
-        const macdChart = createChart(macdContainerRef.current, {
-            ...opts,
-            width: macdContainerRef.current.clientWidth,
-            height: 150,
-            timeScale: { ...opts.timeScale, visible: false },
-        });
+        cleanupChart(macdChartRef);
+        const macdChart = createSubChart(macdContainerRef.current, isDark, 150);
         macdChartRef.current = macdChart;
         const { macd, signal, histogram } = calculateMACD(candleDataRef.current);
         const histSeries = macdChart.addSeries(HistogramSeries, {
@@ -101,21 +106,8 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         macdChart.priceScale('right').applyOptions({
             scaleMargins: { top: 0.1, bottom: 0.1 },
         });
-        const mainChart = chartRef.current;
-        if (mainChart) {
-            const syncRange = () => {
-                const r = mainChart.timeScale().getVisibleLogicalRange();
-                if (r) macdChart.timeScale().setVisibleLogicalRange(r);
-            };
-            mainChart.timeScale().subscribeVisibleLogicalRangeChange(syncRange);
-            syncRange();
-            macdChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
-                if (range) mainChart.timeScale().setVisibleLogicalRange(range);
-            });
-        }
-        return () => {
-            if (macdChartRef.current) { macdChartRef.current.remove(); macdChartRef.current = null; }
-        };
+        syncTimeScales(chartRef.current, macdChart);
+        return () => cleanupChart(macdChartRef);
     }, [hasMACD, macdIndicator, data]);
 
     useEffect(() => {
@@ -124,32 +116,15 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
 
     useEffect(() => {
         if (!showVolume || !volumeContainerRef.current || !volumeDataRef.current.length) {
-            if (volumeChartRef.current) { volumeChartRef.current.remove(); volumeChartRef.current = null; }
+            cleanupChart(volumeChartRef);
             return;
         }
-        const vopts = getChartOptions(isDark);
-        const volChart = createChart(volumeContainerRef.current, {
-            ...vopts,
-            width: volumeContainerRef.current.clientWidth,
-            height: 120,
-            timeScale: { ...vopts.timeScale, visible: false },
-        });
+        const volChart = createSubChart(volumeContainerRef.current, isDark, 120);
         volumeChartRef.current = volChart;
         const volSeries = volChart.addSeries(HistogramSeries, { color: '#26a69a', priceFormat: { type: 'volume' } });
         volSeries.setData(volumeDataRef.current);
-        const mainChart = chartRef.current;
-        if (mainChart) {
-            const sync = () => {
-                const r = mainChart.timeScale().getVisibleLogicalRange();
-                if (r) volChart.timeScale().setVisibleLogicalRange(r);
-            };
-            mainChart.timeScale().subscribeVisibleLogicalRangeChange(sync);
-            sync();
-            volChart.timeScale().subscribeVisibleLogicalRangeChange(range => {
-                if (range) mainChart.timeScale().setVisibleLogicalRange(range);
-            });
-        }
-        return () => { if (volumeChartRef.current) { volumeChartRef.current.remove(); volumeChartRef.current = null; } };
+        syncTimeScales(chartRef.current, volChart);
+        return () => cleanupChart(volumeChartRef);
     }, [showVolume, data]);
 
     useEffect(() => {

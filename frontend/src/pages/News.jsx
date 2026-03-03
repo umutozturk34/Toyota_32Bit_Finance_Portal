@@ -2,10 +2,14 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Globe, Bitcoin, Landmark, Coins, Flag,
-    AlertCircle, Newspaper, ExternalLink, Calendar, User, Loader2, SearchX
+    Newspaper, ExternalLink, Calendar, User, SearchX
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { newsService } from '../services/dataService';
+import { filterNewsByCategory } from '../utils/newsCategories';
+import { formatDateLong } from '../utils/formatters';
+import LoadingState from '../components/LoadingState';
+import ErrorState from '../components/ErrorState';
 const categories = [
     { key: 'all', label: 'Tümü (25)', icon: Globe },
     { key: 'CRYPTO', label: 'Kripto', icon: Bitcoin },
@@ -30,40 +34,6 @@ const News = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [category, setCategory] = useState('all');
-    const categoryRules = [
-        {
-            name: 'CRYPTO',
-            keywords: ['bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'cryptocurrency', 'blockchain',
-                'dogecoin', 'ripple', 'xrp', 'binance', 'coinbase', 'solana', 'cardano',
-                'defi', 'nft', 'altcoin', 'stablecoin', 'usdt', 'usdc', 'crypto mining',
-                'liquidation', 'memecoin', 'shiba', 'pepe coin', 'litecoin', 'polkadot',
-                'avalanche', 'chainlink', 'uniswap', 'aave'],
-        },
-        {
-            name: 'FOREX_METALS',
-            keywords: ['forex', 'gold futures', 'gold price', 'silver price', 'precious metal', 'platinum',
-                'currency', 'exchange rate', 'tariff', 'trade war', 'trade deal',
-                'copper', 'oil price', 'crude oil', 'commodity', 'commodities',
-                'döviz', 'altın', 'gümüş', 'petrol', 'inflation data', 'cpi',
-                'canada tariff', 'mexico tariff', 'china tariff', 'import duty'],
-        },
-        {
-            name: 'ISTANBUL_STOCK',
-            keywords: ['borsa istanbul', 'bist', 'xu100', 'istanbul stock', 'turkish stock',
-                'aselsan', 'thyao', 'turkish airlines', 'garanti', 'akbank', 'türkiye',
-                'koç', 'sabancı', 'halkbank', 'yapı kredi', 'eregli', 'tupras',
-                'arcelik', 'bim', 'migros', 'gyo', 'turkish economy', 'turkey inflation',
-                'turkey stock', 'turkey economy', 'turkish lira'],
-        },
-        {
-            name: 'US_STOCK',
-            keywords: ['wall street', 'nasdaq', 'dow jones', 's&p 500', 'nyse',
-                'aapl', 'apple inc', 'msft', 'microsoft', 'googl', 'alphabet',
-                'tesla', 'tsla', 'amazon', 'amzn', 'meta platforms', 'nvidia', 'nvda',
-                'amd', 'intel', 'netflix', 'jpmorgan', 'goldman sachs', 'berkshire',
-                'fed chair', 'federal reserve', 'earnings report', 'stock rally'],
-        },
-    ];
     useEffect(() => {
         fetchAllNews();
     }, []);
@@ -84,48 +54,14 @@ const News = () => {
             setLoading(false);
         }
     };
-    const getArticleCategory = (article) => {
-        const text = `${article.title || ''} ${article.description || ''}`.toLowerCase();
-        for (const rule of categoryRules) {
-            if (rule.keywords.some(keyword => text.includes(keyword.toLowerCase()))) {
-                return rule.name;
-            }
-        }
-        return 'GENERAL';
-    };
     const filteredNews = useMemo(() => {
-        if (category === 'all') return allNews.slice(0, 25);
-        return allNews.filter(article => getArticleCategory(article) === category);
+        return filterNewsByCategory(allNews, category);
     }, [allNews, category]);
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('tr-TR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-        });
-    };
     const openArticle = (url) => {
         window.open(url, '_blank', 'noopener,noreferrer');
     };
-        if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 size={32} className="text-accent animate-spin" />
-                <span className="text-fg-muted text-sm">Loading news...</span>
-            </div>
-        );
-    }
-        if (error) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <div className="flex items-center gap-3 px-5 py-3 rounded-lg border border-danger/30 bg-bg-base">
-                    <AlertCircle size={20} className="text-danger" />
-                    <span className="text-danger text-sm font-medium">{error}</span>
-                </div>
-            </div>
-        );
-    }
+    if (loading) return <LoadingState message="Loading news..." />;
+    if (error) return <ErrorState message={error} onRetry={fetchAllNews} />;
     return (
         <div className="py-6">
             {}
@@ -240,7 +176,7 @@ const News = () => {
                                     <div className="flex items-center justify-between pt-2.5 border-t border-border-default text-fg-subtle text-xs">
                                         <div className="flex items-center gap-1.5">
                                             <Calendar size={12} strokeWidth={1.6} />
-                                            <span>{formatDate(article.publishedAt)}</span>
+                                            <span>{formatDateLong(article.publishedAt)}</span>
                                         </div>
                                         {article.author && (
                                             <div className="flex items-center gap-1.5 truncate max-w-[45%]">

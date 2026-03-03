@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
     BarChart2, X, LineChart, Activity, PenTool, Triangle,
 } from 'lucide-react';
@@ -23,14 +23,14 @@ const TABS = [
 const LightweightChart = ({ data, symbol }) => {
     const { isDark } = useTheme();
     const renderDrawingsRef = useRef(null);
+    const textDoneRef = useRef(false);
     const [activeTab, setActiveTab] = useState('indicators');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showVolume, setShowVolume] = useState(false);
     const [chartType, setChartType] = useState('line');
     const [magnetMode, setMagnetMode] = useState('off');
-    const [textInput, setTextInput] = useState('Breakout');
-    const [textSize, setTextSize] = useState(13);
     const [selectedIcon, setSelectedIcon] = useState('🚀');
+    const [iconSize, setIconSize] = useState(22);
 
     const { indicators, addIndicator, removeIndicator, updateIndicator, toggleIndicator } = useIndicators();
     const { drawings, activeTool, addDrawing, removeDrawing, undoDrawing, clearDrawings, selectTool, cancelTool } = useDrawings();
@@ -54,37 +54,42 @@ const LightweightChart = ({ data, symbol }) => {
         canvasOverlayRef, freehandCanvasRef,
         handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave,
         isAnyToolActive, handleSelectTool, handleSelectFibTool, cancelAllDrawing,
+        textEditState, commitTextEdit, cancelTextEdit,
     } = useChartDrawing({
         chartRef, candleSeriesRef, candleDataRef, isDark,
         drawings, addDrawing, cancelTool,
         fibTools, addFibTool, cancelFibTool,
         activeTool, activeFibTool,
-        magnetMode, textInput, textSize, selectedIcon,
+        magnetMode, selectedIcon, iconSize,
         data, symbol, renderDrawingsRef,
         selectTool, selectFibTool,
     });
 
+    useEffect(() => {
+        if (textEditState) textDoneRef.current = false;
+    }, [textEditState]);
+
     if (!data?.candles?.length) {
         return (
-            <div className="flex flex-col items-center justify-center h-80 rounded-xl border" style={{ background: isDark ? '#050506' : '#f9fafb', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)' }}>
-                <LineChart className="w-12 h-12 mb-3" style={{ color: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)' }} />
+            <div className="flex flex-col items-center justify-center h-80 rounded-xl border" style={{ background: isDark ? '#050506' : '#f8fafc', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
+                <LineChart className="w-12 h-12 mb-3" style={{ color: isDark ? 'rgba(255,255,255,0.2)' : '#94a3b8' }} />
                 <p className="text-fg-muted text-sm">Waiting for chart data...</p>
             </div>
         );
     }
 
     return (
-        <div className="flex rounded-xl border overflow-hidden" style={{ minHeight: 560, background: isDark ? '#020203' : '#f9fafb', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)' }}>
+        <div className="flex rounded-xl border overflow-hidden" style={{ minHeight: 560, background: isDark ? '#020203' : '#f8fafc', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
             {sidebarOpen && (
-                <div className="w-56 shrink-0 border-r flex flex-col" style={{ background: isDark ? '#0a0a0c' : '#f3f4f6', borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
-                    <div className="flex border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
+                <div className="w-56 shrink-0 border-r flex flex-col" style={{ background: isDark ? '#0a0a0c' : '#eef1f6', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
+                    <div className="flex border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
                         {TABS.map(({ id, label, Icon }) => (
                             <button
                                 key={id}
                                 onClick={() => setActiveTab(id)}
                                 className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold uppercase tracking-wider border-none cursor-pointer transition-all duration-150"
                                 style={{
-                                    background: activeTab === id ? (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)') : 'transparent',
+                                    background: activeTab === id ? (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)') : 'transparent',
                                     color: activeTab === id ? 'var(--color-fg)' : 'var(--color-fg-muted)',
                                     borderBottom: activeTab === id ? '2px solid #5E6AD2' : '2px solid transparent',
                                 }}
@@ -115,10 +120,8 @@ const LightweightChart = ({ data, symbol }) => {
                                 clearDrawings={clearDrawings}
                                 selectedIcon={selectedIcon}
                                 setSelectedIcon={setSelectedIcon}
-                                textInput={textInput}
-                                setTextInput={setTextInput}
-                                textSize={textSize}
-                                setTextSize={setTextSize}
+                                iconSize={iconSize}
+                                setIconSize={setIconSize}
                             />
                         )}
                         {activeTab === 'fibonacci' && (
@@ -132,13 +135,13 @@ const LightweightChart = ({ data, symbol }) => {
                             />
                         )}
                     </div>
-                    <div className="border-t p-2.5 space-y-1.5" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
+                    <div className="border-t p-2.5 space-y-1.5" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
                         <button
                             onClick={() => setShowVolume(!showVolume)}
                             className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 cursor-pointer"
                             style={{
                                 background: showVolume ? 'rgba(38,166,154,0.1)' : 'transparent',
-                                borderColor: showVolume ? 'rgba(38,166,154,0.3)' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)'),
+                                borderColor: showVolume ? 'rgba(38,166,154,0.3)' : (isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'),
                                 color: showVolume ? '#26a69a' : 'var(--color-fg-muted)',
                             }}
                         >
@@ -188,10 +191,58 @@ const LightweightChart = ({ data, symbol }) => {
                         className="absolute inset-0 w-full pointer-events-none"
                         style={{ height: 500, zIndex: 11 }}
                     />
+                    {textEditState && (
+                        <input
+                            autoFocus
+                            type="text"
+                            placeholder="Type here..."
+                            className="absolute outline-none"
+                            style={{
+                                left: textEditState.x,
+                                top: textEditState.y - 18,
+                                fontSize: 14,
+                                fontFamily: 'Inter, sans-serif',
+                                fontWeight: 500,
+                                color: isDark ? '#EDEDEF' : '#0f172a',
+                                background: isDark ? 'rgba(10,10,14,0.95)' : '#ffffff',
+                                border: '1.5px solid #5E6AD2',
+                                borderRadius: 6,
+                                padding: '4px 8px',
+                                zIndex: 20,
+                                minWidth: 80,
+                                maxWidth: 320,
+                                caretColor: '#5E6AD2',
+                                boxShadow: '0 2px 8px rgba(94,106,210,0.18)',
+                                letterSpacing: '0.01em',
+                            }}
+                            onChange={(e) => {
+                                const el = e.target;
+                                el.style.width = '0';
+                                el.style.width = `${Math.max(80, Math.min(320, el.scrollWidth + 16))}px`;
+                            }}
+                            onKeyDown={(e) => {
+                                e.stopPropagation();
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    textDoneRef.current = true;
+                                    commitTextEdit(e.target.value);
+                                } else if (e.key === 'Escape') {
+                                    textDoneRef.current = true;
+                                    cancelTextEdit();
+                                }
+                            }}
+                            onBlur={(e) => {
+                                if (textDoneRef.current) return;
+                                textDoneRef.current = true;
+                                if (e.target.value.trim()) commitTextEdit(e.target.value);
+                                else cancelTextEdit();
+                            }}
+                        />
+                    )}
                 </div>
                 {hasRSI && (
-                    <div className="border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
-                        <div className="flex items-center justify-between px-3 py-1.5" style={{ background: isDark ? '#0a0a0c' : '#f3f4f6' }}>
+                    <div className="border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
+                        <div className="flex items-center justify-between px-3 py-1.5" style={{ background: isDark ? '#0a0a0c' : '#eef1f6' }}>
                             <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
                                 <Activity className="w-3.5 h-3.5" style={{ color: rsiIndicator?.color || '#e91e63' }} />
                                 RSI {rsiIndicator?.period || 14}
@@ -207,8 +258,8 @@ const LightweightChart = ({ data, symbol }) => {
                     </div>
                 )}
                 {hasMACD && (
-                    <div className="border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
-                        <div className="flex items-center justify-between px-3 py-1.5" style={{ background: isDark ? '#0a0a0c' : '#f3f4f6' }}>
+                    <div className="border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
+                        <div className="flex items-center justify-between px-3 py-1.5" style={{ background: isDark ? '#0a0a0c' : '#eef1f6' }}>
                             <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
                                 <Activity className="w-3.5 h-3.5" style={{ color: macdIndicator?.color || '#06b6d4' }} />
                                 MACD (12, 26, 9)
@@ -224,8 +275,8 @@ const LightweightChart = ({ data, symbol }) => {
                     </div>
                 )}
                 {showVolume && (
-                    <div className="border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }}>
-                        <div className="flex items-center justify-between px-3 py-1.5" style={{ background: isDark ? '#0a0a0c' : '#f3f4f6' }}>
+                    <div className="border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
+                        <div className="flex items-center justify-between px-3 py-1.5" style={{ background: isDark ? '#0a0a0c' : '#eef1f6' }}>
                             <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
                                 <BarChart2 className="w-3.5 h-3.5 text-[#26a69a]" />
                                 Volume

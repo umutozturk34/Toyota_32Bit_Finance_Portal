@@ -1,5 +1,4 @@
 package com.finance.backend.exception;
-import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -23,18 +22,28 @@ public class GlobalExceptionHandler {
                 .body(error);
     }
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ApiResponse<Object>> handleResourceNotFoundException(ResourceNotFoundException ex) {
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex, HttpServletRequest request) {
         log.warn("Resource not found: {}", ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+            ex.getMessage(),
+            "RESOURCE_NOT_FOUND",
+            request.getRequestURI()
+        );
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(error);
     }
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ApiResponse<Object>> handleBadRequestException(BadRequestException ex) {
+    public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException ex, HttpServletRequest request) {
         log.warn("Bad request: {}", ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+            ex.getMessage(),
+            "BAD_REQUEST",
+            request.getRequestURI()
+        );
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(error);
     }
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex, HttpServletRequest request) {
@@ -94,16 +103,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex, HttpServletRequest request) {
         log.error("Runtime exception: {}", ex.getMessage(), ex);
-        if (ex.getMessage() != null && ex.getMessage().contains("Critical API failure")) {
-            ErrorResponse error = ErrorResponse.of(
-                "External service temporarily unavailable: " + ex.getMessage(),
-                "SERVICE_UNAVAILABLE",
-                request.getRequestURI()
-            );
-            return ResponseEntity
-                    .status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(error);
-        }
         ErrorResponse error = ErrorResponse.of(
             "An unexpected error occurred",
             "INTERNAL_ERROR",

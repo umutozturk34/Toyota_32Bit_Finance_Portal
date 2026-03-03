@@ -35,6 +35,9 @@ public class StockCandle extends BaseCandle {
     private Stock stock;
     @Column(name = "stock_symbol", insertable = false, updatable = false, nullable = false)
     private String stockSymbol;
+
+    @Column(name = "volume")
+    private Long volume;
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -32,6 +32,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
     useEffect(() => {
         if (!chartContainerRef.current || !data?.candles?.length) return;
         if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
+        indicatorSeriesRef.current = {};
         const chart = createChart(chartContainerRef.current, {
             ...getChartOptions(isDark),
             width: chartContainerRef.current.clientWidth,
@@ -143,7 +144,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 indicatorSeriesRef.current[ind.id] = series;
             }
         });
-    }, [indicators, data]);
+    }, [indicators, data, chartType]);
 
     return { chartRef, chartContainerRef, candleSeriesRef, candleDataRef, volumeDataRef, trend, crosshairData };
 };

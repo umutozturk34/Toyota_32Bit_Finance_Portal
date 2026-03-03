@@ -38,6 +38,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       COINGECKO_API_KEY: ${COINGECKO_KEY}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     env_file:
       - .env
     depends_on:
@@ -114,10 +115,13 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak/realm-simple.json:/opt/keycloak/data/import/realm-finance.json:ro
+      - ./keycloak/themes/finance:/opt/keycloak/themes/finance:ro
     depends_on:
       db:
         condition: service_healthy
       openldap:
+        condition: service_started
+      mailpit:
         condition: service_started
     networks:
       - finance-network
@@ -129,14 +133,24 @@ services:
     restart: unless-stopped
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - finance-network
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: finance-mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
     networks:
       - finance-network
 

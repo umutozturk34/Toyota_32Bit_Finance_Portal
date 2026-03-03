@@ -2,10 +2,10 @@ package com.finance.backend.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 @Entity
@@ -25,8 +25,8 @@ import java.util.Objects;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class ForexCandle {
+@SuperBuilder
+public class ForexCandle extends BaseCandle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -37,16 +37,6 @@ public class ForexCandle {
     private Forex forex;
     @Column(name = "currency_code", insertable = false, updatable = false, nullable = false)
     private String currencyCode;
-    @Column(name = "candle_date", nullable = false)
-    private LocalDateTime candleDate;
-    @Column(name = "open", precision = 19, scale = 4)
-    private BigDecimal open;
-    @Column(name = "high", precision = 19, scale = 4)
-    private BigDecimal high;
-    @Column(name = "low", precision = 19, scale = 4)
-    private BigDecimal low;
-    @Column(name = "close", precision = 19, scale = 4)
-    private BigDecimal close;
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

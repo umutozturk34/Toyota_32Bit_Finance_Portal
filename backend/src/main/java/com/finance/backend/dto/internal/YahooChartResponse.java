@@ -38,6 +38,7 @@ public record YahooChartResponse(Chart chart) {
     ) {}
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Indicators(List<Quote> quote) {}
+    
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Quote(
             List<BigDecimal> open,

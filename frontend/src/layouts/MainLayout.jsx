@@ -33,23 +33,23 @@ const MainLayout = () => {
   const isHomePage = location.pathname === '/';
   return (
     <div className="flex flex-col min-h-screen bg-bg-base relative">
-      {}
+      { }
       {isDark && (
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-          {}
+          { }
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#0c0a14_0%,#050506_50%,#020203_100%)]" />
-          {}
+          { }
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(rgba(140,130,220,0.8) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-          {}
+          { }
           <div className="absolute -top-[200px] left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full bg-accent/[0.08] blur-[150px] animate-float-slow" />
           <div className="absolute top-[30%] -left-[200px] w-[600px] h-[500px] rounded-full bg-[#7c3aed]/[0.05] blur-[120px] animate-float-mid" />
           <div className="absolute top-[50%] -right-[150px] w-[500px] h-[400px] rounded-full bg-accent/[0.04] blur-[100px] animate-float-fast" />
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-[#7c3aed]/[0.05] blur-[120px] animate-pulse-glow" />
-          {}
+          { }
           <div className="absolute inset-0 noise-overlay" />
         </div>
       )}
-      {}
+      { }
       <header
         className="sticky top-0 z-50 border-b border-border-default"
         style={{
@@ -60,17 +60,17 @@ const MainLayout = () => {
           WebkitBackdropFilter: 'blur(16px) saturate(1.8)',
         }}
       >
-        {}
+        { }
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border-hover to-transparent" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-6 relative">
-          {}
+          { }
           <Link to="/" className="flex items-center gap-2.5 no-underline shrink-0 group">
             <span className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-accent/15 text-accent group-hover:bg-accent/25 transition-all duration-200">
               <TrendingUp className="w-4.5 h-4.5" />
               <span className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ boxShadow: '0 0 16px rgba(94,106,210,0.3)' }} />
             </span>
           </Link>
-          {}
+          { }
           <nav className="hidden lg:flex items-center gap-0.5">
             {allNav.map(({ to, label, Icon }) => (
               <Link
@@ -99,9 +99,9 @@ const MainLayout = () => {
               </Link>
             ))}
           </nav>
-          {}
+          { }
           <div className="flex items-center gap-1.5 shrink-0">
-            {}
+            { }
             <button
               onClick={toggleTheme}
               className="group flex items-center justify-center w-8 h-8 rounded-md bg-transparent border-none cursor-pointer text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150"
@@ -145,7 +145,7 @@ const MainLayout = () => {
                 Login
               </button>
             )}
-            {}
+            { }
             <button
               className="flex lg:hidden items-center justify-center w-8 h-8 bg-transparent border-none cursor-pointer text-fg-muted hover:text-fg transition-colors"
               onClick={() => setMenuOpen(!menuOpen)}
@@ -155,7 +155,7 @@ const MainLayout = () => {
             </button>
           </div>
         </div>
-        {}
+        { }
         <AnimatePresence>
           {menuOpen && (
             <motion.div
@@ -165,7 +165,7 @@ const MainLayout = () => {
               transition={{ duration: 0.15 }}
               className="lg:hidden overflow-hidden border-t border-border-default"
               style={{
-                background: isDark ? 'rgba(5, 5, 6, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                background: isDark ? 'rgba(5, 5, 6, 0.95)' : 'rgba(248, 250, 252, 0.97)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
               }}
@@ -188,13 +188,13 @@ const MainLayout = () => {
           )}
         </AnimatePresence>
       </header>
-      {}
+      { }
       <main className="flex-1 w-full relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
           <Outlet />
         </div>
       </main>
-      {}
+      { }
       <footer className="relative z-10 border-t border-border-default">
         <div className="section-line" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex items-center justify-between">

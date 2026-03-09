@@ -132,6 +132,11 @@ public class TefasClient {
             TefasResponse tefasResponse = objectMapper.readValue(responseBody, TefasResponse.class);
 
             log.debug("TEFAS response: type={}, code={}, records={}", fundType, fundCode, tefasResponse.recordsTotal());
+
+            if (tefasResponse.recordsTotal() == 0) {
+                return new TefasResponse(0, 0, 0, List.of());
+            }
+
             return tefasResponse;
         } catch (ExternalApiException e) {
             throw e;
@@ -177,6 +182,11 @@ public class TefasClient {
 
             TefasResponse tefasResponse = objectMapper.readValue(responseBody, TefasResponse.class);
             log.debug("TEFAS retry success: type={}, code={}, records={}", fundType, fundCode, tefasResponse.recordsTotal());
+
+            if (tefasResponse.recordsTotal() == 0) {
+                return new TefasResponse(0, 0, 0, List.of());
+            }
+
             return tefasResponse;
         } catch (Exception e) {
             log.warn("TEFAS retry failed for {} {}: {}", fundType, fundCode, e.getMessage());

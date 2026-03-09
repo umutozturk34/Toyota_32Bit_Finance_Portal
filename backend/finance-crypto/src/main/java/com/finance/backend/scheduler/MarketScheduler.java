@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 public class MarketScheduler {
     private final MarketDataService marketDataService;
     private final TaskTrackingService taskTracker;
-    @Scheduled(cron = "0 5 0 * * *", zone = "Europe/Istanbul")
+    @Scheduled(cron = "0 30 19 * * *", zone = "Europe/Istanbul")
     public void runFullDailyMarketUpdate() {
         log.info("[MARKET-SCHEDULER] Starting full daily market synchronization...");
         TaskInfo started = taskTracker.startTask("scheduled-crypto-full", "Scheduled daily crypto update (snapshots + candles)");

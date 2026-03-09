@@ -14,6 +14,7 @@ import Stocks from './pages/Stocks';
 import Crypto from './pages/Crypto';
 import Forex from './pages/Forex';
 import Metals from './pages/Metals';
+import Funds from './pages/Funds';
 import ChartView from './pages/ChartView';
 function App() {
   return (
@@ -85,6 +86,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Metals />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="funds" 
+              element={
+                <ProtectedRoute>
+                  <Funds />
                 </ProtectedRoute>
               } 
             />

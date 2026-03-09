@@ -30,12 +30,8 @@ const Metals = () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await metalService.getLatestPrices();
-            if (response.success && response.data) {
-                setMetals(response.data || []);
-            } else {
-                setError('Failed to load precious metals data');
-            }
+            const data = await metalService.getMetals();
+            setMetals(data || []);
         } catch (err) {
             console.error('Error fetching metals:', err);
             setError('Failed to load precious metals data. Please try again later.');

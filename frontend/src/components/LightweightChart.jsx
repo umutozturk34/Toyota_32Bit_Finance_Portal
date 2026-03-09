@@ -20,34 +20,55 @@ const TABS = [
     { id: 'fibonacci', label: 'Fibonacci', Icon: Triangle },
 ];
 
-const LightweightChart = ({ data, symbol }) => {
+const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = null, compareSymbol = null }) => {
     const { isDark } = useTheme();
     const renderDrawingsRef = useRef(null);
     const textDoneRef = useRef(false);
     const [activeTab, setActiveTab] = useState('indicators');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showVolume, setShowVolume] = useState(false);
-    const [chartType, setChartType] = useState('line');
+    const [chartType, setChartType] = useState(assetType === 'FUND' ? 'line' : 'line');
     const [magnetMode, setMagnetMode] = useState('off');
-    const [selectedIcon, setSelectedIcon] = useState('🚀');
+    const [selectedIcon, setSelectedIcon] = useState('\u{1F680}');
     const [iconSize, setIconSize] = useState(22);
+
+    const isFund = assetType === 'FUND';
+    const isCrypto = assetType === 'CRYPTO';
+    const showVolumeToggle = !isFund && !isCrypto;
+    const showFibTab = !isFund;
+    const allowCandle = !isFund;
+    const [showInvestorCount, setShowInvestorCount] = useState(false);
+    const [showPortfolioSize, setShowPortfolioSize] = useState(false);
+
+    const hasInvestorCountData = useMemo(() =>
+        isFund && data?.candles?.some(c => c.investorCount != null), [data, isFund]);
+    const hasPortfolioSizeData = useMemo(() =>
+        isFund && data?.candles?.some(c => c.portfolioSize != null), [data, isFund]);
 
     const { indicators, addIndicator, removeIndicator, updateIndicator, toggleIndicator } = useIndicators();
     const { drawings, activeTool, addDrawing, removeDrawing, undoDrawing, clearDrawings, selectTool, cancelTool } = useDrawings();
     const { fibTools, activeFibTool, addFibTool, removeFibTool, clearFibTools, selectFibTool, cancelFibTool } = useFibonacci();
 
-    const hasRSI = useMemo(() => indicators.some(i => i.type === 'RSI' && i.visible), [indicators]);
+    const filteredIndicators = useMemo(() => {
+        if (isFund) return indicators.filter(i => i.type === 'SMA' || i.type === 'EMA');
+        return indicators;
+    }, [indicators, isFund]);
+
+    const hasRSI = useMemo(() => !isFund && indicators.some(i => i.type === 'RSI' && i.visible), [indicators, isFund]);
     const rsiIndicator = useMemo(() => indicators.find(i => i.type === 'RSI' && i.visible), [indicators]);
-    const hasMACD = useMemo(() => indicators.some(i => i.type === 'MACD' && i.visible), [indicators]);
+    const hasMACD = useMemo(() => !isFund && indicators.some(i => i.type === 'MACD' && i.visible), [indicators, isFund]);
     const macdIndicator = useMemo(() => indicators.find(i => i.type === 'MACD' && i.visible), [indicators]);
 
     const { chartRef, chartContainerRef, candleSeriesRef, candleDataRef, volumeDataRef, trend, crosshairData } = useChartCore({
-        data, symbol, chartType, isDark, indicators, renderDrawingsRef,
+        data, symbol, chartType: allowCandle ? chartType : 'line', isDark, indicators: filteredIndicators, renderDrawingsRef, assetType,
+        compareData, compareSymbol,
     });
 
-    const { rsiContainerRef, macdContainerRef, volumeContainerRef } = useSubCharts({
+    const { rsiContainerRef, macdContainerRef, volumeContainerRef, investorCountContainerRef, portfolioSizeContainerRef } = useSubCharts({
         chartRef, candleDataRef, volumeDataRef, isDark,
-        hasRSI, rsiIndicator, hasMACD, macdIndicator, showVolume, data,
+        hasRSI, rsiIndicator, hasMACD, macdIndicator, showVolume: showVolumeToggle && showVolume, data,
+        showInvestorCount: isFund && showInvestorCount,
+        showPortfolioSize: isFund && showPortfolioSize,
     });
 
     const {
@@ -58,8 +79,8 @@ const LightweightChart = ({ data, symbol }) => {
     } = useChartDrawing({
         chartRef, candleSeriesRef, candleDataRef, isDark,
         drawings, addDrawing, cancelTool,
-        fibTools, addFibTool, cancelFibTool,
-        activeTool, activeFibTool,
+        fibTools: showFibTab ? fibTools : [], addFibTool, cancelFibTool,
+        activeTool, activeFibTool: showFibTab ? activeFibTool : null,
         magnetMode, selectedIcon, iconSize,
         data, symbol, renderDrawingsRef,
         selectTool, selectFibTool,
@@ -83,7 +104,7 @@ const LightweightChart = ({ data, symbol }) => {
             {sidebarOpen && (
                 <div className="w-56 shrink-0 border-r flex flex-col" style={{ background: isDark ? '#0a0a0c' : '#eef1f6', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
                     <div className="flex border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
-                        {TABS.map(({ id, label, Icon }) => (
+                        {TABS.filter(t => showFibTab || t.id !== 'fibonacci').map(({ id, label, Icon }) => (
                             <button
                                 key={id}
                                 onClick={() => setActiveTab(id)}
@@ -107,6 +128,7 @@ const LightweightChart = ({ data, symbol }) => {
                                 removeIndicator={removeIndicator}
                                 updateIndicator={updateIndicator}
                                 toggleIndicator={toggleIndicator}
+                                allowedTypes={isFund ? ['SMA', 'EMA'] : undefined}
                             />
                         )}
                         {activeTab === 'drawings' && (
@@ -136,18 +158,56 @@ const LightweightChart = ({ data, symbol }) => {
                         )}
                     </div>
                     <div className="border-t p-2.5 space-y-1.5" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
-                        <button
-                            onClick={() => setShowVolume(!showVolume)}
-                            className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 cursor-pointer"
-                            style={{
-                                background: showVolume ? 'rgba(38,166,154,0.1)' : 'transparent',
-                                borderColor: showVolume ? 'rgba(38,166,154,0.3)' : (isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'),
-                                color: showVolume ? '#26a69a' : 'var(--color-fg-muted)',
-                            }}
-                        >
-                            <BarChart2 className="w-3.5 h-3.5" />
-                            Volume
-                        </button>
+                        {showVolumeToggle && (
+                            <button
+                                onClick={() => setShowVolume(!showVolume)}
+                                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 cursor-pointer"
+                                style={{
+                                    background: showVolume ? 'rgba(38,166,154,0.1)' : 'transparent',
+                                    borderColor: showVolume ? 'rgba(38,166,154,0.3)' : (isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'),
+                                    color: showVolume ? '#26a69a' : 'var(--color-fg-muted)',
+                                }}
+                            >
+                                <BarChart2 className="w-3.5 h-3.5" />
+                                Volume
+                            </button>
+                        )}
+                        {isFund && (
+                            <>
+                                <button
+                                    onClick={() => hasInvestorCountData && setShowInvestorCount(!showInvestorCount)}
+                                    disabled={!hasInvestorCountData}
+                                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150"
+                                    style={{
+                                        background: showInvestorCount ? 'rgba(99,102,241,0.1)' : 'transparent',
+                                        borderColor: showInvestorCount ? 'rgba(99,102,241,0.3)' : (isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'),
+                                        color: !hasInvestorCountData ? 'var(--color-fg-subtle)' : showInvestorCount ? '#6366f1' : 'var(--color-fg-muted)',
+                                        opacity: hasInvestorCountData ? 1 : 0.45,
+                                        cursor: hasInvestorCountData ? 'pointer' : 'not-allowed',
+                                    }}
+                                    title={hasInvestorCountData ? 'Kişi Sayısı' : 'Bu fon için kişi sayısı verisi yok'}
+                                >
+                                    <Activity className="w-3.5 h-3.5" />
+                                    Kişi Sayısı
+                                </button>
+                                <button
+                                    onClick={() => hasPortfolioSizeData && setShowPortfolioSize(!showPortfolioSize)}
+                                    disabled={!hasPortfolioSizeData}
+                                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150"
+                                    style={{
+                                        background: showPortfolioSize ? 'rgba(16,185,129,0.1)' : 'transparent',
+                                        borderColor: showPortfolioSize ? 'rgba(16,185,129,0.3)' : (isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'),
+                                        color: !hasPortfolioSizeData ? 'var(--color-fg-subtle)' : showPortfolioSize ? '#10b981' : 'var(--color-fg-muted)',
+                                        opacity: hasPortfolioSizeData ? 1 : 0.45,
+                                        cursor: hasPortfolioSizeData ? 'pointer' : 'not-allowed',
+                                    }}
+                                    title={hasPortfolioSizeData ? 'Portföy Büyüklüğü' : 'Bu fon için portföy verisi yok'}
+                                >
+                                    <BarChart2 className="w-3.5 h-3.5" />
+                                    Portföy Büyüklüğü
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
@@ -156,19 +216,21 @@ const LightweightChart = ({ data, symbol }) => {
                     isDark={isDark}
                     sidebarOpen={sidebarOpen}
                     setSidebarOpen={setSidebarOpen}
-                    chartType={chartType}
-                    setChartType={setChartType}
+                    chartType={allowCandle ? chartType : 'line'}
+                    setChartType={allowCandle ? setChartType : () => {}}
                     magnetMode={magnetMode}
                     setMagnetMode={setMagnetMode}
                     symbol={symbol}
                     trend={trend}
                     crosshairData={crosshairData}
-                    indicators={indicators}
+                    indicators={filteredIndicators}
                     drawings={drawings}
                     isAnyToolActive={isAnyToolActive}
                     activeTool={activeTool}
-                    activeFibTool={activeFibTool}
+                    activeFibTool={showFibTab ? activeFibTool : null}
                     cancelAllDrawing={cancelAllDrawing}
+                    allowCandle={allowCandle}
+                    compareSymbol={compareSymbol}
                 />
                 <div className="relative flex-1">
                     <div ref={chartContainerRef} className="w-full" style={{ height: 500 }} />
@@ -291,6 +353,41 @@ const LightweightChart = ({ data, symbol }) => {
                         <div ref={volumeContainerRef} />
                     </div>
                 )}
+                {isFund && showInvestorCount && (
+                    <div className="border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
+                        <div className="flex items-center justify-between px-3 py-1.5" style={{ background: isDark ? '#0a0a0c' : '#eef1f6' }}>
+                            <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
+                                <Activity className="w-3.5 h-3.5" style={{ color: '#6366f1' }} />
+                                Kişi Sayısı
+                            </span>
+                            <button
+                                onClick={() => setShowInvestorCount(false)}
+                                className="p-0.5 rounded hover:bg-surface text-fg-subtle hover:text-fg transition-colors cursor-pointer bg-transparent border-none"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                        <div ref={investorCountContainerRef} />
+                    </div>
+                )}
+                {isFund && showPortfolioSize && (
+                    <div className="border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
+                        <div className="flex items-center justify-between px-3 py-1.5" style={{ background: isDark ? '#0a0a0c' : '#eef1f6' }}>
+                            <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
+                                <BarChart2 className="w-3.5 h-3.5" style={{ color: '#10b981' }} />
+                                Portföy Büyüklüğü
+                            </span>
+                            <button
+                                onClick={() => setShowPortfolioSize(false)}
+                                className="p-0.5 rounded hover:bg-surface text-fg-subtle hover:text-fg transition-colors cursor-pointer bg-transparent border-none"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                        <div ref={portfolioSizeContainerRef} />
+                    </div>
+                )}
+
             </div>
         </div>
     );

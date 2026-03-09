@@ -130,7 +130,6 @@ function Crypto() {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <span className="rounded-md border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent-bright">
-                                                #{crypto.symbol}
                                             </span>
                                             <button
                                                 onClick={(e) => {

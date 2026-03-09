@@ -39,6 +39,7 @@ services:
       COINGECKO_API_KEY: ${COINGECKO_KEY}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      FUNDS_ALL: ${FUNDS_ALL}
     env_file:
       - .env
     depends_on:
@@ -161,6 +162,7 @@ services:
       args:
         - VITE_BIST_STOCKS=${BIST_STOCKS}
         - VITE_TRACKED_CRYPTOS=${TRACKED_CRYPTOS}
+        - VITE_FUNDS_ALL=${FUNDS_ALL}
     container_name: finance-frontend
     restart: unless-stopped
     ports:

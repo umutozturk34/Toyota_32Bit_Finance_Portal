@@ -3,6 +3,7 @@ import com.finance.backend.client.CoinGeckoClient;
 import com.finance.backend.dto.external.CoinGeckoCandleDto;
 import com.finance.backend.dto.external.CoinGeckoMarketDto;
 import com.finance.backend.mapper.CryptoMapper;
+import com.finance.backend.util.BatchFailureGuard;
 import com.finance.backend.model.Crypto;
 import com.finance.backend.model.CryptoCandle;
 import com.finance.backend.constants.MarketConstants;
@@ -60,37 +61,45 @@ public class MarketDataService {
         Map<String, BigDecimal> tryPriceMap = tryMarkets.stream()
                 .collect(Collectors.toMap(CoinGeckoMarketDto::id, CoinGeckoMarketDto::currentPrice));
 
-        List<Crypto> saved = transactionTemplate.execute(status -> {
-            LocalDateTime now = LocalDateTime.now();
-            Map<String, Crypto> existingMap = cryptoRepository.findAllById(
-                    usdMarkets.stream().map(CoinGeckoMarketDto::id).toList()
-            ).stream().collect(Collectors.toMap(Crypto::getId, c -> c));
-            List<Crypto> cryptos = new ArrayList<>(usdMarkets.size());
-            for (CoinGeckoMarketDto usdDto : usdMarkets) {
+        int successCount = 0;
+        int failCount = 0;
+        List<String> failedIds = new ArrayList<>();
+        for (CoinGeckoMarketDto usdDto : usdMarkets) {
+            try {
                 BigDecimal tryPrice = tryPriceMap.get(usdDto.id());
-                Crypto existing = existingMap.get(usdDto.id());
-                if (existing != null) {
-                    cryptoMapper.updateEntityFromDto(existing, usdDto, tryPrice, now);
-                    cryptos.add(existing);
-                } else {
-                    cryptos.add(cryptoMapper.toEntity(usdDto, tryPrice, now));
-                }
-            }
-            return cryptoRepository.saveAll(cryptos);
-        });
-
-        if (saved != null) {
-            for (Crypto crypto : saved) {
-                cryptoCacheService.putSnapshot(crypto.getId(), crypto);
+                Crypto saved = self.saveSingleSnapshot(usdDto, tryPrice);
+                cryptoCacheService.putSnapshot(saved.getId(), saved);
+                successCount++;
+            } catch (Exception e) {
+                failCount++;
+                failedIds.add(usdDto.id());
+                log.error("Failed to save snapshot for {}: {}", usdDto.id(), e.getMessage(), e);
+                BatchFailureGuard.check(successCount, failCount, failedIds, "snapshot");
             }
         }
-        log.info("Snapshot update completed: {} coins saved (USD + TRY)", saved != null ? saved.size() : 0);
+        log.info("Snapshot update completed: {} success, {} failed (USD + TRY)", successCount, failCount);
+        if (!failedIds.isEmpty()) {
+            log.warn("Failed coins: {}", failedIds);
+        }
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public Crypto saveSingleSnapshot(CoinGeckoMarketDto usdDto, BigDecimal tryPrice) {
+        LocalDateTime now = LocalDateTime.now();
+        Crypto existing = cryptoRepository.findById(usdDto.id()).orElse(null);
+        if (existing != null) {
+            cryptoMapper.updateEntityFromDto(existing, usdDto, tryPrice, now);
+        } else {
+            existing = cryptoMapper.toEntity(usdDto, tryPrice, now);
+        }
+        return cryptoRepository.save(existing);
     }
     public void updateOnlyCandles() {
         List<String> trackedCoins = marketConstants.getTrackedCryptos();
         log.info("Starting candle update with self-healing for {} coins...", trackedCoins.size());
         int processed = 0;
         int failed = 0;
+        List<String> failedCoins = new ArrayList<>();
         for (String coinId : trackedCoins) {
             try {
                 long count = cryptoCandleRepository.countByCryptoId(coinId);
@@ -105,13 +114,15 @@ public class MarketDataService {
                 cryptoCacheService.refreshHistory(coinId);
             } catch (Exception e) {
                 failed++;
-                log.error("Failed to fetch candle for {}: {}", coinId, e.getMessage());
+                failedCoins.add(coinId);
+                log.error("Failed to fetch candle for {}: {}", coinId, e.getMessage(), e);
+                BatchFailureGuard.check(processed, failed, failedCoins, "candle");
             }
         }
         pruneOldCandles();
         log.info("Candle update completed: {} success, {} failed", processed, failed);
-        if (failed > 0 && failed >= trackedCoins.size() / 2) {
-            log.warn("HIGH FAILURE RATE: {} out of {} coins failed", failed, trackedCoins.size());
+        if (!failedCoins.isEmpty()) {
+            log.warn("Failed coins: {}", failedCoins);
         }
     }
     public void fullMarketUpdate() {

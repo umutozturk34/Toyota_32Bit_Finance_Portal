@@ -2,10 +2,13 @@ package com.finance.backend.mapper;
 import com.finance.backend.dto.external.TcmbRateDto;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.dto.external.YahooQuoteDto;
+import com.finance.backend.dto.internal.YahooChartResponse;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
@@ -19,6 +22,22 @@ public class ForexMapper {
     private static final BigDecimal SPREAD_RATE = new BigDecimal("0.01");
     private static final BigDecimal HUNDRED = new BigDecimal("100");
     private static final String QUOTE_CURRENCY = "TRY";
+    public YahooQuoteDto toQuoteDto(YahooChartResponse.Meta meta) {
+        return new YahooQuoteDto(meta.regularMarketPrice(), meta.previousClose());
+    }
+    public TcmbRateDto toRateDto(Element el) {
+        return new TcmbRateDto(
+                el.getAttribute("Kod"),
+                text(el, "CurrencyName"),
+                text(el, "Isim"),
+                toInt(text(el, "Unit"), 1),
+                toBigDecimal(text(el, "ForexBuying")),
+                toBigDecimal(text(el, "ForexSelling")),
+                toBigDecimal(text(el, "BanknoteBuying")),
+                toBigDecimal(text(el, "BanknoteSelling")),
+                toBigDecimal(text(el, "CrossRateUSD")),
+                toBigDecimal(text(el, "CrossRateOther")));
+    }
     public String toCurrencyPairCode(String rawCurrencyCode) {
         return rawCurrencyCode + QUOTE_CURRENCY;
     }
@@ -206,5 +225,21 @@ public class ForexMapper {
             return value;
         }
         return value.divide(new BigDecimal(unit), SCALE, RoundingMode.HALF_UP);
+    }
+    private static int toInt(String value, int defaultValue) {
+        if (value == null) return defaultValue;
+        try { return Integer.parseInt(value); }
+        catch (NumberFormatException e) { return defaultValue; }
+    }
+    private static BigDecimal toBigDecimal(String value) {
+        if (value == null) return null;
+        try { return new BigDecimal(value); }
+        catch (NumberFormatException e) { return null; }
+    }
+    private static String text(Element parent, String tag) {
+        NodeList list = parent.getElementsByTagName(tag);
+        if (list.getLength() == 0) return null;
+        String value = list.item(0).getTextContent().trim();
+        return value.isEmpty() ? null : value;
     }
 }

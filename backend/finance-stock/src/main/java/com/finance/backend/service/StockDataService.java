@@ -4,6 +4,7 @@ import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.dto.external.YahooStockQuoteDto;
 import com.finance.backend.exception.BusinessException;
 import com.finance.backend.mapper.StockMapper;
+import com.finance.backend.util.BatchFailureGuard;
 import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
 import com.finance.backend.constants.MarketConstants;
@@ -25,7 +26,6 @@ import java.util.stream.Collectors;
 @Service
 public class StockDataService {
     private static final ZoneId ISTANBUL_ZONE = ZoneId.of("Europe/Istanbul");
-    private static final double FAILURE_THRESHOLD = 0.5;
     private static final int MIN_CANDLES_FOR_INCREMENTAL = 1200;
     private final YahooStockClient yahooStockClient;
     private final StockMapper stockMapper;
@@ -67,8 +67,8 @@ public class StockDataService {
             } catch (Exception e) {
                 failCount++;
                 failedSymbols.add(symbol);
-                log.error("Failed to update snapshot for {}: {}", symbol, e.getMessage());
-                checkFailureThreshold(successCount, failCount, failedSymbols, "snapshot");
+                log.error("Failed to update snapshot for {}: {}", symbol, e.getMessage(), e);
+                BatchFailureGuard.check(successCount, failCount, failedSymbols, "snapshot", 10);
             }
         }
         log.info("Snapshot update completed: {} success, {} failed", successCount, failCount);
@@ -120,8 +120,8 @@ public class StockDataService {
             } catch (Exception e) {
                 failCount++;
                 failedSymbols.add(symbol);
-                log.error("Failed to update candles for {} (transaction rolled back): {}", symbol, e.getMessage());
-                checkFailureThreshold(successCount, failCount, failedSymbols, "candle");
+                log.error("Failed to update candles for {} (transaction rolled back): {}", symbol, e.getMessage(), e);
+                BatchFailureGuard.check(successCount, failCount, failedSymbols, "candle", 10);
             }
         }
         log.info("Candle update completed: {} total candles, {} success, {} failed", totalCandles, successCount, failCount);
@@ -140,8 +140,9 @@ public class StockDataService {
             log.warn("{} - No valid candle data", symbol);
             return 0;
         }
+        List<LocalDateTime> dates = candleDtos.stream().map(YahooCandleDto::candleDate).toList();
         Map<LocalDateTime, StockCandle> existingMap = stockCandleRepository
-                .findByStockSymbolOrderByCandleDateDesc(symbol)
+                .findByStockSymbolAndCandleDateIn(symbol, dates)
                 .stream()
                 .collect(Collectors.toMap(
                         c -> c.getCandleDate().truncatedTo(ChronoUnit.DAYS),
@@ -154,7 +155,6 @@ public class StockDataService {
             StockCandle existing = existingMap.get(dto.candleDate());
             if (existing != null) {
                 stockMapper.updateCandleEntity(existing, dto);
-                toSave.add(existing);
                 updateCount++;
             } else {
                 toSave.add(stockMapper.toCandleEntity(dto, stock));
@@ -163,24 +163,14 @@ public class StockDataService {
         }
         if (!toSave.isEmpty()) {
             stockCandleRepository.saveAll(toSave);
-            log.info("{} - Saved {} candles ({} new, {} updated)", symbol, toSave.size(), newCount, updateCount);
+        }
+        if (newCount > 0 || updateCount > 0) {
+            log.info("{} - Saved {} candles ({} new, {} updated)", symbol, newCount + updateCount, newCount, updateCount);
         }
         if ("5y".equals(range)) {
             LocalDateTime fiveYearsAgo = LocalDateTime.now(ISTANBUL_ZONE).minusYears(5);
             stockCandleRepository.deleteByStockSymbolAndCandleDateBefore(symbol, fiveYearsAgo);
         }
-        return toSave.size();
-    }
-    private void checkFailureThreshold(int successCount, int failCount,
-                                       List<String> failedSymbols, String type) {
-        double failureRate = (double) failCount / (successCount + failCount);
-        if (failureRate > FAILURE_THRESHOLD && (successCount + failCount) >= 10) {
-            log.error("CRITICAL API ERROR: Failure rate {}% exceeded threshold during {} update. Failed symbols: {}",
-                    String.format("%.1f", failureRate * 100), type, failedSymbols);
-            throw new BusinessException(
-                    String.format("Critical API failure: %d out of %d stocks failed (%.1f%%)",
-                            failCount, successCount + failCount, failureRate * 100),
-                    "CRITICAL_API_FAILURE");
-        }
+        return newCount + updateCount;
     }
 }

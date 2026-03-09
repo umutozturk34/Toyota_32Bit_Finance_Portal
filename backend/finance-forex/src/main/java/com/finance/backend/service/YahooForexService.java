@@ -2,6 +2,8 @@ package com.finance.backend.service;
 import com.finance.backend.client.YahooForexClient;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.dto.external.YahooQuoteDto;
+import com.finance.backend.exception.ExternalApiException;
+import com.finance.backend.util.BatchFailureGuard;
 import com.finance.backend.mapper.ForexMapper;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
@@ -44,19 +46,29 @@ public class YahooForexService {
     public void syncAllYahooSnapshots() {
         log.info("Starting Yahoo Finance snapshot sync...");
         List<Forex> allForex = forexRepository.findAll();
+        int successCount = 0;
+        int failCount = 0;
+        List<String> failedCodes = new ArrayList<>();
         for (Forex forex : allForex) {
             try {
                 self.updateForexSnapshot(forex);
+                successCount++;
                 Thread.sleep(2000); 
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 log.warn("Interrupted during snapshot sync");
                 break;
             } catch (Exception e) {
-                log.error("[SNAPSHOT] Failed for {}: {}", forex.getCurrencyCode(), e.getMessage());
+                failCount++;
+                failedCodes.add(forex.getCurrencyCode());
+                log.error("[SNAPSHOT] Failed for {}: {}", forex.getCurrencyCode(), e.getMessage(), e);
+                BatchFailureGuard.check(successCount, failCount, failedCodes, "snapshot");
             }
         }
-        log.info("Completed Yahoo Finance snapshot sync");
+        log.info("Completed Yahoo Finance snapshot sync: {} success, {} failed", successCount, failCount);
+        if (!failedCodes.isEmpty()) {
+            log.warn("Failed currencies: {}", failedCodes);
+        }
     }
     public void syncAllYahooCandles() {
         log.info("Starting Yahoo Finance candles sync...");
@@ -67,28 +79,44 @@ public class YahooForexService {
                 .findFirst()
                 .orElse(null);
         if (usdtry == null) {
-            log.error("USDTRY not found in database");
+            log.error("USDTRY not found in database, skipping candle sync");
             return;
         }
-        self.updateForexCandles(usdtry);
+        self.updateForexCandles(usdtry, Map.of());
         forexCacheService.refreshHistory("USDTRY");
+        Map<String, ForexCandle> usdtryCandleMap = forexCacheService.getHistory("USDTRY")
+                .stream()
+                .collect(Collectors.toMap(
+                        c -> c.getCandleDate().toLocalDate().toString(),
+                        c -> c,
+                        (a, b) -> a));
+        int successCount = 0;
+        int failCount = 0;
+        List<String> failedCodes = new ArrayList<>();
         for (Forex forex : allForex) {
             if ("USDTRY".equals(forex.getCurrencyCode())) {
                 continue;
             }
             try {
-                self.updateForexCandles(forex);
+                self.updateForexCandles(forex, usdtryCandleMap);
                 forexCacheService.refreshHistory(forex.getCurrencyCode());
+                successCount++;
                 Thread.sleep(2000);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 log.warn("Interrupted during candle sync");
                 break;
             } catch (Exception e) {
-                log.error("[CANDLES] Failed for {}: {}", forex.getCurrencyCode(), e.getMessage());
+                failCount++;
+                failedCodes.add(forex.getCurrencyCode());
+                log.error("[CANDLES] Failed for {}: {}", forex.getCurrencyCode(), e.getMessage(), e);
+                BatchFailureGuard.check(successCount, failCount, failedCodes, "candle");
             }
         }
-        log.info("Completed Yahoo Finance candles sync");
+        log.info("Completed Yahoo Finance candles sync: {} success, {} failed", successCount, failCount);
+        if (!failedCodes.isEmpty()) {
+            log.warn("Failed currencies: {}", failedCodes);
+        }
     }
     @Transactional
     public void updateForexSnapshot(Forex forex) {
@@ -104,16 +132,16 @@ public class YahooForexService {
                 return;
             }
         } catch (Exception e) {
-            log.warn("[SNAPSHOT] Direct fetch failed for {}: {} - trying synthetic", baseSymbol, e.getMessage());
+            log.warn("[SNAPSHOT] Direct fetch failed for {}: {} - trying synthetic", baseSymbol, e.getMessage(), e);
         }
         if (!"USDTRY".equals(baseSymbol)) {
             trySyntheticSnapshot(forex);
         } else {
-            log.error("[SNAPSHOT] All attempts failed for {}", baseSymbol);
+            throw new ExternalApiException("Yahoo Finance", "All snapshot attempts failed for " + baseSymbol);
         }
     }
     @Transactional
-    public void updateForexCandles(Forex forex) {
+    public void updateForexCandles(Forex forex, Map<String, ForexCandle> usdtryCandleMap) {
         String baseSymbol = forex.getCurrencyCode();
         String yahooSymbol = baseSymbol + "=X";
         long candleCount = forexCandleRepository.countByCurrencyCode(baseSymbol);
@@ -132,19 +160,19 @@ public class YahooForexService {
                 }
             }
         } catch (Exception e) {
-            log.warn("[CANDLES] Direct fetch failed for {}: {} - trying synthetic", baseSymbol, e.getMessage());
+            log.warn("[CANDLES] Direct fetch failed for {}: {} - trying synthetic", baseSymbol, e.getMessage(), e);
         }
         if (!"USDTRY".equals(baseSymbol)) {
-            trySyntheticCandles(forex);
+            trySyntheticCandles(forex, usdtryCandleMap);
         } else {
-            log.error("[CANDLES] All attempts failed for {}", baseSymbol);
+            throw new ExternalApiException("Yahoo Finance", "All candle attempts failed for " + baseSymbol);
         }
     }
     private void trySyntheticSnapshot(Forex forex) {
         Forex usdtry = forexRepository.findById("USDTRY").orElse(null);
         if (usdtry == null || usdtry.getCurrentPrice() == null) {
-            log.error("[SNAPSHOT] USDTRY not available for synthetic calculation");
-            return;
+            throw new ExternalApiException("Yahoo Finance",
+                    "USDTRY not available for synthetic calculation of " + forex.getCurrencyCode());
         }
         String baseCurrency = forex.getCurrencyCode().replace("TRY", "");
         String[] attempts = { baseCurrency + "USD=X", "USD" + baseCurrency + "=X" };
@@ -162,28 +190,17 @@ public class YahooForexService {
                     return;
                 }
             } catch (Exception e) {
-                log.warn("[SNAPSHOT-SYNTHETIC] {} failed for {}: {}", symbol, forex.getCurrencyCode(), e.getMessage());
+                log.warn("[SNAPSHOT-SYNTHETIC] {} failed for {}: {}", symbol, forex.getCurrencyCode(), e.getMessage(), e);
             }
         }
-        log.error("[SNAPSHOT] All attempts failed for {}", forex.getCurrencyCode());
+        throw new ExternalApiException("Yahoo Finance",
+                "All snapshot attempts failed for " + forex.getCurrencyCode());
     }
-    private void trySyntheticCandles(Forex forex) {
-        Forex usdtry = forexRepository.findById("USDTRY").orElse(null);
-        if (usdtry == null) {
-            log.error("[CANDLES-SYNTHETIC] USDTRY not available for {}", forex.getCurrencyCode());
-            return;
+    private void trySyntheticCandles(Forex forex, Map<String, ForexCandle> usdtryCandleMap) {
+        if (usdtryCandleMap.isEmpty()) {
+            throw new ExternalApiException("Yahoo Finance",
+                    "USDTRY candles not available for " + forex.getCurrencyCode());
         }
-        List<ForexCandle> usdtryCandles = forexCandleRepository
-                .findTop1825ByCurrencyCodeOrderByCandleDateDesc("USDTRY");
-        if (usdtryCandles.isEmpty()) {
-            log.error("[CANDLES-SYNTHETIC] USDTRY candles not available for {}", forex.getCurrencyCode());
-            return;
-        }
-        Map<String, ForexCandle> usdtryCandleByDate = usdtryCandles.stream()
-                .collect(Collectors.toMap(
-                        c -> c.getCandleDate().toLocalDate().toString(),
-                        c -> c,
-                        (a, b) -> a));
         String baseCurrency = forex.getCurrencyCode().replace("TRY", "");
         String[] attempts = { baseCurrency + "USD=X", "USD" + baseCurrency + "=X" };
         for (String symbol : attempts) {
@@ -192,31 +209,34 @@ public class YahooForexService {
                 if (!pairCandles.isEmpty()) {
                     boolean isUsdBase = symbol.startsWith("USD");
                     List<YahooCandleDto> syntheticCandles = forexMapper.buildSyntheticCandles(
-                            pairCandles, usdtryCandleByDate, forex.getCurrentPrice(), isUsdBase);
+                            pairCandles, usdtryCandleMap, forex.getCurrentPrice(), isUsdBase);
                     int saved = saveCandleBatch(forex, syntheticCandles);
                     log.info("[CANDLES-SYNTHETIC] Saved {} candles for {} via {}", saved, forex.getCurrencyCode(), symbol);
                     return;
                 }
             } catch (Exception e) {
-                log.warn("[CANDLES-SYNTHETIC] {} failed for {}: {}", symbol, forex.getCurrencyCode(), e.getMessage());
+                log.warn("[CANDLES-SYNTHETIC] {} failed for {}: {}", symbol, forex.getCurrencyCode(), e.getMessage(), e);
             }
         }
-        log.error("[CANDLES] All attempts failed for {}", forex.getCurrencyCode());
+        throw new ExternalApiException("Yahoo Finance",
+                "All candle attempts failed for " + forex.getCurrencyCode());
     }
     private int saveCandleBatch(Forex forex, List<YahooCandleDto> candleDtos) {
+        List<LocalDateTime> dates = candleDtos.stream().map(YahooCandleDto::candleDate).toList();
         Map<LocalDateTime, ForexCandle> existingMap = forexCandleRepository
-                .findByCurrencyCodeOrderByCandleDateDesc(forex.getCurrencyCode())
+                .findByCurrencyCodeAndCandleDateIn(forex.getCurrencyCode(), dates)
                 .stream()
                 .collect(Collectors.toMap(
                         ForexCandle::getCandleDate,
                         Function.identity(),
                         (a, b) -> a));
         List<ForexCandle> toSave = new ArrayList<>(candleDtos.size());
+        int updateCount = 0;
         for (YahooCandleDto dto : candleDtos) {
             ForexCandle existing = existingMap.get(dto.candleDate());
             if (existing != null) {
                 forexMapper.updateCandleEntity(existing, dto);
-                toSave.add(existing);
+                updateCount++;
             } else {
                 toSave.add(forexMapper.toCandleEntity(dto, forex.getCurrencyCode(), forex));
             }
@@ -224,7 +244,7 @@ public class YahooForexService {
         if (!toSave.isEmpty()) {
             forexCandleRepository.saveAll(toSave);
         }
-        return toSave.size();
+        return toSave.size() + updateCount;
     }
 
     @Transactional

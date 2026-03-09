@@ -1,4 +1,4 @@
-package com.finance.backend.dto.external;
+package com.finance.backend.dto.internal;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

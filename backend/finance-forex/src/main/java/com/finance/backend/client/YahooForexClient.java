@@ -1,8 +1,9 @@
 package com.finance.backend.client;
 import com.finance.backend.dto.external.YahooQuoteDto;
-import com.finance.backend.dto.internal.YahooChartResponse.Meta;
 import com.finance.backend.dto.internal.YahooChartResponse.Result;
 import com.finance.backend.exception.ExternalApiException;
+import com.finance.backend.mapper.ForexMapper;
+import com.finance.backend.mapper.YahooCandleMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,15 +13,18 @@ import java.time.ZoneId;
 @Component
 @Slf4j
 public class YahooForexClient extends AbstractYahooClient {
+    private final ForexMapper forexMapper;
     public YahooForexClient(@Qualifier("yahooRestTemplate") RestTemplate restTemplate,
-                            @Value("${app.api.yahoo.base-url}") String baseUrl) {
-        super(restTemplate, baseUrl, ZoneId.systemDefault(), false);
+                            @Value("${app.api.yahoo.base-url}") String baseUrl,
+                            ForexMapper forexMapper,
+                            YahooCandleMapper candleMapper) {
+        super(restTemplate, baseUrl, ZoneId.systemDefault(), false, candleMapper);
+        this.forexMapper = forexMapper;
     }
     public YahooQuoteDto fetchQuote(String yahooSymbol) {
         try {
             Result result = fetchChart(yahooSymbol, "1d", "1m");
-            Meta meta = result.meta();
-            return new YahooQuoteDto(meta.regularMarketPrice(), meta.previousClose());
+            return forexMapper.toQuoteDto(result.meta());
         } catch (ExternalApiException e) {
             throw e;
         } catch (Exception e) {

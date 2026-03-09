@@ -1,6 +1,7 @@
 package com.finance.backend.client;
 import com.finance.backend.dto.external.TcmbRateDto;
 import com.finance.backend.exception.ExternalApiException;
+import com.finance.backend.mapper.ForexMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -11,7 +12,6 @@ import org.w3c.dom.NodeList;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,10 +19,13 @@ import java.util.List;
 @Slf4j
 public class TcmbForexClient {
     private final RestTemplate restTemplate;
+    private final ForexMapper forexMapper;
     private final String tcmbXmlUrl;
     public TcmbForexClient(RestTemplate restTemplate,
+                           ForexMapper forexMapper,
                            @Value("${app.tcmb-xml-url}") String tcmbXmlUrl) {
         this.restTemplate = restTemplate;
+        this.forexMapper = forexMapper;
         this.tcmbXmlUrl = tcmbXmlUrl;
     }
     public List<TcmbRateDto> fetchDailyRates() {
@@ -54,36 +57,9 @@ public class TcmbForexClient {
             Element el = (Element) nodes.item(i);
             String code = el.getAttribute("Kod");
             if ("XDR".equals(code)) continue;
-            rates.add(new TcmbRateDto(
-                    code,
-                    text(el, "CurrencyName"),
-                    text(el, "Isim"),
-                    toInt(text(el, "Unit"), 1),
-                    toBigDecimal(text(el, "ForexBuying")),
-                    toBigDecimal(text(el, "ForexSelling")),
-                    toBigDecimal(text(el, "BanknoteBuying")),
-                    toBigDecimal(text(el, "BanknoteSelling")),
-                    toBigDecimal(text(el, "CrossRateUSD")),
-                    toBigDecimal(text(el, "CrossRateOther"))
-            ));
+            rates.add(forexMapper.toRateDto(el));
         }
         log.debug("Parsed {} currency rates from TCMB", rates.size());
         return rates;
-    }
-    private static String text(Element parent, String tag) {
-        NodeList list = parent.getElementsByTagName(tag);
-        if (list.getLength() == 0) return null;
-        String value = list.item(0).getTextContent().trim();
-        return value.isEmpty() ? null : value;
-    }
-    private static int toInt(String value, int defaultValue) {
-        if (value == null) return defaultValue;
-        try { return Integer.parseInt(value); }
-        catch (NumberFormatException e) { return defaultValue; }
-    }
-    private static BigDecimal toBigDecimal(String value) {
-        if (value == null) return null;
-        try { return new BigDecimal(value); }
-        catch (NumberFormatException e) { return null; }
     }
 }

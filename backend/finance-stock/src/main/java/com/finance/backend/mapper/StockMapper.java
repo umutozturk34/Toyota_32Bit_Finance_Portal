@@ -1,16 +1,38 @@
 package com.finance.backend.mapper;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.dto.external.YahooStockQuoteDto;
+import com.finance.backend.dto.internal.YahooChartResponse.Meta;
+import com.finance.backend.dto.internal.YahooChartResponse.Quote;
+import com.finance.backend.dto.internal.YahooChartResponse.Result;
 import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
 import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.Objects;
 @Component
 public class StockMapper {
     private static final int SCALE = 4;
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
+    public YahooStockQuoteDto toQuoteDto(Result result, String symbol) {
+        Meta meta = result.meta();
+        Quote quote = result.firstQuote();
+        BigDecimal openPrice = (quote != null && quote.open() != null && !quote.open().isEmpty())
+                ? quote.open().getFirst() : null;
+        return new YahooStockQuoteDto(
+                symbol,
+                Objects.toString(meta.longName(), Objects.toString(meta.shortName(), symbol)),
+                meta.regularMarketPrice(),
+                meta.chartPreviousClose(),
+                openPrice,
+                meta.dayHigh(),
+                meta.dayLow(),
+                meta.volume() != null ? meta.volume() : 0L,
+                Objects.toString(meta.exchangeName(), "BIST"),
+                Objects.toString(meta.currency(), "TRY")
+        );
+    }
     public Stock toEntity(YahooStockQuoteDto dto, LocalDateTime now) {
         return Stock.builder()
                 .symbol(dto.symbol())

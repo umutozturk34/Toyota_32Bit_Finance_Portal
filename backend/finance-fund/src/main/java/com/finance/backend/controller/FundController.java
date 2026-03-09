@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -29,7 +30,15 @@ public class FundController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<FundResponse>> getAllFunds() {
         log.debug("Get all fund snapshots");
-        List<Fund> funds = fundRepository.findAll();
+        List<String> codes = fundRepository.findAllFundCodes();
+        List<Fund> funds = new ArrayList<>(codes.size());
+        for (String code : codes) {
+            try {
+                funds.add(fundCacheService.getSnapshot(code));
+            } catch (Exception e) {
+                log.debug("Fund {} not in cache, skipping", code);
+            }
+        }
         return ResponseEntity.ok(fundResponseMapper.toFundResponses(funds));
     }
 

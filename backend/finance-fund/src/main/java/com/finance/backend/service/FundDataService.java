@@ -2,8 +2,10 @@
 
     import com.finance.backend.client.TefasClient;
     import com.finance.backend.constants.MarketConstants;
-    import com.finance.backend.dto.external.TefasResponse;
+    import com.finance.backend.dto.external.TefasFundDto;
+    import com.finance.backend.exception.BusinessException;
     import com.finance.backend.mapper.FundMapper;
+    import com.finance.backend.util.BatchFailureGuard;
     import com.finance.backend.model.Fund;
     import com.finance.backend.model.FundCandle;
     import com.finance.backend.repository.FundCandleRepository;
@@ -76,22 +78,27 @@
 
             int successCount = 0;
             int failCount = 0;
+            List<String> failedCodes = new ArrayList<>();
 
             try {
-                TefasResponse byfResponse = tefasClient.fetchAllByfFunds(today);
-                for (TefasResponse.FundData dto : byfResponse.data()) {
+                List<TefasFundDto> byfFunds = tefasClient.fetchAllByfFunds(today);
+                for (TefasFundDto dto : byfFunds) {
                         try {
                             Fund saved = self.saveFundSnapshot(dto, "BYF");
                             fundCacheService.putSnapshot(saved.getFundCode(), saved);
                             successCount++;
                         } catch (Exception e) {
                             failCount++;
-                            log.error("Failed to save BYF snapshot {}: {}", dto.fonKodu(), e.getMessage());
+                            failedCodes.add(dto.fundCode());
+                            log.error("Failed to save BYF snapshot {}: {}", dto.fundCode(), e.getMessage(), e);
+                            BatchFailureGuard.check(successCount, failCount, failedCodes, "BYF snapshot");
                         }
                 }
                 log.info("BYF snapshots done: {} success, {} failed", successCount, failCount);
+            } catch (BusinessException e) {
+                throw e;
             } catch (Exception e) {
-                log.error("Failed to fetch BYF funds: {}", e.getMessage());
+                log.error("Failed to fetch BYF funds: {}", e.getMessage(), e);
             }
 
             try { Thread.sleep(2000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
@@ -104,53 +111,63 @@
 
             int yatSuccess = 0;
             int yatFail = 0;
+            List<String> yatFailedCodes = new ArrayList<>();
             for (String code : yatCodes) {
                 try {
                     Thread.sleep(2000);
-                    TefasResponse response = tefasClient.fetchFundHistory("YAT", code, today, today);
-                    if (!response.data().isEmpty()) {
-                        Fund saved = self.saveFundSnapshot(response.data().getFirst(), "YAT");
+                    List<TefasFundDto> yatFunds = tefasClient.fetchFundHistory("YAT", code, today, today);
+                    if (!yatFunds.isEmpty()) {
+                        Fund saved = self.saveFundSnapshot(yatFunds.getFirst(), "YAT");
                         fundCacheService.putSnapshot(saved.getFundCode(), saved);
                         yatSuccess++;
                     }
                 } catch (Exception e) {
                     yatFail++;
+                    yatFailedCodes.add(code);
                     log.error("Failed to save YAT snapshot {}: {}", code, e.getMessage(), e);
+                    BatchFailureGuard.check(yatSuccess, yatFail, yatFailedCodes, "YAT snapshot");
                 }
             }
             log.info("YAT snapshots done: {} success, {} failed", yatSuccess, yatFail);
             log.info("Total snapshot update: {} success, {} failed", successCount + yatSuccess, failCount + yatFail);
+            if (!failedCodes.isEmpty() || !yatFailedCodes.isEmpty()) {
+                log.warn("Failed funds: BYF={}, YAT={}", failedCodes, yatFailedCodes);
+            }
         }
 
         @Transactional
-        public Fund saveFundSnapshot(TefasResponse.FundData dto, String fundType) {
+        public Fund saveFundSnapshot(TefasFundDto dto, String fundType) {
             LocalDateTime now = LocalDateTime.now();
-            Fund fund = fundRepository.findById(dto.fonKodu()).orElse(null);
+            Fund fund = fundRepository.findById(dto.fundCode()).orElse(null);
             if (fund != null) {
                 fundMapper.updateEntity(fund, dto, fundType, now);
             } else {
                 fund = fundMapper.toEntity(dto, fundType, now);
             }
             fundRepository.save(fund);
-            log.debug("Saved snapshot: {} ({}) - {}", dto.fonKodu(), fundType, dto.fiyat());
+            log.debug("Saved snapshot: {} ({}) - {}", dto.fundCode(), fundType, dto.price());
             return fund;
         }
 
         public void updateFundCandles() {
             log.info("Starting fund candle update...");
 
+            pruneOldCandles();
             updateCandlesForType("BYF");
             updateCandlesForType("YAT");
 
             log.info("Fund candle update completed");
         }
 
+        private void pruneOldCandles() {
+            LocalDateTime cutoffDate = LocalDateTime.now().minusYears(YEARS_TO_FETCH);
+            fundCandleRepository.deleteByCandleDateBefore(cutoffDate);
+        }
+
         private void updateCandlesForType(String fundType) {
             List<Fund> funds;
             if ("BYF".equals(fundType)) {
-                funds = fundRepository.findAll().stream()
-                        .filter(f -> "BYF".equals(f.getFundType()))
-                        .toList();
+                funds = fundRepository.findByFundType("BYF");
             } else {
                 List<String> yatCodes = marketConstants.getTrackedFunds();
                 funds = fundRepository.findAllById(yatCodes);
@@ -164,6 +181,7 @@
             log.info("Starting {} candle update for {} funds", fundType, funds.size());
             int successCount = 0;
             int failCount = 0;
+            List<String> failedFunds = new ArrayList<>();
 
             for (Fund fund : funds) {
                 try {
@@ -182,37 +200,27 @@
                     successCount++;
                 } catch (Exception e) {
                     failCount++;
-                    log.error("Failed candle update for {} ({}): {}", fund.getFundCode(), fundType, e.getMessage());
+                    failedFunds.add(fund.getFundCode());
+                    log.error("Failed candle update for {} ({}): {}", fund.getFundCode(), fundType, e.getMessage(), e);
+                    BatchFailureGuard.check(successCount, failCount, failedFunds, fundType + " candle");
                 }
             }
             log.info("{} candle update: {} success, {} failed", fundType, successCount, failCount);
+            if (!failedFunds.isEmpty()) {
+                log.warn("Failed {} funds: {}", fundType, failedFunds);
+            }
         }
 
         @Transactional
         public int fetchAndSaveTodayCandle(Fund fund, String fundType) {
             LocalDate today = findLastBusinessDay(LocalDate.now());
-            TefasResponse response = tefasClient.fetchFundHistory(fundType, fund.getFundCode(), today, today);
+            List<TefasFundDto> candles = tefasClient.fetchFundHistory(fundType, fund.getFundCode(), today, today);
 
-            if (response.data().isEmpty()) {
+            if (candles.isEmpty()) {
                 return 0;
             }
 
-            int saved = 0;
-            for (TefasResponse.FundData dto : response.data()) {
-                LocalDateTime candleDate = fundMapper.parseTimestamp(dto.tarih());
-                FundCandle existing = fundCandleRepository
-                        .findByFundCodeAndCandleDate(fund.getFundCode(), candleDate)
-                        .orElse(null);
-
-                if (existing != null) {
-                    fundMapper.updateCandleEntity(existing, dto);
-                    fundCandleRepository.save(existing);
-                } else {
-                    fundCandleRepository.save(fundMapper.toCandleEntity(dto, fund, fundType));
-                }
-                saved++;
-            }
-            return saved;
+            return saveCandleBatch(fund, fundType, candles);
         }
 
         private int fetchAndSaveFullHistory(Fund fund, String fundType) {
@@ -256,35 +264,32 @@
                 }
             }
 
-            LocalDate fiveYearsAgo = endDate.minusYears(YEARS_TO_FETCH);
-            fundCandleRepository.deleteByFundCodeAndCandleDateBefore(
-                    fund.getFundCode(), fiveYearsAgo.atStartOfDay());
-
             log.info("{} ({}) - Full history complete: {} candles", fund.getFundCode(), fundType, totalSaved);
             return totalSaved;
         }
 
         private int tryFetchWindow(Fund fund, String fundType, LocalDate start, LocalDate end) {
             try {
-                TefasResponse response = tefasClient.fetchFundHistory(fundType, fund.getFundCode(), start, end);
+                List<TefasFundDto> candles = tefasClient.fetchFundHistory(fundType, fund.getFundCode(), start, end);
 
-                if (response.data().isEmpty()) {
+                if (candles.isEmpty()) {
                     return 0;
                 }
 
-                int saved = self.saveCandleBatch(fund, fundType, response.data());
+                int saved = self.saveCandleBatch(fund, fundType, candles);
                 log.debug("{} - Window {} to {}: {} candles", fund.getFundCode(), start, end, saved);
                 return saved;
             } catch (Exception e) {
-                log.warn("{} - Window {} to {} failed: {}", fund.getFundCode(), start, end, e.getMessage());
+                log.warn("{} - Window {} to {} failed: {}", fund.getFundCode(), start, end, e.getMessage(), e);
                 return -1;
             }
         }
 
         @Transactional
-        public int saveCandleBatch(Fund fund, String fundType, List<TefasResponse.FundData> dtos) {
+        public int saveCandleBatch(Fund fund, String fundType, List<TefasFundDto> dtos) {
+            List<LocalDateTime> dates = dtos.stream().map(TefasFundDto::date).toList();
             Map<LocalDateTime, FundCandle> existingMap = fundCandleRepository
-                    .findByFundCodeOrderByCandleDateDesc(fund.getFundCode())
+                    .findByFundCodeAndCandleDateIn(fund.getFundCode(), dates)
                     .stream()
                     .collect(Collectors.toMap(
                             FundCandle::getCandleDate,
@@ -295,13 +300,11 @@
             int newCount = 0;
             int updateCount = 0;
 
-            for (TefasResponse.FundData dto : dtos) {
-                LocalDateTime candleDate = fundMapper.parseTimestamp(dto.tarih());
-                FundCandle existing = existingMap.get(candleDate);
+            for (TefasFundDto dto : dtos) {
+                FundCandle existing = existingMap.get(dto.date());
 
                 if (existing != null) {
                     fundMapper.updateCandleEntity(existing, dto);
-                    toSave.add(existing);
                     updateCount++;
                 } else {
                     toSave.add(fundMapper.toCandleEntity(dto, fund, fundType));
@@ -314,6 +317,6 @@
             }
 
             log.debug("{} - Batch: {} new, {} updated", fund.getFundCode(), newCount, updateCount);
-            return toSave.size();
+            return newCount + updateCount;
         }
     }

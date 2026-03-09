@@ -54,7 +54,10 @@ const ChartView = () => {
   });
   const [symbol, setSymbol] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('symbol') || coinId || 'bitcoin';
+    const urlType = params.get('type');
+    let sym = params.get('symbol') || coinId || 'bitcoin';
+    if (urlType === 'BIST' && sym.endsWith('.IS')) sym = sym.replace('.IS', '');
+    return sym;
   });
   const [timeRange, setTimeRange] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -157,9 +160,12 @@ const ChartView = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlType = params.get('type');
-    const urlSymbol = params.get('symbol');
+    let urlSymbol = params.get('symbol');
     const urlRange = params.get('range');
     if (urlType && ['BIST', 'US', 'CRYPTO', 'FOREX', 'FUND', 'METAL'].includes(urlType)) {
+      if (urlType === 'BIST' && urlSymbol && urlSymbol.endsWith('.IS')) {
+        urlSymbol = urlSymbol.replace('.IS', '');
+      }
       setAssetType(urlType);
       if (urlSymbol) setSymbol(urlSymbol);
     } else if (coinId) {
@@ -175,7 +181,7 @@ const ChartView = () => {
       return;
     }
     const symbols = presetSymbols[assetType];
-    if (symbols && symbols.length > 0) {
+    if (symbols && symbols.length > 0 && !symbols.includes(symbol)) {
       setSymbol(symbols[0]);
     }
     setCustomSymbol('');

@@ -3,7 +3,6 @@ package com.finance.backend.service;
 import com.finance.backend.client.TefasClient;
 import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.TefasResponse;
-import com.finance.backend.dto.external.TefasResponse.FundData;
 import com.finance.backend.mapper.FundMapper;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;
@@ -193,7 +192,7 @@ public class FundDataService {
 
     @Transactional
     public int fetchAndSaveTodayCandle(Fund fund, String fundType) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = findLastBusinessDay(LocalDate.now());
         TefasResponse response = tefasClient.fetchFundHistory(fundType, fund.getFundCode(), today, today);
 
         if (response == null || response.data() == null || response.data().isEmpty()) {

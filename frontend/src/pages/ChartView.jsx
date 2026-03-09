@@ -1,20 +1,21 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LineChart, ArrowLeft, Clock, BarChart2, Loader2,
-  AlertTriangle, TrendingUp, RefreshCw, Activity
+  AlertTriangle, TrendingUp, RefreshCw, Activity, X
 } from 'lucide-react';
 import LightweightChart from '../components/LightweightChart';
-import { getCryptoHistory, stockService, forexService } from '../services/marketService';
+import { getCryptoHistory, stockService, forexService, fundService } from '../services/marketService';
 import { getCoinIds } from '../constants/coins';
-import { getBistSymbols, getBistDisplayName } from '../constants/stocks';
+import { getBistSymbols, getBistDisplayName, isCompareOnly } from '../constants/stocks';
 import { getForexPairs } from '../constants/forex';
 const ASSET_ICONS = {
   BIST: <BarChart2 className="w-4 h-4" />,
   US: <TrendingUp className="w-4 h-4" />,
   CRYPTO: <Activity className="w-4 h-4" />,
   FOREX: <RefreshCw className="w-4 h-4" />,
+  FUND: <LineChart className="w-4 h-4" />,
   METAL: <LineChart className="w-4 h-4" />,
 };
 const ASSET_LABELS = {
@@ -22,6 +23,7 @@ const ASSET_LABELS = {
   US: 'US',
   CRYPTO: 'Crypto',
   FOREX: 'Forex',
+  FUND: 'Fon',
   METAL: 'Metal',
 };
 const containerVariants = {
@@ -47,7 +49,7 @@ const ChartView = () => {
   const [assetType, setAssetType] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const urlType = params.get('type');
-    if (urlType && ['BIST', 'US', 'CRYPTO', 'FOREX', 'METAL'].includes(urlType)) return urlType;
+    if (urlType && ['BIST', 'US', 'CRYPTO', 'FOREX', 'FUND', 'METAL'].includes(urlType)) return urlType;
     return 'CRYPTO';
   });
   const [symbol, setSymbol] = useState(() => {
@@ -61,8 +63,65 @@ const ChartView = () => {
   });
   const [customSymbol, setCustomSymbol] = useState('');
   const [retryKey, setRetryKey] = useState(0);
+  const [fundList, setFundList] = useState([]);
+  const [compareSymbol, setCompareSymbol] = useState(null);
+  const [compareData, setCompareData] = useState(null);
+
+  useEffect(() => {
+    if (assetType === 'FUND' && fundList.length === 0) {
+      fundService.getAllFunds()
+        .then(data => setFundList(data || []))
+        .catch(() => setFundList([]));
+    }
+  }, [assetType]);
+
+  useEffect(() => {
+    setCompareSymbol(null);
+    setCompareData(null);
+  }, [assetType, symbol]);
+
+  useEffect(() => {
+    if (!compareSymbol) { setCompareData(null); return; }
+    let cancelled = false;
+    const fetchCompare = async () => {
+      try {
+        let data;
+        if (assetType === 'CRYPTO') {
+          data = await getCryptoHistory(compareSymbol);
+        } else if (assetType === 'BIST' || assetType === 'US') {
+          const sym = compareSymbol.endsWith('.IS') ? compareSymbol : (assetType === 'BIST' ? `${compareSymbol}.IS` : compareSymbol);
+          data = await stockService.getStockHistory(sym);
+        } else if (assetType === 'FOREX') {
+          data = await forexService.getForexHistory(compareSymbol);
+        } else if (assetType === 'FUND') {
+          data = await fundService.getFundHistory(compareSymbol);
+        } else {
+          return;
+        }
+        if (cancelled || !data?.length) return;
+        let candles;
+        if (assetType === 'FUND') {
+          candles = data.map(c => ({
+            date: c.candleDate, candleDate: c.candleDate,
+            open: c.price, high: c.price, low: c.price, close: c.price,
+          }));
+        } else {
+          candles = data.map(c => ({
+            date: c.candleDate, candleDate: c.candleDate,
+            open: c.open, high: c.high, low: c.low, close: c.close,
+          }));
+        }
+        if (!cancelled) setCompareData({ candles });
+      } catch {
+        if (!cancelled) setCompareData(null);
+      }
+    };
+    fetchCompare();
+    return () => { cancelled = true; };
+  }, [compareSymbol, assetType]);
+
   const presetSymbols = {
-    BIST: getBistSymbols().map(symbol => getBistDisplayName(symbol)),
+    BIST: getBistSymbols().filter(s => !isCompareOnly(s)).map(symbol => getBistDisplayName(symbol)),
     US: [
       'AAPL', 'AMD', 'AMZN', 'BAC', 'DIS',
       'GOOGL', 'GS', 'INTC', 'JNJ', 'JPM',
@@ -71,7 +130,16 @@ const ChartView = () => {
     ],
     CRYPTO: getCoinIds(),
     FOREX: getForexPairs(),
+    FUND: fundList.map(f => f.fundCode),
     METAL: ['PAXG', 'XAUT', 'KAG']
+  };
+  const compareSymbols = {
+    BIST: getBistSymbols().map(symbol => getBistDisplayName(symbol)),
+    US: presetSymbols.US,
+    CRYPTO: presetSymbols.CRYPTO,
+    FOREX: presetSymbols.FOREX,
+    FUND: presetSymbols.FUND,
+    METAL: presetSymbols.METAL,
   };
   const filterDataByTimeRange = (candles, range) => {
     if (!candles || candles.length === 0) return candles;
@@ -91,7 +159,7 @@ const ChartView = () => {
     const urlType = params.get('type');
     const urlSymbol = params.get('symbol');
     const urlRange = params.get('range');
-    if (urlType && ['BIST', 'US', 'CRYPTO', 'FOREX', 'METAL'].includes(urlType)) {
+    if (urlType && ['BIST', 'US', 'CRYPTO', 'FOREX', 'FUND', 'METAL'].includes(urlType)) {
       setAssetType(urlType);
       if (urlSymbol) setSymbol(urlSymbol);
     } else if (coinId) {
@@ -106,12 +174,15 @@ const ChartView = () => {
       initialAssetTypeRef.current = null; 
       return;
     }
-    setSymbol(presetSymbols[assetType][0]);
+    const symbols = presetSymbols[assetType];
+    if (symbols && symbols.length > 0) {
+      setSymbol(symbols[0]);
+    }
     setCustomSymbol('');
     if ((assetType === 'CRYPTO' || assetType === 'METAL') && timeRange === '5Y') {
       setTimeRange('1Y');
     }
-  }, [assetType]);
+  }, [assetType, fundList]);
   useEffect(() => {
     if (symbol) {
       setSearchParams({ type: assetType, symbol, range: timeRange });
@@ -132,6 +203,8 @@ const ChartView = () => {
           data = await stockService.getStockHistory(symbolWithSuffix);
         } else if (assetType === 'FOREX') {
           data = await forexService.getForexHistory(symbol);
+        } else if (assetType === 'FUND') {
+          data = await fundService.getFundHistory(symbol);
         } else {
           if (!cancelled) { setError(`${assetType} historical data not yet implemented`); setChartData(null); }
           return;
@@ -142,16 +215,34 @@ const ChartView = () => {
           setChartData(null);
           return;
         }
-        const transformedCandles = data.map(candle => ({
-          date: candle.candleDate,
-          candleDate: candle.candleDate,
-          price: candle.close,
-          open: candle.open,
-          high: candle.high,
-          low: candle.low,
-          close: candle.close,
-          volume: candle.volume,
-        }));
+        let transformedCandles;
+        if (assetType === 'FUND') {
+          transformedCandles = data.map(candle => ({
+            date: candle.candleDate,
+            candleDate: candle.candleDate,
+            price: candle.price,
+            open: candle.price,
+            high: candle.price,
+            low: candle.price,
+            close: candle.price,
+            volume: null,
+            investorCount: candle.investorCount,
+            portfolioSize: candle.portfolioSize,
+            shareCount: candle.shareCount,
+            bulletinPrice: candle.bulletinPrice,
+          }));
+        } else {
+          transformedCandles = data.map(candle => ({
+            date: candle.candleDate,
+            candleDate: candle.candleDate,
+            price: candle.close,
+            open: candle.open,
+            high: candle.high,
+            low: candle.low,
+            close: candle.close,
+            volume: candle.volume,
+          }));
+        }
         setChartData({ candles: transformedCandles });
       } catch (err) {
         if (!cancelled) {
@@ -170,11 +261,17 @@ const ChartView = () => {
       setFilteredData({ ...chartData, candles: filtered });
     }
   }, [chartData, timeRange]);
+
+  const filteredCompareData = useMemo(() => {
+    if (!compareData?.candles) return null;
+    const filtered = filterDataByTimeRange(compareData.candles, timeRange);
+    return filtered.length ? { candles: filtered } : null;
+  }, [compareData, timeRange]);
   const handleCustomSymbol = (e) => {
     e.preventDefault();
     if (customSymbol.trim()) setSymbol(customSymbol.trim().toUpperCase());
   };
-  const timeRanges = (assetType === 'BIST' || assetType === 'US' || assetType === 'FOREX')
+  const timeRanges = (assetType === 'BIST' || assetType === 'US' || assetType === 'FOREX' || assetType === 'FUND')
     ? ['5Y', '1Y', '3M', '1M']
     : ['1Y', '3M', '1M'];
   return (
@@ -218,7 +315,7 @@ const ChartView = () => {
               Asset Type
             </label>
             <div className="flex flex-wrap gap-2">
-              {['BIST', 'US', 'CRYPTO', 'FOREX', 'METAL'].map(type => (
+              {['BIST', 'US', 'CRYPTO', 'FOREX', 'FUND', 'METAL'].map(type => (
                 <button
                   key={type}
                   onClick={() => setAssetType(type)}
@@ -244,9 +341,25 @@ const ChartView = () => {
                 onChange={(e) => setSymbol(e.target.value)}
                 className="flex-1 rounded-lg border border-border-default bg-bg-elevated px-4 py-2.5 text-sm text-fg outline-none focus:border-accent focus:ring-1 focus:ring-accent-glow transition-all duration-200 appearance-none cursor-pointer"
               >
-                {presetSymbols[assetType].map(sym => (
-                  <option key={sym} value={sym}>{sym}</option>
-                ))}
+              {assetType === 'FUND' && fundList.length > 0 ? (
+                  <>
+                    {['BYF', 'YAT'].map(type => {
+                      const typeFunds = fundList.filter(f => f.fundType === type);
+                      if (typeFunds.length === 0) return null;
+                      return (
+                        <optgroup key={type} label={type === 'BYF' ? 'Borsa Yatırım Fonları' : 'Yatırım Fonları'}>
+                          {typeFunds.map(f => (
+                            <option key={f.fundCode} value={f.fundCode}>{f.fundCode}{f.name ? ` - ${f.name}` : ''}</option>
+                          ))}
+                        </optgroup>
+                      );
+                    })}
+                  </>
+                ) : (
+                  presetSymbols[assetType].map(sym => (
+                    <option key={sym} value={sym}>{sym}</option>
+                  ))
+                )}
               </select>
               <form onSubmit={handleCustomSymbol} className="flex gap-2">
                 <input
@@ -263,6 +376,49 @@ const ChartView = () => {
                   Go
                 </button>
               </form>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
+              Compare (same type overlay)
+            </label>
+            <div className="flex items-center gap-3">
+              <select
+                value={compareSymbol || ''}
+                onChange={(e) => setCompareSymbol(e.target.value || null)}
+                className="flex-1 rounded-lg border border-border-default bg-bg-elevated px-4 py-2.5 text-sm text-fg outline-none focus:border-accent focus:ring-1 focus:ring-accent-glow transition-all duration-200 appearance-none cursor-pointer"
+              >
+                <option value="">-- No comparison --</option>
+                {assetType === 'FUND' && fundList.length > 0 ? (
+                  <>
+                    {['BYF', 'YAT'].map(type => {
+                      const typeFunds = fundList.filter(f => f.fundType === type && f.fundCode !== symbol);
+                      if (typeFunds.length === 0) return null;
+                      return (
+                        <optgroup key={type} label={type === 'BYF' ? 'Borsa Yatırım Fonları' : 'Yatırım Fonları'}>
+                          {typeFunds.map(f => (
+                            <option key={f.fundCode} value={f.fundCode}>{f.fundCode}{f.name ? ` - ${f.name}` : ''}</option>
+                          ))}
+                        </optgroup>
+                      );
+                    })}
+                  </>
+                ) : (
+                  (compareSymbols[assetType] || presetSymbols[assetType]).filter(s => s !== symbol).map(sym => (
+                    <option key={sym} value={sym}>{sym}</option>
+                  ))
+                )}
+              </select>
+              {compareSymbol && (
+                <button
+                  onClick={() => setCompareSymbol(null)}
+                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-red-300 text-red-500 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors duration-150"
+                >
+                  <X className="w-4 h-4" />
+                  Remove
+                </button>
+              )}
             </div>
           </div>
         </motion.div>
@@ -331,7 +487,13 @@ const ChartView = () => {
                 transition={{ duration: 0.4 }}
                 className="w-full h-full"
               >
-                <LightweightChart data={filteredData} symbol={symbol} />
+                <LightweightChart
+                  data={filteredData}
+                  symbol={symbol}
+                  assetType={assetType}
+                  compareData={filteredCompareData}
+                  compareSymbol={compareSymbol}
+                />
               </motion.div>
             )}
             {!loading && !error && !filteredData && (

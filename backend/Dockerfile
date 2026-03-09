@@ -1,30 +1,36 @@
-# Build stage
 FROM maven:3.9-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
-# Copy pom.xml and download dependencies
 COPY pom.xml .
+COPY finance-common/pom.xml finance-common/pom.xml
+COPY finance-cache/pom.xml finance-cache/pom.xml
+COPY finance-crypto/pom.xml finance-crypto/pom.xml
+COPY finance-stock/pom.xml finance-stock/pom.xml
+COPY finance-forex/pom.xml finance-forex/pom.xml
+COPY finance-user/pom.xml finance-user/pom.xml
+COPY finance-fund/pom.xml finance-fund/pom.xml
+COPY finance-app/pom.xml finance-app/pom.xml
 RUN mvn dependency:go-offline -B
 
-# Copy source code
-COPY src src
+COPY finance-common/src finance-common/src
+COPY finance-cache/src finance-cache/src
+COPY finance-crypto/src finance-crypto/src
+COPY finance-stock/src finance-stock/src
+COPY finance-forex/src finance-forex/src
+COPY finance-user/src finance-user/src
+COPY finance-fund/src finance-fund/src
+COPY finance-app/src finance-app/src
 
-# Build application (skip tests for faster build)
 RUN mvn clean package -DskipTests
 
-# Run stage
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Copy jar from build stage
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/finance-app/target/*.jar app.jar
 
-# Expose port
 EXPOSE 8080
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
-# Run application
 ENTRYPOINT ["java", "-jar", "app.jar"]

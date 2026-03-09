@@ -100,6 +100,15 @@ export const stockService = {
   },
 };
 export const adminService = {
+  getTaskStatus: async () => {
+    try {
+      const response = await api.get('/admin/tasks/status');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching task status:', error);
+      throw error;
+    }
+  },
   triggerCryptoSnapshot: async () => {
     try {
       const response = await api.post('/admin/trigger/crypto/snapshot');
@@ -181,9 +190,68 @@ export const adminService = {
       throw error;
     }
   },
+  triggerFundSnapshot: async () => {
+    try {
+      const response = await api.post('/admin/trigger/fund/snapshot');
+      return response.data;
+    } catch (error) {
+      console.error('Error triggering fund snapshot:', error);
+      throw error;
+    }
+  },
+  triggerFundCandles: async () => {
+    try {
+      const response = await api.post('/admin/trigger/fund/candles');
+      return response.data;
+    } catch (error) {
+      console.error('Error triggering fund candles:', error);
+      throw error;
+    }
+  },
+  triggerFundFull: async () => {
+    try {
+      const response = await api.post('/admin/trigger/fund/full');
+      return response.data;
+    } catch (error) {
+      console.error('Error triggering fund full update:', error);
+      throw error;
+    }
+  },
 };
 export const cryptoService = {
   getCryptos: async () => [],
   getCryptoDetails: async () => null,
 };
+
+export const fundService = {
+  getAllFunds: async () => {
+    try {
+      const response = await api.get('/funds');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching all funds:', error);
+      throw error;
+    }
+  },
+  getFundByCode: async (fundCode) => {
+    try {
+      const response = await api.get(`/funds/${fundCode}`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) return null;
+      console.error(`Error fetching fund ${fundCode}:`, error);
+      throw error;
+    }
+  },
+  getFundHistory: async (fundCode) => {
+    try {
+      const response = await api.get(`/funds/${fundCode}/history`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching history for fund ${fundCode}:`, error);
+      throw error;
+    }
+  },
+};
+
 export const getHistoricalData = getCryptoHistory;

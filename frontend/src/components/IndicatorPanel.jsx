@@ -12,9 +12,12 @@ const COLOR_PRESETS = [
     '#2196f3', '#ff9800', '#8b5cf6', '#e91e63', '#10b981',
     '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#f97316',
 ];
-const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndicator, toggleIndicator }) => {
+const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndicator, toggleIndicator, allowedTypes }) => {
+    const availableTypes = allowedTypes
+        ? INDICATOR_TYPES.filter(t => allowedTypes.includes(t.value))
+        : INDICATOR_TYPES;
     const [showAddForm, setShowAddForm] = useState(false);
-    const [newType, setNewType] = useState('SMA');
+    const [newType, setNewType] = useState(availableTypes[0]?.value || 'SMA');
     const [newPeriod, setNewPeriod] = useState(20);
     const [newColor, setNewColor] = useState('#2196f3');
     const [editingId, setEditingId] = useState(null);
@@ -116,7 +119,7 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
             {showAddForm ? (
                 <div className="p-2.5 rounded-lg bg-surface/50 border border-border-default space-y-2.5">
                     <div className="flex gap-1">
-                        {INDICATOR_TYPES.map(t => (
+                        {availableTypes.map(t => (
                             <button
                                 key={t.value}
                                 onClick={() => handleAddType(t.value)}

@@ -13,6 +13,8 @@ const ChartToolbar = ({
     indicators, drawings,
     isAnyToolActive, activeTool, activeFibTool,
     cancelAllDrawing,
+    allowCandle = true,
+    compareSymbol = null,
 }) => (
     <>
         <div className="flex items-center gap-3 px-3 py-2 border-b" style={{ background: isDark ? '#0a0a0c' : '#eef1f6', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
@@ -36,19 +38,21 @@ const ChartToolbar = ({
                     <LineChart className="w-3.5 h-3.5" />
                     Line
                 </button>
-                <button
-                    onClick={() => setChartType('candle')}
-                    className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium border-none cursor-pointer transition-all duration-150 border-l"
-                    style={{
-                        background: chartType === 'candle' ? 'rgba(94,106,210,0.15)' : 'transparent',
-                        color: chartType === 'candle' ? '#6872D9' : 'var(--color-fg-muted)',
-                        borderLeftColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
-                    }}
-                    title="Candlestick chart"
-                >
-                    <BarChart2 className="w-3.5 h-3.5" />
-                    Candle
-                </button>
+                {allowCandle && (
+                    <button
+                        onClick={() => setChartType('candle')}
+                        className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium border-none cursor-pointer transition-all duration-150 border-l"
+                        style={{
+                            background: chartType === 'candle' ? 'rgba(94,106,210,0.15)' : 'transparent',
+                            color: chartType === 'candle' ? '#6872D9' : 'var(--color-fg-muted)',
+                            borderLeftColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
+                        }}
+                        title="Candlestick chart"
+                    >
+                        <BarChart2 className="w-3.5 h-3.5" />
+                        Candle
+                    </button>
+                )}
             </div>
             <button
                 onClick={() => setMagnetMode(m => m === 'off' ? 'weak' : m === 'weak' ? 'strong' : 'off')}
@@ -70,6 +74,11 @@ const ChartToolbar = ({
             <div className="w-px h-5 bg-border-default" />
             <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-fg tracking-wide">{symbol?.toUpperCase()}</span>
+                {compareSymbol && (
+                    <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                        vs {compareSymbol.toUpperCase()}
+                    </span>
+                )}
             </div>
             {trend && (
                 <div

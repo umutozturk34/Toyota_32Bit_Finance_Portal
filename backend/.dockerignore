@@ -1,29 +1,15 @@
-# Docker ignore patterns
 
-# Maven
 target/
 !.mvn/wrapper/maven-wrapper.jar
 .mvn/
 
-# IDE
 .idea/
-*.iml
-*.iws
-*.ipr
 .vscode/
 .classpath
 .project
 .settings/
 
-# OS
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
 
-# Temporary files
-*.tmp
-*.bak
-*.swp
-*~

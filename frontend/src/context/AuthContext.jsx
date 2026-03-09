@@ -25,9 +25,9 @@ export const AuthProvider = ({ children }) => {
       if (auth) {
         const userInfo = getUserInfo();
         setUser(userInfo);
-        console.log('👤 User authenticated:', userInfo);
+        console.log('User authenticated:', userInfo);
       } else {
-        console.log('❌ User not authenticated');
+        console.log('User not authenticated');
       }
       setLoading(false);
     });

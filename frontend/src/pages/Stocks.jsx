@@ -12,7 +12,7 @@ import {
     Clock,
 } from 'lucide-react';
 import { stockService, adminService } from '../services/marketService';
-import { getBistSymbols } from '../constants/stocks';
+import { getBistSymbols, getIndexLongName, isMainIndex, isSecondaryIndex, isIndex } from '../constants/stocks';
 import { useAuth } from '../context/AuthContext';
 import { getChangeClass, changeColors, changeBg, formatPrice, formatVolume } from '../utils/formatters';
 import { containerVariants, cardVariants } from '../utils/animations';
@@ -55,8 +55,9 @@ function Stocks() {
             setLoading(false);
         }
     };
-    const indices = stocks.filter(s => ['XU030.IS', 'XU100.IS', 'XU500.IS'].includes(s.symbol));
-    const regularStocks = stocks.filter(s => !['XU030.IS', 'XU100.IS', 'XU500.IS'].includes(s.symbol));
+    const indices = stocks.filter(s => isMainIndex(s.symbol));
+    const secondaryIndices = stocks.filter(s => isSecondaryIndex(s.symbol));
+    const regularStocks = stocks.filter(s => !isIndex(s.symbol));
     const handleStockSnapshotUpdate = async () => {
         setUpdating(prev => ({ ...prev, snapshot: true }));
         try {
@@ -144,6 +145,8 @@ function Stocks() {
                         >
                             {indices.map((index) => {
                                 const cls = getChangeClass(index.priceChangePercent);
+                                const displayName = index.symbol === 'XU030.IS' ? 'BIST 30' :
+                                    index.symbol === 'XU100.IS' ? 'BIST 100' : 'BIST 500';
                                 return (
                                     <motion.div
                                         key={index.symbol}
@@ -153,11 +156,9 @@ function Stocks() {
                                         <div className="flex items-start justify-between">
                                             <div>
                                                 <h3 className="text-base font-semibold text-fg">
-                                                    {index.symbol === 'XU030.IS' ? 'BIST 30' :
-                                                        index.symbol === 'XU100.IS' ? 'BIST 100' :
-                                                            'BIST 500'}
+                                                    {displayName}
                                                 </h3>
-                                                <span className="text-xs text-fg-muted">{index.symbol}</span>
+                                                <span className="text-xs text-fg-muted">{getIndexLongName(index.symbol)}</span>
                                             </div>
                                             <button
                                                 onClick={() => {
@@ -184,6 +185,39 @@ function Stocks() {
                                 );
                             })}
                         </motion.div>
+                        {secondaryIndices.length > 0 && (
+                            <motion.div
+                                variants={containerVariants()}
+                                initial="hidden"
+                                animate="show"
+                                className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+                            >
+                                {secondaryIndices.map((index) => {
+                                    const cls = getChangeClass(index.priceChangePercent);
+                                    return (
+                                        <motion.div
+                                            key={index.symbol}
+                                            variants={cardVariants}
+                                            className="group rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 card-hover transition-all duration-200 hover:border-border-hover"
+                                        >
+                                            <div className="flex items-center justify-between gap-2">
+                                                <div className="min-w-0">
+                                                    <h3 className="truncate text-xs font-semibold text-fg">{index.symbol.replace('.IS', '')}</h3>
+                                                    <span className="block truncate text-[10px] text-fg-muted">{getIndexLongName(index.symbol)}</span>
+                                                </div>
+                                                <div className={`shrink-0 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
+                                                    {index.priceChangePercent > 0 ? <ChevronUp className="h-3 w-3" /> : index.priceChangePercent < 0 ? <ChevronDown className="h-3 w-3" /> : null}
+                                                    {Math.abs(index.priceChangePercent || 0).toFixed(2)}%
+                                                </div>
+                                            </div>
+                                            <p className="mt-1 font-mono text-sm font-bold text-fg">
+                                                {formatStockPrice(index.currentPrice)}
+                                            </p>
+                                        </motion.div>
+                                    );
+                                })}
+                            </motion.div>
+                        )}
                     </motion.section>
                 )}
             </AnimatePresence>

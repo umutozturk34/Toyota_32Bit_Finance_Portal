@@ -28,13 +28,13 @@ api.interceptors.response.use(
   },
   async (error) => {
     if (error.response?.status === 401) {
-      console.error('🔐 401 Unauthorized - Keycloak token geçersiz veya süresi dolmuş');
+      console.error('401 Unauthorized - Keycloak token geçersiz veya süresi dolmuş');
       if (window.location.pathname.includes('/login')) {
         return Promise.reject(error);
       }
       try {
         const { doLogin } = await import('./keycloak');
-        console.log('🔄 Redirecting to Keycloak login...');
+        console.log('Redirecting to Keycloak login...');
         doLogin();
       } catch (e) {
         console.error('Failed to initiate Keycloak login:', e);

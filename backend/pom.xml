@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.finance</groupId>
 	<artifactId>finance-portal</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.7.3-Tracebality</version>
 	<name>Finance Portal</name>
 	<description>Finance Portal - Multi Module</description>
 	<packaging>pom</packaging>
@@ -31,6 +31,16 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-logging</artifactId>
+				<exclusions>
+					<exclusion>
+						<groupId>*</groupId>
+						<artifactId>*</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
 			<dependency>
 				<groupId>com.finance</groupId>
 				<artifactId>finance-common</artifactId>
@@ -75,6 +85,14 @@
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-log4j2</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-layout-template-json</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -87,6 +105,11 @@
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
+						</path>
+						<path>
+							<groupId>org.apache.logging.log4j</groupId>
+							<artifactId>log4j-api</artifactId>
+							<version>2.25.3</version>
 						</path>
 					</annotationProcessorPaths>
 				</configuration>

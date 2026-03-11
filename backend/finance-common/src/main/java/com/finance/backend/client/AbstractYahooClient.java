@@ -5,13 +5,13 @@
     import com.finance.backend.dto.internal.YahooChartResponse.Result;
     import com.finance.backend.exception.ExternalApiException;
     import com.finance.backend.mapper.YahooCandleMapper;
-    import lombok.extern.slf4j.Slf4j;
+    import lombok.extern.log4j.Log4j2;
     import org.springframework.web.client.RestTemplate;
 
     import java.time.ZoneId;
     import java.util.List;
 
-    @Slf4j
+    @Log4j2
     public abstract class AbstractYahooClient {
         protected final RestTemplate restTemplate;
         protected final String baseUrl;
@@ -32,10 +32,13 @@
         public List<YahooCandleDto> fetchCandles(String symbol, String range, String interval) {
             try {
                 Result result = fetchChart(symbol, range, interval);
-                return candleMapper.toCandleDtos(result, zoneId, truncateToDays);
+                List<YahooCandleDto> candles = candleMapper.toCandleDtos(result, zoneId, truncateToDays);
+                log.debug("Fetched {} candles for {} (range={}, interval={})", candles.size(), symbol, range, interval);
+                return candles;
             } catch (ExternalApiException e) {
                 throw e;
             } catch (Exception e) {
+                log.error("Candle fetch failed for {}", symbol, e);
                 throw new ExternalApiException("Yahoo Finance", "Candle fetch failed for " + symbol, e);
             }
         }
@@ -55,6 +58,7 @@
             } catch (ExternalApiException e) {
                 throw e;
             } catch (Exception e) {
+                log.error("Chart request failed: {}", url, e);
                 throw new ExternalApiException("Yahoo Finance", "Request failed: " + url, e);
             }
         }

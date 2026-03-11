@@ -5,7 +5,7 @@ import com.finance.backend.dto.external.CoinGeckoCandleDto;
 import com.finance.backend.dto.external.CoinGeckoMarketDto;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.CryptoMapper;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -18,7 +18,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 @Component
-@Slf4j
+@Log4j2
 public class CoinGeckoClient {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;

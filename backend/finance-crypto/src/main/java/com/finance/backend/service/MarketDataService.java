@@ -9,7 +9,7 @@ import com.finance.backend.model.CryptoCandle;
 import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.repository.CryptoCandleRepository;
 import com.finance.backend.repository.CryptoRepository;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-@Slf4j
+@Log4j2
 @Service
 public class MarketDataService {
     private static final int HISTORY_DAYS = 365;
@@ -54,8 +54,6 @@ public class MarketDataService {
     }
     public void updateOnlySnapshots() {
         List<String> trackedCoins = marketConstants.getTrackedCryptos();
-        log.info("Starting snapshot update for {} coins...", trackedCoins.size());
-
         List<CoinGeckoMarketDto> usdMarkets = coinGeckoClient.fetchMarkets("usd", trackedCoins);
         List<CoinGeckoMarketDto> tryMarkets = coinGeckoClient.fetchMarkets("try", trackedCoins);
         Map<String, BigDecimal> tryPriceMap = tryMarkets.stream()
@@ -77,7 +75,7 @@ public class MarketDataService {
                 BatchFailureGuard.check(successCount, failCount, failedIds, "snapshot");
             }
         }
-        log.info("Snapshot update completed: {} success, {} failed (USD + TRY)", successCount, failCount);
+        log.info("Crypto snapshot update: {} success, {} failed", successCount, failCount);
         if (!failedIds.isEmpty()) {
             log.warn("Failed coins: {}", failedIds);
         }
@@ -96,7 +94,6 @@ public class MarketDataService {
     }
     public void updateOnlyCandles() {
         List<String> trackedCoins = marketConstants.getTrackedCryptos();
-        log.info("Starting candle update with self-healing for {} coins...", trackedCoins.size());
         int processed = 0;
         int failed = 0;
         List<String> failedCoins = new ArrayList<>();
@@ -104,10 +101,8 @@ public class MarketDataService {
             try {
                 long count = cryptoCandleRepository.countByCryptoId(coinId);
                 if (count < MIN_CANDLES_FOR_HEALTHY) {
-                    log.warn("Gap detected for {}. Reloading full history...", coinId);
                     reloadFullHistory(coinId);
                 } else {
-                    log.info("Data healthy for {}. Fetching today's update.", coinId);
                     updateDailyCandle(coinId);
                 }
                 processed++;
@@ -120,16 +115,14 @@ public class MarketDataService {
             }
         }
         pruneOldCandles();
-        log.info("Candle update completed: {} success, {} failed", processed, failed);
+        log.info("Crypto candle update: {} success, {} failed", processed, failed);
         if (!failedCoins.isEmpty()) {
             log.warn("Failed coins: {}", failedCoins);
         }
     }
     public void fullMarketUpdate() {
-        log.info("Starting FULL market update...");
         self.updateOnlySnapshots();
         self.updateOnlyCandles();
-        log.info("FULL market update completed!");
     }
     private void reloadFullHistory(String coinId) {
         List<CoinGeckoCandleDto> dtos = coinGeckoClient.fetchMarketChartRange(coinId, HISTORY_DAYS);
@@ -142,7 +135,6 @@ public class MarketDataService {
                 cryptoCandleRepository.deleteByCryptoId(coinId);
                 cryptoCandleRepository.saveAll(candles);
             });
-            log.info("Reloaded {} candles for {}", candles.size(), coinId);
         }
     }
     private void updateDailyCandle(String coinId) {
@@ -163,7 +155,6 @@ public class MarketDataService {
         });
     }
     private void pruneOldCandles() {
-        log.info("Pruning old candle data (keeping exactly {} days)...", HISTORY_DAYS);
         LocalDateTime cutoffDate = LocalDateTime.now().truncatedTo(ChronoUnit.DAYS).minusDays(HISTORY_DAYS - 1);
         transactionTemplate.executeWithoutResult(status -> {
             cryptoCandleRepository.deleteByCandleDateBefore(cutoffDate);

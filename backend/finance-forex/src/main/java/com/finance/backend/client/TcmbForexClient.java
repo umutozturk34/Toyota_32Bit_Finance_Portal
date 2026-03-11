@@ -2,7 +2,7 @@ package com.finance.backend.client;
 import com.finance.backend.dto.external.TcmbRateDto;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.ForexMapper;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 @Component
-@Slf4j
+@Log4j2
 public class TcmbForexClient {
     private final RestTemplate restTemplate;
     private final ForexMapper forexMapper;

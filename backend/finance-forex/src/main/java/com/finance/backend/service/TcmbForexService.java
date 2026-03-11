@@ -5,7 +5,7 @@ import com.finance.backend.mapper.ForexMapper;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
 import com.finance.backend.repository.ForexRepository;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 @Service
-@Slf4j
+@Log4j2
 public class TcmbForexService {
     private final TcmbForexClient tcmbForexClient;
     private final ForexMapper forexMapper;

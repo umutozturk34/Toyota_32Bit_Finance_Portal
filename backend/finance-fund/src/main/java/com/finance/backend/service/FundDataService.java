@@ -10,7 +10,7 @@
     import com.finance.backend.model.FundCandle;
     import com.finance.backend.repository.FundCandleRepository;
     import com.finance.backend.repository.FundRepository;
-    import lombok.extern.slf4j.Slf4j;
+    import lombok.extern.log4j.Log4j2;
     import org.springframework.context.annotation.Lazy;
     import org.springframework.stereotype.Service;
     import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +23,7 @@
     import java.util.function.Function;
     import java.util.stream.Collectors;
 
-    @Slf4j
+    @Log4j2
     @Service
     public class FundDataService {
 
@@ -74,8 +74,6 @@
 
         public void updateFundSnapshots() {
             LocalDate today = findLastBusinessDay(LocalDate.now());
-            log.info("Starting fund snapshot update (date={})...", today);
-
             int successCount = 0;
             int failCount = 0;
             List<String> failedCodes = new ArrayList<>();
@@ -90,15 +88,14 @@
                         } catch (Exception e) {
                             failCount++;
                             failedCodes.add(dto.fundCode());
-                            log.error("Failed to save BYF snapshot {}: {}", dto.fundCode(), e.getMessage(), e);
+                            log.error("BYF snapshot failed {}: {}", dto.fundCode(), e.getMessage(), e);
                             BatchFailureGuard.check(successCount, failCount, failedCodes, "BYF snapshot");
                         }
                 }
-                log.info("BYF snapshots done: {} success, {} failed", successCount, failCount);
             } catch (BusinessException e) {
                 throw e;
             } catch (Exception e) {
-                log.error("Failed to fetch BYF funds: {}", e.getMessage(), e);
+                log.error("Failed to fetch BYF funds", e);
             }
 
             try { Thread.sleep(2000); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
@@ -124,12 +121,11 @@
                 } catch (Exception e) {
                     yatFail++;
                     yatFailedCodes.add(code);
-                    log.error("Failed to save YAT snapshot {}: {}", code, e.getMessage(), e);
+                    log.error("YAT snapshot failed {}: {}", code, e.getMessage(), e);
                     BatchFailureGuard.check(yatSuccess, yatFail, yatFailedCodes, "YAT snapshot");
                 }
             }
-            log.info("YAT snapshots done: {} success, {} failed", yatSuccess, yatFail);
-            log.info("Total snapshot update: {} success, {} failed", successCount + yatSuccess, failCount + yatFail);
+            log.info("Fund snapshot update: {} success, {} failed", successCount + yatSuccess, failCount + yatFail);
             if (!failedCodes.isEmpty() || !yatFailedCodes.isEmpty()) {
                 log.warn("Failed funds: BYF={}, YAT={}", failedCodes, yatFailedCodes);
             }
@@ -149,14 +145,11 @@
             return fund;
         }
 
+        @Transactional
         public void updateFundCandles() {
-            log.info("Starting fund candle update...");
-
             pruneOldCandles();
             updateCandlesForType("BYF");
             updateCandlesForType("YAT");
-
-            log.info("Fund candle update completed");
         }
 
         private void pruneOldCandles() {
@@ -174,11 +167,10 @@
             }
 
             if (funds.isEmpty()) {
-                log.warn("No {} funds found in DB to fetch candles for", fundType);
+                log.warn("No {} funds found", fundType);
                 return;
             }
 
-            log.info("Starting {} candle update for {} funds", fundType, funds.size());
             int successCount = 0;
             int failCount = 0;
             List<String> failedFunds = new ArrayList<>();
@@ -189,11 +181,9 @@
                     long existingCount = fundCandleRepository.countByFundCode(fund.getFundCode());
 
                     if (existingCount >= MIN_CANDLES_FOR_INCREMENTAL) {
-                        int saved = self.fetchAndSaveTodayCandle(fund, fundType);
-                        log.info("{} ({}) - Incremental: {} candle saved", fund.getFundCode(), fundType, saved);
+                        self.fetchAndSaveTodayCandle(fund, fundType);
                     } else {
-                        int saved = fetchAndSaveFullHistory(fund, fundType);
-                        log.info("{} ({}) - Full history: {} candles saved", fund.getFundCode(), fundType, saved);
+                        fetchAndSaveFullHistory(fund, fundType);
                     }
 
                     fundCacheService.refreshHistory(fund.getFundCode());
@@ -206,9 +196,6 @@
                 }
             }
             log.info("{} candle update: {} success, {} failed", fundType, successCount, failCount);
-            if (!failedFunds.isEmpty()) {
-                log.warn("Failed {} funds: {}", fundType, failedFunds);
-            }
         }
 
         @Transactional
@@ -258,13 +245,17 @@
                     log.debug("{} - All window sizes failed, skipping {} days from {}",
                             fund.getFundCode(), SKIP_DAYS, windowStart);
                     windowStart = windowStart.plusDays(SKIP_DAYS);
+                } else if (saved == 0) {
+                    log.debug("{} - Empty response, skipping {} days from {}",
+                            fund.getFundCode(), SKIP_DAYS, windowStart);
+                    windowStart = windowStart.plusDays(SKIP_DAYS);
                 } else {
                     totalSaved += saved;
                     windowStart = windowStart.plusDays(usedWindowSize);
                 }
             }
 
-            log.info("{} ({}) - Full history complete: {} candles", fund.getFundCode(), fundType, totalSaved);
+            log.info("{} full history: {} candles", fund.getFundCode(), totalSaved);
             return totalSaved;
         }
 

@@ -5,7 +5,7 @@ import com.finance.backend.dto.external.YahooQuoteDto;
 import com.finance.backend.dto.internal.YahooChartResponse;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-@Slf4j
+@Log4j2
 @Component
 public class ForexMapper {
     private static final int SCALE = 4;

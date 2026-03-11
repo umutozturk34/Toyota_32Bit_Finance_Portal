@@ -6,7 +6,7 @@ import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.dto.internal.TefasResponse;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.FundMapper;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -18,7 +18,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-@Slf4j
+@Log4j2
 @Component
 public class TefasClient {
 
@@ -169,14 +169,13 @@ public class TefasClient {
                 return result;
             }
 
-            if (response.getBody() != null && !response.getBody().isBlank()) {
-                log.warn("TEFAS still returning HTML after session refresh for {} {} ({} - {})",
-                        fundType, fundCode, startDate, endDate);
-            }
-            return EMPTY_RESPONSE;
+            throw new ExternalApiException("TEFAS",
+                    "Still returning HTML after session refresh for " + fundType + " " + fundCode + " (" + startDate + " - " + endDate + ")");
+        } catch (ExternalApiException e) {
+            throw e;
         } catch (Exception e) {
-            log.warn("TEFAS retry failed for {} {}: {}", fundType, fundCode, e.getMessage(), e);
-            return EMPTY_RESPONSE;
+            throw new ExternalApiException("TEFAS",
+                    "Retry failed for " + fundType + " " + fundCode + ": " + e.getMessage(), e);
         }
     }
 }

@@ -10,7 +10,7 @@ import com.finance.backend.model.StockCandle;
 import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.repository.StockCandleRepository;
 import com.finance.backend.repository.StockRepository;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-@Slf4j
+@Log4j2
 @Service
 public class StockDataService {
     private static final ZoneId ISTANBUL_ZONE = ZoneId.of("Europe/Istanbul");
@@ -71,7 +71,7 @@ public class StockDataService {
                 BatchFailureGuard.check(successCount, failCount, failedSymbols, "snapshot", 10);
             }
         }
-        log.info("Snapshot update completed: {} success, {} failed", successCount, failCount);
+        log.info("Stock snapshot update: {} success, {} failed", successCount, failCount);
         if (!failedSymbols.isEmpty()) {
             log.warn("Failed symbols: {}", failedSymbols);
         }
@@ -97,7 +97,6 @@ public class StockDataService {
             stock = stockMapper.toEntity(dto, now);
         }
         stockRepository.save(stock);
-        log.info("Updated snapshot: {} - TRY {}", symbol, stock.getCurrentPrice());
         return stock;
     }
     public void updateStockCandles() {
@@ -106,7 +105,7 @@ public class StockDataService {
             log.warn("No BIST stocks configured in environment variables");
             return;
         }
-        log.info("Starting candle update for {} BIST stocks (5 years)", bistStocks.size());
+        log.info("Starting candle update for {} BIST stocks", bistStocks.size());
         int totalCandles = 0;
         int successCount = 0;
         int failCount = 0;
@@ -124,7 +123,7 @@ public class StockDataService {
                 BatchFailureGuard.check(successCount, failCount, failedSymbols, "candle", 10);
             }
         }
-        log.info("Candle update completed: {} total candles, {} success, {} failed", totalCandles, successCount, failCount);
+        log.info("Stock candle update: {} total, {} success, {} failed", totalCandles, successCount, failCount);
         if (!failedSymbols.isEmpty()) {
             log.warn("Failed symbols: {}", failedSymbols);
         }
@@ -134,7 +133,7 @@ public class StockDataService {
         Stock stock = stockRepository.getReferenceById(symbol);
         long existingCount = stockCandleRepository.countByStockSymbol(symbol);
         String range = existingCount < MIN_CANDLES_FOR_INCREMENTAL ? "5y" : "5d";
-        log.info("{} - Existing candles: {}, using range: {}", symbol, existingCount, range);
+        log.debug("{} - existing: {}, range: {}", symbol, existingCount, range);
         List<YahooCandleDto> candleDtos = yahooStockClient.fetchCandles(symbol, range, "1d");
         if (candleDtos.isEmpty()) {
             log.warn("{} - No valid candle data", symbol);
@@ -165,7 +164,7 @@ public class StockDataService {
             stockCandleRepository.saveAll(toSave);
         }
         if (newCount > 0 || updateCount > 0) {
-            log.info("{} - Saved {} candles ({} new, {} updated)", symbol, newCount + updateCount, newCount, updateCount);
+            log.debug("{} - {} new, {} updated", symbol, newCount, updateCount);
         }
         if ("5y".equals(range)) {
             LocalDateTime fiveYearsAgo = LocalDateTime.now(ISTANBUL_ZONE).minusYears(5);

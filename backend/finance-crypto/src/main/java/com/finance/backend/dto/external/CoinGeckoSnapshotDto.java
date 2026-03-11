@@ -1,6 +1,8 @@
 package com.finance.backend.dto.external;
+
 import java.math.BigDecimal;
-public record CoinGeckoMarketDto(
+
+public record CoinGeckoSnapshotDto(
         String id,
         String symbol,
         String name,

@@ -12,6 +12,7 @@ public interface ForexCandleRepository extends JpaRepository<ForexCandle, Long> 
     List<ForexCandle> findByCurrencyCodeAndCandleDateBetweenOrderByCandleDateAsc(
         String currencyCode, LocalDateTime start, LocalDateTime end
     );
+    Optional<ForexCandle> findFirstByCurrencyCodeOrderByCandleDateDesc(String currencyCode);
     Optional<ForexCandle> findByCurrencyCodeAndCandleDate(String currencyCode, LocalDateTime candleDate);
 
     List<ForexCandle> findByCurrencyCodeAndCandleDateIn(String currencyCode, Collection<LocalDateTime> candleDates);

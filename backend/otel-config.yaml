@@ -30,23 +30,12 @@ processors:
       span:
         - 'attributes["http.target"] == "/actuator/health"'
         - 'attributes["url.path"] == "/actuator/health"'
-    logs:
-      log_record:
-        - 'body == ""'
-
   transform/traces:
     error_mode: ignore
     trace_statements:
       - context: span
         statements:
           - set(status.code, 2) where status.code == 0 and attributes["http.status_code"] >= 500
-
-  transform/logs:
-    error_mode: ignore
-    log_statements:
-      - context: log
-        statements:
-          - set(severity_number, 17) where IsMatch(body, "(?i)error|exception|fail")
 
   transform/metrics:
     error_mode: ignore
@@ -78,15 +67,6 @@ exporters:
         insecure_skip_verify: true
     traces_index: "finance-traces"
 
-  opensearch/logs:
-    http:
-      endpoint: "https://opensearch:9200"
-      auth:
-        authenticator: basicauth
-      tls:
-        insecure_skip_verify: true
-    logs_index: "finance-logs"
-
   elasticsearch/metrics:
     endpoints: ["http://opensearch-proxy:9201"]
     user: "${env:OPENSEARCH_USERNAME}"
@@ -113,10 +93,6 @@ service:
       receivers: [otlp]
       processors: [memory_limiter, filter/health, resource, transform/traces, batch]
       exporters: [opensearch/traces]
-    logs:
-      receivers: [otlp]
-      processors: [memory_limiter, filter/health, resource, transform/logs, batch]
-      exporters: [opensearch/logs]
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, filter/metrics, resource, transform/metrics, cumulativetodelta, batch]

@@ -7,14 +7,14 @@ import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
 import com.finance.backend.service.MarketCacheService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Slf4j
+@Log4j2
 @RestController
 @RequestMapping("/api/v1/forex")
 @RequiredArgsConstructor
@@ -26,7 +26,6 @@ public class ForexController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ForexResponse> getForexByCurrencyCode(@PathVariable String currencyCode) {
         String normalized = currencyCode.strip().toUpperCase();
-        log.debug("Get forex snapshot: {}", normalized);
         return ResponseEntity.ok(forexResponseMapper.toForexResponse(forexCacheService.getSnapshot(normalized)));
     }
 
@@ -34,7 +33,6 @@ public class ForexController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<CandleResponse>> getForexHistory(@PathVariable String currencyCode) {
         String normalized = currencyCode.strip().toUpperCase();
-        log.debug("Get forex history: {}", normalized);
         return ResponseEntity.ok(forexResponseMapper.toForexCandleResponses(forexCacheService.getHistory(normalized)));
     }
 }

@@ -7,13 +7,13 @@ import com.finance.backend.service.YahooForexService;
 import com.finance.backend.service.TaskTrackingService;
 import com.finance.backend.service.TaskTrackingService.TaskInfo;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.concurrent.Executor;
-@Slf4j
+@Log4j2
 @Component
 @Order(3) 
 @RequiredArgsConstructor
@@ -26,7 +26,6 @@ public class ForexDataInitializer implements CommandLineRunner {
     private final Executor taskExecutor;
     @Override
     public void run(String... args) {
-        log.info("Running ForexDataInitializer (Smart Mode)...");
         long forexCount = forexRepository.count();
         long candleCount = forexCandleRepository.count();
         if (forexCount > 0 && candleCount > 0) {
@@ -38,45 +37,36 @@ public class ForexDataInitializer implements CommandLineRunner {
                     .distinct()
                     .count();
             if (!missingPrice.isEmpty() || forexWithCandles < forexCount) {
-                log.warn("Found {} currencies with missing prices, {}/{} with candle data - starting repair fetch",
+                log.warn("Forex repair needed: {} missing prices, {}/{} with candles",
                         missingPrice.size(), forexWithCandles, forexCount);
                 TaskInfo started = taskTracker.startTask("init-forex-repair", "Forex data repair (Yahoo snapshots + candles)");
                 taskExecutor.execute(() -> {
                     try {
-                        log.info("[REPAIR] Fetching Yahoo Finance snapshots for all currencies...");
                         yahooForexService.syncAllYahooSnapshots();
-                        log.info("[REPAIR] Fetching Yahoo Finance candles for all currencies...");
                         yahooForexService.syncAllYahooCandles();
                         taskTracker.completeTask("init-forex-repair", started);
-                        log.info("[REPAIR] Forex data repair completed!");
                     } catch (Exception e) {
                         taskTracker.failTask("init-forex-repair", started, e.getMessage());
-                        log.error("[REPAIR] Forex data repair failed: {}", e.getMessage(), e);
+                        log.error("Forex repair failed", e);
                     }
                 });
                 return;
             }
-            log.info("Existing forex data found ({} currencies, {} candles) - skipping initial fetch", forexCount, candleCount);
-            log.info("Next update will run at scheduled time (16:00 Istanbul)");
+            log.info("Forex data exists ({} currencies, {} candles) - skipping init", forexCount, candleCount);
             return;
         }
-        log.info("No forex data found - starting initial fetch from TCMB and Yahoo Finance API...");
+        log.info("No forex data - starting TCMB + Yahoo fetch");
         TaskInfo started = taskTracker.startTask("init-forex", "Initial forex data fetch (TCMB + Yahoo 5y)");
         taskExecutor.execute(() -> {
             try {
-                log.info("Step 1/3: Fetching TCMB official rates (21 currencies)...");
                 tcmbForexService.fetchAndSaveTcmbRates();
-                log.info("Step 2/3: Fetching Yahoo Finance snapshots...");
                 yahooForexService.syncAllYahooSnapshots();
-                log.info("Step 3/3: Fetching Yahoo Finance 5-year candle data (this may take 5-10 minutes)...");
                 yahooForexService.syncAllYahooCandles();
                 taskTracker.completeTask("init-forex", started);
-                log.info("Initial forex data loaded successfully!");
             } catch (Exception e) {
                 taskTracker.failTask("init-forex", started, e.getMessage());
-                log.error("Initial forex data fetch failed: {}", e.getMessage(), e);
+                log.error("Forex init failed", e);
             }
         });
-        log.info("ForexDataInitializer completed (data fetching in background)");
     }
 }

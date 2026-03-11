@@ -1,182 +1,116 @@
 package com.finance.backend.client;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.dto.internal.TefasResponse;
 import com.finance.backend.exception.ExternalApiException;
-import com.finance.backend.mapper.FundMapper;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.*;
-import org.springframework.beans.factory.annotation.Value;
+import com.finance.backend.exception.ExternalApiRequestException;
+import com.finance.backend.mapper.TefasClientMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-@Slf4j
+@Log4j2
 @Component
 public class TefasClient {
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-    private static final String USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Safari/605.1.15";
-    private static final String TEFAS_BASE = "https://www.tefas.gov.tr";
-    private static final TefasResponse EMPTY_RESPONSE = new TefasResponse(0, 0, 0, List.of());
 
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
+    private final String tefasApiPath;
     private final ObjectMapper objectMapper;
-    private final FundMapper fundMapper;
-    private final String tefasUrl;
+    private final TefasClientMapper tefasClientMapper;
+    private final TefasSessionManager sessionManager;
 
-    private volatile String sessionCookie;
-
-    public TefasClient(RestTemplate restTemplate,
-                       FundMapper fundMapper,
-                       @Value("${app.tefas-url}") String tefasUrl) {
-        this.restTemplate = restTemplate;
-        this.fundMapper = fundMapper;
-        this.objectMapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        this.tefasUrl = tefasUrl;
+    public TefasClient(@Qualifier("tefasWebClient") WebClient webClient,
+                       AppProperties appProperties,
+                       ObjectMapper objectMapper,
+                       TefasClientMapper tefasClientMapper,
+                       TefasSessionManager sessionManager) {
+        this.webClient = webClient;
+        this.tefasApiPath = appProperties.getTefasApiPath();
+        this.objectMapper = objectMapper;
+        this.tefasClientMapper = tefasClientMapper;
+        this.sessionManager = sessionManager;
     }
 
-    private HttpHeaders createBaseHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("User-Agent", USER_AGENT);
-        headers.set("Accept-Encoding", "gzip, deflate, br");
-        headers.set("Connection", "keep-alive");
-        return headers;
-    }
-
-    private synchronized void refreshSession() {
+    @CircuitBreaker(name = "tefas")
+    @Retry(name = "tefas")
+    public List<TefasFundDto> post(String fundType, String fundCode, LocalDate startDate, LocalDate endDate) {
+        log.debug("TEFAS request: type={}, code={}, from={}, to={}", fundType, fundCode, startDate, endDate);
         try {
-            HttpHeaders headers = createBaseHeaders();
-            headers.set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+            formData.add("fontip", fundType);
+            formData.add("bastarih", startDate.format(DATE_FORMAT));
+            formData.add("bittarih", endDate.format(DATE_FORMAT));
+            if (fundCode != null && !fundCode.isBlank()) {
+                formData.add("fonkod", fundCode);
+            }
 
-            ResponseEntity<String> response = restTemplate.exchange(
-                    TEFAS_BASE + "/TarihselVeriler.aspx",
-                    HttpMethod.GET,
-                    new HttpEntity<>(headers),
-                    String.class);
+            String body = doPost(formData);
 
-            List<String> cookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
-            if (cookies != null && !cookies.isEmpty()) {
-                StringBuilder sb = new StringBuilder();
-                for (String c : cookies) {
-                    String cookiePart = c.split(";")[0];
-                    if (!sb.isEmpty()) sb.append("; ");
-                    sb.append(cookiePart);
+            if (body != null && body.trim().startsWith("<")) {
+                log.warn("TEFAS WAF block: {} {} ({} to {})", fundType, fundCode, startDate, endDate);
+                throw new ExternalApiRequestException("TEFAS",
+                        "WAF blocked request for " + fundType + " " + (fundCode != null ? fundCode : "all")
+                        + " (range " + startDate + " to " + endDate + ")");
+            }
+
+            if (body == null || body.isBlank()) {
+                log.warn("TEFAS empty body for {} {}, refreshing session", fundType, fundCode);
+                sessionManager.invalidate();
+                throw new ExternalApiException("TEFAS",
+                            "Empty response after session refresh for " + fundType
+                            + " " + (fundCode != null ? fundCode : "all"));
                 }
-                sessionCookie = sb.toString();
-                log.info("TEFAS session refreshed: {} chars", sessionCookie.length());
-            } else {
-                log.warn("TEFAS session refresh returned no cookies");
-            }
-        } catch (Exception e) {
-            log.warn("Failed to refresh TEFAS session: {}", e.getMessage());
-        }
-    }
 
-    private void ensureSession() {
-        if (sessionCookie == null) {
-            refreshSession();
-        }
-    }
 
-    public List<TefasFundDto> fetchAllByfFunds(LocalDate date) {
-        String dateStr = date.format(DATE_FORMAT);
-        return fundMapper.toDto(fetchFunds("BYF", null, dateStr, dateStr).data());
-    }
-
-    public List<TefasFundDto> fetchFundHistory(String fundType, String fundCode, LocalDate startDate, LocalDate endDate) {
-        return fundMapper.toDto(fetchFunds(fundType, fundCode, startDate.format(DATE_FORMAT), endDate.format(DATE_FORMAT)).data());
-    }
-
-    private HttpEntity<MultiValueMap<String, String>> buildRequest(String fundType, String fundCode, String startDate, String endDate) {
-        HttpHeaders headers = createBaseHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.set("Accept", "*/*");
-        if (sessionCookie != null) {
-            headers.set("Cookie", sessionCookie);
-        }
-
-        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("fontip", fundType);
-        body.add("bastarih", startDate);
-        body.add("bittarih", endDate);
-        if (fundCode != null && !fundCode.isBlank()) {
-            body.add("fonkod", fundCode);
-        }
-
-        return new HttpEntity<>(body, headers);
-    }
-
-    private TefasResponse parseResponse(String responseBody, String fundType, String fundCode) throws Exception {
-        TefasResponse tefasResponse = objectMapper.readValue(responseBody, TefasResponse.class);
-        log.debug("TEFAS response: type={}, code={}, records={}", fundType, fundCode, tefasResponse.recordsTotal());
-        return tefasResponse.recordsTotal() == 0 ? EMPTY_RESPONSE : tefasResponse;
-    }
-
-    private TefasResponse handleResponseBody(ResponseEntity<String> response, String fundType, String fundCode) throws Exception {
-        if (response.getBody() == null || response.getBody().isBlank()) {
-            return null;
-        }
-        String responseBody = response.getBody().trim();
-        if (responseBody.startsWith("<")) {
-            return null;
-        }
-        return parseResponse(responseBody, fundType, fundCode);
-    }
-
-    private TefasResponse fetchFunds(String fundType, String fundCode, String startDate, String endDate) {
-        ensureSession();
-        try {
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                    tefasUrl, buildRequest(fundType, fundCode, startDate, endDate), String.class);
-
-            TefasResponse result = handleResponseBody(response, fundType, fundCode);
-            if (result != null) {
-                return result;
-            }
-
-            if (response.getBody() == null || response.getBody().isBlank()) {
-                throw new ExternalApiException("TEFAS", "Empty response for " + fundType + " " + (fundCode != null ? fundCode : "all"));
-            }
-
-            log.debug("TEFAS returned HTML for {} {} ({} - {}), refreshing session and retrying",
-                    fundType, fundCode, startDate, endDate);
-            refreshSession();
-            return retryFetchFunds(fundType, fundCode, startDate, endDate);
-        } catch (ExternalApiException e) {
+            return parseResponse(body);
+        } catch (ExternalApiException | ExternalApiRequestException e) {
             throw e;
         } catch (Exception e) {
             throw new ExternalApiException("TEFAS",
-                    "Failed to fetch " + fundType + " " + (fundCode != null ? fundCode : "all") + ": " + e.getMessage(), e);
+                    "Request failed for " + fundType + " " + (fundCode != null ? fundCode : "all"), e);
         }
     }
 
-    private TefasResponse retryFetchFunds(String fundType, String fundCode, String startDate, String endDate) {
+    private String doPost(MultiValueMap<String, String> formData) {
+        return webClient.post()
+                .uri(tefasApiPath)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .header("Accept", "*/*")
+                .bodyValue(formData)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+    }
+
+    private List<TefasFundDto> parseResponse(String body) {
+        String trimmed = body.trim();
         try {
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                    tefasUrl, buildRequest(fundType, fundCode, startDate, endDate), String.class);
-
-            TefasResponse result = handleResponseBody(response, fundType, fundCode);
-            if (result != null) {
-                return result;
+            TefasResponse response = objectMapper.readValue(trimmed, TefasResponse.class);
+            if (response.recordsTotal() == 0) {
+                return List.of();
             }
-
-            if (response.getBody() != null && !response.getBody().isBlank()) {
-                log.warn("TEFAS still returning HTML after session refresh for {} {} ({} - {})",
-                        fundType, fundCode, startDate, endDate);
-            }
-            return EMPTY_RESPONSE;
+            List<TefasFundDto> result = response.data().stream()
+                    .map(tefasClientMapper::toDto)
+                    .toList();
+            log.debug("TEFAS returned {} records", result.size());
+            return result;
         } catch (Exception e) {
-            log.warn("TEFAS retry failed for {} {}: {}", fundType, fundCode, e.getMessage(), e);
-            return EMPTY_RESPONSE;
+            log.error("TEFAS parse failed. Response body (first 500 chars): {}", trimmed.substring(0, Math.min(trimmed.length(), 500)));
+            throw new ExternalApiException("TEFAS", "Failed to parse TEFAS response", e);
         }
     }
 }

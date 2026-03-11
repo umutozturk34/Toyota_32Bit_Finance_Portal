@@ -1,11 +1,10 @@
 #!/bin/sh
 set -e
 
-# ═══════════════════════════════════════════════════════════════════════════════
+
 # Finance Portal — OpenSearch Init Script
 # Creates: ISM Policy, Index Templates, Index Patterns, 13 Visualizations, 4 Dashboards
 # Idempotent: Skips if dashboards already exist, re-creates if missing
-# ═══════════════════════════════════════════════════════════════════════════════
 
 apk add --no-cache curl jq > /dev/null 2>&1
 
@@ -77,7 +76,7 @@ os_api -X PUT "$OS_URL/_plugins/_ism/policies/finance-lifecycle" \
     "states": [
       {
         "name": "hot",
-        "actions": [{ "force_merge": { "max_num_segments": 1 } }],
+        "actions": [],
         "transitions": [{ "state_name": "delete", "conditions": { "min_index_age": "30d" } }]
       },
       {
@@ -138,22 +137,13 @@ os_api -X PUT "$OS_URL/_index_template/finance-logs-template" \
     "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
     "mappings": {
       "properties": {
-        "severity": {
-          "properties": {
-            "text":       { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
-            "number":     { "type": "integer" }
-          }
-        },
-        "body":            { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
         "@timestamp":      { "type": "date" },
-        "observedTimestamp":{ "type": "date" },
-        "traceId":         { "type": "keyword" },
-        "spanId":          { "type": "keyword" },
-        "resource": {
-          "properties": {
-            "service.name": { "type": "keyword" }
-          }
-        }
+        "severity":        { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+        "body":            { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+        "serviceName":     { "type": "keyword" },
+        "logger":          { "type": "keyword" },
+        "thread":          { "type": "keyword" },
+        "exception":       { "type": "text" }
       }
     }
   }
@@ -336,7 +326,7 @@ dash_line() {
 {
   # ─── INDEX PATTERNS ───
   ip_line "finance-traces"  "finance-traces*"  "endTime"
-  ip_line "finance-logs"    "finance-logs*"    "observedTimestamp"
+  ip_line "finance-logs"    "finance-logs*"    "@timestamp"
   ip_line "finance-metrics" "finance-metrics*" "@timestamp"
 
   # ─── EXECUTIVE DASHBOARD CHARTS ───
@@ -357,25 +347,25 @@ dash_line() {
 
   # 2.1 Latency Percentiles (uses script to compute duration from startTime/endTime)
   viz_line "viz-apm-lat" "APM - Latency Percentiles" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Latency Percentiles (ms)","data":{"url":{"%context%":true,"index":"finance-traces*","body":{"size":0,"aggs":{"over_time":{"date_histogram":{"field":"endTime","fixed_interval":"1m","min_doc_count":1},"aggs":{"pcts":{"percentiles":{"script":{"source":"doc['\''endTime'\''].value.toInstant().toEpochMilli() - doc['\''startTime'\''].value.toInstant().toEpochMilli()","lang":"painless"},"percents":[50,95,99]}}}}}}},"format":{"property":"aggregations.over_time.buckets"}},"transform":[{"calculate":"datum.pcts.values['\''50.0'\''] != null ? datum.pcts.values['\''50.0'\''] : 0","as":"P50"},{"calculate":"datum.pcts.values['\''95.0'\''] != null ? datum.pcts.values['\''95.0'\''] : 0","as":"P95"},{"calculate":"datum.pcts.values['\''99.0'\''] != null ? datum.pcts.values['\''99.0'\''] : 0","as":"P99"}],"layer":[{"mark":{"type":"line","strokeWidth":2,"point":{"size":30},"color":"#54B399"},"encoding":{"y":{"field":"P50","type":"quantitative"},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"P50","type":"quantitative","title":"P50 ms","format":".1f"}]}},{"mark":{"type":"line","strokeWidth":2,"point":{"size":30},"color":"#D6BF57"},"encoding":{"y":{"field":"P95","type":"quantitative"},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"P95","type":"quantitative","title":"P95 ms","format":".1f"}]}},{"mark":{"type":"line","strokeWidth":2,"point":{"size":30},"color":"#E7664C"},"encoding":{"y":{"field":"P99","type":"quantitative"},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"P99","type":"quantitative","title":"P99 ms","format":".1f"}]}}],"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"type":"quantitative","axis":{"title":"Latency (ms)"}}}}'
+    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Latency Percentiles (ms)","data":{"url":{"%context%":true,"index":"finance-traces*","body":{"size":0,"aggs":{"over_time":{"date_histogram":{"field":"endTime","fixed_interval":"1m","min_doc_count":1},"aggs":{"pcts":{"percentiles":{"script":{"source":"doc['\''endTime'\''].value.toInstant().toEpochMilli() - doc['\''startTime'\''].value.toInstant().toEpochMilli()","lang":"painless"},"percents":[50,95,99]}}}}}}},"format":{"property":"aggregations.over_time.buckets"}},"transform":[{"calculate":"datum.pcts.values['\''50.0'\''] != null && isFinite(datum.pcts.values['\''50.0'\'']) ? datum.pcts.values['\''50.0'\''] : 0","as":"P50"},{"calculate":"datum.pcts.values['\''95.0'\''] != null && isFinite(datum.pcts.values['\''95.0'\'']) ? datum.pcts.values['\''95.0'\''] : 0","as":"P95"},{"calculate":"datum.pcts.values['\''99.0'\''] != null && isFinite(datum.pcts.values['\''99.0'\'']) ? datum.pcts.values['\''99.0'\''] : 0","as":"P99"}],"layer":[{"mark":{"type":"line","strokeWidth":2,"point":{"size":30},"color":"#54B399"},"encoding":{"y":{"field":"P50","type":"quantitative"},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"P50","type":"quantitative","title":"P50 ms","format":".1f"}]}},{"mark":{"type":"line","strokeWidth":2,"point":{"size":30},"color":"#D6BF57"},"encoding":{"y":{"field":"P95","type":"quantitative"},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"P95","type":"quantitative","title":"P95 ms","format":".1f"}]}},{"mark":{"type":"line","strokeWidth":2,"point":{"size":30},"color":"#E7664C"},"encoding":{"y":{"field":"P99","type":"quantitative"},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"P99","type":"quantitative","title":"P99 ms","format":".1f"}]}}],"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"type":"quantitative","axis":{"title":"Latency (ms)"}}}}'
 
   # 2.2 Latency Heatmap (computes duration client-side from startTime/endTime)
   viz_line "viz-apm-hm" "APM - Latency Heatmap" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Latency Heatmap","data":{"url":{"%context%":true,"index":"finance-traces*","body":{"size":0,"aggs":{"over_time":{"date_histogram":{"field":"endTime","fixed_interval":"1m","min_doc_count":1},"aggs":{"lat_ranges":{"range":{"script":{"source":"doc['\''endTime'\''].value.toInstant().toEpochMilli() - doc['\''startTime'\''].value.toInstant().toEpochMilli()","lang":"painless"},"ranges":[{"key":"0-1","to":1},{"key":"1-5","from":1,"to":5},{"key":"5-20","from":5,"to":20},{"key":"20-50","from":20,"to":50},{"key":"50-100","from":50,"to":100},{"key":"100+","from":100}]}}}}}}},"format":{"property":"aggregations.over_time.buckets"}},"transform":[{"flatten":["lat_ranges.buckets"],"as":["range"]},{"calculate":"datum.range.doc_count","as":"count"},{"calculate":"datum.range.key","as":"latency_band"},{"filter":"datum.count > 0"}],"mark":{"type":"rect","cornerRadius":2},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"latency_band","type":"ordinal","sort":["100+","50-100","20-50","5-20","1-5","0-1"],"axis":{"title":"Latency (ms)"}},"color":{"field":"latency_band","type":"ordinal","sort":["100+","50-100","20-50","5-20","1-5","0-1"],"scale":{"domain":["0-1","1-5","5-20","20-50","50-100","100+"],"range":["#54B399","#8BC34A","#D6BF57","#FF9800","#E7664C","#D32F2F"]},"legend":{"title":"Latency (ms)"}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"latency_band","type":"ordinal","title":"Latency ms"},{"field":"count","type":"quantitative","title":"Count"}]}}'
+    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Latency Distribution","data":{"url":{"%context%":true,"index":"finance-traces*","body":{"size":0,"aggs":{"lat_ranges":{"range":{"script":{"source":"doc['\''endTime'\''].value.toInstant().toEpochMilli() - doc['\''startTime'\''].value.toInstant().toEpochMilli()","lang":"painless"},"ranges":[{"key":"0-10 ms","to":10},{"key":"10-50 ms","from":10,"to":50},{"key":"50-100 ms","from":50,"to":100},{"key":"100-300 ms","from":100,"to":300},{"key":"300-1000 ms","from":300,"to":1000},{"key":"1s+","from":1000}]}}}}},"format":{"property":"aggregations.lat_ranges.buckets"}},"transform":[{"filter":"datum.doc_count > 0"},{"calculate":"datum.key","as":"latency_band"},{"calculate":"datum.doc_count","as":"count"}],"mark":{"type":"bar","cornerRadiusEnd":4},"encoding":{"x":{"field":"count","type":"quantitative","axis":{"title":"Count","tickCount":5},"scale":{"zero":true}},"y":{"field":"latency_band","type":"ordinal","sort":["1s+","300-1000 ms","100-300 ms","50-100 ms","10-50 ms","0-10 ms"],"axis":{"title":"Latency"}},"color":{"field":"latency_band","type":"ordinal","sort":["1s+","300-1000 ms","100-300 ms","50-100 ms","10-50 ms","0-10 ms"],"scale":{"domain":["1s+","300-1000 ms","100-300 ms","50-100 ms","10-50 ms","0-10 ms"],"range":["#8B0000","#CC3232","#DB7B2B","#E7B416","#7BC043","#2DC937"]},"legend":{"title":"Latency"}},"tooltip":[{"field":"latency_band","type":"ordinal","title":"Latency"},{"field":"count","type":"quantitative","title":"Count"}]}}'
 
   # 2.3 Dependency Analysis (uses http.route and scripted avg duration)
   viz_line "viz-apm-dep" "APM - Dependency Analysis" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Avg Latency by Route","data":{"url":{"%context%":true,"index":"finance-traces*","body":{"size":0,"aggs":{"filtered":{"filter":{"exists":{"field":"attributes.http.route"}},"aggs":{"targets":{"terms":{"field":"attributes.http.route.keyword","size":20},"aggs":{"avg_lat":{"avg":{"script":{"source":"doc['\''endTime'\''].value.toInstant().toEpochMilli() - doc['\''startTime'\''].value.toInstant().toEpochMilli()","lang":"painless"}}}}}}}}}},"format":{"property":"aggregations.filtered.targets.buckets"}},"transform":[{"calculate":"datum.avg_lat.value","as":"avg_ms"}],"mark":{"type":"bar","cornerRadiusEnd":4},"encoding":{"y":{"field":"key","type":"nominal","axis":{"title":"HTTP Route"},"sort":"-x"},"x":{"field":"avg_ms","type":"quantitative","axis":{"title":"Avg Latency (ms)"}},"color":{"field":"avg_ms","type":"quantitative","scale":{"scheme":"redyellowgreen","reverse":true},"legend":{"title":"ms"}},"tooltip":[{"field":"key","type":"nominal","title":"Route"},{"field":"avg_ms","type":"quantitative","title":"Avg ms","format":".1f"}]}}'
+    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Avg Latency by Route","data":{"url":{"%context%":true,"index":"finance-traces*","body":{"size":0,"aggs":{"filtered":{"filter":{"exists":{"field":"attributes.http.route"}},"aggs":{"targets":{"terms":{"field":"attributes.http.route.keyword","size":20},"aggs":{"avg_lat":{"avg":{"script":{"source":"doc['\''endTime'\''].value.toInstant().toEpochMilli() - doc['\''startTime'\''].value.toInstant().toEpochMilli()","lang":"painless"}}}}}}}}}},"format":{"property":"aggregations.filtered.targets.buckets"}},"transform":[{"calculate":"datum.avg_lat.value != null && isFinite(datum.avg_lat.value) ? datum.avg_lat.value : 0","as":"avg_ms"}],"mark":{"type":"bar","cornerRadiusEnd":4},"encoding":{"y":{"field":"key","type":"nominal","axis":{"title":"HTTP Route"},"sort":"-x"},"x":{"field":"avg_ms","type":"quantitative","axis":{"title":"Avg Latency (ms)"}},"color":{"field":"avg_ms","type":"quantitative","scale":{"scheme":"redyellowgreen","reverse":true},"legend":{"title":"ms"}},"tooltip":[{"field":"key","type":"nominal","title":"Route"},{"field":"avg_ms","type":"quantitative","title":"Avg ms","format":".1f"}]}}'
 
   # ─── RELIABILITY DASHBOARD CHARTS ───
 
   # 3.1 Log Severity Distribution
   viz_line "viz-rel-logdist" "Reliability - Log Distribution" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Log Severity Distribution","data":{"url":{"%context%":true,"index":"finance-logs*","body":{"size":0,"aggs":{"severity":{"terms":{"field":"severity.text.keyword","size":10}}}}},"format":{"property":"aggregations.severity.buckets"}},"mark":{"type":"arc","innerRadius":50,"outerRadius":90,"cornerRadius":4},"encoding":{"theta":{"field":"doc_count","type":"quantitative"},"color":{"field":"key","type":"nominal","scale":{"domain":["INFO","WARN","ERROR","DEBUG","TRACE"],"range":["#54B399","#D6BF57","#E7664C","#6092C0","#888"]},"legend":{"title":"Severity"}},"tooltip":[{"field":"key","type":"nominal","title":"Severity"},{"field":"doc_count","type":"quantitative","title":"Count"}]}}'
+    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Log Severity Distribution","data":{"url":{"%context%":true,"index":"finance-logs*","body":{"size":0,"aggs":{"severity":{"terms":{"field":"severity.keyword","size":10}}}}},"format":{"property":"aggregations.severity.buckets"}},"mark":{"type":"arc","innerRadius":50,"outerRadius":90,"cornerRadius":4},"encoding":{"theta":{"field":"doc_count","type":"quantitative"},"color":{"field":"key","type":"nominal","scale":{"domain":["INFO","WARN","ERROR","DEBUG","TRACE"],"range":["#54B399","#D6BF57","#E7664C","#6092C0","#888"]},"legend":{"title":"Severity"}},"tooltip":[{"field":"key","type":"nominal","title":"Severity"},{"field":"doc_count","type":"quantitative","title":"Count"}]}}'
 
   # 3.2 Log Volume Over Time (by severity)
   viz_line "viz-rel-errhm" "Reliability - Error Heatmap" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Log Volume Over Time","data":{"url":{"%context%":true,"index":"finance-logs*","body":{"size":0,"aggs":{"over_time":{"date_histogram":{"field":"observedTimestamp","fixed_interval":"1h","min_doc_count":1},"aggs":{"by_sev":{"terms":{"field":"severity.text.keyword","size":10}}}}}}},"format":{"property":"aggregations.over_time.buckets"}},"transform":[{"flatten":["by_sev.buckets"],"as":["sev_bucket"]},{"calculate":"datum.sev_bucket.key","as":"severity"},{"calculate":"datum.sev_bucket.doc_count","as":"count"}],"mark":{"type":"bar","cornerRadiusTopLeft":3,"cornerRadiusTopRight":3},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time"}},"y":{"field":"count","type":"quantitative","stack":true,"axis":{"title":"Log Count"}},"color":{"field":"severity","type":"nominal","scale":{"domain":["INFO","WARN","ERROR","DEBUG","TRACE"],"range":["#54B399","#D6BF57","#E7664C","#6092C0","#888"]},"legend":{"title":"Severity"}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"severity","type":"nominal","title":"Severity"},{"field":"count","type":"quantitative","title":"Count"}]}}'
+    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Log Volume Over Time","data":{"url":{"%context%":true,"index":"finance-logs*","body":{"size":0,"aggs":{"over_time":{"date_histogram":{"field":"@timestamp","fixed_interval":"1h","min_doc_count":1},"aggs":{"by_sev":{"terms":{"field":"severity.keyword","size":10}}}}}}},"format":{"property":"aggregations.over_time.buckets"}},"transform":[{"flatten":["by_sev.buckets"],"as":["sev_bucket"]},{"calculate":"datum.sev_bucket.key","as":"severity"},{"calculate":"datum.sev_bucket.doc_count","as":"count"}],"mark":{"type":"bar","cornerRadiusTopLeft":3,"cornerRadiusTopRight":3},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time"}},"y":{"field":"count","type":"quantitative","stack":true,"axis":{"title":"Log Count"}},"color":{"field":"severity","type":"nominal","scale":{"domain":["INFO","WARN","ERROR","DEBUG","TRACE"],"range":["#54B399","#D6BF57","#E7664C","#6092C0","#888"]},"legend":{"title":"Severity"}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"severity","type":"nominal","title":"Severity"},{"field":"count","type":"quantitative","title":"Count"}]}}'
 
   # 3.3 Top Log Messages
   viz_line "viz-rel-toperr" "Reliability - Top Log Messages" \
@@ -384,11 +374,11 @@ dash_line() {
 
   # 4.1 CPU Usage Trend
   viz_line "viz-met-cpu" "Metrics - CPU Usage" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"CPU Usage (%)","data":{"url":{"%context%":true,"index":"finance-metrics*","body":{"size":0,"aggs":{"filtered":{"filter":{"exists":{"field":"jvm.cpu.recent_utilization"}},"aggs":{"over_time":{"date_histogram":{"field":"@timestamp","fixed_interval":"1m"},"aggs":{"avg_cpu":{"avg":{"field":"jvm.cpu.recent_utilization"}}}}}}}}},"format":{"property":"aggregations.filtered.over_time.buckets"}},"transform":[{"calculate":"datum.avg_cpu.value != null ? datum.avg_cpu.value * 100 : 0","as":"cpu_pct"}],"mark":{"type":"area","line":true,"color":{"gradient":"linear","stops":[{"offset":0,"color":"rgba(84,179,153,0.3)"},{"offset":1,"color":"#54B399"}]}},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"cpu_pct","type":"quantitative","axis":{"title":"CPU %"},"scale":{"zero":true}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"cpu_pct","type":"quantitative","title":"CPU %","format":".1f"}]}}'
+    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"CPU Usage (%)","data":{"url":{"%context%":true,"index":"finance-metrics*","body":{"size":0,"aggs":{"filtered":{"filter":{"exists":{"field":"jvm.cpu.recent_utilization"}},"aggs":{"over_time":{"date_histogram":{"field":"@timestamp","fixed_interval":"1m"},"aggs":{"avg_cpu":{"avg":{"field":"jvm.cpu.recent_utilization"}}}}}}}}},"format":{"property":"aggregations.filtered.over_time.buckets"}},"transform":[{"calculate":"datum.avg_cpu.value != null && isFinite(datum.avg_cpu.value) ? datum.avg_cpu.value * 100 : 0","as":"cpu_pct"}],"mark":{"type":"area","line":true,"color":{"gradient":"linear","stops":[{"offset":0,"color":"rgba(84,179,153,0.3)"},{"offset":1,"color":"#54B399"}]}},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"cpu_pct","type":"quantitative","axis":{"title":"CPU %"},"scale":{"zero":true}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"cpu_pct","type":"quantitative","title":"CPU %","format":".1f"}]}}'
 
   # 4.2 Memory Usage
   viz_line "viz-met-mem" "Metrics - Memory Usage" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"JVM Heap Memory (MB)","data":{"url":{"%context%":true,"index":"finance-metrics*","body":{"size":0,"aggs":{"filtered":{"filter":{"bool":{"must":[{"exists":{"field":"jvm.memory.used"}},{"term":{"jvm.memory.type":"heap"}}]}},"aggs":{"over_time":{"date_histogram":{"field":"@timestamp","fixed_interval":"1m"},"aggs":{"total_mem":{"sum":{"field":"jvm.memory.used"}}}}}}}}},"format":{"property":"aggregations.filtered.over_time.buckets"}},"transform":[{"calculate":"datum.total_mem.value != null ? datum.total_mem.value / 1048576 : 0","as":"mem_mb"}],"mark":{"type":"area","line":true,"color":{"gradient":"linear","stops":[{"offset":0,"color":"rgba(96,146,192,0.3)"},{"offset":1,"color":"#6092C0"}]}},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"mem_mb","type":"quantitative","axis":{"title":"Heap Memory (MB)"}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"mem_mb","type":"quantitative","title":"MB","format":".0f"}]}}'
+    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"JVM Heap Memory (MB)","data":{"url":{"%context%":true,"index":"finance-metrics*","body":{"size":0,"aggs":{"filtered":{"filter":{"bool":{"must":[{"exists":{"field":"jvm.memory.used"}},{"term":{"jvm.memory.type":"heap"}}]}},"aggs":{"over_time":{"date_histogram":{"field":"@timestamp","fixed_interval":"1m"},"aggs":{"total_mem":{"sum":{"field":"jvm.memory.used"}}}}}}}}},"format":{"property":"aggregations.filtered.over_time.buckets"}},"transform":[{"calculate":"datum.total_mem.value != null && isFinite(datum.total_mem.value) ? datum.total_mem.value / 1048576 : 0","as":"mem_mb"}],"mark":{"type":"area","line":true,"color":{"gradient":"linear","stops":[{"offset":0,"color":"rgba(96,146,192,0.3)"},{"offset":1,"color":"#6092C0"}]}},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"mem_mb","type":"quantitative","axis":{"title":"Heap Memory (MB)"}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"mem_mb","type":"quantitative","title":"MB","format":".0f"}]}}'
 
   # 4.3 HTTP Requests
   viz_line "viz-met-reqcount" "Metrics - Request Count" \
@@ -408,6 +398,23 @@ dash_line() {
   jq -nc --arg id "otel-met-dashboard" --arg title "4. Metrics & System Resources" --arg panels "$_panels4" \
     --arg v1 "viz-met-cpu" --arg v2 "viz-met-mem" --arg v3 "viz-met-reqcount" --arg v4 "viz-met-errrate" \
     '{"type":"dashboard","id":$id,"attributes":{"title":$title,"hits":0,"description":"","panelsJSON":$panels,"optionsJSON":"{\"useMargins\":true,\"hidePanelTitles\":false}","timeRestore":true,"timeFrom":"now-24h","timeTo":"now","kibanaSavedObjectMeta":{"searchSourceJSON":"{}"}},"references":[{"name":"panel_0","type":"visualization","id":$v1},{"name":"panel_1","type":"visualization","id":$v2},{"name":"panel_2","type":"visualization","id":$v3},{"name":"panel_3","type":"visualization","id":$v4}]}'
+
+  # ─── INTEGRATION & DB DASHBOARD CHARTS ───
+
+  # 5.1 DB Connection Pool Health (usage & pending over time)
+  viz_line "viz-integ-dbpool" "Integration - DB Connection Pool" \
+    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"DB Connection Pool Health","data":{"url":{"%context%":true,"index":"finance-metrics*","body":{"size":0,"aggs":{"over_time":{"date_histogram":{"field":"@timestamp","fixed_interval":"1m","min_doc_count":1},"aggs":{"avg_usage":{"avg":{"field":"db.client.connections.usage"}},"avg_pending":{"avg":{"field":"db.client.connections.pending_requests"}},"avg_max":{"avg":{"field":"db.client.connections.max"}}}}}}},"format":{"property":"aggregations.over_time.buckets"}},"transform":[{"calculate":"datum.key","as":"time"},{"calculate":"datum.avg_usage.value != null && isFinite(datum.avg_usage.value) ? datum.avg_usage.value : 0","as":"Active"},{"calculate":"datum.avg_pending.value != null && isFinite(datum.avg_pending.value) ? datum.avg_pending.value : 0","as":"Pending"},{"calculate":"datum.avg_max.value != null && isFinite(datum.avg_max.value) ? datum.avg_max.value : 0","as":"Max"},{"fold":["Active","Pending","Max"]}],"mark":{"type":"line","strokeWidth":2,"point":{"size":30}},"encoding":{"x":{"field":"time","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"value","type":"quantitative","axis":{"title":"Connections"}},"color":{"field":"key","type":"nominal","scale":{"domain":["Active","Pending","Max"],"range":["#6092C0","#E7664C","#54B399"]},"legend":{"title":"Metric"}},"tooltip":[{"field":"time","type":"temporal","title":"Time"},{"field":"key","type":"nominal","title":"Metric"},{"field":"value","type":"quantitative","title":"Count","format":".0f"}]}}'
+
+  # 5.2 JVM Thread State Distribution
+  viz_line "viz-integ-threads" "Integration - Thread States" \
+    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"JVM Thread State Distribution","data":{"url":{"%context%":true,"index":"finance-metrics*","body":{"size":0,"aggs":{"filtered":{"filter":{"exists":{"field":"jvm.thread.state"}},"aggs":{"states":{"terms":{"field":"jvm.thread.state","size":10},"aggs":{"total_threads":{"sum":{"field":"jvm.thread.count"}}}}}}}}},"format":{"property":"aggregations.filtered.states.buckets"}},"transform":[{"calculate":"datum.total_threads.value != null && isFinite(datum.total_threads.value) ? datum.total_threads.value : 0","as":"threads"}],"mark":{"type":"bar","cornerRadiusTopLeft":4,"cornerRadiusTopRight":4},"encoding":{"x":{"field":"key","type":"nominal","axis":{"title":"Thread State"}},"y":{"field":"threads","type":"quantitative","axis":{"title":"Thread Count"}},"color":{"field":"key","type":"nominal","scale":{"domain":["runnable","waiting","timed_waiting","blocked","new","terminated"],"range":["#54B399","#6092C0","#D6BF57","#E7664C","#888","#D32F2F"]},"legend":{"title":"State"}},"tooltip":[{"field":"key","type":"nominal","title":"State"},{"field":"threads","type":"quantitative","title":"Threads"}]}}'
+
+  # 5.3 HTTP Server Request Duration Over Time
+  viz_line "viz-integ-httplat" "Integration - HTTP Latency Trend" \
+    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"HTTP Server Request Latency","data":{"url":{"%context%":true,"index":"finance-metrics*","body":{"size":0,"aggs":{"filtered":{"filter":{"exists":{"field":"http.server.request.duration.values"}},"aggs":{"over_time":{"date_histogram":{"field":"@timestamp","fixed_interval":"1m","min_doc_count":1},"aggs":{"avg_lat":{"avg":{"field":"http.server.request.duration.values"}}}}}}}}},"format":{"property":"aggregations.filtered.over_time.buckets"}},"transform":[{"calculate":"datum.avg_lat.value != null && isFinite(datum.avg_lat.value) ? datum.avg_lat.value * 1000 : 0","as":"latency_ms"}],"mark":{"type":"area","line":{"color":"#D6BF57"},"color":{"gradient":"linear","stops":[{"offset":0,"color":"rgba(214,191,87,0.15)"},{"offset":1,"color":"rgba(214,191,87,0.5)"}]}},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"latency_ms","type":"quantitative","axis":{"title":"Avg Latency (ms)"}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"latency_ms","type":"quantitative","title":"Latency ms","format":".1f"}]}}'
+
+  # 5th dashboard with 3 panels
+  dash_line "otel-integ-dashboard" "5. Integration & DB Health" "viz-integ-dbpool" "viz-integ-threads" "viz-integ-httplat"
 
 } > "$NDJSON"
 
@@ -432,12 +439,54 @@ IMPORT_RESULT=$(dash_api -X POST "$DASH_URL/api/saved_objects/_import?overwrite=
 SUCCESS=$(printf '%s' "$IMPORT_RESULT" | jq -r '.success // false' 2>/dev/null || echo "false")
 
 if [ "$SUCCESS" = "true" ]; then
-  echo "Kurulum tamamlandi! 4 Dashboard ve 13 Grafik basariyla olusturuldu."
+  # Refresh field lists — index templates give us the mapping even without docs
+  echo "Index pattern field listleri guncelleniyor..."
+  for pat_id in finance-traces finance-logs finance-metrics; do
+    case "$pat_id" in
+      finance-traces) _tf="endTime" ;;
+      *)              _tf="@timestamp" ;;
+    esac
+
+    # Build fields JSON from _field_caps
+    FIELDS_JSON=$(os_api -s "$OS_URL/${pat_id}*/_field_caps?fields=*" \
+      -H 'Content-Type: application/json' 2>/dev/null \
+    | jq -c '[
+        .fields | to_entries[] |
+        .key as $name | .value | to_entries[0] |
+        .value as $info |
+        {
+          name: $name,
+          type: (if $info.type == "keyword" or $info.type == "text" then "string"
+                 elif $info.type == "integer" or $info.type == "long" or $info.type == "float" or $info.type == "double" then "number"
+                 elif $info.type == "date" then "date"
+                 elif $info.type == "boolean" then "boolean"
+                 else $info.type end),
+          count: 0,
+          scripted: false,
+          searchable: ($info.searchable // true),
+          aggregatable: ($info.aggregatable // false),
+          readFromDocValues: ($info.aggregatable // false)
+        }
+      ]')
+
+    # Use jq to build payload — handles JSON escaping correctly
+    PAYLOAD=$(jq -nc \
+      --arg fields "$FIELDS_JSON" \
+      --arg title "${pat_id}*" \
+      --arg tf "$_tf" \
+      '{attributes: {title: $title, timeFieldName: $tf, fields: $fields}}')
+
+    dash_api -X PUT "$DASH_URL/api/saved_objects/index-pattern/$pat_id" \
+      -H "Content-Type: application/json" \
+      -d "$PAYLOAD" > /dev/null 2>&1 && echo "  $pat_id: OK" || echo "  $pat_id: HATA"
+  done
+  echo "Kurulum tamamlandi! 5 Dashboard ve 16 Grafik basariyla olusturuldu."
   echo ""
   echo "   1. Executive Health Dashboard     - Genel saglik durumu"
   echo "   2. APM & Performance Dashboard    - Performans analizi"
   echo "   3. Reliability & Logs Dashboard   - Hata analizi"
   echo "   4. Metrics & System Resources     - Sistem kaynaklari"
+  echo "   5. Integration & DB Health        - DB pool, thread, HTTP latency"
   echo ""
   echo "   http://opensearch-dashboards:5601/app/dashboards"
 else

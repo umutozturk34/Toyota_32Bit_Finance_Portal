@@ -7,14 +7,14 @@ import com.finance.backend.model.Crypto;
 import com.finance.backend.model.CryptoCandle;
 import com.finance.backend.service.MarketCacheService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Slf4j
+@Log4j2
 @RestController
 @RequestMapping("/api/v1/market")
 @RequiredArgsConstructor
@@ -26,7 +26,6 @@ public class CryptoController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CryptoResponse> getCryptoById(@PathVariable String id) {
         String normalizedId = id.strip().toLowerCase();
-        log.debug("Get crypto snapshot: {}", normalizedId);
         return ResponseEntity.ok(cryptoResponseMapper.toCryptoResponse(cryptoCacheService.getSnapshot(normalizedId)));
     }
 
@@ -34,7 +33,6 @@ public class CryptoController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<CandleResponse>> getCryptoHistory(@PathVariable String id) {
         String normalizedId = id.strip().toLowerCase();
-        log.debug("Get crypto history: {}", normalizedId);
         return ResponseEntity.ok(cryptoResponseMapper.toCryptoCandleResponses(cryptoCacheService.getHistory(normalizedId)));
     }
 }

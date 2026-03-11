@@ -4,41 +4,16 @@ import com.finance.backend.dto.response.CandleResponse;
 import com.finance.backend.dto.response.StockResponse;
 import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
 
 import java.util.List;
 
-@Component
-public class StockResponseMapper {
+@Mapper(componentModel = "spring")
+public abstract class StockResponseMapper {
 
-    public StockResponse toStockResponse(Stock s) {
-        return new StockResponse(
-                s.getSymbol(),
-                s.getName(),
-                s.getExchange(),
-                s.getCurrentPrice(),
-                s.getOpenPrice(),
-                s.getDayHigh(),
-                s.getDayLow(),
-                s.getVolume(),
-                s.getPriceChangePercent(),
-                s.getPriceChangeAmount(),
-                s.getLastUpdated()
-        );
-    }
+    public abstract StockResponse toStockResponse(Stock stock);
 
-    public CandleResponse toCandleResponse(StockCandle c) {
-        return new CandleResponse(
-                c.getCandleDate(),
-                c.getOpen(),
-                c.getHigh(),
-                c.getLow(),
-                c.getClose(),
-                c.getVolume()
-        );
-    }
+    public abstract CandleResponse toCandleResponse(StockCandle candle);
 
-    public List<CandleResponse> toStockCandleResponses(List<StockCandle> candles) {
-        return candles.stream().map(this::toCandleResponse).toList();
-    }
+    public abstract List<CandleResponse> toStockCandleResponses(List<StockCandle> candles);
 }

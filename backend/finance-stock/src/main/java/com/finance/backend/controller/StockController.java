@@ -7,14 +7,14 @@ import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
 import com.finance.backend.service.MarketCacheService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Slf4j
+@Log4j2
 @RestController
 @RequestMapping("/api/v1/stocks")
 @RequiredArgsConstructor
@@ -26,7 +26,6 @@ public class StockController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<StockResponse> getStockBySymbol(@PathVariable String symbol) {
         String normalized = symbol.strip().toUpperCase();
-        log.debug("Get stock snapshot: {}", normalized);
         return ResponseEntity.ok(stockResponseMapper.toStockResponse(stockCacheService.getSnapshot(normalized)));
     }
 
@@ -34,7 +33,6 @@ public class StockController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<CandleResponse>> getStockHistory(@PathVariable String symbol) {
         String normalized = symbol.strip().toUpperCase();
-        log.debug("Get stock history: {}", normalized);
         return ResponseEntity.ok(stockResponseMapper.toStockCandleResponses(stockCacheService.getHistory(normalized)));
     }
 }

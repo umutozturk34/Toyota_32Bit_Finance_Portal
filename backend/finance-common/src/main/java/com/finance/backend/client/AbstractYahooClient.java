@@ -1,61 +1,57 @@
-    package com.finance.backend.client;
+package com.finance.backend.client;
 
-    import com.finance.backend.dto.external.YahooCandleDto;
-    import com.finance.backend.dto.internal.YahooChartResponse;
-    import com.finance.backend.dto.internal.YahooChartResponse.Result;
-    import com.finance.backend.exception.ExternalApiException;
-    import com.finance.backend.mapper.YahooCandleMapper;
-    import lombok.extern.slf4j.Slf4j;
-    import org.springframework.web.client.RestTemplate;
+import com.finance.backend.dto.external.YahooCandleDto;
+import com.finance.backend.dto.internal.YahooChartResponse;
+import com.finance.backend.dto.internal.YahooChartResponse.Result;
+import com.finance.backend.exception.ExternalApiException;
+import com.finance.backend.exception.SymbolNotFoundException;
+import com.finance.backend.mapper.YahooClientMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-    import java.time.ZoneId;
-    import java.util.List;
+import java.util.List;
 
-    @Slf4j
-    public abstract class AbstractYahooClient {
-        protected final RestTemplate restTemplate;
-        protected final String baseUrl;
-        private final ZoneId zoneId;
-        private final boolean truncateToDays;
-        private final YahooCandleMapper candleMapper;
+@Log4j2
+public abstract class AbstractYahooClient {
 
-        protected AbstractYahooClient(RestTemplate restTemplate, String baseUrl,
-                                    ZoneId zoneId, boolean truncateToDays,
-                                    YahooCandleMapper candleMapper) {
-            this.restTemplate = restTemplate;
-            this.baseUrl = baseUrl;
-            this.zoneId = zoneId;
-            this.truncateToDays = truncateToDays;
-            this.candleMapper = candleMapper;
-        }
+    protected final WebClient webClient;
+    protected final YahooClientMapper yahooClientMapper;
 
-        public List<YahooCandleDto> fetchCandles(String symbol, String range, String interval) {
-            try {
-                Result result = fetchChart(symbol, range, interval);
-                return candleMapper.toCandleDtos(result, zoneId, truncateToDays);
-            } catch (ExternalApiException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new ExternalApiException("Yahoo Finance", "Candle fetch failed for " + symbol, e);
-            }
-        }
-
-        protected Result fetchChart(String symbol, String range, String interval) {
-            String url = baseUrl + symbol + "?range=" + range + "&interval=" + interval;
-            try {
-                YahooChartResponse response = restTemplate.getForObject(url, YahooChartResponse.class);
-                if (response == null || response.chart() == null) {
-                    throw new ExternalApiException("Yahoo Finance", "Empty response for " + symbol);
-                }
-                Result result = response.chart().firstResult();
-                if (result == null) {
-                    throw new ExternalApiException("Yahoo Finance", "No chart data for " + symbol);
-                }
-                return result;
-            } catch (ExternalApiException e) {
-                throw e;
-            } catch (Exception e) {
-                throw new ExternalApiException("Yahoo Finance", "Request failed: " + url, e);
-            }
-        }
+    protected AbstractYahooClient(WebClient webClient, YahooClientMapper yahooClientMapper) {
+        this.webClient = webClient;
+        this.yahooClientMapper = yahooClientMapper;
     }
+
+    @CircuitBreaker(name = "yahoo")
+    @Retry(name = "yahoo")
+    public List<YahooCandleDto> fetchCandles(String symbol, String range, String interval, boolean truncateToDays) {
+        log.debug("Fetching candles: symbol={}, range={}, interval={}", symbol, range, interval);
+        Result result = fetchChart(symbol, range, interval);
+        List<YahooCandleDto> candles = yahooClientMapper.toCandleDtos(result, truncateToDays);
+        log.debug("Yahoo returned {} candles for {}", candles.size(), symbol);
+        return candles;
+    }
+
+    protected Result fetchChart(String symbol, String range, String interval) {
+        YahooChartResponse response;
+        try {
+            response = webClient.get()
+                    .uri(symbol + "?range=" + range + "&interval=" + interval)
+                    .retrieve()
+                    .bodyToMono(YahooChartResponse.class)
+                    .block();
+        } catch (WebClientResponseException.NotFound e) {
+            throw new SymbolNotFoundException(symbol);
+        } catch (Exception e) {
+            throw new ExternalApiException("Yahoo Finance", "Request failed for " + symbol, e);
+        }
+        if (response == null || response.chart() == null || response.chart().result() == null
+                || response.chart().result().isEmpty()) {
+            throw new SymbolNotFoundException(symbol);
+        }
+        return response.chart().result().getFirst();
+    }
+}

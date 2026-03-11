@@ -3,6 +3,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 @Getter
 @Setter
 @SuperBuilder
@@ -38,4 +39,17 @@ public class Crypto extends BaseAsset {
     private String exchange;
     @Column(name = "currency")
     private String currency;
+
+    public void scaleFields(int scale) {
+        this.currentPrice = scaleValue(this.currentPrice, scale);
+        this.currentPriceTry = scaleValue(this.currentPriceTry, scale);
+        this.changeAmount = scaleValue(this.changeAmount, scale);
+        this.changePercent = scaleValue(this.changePercent, scale);
+        this.marketCap = scaleValue(this.marketCap, scale);
+        this.totalVolume = scaleValue(this.totalVolume, scale);
+    }
+
+    private BigDecimal scaleValue(BigDecimal value, int scale) {
+        return value != null ? value.setScale(scale, RoundingMode.HALF_UP) : null;
+    }
 }

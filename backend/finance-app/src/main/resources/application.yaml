@@ -41,10 +41,152 @@ app:
   api:
     coingecko:
       base-url: https://api.coingecko.com/api/v3
+      user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      api-key-header: x-cg-demo-api-key
     yahoo:
       base-url: https://query1.finance.yahoo.com/v8/finance/chart/
-  tcmb-xml-url: ${TCMB_XML_URL:https://www.tcmb.gov.tr/kurlar/today.xml}
-  tefas-url: https://www.tefas.gov.tr/api/DB/BindHistoryInfo
+      user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  tcmb:
+    base-url: ${TCMB_BASE_URL:https://www.tcmb.gov.tr}
+    xml-path: /kurlar/today.xml
+  tefas-api-path: /api/DB/BindHistoryInfo
+  tefas-base-url: https://www.tefas.gov.tr
+  timezone: Europe/Istanbul
+  scale: 4
+
+  http:
+    connect-timeout-ms: 10000
+    read-timeout-ms: 30000
+    default-user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
+  async:
+    core-pool-size: 3
+    max-pool-size: 5
+    queue-capacity: 25
+
+  crypto:
+    history-days: 365
+    min-candles-for-healthy: 350
+
+  stock:
+    min-candles-for-incremental: 1200
+    history-years: 5
+
+  forex:
+    years-to-keep: 5
+    min-candles-for-incremental: 1200
+    spread-rate: 0.01
+
+  fund:
+    years-to-fetch: 5
+    min-candles-for-incremental: 30
+    window-sizes: 95
+
+resilience4j:
+  circuitbreaker:
+    circuitBreakerAspectOrder: 1
+    instances:
+      tefas:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        record-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+          - com.finance.backend.exception.ExternalApiRequestException
+      yahoo:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        record-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+        ignore-exceptions:
+          - com.finance.backend.exception.SymbolNotFoundException
+      coingecko:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        record-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+      tcmb:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        record-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+  ratelimiter:
+    instances:
+      yahoo:
+        limit-for-period: 1
+        limit-refresh-period: 1s
+        timeout-duration: 10s
+      tefas:
+        limit-for-period: 1
+        limit-refresh-period: 2s
+        timeout-duration: 10s
+      coingecko:
+        limit-for-period: 1
+        limit-refresh-period: 2s
+        timeout-duration: 10s
+  retry:
+    retryAspectOrder: 2
+    instances:
+      tefas:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - io.netty.handler.timeout.ReadTimeoutException
+        ignore-exceptions:
+          - com.finance.backend.exception.BusinessException
+          - com.finance.backend.exception.ExternalApiRequestException
+      tcmb:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - io.netty.handler.timeout.ReadTimeoutException
+      coingecko:
+        max-attempts: 3
+        wait-duration: 3s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - io.netty.handler.timeout.ReadTimeoutException
+      yahoo:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - io.netty.handler.timeout.ReadTimeoutException
+        ignore-exceptions:
+          - com.finance.backend.exception.SymbolNotFoundException
 
 management:
   endpoint:

@@ -1,5 +1,6 @@
 package com.finance.backend.service;
 import com.finance.backend.client.YahooStockClient;
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.dto.external.YahooStockQuoteDto;
 import com.finance.backend.exception.BusinessException;
@@ -10,10 +11,11 @@ import com.finance.backend.model.StockCandle;
 import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.repository.StockCandleRepository;
 import com.finance.backend.repository.StockRepository;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -22,32 +24,38 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-@Slf4j
+@Log4j2
 @Service
 public class StockDataService {
-    private static final ZoneId ISTANBUL_ZONE = ZoneId.of("Europe/Istanbul");
-    private static final int MIN_CANDLES_FOR_INCREMENTAL = 1200;
+    private final ZoneId appZone;
     private final YahooStockClient yahooStockClient;
     private final StockMapper stockMapper;
     private final StockRepository stockRepository;
     private final StockCandleRepository stockCandleRepository;
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
     private final MarketConstants marketConstants;
-    private final StockDataService self;
+    private final TransactionTemplate transactionTemplate;
+    private final int minCandlesForIncremental;
+    private final int historyYears;
+
     public StockDataService(YahooStockClient yahooStockClient,
                             StockMapper stockMapper,
                             StockRepository stockRepository,
                             StockCandleRepository stockCandleRepository,
                             MarketCacheService<Stock, StockCandle> stockCacheService,
                             MarketConstants marketConstants,
-                            @Lazy StockDataService self) {
+                            PlatformTransactionManager transactionManager,
+                            AppProperties appProperties) {
         this.yahooStockClient = yahooStockClient;
         this.stockMapper = stockMapper;
         this.stockRepository = stockRepository;
         this.stockCandleRepository = stockCandleRepository;
         this.stockCacheService = stockCacheService;
         this.marketConstants = marketConstants;
-        this.self = self;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.minCandlesForIncremental = appProperties.getStock().getMinCandlesForIncremental();
+        this.historyYears = appProperties.getStock().getHistoryYears();
+        this.appZone = ZoneId.of(appProperties.getTimezone());
     }
     public void updateStockSnapshots() {
         List<String> bistStocks = marketConstants.getTrackedBistStocks();
@@ -61,7 +69,7 @@ public class StockDataService {
         List<String> failedSymbols = new ArrayList<>();
         for (String symbol : bistStocks) {
             try {
-                Stock stock = self.updateSingleStockSnapshot(symbol);
+                Stock stock = transactionTemplate.execute(status -> updateSingleStockSnapshot(symbol));
                 stockCacheService.putSnapshot(symbol, stock);
                 successCount++;
             } catch (Exception e) {
@@ -71,14 +79,13 @@ public class StockDataService {
                 BatchFailureGuard.check(successCount, failCount, failedSymbols, "snapshot", 10);
             }
         }
-        log.info("Snapshot update completed: {} success, {} failed", successCount, failCount);
+        log.info("Stock snapshot update: {} success, {} failed", successCount, failCount);
         if (!failedSymbols.isEmpty()) {
             log.warn("Failed symbols: {}", failedSymbols);
         }
     }
-    @Transactional
-    public Stock updateSingleStockSnapshot(String symbol) {
-        YahooStockQuoteDto dto = yahooStockClient.fetchSnapshot(symbol);
+    private Stock updateSingleStockSnapshot(String symbol) {
+        YahooStockQuoteDto dto = yahooStockClient.fetchQuote(symbol);
         if (dto == null) {
             throw new BusinessException(
                     "Failed to fetch stock data from external API: " + symbol,
@@ -97,7 +104,6 @@ public class StockDataService {
             stock = stockMapper.toEntity(dto, now);
         }
         stockRepository.save(stock);
-        log.info("Updated snapshot: {} - TRY {}", symbol, stock.getCurrentPrice());
         return stock;
     }
     public void updateStockCandles() {
@@ -106,14 +112,14 @@ public class StockDataService {
             log.warn("No BIST stocks configured in environment variables");
             return;
         }
-        log.info("Starting candle update for {} BIST stocks (5 years)", bistStocks.size());
+        log.info("Starting candle update for {} BIST stocks", bistStocks.size());
         int totalCandles = 0;
         int successCount = 0;
         int failCount = 0;
         List<String> failedSymbols = new ArrayList<>();
         for (String symbol : bistStocks) {
             try {
-                int candleCount = self.updateCandlesForStock(symbol);
+                int candleCount = transactionTemplate.execute(status -> updateCandlesForStock(symbol));
                 stockCacheService.refreshHistory(symbol);
                 totalCandles += candleCount;
                 successCount++;
@@ -124,18 +130,21 @@ public class StockDataService {
                 BatchFailureGuard.check(successCount, failCount, failedSymbols, "candle", 10);
             }
         }
-        log.info("Candle update completed: {} total candles, {} success, {} failed", totalCandles, successCount, failCount);
+        log.info("Stock candle update: {} total, {} success, {} failed", totalCandles, successCount, failCount);
         if (!failedSymbols.isEmpty()) {
             log.warn("Failed symbols: {}", failedSymbols);
         }
     }
-    @Transactional
-    public int updateCandlesForStock(String symbol) {
+    private int updateCandlesForStock(String symbol) {
         Stock stock = stockRepository.getReferenceById(symbol);
         long existingCount = stockCandleRepository.countByStockSymbol(symbol);
-        String range = existingCount < MIN_CANDLES_FOR_INCREMENTAL ? "5y" : "5d";
-        log.info("{} - Existing candles: {}, using range: {}", symbol, existingCount, range);
-        List<YahooCandleDto> candleDtos = yahooStockClient.fetchCandles(symbol, range, "1d");
+        String range = existingCount < minCandlesForIncremental
+                ? historyYears + "y"
+                : stockCandleRepository.findFirstByStockSymbolOrderByCandleDateDesc(symbol)
+                        .map(lastCandle -> toYahooRange(lastCandle.getCandleDate()))
+                        .orElse(historyYears + "y");
+        log.debug("{} - existing: {}, range: {}", symbol, existingCount, range);
+        List<YahooCandleDto> candleDtos = yahooStockClient.fetchCandles(symbol, range, "1d", true);
         if (candleDtos.isEmpty()) {
             log.warn("{} - No valid candle data", symbol);
             return 0;
@@ -165,12 +174,23 @@ public class StockDataService {
             stockCandleRepository.saveAll(toSave);
         }
         if (newCount > 0 || updateCount > 0) {
-            log.info("{} - Saved {} candles ({} new, {} updated)", symbol, newCount + updateCount, newCount, updateCount);
+            log.debug("{} - {} new, {} updated", symbol, newCount, updateCount);
         }
-        if ("5y".equals(range)) {
-            LocalDateTime fiveYearsAgo = LocalDateTime.now(ISTANBUL_ZONE).minusYears(5);
-            stockCandleRepository.deleteByStockSymbolAndCandleDateBefore(symbol, fiveYearsAgo);
+        if (range.endsWith("y")) {
+            LocalDateTime cutoff = LocalDateTime.now(appZone).minusYears(historyYears);
+            stockCandleRepository.deleteByStockSymbolAndCandleDateBefore(symbol, cutoff);
         }
         return newCount + updateCount;
+    }
+
+    private String toYahooRange(LocalDateTime lastCandleDate) {
+        long gapDays = ChronoUnit.DAYS.between(lastCandleDate.toLocalDate(), LocalDate.now(appZone));
+        if (gapDays <= 5) return "5d";
+        if (gapDays <= 30) return "1mo";
+        if (gapDays <= 90) return "3mo";
+        if (gapDays <= 180) return "6mo";
+        if (gapDays <= 365) return "1y";
+        if (gapDays <= 730) return "2y";
+        return historyYears + "y";
     }
 }

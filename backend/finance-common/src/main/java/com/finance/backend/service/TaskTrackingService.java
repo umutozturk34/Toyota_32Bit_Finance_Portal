@@ -1,6 +1,7 @@
 package com.finance.backend.service;
 
-import lombok.extern.slf4j.Slf4j;
+import com.finance.backend.dto.response.TaskInfoResponse;
+import com.finance.backend.dto.response.TaskStatusResponse;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -9,7 +10,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-@Slf4j
 @Service
 public class TaskTrackingService {
 
@@ -17,21 +17,6 @@ public class TaskTrackingService {
 
     public record TaskInfo(String type, String status, String message,
                            Instant startedAt, Instant completedAt, String error) {
-        public Map<String, Object> toMap() {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("type", type);
-            m.put("status", status);
-            m.put("message", message);
-            m.put("startedAt", startedAt.toString());
-            if (completedAt != null) {
-                m.put("completedAt", completedAt.toString());
-                m.put("durationMs", Duration.between(startedAt, completedAt).toMillis());
-            } else {
-                m.put("durationMs", Duration.between(startedAt, Instant.now()).toMillis());
-            }
-            if (error != null) m.put("error", error);
-            return m;
-        }
     }
 
     private final Map<String, TaskInfo> runningTasks = new ConcurrentHashMap<>();
@@ -44,7 +29,6 @@ public class TaskTrackingService {
     public TaskInfo startTask(String taskType, String message) {
         TaskInfo info = new TaskInfo(taskType, "RUNNING", message, Instant.now(), null, null);
         runningTasks.put(taskType, info);
-        log.info("Task started: {}", taskType);
         return info;
     }
 
@@ -53,7 +37,6 @@ public class TaskTrackingService {
                 started.startedAt(), Instant.now(), null);
         addToHistory(completed);
         runningTasks.remove(taskType);
-        log.info("Task completed: {}", taskType);
     }
 
     public void failTask(String taskType, TaskInfo started, String errorMsg) {
@@ -61,20 +44,31 @@ public class TaskTrackingService {
                 started.startedAt(), Instant.now(), errorMsg);
         addToHistory(failed);
         runningTasks.remove(taskType);
-        log.error("Task failed: {}", taskType);
     }
 
-    public Map<String, Object> getStatus() {
-        List<Map<String, Object>> running = runningTasks.values().stream()
-                .map(TaskInfo::toMap)
+    public TaskStatusResponse getTypedStatus() {
+        List<TaskInfoResponse> running = runningTasks.values().stream()
+                .map(this::toInfoResponse)
                 .toList();
-        List<Map<String, Object>> history = taskHistory.stream()
-                .map(TaskInfo::toMap)
+        List<TaskInfoResponse> history = taskHistory.stream()
+                .map(this::toInfoResponse)
                 .toList();
-        return Map.of(
-                "running", running,
-                "history", history,
-                "runningCount", running.size());
+        return new TaskStatusResponse(running, history, running.size());
+    }
+
+    private TaskInfoResponse toInfoResponse(TaskInfo info) {
+        long durationMs;
+        String completedAt;
+        if (info.completedAt() != null) {
+            durationMs = Duration.between(info.startedAt(), info.completedAt()).toMillis();
+            completedAt = info.completedAt().toString();
+        } else {
+            durationMs = Duration.between(info.startedAt(), Instant.now()).toMillis();
+            completedAt = null;
+        }
+        return new TaskInfoResponse(
+                info.type(), info.status(), info.message(),
+                info.startedAt().toString(), completedAt, durationMs, info.error());
     }
 
     private void addToHistory(TaskInfo info) {

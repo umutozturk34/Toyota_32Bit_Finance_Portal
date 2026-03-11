@@ -25,7 +25,8 @@ public class MarketCacheConfig {
                 Duration.ofHours(24), Crypto.class,
                 new TypeReference<>() {}, "Crypto",
                 cryptoRepository::findById,
-                cryptoCandleRepository::findByCryptoIdOrderByCandleDateAsc
+                cryptoCandleRepository::findByCryptoIdOrderByCandleDateAsc,
+                cryptoRepository::findAllIds
         );
     }
 
@@ -41,7 +42,8 @@ public class MarketCacheConfig {
                 Duration.ofHours(24), Stock.class,
                 new TypeReference<>() {}, "Stock",
                 stockRepository::findById,
-                stockCandleRepository::findByStockSymbolOrderByCandleDateAsc
+                stockCandleRepository::findByStockSymbolOrderByCandleDateAsc,
+                stockRepository::findAllSymbols
         );
     }
 
@@ -53,11 +55,12 @@ public class MarketCacheConfig {
             ForexCandleRepository forexCandleRepository) {
         return new MarketCacheService<>(
                 redisTemplate, objectMapper,
-                "forex:snapshot:", "forex:history:",
+                "market:forex:snapshot:", "market:forex:history:",
                 Duration.ofHours(24), Forex.class,
                 new TypeReference<>() {}, "Forex",
                 forexRepository::findById,
-                forexCandleRepository::findTop1825ByCurrencyCodeOrderByCandleDateAsc
+                forexCandleRepository::findTop1825ByCurrencyCodeOrderByCandleDateAsc,
+                forexRepository::findAllCurrencyCodes
         );
     }
 
@@ -73,7 +76,8 @@ public class MarketCacheConfig {
                 Duration.ofHours(24), Fund.class,
                 new TypeReference<>() {}, "Fund",
                 fundRepository::findById,
-                fundCandleRepository::findByFundCodeOrderByCandleDateAsc
+                fundCandleRepository::findByFundCodeOrderByCandleDateAsc,
+                fundRepository::findAllFundCodes
         );
     }
 }

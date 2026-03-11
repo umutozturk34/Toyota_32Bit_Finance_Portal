@@ -1,7 +1,13 @@
 package com.finance.backend.repository;
 import com.finance.backend.model.Crypto;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
 @Repository
 public interface CryptoRepository extends JpaRepository<Crypto, String> {
+    @Query("SELECT c.id FROM Crypto c")
+    List<String> findAllIds();
 }

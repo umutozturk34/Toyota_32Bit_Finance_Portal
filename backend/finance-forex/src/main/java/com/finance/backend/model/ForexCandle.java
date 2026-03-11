@@ -53,4 +53,18 @@ public class ForexCandle extends BaseCandle {
     public int hashCode() {
         return getClass().hashCode();
     }
+
+    public void scaleAndNormalizeOhlc(int scale) {
+        scaleOhlc(scale);
+        normalizeHighLow();
+    }
+
+    private void normalizeHighLow() {
+        if (getOpen() != null && getClose() != null && getHigh() != null && getLow() != null) {
+            java.math.BigDecimal maxOC = getOpen().max(getClose());
+            java.math.BigDecimal minOC = getOpen().min(getClose());
+            if (getHigh().compareTo(maxOC) < 0) setHigh(maxOC);
+            if (getLow().compareTo(minOC) > 0) setLow(minOC);
+        }
+    }
 }

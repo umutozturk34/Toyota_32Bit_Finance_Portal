@@ -6,6 +6,7 @@ import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.dto.internal.TefasResponse;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.exception.ExternalApiRequestException;
+import com.finance.backend.filter.TefasSessionManager;
 import com.finance.backend.mapper.TefasClientMapper;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;

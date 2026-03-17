@@ -1,6 +1,9 @@
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Clock } from 'lucide-react';
 import AdminToolbar from './AdminToolbar';
+
+const COOLDOWN_MS = 10 * 1000;
 
 export default function PageHeader({
     icon,
@@ -12,6 +15,40 @@ export default function PageHeader({
     updating = {},
     children,
 }) {
+    const [cooldownEnd, setCooldownEnd] = useState(null);
+    const [remaining, setRemaining] = useState(0);
+
+    useEffect(() => {
+        if (!cooldownEnd) return;
+
+        const tick = () => {
+            const left = Math.max(0, cooldownEnd - Date.now());
+            setRemaining(left);
+            if (left <= 0) {
+                setCooldownEnd(null);
+            }
+        };
+
+        tick(); 
+        const id = setInterval(tick, 250);
+        return () => clearInterval(id);
+    }, [cooldownEnd]);
+
+    const handleRefresh = useCallback(() => {
+        if (cooldownEnd && Date.now() < cooldownEnd) return;
+        onRefresh?.();
+        setCooldownEnd(Date.now() + COOLDOWN_MS);
+    }, [cooldownEnd, onRefresh]);
+
+    const isCoolingDown = cooldownEnd && remaining > 0;
+
+    const formatRemaining = (ms) => {
+        const totalSec = Math.ceil(ms / 1000);
+        const min = Math.floor(totalSec / 60);
+        const sec = totalSec % 60;
+        return `${min}:${sec.toString().padStart(2, '0')}`;
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: -16 }}
@@ -27,12 +64,27 @@ export default function PageHeader({
             </h1>
             <div className="flex flex-wrap items-center gap-2">
                 <button
-                    onClick={onRefresh}
-                    disabled={loading}
+                    onClick={handleRefresh}
+                    disabled={loading || isCoolingDown}
+                    title={isCoolingDown ? `Cooldown: ${formatRemaining(remaining)}` : 'Yenile'}
                     className="flex items-center gap-2 rounded-md border border-border-default bg-bg-base px-4 py-2 text-sm text-fg-muted transition-colors duration-150 hover:bg-surface hover:text-fg disabled:opacity-50"
                 >
-                    <RefreshCw className="h-4 w-4" />
-                    Yenile
+                    {loading ? (
+                        <>
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                            Yükleniyor
+                        </>
+                    ) : isCoolingDown ? (
+                        <>
+                            <Clock className="h-4 w-4" />
+                            {formatRemaining(remaining)}
+                        </>
+                    ) : (
+                        <>
+                            <RefreshCw className="h-4 w-4" />
+                            Yenile
+                        </>
+                    )}
                 </button>
                 {isAdmin && adminActions.length > 0 && (
                     <AdminToolbar

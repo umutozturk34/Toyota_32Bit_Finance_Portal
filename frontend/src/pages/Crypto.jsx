@@ -10,7 +10,7 @@ import {
     ArrowUpRight,
     ArrowDownRight,
 } from 'lucide-react';
-import { getMultipleCryptos, adminService } from '../services/marketService';
+import { getAllCryptos, adminService } from '../services/marketService';
 import { getCoinIds, getCoinIcon, getCoinIdBySymbol } from '../constants/coins';
 import { useAuth } from '../context/AuthContext';
 import { getChangeClass, changeColors, changeBg, formatPriceUSD, formatPriceTRY, formatCompactNumber } from '../utils/formatters';
@@ -39,7 +39,7 @@ function Crypto() {
         setLoading(true);
         setError(null);
         try {
-            const data = await getMultipleCryptos(getCoinIds());
+            const data = await getAllCryptos();
             setCryptos(data);
         } catch (err) {
             setError('Kripto para verileri yüklenirken hata oluştu');
@@ -88,7 +88,7 @@ function Crypto() {
         { key: 'candles', label: 'Candles', title: 'Kripto mum verilerini güncelle (OHLC)', handler: handleCryptoCandlesUpdate },
         { key: 'full', label: 'Full Update', title: 'Tam güncelleme (snapshot + candles)', handler: handleCryptoFullUpdate },
     ];
-    if (loading) return <LoadingState message="Kripto verileri yükleniyor…" />;
+    if (loading && cryptos.length === 0) return <LoadingState message="Kripto verileri yükleniyor…" />;
     if (error) return <ErrorState message={error} onRetry={fetchCryptos} />;
         return (
         <div className="space-y-6 py-6">

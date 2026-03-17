@@ -22,12 +22,14 @@ public class AppProperties {
     private Stock stock = new Stock();
     private Forex forex = new Forex();
     private Fund fund = new Fund();
+    private RateLimit rateLimit = new RateLimit();
 
     @Getter
     @Setter
     public static class Api {
         private CoinGeckoProvider coingecko = new CoinGeckoProvider();
         private Provider yahoo = new Provider();
+        private Provider binance = new Provider();
     }
 
     @Getter
@@ -94,5 +96,13 @@ public class AppProperties {
         private int yearsToFetch = 5;
         private int minCandlesForIncremental = 30;
         private int windowSizes = 95;
+    }
+
+    @Getter
+    @Setter
+    public static class RateLimit {
+        private int adminTriggerLimit = 3;
+        private int adminReadLimit = 20;
+        private int apiLimit = 60;
     }
 }

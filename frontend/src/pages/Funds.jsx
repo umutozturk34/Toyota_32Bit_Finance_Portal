@@ -109,7 +109,7 @@ function Funds() {
 
     const fundTypes = [...new Set(funds.map(f => f.fundType).filter(Boolean))];
 
-    if (loading) return <LoadingState message="Fon verileri yükleniyor…" />;
+    if (loading && funds.length === 0) return <LoadingState message="Fon verileri yükleniyor…" />;
     if (error) return <ErrorState message={error} onRetry={fetchFunds} />;
 
     return (

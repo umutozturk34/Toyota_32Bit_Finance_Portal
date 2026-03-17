@@ -22,6 +22,12 @@ public class CryptoController {
     private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
     private final CryptoResponseMapper cryptoResponseMapper;
 
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<CryptoResponse>> getAllCryptos() {
+        return ResponseEntity.ok(cryptoResponseMapper.toCryptoResponses(cryptoCacheService.getAllSnapshots()));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CryptoResponse> getCryptoById(@PathVariable String id) {

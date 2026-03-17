@@ -22,6 +22,12 @@ public class ForexController {
     private final MarketCacheService<Forex, ForexCandle> forexCacheService;
     private final ForexResponseMapper forexResponseMapper;
 
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<ForexResponse>> getAllForex() {
+        return ResponseEntity.ok(forexResponseMapper.toForexResponses(forexCacheService.getAllSnapshots()));
+    }
+
     @GetMapping("/{currencyCode}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ForexResponse> getForexByCurrencyCode(@PathVariable String currencyCode) {

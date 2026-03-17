@@ -1,4 +1,5 @@
 package com.finance.backend.service;
+
 import com.finance.backend.client.CoinGeckoClient;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.CoinGeckoCandleDto;
@@ -54,6 +55,12 @@ public class MarketDataService {
         this.historyDays = appProperties.getCrypto().getHistoryDays();
         this.minCandlesForHealthy = appProperties.getCrypto().getMinCandlesForHealthy();
     }
+
+    public void fullMarketUpdate() {
+        updateOnlySnapshots();
+        updateOnlyCandles();
+    }
+
     public void updateOnlySnapshots() {
         List<String> trackedCoins = marketConstants.getTrackedCryptos();
         log.info("Starting crypto snapshot update for {} coins", trackedCoins.size());
@@ -94,6 +101,7 @@ public class MarketDataService {
         }
         return cryptoRepository.save(existing);
     }
+
     public void updateOnlyCandles() {
         List<String> trackedCoins = marketConstants.getTrackedCryptos();
         log.info("Starting crypto candle update for {} coins", trackedCoins.size());
@@ -102,20 +110,25 @@ public class MarketDataService {
         List<String> failedCoins = new ArrayList<>();
         for (String coinId : trackedCoins) {
             try {
+                String binanceSymbol = marketConstants.getBinanceSymbol(coinId);
+                if (binanceSymbol == null) {
+                    log.warn("No Binance mapping for coinId: {}, skipping candle update", coinId);
+                    continue;
+                }
                 long count = cryptoCandleRepository.countByCryptoId(coinId);
                 if (count < minCandlesForHealthy) {
                     log.debug("{} - only {} candles (min {}), reloading full history", coinId, count, minCandlesForHealthy);
-                    reloadFullHistory(coinId);
+                    reloadFullHistory(coinId, binanceSymbol);
                 } else {
                     int gapDays = cryptoCandleRepository.findFirstByCryptoIdOrderByCandleDateDesc(coinId)
                             .map(lastCandle -> (int) ChronoUnit.DAYS.between(lastCandle.getCandleDate().toLocalDate(), LocalDate.now()))
                             .orElse(historyDays);
                     if (gapDays >= historyDays) {
                         log.debug("{} - gap {} days >= history {}, reloading full", coinId, gapDays, historyDays);
-                        reloadFullHistory(coinId);
+                        reloadFullHistory(coinId, binanceSymbol);
                     } else {
                         log.debug("{} - filling {} day gap", coinId, gapDays);
-                        fetchAndSaveSinceLastCandle(coinId, gapDays);
+                        fetchAndSaveSinceLastCandle(coinId, binanceSymbol, gapDays);
                     }
                 }
                 processed++;
@@ -133,12 +146,9 @@ public class MarketDataService {
             log.warn("Failed coins: {}", failedCoins);
         }
     }
-    public void fullMarketUpdate() {
-        updateOnlySnapshots();
-        updateOnlyCandles();
-    }
-    private void reloadFullHistory(String coinId) {
-        List<CoinGeckoCandleDto> dtos = coinGeckoClient.fetchMarketChartRange(coinId, historyDays);
+
+    private void reloadFullHistory(String coinId, String binanceSymbol) {
+        List<CoinGeckoCandleDto> dtos = coinGeckoClient.fetchBinanceKlines(coinId, binanceSymbol, historyDays);
         if (!dtos.isEmpty()) {
             log.info("{} - reloading full history: {} candles", coinId, dtos.size());
             Crypto crypto = cryptoRepository.getReferenceById(coinId);
@@ -151,14 +161,15 @@ public class MarketDataService {
             });
         }
     }
-    private void fetchAndSaveSinceLastCandle(String coinId, int gapDays) {
+
+    private void fetchAndSaveSinceLastCandle(String coinId, String binanceSymbol, int gapDays) {
         int fetchDays = Math.max(gapDays + 1, 2);
-        List<CoinGeckoCandleDto> dtos = coinGeckoClient.fetchMarketChartRange(coinId, fetchDays);
+        List<CoinGeckoCandleDto> dtos = coinGeckoClient.fetchBinanceKlines(coinId, binanceSymbol, fetchDays);
         if (dtos.isEmpty()) return;
 
         Crypto crypto = cryptoRepository.getReferenceById(coinId);
         List<LocalDateTime> dates = dtos.stream()
-                .map(dto -> dto.candleDate().truncatedTo(ChronoUnit.DAYS))
+                .map(CoinGeckoCandleDto::candleDate)
                 .toList();
 
         transactionTemplate.executeWithoutResult(status -> {
@@ -166,14 +177,13 @@ public class MarketDataService {
                     .findByCryptoIdAndCandleDateIn(coinId, dates)
                     .stream()
                     .collect(Collectors.toMap(
-                            c -> c.getCandleDate().truncatedTo(ChronoUnit.DAYS),
+                            CryptoCandle::getCandleDate,
                             Function.identity(),
                             (a, b) -> a));
 
             List<CryptoCandle> toSave = new ArrayList<>(dtos.size());
             for (CoinGeckoCandleDto dto : dtos) {
-                LocalDateTime normalizedDate = dto.candleDate().truncatedTo(ChronoUnit.DAYS);
-                CryptoCandle existing = existingMap.get(normalizedDate);
+                CryptoCandle existing = existingMap.get(dto.candleDate());
                 if (existing != null) {
                     cryptoMapper.updateCandleEntity(existing, dto);
                 } else {
@@ -185,10 +195,10 @@ public class MarketDataService {
             }
         });
     }
+
     private void pruneOldCandles() {
         LocalDateTime cutoffDate = LocalDateTime.now().truncatedTo(ChronoUnit.DAYS).minusDays(historyDays - 1);
-        transactionTemplate.executeWithoutResult(status -> {
-            cryptoCandleRepository.deleteByCandleDateBefore(cutoffDate);
-        });
+        transactionTemplate.executeWithoutResult(status ->
+                cryptoCandleRepository.deleteByCandleDateBefore(cutoffDate));
     }
 }

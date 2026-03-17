@@ -2,9 +2,10 @@ package com.finance.backend.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.finance.backend.client.RateLimiterFilter;
-import com.finance.backend.client.TefasSessionFilter;
-import com.finance.backend.client.TefasSessionManager;
+import com.finance.backend.filter.RateLimiterFilter;
+import com.finance.backend.filter.TefasSessionFilter;
+import com.finance.backend.filter.TefasSessionManager;
+
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import io.netty.channel.ChannelOption;
 import lombok.RequiredArgsConstructor;
@@ -51,7 +52,8 @@ public class AppConfig {
 
     private ExchangeFilterFunction userAgentFilter() {
         String defaultUserAgent = appProperties.getHttp().getDefaultUserAgent();
-        return (request, next) -> {
+        return 
+        (request, next) -> {
             if (request.headers().getFirst(HttpHeaders.USER_AGENT) == null) {
                 return next.exchange(
                         org.springframework.web.reactive.function.client.ClientRequest.from(request)
@@ -61,6 +63,7 @@ public class AppConfig {
             return next.exchange(request);
         };
     }
+
 
     @Bean
     @Primary
@@ -116,6 +119,16 @@ public class AppConfig {
                 .baseUrl(cg.getBaseUrl())
                 .defaultHeader(cg.getApiKeyHeader(), apiKey)
                 .filter(new RateLimiterFilter(rateLimiterRegistry.rateLimiter("coingecko")))
+                .filter(userAgentFilter())
+                .build();
+    }
+    @Bean("binanceWebClient")
+    public WebClient binanceWebClient(WebClient.Builder builder) {
+        AppProperties.Provider binance = appProperties.getApi().getBinance();
+        return builder
+                .clientConnector(new ReactorClientHttpConnector(baseHttpClient()))
+                .baseUrl(binance.getBaseUrl())
+                .filter(new RateLimiterFilter(rateLimiterRegistry.rateLimiter("binance")))
                 .filter(userAgentFilter())
                 .build();
     }

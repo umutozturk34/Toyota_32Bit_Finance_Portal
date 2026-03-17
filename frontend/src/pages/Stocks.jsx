@@ -44,7 +44,7 @@ function Stocks() {
         try {
             const symbols = getBistSymbols();
             console.log('[Stocks] Fetching stocks for symbols:', symbols);
-            const data = await stockService.getMultipleStocks(symbols);
+            const data = await stockService.getAllStocks();
             console.log('[Stocks] fetchStocks() success, data:', data);
             setStocks(data || []);
         } catch (err) {
@@ -98,7 +98,7 @@ function Stocks() {
         { key: 'candles', label: 'Candles (5y)', title: '5 yıllık OHLC verilerini güncelle (10-15 dakika)', handler: handleStockCandlesUpdate },
         { key: 'full', label: 'Full Update', title: 'Tam güncelleme (snapshot + 5y candles, 15-20 dakika)', handler: handleStockFullUpdate },
     ];
-    if (loading) return <LoadingState message="Hisse verileri yükleniyor…" />;
+    if (loading && stocks.length === 0) return <LoadingState message="Hisse verileri yükleniyor…" />;
     if (error) return <ErrorState message={error} onRetry={fetchStocks} />;
         return (
         <div className="space-y-6 py-6">

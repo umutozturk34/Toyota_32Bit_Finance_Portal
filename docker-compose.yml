@@ -311,7 +311,29 @@ services:
       - finance-network
     depends_on:
       - opensearch
-
+  
+  # --- SONARQUBE BÖLÜMÜ ---
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    networks:
+      - finance-network
+    environment:
+      - SONAR_JDBC_URL=jdbc:postgresql://db:5432/sonar_db
+      - SONAR_JDBC_USERNAME=finance_user
+      - SONAR_JDBC_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+      
 volumes:
   postgres_data_v2:
   openldap_data:
@@ -320,6 +342,9 @@ volumes:
   redis_data:
   opensearch_data:
   kafka_data:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
 
 networks:
   finance-network:

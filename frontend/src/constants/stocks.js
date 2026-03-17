@@ -19,10 +19,16 @@ const INDEX_LONG_NAMES = {
   'XUTEK.IS': 'BIST Teknoloji Endeksi',
   'XGMYO.IS': 'BIST GYO Endeksi',
   'XHOLD.IS': 'BIST Holding Endeksi',
+  'XULAS.IS': 'BIST Ulusal Endeksi',
+  'XKTUM.IS': 'BIST Katılım Tüm Endeksi',
+  'XKTMT.IS': 'BIST Katılım Temettü Endeksi',
+  'XTRZM.IS': 'BIST Turizm Endeksi',
+  'XGIDA.IS': 'BIST Gıda Endeksi',
+  'XMANA.IS': 'BIST Metal Ana Sanayi Endeksi'
 };
 
 const MAIN_INDICES = ['XU030.IS', 'XU100.IS', 'XU500.IS'];
-const SECONDARY_INDICES = ['XBANK.IS', 'XUSIN.IS', 'XUTEK.IS', 'XGMYO.IS', 'XHOLD.IS'];
+const SECONDARY_INDICES = ['XBANK.IS', 'XUSIN.IS', 'XUTEK.IS', 'XGMYO.IS', 'XHOLD.IS' ,'XULAS.IS', 'XKTUM.IS', 'XKTMT.IS', 'XTRZM.IS', 'XGIDA.IS', 'XMANA.IS'];
 const ALL_INDICES = [...MAIN_INDICES, ...SECONDARY_INDICES];
 const COMPARE_ONLY_SYMBOLS = [...SECONDARY_INDICES, 'XU500.IS'];
 

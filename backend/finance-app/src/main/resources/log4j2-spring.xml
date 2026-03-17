@@ -21,11 +21,23 @@
         </Failover>
     </Appenders>
     <Loggers>
+        <Logger name="com.finance.backend" level="DEBUG" additivity="false">
+            <AppenderRef ref="FailoverKafka"/>
+        </Logger>
         <Logger name="org.apache.kafka" level="WARN" additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>
+        <Logger name="org.springframework" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="org.hibernate" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="org.apache" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
         <Root level="INFO">
-            <AppenderRef ref="FailoverKafka"/>
+            <AppenderRef ref="Console"/>
         </Root>
     </Loggers>
 </Configuration>

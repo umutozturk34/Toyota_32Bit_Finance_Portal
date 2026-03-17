@@ -2,7 +2,7 @@ package com.finance.backend.client;
 
 import com.finance.backend.dto.external.CoinGeckoCandleDto;
 import com.finance.backend.dto.external.CoinGeckoSnapshotDto;
-import com.finance.backend.dto.internal.CoinGeckoMarketChartResponse;
+import com.finance.backend.dto.internal.BinanceKlineResponse;
 import com.finance.backend.dto.internal.CoinGeckoMarketDto;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.CoinGeckoCandleMapper;
@@ -14,21 +14,21 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Component
 @Log4j2
 public class CoinGeckoClient {
 
-    private final WebClient webClient;
+    private final WebClient coinGeckoWebClient;
+    private final WebClient binanceWebClient;
     private final CoinGeckoCandleMapper candleMapper;
 
-    public CoinGeckoClient(@Qualifier("coinGeckoWebClient") WebClient webClient,
+    public CoinGeckoClient(@Qualifier("coinGeckoWebClient") WebClient coinGeckoWebClient,
+                           @Qualifier("binanceWebClient") WebClient binanceWebClient,
                            CoinGeckoCandleMapper candleMapper) {
-        this.webClient = webClient;
+        this.coinGeckoWebClient = coinGeckoWebClient;
+        this.binanceWebClient = binanceWebClient;
         this.candleMapper = candleMapper;
     }
 
@@ -36,7 +36,7 @@ public class CoinGeckoClient {
     @Retry(name = "coingecko")
     public List<CoinGeckoSnapshotDto> fetchMarkets(String vsCurrency, List<String> coinIds) {
         try {
-            List<CoinGeckoMarketDto> raw = webClient.get()
+            List<CoinGeckoMarketDto> raw = coinGeckoWebClient.get()
                     .uri("/coins/markets?vs_currency=" + vsCurrency
                             + "&ids=" + String.join(",", coinIds)
                             + "&order=market_cap_desc&sparkline=false")
@@ -51,40 +51,22 @@ public class CoinGeckoClient {
         }
     }
 
-    @CircuitBreaker(name = "coingecko")
-    @Retry(name = "coingecko")
-    public List<CoinGeckoCandleDto> fetchMarketChartRange(String coinId, int days) {
+    @CircuitBreaker(name = "binance")
+    @Retry(name = "binance")
+    public List<CoinGeckoCandleDto> fetchBinanceKlines(String coinId, String binanceSymbol, int days) {
         try {
-            long toTimestamp = Instant.now().getEpochSecond();
-            long fromTimestamp = Instant.now().minus(days, ChronoUnit.DAYS).getEpochSecond();
-            CoinGeckoMarketChartResponse chart = webClient.get()
-                    .uri("/coins/" + coinId + "/market_chart/range?vs_currency=usd"
-                            + "&from=" + fromTimestamp + "&to=" + toTimestamp)
+            List<BinanceKlineResponse> raw = binanceWebClient.get()
+                    .uri("/api/v3/klines?symbol=" + binanceSymbol
+                            + "&interval=1d&limit=" + days)
                     .retrieve()
-                    .bodyToMono(CoinGeckoMarketChartResponse.class)
+                    .bodyToMono(new ParameterizedTypeReference<List<BinanceKlineResponse>>() {})
                     .block();
-            List<CoinGeckoCandleDto> candles = candleMapper.toCandleDtosFromChart(chart, coinId);
-            log.debug("CoinGecko chart range for {} ({} days): {} candles", coinId, days, candles.size());
+            if (raw == null || raw.isEmpty()) return List.of();
+            List<CoinGeckoCandleDto> candles = candleMapper.toCandleDtos(raw, coinId);
+            log.debug("Binance klines for {} ({}): {} candles", coinId, binanceSymbol, candles.size());
             return candles;
         } catch (Exception e) {
-            throw new ExternalApiException("CoinGecko", "Chart fetch failed for " + coinId, e);
-        }
-    }
-
-    @CircuitBreaker(name = "coingecko")
-    @Retry(name = "coingecko")
-    public List<CoinGeckoCandleDto> fetchDailyOhlc(String coinId) {
-        try {
-            List<List<BigDecimal>> ohlcData = webClient.get()
-                    .uri("/coins/" + coinId + "/ohlc?vs_currency=usd&days=1")
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<List<List<BigDecimal>>>() {})
-                    .block();
-            List<CoinGeckoCandleDto> candles = candleMapper.toCandleDtosFromOhlc(ohlcData, coinId);
-            log.debug("CoinGecko OHLC for {}: {} candles", coinId, candles.size());
-            return candles;
-        } catch (Exception e) {
-            throw new ExternalApiException("CoinGecko", "OHLC fetch failed for " + coinId, e);
+            throw new ExternalApiException("Binance", "Klines fetch failed for " + coinId, e);
         }
     }
 }

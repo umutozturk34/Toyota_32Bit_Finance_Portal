@@ -1,4 +1,6 @@
     package com.finance.backend.config;
+    import com.fasterxml.jackson.databind.ObjectMapper;
+    import com.finance.backend.filter.RateLimitFilter;
     import org.springframework.beans.factory.annotation.Value;
     import org.springframework.context.annotation.Bean;
     import org.springframework.context.annotation.Configuration;
@@ -13,6 +15,7 @@
     import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
     import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
     import org.springframework.security.web.SecurityFilterChain;
+    import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
     import org.springframework.web.cors.CorsConfiguration;
     import org.springframework.web.cors.CorsConfigurationSource;
     import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -27,7 +30,7 @@
         @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
         private String jwkSetUri;
         @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        public SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimitFilter rateLimitFilter) throws Exception {
             http
                 .csrf(AbstractHttpConfigurer::disable)
                 .anonymous(AbstractHttpConfigurer::disable)
@@ -60,8 +63,14 @@
                 .sessionManagement(session -> session
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
+            http.addFilterAfter(rateLimitFilter, BearerTokenAuthenticationFilter.class);
             return http.build();
         }
+        @Bean
+        public RateLimitFilter rateLimitFilter(ObjectMapper objectMapper, AppProperties appProperties) {
+            return new RateLimitFilter(objectMapper, appProperties);
+        }
+        
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
             CorsConfiguration configuration = new CorsConfiguration();

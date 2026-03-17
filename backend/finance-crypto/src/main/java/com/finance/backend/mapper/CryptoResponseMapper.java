@@ -13,6 +13,8 @@ public abstract class CryptoResponseMapper {
 
     public abstract CryptoResponse toCryptoResponse(Crypto crypto);
 
+    public abstract List<CryptoResponse> toCryptoResponses(List<Crypto> cryptos);
+
     public abstract CandleResponse toCandleResponse(CryptoCandle candle);
 
     public abstract List<CandleResponse> toCryptoCandleResponses(List<CryptoCandle> candles);

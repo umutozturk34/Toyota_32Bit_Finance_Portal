@@ -22,6 +22,12 @@ public class StockController {
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
     private final StockResponseMapper stockResponseMapper;
 
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<StockResponse>> getAllStocks() {
+        return ResponseEntity.ok(stockResponseMapper.toStockResponses(stockCacheService.getAllSnapshots()));
+    }
+
     @GetMapping("/{symbol}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<StockResponse> getStockBySymbol(@PathVariable String symbol) {

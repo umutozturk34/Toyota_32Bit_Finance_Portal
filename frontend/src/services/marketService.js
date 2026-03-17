@@ -21,13 +21,12 @@ export const getCryptoHistory = async (id) => {
     throw error;
   }
 };
-export const getMultipleCryptos = async (ids) => {
+export const getAllCryptos = async () => {
   try {
-    const promises = ids.map(id => getCryptoById(id));
-    const results = await Promise.all(promises);
-    return results.filter(crypto => crypto !== null);
+    const response = await api.get('/market');
+    return response.data;
   } catch (error) {
-    console.error('Error fetching multiple cryptos:', error);
+    console.error('Error fetching all cryptos:', error);
     throw error;
   }
 };
@@ -45,13 +44,12 @@ export const forexService = {
       throw error;
     }
   },
-  getMultipleForex: async (currencyCodes) => {
+  getAllForex: async () => {
     try {
-      const promises = currencyCodes.map(code => forexService.getForexByCode(code));
-      const results = await Promise.all(promises);
-      return results.filter(forex => forex !== null);
+      const response = await api.get('/forex');
+      return response.data;
     } catch (error) {
-      console.error('Error fetching multiple forex:', error);
+      console.error('Error fetching all forex:', error);
       throw error;
     }
   },
@@ -79,13 +77,12 @@ export const stockService = {
       throw error;
     }
   },
-  getMultipleStocks: async (symbols) => {
+  getAllStocks: async () => {
     try {
-      const promises = symbols.map(symbol => stockService.getStockBySymbol(symbol));
-      const results = await Promise.all(promises);
-      return results.filter(stock => stock !== null);
+      const response = await api.get('/stocks');
+      return response.data;
     } catch (error) {
-      console.error('Error fetching multiple stocks:', error);
+      console.error('Error fetching all stocks:', error);
       throw error;
     }
   },

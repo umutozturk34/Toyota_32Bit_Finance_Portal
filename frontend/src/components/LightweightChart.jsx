@@ -26,15 +26,16 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
     const textDoneRef = useRef(false);
     const [activeTab, setActiveTab] = useState('indicators');
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [showVolume, setShowVolume] = useState(false);
-    const [chartType, setChartType] = useState(assetType === 'FUND' ? 'line' : 'line');
+    const [showVolume, setShowVolume] = useState(assetType === 'CRYPTO');
+    const [chartType, setChartType] = useState(assetType === 'FUND' ? 'line' : 'candle');
     const [magnetMode, setMagnetMode] = useState('off');
     const [selectedIcon, setSelectedIcon] = useState('\u{1F680}');
     const [iconSize, setIconSize] = useState(22);
 
     const isFund = assetType === 'FUND';
     const isCrypto = assetType === 'CRYPTO';
-    const showVolumeToggle = !isFund && !isCrypto;
+    const isForex = assetType === 'FOREX';
+    const showVolumeToggle = !isFund && !isForex;
     const showFibTab = !isFund;
     const allowCandle = !isFund;
     const [showInvestorCount, setShowInvestorCount] = useState(false);

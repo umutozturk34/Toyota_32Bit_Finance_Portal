@@ -14,6 +14,8 @@ public abstract class ForexResponseMapper {
 
     public abstract ForexResponse toForexResponse(Forex forex);
 
+    public abstract List<ForexResponse> toForexResponses(List<Forex> forexList);
+
     @Mapping(target = "volume", ignore = true)
     public abstract CandleResponse toCandleResponse(ForexCandle candle);
 

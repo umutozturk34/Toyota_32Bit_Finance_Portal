@@ -6,6 +6,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+let _lastRateLimitAlert = 0;
 api.interceptors.request.use(
   async (config) => {
     try {
@@ -18,7 +19,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {  
+  (error) => {
     return Promise.reject(error);
   }
 );
@@ -27,6 +28,18 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
+    if (error.response?.status === 429) {
+      const now = Date.now();
+      if (now - _lastRateLimitAlert > 30000) {
+        _lastRateLimitAlert = now;
+        const message = error.response?.data?.message
+          || 'Çok fazla istek gönderdin. Lütfen biraz bekle.';
+        const retryAfter = error.response?.headers?.['x-rate-limit-retry-after-seconds'];
+        const suffix = retryAfter ? ` (${retryAfter}s)` : '';
+        alert(`${message}${suffix}`);
+      }
+      return Promise.reject(error);
+    }
     if (error.response?.status === 401) {
       console.error('401 Unauthorized - Keycloak token geçersiz veya süresi dolmuş');
       if (window.location.pathname.includes('/login')) {

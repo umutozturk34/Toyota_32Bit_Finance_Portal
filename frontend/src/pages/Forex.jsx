@@ -44,7 +44,7 @@ function Forex() {
         try {
             const pairs = getForexPairs();
             console.log('[Forex] Fetching forex for pairs:', pairs);
-            const data = await forexService.getMultipleForex(pairs);
+            const data = await forexService.getAllForex();
             console.log('[Forex] fetchForexData() success, data:', data);
             setForexData(data || []);
         } catch (err) {
@@ -100,7 +100,7 @@ function Forex() {
         { key: 'candles', label: 'Candles (5y)', title: 'Yahoo Finance candles güncelle (~10 dakika, 20 forex × 5y OHLC)', handler: handleForexCandlesUpdate },
         { key: 'full', label: 'Full Update', title: 'Yahoo Finance FULL update (~12 dakika, snapshot + 5y candles)', handler: handleForexFullUpdate },
     ];
-    if (loading) return <LoadingState message="Döviz kurları yükleniyor…" />;
+    if (loading && forexData.length === 0) return <LoadingState message="Döviz kurları yükleniyor…" />;
     if (error) return <ErrorState message={error} onRetry={fetchForexData} />;
         return (
         <div className="space-y-6 py-6">

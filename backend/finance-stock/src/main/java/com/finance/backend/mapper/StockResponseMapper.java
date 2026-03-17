@@ -13,6 +13,8 @@ public abstract class StockResponseMapper {
 
     public abstract StockResponse toStockResponse(Stock stock);
 
+    public abstract List<StockResponse> toStockResponses(List<Stock> stocks);
+
     public abstract CandleResponse toCandleResponse(StockCandle candle);
 
     public abstract List<CandleResponse> toStockCandleResponses(List<StockCandle> candles);

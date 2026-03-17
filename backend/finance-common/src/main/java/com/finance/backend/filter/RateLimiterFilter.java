@@ -1,4 +1,4 @@
-package com.finance.backend.client;
+package com.finance.backend.filter;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;

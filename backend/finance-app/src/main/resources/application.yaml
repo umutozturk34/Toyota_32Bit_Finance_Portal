@@ -46,6 +46,8 @@ app:
     yahoo:
       base-url: https://query1.finance.yahoo.com/v8/finance/chart/
       user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    binance:
+      base-url: https://api.binance.com
   tcmb:
     base-url: ${TCMB_BASE_URL:https://www.tcmb.gov.tr}
     xml-path: /kurlar/today.xml
@@ -81,6 +83,11 @@ app:
     years-to-fetch: 5
     min-candles-for-incremental: 30
     window-sizes: 95
+
+  rate-limit:
+    admin-trigger-limit: 3
+    admin-read-limit: 20
+    api-limit: 60
 
 resilience4j:
   circuitbreaker:

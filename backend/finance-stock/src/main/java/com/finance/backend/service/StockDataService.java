@@ -1,4 +1,5 @@
 package com.finance.backend.service;
+
 import com.finance.backend.client.YahooStockClient;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
@@ -11,6 +12,7 @@ import com.finance.backend.model.StockCandle;
 import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.repository.StockCandleRepository;
 import com.finance.backend.repository.StockRepository;
+
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -24,8 +26,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 @Log4j2
 @Service
+
 public class StockDataService {
     private final ZoneId appZone;
     private final YahooStockClient yahooStockClient;
@@ -39,13 +43,13 @@ public class StockDataService {
     private final int historyYears;
 
     public StockDataService(YahooStockClient yahooStockClient,
-                            StockMapper stockMapper,
-                            StockRepository stockRepository,
-                            StockCandleRepository stockCandleRepository,
-                            MarketCacheService<Stock, StockCandle> stockCacheService,
-                            MarketConstants marketConstants,
-                            PlatformTransactionManager transactionManager,
-                            AppProperties appProperties) {
+            StockMapper stockMapper,
+            StockRepository stockRepository,
+            StockCandleRepository stockCandleRepository,
+            MarketCacheService<Stock, StockCandle> stockCacheService,
+            MarketConstants marketConstants,
+            PlatformTransactionManager transactionManager,
+            AppProperties appProperties) {
         this.yahooStockClient = yahooStockClient;
         this.stockMapper = stockMapper;
         this.stockRepository = stockRepository;
@@ -57,6 +61,7 @@ public class StockDataService {
         this.historyYears = appProperties.getStock().getHistoryYears();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
+
     public void updateStockSnapshots() {
         List<String> bistStocks = marketConstants.getTrackedBistStocks();
         if (bistStocks.isEmpty()) {
@@ -84,6 +89,7 @@ public class StockDataService {
             log.warn("Failed symbols: {}", failedSymbols);
         }
     }
+
     private Stock updateSingleStockSnapshot(String symbol) {
         YahooStockQuoteDto dto = yahooStockClient.fetchQuote(symbol);
         if (dto == null) {
@@ -106,6 +112,7 @@ public class StockDataService {
         stockRepository.save(stock);
         return stock;
     }
+
     public void updateStockCandles() {
         List<String> bistStocks = marketConstants.getTrackedBistStocks();
         if (bistStocks.isEmpty()) {
@@ -135,6 +142,7 @@ public class StockDataService {
             log.warn("Failed symbols: {}", failedSymbols);
         }
     }
+
     private int updateCandlesForStock(String symbol) {
         Stock stock = stockRepository.getReferenceById(symbol);
         long existingCount = stockCandleRepository.countByStockSymbol(symbol);
@@ -185,12 +193,18 @@ public class StockDataService {
 
     private String toYahooRange(LocalDateTime lastCandleDate) {
         long gapDays = ChronoUnit.DAYS.between(lastCandleDate.toLocalDate(), LocalDate.now(appZone));
-        if (gapDays <= 5) return "5d";
-        if (gapDays <= 30) return "1mo";
-        if (gapDays <= 90) return "3mo";
-        if (gapDays <= 180) return "6mo";
-        if (gapDays <= 365) return "1y";
-        if (gapDays <= 730) return "2y";
+        if (gapDays <= 5)
+            return "5d";
+        if (gapDays <= 30)
+            return "1mo";
+        if (gapDays <= 90)
+            return "3mo";
+        if (gapDays <= 180)
+            return "6mo";
+        if (gapDays <= 365)
+            return "1y";
+        if (gapDays <= 730)
+            return "2y";
         return historyYears + "y";
     }
 }

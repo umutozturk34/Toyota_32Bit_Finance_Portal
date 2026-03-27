@@ -1,5 +1,6 @@
 package com.finance.backend.controller;
 
+import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.response.CandleResponse;
 import com.finance.backend.dto.response.ForexResponse;
 import com.finance.backend.mapper.ForexResponseMapper;
@@ -24,21 +25,24 @@ public class ForexController {
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<ForexResponse>> getAllForex() {
-        return ResponseEntity.ok(forexResponseMapper.toForexResponses(forexCacheService.getAllSnapshots()));
+    public ResponseEntity<ApiResponse<List<ForexResponse>>> getAllForex() {
+        List<ForexResponse> forexList = forexResponseMapper.toForexResponses(forexCacheService.getAllSnapshots());
+        return ResponseEntity.ok(ApiResponse.success("Forex pairs retrieved successfully", forexList));
     }
 
     @GetMapping("/{currencyCode}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ForexResponse> getForexByCurrencyCode(@PathVariable String currencyCode) {
+    public ResponseEntity<ApiResponse<ForexResponse>> getForexByCurrencyCode(@PathVariable String currencyCode) {
         String normalized = currencyCode.strip().toUpperCase();
-        return ResponseEntity.ok(forexResponseMapper.toForexResponse(forexCacheService.getSnapshot(normalized)));
+        ForexResponse forex = forexResponseMapper.toForexResponse(forexCacheService.getSnapshot(normalized));
+        return ResponseEntity.ok(ApiResponse.success("Forex pair retrieved successfully", forex));
     }
 
     @GetMapping("/{currencyCode}/history")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<CandleResponse>> getForexHistory(@PathVariable String currencyCode) {
+    public ResponseEntity<ApiResponse<List<CandleResponse>>> getForexHistory(@PathVariable String currencyCode) {
         String normalized = currencyCode.strip().toUpperCase();
-        return ResponseEntity.ok(forexResponseMapper.toForexCandleResponses(forexCacheService.getHistory(normalized)));
+        List<CandleResponse> history = forexResponseMapper.toForexCandleResponses(forexCacheService.getHistory(normalized));
+        return ResponseEntity.ok(ApiResponse.success("Forex history retrieved successfully", history));
     }
 }

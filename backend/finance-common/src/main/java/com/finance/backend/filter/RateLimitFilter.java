@@ -4,13 +4,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.ErrorResponse;
 import io.github.bucket4j.Bandwidth;
-import io.github.bucket4j.Bucket;
+import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.ConsumptionProbe;
+import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
+import io.github.bucket4j.redis.lettuce.Bucket4jLettuce;
+import io.github.bucket4j.redis.lettuce.cas.LettuceBasedProxyManager;
+import io.lettuce.core.api.StatefulRedisConnection;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,17 +24,26 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 
 @Log4j2
-@RequiredArgsConstructor
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper;
     private final AppProperties appProperties;
+    private final LettuceBasedProxyManager<String> proxyManager;
 
-    private final ConcurrentMap<String, Bucket> buckets = new ConcurrentHashMap<>();
+    public RateLimitFilter(ObjectMapper objectMapper,
+                           AppProperties appProperties,
+                           StatefulRedisConnection<String, byte[]> connection) {
+        this.objectMapper = objectMapper;
+        this.appProperties = appProperties;
+        this.proxyManager = Bucket4jLettuce.casBasedBuilder(connection)
+                .expirationAfterWrite(
+                        ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(Duration.ofHours(2))
+                )
+                .build();
+    }
 
     private enum Tier {
         ADMIN_TRIGGER, ADMIN_READ, API
@@ -47,10 +59,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
         Tier tier = resolveTier(path, method);
 
         String userId = resolveUserId();
-        String bucketKey = userId + ":" + tier.name();
+        String bucketKey = "rate-limit:" + userId + ":" + tier.name();
 
-        Bucket bucket = buckets.computeIfAbsent(bucketKey, k -> createBucket(tier));
-        ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+        Supplier<BucketConfiguration> configSupplier = () -> createBucketConfiguration(tier);
+        ConsumptionProbe probe = proxyManager.builder()
+                .build(bucketKey, configSupplier)
+                .tryConsumeAndReturnRemaining(1);
 
         log.debug("[RateLimit] user={} tier={} path={} remaining={} consumed={}",
                 userId, tier, path, probe.getRemainingTokens(), probe.isConsumed());
@@ -103,7 +117,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         };
     }
 
-    private Bucket createBucket(Tier tier) {
+    private BucketConfiguration createBucketConfiguration(Tier tier) {
         AppProperties.RateLimit rl = appProperties.getRateLimit();
         Bandwidth bandwidth = switch (tier) {
             case ADMIN_TRIGGER -> Bandwidth.builder()
@@ -119,7 +133,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                     .refillGreedy(rl.getApiLimit(), Duration.ofMinutes(1))
                     .build();
         };
-        return Bucket.builder().addLimit(bandwidth).build();
+        return BucketConfiguration.builder().addLimit(bandwidth).build();
     }
 
     private String resolveUserId() {

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Activity, Play, CheckCircle2, XCircle, Clock,
     RefreshCw, Loader2, Zap, Database, X,
-    TrendingUp, DollarSign, Bitcoin, Briefcase,
+    TrendingUp, DollarSign, Bitcoin, Briefcase, Landmark,
 } from 'lucide-react';
 import { adminService } from '../services/marketService';
 
@@ -52,6 +52,15 @@ const TASK_GROUPS = [
             { key: 'fund-full', label: 'Full Update', trigger: () => adminService.triggerFundFull() },
         ],
     },
+    {
+        category: 'Bonds',
+        icon: Landmark,
+        color: 'text-[#a78bfa]',
+        bg: 'bg-[#a78bfa]/10',
+        tasks: [
+            { key: 'bond-update', label: 'Update', trigger: () => adminService.triggerBondUpdate() },
+        ],
+    },
 ];
 
 function formatDuration(ms) {
@@ -72,9 +81,9 @@ function formatTime(iso) {
 }
 
 const statusConfig = {
-    RUNNING:   { icon: Loader2, color: 'text-accent', bg: 'bg-accent/10', border: 'border-accent/30', label: 'Running', spin: true },
+    RUNNING: { icon: Loader2, color: 'text-accent', bg: 'bg-accent/10', border: 'border-accent/30', label: 'Running', spin: true },
     COMPLETED: { icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10', border: 'border-success/30', label: 'Completed', spin: false },
-    FAILED:    { icon: XCircle, color: 'text-danger', bg: 'bg-danger/10', border: 'border-danger/30', label: 'Failed', spin: false },
+    FAILED: { icon: XCircle, color: 'text-danger', bg: 'bg-danger/10', border: 'border-danger/30', label: 'Failed', spin: false },
 };
 
 function StatusBadge({ status }) {
@@ -96,7 +105,7 @@ export default function TasksPanel({ open, onClose }) {
         try {
             const data = await adminService.getTaskStatus();
             setTaskData(data);
-        } catch {}
+        } catch { }
     }, []);
 
     useEffect(() => {

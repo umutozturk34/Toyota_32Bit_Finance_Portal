@@ -3,6 +3,8 @@ package com.finance.backend.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.backend.exception.ResourceNotFoundException;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Log4j2
+@RequiredArgsConstructor
 public class MarketCacheService<T, C> {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
@@ -27,31 +30,7 @@ public class MarketCacheService<T, C> {
     private final Function<String, Optional<T>> snapshotFinder;
     private final Function<String, List<C>> candleFinder;
     private final Supplier<List<String>> allKeysFinder;
-
-    public MarketCacheService(RedisTemplate<String, Object> redisTemplate,
-                              ObjectMapper objectMapper,
-                              String snapshotPrefix,
-                              String historyPrefix,
-                              Duration ttl,
-                              Class<T> snapshotType,
-                              TypeReference<List<C>> historyType,
-                              String entityName,
-                              Function<String, Optional<T>> snapshotFinder,
-                              Function<String, List<C>> candleFinder,
-                              Supplier<List<String>> allKeysFinder) {
-        this.redisTemplate = redisTemplate;
-        this.objectMapper = objectMapper;
-        this.snapshotPrefix = snapshotPrefix;
-        this.historyPrefix = historyPrefix;
-        this.ttl = ttl;
-        this.snapshotType = snapshotType;
-        this.historyType = historyType;
-        this.entityName = entityName;
-        this.snapshotFinder = snapshotFinder;
-        this.candleFinder = candleFinder;
-        this.allKeysFinder = allKeysFinder;
-    }
-
+    
     @Transactional(readOnly = true)
     public T getSnapshot(String key) {
         String cacheKey = snapshotPrefix + key;

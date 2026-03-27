@@ -1,5 +1,6 @@
 package com.finance.backend.controller;
 
+import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.response.FundCandleResponse;
 import com.finance.backend.dto.response.FundResponse;
 import com.finance.backend.mapper.FundResponseMapper;
@@ -25,21 +26,24 @@ public class FundController {
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<FundResponse>> getAllFunds() {
-        return ResponseEntity.ok(fundResponseMapper.toFundResponses(fundCacheService.getAllSnapshots()));
+    public ResponseEntity<ApiResponse<List<FundResponse>>> getAllFunds() {
+        List<FundResponse> funds = fundResponseMapper.toFundResponses(fundCacheService.getAllSnapshots());
+        return ResponseEntity.ok(ApiResponse.success("Funds retrieved successfully", funds));
     }
 
     @GetMapping("/{fundCode}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<FundResponse> getFundByCode(@PathVariable String fundCode) {
+    public ResponseEntity<ApiResponse<FundResponse>> getFundByCode(@PathVariable String fundCode) {
         String normalized = fundCode.strip().toUpperCase();
-        return ResponseEntity.ok(fundResponseMapper.toFundResponse(fundCacheService.getSnapshot(normalized)));
+        FundResponse fund = fundResponseMapper.toFundResponse(fundCacheService.getSnapshot(normalized));
+        return ResponseEntity.ok(ApiResponse.success("Fund retrieved successfully", fund));
     }
 
     @GetMapping("/{fundCode}/history")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<FundCandleResponse>> getFundHistory(@PathVariable String fundCode) {
+    public ResponseEntity<ApiResponse<List<FundCandleResponse>>> getFundHistory(@PathVariable String fundCode) {
         String normalized = fundCode.strip().toUpperCase();
-        return ResponseEntity.ok(fundResponseMapper.toFundCandleResponses(fundCacheService.getHistory(normalized)));
+        List<FundCandleResponse> history = fundResponseMapper.toFundCandleResponses(fundCacheService.getHistory(normalized));
+        return ResponseEntity.ok(ApiResponse.success("Fund history retrieved successfully", history));
     }
 }

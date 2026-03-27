@@ -1,5 +1,6 @@
 package com.finance.backend.controller;
 
+import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.response.CandleResponse;
 import com.finance.backend.dto.response.StockResponse;
 import com.finance.backend.mapper.StockResponseMapper;
@@ -24,21 +25,24 @@ public class StockController {
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<StockResponse>> getAllStocks() {
-        return ResponseEntity.ok(stockResponseMapper.toStockResponses(stockCacheService.getAllSnapshots()));
+    public ResponseEntity<ApiResponse<List<StockResponse>>> getAllStocks() {
+        List<StockResponse> stocks = stockResponseMapper.toStockResponses(stockCacheService.getAllSnapshots());
+        return ResponseEntity.ok(ApiResponse.success("Stocks retrieved successfully", stocks));
     }
 
     @GetMapping("/{symbol}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<StockResponse> getStockBySymbol(@PathVariable String symbol) {
+    public ResponseEntity<ApiResponse<StockResponse>> getStockBySymbol(@PathVariable String symbol) {
         String normalized = symbol.strip().toUpperCase();
-        return ResponseEntity.ok(stockResponseMapper.toStockResponse(stockCacheService.getSnapshot(normalized)));
+        StockResponse stock = stockResponseMapper.toStockResponse(stockCacheService.getSnapshot(normalized));
+        return ResponseEntity.ok(ApiResponse.success("Stock retrieved successfully", stock));
     }
 
     @GetMapping("/{symbol}/history")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<CandleResponse>> getStockHistory(@PathVariable String symbol) {
+    public ResponseEntity<ApiResponse<List<CandleResponse>>> getStockHistory(@PathVariable String symbol) {
         String normalized = symbol.strip().toUpperCase();
-        return ResponseEntity.ok(stockResponseMapper.toStockCandleResponses(stockCacheService.getHistory(normalized)));
+        List<CandleResponse> history = stockResponseMapper.toStockCandleResponses(stockCacheService.getHistory(normalized));
+        return ResponseEntity.ok(ApiResponse.success("Stock history retrieved successfully", history));
     }
 }

@@ -1,4 +1,5 @@
 package com.finance.backend.config;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -12,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -22,6 +22,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 import java.time.Duration;
 import java.util.concurrent.Executor;
+
 @Configuration
 @RequiredArgsConstructor
 public class AppConfig {
@@ -38,7 +39,6 @@ public class AppConfig {
     }
 
     @Bean
-    @Scope("prototype")
     public WebClient.Builder webClientBuilder() {
         return WebClient.builder();
     }
@@ -52,8 +52,7 @@ public class AppConfig {
 
     private ExchangeFilterFunction userAgentFilter() {
         String defaultUserAgent = appProperties.getHttp().getDefaultUserAgent();
-        return 
-        (request, next) -> {
+        return (request, next) -> {
             if (request.headers().getFirst(HttpHeaders.USER_AGENT) == null) {
                 return next.exchange(
                         org.springframework.web.reactive.function.client.ClientRequest.from(request)
@@ -64,37 +63,58 @@ public class AppConfig {
         };
     }
 
-
     @Bean
     @Primary
     public WebClient webClient(WebClient.Builder builder) {
         return builder
+                .clone()
                 .clientConnector(new ReactorClientHttpConnector(baseHttpClient()))
                 .filter(userAgentFilter())
                 .build();
     }
+
     @Bean("yahooWebClient")
     public WebClient yahooWebClient(WebClient.Builder builder) {
         return builder
+                .clone()
                 .clientConnector(new ReactorClientHttpConnector(baseHttpClient()))
                 .baseUrl(appProperties.getApi().getYahoo().getBaseUrl())
                 .filter(new RateLimiterFilter(rateLimiterRegistry.rateLimiter("yahoo")))
                 .filter(userAgentFilter())
                 .build();
     }
+
     @Bean("tefasBaseWebClient")
     public WebClient tefasBaseWebClient(WebClient.Builder builder) {
-        return builder 
+        return builder
+                .clone()
                 .clientConnector(new ReactorClientHttpConnector(baseHttpClient()))
                 .baseUrl(appProperties.getTefasBaseUrl())
                 .filter(new RateLimiterFilter(rateLimiterRegistry.rateLimiter("tefas")))
                 .filter(userAgentFilter())
                 .build();
     }
+
+    @Bean("bondWebClient")
+    public WebClient bondWebClient(WebClient.Builder builder,
+            @Value("${EVDS_API_KEY:}") String apiKey) {
+        AppProperties.BondProvider bond = appProperties.getApi().getBond();
+        return builder
+                .clone()
+                .clientConnector(new ReactorClientHttpConnector(baseHttpClient()))
+                .baseUrl(bond.getBaseUrl())
+                .defaultHeader(bond.getApiKeyHeader(), apiKey)
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
+                .filter(new RateLimiterFilter(rateLimiterRegistry.rateLimiter("bond")))
+                .filter(userAgentFilter())
+                .build();
+    }
+
     @Bean("tefasWebClient")
     public WebClient tefasWebClient(WebClient.Builder builder,
-                                    TefasSessionManager sessionManager) {
+            TefasSessionManager sessionManager) {
         return builder
+                .clone()
                 .clientConnector(new ReactorClientHttpConnector(baseHttpClient()))
                 .baseUrl(appProperties.getTefasBaseUrl())
                 .filter(new RateLimiterFilter(rateLimiterRegistry.rateLimiter("tefas")))
@@ -102,19 +122,23 @@ public class AppConfig {
                 .filter(userAgentFilter())
                 .build();
     }
+
     @Bean("tcmbWebClient")
     public WebClient tcmbWebClient(WebClient.Builder builder) {
         return builder
+                .clone()
                 .clientConnector(new ReactorClientHttpConnector(baseHttpClient()))
                 .baseUrl(appProperties.getTcmb().getBaseUrl())
                 .filter(userAgentFilter())
                 .build();
     }
+
     @Bean("coinGeckoWebClient")
     public WebClient coinGeckoWebClient(WebClient.Builder builder,
-                                        @Value("${COINGECKO_API_KEY:}") String apiKey) {
+            @Value("${COINGECKO_API_KEY:}") String apiKey) {
         AppProperties.CoinGeckoProvider cg = appProperties.getApi().getCoingecko();
         return builder
+                .clone()
                 .clientConnector(new ReactorClientHttpConnector(baseHttpClient()))
                 .baseUrl(cg.getBaseUrl())
                 .defaultHeader(cg.getApiKeyHeader(), apiKey)
@@ -122,16 +146,19 @@ public class AppConfig {
                 .filter(userAgentFilter())
                 .build();
     }
+
     @Bean("binanceWebClient")
     public WebClient binanceWebClient(WebClient.Builder builder) {
         AppProperties.Provider binance = appProperties.getApi().getBinance();
         return builder
+                .clone()
                 .clientConnector(new ReactorClientHttpConnector(baseHttpClient()))
                 .baseUrl(binance.getBaseUrl())
                 .filter(new RateLimiterFilter(rateLimiterRegistry.rateLimiter("binance")))
                 .filter(userAgentFilter())
                 .build();
     }
+
     @Bean(name = "taskExecutor")
     public Executor taskExecutor() {
         AppProperties.Async async = appProperties.getAsync();

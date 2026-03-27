@@ -23,6 +23,7 @@ public class AppProperties {
     private Forex forex = new Forex();
     private Fund fund = new Fund();
     private RateLimit rateLimit = new RateLimit();
+    private Bond bond = new Bond();
 
     @Getter
     @Setter
@@ -30,6 +31,7 @@ public class AppProperties {
         private CoinGeckoProvider coingecko = new CoinGeckoProvider();
         private Provider yahoo = new Provider();
         private Provider binance = new Provider();
+        private BondProvider bond = new BondProvider();
     }
 
     @Getter
@@ -43,6 +45,12 @@ public class AppProperties {
     @Setter
     public static class CoinGeckoProvider extends Provider {
         private String apiKeyHeader = "x-cg-demo-api-key";
+    }
+
+    @Getter
+    @Setter
+    public static class BondProvider extends Provider {
+        private String apiKeyHeader = "key";
     }
 
     @Getter
@@ -73,6 +81,19 @@ public class AppProperties {
     public static class Crypto {
         private int historyDays = 365;
         private int minCandlesForHealthy = 350;
+    }
+
+    @Getter
+    @Setter
+    public static class Bond {
+        private int batchSize = 10;
+        private String datagroupCode = "bie_pydibs";
+        private int maxDaysPerRequest = 1000;
+        private BigDecimal rateThreshold = new BigDecimal("0.5");
+        private BigDecimal auctionThreshold = new BigDecimal("14");
+        private BigDecimal cpiFixedThreshold = new BigDecimal("5");
+        private BigDecimal faceValue = new BigDecimal("100");
+        private int daysInYear = 365;
     }
 
     @Getter

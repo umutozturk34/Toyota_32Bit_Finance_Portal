@@ -13,6 +13,7 @@ COPY finance-stock/pom.xml finance-stock/pom.xml
 COPY finance-forex/pom.xml finance-forex/pom.xml
 COPY finance-user/pom.xml finance-user/pom.xml
 COPY finance-fund/pom.xml finance-fund/pom.xml
+COPY finance-bond/pom.xml finance-bond/pom.xml
 COPY finance-app/pom.xml finance-app/pom.xml
 RUN mvn dependency:go-offline -B
 
@@ -23,6 +24,7 @@ COPY finance-stock/src finance-stock/src
 COPY finance-forex/src finance-forex/src
 COPY finance-user/src finance-user/src
 COPY finance-fund/src finance-fund/src
+COPY finance-bond/src finance-bond/src
 COPY finance-app/src finance-app/src
 
 RUN mvn clean package -DskipTests

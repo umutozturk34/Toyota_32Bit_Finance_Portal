@@ -2,7 +2,7 @@ import api from './api';
 export const getCryptoById = async (id) => {
   try {
     const response = await api.get(`/market/${id}`);
-    return response.data;
+    return response.data.data;
   } catch (error) {
     if (error.response?.status === 404) {
       console.log(`Crypto ${id} not found (404) - no data yet`);
@@ -15,7 +15,7 @@ export const getCryptoById = async (id) => {
 export const getCryptoHistory = async (id) => {
   try {
     const response = await api.get(`/market/${id}/history`);
-    return response.data;
+    return response.data.data;
   } catch (error) {
     console.error(`Error fetching history for ${id}:`, error);
     throw error;
@@ -24,7 +24,7 @@ export const getCryptoHistory = async (id) => {
 export const getAllCryptos = async () => {
   try {
     const response = await api.get('/market');
-    return response.data;
+    return response.data.data;
   } catch (error) {
     console.error('Error fetching all cryptos:', error);
     throw error;
@@ -34,7 +34,7 @@ export const forexService = {
   getForexByCode: async (currencyCode) => {
     try {
       const response = await api.get(`/forex/${currencyCode}`);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       if (error.response?.status === 404) {
         console.log(`Forex ${currencyCode} not found (404) - no data yet`);
@@ -47,7 +47,7 @@ export const forexService = {
   getAllForex: async () => {
     try {
       const response = await api.get('/forex');
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('Error fetching all forex:', error);
       throw error;
@@ -56,7 +56,7 @@ export const forexService = {
   getForexHistory: async (currencyCode) => {
     try {
       const response = await api.get(`/forex/${currencyCode}/history`);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error(`Error fetching history for ${currencyCode}:`, error);
       throw error;
@@ -67,7 +67,7 @@ export const stockService = {
   getStockBySymbol: async (symbol) => {
     try {
       const response = await api.get(`/stocks/${symbol}`);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       if (error.response?.status === 404) {
         console.log(`Stock ${symbol} not found (404) - no data yet`);
@@ -80,7 +80,7 @@ export const stockService = {
   getAllStocks: async () => {
     try {
       const response = await api.get('/stocks');
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('Error fetching all stocks:', error);
       throw error;
@@ -89,7 +89,7 @@ export const stockService = {
   getStockHistory: async (symbol) => {
     try {
       const response = await api.get(`/stocks/${symbol}/history`);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error(`Error fetching history for ${symbol}:`, error);
       throw error;
@@ -214,6 +214,15 @@ export const adminService = {
       throw error;
     }
   },
+  triggerBondUpdate: async () => {
+    try {
+      const response = await api.post('/admin/trigger/bond/update');
+      return response.data;
+    } catch (error) {
+      console.error('Error triggering bond update:', error);
+      throw error;
+    }
+  },
 };
 export const cryptoService = {
   getCryptos: async () => [],
@@ -224,7 +233,7 @@ export const fundService = {
   getAllFunds: async () => {
     try {
       const response = await api.get('/funds');
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error('Error fetching all funds:', error);
       throw error;
@@ -233,7 +242,7 @@ export const fundService = {
   getFundByCode: async (fundCode) => {
     try {
       const response = await api.get(`/funds/${fundCode}`);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       if (error.response?.status === 404) return null;
       console.error(`Error fetching fund ${fundCode}:`, error);
@@ -243,7 +252,7 @@ export const fundService = {
   getFundHistory: async (fundCode) => {
     try {
       const response = await api.get(`/funds/${fundCode}/history`);
-      return response.data;
+      return response.data.data;
     } catch (error) {
       console.error(`Error fetching history for fund ${fundCode}:`, error);
       throw error;
@@ -252,3 +261,34 @@ export const fundService = {
 };
 
 export const getHistoricalData = getCryptoHistory;
+
+export const bondService = {
+  getAllBonds: async () => {
+    try {
+      const response = await api.get('/bonds');
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching all bonds:', error);
+      throw error;
+    }
+  },
+  getBondByCode: async (seriesCode) => {
+    try {
+      const response = await api.get(`/bonds/${seriesCode}`);
+      return response.data.data;
+    } catch (error) {
+      if (error.response?.status === 404) return null;
+      console.error(`Error fetching bond ${seriesCode}:`, error);
+      throw error;
+    }
+  },
+  getRateHistory: async (isinCode) => {
+    try {
+      const response = await api.get(`/bonds/rate-history/${isinCode}`);
+      return response.data.data;
+    } catch (error) {
+      console.error(`Error fetching rate history ${isinCode}:`, error);
+      throw error;
+    }
+  },
+};

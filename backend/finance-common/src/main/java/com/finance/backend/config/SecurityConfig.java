@@ -1,6 +1,11 @@
     package com.finance.backend.config;
     import com.fasterxml.jackson.databind.ObjectMapper;
     import com.finance.backend.filter.RateLimitFilter;
+    import io.lettuce.core.RedisClient;
+    import io.lettuce.core.api.StatefulRedisConnection;
+    import io.lettuce.core.codec.ByteArrayCodec;
+    import io.lettuce.core.codec.RedisCodec;
+    import io.lettuce.core.codec.StringCodec;
     import org.springframework.beans.factory.annotation.Value;
     import org.springframework.context.annotation.Bean;
     import org.springframework.context.annotation.Configuration;
@@ -19,6 +24,8 @@
     import org.springframework.web.cors.CorsConfiguration;
     import org.springframework.web.cors.CorsConfigurationSource;
     import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+    import org.springframework.data.redis.connection.RedisConnectionFactory;
+    import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
     import java.util.Collection;
     import java.util.List;
     import java.util.Map;
@@ -67,8 +74,13 @@
             return http.build();
         }
         @Bean
-        public RateLimitFilter rateLimitFilter(ObjectMapper objectMapper, AppProperties appProperties) {
-            return new RateLimitFilter(objectMapper, appProperties);
+        public RateLimitFilter rateLimitFilterFactory(ObjectMapper objectMapper, AppProperties appProperties, RedisConnectionFactory redisConnectionFactory) {
+            LettuceConnectionFactory lettuceFactory = (LettuceConnectionFactory) redisConnectionFactory;
+            RedisClient redisClient = (RedisClient) lettuceFactory.getNativeClient();
+            StatefulRedisConnection<String, byte[]> connection = redisClient.connect(
+                    RedisCodec.of(StringCodec.UTF8, ByteArrayCodec.INSTANCE)
+            );
+            return new RateLimitFilter(objectMapper, appProperties, connection);
         }
         
         @Bean

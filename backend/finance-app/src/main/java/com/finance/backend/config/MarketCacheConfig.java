@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
 import java.time.Duration;
+import java.util.List;
 
 @Configuration
 public class MarketCacheConfig {
@@ -78,6 +79,23 @@ public class MarketCacheConfig {
                 fundRepository::findById,
                 fundCandleRepository::findByFundCodeOrderByCandleDateAsc,
                 fundRepository::findAllFundCodes
+        );
+    }
+
+    @Bean
+    public MarketCacheService<Bond, BondRateHistory> bondCacheService(
+            RedisTemplate<String, Object> redisTemplate,
+            @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
+            BondRepository bondRepository,
+            BondRateHistoryRepository bondRateHistoryRepository) {
+        return new MarketCacheService<>(
+                redisTemplate, objectMapper,
+                "market:bond:snapshot:", "market:bond:rate-history:",
+                Duration.ofHours(24), Bond.class,
+                new TypeReference<List<BondRateHistory>>() {}, "Bond",
+                bondRepository::findById,
+                bondRateHistoryRepository::findByIsinCodeOrderByRateDateAsc,
+                bondRepository::findAllSeriesCodes
         );
     }
 }

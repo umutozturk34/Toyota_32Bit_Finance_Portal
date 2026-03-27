@@ -13,16 +13,17 @@ public class ErrorResponse {
     private boolean success;
     private String message;
     private String errorCode;
-    @Builder.Default
+    @Builder.Default 
     private LocalDateTime timestamp = LocalDateTime.now();
     private String path;
+    @Builder.Default
+    private String data = "null";
     private Map<String, String> validationErrors;
     public static ErrorResponse of(String message, String errorCode) {
         return ErrorResponse.builder()
                 .success(false)
                 .message(message)
                 .errorCode(errorCode)
-                .timestamp(LocalDateTime.now())
                 .build();
     }
     public static ErrorResponse of(String message, String errorCode, String path) {
@@ -31,7 +32,6 @@ public class ErrorResponse {
                 .message(message)
                 .errorCode(errorCode)
                 .path(path)
-                .timestamp(LocalDateTime.now())
                 .build();
     }
     public static ErrorResponse of(String message, String errorCode, Map<String, String> validationErrors) {
@@ -40,7 +40,6 @@ public class ErrorResponse {
                 .message(message)
                 .errorCode(errorCode)
                 .validationErrors(validationErrors)
-                .timestamp(LocalDateTime.now())
                 .build();
     }
 }

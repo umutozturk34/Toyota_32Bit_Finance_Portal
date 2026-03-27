@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>com.finance</groupId>
 		<artifactId>finance-portal</artifactId>
-		<version>0.8.1</version>
+		<version>0.9.0</version>
 	</parent>
 	<artifactId>finance-app</artifactId>
 	<name>Finance App</name>
@@ -38,6 +38,10 @@
 		<dependency>
 			<groupId>com.finance</groupId>
 			<artifactId>finance-fund</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.finance</groupId>
+			<artifactId>finance-bond</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

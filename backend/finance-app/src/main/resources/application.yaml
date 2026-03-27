@@ -5,7 +5,7 @@ spring:
   datasource:
     url: jdbc:postgresql://db:5432/finance_db
     username: finance_user
-    password: ${DB_PASSWORD:finance_pass}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -43,14 +43,20 @@ app:
       base-url: https://api.coingecko.com/api/v3
       user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
       api-key-header: x-cg-demo-api-key
+    bond:
+      base-url: https://evds3.tcmb.gov.tr/igmevdsms-dis
+      user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      api-key-header: key
     yahoo:
       base-url: https://query1.finance.yahoo.com/v8/finance/chart/
       user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     binance:
       base-url: https://api.binance.com
+  
   tcmb:
-    base-url: ${TCMB_BASE_URL:https://www.tcmb.gov.tr}
-    xml-path: /kurlar/today.xml
+      base-url: ${TCMB_BASE_URL:https://www.tcmb.gov.tr}
+      xml-path: /kurlar/today.xml
+      
   tefas-api-path: /api/DB/BindHistoryInfo
   tefas-base-url: https://www.tefas.gov.tr
   timezone: Europe/Istanbul
@@ -69,6 +75,16 @@ app:
   crypto:
     history-days: 365
     min-candles-for-healthy: 350
+  
+  bond:
+    batch-size: 10
+    max-days-per-request: 1000
+    datagroup-code: bie_pydibs
+    rate-threshold: 0.5
+    auction-threshold: 14
+    cpi-fixed-threshold: 5
+    face-value: 100
+    days-in-year: 365
 
   stock:
     min-candles-for-incremental: 1200
@@ -123,6 +139,17 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: 3
         record-exceptions:
           - com.finance.backend.exception.ExternalApiException
+      bond:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        record-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+        ignore-exceptions:
+          - com.finance.backend.exception.SymbolNotFoundException
       tcmb:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 10
@@ -143,6 +170,10 @@ resilience4j:
         limit-refresh-period: 2s
         timeout-duration: 10s
       coingecko:
+        limit-for-period: 1
+        limit-refresh-period: 2s
+        timeout-duration: 10s
+      bond:
         limit-for-period: 1
         limit-refresh-period: 2s
         timeout-duration: 10s
@@ -194,6 +225,18 @@ resilience4j:
           - io.netty.handler.timeout.ReadTimeoutException
         ignore-exceptions:
           - com.finance.backend.exception.SymbolNotFoundException
+      bond:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - io.netty.handler.timeout.ReadTimeoutException
+        ignore-exceptions:
+          - com.finance.backend.exception.BusinessException
 
 management:
   endpoint:

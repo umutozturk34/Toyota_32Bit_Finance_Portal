@@ -7,7 +7,7 @@ import {
   Home, Newspaper, BarChart3, TrendingUp, Bitcoin,
   DollarSign, Gem, LineChart, Users, Shield, Info,
   LogOut, LogIn, Sun, Moon, Briefcase, Activity,
-  ChevronLeft, ChevronRight, Menu,
+  ChevronLeft, ChevronRight, Menu, Landmark,
 } from 'lucide-react';
 import TasksPanel from '../components/TasksPanel';
 
@@ -20,6 +20,7 @@ const navItems = [
   { to: '/forex', label: 'Forex', Icon: DollarSign },
   { to: '/metals', label: 'Metals', Icon: Gem },
   { to: '/funds', label: 'Funds', Icon: Briefcase },
+  { to: '/bonds', label: 'Bonds', Icon: Landmark },
   { to: '/charts', label: 'Charts', Icon: LineChart },
 ];
 

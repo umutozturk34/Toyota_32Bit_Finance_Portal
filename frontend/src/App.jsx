@@ -15,6 +15,7 @@ import Crypto from './pages/Crypto';
 import Forex from './pages/Forex';
 import Metals from './pages/Metals';
 import Funds from './pages/Funds';
+import Bonds from './pages/Bonds';
 import ChartView from './pages/ChartView';
 function App() {
   return (
@@ -94,6 +95,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Funds />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="bonds" 
+              element={
+                <ProtectedRoute>
+                  <Bonds />
                 </ProtectedRoute>
               } 
             />

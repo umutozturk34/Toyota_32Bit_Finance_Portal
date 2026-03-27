@@ -1,5 +1,6 @@
 package com.finance.backend.controller;
 
+import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.response.CandleResponse;
 import com.finance.backend.dto.response.CryptoResponse;
 import com.finance.backend.mapper.CryptoResponseMapper;
@@ -24,21 +25,24 @@ public class CryptoController {
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<CryptoResponse>> getAllCryptos() {
-        return ResponseEntity.ok(cryptoResponseMapper.toCryptoResponses(cryptoCacheService.getAllSnapshots()));
+    public ResponseEntity<ApiResponse<List<CryptoResponse>>> getAllCryptos() {
+        List<CryptoResponse> cryptos = cryptoResponseMapper.toCryptoResponses(cryptoCacheService.getAllSnapshots());
+        return ResponseEntity.ok(ApiResponse.success("Cryptos retrieved successfully", cryptos));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CryptoResponse> getCryptoById(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<CryptoResponse>> getCryptoById(@PathVariable String id) {
         String normalizedId = id.strip().toLowerCase();
-        return ResponseEntity.ok(cryptoResponseMapper.toCryptoResponse(cryptoCacheService.getSnapshot(normalizedId)));
+        CryptoResponse crypto = cryptoResponseMapper.toCryptoResponse(cryptoCacheService.getSnapshot(normalizedId));
+        return ResponseEntity.ok(ApiResponse.success("Crypto retrieved successfully", crypto));
     }
 
     @GetMapping("/{id}/history")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<CandleResponse>> getCryptoHistory(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<List<CandleResponse>>> getCryptoHistory(@PathVariable String id) {
         String normalizedId = id.strip().toLowerCase();
-        return ResponseEntity.ok(cryptoResponseMapper.toCryptoCandleResponses(cryptoCacheService.getHistory(normalizedId)));
+        List<CandleResponse> history = cryptoResponseMapper.toCryptoCandleResponses(cryptoCacheService.getHistory(normalizedId));
+        return ResponseEntity.ok(ApiResponse.success("Crypto history retrieved successfully", history));
     }
 }

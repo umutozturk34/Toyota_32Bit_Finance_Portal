@@ -88,9 +88,7 @@ This roadmap defines the planned development phases and milestone-based releases
 - **Log4j Correlator:** Configured Log4j to be captured by OTel Agent, enabling Log-Trace correlation.
 - **Message Broker (Kafka):** Implemented Kafka as a resilient buffer between OTel and OpenSearch to prevent data loss during high traffic.
 - **SpanMetrics Connector:** Enabled real-time metric derivation (Request Count, Error Rates, Latency) directly from raw Traces.
-- **OpenSearch & Dashboards:** Configured OpenSearch as the primary sink and built 4 specialized Vega-Lite dashboards (Executive, APM, Reliability,Integration & DB Health).
-
-
+- **OpenSearch & Dashboards:** Configured OpenSearch as the primary sink and built 4 specialized Vega-Lite dashboards (Executive, APM, Reliability, Integration & DB Health).
 
 ### Version Release
 - ✅ **v0.8.0 – Observability & Monitoring completed**
@@ -98,15 +96,62 @@ This roadmap defines the planned development phases and milestone-based releases
 
 ---
 
-## ⚪ v0.9.0 – Performance & Security Hardening (Planned)
+## 🔵 v0.9.0 – Bond & Bill Module
 ### Development Tasks
-- **SSL/TLS (HTTPS):** Implement end-to-end encryption for all internal and external services.
-- **Query Optimization:** Analyze PostgreSQL execution plans and optimize slow SQL queries.
-- **Security Audit:** Conduct a full security scan for Keycloak and API Gateway layers.
+- **Bond Data Service:** Implemented EVDS API integration for Turkish government bonds (TRT, TRD, TRB).
+- **Bond Type Classification:** Automated bond classification (Discounted, Fixed Coupon, Floating TLREF/CPI/Auction, Sukuk).
+- **Rate History:** Gap-based incremental rate history fetching with atomic transaction support.
+- **Coupon Rate Sanitization:** Detect and handle EVDS edge cases (TRB days-to-maturity in ORAN field).
+- **Simple Yield Calculation:** Discounted yield and fixed coupon current yield formulas.
+- **Frontend:** Bond listing page with type filters, rate history charts, and responsive card design.
+- **Keycloak Email Templates:** Custom FreeMarker email templates matching the portal's dark theme.
+
+### Version Release
+- ✅ **v0.9.0 – Bond & Bill module completed (refactor pending)**
 
 ---
 
-## 🏁 v1.0.0 – Production Ready Release (Planned)
+## ⚪ v0.10.0 – News Module (Planned)
+### Development Tasks
+- Add financial news aggregation service.
+- Create REST endpoints and news feed frontend views.
+- Implement categorization and filtering by asset type.
+
+---
+
+## ⚪ v0.11.0 – Portfolio & User Module (Planned)
+### Development Tasks
+- Implement user portfolio management (add/remove assets, track holdings).
+- Create portfolio dashboard with summary views and asset allocation.
+- Add user preferences and watchlist functionality.
+
+---
+
+## ⚪ v0.12.0 – Charts, Alerts & Reports (Planned)
+### Development Tasks
+- Persist frontend chart data to backend for historical access.
+- Implement price alert system with configurable thresholds.
+- Generate on-demand daily profit/loss PDF reports.
+
+---
+
+## ⚪ v0.13.0 – Backend & Frontend Improvements (Planned)
+### Development Tasks
+- Performance optimization and query tuning.
+- Security hardening (SSL/TLS, security audit).
+- UI/UX refinements and final polish.
+
+---
+
+## ⚪ v0.14.0 – Mobile Application (Planned)
+### Development Tasks
+- Develop mobile application (React Native or native).
+- Implement push notifications for price alerts.
+- Sync portfolio and preferences across platforms.
+
+---
+
+## 🏁 v0.15.0 / v1.0.0 – Production Ready Release (Planned)
 ### Development Tasks
 - Final system stabilization and performance benchmarking.
 - Finalize documentation (API Docs, Deployment Guide).

@@ -19,6 +19,7 @@ public class AdminTaskService {
     private final TcmbForexService tcmbForexService;
     private final YahooForexService yahooForexService;
     private final FundDataService fundDataService;
+    private final BondDataService bondDataService;
     private final TaskTrackingService taskTracker;
     private final Executor taskExecutor;
 
@@ -105,6 +106,12 @@ public class AdminTaskService {
                     fundDataService.updateFundSnapshots();
                     fundDataService.updateFundCandles();
                 });
+    }
+
+    public TaskTriggerResponse triggerBondUpdate() {
+        return executeTask("bond-update",
+                "Bond update started in background",
+                bondDataService::updateBonds);
     }
 
     public TaskStatusResponse getTaskStatus() {

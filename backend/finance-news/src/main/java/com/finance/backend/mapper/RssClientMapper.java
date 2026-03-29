@@ -1,9 +1,11 @@
 package com.finance.backend.mapper;
 
 import com.finance.backend.dto.internal.RssArticleData;
+import com.rometools.rome.feed.synd.SyndContent;
 import com.rometools.rome.feed.synd.SyndEnclosure;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
+import com.finance.backend.util.NewsTextUtils;
 import lombok.extern.log4j.Log4j2;
 import org.jdom2.Element;
 import org.springframework.stereotype.Component;
@@ -28,10 +30,12 @@ public class RssClientMapper {
 
     private RssArticleData toArticleData(SyndEntry entry) {
         return new RssArticleData(
-                entry.getTitle().trim(),
+                NewsTextUtils.decodeHtml(entry.getTitle().trim()),
                 entry.getLink().trim(),
                 extractDescription(entry),
+                extractContent(entry),
                 extractImageUrl(entry),
+                extractGuid(entry),
                 convertDate(entry.getPublishedDate())
         );
     }
@@ -40,9 +44,37 @@ public class RssClientMapper {
         if (entry.getDescription() == null) {
             return null;
         }
-        return entry.getDescription().getValue()
-                .replaceAll("<[^>]+>", "")
-                .trim();
+        String stripped = NewsTextUtils.stripHtmlTags(entry.getDescription().getValue());
+        return NewsTextUtils.decodeHtml(stripped);
+    }
+
+    private String extractContent(SyndEntry entry) {
+        List<SyndContent> contents = entry.getContents();
+        if (contents != null && !contents.isEmpty()) {
+            for (SyndContent content : contents) {
+                if (content.getValue() != null && !content.getValue().isBlank()) {
+                    return content.getValue().trim();
+                }
+            }
+        }
+
+        for (Element element : entry.getForeignMarkup()) {
+            if ("encoded".equals(element.getName())) {
+                String value = element.getValue();
+                if (value != null && !value.isBlank()) {
+                    return value.trim();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String extractGuid(SyndEntry entry) {
+        if (entry.getUri() != null && !entry.getUri().isBlank()) {
+            return entry.getUri().trim();
+        }
+        return null;
     }
 
     private String extractImageUrl(SyndEntry entry) {

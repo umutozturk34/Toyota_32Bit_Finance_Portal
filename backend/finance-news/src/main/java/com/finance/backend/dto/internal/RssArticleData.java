@@ -6,6 +6,8 @@ public record RssArticleData(
         String title,
         String link,
         String description,
+        String content,
         String imageUrl,
+        String guid,
         LocalDateTime publishedAt
 ) {}

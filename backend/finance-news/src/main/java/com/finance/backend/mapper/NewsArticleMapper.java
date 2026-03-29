@@ -21,11 +21,13 @@ public abstract class NewsArticleMapper {
                 data.title(),
                 data.link(),
                 data.description(),
+                data.content(),
                 sourceName,
                 sourceUrl,
                 category,
                 data.publishedAt(),
-                data.imageUrl()
+                data.imageUrl(),
+                data.guid()
         );
     }
 

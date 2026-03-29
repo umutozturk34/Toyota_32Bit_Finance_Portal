@@ -6,7 +6,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -128,6 +130,7 @@ public class AppProperties {
         private int maxArticlesPerSource = 50;
         private int cacheTtlHours = 24;
         private List<NewsSource> sources = new ArrayList<>();
+        private Map<String, Integer> categoryLimits = new HashMap<>();
     }
 
     @Getter

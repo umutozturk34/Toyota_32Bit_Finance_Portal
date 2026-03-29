@@ -57,6 +57,12 @@ public class NewsArticle {
     @Column(name = "image_url", length = 1024)
     private String imageUrl;
 
+    @Column(name = "content", columnDefinition = "TEXT")
+    private String content;
+
+    @Column(name = "guid", length = 1024)
+    private String guid;
+
     public void resolveCategory(String defaultCategory) {
         this.category = NewsCategoryResolver.resolve(defaultCategory, this.title, this.description);
     }

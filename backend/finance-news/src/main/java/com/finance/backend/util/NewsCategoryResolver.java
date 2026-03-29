@@ -18,31 +18,38 @@ public final class NewsCategoryResolver {
     static {
         KEYWORD_MAP.put(NewsCategory.CRYPTO, List.of(
                 "bitcoin", "ethereum", "kripto", "btc", "eth", "altcoin",
-                "blockchain", "coin", "solana", "ripple", "xrp", "kripto para"));
+                "blockchain", "coin", "solana", "ripple", "xrp", "kripto para",
+                "stablecoin", "defi", "nft", "binance", "coinbase"));
 
         KEYWORD_MAP.put(NewsCategory.BORSA_SIRKETLERI, List.of(
                 "bilanço", "kâr", "temettü", "bedelsiz", "sermaye artırımı",
-                "halka arz", "gong", "hisse geri alım"));
+                "halka arz", "gong", "hisse geri alım", "kar payı",
+                "şirket", "genel kurul", "yönetim kurulu", "spk"));
 
         KEYWORD_MAP.put(NewsCategory.TAHVIL_BONO, List.of(
                 "tahvil", "bono", "kupon", "getiri eğrisi", "hazine",
-                "eurobond", "sukuk"));
+                "eurobond", "sukuk", "faiz", "merkez bankası", "tcmb",
+                "politika faizi", "gösterge faizi", "faiz oranı", "faiz kararı",
+                "enflasyon", "tüfe", "para politikası", "ppk"));
 
         KEYWORD_MAP.put(NewsCategory.FON, List.of(
                 "yatırım fonu", "tefas", "portföy", "fon getiri",
-                "emeklilik fonu", "borsa yatırım fonu"));
+                "emeklilik fonu", "borsa yatırım fonu", "bys fon"));
 
         KEYWORD_MAP.put(NewsCategory.EMTIA, List.of(
                 "altın", "petrol", "gümüş", "bakır", "emtia",
-                "doğalgaz", "brent", "ons"));
+                "doğalgaz", "brent", "ons", "gram altın", "çeyrek altın",
+                "wti", "opec", "kıymetli maden"));
 
         KEYWORD_MAP.put(NewsCategory.PARITE, List.of(
                 "döviz", "kur", "dolar", "euro", "parite",
-                "sterlin", "yen", "tl değer"));
+                "sterlin", "yen", "tl değer", "dolar/tl", "eur/tl",
+                "gbp/tl", "usd/try", "eur/usd", "kur artışı", "kur düşüşü"));
 
         KEYWORD_MAP.put(NewsCategory.BORSA_ISTANBUL, List.of(
                 "borsa", "bist", "endeks", "hisse", "pay piyasası",
-                "xu030", "xu100", "viop"));
+                "xu030", "xu100", "viop", "bist 100", "bist100",
+                "borsa istanbul", "hisse senedi", "piyasa değeri"));
     }
 
     private NewsCategoryResolver() {

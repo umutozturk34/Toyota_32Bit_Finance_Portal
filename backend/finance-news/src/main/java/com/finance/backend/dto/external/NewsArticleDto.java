@@ -8,9 +8,11 @@ public record NewsArticleDto(
         String title,
         String link,
         String description,
+        String content,
         String sourceName,
         String sourceUrl,
         NewsCategory category,
         LocalDateTime publishedAt,
-        String imageUrl
+        String imageUrl,
+        String guid
 ) {}

@@ -116,17 +116,11 @@ app:
       - name: ParaAnaliz
         url: https://www.paraanaliz.com/feed
         type: RSS
-      - name: BigPara
-        url: https://bigpara.hurriyet.com.tr/rss/
-        type: RSS
       - name: NTV-Para
         url: https://www.ntv.com.tr/ntvpara.rss
         type: RSS
       - name: NTV-Ekonomi
         url: https://www.ntv.com.tr/ekonomi.rss
-        type: RSS
-      - name: AA-Ekonomi
-        url: https://www.aa.com.tr/tr/rss/default?cat=ekonomi
         type: RSS
       - name: Ekonomim
         url: https://www.ekonomim.net/rss/yatirim-3
@@ -143,6 +137,23 @@ app:
         url: https://finansgundem.com.tr/rss/emtia
         type: RSS
         default-category: EMTIA
+      - name: YatirimRehberi-Piyasalar
+        url: https://www.yatirimrehberi.com.tr/rss/piyasalar
+        type: RSS
+        default-category: GENEL_FINANS
+      - name: BorsaGundem-Sirket
+        url: https://www.borsagundem.com.tr/rss/sirket-haberleri
+        type: RSS
+        default-category: BORSA_SIRKETLERI
+    category-limits:
+      "[CRYPTO]": 20
+      "[BORSA_ISTANBUL]": 30
+      "[BORSA_SIRKETLERI]": 20
+      "[TAHVIL_BONO]": 15
+      "[PARITE]": 20
+      "[FON]": 15
+      "[EMTIA]": 20
+      "[GENEL_FINANS]": 30
 
   rate-limit:
     admin-trigger-limit: 3
@@ -195,6 +206,15 @@ resilience4j:
         ignore-exceptions:
           - com.finance.backend.exception.SymbolNotFoundException
       tcmb:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        record-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+      news:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 10
         minimum-number-of-calls: 5
@@ -281,6 +301,16 @@ resilience4j:
           - io.netty.handler.timeout.ReadTimeoutException
         ignore-exceptions:
           - com.finance.backend.exception.BusinessException
+      news:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - io.netty.handler.timeout.ReadTimeoutException
 
 management:
   endpoint:

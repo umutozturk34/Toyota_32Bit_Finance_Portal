@@ -95,6 +95,12 @@ public class AdminController {
         return adminTaskService.triggerBondUpdate();
     }
 
+    @PostMapping("/trigger/news/update")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public TaskTriggerResponse triggerNewsUpdate() {
+        return adminTaskService.triggerNewsUpdate();
+    }
+
     @GetMapping("/tasks/status")
     public TaskStatusResponse getTaskStatus() {
         return adminTaskService.getTaskStatus();

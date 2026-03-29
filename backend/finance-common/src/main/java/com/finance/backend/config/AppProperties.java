@@ -5,6 +5,8 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -24,6 +26,7 @@ public class AppProperties {
     private Fund fund = new Fund();
     private RateLimit rateLimit = new RateLimit();
     private Bond bond = new Bond();
+    private News news = new News();
 
     @Getter
     @Setter
@@ -117,6 +120,23 @@ public class AppProperties {
         private int yearsToFetch = 5;
         private int minCandlesForIncremental = 30;
         private int windowSizes = 95;
+    }
+
+    @Getter
+    @Setter
+    public static class News {
+        private int maxArticlesPerSource = 50;
+        private int cacheTtlHours = 24;
+        private List<NewsSource> sources = new ArrayList<>();
+    }
+
+    @Getter
+    @Setter
+    public static class NewsSource {
+        private String name;
+        private String url;
+        private String type = "RSS";
+        private String defaultCategory;
     }
 
     @Getter

@@ -100,6 +100,50 @@ app:
     min-candles-for-incremental: 30
     window-sizes: 95
 
+  news:
+    max-articles-per-source: 50
+    cache-ttl-hours: 24
+    sources:
+      - name: BloombergHT
+        url: https://www.bloomberght.com/rss
+        type: RSS
+      - name: Dunya-Finans
+        url: https://www.dunya.com/rss/finans.xml
+        type: RSS
+      - name: Dunya-Ekonomi
+        url: https://www.dunya.com/rss/ekonomi.xml
+        type: RSS
+      - name: ParaAnaliz
+        url: https://www.paraanaliz.com/feed
+        type: RSS
+      - name: BigPara
+        url: https://bigpara.hurriyet.com.tr/rss/
+        type: RSS
+      - name: NTV-Para
+        url: https://www.ntv.com.tr/ntvpara.rss
+        type: RSS
+      - name: NTV-Ekonomi
+        url: https://www.ntv.com.tr/ekonomi.rss
+        type: RSS
+      - name: AA-Ekonomi
+        url: https://www.aa.com.tr/tr/rss/default?cat=ekonomi
+        type: RSS
+      - name: Ekonomim
+        url: https://www.ekonomim.net/rss/yatirim-3
+        type: RSS
+      - name: FinansGundem-Kripto
+        url: https://finansgundem.com.tr/rss/kripto-piyasasi
+        type: RSS
+        default-category: CRYPTO
+      - name: FinansGundem-Borsa
+        url: https://finansgundem.com.tr/rss/borsa
+        type: RSS
+        default-category: BORSA_ISTANBUL
+      - name: FinansGundem-Emtia
+        url: https://finansgundem.com.tr/rss/emtia
+        type: RSS
+        default-category: EMTIA
+
   rate-limit:
     admin-trigger-limit: 3
     admin-read-limit: 20

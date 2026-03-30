@@ -20,6 +20,7 @@ public class AdminTaskService {
     private final YahooForexService yahooForexService;
     private final FundDataService fundDataService;
     private final BondDataService bondDataService;
+    private final NewsDataService newsDataService;
     private final TaskTrackingService taskTracker;
     private final Executor taskExecutor;
 
@@ -112,6 +113,12 @@ public class AdminTaskService {
         return executeTask("bond-update",
                 "Bond update started in background",
                 bondDataService::updateBonds);
+    }
+
+    public TaskTriggerResponse triggerNewsUpdate() {
+        return executeTask("news-update",
+                "News feed update started in background",
+                newsDataService::updateNews);
     }
 
     public TaskStatusResponse getTaskStatus() {

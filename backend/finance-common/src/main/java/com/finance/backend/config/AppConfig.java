@@ -147,6 +147,16 @@ public class AppConfig {
                 .build();
     }
 
+    @Bean("newsWebClient")
+    public WebClient newsWebClient(WebClient.Builder builder) {
+        return builder
+                .clone()
+                .clientConnector(new ReactorClientHttpConnector(baseHttpClient()))
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(5 * 1024 * 1024))
+                .filter(userAgentFilter())
+                .build();
+    }
+
     @Bean("binanceWebClient")
     public WebClient binanceWebClient(WebClient.Builder builder) {
         AppProperties.Provider binance = appProperties.getApi().getBinance();

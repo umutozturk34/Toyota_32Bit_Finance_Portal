@@ -8,7 +8,8 @@ import About from './pages/About';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import TwoFactorSetup from './pages/TwoFactorSetup';
-import News from './pages/News';
+import News from './pages/news';
+import NewsDetail from './pages/news/NewsDetail';
 import MarketData from './pages/MarketData';
 import Stocks from './pages/Stocks';
 import Crypto from './pages/Crypto';
@@ -42,13 +43,21 @@ function App() {
                 </ProtectedRoute>
               } 
             />
-            <Route 
-              path="news" 
+            <Route
+              path="news"
               element={
                 <ProtectedRoute>
                   <News />
                 </ProtectedRoute>
-              } 
+              }
+            />
+            <Route
+              path="news/:id"
+              element={
+                <ProtectedRoute>
+                  <NewsDetail />
+                </ProtectedRoute>
+              }
             />
             <Route 
               path="market" 

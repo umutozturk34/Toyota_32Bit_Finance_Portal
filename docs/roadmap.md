@@ -111,11 +111,14 @@ This roadmap defines the planned development phases and milestone-based releases
 
 ---
 
-## ⚪ v0.10.0 – News Module (Planned)
+## 🔵 v0.10.0 – News Module
 ### Development Tasks
 - Add financial news aggregation service.
 - Create REST endpoints and news feed frontend views.
 - Implement categorization and filtering by asset type.
+
+### Version Release
+- ✅ **v0.10.0 – News module completed (optimization/refactor pending)**
 
 ---
 

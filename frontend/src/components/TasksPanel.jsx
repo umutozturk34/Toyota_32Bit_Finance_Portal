@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Activity, Play, CheckCircle2, XCircle, Clock,
     RefreshCw, Loader2, Zap, Database, X,
-    TrendingUp, DollarSign, Bitcoin, Briefcase, Landmark,
+    TrendingUp, DollarSign, Bitcoin, Briefcase, Landmark, Newspaper,
 } from 'lucide-react';
 import { adminService } from '../services/marketService';
 
@@ -59,6 +59,15 @@ const TASK_GROUPS = [
         bg: 'bg-[#a78bfa]/10',
         tasks: [
             { key: 'bond-update', label: 'Update', trigger: () => adminService.triggerBondUpdate() },
+        ],
+    },
+    {
+        category: 'News',
+        icon: Newspaper,
+        color: 'text-[#f472b6]',
+        bg: 'bg-[#f472b6]/10',
+        tasks: [
+            { key: 'news-update', label: 'Update', trigger: () => adminService.triggerNewsUpdate() },
         ],
     },
 ];

@@ -14,11 +14,10 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.util.*;
 
-@Log4j2
 @Service
+@Log4j2
 public class NewsCacheService {
 
-    private static final String CACHE_PREFIX = "news:category:";
     private static final String CACHE_LATEST = "news:latest";
     private static final String CACHE_ARTICLE = "news:article:";
     private static final int DEFAULT_CATEGORY_LIMIT = 20;
@@ -29,10 +28,12 @@ public class NewsCacheService {
     private final Duration cacheTtl;
     private final Map<String, Integer> categoryLimits;
 
-    public NewsCacheService(RedisTemplate<String, Object> redisTemplate,
-                            @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
-                            NewsArticleRepository articleRepository,
-                            AppProperties appProperties) {
+    public NewsCacheService(
+            RedisTemplate<String, Object> redisTemplate,
+            @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
+            NewsArticleRepository articleRepository,
+            AppProperties appProperties
+    ) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.articleRepository = articleRepository;
@@ -41,16 +42,8 @@ public class NewsCacheService {
     }
 
     public List<NewsArticle> getByCategory(NewsCategory category) {
-        String key = CACHE_PREFIX + category.name();
-        List<NewsArticle> cached = readListFromCache(key);
-        if (cached != null) {
-            return cached;
-        }
-
         int limit = categoryLimits.getOrDefault(category.name(), DEFAULT_CATEGORY_LIMIT);
-        List<NewsArticle> articles = articleRepository.findTopByCategoryOrderByPublishedAtDesc(category, limit);
-        writeToCache(key, articles);
-        return articles;
+        return articleRepository.findTopByCategoryOrderByPublishedAtDesc(category, limit);
     }
 
     public List<NewsArticle> getLatest() {
@@ -81,21 +74,11 @@ public class NewsCacheService {
     }
 
     public void refreshAll() {
-        List<NewsArticle> aggregated = new ArrayList<>();
-
-        for (NewsCategory category : NewsCategory.values()) {
-            String key = CACHE_PREFIX + category.name();
-            int limit = categoryLimits.getOrDefault(category.name(), DEFAULT_CATEGORY_LIMIT);
-            List<NewsArticle> articles = articleRepository.findTopByCategoryOrderByPublishedAtDesc(category, limit);
-            writeToCache(key, articles);
-            aggregated.addAll(articles);
-        }
-
-        aggregated.sort(Comparator.comparing(NewsArticle::getPublishedAt).reversed());
+        List<NewsArticle> aggregated = buildAggregatedLatest();
         writeToCache(CACHE_LATEST, aggregated);
 
-        log.info("News cache fully refreshed: {} categories, {} total articles, TTL={}h",
-                NewsCategory.values().length, aggregated.size(), cacheTtl.toHours());
+        log.info("News latest cache refreshed: {} total articles, TTL={}h",
+                aggregated.size(), cacheTtl.toHours());
     }
 
     private NewsArticle readArticleFromCache(String key) {
@@ -111,7 +94,7 @@ public class NewsCacheService {
         if (cached == null) {
             return null;
         }
-        return objectMapper.convertValue(cached, new TypeReference<>() {});
+        return objectMapper.convertValue(cached, new TypeReference<List<NewsArticle>>() {});
     }
 
     private void writeToCache(String key, Object value) {

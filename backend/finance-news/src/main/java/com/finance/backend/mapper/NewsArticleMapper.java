@@ -17,6 +17,10 @@ public abstract class NewsArticleMapper {
         NewsCategory category = NewsCategoryResolver.resolve(
                 defaultCategory, data.title(), data.description());
 
+        if (category == null) {
+            return null;
+        }
+
         return new NewsArticleDto(
                 data.title(),
                 data.link(),

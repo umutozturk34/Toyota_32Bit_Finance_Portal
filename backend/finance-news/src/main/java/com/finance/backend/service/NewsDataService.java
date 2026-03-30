@@ -66,9 +66,6 @@ public class NewsDataService {
                 int saved = processSource(source);
                 totalSuccess++;
                 totalSaved += saved;
-                if (saved > 0) {
-                    newsCacheService.refreshAll();
-                }
                 log.info("Source {} processed: {} new articles saved", source.getName(), saved);
             } catch (CallNotPermittedException e) {
                 log.warn("Circuit breaker OPEN for RSS feeds, stopping news update at source {}", source.getName());
@@ -95,7 +92,9 @@ public class NewsDataService {
             throw new BusinessException("All " + sources.size() + " news sources failed: " + failedSources);
         }
 
-        if (totalSaved == 0 && totalFailed == 0) {
+        if (totalSaved > 0) {
+            newsCacheService.refreshAll();
+        } else if (totalFailed == 0) {
             log.info("No new articles found across all sources");
         }
 
@@ -127,6 +126,9 @@ public class NewsDataService {
             try {
                 NewsArticleDto dto = articleMapper.toDto(
                         data, source.getName(), source.getUrl(), source.getDefaultCategory());
+                if (dto == null) {
+                    continue;
+                }
                 NewsArticle entity = articleMapper.toEntity(dto, now);
                 NewsArticle saved = transactionTemplate.execute(status -> articleRepository.save(entity));
                 newsCacheService.cacheArticle(saved);

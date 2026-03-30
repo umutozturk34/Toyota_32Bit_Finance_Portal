@@ -6,7 +6,6 @@ public enum NewsCategory {
     BORSA_SIRKETLERI,
     TAHVIL_BONO,
     PARITE,
-    FON,
     GENEL_FINANS,
     EMTIA
 }

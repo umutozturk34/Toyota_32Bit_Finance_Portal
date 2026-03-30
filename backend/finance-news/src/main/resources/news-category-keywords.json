@@ -1,0 +1,145 @@
+{
+  "categoryKeywords": {
+    "CRYPTO": [
+      "bitcoin", "ethereum", "kripto", "btc", "eth", "altcoin",
+      "blockchain", "solana", "ripple", "xrp", "kripto para",
+      "stablecoin", "defi", "nft", "binance", "coinbase",
+      "dogecoin", "cardano", "polkadot", "avalanche", "bnb",
+      "kripto borsa", "kripto varlık", "dijital varlık",
+      "litecoin", "tether", "usdt", "usdc",
+      "web3", "airdrop", "ico", "merkezi olmayan",
+      "madencilik ödül", "halving", "hash rate",
+      "kripto düzenleme", "kripto regülasyon",
+      "akıllı sözleşme", "layer 2",
+      "kripto piyasa", "kripto yatırım",
+      "sec kripto", "etf bitcoin", "bitcoin etf",
+      "spot etf", "kripto etf",
+      "memecoin", "meme coin", "shiba inu", "pepe coin",
+      "sui coin", "ton coin", "token satış",
+      "cüzdan adresi", "kripto cüzdan"
+    ],
+    "BORSA_SIRKETLERI": [
+      "bilanço", "temettü", "bedelsiz", "sermaye artırımı",
+      "halka arz", "hisse geri alım", "kar payı",
+      "genel kurul", "yönetim kurulu", "spk",
+      "kap bildirimi", "özel durum açıklama",
+      "gelir tablosu", "mali tablo", "faaliyet raporu",
+      "net satış", "ebitda", "brüt kâr", "net kâr",
+      "bedelli", "rüçhan", "kotasyon",
+      "kar marjı", "ciro artış", "satış gelir",
+      "operasyonel kâr", "hisse devri", "ortaklık yapısı",
+      "yatırımcı ilişki", "şirket birleşme", "devralma",
+      "bağımsız denetim", "kap açıklama"
+    ],
+    "TAHVIL_BONO": [
+      "tahvil", "bono", "getiri eğrisi",
+      "devlet tahvili", "hazine bonosu", "hazine tahvil",
+      "eurobond", "sukuk",
+      "tahvil faizi", "tahvil getiri", "tahvil piyasa",
+      "bono faizi", "bono ihracı", "bono getiri",
+      "cds",
+      "tahvil ihracı", "devlet iç borçlanma", "dibs",
+      "kira sertifika", "kupon ödemesi", "vadeye kadar getiri",
+      "swap", "libor", "sofr"
+    ],
+    "EMTIA": [
+      "altın fiyat", "gram altın", "çeyrek altın", "cumhuriyet altın",
+      "spot altın", "ons altın", "altın ons", "altın", "gümüş", "paladyum", "platin",
+      "petrol fiyat", "ham petrol", "brent petrol",
+      "gümüş fiyat", "emtia", "emtia piyasa",
+      "doğalgaz fiyat", "brent", "wti", "opec", "opec+",
+      "kıymetli maden", "platin", "paladyum",
+      "altın yüksel", "altın düş", "altın rekor",
+      "bakır fiyat", "buğday fiyat", "pamuk fiyat",
+      "demir çelik", "çelik fiyat", "nikel fiyat",
+      "alüminyum fiyat", "petrol üretim",
+      "enerji emtia", "tarım emtia",
+      "altın talep", "altın arz", "altın ithalat"
+    ],
+    "PARITE": [
+      "döviz kuru", "dolar kuru", "euro kuru",
+      "döviz piyasa", "döviz bürosu",
+      "parite", "dolar/tl", "eur/tl", "gbp/tl",
+      "usd/try", "eur/usd", "usd/jpy", "gbp/usd",
+      "kur artışı", "kur düşüşü", "kurdaki", "kurlarda",
+      "tl değer", "tl'nin değer", "dolarizasyon",
+      "döviz rezerv", "efektif kur",
+      "dolar yüksel", "dolar düş", "euro yüksel",
+      "sterlin kuru", "yen kuru",
+      "döviz alış", "döviz satış", "döviz çevir",
+      "forex piyasa", "forex işlem",
+      "kur riski", "kur baskısı", "kur atağı",
+      "dolar endeks", "dxy",
+      "yuan kuru", "ruble kuru", "frank kuru"
+    ],
+    "BORSA_ISTANBUL": [
+      "bist", "bist 100", "bist100", "bist 30", "bist30",
+      "borsa istanbul", "xu030", "xu100", "viop",
+      "hisse senedi", "pay piyasası", "endeks değer",
+      "xbank", "xutek", "xhold", "xsgrt", "xgmyo",
+      "açığa satış", "devre kesici",
+      "yabancı yatırımcı", "yabancı payı",
+      "borsa yüksel", "borsa düş", "borsa kapan",
+      "borsa açılış", "borsa günü", "borsa endeks",
+      "seans", "piyasa yapıcı",
+      "endeks yüksel", "endeks düş", "endeks kapan"
+    ],
+    "GENEL_FINANS": [
+      "ekonomik büyüme", "gsyh", "büyüme oranı",
+      "cari açık", "cari denge", "cari fazla",
+      "bütçe açığı", "bütçe dengesi", "kamu borç",
+      "ihracat rakam", "ithalat veri", "dış ticaret",
+      "sanayi üretim", "işsizlik oranı", "istihdam veri",
+      "tüketici güven", "pmi endeks",
+      "kredi hacmi", "kredi büyüme", "mevduat faiz",
+      "bankacılık sektör", "sigorta sektör", "finans sektör",
+      "enflasyon", "tüfe", "üfe", "çekirdek enflasyon",
+      "tcmb", "merkez bankası", "politika faizi", "faiz kararı",
+      "faiz artırımı", "faiz indirimi", "faiz oranı",
+      "para politikası", "ppk", "repo faiz", "açık piyasa",
+      "parasal sıkılaştırma", "parasal genişleme",
+      "beklenti anketi", "kredi notu", "risk primi",
+      "vergi reform", "vergi gelir", "özelleştirme",
+      "sermaye piyasa", "yatırım ortam", "yatırımcı güven",
+      "piyasa beklenti", "ekonomi yönetim",
+      "maliye politika", "kalkınma plan",
+      "konut satış", "konut fiyat", "gayrimenkul piyasa",
+      "enerji fiyat", "elektrik fiyat", "akaryakıt fiyat",
+      "otomotiv satış", "otomotiv üretim",
+      "regülasyon", "bddk", "spk karar",
+      "ekonomik veri", "dış borç", "iç borç",
+      "bütçe performans", "hazine ve maliye",
+      "ekonomi bakan", "merkez bankası başkan",
+      "resesyon", "stagflasyon", "dezenflasyon",
+      "ekonomik kriz", "piyasa dalgalan"
+    ]
+  },
+  "ruleKeywords": {
+    "summaryHint": [
+      "bu hafta", "haftayı", "haftalık bazda", "yatırım araçlarının performansı",
+      "kategorilerine göre", "değer kaybetti", "değer kazandı"
+    ],
+    "generalMarketBasket": [
+      "bist", "bist 100", "altın", "gram altın", "dolar", "avro", "euro",
+      "yatırım fonları", "emeklilik fonları", "haftalık performans"
+    ],
+    "nonParityMarketAnchors": [
+      "bist", "bist 100", "borsa", "altın", "gram altın",
+      "yatırım fonları", "emeklilik fonları", "kapalıçarşı"
+    ],
+    "absoluteCrypto": ["bitcoin", "ethereum", "kripto para", "coinmarketcap", "altcoin"],
+    "absoluteParity": ["tcmb döviz kurları", "alım satıma konu olmayan döviz kurları", "döviz kurları"],
+    "parityPriority": ["döviz kuru", "efektif döviz", "efektif döviz kuru", "usd/try", "eur/try", "parite", "kur sepeti"],
+    "bondPriority": ["tahvil", "bono", "eurobond", "sukuk", "dibs"],
+    "bondContext": ["risk primi", "kredi notu", "getiri eğrisi", "tahvil faizi", "hazine", "devlet iç borçlanma", "kupon ödemesi", "vadeye kadar getiri"],
+    "macroPolicy": ["tcmb", "merkez bankası", "politika faizi", "faiz kararı", "faiz artırımı", "faiz indirimi", "repo faiz", "ppk", "enflasyon", "tüfe", "üfe", "para politikası"],
+    "strongCompanyNews": ["kap", "kap bildirimi", "özel durum açıklama", "bilanço", "gelir tablosu", "faaliyet raporu", "temettü", "bedelli", "bedelsiz", "rüçhan", "halka arz", "hisse geri alım", "şirket birleşme", "devralma", "ortaklık yapısı"]
+  },
+  "summaryDiversityCategories": [
+    "BORSA_ISTANBUL",
+    "EMTIA",
+    "PARITE",
+    "TAHVIL_BONO",
+    "CRYPTO"
+  ]
+}

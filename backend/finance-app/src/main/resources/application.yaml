@@ -116,15 +116,6 @@ app:
       - name: ParaAnaliz
         url: https://www.paraanaliz.com/feed
         type: RSS
-      - name: NTV-Para
-        url: https://www.ntv.com.tr/ntvpara.rss
-        type: RSS
-      - name: NTV-Ekonomi
-        url: https://www.ntv.com.tr/ekonomi.rss
-        type: RSS
-      - name: Ekonomim
-        url: https://www.ekonomim.net/rss/yatirim-3
-        type: RSS
       - name: FinansGundem-Kripto
         url: https://finansgundem.com.tr/rss/kripto-piyasasi
         type: RSS
@@ -145,15 +136,25 @@ app:
         url: https://www.borsagundem.com.tr/rss/sirket-haberleri
         type: RSS
         default-category: BORSA_SIRKETLERI
+      - name: Ekonomim-Para
+        url: https://www.ekonomim.net/rss/para-4
+        type: RSS
+        default-category: TAHVIL_BONO
+      - name: Ekonomim-Ekonomi
+        url: https://www.ekonomim.net/rss/ekonomi-5
+        type: RSS
+      - name: EkonomiDunya
+        url: https://www.ekonomidunya.com/rss_ekonomi_1.xml
+        type: RSS
+        default-category: PARITE
     category-limits:
       "[CRYPTO]": 20
       "[BORSA_ISTANBUL]": 30
       "[BORSA_SIRKETLERI]": 20
-      "[TAHVIL_BONO]": 15
+      "[TAHVIL_BONO]": 20
       "[PARITE]": 20
-      "[FON]": 15
       "[EMTIA]": 20
-      "[GENEL_FINANS]": 30
+      "[GENEL_FINANS]": 60
 
   rate-limit:
     admin-trigger-limit: 3

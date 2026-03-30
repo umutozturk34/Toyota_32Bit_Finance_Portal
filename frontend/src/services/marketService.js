@@ -223,6 +223,15 @@ export const adminService = {
       throw error;
     }
   },
+  triggerNewsUpdate: async () => {
+    try {
+      const response = await api.post('/admin/trigger/news/update');
+      return response.data;
+    } catch (error) {
+      console.error('Error triggering news update:', error);
+      throw error;
+    }
+  },
 };
 export const cryptoService = {
   getCryptos: async () => [],

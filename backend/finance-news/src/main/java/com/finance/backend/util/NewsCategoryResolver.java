@@ -7,6 +7,7 @@ import lombok.extern.log4j.Log4j2;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,6 +25,7 @@ public final class NewsCategoryResolver {
     private static final Pattern NON_WORD_SPLITTER = Pattern.compile("[^\\p{L}\\p{N}]+");
     private static final NewsCategoryResolverConfig.ResolverConfig CONFIG = loadConfig();
     private static final Map<NewsCategory, List<String>> KEYWORD_MAP = CONFIG.categoryKeywords();
+    private static final Map<String, Pattern> PHRASE_PATTERN_CACHE = buildPhrasePatternCache();
     private static final List<String> SUMMARY_HINT_KEYWORDS = CONFIG.ruleKeywords().summaryHint();
     private static final List<String> GENERAL_MARKET_BASKET_KEYWORDS = CONFIG.ruleKeywords().generalMarketBasket();
     private static final List<String> NON_PARITY_MARKET_ANCHORS = CONFIG.ruleKeywords().nonParityMarketAnchors();
@@ -172,7 +174,12 @@ public final class NewsCategoryResolver {
     }
 
     private static boolean matchesAny(String text, Set<String> tokens, List<String> keywords) {
-        return countMatches(text, tokens, keywords) > 0;
+        for (String keyword : keywords) {
+            if (matchesKeyword(text, tokens, keyword)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static int countMatches(String text, Set<String> tokens, List<String> keywords) {
@@ -203,7 +210,10 @@ public final class NewsCategoryResolver {
     }
 
     private static boolean containsAsBoundaryPhrase(String text, String phrase) {
-        Pattern pattern = Pattern.compile("(^|[^\\p{L}\\p{N}])" + Pattern.quote(phrase) + "([^\\p{L}\\p{N}]|$)");
+        Pattern pattern = PHRASE_PATTERN_CACHE.get(phrase);
+        if (pattern == null) {
+            pattern = compileBoundaryPattern(phrase);
+        }
         return pattern.matcher(text).find();
     }
 
@@ -316,6 +326,35 @@ public final class NewsCategoryResolver {
             return "";
         }
         return value.toLowerCase(TR);
+    }
+
+    private static Map<String, Pattern> buildPhrasePatternCache() {
+        Map<String, Pattern> cache = new HashMap<>();
+        collectPhrases(cache, KEYWORD_MAP.values().stream().flatMap(List::stream).toList());
+        collectPhrases(cache, CONFIG.ruleKeywords().summaryHint());
+        collectPhrases(cache, CONFIG.ruleKeywords().generalMarketBasket());
+        collectPhrases(cache, CONFIG.ruleKeywords().nonParityMarketAnchors());
+        collectPhrases(cache, CONFIG.ruleKeywords().absoluteCrypto());
+        collectPhrases(cache, CONFIG.ruleKeywords().absoluteParity());
+        collectPhrases(cache, CONFIG.ruleKeywords().parityPriority());
+        collectPhrases(cache, CONFIG.ruleKeywords().bondPriority());
+        collectPhrases(cache, CONFIG.ruleKeywords().bondContext());
+        collectPhrases(cache, CONFIG.ruleKeywords().macroPolicy());
+        collectPhrases(cache, CONFIG.ruleKeywords().strongCompanyNews());
+        return Map.copyOf(cache);
+    }
+
+    private static void collectPhrases(Map<String, Pattern> cache, List<String> keywords) {
+        for (String keyword : keywords) {
+            String normalized = normalize(keyword);
+            if (isPhraseKeyword(normalized) && !cache.containsKey(normalized)) {
+                cache.put(normalized, compileBoundaryPattern(normalized));
+            }
+        }
+    }
+
+    private static Pattern compileBoundaryPattern(String phrase) {
+        return Pattern.compile("(^|[^\\p{L}\\p{N}])" + Pattern.quote(phrase) + "([^\\p{L}\\p{N}]|$)");
     }
 
     private static Set<String> tokenize(String text) {

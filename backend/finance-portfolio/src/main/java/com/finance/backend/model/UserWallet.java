@@ -1,0 +1,54 @@
+package com.finance.backend.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "user_wallets")
+public class UserWallet {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "portfolio_id", nullable = false)
+    private Portfolio portfolio;
+
+    @Column(name = "portfolio_id", insertable = false, updatable = false)
+    private Long portfolioId;
+
+    @Column(name = "currency", nullable = false, length = 10)
+    private String currency;
+
+    @Column(name = "balance", nullable = false, precision = 19, scale = 4)
+    private BigDecimal balance;
+
+    @Column(name = "available_balance", nullable = false, precision = 19, scale = 4)
+    private BigDecimal availableBalance;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
+        if (createdAt == null) createdAt = now;
+        if (updatedAt == null) updatedAt = now;
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+}

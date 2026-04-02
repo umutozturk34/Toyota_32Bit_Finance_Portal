@@ -18,4 +18,7 @@ public interface PortfolioPositionRepository extends JpaRepository<PortfolioPosi
 
     List<PortfolioPosition> findByPortfolioIdAndQuantityGreaterThan(
             Long portfolioId, java.math.BigDecimal minQuantity);
+
+    List<PortfolioPosition> findByPortfolioIdAndAssetTypeAndQuantityGreaterThan(
+            Long portfolioId, AssetType assetType, java.math.BigDecimal minQuantity);
 }

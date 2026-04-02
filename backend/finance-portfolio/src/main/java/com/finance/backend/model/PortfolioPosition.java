@@ -3,6 +3,7 @@ package com.finance.backend.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Getter
@@ -57,5 +58,29 @@ public class PortfolioPosition {
     @PreUpdate
     void preUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    private static final int PRICE_SCALE = 4;
+    private static final int QTY_SCALE = 8;
+
+    public boolean hasSufficientQuantity(BigDecimal amount) {
+        return quantity.compareTo(amount) >= 0;
+    }
+
+    public void addQuantity(BigDecimal qty, BigDecimal cost) {
+        BigDecimal newQty = quantity.add(qty).setScale(QTY_SCALE, RoundingMode.HALF_UP);
+        BigDecimal newTotalCost = totalCostTry.add(cost);
+        BigDecimal newAvgCost = newQty.compareTo(BigDecimal.ZERO) > 0
+                ? newTotalCost.divide(newQty, PRICE_SCALE, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        this.quantity = newQty;
+        this.totalCostTry = newTotalCost;
+        this.averageCostTry = newAvgCost;
+    }
+
+    public void removeQuantity(BigDecimal qty) {
+        BigDecimal costReduction = averageCostTry.multiply(qty).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
+        this.quantity = quantity.subtract(qty).setScale(QTY_SCALE, RoundingMode.HALF_UP);
+        this.totalCostTry = totalCostTry.subtract(costReduction).max(BigDecimal.ZERO);
     }
 }

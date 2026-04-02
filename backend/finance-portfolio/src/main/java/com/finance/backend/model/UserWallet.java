@@ -3,6 +3,7 @@ package com.finance.backend.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Getter
@@ -13,6 +14,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "user_wallets")
 public class UserWallet {
+
+    private static final int SCALE = 4;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,5 +53,19 @@ public class UserWallet {
     @PreUpdate
     void preUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public boolean hasSufficientBalance(BigDecimal amount) {
+        return availableBalance.compareTo(amount) >= 0;
+    }
+
+    public void debit(BigDecimal amount) {
+        balance = balance.subtract(amount).setScale(SCALE, RoundingMode.HALF_UP);
+        availableBalance = availableBalance.subtract(amount).setScale(SCALE, RoundingMode.HALF_UP);
+    }
+
+    public void credit(BigDecimal amount) {
+        balance = balance.add(amount).setScale(SCALE, RoundingMode.HALF_UP);
+        availableBalance = availableBalance.add(amount).setScale(SCALE, RoundingMode.HALF_UP);
     }
 }

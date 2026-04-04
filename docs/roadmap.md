@@ -122,39 +122,67 @@ This roadmap defines the planned development phases and milestone-based releases
 
 ---
 
-## ⚪ v0.11.0 – Portfolio & User Module (Planned)
+## 🔵 v0.11.0 – Portfolio Module
 ### Development Tasks
-- Implement user portfolio management (add/remove assets, track holdings).
-- Create portfolio dashboard with summary views and asset allocation.
-- Add user preferences and watchlist functionality.
+- Implemented demo portfolio system with 1M TL initial deposit.
+- BUY/SELL transactions with weighted average cost (WAC) tracking.
+- Wallet ledger for all balance movements (deposit, buy, sell).
+- Daily snapshots (aggregate + per-asset) for performance graphs.
+- Event-driven snapshots triggered by market updates, transactions, and daily fallback.
+- Portfolio performance charts (aggregate and per-asset) with time range filters.
+- Asset allocation chart (by asset type and by individual asset).
+- Transaction history with full audit trail.
+- Onboarding flow with confirmation screen and processing animation.
+- Realized P&L tracking per transaction.
+
+### Version Release
+- ✅ **v0.11.0 – Portfolio module completed**
 
 ---
 
-## ⚪ v0.12.0 – Charts, Alerts & Reports (Planned)
+## ⚪ v0.12.0 – Commodity Module (Planned)
 ### Development Tasks
-- Persist frontend chart data to backend for historical access.
-- Implement price alert system with configurable thresholds.
-- Generate on-demand daily profit/loss PDF reports.
+- Add commodity data service (gold, silver, oil, natural gas).
+- Integrate external API for real-time and historical commodity prices.
+- Create REST endpoints and commodity listing/detail frontend views.
+- Add commodity support to portfolio (BUY/SELL).
+- Implement caching and scheduled data fetching.
 
 ---
 
-## ⚪ v0.13.0 – Backend & Frontend Improvements (Planned)
+## ⚪ v0.13.0 – Backend Features (Planned)
 ### Development Tasks
-- Performance optimization and query tuning.
-- Security hardening (SSL/TLS, security audit).
-- UI/UX refinements and final polish.
+- Unified market endpoint with pagination, sort, search, and filter.
+- Response-level Redis caching (cache-aside + write-through for hot paths).
+- Candle period filtering (1M, 3M, 6M, 1Y, 5Y) — backend-driven instead of client-side.
+- News pagination with category-based filtering.
+- Portfolio endpoint consolidation (single composite endpoint).
+- Price alert system with configurable thresholds.
+- Chart drawing persistence to backend.
+- On-demand daily profit/loss PDF reports.
 
 ---
 
-## ⚪ v0.14.0 – Mobile Application (Planned)
+## ⚪ v0.14.0 – Frontend Features (Planned)
+### Development Tasks
+- Home page with real-time top movers (gainers/losers per asset type).
+- Paginated asset list pages with server-side sort and search.
+- UI/UX refinements and design system polish.
+- Performance optimization and bundle size reduction.
+- Security hardening (SSL/TLS, CSP headers).
+
+---
+
+## ⚪ v0.15.0 – Mobile Application (Planned)
 ### Development Tasks
 - Develop mobile application (React Native or native).
 - Implement push notifications for price alerts.
 - Sync portfolio and preferences across platforms.
+- Mobile-optimized charts and portfolio views.
 
 ---
 
-## 🏁 v0.15.0 / v1.0.0 – Production Ready Release (Planned)
+## 🏁 v1.0.0 – Production Ready Release (Planned)
 ### Development Tasks
 - Final system stabilization and performance benchmarking.
 - Finalize documentation (API Docs, Deployment Guide).

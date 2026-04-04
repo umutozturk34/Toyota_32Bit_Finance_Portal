@@ -1,0 +1,265 @@
+import { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, TrendingUp, TrendingDown, Loader2, Hash, DollarSign, BarChart3, Wallet } from 'lucide-react';
+import Chart from 'react-apexcharts';
+import { useTheme } from '../../shared/context/ThemeContext';
+import { portfolioService } from './portfolioService';
+import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../shared/utils/formatters';
+import { cardVariants } from '../../shared/utils/animations';
+import { getApexThemeOptions } from '../../shared/utils/apexTheme';
+
+
+const RANGES = [
+  { id: '1M', label: '1A' },
+  { id: '3M', label: '3A' },
+  { id: '6M', label: '6A' },
+  { id: '1Y', label: '1Y' },
+  { id: 'ALL', label: 'Tümü' },
+];
+
+const ASSET_TYPE_LABELS = {
+  CRYPTO: 'Kripto',
+  STOCK: 'Hisse',
+  FOREX: 'Döviz',
+  FUND: 'Fon',
+};
+
+const STAT_CARDS = [
+  { key: 'quantity', label: 'Miktar', Icon: Hash, format: (v) => Number(v).toLocaleString('tr-TR', { maximumFractionDigits: 6 }) },
+  { key: 'averageCostTry', label: 'Ort. Maliyet', Icon: DollarSign, format: formatPriceTRY },
+  { key: 'currentPriceTry', label: 'Güncel Fiyat', Icon: BarChart3, format: formatPriceTRY },
+  { key: 'marketValueTry', label: 'Piyasa Değeri', Icon: Wallet, format: formatPriceTRY },
+];
+
+function AssetChart({ data, isDark }) {
+  if (!data || data.length === 0) return null;
+
+  const themeOpts = getApexThemeOptions(isDark);
+  const timestamps = data.map(d => new Date(d.timestamp).getTime());
+  const marketValues = data.map(d => Number(d.marketValueTry));
+  const unitPrices = data.map(d => Number(d.unitPriceTry));
+
+  const options = {
+    ...themeOpts,
+    chart: {
+      ...themeOpts.chart,
+      height: 300,
+      toolbar: { show: false },
+      zoom: { enabled: true },
+      animations: { enabled: true, easing: 'easeinout', speed: 600 },
+    },
+    colors: ['#6366f1', '#f59e0b'],
+    stroke: {
+      curve: 'smooth',
+      width: [2.5, 1.5],
+      dashArray: [0, 6],
+    },
+    fill: {
+      type: ['gradient', 'none'],
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.35,
+        opacityTo: 0.02,
+        stops: [0, 100],
+      },
+    },
+    xaxis: {
+      ...themeOpts.xaxis,
+      type: 'datetime',
+      categories: timestamps,
+    },
+    yaxis: [
+      {
+        ...themeOpts.yaxis,
+        title: { text: '' },
+        labels: {
+          ...themeOpts.yaxis.labels,
+          formatter: (val) => formatPriceTRY(val),
+        },
+      },
+      {
+        opposite: true,
+        ...themeOpts.yaxis,
+        title: { text: '' },
+        labels: {
+          ...themeOpts.yaxis.labels,
+          formatter: (val) => formatPriceTRY(val),
+        },
+      },
+    ],
+    tooltip: {
+      ...themeOpts.tooltip,
+      x: { format: 'dd MMM yyyy' },
+    },
+    legend: { show: false },
+    grid: themeOpts.grid,
+    dataLabels: { enabled: false },
+  };
+
+  const series = [
+    { name: 'Piyasa Değeri', type: 'area', data: marketValues },
+    { name: 'Birim Fiyat', type: 'line', data: unitPrices },
+  ];
+
+  return <Chart options={options} series={series} type="line" height={300} />;
+}
+
+export default function AssetDetail({ portfolioId, asset, onBack }) {
+  const { isDark } = useTheme();
+  const [range, setRange] = useState('ALL');
+  const [series, setSeries] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const pnlClass = getChangeClass(asset.pnlTry);
+  const displayLabel = asset.assetCode;
+  const displayBadge = asset.assetImage || null;
+  const displayBadgeText = asset.assetCode.replace('.IS', '').slice(0, 3).toUpperCase();
+  const displaySub = asset.assetName || (ASSET_TYPE_LABELS[asset.assetType] || asset.assetType);
+
+  const fetchSeries = useCallback(async (r) => {
+    setLoading(true);
+    try {
+      const result = await portfolioService.getAssetSeries(
+        portfolioId, asset.assetType, asset.assetCode, r
+      );
+      setSeries(result || []);
+    } catch {
+      setSeries([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [portfolioId, asset.assetType, asset.assetCode]);
+
+  useEffect(() => { fetchSeries(range); }, [range, fetchSeries]);
+
+  return (
+    <div className="space-y-5">
+      <motion.div
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="flex items-center gap-3"
+      >
+        <button
+          onClick={onBack}
+          className="flex items-center justify-center w-9 h-9 rounded-lg border border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:bg-surface hover:-translate-x-0.5 transition-all cursor-pointer"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <div className="flex items-center gap-3">
+          {displayBadge ? (
+            <img src={displayBadge} alt={displayLabel} className="w-10 h-10 rounded-xl" />
+          ) : (
+            <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 text-sm font-bold text-accent">
+              {displayBadgeText}
+            </span>
+          )}
+          <div>
+            <h1 className="text-xl font-bold text-fg">{displayLabel}</h1>
+            <p className="text-xs text-fg-muted">{displaySub}</p>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div
+        variants={cardVariants}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+      >
+        {STAT_CARDS.map(({ key, label, Icon, format }) => (
+          <div key={key} className="rounded-xl border border-border-default bg-bg-elevated p-3 space-y-2 card-hover transition-all duration-200 hover:border-border-hover">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center w-6 h-6 rounded-md bg-accent/10">
+                <Icon className="h-3 w-3 text-accent" />
+              </div>
+              <p className="text-[11px] text-fg-muted">{label}</p>
+            </div>
+            <p className="text-sm font-semibold font-mono text-fg">{format(asset[key])}</p>
+          </div>
+        ))}
+      </motion.div>
+
+      <motion.div
+        variants={cardVariants}
+        initial="hidden"
+        animate="show"
+        className={`flex items-center justify-between rounded-xl border p-4 card-hover transition-all duration-200 ${
+          asset.pnlTry >= 0
+            ? 'border-success/20 bg-success/5 hover:border-success/40'
+            : 'border-danger/20 bg-danger/5 hover:border-danger/40'
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          {asset.pnlTry >= 0
+            ? <TrendingUp className="h-5 w-5 text-success" />
+            : <TrendingDown className="h-5 w-5 text-danger" />}
+          <span className="text-sm font-medium text-fg">Kar/Zarar</span>
+        </div>
+        <div className="text-right flex items-center gap-3">
+          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>
+            {formatPercent(asset.pnlPercent)}
+          </span>
+          <p className={`text-lg font-semibold font-mono ${changeColors[pnlClass]}`}>
+            {formatPriceTRY(asset.pnlTry)}
+          </p>
+        </div>
+      </motion.div>
+
+      <motion.div
+        variants={cardVariants}
+        initial="hidden"
+        animate="show"
+        className="rounded-2xl border border-border-default bg-bg-elevated backdrop-blur-md p-5 space-y-3 card-hover transition-all duration-200 hover:border-border-hover"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-1 rounded bg-[#6366f1]" />
+              <span className="text-[11px] text-fg-muted">Piyasa Değeri</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-0 border-t-2 border-dashed border-[#f59e0b]" />
+              <span className="text-[11px] text-fg-muted">Birim Fiyat</span>
+            </div>
+          </div>
+          <div className="flex gap-1 rounded-lg border border-border-default bg-bg-base p-0.5">
+            {RANGES.map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setRange(id)}
+                className="relative rounded-md px-2.5 py-1 text-[11px] font-medium transition-all border-none cursor-pointer bg-transparent"
+              >
+                {range === id && (
+                  <motion.span
+                    layoutId="asset-range"
+                    className="absolute inset-0 rounded-md bg-accent/15"
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  />
+                )}
+                <span className={`relative z-10 ${range === id ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
+                  {label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative">
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-bg-elevated/60 rounded-lg">
+              <Loader2 className="h-6 w-6 animate-spin text-accent" />
+            </div>
+          )}
+          {series.length === 0 && !loading ? (
+            <div className="flex items-center justify-center h-[300px] text-sm text-fg-muted">
+              Bu aralıkta veri bulunmuyor
+            </div>
+          ) : series.length > 0 ? (
+            <AssetChart data={series} isDark={isDark} />
+          ) : null}
+        </div>
+      </motion.div>
+    </div>
+  );
+}

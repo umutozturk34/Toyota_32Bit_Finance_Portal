@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { getToken } from './keycloak';
+import { getToken } from '../../features/auth/keycloak';
+import { toast } from '../components/Toast';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
   headers: {
@@ -35,8 +36,7 @@ api.interceptors.response.use(
         const message = error.response?.data?.message
           || 'Çok fazla istek gönderdin. Lütfen biraz bekle.';
         const retryAfter = error.response?.headers?.['x-rate-limit-retry-after-seconds'];
-        const suffix = retryAfter ? ` (${retryAfter}s)` : '';
-        alert(`${message}${suffix}`);
+        toast.rateLimit(message, retryAfter);
       }
       return Promise.reject(error);
     }
@@ -46,7 +46,7 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
       try {
-        const { doLogin } = await import('./keycloak');
+        const { doLogin } = await import('../../features/auth/keycloak');
         console.log('Redirecting to Keycloak login...');
         doLogin();
       } catch (e) {

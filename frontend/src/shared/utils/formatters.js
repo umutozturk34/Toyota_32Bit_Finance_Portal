@@ -81,5 +81,29 @@ export const formatDateLong = (dateString, locale = 'tr-TR') => {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
+        timeZone: 'Europe/Istanbul',
+    });
+};
+
+export const formatDateTimeShort = (dateString, locale = 'tr-TR') => {
+    const date = new Date(dateString);
+    return date.toLocaleString(locale, {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/Istanbul',
+    });
+};
+
+export const formatDateTimeFull = (dateString, locale = 'tr-TR') => {
+    const date = new Date(dateString);
+    return date.toLocaleString(locale, {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/Istanbul',
     });
 };

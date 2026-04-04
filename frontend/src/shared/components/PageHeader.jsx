@@ -29,7 +29,7 @@ export default function PageHeader({
             }
         };
 
-        tick(); 
+        tick();
         const id = setInterval(tick, 250);
         return () => clearInterval(id);
     }, [cooldownEnd]);
@@ -53,11 +53,11 @@ export default function PageHeader({
         <motion.div
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
         >
-            <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-[-0.025em] text-fg sm:text-3xl">
-                <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10 text-accent">
+            <h1 className="flex items-center gap-3 text-2xl font-display tracking-normal text-fg sm:text-3xl">
+                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-accent text-white shadow-sm shadow-accent/20">
                     {icon}
                 </span>
                 {title}
@@ -67,7 +67,7 @@ export default function PageHeader({
                     onClick={handleRefresh}
                     disabled={loading || isCoolingDown}
                     title={isCoolingDown ? `Cooldown: ${formatRemaining(remaining)}` : 'Yenile'}
-                    className="flex items-center gap-2 rounded-md border border-border-default bg-bg-base px-4 py-2 text-sm text-fg-muted transition-colors duration-150 hover:bg-surface hover:text-fg disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg border border-border-default bg-bg-elevated px-4 py-2 text-sm text-fg-muted transition-all duration-200 hover:bg-surface hover:text-fg hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
                 >
                     {loading ? (
                         <>

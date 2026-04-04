@@ -74,9 +74,10 @@ public class PortfolioController {
     @GetMapping("/{portfolioId}/summary")
     public ResponseEntity<ApiResponse<PortfolioSummaryResponse>> getSummary(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long portfolioId) {
+            @PathVariable Long portfolioId,
+            @RequestParam(required = false) String assetType) {
         return ResponseEntity.ok(ApiResponse.success("Summary retrieved",
-                portfolioFacade.getSummary(jwt.getSubject(), portfolioId)));
+                portfolioFacade.getSummary(jwt.getSubject(), portfolioId, assetType)));
     }
 
     @GetMapping("/{portfolioId}/allocation")

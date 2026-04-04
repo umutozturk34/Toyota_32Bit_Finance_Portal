@@ -6,6 +6,8 @@ public record PositionResponse(
         Long id,
         String assetType,
         String assetCode,
+        String assetName,
+        String assetImage,
         BigDecimal quantity,
         BigDecimal averageCostTry,
         BigDecimal totalCostTry,

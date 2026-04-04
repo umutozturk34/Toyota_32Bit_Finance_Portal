@@ -48,9 +48,9 @@ public class PortfolioFacade {
         return summaryService.getPositions(portfolioId);
     }
 
-    public PortfolioSummaryResponse getSummary(String userSub, Long portfolioId) {
+    public PortfolioSummaryResponse getSummary(String userSub, Long portfolioId, String assetType) {
         validateOwner(userSub, portfolioId);
-        return summaryService.getSummary(portfolioId);
+        return summaryService.getSummary(portfolioId, assetType);
     }
 
     public List<AllocationItem> getAllocation(String userSub, Long portfolioId, String mode) {

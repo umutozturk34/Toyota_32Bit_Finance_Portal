@@ -5,6 +5,7 @@ import com.finance.backend.dto.response.PortfolioSummaryResponse;
 import com.finance.backend.dto.response.PositionResponse;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.mapper.PortfolioResponseMapper;
+import com.finance.backend.model.AssetType;
 import com.finance.backend.model.Portfolio;
 import com.finance.backend.model.PortfolioPosition;
 import com.finance.backend.model.UserWallet;
@@ -40,11 +41,21 @@ public class PortfolioSummaryService {
     }
 
     @Transactional(readOnly = true)
-    public PortfolioSummaryResponse getSummary(Long portfolioId) {
+    public PortfolioSummaryResponse getSummary(Long portfolioId, String assetType) {
         Portfolio portfolio = portfolioRepository.findById(portfolioId)
                 .orElseThrow(() -> new ResourceNotFoundException("Portfolio not found"));
         List<PortfolioPosition> positions = positionRepository
                 .findByPortfolioIdAndQuantityGreaterThan(portfolioId, BigDecimal.ZERO);
+
+        AssetType filterType = (assetType != null && !assetType.isBlank())
+                ? AssetType.valueOf(assetType) : null;
+
+        if (filterType != null) {
+            positions = positions.stream()
+                    .filter(p -> p.getAssetType() == filterType)
+                    .toList();
+        }
+
         UserWallet wallet = findWallet(portfolioId);
 
         BigDecimal totalValue = BigDecimal.ZERO;
@@ -59,14 +70,14 @@ public class PortfolioSummaryService {
         }
 
         totalValue = totalValue.setScale(SCALE, RoundingMode.HALF_UP);
-        BigDecimal cashBalance = wallet.getBalance();
+        BigDecimal cashBalance = filterType == null ? wallet.getBalance() : BigDecimal.ZERO;
         BigDecimal grandTotal = totalValue.add(cashBalance);
         BigDecimal unrealizedPnl = totalValue.subtract(totalCost).setScale(SCALE, RoundingMode.HALF_UP);
-        BigDecimal realizedPnl = portfolio.getRealizedPnlTry();
+        BigDecimal realizedPnl = filterType == null ? portfolio.getRealizedPnlTry() : BigDecimal.ZERO;
         BigDecimal totalPnl = unrealizedPnl.add(realizedPnl).setScale(SCALE, RoundingMode.HALF_UP);
-        BigDecimal initialDeposit = new BigDecimal("1000000");
+        BigDecimal denominator = totalCost.compareTo(BigDecimal.ZERO) > 0 ? totalCost : new BigDecimal("1000000");
         BigDecimal pnlPercent = totalPnl.multiply(new BigDecimal("100"))
-                .divide(initialDeposit, SCALE, RoundingMode.HALF_UP);
+                .divide(denominator, SCALE, RoundingMode.HALF_UP);
 
         return new PortfolioSummaryResponse(grandTotal, totalCost, cashBalance, unrealizedPnl, realizedPnl, totalPnl, pnlPercent);
     }
@@ -122,7 +133,8 @@ public class PortfolioSummaryService {
                 ? pnl.multiply(new BigDecimal("100")).divide(pos.getTotalCostTry(), SCALE, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
-        return responseMapper.toPositionResponse(pos, currentPrice, marketValue, pnl, pnlPercent);
+        AssetPricingPort.AssetMeta meta = pricingPort.getAssetMeta(pos.getAssetType().name(), pos.getAssetCode());
+        return responseMapper.toPositionResponse(pos, currentPrice, marketValue, pnl, pnlPercent, meta.name(), meta.image());
     }
 
     private UserWallet findWallet(Long portfolioId) {

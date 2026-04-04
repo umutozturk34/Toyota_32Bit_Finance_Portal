@@ -103,7 +103,7 @@ public class PortfolioTransactionService {
                             BigDecimal quantity, BigDecimal totalCost, BigDecimal fee) {
         BigDecimal totalDebit = totalCost.add(fee);
         if (!wallet.hasSufficientBalance(totalDebit)) {
-            throw new BusinessException("Insufficient balance. Required: " + totalDebit + " TRY, available: " + wallet.getAvailableBalance());
+            throw new BusinessException("Alım gücü yetersiz. Gereken: " + totalDebit + " TRY, mevcut: " + wallet.getAvailableBalance());
         }
 
         wallet.debit(totalDebit);
@@ -137,7 +137,7 @@ public class PortfolioTransactionService {
                 .orElseThrow(() -> new ResourceNotFoundException("No position found for " + assetCode));
 
         if (!position.hasSufficientQuantity(quantity)) {
-            throw new BusinessException("Insufficient quantity. Owned: " + position.getQuantity() + ", selling: " + quantity);
+            throw new BusinessException("Yetersiz miktar. Sahip olunan: " + position.getQuantity() + ", satılmak istenen: " + quantity);
         }
 
         BigDecimal costBasis = position.getAverageCostTry().multiply(quantity).setScale(PRICE_SCALE, RoundingMode.HALF_UP);

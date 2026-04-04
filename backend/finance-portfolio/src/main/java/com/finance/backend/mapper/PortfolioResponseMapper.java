@@ -28,11 +28,15 @@ public abstract class PortfolioResponseMapper {
                                                 BigDecimal currentPriceTry,
                                                 BigDecimal marketValueTry,
                                                 BigDecimal pnlTry,
-                                                BigDecimal pnlPercent) {
+                                                BigDecimal pnlPercent,
+                                                String assetName,
+                                                String assetImage) {
         return new PositionResponse(
                 pos.getId(),
                 pos.getAssetType().name(),
                 pos.getAssetCode(),
+                assetName,
+                assetImage,
                 pos.getQuantity(),
                 pos.getAverageCostTry(),
                 pos.getTotalCostTry(),

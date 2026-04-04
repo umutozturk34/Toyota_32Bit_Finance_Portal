@@ -20,6 +20,9 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
 
     List<PortfolioAssetDailySnapshot> findByPortfolioIdAndSnapshotDate(Long portfolioId, LocalDate snapshotDate);
 
+    List<PortfolioAssetDailySnapshot> findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(
+            Long portfolioId, LocalDateTime start, LocalDateTime end);
+
     List<PortfolioAssetDailySnapshot> findByPortfolioIdAndAssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
             Long portfolioId, AssetType assetType, LocalDateTime start, LocalDateTime end);
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { calculateFibRetracement, calculateFibExtension } from '../utils/fibonacci';
-import { createMagnetManager } from '../utils/magnetManager';
+import { calculateFibRetracement, calculateFibExtension } from './fibonacci';
+import { createMagnetManager } from './magnetManager';
 
 const useDrawingInteraction = ({
     canvasOverlayRef,

@@ -3,7 +3,7 @@ import {
     TrendingUp, Minus, ArrowDownUp, Pencil,
     Type, Trash2, X, Star,
 } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../../shared/context/ThemeContext';
 const DRAWING_TOOLS = [
     { id: 'TREND_LINE', label: 'Trend', Icon: TrendingUp, color: '#5E6AD2' },
     { id: 'HORIZONTAL_LINE', label: 'H-Line', Icon: Minus, color: '#f59e0b' },

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
-import { calculateSMA, calculateEMA } from '../utils/indicators';
-import { getChartOptions } from '../utils/chartOptions';
+import { calculateSMA, calculateEMA } from './indicators';
+import { getChartOptions } from './chartOptions';
 
 const dimColor = (color, alpha = 0.4) => {
     if (!color) return color;
@@ -10,6 +10,24 @@ const dimColor = (color, alpha = 0.4) => {
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const toChartTime = (dateStr) => {
+    if (!dateStr) return 0;
+    const s = String(dateStr);
+    if (s.length >= 10) {
+        const [y, m, d] = s.substring(0, 10).split('-').map(Number);
+        return { year: y, month: m, day: d };
+    }
+    return new Date(s).getTime() / 1000;
+};
+
+const chartTimeEqual = (a, b) => {
+    if (a === b) return true;
+    if (a && b && typeof a === 'object' && typeof b === 'object') {
+        return a.year === b.year && a.month === b.month && a.day === b.day;
+    }
+    return false;
 };
 
 const analyzeTrend = (d) => {
@@ -53,7 +71,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         });
         chartRef.current = chart;
         const candleData = data.candles.map(c => ({
-            time: new Date(c.candleDate || c.date).getTime() / 1000,
+            time: toChartTime(c.candleDate || c.date),
             open: c.open, high: c.high, low: c.low, close: c.close,
         }));
         candleDataRef.current = candleData;
@@ -100,10 +118,11 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         volumeDataRef.current = data.candles
             .filter(c => c.volume != null && c.volume > 0)
             .map(c => ({
-                time: new Date(c.candleDate || c.date).getTime() / 1000,
+                time: toChartTime(c.candleDate || c.date),
                 value: c.volume,
                 color: c.close >= c.open ? 'rgba(38, 166, 154, 0.7)' : 'rgba(239, 83, 80, 0.7)',
             }));
+        chart.timeScale().fitContent();
         setTrend(analyzeTrend(candleData));
         const handleCrosshairMove = (param) => {
             if (renderDrawingsRef.current) renderDrawingsRef.current();
@@ -117,7 +136,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 }
                 return;
             }
-            const cd = candleDataRef.current.find(c => c.time === param.time);
+            const cd = candleDataRef.current.find(c => chartTimeEqual(c.time, param.time));
             if (cd) setCrosshairData({ open: cd.open, high: cd.high, low: cd.low, close: cd.close, time: cd.time });
             const overlays = overlayMetaRef.current;
             if (overlays.size > 0 && param.point) {
@@ -196,7 +215,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         if (!compareData?.candles?.length || !compareSymbol) return;
         const candleData = candleDataRef.current;
         let compareCandles = compareData.candles.map(c => ({
-            time: new Date(c.candleDate || c.date).getTime() / 1000,
+            time: toChartTime(c.candleDate || c.date),
             value: c.close,
         }));
         if (compareCandles.length === 1 && candleData.length > 1) {

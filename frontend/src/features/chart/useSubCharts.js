@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createChart, LineSeries, HistogramSeries } from 'lightweight-charts';
-import { calculateRSI, calculateMACD } from '../utils/indicators';
-import { getChartOptions } from '../utils/chartOptions';
+import { calculateRSI, calculateMACD } from './indicators';
+import { getChartOptions } from './chartOptions';
 
 const createSubChart = (container, isDark, height) => {
     const opts = getChartOptions(isDark);

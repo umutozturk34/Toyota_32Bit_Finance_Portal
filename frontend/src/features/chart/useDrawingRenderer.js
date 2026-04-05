@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { FIB_LEVELS, FIB_LABELS } from '../utils/fibonacci';
-import { drawSnapIndicator } from '../utils/magnetManager';
+import { FIB_LEVELS, FIB_LABELS } from './fibonacci';
+import { drawSnapIndicator } from './magnetManager';
 
 const useDrawingRenderer = ({
     canvasOverlayRef,

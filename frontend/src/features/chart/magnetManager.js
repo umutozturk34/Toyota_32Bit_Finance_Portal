@@ -1,9 +1,16 @@
 const __DEV__ = import.meta.env?.DEV ?? false;
+const timeToNum = (t) => {
+  if (t && typeof t === 'object' && t.year != null) {
+    return t.year * 10000 + t.month * 100 + t.day;
+  }
+  return Number(t);
+};
 const sanitizeCandles = (arr) => {
   if (!arr || arr.length === 0) return [];
   return arr
     .map(c => ({
-      time: Number(c.time),
+      time: timeToNum(c.time),
+      rawTime: c.time,
       open: Number(c.open),
       high: Number(c.high),
       low: Number(c.low),
@@ -110,13 +117,13 @@ export const createMagnetManager = (config = {}) => {
       releaseSnap();
       return null;
     }
-    const match = findNearestCandle(candles, raw.time);
+    const match = findNearestCandle(candles, timeToNum(raw.time));
     if (!match) {
       releaseSnap();
       return null;
     }
     const { candle } = match;
-    const snappedTime = candle.time;
+    const snappedTime = candle.rawTime;
     const { price: snappedPrice } = snapToOHLC(candle, raw.price, mode);
     let pixel;
     try { pixel = toPixel(snappedTime, snappedPrice); } catch { pixel = null; }
@@ -209,10 +216,10 @@ export const createMagnetManager = (config = {}) => {
       try { raw = fromPixel(x, y); } catch { raw = null; }
       if (!shouldSnap()) return raw;
       if (!raw || raw.time == null || raw.price == null) return raw;
-      const match = findNearestCandle(candles, raw.time);
+      const match = findNearestCandle(candles, timeToNum(raw.time));
       if (!match) return raw;
       const { candle } = match;
-      const snappedTime = candle.time;
+      const snappedTime = candle.rawTime;
       const { price: snappedPrice } = snapToOHLC(candle, raw.price, mode);
       return { time: snappedTime, price: snappedPrice };
     },

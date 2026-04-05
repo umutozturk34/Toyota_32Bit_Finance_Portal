@@ -1,14 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
-    BarChart2, X, LineChart, Activity, PenTool, Triangle,
+    BarChart2, X, LineChart, Activity, PenTool, Triangle, Calendar,
 } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
-import useIndicators from '../hooks/useIndicators';
-import useDrawings from '../hooks/useDrawings';
-import useFibonacci from '../hooks/useFibonacci';
-import useChartCore from '../hooks/useChartCore';
-import useSubCharts from '../hooks/useSubCharts';
-import useChartDrawing from '../hooks/useChartDrawing';
+import { useTheme } from '../../shared/context/ThemeContext';
+import useIndicators from './useIndicators';
+import useDrawings from './useDrawings';
+import useFibonacci from './useFibonacci';
+import useChartCore from './useChartCore';
+import useSubCharts from './useSubCharts';
+import useChartDrawing from './useChartDrawing';
 import IndicatorPanel from './IndicatorPanel';
 import DrawingPanel from './DrawingPanel';
 import FibonacciPanel from './FibonacciPanel';
@@ -19,6 +19,22 @@ const TABS = [
     { id: 'drawings', label: 'Draw', Icon: PenTool },
     { id: 'fibonacci', label: 'Fibonacci', Icon: Triangle },
 ];
+
+const TIME_RANGES = [
+    { id: '1M', label: '1A', months: 1 },
+    { id: '3M', label: '3A', months: 3 },
+    { id: '6M', label: '6A', months: 6 },
+    { id: '1Y', label: '1Y', months: 12 },
+    { id: '5Y', label: '5Y', months: 60 },
+];
+
+const filterByTimeRange = (candles, months) => {
+    if (!candles?.length) return candles;
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - months);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    return candles.filter(c => (c.candleDate || c.date) >= cutoffStr);
+};
 
 const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = null, compareSymbol = null }) => {
     const { isDark } = useTheme();
@@ -31,6 +47,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
     const [magnetMode, setMagnetMode] = useState('off');
     const [selectedIcon, setSelectedIcon] = useState('\u{1F680}');
     const [iconSize, setIconSize] = useState(22);
+    const [timeRange, setTimeRange] = useState('1M');
 
     const isFund = assetType === 'FUND';
     const isCrypto = assetType === 'CRYPTO';
@@ -41,10 +58,27 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
     const [showInvestorCount, setShowInvestorCount] = useState(false);
     const [showPortfolioSize, setShowPortfolioSize] = useState(false);
 
+    const activeRange = TIME_RANGES.find(r => r.id === timeRange);
+    const filteredData = useMemo(() => {
+        if (!data?.candles?.length || !activeRange) return data;
+        const filtered = filterByTimeRange(data.candles, activeRange.months);
+        return { ...data, candles: filtered.length > 0 ? filtered : data.candles };
+    }, [data, activeRange]);
+
+    const filteredCompareData = useMemo(() => {
+        if (!compareData?.candles?.length || !activeRange) return compareData;
+        const filtered = filterByTimeRange(compareData.candles, activeRange.months);
+        return { ...compareData, candles: filtered.length > 0 ? filtered : compareData.candles };
+    }, [compareData, activeRange]);
+
+    const visibleRanges = useMemo(() =>
+        TIME_RANGES.filter(r => !(isCrypto && r.id === '5Y')),
+    [isCrypto]);
+
     const hasInvestorCountData = useMemo(() =>
-        isFund && data?.candles?.some(c => c.investorCount != null), [data, isFund]);
+        isFund && filteredData?.candles?.some(c => c.investorCount != null), [filteredData, isFund]);
     const hasPortfolioSizeData = useMemo(() =>
-        isFund && data?.candles?.some(c => c.portfolioSize != null), [data, isFund]);
+        isFund && filteredData?.candles?.some(c => c.portfolioSize != null), [filteredData, isFund]);
 
     const { indicators, addIndicator, removeIndicator, updateIndicator, toggleIndicator } = useIndicators();
     const { drawings, activeTool, addDrawing, removeDrawing, undoDrawing, clearDrawings, selectTool, cancelTool } = useDrawings();
@@ -61,13 +95,13 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
     const macdIndicator = useMemo(() => indicators.find(i => i.type === 'MACD' && i.visible), [indicators]);
 
     const { chartRef, chartContainerRef, candleSeriesRef, candleDataRef, volumeDataRef, trend, crosshairData } = useChartCore({
-        data, symbol, chartType: allowCandle ? chartType : 'line', isDark, indicators: filteredIndicators, renderDrawingsRef, assetType,
-        compareData, compareSymbol,
+        data: filteredData, symbol, chartType: allowCandle ? chartType : 'line', isDark, indicators: filteredIndicators, renderDrawingsRef, assetType,
+        compareData: filteredCompareData, compareSymbol,
     });
 
     const { rsiContainerRef, macdContainerRef, volumeContainerRef, investorCountContainerRef, portfolioSizeContainerRef } = useSubCharts({
         chartRef, candleDataRef, volumeDataRef, isDark,
-        hasRSI, rsiIndicator, hasMACD, macdIndicator, showVolume: showVolumeToggle && showVolume, data,
+        hasRSI, rsiIndicator, hasMACD, macdIndicator, showVolume: showVolumeToggle && showVolume, data: filteredData,
         showInvestorCount: isFund && showInvestorCount,
         showPortfolioSize: isFund && showPortfolioSize,
     });
@@ -83,7 +117,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
         fibTools: showFibTab ? fibTools : [], addFibTool, cancelFibTool,
         activeTool, activeFibTool: showFibTab ? activeFibTool : null,
         magnetMode, selectedIcon, iconSize,
-        data, symbol, renderDrawingsRef,
+        data: filteredData, symbol, renderDrawingsRef,
         selectTool, selectFibTool,
     });
 
@@ -91,7 +125,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
         if (textEditState) textDoneRef.current = false;
     }, [textEditState]);
 
-    if (!data?.candles?.length) {
+    if (!filteredData?.candles?.length) {
         return (
             <div className="flex flex-col items-center justify-center h-80 rounded-xl border" style={{ background: isDark ? '#050506' : '#f8fafc', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
                 <LineChart className="w-12 h-12 mb-3" style={{ color: isDark ? 'rgba(255,255,255,0.2)' : '#94a3b8' }} />
@@ -233,6 +267,29 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                     allowCandle={allowCandle}
                     compareSymbol={compareSymbol}
                 />
+                <div className="flex items-center gap-1 px-3 py-1.5 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0', background: isDark ? 'rgba(10,10,14,0.5)' : 'rgba(238,241,246,0.5)' }}>
+                    <Calendar className="w-3 h-3 mr-1" style={{ color: isDark ? '#55555f' : '#94a3b8' }} />
+                    {visibleRanges.map(({ id, label }) => (
+                        <button
+                            key={id}
+                            onClick={() => setTimeRange(id)}
+                            className="px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide border-none cursor-pointer transition-all duration-150"
+                            style={{
+                                background: timeRange === id
+                                    ? (isDark ? 'rgba(99,102,241,0.15)' : 'rgba(0,82,255,0.1)')
+                                    : 'transparent',
+                                color: timeRange === id
+                                    ? (isDark ? '#818cf8' : '#0052FF')
+                                    : (isDark ? '#8b8b9a' : '#64748B'),
+                                boxShadow: timeRange === id
+                                    ? (isDark ? '0 0 12px rgba(99,102,241,0.15)' : '0 0 12px rgba(0,82,255,0.1)')
+                                    : 'none',
+                            }}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
                 <div className="relative flex-1">
                     <div ref={chartContainerRef} className="w-full" style={{ height: 500 }} />
                     <canvas

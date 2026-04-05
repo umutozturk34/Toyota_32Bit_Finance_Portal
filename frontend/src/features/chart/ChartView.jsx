@@ -5,11 +5,10 @@ import {
   LineChart, ArrowLeft, Clock, BarChart2, Loader2,
   AlertTriangle, TrendingUp, RefreshCw, Activity, X
 } from 'lucide-react';
-import LightweightChart from '../components/LightweightChart';
-import { getCryptoHistory, stockService, forexService, fundService } from '../services/marketService';
-import { getCoinIds } from '../constants/coins';
-import { getBistSymbols, getBistDisplayName, isCompareOnly } from '../constants/stocks';
-import { getForexPairs } from '../constants/forex';
+import LightweightChart from './LightweightChart';
+import { getCryptoHistory, stockService, forexService, fundService, trackedAssetService } from '../../shared/services/marketService';
+import { formatBistSymbol } from '../../shared/constants/stocks';
+import { getForexPairs } from '../../shared/constants/forex';
 const ASSET_ICONS = {
   BIST: <BarChart2 className="w-4 h-4" />,
   US: <TrendingUp className="w-4 h-4" />,
@@ -26,6 +25,22 @@ const ASSET_LABELS = {
   FUND: 'Fon',
   METAL: 'Metal',
 };
+const ROUTE_TO_ASSET_TYPE = {
+  bist: 'BIST',
+  us: 'US',
+  crypto: 'CRYPTO',
+  forex: 'FOREX',
+  fund: 'FUND',
+  metal: 'METAL',
+};
+const ASSET_TYPE_TO_ROUTE = {
+  BIST: 'bist',
+  US: 'us',
+  CRYPTO: 'crypto',
+  FOREX: 'forex',
+  FUND: 'fund',
+  METAL: 'metal',
+};
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -38,21 +53,30 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
 };
 const ChartView = () => {
-  const { coinId } = useParams();
+  const { coinId, assetType: routeAssetType, symbol: routeSymbol } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const normalizedRouteAssetType = routeAssetType?.toLowerCase();
+  const routeType = normalizedRouteAssetType ? ROUTE_TO_ASSET_TYPE[normalizedRouteAssetType] : null;
+  const routeSymbolValue = routeSymbol ? decodeURIComponent(routeSymbol) : null;
+  const isDetailRoute = Boolean(routeType && routeSymbolValue);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [chartData, setChartData] = useState(null);
   const [filteredData, setFilteredData] = useState(null);
   const [assetType, setAssetType] = useState(() => {
+    if (routeType) return routeType;
     const params = new URLSearchParams(window.location.search);
     const urlType = params.get('type');
     if (urlType && ['BIST', 'US', 'CRYPTO', 'FOREX', 'FUND', 'METAL'].includes(urlType)) return urlType;
     return 'CRYPTO';
   });
   const [symbol, setSymbol] = useState(() => {
+    if (routeType && routeSymbolValue) {
+      if (routeType === 'BIST' && routeSymbolValue.endsWith('.IS')) return routeSymbolValue.replace('.IS', '');
+      return routeSymbolValue;
+    }
     const params = new URLSearchParams(window.location.search);
     const urlType = params.get('type');
     let sym = params.get('symbol') || coinId || 'bitcoin';
@@ -69,6 +93,42 @@ const ChartView = () => {
   const [fundList, setFundList] = useState([]);
   const [compareSymbol, setCompareSymbol] = useState(null);
   const [compareData, setCompareData] = useState(null);
+  const [trackedUniverse, setTrackedUniverse] = useState({
+    CRYPTO: [],
+    BIST: [],
+    FUND: [],
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadTrackedUniverse = async () => {
+      try {
+        const [cryptos, stocks, funds] = await Promise.all([
+          trackedAssetService.getByType('CRYPTO'),
+          trackedAssetService.getByType('STOCK'),
+          trackedAssetService.getByType('FUND'),
+        ]);
+        if (!cancelled) {
+          setTrackedUniverse({
+            CRYPTO: cryptos || [],
+            BIST: stocks || [],
+            FUND: funds || [],
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setTrackedUniverse({ CRYPTO: [], BIST: [], FUND: [] });
+        }
+      }
+    };
+
+    loadTrackedUniverse();
+    const intervalId = setInterval(loadTrackedUniverse, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
+  }, []);
 
   useEffect(() => {
     if (assetType === 'FUND' && fundList.length === 0) {
@@ -82,6 +142,51 @@ const ChartView = () => {
     setCompareSymbol(null);
     setCompareData(null);
   }, [assetType, symbol]);
+
+  useEffect(() => {
+    if (!symbol) return;
+
+    const typeMap = {
+      CRYPTO: 'CRYPTO',
+      BIST: 'STOCK',
+      FUND: 'FUND',
+    };
+    const listMap = {
+      CRYPTO: 'CRYPTO',
+      BIST: 'BIST',
+      FUND: 'FUND',
+    };
+
+    const backendType = typeMap[assetType];
+    const listKey = listMap[assetType];
+    if (!backendType || !listKey) return;
+
+    const normalizedCode = assetType === 'BIST'
+      ? formatBistSymbol(symbol)
+      : symbol;
+
+    const alreadyExists = (trackedUniverse[listKey] || []).some(item => item.assetCode === normalizedCode);
+    if (alreadyExists) return;
+
+    let cancelled = false;
+    const loadSingleTracked = async () => {
+      try {
+        const single = await trackedAssetService.getOne(backendType, normalizedCode);
+        if (!cancelled && single) {
+          setTrackedUniverse(prev => ({
+            ...prev,
+            [listKey]: [...(prev[listKey] || []), single],
+          }));
+        }
+      } catch {
+      }
+    };
+    loadSingleTracked();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [assetType, symbol, trackedUniverse]);
 
   useEffect(() => {
     if (!compareSymbol) { setCompareData(null); return; }
@@ -123,21 +228,29 @@ const ChartView = () => {
     return () => { cancelled = true; };
   }, [compareSymbol, assetType]);
 
+  const trackedBistSymbols = trackedUniverse.BIST
+    .filter(item => !item.compareOnly)
+    .map(item => item.assetCode.replace('.IS', ''));
+  const trackedBistCompareSymbols = trackedUniverse.BIST
+    .map(item => item.assetCode.replace('.IS', ''));
+  const trackedCryptoSymbols = trackedUniverse.CRYPTO.map(item => item.assetCode);
+  const trackedFundSymbols = trackedUniverse.FUND.map(item => item.assetCode);
+
   const presetSymbols = {
-    BIST: getBistSymbols().filter(s => !isCompareOnly(s)).map(symbol => getBistDisplayName(symbol)),
+    BIST: trackedBistSymbols,
     US: [
       'AAPL', 'AMD', 'AMZN', 'BAC', 'DIS',
       'GOOGL', 'GS', 'INTC', 'JNJ', 'JPM',
       'KO', 'MA', 'META', 'MSFT', 'NFLX',
       'NVDA', 'TSLA', 'V', 'WMT', 'XOM'
     ],
-    CRYPTO: getCoinIds(),
+    CRYPTO: trackedCryptoSymbols,
     FOREX: getForexPairs(),
-    FUND: fundList.map(f => f.fundCode),
+    FUND: trackedFundSymbols.length > 0 ? trackedFundSymbols : fundList.map(f => f.fundCode),
     METAL: ['PAXG', 'XAUT', 'KAG']
   };
   const compareSymbols = {
-    BIST: getBistSymbols().map(symbol => getBistDisplayName(symbol)),
+    BIST: trackedBistCompareSymbols,
     US: presetSymbols.US,
     CRYPTO: presetSymbols.CRYPTO,
     FOREX: presetSymbols.FOREX,
@@ -158,6 +271,19 @@ const ChartView = () => {
     return candles.filter(candle => new Date(candle.date) >= cutoffDate);
   };
   useEffect(() => {
+    if (routeType && routeSymbolValue) {
+      const nextSymbol = routeType === 'BIST' && routeSymbolValue.endsWith('.IS')
+        ? routeSymbolValue.replace('.IS', '')
+        : routeSymbolValue;
+      setAssetType(routeType);
+      setSymbol(nextSymbol);
+      const routeRange = searchParams.get('range');
+      if (routeRange && ['1M', '3M', '1Y', '5Y'].includes(routeRange)) {
+        setTimeRange(routeRange);
+      }
+      return;
+    }
+
     const params = new URLSearchParams(window.location.search);
     const urlType = params.get('type');
     let urlSymbol = params.get('symbol');
@@ -173,11 +299,11 @@ const ChartView = () => {
       setAssetType('CRYPTO');
     }
     if (urlRange && ['1M', '3M', '1Y', '5Y'].includes(urlRange)) setTimeRange(urlRange);
-  }, [location.search]);
+  }, [location.search, routeType, routeSymbolValue, coinId, searchParams]);
   const initialAssetTypeRef = useRef(assetType);
   useEffect(() => {
     if (initialAssetTypeRef.current === assetType) {
-      initialAssetTypeRef.current = null; 
+      initialAssetTypeRef.current = null;
       return;
     }
     const symbols = presetSymbols[assetType];
@@ -191,9 +317,15 @@ const ChartView = () => {
   }, [assetType, fundList]);
   useEffect(() => {
     if (symbol) {
+      if (isDetailRoute) {
+        const routeType = ASSET_TYPE_TO_ROUTE[assetType] || 'crypto';
+        const routeSymbol = encodeURIComponent(symbol);
+        navigate(`/charts/${routeType}/${routeSymbol}?range=${timeRange}`, { replace: true });
+        return;
+      }
       setSearchParams({ type: assetType, symbol, range: timeRange });
     }
-  }, [symbol, assetType, timeRange]);
+  }, [symbol, assetType, timeRange, isDetailRoute, navigate, setSearchParams]);
   useEffect(() => {
     if (!symbol) return;
     let cancelled = false;
@@ -305,7 +437,7 @@ const ChartView = () => {
                 Historical Analysis
               </h1>
               <p className="mt-1 text-sm text-fg-muted">
-                Analyze price trends with technical indicators
+                {ASSET_LABELS[assetType]} - {symbol} detail chart and technical analysis
               </p>
             </div>
           </div>
@@ -313,77 +445,86 @@ const ChartView = () => {
         {}
         <motion.div
           variants={itemVariants}
-          className="rounded-xl border border-border-default bg-bg-elevated p-5 space-y-5"
+          className="rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-5 space-y-5"
         >
-          {}
-          <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
-              Asset Type
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {['BIST', 'US', 'CRYPTO', 'FOREX', 'FUND', 'METAL'].map(type => (
-                <button
-                  key={type}
-                  onClick={() => setAssetType(type)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 border ${assetType === type
-                    ? 'bg-accent text-white border-accent'
-                    : 'bg-bg-base text-fg-muted border-border-default hover:bg-surface hover:text-fg'
-                    }`}
-                >
-                  {ASSET_ICONS[type]}
-                  {ASSET_LABELS[type]}
-                </button>
-              ))}
+          {isDetailRoute ? (
+            <div className="rounded-lg border border-border-default bg-bg-base px-4 py-3">
+              <p className="text-xs uppercase tracking-wider text-fg-muted">Detail Mode</p>
+              <p className="mt-1 text-sm text-fg">
+                This page is locked to <span className="font-semibold">{ASSET_LABELS[assetType]}</span> / <span className="font-semibold">{symbol}</span>.
+              </p>
             </div>
-          </div>
-          {}
-          <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
-              Symbol
-            </label>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <select
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
-                className="flex-1 rounded-lg border border-border-default bg-bg-elevated px-4 py-2.5 text-sm text-fg outline-none focus:border-accent focus:ring-1 focus:ring-accent-glow transition-all duration-200 appearance-none cursor-pointer"
-              >
-              {assetType === 'FUND' && fundList.length > 0 ? (
-                  <>
-                    {['BYF', 'YAT'].map(type => {
-                      const typeFunds = fundList.filter(f => f.fundType === type);
-                      if (typeFunds.length === 0) return null;
-                      return (
-                        <optgroup key={type} label={type === 'BYF' ? 'Borsa Yatırım Fonları' : 'Yatırım Fonları'}>
-                          {typeFunds.map(f => (
-                            <option key={f.fundCode} value={f.fundCode}>{f.fundCode}{f.name ? ` - ${f.name}` : ''}</option>
-                          ))}
-                        </optgroup>
-                      );
-                    })}
-                  </>
-                ) : (
-                  presetSymbols[assetType].map(sym => (
-                    <option key={sym} value={sym}>{sym}</option>
-                  ))
-                )}
-              </select>
-              <form onSubmit={handleCustomSymbol} className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Custom symbol..."
-                  value={customSymbol}
-                  onChange={(e) => setCustomSymbol(e.target.value)}
-                  className="w-44 rounded-lg border border-border-default bg-bg-elevated px-4 py-2.5 text-sm text-fg placeholder:text-fg-subtle outline-none focus:border-accent focus:ring-1 focus:ring-accent-glow transition-all duration-200"
-                />
-                <button
-                  type="submit"
-                  className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-bright transition-colors duration-150"
-                >
-                  Go
-                </button>
-              </form>
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
+                  Asset Type
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {['BIST', 'US', 'CRYPTO', 'FOREX', 'FUND', 'METAL'].map(type => (
+                    <button
+                      key={type}
+                      onClick={() => setAssetType(type)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-150 border ${assetType === type
+                        ? 'bg-accent text-white border-accent'
+                        : 'bg-bg-base text-fg-muted border-border-default hover:bg-surface hover:text-fg'
+                        }`}
+                    >
+                      {ASSET_ICONS[type]}
+                      {ASSET_LABELS[type]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
+                  Symbol
+                </label>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <select
+                    value={symbol}
+                    onChange={(e) => setSymbol(e.target.value)}
+                    className="flex-1 rounded-lg border border-border-default bg-bg-elevated px-4 py-2.5 text-sm text-fg outline-none focus:border-accent focus:ring-1 focus:ring-accent-glow transition-all duration-200 appearance-none cursor-pointer"
+                  >
+                  {assetType === 'FUND' && fundList.length > 0 ? (
+                      <>
+                        {['BYF', 'YAT'].map(type => {
+                          const typeFunds = fundList.filter(f => f.fundType === type);
+                          if (typeFunds.length === 0) return null;
+                          return (
+                            <optgroup key={type} label={type === 'BYF' ? 'Borsa Yatırım Fonları' : 'Yatırım Fonları'}>
+                              {typeFunds.map(f => (
+                                <option key={f.fundCode} value={f.fundCode}>{f.fundCode}{f.name ? ` - ${f.name}` : ''}</option>
+                              ))}
+                            </optgroup>
+                          );
+                        })}
+                      </>
+                    ) : (
+                      presetSymbols[assetType].map(sym => (
+                        <option key={sym} value={sym}>{sym}</option>
+                      ))
+                    )}
+                  </select>
+                  <form onSubmit={handleCustomSymbol} className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Custom symbol..."
+                      value={customSymbol}
+                      onChange={(e) => setCustomSymbol(e.target.value)}
+                      className="w-44 rounded-lg border border-border-default bg-bg-elevated px-4 py-2.5 text-sm text-fg placeholder:text-fg-subtle outline-none focus:border-accent focus:ring-1 focus:ring-accent-glow transition-all duration-200"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-bright transition-colors duration-150"
+                    >
+                      Go
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="space-y-2">
             <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
@@ -450,7 +591,7 @@ const ChartView = () => {
             ))}
           </div>
           {}
-          <div className="flex-1 rounded-xl border border-border-default bg-bg-elevated overflow-hidden min-h-[500px] relative">
+          <div className="flex-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md overflow-hidden min-h-[500px] relative">
             <AnimatePresence mode="wait">
               {loading && (
                 <motion.div

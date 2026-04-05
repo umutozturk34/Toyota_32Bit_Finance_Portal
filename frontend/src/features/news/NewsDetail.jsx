@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Calendar, ExternalLink, Building2 } from 'lucide-react';
-import { newsService } from '../../services/newsService';
-import { formatDateLong } from '../../utils/formatters';
+import { newsService } from './newsService';
+import { formatDateTimeFull } from '../../shared/utils/formatters';
 import { CategoryBadge, getFallbackImage } from './newsConfig.jsx';
-import LoadingState from '../../components/LoadingState';
-import ErrorState from '../../components/ErrorState';
+import LoadingState from '../../shared/components/LoadingState';
+import ErrorState from '../../shared/components/ErrorState';
 
 export default function NewsDetail() {
     const { id } = useParams();
@@ -36,7 +36,7 @@ export default function NewsDetail() {
     if (error) return <ErrorState message={error} onRetry={() => navigate('/news')} />;
     if (!article) return <ErrorState message="Haber bulunamadi." onRetry={() => navigate('/news')} />;
 
-    const imgSrc = getFallbackImage(article.category, article.id);
+    const imgSrc = article.imageUrl || getFallbackImage(article.category, article.id);
     const hasContent = article.content && article.content.trim().length > 0;
 
     return (
@@ -59,7 +59,7 @@ export default function NewsDetail() {
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className="rounded-xl overflow-hidden bg-bg-elevated border border-border-default"
+                className="rounded-xl overflow-hidden bg-bg-elevated card-hover backdrop-blur-md border border-border-default"
             >
                 <div className="relative w-full h-64 sm:h-80 overflow-hidden bg-surface">
                     <img
@@ -81,7 +81,7 @@ export default function NewsDetail() {
                         )}
                         <div className="flex items-center gap-1.5 text-fg-subtle text-xs">
                             <Calendar size={12} strokeWidth={1.6} />
-                            <span>{formatDateLong(article.publishedAt)}</span>
+                            <span>{formatDateTimeFull(article.publishedAt)}</span>
                         </div>
                     </div>
 

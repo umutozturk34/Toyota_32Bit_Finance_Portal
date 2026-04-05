@@ -5,7 +5,8 @@ import {
     RefreshCw, Loader2, Zap, Database, X,
     TrendingUp, DollarSign, Bitcoin, Briefcase, Landmark, Newspaper,
 } from 'lucide-react';
-import { adminService } from '../services/marketService';
+import { adminService } from './adminService';
+import { toast } from '../../shared/components/Toast';
 
 const TASK_GROUPS = [
     {
@@ -133,7 +134,7 @@ export default function TasksPanel({ open, onClose }) {
             setTimeout(fetchStatus, 500);
         } catch (err) {
             const msg = err.response?.data?.message || err.message;
-            alert(msg);
+            toast.info('Görev', msg);
         } finally {
             setTriggering(p => ({ ...p, [key]: false }));
         }
@@ -158,7 +159,7 @@ export default function TasksPanel({ open, onClose }) {
                         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
                         className="fixed top-0 right-0 bottom-0 z-[70] w-[420px] max-w-[90vw] flex flex-col border-l border-border-default bg-bg-base overflow-hidden"
                     >
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-border-default bg-bg-elevated shrink-0">
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-border-default bg-bg-elevated backdrop-blur-md shrink-0">
                             <div className="flex items-center gap-2">
                                 <Activity className="w-4 h-4 text-accent" />
                                 <span className="text-sm font-semibold text-fg">Task Manager</span>
@@ -189,7 +190,7 @@ export default function TasksPanel({ open, onClose }) {
                         <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ scrollbarWidth: 'thin' }}>
                             <div className="grid gap-2 grid-cols-2">
                                 {TASK_GROUPS.map(({ category, icon: CatIcon, color, bg, tasks }) => (
-                                    <div key={category} className="rounded-lg border border-border-default bg-bg-elevated p-3 space-y-2">
+                                    <div key={category} className="rounded-lg border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-3 space-y-2">
                                         <div className="flex items-center gap-2">
                                             <span className={`flex items-center justify-center w-6 h-6 rounded-md ${bg} ${color}`}>
                                                 <CatIcon className="w-3 h-3" />

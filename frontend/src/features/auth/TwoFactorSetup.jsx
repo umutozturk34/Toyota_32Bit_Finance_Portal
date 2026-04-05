@@ -13,11 +13,11 @@ import {
     ExternalLink,
     Settings,
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { useAuth } from './AuthContext';
+import { useTheme } from '../../shared/context/ThemeContext';
 import axios from 'axios';
-import { getToken } from '../services/keycloak';
-import keycloak from '../services/keycloak';
+import { getToken } from './keycloak';
+import keycloak from './keycloak';
 const TwoFactorSetup = () => {
     const { user } = useAuth();
     const { isDark } = useTheme();
@@ -204,11 +204,11 @@ const TwoFactorSetup = () => {
                     >
                         <button
                             onClick={handleSetup2FA}
-                            className="flex w-full items-center justify-center gap-2.5 rounded-lg py-3 px-6 text-sm font-semibold text-white bg-accent hover:bg-accent-bright transition-all duration-150 active:scale-[0.98]"
+                            className="flex w-full items-center justify-center gap-2.5 rounded-xl py-3 px-6 text-sm font-semibold text-white bg-gradient-accent transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
                             style={{
                                 boxShadow: isDark
-                                    ? '0 0 0 1px rgba(94,106,210,0.5), 0 2px 12px rgba(94,106,210,0.25), inset 0 1px 0 0 rgba(255,255,255,0.1)'
-                                    : undefined,
+                                    ? '0 4px 14px rgba(99,102,241,0.3)'
+                                    : '0 4px 14px rgba(0,82,255,0.25)',
                             }}
                         >
                             {isEnabled ? (

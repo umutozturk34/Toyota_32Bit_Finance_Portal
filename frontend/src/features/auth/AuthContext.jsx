@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { initKeycloak, isAuthenticated, getUserInfo, doLogin, doLogout, hasRole } from '../services/keycloak';
+import { initKeycloak, getUserInfo, doLogin, doLogout, hasRole } from './keycloak';
 const AuthContext = createContext({
   isAuthenticated: false,
   user: null,
@@ -14,10 +14,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.warn('⚠️ Keycloak init timeout - proceeding without auth');
-        setLoading(false);
-      }
+      console.warn('⚠️ Keycloak init timeout - proceeding without auth');
+      setLoading(false);
     }, 5000);
     initKeycloak((auth) => {
       clearTimeout(timeoutId);

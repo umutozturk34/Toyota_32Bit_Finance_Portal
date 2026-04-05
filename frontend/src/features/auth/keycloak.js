@@ -20,7 +20,7 @@ export const initKeycloak = (onAuthenticatedCallback) => {
         console.log('Email:', keycloak.tokenParsed?.email);
         console.log('Roles:', keycloak.tokenParsed?.realm_access?.roles);
       } else {
-        console.log('User not authenticated'); 
+        console.log('User not authenticated');
       }
       if (onAuthenticatedCallback) {
         onAuthenticatedCallback(authenticated);

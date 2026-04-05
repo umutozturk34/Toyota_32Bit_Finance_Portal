@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Newspaper, RefreshCw, Clock, SearchX, Tag } from 'lucide-react';
-import { newsService } from '../../services/newsService';
+import { newsService } from './newsService';
 import { TABS, COOLDOWN_MS } from './newsConfig.jsx';
 import NewsFilters from './NewsFilters';
 import NewsCard from './NewsCard';
 import FeaturedCard from './FeaturedCard';
-import LoadingState from '../../components/LoadingState';
-import ErrorState from '../../components/ErrorState';
+import LoadingState from '../../shared/components/LoadingState';
+import ErrorState from '../../shared/components/ErrorState';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -147,7 +147,7 @@ export default function News() {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.97 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center justify-center gap-3 py-20 rounded-xl border border-border-default bg-bg-elevated"
+                    className="flex flex-col items-center justify-center gap-3 py-20 rounded-xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md"
                 >
                     <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-surface">
                         <SearchX size={28} className="text-fg-subtle" />

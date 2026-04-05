@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, ChevronRight } from 'lucide-react';
-import { formatDateLong } from '../../utils/formatters';
+import { formatDateTimeShort } from '../../shared/utils/formatters';
 import { getFallbackImage, CategoryBadge } from './newsConfig.jsx';
 
 const cardVariants = {
@@ -12,7 +12,7 @@ const cardVariants = {
 
 export default function FeaturedCard({ article, index }) {
     const navigate = useNavigate();
-    const imgSrc = getFallbackImage(article.category, article.id ?? index);
+    const imgSrc = article.imageUrl || getFallbackImage(article.category, article.id ?? index);
     const [imgLoaded, setImgLoaded] = useState(false);
 
     const handleClick = () => {
@@ -51,7 +51,7 @@ export default function FeaturedCard({ article, index }) {
                         </span>
                         <span className="text-fg-subtle text-[11px] flex items-center gap-1">
                             <Calendar size={10} strokeWidth={1.6} />
-                            {formatDateLong(article.publishedAt)}
+                            {formatDateTimeShort(article.publishedAt)}
                         </span>
                         <span className="ml-auto text-accent text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1">
                             <ChevronRight size={11} strokeWidth={2} />

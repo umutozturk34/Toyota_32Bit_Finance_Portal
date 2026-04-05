@@ -1,33 +1,18 @@
-import api from './api';
+import api from '../../shared/services/api';
 
 export const newsService = {
-    getLatestNews: async () => {
-        try {
-            const response = await api.get('/news');
-            return response.data.data || [];
-        } catch (error) {
-            console.error('Error fetching latest news:', error);
-            throw error;
-        }
-    },
+  getLatestNews: async () => {
+    const response = await api.get('/news');
+    return response.data.data || [];
+  },
 
-    getNewsByCategory: async (category) => {
-        try {
-            const response = await api.get(`/news/category/${category}`);
-            return response.data.data || [];
-        } catch (error) {
-            console.error(`Error fetching news for category ${category}:`, error);
-            throw error;
-        }
-    },
+  getByCategory: async (category) => {
+    const response = await api.get(`/news/category/${category}`);
+    return response.data.data || [];
+  },
 
-    getNewsById: async (id) => {
-        try {
-            const response = await api.get(`/news/${id}`);
-            return response.data.data || null;
-        } catch (error) {
-            console.error(`Error fetching news article ${id}:`, error);
-            throw error;
-        }
-    },
+  getNewsById: async (id) => {
+    const response = await api.get(`/news/${id}`);
+    return response.data.data || null;
+  },
 };

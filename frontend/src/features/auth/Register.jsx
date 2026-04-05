@@ -1,6 +1,6 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { useAuth } from './AuthContext';
+import { useTheme } from '../../shared/context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Shield, Target, Lock, UserPlus } from 'lucide-react';
@@ -15,7 +15,7 @@ const Register = () => {
   const navigate = useNavigate();
   React.useEffect(() => {
     if (isAuthenticated) {
-      navigate('/users');
+      navigate('/market');
     }
   }, [isAuthenticated, navigate]);
   const handleRegister = () => {
@@ -25,12 +25,12 @@ const Register = () => {
     return null;
   }
   return (
-    <div className="flex justify-center items-center min-h-[calc(100vh-120px)] p-6">
+    <div className="flex justify-center items-center min-h-screen p-6">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="relative rounded-xl border border-border-default bg-bg-elevated max-w-[460px] w-full overflow-hidden card-hover"
+        className="relative rounded-2xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md max-w-[460px] w-full overflow-hidden"
       >
         {}
         {isDark && (
@@ -38,7 +38,7 @@ const Register = () => {
         )}
         {}
         <div className="relative px-6 py-6 border-b border-border-default">
-          <h1 className="text-xl font-bold text-fg">Finance Portal</h1>
+          <h1 className="text-xl font-display text-fg">Finance Portal</h1>
           <p className="text-fg-muted text-sm mt-1">Create Your Account</p>
         </div>
         {}
@@ -49,11 +49,11 @@ const Register = () => {
           {}
           <button
             onClick={handleRegister}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-5 text-sm font-semibold text-white bg-accent rounded-lg cursor-pointer transition-all duration-150 hover:bg-accent-bright active:scale-[0.98] mb-6"
+            className="w-full flex items-center justify-center gap-2 py-3 px-5 text-sm font-semibold text-white bg-gradient-accent rounded-xl cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] mb-6"
             style={{
               boxShadow: isDark
-                ? '0 0 0 1px rgba(94,106,210,0.5), 0 2px 12px rgba(94,106,210,0.25), inset 0 1px 0 0 rgba(255,255,255,0.1)'
-                : undefined,
+                ? '0 4px 14px rgba(99,102,241,0.3)'
+                : '0 4px 14px rgba(0,82,255,0.25)',
             }}
           >
             <UserPlus size={16} strokeWidth={1.8} />

@@ -7,7 +7,7 @@ export default function NewsFilters({ activeTab, onTabChange, categoryCounts }) 
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.08 }}
-            className="flex gap-1.5 flex-wrap p-1.5 rounded-xl border border-border-default bg-bg-elevated"
+            className="flex gap-1.5 flex-wrap p-1.5 rounded-xl border border-border-default bg-bg-elevated card-hover"
         >
             {TABS.map((tab) => {
                 const cfg = CATEGORY_CONFIG[tab];
@@ -23,7 +23,7 @@ export default function NewsFilters({ activeTab, onTabChange, categoryCounts }) 
                             flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
                             transition-all duration-150 cursor-pointer border-none whitespace-nowrap
                             ${isActive
-                                ? 'bg-accent text-white shadow-[0_1px_4px_rgba(94,106,210,0.4)]'
+                                ? 'bg-gradient-accent text-white shadow-sm shadow-accent/30'
                                 : 'bg-transparent text-fg-muted hover:text-fg hover:bg-surface'
                             }
                         `}

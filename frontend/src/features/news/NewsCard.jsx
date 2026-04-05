@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, ChevronRight } from 'lucide-react';
-import { formatDateLong } from '../../utils/formatters';
+import { formatDateTimeShort } from '../../shared/utils/formatters';
 import { getFallbackImage, CategoryBadge } from './newsConfig.jsx';
 
 const cardVariants = {
@@ -12,7 +12,7 @@ const cardVariants = {
 
 export default function NewsCard({ article, index }) {
     const navigate = useNavigate();
-    const imgSrc = getFallbackImage(article.category, article.id ?? index);
+    const imgSrc = article.imageUrl || getFallbackImage(article.category, article.id ?? index);
     const [imgLoaded, setImgLoaded] = useState(false);
 
     const handleClick = () => {
@@ -54,7 +54,7 @@ export default function NewsCard({ article, index }) {
                 {article.description && (
                     <p className="text-fg-muted text-xs leading-relaxed line-clamp-2">
                         {article.description.length > 120
-                            ? article.description.substring(0, 120) + '…'
+                            ? article.description.substring(0, 120) + '\u2026'
                             : article.description}
                     </p>
                 )}
@@ -64,7 +64,7 @@ export default function NewsCard({ article, index }) {
                 <div className="flex items-center justify-between pt-2.5 border-t border-border-default">
                     <div className="flex items-center gap-1.5 text-fg-subtle text-[11px]">
                         <Calendar size={11} strokeWidth={1.6} />
-                        <span>{formatDateLong(article.publishedAt)}</span>
+                        <span>{formatDateTimeShort(article.publishedAt)}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-accent text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                         <ChevronRight size={11} strokeWidth={2} />

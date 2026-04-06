@@ -9,19 +9,24 @@ import {
     Clock,
     ArrowUpRight,
     ArrowDownRight,
+    ShoppingCart,
 } from 'lucide-react';
-import { getAllCryptos, adminService } from '../services/marketService';
-import { getCoinIds, getCoinIcon, getCoinIdBySymbol } from '../constants/coins';
-import { useAuth } from '../context/AuthContext';
-import { getChangeClass, changeColors, changeBg, formatPriceUSD, formatPriceTRY, formatCompactNumber } from '../utils/formatters';
-import { containerVariants, cardVariants } from '../utils/animations';
-import LoadingState from '../components/LoadingState';
-import ErrorState from '../components/ErrorState';
-import EmptyState from '../components/EmptyState';
-import PageHeader from '../components/PageHeader';
-function Crypto() {
+import { cryptoService } from './cryptoService';
+import { adminService } from '../admin/adminService';
+import { useAuth } from '../auth/AuthContext';
+import { getChangeClass, changeColors, changeBg, formatPriceUSD, formatPriceTRY, formatCompactNumber } from '../../shared/utils/formatters';
+import { containerVariants, cardVariants } from '../../shared/utils/animations';
+import LoadingState from '../../shared/components/LoadingState';
+import ErrorState from '../../shared/components/ErrorState';
+import EmptyState from '../../shared/components/EmptyState';
+import PageHeader from '../../shared/components/PageHeader';
+import BuyModal from '../../shared/components/BuyModal';
+import { toast } from '../../shared/components/Toast';
+
+export default function CryptoPage() {
     const navigate = useNavigate();
     const { hasRole } = useAuth();
+    const [buyTarget, setBuyTarget] = useState(null);
     const [cryptos, setCryptos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -31,68 +36,48 @@ function Crypto() {
         full: false,
     });
     const isAdmin = hasRole('ADMIN');
-    console.log('[Crypto] isAdmin:', isAdmin);
+
     useEffect(() => {
         fetchCryptos();
     }, []);
+
     const fetchCryptos = async () => {
         setLoading(true);
         setError(null);
         try {
-            const data = await getAllCryptos();
+            const data = await cryptoService.getAll();
             setCryptos(data);
         } catch (err) {
             setError('Kripto para verileri yüklenirken hata oluştu');
-            console.error(err);
         } finally {
             setLoading(false);
         }
     };
-    const handleCryptoSnapshotUpdate = async () => {
-        setUpdating(prev => ({ ...prev, snapshot: true }));
+
+    const handleTrigger = async (action, triggerFn) => {
+        setUpdating(prev => ({ ...prev, [action]: true }));
         try {
-            const response = await adminService.triggerCryptoSnapshot();
-            alert(response.message || 'Kripto snapshot güncelleme başlatıldı');
-            setTimeout(fetchCryptos, 5000);
+            const response = await triggerFn();
+            toast.success('Güncelleme Başlatıldı', response.message || 'Güncelleme başlatıldı');
+            if (action !== 'candles') setTimeout(fetchCryptos, 5000);
         } catch (err) {
-            alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
+            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
         } finally {
-            setUpdating(prev => ({ ...prev, snapshot: false }));
+            setUpdating(prev => ({ ...prev, [action]: false }));
         }
     };
-    const handleCryptoCandlesUpdate = async () => {
-        setUpdating(prev => ({ ...prev, candles: true }));
-        try {
-            const response = await adminService.triggerCryptoCandles();
-            alert(response.message || 'Kripto candle güncelleme başlatıldı');
-        } catch (err) {
-            alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
-        } finally {
-            setUpdating(prev => ({ ...prev, candles: false }));
-        }
-    };
-    const handleCryptoFullUpdate = async () => {
-        setUpdating(prev => ({ ...prev, full: true }));
-        try {
-            const response = await adminService.triggerCryptoFull();
-            alert(response.message || 'Kripto tam güncelleme başlatıldı');
-            setTimeout(fetchCryptos, 10000);
-        } catch (err) {
-            alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
-        } finally {
-            setUpdating(prev => ({ ...prev, full: false }));
-        }
-    };
+
     const adminActions = [
-        { key: 'snapshot', label: 'Snapshot', title: 'Kripto snapshot verilerini güncelle (fiyat, hacim vb.)', handler: handleCryptoSnapshotUpdate },
-        { key: 'candles', label: 'Candles', title: 'Kripto mum verilerini güncelle (OHLC)', handler: handleCryptoCandlesUpdate },
-        { key: 'full', label: 'Full Update', title: 'Tam güncelleme (snapshot + candles)', handler: handleCryptoFullUpdate },
+        { key: 'snapshot', label: 'Snapshot', title: 'Kripto snapshot verilerini güncelle', handler: () => handleTrigger('snapshot', adminService.triggerCryptoSnapshot) },
+        { key: 'candles', label: 'Candles', title: 'Kripto mum verilerini güncelle', handler: () => handleTrigger('candles', adminService.triggerCryptoCandles) },
+        { key: 'full', label: 'Full Update', title: 'Tam güncelleme (snapshot + candles)', handler: () => handleTrigger('full', adminService.triggerCryptoFull) },
     ];
+
     if (loading && cryptos.length === 0) return <LoadingState message="Kripto verileri yükleniyor…" />;
     if (error) return <ErrorState message={error} onRetry={fetchCryptos} />;
-        return (
+
+    return (
         <div className="space-y-6 py-6">
-            {}
             <PageHeader
                 icon={<Bitcoin className="h-5 w-5" />}
                 title="Kripto Paralar"
@@ -102,7 +87,7 @@ function Crypto() {
                 adminActions={adminActions}
                 updating={updating}
             />
-            {}
+
             <AnimatePresence>
                 {cryptos.length > 0 && (
                     <motion.div
@@ -117,35 +102,36 @@ function Crypto() {
                                 <motion.div
                                     key={crypto.id}
                                     variants={cardVariants}
-                                    className="group rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover"
+                                    onClick={() => navigate(`/crypto/${crypto.id}`)}
+                                    className="group cursor-pointer rounded-2xl border border-border-default bg-bg-elevated p-5 card-hover transition-all duration-200 hover:border-border-hover overflow-hidden relative"
                                 >
-                                    {}
                                     <div className="flex items-start justify-between">
                                         <div className="flex items-center gap-3">
-                                            <span className="text-2xl">{getCoinIcon(crypto.symbol)}</span>
+                                            {crypto.image ? (
+                                                <img src={crypto.image} alt={crypto.symbol} className="w-8 h-8 rounded-full" />
+                                            ) : (
+                                                <span className="flex items-center justify-center w-8 h-8 rounded-full bg-warning/10 text-xs font-bold text-warning">
+                                                    {crypto.symbol?.slice(0, 2)}
+                                                </span>
+                                            )}
                                             <div className="min-w-0">
                                                 <h3 className="truncate text-sm font-semibold text-fg">{crypto.symbol}</h3>
                                                 <span className="block truncate text-xs text-fg-muted">{crypto.name}</span>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="rounded-md border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent-bright">
-                                            </span>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    const coinId = getCoinIdBySymbol(crypto.symbol);
-                                                    navigate(`/charts?type=CRYPTO&symbol=${coinId}&range=1M`);
-                                                }}
-                                                title="Grafiği Görüntüle"
-                                                className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base transition-colors duration-150 hover:bg-surface"
-                                            >
-                                                <BarChart2 className="h-3.5 w-3.5 text-fg-subtle group-hover:text-accent transition-colors duration-150" />
-                                            </button>
-                                        </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setBuyTarget({ assetCode: crypto.id, assetName: `${crypto.symbol} - ${crypto.name}`, price: crypto.currentPriceTry });
+                                            }}
+                                            title="Satın Al"
+                                            className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base transition-colors duration-150 hover:bg-surface"
+                                        >
+                                            <ShoppingCart className="h-3.5 w-3.5 text-fg-subtle group-hover:text-success transition-colors duration-150" />
+                                        </button>
                                     </div>
-                                    {}
+
                                     <div className="mt-3 space-y-1">
                                         <span className="font-mono text-xl font-bold text-fg">
                                             {formatPriceUSD(crypto.currentPrice)}
@@ -155,7 +141,7 @@ function Crypto() {
                                             <span className="font-mono">{formatPriceTRY(crypto.currentPriceTry)}</span>
                                         </div>
                                     </div>
-                                    {}
+
                                     {crypto.changePercent !== null && crypto.changePercent !== undefined && (
                                         <div className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
                                             {crypto.changePercent > 0 ? (
@@ -167,7 +153,7 @@ function Crypto() {
                                             <span className="ml-1 opacity-75">24h</span>
                                         </div>
                                     )}
-                                    {}
+
                                     <div className="mt-3 space-y-1 border-t border-border-default pt-3">
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="flex items-center gap-1 text-fg-muted">
@@ -191,10 +177,10 @@ function Crypto() {
                                             <span className="font-mono text-fg">{formatCompactNumber(crypto.marketCap)}</span>
                                         </div>
                                     </div>
-                                    {}
+
                                     <div className="mt-2 flex items-center gap-1 text-[11px] text-fg-subtle">
                                         <Clock className="h-3 w-3" />
-                                        {crypto.lastUpdated ? new Date(crypto.lastUpdated).toLocaleString('tr-TR') : 'N/A'}
+                                        {crypto.lastUpdated ? new Date(crypto.lastUpdated).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'N/A'}
                                     </div>
                                 </motion.div>
                             );
@@ -202,7 +188,7 @@ function Crypto() {
                     </motion.div>
                 )}
             </AnimatePresence>
-            {}
+
             {cryptos.length === 0 && (
                 <EmptyState
                     icon={<Bitcoin className="h-7 w-7 text-fg-subtle" />}
@@ -210,7 +196,17 @@ function Crypto() {
                     hint={isAdmin ? 'Admin butonlarını kullanarak veri çekebilirsiniz.' : 'Admin veri güncellemesini bekleyin.'}
                 />
             )}
+
+            {buyTarget && (
+                <BuyModal
+                    assetType="CRYPTO"
+                    assetCode={buyTarget.assetCode}
+                    assetName={buyTarget.assetName}
+                    currentPrice={buyTarget.price}
+                    onClose={() => setBuyTarget(null)}
+                    onComplete={() => setBuyTarget(null)}
+                />
+            )}
         </div>
     );
 }
-export default Crypto;

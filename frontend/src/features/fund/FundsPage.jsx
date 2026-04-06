@@ -4,30 +4,38 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     LineChart,
     TrendingUp,
-    BarChart2,
+    TrendingDown,
     Activity,
     Clock,
     Users as UsersIcon,
     Wallet,
     Filter,
+    ShoppingCart,
 } from 'lucide-react';
-import { fundService, adminService } from '../services/marketService';
-import { getFundDisplayName } from '../constants/funds';
-import { useAuth } from '../context/AuthContext';
-import { formatPriceTRY, formatCompactNumber } from '../utils/formatters';
-import { containerVariants, cardVariants } from '../utils/animations';
-import LoadingState from '../components/LoadingState';
-import ErrorState from '../components/ErrorState';
-import EmptyState from '../components/EmptyState';
-import PageHeader from '../components/PageHeader';
+import { fundService } from './fundService';
+import { adminService } from '../admin/adminService';
+import { useAuth } from '../auth/AuthContext';
+import { formatPriceTRY, formatCompactNumber, getChangeClass, changeColors, changeBg } from '../../shared/utils/formatters';
+import { containerVariants, cardVariants } from '../../shared/utils/animations';
+import LoadingState from '../../shared/components/LoadingState';
+import ErrorState from '../../shared/components/ErrorState';
+import EmptyState from '../../shared/components/EmptyState';
+import PageHeader from '../../shared/components/PageHeader';
+import BuyModal from '../../shared/components/BuyModal';
+import { toast } from '../../shared/components/Toast';
 
-function Funds() {
+function FundsPage() {
     const navigate = useNavigate();
     const { hasRole } = useAuth();
+    const [buyTarget, setBuyTarget] = useState(null);
     const [funds, setFunds] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [updating, setUpdating] = useState({});
+    const [updating, setUpdating] = useState({
+        snapshot: false,
+        candles: false,
+        full: false,
+    });
     const [typeFilter, setTypeFilter] = useState('ALL');
     const isAdmin = hasRole('ADMIN');
 
@@ -66,10 +74,10 @@ function Funds() {
         setUpdating(prev => ({ ...prev, snapshot: true }));
         try {
             const response = await adminService.triggerFundSnapshot();
-            alert(response.message || 'Fon snapshot güncelleme başlatıldı');
+            toast.success('Güncelleme Başlatıldı', response.message || 'Fon snapshot güncelleme başlatıldı');
             setTimeout(fetchFunds, 5000);
         } catch (err) {
-            alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
+            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
         } finally {
             setUpdating(prev => ({ ...prev, snapshot: false }));
         }
@@ -78,9 +86,9 @@ function Funds() {
         setUpdating(prev => ({ ...prev, candles: true }));
         try {
             const response = await adminService.triggerFundCandles();
-            alert(response.message || 'Fon candle güncelleme başlatıldı');
+            toast.success('Güncelleme Başlatıldı', response.message || 'Fon candle güncelleme başlatıldı');
         } catch (err) {
-            alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
+            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
         } finally {
             setUpdating(prev => ({ ...prev, candles: false }));
         }
@@ -89,14 +97,15 @@ function Funds() {
         setUpdating(prev => ({ ...prev, full: true }));
         try {
             const response = await adminService.triggerFundFull();
-            alert(response.message || 'Fon tam güncelleme başlatıldı');
+            toast.success('Güncelleme Başlatıldı', response.message || 'Fon tam güncelleme başlatıldı');
             setTimeout(fetchFunds, 10000);
         } catch (err) {
-            alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
+            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
         } finally {
             setUpdating(prev => ({ ...prev, full: false }));
         }
     };
+
     const adminActions = [
         { key: 'snapshot', label: 'Snapshot', title: 'Fon snapshot verilerini güncelle', handler: handleFundSnapshotUpdate },
         { key: 'candles', label: 'Candles', title: 'Fon mum verilerini güncelle', handler: handleFundCandlesUpdate },
@@ -123,7 +132,6 @@ function Funds() {
                 adminActions={adminActions}
                 updating={updating}
             />
-
             {fundTypes.length > 0 && (
                 <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4 text-fg-muted" />
@@ -163,11 +171,14 @@ function Funds() {
                         animate="show"
                         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                     >
-                        {filteredFunds.map((fund) => (
+                        {filteredFunds.map((fund) => {
+                            const cls = getChangeClass(fund.changePercent);
+                            return (
                             <motion.div
                                 key={fund.fundCode}
                                 variants={cardVariants}
-                                className="group rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover overflow-hidden min-w-0"
+                                onClick={() => navigate(`/funds/${fund.fundCode}`)}
+                                className="group cursor-pointer rounded-2xl border border-border-default bg-bg-elevated p-5 card-hover transition-all duration-200 hover:border-border-hover overflow-hidden min-w-0 relative"
                             >
                                 <div className="flex items-start justify-between gap-2 min-w-0">
                                     <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -176,7 +187,7 @@ function Funds() {
                                         </span>
                                         <div className="min-w-0">
                                             <h3 className="truncate text-sm font-semibold text-fg">{fund.fundCode}</h3>
-                                            <span className="block truncate text-xs text-fg-muted">{fund.name || getFundDisplayName(fund.fundCode)}</span>
+                                            <span className="block truncate text-xs text-fg-muted">{fund.name || fund.fundCode}</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
@@ -187,12 +198,12 @@ function Funds() {
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
-                                                navigate(`/charts?type=FUND&symbol=${fund.fundCode}&range=1Y`);
+                                                setBuyTarget({ assetCode: fund.fundCode, assetName: fund.name || fund.fundCode, price: fund.price });
                                             }}
-                                            title="Grafiği Görüntüle"
+                                            title="Satın Al"
                                             className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base transition-colors duration-150 hover:bg-surface"
                                         >
-                                            <BarChart2 className="h-3.5 w-3.5 text-fg-subtle group-hover:text-accent transition-colors duration-150" />
+                                            <ShoppingCart className="h-3.5 w-3.5 text-fg-subtle group-hover:text-success transition-colors duration-150" />
                                         </button>
                                     </div>
                                 </div>
@@ -208,6 +219,18 @@ function Funds() {
                                         </div>
                                     )}
                                 </div>
+
+                                {fund.changePercent != null && (
+                                    <div className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
+                                        {fund.changePercent > 0 ? (
+                                            <TrendingUp className="h-3.5 w-3.5" />
+                                        ) : fund.changePercent < 0 ? (
+                                            <TrendingDown className="h-3.5 w-3.5" />
+                                        ) : null}
+                                        {Math.abs(fund.changePercent).toFixed(2)}%
+                                        <span className="ml-1 opacity-75">24h</span>
+                                    </div>
+                                )}
 
                                 <div className="mt-3 space-y-1 border-t border-border-default pt-3">
                                     {fund.fundType === 'YAT' && fund.investorCount != null && (
@@ -237,17 +260,29 @@ function Funds() {
 
                                 <div className="mt-2 flex items-center gap-1 text-[11px] text-fg-subtle">
                                     <Clock className="h-3 w-3" />
-                                    {fund.lastUpdated ? new Date(fund.lastUpdated).toLocaleString('tr-TR') : 'N/A'}
+                                    {fund.lastUpdated ? new Date(fund.lastUpdated).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'N/A'}
                                 </div>
                             </motion.div>
-                        ))}
+                            );
+                        })}
                     </motion.div>
                 ) : (
                     <EmptyState message="Henüz fon verisi bulunmuyor" />
                 )}
             </AnimatePresence>
+
+            {buyTarget && (
+                <BuyModal
+                    assetType="FUND"
+                    assetCode={buyTarget.assetCode}
+                    assetName={buyTarget.assetName}
+                    currentPrice={buyTarget.price}
+                    onClose={() => setBuyTarget(null)}
+                    onComplete={() => setBuyTarget(null)}
+                />
+            )}
         </div>
     );
 }
 
-export default Funds;
+export default FundsPage;

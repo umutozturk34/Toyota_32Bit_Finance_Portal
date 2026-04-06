@@ -13,13 +13,15 @@ import {
     ChevronUp,
     BarChart3,
 } from 'lucide-react';
-import { bondService, adminService } from '../services/marketService';
-import { useAuth } from '../context/AuthContext';
-import { containerVariants, cardVariants } from '../utils/animations';
-import LoadingState from '../components/LoadingState';
-import ErrorState from '../components/ErrorState';
-import EmptyState from '../components/EmptyState';
-import PageHeader from '../components/PageHeader';
+import { bondService } from './bondService';
+import { adminService } from '../admin/adminService';
+import { useAuth } from '../auth/AuthContext';
+import { containerVariants, cardVariants } from '../../shared/utils/animations';
+import LoadingState from '../../shared/components/LoadingState';
+import ErrorState from '../../shared/components/ErrorState';
+import EmptyState from '../../shared/components/EmptyState';
+import PageHeader from '../../shared/components/PageHeader';
+import { toast } from '../../shared/components/Toast';
 
 const BOND_TYPE_LABELS = {
     DISCOUNTED: 'İskontolu',
@@ -124,7 +126,7 @@ function RateHistoryChart({ isinCode, bondType }) {
     return <Chart options={options} series={series} type="line" height={200} />;
 }
 
-function Bonds() {
+function BondsPage() {
     const { hasRole } = useAuth();
     const [bonds, setBonds] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -164,7 +166,7 @@ function Bonds() {
 
     const formatDate = (val) => {
         if (!val) return 'N/A';
-        return new Date(val).toLocaleDateString('tr-TR');
+        return new Date(val).toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' });
     };
 
     const daysUntil = (dateStr) => {
@@ -186,10 +188,10 @@ function Bonds() {
         setUpdating(prev => ({ ...prev, full: true }));
         try {
             const response = await adminService.triggerBondUpdate();
-            alert(response.message || 'Tahvil güncelleme başlatıldı');
+            toast.success('Güncelleme Başlatıldı', response.message || 'Tahvil güncelleme başlatıldı');
             setTimeout(fetchBonds, 10000);
         } catch (err) {
-            alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
+            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
         } finally {
             setUpdating(prev => ({ ...prev, full: false }));
         }
@@ -267,7 +269,7 @@ function Bonds() {
                                     key={bond.seriesCode}
                                     variants={cardVariants}
                                     layout
-                                    className="rounded-xl border border-border-default bg-bg-elevated card-hover transition-all duration-200 hover:border-border-hover"
+                                    className="rounded-2xl border border-border-default bg-bg-elevated card-hover transition-all duration-200 hover:border-border-hover overflow-hidden"
                                 >
                                     <div className="p-6">
                                         <div className="flex items-start justify-between gap-4">
@@ -349,7 +351,7 @@ function Bonds() {
                                         <div className="mt-4 flex items-center justify-between">
                                             <div className="flex items-center gap-1.5 text-[11px] text-fg-subtle">
                                                 <Clock className="h-3 w-3" />
-                                                {bond.lastUpdated ? new Date(bond.lastUpdated).toLocaleString('tr-TR') : 'N/A'}
+                                                {bond.lastUpdated ? new Date(bond.lastUpdated).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'N/A'}
                                             </div>
                                             {bond.couponRate != null && Number(bond.couponRate) > 0 && (
                                                 <button
@@ -391,4 +393,4 @@ function Bonds() {
     );
 }
 
-export default Bonds;
+export default BondsPage;

@@ -9,19 +9,24 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     Coins,
+    ShoppingCart,
 } from 'lucide-react';
-import { forexService, adminService } from '../services/marketService';
-import { getForexPairs, getForexDisplayName, getForexFlag, getBaseCurrency } from '../constants/forex';
-import { useAuth } from '../context/AuthContext';
-import { getChangeClass, changeColors, changeBg, formatPrice, formatChange, formatPercent } from '../utils/formatters';
-import { containerVariants, cardVariants } from '../utils/animations';
-import LoadingState from '../components/LoadingState';
-import ErrorState from '../components/ErrorState';
-import EmptyState from '../components/EmptyState';
-import PageHeader from '../components/PageHeader';
-function Forex() {
+import { forexService } from './forexService';
+import { adminService } from '../admin/adminService';
+import { getForexPairs, getForexDisplayName, getForexFlag, getBaseCurrency } from '../../shared/constants/forex';
+import { useAuth } from '../auth/AuthContext';
+import { getChangeClass, changeColors, changeBg, formatPrice, formatChange, formatPercent } from '../../shared/utils/formatters';
+import { containerVariants, cardVariants } from '../../shared/utils/animations';
+import LoadingState from '../../shared/components/LoadingState';
+import ErrorState from '../../shared/components/ErrorState';
+import EmptyState from '../../shared/components/EmptyState';
+import PageHeader from '../../shared/components/PageHeader';
+import BuyModal from '../../shared/components/BuyModal';
+import { toast } from '../../shared/components/Toast';
+function ForexPage() {
     const navigate = useNavigate();
     const { hasRole } = useAuth();
+    const [buyTarget, setBuyTarget] = useState(null);
     const [forexData, setForexData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -59,10 +64,10 @@ function Forex() {
         setUpdating(prev => ({ ...prev, snapshot: true }));
         try {
             const response = await adminService.triggerForexSnapshot();
-            alert(response.message || 'TCMB + Yahoo snapshot güncelleme başlatıldı (~1 dakika, 21 forex × 2sn)');
+            toast.success('Güncelleme Başlatıldı', response.message || 'TCMB + Yahoo snapshot güncelleme başlatıldı (~1 dakika, 21 forex × 2sn)');
             setTimeout(fetchForexData, 5000);
         } catch (err) {
-            alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
+            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
         } finally {
             setUpdating(prev => ({ ...prev, snapshot: false }));
         }
@@ -71,9 +76,9 @@ function Forex() {
         setUpdating(prev => ({ ...prev, candles: true }));
         try {
             const response = await adminService.triggerForexCandles();
-            alert(response.message || 'Yahoo Finance candles güncelleme başlatıldı (~10 dakika, 20 forex × 5y OHLC)');
+            toast.success('Güncelleme Başlatıldı', response.message || 'Yahoo Finance candles güncelleme başlatıldı (~10 dakika, 20 forex × 5y OHLC)');
         } catch (err) {
-            alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
+            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
         } finally {
             setUpdating(prev => ({ ...prev, candles: false }));
         }
@@ -82,9 +87,9 @@ function Forex() {
         setUpdating(prev => ({ ...prev, full: true }));
         try {
             const response = await adminService.triggerForexFull();
-            alert(response.message || 'Yahoo Finance FULL güncelleme başlatıldı (~12 dakika, snapshot + 5y candles)');
+            toast.success('Güncelleme Başlatıldı', response.message || 'Yahoo Finance FULL güncelleme başlatıldı (~12 dakika, snapshot + 5y candles)');
         } catch (err) {
-            alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
+            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
         } finally {
             setUpdating(prev => ({ ...prev, full: false }));
         }
@@ -92,7 +97,7 @@ function Forex() {
     const formatForexPrice = (price) => formatPrice(price, { locale: 'tr-TR', minDecimals: 4, maxDecimals: 4 });
 
     const handleCardClick = (currencyCode) => {
-        navigate(`/charts?type=FOREX&symbol=${currencyCode}&range=3M`);
+        navigate(`/forex/${currencyCode}`);
     };
 
     const adminActions = [
@@ -144,7 +149,7 @@ function Forex() {
                                     key={forex.currencyCode}
                                     variants={cardVariants}
                                     onClick={() => handleCardClick(forex.currencyCode)}
-                                    className="group cursor-pointer rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover"
+                                    className="group cursor-pointer rounded-2xl border border-border-default bg-bg-elevated p-5 card-hover transition-all duration-200 hover:border-border-hover overflow-hidden relative"
                                 >
                                     {}
                                     <div className="flex items-start justify-between">
@@ -162,12 +167,12 @@ function Forex() {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleCardClick(forex.currencyCode);
+                                                setBuyTarget({ assetCode: forex.currencyCode, assetName: getForexDisplayName(forex.currencyCode), price: forex.currentPrice });
                                             }}
-                                            title="Grafiği Görüntüle"
+                                            title="Satın Al"
                                             className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base text-fg-subtle transition-colors duration-150 hover:bg-surface hover:text-accent"
                                         >
-                                            <BarChart2 className="h-3.5 w-3.5" />
+                                            <ShoppingCart className="h-3.5 w-3.5" />
                                         </button>
                                     </div>
                                     {}
@@ -276,7 +281,18 @@ function Forex() {
                     hint={isAdmin ? 'Admin butonlarını kullanarak veri çekebilirsiniz.' : 'Admin veri güncellemesini bekleyin.'}
                 />
             )}
+
+            {buyTarget && (
+                <BuyModal
+                    assetType="FOREX"
+                    assetCode={buyTarget.assetCode}
+                    assetName={buyTarget.assetName}
+                    currentPrice={buyTarget.price}
+                    onClose={() => setBuyTarget(null)}
+                    onComplete={() => setBuyTarget(null)}
+                />
+            )}
         </div>
     );
 }
-export default Forex;
+export default ForexPage;

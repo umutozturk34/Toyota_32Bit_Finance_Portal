@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Gem,
@@ -9,17 +8,15 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     TrendingUp,
-    BarChart2,
     Clock,
 } from 'lucide-react';
-import { metalService } from '../services/dataService';
-import { getChangeClass, changeColors, changeBg, formatPriceUSD } from '../utils/formatters';
-import { containerVariants, cardVariants } from '../utils/animations';
-import LoadingState from '../components/LoadingState';
-import ErrorState from '../components/ErrorState';
-import EmptyState from '../components/EmptyState';
-const Metals = () => {
-    const navigate = useNavigate();
+import { metalService } from '../../shared/services/dataService';
+import { getChangeClass, changeColors, changeBg, formatPriceUSD } from '../../shared/utils/formatters';
+import { containerVariants, cardVariants } from '../../shared/utils/animations';
+import LoadingState from '../../shared/components/LoadingState';
+import ErrorState from '../../shared/components/ErrorState';
+import EmptyState from '../../shared/components/EmptyState';
+const MetalsPage = () => {
     const [metals, setMetals] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -59,7 +56,7 @@ const Metals = () => {
         negative: ArrowDownRight,
         neutral: TrendingUp,
     };
-    if (loading) return <LoadingState message="Kıymetli maden verileri yükleniyor…" />;
+    if (loading) return <LoadingState message="Kıymetli maden verileri yükleniyor..." />;
 
     if (error) return <ErrorState message={error} onRetry={fetchMetals} />;
         return (
@@ -74,7 +71,7 @@ const Metals = () => {
                     <motion.h1
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center gap-3 text-2xl font-bold tracking-[-0.025em] text-fg"
+                        className="flex items-center gap-3 text-2xl font-display tracking-normal text-fg"
                     >
                         <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10 text-accent">
                             <Gem className="h-5 w-5" />
@@ -122,7 +119,7 @@ const Metals = () => {
                                     key={metal.id}
                                     variants={cardVariants}
                                     layout
-                                    className="group rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover"
+                                    className="group rounded-2xl border border-border-default bg-bg-elevated p-5 card-hover transition-all duration-200 hover:border-border-hover overflow-hidden relative"
                                 >
                                     {}
                                     <div className="flex items-center justify-between">
@@ -139,17 +136,6 @@ const Metals = () => {
                                                 </span>
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() =>
-                                                navigate(
-                                                    `/charts?type=METAL&symbol=${metal.symbol}&range=1M`
-                                                )
-                                            }
-                                            title="Grafiği Görüntüle"
-                                            className="flex h-8 w-8 items-center justify-center rounded-md border border-border-default bg-bg-base text-fg-subtle transition-colors duration-150 hover:bg-surface hover:text-accent"
-                                        >
-                                            <BarChart2 className="h-4 w-4" />
-                                        </button>
                                     </div>
                                     {}
                                     <div className="mt-4 space-y-2">
@@ -173,7 +159,7 @@ const Metals = () => {
                                     <div className="mt-3 flex items-center gap-1.5 text-[11px] text-fg-subtle">
                                         <Clock className="h-3 w-3" />
                                         Son güncelleme:{' '}
-                                        {new Date(metal.timestamp).toLocaleString('tr-TR')}
+                                        {new Date(metal.timestamp).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' })}
                                     </div>
                                 </motion.div>
                             );
@@ -184,4 +170,4 @@ const Metals = () => {
         </motion.div>
     );
 };
-export default Metals;
+export default MetalsPage;

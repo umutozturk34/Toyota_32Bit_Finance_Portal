@@ -10,19 +10,23 @@ import {
     ChevronDown,
     Activity,
     Clock,
+    ShoppingCart,
 } from 'lucide-react';
-import { stockService, adminService } from '../services/marketService';
-import { getBistSymbols, getIndexLongName, isMainIndex, isSecondaryIndex, isIndex } from '../constants/stocks';
-import { useAuth } from '../context/AuthContext';
-import { getChangeClass, changeColors, changeBg, formatPrice, formatVolume } from '../utils/formatters';
-import { containerVariants, cardVariants } from '../utils/animations';
-import LoadingState from '../components/LoadingState';
-import ErrorState from '../components/ErrorState';
-import EmptyState from '../components/EmptyState';
-import PageHeader from '../components/PageHeader';
-function Stocks() {
+import { stockService } from './stockService';
+import { adminService } from '../admin/adminService';
+import { useAuth } from '../auth/AuthContext';
+import { getChangeClass, changeColors, changeBg, formatPrice, formatVolume } from '../../shared/utils/formatters';
+import { containerVariants, cardVariants } from '../../shared/utils/animations';
+import LoadingState from '../../shared/components/LoadingState';
+import ErrorState from '../../shared/components/ErrorState';
+import EmptyState from '../../shared/components/EmptyState';
+import PageHeader from '../../shared/components/PageHeader';
+import BuyModal from '../../shared/components/BuyModal';
+import { toast } from '../../shared/components/Toast';
+function StocksPage() {
     const navigate = useNavigate();
     const { hasRole } = useAuth();
+    const [buyTarget, setBuyTarget] = useState(null);
     const [stocks, setStocks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -38,33 +42,29 @@ function Stocks() {
         fetchStocks();
     }, []);
     const fetchStocks = async () => {
-        console.log('[Stocks] fetchStocks() called');
         setLoading(true);
         setError(null);
         try {
-            const symbols = getBistSymbols();
-            console.log('[Stocks] Fetching stocks for symbols:', symbols);
             const data = await stockService.getAllStocks();
-            console.log('[Stocks] fetchStocks() success, data:', data);
             setStocks(data || []);
         } catch (err) {
-            console.error('[Stocks] fetchStocks() error:', err);
             setError('Hisse senedi verileri yüklenirken hata oluştu');
             console.error(err);
         } finally {
             setLoading(false);
         }
     };
-    const indices = stocks.filter(s => isMainIndex(s.symbol));
-    const secondaryIndices = stocks.filter(s => isSecondaryIndex(s.symbol));
-    const regularStocks = stocks.filter(s => !isIndex(s.symbol));
+
+    const indices = stocks.filter(s => s.stockSegment === 'MAIN_INDEX');
+    const secondaryIndices = stocks.filter(s => s.stockSegment === 'SECONDARY_INDEX');
+    const regularStocks = stocks.filter(s => s.stockSegment === 'EQUITY');
     const handleStockSnapshotUpdate = async () => {
         setUpdating(prev => ({ ...prev, snapshot: true }));
         try {
             const response = await adminService.triggerStockSnapshot();
-            alert(response.message || 'Hisse snapshot güncelleme başlatıldı');
+            toast.success('Güncelleme Başlatıldı', response.message || 'Hisse snapshot güncelleme başlatıldı');
         } catch (err) {
-            alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
+            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
         } finally {
             setUpdating(prev => ({ ...prev, snapshot: false }));
         }
@@ -73,9 +73,9 @@ function Stocks() {
         setUpdating(prev => ({ ...prev, candles: true }));
         try {
             const response = await adminService.triggerStockCandles();
-            alert(response.message || 'Hisse candle güncelleme başlatıldı (Bu işlem 10-15 dakika sürebilir)');
+            toast.success('Güncelleme Başlatıldı', response.message || 'Hisse candle güncelleme başlatıldı (Bu işlem 10-15 dakika sürebilir)');
         } catch (err) {
-            alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
+            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
         } finally {
             setUpdating(prev => ({ ...prev, candles: false }));
         }
@@ -84,13 +84,14 @@ function Stocks() {
         setUpdating(prev => ({ ...prev, full: true }));
         try {
             const response = await adminService.triggerStockFull();
-            alert(response.message || 'Hisse tam güncelleme başlatıldı (Bu işlem 15-20 dakika sürebilir)');
+            toast.success('Güncelleme Başlatıldı', response.message || 'Hisse tam güncelleme başlatıldı (Bu işlem 15-20 dakika sürebilir)');
         } catch (err) {
-            alert('Güncelleme başlatılamadı: ' + (err.response?.data?.message || err.message));
+            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
         } finally {
             setUpdating(prev => ({ ...prev, full: false }));
         }
     };
+
     const formatStockPrice = (price) => formatPrice(price, { locale: 'tr-TR' });
 
     const adminActions = [
@@ -145,30 +146,20 @@ function Stocks() {
                         >
                             {indices.map((index) => {
                                 const cls = getChangeClass(index.priceChangePercent);
-                                const displayName = index.symbol === 'XU030.IS' ? 'BIST 30' :
-                                    index.symbol === 'XU100.IS' ? 'BIST 100' : 'BIST 500';
                                 return (
                                     <motion.div
                                         key={index.symbol}
                                         variants={cardVariants}
-                                        className="group rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover"
+                                        onClick={() => navigate(`/stocks/${index.symbol}`)}
+                                        className="group cursor-pointer rounded-2xl border border-border-default bg-bg-elevated p-5 card-hover transition-all duration-200 hover:border-border-hover overflow-hidden relative"
                                     >
                                         <div className="flex items-start justify-between">
                                             <div>
                                                 <h3 className="text-base font-semibold text-fg">
-                                                    {displayName}
+                                                    {index.name || index.symbol.replace('.IS', '')}
                                                 </h3>
-                                                <span className="text-xs text-fg-muted">{getIndexLongName(index.symbol)}</span>
+                                                <span className="text-xs text-fg-muted">{index.name}</span>
                                             </div>
-                                            <button
-                                                onClick={() => {
-                                                    navigate(`/charts?type=BIST&symbol=${index.symbol}&range=3M`);
-                                                }}
-                                                title="Grafiği Görüntüle"
-                                                className="flex h-8 w-8 items-center justify-center rounded-md border border-border-default bg-bg-base transition-colors duration-150 hover:bg-surface"
-                                            >
-                                                <BarChart2 className="h-4 w-4 text-fg-subtle group-hover:text-accent transition-colors duration-150" />
-                                            </button>
                                         </div>
                                         <p className="mt-3 font-mono text-2xl font-bold text-fg">
                                             {formatStockPrice(index.currentPrice)}
@@ -203,7 +194,7 @@ function Stocks() {
                                             <div className="flex items-center justify-between gap-2">
                                                 <div className="min-w-0">
                                                     <h3 className="truncate text-xs font-semibold text-fg">{index.symbol.replace('.IS', '')}</h3>
-                                                    <span className="block truncate text-[10px] text-fg-muted">{getIndexLongName(index.symbol)}</span>
+                                                    <span className="block truncate text-[10px] text-fg-muted">{index.name}</span>
                                                 </div>
                                                 <div className={`shrink-0 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
                                                     {index.priceChangePercent > 0 ? <ChevronUp className="h-3 w-3" /> : index.priceChangePercent < 0 ? <ChevronDown className="h-3 w-3" /> : null}
@@ -246,7 +237,8 @@ function Stocks() {
                                 <motion.div
                                     key={stock.symbol}
                                     variants={cardVariants}
-                                    className="group rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover"
+                                    onClick={() => navigate(`/stocks/${stock.symbol}`)}
+                                    className="group cursor-pointer rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover"
                                 >
                                     {}
                                     <div className="flex items-start justify-between">
@@ -259,13 +251,14 @@ function Stocks() {
                                                 {stock.exchange || 'BIST'}
                                             </span>
                                             <button
-                                                onClick={() => {
-                                                    navigate(`/charts?type=BIST&symbol=${stock.symbol}&range=3M`);
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setBuyTarget({ assetCode: stock.symbol, assetName: stock.name || stock.symbol, price: stock.currentPrice });
                                                 }}
-                                                title="Grafiği Görüntüle"
+                                                title="Satın Al"
                                                 className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base transition-colors duration-150 hover:bg-surface"
                                             >
-                                                <BarChart2 className="h-3.5 w-3.5 text-fg-subtle group-hover:text-accent transition-colors duration-150" />
+                                                <ShoppingCart className="h-3.5 w-3.5 text-fg-subtle group-hover:text-success transition-colors duration-150" />
                                             </button>
                                         </div>
                                     </div>
@@ -320,7 +313,7 @@ function Stocks() {
                                     {}
                                     <div className="mt-2 flex items-center gap-1 text-[11px] text-fg-subtle">
                                         <Clock className="h-3 w-3" />
-                                        {stock.lastUpdated ? new Date(stock.lastUpdated).toLocaleString('tr-TR') : 'N/A'}
+                                        {stock.lastUpdated ? new Date(stock.lastUpdated).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'N/A'}
                                     </div>
                                 </motion.div>
                             );
@@ -336,7 +329,18 @@ function Stocks() {
                     hint={isAdmin ? 'Admin butonlarını kullanarak veri çekebilirsiniz.' : 'Admin veri güncellemesini bekleyin.'}
                 />
             )}
+
+            {buyTarget && (
+                <BuyModal
+                    assetType="STOCK"
+                    assetCode={buyTarget.assetCode}
+                    assetName={buyTarget.assetName}
+                    currentPrice={buyTarget.price}
+                    onClose={() => setBuyTarget(null)}
+                    onComplete={() => setBuyTarget(null)}
+                />
+            )}
         </div>
     );
 }
-export default Stocks;
+export default StocksPage;

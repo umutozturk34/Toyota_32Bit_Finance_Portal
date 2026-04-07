@@ -7,8 +7,6 @@ import com.finance.backend.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +29,6 @@ public class MarketCacheService<T, C> {
     private final Function<String, List<C>> candleFinder;
     private final Supplier<List<String>> allKeysFinder;
     
-    @Transactional(readOnly = true)
     public T getSnapshot(String key) {
         String cacheKey = snapshotPrefix + key;
         Object cached = redisTemplate.opsForValue().get(cacheKey);
@@ -46,7 +43,6 @@ public class MarketCacheService<T, C> {
         throw new ResourceNotFoundException(entityName + " not found: " + key);
     }
 
-    @Transactional(readOnly = true)
     public List<T> getAllSnapshots() {
         List<String> keys = allKeysFinder.get();
         List<T> result = new ArrayList<>(keys.size());
@@ -60,7 +56,6 @@ public class MarketCacheService<T, C> {
         return result;
     }
 
-    @Transactional(readOnly = true)
     public List<C> getHistory(String key) {
         String cacheKey = historyPrefix + key;
         Object cached = redisTemplate.opsForValue().get(cacheKey);

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.finance.backend.filter.RateLimiterFilter;
 import com.finance.backend.filter.TefasSessionFilter;
 import com.finance.backend.filter.TefasSessionManager;
+import org.springframework.web.reactive.function.client.ClientRequest;
 
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import io.netty.channel.ChannelOption;
@@ -55,9 +56,7 @@ public class AppConfig {
         return (request, next) -> {
             if (request.headers().getFirst(HttpHeaders.USER_AGENT) == null) {
                 return next.exchange(
-                        org.springframework.web.reactive.function.client.ClientRequest.from(request)
-                                .header(HttpHeaders.USER_AGENT, defaultUserAgent)
-                                .build());
+                    ClientRequest.from(request).header(HttpHeaders.USER_AGENT, defaultUserAgent).build());
             }
             return next.exchange(request);
         };

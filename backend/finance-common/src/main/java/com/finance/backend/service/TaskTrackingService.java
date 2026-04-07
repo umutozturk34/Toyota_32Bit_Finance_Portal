@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.dto.response.TaskInfoResponse;
 import com.finance.backend.dto.response.TaskStatusResponse;
+import com.finance.backend.exception.TaskAlreadyRunningException;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -28,7 +29,10 @@ public class TaskTrackingService {
 
     public TaskInfo startTask(String taskType, String message) {
         TaskInfo info = new TaskInfo(taskType, "RUNNING", message, Instant.now(), null, null);
-        runningTasks.put(taskType, info);
+        TaskInfo existing = runningTasks.putIfAbsent(taskType, info);
+        if (existing != null) {
+            throw new TaskAlreadyRunningException(taskType);
+        }
         return info;
     }
 

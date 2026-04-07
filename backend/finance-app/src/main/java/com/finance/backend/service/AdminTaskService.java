@@ -2,11 +2,11 @@ package com.finance.backend.service;
 
 import com.finance.backend.dto.response.TaskStatusResponse;
 import com.finance.backend.dto.response.TaskTriggerResponse;
-import com.finance.backend.exception.TaskAlreadyRunningException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
 import java.util.concurrent.Executor;
 
 @Log4j2
@@ -23,11 +23,15 @@ public class AdminTaskService {
     private final NewsDataService newsDataService;
     private final TaskTrackingService taskTracker;
     private final Executor taskExecutor;
+    private final Optional<PortfolioSnapshotPort> portfolioSnapshotPort;
 
     public TaskTriggerResponse triggerCryptoSnapshot() {
         return executeTask("crypto-snapshot",
                 "Crypto snapshot update started in background",
-                marketDataService::updateOnlySnapshots);
+                () -> {
+                    marketDataService.updateOnlySnapshots();
+                    triggerPortfolioSnapshot("CRYPTO");
+                });
     }
 
     public TaskTriggerResponse triggerCryptoCandles() {
@@ -39,13 +43,19 @@ public class AdminTaskService {
     public TaskTriggerResponse triggerCryptoFull() {
         return executeTask("crypto-full",
                 "Full crypto market update started in background",
-                marketDataService::fullMarketUpdate);
+                () -> {
+                    marketDataService.fullMarketUpdate();
+                    triggerPortfolioSnapshot("CRYPTO");
+                });
     }
 
     public TaskTriggerResponse triggerStockSnapshot() {
         return executeTask("stock-snapshot",
                 "Stock snapshot update started in background",
-                stockDataService::updateStockSnapshots);
+                () -> {
+                    stockDataService.updateStockSnapshots();
+                    triggerPortfolioSnapshot("STOCK");
+                });
     }
 
     public TaskTriggerResponse triggerStockCandles() {
@@ -60,6 +70,7 @@ public class AdminTaskService {
                 () -> {
                     stockDataService.updateStockSnapshots();
                     stockDataService.updateStockCandles();
+                    triggerPortfolioSnapshot("STOCK");
                 });
     }
 
@@ -69,6 +80,7 @@ public class AdminTaskService {
                 () -> {
                     tcmbForexService.fetchAndSaveTcmbRates();
                     yahooForexService.syncAllYahooSnapshots();
+                    triggerPortfolioSnapshot("FOREX");
                 });
     }
 
@@ -85,13 +97,17 @@ public class AdminTaskService {
                     tcmbForexService.fetchAndSaveTcmbRates();
                     yahooForexService.syncAllYahooSnapshots();
                     yahooForexService.syncAllYahooCandles();
+                    triggerPortfolioSnapshot("FOREX");
                 });
     }
 
     public TaskTriggerResponse triggerFundSnapshot() {
         return executeTask("fund-snapshot",
                 "Fund snapshot update started in background",
-                fundDataService::updateFundSnapshots);
+                () -> {
+                    fundDataService.updateFundSnapshots();
+                    triggerPortfolioSnapshot("FUND");
+                });
     }
 
     public TaskTriggerResponse triggerFundCandles() {
@@ -106,6 +122,7 @@ public class AdminTaskService {
                 () -> {
                     fundDataService.updateFundSnapshots();
                     fundDataService.updateFundCandles();
+                    triggerPortfolioSnapshot("FUND");
                 });
     }
 
@@ -125,11 +142,18 @@ public class AdminTaskService {
         return taskTracker.getTypedStatus();
     }
 
-    private TaskTriggerResponse executeTask(String taskType, String message, Runnable task) {
-        if (taskTracker.isRunning(taskType)) {
-            throw new TaskAlreadyRunningException(taskType);
-        }
+    private void triggerPortfolioSnapshot(String assetType) {
+        portfolioSnapshotPort.ifPresent(port -> {
+            try {
+                port.onMarketUpdate(assetType);
+                log.info("Portfolio snapshot triggered for {}", assetType);
+            } catch (Exception e) {
+                log.warn("Portfolio snapshot failed for {}: {}", assetType, e.getMessage());
+            }
+        });
+    }
 
+    private TaskTriggerResponse executeTask(String taskType, String message, Runnable task) {
         TaskTrackingService.TaskInfo info = taskTracker.startTask(taskType, message);
         log.info("Task started: {}", taskType);
 

@@ -54,9 +54,9 @@ app:
       base-url: https://api.binance.com
   
   tcmb:
-      base-url: ${TCMB_BASE_URL:https://www.tcmb.gov.tr}
-      xml-path: /kurlar/today.xml
-      
+    base-url: ${TCMB_BASE_URL:https://www.tcmb.gov.tr}
+    xml-path: /kurlar/today.xml
+
   tefas-api-path: /api/DB/BindHistoryInfo
   tefas-base-url: https://www.tefas.gov.tr
   timezone: Europe/Istanbul
@@ -75,7 +75,7 @@ app:
   crypto:
     history-days: 365
     min-candles-for-healthy: 350
-  
+
   bond:
     batch-size: 10
     max-days-per-request: 1000
@@ -103,50 +103,6 @@ app:
   news:
     max-articles-per-source: 50
     cache-ttl-hours: 24
-    sources:
-      - name: BloombergHT
-        url: https://www.bloomberght.com/rss
-        type: RSS
-      - name: Dunya-Finans
-        url: https://www.dunya.com/rss/finans.xml
-        type: RSS
-      - name: Dunya-Ekonomi
-        url: https://www.dunya.com/rss/ekonomi.xml
-        type: RSS
-      - name: ParaAnaliz
-        url: https://www.paraanaliz.com/feed
-        type: RSS
-      - name: FinansGundem-Kripto
-        url: https://finansgundem.com.tr/rss/kripto-piyasasi
-        type: RSS
-        default-category: CRYPTO
-      - name: FinansGundem-Borsa
-        url: https://finansgundem.com.tr/rss/borsa
-        type: RSS
-        default-category: BORSA_ISTANBUL
-      - name: FinansGundem-Emtia
-        url: https://finansgundem.com.tr/rss/emtia
-        type: RSS
-        default-category: EMTIA
-      - name: YatirimRehberi-Piyasalar
-        url: https://www.yatirimrehberi.com.tr/rss/piyasalar
-        type: RSS
-        default-category: GENEL_FINANS
-      - name: BorsaGundem-Sirket
-        url: https://www.borsagundem.com.tr/rss/sirket-haberleri
-        type: RSS
-        default-category: BORSA_SIRKETLERI
-      - name: Ekonomim-Para
-        url: https://www.ekonomim.net/rss/para-4
-        type: RSS
-        default-category: TAHVIL_BONO
-      - name: Ekonomim-Ekonomi
-        url: https://www.ekonomim.net/rss/ekonomi-5
-        type: RSS
-      - name: EkonomiDunya
-        url: https://www.ekonomidunya.com/rss_ekonomi_1.xml
-        type: RSS
-        default-category: PARITE
     category-limits:
       "[CRYPTO]": 20
       "[BORSA_ISTANBUL]": 30
@@ -157,9 +113,17 @@ app:
       "[GENEL_FINANS]": 60
 
   rate-limit:
-    admin-trigger-limit: 3
+    admin-trigger-limit: 20
     admin-read-limit: 20
     api-limit: 60
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
 
 resilience4j:
   circuitbreaker:

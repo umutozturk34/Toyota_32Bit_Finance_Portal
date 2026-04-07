@@ -7,61 +7,61 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Finance Portal</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
         body {
             margin: 0;
             padding: 0;
-            background-color: #050506;
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-            color: #EDEDEF;
+            background-color: #0e0e14;
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            color: #ededf0;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
 
         .email-wrapper {
             width: 100%;
-            background-color: #050506;
+            background-color: #0e0e14;
             padding: 40px 0;
         }
 
         .email-container {
             max-width: 560px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(140, 130, 220, 0.12);
-            border-radius: 12px;
+            background: rgba(22, 22, 30, 0.85);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            border-radius: 16px;
             overflow: hidden;
         }
 
         .email-header {
-            padding: 24px;
-            border-bottom: 1px solid rgba(140, 130, 220, 0.12);
+            padding: 28px 28px 20px;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.1);
             text-align: left;
         }
 
         .email-header h1 {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 700;
-            color: #EDEDEF;
+            color: #ededf0;
             margin: 0;
             letter-spacing: -0.02em;
         }
 
         .email-header p {
             font-size: 14px;
-            color: #8A8F98;
-            margin: 4px 0 0 0;
+            color: #8b8b9a;
+            margin: 6px 0 0 0;
         }
 
         .email-body {
-            padding: 24px;
+            padding: 28px;
         }
 
         .email-body p {
             font-size: 14px;
-            color: #8A8F98;
-            line-height: 1.6;
+            color: #8b8b9a;
+            line-height: 1.7;
             margin: 0 0 16px 0;
         }
 
@@ -70,63 +70,65 @@
         }
 
         .email-body strong {
-            color: #EDEDEF;
+            color: #ededf0;
             font-weight: 600;
         }
 
         .email-cta {
             display: inline-block;
-            padding: 10px 24px;
+            padding: 12px 28px;
             font-size: 14px;
             font-weight: 600;
-            font-family: 'Inter', system-ui, sans-serif;
+            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
             color: #ffffff !important;
-            background-color: #5E6AD2;
-            border-radius: 8px;
+            background: linear-gradient(135deg, #6366f1, #818cf8);
+            border-radius: 12px;
             text-decoration: none;
             margin: 8px 0 16px 0;
+            box-shadow: 0 4px 20px rgba(99,102,241,0.35);
         }
 
         .email-info-box {
             padding: 16px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(140, 130, 220, 0.12);
-            border-radius: 8px;
+            background: rgba(99, 102, 241, 0.06);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
             margin: 16px 0;
         }
 
         .email-info-box p {
             font-size: 13px;
-            color: #8A8F98;
+            color: #8b8b9a;
             margin: 0;
         }
 
         .email-info-box code {
             font-size: 13px;
-            color: #EDEDEF;
-            background: rgba(255, 255, 255, 0.08);
-            padding: 2px 6px;
-            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #ededf0;
+            background: rgba(99, 102, 241, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
         }
 
         .email-footer {
-            padding: 16px 24px;
-            border-top: 1px solid rgba(140, 130, 220, 0.12);
+            padding: 16px 28px;
+            border-top: 1px solid rgba(99, 102, 241, 0.1);
         }
 
         .email-footer p {
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.40);
+            color: #55555f;
             margin: 0;
         }
 
         .email-footer a {
-            color: #5E6AD2;
+            color: #6366f1;
             text-decoration: none;
         }
 
         a {
-            color: #5E6AD2;
+            color: #6366f1;
             text-decoration: none;
         }
     </style>
@@ -142,7 +144,7 @@
                 <#nested>
             </div>
             <div class="email-footer">
-                <p>Bu e-posta Finance Portal tarafından otomatik olarak gönderilmiştir.</p>
+                <p>Bu e-posta Finance Portal tarafindan otomatik olarak gonderilmistir.</p>
             </div>
         </div>
     </div>

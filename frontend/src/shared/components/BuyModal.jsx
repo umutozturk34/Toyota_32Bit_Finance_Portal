@@ -1,25 +1,31 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowUpRight, Loader2, Check, AlertCircle, ShieldCheck, RefreshCw, AlertTriangle } from 'lucide-react';
-import { portfolioService } from './portfolioService';
-import { formatPriceTRY } from '../../shared/utils/formatters';
-import PercentageSlider from '../../shared/components/PercentageSlider';
+import { X, ArrowDownRight, Loader2, Check, AlertCircle, Wallet, ShieldCheck, RefreshCw, AlertTriangle } from 'lucide-react';
+import { portfolioService } from '../../features/portfolio/portfolioService';
+import { formatPriceTRY } from '../utils/formatters';
+import PercentageSlider from './PercentageSlider';
 
 const PROCESSING_STEPS = [
-  { label: 'Satış emri doğrulanıyor...', duration: 700 },
+  { label: 'İşlem doğrulanıyor...', duration: 800 },
   { label: 'Piyasa fiyatı kontrol ediliyor...', duration: 600 },
-  { label: 'Portföy güncelleniyor...', duration: 800 },
+  { label: 'Portföy güncelleniyor...', duration: 700 },
 ];
 
 const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX'];
 
-export default function SellModal({ portfolioId, position, onClose, onComplete }) {
-  const isFractional = FRACTIONAL_TYPES.includes(position.assetType);
-  const [inputMode, setInputMode] = useState('quantity');
+export default function BuyModal({ assetType, assetCode, assetName, currentPrice, onClose, onComplete }) {
+  const navigate = useNavigate();
+  const isFractional = FRACTIONAL_TYPES.includes(assetType);
+  const [inputMode, setInputMode] = useState('amount');
   const [amountTry, setAmountTry] = useState('');
   const [quantity, setQuantity] = useState('');
   const [sliderPercent, setSliderPercent] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [portfolioLoading, setPortfolioLoading] = useState(true);
+  const [portfolioId, setPortfolioId] = useState(null);
+  const [walletBalance, setWalletBalance] = useState(null);
+  const [noPortfolio, setNoPortfolio] = useState(false);
   const [error, setError] = useState(null);
   const [processingStep, setProcessingStep] = useState(-1);
   const [success, setSuccess] = useState(false);
@@ -30,58 +36,73 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
     return () => stepTimers.current.forEach(clearTimeout);
   }, []);
 
-  const maxQuantity = Number(position.quantity);
-  const maxValueTry = useMemo(() => {
-    if (!position.currentPriceTry || maxQuantity <= 0) return 0;
-    return Number(position.currentPriceTry) * maxQuantity;
-  }, [position.currentPriceTry, maxQuantity]);
+  useEffect(() => {
+    let cancelled = false;
+    const init = async () => {
+      setPortfolioLoading(true);
+      try {
+        const portfolios = await portfolioService.list();
+        if (!cancelled) {
+          if (!portfolios || portfolios.length === 0) {
+            setNoPortfolio(true);
+          } else {
+            setPortfolioId(portfolios[0].id);
+            setWalletBalance(portfolios[0].cashBalanceTry);
+          }
+        }
+      } catch {
+        if (!cancelled) setNoPortfolio(true);
+      } finally {
+        if (!cancelled) setPortfolioLoading(false);
+      }
+    };
+    init();
+    return () => { cancelled = true; };
+  }, []);
 
   const computedQuantity = useMemo(() => {
-    if (!position.currentPriceTry || Number(position.currentPriceTry) <= 0) return null;
+    if (!currentPrice || currentPrice <= 0) return null;
     if (isFractional && inputMode === 'amount') {
       const amt = Number(amountTry);
       if (!amt || amt <= 0) return null;
-      return amt / Number(position.currentPriceTry);
+      return amt / currentPrice;
     }
     const qty = Number(quantity);
-    return qty > 0 ? qty : null;
-  }, [position.currentPriceTry, amountTry, quantity, inputMode, isFractional]);
+    if (!qty || qty <= 0) return null;
+    return qty;
+  }, [currentPrice, amountTry, quantity, inputMode, isFractional]);
 
-  const totalValue = useMemo(() => {
-    if (!position.currentPriceTry) return null;
+  const totalCost = useMemo(() => {
+    if (!currentPrice || currentPrice <= 0) return null;
     if (isFractional && inputMode === 'amount') {
       const amt = Number(amountTry);
       return amt > 0 ? amt : null;
     }
     const qty = Number(quantity);
-    return qty > 0 ? Number(position.currentPriceTry) * qty : null;
-  }, [position.currentPriceTry, amountTry, quantity, inputMode, isFractional]);
+    return qty > 0 ? currentPrice * qty : null;
+  }, [currentPrice, amountTry, quantity, inputMode, isFractional]);
 
   const handleSliderChange = useCallback((pct) => {
+    if (!walletBalance || walletBalance <= 0) return;
     setSliderPercent(pct);
     setError(null);
+    const amount = (walletBalance * pct) / 100;
     if (isFractional && inputMode === 'amount') {
-      const amount = (maxValueTry * pct) / 100;
       setAmountTry(pct === 0 ? '' : String(Math.floor(amount * 100) / 100));
-    } else {
+    } else if (currentPrice > 0) {
       const qty = isFractional
-        ? (maxQuantity * pct) / 100
-        : Math.floor((maxQuantity * pct) / 100);
+        ? amount / currentPrice
+        : Math.floor(amount / currentPrice);
       setQuantity(pct === 0 ? '' : String(qty));
     }
-  }, [maxQuantity, maxValueTry, inputMode, isFractional]);
+  }, [walletBalance, inputMode, isFractional, currentPrice]);
 
   const syncSliderFromInput = useCallback((val) => {
-    if (isFractional && inputMode === 'amount') {
-      if (maxValueTry <= 0) { setSliderPercent(0); return; }
-      const pct = Math.min(100, Math.round((Number(val) / maxValueTry) * 100));
-      setSliderPercent(pct > 0 ? pct : 0);
-    } else {
-      if (maxQuantity <= 0) { setSliderPercent(0); return; }
-      const pct = Math.min(100, Math.round((Number(val) / maxQuantity) * 100));
-      setSliderPercent(pct > 0 ? pct : 0);
-    }
-  }, [maxQuantity, maxValueTry, inputMode, isFractional]);
+    if (!walletBalance || walletBalance <= 0) { setSliderPercent(0); return; }
+    const cost = isFractional && inputMode === 'amount' ? Number(val) : Number(val) * (currentPrice || 0);
+    const pct = Math.min(100, Math.round((cost / walletBalance) * 100));
+    setSliderPercent(pct > 0 ? pct : 0);
+  }, [walletBalance, inputMode, isFractional, currentPrice]);
 
   const handleModeSwitch = (mode) => {
     setInputMode(mode);
@@ -106,6 +127,7 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!portfolioId) return;
 
     if (isFractional && inputMode === 'amount') {
       if (!Number(amountTry) || Number(amountTry) <= 0) {
@@ -115,10 +137,6 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
     } else {
       if (!Number(quantity) || Number(quantity) <= 0) {
         setError('Lütfen geçerli bir miktar girin');
-        return;
-      }
-      if (Number(quantity) > maxQuantity) {
-        setError(`Maksimum ${maxQuantity} adet satabilirsiniz`);
         return;
       }
     }
@@ -132,9 +150,9 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
     setProcessingStep(0);
 
     const payload = {
-      assetType: position.assetType,
-      assetCode: position.assetCode,
-      side: 'SELL',
+      assetType,
+      assetCode,
+      side: 'BUY',
       feeTry: 0,
     };
 
@@ -150,10 +168,13 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
         runProcessingAnimation(),
       ]);
       setSuccess(true);
-      setTimeout(() => onComplete(), 1800);
+      setTimeout(() => {
+        onComplete?.();
+        onClose();
+      }, 1800);
     } catch (err) {
       setProcessingStep(-1);
-      setError(err.response?.data?.message || 'Satış başarısız');
+      setError(err.response?.data?.message || 'Satın alma başarısız');
     } finally {
       setLoading(false);
     }
@@ -179,15 +200,15 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="relative w-full max-w-sm rounded-2xl border border-border-default modal-panel p-6 overflow-hidden"
       >
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-danger/40 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-success/40 to-transparent" />
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-danger/10">
-              <ArrowUpRight className="h-4.5 w-4.5 text-danger" />
+            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-success/10">
+              <ArrowDownRight className="h-4.5 w-4.5 text-success" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-fg">Sat</h2>
-              <p className="text-xs text-fg-muted">{position.assetCode} · {position.assetType}</p>
+              <h2 className="text-base font-semibold text-fg">Satın Al</h2>
+              <p className="text-xs text-fg-muted">{assetName || assetCode}</p>
             </div>
           </div>
           <button
@@ -199,7 +220,28 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
           </button>
         </div>
 
-        {success ? (
+        {portfolioLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-accent" />
+          </div>
+        ) : noPortfolio ? (
+          <div className="flex flex-col items-center justify-center gap-4 py-8">
+            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-accent/10">
+              <Wallet className="h-7 w-7 text-accent" />
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-semibold text-fg">Portföy bulunamadı</p>
+              <p className="text-xs text-fg-muted">Alım yapabilmek için önce portföyünüzü oluşturmanız gerekiyor.</p>
+            </div>
+            <button
+              onClick={() => { onClose(); navigate('/portfolio'); }}
+              className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-bright border-none cursor-pointer"
+            >
+              <Wallet className="h-4 w-4" />
+              Portföye Git
+            </button>
+          </div>
+        ) : success ? (
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -222,8 +264,8 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
               <p className="text-sm font-semibold text-fg">İşleminiz onaylandı</p>
               <p className="text-xs text-fg-muted">
                 {isFractional && inputMode === 'amount'
-                  ? `${formatPriceTRY(Number(amountTry))} tutarında ${position.assetCode} satıldı`
-                  : `${displayQuantity} adet ${position.assetCode} satıldı`}
+                  ? `${formatPriceTRY(Number(amountTry))} tutarında ${assetCode} satın alındı`
+                  : `${displayQuantity} adet ${assetCode} satın alındı`}
               </p>
             </motion.div>
             <motion.div
@@ -281,8 +323,8 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
                 <p className="text-sm font-semibold text-fg">İşleminizi onaylıyor musunuz?</p>
                 <p className="text-xs text-fg-muted">
                   {isFractional && inputMode === 'amount'
-                    ? <>{formatPriceTRY(Number(amountTry))} tutarında <span className="font-medium text-fg">{position.assetCode}</span> satılacak</>
-                    : <>{displayQuantity} adet <span className="font-medium text-fg">{position.assetCode}</span> satılacak</>}
+                    ? <>{formatPriceTRY(Number(amountTry))} tutarında <span className="font-medium text-fg">{assetCode}</span> satın alınacak</>
+                    : <>{displayQuantity} adet <span className="font-medium text-fg">{assetCode}</span> satın alınacak</>}
                 </p>
               </div>
             </div>
@@ -295,11 +337,11 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-fg-muted">Birim Fiyat</span>
-                    <span className="font-mono font-medium text-fg">{formatPriceTRY(position.currentPriceTry)}</span>
+                    <span className="font-mono font-medium text-fg">{formatPriceTRY(currentPrice)}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs border-t border-border-default pt-2">
                     <span className="text-fg-muted font-semibold">Tahmini Miktar</span>
-                    <span className="font-mono font-bold text-danger">{computedQuantity?.toLocaleString('tr-TR', { maximumFractionDigits: 6 })}</span>
+                    <span className="font-mono font-bold text-success">{computedQuantity?.toLocaleString('tr-TR', { maximumFractionDigits: 6 })}</span>
                   </div>
                 </>
               ) : (
@@ -310,11 +352,11 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-fg-muted">Birim Fiyat</span>
-                    <span className="font-mono font-medium text-fg">{formatPriceTRY(position.currentPriceTry)}</span>
+                    <span className="font-mono font-medium text-fg">{formatPriceTRY(currentPrice)}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs border-t border-border-default pt-2">
-                    <span className="text-fg-muted font-semibold">Satış Tutarı</span>
-                    <span className="font-mono font-bold text-danger">{formatPriceTRY(totalValue)}</span>
+                    <span className="text-fg-muted font-semibold">Toplam Tutar</span>
+                    <span className="font-mono font-bold text-success">{formatPriceTRY(totalCost)}</span>
                   </div>
                 </>
               )}
@@ -328,58 +370,61 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
               </button>
               <button
                 onClick={handleConfirm}
-                className="flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white bg-danger hover:bg-danger/90 transition-all border-none cursor-pointer"
+                className="flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white bg-success hover:bg-success/90 transition-all border-none cursor-pointer"
               >
-                <ArrowUpRight className="h-4 w-4" />
+                <ArrowDownRight className="h-4 w-4" />
                 Onayla
               </button>
             </div>
           </motion.div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-border-default bg-bg-base px-3 py-2.5">
-                <p className="text-[11px] text-fg-muted mb-1">Güncel Fiyat</p>
-                <p className="text-sm font-bold font-mono text-fg">{formatPriceTRY(position.currentPriceTry)}</p>
-              </div>
-              <div className="rounded-lg border border-border-default bg-bg-base px-3 py-2.5">
-                <p className="text-[11px] text-fg-muted mb-1">Sahip Olunan</p>
-                <p className="text-sm font-bold font-mono text-fg">
-                  {maxQuantity.toLocaleString('tr-TR', { maximumFractionDigits: isFractional ? 6 : 0 })}
-                </p>
-              </div>
+            <div className="rounded-lg border border-border-default bg-bg-base px-4 py-3 flex items-center justify-between">
+              <span className="text-xs text-fg-muted font-medium">Güncel Fiyat</span>
+              {currentPrice != null ? (
+                <span className="text-base font-bold font-mono text-fg">{formatPriceTRY(currentPrice)}</span>
+              ) : (
+                <span className="text-xs text-danger">Fiyat bulunamadı</span>
+              )}
             </div>
+
+            {walletBalance != null && (
+              <div className="flex items-center justify-between text-xs px-1">
+                <span className="text-fg-muted">Kullanılabilir Bakiye</span>
+                <span className="font-mono font-medium text-fg">{formatPriceTRY(walletBalance)}</span>
+              </div>
+            )}
 
             {isFractional && (
               <div className="flex rounded-lg border border-border-default bg-bg-base p-0.5">
                 <button
                   type="button"
-                  onClick={() => handleModeSwitch('quantity')}
-                  className={`flex-1 rounded-md py-2 text-xs font-medium transition-all cursor-pointer border-none ${
-                    inputMode === 'quantity'
-                      ? 'bg-danger text-white'
-                      : 'bg-transparent text-fg-muted hover:text-fg'
-                  }`}
-                >
-                  Adet
-                </button>
-                <button
-                  type="button"
                   onClick={() => handleModeSwitch('amount')}
                   className={`flex-1 rounded-md py-2 text-xs font-medium transition-all cursor-pointer border-none ${
                     inputMode === 'amount'
-                      ? 'bg-danger text-white'
+                      ? 'bg-accent text-white'
                       : 'bg-transparent text-fg-muted hover:text-fg'
                   }`}
                 >
                   TRY Tutarı
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeSwitch('quantity')}
+                  className={`flex-1 rounded-md py-2 text-xs font-medium transition-all cursor-pointer border-none ${
+                    inputMode === 'quantity'
+                      ? 'bg-accent text-white'
+                      : 'bg-transparent text-fg-muted hover:text-fg'
+                  }`}
+                >
+                  Adet
                 </button>
               </div>
             )}
 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-fg-muted">
-                {isFractional && inputMode === 'amount' ? 'Tutar (TRY)' : 'Satılacak Miktar'}
+                {isFractional && inputMode === 'amount' ? 'Tutar (TRY)' : 'Miktar'}
               </label>
               {isFractional && inputMode === 'amount' ? (
                 <input
@@ -404,35 +449,33 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
               )}
             </div>
 
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[11px] text-fg-subtle px-0.5">
-                <span>%{sliderPercent}</span>
-                <span>
-                  {isFractional && inputMode === 'amount'
-                    ? formatPriceTRY((maxValueTry * sliderPercent) / 100)
-                    : `${((maxQuantity * sliderPercent) / 100).toLocaleString('tr-TR', { maximumFractionDigits: isFractional ? 6 : 0 })} adet`}
-                </span>
+            {walletBalance > 0 && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[11px] text-fg-subtle px-0.5">
+                  <span>%{sliderPercent}</span>
+                  <span>{formatPriceTRY((walletBalance * sliderPercent) / 100)}</span>
+                </div>
+                <PercentageSlider
+                  value={sliderPercent}
+                  onChange={handleSliderChange}
+                  color="success"
+                />
               </div>
-              <PercentageSlider
-                value={sliderPercent}
-                onChange={handleSliderChange}
-                color="danger"
-              />
-            </div>
+            )}
 
             {isFractional && inputMode === 'amount' && computedQuantity != null && (
               <div className="flex items-center justify-between text-xs px-1">
                 <span className="text-fg-muted">Tahmini Miktar</span>
                 <span className="font-mono font-medium text-fg">
-                  ~{computedQuantity.toLocaleString('tr-TR', { maximumFractionDigits: 6 })} {position.assetCode}
+                  ~{computedQuantity.toLocaleString('tr-TR', { maximumFractionDigits: 6 })} {assetCode}
                 </span>
               </div>
             )}
 
-            {totalValue != null && (
-              <div className="rounded-xl border border-danger/30 bg-gradient-to-r from-danger/5 to-transparent px-4 py-3 flex items-center justify-between">
-                <span className="text-xs font-semibold text-danger">Satış Tutarı</span>
-                <span className="text-lg font-bold font-mono text-danger">{formatPriceTRY(totalValue)}</span>
+            {totalCost != null && (
+              <div className="rounded-xl border border-success/30 bg-gradient-to-r from-success/5 to-transparent px-4 py-3 flex items-center justify-between">
+                <span className="text-xs font-semibold text-success">Toplam Tutar</span>
+                <span className="text-lg font-bold font-mono text-success">{formatPriceTRY(totalCost)}</span>
               </div>
             )}
 
@@ -452,11 +495,11 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white bg-danger hover:bg-danger/90 transition-all border-none cursor-pointer disabled:opacity-50"
+              disabled={loading || !currentPrice}
+              className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white bg-success hover:bg-success/90 transition-all border-none cursor-pointer disabled:opacity-50"
             >
-              <ArrowUpRight className="h-4 w-4" />
-              Sat
+              <ArrowDownRight className="h-4 w-4" />
+              Satın Al
             </button>
           </form>
         )}

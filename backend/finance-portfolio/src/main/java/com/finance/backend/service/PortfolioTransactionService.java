@@ -8,6 +8,9 @@ import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.mapper.PortfolioResponseMapper;
 import com.finance.backend.model.*;
 import com.finance.backend.repository.*;
+import com.finance.backend.service.transaction.ResolvedInput;
+import com.finance.backend.service.transaction.TransactionInputResolver;
+import com.finance.backend.service.transaction.TransactionInputResolverFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -24,7 +27,6 @@ import java.math.RoundingMode;
 public class PortfolioTransactionService {
 
     private static final int PRICE_SCALE = 4;
-    private static final int QTY_SCALE = 8;
 
     private final AssetPricingPort pricingPort;
     private final PortfolioRepository portfolioRepository;
@@ -34,6 +36,7 @@ public class PortfolioTransactionService {
     private final WalletLedgerRepository ledgerRepository;
     private final PortfolioResponseMapper mapper;
     private final PortfolioSnapshotService snapshotService;
+    private final TransactionInputResolverFactory resolverFactory;
 
     @Transactional
     public TransactionResponse execute(String userSub, Long portfolioId, TransactionRequest request) {
@@ -42,12 +45,7 @@ public class PortfolioTransactionService {
 
         AssetType assetType = AssetType.valueOf(request.assetType());
         TransactionSide side = TransactionSide.valueOf(request.side());
-        BigDecimal quantity = request.quantity().setScale(QTY_SCALE, RoundingMode.HALF_UP);
         BigDecimal fee = request.feeTry() != null ? request.feeTry().setScale(PRICE_SCALE, RoundingMode.HALF_UP) : BigDecimal.ZERO;
-
-        if (quantity.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BadRequestException("Quantity must be positive");
-        }
 
         BigDecimal unitPrice = pricingPort.getPriceTry(request.assetType(), request.assetCode());
         if (unitPrice == null) {
@@ -55,7 +53,10 @@ public class PortfolioTransactionService {
         }
         unitPrice = unitPrice.setScale(PRICE_SCALE, RoundingMode.HALF_UP);
 
-        BigDecimal totalCost = unitPrice.multiply(quantity).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
+        TransactionInputResolver resolver = resolverFactory.getResolver(assetType);
+        ResolvedInput resolved = resolver.resolve(request.quantity(), request.amountTry(), unitPrice);
+        BigDecimal quantity = resolved.quantity();
+        BigDecimal totalCost = resolved.totalCostTry();
 
         UserWallet wallet = walletRepository.findByPortfolioIdAndCurrency(portfolioId, "TRY")
                 .orElseThrow(() -> new ResourceNotFoundException("TRY wallet not found"));

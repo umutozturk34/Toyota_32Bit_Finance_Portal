@@ -7,5 +7,6 @@ public record TransactionRequest(
         String assetCode,
         String side,
         BigDecimal quantity,
+        BigDecimal amountTry,
         BigDecimal feeTry
 ) {}

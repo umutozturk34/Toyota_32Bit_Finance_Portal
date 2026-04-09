@@ -11,15 +11,16 @@
             <p class="fp-section-desc">${msg("emailVerifyInstruction1")}</p>
         </div>
 
-        <div style="padding: 1rem; background: var(--fp-surface); border: 1px solid var(--fp-border); border-radius: var(--fp-radius-sm); margin-bottom: 1rem; text-align: center;">
-            <p style="font-size: 0.875rem; color: var(--fp-fg-muted); margin: 0 0 0.75rem 0;">${msg("emailVerifyInstruction2")}</p>
-            <p style="font-size: 0.8125rem; color: var(--fp-fg-subtle); margin: 0;">${msg("emailVerifyInstruction3")}</p>
+        <div class="fp-code-info">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>${msg("emailVerifyInstruction2")}</span>
         </div>
 
-        <div id="kc-form-buttons" style="margin-top: 1.5rem;">
-            <a href="${url.loginAction}" class="btn-primary" style="text-align: center; display: block; text-decoration: none; padding: 0.625rem 1.25rem; font-size: 0.875rem; font-weight: 600; color: #fff; background: var(--fp-accent); border-radius: var(--fp-radius-sm);">
-                ${msg("doClickHere")} ${msg("emailVerifyInstruction3")}
-            </a>
+    <#elseif section = "info">
+        <div class="fp-resend-box">
+            <p>${msg("emailVerifyInstruction3")}
+                <a href="${url.loginAction}" class="fp-link">${msg("doClickHere")}</a>
+            </p>
         </div>
     </#if>
 </@layout.registrationLayout>

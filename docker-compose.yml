@@ -98,7 +98,7 @@ services:
 
   # Keycloak 
   keycloak:
-    image: quay.io/keycloak/keycloak:23.0
+    image: quay.io/keycloak/keycloak:24.0
     container_name: finance-keycloak
     restart: unless-stopped
     ports:
@@ -122,10 +122,13 @@ services:
     command:
       - start-dev
       - --import-realm
+      - --spi-required-action-VERIFY_EMAIL_CODE-code-length=6
+      - --spi-required-action-VERIFY_EMAIL_CODE-code-symbols=0123456789
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak/realm-simple.json:/opt/keycloak/data/import/realm-finance.json:ro
       - ./keycloak/themes/finance:/opt/keycloak/themes/finance:ro
+      - ./keycloak/providers:/opt/keycloak/providers:ro
     depends_on:
       db:
         condition: service_healthy

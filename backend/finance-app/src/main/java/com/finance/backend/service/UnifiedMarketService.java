@@ -60,32 +60,31 @@ public class UnifiedMarketService implements MarketUpdatePort {
         boolean hasFilter = filter != null && !"all".equalsIgnoreCase(filter);
         boolean hasSort = sort != null && !sort.isBlank();
 
-        boolean useProviderSearch = hasSort && !hasSegment && !hasSearch && !hasFilter && !hasSubType;
+        boolean useDbQuery = hasSort || hasSearch;
 
         List<MarketAssetResponse> allResults = new ArrayList<>();
 
-        if (useProviderSearch) {
-            long providerTotal = 0;
+        if (useDbQuery) {
             for (MarketType type : types) {
                 MarketAssetProvider provider = providers.get(type);
                 if (provider == null) continue;
-                allResults.addAll(provider.search(null, resolveSort(sort), direction, page, size));
-                providerTotal += provider.count();
+                allResults.addAll(provider.search(search, resolveSort(sort), direction, page, size));
             }
-            return PagedResponse.of(applySort(allResults, sort, direction), page, size, providerTotal);
-        }
-
-        for (MarketType type : types) {
-            MarketAssetProvider provider = providers.get(type);
-            if (provider == null) continue;
-            allResults.addAll(provider.getAll());
-        }
-
-        if (hasSearch) {
-            String q = search.toLowerCase();
-            allResults = allResults.stream()
-                    .filter(a -> a.code().toLowerCase().contains(q) || (a.name() != null && a.name().toLowerCase().contains(q)))
-                    .toList();
+            if (!hasSegment && !hasSubType && !hasFilter) {
+                long total = 0;
+                for (MarketType type : types) {
+                    MarketAssetProvider provider = providers.get(type);
+                    if (provider == null) continue;
+                    total += hasSearch ? provider.countBySearch(search) : provider.count();
+                }
+                return PagedResponse.of(applySort(allResults, sort, direction), page, size, total);
+            }
+        } else {
+            for (MarketType type : types) {
+                MarketAssetProvider provider = providers.get(type);
+                if (provider == null) continue;
+                allResults.addAll(provider.getAll());
+            }
         }
 
         if (hasSegment) {
@@ -177,13 +176,11 @@ public class UnifiedMarketService implements MarketUpdatePort {
         return provider.getGroupCounts();
     }
 
-    public List<CandleResponse> getHistory(MarketType type, String code, CandlePeriod period) {
+    public List<?> getHistory(MarketType type, String code, CandlePeriod period) {
         return switch (type) {
             case STOCK -> stockQueryService.getStockHistory(code, period);
             case CRYPTO -> cryptoQueryService.getCryptoHistory(code, period);
-            case FUND -> fundQueryService.getFundHistory(code, period).stream()
-                    .map(f -> new CandleResponse(f.candleDate(), null, null, null, f.price(), null))
-                    .toList();
+            case FUND -> fundQueryService.getFundHistory(code, period);
             case FOREX -> forexQueryService.getForexHistory(code, period);
         };
     }

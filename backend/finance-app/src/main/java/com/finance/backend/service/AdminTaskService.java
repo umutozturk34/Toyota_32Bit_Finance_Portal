@@ -25,6 +25,7 @@ public class AdminTaskService {
     private final TaskTrackingService taskTracker;
     private final Executor taskExecutor;
     private final Optional<PortfolioSnapshotPort> portfolioSnapshotPort;
+    private final Optional<MarketUpdatePort> marketUpdatePort;
 
     public TaskTriggerResponse triggerCryptoSnapshot() {
         return executeTask("crypto-snapshot",
@@ -147,9 +148,15 @@ public class AdminTaskService {
         portfolioSnapshotPort.ifPresent(port -> {
             try {
                 port.onMarketUpdate(assetType);
-                log.info("Portfolio snapshot triggered for {}", assetType);
             } catch (Exception e) {
                 log.warn("Portfolio snapshot failed for {}: {}", assetType, e.getMessage());
+            }
+        });
+        marketUpdatePort.ifPresent(port -> {
+            try {
+                port.onMarketDataUpdated(assetType);
+            } catch (Exception e) {
+                log.warn("Market cache update failed for {}: {}", assetType, e.getMessage());
             }
         });
     }

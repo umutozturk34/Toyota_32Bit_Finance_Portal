@@ -57,10 +57,10 @@ class UnifiedMarketServiceTest {
     }
 
     @Test
-    void searchWithSearchTermBypassesCache() {
-        when(stockProvider.getAll()).thenReturn(List.of(
-                asset("THYAO.IS", MarketType.STOCK, "5.0"),
-                asset("GARAN.IS", MarketType.STOCK, "3.0")));
+    void searchWithSearchTermUsesDbQuery() {
+        when(stockProvider.search(eq("thy"), any(), any(), eq(0), eq(20)))
+                .thenReturn(List.of(asset("THYAO.IS", MarketType.STOCK, "5.0")));
+        when(stockProvider.countBySearch("thy")).thenReturn(1L);
 
         PagedResponse<MarketAssetResponse> result = service.search(
                 List.of(MarketType.STOCK), null, null, null, "thy",
@@ -68,7 +68,7 @@ class UnifiedMarketServiceTest {
 
         assertThat(result.content()).hasSize(1);
         assertThat(result.content().getFirst().code()).isEqualTo("THYAO.IS");
-
+        verify(stockProvider, never()).getAll();
     }
 
     @Test
@@ -99,9 +99,10 @@ class UnifiedMarketServiceTest {
 
     @Test
     void searchWithFilterGainersFiltersNegativeChange() {
-        when(stockProvider.getAll()).thenReturn(List.of(
-                asset("THYAO.IS", MarketType.STOCK, "5.0"),
-                asset("GARAN.IS", MarketType.STOCK, "-2.0")));
+        when(stockProvider.search(isNull(), eq("changePercent"), eq("desc"), eq(0), eq(20)))
+                .thenReturn(List.of(
+                        asset("THYAO.IS", MarketType.STOCK, "5.0"),
+                        asset("GARAN.IS", MarketType.STOCK, "-2.0")));
 
         PagedResponse<MarketAssetResponse> result = service.search(
                 List.of(MarketType.STOCK), null, null, null, null,
@@ -153,7 +154,7 @@ class UnifiedMarketServiceTest {
                 new CandleResponse(LocalDateTime.now(), null, null, null, new BigDecimal("50"), null));
         when(stockQueryService.getStockHistory("THYAO.IS", CandlePeriod.ONE_MONTH)).thenReturn(candles);
 
-        List<CandleResponse> result = service.getHistory(MarketType.STOCK, "THYAO.IS", CandlePeriod.ONE_MONTH);
+        List<?> result = service.getHistory(MarketType.STOCK, "THYAO.IS", CandlePeriod.ONE_MONTH);
 
         assertThat(result).hasSize(1);
         verify(stockQueryService).getStockHistory("THYAO.IS", CandlePeriod.ONE_MONTH);
@@ -165,7 +166,7 @@ class UnifiedMarketServiceTest {
                 new CandleResponse(LocalDateTime.now(), null, null, null, new BigDecimal("65000"), null));
         when(cryptoQueryService.getCryptoHistory("bitcoin", CandlePeriod.THREE_MONTHS)).thenReturn(candles);
 
-        List<CandleResponse> result = service.getHistory(MarketType.CRYPTO, "bitcoin", CandlePeriod.THREE_MONTHS);
+        List<?> result = service.getHistory(MarketType.CRYPTO, "bitcoin", CandlePeriod.THREE_MONTHS);
 
         assertThat(result).hasSize(1);
     }
@@ -192,9 +193,10 @@ class UnifiedMarketServiceTest {
 
     @Test
     void searchWithFilterLosersFiltersPositiveChange() {
-        when(stockProvider.getAll()).thenReturn(List.of(
-                asset("THYAO.IS", MarketType.STOCK, "5.0"),
-                asset("GARAN.IS", MarketType.STOCK, "-2.0")));
+        when(stockProvider.search(isNull(), eq("changePercent"), eq("desc"), eq(0), eq(20)))
+                .thenReturn(List.of(
+                        asset("THYAO.IS", MarketType.STOCK, "5.0"),
+                        asset("GARAN.IS", MarketType.STOCK, "-2.0")));
 
         PagedResponse<MarketAssetResponse> result = service.search(
                 List.of(MarketType.STOCK), null, null, null, null,
@@ -240,7 +242,7 @@ class UnifiedMarketServiceTest {
                 new CandleResponse(LocalDateTime.now(), null, null, null, new BigDecimal("38.5"), null));
         when(forexQueryService.getForexHistory("usd", CandlePeriod.ALL)).thenReturn(candles);
 
-        List<CandleResponse> result = service.getHistory(MarketType.FOREX, "usd", CandlePeriod.ALL);
+        List<?> result = service.getHistory(MarketType.FOREX, "usd", CandlePeriod.ALL);
 
         assertThat(result).hasSize(1);
         verify(forexQueryService).getForexHistory("usd", CandlePeriod.ALL);
@@ -252,7 +254,7 @@ class UnifiedMarketServiceTest {
                 new CandleResponse(LocalDateTime.now(), null, null, null, new BigDecimal("38.5"), null));
         when(forexQueryService.getForexHistory("usd", CandlePeriod.ONE_MONTH)).thenReturn(candles);
 
-        List<CandleResponse> result = service.getHistory(MarketType.FOREX, "usd", CandlePeriod.ONE_MONTH);
+        List<?> result = service.getHistory(MarketType.FOREX, "usd", CandlePeriod.ONE_MONTH);
 
         assertThat(result).hasSize(1);
         verify(forexQueryService).getForexHistory("usd", CandlePeriod.ONE_MONTH);

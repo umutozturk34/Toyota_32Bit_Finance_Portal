@@ -1,13 +1,13 @@
 package com.finance.backend.controller;
 
+import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.response.TaskStatusResponse;
 import com.finance.backend.dto.response.TaskTriggerResponse;
 import com.finance.backend.service.AdminTaskService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -18,91 +18,77 @@ public class AdminController {
     private final AdminTaskService adminTaskService;
 
     @PostMapping("/trigger/crypto/snapshot")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerCryptoSnapshot() {
-        return adminTaskService.triggerCryptoSnapshot();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerCryptoSnapshot() {
+        return ResponseEntity.accepted().body(ApiResponse.success("Crypto snapshot triggered", adminTaskService.triggerCryptoSnapshot()));
     }
 
     @PostMapping("/trigger/crypto/candles")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerCryptoCandles() {
-        return adminTaskService.triggerCryptoCandles();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerCryptoCandles() {
+        return ResponseEntity.accepted().body(ApiResponse.success("Crypto candles triggered", adminTaskService.triggerCryptoCandles()));
     }
 
     @PostMapping("/trigger/crypto/full")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerCryptoFull() {
-        return adminTaskService.triggerCryptoFull();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerCryptoFull() {
+        return ResponseEntity.accepted().body(ApiResponse.success("Crypto full update triggered", adminTaskService.triggerCryptoFull()));
     }
 
     @PostMapping("/trigger/stock/snapshot")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerStockSnapshot() {
-        return adminTaskService.triggerStockSnapshot();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerStockSnapshot() {
+        return ResponseEntity.accepted().body(ApiResponse.success("Stock snapshot triggered", adminTaskService.triggerStockSnapshot()));
     }
 
     @PostMapping("/trigger/stock/candles")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerStockCandles() {
-        return adminTaskService.triggerStockCandles();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerStockCandles() {
+        return ResponseEntity.accepted().body(ApiResponse.success("Stock candles triggered", adminTaskService.triggerStockCandles()));
     }
 
     @PostMapping("/trigger/stock/full")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerStockFull() {
-        return adminTaskService.triggerStockFull();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerStockFull() {
+        return ResponseEntity.accepted().body(ApiResponse.success("Stock full update triggered", adminTaskService.triggerStockFull()));
     }
 
     @PostMapping("/trigger/forex/snapshot")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerForexSnapshot() {
-        return adminTaskService.triggerForexSnapshot();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerForexSnapshot() {
+        return ResponseEntity.accepted().body(ApiResponse.success("Forex snapshot triggered", adminTaskService.triggerForexSnapshot()));
     }
 
     @PostMapping("/trigger/forex/candles")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerForexCandles() {
-        return adminTaskService.triggerForexCandles();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerForexCandles() {
+        return ResponseEntity.accepted().body(ApiResponse.success("Forex candles triggered", adminTaskService.triggerForexCandles()));
     }
 
     @PostMapping("/trigger/forex/full")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerForexFull() {
-        return adminTaskService.triggerForexFull();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerForexFull() {
+        return ResponseEntity.accepted().body(ApiResponse.success("Forex full update triggered", adminTaskService.triggerForexFull()));
     }
 
     @PostMapping("/trigger/fund/snapshot")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerFundSnapshot() {
-        return adminTaskService.triggerFundSnapshot();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerFundSnapshot() {
+        return ResponseEntity.accepted().body(ApiResponse.success("Fund snapshot triggered", adminTaskService.triggerFundSnapshot()));
     }
 
     @PostMapping("/trigger/fund/candles")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerFundCandles() {
-        return adminTaskService.triggerFundCandles();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerFundCandles() {
+        return ResponseEntity.accepted().body(ApiResponse.success("Fund candles triggered", adminTaskService.triggerFundCandles()));
     }
 
     @PostMapping("/trigger/fund/full")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerFundFull() {
-        return adminTaskService.triggerFundFull();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerFundFull() {
+        return ResponseEntity.accepted().body(ApiResponse.success("Fund full update triggered", adminTaskService.triggerFundFull()));
     }
 
     @PostMapping("/trigger/bond/update")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerBondUpdate() {
-        return adminTaskService.triggerBondUpdate();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerBondUpdate() {
+        return ResponseEntity.accepted().body(ApiResponse.success("Bond update triggered", adminTaskService.triggerBondUpdate()));
     }
 
     @PostMapping("/trigger/news/update")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskTriggerResponse triggerNewsUpdate() {
-        return adminTaskService.triggerNewsUpdate();
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerNewsUpdate() {
+        return ResponseEntity.accepted().body(ApiResponse.success("News update triggered", adminTaskService.triggerNewsUpdate()));
     }
 
     @GetMapping("/tasks/status")
-    public TaskStatusResponse getTaskStatus() {
-        return adminTaskService.getTaskStatus();
+    public ResponseEntity<ApiResponse<TaskStatusResponse>> getTaskStatus() {
+        return ResponseEntity.ok(ApiResponse.success("Task status retrieved", adminTaskService.getTaskStatus()));
     }
 }

@@ -3,45 +3,57 @@ package com.finance.backend.controller;
 import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.response.BondRateResponse;
 import com.finance.backend.dto.response.BondResponse;
-import com.finance.backend.mapper.BondResponseMapper;
-import com.finance.backend.model.Bond;
-import com.finance.backend.model.BondRateHistory;
-import com.finance.backend.service.MarketCacheService;
+import com.finance.backend.dto.response.PagedResponse;
+import com.finance.backend.model.CandlePeriod;
+import com.finance.backend.service.BondQueryService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
-@Log4j2
 @RestController
 @RequestMapping("/api/v1/bonds")
 @RequiredArgsConstructor
 public class BondController {
-    private final MarketCacheService<Bond, BondRateHistory> bondCacheService;
-    private final BondResponseMapper bondResponseMapper;
+
+    private final BondQueryService bondQueryService;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<BondResponse>>> getAllBonds() {
-        List<BondResponse> bonds = bondResponseMapper.toBondResponses(bondCacheService.getAllSnapshots());
-        return ResponseEntity.ok(ApiResponse.success("Bonds retrieved successfully", bonds));
+    public ResponseEntity<ApiResponse<PagedResponse<BondResponse>>> getAllBonds(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String bondType,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) Integer size) {
+        return ResponseEntity.ok(ApiResponse.success("Bonds retrieved successfully",
+                bondQueryService.search(search, bondType, sort, direction, page, size)));
+    }
+
+    @GetMapping("/types")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getDistinctBondTypes() {
+        return ResponseEntity.ok(ApiResponse.success("Bond types retrieved",
+                bondQueryService.getTypeCounts()));
     }
 
     @GetMapping("/{seriesCode}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<BondResponse>> getBondByCode(@PathVariable String seriesCode) {
-        BondResponse bond = bondResponseMapper.toBondResponse(bondCacheService.getSnapshot(seriesCode));
-        return ResponseEntity.ok(ApiResponse.success("Bond retrieved successfully", bond));
+        return ResponseEntity.ok(ApiResponse.success("Bond retrieved successfully",
+                bondQueryService.getByCode(seriesCode)));
     }
 
     @GetMapping("/rate-history/{isinCode}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<BondRateResponse>>> getRateHistory(@PathVariable String isinCode) {
-        List<BondRateHistory> history = bondCacheService.getHistory(isinCode);
-        List<BondRateResponse> data = bondResponseMapper.toRateResponses(history);
-        return ResponseEntity.ok(ApiResponse.success("Rate history retrieved", data));
+    public ResponseEntity<ApiResponse<List<BondRateResponse>>> getRateHistory(
+            @PathVariable String isinCode,
+            @RequestParam(defaultValue = "ALL") CandlePeriod period) {
+        return ResponseEntity.ok(ApiResponse.success("Rate history retrieved",
+                bondQueryService.getRateHistory(isinCode, period)));
     }
 }

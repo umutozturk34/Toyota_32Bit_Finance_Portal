@@ -48,9 +48,9 @@ class PortfolioFacadeViewTest {
                 BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ZERO,
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
         when(summaryService.getSummary(1L, null)).thenReturn(summary);
-        when(summaryService.getPositionsPaged(eq(1L), isNull(), isNull(), isNull(), eq(0), eq(10)))
+        when(summaryService.getPositionsPaged(eq(1L), isNull(), isNull(), isNull(), isNull(), eq(0), eq(10)))
                 .thenReturn(PagedResponse.of(List.of(), 0, 10, 0));
-        when(crudService.listTransactionsPaged(eq(1L), isNull(), isNull(), isNull(), eq(0), eq(5)))
+        when(crudService.listTransactionsPaged(eq(1L), isNull(), isNull(), isNull(), isNull(), eq(0), eq(5)))
                 .thenReturn(PagedResponse.of(List.of(), 0, 5, 0));
         when(summaryService.getAllocation(1L, "assetType", null)).thenReturn(List.of());
 
@@ -77,7 +77,7 @@ class PortfolioFacadeViewTest {
         assertThat(view.positions()).isNull();
         assertThat(view.recentTransactions()).isNull();
         assertThat(view.allocation()).isNull();
-        verify(crudService, never()).listTransactionsPaged(anyLong(), any(), any(), any(), anyInt(), anyInt());
+        verify(crudService, never()).listTransactionsPaged(anyLong(), any(), any(), any(), any(), anyInt(), anyInt());
     }
 
     @Test

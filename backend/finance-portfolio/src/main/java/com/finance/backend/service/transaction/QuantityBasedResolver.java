@@ -2,11 +2,13 @@ package com.finance.backend.service.transaction;
 
 import com.finance.backend.exception.BadRequestException;
 import com.finance.backend.model.AssetType;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+@Log4j2
 @Component
 public class QuantityBasedResolver implements TransactionInputResolver {
 

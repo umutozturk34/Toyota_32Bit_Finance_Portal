@@ -52,9 +52,13 @@ public class PortfolioSummaryService {
 
     @Transactional(readOnly = true)
     public PagedResponse<PositionResponse> getPositionsPaged(Long portfolioId, String search,
-                                                               String sortBy, String direction,
+                                                               String assetType, String sortBy, String direction,
                                                                int page, int size) {
         List<PositionResponse> all = getPositions(portfolioId);
+
+        if (assetType != null && !assetType.isBlank()) {
+            all = all.stream().filter(r -> assetType.equalsIgnoreCase(r.assetType())).toList();
+        }
 
         if (search != null && !search.isBlank()) {
             String lower = search.toLowerCase();
@@ -141,8 +145,12 @@ public class PortfolioSummaryService {
                 .findByPortfolioIdAndQuantityGreaterThan(portfolioId, BigDecimal.ZERO);
 
         if (assetTypeFilter != null && !assetTypeFilter.isBlank()) {
-            AssetType filterType = AssetType.valueOf(assetTypeFilter);
-            positions = positions.stream().filter(p -> p.getAssetType() == filterType).toList();
+            try {
+                AssetType filterType = AssetType.valueOf(assetTypeFilter);
+                positions = positions.stream().filter(p -> p.getAssetType() == filterType).toList();
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException("Invalid asset type: " + assetTypeFilter);
+            }
         }
 
         UserWallet wallet = findWallet(portfolioId);

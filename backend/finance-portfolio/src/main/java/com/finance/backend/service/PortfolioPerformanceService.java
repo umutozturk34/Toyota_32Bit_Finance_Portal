@@ -4,6 +4,7 @@ import com.finance.backend.dto.response.AssetSeriesPoint;
 import com.finance.backend.dto.response.PerformanceAssetDetail;
 import com.finance.backend.dto.response.PerformanceEvent;
 import com.finance.backend.dto.response.PerformancePoint;
+import com.finance.backend.exception.BadRequestException;
 import com.finance.backend.mapper.PortfolioSnapshotMapper;
 import com.finance.backend.model.AssetType;
 import com.finance.backend.model.PortfolioAssetDailySnapshot;
@@ -13,6 +14,7 @@ import com.finance.backend.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.backend.repository.PortfolioDailySnapshotRepository;
 import com.finance.backend.repository.PortfolioTransactionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class PortfolioPerformanceService {
@@ -37,7 +40,11 @@ public class PortfolioPerformanceService {
         LocalDateTime start = resolveStartDateTime(end, range);
 
         if (assetType != null && !assetType.isBlank()) {
-            return getAssetTypePerformance(portfolioId, AssetType.valueOf(assetType), start, end);
+            try {
+                return getAssetTypePerformance(portfolioId, AssetType.valueOf(assetType), start, end);
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException("Invalid asset type: " + assetType);
+            }
         }
 
         return getAggregatePerformance(portfolioId, start, end);
@@ -49,9 +56,16 @@ public class PortfolioPerformanceService {
         LocalDateTime end = LocalDateTime.now();
         LocalDateTime start = resolveStartDateTime(end, range);
 
+        AssetType type;
+        try {
+            type = AssetType.valueOf(assetType);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid asset type: " + assetType);
+        }
+
         List<PortfolioAssetDailySnapshot> snapshots = assetSnapshotRepository
                 .findByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtBetweenOrderByCreatedAtAsc(
-                        portfolioId, AssetType.valueOf(assetType), assetCode, start, end);
+                        portfolioId, type, assetCode, start, end);
 
         return snapshotMapper.toAssetSeriesPoints(snapshots);
     }

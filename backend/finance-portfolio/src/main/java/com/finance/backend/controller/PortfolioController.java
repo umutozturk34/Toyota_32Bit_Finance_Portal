@@ -64,36 +64,47 @@ public class PortfolioController {
     public ResponseEntity<ApiResponse<PagedResponse<TransactionResponse>>> listTransactions(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
+            
             @RequestParam(required = false) String search,
+            
+            @RequestParam(required = false) String assetType,
+            
             @RequestParam(required = false) String sort,
+            
             @RequestParam(required = false) String direction,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) Integer size) {
         int resolvedSize = resolvePageSize(size, appProperties.getPagination().getPortfolio().getTransactionsDefaultSize());
         return ResponseEntity.ok(ApiResponse.success("Transactions retrieved",
                 portfolioFacade.listTransactionsPaged(jwt.getSubject(), portfolioId,
-                        search, sort, direction, page, resolvedSize)));
+                        search, assetType, sort, direction, page, resolvedSize)));
     }
 
     @GetMapping("/{portfolioId}/positions")
     public ResponseEntity<ApiResponse<PagedResponse<PositionResponse>>> getPositions(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
+            
             @RequestParam(required = false) String search,
+            
+            @RequestParam(required = false) String assetType,
+            
             @RequestParam(required = false) String sort,
+            
             @RequestParam(required = false) String direction,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) Integer size) {
         int resolvedSize = resolvePageSize(size, appProperties.getPagination().getPortfolio().getPositionsDefaultSize());
         return ResponseEntity.ok(ApiResponse.success("Positions retrieved",
                 portfolioFacade.getPositionsPaged(jwt.getSubject(), portfolioId,
-                        search, sort, direction, page, resolvedSize)));
+                        search, assetType, sort, direction, page, resolvedSize)));
     }
 
     @GetMapping("/{portfolioId}/summary")
     public ResponseEntity<ApiResponse<PortfolioSummaryResponse>> getSummary(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
+            
             @RequestParam(required = false) String assetType) {
         return ResponseEntity.ok(ApiResponse.success("Summary retrieved",
                 portfolioFacade.getSummary(jwt.getSubject(), portfolioId, assetType)));
@@ -103,7 +114,9 @@ public class PortfolioController {
     public ResponseEntity<ApiResponse<List<AllocationItem>>> getAllocation(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
+            
             @RequestParam(defaultValue = "assetType") String mode,
+            
             @RequestParam(required = false) String assetType) {
         return ResponseEntity.ok(ApiResponse.success("Allocation retrieved",
                 portfolioFacade.getAllocation(jwt.getSubject(), portfolioId, mode, assetType)));
@@ -113,6 +126,7 @@ public class PortfolioController {
     public ResponseEntity<ApiResponse<PortfolioViewResponse>> getPortfolioView(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
+            
             @RequestParam(defaultValue = "summary,positions,transactions,allocation") String include) {
         Set<String> includes = Arrays.stream(include.split(","))
                 .map(String::trim)
@@ -125,9 +139,13 @@ public class PortfolioController {
     public ResponseEntity<ApiResponse<?>> getChart(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
+            
             @RequestParam String type,
+            
             @RequestParam(defaultValue = "1M") String range,
+            
             @RequestParam(required = false) String assetType,
+            
             @RequestParam(required = false) String assetCode) {
         return ResponseEntity.ok(ApiResponse.success("Chart data retrieved",
                 portfolioFacade.getChart(jwt.getSubject(), portfolioId, type, range, assetType, assetCode)));

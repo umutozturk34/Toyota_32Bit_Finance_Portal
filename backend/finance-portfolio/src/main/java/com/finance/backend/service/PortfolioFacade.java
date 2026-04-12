@@ -47,10 +47,10 @@ public class PortfolioFacade {
     }
 
     public PagedResponse<TransactionResponse> listTransactionsPaged(String userSub, Long portfolioId,
-                                                                      String search, String sortBy,
+                                                                      String search, String assetType, String sortBy,
                                                                       String direction, int page, int size) {
         validateOwner(userSub, portfolioId);
-        return crudService.listTransactionsPaged(portfolioId, search, sortBy, direction, page, size);
+        return crudService.listTransactionsPaged(portfolioId, search, assetType, sortBy, direction, page, size);
     }
 
     public List<PositionResponse> getPositions(String userSub, Long portfolioId) {
@@ -59,10 +59,10 @@ public class PortfolioFacade {
     }
 
     public PagedResponse<PositionResponse> getPositionsPaged(String userSub, Long portfolioId,
-                                                               String search, String sortBy,
+                                                               String search, String assetType, String sortBy,
                                                                String direction, int page, int size) {
         validateOwner(userSub, portfolioId);
-        return summaryService.getPositionsPaged(portfolioId, search, sortBy, direction, page, size);
+        return summaryService.getPositionsPaged(portfolioId, search, assetType, sortBy, direction, page, size);
     }
 
     public PortfolioSummaryResponse getSummary(String userSub, Long portfolioId, String assetType) {
@@ -94,10 +94,10 @@ public class PortfolioFacade {
                 ? summaryService.getSummary(portfolioId, null) : null;
 
         PagedResponse<PositionResponse> positions = includes.contains("positions")
-                ? summaryService.getPositionsPaged(portfolioId, null, null, null, 0, 10) : null;
+                ? summaryService.getPositionsPaged(portfolioId, null, null, null, null, 0, 10) : null;
 
         PagedResponse<TransactionResponse> transactionsPaged = includes.contains("transactions")
-                ? crudService.listTransactionsPaged(portfolioId, null, null, null, 0, 5) : null;
+                ? crudService.listTransactionsPaged(portfolioId, null, null, null, null, 0, 5) : null;
         List<TransactionResponse> transactions = transactionsPaged != null ? transactionsPaged.content() : null;
 
         List<AllocationItem> allocation = includes.contains("allocation")

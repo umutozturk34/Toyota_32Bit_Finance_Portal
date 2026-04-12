@@ -1,9 +1,11 @@
 package com.finance.backend.service;
 
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.model.*;
 import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.repository.UserWalletRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -11,6 +13,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class SnapshotCalculationService {
@@ -20,11 +23,12 @@ public class SnapshotCalculationService {
     private final AssetPricingPort pricingPort;
     private final PortfolioPositionRepository positionRepository;
     private final UserWalletRepository walletRepository;
+    private final AppProperties appProperties;
 
     public PortfolioAssetDailySnapshot buildAssetSnapshot(Long portfolioId, PortfolioPosition pos,
                                                               LocalDateTime batchTimestamp) {
         BigDecimal price = pricingPort.getPriceTry(pos.getAssetType().name(), pos.getAssetCode());
-        BigDecimal unitPrice = price != null ? price.setScale(SCALE, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+        BigDecimal unitPrice = price != null ? price : BigDecimal.ZERO;
         BigDecimal marketValue = unitPrice.multiply(pos.getQuantity()).setScale(SCALE, RoundingMode.HALF_UP);
         BigDecimal pnl = marketValue.subtract(pos.getTotalCostTry());
 
@@ -53,14 +57,16 @@ public class SnapshotCalculationService {
 
         for (PortfolioPosition pos : allPositions) {
             BigDecimal price = pricingPort.getPriceTry(pos.getAssetType().name(), pos.getAssetCode());
-            BigDecimal unitPrice = price != null ? price.setScale(SCALE, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+            BigDecimal unitPrice = price != null ? price : BigDecimal.ZERO;
             BigDecimal marketValue = unitPrice.multiply(pos.getQuantity()).setScale(SCALE, RoundingMode.HALF_UP);
 
             totalMarketValue = totalMarketValue.add(marketValue);
             totalCost = totalCost.add(pos.getTotalCostTry());
         }
 
-        BigDecimal cashBalance = walletRepository.findByPortfolioIdAndCurrency(pid, "TRY")
+        BigDecimal cashBalance = walletRepository.findByPortfolioIdAndCurrency(
+                        pid,
+                        appProperties.getPortfolio().getDefaultCurrency())
                 .map(UserWallet::getBalance)
                 .orElse(BigDecimal.ZERO);
 

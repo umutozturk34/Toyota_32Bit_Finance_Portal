@@ -1,5 +1,6 @@
 package com.finance.backend.service;
 
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.request.TransactionRequest;
 import com.finance.backend.dto.response.TransactionResponse;
 import com.finance.backend.exception.BadRequestException;
@@ -37,34 +38,48 @@ public class PortfolioTransactionService {
     private final PortfolioResponseMapper mapper;
     private final PortfolioSnapshotService snapshotService;
     private final TransactionInputResolverFactory resolverFactory;
+    private final AppProperties appProperties;
 
     @Transactional
     public TransactionResponse execute(String userSub, Long portfolioId, TransactionRequest request) {
         Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
                 .orElseThrow(() -> new ResourceNotFoundException("Portfolio not found"));
 
-        AssetType assetType = AssetType.valueOf(request.assetType());
-        TransactionSide side = TransactionSide.valueOf(request.side());
+        AssetType assetType;
+        TransactionSide side;
+        try {
+            assetType = AssetType.valueOf(request.assetType());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid asset type: " + request.assetType());
+        }
+        try {
+            side = TransactionSide.valueOf(request.side());
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid transaction side: " + request.side());
+        }
         BigDecimal fee = request.feeTry() != null ? request.feeTry().setScale(PRICE_SCALE, RoundingMode.HALF_UP) : BigDecimal.ZERO;
 
-        BigDecimal unitPrice = pricingPort.getPriceTry(request.assetType(), request.assetCode());
+        BigDecimal unitPrice = side == TransactionSide.SELL
+                ? pricingPort.getSellPriceTry(request.assetType(), request.assetCode())
+                : pricingPort.getPriceTry(request.assetType(), request.assetCode());
         if (unitPrice == null) {
             throw new BadRequestException("Price not available for " + request.assetType() + ":" + request.assetCode());
         }
-        unitPrice = unitPrice.setScale(PRICE_SCALE, RoundingMode.HALF_UP);
 
         TransactionInputResolver resolver = resolverFactory.getResolver(assetType);
         ResolvedInput resolved = resolver.resolve(request.quantity(), request.amountTry(), unitPrice);
         BigDecimal quantity = resolved.quantity();
         BigDecimal totalCost = resolved.totalCostTry();
 
-        UserWallet wallet = walletRepository.findByPortfolioIdAndCurrency(portfolioId, "TRY")
-                .orElseThrow(() -> new ResourceNotFoundException("TRY wallet not found"));
+        String currency = appProperties.getPortfolio().getDefaultCurrency();
+        UserWallet wallet = walletRepository.findByPortfolioIdAndCurrency(portfolioId, currency)
+                .orElseThrow(() -> new ResourceNotFoundException(currency + " wallet not found"));
 
+        BigDecimal realizedPnl = BigDecimal.ZERO;
         if (side == TransactionSide.BUY) {
             executeBuy(portfolio, wallet, assetType, request.assetCode(), quantity, totalCost, fee);
         } else {
-            executeSell(portfolio, wallet, assetType, request.assetCode(), quantity, totalCost, fee);
+            realizedPnl = executeSell(portfolio, wallet, assetType, request.assetCode(), quantity, totalCost, fee);
         }
 
         PortfolioTransaction txn = PortfolioTransaction.builder()
@@ -76,11 +91,13 @@ public class PortfolioTransactionService {
                 .unitPriceTry(unitPrice)
                 .totalCostTry(totalCost)
                 .feeTry(fee)
+                .realizedPnlTry(realizedPnl)
                 .build();
         txn = transactionRepository.save(txn);
 
-        log.info("{} {} {} @ {} TRY (fee={}) for portfolio {}",
-                side, quantity, request.assetCode(), unitPrice, fee, portfolioId);
+        log.info("{} {} {} @ {} {} (fee={}) for portfolio {}",
+                side, quantity, request.assetCode(), unitPrice,
+                appProperties.getPortfolio().getDefaultCurrency(), fee, portfolioId);
 
         final Long pid = portfolioId;
         final AssetType snapshotType = assetType;
@@ -104,7 +121,9 @@ public class PortfolioTransactionService {
                             BigDecimal quantity, BigDecimal totalCost, BigDecimal fee) {
         BigDecimal totalDebit = totalCost.add(fee);
         if (!wallet.hasSufficientBalance(totalDebit)) {
-            throw new BusinessException("Alım gücü yetersiz. Gereken: " + totalDebit + " TRY, mevcut: " + wallet.getAvailableBalance());
+            String currency = appProperties.getPortfolio().getDefaultCurrency();
+            throw new BusinessException("Alım gücü yetersiz. Gereken: " + totalDebit + " " + currency
+                    + ", mevcut: " + wallet.getAvailableBalance());
         }
 
         wallet.debit(totalDebit);
@@ -130,9 +149,9 @@ public class PortfolioTransactionService {
         positionRepository.save(position);
     }
 
-    private void executeSell(Portfolio portfolio, UserWallet wallet,
-                             AssetType assetType, String assetCode,
-                             BigDecimal quantity, BigDecimal totalCost, BigDecimal fee) {
+    private BigDecimal executeSell(Portfolio portfolio, UserWallet wallet,
+                                   AssetType assetType, String assetCode,
+                                   BigDecimal quantity, BigDecimal totalCost, BigDecimal fee) {
         PortfolioPosition position = positionRepository
                 .findByPortfolioIdAndAssetTypeAndAssetCode(portfolio.getId(), assetType, assetCode)
                 .orElseThrow(() -> new ResourceNotFoundException("No position found for " + assetCode));
@@ -157,6 +176,8 @@ public class PortfolioTransactionService {
 
         position.removeQuantity(quantity);
         positionRepository.save(position);
+
+        return realizedPnl;
     }
 
     private void recordLedger(UserWallet wallet, LedgerType type, BigDecimal amount, String description) {

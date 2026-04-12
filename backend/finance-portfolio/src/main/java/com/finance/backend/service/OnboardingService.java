@@ -1,5 +1,6 @@
 package com.finance.backend.service;
 
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.exception.BusinessException;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.model.*;
@@ -16,9 +17,7 @@ import java.math.BigDecimal;
 @Service
 @RequiredArgsConstructor
 public class OnboardingService {
-
-    private static final BigDecimal INITIAL_BALANCE = new BigDecimal("1000000.0000");
-
+    private final AppProperties appProperties;
     private final PortfolioBootstrapService bootstrapService;
     private final UserWalletRepository walletRepository;
     private final WalletLedgerRepository ledgerRepository;
@@ -26,27 +25,29 @@ public class OnboardingService {
     @Transactional
     public void initialize(String userSub) {
         Portfolio portfolio = bootstrapService.ensurePortfolio(userSub);
+        BigDecimal initialBalance = appProperties.getPortfolio().getInitialBalance();
+        String currency = appProperties.getPortfolio().getDefaultCurrency();
 
-        UserWallet wallet = walletRepository.findByPortfolioIdAndCurrency(portfolio.getId(), "TRY")
-                .orElseThrow(() -> new ResourceNotFoundException("TRY wallet not found for portfolio " + portfolio.getId()));
+        UserWallet wallet = walletRepository.findByPortfolioIdAndCurrency(portfolio.getId(), currency)
+                .orElseThrow(() -> new ResourceNotFoundException(currency + " wallet not found for portfolio " + portfolio.getId()));
 
         if (ledgerRepository.existsByWalletIdAndLedgerType(wallet.getId(), LedgerType.INITIAL_DEPOSIT)) {
             throw new BusinessException("Initial deposit already applied for this portfolio");
         }
 
-        wallet.setBalance(INITIAL_BALANCE);
-        wallet.setAvailableBalance(INITIAL_BALANCE);
+        wallet.setBalance(initialBalance);
+        wallet.setAvailableBalance(initialBalance);
         walletRepository.save(wallet);
 
         WalletLedger ledger = WalletLedger.builder()
                 .wallet(wallet)
                 .ledgerType(LedgerType.INITIAL_DEPOSIT)
-                .amount(INITIAL_BALANCE)
-                .balanceAfter(INITIAL_BALANCE)
+                .amount(initialBalance)
+                .balanceAfter(initialBalance)
                 .description("Demo initial deposit")
                 .build();
         ledgerRepository.save(ledger);
 
-        log.info("Onboarding completed for user {}: {} TRY deposited", userSub, INITIAL_BALANCE);
+        log.info("Onboarding completed for user {}: {} {} deposited", userSub, initialBalance, currency);
     }
 }

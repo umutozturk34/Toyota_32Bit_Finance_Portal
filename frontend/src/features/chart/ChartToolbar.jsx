@@ -75,8 +75,10 @@ const ChartToolbar = ({
             <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-fg tracking-wide">{symbol?.toUpperCase()}</span>
                 {compareSymbol && (
-                    <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                    <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
+                        <span className="w-2 h-0.5 rounded bg-[#ef4444]" />
                         vs {compareSymbol.toUpperCase()}
+                        <span className="text-[10px] font-mono opacity-70">(%)</span>
                     </span>
                 )}
             </div>
@@ -94,12 +96,12 @@ const ChartToolbar = ({
                     <span style={{ opacity: 0.7 }}>({trend.change > 0 ? '+' : ''}{trend.change.toFixed(2)}%)</span>
                 </div>
             )}
-            {crosshairData && (
+            {crosshairData && crosshairData.open != null && (
                 <div className="flex items-center gap-3 text-[11px] font-mono">
-                    <span className="text-fg-muted">O <span className="text-fg">{crosshairData.open.toFixed(2)}</span></span>
-                    <span className="text-fg-muted">H <span className="text-[#10b981]">{crosshairData.high.toFixed(2)}</span></span>
-                    <span className="text-fg-muted">L <span className="text-[#ef4444]">{crosshairData.low.toFixed(2)}</span></span>
-                    <span className="text-fg-muted">C <span style={{ color: crosshairData.close >= crosshairData.open ? '#10b981' : '#ef4444' }}>{crosshairData.close.toFixed(2)}</span></span>
+                    <span className="text-fg-muted">O <span className="text-fg">{Number(crosshairData.open).toFixed(2)}</span></span>
+                    <span className="text-fg-muted">H <span className="text-[#10b981]">{Number(crosshairData.high).toFixed(2)}</span></span>
+                    <span className="text-fg-muted">L <span className="text-[#ef4444]">{Number(crosshairData.low).toFixed(2)}</span></span>
+                    <span className="text-fg-muted">C <span style={{ color: Number(crosshairData.close) >= Number(crosshairData.open) ? '#10b981' : '#ef4444' }}>{Number(crosshairData.close).toFixed(2)}</span></span>
                 </div>
             )}
             <div className="flex items-center gap-2.5 ml-auto">

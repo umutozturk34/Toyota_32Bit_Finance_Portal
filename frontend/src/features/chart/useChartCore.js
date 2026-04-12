@@ -60,6 +60,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
 
     useEffect(() => {
         if (!chartContainerRef.current || !data?.candles?.length) return;
+        const scrollY = window.scrollY;
         if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
         indicatorSeriesRef.current = {};
         overlayMetaRef.current.clear();
@@ -70,10 +71,16 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             height: 500,
         });
         chartRef.current = chart;
-        const candleData = data.candles.map(c => ({
-            time: toChartTime(c.candleDate || c.date),
-            open: c.open, high: c.high, low: c.low, close: c.close,
-        }));
+        const candleData = data.candles.map(c => {
+            const close = Number(c.close ?? c.price ?? 0);
+            return {
+                time: toChartTime(c.candleDate || c.date),
+                open: Number(c.open ?? close),
+                high: Number(c.high ?? close),
+                low: Number(c.low ?? close),
+                close,
+            };
+        });
         candleDataRef.current = candleData;
         if (chartType === 'candle') {
             const candleSeries = chart.addSeries(CandlestickSeries, {
@@ -123,6 +130,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 color: c.close >= c.open ? 'rgba(38, 166, 154, 0.7)' : 'rgba(239, 83, 80, 0.7)',
             }));
         chart.timeScale().fitContent();
+        requestAnimationFrame(() => window.scrollTo(0, scrollY));
         setTrend(analyzeTrend(candleData));
         const handleCrosshairMove = (param) => {
             if (renderDrawingsRef.current) renderDrawingsRef.current();
@@ -204,28 +212,89 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
 
 
     const compareSeriesRef = useRef(null);
+    const mainPercentSeriesRef = useRef(null);
+    const zeroLineSeriesRef = useRef(null);
 
     useEffect(() => {
         const chart = chartRef.current;
         if (!chart) return;
+
         if (compareSeriesRef.current) {
             try { chart.removeSeries(compareSeriesRef.current); } catch {}
             compareSeriesRef.current = null;
         }
-        if (!compareData?.candles?.length || !compareSymbol) return;
-        const candleData = candleDataRef.current;
-        let compareCandles = compareData.candles.map(c => ({
-            time: toChartTime(c.candleDate || c.date),
-            value: c.close,
-        }));
-        if (compareCandles.length === 1 && candleData.length > 1) {
-            const price = compareCandles[0].value;
-            compareCandles = [
-                { time: candleData[0].time, value: price },
-                { time: candleData[candleData.length - 1].time, value: price },
-            ];
+        if (mainPercentSeriesRef.current) {
+            try { chart.removeSeries(mainPercentSeriesRef.current); } catch {}
+            mainPercentSeriesRef.current = null;
         }
-        const series = chart.addSeries(LineSeries, {
+        if (zeroLineSeriesRef.current) {
+            try { chart.removeSeries(zeroLineSeriesRef.current); } catch {}
+            zeroLineSeriesRef.current = null;
+        }
+
+        const mainSeries = candleSeriesRef.current;
+        if (!compareData?.candles?.length || !compareSymbol) {
+            if (mainSeries) {
+                try { mainSeries.applyOptions({ visible: true }); } catch {}
+            }
+            try { chart.priceScale('left').applyOptions({ visible: false }); } catch {}
+            try {
+                chart.priceScale('right').applyOptions({
+                    mode: 0,
+                });
+            } catch {}
+            return;
+        }
+
+        const candleData = candleDataRef.current;
+        if (!candleData.length) return;
+
+        if (mainSeries) {
+            try { mainSeries.applyOptions({ visible: false }); } catch {}
+        }
+
+        const toPercent = (points, baseValue) => {
+            if (!baseValue || baseValue === 0) return points;
+            return points.map(p => ({
+                time: p.time,
+                value: ((p.value - baseValue) / baseValue) * 100,
+            }));
+        };
+
+        const mainPoints = candleData.map(c => ({ time: c.time, value: c.close }));
+        const mainBase = mainPoints[0]?.value || 1;
+
+        const comparePoints = compareData.candles.map(c => ({
+            time: toChartTime(c.candleDate || c.date),
+            value: Number(c.close ?? c.price ?? 0),
+        }));
+        const compareBase = comparePoints[0]?.value || 1;
+
+        const mainPercentData = toPercent(mainPoints, mainBase);
+        const comparePercentData = toPercent(comparePoints, compareBase);
+
+        const fmtPercent = (p) => (p >= 0 ? '+' : '') + p.toFixed(2) + '%';
+        const percentFormat = { type: 'custom', minMove: 0.01, formatter: fmtPercent };
+
+        const mainPercentSeries = chart.addSeries(LineSeries, {
+            color: '#5E6AD2',
+            lineWidth: 2.5,
+            crosshairMarkerVisible: true,
+            crosshairMarkerRadius: 4,
+            crosshairMarkerBorderColor: '#5E6AD2',
+            crosshairMarkerBackgroundColor: isDark ? '#050506' : '#ffffff',
+            lastValueVisible: true,
+            priceLineVisible: true,
+            priceLineColor: '#5E6AD230',
+            priceLineStyle: 2,
+            title: symbol?.toUpperCase() || '',
+            priceScaleId: 'right',
+            priceFormat: percentFormat,
+        });
+        mainPercentSeries.setData(mainPercentData);
+        mainPercentSeriesRef.current = mainPercentSeries;
+
+        const compareSeries = chart.addSeries(LineSeries, {
             color: '#ef4444',
             lineWidth: 2,
             crosshairMarkerVisible: true,
@@ -234,24 +303,57 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             crosshairMarkerBackgroundColor: isDark ? '#050506' : '#ffffff',
             lastValueVisible: true,
             priceLineVisible: true,
+            priceLineColor: '#ef444430',
+            priceLineStyle: 2,
             title: compareSymbol.toUpperCase(),
-            priceScaleId: 'left',
+            priceScaleId: 'right',
+            priceFormat: percentFormat,
         });
-        series.setData(compareCandles);
-        chart.priceScale('left').applyOptions({
+        compareSeries.setData(comparePercentData);
+        compareSeriesRef.current = compareSeries;
+
+        const zeroLine = chart.addSeries(LineSeries, {
+            color: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+            lineWidth: 1,
+            lineStyle: 2,
+            crosshairMarkerVisible: false,
+            lastValueVisible: false,
+            priceLineVisible: false,
+            priceScaleId: 'right',
+        });
+        const firstTime = mainPercentData[0]?.time;
+        const lastTime = mainPercentData[mainPercentData.length - 1]?.time;
+        if (firstTime && lastTime) {
+            zeroLine.setData([{ time: firstTime, value: 0 }, { time: lastTime, value: 0 }]);
+        }
+        zeroLineSeriesRef.current = zeroLine;
+
+        chart.priceScale('right').applyOptions({
             visible: true,
-            scaleMargins: { top: 0.05, bottom: 0.05 },
+            scaleMargins: { top: 0.08, bottom: 0.08 },
             autoScale: true,
         });
-        compareSeriesRef.current = series;
+
+        chart.timeScale().fitContent();
+
         return () => {
             if (compareSeriesRef.current && chartRef.current) {
                 try { chartRef.current.removeSeries(compareSeriesRef.current); } catch {}
                 compareSeriesRef.current = null;
-                try { chartRef.current.priceScale('left').applyOptions({ visible: false }); } catch {}
+            }
+            if (mainPercentSeriesRef.current && chartRef.current) {
+                try { chartRef.current.removeSeries(mainPercentSeriesRef.current); } catch {}
+                mainPercentSeriesRef.current = null;
+            }
+            if (zeroLineSeriesRef.current && chartRef.current) {
+                try { chartRef.current.removeSeries(zeroLineSeriesRef.current); } catch {}
+                zeroLineSeriesRef.current = null;
+            }
+            if (mainSeries) {
+                try { mainSeries.applyOptions({ visible: true }); } catch {}
             }
         };
-    }, [compareData, compareSymbol, data, isDark]);
+    }, [compareData, compareSymbol, data, isDark, symbol, chartType]);
 
     useEffect(() => {
         const chart = chartRef.current;

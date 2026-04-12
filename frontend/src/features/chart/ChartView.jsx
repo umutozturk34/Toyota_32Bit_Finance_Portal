@@ -1,45 +1,41 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LineChart, ArrowLeft, Clock, BarChart2, Loader2,
-  AlertTriangle, TrendingUp, RefreshCw, Activity, X
+  LineChart, ArrowLeft, BarChart2, Loader2,
+  AlertTriangle, TrendingUp, RefreshCw, Activity
 } from 'lucide-react';
 import LightweightChart from './LightweightChart';
+import CompareBar from '../../shared/components/CompareBar';
 import { getCryptoHistory, stockService, forexService, fundService, trackedAssetService } from '../../shared/services/marketService';
 import { formatBistSymbol } from '../../shared/constants/stocks';
 import { getForexPairs } from '../../shared/constants/forex';
+
+
 const ASSET_ICONS = {
   BIST: <BarChart2 className="w-4 h-4" />,
-  US: <TrendingUp className="w-4 h-4" />,
   CRYPTO: <Activity className="w-4 h-4" />,
   FOREX: <RefreshCw className="w-4 h-4" />,
   FUND: <LineChart className="w-4 h-4" />,
-  METAL: <LineChart className="w-4 h-4" />,
 };
 const ASSET_LABELS = {
   BIST: 'BIST',
-  US: 'US',
-  CRYPTO: 'Crypto',
-  FOREX: 'Forex',
+  CRYPTO: 'Kripto',
+  FOREX: 'Döviz',
   FUND: 'Fon',
-  METAL: 'Metal',
 };
 const ROUTE_TO_ASSET_TYPE = {
   bist: 'BIST',
-  us: 'US',
   crypto: 'CRYPTO',
   forex: 'FOREX',
   fund: 'FUND',
-  metal: 'METAL',
 };
 const ASSET_TYPE_TO_ROUTE = {
   BIST: 'bist',
-  US: 'us',
   CRYPTO: 'crypto',
   FOREX: 'forex',
   FUND: 'fund',
-  METAL: 'metal',
 };
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -61,15 +57,12 @@ const ChartView = () => {
   const routeType = normalizedRouteAssetType ? ROUTE_TO_ASSET_TYPE[normalizedRouteAssetType] : null;
   const routeSymbolValue = routeSymbol ? decodeURIComponent(routeSymbol) : null;
   const isDetailRoute = Boolean(routeType && routeSymbolValue);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [chartData, setChartData] = useState(null);
-  const [filteredData, setFilteredData] = useState(null);
   const [assetType, setAssetType] = useState(() => {
     if (routeType) return routeType;
     const params = new URLSearchParams(window.location.search);
     const urlType = params.get('type');
-    if (urlType && ['BIST', 'US', 'CRYPTO', 'FOREX', 'FUND', 'METAL'].includes(urlType)) return urlType;
+    if (urlType && ['BIST', 'CRYPTO', 'FOREX', 'FUND'].includes(urlType)) return urlType;
     return 'CRYPTO';
   });
   const [symbol, setSymbol] = useState(() => {
@@ -83,192 +76,95 @@ const ChartView = () => {
     if (urlType === 'BIST' && sym.endsWith('.IS')) sym = sym.replace('.IS', '');
     return sym;
   });
-  const [timeRange, setTimeRange] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    const r = params.get('range');
-    return (r && ['1M', '3M', '1Y', '5Y'].includes(r)) ? r : '1Y';
-  });
+  const [timeRange, setTimeRange] = useState('MAX');
   const [customSymbol, setCustomSymbol] = useState('');
-  const [retryKey, setRetryKey] = useState(0);
-  const [fundList, setFundList] = useState([]);
-  const [compareSymbol, setCompareSymbol] = useState(null);
-  const [compareData, setCompareData] = useState(null);
-  const [trackedUniverse, setTrackedUniverse] = useState({
-    CRYPTO: [],
-    BIST: [],
-    FUND: [],
+  const [compareAsset, setCompareAsset] = useState(null);
+
+  const { data: trackedCrypto = [] } = useQuery({
+    queryKey: ['trackedAssets', 'CRYPTO'],
+    queryFn: () => trackedAssetService.getByType('CRYPTO'),
+    staleTime: 30_000,
   });
-
-  useEffect(() => {
-    let cancelled = false;
-    const loadTrackedUniverse = async () => {
-      try {
-        const [cryptos, stocks, funds] = await Promise.all([
-          trackedAssetService.getByType('CRYPTO'),
-          trackedAssetService.getByType('STOCK'),
-          trackedAssetService.getByType('FUND'),
-        ]);
-        if (!cancelled) {
-          setTrackedUniverse({
-            CRYPTO: cryptos || [],
-            BIST: stocks || [],
-            FUND: funds || [],
-          });
-        }
-      } catch {
-        if (!cancelled) {
-          setTrackedUniverse({ CRYPTO: [], BIST: [], FUND: [] });
-        }
-      }
+  const { data: trackedStocks = [] } = useQuery({
+    queryKey: ['trackedAssets', 'STOCK'],
+    queryFn: () => trackedAssetService.getByType('STOCK'),
+    staleTime: 30_000,
+  });
+  const { data: trackedFunds = [] } = useQuery({
+    queryKey: ['trackedAssets', 'FUND'],
+    queryFn: () => trackedAssetService.getByType('FUND'),
+    staleTime: 30_000,
+  });
+  const trackedUniverse = useMemo(() => {
+    const universe = {
+      CRYPTO: [...(trackedCrypto || [])],
+      BIST: [...(trackedStocks || [])],
+      FUND: [...(trackedFunds || [])],
     };
+    return universe;
+  }, [trackedCrypto, trackedStocks, trackedFunds]);
 
-    loadTrackedUniverse();
-    const intervalId = setInterval(loadTrackedUniverse, 30000);
-    return () => {
-      cancelled = true;
-      clearInterval(intervalId);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (assetType === 'FUND' && fundList.length === 0) {
-      fundService.getAllFunds()
-        .then(data => setFundList(data || []))
-        .catch(() => setFundList([]));
-    }
-  }, [assetType]);
+  const { data: fundListRaw = [] } = useQuery({
+    queryKey: ['fundList'],
+    queryFn: fundService.getAllFunds,
+    enabled: assetType === 'FUND',
+    staleTime: 60_000,
+  });
+  const fundList = fundListRaw || [];
 
   useEffect(() => {
-    setCompareSymbol(null);
-    setCompareData(null);
+    setCompareAsset(null);
   }, [assetType, symbol]);
 
-  useEffect(() => {
-    if (!symbol) return;
+  const singleAssetType = { CRYPTO: 'CRYPTO', BIST: 'STOCK', FUND: 'FUND' }[assetType];
+  const singleCode = symbol && singleAssetType
+    ? (assetType === 'BIST' ? formatBistSymbol(symbol) : symbol)
+    : null;
+  const singleKey = { CRYPTO: 'CRYPTO', BIST: 'BIST', FUND: 'FUND' }[assetType];
+  const alreadyTracked = singleCode && singleKey
+    ? (trackedUniverse[singleKey] || []).some(item => item.assetCode === singleCode)
+    : true;
 
-    const typeMap = {
-      CRYPTO: 'CRYPTO',
-      BIST: 'STOCK',
-      FUND: 'FUND',
-    };
-    const listMap = {
-      CRYPTO: 'CRYPTO',
-      BIST: 'BIST',
-      FUND: 'FUND',
-    };
+  const { data: singleTracked } = useQuery({
+    queryKey: ['trackedAsset', singleAssetType, singleCode],
+    queryFn: () => trackedAssetService.getOne(singleAssetType, singleCode),
+    enabled: !!singleCode && !alreadyTracked,
+    staleTime: 60_000,
+  });
 
-    const backendType = typeMap[assetType];
-    const listKey = listMap[assetType];
-    if (!backendType || !listKey) return;
+  const { data: compareRaw } = useQuery({
+    queryKey: ['chartCompare', compareAsset?.type, compareAsset?.code, timeRange],
+    queryFn: () => {
+      const code = compareAsset.code;
+      const type = compareAsset.type;
+      if (type === 'CRYPTO') return getCryptoHistory(code, timeRange);
+      if (type === 'STOCK') return stockService.getStockHistory(code.endsWith('.IS') ? code : `${code}.IS`, timeRange);
+      if (type === 'FOREX') return forexService.getForexHistory(code, timeRange);
+      if (type === 'FUND') return fundService.getFundHistory(code, timeRange);
+      return Promise.resolve([]);
+    },
+    enabled: !!compareAsset,
+    placeholderData: (prev) => prev,
+  });
 
-    const normalizedCode = assetType === 'BIST'
-      ? formatBistSymbol(symbol)
-      : symbol;
+  const compareData = useMemo(() => {
+    if (!compareRaw?.length) return null;
+    return { candles: compareRaw };
+  }, [compareRaw]);
 
-    const alreadyExists = (trackedUniverse[listKey] || []).some(item => item.assetCode === normalizedCode);
-    if (alreadyExists) return;
-
-    let cancelled = false;
-    const loadSingleTracked = async () => {
-      try {
-        const single = await trackedAssetService.getOne(backendType, normalizedCode);
-        if (!cancelled && single) {
-          setTrackedUniverse(prev => ({
-            ...prev,
-            [listKey]: [...(prev[listKey] || []), single],
-          }));
-        }
-      } catch {
-      }
-    };
-    loadSingleTracked();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [assetType, symbol, trackedUniverse]);
-
-  useEffect(() => {
-    if (!compareSymbol) { setCompareData(null); return; }
-    let cancelled = false;
-    const fetchCompare = async () => {
-      try {
-        let data;
-        if (assetType === 'CRYPTO') {
-          data = await getCryptoHistory(compareSymbol);
-        } else if (assetType === 'BIST' || assetType === 'US') {
-          const sym = compareSymbol.endsWith('.IS') ? compareSymbol : (assetType === 'BIST' ? `${compareSymbol}.IS` : compareSymbol);
-          data = await stockService.getStockHistory(sym);
-        } else if (assetType === 'FOREX') {
-          data = await forexService.getForexHistory(compareSymbol);
-        } else if (assetType === 'FUND') {
-          data = await fundService.getFundHistory(compareSymbol);
-        } else {
-          return;
-        }
-        if (cancelled || !data?.length) return;
-        let candles;
-        if (assetType === 'FUND') {
-          candles = data.map(c => ({
-            date: c.candleDate, candleDate: c.candleDate,
-            open: c.price, high: c.price, low: c.price, close: c.price,
-          }));
-        } else {
-          candles = data.map(c => ({
-            date: c.candleDate, candleDate: c.candleDate,
-            open: c.open, high: c.high, low: c.low, close: c.close,
-          }));
-        }
-        if (!cancelled) setCompareData({ candles });
-      } catch {
-        if (!cancelled) setCompareData(null);
-      }
-    };
-    fetchCompare();
-    return () => { cancelled = true; };
-  }, [compareSymbol, assetType]);
+  const compareSymbol = compareAsset?.code || null;
 
   const trackedBistSymbols = trackedUniverse.BIST
     .filter(item => !item.compareOnly)
-    .map(item => item.assetCode.replace('.IS', ''));
-  const trackedBistCompareSymbols = trackedUniverse.BIST
     .map(item => item.assetCode.replace('.IS', ''));
   const trackedCryptoSymbols = trackedUniverse.CRYPTO.map(item => item.assetCode);
   const trackedFundSymbols = trackedUniverse.FUND.map(item => item.assetCode);
 
   const presetSymbols = {
     BIST: trackedBistSymbols,
-    US: [
-      'AAPL', 'AMD', 'AMZN', 'BAC', 'DIS',
-      'GOOGL', 'GS', 'INTC', 'JNJ', 'JPM',
-      'KO', 'MA', 'META', 'MSFT', 'NFLX',
-      'NVDA', 'TSLA', 'V', 'WMT', 'XOM'
-    ],
     CRYPTO: trackedCryptoSymbols,
     FOREX: getForexPairs(),
     FUND: trackedFundSymbols.length > 0 ? trackedFundSymbols : fundList.map(f => f.fundCode),
-    METAL: ['PAXG', 'XAUT', 'KAG']
-  };
-  const compareSymbols = {
-    BIST: trackedBistCompareSymbols,
-    US: presetSymbols.US,
-    CRYPTO: presetSymbols.CRYPTO,
-    FOREX: presetSymbols.FOREX,
-    FUND: presetSymbols.FUND,
-    METAL: presetSymbols.METAL,
-  };
-  const filterDataByTimeRange = (candles, range) => {
-    if (!candles || candles.length === 0) return candles;
-    const now = new Date();
-    let cutoffDate;
-    switch (range) {
-      case '1M': cutoffDate = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000)); break;
-      case '3M': cutoffDate = new Date(now.getTime() - (90 * 24 * 60 * 60 * 1000)); break;
-      case '1Y': cutoffDate = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000)); break;
-      case '5Y': cutoffDate = new Date(now.getTime() - (5 * 365 * 24 * 60 * 60 * 1000)); break;
-      default: return candles;
-    }
-    return candles.filter(candle => new Date(candle.date) >= cutoffDate);
   };
   useEffect(() => {
     if (routeType && routeSymbolValue) {
@@ -277,18 +173,13 @@ const ChartView = () => {
         : routeSymbolValue;
       setAssetType(routeType);
       setSymbol(nextSymbol);
-      const routeRange = searchParams.get('range');
-      if (routeRange && ['1M', '3M', '1Y', '5Y'].includes(routeRange)) {
-        setTimeRange(routeRange);
-      }
       return;
     }
 
     const params = new URLSearchParams(window.location.search);
     const urlType = params.get('type');
     let urlSymbol = params.get('symbol');
-    const urlRange = params.get('range');
-    if (urlType && ['BIST', 'US', 'CRYPTO', 'FOREX', 'FUND', 'METAL'].includes(urlType)) {
+    if (urlType && ['BIST', 'CRYPTO', 'FOREX', 'FUND'].includes(urlType)) {
       if (urlType === 'BIST' && urlSymbol && urlSymbol.endsWith('.IS')) {
         urlSymbol = urlSymbol.replace('.IS', '');
       }
@@ -298,7 +189,6 @@ const ChartView = () => {
       setSymbol(coinId);
       setAssetType('CRYPTO');
     }
-    if (urlRange && ['1M', '3M', '1Y', '5Y'].includes(urlRange)) setTimeRange(urlRange);
   }, [location.search, routeType, routeSymbolValue, coinId, searchParams]);
   const initialAssetTypeRef = useRef(assetType);
   useEffect(() => {
@@ -311,107 +201,43 @@ const ChartView = () => {
       setSymbol(symbols[0]);
     }
     setCustomSymbol('');
-    if ((assetType === 'CRYPTO' || assetType === 'METAL') && timeRange === '5Y') {
-      setTimeRange('1Y');
-    }
   }, [assetType, fundList]);
   useEffect(() => {
     if (symbol) {
       if (isDetailRoute) {
         const routeType = ASSET_TYPE_TO_ROUTE[assetType] || 'crypto';
         const routeSymbol = encodeURIComponent(symbol);
-        navigate(`/charts/${routeType}/${routeSymbol}?range=${timeRange}`, { replace: true });
+        navigate(`/charts/${routeType}/${routeSymbol}`, { replace: true });
         return;
       }
-      setSearchParams({ type: assetType, symbol, range: timeRange });
+      setSearchParams({ type: assetType, symbol });
     }
-  }, [symbol, assetType, timeRange, isDetailRoute, navigate, setSearchParams]);
-  useEffect(() => {
-    if (!symbol) return;
-    let cancelled = false;
-    const doFetch = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        let data;
-        if (assetType === 'CRYPTO') {
-          data = await getCryptoHistory(symbol);
-        } else if (assetType === 'BIST') {
-          const symbolWithSuffix = symbol.endsWith('.IS') ? symbol : `${symbol}.IS`;
-          data = await stockService.getStockHistory(symbolWithSuffix);
-        } else if (assetType === 'FOREX') {
-          data = await forexService.getForexHistory(symbol);
-        } else if (assetType === 'FUND') {
-          data = await fundService.getFundHistory(symbol);
-        } else {
-          if (!cancelled) { setError(`${assetType} historical data not yet implemented`); setChartData(null); }
-          return;
-        }
-        if (cancelled) return;
-        if (!data || !Array.isArray(data) || data.length === 0) {
-          setError('No historical data available');
-          setChartData(null);
-          return;
-        }
-        let transformedCandles;
-        if (assetType === 'FUND') {
-          transformedCandles = data.map(candle => ({
-            date: candle.candleDate,
-            candleDate: candle.candleDate,
-            price: candle.price,
-            open: candle.price,
-            high: candle.price,
-            low: candle.price,
-            close: candle.price,
-            volume: null,
-            investorCount: candle.investorCount,
-            portfolioSize: candle.portfolioSize,
-            shareCount: candle.shareCount,
-            bulletinPrice: candle.bulletinPrice,
-          }));
-        } else {
-          transformedCandles = data.map(candle => ({
-            date: candle.candleDate,
-            candleDate: candle.candleDate,
-            price: candle.close,
-            open: candle.open,
-            high: candle.high,
-            low: candle.low,
-            close: candle.close,
-            volume: candle.volume,
-          }));
-        }
-        setChartData({ candles: transformedCandles });
-      } catch (err) {
-        if (!cancelled) {
-          setError(err.message || 'Failed to load historical data');
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    doFetch();
-    return () => { cancelled = true; };
-  }, [symbol, assetType, retryKey]);
-  useEffect(() => {
-    if (chartData && chartData.candles) {
-      const filtered = filterDataByTimeRange(chartData.candles, timeRange);
-      setFilteredData({ ...chartData, candles: filtered });
-    }
-  }, [chartData, timeRange]);
+  }, [symbol, assetType, isDetailRoute, navigate, setSearchParams]);
+  const fetchSymbol = assetType === 'BIST' && symbol && !symbol.endsWith('.IS') ? `${symbol}.IS` : symbol;
 
-  const filteredCompareData = useMemo(() => {
-    if (!compareData?.candles) return null;
-    const filtered = filterDataByTimeRange(compareData.candles, timeRange);
-    return filtered.length ? { candles: filtered } : null;
-  }, [compareData, timeRange]);
+  const fetchHistory = (sym, type, range) => {
+    if (type === 'CRYPTO') return getCryptoHistory(sym, range);
+    if (type === 'BIST' || type === 'US') return stockService.getStockHistory(sym.endsWith('.IS') ? sym : `${sym}.IS`, range);
+    if (type === 'FOREX') return forexService.getForexHistory(sym, range);
+    if (type === 'FUND') return fundService.getFundHistory(sym, range);
+    return Promise.resolve([]);
+  };
+
+  const { data: historyRaw, isLoading: loading, refetch: refetchHistory } = useQuery({
+    queryKey: ['chartHistory', assetType, fetchSymbol, timeRange],
+    queryFn: () => fetchHistory(symbol, assetType, timeRange),
+    enabled: !!symbol,
+    placeholderData: (prev) => prev,
+  });
+
+  const chartData = useMemo(() => {
+    if (!historyRaw || !Array.isArray(historyRaw) || historyRaw.length === 0) return null;
+    return { candles: historyRaw };
+  }, [historyRaw]);
   const handleCustomSymbol = (e) => {
     e.preventDefault();
     if (customSymbol.trim()) setSymbol(customSymbol.trim().toUpperCase());
   };
-  const timeRanges = (assetType === 'BIST' || assetType === 'US' || assetType === 'FOREX' || assetType === 'FUND')
-    ? ['5Y', '1Y', '3M', '1M']
-    : ['1Y', '3M', '1M'];
   return (
     <motion.div
       className="py-8"
@@ -445,7 +271,7 @@ const ChartView = () => {
         {}
         <motion.div
           variants={itemVariants}
-          className="rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-5 space-y-5"
+          className="rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-5 space-y-5 overflow-visible relative z-10"
         >
           {isDetailRoute ? (
             <div className="rounded-lg border border-border-default bg-bg-base px-4 py-3">
@@ -461,7 +287,7 @@ const ChartView = () => {
                   Asset Type
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {['BIST', 'US', 'CRYPTO', 'FOREX', 'FUND', 'METAL'].map(type => (
+                  {['BIST', 'CRYPTO', 'FOREX', 'FUND'].map(type => (
                     <button
                       key={type}
                       onClick={() => setAssetType(type)}
@@ -528,68 +354,19 @@ const ChartView = () => {
 
           <div className="space-y-2">
             <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
-              Compare (same type overlay)
+              Karşılaştır
             </label>
-            <div className="flex items-center gap-3">
-              <select
-                value={compareSymbol || ''}
-                onChange={(e) => setCompareSymbol(e.target.value || null)}
-                className="flex-1 rounded-lg border border-border-default bg-bg-elevated px-4 py-2.5 text-sm text-fg outline-none focus:border-accent focus:ring-1 focus:ring-accent-glow transition-all duration-200 appearance-none cursor-pointer"
-              >
-                <option value="">-- No comparison --</option>
-                {assetType === 'FUND' && fundList.length > 0 ? (
-                  <>
-                    {['BYF', 'YAT'].map(type => {
-                      const typeFunds = fundList.filter(f => f.fundType === type && f.fundCode !== symbol);
-                      if (typeFunds.length === 0) return null;
-                      return (
-                        <optgroup key={type} label={type === 'BYF' ? 'Borsa Yatırım Fonları' : 'Yatırım Fonları'}>
-                          {typeFunds.map(f => (
-                            <option key={f.fundCode} value={f.fundCode}>{f.fundCode}{f.name ? ` - ${f.name}` : ''}</option>
-                          ))}
-                        </optgroup>
-                      );
-                    })}
-                  </>
-                ) : (
-                  (compareSymbols[assetType] || presetSymbols[assetType]).filter(s => s !== symbol).map(sym => (
-                    <option key={sym} value={sym}>{sym}</option>
-                  ))
-                )}
-              </select>
-              {compareSymbol && (
-                <button
-                  onClick={() => setCompareSymbol(null)}
-                  className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-red-300 text-red-500 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors duration-150"
-                >
-                  <X className="w-4 h-4" />
-                  Remove
-                </button>
-              )}
-            </div>
+            <CompareBar
+              compareAsset={compareAsset}
+              onSelect={setCompareAsset}
+              onClear={() => setCompareAsset(null)}
+              excludeCodes={[symbol, fetchSymbol].filter(Boolean)}
+            />
           </div>
         </motion.div>
         {}
         <motion.div variants={itemVariants} className="flex gap-4">
           {}
-          <div className="flex flex-col items-center gap-2 pt-2">
-            <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-fg-muted mb-1">
-              <Clock className="w-3 h-3" />
-              Time
-            </span>
-            {timeRanges.map(range => (
-              <button
-                key={range}
-                onClick={() => setTimeRange(range)}
-                className={`w-12 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150 border ${timeRange === range
-                  ? 'bg-accent text-white border-accent'
-                  : 'bg-bg-base border-border-default text-fg-muted hover:bg-surface hover:text-fg'
-                  }`}
-              >
-                {range}
-              </button>
-            ))}
-          </div>
           {}
           <div className="flex-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md overflow-hidden min-h-[500px] relative">
             <AnimatePresence mode="wait">
@@ -618,7 +395,7 @@ const ChartView = () => {
                     <span className="text-sm font-medium">{error}</span>
                   </div>
                   <button
-                    onClick={() => setRetryKey(k => k + 1)}
+                    onClick={() => refetchHistory()}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent-bright transition-colors duration-150"
                   >
                     <RefreshCw className="w-4 h-4" />
@@ -627,7 +404,7 @@ const ChartView = () => {
                 </motion.div>
               )}
             </AnimatePresence>
-            {!loading && !error && filteredData && (
+            {!loading && !error && chartData && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -635,15 +412,17 @@ const ChartView = () => {
                 className="w-full h-full"
               >
                 <LightweightChart
-                  data={filteredData}
+                  data={chartData}
                   symbol={symbol}
                   assetType={assetType}
-                  compareData={filteredCompareData}
+                  compareData={compareData}
                   compareSymbol={compareSymbol}
+                  timeRange={timeRange}
+                  onTimeRangeChange={setTimeRange}
                 />
               </motion.div>
             )}
-            {!loading && !error && !filteredData && (
+            {!loading && !error && !chartData && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-fg-subtle">
                 <BarChart2 className="w-10 h-10 opacity-40" />
                 <p className="text-sm">Select a symbol to view chart data</p>

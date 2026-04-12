@@ -1,5 +1,6 @@
 package com.finance.backend.controller;
 
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.request.PortfolioCreateRequest;
 import com.finance.backend.dto.request.TransactionRequest;
@@ -14,7 +15,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/portfolios")
@@ -22,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PortfolioController {
 
+    private final AppProperties appProperties;
     private final PortfolioFacade portfolioFacade;
 
     @PostMapping("/onboarding/initialize")
@@ -56,19 +61,33 @@ public class PortfolioController {
     }
 
     @GetMapping("/{portfolioId}/transactions")
-    public ResponseEntity<ApiResponse<List<TransactionResponse>>> listTransactions(
+    public ResponseEntity<ApiResponse<PagedResponse<TransactionResponse>>> listTransactions(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long portfolioId) {
+            @PathVariable Long portfolioId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) Integer size) {
+        int resolvedSize = resolvePageSize(size, appProperties.getPagination().getPortfolio().getTransactionsDefaultSize());
         return ResponseEntity.ok(ApiResponse.success("Transactions retrieved",
-                portfolioFacade.listTransactions(jwt.getSubject(), portfolioId)));
+                portfolioFacade.listTransactionsPaged(jwt.getSubject(), portfolioId,
+                        search, sort, direction, page, resolvedSize)));
     }
 
     @GetMapping("/{portfolioId}/positions")
-    public ResponseEntity<ApiResponse<List<PositionResponse>>> getPositions(
+    public ResponseEntity<ApiResponse<PagedResponse<PositionResponse>>> getPositions(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long portfolioId) {
+            @PathVariable Long portfolioId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String direction,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) Integer size) {
+        int resolvedSize = resolvePageSize(size, appProperties.getPagination().getPortfolio().getPositionsDefaultSize());
         return ResponseEntity.ok(ApiResponse.success("Positions retrieved",
-                portfolioFacade.getPositions(jwt.getSubject(), portfolioId)));
+                portfolioFacade.getPositionsPaged(jwt.getSubject(), portfolioId,
+                        search, sort, direction, page, resolvedSize)));
     }
 
     @GetMapping("/{portfolioId}/summary")
@@ -84,29 +103,38 @@ public class PortfolioController {
     public ResponseEntity<ApiResponse<List<AllocationItem>>> getAllocation(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
-            @RequestParam(defaultValue = "assetType") String mode) {
-        return ResponseEntity.ok(ApiResponse.success("Allocation retrieved",
-                portfolioFacade.getAllocation(jwt.getSubject(), portfolioId, mode)));
-    }
-
-    @GetMapping("/{portfolioId}/performance")
-    public ResponseEntity<ApiResponse<List<PerformancePoint>>> getPerformance(
-            @AuthenticationPrincipal Jwt jwt,
-            @PathVariable Long portfolioId,
-            @RequestParam(defaultValue = "1M") String range,
+            @RequestParam(defaultValue = "assetType") String mode,
             @RequestParam(required = false) String assetType) {
-        return ResponseEntity.ok(ApiResponse.success("Performance retrieved",
-                portfolioFacade.getPerformance(jwt.getSubject(), portfolioId, range, assetType)));
+        return ResponseEntity.ok(ApiResponse.success("Allocation retrieved",
+                portfolioFacade.getAllocation(jwt.getSubject(), portfolioId, mode, assetType)));
     }
 
-    @GetMapping("/{portfolioId}/asset-series")
-    public ResponseEntity<ApiResponse<List<AssetSeriesPoint>>> getAssetSeries(
+    @GetMapping("/{portfolioId}/view")
+    public ResponseEntity<ApiResponse<PortfolioViewResponse>> getPortfolioView(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
-            @RequestParam String assetType,
-            @RequestParam String assetCode,
-            @RequestParam(defaultValue = "1M") String range) {
-        return ResponseEntity.ok(ApiResponse.success("Asset series retrieved",
-                portfolioFacade.getAssetSeries(jwt.getSubject(), portfolioId, assetType, assetCode, range)));
+            @RequestParam(defaultValue = "summary,positions,transactions,allocation") String include) {
+        Set<String> includes = Arrays.stream(include.split(","))
+                .map(String::trim)
+                .collect(Collectors.toSet());
+        return ResponseEntity.ok(ApiResponse.success("Portfolio view retrieved",
+                portfolioFacade.getPortfolioView(jwt.getSubject(), portfolioId, includes)));
+    }
+
+    @GetMapping("/{portfolioId}/chart")
+    public ResponseEntity<ApiResponse<?>> getChart(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long portfolioId,
+            @RequestParam String type,
+            @RequestParam(defaultValue = "1M") String range,
+            @RequestParam(required = false) String assetType,
+            @RequestParam(required = false) String assetCode) {
+        return ResponseEntity.ok(ApiResponse.success("Chart data retrieved",
+                portfolioFacade.getChart(jwt.getSubject(), portfolioId, type, range, assetType, assetCode)));
+    }
+
+    private int resolvePageSize(Integer size, int defaultSize) {
+        int requestedSize = size == null ? defaultSize : size;
+        return Math.max(1, Math.min(requestedSize, appProperties.getPagination().getPortfolio().getMaxSize()));
     }
 }

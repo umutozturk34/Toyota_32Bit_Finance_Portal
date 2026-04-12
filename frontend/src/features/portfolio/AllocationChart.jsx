@@ -1,12 +1,19 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
+import useSessionState from "../../shared/hooks/useSessionState";
 import { motion } from 'framer-motion';
-import { PieChart, Loader2 } from 'lucide-react';
+import { PieChart } from 'lucide-react';
+import { Loader2 } from '../../shared/components/AnimatedIcons';
 import Chart from 'react-apexcharts';
 import { useTheme } from '../../shared/context/ThemeContext';
-import { formatPriceTRY } from '../../shared/utils/formatters';
+import { formatPriceTRY, formatCompactTRY } from '../../shared/utils/formatters';
 import { getApexThemeOptions } from '../../shared/utils/apexTheme';
-import { portfolioService } from './portfolioService';
+import { usePortfolioAllocation } from './usePortfolioData';
 import { cardVariants } from '../../shared/utils/animations';
+import {
+  ASSET_TYPE_LABELS,
+  ASSET_TYPE_CHART_COLORS as ASSET_TYPE_COLORS,
+  ASSET_TYPE_TABS as TYPE_TABS,
+} from '../../shared/constants/assetTypes';
 
 const COLORS = [
   '#818cf8', '#34d399', '#fbbf24', '#f87171', '#c084fc',
@@ -14,62 +21,31 @@ const COLORS = [
   '#e879f9', '#38bdf8', '#fdba74', '#86efac', '#f9a8d4',
 ];
 
-const TYPE_TABS = [
-  { id: 'ALL', label: 'Tümü' },
-  { id: 'CRYPTO', label: 'Kripto' },
-  { id: 'STOCK', label: 'Hisse' },
-  { id: 'FOREX', label: 'Döviz' },
-  { id: 'FUND', label: 'Fon' },
-];
-
-const ASSET_TYPE_LABELS = {
-  CRYPTO: 'Kripto',
-  STOCK: 'Hisse',
-  FOREX: 'Döviz',
-  FUND: 'Fon',
-  CASH: 'Nakit',
-};
-
-const ASSET_TYPE_COLORS = {
-  CRYPTO: '#fbbf24',
-  STOCK: '#34d399',
-  FOREX: '#22d3ee',
-  FUND: '#c084fc',
-};
-
 export default function AllocationChart({ allocation, portfolioId }) {
   const { isDark } = useTheme();
-  const [activeTab, setActiveTab] = useState('ALL');
-  const [typeData] = useState(allocation);
-  const [assetData, setAssetData] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useSessionState('portfolio-alloc-tab', 'ALL');
+
+  const { data: assetData, isFetching: assetLoading } = usePortfolioAllocation(
+    activeTab !== 'ALL' ? portfolioId : null, 'assetCode', activeTab !== 'ALL' ? activeTab : undefined
+  );
 
   const availableTypes = useMemo(() => {
-    if (!typeData) return new Set();
-    return new Set(typeData.filter(i => i.label !== 'CASH').map(i => i.label));
-  }, [typeData]);
+    if (!allocation) return new Set();
+    return new Set(allocation.map(i => i.label));
+  }, [allocation]);
 
-  useEffect(() => {
-    if (activeTab === 'ALL' || assetData) return;
-    let cancelled = false;
-    setLoading(true);
-    portfolioService.getAllocation(portfolioId, 'assetCode')
-      .then(result => { if (!cancelled) setAssetData(result); })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [activeTab, portfolioId, assetData]);
+  const loading = activeTab !== 'ALL' && assetLoading;
 
   const finalData = useMemo(() => {
     let items;
     if (activeTab === 'ALL') {
-      items = (typeData || []).filter(i => i.label !== 'CASH');
+      items = allocation || [];
     } else {
       if (!assetData) return [];
-      items = assetData.filter(i => i.assetType === activeTab);
+      items = assetData;
     }
     return items.filter(i => Number(i.valueTry) > 0);
-  }, [activeTab, typeData, assetData]);
+  }, [activeTab, allocation, assetData]);
 
   const labels = useMemo(() =>
     finalData.map(item =>
@@ -128,12 +104,12 @@ export default function AllocationChart({ allocation, portfolioId }) {
             },
             value: {
               show: true,
-              fontSize: '18px',
+              fontSize: '14px',
               fontFamily: "'JetBrains Mono', monospace",
               fontWeight: 700,
               color: isDark ? '#e6edf3' : '#1b1f24',
               offsetY: 4,
-              formatter: (val) => formatPriceTRY(Number(val)),
+              formatter: (val) => formatCompactTRY(Number(val)),
             },
             total: {
               show: true,
@@ -143,7 +119,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
               fontFamily: "'Nunito Sans', sans-serif",
               fontWeight: 500,
               color: isDark ? '#7d8590' : '#636c76',
-              formatter: (w) => formatPriceTRY(
+              formatter: (w) => formatCompactTRY(
                 w.globals.seriesTotals.reduce((a, b) => a + b, 0)
               ),
             },

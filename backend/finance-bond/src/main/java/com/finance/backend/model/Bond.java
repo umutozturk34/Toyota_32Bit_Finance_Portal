@@ -73,7 +73,8 @@ public class Bond extends BaseAsset {
 
     @JsonIgnore
     public boolean isFloating() {
-        return bondType == BondType.FLOATING_TLREF || bondType == BondType.FLOATING_CPI || bondType == BondType.FLOATING_AUCTION;
+        return bondType == BondType.FLOATING_TLREF || bondType == BondType.FLOATING_CPI
+                || bondType == BondType.FLOATING_AUCTION || bondType == BondType.SUKUK_CPI;
     }
 
     @JsonIgnore
@@ -127,13 +128,19 @@ public class Bond extends BaseAsset {
 
         if (isinCode.startsWith("TRB")) {
             this.bondType = BondType.DISCOUNTED;
-            log.debug("Bond {} classified as DISCOUNTED (TRB prefix)", isinCode);
+            return;
+        }
+
+        boolean highBaseIndex = baseIndex != null && baseIndex.compareTo(new BigDecimal("110")) > 0;
+
+        if (highBaseIndex) {
+            boolean sukuk = isinCode.startsWith("TRD");
+            this.bondType = sukuk ? BondType.SUKUK_CPI : BondType.FLOATING_CPI;
             return;
         }
 
         if (couponRate == null || couponRate.compareTo(BigDecimal.ZERO) == 0) {
             this.bondType = BondType.DISCOUNTED;
-            log.debug("Bond {} classified as DISCOUNTED (rate is null or zero)", isinCode);
             return;
         }
 
@@ -173,45 +180,41 @@ public class Bond extends BaseAsset {
 
         if (bondType == BondType.DISCOUNTED) {
             if (maturityEnd == null) {
-                log.debug("Cannot calculate discounted yield for {}: maturityEnd is null", isinCode);
                 this.simpleYield = null;
                 return;
             }
             long days = daysToMaturity();
             if (days <= 0) {
-                log.debug("Cannot calculate discounted yield for {}: bond expired (days={})", isinCode, days);
                 this.simpleYield = null;
                 return;
             }
             BigDecimal daysDecimal = new BigDecimal(days);
-            this.simpleYield = faceValue.subtract(baseIndex)
+            BigDecimal rawYield = faceValue.subtract(baseIndex)
                     .divide(baseIndex, 10, RoundingMode.HALF_UP)
                     .multiply(daysPerYear)
                     .divide(daysDecimal, 10, RoundingMode.HALF_UP)
                     .multiply(faceValue)
                     .setScale(4, RoundingMode.HALF_UP);
-            log.debug("Discounted yield for {}: {} (baseIndex={}, days={})", isinCode, simpleYield, baseIndex, days);
+            this.simpleYield = rawYield.compareTo(BigDecimal.ZERO) < 0 ? null : rawYield;
             return;
         }
 
         if (isFloating()) {
-            log.debug("Floating bond {}, yield not applicable", isinCode);
             this.simpleYield = null;
             return;
         }
 
-        if (couponRate == null) {
-            log.debug("Cannot calculate fixed yield for {}: couponRate is null", isinCode);
+        if (couponRate == null || couponRate.compareTo(BigDecimal.ZERO) <= 0) {
             this.simpleYield = null;
             return;
         }
 
         BigDecimal annualCoupon = couponRate.multiply(new BigDecimal("2"));
-        this.simpleYield = annualCoupon
+        BigDecimal rawYield = annualCoupon
                 .divide(baseIndex, 10, RoundingMode.HALF_UP)
                 .multiply(faceValue)
                 .setScale(4, RoundingMode.HALF_UP);
-        log.debug("Fixed coupon yield for {}: {} (couponRate={}, baseIndex={})", isinCode, simpleYield, couponRate, baseIndex);
+        this.simpleYield = rawYield.compareTo(BigDecimal.ZERO) < 0 ? null : rawYield;
     }
 
     public void scaleFields(int scale) {

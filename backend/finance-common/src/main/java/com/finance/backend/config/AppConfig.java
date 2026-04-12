@@ -103,7 +103,8 @@ public class AppConfig {
                 .clientConnector(new ReactorClientHttpConnector(baseHttpClient()))
                 .baseUrl(bond.getBaseUrl())
                 .defaultHeader(bond.getApiKeyHeader(), apiKey)
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
+                .codecs(configurer -> configurer.defaultCodecs()
+                        .maxInMemorySize(appProperties.getHttp().getBondMaxInMemorySizeMb() * 1024 * 1024))
                 .filter(new RateLimiterFilter(rateLimiterRegistry.rateLimiter("bond")))
                 .filter(userAgentFilter())
                 .build();
@@ -151,7 +152,8 @@ public class AppConfig {
         return builder
                 .clone()
                 .clientConnector(new ReactorClientHttpConnector(baseHttpClient()))
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(5 * 1024 * 1024))
+                .codecs(configurer -> configurer.defaultCodecs()
+                        .maxInMemorySize(appProperties.getHttp().getNewsMaxInMemorySizeMb() * 1024 * 1024))
                 .filter(userAgentFilter())
                 .build();
     }

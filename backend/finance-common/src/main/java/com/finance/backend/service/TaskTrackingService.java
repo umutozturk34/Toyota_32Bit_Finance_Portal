@@ -1,8 +1,11 @@
 package com.finance.backend.service;
 
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.response.TaskInfoResponse;
 import com.finance.backend.dto.response.TaskStatusResponse;
 import com.finance.backend.exception.TaskAlreadyRunningException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -11,15 +14,16 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+@Log4j2
 @Service
+@RequiredArgsConstructor
 public class TaskTrackingService {
-
-    private static final int MAX_HISTORY = 50;
 
     public record TaskInfo(String type, String status, String message,
                            Instant startedAt, Instant completedAt, String error) {
     }
 
+    private final AppProperties appProperties;
     private final Map<String, TaskInfo> runningTasks = new ConcurrentHashMap<>();
     private final Deque<TaskInfo> taskHistory = new ConcurrentLinkedDeque<>();
 
@@ -77,7 +81,7 @@ public class TaskTrackingService {
 
     private void addToHistory(TaskInfo info) {
         taskHistory.addFirst(info);
-        while (taskHistory.size() > MAX_HISTORY) {
+        while (taskHistory.size() > appProperties.getTask().getMaxHistory()) {
             taskHistory.removeLast();
         }
     }

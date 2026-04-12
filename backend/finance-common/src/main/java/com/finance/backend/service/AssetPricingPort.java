@@ -6,6 +6,8 @@ public interface AssetPricingPort {
 
     BigDecimal getPriceTry(String assetType, String assetCode);
 
+    BigDecimal getSellPriceTry(String assetType, String assetCode);
+
     record AssetMeta(String name, String image) {}
 
     default AssetMeta getAssetMeta(String assetType, String assetCode) {

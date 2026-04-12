@@ -1,23 +1,21 @@
 import api from '../../shared/services/api';
+import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
 
 export const stockService = {
+  getAllStocks: async (params = {}) => {
+    return unifiedMarketService.search({ type: 'STOCK', ...params });
+  },
+
   getStockBySymbol: async (symbol) => {
-    try {
-      const response = await api.get(`/stocks/${symbol}`);
-      return response.data.data;
-    } catch (error) {
-      if (error.response?.status === 404) return null;
-      throw error;
-    }
+    return unifiedMarketService.getByCode('STOCK', symbol);
   },
 
-  getAllStocks: async () => {
-    const response = await api.get('/stocks');
-    return response.data.data;
+  getStockHistory: async (symbol, period = 'ALL') => {
+    return unifiedMarketService.getHistory('STOCK', symbol, period);
   },
 
-  getStockHistory: async (symbol) => {
-    const response = await api.get(`/stocks/${symbol}/history`);
-    return response.data.data;
+  getSegmentCounts: async () => {
+    const res = await api.get('/market/group-counts', { params: { type: 'STOCK' } });
+    return res.data.data;
   },
 };

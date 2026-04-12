@@ -1,27 +1,52 @@
 package com.finance.backend.scheduler;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.service.MarketDataService;
+import com.finance.backend.service.MarketUpdatePort;
+import com.finance.backend.service.PortfolioSnapshotPort;
 import com.finance.backend.service.TaskTrackingService;
 import com.finance.backend.service.TaskTrackingService.TaskInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
+
 @Log4j2
 @Component
 @RequiredArgsConstructor
 public class MarketScheduler {
     private final MarketDataService marketDataService;
     private final TaskTrackingService taskTracker;
-    @Scheduled(cron = "0 30 19 * * *", zone = "${app.timezone}")
-    public void runFullDailyMarketUpdate() {
-        TaskInfo started = taskTracker.startTask("scheduled-crypto-full", "Scheduled daily crypto update (snapshots + candles)");
+    private final Optional<PortfolioSnapshotPort> portfolioSnapshotPort;
+    private final Optional<MarketUpdatePort> marketUpdatePort;
+
+    @Scheduled(cron = "${app.scheduler.crypto.morning-cron}", zone = "${app.timezone}")
+    public void runMorningCryptoUpdate() {
+        executeCryptoUpdate("scheduled-crypto-morning", "Scheduled morning crypto update (09:00)");
+    }
+
+    @Scheduled(cron = "${app.scheduler.crypto.afternoon-cron}", zone = "${app.timezone}")
+    public void runAfternoonCryptoUpdate() {
+        executeCryptoUpdate("scheduled-crypto-afternoon", "Scheduled afternoon crypto update (15:00)");
+    }
+
+    @Scheduled(cron = "${app.scheduler.crypto.evening-cron}", zone = "${app.timezone}")
+    public void runEveningCryptoUpdate() {
+        executeCryptoUpdate("scheduled-crypto-evening", "Scheduled evening crypto update (21:00)");
+    }
+
+    private void executeCryptoUpdate(String taskType, String description) {
+        TaskInfo started = taskTracker.startTask(taskType, description);
         try {
             marketDataService.updateOnlySnapshots();
             marketDataService.updateOnlyCandles();
-            taskTracker.completeTask("scheduled-crypto-full", started);
+            portfolioSnapshotPort.ifPresent(port -> port.onMarketUpdate(MarketType.CRYPTO));
+            marketUpdatePort.ifPresent(port -> port.onMarketDataUpdated(MarketType.CRYPTO));
+            taskTracker.completeTask(taskType, started);
         } catch (Exception e) {
-            taskTracker.failTask("scheduled-crypto-full", started, e.getMessage());
-            log.error("Daily crypto update failed", e);
+            taskTracker.failTask(taskType, started, e.getMessage());
+            log.error("{} failed", taskType, e);
         }
     }
 }

@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.dto.response.TaskStatusResponse;
 import com.finance.backend.dto.response.TaskTriggerResponse;
+import com.finance.backend.model.MarketType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ public class AdminTaskService {
                 "Crypto snapshot update started in background",
                 () -> {
                     marketDataService.updateOnlySnapshots();
-                    triggerPortfolioSnapshot("CRYPTO");
+                    triggerPortfolioSnapshot(MarketType.CRYPTO);
                 });
     }
 
@@ -45,7 +46,7 @@ public class AdminTaskService {
                 "Full crypto market update started in background",
                 () -> {
                     marketDataService.fullMarketUpdate();
-                    triggerPortfolioSnapshot("CRYPTO");
+                    triggerPortfolioSnapshot(MarketType.CRYPTO);
                 });
     }
 
@@ -54,7 +55,7 @@ public class AdminTaskService {
                 "Stock snapshot update started in background",
                 () -> {
                     stockDataService.updateStockSnapshots();
-                    triggerPortfolioSnapshot("STOCK");
+                    triggerPortfolioSnapshot(MarketType.STOCK);
                 });
     }
 
@@ -70,7 +71,7 @@ public class AdminTaskService {
                 () -> {
                     stockDataService.updateStockSnapshots();
                     stockDataService.updateStockCandles();
-                    triggerPortfolioSnapshot("STOCK");
+                    triggerPortfolioSnapshot(MarketType.STOCK);
                 });
     }
 
@@ -80,7 +81,7 @@ public class AdminTaskService {
                 () -> {
                     tcmbForexService.fetchAndSaveTcmbRates();
                     yahooForexService.syncAllYahooSnapshots();
-                    triggerPortfolioSnapshot("FOREX");
+                    triggerPortfolioSnapshot(MarketType.FOREX);
                 });
     }
 
@@ -97,7 +98,7 @@ public class AdminTaskService {
                     tcmbForexService.fetchAndSaveTcmbRates();
                     yahooForexService.syncAllYahooSnapshots();
                     yahooForexService.syncAllYahooCandles();
-                    triggerPortfolioSnapshot("FOREX");
+                    triggerPortfolioSnapshot(MarketType.FOREX);
                 });
     }
 
@@ -106,7 +107,7 @@ public class AdminTaskService {
                 "Fund snapshot update started in background",
                 () -> {
                     fundDataService.updateFundSnapshots();
-                    triggerPortfolioSnapshot("FUND");
+                    triggerPortfolioSnapshot(MarketType.FUND);
                 });
     }
 
@@ -122,7 +123,7 @@ public class AdminTaskService {
                 () -> {
                     fundDataService.updateFundSnapshots();
                     fundDataService.updateFundCandles();
-                    triggerPortfolioSnapshot("FUND");
+                    triggerPortfolioSnapshot(MarketType.FUND);
                 });
     }
 
@@ -142,7 +143,7 @@ public class AdminTaskService {
         return taskTracker.getTypedStatus();
     }
 
-    private void triggerPortfolioSnapshot(String assetType) {
+    private void triggerPortfolioSnapshot(MarketType assetType) {
         portfolioSnapshotPort.ifPresent(port -> {
             try {
                 port.onMarketUpdate(assetType);

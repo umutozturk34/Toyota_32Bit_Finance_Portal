@@ -1,23 +1,21 @@
 import api from '../../shared/services/api';
+import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
 
 export const fundService = {
-  getAllFunds: async () => {
-    const response = await api.get('/funds');
-    return response.data.data;
+  getAllFunds: async (params = {}) => {
+    return unifiedMarketService.search({ type: 'FUND', ...params });
   },
 
-  getFundByCode: async (fundCode) => {
-    try {
-      const response = await api.get(`/funds/${fundCode}`);
-      return response.data.data;
-    } catch (error) {
-      if (error.response?.status === 404) return null;
-      throw error;
-    }
+  getFundByCode: async (code) => {
+    return unifiedMarketService.getByCode('FUND', code);
   },
 
-  getFundHistory: async (fundCode) => {
-    const response = await api.get(`/funds/${fundCode}/history`);
+  getFundHistory: async (code, period = 'ALL') => {
+    return unifiedMarketService.getHistory('FUND', code, period);
+  },
+
+  getTypes: async () => {
+    const response = await api.get('/market/group-counts', { params: { type: 'FUND' } });
     return response.data.data;
   },
 };

@@ -30,8 +30,8 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
     private final TransactionTemplate transactionTemplate;
 
     @Override
-    public void onMarketUpdate(String assetType) {
-        AssetType type = AssetType.valueOf(assetType);
+    public void onMarketUpdate(com.finance.backend.model.MarketType marketType) {
+        AssetType type = AssetType.valueOf(marketType.name());
         List<Portfolio> portfolios = portfolioRepository.findAll();
         LocalDateTime batchTimestamp = LocalDateTime.now();
 
@@ -48,11 +48,11 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
                     }
                 }),
                 p -> String.valueOf(p.getId()),
-                "portfolio-" + assetType + "-snapshot",
+                "portfolio-" + type + "-snapshot",
                 1, null, null, null
         );
 
-        BatchLogHelper.logSummary(log, assetType + " portfolio snapshot", result);
+        BatchLogHelper.logSummary(log, type + " portfolio snapshot", result);
     }
 
     public void generateDailySnapshots() {

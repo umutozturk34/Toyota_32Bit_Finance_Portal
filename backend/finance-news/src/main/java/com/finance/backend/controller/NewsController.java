@@ -1,51 +1,51 @@
 package com.finance.backend.controller;
 
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.response.NewsArticleDetailResponse;
 import com.finance.backend.dto.response.NewsArticleResponse;
-import com.finance.backend.exception.BusinessException;
-import com.finance.backend.mapper.NewsResponseMapper;
-import com.finance.backend.model.NewsArticle;
-import com.finance.backend.model.NewsCategory;
-import com.finance.backend.service.NewsCacheService;
+import com.finance.backend.dto.response.PagedResponse;
+import com.finance.backend.service.NewsQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/news")
 @RequiredArgsConstructor
 public class NewsController {
 
-    private final NewsCacheService newsCacheService;
-    private final NewsResponseMapper newsResponseMapper;
+    private final AppProperties appProperties;
+    private final NewsQueryService newsQueryService;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<NewsArticleResponse>>> getLatestNews() {
-        List<NewsArticleResponse> articles = newsResponseMapper.toResponses(
-                newsCacheService.getLatest());
-        return ResponseEntity.ok(ApiResponse.success("Latest news retrieved successfully", articles));
+    public ResponseEntity<ApiResponse<PagedResponse<NewsArticleResponse>>> getNews(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String sort,
+            @RequestParam(defaultValue = "desc") String direction,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) Integer size) {
+        AppProperties.NewsPage pagination = appProperties.getPagination().getNews();
+        int resolvedSize = size == null ? pagination.getDefaultSize() : size;
+        resolvedSize = Math.max(1, Math.min(resolvedSize, pagination.getMaxSize()));
+        PagedResponse<NewsArticleResponse> result = newsQueryService.search(
+                category, search, sort, direction, page, resolvedSize);
+        return ResponseEntity.ok(ApiResponse.success("News retrieved successfully", result));
     }
 
-    @GetMapping("/category/{category}")
+    @GetMapping("/categories")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<NewsArticleResponse>>> getNewsByCategory(
-            @PathVariable NewsCategory category) {
-        List<NewsArticleResponse> articles = newsResponseMapper.toResponses(
-                newsCacheService.getByCategory(category));
-        return ResponseEntity.ok(ApiResponse.success("News retrieved successfully", articles));
+    public ResponseEntity<ApiResponse<java.util.List<java.util.Map<String, Object>>>> getCategoryCounts() {
+        return ResponseEntity.ok(ApiResponse.success("News categories retrieved", newsQueryService.getCategoryCounts()));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<NewsArticleDetailResponse>> getNewsById(@PathVariable Long id) {
-        NewsArticle article = newsCacheService.getById(id)
-                .orElseThrow(() -> new BusinessException("News article not found: " + id));
         return ResponseEntity.ok(ApiResponse.success("News article retrieved successfully",
-                newsResponseMapper.toDetailResponse(article)));
+                newsQueryService.getById(id)));
     }
 }

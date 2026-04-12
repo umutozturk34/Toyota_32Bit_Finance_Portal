@@ -1,7 +1,6 @@
 package com.finance.backend.mapper;
 
 import com.finance.backend.dto.response.CandleResponse;
-import com.finance.backend.dto.response.ForexResponse;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
@@ -15,13 +14,6 @@ import java.util.Map;
 
 @Mapper(componentModel = "spring")
 public abstract class ForexResponseMapper {
-
-    public abstract ForexResponse toForexResponse(Forex forex);
-
-    public abstract List<ForexResponse> toForexResponses(List<Forex> forexList);
-
-    @Mapping(target = "volume", ignore = true)
-    public abstract CandleResponse toCandleResponse(ForexCandle candle);
 
     public abstract List<CandleResponse> toForexCandleResponses(List<ForexCandle> candles);
 

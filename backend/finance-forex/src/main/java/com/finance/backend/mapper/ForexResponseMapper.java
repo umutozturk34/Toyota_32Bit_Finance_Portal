@@ -18,7 +18,7 @@ public abstract class ForexResponseMapper {
     public abstract List<CandleResponse> toForexCandleResponses(List<ForexCandle> candles);
 
     @Mapping(target = "code", source = "currencyCode")
-    @Mapping(target = "name", source = "currencyName")
+    @Mapping(target = "name", source = "currencyNameTr")
     @Mapping(target = "price", source = "currentPrice")
     @Mapping(target = "changeAmount", source = "change24h")
     @Mapping(target = "changePercent", source = "changePercent24h")

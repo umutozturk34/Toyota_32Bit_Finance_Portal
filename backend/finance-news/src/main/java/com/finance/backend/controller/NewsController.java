@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/news")
@@ -38,7 +40,7 @@ public class NewsController {
 
     @GetMapping("/categories")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<java.util.List<java.util.Map<String, Object>>>> getCategoryCounts() {
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getCategoryCounts() {
         return ResponseEntity.ok(ApiResponse.success("News categories retrieved", newsQueryService.getCategoryCounts()));
     }
 

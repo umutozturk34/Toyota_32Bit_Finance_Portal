@@ -20,6 +20,7 @@ import java.util.List;
 public class RssClientMapper {
 
     private static final ZoneId ISTANBUL_ZONE = ZoneId.of("Europe/Istanbul");
+    private static final int RICH_HTML_MIN_LENGTH = 150;
 
     public List<RssArticleData> toArticleDataList(SyndFeed feed) {
         return feed.getEntries().stream()
@@ -29,23 +30,53 @@ public class RssClientMapper {
     }
 
     private RssArticleData toArticleData(SyndEntry entry) {
+        String rawDescriptionHtml = extractRawDescription(entry);
+        String plainDescription = toPlainText(rawDescriptionHtml);
+        String content = extractContent(entry);
+
+        if (content == null && isRichHtml(rawDescriptionHtml)) {
+            content = rawDescriptionHtml;
+        }
+
+        String imageUrl = extractImageUrl(entry);
+        if (imageUrl == null && content != null) {
+            imageUrl = NewsTextUtils.extractFirstImageUrl(content);
+        }
+        if (imageUrl == null && rawDescriptionHtml != null) {
+            imageUrl = NewsTextUtils.extractFirstImageUrl(rawDescriptionHtml);
+        }
+
+        String cleanedContent = NewsTextUtils.stripCoverImageFromContent(content, imageUrl);
+
         return new RssArticleData(
                 NewsTextUtils.decodeHtml(entry.getTitle().trim()),
                 entry.getLink().trim(),
-                extractDescription(entry),
-                extractContent(entry),
-                extractImageUrl(entry),
+                plainDescription,
+                cleanedContent,
+                imageUrl,
                 extractGuid(entry),
                 convertDate(entry.getPublishedDate())
         );
     }
 
-    private String extractDescription(SyndEntry entry) {
+    private String extractRawDescription(SyndEntry entry) {
         if (entry.getDescription() == null) {
             return null;
         }
-        String stripped = NewsTextUtils.stripHtmlTags(entry.getDescription().getValue());
+        String value = entry.getDescription().getValue();
+        return value != null && !value.isBlank() ? value.trim() : null;
+    }
+
+    private String toPlainText(String html) {
+        if (html == null) {
+            return null;
+        }
+        String stripped = NewsTextUtils.stripHtmlTags(html);
         return NewsTextUtils.decodeHtml(stripped);
+    }
+
+    private boolean isRichHtml(String text) {
+        return text != null && text.contains("<") && text.length() > RICH_HTML_MIN_LENGTH;
     }
 
     private String extractContent(SyndEntry entry) {
@@ -80,17 +111,34 @@ public class RssClientMapper {
     private String extractImageUrl(SyndEntry entry) {
         List<SyndEnclosure> enclosures = entry.getEnclosures();
         if (enclosures != null && !enclosures.isEmpty()) {
-            String type = enclosures.getFirst().getType();
-            if (type != null && type.startsWith("image")) {
-                return enclosures.getFirst().getUrl();
+            SyndEnclosure first = enclosures.getFirst();
+            String url = first.getUrl();
+            if (url != null && !url.isBlank()) {
+                String type = first.getType();
+                if (type == null || type.startsWith("image")) {
+                    return url.trim();
+                }
             }
         }
 
         for (Element element : entry.getForeignMarkup()) {
-            if ("thumbnail".equals(element.getName()) || "content".equals(element.getName())) {
+            String name = element.getName();
+
+            if ("thumbnail".equals(name) || "content".equals(name)) {
                 String url = element.getAttributeValue("url");
                 if (url != null) {
                     return url;
+                }
+            }
+
+            if ("image".equals(name)) {
+                String url = element.getAttributeValue("url");
+                if (url != null) {
+                    return url;
+                }
+                String textUrl = element.getTextTrim();
+                if (textUrl != null && textUrl.startsWith("http")) {
+                    return textUrl;
                 }
             }
         }

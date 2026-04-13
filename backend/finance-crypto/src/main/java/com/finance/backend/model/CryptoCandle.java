@@ -28,11 +28,13 @@ public class CryptoCandle extends BaseCandle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "crypto_id", referencedColumnName = "id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_crypto_candle_id"))
     @JsonIgnore
     private Crypto crypto;
+
     @Column(name = "crypto_id", insertable = false, updatable = false, nullable = false)
     private String cryptoId;
 

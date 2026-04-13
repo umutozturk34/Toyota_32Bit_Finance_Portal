@@ -23,13 +23,18 @@ public class CoinGeckoClient {
     private final WebClient coinGeckoWebClient;
     private final WebClient binanceWebClient;
     private final CoinGeckoCandleMapper candleMapper;
+    private final String marketsPath;
+    private final String klinesPath;
 
     public CoinGeckoClient(@Qualifier("coinGeckoWebClient") WebClient coinGeckoWebClient,
                            @Qualifier("binanceWebClient") WebClient binanceWebClient,
-                           CoinGeckoCandleMapper candleMapper) {
+                           CoinGeckoCandleMapper candleMapper,
+                           com.finance.backend.config.AppProperties appProperties) {
         this.coinGeckoWebClient = coinGeckoWebClient;
         this.binanceWebClient = binanceWebClient;
         this.candleMapper = candleMapper;
+        this.marketsPath = appProperties.getApi().getCoingecko().getMarketsPath();
+        this.klinesPath = appProperties.getApi().getBinance().getKlinesPath();
     }
 
     @CircuitBreaker(name = "coingecko")
@@ -37,7 +42,7 @@ public class CoinGeckoClient {
     public List<CoinGeckoSnapshotDto> fetchMarkets(String vsCurrency, List<String> coinIds) {
         try {
             List<CoinGeckoMarketDto> raw = coinGeckoWebClient.get()
-                    .uri("/coins/markets?vs_currency=" + vsCurrency
+                    .uri(marketsPath + "?vs_currency=" + vsCurrency
                             + "&ids=" + String.join(",", coinIds)
                             + "&order=market_cap_desc&sparkline=false")
                     .retrieve()
@@ -56,7 +61,7 @@ public class CoinGeckoClient {
     public List<CoinGeckoCandleDto> fetchBinanceKlines(String coinId, String binanceSymbol, int days) {
         try {
             List<BinanceKlineResponse> raw = binanceWebClient.get()
-                    .uri("/api/v3/klines?symbol=" + binanceSymbol
+                    .uri(klinesPath + "?symbol=" + binanceSymbol
                             + "&interval=1d&limit=" + days)
                     .retrieve()
                     .bodyToMono(new ParameterizedTypeReference<List<BinanceKlineResponse>>() {})

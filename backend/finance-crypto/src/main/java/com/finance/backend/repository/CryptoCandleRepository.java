@@ -15,4 +15,7 @@ public interface CryptoCandleRepository extends JpaRepository<CryptoCandle, Long
     void deleteByCandleDateBefore(LocalDateTime date);
     Optional<CryptoCandle> findByCryptoIdAndCandleDate(String cryptoId, LocalDateTime candleDate);
     List<CryptoCandle> findByCryptoIdAndCandleDateIn(String cryptoId, List<LocalDateTime> candleDates);
+
+    List<CryptoCandle> findByCryptoIdAndCandleDateBetweenOrderByCandleDateAsc(
+            String cryptoId, LocalDateTime startDate, LocalDateTime endDate);
 }

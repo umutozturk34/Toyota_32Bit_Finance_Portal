@@ -111,17 +111,9 @@ public final class BondSerieFilterUtil {
     }
 
     public static List<LocalDate[]> buildWindows(LocalDate startDate, LocalDate endDate, int maxDays) {
-        List<LocalDate[]> windows = new ArrayList<>();
-        LocalDate windowStart = startDate;
-        while (windowStart.isBefore(endDate) || windowStart.isEqual(endDate)) {
-            LocalDate windowEnd = windowStart.plusDays(maxDays - 1);
-            if (windowEnd.isAfter(endDate)) {
-                windowEnd = endDate;
-            }
-            windows.add(new LocalDate[] { windowStart, windowEnd });
-            windowStart = windowEnd.plusDays(1);
-        }
-        return windows;
+        return WindowedFetchPlanner.planForward(startDate, endDate, maxDays).stream()
+                .map(window -> new LocalDate[] { window.start(), window.end() })
+                .toList();
     }
 
     public static <T> List<List<T>> partition(List<T> list, int size) {

@@ -20,11 +20,15 @@ public class EvdsClient {
 
     private final WebClient webClient;
     private final String datagroupCode;
+    private final String serieListPath;
+    private final String seriesPath;
 
     public EvdsClient(@Qualifier("bondWebClient") WebClient webClient,
                       AppProperties appProperties) {
         this.webClient = webClient;
         this.datagroupCode = appProperties.getBond().getDatagroupCode();
+        this.serieListPath = appProperties.getApi().getBond().getSerieListPath();
+        this.seriesPath = appProperties.getApi().getBond().getSeriesPath();
     }
 
     @CircuitBreaker(name = "bond")
@@ -33,7 +37,7 @@ public class EvdsClient {
         log.debug("Fetching bond serie list from EVDS, datagroup: {}", datagroupCode);
         try {
             List<EvdsBondSerieResponse> series = webClient.get()
-                    .uri("/serieList/type=json&code=" + datagroupCode)
+                    .uri(serieListPath + datagroupCode)
                     .retrieve()
                     .bodyToMono(new ParameterizedTypeReference<List<EvdsBondSerieResponse>>() {})
                     .block();
@@ -58,7 +62,7 @@ public class EvdsClient {
         log.debug("Fetching bond data: {} codes, period {} to {}", serieCodes.size(), startDate, endDate);
         try {
             EvdsBondDataResponse response = webClient.get()
-                    .uri("/series=" + seriesParam
+                    .uri(seriesPath + seriesParam
                             + "&startDate=" + startDate
                             + "&endDate=" + endDate
                             + "&type=json")

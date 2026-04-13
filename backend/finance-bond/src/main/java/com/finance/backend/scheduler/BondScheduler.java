@@ -15,7 +15,7 @@ public class BondScheduler {
     private final BondDataService bondDataService;
     private final TaskTrackingService taskTracker;
 
-    @Scheduled(cron = "0 0 20 * * *", zone = "${app.timezone}")
+    @Scheduled(cron = "${app.scheduler.bond.daily-cron}", zone = "${app.timezone}")
     public void runDailyBondUpdate() {
         TaskInfo started = taskTracker.startTask("scheduled-bond-update", "Scheduled daily bond update (snapshot + rate history)");
         try {

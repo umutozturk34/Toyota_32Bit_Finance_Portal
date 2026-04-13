@@ -3,7 +3,7 @@ import com.finance.backend.model.MarketType;
 import com.finance.backend.service.MarketUpdatePort;
 import com.finance.backend.service.PortfolioSnapshotPort;
 import com.finance.backend.service.TcmbForexService;
-import com.finance.backend.service.YahooForexService;
+import com.finance.backend.service.ForexDataService;
 import com.finance.backend.service.TaskTrackingService;
 import com.finance.backend.service.TaskTrackingService.TaskInfo;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ForexScheduler {
     private final TcmbForexService tcmbForexService;
-    private final YahooForexService yahooForexService;
+    private final ForexDataService yahooForexService;
     private final TaskTrackingService taskTracker;
     private final Optional<PortfolioSnapshotPort> portfolioSnapshotPort;
     private final Optional<MarketUpdatePort> marketUpdatePort;

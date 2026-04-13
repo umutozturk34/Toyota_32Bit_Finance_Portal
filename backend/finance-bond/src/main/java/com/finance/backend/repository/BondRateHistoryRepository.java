@@ -17,4 +17,7 @@ public interface BondRateHistoryRepository extends JpaRepository<BondRateHistory
     long countByIsinCode(String isinCode);
 
     boolean existsByIsinCodeAndRateDate(String isinCode, java.time.LocalDate rateDate);
+
+    List<BondRateHistory> findByIsinCodeAndRateDateAfterOrderByRateDateAsc(
+            String isinCode, java.time.LocalDate afterDate);
 }

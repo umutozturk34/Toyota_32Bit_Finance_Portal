@@ -34,6 +34,8 @@ public final class NewsCategoryResolverConfig {
         public List<String> bondContext;
         public List<String> macroPolicy;
         public List<String> strongCompanyNews;
+        public List<String> definiteCorporate;
+        public List<String> foreignBondContext;
 
         public RuleKeywords() {
         }
@@ -48,7 +50,9 @@ public final class NewsCategoryResolverConfig {
                 List<String> bondPriority,
                 List<String> bondContext,
                 List<String> macroPolicy,
-                List<String> strongCompanyNews
+                List<String> strongCompanyNews,
+                List<String> definiteCorporate,
+                List<String> foreignBondContext
         ) {
             this.summaryHint = summaryHint;
             this.generalMarketBasket = generalMarketBasket;
@@ -60,6 +64,8 @@ public final class NewsCategoryResolverConfig {
             this.bondContext = bondContext;
             this.macroPolicy = macroPolicy;
             this.strongCompanyNews = strongCompanyNews;
+            this.definiteCorporate = definiteCorporate;
+            this.foreignBondContext = foreignBondContext;
         }
 
         public List<String> summaryHint() {
@@ -100,6 +106,14 @@ public final class NewsCategoryResolverConfig {
 
         public List<String> strongCompanyNews() {
             return strongCompanyNews;
+        }
+
+        public List<String> definiteCorporate() {
+            return definiteCorporate;
+        }
+
+        public List<String> foreignBondContext() {
+            return foreignBondContext;
         }
     }
 }

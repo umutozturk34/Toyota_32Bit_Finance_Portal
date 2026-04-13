@@ -24,11 +24,15 @@ public interface FundCandleRepository extends JpaRepository<FundCandle, Long> {
 
     Optional<FundCandle> findFirstByFundCodeOrderByCandleDateDesc(String fundCode);
 
+    Optional<FundCandle> findFirstByFundCodeAndCandleDateBeforeOrderByCandleDateDesc(String fundCode, LocalDateTime before);
+
     Optional<FundCandle> findByFundCodeAndCandleDate(String fundCode, LocalDateTime candleDate);
 
     List<FundCandle> findByFundCodeAndCandleDateIn(String fundCode, Collection<LocalDateTime> candleDates);
 
     List<FundCandle> findTop1825ByFundCodeOrderByCandleDateDesc(String fundCode);
+
+    List<FundCandle> findTop2ByFundCodeOrderByCandleDateDesc(String fundCode);
 
     long countByFundCode(String fundCode);
 

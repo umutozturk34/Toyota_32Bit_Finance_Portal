@@ -61,21 +61,15 @@ public class UnifiedMarketService implements MarketUpdatePort {
         String filterValue = filter != null && !"all".equalsIgnoreCase(filter) ? filter : null;
 
         List<MarketAssetResponse> allResults = new ArrayList<>();
-        for (MarketType type : types) {
-            MarketAssetProvider provider = providers.get(type);
-            if (provider == null) continue;
-            allResults.addAll(provider.search(search, filters, resolveSort(sort), direction, page, size));
-        }
-
-        List<MarketAssetResponse> filtered = applyFilter(allResults, filterValue);
-
         long total = 0;
         for (MarketType type : types) {
             MarketAssetProvider provider = providers.get(type);
             if (provider == null) continue;
+            allResults.addAll(provider.search(search, filters, resolveSort(sort), direction, page, size));
             total += hasSearch ? provider.countBySearch(search, filters) : provider.count(filters);
         }
 
+        List<MarketAssetResponse> filtered = applyFilter(allResults, filterValue);
         return PagedResponse.of(applySort(filtered, sort, direction), page, size, total);
     }
 

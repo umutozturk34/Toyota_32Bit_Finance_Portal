@@ -1,6 +1,6 @@
 package com.finance.backend.scheduler;
 import com.finance.backend.model.MarketType;
-import com.finance.backend.service.MarketDataService;
+import com.finance.backend.service.CryptoDataService;
 import com.finance.backend.service.MarketUpdatePort;
 import com.finance.backend.service.PortfolioSnapshotPort;
 import com.finance.backend.service.TaskTrackingService;
@@ -15,8 +15,8 @@ import java.util.Optional;
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class MarketScheduler {
-    private final MarketDataService marketDataService;
+public class CryptoScheduler {
+    private final CryptoDataService marketDataService;
     private final TaskTrackingService taskTracker;
     private final Optional<PortfolioSnapshotPort> portfolioSnapshotPort;
     private final Optional<MarketUpdatePort> marketUpdatePort;

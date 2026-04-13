@@ -3,7 +3,7 @@ import com.finance.backend.model.Forex;
 import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.repository.ForexCandleRepository;
 import com.finance.backend.service.TcmbForexService;
-import com.finance.backend.service.YahooForexService;
+import com.finance.backend.service.ForexDataService;
 import com.finance.backend.service.TaskTrackingService;
 import com.finance.backend.service.TaskTrackingService.TaskInfo;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class ForexDataInitializer implements CommandLineRunner {
     private final ForexRepository forexRepository;
     private final ForexCandleRepository forexCandleRepository;
     private final TcmbForexService tcmbForexService;
-    private final YahooForexService yahooForexService;
+    private final ForexDataService yahooForexService;
     private final TaskTrackingService taskTracker;
     private final Executor taskExecutor;
     @Override

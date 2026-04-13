@@ -15,10 +15,10 @@ import java.util.concurrent.Executor;
 @RequiredArgsConstructor
 public class AdminTaskService {
 
-    private final MarketDataService marketDataService;
+    private final CryptoDataService marketDataService;
     private final StockDataService stockDataService;
     private final TcmbForexService tcmbForexService;
-    private final YahooForexService yahooForexService;
+    private final ForexDataService yahooForexService;
     private final FundDataService fundDataService;
     private final BondDataService bondDataService;
     private final NewsDataService newsDataService;

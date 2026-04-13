@@ -1,4 +1,4 @@
-package com.finance.backend.entity;
+package com.finance.backend.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

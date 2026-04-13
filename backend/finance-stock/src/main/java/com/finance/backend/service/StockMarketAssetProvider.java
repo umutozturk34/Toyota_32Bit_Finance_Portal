@@ -6,10 +6,12 @@ import com.finance.backend.model.MarketType;
 import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
 import com.finance.backend.model.TrackedAssetType;
+import com.finance.backend.model.StockSegment;
 import com.finance.backend.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -57,7 +59,7 @@ public class StockMarketAssetProvider implements MarketAssetProvider {
         String segment = filters != null ? filters.get("segment") : null;
         if (segment != null && !segment.isBlank()) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("stockSegment"),
-                    com.finance.backend.model.StockSegment.valueOf(segment)));
+                    StockSegment.valueOf(segment)));
         }
         List<Stock> stocks = stockRepository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS))).getContent();
         return withDisplayNames(stockResponseMapper.toMarketAssetResponses(stocks));
@@ -70,8 +72,8 @@ public class StockMarketAssetProvider implements MarketAssetProvider {
                 .and(nonNullChangePercent());
 
         var sort = gainers
-                ? org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "priceChangePercent")
-                : org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "priceChangePercent");
+                ? Sort.by(Sort.Direction.DESC, "priceChangePercent")
+                : Sort.by(Sort.Direction.ASC, "priceChangePercent");
 
         List<Stock> stocks = stockRepository.findAll(spec, PageRequest.of(0, limit, sort)).getContent();
         return withDisplayNames(stockResponseMapper.toMarketAssetResponses(stocks));
@@ -84,7 +86,7 @@ public class StockMarketAssetProvider implements MarketAssetProvider {
         String segment = filters != null ? filters.get("segment") : null;
         if (segment != null && !segment.isBlank()) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("stockSegment"),
-                    com.finance.backend.model.StockSegment.valueOf(segment)));
+                    StockSegment.valueOf(segment)));
         }
         return stockRepository.count(spec);
     }
@@ -96,7 +98,7 @@ public class StockMarketAssetProvider implements MarketAssetProvider {
         String segment = filters != null ? filters.get("segment") : null;
         if (segment != null && !segment.isBlank()) {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("stockSegment"),
-                    com.finance.backend.model.StockSegment.valueOf(segment)));
+                    StockSegment.valueOf(segment)));
         }
         return stockRepository.count(spec);
     }
@@ -109,7 +111,7 @@ public class StockMarketAssetProvider implements MarketAssetProvider {
     }
 
     private Specification<Stock> buildSpecification(String searchTerm, Set<String> enabledCodes) {
-        Specification<Stock> spec = enabledCodesSpec(enabledCodes);
+         Specification<Stock> spec = enabledCodesSpec(enabledCodes);
         if (searchTerm != null && !searchTerm.isBlank()) {
             String pattern = "%" + searchTerm.toLowerCase() + "%";
             spec = spec.and((root, query, cb) -> cb.or(

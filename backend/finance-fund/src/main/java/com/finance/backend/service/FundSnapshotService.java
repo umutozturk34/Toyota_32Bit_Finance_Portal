@@ -21,6 +21,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
+import java.util.stream.Stream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
@@ -136,7 +137,7 @@ public class FundSnapshotService {
             byfResult = new BatchUpdateRunner.Result(
                     byfResult.successCount() + yatResult.successCount(),
                     byfResult.failCount() + yatResult.failCount(),
-                    java.util.stream.Stream.concat(byfResult.failedItems().stream(), yatResult.failedItems().stream()).toList());
+                    Stream.concat(byfResult.failedItems().stream(), yatResult.failedItems().stream()).toList());
         }
 
         log.info("[TIMING] Fund snapshot update took {}s (BYF={}, YAT={})",

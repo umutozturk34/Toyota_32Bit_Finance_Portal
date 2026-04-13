@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -125,11 +126,11 @@ public class TrackedAssetService {
         return trackedAssetRepository.findByAssetTypeAndEnabledTrueOrderBySortOrderAscAssetCodeAsc(type)
                 .stream()
                 .filter(asset -> asset.getDisplayName() != null && !asset.getDisplayName().isBlank())
-                .collect(java.util.stream.Collectors.toMap(
+                .collect(Collectors.toMap(
                         TrackedAsset::getAssetCode,
                         TrackedAsset::getDisplayName,
                         (first, second) -> second,
-                        java.util.LinkedHashMap::new
+                        LinkedHashMap::new
                 ));
     }
 

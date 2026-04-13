@@ -8,11 +8,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -27,8 +25,7 @@ public class MarketCacheService<T, C> {
     private final String entityName;
     private final Function<String, Optional<T>> snapshotFinder;
     private final Function<String, List<C>> candleFinder;
-    private final Supplier<List<String>> allKeysFinder;
-    
+
     public T getSnapshot(String key) {
         String cacheKey = snapshotPrefix + key;
         Object cached = redisTemplate.opsForValue().get(cacheKey);
@@ -41,19 +38,6 @@ public class MarketCacheService<T, C> {
             return entity.get();
         }
         throw new ResourceNotFoundException(entityName + " not found: " + key);
-    }
-
-    public List<T> getAllSnapshots() {
-        List<String> keys = allKeysFinder.get();
-        List<T> result = new ArrayList<>(keys.size());
-        for (String key : keys) {
-            try {
-                result.add(getSnapshot(key));
-            } catch (ResourceNotFoundException e) {
-                log.debug("{} not found in cache or DB: {}", entityName, key);
-            }
-        }
-        return result;
     }
 
     public List<C> getHistory(String key) {

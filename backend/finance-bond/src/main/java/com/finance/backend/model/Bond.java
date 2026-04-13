@@ -222,8 +222,4 @@ public class Bond extends BaseAsset {
         this.simpleYield = scaleValue(this.simpleYield, scale);
         this.baseIndex = scaleValue(this.baseIndex, scale);
     }
-
-    private BigDecimal scaleValue(BigDecimal value, int scale) {
-        return value != null ? value.setScale(scale, RoundingMode.HALF_UP) : null;
-    }
 }

@@ -41,6 +41,9 @@ public class Stock extends BaseAsset {
     private String exchange;
     @Column(name = "currency")
     private String currency;
+    @Column(name = "stock_segment", length = 50)
+    @Enumerated(EnumType.STRING)
+    private StockSegment stockSegment;
 
     public void scaleAndComputeChange(int scale) {
         this.currentPrice = scaleValue(this.currentPrice, scale);
@@ -62,9 +65,5 @@ public class Stock extends BaseAsset {
         this.priceChangePercent = change.divide(previousClose, scale + 2, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100))
                 .setScale(scale, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal scaleValue(BigDecimal value, int scale) {
-        return value != null ? value.setScale(scale, RoundingMode.HALF_UP) : null;
     }
 }

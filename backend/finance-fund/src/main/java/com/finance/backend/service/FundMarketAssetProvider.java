@@ -19,16 +19,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.finance.backend.service.MarketProviderHelper.applyDisplayNames;
+import static com.finance.backend.service.MarketProviderHelper.buildSort;
+
 @Log4j2
 @Service
 @RequiredArgsConstructor
 public class FundMarketAssetProvider implements MarketAssetProvider {
 
+    private static final Map<String, String> SORT_FIELDS = Map.of(
+            "price", "price",
+            "changePercent", "changePercent",
+            "name", "name",
+            "default", "changePercent"
+    );
+
     private final FundRepository fundRepository;
     private final MarketCacheService<Fund, FundCandle> fundCacheService;
     private final FundResponseMapper fundResponseMapper;
     private final TrackedAssetService trackedAssetService;
-    private final TrackedMarketViewService trackedMarketViewService;
 
     @Override
     public MarketType getType() {
@@ -39,24 +48,16 @@ public class FundMarketAssetProvider implements MarketAssetProvider {
     public MarketAssetResponse getByCode(String code) {
         Fund fund = fundCacheService.getSnapshot(code);
         if (fund == null) return null;
-        return applyDisplayNames(fundResponseMapper.toMarketAssetResponses(List.of(fund))).stream().findFirst().orElse(null);
-    }
-
-    @Override
-    public List<MarketAssetResponse> getAll() {
-        List<Fund> ordered = trackedMarketViewService.getEnabledAndOrdered(
-                TrackedAssetType.FUND, fundCacheService.getAllSnapshots(), Fund::getFundCode);
-        return applyDisplayNames(fundResponseMapper.toMarketAssetResponses(ordered));
+        return withDisplayNames(fundResponseMapper.toMarketAssetResponses(List.of(fund))).stream().findFirst().orElse(null);
     }
 
     @Override
     public List<MarketAssetResponse> search(String searchTerm, String sortBy, String direction, int page, int size) {
         Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.FUND));
         Specification<Fund> spec = buildSpecification(searchTerm, enabledCodes);
-        Sort sort = buildSort(sortBy, direction);
 
-        List<Fund> funds = fundRepository.findAll(spec, PageRequest.of(page, size, sort)).getContent();
-        return applyDisplayNames(fundResponseMapper.toMarketAssetResponses(funds));
+        List<Fund> funds = fundRepository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS))).getContent();
+        return withDisplayNames(fundResponseMapper.toMarketAssetResponses(funds));
     }
 
     @Override
@@ -70,7 +71,7 @@ public class FundMarketAssetProvider implements MarketAssetProvider {
                 : Sort.by(Sort.Direction.ASC, "changePercent");
 
         List<Fund> funds = fundRepository.findAll(spec, PageRequest.of(0, limit, sort)).getContent();
-        return applyDisplayNames(fundResponseMapper.toMarketAssetResponses(funds));
+        return withDisplayNames(fundResponseMapper.toMarketAssetResponses(funds));
     }
 
     @Override
@@ -111,25 +112,7 @@ public class FundMarketAssetProvider implements MarketAssetProvider {
         return (root, query, cb) -> cb.isNotNull(root.get("changePercent"));
     }
 
-    private Sort buildSort(String sortBy, String direction) {
-        String field = switch (sortBy) {
-            case "price" -> "price";
-            case "changePercent" -> "changePercent";
-            case "name" -> "name";
-            default -> "changePercent";
-        };
-        return Sort.by("asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC, field);
-    }
-
-    private List<MarketAssetResponse> applyDisplayNames(List<MarketAssetResponse> responses) {
-        Map<String, String> displayNameMap = trackedAssetService.getEnabledDisplayNameMap(TrackedAssetType.FUND);
-        return responses.stream()
-                .map(r -> {
-                    String displayName = displayNameMap.get(r.code());
-                    if (displayName == null || displayName.isBlank()) return r;
-                    return new MarketAssetResponse(r.code(), displayName, r.image(), r.type(),
-                            r.price(), r.changeAmount(), r.changePercent(), r.lastUpdated(), r.metadata());
-                })
-                .toList();
+    private List<MarketAssetResponse> withDisplayNames(List<MarketAssetResponse> responses) {
+        return applyDisplayNames(responses, trackedAssetService.getEnabledDisplayNameMap(TrackedAssetType.FUND));
     }
 }

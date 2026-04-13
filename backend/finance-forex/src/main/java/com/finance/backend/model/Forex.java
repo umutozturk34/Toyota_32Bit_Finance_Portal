@@ -115,8 +115,4 @@ public class Forex extends BaseAsset {
         if (value == null || unit <= 1) return value;
         return value.divide(new BigDecimal(unit), scale, RoundingMode.HALF_UP);
     }
-
-    private BigDecimal scaleValue(BigDecimal value, int scale) {
-        return value != null ? value.setScale(scale, RoundingMode.HALF_UP) : null;
-    }
 }

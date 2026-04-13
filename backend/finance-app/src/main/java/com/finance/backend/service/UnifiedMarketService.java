@@ -1,6 +1,4 @@
 package com.finance.backend.service;
-
-import com.finance.backend.dto.response.CandleResponse;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.dto.response.MarketOverviewResponse;
 import com.finance.backend.dto.response.PagedResponse;
@@ -14,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,33 +55,22 @@ public class UnifiedMarketService implements MarketUpdatePort {
         boolean hasSegment = segment != null && !segment.isBlank();
         boolean hasSearch = search != null && !search.isBlank();
         boolean hasFilter = filter != null && !"all".equalsIgnoreCase(filter);
-        boolean hasSort = sort != null && !sort.isBlank();
-
-        boolean useDbQuery = hasSort || hasSearch;
-
         List<MarketAssetResponse> allResults = new ArrayList<>();
 
-        if (useDbQuery) {
+        for (MarketType type : types) {
+            MarketAssetProvider provider = providers.get(type);
+            if (provider == null) continue;
+            allResults.addAll(provider.search(search, resolveSort(sort), direction, page, size));
+        }
+
+        if (!hasSegment && !hasSubType && !hasFilter) {
+            long total = 0;
             for (MarketType type : types) {
                 MarketAssetProvider provider = providers.get(type);
                 if (provider == null) continue;
-                allResults.addAll(provider.search(search, resolveSort(sort), direction, page, size));
+                total += hasSearch ? provider.countBySearch(search) : provider.count();
             }
-            if (!hasSegment && !hasSubType && !hasFilter) {
-                long total = 0;
-                for (MarketType type : types) {
-                    MarketAssetProvider provider = providers.get(type);
-                    if (provider == null) continue;
-                    total += hasSearch ? provider.countBySearch(search) : provider.count();
-                }
-                return PagedResponse.of(applySort(allResults, sort, direction), page, size, total);
-            }
-        } else {
-            for (MarketType type : types) {
-                MarketAssetProvider provider = providers.get(type);
-                if (provider == null) continue;
-                allResults.addAll(provider.getAll());
-            }
+            return PagedResponse.of(applySort(allResults, sort, direction), page, size, total);
         }
 
         if (hasSegment) {
@@ -101,7 +87,7 @@ public class UnifiedMarketService implements MarketUpdatePort {
 
         List<MarketAssetResponse> filtered = applyFilter(allResults, filter);
         long totalElements = filtered.size();
-        List<MarketAssetResponse> sorted = hasSort ? applySort(filtered, sort, direction) : filtered;
+        List<MarketAssetResponse> sorted = applySort(filtered, sort, direction);
         List<MarketAssetResponse> paged = sorted.stream().skip((long) page * size).limit(size).toList();
 
         return PagedResponse.of(paged, page, size, totalElements);
@@ -133,7 +119,7 @@ public class UnifiedMarketService implements MarketUpdatePort {
         if (indices.isEmpty()) {
             MarketAssetProvider stockProvider = providers.get(MarketType.STOCK);
             if (stockProvider != null) {
-                indices = stockProvider.getAll().stream()
+                indices = stockProvider.search(null, "changePercent", "desc", 0, 100).stream()
                         .filter(a -> a.metadata() != null && "MAIN_INDEX".equals(a.metadata().get("stockSegment")))
                         .toList();
             }
@@ -197,8 +183,8 @@ public class UnifiedMarketService implements MarketUpdatePort {
             topMoversRedisService.updateMovers(type, combined);
 
             if (type == MarketType.STOCK) {
-                List<MarketAssetResponse> all = provider.getAll();
-                List<MarketAssetResponse> indexAssets = all.stream()
+                List<MarketAssetResponse> allStocks = provider.search(null, "changePercent", "desc", 0, 100);
+                List<MarketAssetResponse> indexAssets = allStocks.stream()
                         .filter(a -> a.metadata() != null && "MAIN_INDEX".equals(a.metadata().get("stockSegment")))
                         .toList();
                 topMoversRedisService.updateIndices(indexAssets);

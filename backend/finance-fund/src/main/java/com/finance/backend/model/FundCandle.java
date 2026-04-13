@@ -83,15 +83,15 @@ public class FundCandle {
         this.portfolioSize = scaleValue(this.portfolioSize, 2);
     }
 
+    private static BigDecimal scaleValue(BigDecimal value, int scale) {
+        return value != null ? value.setScale(scale, java.math.RoundingMode.HALF_UP) : null;
+    }
+
     public void scaleAllFields() {
         this.price = scaleValue(this.price, 6);
         this.bulletinPrice = scaleValue(this.bulletinPrice, 4);
         this.shareCount = scaleValue(this.shareCount, 2);
         this.investorCount = scaleValue(this.investorCount, 2);
         this.portfolioSize = scaleValue(this.portfolioSize, 2);
-    }
-
-    private BigDecimal scaleValue(BigDecimal value, int scale) {
-        return value != null ? value.setScale(scale, RoundingMode.HALF_UP) : null;
     }
 }

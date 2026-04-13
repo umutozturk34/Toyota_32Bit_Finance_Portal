@@ -11,10 +11,8 @@ import com.finance.backend.repository.ForexCandleRepository;
 import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
-import com.finance.backend.util.CacheUpdateHelper;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
-import com.finance.backend.util.TxRunner;
 import com.finance.backend.util.YahooRangePolicy;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
@@ -29,7 +27,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Log4j2
-public class YahooForexCandleService {
+public class ForexCandleService {
 
     private final YahooForexClient yahooForexClient;
     private final ForexMapper forexMapper;
@@ -42,7 +40,7 @@ public class YahooForexCandleService {
     private final int minCandlesForIncremental;
     private final ZoneId appZone;
 
-    public YahooForexCandleService(YahooForexClient yahooForexClient,
+    public ForexCandleService(YahooForexClient yahooForexClient,
                                    ForexMapper forexMapper,
                                    PriceCalculationService priceCalculationService,
                                    ForexRepository forexRepository,
@@ -75,7 +73,7 @@ public class YahooForexCandleService {
             return;
         }
         updateForexCandles(usdtry, Map.of());
-        CacheUpdateHelper.refreshHistory(forexCacheService, "USDTRY");
+        forexCacheService.refreshHistory("USDTRY");
         Map<String, ForexCandle> usdtryCandleMap = forexCacheService.getHistory("USDTRY")
                 .stream()
                 .collect(Collectors.toMap(
@@ -91,7 +89,7 @@ public class YahooForexCandleService {
                 nonUsdTryForex,
                 forex -> {
                     updateForexCandles(forex, usdtryCandleMap);
-                    CacheUpdateHelper.refreshHistory(forexCacheService, forex.getCurrencyCode());
+                    forexCacheService.refreshHistory(forex.getCurrencyCode());
                 },
                 Forex::getCurrencyCode,
                 "candle",
@@ -116,7 +114,7 @@ public class YahooForexCandleService {
         try {
             List<YahooCandleDto> candles = yahooForexClient.fetchCandles(yahooSymbol, range, "1d", false);
             if (!candles.isEmpty()) {
-                int saved = TxRunner.run(transactionTemplate, () -> saveCandleBatch(forex, candles));
+                int saved = transactionTemplate.execute(status -> saveCandleBatch(forex, candles));
                 if (saved > 0 && (!"5y".equals(range) || candleCount + saved >= minCandlesForIncremental)) {
                     return;
                 }
@@ -151,7 +149,7 @@ public class YahooForexCandleService {
                     boolean isUsdBase = symbol.startsWith("USD");
                     List<YahooCandleDto> syntheticCandles = priceCalculationService.buildSyntheticCandles(
                             pairCandles, usdtryCandleMap, isUsdBase);
-                    int saved = TxRunner.run(transactionTemplate, () -> saveCandleBatch(forex, syntheticCandles));
+                    int saved = transactionTemplate.execute(status -> saveCandleBatch(forex, syntheticCandles));
                     log.debug("Saved {} synthetic candles for {} via {}", saved, forex.getCurrencyCode(), symbol);
                     return;
                 }

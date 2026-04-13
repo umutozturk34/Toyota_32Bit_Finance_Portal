@@ -1,0 +1,217 @@
+package com.finance.backend.service;
+
+import com.finance.backend.client.TefasClient;
+import com.finance.backend.constants.MarketConstants;
+import com.finance.backend.dto.external.TefasFundDto;
+import com.finance.backend.dto.internal.TrackedAssetUpsertCommand;
+import com.finance.backend.exception.BusinessException;
+import com.finance.backend.exception.ExternalApiException;
+import com.finance.backend.mapper.FundMapper;
+import com.finance.backend.model.Fund;
+import com.finance.backend.model.FundCandle;
+import com.finance.backend.model.TrackedAssetType;
+import com.finance.backend.repository.FundRepository;
+import com.finance.backend.util.BatchLogHelper;
+import com.finance.backend.util.BatchUpdateRunner;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+@Log4j2
+@Service
+public class FundSnapshotService {
+
+    private final TefasClient tefasClient;
+    private final FundMapper fundMapper;
+    private final FundRepository fundRepository;
+    private final MarketCacheService<Fund, FundCandle> fundCacheService;
+    private final TrackedAssetService trackedAssetService;
+    private final MarketConstants marketConstants;
+    private final FundChangeCalculator fundChangeCalculator;
+    private final TransactionTemplate transactionTemplate;
+    private final ZoneId appZone;
+
+    public FundSnapshotService(TefasClient tefasClient,
+                               FundMapper fundMapper,
+                               FundRepository fundRepository,
+                               MarketCacheService<Fund, FundCandle> fundCacheService,
+                               TrackedAssetService trackedAssetService,
+                               MarketConstants marketConstants,
+                               FundChangeCalculator fundChangeCalculator,
+                               PlatformTransactionManager transactionManager,
+                               @Value("${app.timezone}") String timezone) {
+        this.tefasClient = tefasClient;
+        this.fundMapper = fundMapper;
+        this.fundRepository = fundRepository;
+        this.fundCacheService = fundCacheService;
+        this.trackedAssetService = trackedAssetService;
+        this.marketConstants = marketConstants;
+        this.fundChangeCalculator = fundChangeCalculator;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.appZone = ZoneId.of(timezone);
+    }
+
+    public boolean existsInApi(String fundCode) {
+        String normalized = fundCode == null ? "" : fundCode.trim().toUpperCase();
+        if (normalized.isBlank()) return false;
+        LocalDate today = findLastBusinessDay(LocalDate.now());
+        try {
+            List<TefasFundDto> yat = fetchTefas("YAT", normalized, today, today);
+            if (!yat.isEmpty()) return true;
+            List<TefasFundDto> byf = fetchTefas("BYF", normalized, today, today);
+            return !byf.isEmpty();
+        } catch (Exception e) {
+            log.warn("Fund existence check failed for {}: {}", normalized, e.getMessage());
+            return false;
+        }
+    }
+
+    public void updateFundSnapshots() {
+        long snapshotStart = System.currentTimeMillis();
+        LocalDate today = findLastBusinessDay(LocalDate.now());
+        log.info("Starting fund snapshot update for {}", today);
+        BatchUpdateRunner.Result byfResult = new BatchUpdateRunner.Result(0, 0, List.of());
+        Set<String> byfCodes = Set.of();
+
+        try {
+            List<TefasFundDto> byfFunds = fetchTefas("BYF", null, today, today);
+            byfCodes = byfFunds.stream().map(TefasFundDto::fundCode).collect(Collectors.toSet());
+            byfResult = BatchUpdateRunner.run(
+                    byfFunds,
+                    dto -> {
+                        Fund saved = transactionTemplate.execute(status -> saveFundSnapshot(dto, "BYF"));
+                        ensureByfTracked(saved.getFundCode(), saved.getName());
+                        fundCacheService.putSnapshot(saved.getFundCode(), saved);
+                    },
+                    TefasFundDto::fundCode,
+                    "BYF snapshot",
+                    5,
+                    (dto, e) -> log.error("BYF snapshot failed {}: {}", dto.fundCode(), e.getMessage(), e),
+                    null,
+                    null);
+        } catch (CallNotPermittedException e) {
+            log.warn("TEFAS circuit breaker is OPEN, aborting snapshot update");
+            return;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to fetch BYF funds", e);
+        }
+
+        Set<String> handledByfCodes = byfCodes;
+        List<String> yatCodes = marketConstants.getTrackedFunds().stream()
+                .filter(code -> !handledByfCodes.contains(code))
+                .toList();
+
+        if (yatCodes.isEmpty()) {
+            log.info("No YAT-only fund codes to update (all handled as BYF)");
+        } else {
+            BatchUpdateRunner.Result yatResult = BatchUpdateRunner.run(
+                    yatCodes,
+                    code -> {
+                        List<TefasFundDto> yatFunds = fetchTefas("YAT", code, today, today);
+                        if (!yatFunds.isEmpty()) {
+                            Fund saved = transactionTemplate.execute(status -> saveFundSnapshot(yatFunds.getFirst(), "YAT"));
+                            fundCacheService.putSnapshot(saved.getFundCode(), saved);
+                        }
+                    },
+                    Function.identity(),
+                    "YAT snapshot",
+                    5,
+                    (code, e) -> log.error("YAT snapshot failed {}: {}", code, e.getMessage(), e),
+                    e -> e instanceof CallNotPermittedException,
+                    (result, e) -> log.warn("TEFAS circuit breaker is OPEN, stopping YAT snapshot update"));
+
+            byfResult = new BatchUpdateRunner.Result(
+                    byfResult.successCount() + yatResult.successCount(),
+                    byfResult.failCount() + yatResult.failCount(),
+                    java.util.stream.Stream.concat(byfResult.failedItems().stream(), yatResult.failedItems().stream()).toList());
+        }
+
+        log.info("[TIMING] Fund snapshot update took {}s (BYF={}, YAT={})",
+                (System.currentTimeMillis() - snapshotStart) / 1000,
+                handledByfCodes.size(), yatCodes.size());
+        BatchLogHelper.logSummary(log, "Fund snapshot update", byfResult);
+    }
+
+    public void refreshTrackedFundSnapshot(String fundCode) {
+        String normalized = fundCode == null ? "" : fundCode.trim().toUpperCase();
+        if (normalized.isBlank()) {
+            return;
+        }
+
+        LocalDate today = findLastBusinessDay(LocalDate.now());
+        List<TefasFundDto> yatFunds = fetchTefas("YAT", normalized, today, today);
+        String fundType = "YAT";
+        TefasFundDto dto = yatFunds.isEmpty() ? null : yatFunds.getFirst();
+
+        if (dto == null) {
+            List<TefasFundDto> byfFunds = fetchTefas("BYF", normalized, today, today);
+            fundType = "BYF";
+            dto = byfFunds.isEmpty() ? null : byfFunds.getFirst();
+        }
+
+        if (dto == null) {
+            log.warn("No snapshot data found for tracked fund {}", normalized);
+            return;
+        }
+
+        String finalFundType = fundType;
+        TefasFundDto selectedDto = dto;
+        Fund saved = transactionTemplate.execute(status -> saveFundSnapshot(selectedDto, finalFundType));
+        fundCacheService.putSnapshot(saved.getFundCode(), saved);
+        log.info("Refreshed tracked fund snapshot for {}", normalized);
+    }
+
+    private Fund saveFundSnapshot(TefasFundDto dto, String fundType) {
+        LocalDateTime now = LocalDateTime.now();
+        Fund fund = fundRepository.findById(dto.fundCode()).orElse(null);
+        Fund toPersist;
+        if (fund != null) {
+            fundMapper.updateEntity(fund, dto, fundType, now);
+            toPersist = fund;
+        } else {
+            toPersist = fundMapper.toEntity(dto, fundType, now);
+        }
+        toPersist.setChangePercent(fundChangeCalculator.calculateChangePercent(dto.fundCode(), dto.price()));
+        fundRepository.save(toPersist);
+        log.debug("Saved snapshot: {} ({}) - {}", dto.fundCode(), fundType, dto.price());
+        return toPersist;
+    }
+
+    private List<TefasFundDto> fetchTefas(String fundType, String fundCode,
+                                          LocalDate startDate, LocalDate endDate) {
+        return com.finance.backend.util.TefasHelper.fetchTefas(tefasClient, fundType, fundCode, startDate, endDate);
+    }
+
+    private void ensureByfTracked(String fundCode, String tefasName) {
+        if (trackedAssetService.getTrackedAsset(TrackedAssetType.FUND, fundCode).isPresent()) {
+            return;
+        }
+
+        trackedAssetService.upsert(TrackedAssetUpsertCommand.builder()
+            .assetType(TrackedAssetType.FUND)
+            .assetCode(fundCode)
+            .displayName(tefasName)
+            .enabled(true)
+            .sortOrder(9999)
+            .build());
+
+        log.info("Auto-added BYF fund to tracked assets: {}", fundCode);
+    }
+
+    private LocalDate findLastBusinessDay(LocalDate from) {
+        return com.finance.backend.util.TefasHelper.findLastBusinessDay(from, appZone);
+    }
+}

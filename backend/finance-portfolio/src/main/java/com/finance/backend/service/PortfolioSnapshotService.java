@@ -4,7 +4,6 @@ import com.finance.backend.model.*;
 import com.finance.backend.repository.*;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
-import com.finance.backend.util.TxRunner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -37,7 +36,7 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
                 portfolios,
-                portfolio -> TxRunner.runVoid(transactionTemplate, () -> {
+                portfolio -> transactionTemplate.executeWithoutResult(status -> {
                     boolean hasPositions = !positionRepository
                             .findByPortfolioIdAndAssetTypeAndQuantityGreaterThan(
                                     portfolio.getId(), type, BigDecimal.ZERO)
@@ -61,7 +60,7 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
                 portfolios,
-                portfolio -> TxRunner.runVoid(transactionTemplate, () -> {
+                portfolio -> transactionTemplate.executeWithoutResult(status -> {
                     if (dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(portfolio.getId(), today)) {
                         return;
                     }

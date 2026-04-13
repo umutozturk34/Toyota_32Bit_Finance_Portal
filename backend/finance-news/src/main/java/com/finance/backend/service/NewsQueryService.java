@@ -8,6 +8,8 @@ import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.mapper.NewsResponseMapper;
 import com.finance.backend.model.NewsArticle;
 import com.finance.backend.model.NewsCategory;
+import java.util.List;
+import java.util.Map;
 import com.finance.backend.repository.NewsArticleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -51,9 +53,9 @@ public class NewsQueryService {
     }
 
     @Transactional(readOnly = true)
-    public java.util.List<java.util.Map<String, Object>> getCategoryCounts() {
+    public List<Map<String, Object>> getCategoryCounts() {
         return articleRepository.countByCategory().stream()
-                .map(row -> java.util.Map.<String, Object>of("type", row[0].toString(), "count", row[1]))
+                .map(row -> Map.<String, Object>of("type", row[0].toString(), "count", row[1]))
                 .toList();
     }
 

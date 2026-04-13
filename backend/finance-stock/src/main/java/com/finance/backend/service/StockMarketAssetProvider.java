@@ -10,7 +10,6 @@ import com.finance.backend.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -19,16 +18,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.finance.backend.service.MarketProviderHelper.applyDisplayNames;
+import static com.finance.backend.service.MarketProviderHelper.buildSort;
+
 @Log4j2
 @Service
 @RequiredArgsConstructor
 public class StockMarketAssetProvider implements MarketAssetProvider {
 
+    private static final Map<String, String> SORT_FIELDS = Map.of(
+            "price", "currentPrice",
+            "changePercent", "priceChangePercent",
+            "name", "name",
+            "default", "priceChangePercent"
+    );
+
     private final StockRepository stockRepository;
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
     private final StockResponseMapper stockResponseMapper;
     private final TrackedAssetService trackedAssetService;
-    private final TrackedMarketViewService trackedMarketViewService;
 
     @Override
     public MarketType getType() {
@@ -39,24 +47,16 @@ public class StockMarketAssetProvider implements MarketAssetProvider {
     public MarketAssetResponse getByCode(String code) {
         Stock stock = stockCacheService.getSnapshot(code);
         if (stock == null) return null;
-        return applyDisplayNames(stockResponseMapper.toMarketAssetResponses(List.of(stock))).stream().findFirst().orElse(null);
-    }
-
-    @Override
-    public List<MarketAssetResponse> getAll() {
-        List<Stock> ordered = trackedMarketViewService.getEnabledAndOrdered(
-                TrackedAssetType.STOCK, stockCacheService.getAllSnapshots(), Stock::getSymbol);
-        return applyDisplayNames(stockResponseMapper.toMarketAssetResponses(ordered));
+        return withDisplayNames(stockResponseMapper.toMarketAssetResponses(List.of(stock))).stream().findFirst().orElse(null);
     }
 
     @Override
     public List<MarketAssetResponse> search(String searchTerm, String sortBy, String direction, int page, int size) {
         Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.STOCK));
         Specification<Stock> spec = buildSpecification(searchTerm, enabledCodes);
-        Sort sort = buildSort(sortBy, direction);
 
-        List<Stock> stocks = stockRepository.findAll(spec, PageRequest.of(page, size, sort)).getContent();
-        return applyDisplayNames(stockResponseMapper.toMarketAssetResponses(stocks));
+        List<Stock> stocks = stockRepository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS))).getContent();
+        return withDisplayNames(stockResponseMapper.toMarketAssetResponses(stocks));
     }
 
     @Override
@@ -65,12 +65,12 @@ public class StockMarketAssetProvider implements MarketAssetProvider {
         Specification<Stock> spec = enabledCodesSpec(enabledCodes)
                 .and(nonNullChangePercent());
 
-        Sort sort = gainers
-                ? Sort.by(Sort.Direction.DESC, "priceChangePercent")
-                : Sort.by(Sort.Direction.ASC, "priceChangePercent");
+        var sort = gainers
+                ? org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "priceChangePercent")
+                : org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "priceChangePercent");
 
         List<Stock> stocks = stockRepository.findAll(spec, PageRequest.of(0, limit, sort)).getContent();
-        return applyDisplayNames(stockResponseMapper.toMarketAssetResponses(stocks));
+        return withDisplayNames(stockResponseMapper.toMarketAssetResponses(stocks));
     }
 
     @Override
@@ -111,25 +111,7 @@ public class StockMarketAssetProvider implements MarketAssetProvider {
         return (root, query, cb) -> cb.isNotNull(root.get("priceChangePercent"));
     }
 
-    private Sort buildSort(String sortBy, String direction) {
-        String field = switch (sortBy) {
-            case "price" -> "currentPrice";
-            case "changePercent" -> "priceChangePercent";
-            case "name" -> "name";
-            default -> "priceChangePercent";
-        };
-        return Sort.by("asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC, field);
-    }
-
-    private List<MarketAssetResponse> applyDisplayNames(List<MarketAssetResponse> responses) {
-        Map<String, String> displayNameMap = trackedAssetService.getEnabledDisplayNameMap(TrackedAssetType.STOCK);
-        return responses.stream()
-                .map(r -> {
-                    String displayName = displayNameMap.get(r.code());
-                    if (displayName == null || displayName.isBlank()) return r;
-                    return new MarketAssetResponse(r.code(), displayName, r.image(), r.type(),
-                            r.price(), r.changeAmount(), r.changePercent(), r.lastUpdated(), r.metadata());
-                })
-                .toList();
+    private List<MarketAssetResponse> withDisplayNames(List<MarketAssetResponse> responses) {
+        return applyDisplayNames(responses, trackedAssetService.getEnabledDisplayNameMap(TrackedAssetType.STOCK));
     }
 }

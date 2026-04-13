@@ -18,7 +18,7 @@ import java.math.RoundingMode;
 )
 public class Crypto extends BaseAsset {
     @Id
-    @EqualsAndHashCode.Include
+    @EqualsAndHashCode.Include 
     @Column(name = "id")
     private String id;
     @Column(name = "symbol")
@@ -47,9 +47,5 @@ public class Crypto extends BaseAsset {
         this.changePercent = scaleValue(this.changePercent, scale);
         this.marketCap = scaleValue(this.marketCap, scale);
         this.totalVolume = scaleValue(this.totalVolume, scale);
-    }
-
-    private BigDecimal scaleValue(BigDecimal value, int scale) {
-        return value != null ? value.setScale(scale, RoundingMode.HALF_UP) : null;
     }
 }

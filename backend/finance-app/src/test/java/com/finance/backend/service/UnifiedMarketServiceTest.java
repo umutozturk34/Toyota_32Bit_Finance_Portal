@@ -68,7 +68,7 @@ class UnifiedMarketServiceTest {
 
         assertThat(result.content()).hasSize(1);
         assertThat(result.content().getFirst().code()).isEqualTo("THYAO.IS");
-        verify(stockProvider, never()).getAll();
+        verify(stockProvider).search(eq("thy"), any(), any(), eq(0), eq(20));
     }
 
     @Test
@@ -177,7 +177,7 @@ class UnifiedMarketServiceTest {
         List<MarketAssetResponse> losers = List.of(asset("GARAN.IS", MarketType.STOCK, "-3.0"));
         when(stockProvider.getTopMovers(10, true)).thenReturn(gainers);
         when(stockProvider.getTopMovers(10, false)).thenReturn(losers);
-        when(stockProvider.getAll()).thenReturn(List.of());
+        when(stockProvider.search(isNull(), any(), any(), eq(0), eq(100))).thenReturn(List.of());
 
         service.onMarketDataUpdated(MarketType.STOCK);
 

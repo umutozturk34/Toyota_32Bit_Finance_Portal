@@ -4,12 +4,11 @@ import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.model.MarketType;
 
 import java.util.List;
+import java.util.Map;
 
 public interface MarketAssetProvider {
 
     MarketType getType();
-
-    List<MarketAssetResponse> getAll();
 
     MarketAssetResponse getByCode(String code);
 
@@ -21,7 +20,7 @@ public interface MarketAssetProvider {
 
     long countBySearch(String searchTerm);
 
-    default List<java.util.Map<String, Object>> getGroupCounts() {
+    default List<Map<String, Object>> getGroupCounts() {
         return List.of();
     }
 }

@@ -19,6 +19,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.function.Function;
 
 @Log4j2
 @Service
@@ -74,7 +75,7 @@ public class StockSnapshotService {
                     Stock stock = transactionTemplate.execute(status -> updateSingleStockSnapshot(symbol));
                     stockCacheService.putSnapshot(symbol, stock);
                 },
-                java.util.function.Function.identity(),
+                Function.identity(),
                 "snapshot",
                 10,
                 (symbol, e) -> log.error("Failed to update snapshot for {}: {}", symbol, e.getMessage(), e),

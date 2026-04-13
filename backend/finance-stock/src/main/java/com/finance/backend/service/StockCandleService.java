@@ -22,6 +22,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.function.Function;
 
 @Log4j2
 @Service
@@ -74,7 +75,7 @@ public class StockCandleService {
                     stockCacheService.refreshHistory(symbol);
                     totalCandles[0] += candleCount;
                 },
-                java.util.function.Function.identity(),
+                Function.identity(),
                 "candle",
                 10,
                 (symbol, e) -> log.error("Failed to update candles for {} (transaction rolled back): {}", symbol, e.getMessage(), e),

@@ -21,6 +21,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -164,9 +165,9 @@ public class ForexCandleService {
     private int saveCandleBatch(Forex forex, List<YahooCandleDto> candleDtos) {
         CandleBatchUpsertTemplate.UpsertResult<ForexCandle> upsertResult = CandleBatchUpsertTemplate.upsert(
                 candleDtos,
-                dto -> dto.candleDate().truncatedTo(java.time.temporal.ChronoUnit.DAYS),
+                dto -> dto.candleDate().truncatedTo(ChronoUnit.DAYS),
                 keys -> forexCandleRepository.findByCurrencyCodeAndCandleDateIn(forex.getCurrencyCode(), keys),
-                candle -> candle.getCandleDate().truncatedTo(java.time.temporal.ChronoUnit.DAYS),
+                candle -> candle.getCandleDate().truncatedTo(ChronoUnit.DAYS),
                 forexMapper::updateCandleEntity,
                 dto -> forexMapper.toCandleEntity(dto, forex.getCurrencyCode(), forex));
 

@@ -22,6 +22,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.function.Function;
 
 @Log4j2
 @Service
@@ -87,7 +88,7 @@ public class CryptoCandleService {
 
                     cryptoCacheService.refreshHistory(coinId);
                 },
-                java.util.function.Function.identity(),
+                Function.identity(),
                 "candle",
                 5,
                 (coinId, e) -> log.error("Failed to fetch candle for {}: {}", coinId, e.getMessage(), e),

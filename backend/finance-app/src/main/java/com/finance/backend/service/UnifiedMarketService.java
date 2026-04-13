@@ -3,12 +3,14 @@ import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.dto.response.MarketOverviewResponse;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.model.CandlePeriod;
+import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.model.MarketType;
 
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashSet;
@@ -53,13 +55,9 @@ public class UnifiedMarketService implements MarketUpdatePort {
 
         boolean hasSearch = search != null && !search.isBlank();
 
-        Map<String, String> filters = new java.util.HashMap<>();
+        Map<String, String> filters = new HashMap<>();
         if (segment != null && !segment.isBlank()) filters.put("segment", segment);
         if (subType != null && !subType.isBlank()) filters.put("subType", subType);
-        if (filter != null && !"all".equalsIgnoreCase(filter)) filters.put("filter", filter);
-
-        String filterValue = filter != null && !"all".equalsIgnoreCase(filter) ? filter : null;
-
         List<MarketAssetResponse> allResults = new ArrayList<>();
         long total = 0;
         for (MarketType type : types) {
@@ -69,7 +67,7 @@ public class UnifiedMarketService implements MarketUpdatePort {
             total += hasSearch ? provider.countBySearch(search, filters) : provider.count(filters);
         }
 
-        List<MarketAssetResponse> filtered = applyFilter(allResults, filterValue);
+        List<MarketAssetResponse> filtered = applyFilter(allResults, filter);
         return PagedResponse.of(applySort(filtered, sort, direction), page, size, total);
     }
 
@@ -189,7 +187,7 @@ public class UnifiedMarketService implements MarketUpdatePort {
                 log.debug("Asset lookup failed for type={} code={}: {}", type, code, e.getMessage());
             }
         }
-        return PagedResponse.of(List.of(), 0, 1, 0);
+        throw new ResourceNotFoundException("Asset not found: " + code);
     }
 
     private List<MarketAssetResponse> applyFilter(List<MarketAssetResponse> items, String filter) {

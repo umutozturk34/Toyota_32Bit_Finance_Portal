@@ -84,7 +84,7 @@ public class FundCandle {
     }
 
     private static BigDecimal scaleValue(BigDecimal value, int scale) {
-        return value != null ? value.setScale(scale, java.math.RoundingMode.HALF_UP) : null;
+        return value != null ? value.setScale(scale, RoundingMode.HALF_UP) : null;
     }
 
     public void scaleAllFields() {

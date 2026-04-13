@@ -44,7 +44,6 @@ const TwoFactorSetup = () => {
             const hasTotp = response.data.some((cred) => cred.type === 'otp');
             setTotpStatus({ configured: hasTotp });
         } catch (error) {
-            console.error('Failed to fetch TOTP status:', error);
             setTotpStatus({ configured: false });
         } finally {
             setLoading(false);

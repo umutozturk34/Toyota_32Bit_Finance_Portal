@@ -35,8 +35,19 @@ export const formatPrice = (
 export const formatPriceUSD = (price, maxDecimals = 2) =>
     formatPrice(price, { currency: 'USD', locale: 'en-US', maxDecimals });
 
-export const formatPriceTRY = (price) =>
-    formatPrice(price, { currency: 'TRY', locale: 'tr-TR' });
+export const formatPriceTRY = (price) => {
+    if (price === null || price === undefined) return 'N/A';
+    const num = Number(price);
+    const decimals = num < 10 ? 4 : num < 1000 ? 3 : 2;
+    return formatPrice(num, { currency: 'TRY', locale: 'tr-TR', minDecimals: 2, maxDecimals: decimals });
+};
+
+export const formatCompactTRY = (price) => {
+    if (price === null || price === undefined) return 'N/A';
+    if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(1)}M ₺`;
+    if (price >= 100_000) return `${(price / 1_000).toFixed(0)}K ₺`;
+    return formatPriceTRY(price);
+};
 
 export const formatCompactNumber = (number, currency = 'USD') => {
     if (number === null || number === undefined) return 'N/A';

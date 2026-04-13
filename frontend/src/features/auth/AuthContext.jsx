@@ -14,18 +14,13 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      console.warn('⚠️ Keycloak init timeout - proceeding without auth');
       setLoading(false);
     }, 5000);
     initKeycloak((auth) => {
       clearTimeout(timeoutId);
       setAuthenticated(auth);
       if (auth) {
-        const userInfo = getUserInfo();
-        setUser(userInfo);
-        console.log('User authenticated:', userInfo);
-      } else {
-        console.log('User not authenticated');
+        setUser(getUserInfo());
       }
       setLoading(false);
     });

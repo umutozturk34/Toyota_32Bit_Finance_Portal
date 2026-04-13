@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Activity, Play, CheckCircle2, XCircle, Clock,
@@ -108,22 +109,15 @@ function StatusBadge({ status }) {
 }
 
 export default function TasksPanel({ open, onClose }) {
-    const [taskData, setTaskData] = useState({ running: [], history: [], runningCount: 0 });
+    const queryClient = useQueryClient();
     const [triggering, setTriggering] = useState({});
 
-    const fetchStatus = useCallback(async () => {
-        try {
-            const data = await adminService.getTaskStatus();
-            setTaskData(data);
-        } catch { }
-    }, []);
-
-    useEffect(() => {
-        if (!open) return;
-        fetchStatus();
-        const id = setInterval(fetchStatus, 3000);
-        return () => clearInterval(id);
-    }, [open, fetchStatus]);
+    const { data: taskData = { running: [], history: [], runningCount: 0 } } = useQuery({
+        queryKey: ['taskStatus'],
+        queryFn: adminService.getTaskStatus,
+        enabled: open,
+        refetchInterval: open ? 3000 : false,
+    });
 
     const runningSet = new Set(taskData.running.map(t => t.type));
 
@@ -131,7 +125,7 @@ export default function TasksPanel({ open, onClose }) {
         setTriggering(p => ({ ...p, [key]: true }));
         try {
             await triggerFn();
-            setTimeout(fetchStatus, 500);
+            setTimeout(() => queryClient.invalidateQueries({ queryKey: ['taskStatus'] }), 500);
         } catch (err) {
             const msg = err.response?.data?.message || err.message;
             toast.info('Görev', msg);
@@ -172,7 +166,7 @@ export default function TasksPanel({ open, onClose }) {
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <button
-                                    onClick={fetchStatus}
+                                    onClick={() => queryClient.invalidateQueries({ queryKey: ['taskStatus'] })}
                                     className="p-1.5 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors"
                                     title="Refresh"
                                 >

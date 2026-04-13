@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Code, Database, Server, Key, Container } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../../shared/context/ThemeContext';
 const techStack = [
   { icon: Code, label: 'Frontend', value: 'React 19 + Vite' },
   { icon: Server, label: 'Backend', value: 'Spring Boot 3.4' },
@@ -16,7 +16,7 @@ const itemV = {
   hidden: { opacity: 0, y: 12 },
   show:   { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
 };
-const About = () => {
+const AboutPage = () => {
   const { isDark } = useTheme();
   return (
     <div className="max-w-3xl mx-auto py-12 md:py-16">
@@ -110,4 +110,4 @@ const About = () => {
     </div>
   );
 };
-export default About;
+export default AboutPage;

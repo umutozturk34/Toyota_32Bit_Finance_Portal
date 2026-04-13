@@ -3,27 +3,27 @@ import api from '../../shared/services/api';
 export const adminService = {
   getTaskStatus: async () => {
     const response = await api.get('/admin/tasks/status');
-    return response.data;
+    return response.data.data;
   },
 
-  triggerCryptoSnapshot: () => api.post('/admin/trigger/crypto/snapshot').then(r => r.data),
-  triggerCryptoCandles: () => api.post('/admin/trigger/crypto/candles').then(r => r.data),
-  triggerCryptoFull: () => api.post('/admin/trigger/crypto/full').then(r => r.data),
+  triggerCryptoSnapshot: () => api.post('/admin/trigger/crypto/snapshot').then(r => r.data.data),
+  triggerCryptoCandles: () => api.post('/admin/trigger/crypto/candles').then(r => r.data.data),
+  triggerCryptoFull: () => api.post('/admin/trigger/crypto/full').then(r => r.data.data),
 
-  triggerStockSnapshot: () => api.post('/admin/trigger/stock/snapshot').then(r => r.data),
-  triggerStockCandles: () => api.post('/admin/trigger/stock/candles').then(r => r.data),
-  triggerStockFull: () => api.post('/admin/trigger/stock/full').then(r => r.data),
+  triggerStockSnapshot: () => api.post('/admin/trigger/stock/snapshot').then(r => r.data.data),
+  triggerStockCandles: () => api.post('/admin/trigger/stock/candles').then(r => r.data.data),
+  triggerStockFull: () => api.post('/admin/trigger/stock/full').then(r => r.data.data),
 
-  triggerForexSnapshot: () => api.post('/admin/trigger/forex/snapshot').then(r => r.data),
-  triggerForexCandles: () => api.post('/admin/trigger/forex/candles').then(r => r.data),
-  triggerForexFull: () => api.post('/admin/trigger/forex/full').then(r => r.data),
+  triggerForexSnapshot: () => api.post('/admin/trigger/forex/snapshot').then(r => r.data.data),
+  triggerForexCandles: () => api.post('/admin/trigger/forex/candles').then(r => r.data.data),
+  triggerForexFull: () => api.post('/admin/trigger/forex/full').then(r => r.data.data),
 
-  triggerFundSnapshot: () => api.post('/admin/trigger/fund/snapshot').then(r => r.data),
-  triggerFundCandles: () => api.post('/admin/trigger/fund/candles').then(r => r.data),
-  triggerFundFull: () => api.post('/admin/trigger/fund/full').then(r => r.data),
+  triggerFundSnapshot: () => api.post('/admin/trigger/fund/snapshot').then(r => r.data.data),
+  triggerFundCandles: () => api.post('/admin/trigger/fund/candles').then(r => r.data.data),
+  triggerFundFull: () => api.post('/admin/trigger/fund/full').then(r => r.data.data),
 
-  triggerBondUpdate: () => api.post('/admin/trigger/bond/update').then(r => r.data),
-  triggerNewsUpdate: () => api.post('/admin/trigger/news/update').then(r => r.data),
+  triggerBondUpdate: () => api.post('/admin/trigger/bond/update').then(r => r.data.data),
+  triggerNewsUpdate: () => api.post('/admin/trigger/news/update').then(r => r.data.data),
 
   getNewsSources: async (includeDisabled = true) => {
     const response = await api.get('/admin/news-sources', { params: { includeDisabled } });
@@ -73,21 +73,4 @@ export const adminService = {
   },
 };
 
-export const trackedAssetService = {
-  getByType: async (type, includeDisabled = false) => {
-    const response = await api.get('/tracked-assets', {
-      params: { type, includeDisabled },
-    });
-    return response.data.data;
-  },
-
-  getOne: async (type, code) => {
-    try {
-      const response = await api.get(`/tracked-assets/${type}/${encodeURIComponent(code)}`);
-      return response.data.data;
-    } catch (error) {
-      if (error.response?.status === 404) return null;
-      throw error;
-    }
-  },
-};
+export { trackedAssetService } from '../../shared/services/marketService';

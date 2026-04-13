@@ -1,183 +1,150 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LineChart,
-    TrendingUp,
-    TrendingDown,
     Activity,
     Clock,
     Users as UsersIcon,
     Wallet,
-    Filter,
-    ShoppingCart,
 } from 'lucide-react';
+import { TrendingUp, TrendingDown, ShoppingCart } from '../../shared/components/AnimatedIcons';
 import { fundService } from './fundService';
 import { adminService } from '../admin/adminService';
 import { useAuth } from '../auth/AuthContext';
-import { formatPriceTRY, formatCompactNumber, getChangeClass, changeColors, changeBg } from '../../shared/utils/formatters';
+import { formatPriceTRY, formatCompactTRY, formatVolume, getChangeClass, changeColors, changeBg } from '../../shared/utils/formatters';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
 import LoadingState from '../../shared/components/LoadingState';
 import ErrorState from '../../shared/components/ErrorState';
 import EmptyState from '../../shared/components/EmptyState';
 import PageHeader from '../../shared/components/PageHeader';
+import SearchInput from '../../shared/components/SearchInput';
+import SortSelect from '../../shared/components/SortSelect';
+import Pagination from '../../shared/components/Pagination';
 import BuyModal from '../../shared/components/BuyModal';
+import FilterTabs from '../../shared/components/FilterTabs';
 import { toast } from '../../shared/components/Toast';
+import useListParams from '../../shared/hooks/useListParams';
+
+const FUND_TYPE_LABELS = {
+    BYF: 'Borsa Yatırım Fonları',
+    YAT: 'Yatırım Fonları',
+};
+
+const SORT_OPTIONS = [
+    { id: 'changePercent', label: 'Değişim %' },
+    { id: 'price', label: 'Fiyat' },
+    { id: 'name', label: 'İsim' },
+];
 
 function FundsPage() {
     const navigate = useNavigate();
     const { hasRole } = useAuth();
     const [buyTarget, setBuyTarget] = useState(null);
-    const [funds, setFunds] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [updating, setUpdating] = useState({
         snapshot: false,
         candles: false,
         full: false,
     });
-    const [typeFilter, setTypeFilter] = useState('ALL');
     const isAdmin = hasRole('ADMIN');
+    const listParams = useListParams();
+    const typeFilter = listParams.filter || 'ALL';
 
-    useEffect(() => {
-        fetchFunds();
-    }, []);
+    const { data: fundTypes = [] } = useQuery({
+        queryKey: ['fundTypes'],
+        queryFn: fundService.getTypes,
+        staleTime: 60_000,
+    });
 
-    const fetchFunds = async () => {
-        setLoading(true);
-        setError(null);
+    const queryParams = {
+        ...listParams.params,
+        ...(typeFilter !== 'ALL' && { subType: typeFilter }),
+    };
+
+    const { data, isLoading: loading, error, refetch } = useQuery({
+        queryKey: ['funds', queryParams],
+        queryFn: () => fundService.getAllFunds(queryParams),
+        placeholderData: (prev) => prev,
+    });
+
+    const funds = data?.content || [];
+    const totalPages = data?.totalPages || 0;
+    const totalElements = data?.totalElements || 0;
+
+    const handleTrigger = async (action, triggerFn, successMsg) => {
+        setUpdating(prev => ({ ...prev, [action]: true }));
         try {
-            const data = await fundService.getAllFunds();
-            setFunds(data);
-        } catch (err) {
-            setError('Fon verileri yüklenirken hata oluştu');
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const formatTRY = (val) => {
-        if (val == null) return 'N/A';
-        return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(val);
-    };
-
-    const formatCompact = (val) => {
-        if (val == null) return 'N/A';
-        if (val >= 1_000_000_000) return `${(val / 1_000_000_000).toFixed(1)}B`;
-        if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M`;
-        if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K`;
-        return new Intl.NumberFormat('tr-TR').format(val);
-    };
-
-    const handleFundSnapshotUpdate = async () => {
-        setUpdating(prev => ({ ...prev, snapshot: true }));
-        try {
-            const response = await adminService.triggerFundSnapshot();
-            toast.success('Güncelleme Başlatıldı', response.message || 'Fon snapshot güncelleme başlatıldı');
-            setTimeout(fetchFunds, 5000);
+            const response = await triggerFn();
+            toast.success('Güncelleme Başlatıldı', response.message || successMsg);
+            if (action !== 'candles') setTimeout(refetch, 5000);
         } catch (err) {
             toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
         } finally {
-            setUpdating(prev => ({ ...prev, snapshot: false }));
-        }
-    };
-    const handleFundCandlesUpdate = async () => {
-        setUpdating(prev => ({ ...prev, candles: true }));
-        try {
-            const response = await adminService.triggerFundCandles();
-            toast.success('Güncelleme Başlatıldı', response.message || 'Fon candle güncelleme başlatıldı');
-        } catch (err) {
-            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
-        } finally {
-            setUpdating(prev => ({ ...prev, candles: false }));
-        }
-    };
-    const handleFundFullUpdate = async () => {
-        setUpdating(prev => ({ ...prev, full: true }));
-        try {
-            const response = await adminService.triggerFundFull();
-            toast.success('Güncelleme Başlatıldı', response.message || 'Fon tam güncelleme başlatıldı');
-            setTimeout(fetchFunds, 10000);
-        } catch (err) {
-            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
-        } finally {
-            setUpdating(prev => ({ ...prev, full: false }));
+            setUpdating(prev => ({ ...prev, [action]: false }));
         }
     };
 
     const adminActions = [
-        { key: 'snapshot', label: 'Snapshot', title: 'Fon snapshot verilerini güncelle', handler: handleFundSnapshotUpdate },
-        { key: 'candles', label: 'Candles', title: 'Fon mum verilerini güncelle', handler: handleFundCandlesUpdate },
-        { key: 'full', label: 'Full Update', title: 'Tam güncelleme (snapshot + candles)', handler: handleFundFullUpdate },
+        { key: 'snapshot', label: 'Snapshot', title: 'Fon snapshot verilerini güncelle', handler: () => handleTrigger('snapshot', adminService.triggerFundSnapshot, 'Fon snapshot güncelleme başlatıldı') },
+        { key: 'candles', label: 'Candles', title: 'Fon mum verilerini güncelle', handler: () => handleTrigger('candles', adminService.triggerFundCandles, 'Fon candle güncelleme başlatıldı') },
+        { key: 'full', label: 'Full Update', title: 'Tam güncelleme (snapshot + candles)', handler: () => handleTrigger('full', adminService.triggerFundFull, 'Fon tam güncelleme başlatıldı') },
     ];
 
-    const filteredFunds = typeFilter === 'ALL'
-        ? funds
-        : funds.filter(f => f.fundType === typeFilter);
-
-    const fundTypes = [...new Set(funds.map(f => f.fundType).filter(Boolean))];
-
     if (loading && funds.length === 0) return <LoadingState message="Fon verileri yükleniyor…" />;
-    if (error) return <ErrorState message={error} onRetry={fetchFunds} />;
+    if (error) return <ErrorState message="Fon verileri yüklenirken hata oluştu" onRetry={refetch} />;
 
     return (
         <div className="space-y-6 py-6">
             <PageHeader
                 icon={<LineChart className="h-5 w-5" />}
                 title="Yatırım Fonları"
-                onRefresh={fetchFunds}
+                onRefresh={refetch}
                 loading={loading}
                 isAdmin={isAdmin}
                 adminActions={adminActions}
                 updating={updating}
             />
-            {fundTypes.length > 0 && (
-                <div className="flex items-center gap-2">
-                    <Filter className="h-4 w-4 text-fg-muted" />
-                    <div className="flex gap-1">
-                        <button
-                            onClick={() => setTypeFilter('ALL')}
-                            className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                                typeFilter === 'ALL'
-                                    ? 'bg-accent text-white'
-                                    : 'bg-bg-elevated text-fg-muted hover:text-fg border border-border-default'
-                            }`}
-                        >
-                            Tümü ({funds.length})
-                        </button>
-                        {fundTypes.map(type => (
-                            <button
-                                key={type}
-                                onClick={() => setTypeFilter(type)}
-                                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                                    typeFilter === type
-                                        ? 'bg-accent text-white'
-                                        : 'bg-bg-elevated text-fg-muted hover:text-fg border border-border-default'
-                                }`}
-                            >
-                                {type} ({funds.filter(f => f.fundType === type).length})
-                            </button>
-                        ))}
-                    </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+                <div className="w-48">
+                    <SearchInput value={listParams.search} onChange={listParams.setSearch} placeholder="Fon ara..." withSuggestions filterType="FUND" />
                 </div>
-            )}
+                {totalElements > 0 && (
+                    <span className="text-xs text-fg-muted">{totalElements} fon</span>
+                )}
+                <SortSelect
+                    value={listParams.sort}
+                    direction={listParams.direction}
+                    options={SORT_OPTIONS}
+                    onSortChange={listParams.setSort}
+                    onDirectionChange={listParams.setDirection}
+                />
+                {fundTypes.length > 0 && <FilterTabs
+                    items={fundTypes.map(f => ({ type: f.type, count: f.count, label: FUND_TYPE_LABELS[f.type] || f.type }))}
+                    activeId={typeFilter}
+                    onSelect={(id) => listParams.setFilter(id)}
+                    allCount={fundTypes.reduce((sum, f) => sum + Number(f.count), 0)}
+                    layoutId="fund-type"
+                />}
+            </div>
 
             <AnimatePresence>
-                {filteredFunds.length > 0 ? (
+                {funds.length > 0 ? (
                     <motion.div
                         variants={containerVariants(0.06)}
                         initial="hidden"
                         animate="show"
-                        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-[600px] content-start"
                     >
-                        {filteredFunds.map((fund) => {
+                        {funds.map((fund) => {
+                            const meta = fund.metadata || {};
                             const cls = getChangeClass(fund.changePercent);
                             return (
                             <motion.div
-                                key={fund.fundCode}
+                                key={fund.code}
                                 variants={cardVariants}
-                                onClick={() => navigate(`/funds/${fund.fundCode}`)}
+                                onClick={() => navigate(`/funds/${fund.code}`)}
                                 className="group cursor-pointer rounded-2xl border border-border-default bg-bg-elevated p-5 card-hover transition-all duration-200 hover:border-border-hover overflow-hidden min-w-0 relative"
                             >
                                 <div className="flex items-start justify-between gap-2 min-w-0">
@@ -186,19 +153,19 @@ function FundsPage() {
                                             <LineChart className="w-4.5 h-4.5" />
                                         </span>
                                         <div className="min-w-0">
-                                            <h3 className="truncate text-sm font-semibold text-fg">{fund.fundCode}</h3>
-                                            <span className="block truncate text-xs text-fg-muted">{fund.name || fund.fundCode}</span>
+                                            <h3 className="truncate text-sm font-semibold text-fg">{fund.code}</h3>
+                                            <span className="block truncate text-xs text-fg-muted">{fund.name || fund.code}</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
                                         <span className="rounded-md border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent-bright">
-                                            {fund.fundType || 'FON'}
+                                            {meta.fundType || 'FON'}
                                         </span>
                                         <button
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
-                                                setBuyTarget({ assetCode: fund.fundCode, assetName: fund.name || fund.fundCode, price: fund.price });
+                                                setBuyTarget({ assetCode: fund.code, assetName: fund.name || fund.code, price: fund.price });
                                             }}
                                             title="Satın Al"
                                             className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base transition-colors duration-150 hover:bg-surface"
@@ -210,12 +177,12 @@ function FundsPage() {
 
                                 <div className="mt-3 space-y-1">
                                     <span className="block truncate font-mono text-xl font-bold text-fg">
-                                        ₺{formatTRY(fund.price)}
+                                        {formatPriceTRY(fund.price)}
                                     </span>
-                                    {fund.fundType === 'BYF' && fund.bulletinPrice != null && (
+                                    {meta.fundType === 'BYF' && meta.bulletinPrice != null && (
                                         <div className="flex items-center gap-2 text-xs text-fg-muted">
                                             <span className="font-medium">Borsa Fiyatı</span>
-                                            <span className="font-mono">₺{formatTRY(fund.bulletinPrice)}</span>
+                                            <span className="font-mono">{formatPriceTRY(meta.bulletinPrice)}</span>
                                         </div>
                                     )}
                                 </div>
@@ -233,13 +200,13 @@ function FundsPage() {
                                 )}
 
                                 <div className="mt-3 space-y-1 border-t border-border-default pt-3">
-                                    {fund.fundType === 'YAT' && fund.investorCount != null && (
+                                    {meta.fundType === 'YAT' && meta.investorCount != null && (
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="flex items-center gap-1 text-fg-muted">
                                                 <UsersIcon className="h-3 w-3" />
                                                 Yatırımcı
                                             </span>
-                                            <span className="font-mono text-fg">{formatCompact(fund.investorCount)}</span>
+                                            <span className="font-mono text-fg">{formatVolume(meta.investorCount)}</span>
                                         </div>
                                     )}
                                     <div className="flex items-center justify-between text-xs">
@@ -247,14 +214,14 @@ function FundsPage() {
                                             <Wallet className="h-3 w-3" />
                                             Portföy
                                         </span>
-                                        <span className="font-mono text-fg">₺{formatCompact(fund.portfolioSize)}</span>
+                                        <span className="font-mono text-fg">{formatCompactTRY(meta.portfolioSize)}</span>
                                     </div>
                                     <div className="flex items-center justify-between text-xs">
                                         <span className="flex items-center gap-1 text-fg-muted">
                                             <Activity className="h-3 w-3" />
                                             Pay Sayısı
                                         </span>
-                                        <span className="font-mono text-fg">{formatCompact(fund.shareCount)}</span>
+                                        <span className="font-mono text-fg">{formatVolume(meta.shareCount)}</span>
                                     </div>
                                 </div>
 
@@ -267,9 +234,15 @@ function FundsPage() {
                         })}
                     </motion.div>
                 ) : (
-                    <EmptyState message="Henüz fon verisi bulunmuyor" />
+                    <EmptyState
+                        icon={<LineChart className="h-7 w-7 text-fg-subtle" />}
+                        message={listParams.search ? 'Aramayla eşleşen fon bulunamadı.' : 'Henüz fon verisi bulunmuyor'}
+                        hint={!listParams.search && isAdmin ? 'Admin butonlarını kullanarak veri çekebilirsiniz.' : undefined}
+                    />
                 )}
             </AnimatePresence>
+
+            <Pagination page={listParams.page} totalPages={totalPages} onPageChange={listParams.setPage} />
 
             {buyTarget && (
                 <BuyModal

@@ -1,23 +1,15 @@
-import api from '../../shared/services/api';
+import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
 
 export const cryptoService = {
+  getAll: async (params = {}) => {
+    return unifiedMarketService.search({ type: 'CRYPTO', ...params });
+  },
+
   getById: async (id) => {
-    try {
-      const response = await api.get(`/market/${id}`);
-      return response.data.data;
-    } catch (error) {
-      if (error.response?.status === 404) return null;
-      throw error;
-    }
+    return unifiedMarketService.getByCode('CRYPTO', id);
   },
 
-  getHistory: async (id) => {
-    const response = await api.get(`/market/${id}/history`);
-    return response.data.data;
-  },
-
-  getAll: async () => {
-    const response = await api.get('/market');
-    return response.data.data;
+  getHistory: async (id, period = 'ALL') => {
+    return unifiedMarketService.getHistory('CRYPTO', id, period);
   },
 };

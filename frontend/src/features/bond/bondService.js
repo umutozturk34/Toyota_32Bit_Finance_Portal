@@ -1,8 +1,8 @@
 import api from '../../shared/services/api';
 
 export const bondService = {
-  getAllBonds: async () => {
-    const response = await api.get('/bonds');
+  getAllBonds: async (params = {}) => {
+    const response = await api.get('/bonds', { params });
     return response.data.data;
   },
 
@@ -18,6 +18,11 @@ export const bondService = {
 
   getRateHistory: async (isinCode) => {
     const response = await api.get(`/bonds/rate-history/${isinCode}`);
+    return response.data.data;
+  },
+
+  getTypes: async () => {
+    const response = await api.get('/bonds/types');
     return response.data.data;
   },
 };

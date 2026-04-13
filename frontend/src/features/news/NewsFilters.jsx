@@ -1,43 +1,30 @@
-import { motion } from 'framer-motion';
-import { TABS, CATEGORY_CONFIG } from './newsConfig.jsx';
+import { useQuery } from '@tanstack/react-query';
+import { Newspaper } from 'lucide-react';
+import { newsService } from './newsService';
+import { CATEGORY_CONFIG } from './newsConfig.jsx';
+import FilterTabs from '../../shared/components/FilterTabs';
 
-export default function NewsFilters({ activeTab, onTabChange, categoryCounts }) {
+export default function NewsFilters({ activeTab, onTabChange }) {
+    const { data: categoryCounts = [] } = useQuery({
+        queryKey: ['newsCategories'],
+        queryFn: newsService.getCategories,
+        staleTime: 60_000,
+    });
+
+    const items = categoryCounts.map(c => {
+        const cfg = CATEGORY_CONFIG[c.type] || {};
+        return { type: c.type, count: c.count, label: cfg.label || c.type };
+    });
+
+    const totalCount = categoryCounts.reduce((sum, c) => sum + Number(c.count), 0);
+
     return (
-        <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.08 }}
-            className="flex gap-1.5 flex-wrap p-1.5 rounded-xl border border-border-default bg-bg-elevated card-hover"
-        >
-            {TABS.map((tab) => {
-                const cfg = CATEGORY_CONFIG[tab];
-                const Icon = cfg.icon;
-                const count = categoryCounts[tab] ?? 0;
-                const isActive = activeTab === tab;
-                return (
-                    <button
-                        key={tab}
-                        id={`news-tab-${tab.toLowerCase()}`}
-                        onClick={() => onTabChange(tab)}
-                        className={`
-                            flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-                            transition-all duration-150 cursor-pointer border-none whitespace-nowrap
-                            ${isActive
-                                ? 'bg-gradient-accent text-white shadow-sm shadow-accent/30'
-                                : 'bg-transparent text-fg-muted hover:text-fg hover:bg-surface'
-                            }
-                        `}
-                    >
-                        <Icon size={13} strokeWidth={2} className={isActive ? 'text-white' : 'text-fg-subtle'} />
-                        {cfg.label}
-                        {count > 0 && (
-                            <span className={`text-[10px] rounded-full px-1.5 py-0.5 font-medium ${isActive ? 'bg-white/20 text-white' : 'bg-surface text-fg-subtle'}`}>
-                                {count}
-                            </span>
-                        )}
-                    </button>
-                );
-            })}
-        </motion.div>
+        <FilterTabs
+            items={items}
+            activeId={activeTab}
+            onSelect={onTabChange}
+            allCount={totalCount}
+            layoutId="news-category"
+        />
     );
 }

@@ -101,7 +101,7 @@ export default function SearchSuggestions({
   return (
     <div ref={containerRef} className="relative w-full">
       <div className="relative">
-        <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none ${isHero ? 'h-5 w-5 text-accent' : 'h-3.5 w-3.5 text-fg-muted'}`} />
+        <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none z-10 ${isHero ? 'h-5 w-5 text-accent' : 'h-3.5 w-3.5 text-fg-muted'}`} />
         <input
           ref={inputRef}
           type="text"

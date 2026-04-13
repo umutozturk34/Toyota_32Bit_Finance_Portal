@@ -1,196 +1,215 @@
-# 🚀 Finance Portal – Project Roadmap
+# Finance Portal — Roadmap
+
 **Modular & Chronological Development Stages**
 
-This roadmap defines the planned development phases and milestone-based releases of the Finance Portal project. Each version represents a stable and completed development milestone.
+---
+
+## Tamamlanan Versiyonlar
+
+| Versiyon | Icerik | Durum |
+|----------|--------|-------|
+| v0.1.0 | Infrastructure (Spring Boot, React, Docker, PostgreSQL) | ✅ |
+| v0.2.0 | Authentication & Keycloak (JWT, RBAC, LDAP) | ✅ |
+| v0.3.0 | Admin Module (asset/user management) | ✅ |
+| v0.4.0 | Crypto Module (CoinGecko + Binance) | ✅ |
+| v0.5.0 | Stock Module (Yahoo Finance BIST) | ✅ |
+| v0.6.0 | Forex Module (TCMB + Yahoo) | ✅ |
+| v0.7.0 | Fund Module (TEFAS) | ✅ |
+| v0.8.0 | Observability (OTel, Kafka, OpenSearch, Dashboards) | ✅ |
+| v0.9.0 | Bond & Bill Module (EVDS, rate history, yield calculation) | ✅ |
+| v0.10.0 | News Module (RSS, score-based categorization) | ✅ |
+| v0.11.0 | Portfolio Module (BUY/SELL, WAC, snapshots, performance) | ✅ |
+| v0.12.0 | Unified Endpoint & Frontend Refactor (Strategy pattern, SearchSuggestions, AnimatedIcons, chart comparison) | ✅ |
 
 ---
 
-## 🔵 v0.1.0 – Infrastructure
-### Development Tasks
-- Initialize backend (Spring Boot) and frontend (React) projects.
-- Configure PostgreSQL, Docker, and application profiles.
-- Setup basic routing, layouts, and health checks.
+## Aktif Gelistirme Plani (15 Nisan — 25 Mayis)
 
-### Version Release
-- ✅ **v0.1.0 – Infrastructure completed**
+### v0.13.0 — Emtia Modulu (15 Nisan | 1 gun)
 
----
+**Backend:**
+- `finance-commodity` modul: Yahoo Finance commodity data
+- Varliklar: Altin (GC=F), Gumus (SI=F), Petrol (CL=F), Bakir (HG=F), Dogalgaz (NG=F)
+- `CommodityCalculationService`: USD fiyat x USD/TRY kuru = TRY fiyat
+- Altin endeksleri: Gram = Ons x USDTRY / 31.1035, Tam = Gram x 7.02, Yarim = Tam / 2, Ceyrek = Tam / 4
+- Katsayilar `application.yaml`'da config
+- `CommodityMarketAssetProvider implements MarketAssetProvider`
+- Entity, repository, mapper, scheduler, cache service
+- `AssetType.COMMODITY` + `MarketType.COMMODITY` enum ekleme
+- `AssetPricingAdapter`'a commodity destegiportfolio BUY/SELL otomatik calisir
+- Flyway migration V33
 
-## 🔵 v0.2.0 – Authentication & Keycloak
-### Development Tasks
-- Integrate Keycloak for authentication and Role-Based Access Control (RBAC).
-- Implement JWT-based security and token validation.
-- Add login/register flows with frontend integration.
-
-### Version Release
-- ✅ **v0.2.0 – Authentication & security completed**
-
----
-
-## 🔵 v0.3.0 – Admin Module
-### Development Tasks
-- Implement admin controllers for asset and user management.
-- Add admin dashboard UI with data tables.
-- Setup role-based permissions for admin actions.
-
-### Version Release
-- ✅ **v0.3.0 – Admin module completed**
+**Frontend:**
+- `features/commodity/` — CommodityPage, commodityService
+- AssetDetailPage ile detay sayfasi
+- Sidebar'a ekleme
+- MarketDataPage overview'da commodity movers
 
 ---
 
-## 🔵 v0.4.0 – Crypto Module
-### Development Tasks
-- Add cryptocurrency market data service integration.
-- Create REST endpoints and dedicated frontend views.
-- Implement caching layer with Redis for high-frequency data.
+### v0.14.0 — Notification Sistemi + Takip Listesi (16-20 Nisan | 5 gun)
 
-### Version Release
-- ✅ **v0.4.0 – Crypto module completed**
+**Veritabani (V34-V36):**
+- `notification_preferences` — user_sub, channel (EMAIL/IN_APP), category, enabled
+- `notifications` — user_sub, title, body, category, channel, read, created_at
+- `price_alerts` — user_sub, asset_type, asset_code, target_price, direction (ABOVE/BELOW), triggered, auto_buy, auto_buy_amount
+- `watchlist` — user_sub, asset_type, asset_code, change_threshold
 
----
+**Backend:**
+- `finance-notification` modul
+- `NotificationService` — CRUD, mark read, list (paginated)
+- `NotificationDispatcher` — tercih kontrol, kanal yonlendirme
+- `EmailNotificationService` — JavaMailSender (Mailpit dev, SMTP prod)
+- `InAppNotificationService` — DB'ye kaydet
+- `PriceAlertService` — CRUD + checkAlerts()
+- `WatchlistService` — CRUD + checkChanges()
+- `NotificationPreferenceService` — kullanici tercihleri
+- `NotificationCheckPort.onMarketUpdate()` — Observer pattern, scheduler sonrasi kontrol
+- Endpoint'ler: /notifications, /price-alerts, /watchlist, /notification-preferences
 
-## 🔵 v0.5.0 – Stock Module
-### Development Tasks
-- Add BIST (Borsa Istanbul) stock market data service.
-- Create REST endpoints and interactive frontend charts.
-- Implement advanced caching and historical charting.
-
-### Version Release
-- ✅ **v0.5.0 – Stock module completed**
-
----
-
-## 🔵 v0.6.0 – Forex Module
-### Development Tasks
-- Add Forex data service (TCMB + Yahoo Finance).
-- Create REST endpoints and currency conversion views.
-- Implement multi-layered caching for exchange rates.
-
-### Version Release
-- ✅ **v0.6.0 – Forex module completed**
+**Frontend:**
+- Sidebar'da bildirim ikonu (okunmamis sayisi badge)
+- /notifications sayfasi
+- /price-alerts sayfasi — alarm olustur/sil/duzenle
+- /watchlist sayfasi — varlik ekle/cikar, esik ayarla
+- Ayarlar sayfasi — tercihler (email, in-app toggle)
+- Detay sayfalarinda "Alarm Ekle" ve "Takip Et" butonlari
 
 ---
 
-## 🔵 v0.7.0 – Fund Module
-### Development Tasks
-- Add Investment Fund (TEFAS) data service.
-- Create REST endpoints and fund performance views.
-- Implement unit tests and integration tests for data accuracy.
+### v0.15.0 — PDF Rapor Sistemi + AWS S3 (21-25 Nisan | 5 gun)
 
-### Version Release
-- ✅ **v0.7.0 – Fund module completed**
+**Backend:**
+- `PdfGenerationService` — iText ile PDF olusturma
+- `ReportStorageService` — AWS S3 upload/download (dev: MinIO Docker, prod: S3)
+- `ReportScheduler` — gunluk/haftalik/aylik (kullanici tercihine gore)
+- `portfolio_reports` tablosu — user_sub, report_type, period, s3_key, file_size
+- Pre-signed URL ile guvenli download
+- 90 gun retention (S3 lifecycle)
+- Flyway migration V37-V38
 
----
+**PDF Icerigi:**
+- Portfolyo ozeti (toplam deger, K/Z, nakit)
+- Pozisyon tablosu (varlik, miktar, maliyet, piyasa degeri, K/Z)
+- Dagilim pasta grafigi
+- Performans cizgi grafigi
+- Islem listesi (donem ici)
+- Header: kullanici adi, tarih araligi
 
-## 🔵 v0.8.0 – Full Observability Stack (OTel & Kafka)
-### Development Tasks
-- **OpenTelemetry Integration:** Deployed OTel Collector with OTLP receivers and multi-signal pipelines (Traces, Metrics, Logs).
-- **Log4j Correlator:** Configured Log4j to be captured by OTel Agent, enabling Log-Trace correlation.
-- **Message Broker (Kafka):** Implemented Kafka as a resilient buffer between OTel and OpenSearch to prevent data loss during high traffic.
-- **SpanMetrics Connector:** Enabled real-time metric derivation (Request Count, Error Rates, Latency) directly from raw Traces.
-- **OpenSearch & Dashboards:** Configured OpenSearch as the primary sink and built 4 specialized Vega-Lite dashboards (Executive, APM, Reliability, Integration & DB Health).
-
-### Version Release
-- ✅ **v0.8.0 – Observability & Monitoring completed**
-- *Ref: Commit "release: v0.8.0 - integrated full observability stack"*
-
----
-
-## 🔵 v0.9.0 – Bond & Bill Module
-### Development Tasks
-- **Bond Data Service:** Implemented EVDS API integration for Turkish government bonds (TRT, TRD, TRB).
-- **Bond Type Classification:** Automated bond classification (Discounted, Fixed Coupon, Floating TLREF/CPI/Auction, Sukuk).
-- **Rate History:** Gap-based incremental rate history fetching with atomic transaction support.
-- **Coupon Rate Sanitization:** Detect and handle EVDS edge cases (TRB days-to-maturity in ORAN field).
-- **Simple Yield Calculation:** Discounted yield and fixed coupon current yield formulas.
-- **Frontend:** Bond listing page with type filters, rate history charts, and responsive card design.
-- **Keycloak Email Templates:** Custom FreeMarker email templates matching the portal's dark theme.
-
-### Version Release
-- ✅ **v0.9.0 – Bond & Bill module completed (refactor pending)**
+**Frontend:**
+- Rapor frekansi secimi (ayarlar)
+- Rapor gecmisi listesi (tarih, tip, boyut, indir)
+- Manuel "Rapor Olustur" butonu
 
 ---
 
-## 🔵 v0.10.0 – News Module
-### Development Tasks
-- Add financial news aggregation service.
-- Create REST endpoints and news feed frontend views.
-- Implement categorization and filtering by asset type.
+### v0.16.0 — Alis Emri + Market Saatleri (26-28 Nisan | 3 gun)
 
-### Version Release
-- ✅ **v0.10.0 – News module completed (optimization/refactor pending)**
+**Market Saat Kurallari:**
+- BIST (Stock): 10:00-18:00 Hafta ici
+- TEFAS (Fund): 10:00-13:30 Hafta ici
+- Crypto: 7/24
+- Forex: 7/24
+- Commodity: 7/24
 
----
+**Backend:**
+- `MarketHoursService` — market acik/kapali kontrol, config'den saat okuma
+- Kapali market'te alis/satis → `PENDING_ORDER` status
+- `pending_orders` tablosu — user_sub, asset_type, asset_code, side, quantity/amount, created_at
+- `OrderExecutionScheduler` — market acilinca pending order'lari execute et
+- Fiyat alarmi tetiklenince auto_buy → pending order veya anlik islem (market durumuna gore)
+- Flyway migration V39
 
-## 🔵 v0.11.0 – Portfolio Module
-### Development Tasks
-- Implemented demo portfolio system with 1M TL initial deposit.
-- BUY/SELL transactions with weighted average cost (WAC) tracking.
-- Wallet ledger for all balance movements (deposit, buy, sell).
-- Daily snapshots (aggregate + per-asset) for performance graphs.
-- Event-driven snapshots triggered by market updates, transactions, and daily fallback.
-- Portfolio performance charts (aggregate and per-asset) with time range filters.
-- Asset allocation chart (by asset type and by individual asset).
-- Transaction history with full audit trail.
-- Onboarding flow with confirmation screen and processing animation.
-- Realized P&L tracking per transaction.
-
-### Version Release
-- ✅ **v0.11.0 – Portfolio module completed**
+**Frontend:**
+- Market durumu gostergesi (acik/kapali badge)
+- Kapali market'te "Emir Ver" butonu (Satin Al yerine)
+- Bekleyen emirler listesi
+- Emir iptal
 
 ---
 
-## ⚪ v0.12.0 – Commodity Module (Planned)
-### Development Tasks
-- Add commodity data service (gold, silver, oil, natural gas).
-- Integrate external API for real-time and historical commodity prices.
-- Create REST endpoints and commodity listing/detail frontend views.
-- Add commodity support to portfolio (BUY/SELL).
-- Implement caching and scheduled data fetching.
+### v0.17.0 — Grafik Kaydetme + MongoDB (29 Nisan - 1 Mayis | 3 gun)
+
+**Altyapi:**
+- Docker Compose'a MongoDB ekleme
+- `spring-boot-starter-data-mongodb` dependency
+
+**Backend:**
+- `ChartDrawing` document (userSub, assetType, assetCode, drawings, indicators, fibTools)
+- `ChartDrawingRepository extends MongoRepository`
+- CRUD endpoint: GET/PUT /api/v1/chart-drawings/{assetType}/{assetCode}
+- Kullanici bazli izolasyon (JWT sub)
+
+**Frontend:**
+- Chart acildiginda backend'den cizim yukle
+- Cizim degistiginde debounced auto-save
+- "Cizimleri Sil" butonu
 
 ---
 
-## ⚪ v0.13.0 – Backend Features (Planned)
-### Development Tasks
-- Unified market endpoint with pagination, sort, search, and filter.
-- Response-level Redis caching (cache-aside + write-through for hot paths).
-- Candle period filtering (1M, 3M, 6M, 1Y, 5Y) — backend-driven instead of client-side.
-- News pagination with category-based filtering.
-- Portfolio endpoint consolidation (single composite endpoint).
-- Price alert system with configurable thresholds.
-- Chart drawing persistence to backend.
-- On-demand daily profit/loss PDF reports.
+### v0.18.0 — Vadeli Islem Modulu (2-11 Mayis | 10 gun)
+
+**Veritabani (V40-V43):**
+- `derivative_contracts` — asset_type, asset_code, contract_size, expiry_date, margin_rate
+- `derivative_positions` — user_sub, contract_id, side (LONG/SHORT), quantity, entry_price, margin_amount
+- `derivative_transactions` — islem gecmisi
+- `margin_calls` — teminat tamamlama kayitlari
+
+**Backend:**
+- `finance-derivative` modul
+- `DerivativeContractService` — kontrat tanimlama
+- `DerivativePositionService` — pozisyon acma/kapatma
+- `MarginService` — teminat hesaplama, margin call kontrol
+- `DailySettlementService` — gunluk uzlasma (mark-to-market)
+- `DerivativeScheduler` — gunluk uzlasma + vade kontrol + margin call
+- Kaldirac hesaplamasi
+- Vade sonu otomatik kapatma
+
+**Frontend:**
+- Vadeli islem sayfasi — kontrat listesi
+- Pozisyon acma formu (LONG/SHORT, lot, kaldirac)
+- Acik pozisyonlar tablosu (K/Z, teminat durumu)
+- Margin call bildirimi
+- Vade takvimi
 
 ---
 
-## ⚪ v0.14.0 – Frontend Features (Planned)
-### Development Tasks
-- Home page with real-time top movers (gainers/losers per asset type).
-- Paginated asset list pages with server-side sort and search.
-- UI/UX refinements and design system polish.
-- Performance optimization and bundle size reduction.
-- Security hardening (SSL/TLS, CSP headers).
+### v0.19.0 — i18n + Kullanici Tercihleri + Tanitim (12-16 Mayis | 5 gun)
+
+**i18n:**
+- react-i18next entegrasyonu
+- TR ve EN translation dosyalari
+- Mevcut label map'ler (ASSET_TYPE_LABELS, BOND_TYPE_LABELS, FUND_TYPE_LABELS, SEGMENT_LABELS) translation'a tasima
+- Keycloak tema i18n (FreeMarker locale switch)
+- Dil secimi header'da
+
+**User Preferences:**
+- `user_preferences` tablosu (V44) — user_sub, language, theme, notification settings
+- CRUD endpoint
+- Frontend ayarlar sayfasi
+
+**Tanitim Ekrani:**
+- Ilk giris onboarding tour (React Joyride veya custom stepper)
+- Temel ozelliklerin tanitimi (portfolio, chart, alarm)
+- "Bir daha gosterme" tercihi
 
 ---
 
-## ⚪ v0.15.0 – Mobile Application (Planned)
-### Development Tasks
-- Develop mobile application (React Native or native).
-- Implement push notifications for price alerts.
-- Sync portfolio and preferences across platforms.
-- Mobile-optimized charts and portfolio views.
+### Test + Debug + Polish (17-21 Mayis | 5 gun)
+
+- Tum endpoint'lerin Swagger'dan test edilmesi
+- Frontend tum sayfalarin cross-browser testi
+- Performance profiling (buyuk portfolio, cok haber)
+- Edge case'ler (bos portfolio, 0 bakiye, expired token)
+- Responsive tasarim kontrol
+- Dark/light mode tutarlilik
 
 ---
 
-## 🏁 v1.0.0 – Production Ready Release (Planned)
-### Development Tasks
-- Final system stabilization and performance benchmarking.
-- Finalize documentation (API Docs, Deployment Guide).
-- Final project presentation and live demo.
+### Buffer (22-25 Mayis | 4 gun)
+
+- Geciken isler icin yedek sure
+- Son dakika bug fix
+- Dokumandasyon finalizasyonu
 
 ---
-
-## 🛠 Project Standards
-1. **Semantic Versioning:** Follows `Major.Minor.Patch` logic.
-2. **Infrastructure as Code:** All configurations are version-controlled via Docker and OTel YAMLs.
-3. **Continuous Monitoring:** Real-time health and performance tracking are integrated into the core architecture.

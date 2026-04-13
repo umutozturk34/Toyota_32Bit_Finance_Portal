@@ -14,9 +14,7 @@ export function ThemeProvider({ children }) {
             }
             const saved = localStorage.getItem('finance-theme');
             if (saved === 'light' || saved === 'dark') return saved;
-        } catch {
-            // Ignore storage/cookie access failures and use system preference.
-        }
+        } catch {}
         return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     });
     useEffect(() => {
@@ -24,9 +22,7 @@ export function ThemeProvider({ children }) {
         try {
             localStorage.setItem('finance-theme', theme);
             document.cookie = 'finance-theme=' + theme + ';path=/;max-age=31536000;SameSite=Lax';
-        } catch {
-            // Ignore persistence failures to keep theme toggle functional.
-        }
+        } catch {}
     }, [theme]);
     const toggleTheme = () => setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
     return (

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowUpRight, Loader2, Check, AlertCircle, ShieldCheck, RefreshCw, AlertTriangle } from 'lucide-react';
+import { X, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight, Loader2, Check, AlertCircle, RefreshCw, AlertTriangle } from '../../shared/components/AnimatedIcons';
 import { portfolioService } from './portfolioService';
 import { formatPriceTRY } from '../../shared/utils/formatters';
 import PercentageSlider from '../../shared/components/PercentageSlider';
@@ -12,6 +13,7 @@ const PROCESSING_STEPS = [
 ];
 
 const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX'];
+
 
 export default function SellModal({ portfolioId, position, onClose, onComplete }) {
   const isFractional = FRACTIONAL_TYPES.includes(position.assetType);
@@ -30,32 +32,45 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
     return () => stepTimers.current.forEach(clearTimeout);
   }, []);
 
+  const commissionRate = Number(position.commissionRate) || 0;
+  const sellPrice = position.sellPriceTry || position.currentPriceTry;
   const maxQuantity = Number(position.quantity);
+  const sellPriceNum = Number(sellPrice);
   const maxValueTry = useMemo(() => {
-    if (!position.currentPriceTry || maxQuantity <= 0) return 0;
-    return Number(position.currentPriceTry) * maxQuantity;
-  }, [position.currentPriceTry, maxQuantity]);
+    if (!sellPriceNum || maxQuantity <= 0) return 0;
+    return sellPriceNum * maxQuantity;
+  }, [sellPriceNum, maxQuantity]);
 
   const computedQuantity = useMemo(() => {
-    if (!position.currentPriceTry || Number(position.currentPriceTry) <= 0) return null;
+    if (!sellPriceNum || sellPriceNum <= 0) return null;
     if (isFractional && inputMode === 'amount') {
       const amt = Number(amountTry);
       if (!amt || amt <= 0) return null;
-      return amt / Number(position.currentPriceTry);
+      return amt / sellPriceNum;
     }
     const qty = Number(quantity);
     return qty > 0 ? qty : null;
-  }, [position.currentPriceTry, amountTry, quantity, inputMode, isFractional]);
+  }, [sellPriceNum, amountTry, quantity, inputMode, isFractional]);
 
   const totalValue = useMemo(() => {
-    if (!position.currentPriceTry) return null;
+    if (!sellPriceNum) return null;
     if (isFractional && inputMode === 'amount') {
       const amt = Number(amountTry);
       return amt > 0 ? amt : null;
     }
     const qty = Number(quantity);
-    return qty > 0 ? Number(position.currentPriceTry) * qty : null;
-  }, [position.currentPriceTry, amountTry, quantity, inputMode, isFractional]);
+    return qty > 0 ? sellPriceNum * qty : null;
+  }, [sellPriceNum, amountTry, quantity, inputMode, isFractional]);
+
+  const commissionTry = useMemo(() => {
+    if (!totalValue || commissionRate === 0) return 0;
+    return totalValue * commissionRate;
+  }, [totalValue, commissionRate]);
+
+  const netTotal = useMemo(() => {
+    if (!totalValue) return null;
+    return totalValue - commissionTry;
+  }, [totalValue, commissionTry]);
 
   const handleSliderChange = useCallback((pct) => {
     setSliderPercent(pct);
@@ -295,8 +310,14 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-fg-muted">Birim Fiyat</span>
-                    <span className="font-mono font-medium text-fg">{formatPriceTRY(position.currentPriceTry)}</span>
+                    <span className="font-mono font-medium text-fg">{formatPriceTRY(sellPrice)}</span>
                   </div>
+                  {commissionRate > 0 && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-fg-muted">Komisyon (%{(commissionRate * 100).toFixed(1)})</span>
+                      <span className="font-mono text-warning">-{formatPriceTRY(commissionTry)}</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-xs border-t border-border-default pt-2">
                     <span className="text-fg-muted font-semibold">Tahmini Miktar</span>
                     <span className="font-mono font-bold text-danger">{computedQuantity?.toLocaleString('tr-TR', { maximumFractionDigits: 6 })}</span>
@@ -310,11 +331,17 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
                   </div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-fg-muted">Birim Fiyat</span>
-                    <span className="font-mono font-medium text-fg">{formatPriceTRY(position.currentPriceTry)}</span>
+                    <span className="font-mono font-medium text-fg">{formatPriceTRY(sellPrice)}</span>
                   </div>
+                  {commissionRate > 0 && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-fg-muted">Komisyon (%{(commissionRate * 100).toFixed(1)})</span>
+                      <span className="font-mono text-warning">-{formatPriceTRY(commissionTry)}</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-xs border-t border-border-default pt-2">
-                    <span className="text-fg-muted font-semibold">Satış Tutarı</span>
-                    <span className="font-mono font-bold text-danger">{formatPriceTRY(totalValue)}</span>
+                    <span className="text-fg-muted font-semibold">{commissionRate > 0 ? 'Net Tutar' : 'Satış Tutarı'}</span>
+                    <span className="font-mono font-bold text-danger">{formatPriceTRY(commissionRate > 0 ? netTotal : totalValue)}</span>
                   </div>
                 </>
               )}
@@ -339,8 +366,8 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-border-default bg-bg-base px-3 py-2.5">
-                <p className="text-[11px] text-fg-muted mb-1">Güncel Fiyat</p>
-                <p className="text-sm font-bold font-mono text-fg">{formatPriceTRY(position.currentPriceTry)}</p>
+                <p className="text-[11px] text-fg-muted mb-1">Satış Fiyatı</p>
+                <p className="text-sm font-bold font-mono text-fg">{formatPriceTRY(sellPrice)}</p>
               </div>
               <div className="rounded-lg border border-border-default bg-bg-base px-3 py-2.5">
                 <p className="text-[11px] text-fg-muted mb-1">Sahip Olunan</p>
@@ -430,9 +457,23 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
             )}
 
             {totalValue != null && (
-              <div className="rounded-xl border border-danger/30 bg-gradient-to-r from-danger/5 to-transparent px-4 py-3 flex items-center justify-between">
-                <span className="text-xs font-semibold text-danger">Satış Tutarı</span>
-                <span className="text-lg font-bold font-mono text-danger">{formatPriceTRY(totalValue)}</span>
+              <div className="space-y-2">
+                <div className="rounded-xl border border-danger/30 bg-gradient-to-r from-danger/5 to-transparent px-4 py-3 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-danger">Satış Tutarı</span>
+                  <span className="text-lg font-bold font-mono text-danger">{formatPriceTRY(totalValue)}</span>
+                </div>
+                {commissionRate > 0 && (
+                  <div className="rounded-lg border border-border-default bg-bg-base px-4 py-2.5 space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-fg-muted">Komisyon (%{(commissionRate * 100).toFixed(1)})</span>
+                      <span className="font-mono text-warning">-{formatPriceTRY(commissionTry)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs border-t border-border-default pt-1.5">
+                      <span className="text-fg-muted font-semibold">Net Tutar</span>
+                      <span className="font-mono font-bold text-fg">{formatPriceTRY(netTotal)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

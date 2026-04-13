@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigationType } from 'react-router-dom';
 import { useAuth } from '../../features/auth/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import useAppStore from '../stores/useAppStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Newspaper, BarChart3, TrendingUp, Bitcoin,
-  DollarSign, Gem, Shield,
+  DollarSign, Shield,
   LogOut, Sun, Moon, Briefcase, Activity,
   ChevronLeft, ChevronRight, Menu, Landmark, Wallet, Database,
 } from 'lucide-react';
@@ -17,7 +18,6 @@ const navItems = [
   { to: '/stocks', label: 'Stocks', Icon: TrendingUp },
   { to: '/crypto', label: 'Crypto', Icon: Bitcoin },
   { to: '/forex', label: 'Forex', Icon: DollarSign },
-  { to: '/metals', label: 'Metals', Icon: Gem },
   { to: '/funds', label: 'Funds', Icon: Briefcase },
   { to: '/bonds', label: 'Bonds', Icon: Landmark },
   { to: '/portfolio', label: 'Portfolio', Icon: Wallet },
@@ -27,17 +27,19 @@ const MainLayout = () => {
   const { user, logout, hasRole } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(() => {
-    try { return localStorage.getItem('sidebar-collapsed') === 'true'; } catch { return false; }
-  });
+  const collapsed = useAppStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
 
-  useEffect(() => {
-    try { localStorage.setItem('sidebar-collapsed', collapsed); } catch {}
-  }, [collapsed]);
+  const navType = useNavigationType();
 
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+  useEffect(() => {
+    setMobileOpen(false);
+    if (navType !== 'POP') {
+      window.scrollTo(0, 0);
+    }
+  }, [location.pathname]);
 
   const allNav = [
     ...navItems,
@@ -53,20 +55,20 @@ const MainLayout = () => {
       <div className={`flex items-center ${collapsed && !isMobile ? 'justify-center' : 'justify-between'} h-14 px-3 border-b border-border-default shrink-0`}>
         {(!collapsed || isMobile) && (
           <Link to="/" className="flex items-center gap-2.5 no-underline group">
-            <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-accent text-white shadow-sm shadow-accent/20 group-hover:shadow-accent/40 transition-all duration-200">
+            <span className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25 group-hover:shadow-accent/50 group-hover:scale-105 transition-all duration-300">
               <TrendingUp className="w-4 h-4" />
             </span>
-            <span className="text-sm font-bold text-fg tracking-tight">Finance</span>
+            <span className="text-sm font-bold text-fg tracking-tight font-display">Finance</span>
           </Link>
         )}
         {collapsed && !isMobile && (
-          <Link to="/" className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-accent text-white shadow-sm shadow-accent/20 hover:shadow-accent/40 transition-all no-underline">
+          <Link to="/" className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25 hover:shadow-accent/50 hover:scale-105 transition-all duration-300 no-underline">
             <TrendingUp className="w-4 h-4" />
           </Link>
         )}
         {!isMobile && (
           <button
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={toggleSidebar}
             className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
@@ -204,10 +206,10 @@ const MainLayout = () => {
           <Menu size={18} />
         </button>
         <Link to="/" className="flex items-center gap-2 no-underline">
-          <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-accent text-white">
+          <span className="flex items-center justify-center w-7 h-7 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25">
             <TrendingUp className="w-3.5 h-3.5" />
           </span>
-          <span className="text-sm font-bold text-fg">Finance</span>
+          <span className="text-sm font-bold text-fg font-display">Finance</span>
         </Link>
         <div className="w-8" />
       </div>
@@ -242,7 +244,7 @@ const MainLayout = () => {
         )}
       </AnimatePresence>
 
-      <div className="flex-1 flex flex-col min-w-0 relative">
+      <div className="flex-1 flex flex-col min-w-0 relative overflow-x-hidden">
         <main className="flex-1 w-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-6 pt-16 lg:pt-6">
             <Outlet />

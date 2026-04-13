@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/AnimatedIcons';
 import { forexService } from './forexService';
-import { getForexDisplayName, getForexFlag, getBaseCurrency } from '../../shared/constants/forex';
+import { getForexFlag, getBaseCurrency } from '../../shared/constants/forex';
 import { getChangeClass, changeColors, formatPrice, formatChange, formatPercent } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
 import AssetDetailPage from '../../shared/components/AssetDetailPage';
@@ -12,14 +12,13 @@ const fmt = (price) => formatPrice(price, { locale: 'tr-TR', minDecimals: 4, max
 function ForexHeader({ asset, code }) {
   const flag = getForexFlag(code);
   const base = getBaseCurrency(code);
-  const name = getForexDisplayName(code);
 
   return (
     <>
       <span className="text-2xl">{flag}</span>
       <div>
         <h1 className="text-xl font-bold text-fg">{base}/TRY</h1>
-        <p className="text-xs text-fg-muted">{name}</p>
+        <p className="text-xs text-fg-muted">{asset.name}</p>
       </div>
     </>
   );
@@ -91,7 +90,6 @@ function ForexMetadata({ asset, code }) {
 
 export default function ForexDetail() {
   const { code } = useParams();
-  const name = getForexDisplayName(code);
   const sellingPriceGetter = (asset) => asset.metadata?.sellingPrice ?? asset.price;
 
   return (
@@ -108,7 +106,7 @@ export default function ForexDetail() {
       getBuyProps={(asset) => ({
         assetType: 'FOREX',
         assetCode: code,
-        assetName: name,
+        assetName: asset.name,
         currentPrice: sellingPriceGetter(asset),
       })}
     />

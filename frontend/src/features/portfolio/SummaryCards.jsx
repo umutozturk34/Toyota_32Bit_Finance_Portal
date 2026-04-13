@@ -1,17 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Wallet, TrendingUp, TrendingDown, Banknote, BarChart3, CheckCircle2, AlertCircle } from 'lucide-react';
+import useSessionState from '../../shared/hooks/useSessionState';
+import { Wallet, Banknote, BarChart3, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, AlertCircle } from '../../shared/components/AnimatedIcons';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../shared/utils/formatters';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
-import { portfolioService } from './portfolioService';
-
-const SUMMARY_FILTERS = [
-  { id: null, label: 'Tümü' },
-  { id: 'CRYPTO', label: 'Kripto' },
-  { id: 'STOCK', label: 'Hisse' },
-  { id: 'FOREX', label: 'Döviz' },
-  { id: 'FUND', label: 'Fon' },
-];
+import { usePortfolioSummary } from './usePortfolioData';
+import { ASSET_TYPE_FILTERS as SUMMARY_FILTERS } from '../../shared/constants/assetTypes';
 
 const valueCards = [
   { key: 'totalValueTry', label: 'Toplam Değer', Icon: Wallet, iconBg: 'bg-accent/10', iconColor: 'text-accent', border: 'border-t-accent' },
@@ -46,33 +40,13 @@ function PnlCard({ label, value, icon: Icon, showPercent, percent }) {
 }
 
 export default function SummaryCards({ summary: initialSummary, portfolioId }) {
-  const [activeFilter, setActiveFilter] = useState(null);
-  const [summary, setSummary] = useState(initialSummary);
-  const [loading, setLoading] = useState(false);
+  const [activeFilter, setActiveFilter] = useSessionState('portfolio-summary-filter', null);
 
-  useEffect(() => { setSummary(initialSummary); }, [initialSummary]);
+  const { data: filteredSummary, isFetching: loading } = usePortfolioSummary(
+    portfolioId, activeFilter
+  );
 
-  const fetchFiltered = useCallback(async (assetType) => {
-    if (!portfolioId) return;
-    if (!assetType) {
-      setSummary(initialSummary);
-      return;
-    }
-    setLoading(true);
-    try {
-      const data = await portfolioService.getSummary(portfolioId, assetType);
-      setSummary(data);
-    } catch {
-      setSummary(initialSummary);
-    } finally {
-      setLoading(false);
-    }
-  }, [portfolioId, initialSummary]);
-
-  const handleFilter = (id) => {
-    setActiveFilter(id);
-    fetchFiltered(id);
-  };
+  const summary = activeFilter ? (filteredSummary ?? initialSummary) : initialSummary;
 
   return (
     <motion.div
@@ -86,7 +60,7 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
           {SUMMARY_FILTERS.map(({ id, label }) => (
             <button
               key={id || 'all'}
-              onClick={() => handleFilter(id)}
+              onClick={() => setActiveFilter(id)}
               className="relative rounded-md px-2.5 py-1 text-[11px] font-medium transition-all border-none cursor-pointer bg-transparent"
             >
               {activeFilter === id && (
@@ -137,13 +111,6 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
           value={summary.unrealizedPnlTry ?? summary.totalPnlTry}
           icon={summary.unrealizedPnlTry >= 0 ? TrendingUp : TrendingDown}
         />
-        {!activeFilter && (
-          <PnlCard
-            label="Gerçekleşen K/Z"
-            value={summary.realizedPnlTry ?? 0}
-            icon={CheckCircle2}
-          />
-        )}
         <PnlCard
           label="Toplam K/Z"
           value={summary.totalPnlTry}
@@ -151,6 +118,13 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
           showPercent
           percent={summary.pnlPercent}
         />
+        {!activeFilter && (
+          <PnlCard
+            label="Gerçekleşen K/Z"
+            value={summary.realizedPnlTry ?? 0}
+            icon={CheckCircle2}
+          />
+        )}
       </div>
     </motion.div>
   );

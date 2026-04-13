@@ -1,8 +1,8 @@
 import api from './api';
+import { unifiedMarketService } from './unifiedMarketService';
 
-export const getCryptoHistory = async (id) => {
-  const response = await api.get(`/market/${id}/history`);
-  return response.data.data;
+export const getCryptoHistory = async (id, period = 'ALL') => {
+  return unifiedMarketService.getHistory('CRYPTO', id, period);
 };
 
 export const trackedAssetService = {
@@ -24,26 +24,23 @@ export const trackedAssetService = {
 };
 
 export const forexService = {
-  getForexHistory: async (currencyCode) => {
-    const response = await api.get(`/forex/${currencyCode}/history`);
-    return response.data.data;
+  getForexHistory: async (currencyCode, period = 'ALL') => {
+    return unifiedMarketService.getHistory('FOREX', currencyCode, period);
   },
 };
 
 export const stockService = {
-  getStockHistory: async (symbol) => {
-    const response = await api.get(`/stocks/${symbol}/history`);
-    return response.data.data;
+  getStockHistory: async (symbol, period = 'ALL') => {
+    return unifiedMarketService.getHistory('STOCK', symbol, period);
   },
 };
 
 export const fundService = {
   getAllFunds: async () => {
-    const response = await api.get('/funds');
-    return response.data.data;
+    const result = await unifiedMarketService.search({ type: 'FUND', size: 100 });
+    return result.content || [];
   },
-  getFundHistory: async (fundCode) => {
-    const response = await api.get(`/funds/${fundCode}/history`);
-    return response.data.data;
+  getFundHistory: async (code, period = 'ALL') => {
+    return unifiedMarketService.getHistory('FUND', code, period);
   },
 };

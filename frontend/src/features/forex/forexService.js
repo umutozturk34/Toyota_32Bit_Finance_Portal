@@ -1,23 +1,15 @@
-import api from '../../shared/services/api';
+import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
 
 export const forexService = {
-  getForexByCode: async (currencyCode) => {
-    try {
-      const response = await api.get(`/forex/${currencyCode}`);
-      return response.data.data;
-    } catch (error) {
-      if (error.response?.status === 404) return null;
-      throw error;
-    }
+  getAllForex: async (params = {}) => {
+    return unifiedMarketService.search({ type: 'FOREX', ...params });
   },
 
-  getAllForex: async () => {
-    const response = await api.get('/forex');
-    return response.data.data;
+  getForexByCode: async (code) => {
+    return unifiedMarketService.getByCode('FOREX', code);
   },
 
-  getForexHistory: async (currencyCode) => {
-    const response = await api.get(`/forex/${currencyCode}/history`);
-    return response.data.data;
+  getForexHistory: async (code, period = 'ALL') => {
+    return unifiedMarketService.getHistory('FOREX', code, period);
   },
 };

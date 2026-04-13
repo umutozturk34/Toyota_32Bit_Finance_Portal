@@ -8,6 +8,8 @@ import { unifiedMarketService } from '../services/unifiedMarketService';
 import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../constants/assetTypes';
 import { formatPriceTRY, getChangeClass, changeColors } from '../utils/formatters';
 
+import { BOND_TYPE_LABELS } from '../../features/bond/bondConstants';
+
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds' };
 
 export default function SearchInput({ value, onChange, placeholder = 'Ara...', debounceMs = 400, withSuggestions = false, filterType, suggestFn, suggestLabelFn }) {
@@ -138,10 +140,10 @@ export default function SearchInput({ value, onChange, placeholder = 'Ara...', d
             >
               <div className="overflow-y-auto max-h-[300px]">
                 {suggestions.map((asset, i) => {
-                  const code = asset.code || asset.seriesCode || asset.isinCode || '';
-                  const name = asset.name || asset.seriesCode || '';
+                  const code = asset.code || asset.isinCode || asset.seriesCode || '';
+                  const name = asset.name || (asset.isinCode && asset.seriesCode ? asset.seriesCode : '');
                   const typeColor = ASSET_TYPE_COLORS[asset.type] || '#8b5cf6';
-                  const typeLabel = asset.type ? (ASSET_TYPE_LABELS[asset.type] || asset.type) : (asset.bondType || '');
+                  const typeLabel = asset.type ? (ASSET_TYPE_LABELS[asset.type] || asset.type) : (BOND_TYPE_LABELS[asset.bondType] || asset.bondType || '');
                   const cls = getChangeClass(asset.changePercent);
                   return (
                     <button

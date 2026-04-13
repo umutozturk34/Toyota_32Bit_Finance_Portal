@@ -16,10 +16,7 @@ export default function FeaturedCard({ article, index }) {
     const [imgLoaded, setImgLoaded] = useState(false);
 
     const handleClick = () => {
-        if (article.id) {
-            sessionStorage.setItem('news-scroll-y', String(window.scrollY));
-            navigate(`/news/${article.id}`);
-        }
+        if (article.id) navigate(`/news/${article.id}`);
     };
 
     return (

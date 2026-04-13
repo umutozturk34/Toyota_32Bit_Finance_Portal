@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { RefreshCw, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
+import { RefreshCw } from './AnimatedIcons';
 import AdminToolbar from './AdminToolbar';
+import useAppStore from '../stores/useAppStore';
 
-const COOLDOWN_MS = 10 * 1000;
+const COOLDOWN_MS = 3 * 1000;
 
 export default function PageHeader({
     icon,
@@ -15,20 +18,17 @@ export default function PageHeader({
     updating = {},
     children,
 }) {
-    const [cooldownEnd, setCooldownEnd] = useState(null);
-    const [remaining, setRemaining] = useState(0);
+    const { pathname } = useLocation();
+    const setCooldown = useAppStore((s) => s.setCooldown);
+    const cooldownEnd = useAppStore((s) => s.getCooldownEnd(pathname));
+    const [remaining, setRemaining] = useState(() => Math.max(0, cooldownEnd - Date.now()));
 
     useEffect(() => {
-        if (!cooldownEnd) return;
-
+        if (!cooldownEnd || cooldownEnd <= Date.now()) return;
         const tick = () => {
             const left = Math.max(0, cooldownEnd - Date.now());
             setRemaining(left);
-            if (left <= 0) {
-                setCooldownEnd(null);
-            }
         };
-
         tick();
         const id = setInterval(tick, 250);
         return () => clearInterval(id);
@@ -37,8 +37,8 @@ export default function PageHeader({
     const handleRefresh = useCallback(() => {
         if (cooldownEnd && Date.now() < cooldownEnd) return;
         onRefresh?.();
-        setCooldownEnd(Date.now() + COOLDOWN_MS);
-    }, [cooldownEnd, onRefresh]);
+        setCooldown(pathname, Date.now() + COOLDOWN_MS);
+    }, [cooldownEnd, onRefresh, setCooldown, pathname]);
 
     const isCoolingDown = cooldownEnd && remaining > 0;
 

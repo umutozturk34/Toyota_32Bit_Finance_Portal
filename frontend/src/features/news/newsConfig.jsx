@@ -80,7 +80,7 @@ export const TABS = [
     'GENEL_FINANS',
 ];
 
-export const COOLDOWN_MS = 10_000;
+export const COOLDOWN_MS = 3_000;
 
 export function getFallbackImage(category, articleId) {
     const config = CATEGORY_CONFIG[category] ?? CATEGORY_CONFIG.GENEL_FINANS;

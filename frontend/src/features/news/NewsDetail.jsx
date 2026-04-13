@@ -23,7 +23,6 @@ export default function NewsDetail() {
                 const data = await newsService.getNewsById(id);
                 setArticle(data);
             } catch (err) {
-                console.error('Error fetching article:', err);
                 setError('Haber yuklenirken bir hata olustu.');
             } finally {
                 setLoading(false);
@@ -47,7 +46,7 @@ export default function NewsDetail() {
                 transition={{ duration: 0.3 }}
             >
                 <button
-                    onClick={() => navigate('/news')}
+                    onClick={() => navigate(-1)}
                     className="flex items-center gap-2 text-fg-muted hover:text-fg transition-colors duration-150 text-sm mb-4"
                 >
                     <ArrowLeft size={16} />

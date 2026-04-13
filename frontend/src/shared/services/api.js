@@ -15,19 +15,13 @@ api.interceptors.request.use(
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-    } catch (error) {
-      console.error('Failed to get Keycloak token:', error);
-    }
+    } catch {}
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   async (error) => {
     if (error.response?.status === 429) {
       const now = Date.now();
@@ -41,24 +35,13 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
     if (error.response?.status === 401) {
-      console.error('401 Unauthorized - Keycloak token geçersiz veya süresi dolmuş');
-      if (window.location.pathname.includes('/login')) {
-        return Promise.reject(error);
-      }
-      try {
-        const { doLogin } = await import('../../features/auth/keycloak');
-        console.log('Redirecting to Keycloak login...');
-        doLogin();
-      } catch (e) {
-        console.error('Failed to initiate Keycloak login:', e);
+      if (!window.location.pathname.includes('/login')) {
+        try {
+          const { doLogin } = await import('../../features/auth/keycloak');
+          doLogin();
+        } catch {}
       }
     }
-    console.error('API Error:', {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      data: error.response?.data,
-    });
     return Promise.reject(error);
   }
 );

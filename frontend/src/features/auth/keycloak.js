@@ -11,24 +11,14 @@ export const initKeycloak = (onAuthenticatedCallback) => {
       silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
       checkLoginIframe: false,
       pkceMethod: 'S256',
-      enableLogging: true,
+      enableLogging: false,
     })
     .then((authenticated) => {
-      if (authenticated) {
-        console.log('User authenticated');
-        console.log('Username:', keycloak.tokenParsed?.preferred_username);
-        console.log('Email:', keycloak.tokenParsed?.email);
-        console.log('Roles:', keycloak.tokenParsed?.realm_access?.roles);
-      } else {
-        console.log('User not authenticated');
-      }
       if (onAuthenticatedCallback) {
         onAuthenticatedCallback(authenticated);
       }
     })
-    .catch((error) => {
-      console.error('Keycloak initialization error:', error);
-    });
+    .catch(() => {});
 };
 export const doLogin = (options = {}) => {
   const loginOptions = {};
@@ -44,7 +34,7 @@ export const doLogout = () => {
   keycloak.logout({ redirectUri: window.location.origin });
 };
 export const getToken = () => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (!keycloak.authenticated) {
       resolve(null);
       return;
@@ -54,8 +44,7 @@ export const getToken = () => {
       .then(() => {
         resolve(keycloak.token);
       })
-      .catch((error) => {
-        console.error('Token refresh failed:', error);
+      .catch(() => {
         resolve(null);
       });
   });
@@ -78,22 +67,9 @@ export const isAuthenticated = () => {
   return keycloak.authenticated;
 };
 keycloak.onTokenExpired = () => {
-  console.log('Token expired, refreshing...');
   keycloak.updateToken(30).catch(() => {
-    console.error('Token refresh failed, redirecting to login...');
     doLogin();
   });
 };
-keycloak.onAuthSuccess = () => {
-  console.log('Authentication successful');
-};
-keycloak.onAuthError = (error) => {
-  console.error('Authentication error:', error);
-};
-keycloak.onAuthRefreshSuccess = () => {
-  console.log('Token refreshed successfully');
-};
-keycloak.onAuthRefreshError = () => {
-  console.error('Token refresh failed');
-};
+keycloak.onAuthRefreshError = () => {};
 export default keycloak;

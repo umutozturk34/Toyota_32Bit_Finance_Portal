@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowDownRight, Loader2, Check, AlertCircle, Wallet, ShieldCheck, RefreshCw, AlertTriangle } from 'lucide-react';
+import { X, Wallet, ShieldCheck } from 'lucide-react';
+import { ArrowDownRight, Loader2, Check, AlertCircle, RefreshCw, AlertTriangle } from './AnimatedIcons';
 import { portfolioService } from '../../features/portfolio/portfolioService';
 import { formatPriceTRY } from '../utils/formatters';
 import PercentageSlider from './PercentageSlider';

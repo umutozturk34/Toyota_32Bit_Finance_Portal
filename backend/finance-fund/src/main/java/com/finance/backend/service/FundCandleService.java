@@ -4,7 +4,6 @@ import com.finance.backend.client.TefasClient;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.TefasFundDto;
-import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.FundMapper;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;
@@ -14,6 +13,7 @@ import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
+import com.finance.backend.util.TefasHelper;
 import com.finance.backend.util.WindowedFetchPlanner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
@@ -241,10 +241,10 @@ public class FundCandleService {
 
     private List<TefasFundDto> fetchTefas(String fundType, String fundCode,
                                           LocalDate startDate, LocalDate endDate) {
-        return com.finance.backend.util.TefasHelper.fetchTefas(tefasClient, fundType, fundCode, startDate, endDate);
+        return TefasHelper.fetchTefas(tefasClient, fundType, fundCode, startDate, endDate);
     }
 
     private LocalDate findLastBusinessDay(LocalDate from) {
-        return com.finance.backend.util.TefasHelper.findLastBusinessDay(from, appZone);
+        return TefasHelper.findLastBusinessDay(from, appZone);
     }
 }

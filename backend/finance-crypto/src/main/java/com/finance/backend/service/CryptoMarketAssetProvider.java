@@ -52,7 +52,7 @@ public class CryptoMarketAssetProvider implements MarketAssetProvider {
     }
 
     @Override
-    public List<MarketAssetResponse> search(String searchTerm, String sortBy, String direction, int page, int size) {
+    public List<MarketAssetResponse> search(String searchTerm, Map<String, String> filters, String sortBy, String direction, int page, int size) {
         Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.CRYPTO));
         Specification<Crypto> spec = buildSpecification(searchTerm, enabledCodes);
 
@@ -75,13 +75,13 @@ public class CryptoMarketAssetProvider implements MarketAssetProvider {
     }
 
     @Override
-    public long count() {
+    public long count(Map<String, String> filters) {
         Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.CRYPTO));
         return cryptoRepository.count(enabledCodesSpec(enabledCodes));
     }
 
     @Override
-    public long countBySearch(String searchTerm) {
+    public long countBySearch(String searchTerm, Map<String, String> filters) {
         Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.CRYPTO));
         return cryptoRepository.count(buildSpecification(searchTerm, enabledCodes));
     }

@@ -52,10 +52,13 @@ public class FundMarketAssetProvider implements MarketAssetProvider {
     }
 
     @Override
-    public List<MarketAssetResponse> search(String searchTerm, String sortBy, String direction, int page, int size) {
+    public List<MarketAssetResponse> search(String searchTerm, Map<String, String> filters, String sortBy, String direction, int page, int size) {
         Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.FUND));
         Specification<Fund> spec = buildSpecification(searchTerm, enabledCodes);
-
+        String subType = filters != null ? filters.get("subType") : null;
+        if (subType != null && !subType.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("fundType"), subType));
+        }
         List<Fund> funds = fundRepository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS))).getContent();
         return withDisplayNames(fundResponseMapper.toMarketAssetResponses(funds));
     }
@@ -75,15 +78,25 @@ public class FundMarketAssetProvider implements MarketAssetProvider {
     }
 
     @Override
-    public long count() {
+    public long count(Map<String, String> filters) {
         Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.FUND));
-        return fundRepository.count(enabledCodesSpec(enabledCodes));
+        Specification<Fund> spec = enabledCodesSpec(enabledCodes);
+        String subType = filters != null ? filters.get("subType") : null;
+        if (subType != null && !subType.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("fundType"), subType));
+        }
+        return fundRepository.count(spec);
     }
 
     @Override
-    public long countBySearch(String searchTerm) {
+    public long countBySearch(String searchTerm, Map<String, String> filters) {
         Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.FUND));
-        return fundRepository.count(buildSpecification(searchTerm, enabledCodes));
+        Specification<Fund> spec = buildSpecification(searchTerm, enabledCodes);
+        String subType = filters != null ? filters.get("subType") : null;
+        if (subType != null && !subType.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("fundType"), subType));
+        }
+        return fundRepository.count(spec);
     }
 
     @Override

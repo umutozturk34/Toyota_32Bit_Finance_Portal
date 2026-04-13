@@ -51,10 +51,14 @@ public class StockMarketAssetProvider implements MarketAssetProvider {
     }
 
     @Override
-    public List<MarketAssetResponse> search(String searchTerm, String sortBy, String direction, int page, int size) {
+    public List<MarketAssetResponse> search(String searchTerm, Map<String, String> filters, String sortBy, String direction, int page, int size) {
         Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.STOCK));
         Specification<Stock> spec = buildSpecification(searchTerm, enabledCodes);
-
+        String segment = filters != null ? filters.get("segment") : null;
+        if (segment != null && !segment.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("stockSegment"),
+                    com.finance.backend.model.StockSegment.valueOf(segment)));
+        }
         List<Stock> stocks = stockRepository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS))).getContent();
         return withDisplayNames(stockResponseMapper.toMarketAssetResponses(stocks));
     }
@@ -74,15 +78,27 @@ public class StockMarketAssetProvider implements MarketAssetProvider {
     }
 
     @Override
-    public long count() {
+    public long count(Map<String, String> filters) {
         Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.STOCK));
-        return stockRepository.count(enabledCodesSpec(enabledCodes));
+        Specification<Stock> spec = enabledCodesSpec(enabledCodes);
+        String segment = filters != null ? filters.get("segment") : null;
+        if (segment != null && !segment.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("stockSegment"),
+                    com.finance.backend.model.StockSegment.valueOf(segment)));
+        }
+        return stockRepository.count(spec);
     }
 
     @Override
-    public long countBySearch(String searchTerm) {
+    public long countBySearch(String searchTerm, Map<String, String> filters) {
         Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.STOCK));
-        return stockRepository.count(buildSpecification(searchTerm, enabledCodes));
+        Specification<Stock> spec = buildSpecification(searchTerm, enabledCodes);
+        String segment = filters != null ? filters.get("segment") : null;
+        if (segment != null && !segment.isBlank()) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("stockSegment"),
+                    com.finance.backend.model.StockSegment.valueOf(segment)));
+        }
+        return stockRepository.count(spec);
     }
 
     @Override

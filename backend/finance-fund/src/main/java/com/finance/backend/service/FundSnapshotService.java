@@ -5,7 +5,6 @@ import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.backend.exception.BusinessException;
-import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.FundMapper;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;
@@ -13,6 +12,7 @@ import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.FundRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.TefasHelper;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -192,7 +192,7 @@ public class FundSnapshotService {
 
     private List<TefasFundDto> fetchTefas(String fundType, String fundCode,
                                           LocalDate startDate, LocalDate endDate) {
-        return com.finance.backend.util.TefasHelper.fetchTefas(tefasClient, fundType, fundCode, startDate, endDate);
+        return TefasHelper.fetchTefas(tefasClient, fundType, fundCode, startDate, endDate);
     }
 
     private void ensureByfTracked(String fundCode, String tefasName) {
@@ -212,6 +212,6 @@ public class FundSnapshotService {
     }
 
     private LocalDate findLastBusinessDay(LocalDate from) {
-        return com.finance.backend.util.TefasHelper.findLastBusinessDay(from, appZone);
+        return TefasHelper.findLastBusinessDay(from, appZone);
     }
 }

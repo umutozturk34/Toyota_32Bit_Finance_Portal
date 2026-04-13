@@ -12,13 +12,13 @@ public interface MarketAssetProvider {
 
     MarketAssetResponse getByCode(String code);
 
-    List<MarketAssetResponse> search(String searchTerm, String sortBy, String direction, int page, int size);
+    List<MarketAssetResponse> search(String searchTerm, Map<String, String> filters, String sortBy, String direction, int page, int size);
+
+    long count(Map<String, String> filters);
+
+    long countBySearch(String searchTerm, Map<String, String> filters);
 
     List<MarketAssetResponse> getTopMovers(int limit, boolean gainers);
-
-    long count();
-
-    long countBySearch(String searchTerm);
 
     default List<Map<String, Object>> getGroupCounts() {
         return List.of();

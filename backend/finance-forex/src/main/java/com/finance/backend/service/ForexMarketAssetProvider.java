@@ -47,7 +47,7 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
     }
 
     @Override
-    public List<MarketAssetResponse> search(String searchTerm, String sortBy, String direction, int page, int size) {
+    public List<MarketAssetResponse> search(String searchTerm, Map<String, String> filters, String sortBy, String direction, int page, int size) {
         Specification<Forex> spec = buildSpecification(searchTerm);
 
         List<Forex> forexList = forexRepository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS))).getContent();
@@ -66,12 +66,12 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
     }
 
     @Override
-    public long count() {
+    public long count(Map<String, String> filters) {
         return forexRepository.count();
     }
 
     @Override
-    public long countBySearch(String searchTerm) {
+    public long countBySearch(String searchTerm, Map<String, String> filters) {
         return forexRepository.count(buildSpecification(searchTerm));
     }
 

@@ -133,6 +133,8 @@ public class TrackedAssetService {
                 ));
     }
 
+
+
     @Transactional
     public TrackedAssetResponse upsert(TrackedAssetUpsertCommand command) {
         TrackedAssetType type = command.getAssetType();

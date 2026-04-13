@@ -49,7 +49,7 @@ public class UnifiedMarketController {
             @RequestParam(required = false) Integer size) {
 
         AppProperties.Market market = appProperties.getPagination().getMarket();
-        List<MarketType> types = MarketRequestHelper.parseTypes(type);
+        List<MarketType> types = MarketRequestHelper.parseMarketTypes(type);
         int resolvedSize = MarketRequestHelper.clamp(size, market.getDefaultSize(), market.getMaxSize());
 
         return ResponseEntity.ok(ApiResponse.success("Market assets retrieved successfully",

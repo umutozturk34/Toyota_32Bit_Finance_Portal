@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
 import ToastContainer from './shared/components/Toast';
 import ProtectedRoute from './shared/components/ProtectedRoute';
+import NotFound from './shared/components/NotFound';
 import MainLayout from './shared/layouts/MainLayout';
 import HomePage from './features/home/HomePage';
 import Login from './features/auth/Login';
@@ -60,6 +61,7 @@ function App() {
             <Route path="bonds" element={<BondsPage />} />
             <Route path="admin/tracked-assets" element={<AdminTrackedAssetsPage />} />
             <Route path="portfolio" element={<Portfolio />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
       </BrowserRouter>

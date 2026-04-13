@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -41,7 +40,7 @@ public class AdminTrackedAssetController {
             @RequestParam(defaultValue = "asc") String direction,
             @RequestParam(defaultValue = "false") boolean includeDisabled
     ) {
-        List<TrackedAssetType> types = parseTypes(type);
+        List<TrackedAssetType> types = MarketRequestHelper.parseTrackedTypes(type);
         List<TrackedAssetResponse> data = trackedAssetService.searchTrackedAssets(
                 types, includeDisabled, search, sort, direction);
         return ResponseEntity.ok(ApiResponse.success("Tracked assets retrieved successfully", data));
@@ -82,13 +81,4 @@ public class AdminTrackedAssetController {
         return ResponseEntity.ok(ApiResponse.success("Tracked asset deleted", null));
     }
 
-    private List<TrackedAssetType> parseTypes(String type) {
-        if (type == null || type.isBlank()) {
-            return List.of(TrackedAssetType.values());
-        }
-        return Arrays.stream(type.split(","))
-                .map(String::trim)
-                .map(TrackedAssetType::valueOf)
-                .toList();
-    }
 }

@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -32,7 +31,7 @@ public class TrackedAssetController {
             @RequestParam(defaultValue = "sortOrder") String sort,
             @RequestParam(defaultValue = "asc") String direction
     ) {
-        List<TrackedAssetType> types = parseTypes(type);
+        List<TrackedAssetType> types = MarketRequestHelper.parseTrackedTypes(type);
         List<TrackedAssetResponse> data = trackedAssetService.searchTrackedAssets(
                 types, false, search, sort, direction);
         return ResponseEntity.ok(ApiResponse.success("Tracked assets retrieved successfully", data));
@@ -49,13 +48,4 @@ public class TrackedAssetController {
         return ResponseEntity.ok(ApiResponse.success("Tracked asset retrieved successfully", data));
     }
 
-    private List<TrackedAssetType> parseTypes(String type) {
-        if (type == null || type.isBlank()) {
-            return List.of(TrackedAssetType.values());
-        }
-        return Arrays.stream(type.split(","))
-                .map(String::trim)
-                .map(TrackedAssetType::valueOf)
-                .toList();
-    }
 }

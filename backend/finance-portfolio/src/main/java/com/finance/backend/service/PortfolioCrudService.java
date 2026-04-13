@@ -92,9 +92,7 @@ public class PortfolioCrudService {
                     cb.like(cb.lower(root.get("assetCode")), pattern));
         }
 
-        PageRequest pageRequest = (sortBy != null && !sortBy.isBlank())
-                ? PageRequest.of(page, size, buildTransactionSort(sortBy, direction))
-                : PageRequest.of(page, size);
+        PageRequest pageRequest = PageRequest.of(page, size, buildTransactionSort(sortBy, direction));
         Page<PortfolioTransaction> result = transactionRepository.findAll(spec, pageRequest);
 
         return PagedResponse.of(

@@ -52,7 +52,7 @@ public class UnifiedMarketController {
         List<MarketType> types = MarketRequestHelper.parseMarketTypes(type);
         int resolvedSize = MarketRequestHelper.clamp(size, market.getDefaultSize(), market.getMaxSize());
 
-        return ResponseEntity.ok(ApiResponse.success("Market assets retrieved successfully",
+        return ResponseEntity.ok(ApiResponse.successOrEmpty("Market assets retrieved successfully", "No data found",
                 unifiedMarketService.search(types, code, segment, subType, search, sort, direction, filter, page, resolvedSize)));
     }
 

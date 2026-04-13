@@ -203,41 +203,6 @@ public class TrackedAssetService {
         invalidate(type);
     }
 
-    @Transactional
-    public void bootstrapIfEmpty(TrackedAssetType type, List<String> fallbackCodes) {
-        if (fallbackCodes == null || fallbackCodes.isEmpty()) {
-            return;
-        }
-        if (trackedAssetRepository.existsByAssetType(type)) {
-            return;
-        }
-
-        List<TrackedAsset> seedData = new ArrayList<>();
-        for (int i = 0; i < fallbackCodes.size(); i++) {
-            String normalizedCode = normalizeCode(type, fallbackCodes.get(i));
-            TrackedAsset asset = TrackedAsset.builder()
-                .assetType(type)
-                .assetCode(normalizedCode)
-                .enabled(true)
-                .sortOrder(orderForSeed(i))
-                .build();
-            StockSegment resolvedSegment = resolveStockSegment(type, null, null);
-            asset.setStockSegment(resolvedSegment);
-            asset.setIndexAsset(resolveIndexAsset(type, resolvedSegment, null, false));
-            asset.setCompareOnly(resolveCompareOnly(type, resolvedSegment, null, false));
-            asset.setDisplayName(resolveDisplayName(normalizedCode, null, null));
-            seedData.add(asset);
-        }
-
-        trackedAssetRepository.saveAll(seedData);
-        invalidate(type);
-        log.info("Bootstrapped {} tracked assets for {}", seedData.size(), type);
-    }
-
-    private int orderForSeed(int order) {
-        return order;
-    }
-
     @Transactional(readOnly = true)
     public Optional<String> getCryptoBinanceSymbol(String coinGeckoId) {
         String normalizedCode = normalizeCode(TrackedAssetType.CRYPTO, coinGeckoId);

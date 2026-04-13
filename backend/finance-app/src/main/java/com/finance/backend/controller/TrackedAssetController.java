@@ -34,7 +34,7 @@ public class TrackedAssetController {
         List<TrackedAssetType> types = MarketRequestHelper.parseTrackedTypes(type);
         List<TrackedAssetResponse> data = trackedAssetService.searchTrackedAssets(
                 types, false, search, sort, direction);
-        return ResponseEntity.ok(ApiResponse.success("Tracked assets retrieved successfully", data));
+        return ResponseEntity.ok(ApiResponse.successOrEmpty("Tracked assets retrieved successfully", "No tracked assets found", data));
     }
 
     @GetMapping("/{type}/{code}")

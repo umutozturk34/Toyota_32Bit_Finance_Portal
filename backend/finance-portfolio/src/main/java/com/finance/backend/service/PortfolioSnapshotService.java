@@ -29,7 +29,7 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
     private final TransactionTemplate transactionTemplate;
 
     @Override
-    public void onMarketUpdate(com.finance.backend.model.MarketType marketType) {
+    public void onMarketUpdate(MarketType marketType) {
         AssetType type = AssetType.valueOf(marketType.name());
         List<Portfolio> portfolios = portfolioRepository.findAll();
         LocalDateTime batchTimestamp = LocalDateTime.now();

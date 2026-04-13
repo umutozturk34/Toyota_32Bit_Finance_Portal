@@ -180,7 +180,7 @@ public class PortfolioTransactionService {
         return realizedPnl;
     }
 
-    private void recordLedger(UserWallet wallet, LedgerType type, BigDecimal amount, String description) {
+        private void recordLedger(UserWallet wallet, LedgerType type, BigDecimal amount, String description) {
         WalletLedger ledger = WalletLedger.builder()
                 .wallet(wallet)
                 .ledgerType(type)

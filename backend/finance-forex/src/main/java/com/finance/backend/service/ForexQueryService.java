@@ -1,11 +1,13 @@
 package com.finance.backend.service;
 
 import com.finance.backend.dto.response.CandleResponse;
+import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.mapper.ForexResponseMapper;
 import com.finance.backend.model.CandlePeriod;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
 import com.finance.backend.repository.ForexCandleRepository;
+import com.finance.backend.repository.ForexRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -21,9 +23,13 @@ public class ForexQueryService {
     private final MarketCacheService<Forex, ForexCandle> forexCacheService;
     private final ForexCandleRepository forexCandleRepository;
     private final ForexResponseMapper forexResponseMapper;
+    private final ForexRepository forexRepository;
 
     public List<CandleResponse> getForexHistory(String currencyCode, CandlePeriod period) {
         String normalized = currencyCode.strip().toUpperCase();
+        if (!forexRepository.existsById(normalized)) {
+            throw new ResourceNotFoundException("Forex not found: " + normalized);
+        }
         if (period == CandlePeriod.ALL) {
             return forexResponseMapper.toForexCandleResponses(forexCacheService.getHistory(normalized));
         }

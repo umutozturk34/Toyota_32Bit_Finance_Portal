@@ -8,5 +8,6 @@ public record NewsArticleResponse(
         String description,
         String sourceName,
         String category,
-        LocalDateTime publishedAt
+        LocalDateTime publishedAt,
+        String imageUrl
 ) {}

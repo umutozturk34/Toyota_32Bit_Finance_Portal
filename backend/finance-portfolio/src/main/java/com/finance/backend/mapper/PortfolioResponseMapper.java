@@ -26,6 +26,8 @@ public abstract class PortfolioResponseMapper {
 
     public PositionResponse toPositionResponse(PortfolioPosition pos,
                                                 BigDecimal currentPriceTry,
+                                                BigDecimal sellPriceTry,
+                                                BigDecimal commissionRate,
                                                 BigDecimal marketValueTry,
                                                 BigDecimal pnlTry,
                                                 BigDecimal pnlPercent,
@@ -41,6 +43,8 @@ public abstract class PortfolioResponseMapper {
                 pos.getAverageCostTry(),
                 pos.getTotalCostTry(),
                 currentPriceTry,
+                sellPriceTry,
+                commissionRate,
                 marketValueTry,
                 pnlTry,
                 pnlPercent

@@ -18,6 +18,7 @@ public class AppProperties {
     private Tcmb tcmb = new Tcmb();
     private String tefasApiPath;
     private String tefasBaseUrl;
+    private String tefasSessionPath = "/TarihselVeriler.aspx";
     private String timezone = "Europe/Istanbul";
     private int scale = 4;
     private Http http = new Http();
@@ -29,13 +30,21 @@ public class AppProperties {
     private RateLimit rateLimit = new RateLimit();
     private Bond bond = new Bond();
     private News news = new News();
+    private Commission commission = new Commission();
+    private Scheduler scheduler = new Scheduler();
+    private Pagination pagination = new Pagination();
+    private Portfolio portfolio = new Portfolio();
+    private Task task = new Task();
+    private TrackedAsset trackedAsset = new TrackedAsset();
+    private Security security = new Security();
+    private Cache cache = new Cache();
 
     @Getter
     @Setter
     public static class Api {
         private CoinGeckoProvider coingecko = new CoinGeckoProvider();
-        private Provider yahoo = new Provider();
-        private Provider binance = new Provider();
+        private YahooProvider yahoo = new YahooProvider();
+        private BinanceProvider binance = new BinanceProvider();
         private BondProvider bond = new BondProvider();
     }
 
@@ -50,12 +59,27 @@ public class AppProperties {
     @Setter
     public static class CoinGeckoProvider extends Provider {
         private String apiKeyHeader = "x-cg-demo-api-key";
+        private String marketsPath = "/coins/markets";
     }
 
     @Getter
     @Setter
     public static class BondProvider extends Provider {
         private String apiKeyHeader = "key";
+        private String serieListPath = "/serieList/type=json&code=";
+        private String seriesPath = "/series=";
+    }
+
+    @Getter
+    @Setter
+    public static class YahooProvider extends Provider {
+        private String chartPath = "";
+    }
+
+    @Getter
+    @Setter
+    public static class BinanceProvider extends Provider {
+        private String klinesPath = "/api/v3/klines";
     }
 
     @Getter
@@ -71,6 +95,8 @@ public class AppProperties {
         private int connectTimeoutMs = 10000;
         private int readTimeoutMs = 30000;
         private String defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+        private int bondMaxInMemorySizeMb = 10;
+        private int newsMaxInMemorySizeMb = 5;
     }
 
     @Getter
@@ -129,17 +155,137 @@ public class AppProperties {
     public static class News {
         private int maxArticlesPerSource = 50;
         private int cacheTtlHours = 24;
-        private List<NewsSource> sources = new ArrayList<>();
+        private int defaultCategoryLimit = 20;
         private Map<String, Integer> categoryLimits = new HashMap<>();
     }
 
     @Getter
     @Setter
-    public static class NewsSource {
-        private String name;
-        private String url;
-        private String type = "RSS";
-        private String defaultCategory;
+    public static class Commission {
+        private BigDecimal stockRate = new BigDecimal("0.002");
+        private BigDecimal cryptoRate = new BigDecimal("0.0015");
+        private BigDecimal fundRate = new BigDecimal("0.001");
+    }
+
+    @Getter
+    @Setter
+    public static class Scheduler {
+        private MarketSchedule crypto = new MarketSchedule();
+        private MarketSchedule stock = new MarketSchedule();
+        private MarketSchedule forex = new MarketSchedule();
+        private MarketSchedule news = new MarketSchedule();
+        private SingleSchedule fund = new SingleSchedule();
+        private SingleSchedule bond = new SingleSchedule();
+        private PortfolioSchedule portfolio = new PortfolioSchedule();
+    }
+
+    @Getter
+    @Setter
+    public static class MarketSchedule {
+        private String morningCron;
+        private String afternoonCron;
+        private String eveningCron;
+    }
+
+    @Getter
+    @Setter
+    public static class SingleSchedule {
+        private String dailyCron;
+    }
+
+    @Getter
+    @Setter
+    public static class PortfolioSchedule {
+        private String snapshotCron;
+    }
+
+    @Getter
+    @Setter
+    public static class Pagination {
+        private Market market = new Market();
+        private BondPage bond = new BondPage();
+        private NewsPage news = new NewsPage();
+        private PortfolioPage portfolio = new PortfolioPage();
+    }
+
+    @Getter
+    @Setter
+    public static class Market {
+        private int defaultSize = 20;
+        private int maxSize = 100;
+        private int defaultOverviewLimit = 5;
+        private int maxOverviewLimit = 20;
+    }
+
+    @Getter
+    @Setter
+    public static class BondPage {
+        private int defaultSize = 8;
+        private int maxSize = 100;
+    }
+
+    @Getter
+    @Setter
+    public static class NewsPage {
+        private int defaultSize = 10;
+        private int maxSize = 100;
+    }
+
+    @Getter
+    @Setter
+    public static class PortfolioPage {
+        private int transactionsDefaultSize = 10;
+        private int positionsDefaultSize = 10;
+        private int maxSize = 100;
+    }
+
+    @Getter
+    @Setter
+    public static class Portfolio {
+        private String defaultName = "Ana Portföy";
+        private String defaultCurrency = "TRY";
+        private BigDecimal initialBalance = new BigDecimal("1000000.0000");
+        private BigDecimal minTransactionAmountTry = new BigDecimal("10");
+    }
+
+    @Getter
+    @Setter
+    public static class Task {
+        private int maxHistory = 50;
+    }
+
+    @Getter
+    @Setter
+    public static class TrackedAsset {
+        private long codeCacheTtlSeconds = 45;
+    }
+
+    @Getter
+    @Setter
+    public static class Security {
+        private Cors cors = new Cors();
+    }
+
+    @Getter
+    @Setter
+    public static class Cors {
+        private List<String> allowedOriginPatterns = new ArrayList<>(List.of(
+                "http://localhost",
+                "http://localhost:*",
+                "http://127.0.0.1",
+                "http://127.0.0.1:*"
+        ));
+        private List<String> allowedMethods = new ArrayList<>(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        private List<String> allowedHeaders = new ArrayList<>(List.of("Authorization", "Content-Type", "Cache-Control", "X-Requested-With"));
+        private List<String> exposedHeaders = new ArrayList<>(List.of("Authorization"));
+        private boolean allowCredentials = true;
+        private long maxAgeSeconds = 3600;
+    }
+
+    @Getter
+    @Setter
+    public static class Cache {
+        private int redisDefaultTtlHours = 24;
     }
 
     @Getter

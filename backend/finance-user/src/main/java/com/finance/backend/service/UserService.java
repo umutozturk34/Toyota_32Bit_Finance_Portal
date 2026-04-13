@@ -2,15 +2,17 @@ package com.finance.backend.service;
 import com.finance.backend.dto.CreateUserRequest;
 import com.finance.backend.dto.UpdateUserRequest;
 import com.finance.backend.dto.UserDTO;
-import com.finance.backend.entity.User;
+import com.finance.backend.model.User;
 import com.finance.backend.exception.BadRequestException;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class UserService {

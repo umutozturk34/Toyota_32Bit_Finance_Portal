@@ -42,5 +42,8 @@ public abstract class ForexMapper {
     @AfterMapping
     void enrichForexCandle(@MappingTarget ForexCandle candle) {
         candle.scaleAndNormalizeOhlc(appProperties.getScale());
+        if (candle.getCandleDate() != null) {
+            candle.setCandleDate(candle.getCandleDate().toLocalDate().atStartOfDay());
+        }
     }
 }

@@ -49,6 +49,7 @@ public class TefasClient {
     @CircuitBreaker(name = "tefas")
     @Retry(name = "tefas")
     public List<TefasFundDto> post(String fundType, String fundCode, LocalDate startDate, LocalDate endDate) {
+        long reqStart = System.currentTimeMillis();
         log.debug("TEFAS request: type={}, code={}, from={}, to={}", fundType, fundCode, startDate, endDate);
         try {
             MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
@@ -77,6 +78,8 @@ public class TefasClient {
                 }
 
 
+            long reqMs = System.currentTimeMillis() - reqStart;
+            log.info("[TIMING] TEFAS call {}:{} ({} to {}) took {}ms", fundType, fundCode, startDate, endDate, reqMs);
             return parseResponse(body);
         } catch (ExternalApiException | ExternalApiRequestException e) {
             throw e;

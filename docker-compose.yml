@@ -38,7 +38,6 @@ services:
       EVDS_API_KEY: ${EVDS_API_KEY}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-      FUNDS_ALL: ${FUNDS_ALL}
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_SERVICE_NAME: finance-backend
@@ -99,7 +98,7 @@ services:
 
   # Keycloak 
   keycloak:
-    image: quay.io/keycloak/keycloak:23.0
+    image: quay.io/keycloak/keycloak:24.0
     container_name: finance-keycloak
     restart: unless-stopped
     ports:
@@ -123,10 +122,13 @@ services:
     command:
       - start-dev
       - --import-realm
+      - --spi-required-action-VERIFY_EMAIL_CODE-code-length=6
+      - --spi-required-action-VERIFY_EMAIL_CODE-code-symbols=0123456789
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak/realm-simple.json:/opt/keycloak/data/import/realm-finance.json:ro
       - ./keycloak/themes/finance:/opt/keycloak/themes/finance:ro
+      - ./keycloak/providers:/opt/keycloak/providers:ro
     depends_on:
       db:
         condition: service_healthy
@@ -170,9 +172,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_BIST_STOCKS=${BIST_STOCKS}
-        - VITE_TRACKED_CRYPTOS=${TRACKED_CRYPTOS}
-        - VITE_FUNDS_ALL=${FUNDS_ALL}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+        - VITE_KEYCLOAK_URL=${VITE_KEYCLOAK_URL}
+        - VITE_KEYCLOAK_REALM=${VITE_KEYCLOAK_REALM}
+        - VITE_KEYCLOAK_CLIENT_ID=${VITE_KEYCLOAK_CLIENT_ID}
     container_name: finance-frontend
     restart: unless-stopped
     ports:

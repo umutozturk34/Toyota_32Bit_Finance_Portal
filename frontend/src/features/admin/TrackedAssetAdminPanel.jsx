@@ -1,0 +1,331 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { motion, Reorder, useDragControls } from 'framer-motion';
+import { GripVertical, Power, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { RefreshCw } from '../../shared/components/AnimatedIcons';
+import { adminService, trackedAssetService } from './adminService';
+import { toast } from '../../shared/components/Toast';
+import SearchInput from '../../shared/components/SearchInput';
+import ConfirmDialog from '../../shared/components/ConfirmDialog';
+
+function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onToggle, onDelete, highlighted }) {
+    const dragControls = useDragControls();
+
+    return (
+        <Reorder.Item
+            value={item}
+            dragListener={false}
+            dragControls={dragControls}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{
+                opacity: 1,
+                y: 0,
+                scale: highlighted ? 1.01 : 1,
+                transition: { duration: 0.2 },
+            }}
+            exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+            whileDrag={{
+                scale: 1.02,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                zIndex: 50,
+            }}
+            layout
+            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+            className={`select-none grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg border px-3 py-2 ${
+                highlighted
+                    ? 'border-accent bg-accent/10'
+                    : 'border-border-default bg-bg-base'
+            }`}
+            style={{ position: 'relative' }}
+        >
+            <div className="min-w-0 space-y-0.5">
+                <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-medium text-fg">{item.assetCode}</p>
+                    <span className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px] text-fg-muted">#{index + 1}</span>
+                    <span className={`rounded px-2 py-0.5 text-[10px] font-semibold ${item.enabled ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'}`}>
+                        {item.enabled ? 'ENABLED' : 'DISABLED'}
+                    </span>
+                </div>
+                <p className="truncate text-xs text-fg-muted">{item.displayName || item.assetCode}</p>
+                {type === 'CRYPTO' && item.binanceSymbol && <p className="truncate text-xs text-fg-muted">Binance: {item.binanceSymbol}</p>}
+            </div>
+
+            <div className="flex items-center gap-1.5">
+                <button
+                    onClick={() => onMoveUp(item.assetCode)}
+                    disabled={index === 0}
+                    title="Yukarı taşı"
+                    className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base text-fg-subtle hover:bg-surface disabled:opacity-30 transition-colors"
+                >
+                    <ArrowUp className="h-3.5 w-3.5" />
+                </button>
+                <button
+                    onClick={() => onMoveDown(item.assetCode)}
+                    disabled={index === total - 1}
+                    title="Aşağı taşı"
+                    className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base text-fg-subtle hover:bg-surface disabled:opacity-30 transition-colors"
+                >
+                    <ArrowDown className="h-3.5 w-3.5" />
+                </button>
+
+                <motion.span
+                    onPointerDown={(e) => dragControls.start(e)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="inline-flex h-7 w-7 cursor-grab items-center justify-center rounded-md border border-border-default bg-bg-base text-fg-subtle active:cursor-grabbing hover:bg-surface hover:text-fg transition-colors touch-none"
+                    title="Tut ve sürükle"
+                >
+                    <GripVertical className="h-3.5 w-3.5" />
+                </motion.span>
+                <button
+                    onClick={() => onToggle(item)}
+                    title={item.enabled ? 'Devre dışı bırak' : 'Etkinleştir'}
+                    className={`flex h-7 w-7 items-center justify-center rounded-md border transition-colors ${
+                        item.enabled
+                            ? 'border-success/30 bg-success/5 text-success hover:bg-success/10'
+                            : 'border-border-default bg-bg-base text-fg-subtle hover:bg-surface'
+                    }`}
+                >
+                    <Power className="h-3.5 w-3.5" />
+                </button>
+                <button
+                    onClick={() => onDelete(item)}
+                    title="Sil"
+                    className="flex h-7 w-7 items-center justify-center rounded-md border border-danger/30 bg-danger/5 text-danger hover:bg-danger/15 transition-colors"
+                >
+                    <Trash2 className="h-3.5 w-3.5" />
+                </button>
+            </div>
+        </Reorder.Item>
+    );
+}
+
+export default function TrackedAssetAdminPanel({ type, title, onChanged, refreshToken = 0 }) {
+    const queryClient = useQueryClient();
+    const [items, setItems] = useState([]);
+    const [search, setSearch] = useState('');
+    const [savingOrder, setSavingOrder] = useState(false);
+    const [savedSignature, setSavedSignature] = useState('');
+    const [savedItems, setSavedItems] = useState([]);
+    const [highlightedCode, setHighlightedCode] = useState(null);
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [deleting, setDeleting] = useState(false);
+
+    const computeSignature = useCallback((list) => {
+        return (list || []).map(item => `${item.assetCode}:${item.sortOrder ?? 0}`).join('|');
+    }, []);
+
+    const { data: fetchedData, isLoading: loading } = useQuery({
+        queryKey: ['trackedAssets', type, refreshToken],
+        queryFn: () => trackedAssetService.getByType(type, true),
+    });
+
+    useEffect(() => {
+        if (!fetchedData) return;
+        const normalized = fetchedData || [];
+        setItems(normalized);
+        setSavedItems(normalized);
+        setSavedSignature(computeSignature(normalized));
+    }, [fetchedData, computeSignature]);
+
+    const invalidate = useCallback(() => {
+        queryClient.invalidateQueries({ queryKey: ['trackedAssets', type] });
+    }, [queryClient, type]);
+
+    const filteredItems = useMemo(() => {
+        if (!search) return items;
+        const q = search.toLowerCase();
+        return items.filter(item =>
+            item.assetCode.toLowerCase().includes(q) ||
+            (item.displayName && item.displayName.toLowerCase().includes(q))
+        );
+    }, [items, search]);
+
+    const handleToggle = async (item) => {
+        try {
+            await adminService.setTrackedAssetEnabled(type, item.assetCode, !item.enabled);
+            invalidate();
+            onChanged?.();
+        } catch (err) {
+            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
+        }
+    };
+
+    const handleDeleteClick = (item) => {
+        setDeleteTarget(item);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!deleteTarget) return;
+        setDeleting(true);
+        try {
+            await adminService.deleteTrackedAsset(type, deleteTarget.assetCode);
+            setDeleteTarget(null);
+            invalidate();
+            onChanged?.();
+            toast.success('Silindi', `${deleteTarget.assetCode} başarıyla silindi`);
+        } catch (err) {
+            toast.error('Silme Hatası', err.response?.data?.message || err.message);
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const handleReorder = useCallback((newItems) => {
+        setItems(newItems.map((entry, i) => ({ ...entry, sortOrder: i })));
+    }, []);
+
+    const savedOrderByCode = useMemo(() => {
+        const map = new Map();
+        for (const item of savedItems) {
+            map.set(item.assetCode, item.sortOrder ?? 0);
+        }
+        return map;
+    }, [savedItems]);
+
+    const handleSaveOrder = async () => {
+        setSavingOrder(true);
+        try {
+            const changedItems = items.filter((item, index) => (savedOrderByCode.get(item.assetCode) ?? index) !== index);
+
+            if (changedItems.length > 0) {
+                await adminService.updateTrackedAssetOrder({
+                    assetType: type,
+                    items: changedItems.map((item) => ({
+                        assetCode: item.assetCode,
+                        sortOrder: items.findIndex(x => x.assetCode === item.assetCode),
+                    })),
+                });
+            }
+
+            invalidate();
+            onChanged?.();
+            toast.success('Kaydedildi', 'Sıralama güncellendi');
+        } catch (err) {
+            toast.error('Kaydetme Hatası', err.response?.data?.message || err.message);
+        } finally {
+            setSavingOrder(false);
+        }
+    };
+
+    const handleResetOrder = () => {
+        setItems(savedItems);
+    };
+
+    const moveItemByStep = useCallback((assetCode, step) => {
+        setItems(prev => {
+            const index = prev.findIndex(x => x.assetCode === assetCode);
+            if (index < 0) return prev;
+
+            const nextIndex = index + step;
+            if (nextIndex < 0 || nextIndex >= prev.length) return prev;
+
+            const next = [...prev];
+            const [moved] = next.splice(index, 1);
+            next.splice(nextIndex, 0, moved);
+
+            const result = next.map((entry, i) => ({ ...entry, sortOrder: i }));
+
+            setHighlightedCode(assetCode);
+            setTimeout(() => setHighlightedCode(null), 500);
+
+            return result;
+        });
+    }, []);
+
+    const hasOrderChanges = useMemo(() => computeSignature(items) !== savedSignature, [items, savedSignature, computeSignature]);
+
+    return (
+        <>
+            <div className="rounded-xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-4">
+                <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-fg">{title} Tracked Listesi ({search ? `${filteredItems.length}/` : ''}{items.length})</h3>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleResetOrder}
+                            disabled={!hasOrderChanges || savingOrder}
+                            className="rounded-md border border-border-default bg-bg-base px-2.5 py-1 text-xs text-fg-muted hover:bg-surface disabled:opacity-40 transition-colors"
+                        >
+                            Geri Al
+                        </button>
+                        <button
+                            onClick={handleSaveOrder}
+                            disabled={savingOrder || !hasOrderChanges}
+                            className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                                hasOrderChanges
+                                    ? 'border-accent/50 bg-accent/10 text-accent hover:bg-accent/20'
+                                    : 'border-border-default bg-bg-base text-fg-muted disabled:opacity-40'
+                            }`}
+                        >
+                            {savingOrder ? 'Kaydediliyor...' : 'Sırayı Kaydet'}
+                        </button>
+                        <button
+                            onClick={invalidate}
+                            disabled={loading}
+                            className="flex items-center gap-1 rounded-md border border-border-default bg-bg-base px-2.5 py-1 text-xs text-fg-muted hover:bg-surface disabled:opacity-40 transition-colors"
+                        >
+                            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="mb-3">
+                    <SearchInput value={search} onChange={setSearch} placeholder={`${title} ara...`} />
+                </div>
+
+                {hasOrderChanges && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mb-3 flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning"
+                    >
+                        <div className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse" />
+                        Kaydedilmemiş sıralama değişikliği var
+                    </motion.div>
+                )}
+
+                {filteredItems.length === 0 ? (
+                    <p className="text-xs text-fg-muted py-4 text-center">{search ? 'Aramayla eşleşen kayıt yok.' : 'Kayıt yok.'}</p>
+                ) : (
+                    <div className="max-h-[420px] overflow-y-auto overflow-x-hidden pr-1 select-none">
+                        <Reorder.Group
+                            axis="y"
+                            values={filteredItems}
+                            onReorder={handleReorder}
+                            className="space-y-2 select-none"
+                            layoutScroll
+                        >
+                            {filteredItems.map((item, index) => (
+                                <ReorderItem
+                                    key={item.assetCode}
+                                    item={item}
+                                    index={index}
+                                    total={items.length}
+                                    type={type}
+                                    onMoveUp={(code) => moveItemByStep(code, -1)}
+                                    onMoveDown={(code) => moveItemByStep(code, 1)}
+                                    onToggle={handleToggle}
+                                    onDelete={handleDeleteClick}
+                                    highlighted={highlightedCode === item.assetCode}
+                                />
+                            ))}
+                        </Reorder.Group>
+                    </div>
+                )}
+            </div>
+
+            <ConfirmDialog
+                open={!!deleteTarget}
+                title={`${deleteTarget?.assetCode} silinsin mi?`}
+                message="Bu varlık tracked listesinden kaldırılacak. Mevcut piyasa verileri (mum, snapshot) silinmez."
+                confirmLabel="Sil"
+                cancelLabel="Vazgeç"
+                variant="danger"
+                loading={deleting}
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => setDeleteTarget(null)}
+            />
+        </>
+    );
+}

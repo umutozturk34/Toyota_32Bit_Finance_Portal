@@ -21,6 +21,8 @@ public abstract class CryptoMapper {
     @Mapping(source = "usdDto.priceChange24h", target = "changeAmount")
     @Mapping(source = "usdDto.priceChangePercentage24h", target = "changePercent")
     @Mapping(target = "symbol", expression = "java(usdDto.symbol().toUpperCase())")
+    @Mapping(source = "usdDto.image", target = "image")
+    @Mapping(source = "usdDto.name", target = "name")
     @Mapping(target = "currentPriceTry", expression = "java(tryPrice)")
     @Mapping(target = "exchange", constant = "CoinGecko")
     @Mapping(target = "currency", constant = "USD")
@@ -32,6 +34,8 @@ public abstract class CryptoMapper {
     @Mapping(target = "symbol", ignore = true)
     @Mapping(source = "usdDto.priceChange24h", target = "changeAmount")
     @Mapping(source = "usdDto.priceChangePercentage24h", target = "changePercent")
+    @Mapping(source = "usdDto.image", target = "image")
+    @Mapping(source = "usdDto.name", target = "name")
     @Mapping(target = "currentPriceTry", expression = "java(tryPrice)")
     @Mapping(target = "lastUpdated", expression = "java(now)")
     public abstract void updateEntityFromDto(@MappingTarget Crypto existing,

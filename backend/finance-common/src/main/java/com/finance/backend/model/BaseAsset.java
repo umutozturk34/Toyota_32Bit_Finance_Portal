@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 @Getter
 @Setter
@@ -14,6 +16,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @MappedSuperclass
 public abstract class BaseAsset {
+
+    protected static BigDecimal scaleValue(BigDecimal value, int scale) {
+        return value != null ? value.setScale(scale, RoundingMode.HALF_UP) : null;
+    }
     @Column(name = "name")
     private String name;
     @Column(name = "image")

@@ -1,5 +1,6 @@
 package com.finance.backend.filter;
 
+import com.finance.backend.config.AppProperties;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -12,10 +13,13 @@ import java.util.List;
 public class TefasSessionManager {
 
     private final WebClient webClient;
+    private final String sessionPath;
     private volatile String sessionCookie;
 
-    public TefasSessionManager(@Qualifier("tefasBaseWebClient") WebClient webClient) {
+    public TefasSessionManager(@Qualifier("tefasBaseWebClient") WebClient webClient,
+                               AppProperties appProperties) {
         this.webClient = webClient;
+        this.sessionPath = appProperties.getTefasSessionPath();
     }
 
     public String getCookie() {
@@ -28,7 +32,7 @@ public class TefasSessionManager {
     public synchronized void refresh() {
         try {
             webClient.get()
-                    .uri("/TarihselVeriler.aspx")
+                    .uri(sessionPath)
                     .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                     .exchangeToMono(response -> {
                         List<String> cookies = response.headers().header("Set-Cookie");

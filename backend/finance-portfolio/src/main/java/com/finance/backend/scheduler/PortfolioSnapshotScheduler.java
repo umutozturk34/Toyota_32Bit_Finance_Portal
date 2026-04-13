@@ -16,7 +16,7 @@ public class PortfolioSnapshotScheduler {
     private final PortfolioSnapshotService snapshotService;
     private final TaskTrackingService taskTracker;
 
-    @Scheduled(cron = "0 0 23 * * *", zone = "${app.timezone}")
+    @Scheduled(cron = "${app.scheduler.portfolio.snapshot-cron}", zone = "${app.timezone}")
     public void runDailySnapshots() {
         TaskInfo started = taskTracker.startTask("scheduled-portfolio-snapshot", "Daily portfolio snapshot generation");
         try {

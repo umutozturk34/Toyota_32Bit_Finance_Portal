@@ -6,6 +6,7 @@ import com.finance.backend.dto.internal.YahooChartResponse.Result;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.exception.SymbolNotFoundException;
 import com.finance.backend.mapper.YahooClientMapper;
+import com.finance.backend.config.AppProperties;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.log4j.Log4j2;
@@ -19,10 +20,12 @@ public abstract class AbstractYahooClient {
 
     protected final WebClient webClient;
     protected final YahooClientMapper yahooClientMapper;
+    protected final String chartPath;
 
-    protected AbstractYahooClient(WebClient webClient, YahooClientMapper yahooClientMapper) {
+    protected AbstractYahooClient(WebClient webClient, YahooClientMapper yahooClientMapper, AppProperties appProperties) {
         this.webClient = webClient;
         this.yahooClientMapper = yahooClientMapper;
+        this.chartPath = appProperties.getApi().getYahoo().getChartPath();
     }
 
     @CircuitBreaker(name = "yahoo")
@@ -39,7 +42,7 @@ public abstract class AbstractYahooClient {
         YahooChartResponse response;
         try {
             response = webClient.get()
-                    .uri(symbol + "?range=" + range + "&interval=" + interval)
+                    .uri(chartPath + symbol + "?range=" + range + "&interval=" + interval)
                     .retrieve()
                     .bodyToMono(YahooChartResponse.class)
                     .block();

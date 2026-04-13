@@ -25,13 +25,13 @@ export const portfolioService = {
     return res.data.data;
   },
 
-  getPositions: async (portfolioId) => {
-    const res = await api.get(`${BASE}/${portfolioId}/positions`);
+  getPositions: async (portfolioId, params = {}) => {
+    const res = await api.get(`${BASE}/${portfolioId}/positions`, { params });
     return res.data.data;
   },
 
-  getTransactions: async (portfolioId) => {
-    const res = await api.get(`${BASE}/${portfolioId}/transactions`);
+  getTransactions: async (portfolioId, params = {}) => {
+    const res = await api.get(`${BASE}/${portfolioId}/transactions`, { params });
     return res.data.data;
   },
 
@@ -40,22 +40,30 @@ export const portfolioService = {
     return res.data.data;
   },
 
-  getAllocation: async (portfolioId, mode = 'assetType') => {
-    const res = await api.get(`${BASE}/${portfolioId}/allocation`, { params: { mode } });
+  getAllocation: async (portfolioId, mode = 'assetType', assetType) => {
+    const params = { mode };
+    if (assetType) params.assetType = assetType;
+    const res = await api.get(`${BASE}/${portfolioId}/allocation`, { params });
     return res.data.data;
   },
 
   getPerformance: async (portfolioId, range = '1M', assetType = null) => {
-    const params = { range };
+    const params = { type: 'performance', range };
     if (assetType) params.assetType = assetType;
-    const res = await api.get(`${BASE}/${portfolioId}/performance`, { params });
+    const res = await api.get(`${BASE}/${portfolioId}/chart`, { params });
     return res.data.data;
   },
 
   getAssetSeries: async (portfolioId, assetType, assetCode, range = '1M') => {
-    const res = await api.get(`${BASE}/${portfolioId}/asset-series`, {
-      params: { assetType, assetCode, range },
+    const res = await api.get(`${BASE}/${portfolioId}/chart`, {
+      params: { type: 'asset-series', assetType, assetCode, range },
     });
     return res.data.data;
   },
+
+  getView: async (portfolioId, include = 'summary,positions,transactions,allocation') => {
+    const res = await api.get(`${BASE}/${portfolioId}/view`, { params: { include } });
+    return res.data.data;
+  },
+
 };

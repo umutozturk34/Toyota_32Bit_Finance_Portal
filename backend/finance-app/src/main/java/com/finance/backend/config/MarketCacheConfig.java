@@ -26,8 +26,7 @@ public class MarketCacheConfig {
                 Duration.ofHours(24), Crypto.class,
                 new TypeReference<>() {}, "Crypto",
                 cryptoRepository::findById,
-                cryptoCandleRepository::findByCryptoIdOrderByCandleDateAsc,
-                cryptoRepository::findAllIds
+                cryptoCandleRepository::findByCryptoIdOrderByCandleDateAsc
         );
     }
 
@@ -43,8 +42,7 @@ public class MarketCacheConfig {
                 Duration.ofHours(24), Stock.class,
                 new TypeReference<>() {}, "Stock",
                 stockRepository::findById,
-                stockCandleRepository::findByStockSymbolOrderByCandleDateAsc,
-                stockRepository::findAllSymbols
+                stockCandleRepository::findByStockSymbolOrderByCandleDateAsc
         );
     }
 
@@ -60,8 +58,7 @@ public class MarketCacheConfig {
                 Duration.ofHours(24), Forex.class,
                 new TypeReference<>() {}, "Forex",
                 forexRepository::findById,
-                forexCandleRepository::findTop1825ByCurrencyCodeOrderByCandleDateAsc,
-                forexRepository::findAllCurrencyCodes
+                forexCandleRepository::findTop1825ByCurrencyCodeOrderByCandleDateAsc
         );
     }
 
@@ -77,8 +74,7 @@ public class MarketCacheConfig {
                 Duration.ofHours(24), Fund.class,
                 new TypeReference<>() {}, "Fund",
                 fundRepository::findById,
-                fundCandleRepository::findByFundCodeOrderByCandleDateAsc,
-                fundRepository::findAllFundCodes
+                fundCandleRepository::findByFundCodeOrderByCandleDateAsc
         );
     }
 
@@ -94,8 +90,7 @@ public class MarketCacheConfig {
                 Duration.ofHours(24), Bond.class,
                 new TypeReference<List<BondRateHistory>>() {}, "Bond",
                 bondRepository::findById,
-                bondRateHistoryRepository::findByIsinCodeOrderByRateDateAsc,
-                bondRepository::findAllSeriesCodes
+                bondRateHistoryRepository::findByIsinCodeOrderByRateDateAsc
         );
     }
 }

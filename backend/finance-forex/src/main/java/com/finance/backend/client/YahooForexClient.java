@@ -1,5 +1,6 @@
 package com.finance.backend.client;
 
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.YahooQuoteDto;
 import com.finance.backend.dto.internal.YahooChartResponse.Result;
 import com.finance.backend.mapper.YahooClientMapper;
@@ -15,8 +16,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class YahooForexClient extends AbstractYahooClient {
 
     public YahooForexClient(@Qualifier("yahooWebClient") WebClient webClient,
-                            YahooClientMapper yahooClientMapper) {
-        super(webClient, yahooClientMapper);
+                            YahooClientMapper yahooClientMapper,
+                            AppProperties appProperties) {
+        super(webClient, yahooClientMapper, appProperties);
     }
 
     @CircuitBreaker(name = "yahoo")

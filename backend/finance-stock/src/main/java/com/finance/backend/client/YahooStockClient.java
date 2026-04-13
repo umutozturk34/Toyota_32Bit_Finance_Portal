@@ -1,5 +1,6 @@
 package com.finance.backend.client;
 
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.YahooStockQuoteDto;
 import com.finance.backend.dto.internal.YahooChartResponse.Result;
 import com.finance.backend.mapper.YahooClientMapper;
@@ -19,8 +20,9 @@ public class YahooStockClient extends AbstractYahooClient {
 
     public YahooStockClient(@Qualifier("yahooWebClient") WebClient webClient,
                             YahooClientMapper yahooClientMapper,
-                            YahooStockQuoteMapper yahooStockQuoteMapper) {
-        super(webClient, yahooClientMapper);
+                            YahooStockQuoteMapper yahooStockQuoteMapper,
+                            AppProperties appProperties) {
+        super(webClient, yahooClientMapper, appProperties);
         this.yahooStockQuoteMapper = yahooStockQuoteMapper;
     }
 

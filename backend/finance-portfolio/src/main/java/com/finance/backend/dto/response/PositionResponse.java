@@ -12,6 +12,8 @@ public record PositionResponse(
         BigDecimal averageCostTry,
         BigDecimal totalCostTry,
         BigDecimal currentPriceTry,
+        BigDecimal sellPriceTry,
+        BigDecimal commissionRate,
         BigDecimal marketValueTry,
         BigDecimal pnlTry,
         BigDecimal pnlPercent

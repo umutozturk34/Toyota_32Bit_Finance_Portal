@@ -12,7 +12,7 @@
         </#list>
     </#if>
     <title>${msg("loginTitle",(realm.displayName!''))}</title>
-    <link rel="icon" href="${url.resourcesPath}/img/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="${url.resourcesPath}/img/favicon.svg" />
     <#if properties.stylesCommon?has_content>
         <#list properties.stylesCommon?split(' ') as style>
             <link href="${url.resourcesCommonPath}/${style}" rel="stylesheet" />
@@ -42,7 +42,12 @@
             <div class="fp-glow" id="fp-glow"></div>
 
             <div class="fp-card-header">
-                <h1>${msg("loginTitleHtml",(realm.displayNameHtml!'Finance Portal'))?no_esc}</h1>
+                <div class="fp-logo">
+                    <span class="fp-logo-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                    </span>
+                    <span class="fp-logo-text">Finance Portal</span>
+                </div>
                 <p>Secure Authentication Portal</p>
             </div>
 

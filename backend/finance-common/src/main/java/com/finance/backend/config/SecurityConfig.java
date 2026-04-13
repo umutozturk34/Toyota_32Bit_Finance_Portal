@@ -6,6 +6,7 @@
     import io.lettuce.core.codec.ByteArrayCodec;
     import io.lettuce.core.codec.RedisCodec;
     import io.lettuce.core.codec.StringCodec;
+    import lombok.RequiredArgsConstructor;
     import org.springframework.beans.factory.annotation.Value;
     import org.springframework.context.annotation.Bean;
     import org.springframework.context.annotation.Configuration;
@@ -19,8 +20,8 @@
     import org.springframework.security.oauth2.jwt.JwtDecoder;
     import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
     import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-    import org.springframework.security.web.SecurityFilterChain;
     import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
+    import org.springframework.security.web.SecurityFilterChain;
     import org.springframework.web.cors.CorsConfiguration;
     import org.springframework.web.cors.CorsConfigurationSource;
     import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -33,9 +34,11 @@
     @Configuration
     @EnableWebSecurity
     @EnableMethodSecurity(prePostEnabled = true)
+    @RequiredArgsConstructor
     public class SecurityConfig {
         @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
         private String jwkSetUri;
+        private final AppProperties appProperties;
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimitFilter rateLimitFilter) throws Exception {
             http
@@ -47,6 +50,7 @@
                     .requestMatchers("/actuator/health").permitAll()
                     .requestMatchers("/error").permitAll()
                     .requestMatchers("/auth/**", "/login", "/register").permitAll()
+                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                     .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
                 )
@@ -85,18 +89,14 @@
         
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
+            AppProperties.Cors cors = appProperties.getSecurity().getCors();
             CorsConfiguration configuration = new CorsConfiguration();
-            configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost",
-                "http://localhost:*",
-                "http://127.0.0.1",
-                "http://127.0.0.1:*"
-            ));
-            configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-            configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control", "X-Requested-With"));
-            configuration.setAllowCredentials(true);
-            configuration.setExposedHeaders(List.of("Authorization"));
-            configuration.setMaxAge(3600L);
+            configuration.setAllowedOriginPatterns(cors.getAllowedOriginPatterns());
+            configuration.setAllowedMethods(cors.getAllowedMethods());
+            configuration.setAllowedHeaders(cors.getAllowedHeaders());
+            configuration.setAllowCredentials(cors.isAllowCredentials());
+            configuration.setExposedHeaders(cors.getExposedHeaders());
+            configuration.setMaxAge(cors.getMaxAgeSeconds());
             UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
             source.registerCorsConfiguration("/**", configuration);
             return source;

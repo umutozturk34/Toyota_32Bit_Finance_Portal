@@ -3,8 +3,8 @@ spring:
     name: finance-portal-backend
   
   datasource:
-    url: jdbc:postgresql://db:5432/finance_db
-    username: finance_user
+    url: ${DB_URL:jdbc:postgresql://db:5432/finance_db}
+    username: ${DB_USERNAME:finance_user}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
@@ -25,8 +25,8 @@ spring:
   
   data:
     redis:
-      host: redis
-      port: 6379
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: 60000ms
 
@@ -35,7 +35,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://keycloak:8080/realms/finance-realm/protocol/openid-connect/certs
+          jwk-set-uri: ${JWK_SET_URI:http://keycloak:8080/realms/finance-realm/protocol/openid-connect/certs}
 
 app:
   api:
@@ -43,22 +43,28 @@ app:
       base-url: https://api.coingecko.com/api/v3
       user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
       api-key-header: x-cg-demo-api-key
+      markets-path: /coins/markets
     bond:
       base-url: https://evds3.tcmb.gov.tr/igmevdsms-dis
       user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
       api-key-header: key
+      serie-list-path: /serieList/type=json&code=
+      series-path: /series=
     yahoo:
       base-url: https://query1.finance.yahoo.com/v8/finance/chart/
       user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      chart-path: ""
     binance:
       base-url: https://api.binance.com
+      klines-path: /api/v3/klines
   
   tcmb:
-      base-url: ${TCMB_BASE_URL:https://www.tcmb.gov.tr}
-      xml-path: /kurlar/today.xml
-      
+    base-url: ${TCMB_BASE_URL:https://www.tcmb.gov.tr}
+    xml-path: /kurlar/today.xml
+
   tefas-api-path: /api/DB/BindHistoryInfo
   tefas-base-url: https://www.tefas.gov.tr
+  tefas-session-path: /TarihselVeriler.aspx
   timezone: Europe/Istanbul
   scale: 4
 
@@ -66,6 +72,8 @@ app:
     connect-timeout-ms: 10000
     read-timeout-ms: 30000
     default-user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    bond-max-in-memory-size-mb: 10
+    news-max-in-memory-size-mb: 5
 
   async:
     core-pool-size: 3
@@ -75,7 +83,7 @@ app:
   crypto:
     history-days: 365
     min-candles-for-healthy: 350
-  
+
   bond:
     batch-size: 10
     max-days-per-request: 1000
@@ -103,50 +111,7 @@ app:
   news:
     max-articles-per-source: 50
     cache-ttl-hours: 24
-    sources:
-      - name: BloombergHT
-        url: https://www.bloomberght.com/rss
-        type: RSS
-      - name: Dunya-Finans
-        url: https://www.dunya.com/rss/finans.xml
-        type: RSS
-      - name: Dunya-Ekonomi
-        url: https://www.dunya.com/rss/ekonomi.xml
-        type: RSS
-      - name: ParaAnaliz
-        url: https://www.paraanaliz.com/feed
-        type: RSS
-      - name: FinansGundem-Kripto
-        url: https://finansgundem.com.tr/rss/kripto-piyasasi
-        type: RSS
-        default-category: CRYPTO
-      - name: FinansGundem-Borsa
-        url: https://finansgundem.com.tr/rss/borsa
-        type: RSS
-        default-category: BORSA_ISTANBUL
-      - name: FinansGundem-Emtia
-        url: https://finansgundem.com.tr/rss/emtia
-        type: RSS
-        default-category: EMTIA
-      - name: YatirimRehberi-Piyasalar
-        url: https://www.yatirimrehberi.com.tr/rss/piyasalar
-        type: RSS
-        default-category: GENEL_FINANS
-      - name: BorsaGundem-Sirket
-        url: https://www.borsagundem.com.tr/rss/sirket-haberleri
-        type: RSS
-        default-category: BORSA_SIRKETLERI
-      - name: Ekonomim-Para
-        url: https://www.ekonomim.net/rss/para-4
-        type: RSS
-        default-category: TAHVIL_BONO
-      - name: Ekonomim-Ekonomi
-        url: https://www.ekonomim.net/rss/ekonomi-5
-        type: RSS
-      - name: EkonomiDunya
-        url: https://www.ekonomidunya.com/rss_ekonomi_1.xml
-        type: RSS
-        default-category: PARITE
+    default-category-limit: 20
     category-limits:
       "[CRYPTO]": 20
       "[BORSA_ISTANBUL]": 30
@@ -156,10 +121,107 @@ app:
       "[EMTIA]": 20
       "[GENEL_FINANS]": 60
 
+  commission:
+    stock-rate: 0.002
+    crypto-rate: 0.0015
+    fund-rate: 0.001
+
+  scheduler:
+    crypto:
+      morning-cron: "0 0 9 * * *"
+      afternoon-cron: "0 0 15 * * *"
+      evening-cron: "0 0 21 * * *"
+    stock:
+      morning-cron: "0 15 10 * * MON-FRI"
+      afternoon-cron: "0 15 14 * * MON-FRI"
+      evening-cron: "0 15 19 * * MON-FRI"
+    forex:
+      morning-cron: "0 30 10 * * *"
+      afternoon-cron: "0 0 16 * * *"
+      evening-cron: "0 0 22 * * *"
+    news:
+      morning-cron: "0 0 8 * * *"
+      afternoon-cron: "0 30 14 * * *"
+      evening-cron: "0 30 21 * * *"
+    fund:
+      daily-cron: "0 30 11 * * *"
+    bond:
+      daily-cron: "0 0 20 * * *"
+    portfolio:
+      snapshot-cron: "0 0 23 * * *"
+
+  pagination:
+    market:
+      default-size: 20
+      max-size: 100
+      default-overview-limit: 10
+      max-overview-limit: 20
+    bond:
+      default-size: 8
+      max-size: 100
+    news:
+      default-size: 10
+      max-size: 100
+    portfolio:
+      transactions-default-size: 10
+      positions-default-size: 10
+      max-size: 100
+
+  portfolio:
+    default-name: Ana Portföy
+    default-currency: TRY
+    initial-balance: 1000000.0000
+    min-transaction-amount-try: 10
+
+  task:
+    max-history: 50
+
+  tracked-asset:
+    code-cache-ttl-seconds: 45
+
+  security:
+    cors:
+      allowed-origin-patterns:
+        - http://localhost
+        - http://localhost:*
+        - http://127.0.0.1
+        - http://127.0.0.1:*
+      allowed-methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+        - PATCH
+      allowed-headers:
+        - Authorization
+        - Content-Type
+        - Cache-Control
+        - X-Requested-With
+      exposed-headers:
+        - Authorization
+      allow-credentials: true
+      max-age-seconds: 3600
+
+  cache:
+    redis-default-ttl-hours: 24
+
   rate-limit:
-    admin-trigger-limit: 3
+    admin-trigger-limit: 20
     admin-read-limit: 20
     api-limit: 60
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+    oauth2-redirect-url: ${SWAGGER_OAUTH2_REDIRECT:http://localhost/swagger-ui/oauth2-redirect.html}
+    oauth:
+      client-id: finance-frontend
+      use-pkce-with-authorization-code-grant: true
 
 resilience4j:
   circuitbreaker:

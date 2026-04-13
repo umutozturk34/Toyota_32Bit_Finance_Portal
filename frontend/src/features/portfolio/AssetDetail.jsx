@@ -1,28 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, TrendingUp, TrendingDown, Loader2, Hash, DollarSign, BarChart3, Wallet } from 'lucide-react';
+import useSessionState from '../../shared/hooks/useSessionState';
+import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet } from 'lucide-react';
+import { TrendingUp, TrendingDown, Loader2 } from '../../shared/components/AnimatedIcons';
 import Chart from 'react-apexcharts';
 import { useTheme } from '../../shared/context/ThemeContext';
-import { portfolioService } from './portfolioService';
+import { useAssetSeries } from './usePortfolioData';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
 import { getApexThemeOptions } from '../../shared/utils/apexTheme';
-
-
-const RANGES = [
-  { id: '1M', label: '1A' },
-  { id: '3M', label: '3A' },
-  { id: '6M', label: '6A' },
-  { id: '1Y', label: '1Y' },
-  { id: 'ALL', label: 'Tümü' },
-];
-
-const ASSET_TYPE_LABELS = {
-  CRYPTO: 'Kripto',
-  STOCK: 'Hisse',
-  FOREX: 'Döviz',
-  FUND: 'Fon',
-};
+import { PORTFOLIO_RANGES as RANGES, ASSET_TYPE_LABELS } from '../../shared/constants/assetTypes';
 
 const STAT_CARDS = [
   { key: 'quantity', label: 'Miktar', Icon: Hash, format: (v) => Number(v).toLocaleString('tr-TR', { maximumFractionDigits: 6 }) },
@@ -106,31 +92,17 @@ function AssetChart({ data, isDark }) {
 
 export default function AssetDetail({ portfolioId, asset, onBack }) {
   const { isDark } = useTheme();
-  const [range, setRange] = useState('ALL');
-  const [series, setSeries] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [range, setRange] = useSessionState(`portfolio-asset-range-${asset.assetCode}`, 'ALL');
+
+  const { data: series = [], isLoading: loading } = useAssetSeries(
+    portfolioId, asset.assetType, asset.assetCode, range
+  );
 
   const pnlClass = getChangeClass(asset.pnlTry);
   const displayLabel = asset.assetCode;
   const displayBadge = asset.assetImage || null;
   const displayBadgeText = asset.assetCode.replace('.IS', '').slice(0, 3).toUpperCase();
   const displaySub = asset.assetName || (ASSET_TYPE_LABELS[asset.assetType] || asset.assetType);
-
-  const fetchSeries = useCallback(async (r) => {
-    setLoading(true);
-    try {
-      const result = await portfolioService.getAssetSeries(
-        portfolioId, asset.assetType, asset.assetCode, r
-      );
-      setSeries(result || []);
-    } catch {
-      setSeries([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [portfolioId, asset.assetType, asset.assetCode]);
-
-  useEffect(() => { fetchSeries(range); }, [range, fetchSeries]);
 
   return (
     <div className="space-y-5">

@@ -4,7 +4,6 @@ import com.finance.backend.model.*;
 import com.finance.backend.repository.*;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
-import com.finance.backend.util.TxRunner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -30,14 +29,14 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
     private final TransactionTemplate transactionTemplate;
 
     @Override
-    public void onMarketUpdate(String assetType) {
-        AssetType type = AssetType.valueOf(assetType);
+    public void onMarketUpdate(com.finance.backend.model.MarketType marketType) {
+        AssetType type = AssetType.valueOf(marketType.name());
         List<Portfolio> portfolios = portfolioRepository.findAll();
         LocalDateTime batchTimestamp = LocalDateTime.now();
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
                 portfolios,
-                portfolio -> TxRunner.runVoid(transactionTemplate, () -> {
+                portfolio -> transactionTemplate.executeWithoutResult(status -> {
                     boolean hasPositions = !positionRepository
                             .findByPortfolioIdAndAssetTypeAndQuantityGreaterThan(
                                     portfolio.getId(), type, BigDecimal.ZERO)
@@ -48,11 +47,11 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
                     }
                 }),
                 p -> String.valueOf(p.getId()),
-                "portfolio-" + assetType + "-snapshot",
+                "portfolio-" + type + "-snapshot",
                 1, null, null, null
         );
 
-        BatchLogHelper.logSummary(log, assetType + " portfolio snapshot", result);
+        BatchLogHelper.logSummary(log, type + " portfolio snapshot", result);
     }
 
     public void generateDailySnapshots() {
@@ -61,7 +60,7 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
                 portfolios,
-                portfolio -> TxRunner.runVoid(transactionTemplate, () -> {
+                portfolio -> transactionTemplate.executeWithoutResult(status -> {
                     if (dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(portfolio.getId(), today)) {
                         return;
                     }

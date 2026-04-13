@@ -48,6 +48,9 @@ public class PortfolioTransaction {
     @Column(name = "fee_try", nullable = false, precision = 19, scale = 4)
     private BigDecimal feeTry;
 
+    @Column(name = "realized_pnl_try", precision = 19, scale = 4)
+    private BigDecimal realizedPnlTry;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

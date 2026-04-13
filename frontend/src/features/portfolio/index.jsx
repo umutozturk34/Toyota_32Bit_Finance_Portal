@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Wallet, Check, ShieldCheck, RefreshCw, Loader2, LayoutDashboard, TrendingUp, History, AlertTriangle } from 'lucide-react';
+import { Wallet, ShieldCheck, LayoutDashboard, History } from 'lucide-react';
+import { Check, RefreshCw, Loader2, TrendingUp, AlertTriangle } from '../../shared/components/AnimatedIcons';
 import { useTheme } from '../../shared/context/ThemeContext';
 import PageHeader from '../../shared/components/PageHeader';
 import LoadingState from '../../shared/components/LoadingState';
@@ -13,7 +15,7 @@ import TransactionHistory from './TransactionHistory';
 import SellModal from './SellModal';
 import AssetDetail from './AssetDetail';
 import { portfolioService } from './portfolioService';
-import usePortfolioStore from './usePortfolioStore';
+import { usePortfolioList, usePortfolioView, usePortfolioPositions, useInvalidatePortfolio } from './usePortfolioData';
 
 const ONBOARDING_STEPS = [
   { label: 'Hesap oluşturuluyor...', duration: 900 },
@@ -23,24 +25,61 @@ const ONBOARDING_STEPS = [
 
 export default function Portfolio() {
   const { isDark } = useTheme();
-  const {
-    portfolio, summary, positions, transactions, allocation,
-    loading, error, needsOnboarding, fetchAll,
-    activeTab, setActiveTab,
-    selectedAsset, setSelectedAsset,
-  } = usePortfolioStore();
+  const navigate = useNavigate();
+  const invalidatePortfolio = useInvalidatePortfolio();
 
+  const { data: portfolios, isLoading: listLoading, error: listError } = usePortfolioList();
+  const portfolio = portfolios?.[0] ?? null;
+  const is404 = listError?.response?.status === 404;
+  const needsOnboarding = !listLoading && (is404 || !portfolios || portfolios.length === 0);
+
+  const { data: view, isLoading: viewLoading, error: viewError } = usePortfolioView(portfolio?.id);
+  const summary = view?.summary ?? null;
+  const allocation = view?.allocation ?? [];
+  const viewPositions = view?.positions?.content ?? [];
+
+  const loading = listLoading || (portfolio && viewLoading);
+  const error = (!is404 && listError?.response?.data?.message) || viewError?.response?.data?.message || null;
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'overview';
+  const selectedAssetCode = searchParams.get('asset');
+
+  const setActiveTab = (tab) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('asset');
+      if (tab === 'overview') next.delete('tab');
+      else next.set('tab', tab);
+      return next;
+    }, { replace: true });
+  };
+
+  const { data: searchedPositions } = usePortfolioPositions(
+    selectedAssetCode ? portfolio?.id : null,
+    selectedAssetCode ? { search: selectedAssetCode, size: 1 } : {}
+  );
+  const selectedAsset = selectedAssetCode
+    ? (viewPositions.find(p => p.assetCode === selectedAssetCode) || searchedPositions?.content?.[0] || null)
+    : null;
+
+  const setSelectedAsset = (asset) => {
+    if (asset) {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('asset', asset.assetCode);
+        return next;
+      }, { replace: false });
+    } else {
+      navigate(-1);
+    }
+  };
   const [sellTarget, setSellTarget] = useState(null);
   const [onboardingConfirming, setOnboardingConfirming] = useState(false);
   const [onboarding, setOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(-1);
   const [onboardingSuccess, setOnboardingSuccess] = useState(false);
   const stepTimers = useRef([]);
-
-  useEffect(() => {
-    fetchAll();
-    return () => stepTimers.current.forEach(clearTimeout);
-  }, [fetchAll]);
 
   const runOnboardingAnimation = () => {
     return new Promise((resolve) => {
@@ -65,8 +104,8 @@ export default function Portfolio() {
         runOnboardingAnimation(),
       ]);
       setOnboardingSuccess(true);
-      setTimeout(async () => {
-        await fetchAll();
+      setTimeout(() => {
+        invalidatePortfolio();
         setOnboarding(false);
         setOnboardingSuccess(false);
         setOnboardingStep(-1);
@@ -79,11 +118,11 @@ export default function Portfolio() {
 
   const handleSellComplete = () => {
     setSellTarget(null);
-    fetchAll();
+    invalidatePortfolio();
   };
 
   if (loading) return <LoadingState message="Portföy yükleniyor..." />;
-  if (error) return <ErrorState message={error} onRetry={fetchAll} />;
+  if (error) return <ErrorState message={error} onRetry={invalidatePortfolio} />;
 
   if (needsOnboarding) {
     return (
@@ -91,7 +130,7 @@ export default function Portfolio() {
         <PageHeader
           icon={<Wallet className="h-5 w-5" />}
           title="Portföy"
-          onRefresh={fetchAll}
+          onRefresh={invalidatePortfolio}
           loading={loading}
         />
         <motion.div
@@ -256,7 +295,7 @@ export default function Portfolio() {
       <PageHeader
         icon={<Wallet className="h-5 w-5" />}
         title="Portföy"
-        onRefresh={fetchAll}
+        onRefresh={invalidatePortfolio}
         loading={loading}
       />
 
@@ -284,24 +323,26 @@ export default function Portfolio() {
         ))}
       </div>
 
-      {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-          <PositionsTable
-            positions={positions}
-            onAssetClick={setSelectedAsset}
-            onSellClick={setSellTarget}
-          />
-          <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
-        </div>
-      )}
+      <div className="min-h-[400px]">
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+            <PositionsTable
+              portfolioId={portfolio?.id}
+              onAssetClick={setSelectedAsset}
+              onSellClick={setSellTarget}
+            />
+            <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
+          </div>
+        )}
 
-      {activeTab === 'performance' && portfolio && (
-        <PerformanceChart portfolioId={portfolio.id} />
-      )}
+        {activeTab === 'performance' && portfolio && (
+          <PerformanceChart portfolioId={portfolio.id} />
+        )}
 
-      {activeTab === 'transactions' && (
-        <TransactionHistory transactions={transactions} />
-      )}
+        {activeTab === 'transactions' && (
+          <TransactionHistory portfolioId={portfolio?.id} />
+        )}
+      </div>
 
       {sellTarget && portfolio && (
         <SellModal

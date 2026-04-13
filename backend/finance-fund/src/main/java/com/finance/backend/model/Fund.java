@@ -40,6 +40,9 @@ public class Fund extends BaseAsset {
     @Column(name = "portfolio_size", precision = 19, scale = 2)
     private BigDecimal portfolioSize;
 
+    @Column(name = "change_percent", precision = 19, scale = 4)
+    private BigDecimal changePercent;
+
     public void applyScaling(String fundType) {
         this.price = scaleValue(this.price, 6);
         this.bulletinPrice = "BYF".equals(fundType) ? scaleValue(this.bulletinPrice, 4) : null;
@@ -54,9 +57,5 @@ public class Fund extends BaseAsset {
         this.shareCount = scaleValue(this.shareCount, 2);
         this.investorCount = scaleValue(this.investorCount, 2);
         this.portfolioSize = scaleValue(this.portfolioSize, 2);
-    }
-
-    private BigDecimal scaleValue(BigDecimal value, int scale) {
-        return value != null ? value.setScale(scale, RoundingMode.HALF_UP) : null;
     }
 }

@@ -1,15 +1,10 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowUpRight, Loader2, Check, AlertCircle, ShieldCheck, RefreshCw, AlertTriangle } from 'lucide-react';
+import { X, ShieldCheck } from 'lucide-react';
+import { ArrowUpRight, Loader2, Check, AlertCircle, RefreshCw, AlertTriangle } from '../../shared/components/AnimatedIcons';
 import { portfolioService } from './portfolioService';
 import { formatPriceTRY } from '../../shared/utils/formatters';
-
-const ASSET_TYPE_LABELS = {
-  CRYPTO: 'Kripto',
-  STOCK: 'Hisse',
-  FOREX: 'Döviz',
-  FUND: 'Fon',
-};
+import PercentageSlider from '../../shared/components/PercentageSlider';
 
 const PROCESSING_STEPS = [
   { label: 'Satış emri doğrulanıyor...', duration: 700 },
@@ -17,8 +12,15 @@ const PROCESSING_STEPS = [
   { label: 'Portföy güncelleniyor...', duration: 800 },
 ];
 
+const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX'];
+
+
 export default function SellModal({ portfolioId, position, onClose, onComplete }) {
+  const isFractional = FRACTIONAL_TYPES.includes(position.assetType);
+  const [inputMode, setInputMode] = useState('quantity');
+  const [amountTry, setAmountTry] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [sliderPercent, setSliderPercent] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [processingStep, setProcessingStep] = useState(-1);
@@ -30,15 +32,77 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
     return () => stepTimers.current.forEach(clearTimeout);
   }, []);
 
+  const commissionRate = Number(position.commissionRate) || 0;
+  const sellPrice = position.sellPriceTry || position.currentPriceTry;
   const maxQuantity = Number(position.quantity);
+  const sellPriceNum = Number(sellPrice);
+  const maxValueTry = useMemo(() => {
+    if (!sellPriceNum || maxQuantity <= 0) return 0;
+    return sellPriceNum * maxQuantity;
+  }, [sellPriceNum, maxQuantity]);
+
+  const computedQuantity = useMemo(() => {
+    if (!sellPriceNum || sellPriceNum <= 0) return null;
+    if (isFractional && inputMode === 'amount') {
+      const amt = Number(amountTry);
+      if (!amt || amt <= 0) return null;
+      return amt / sellPriceNum;
+    }
+    const qty = Number(quantity);
+    return qty > 0 ? qty : null;
+  }, [sellPriceNum, amountTry, quantity, inputMode, isFractional]);
 
   const totalValue = useMemo(() => {
-    if (!position.currentPriceTry || !quantity || Number(quantity) <= 0) return null;
-    return Number(position.currentPriceTry) * Number(quantity);
-  }, [position.currentPriceTry, quantity]);
+    if (!sellPriceNum) return null;
+    if (isFractional && inputMode === 'amount') {
+      const amt = Number(amountTry);
+      return amt > 0 ? amt : null;
+    }
+    const qty = Number(quantity);
+    return qty > 0 ? sellPriceNum * qty : null;
+  }, [sellPriceNum, amountTry, quantity, inputMode, isFractional]);
 
-  const handleSetMax = () => {
-    setQuantity(String(maxQuantity));
+  const commissionTry = useMemo(() => {
+    if (!totalValue || commissionRate === 0) return 0;
+    return totalValue * commissionRate;
+  }, [totalValue, commissionRate]);
+
+  const netTotal = useMemo(() => {
+    if (!totalValue) return null;
+    return totalValue - commissionTry;
+  }, [totalValue, commissionTry]);
+
+  const handleSliderChange = useCallback((pct) => {
+    setSliderPercent(pct);
+    setError(null);
+    if (isFractional && inputMode === 'amount') {
+      const amount = (maxValueTry * pct) / 100;
+      setAmountTry(pct === 0 ? '' : String(Math.floor(amount * 100) / 100));
+    } else {
+      const qty = isFractional
+        ? (maxQuantity * pct) / 100
+        : Math.floor((maxQuantity * pct) / 100);
+      setQuantity(pct === 0 ? '' : String(qty));
+    }
+  }, [maxQuantity, maxValueTry, inputMode, isFractional]);
+
+  const syncSliderFromInput = useCallback((val) => {
+    if (isFractional && inputMode === 'amount') {
+      if (maxValueTry <= 0) { setSliderPercent(0); return; }
+      const pct = Math.min(100, Math.round((Number(val) / maxValueTry) * 100));
+      setSliderPercent(pct > 0 ? pct : 0);
+    } else {
+      if (maxQuantity <= 0) { setSliderPercent(0); return; }
+      const pct = Math.min(100, Math.round((Number(val) / maxQuantity) * 100));
+      setSliderPercent(pct > 0 ? pct : 0);
+    }
+  }, [maxQuantity, maxValueTry, inputMode, isFractional]);
+
+  const handleModeSwitch = (mode) => {
+    setInputMode(mode);
+    setAmountTry('');
+    setQuantity('');
+    setSliderPercent(0);
     setError(null);
   };
 
@@ -57,14 +121,21 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const qty = Number(quantity);
-    if (!qty || qty <= 0) {
-      setError('Lütfen geçerli bir miktar girin');
-      return;
-    }
-    if (qty > maxQuantity) {
-      setError(`Maksimum ${maxQuantity} adet satabilirsiniz`);
-      return;
+
+    if (isFractional && inputMode === 'amount') {
+      if (!Number(amountTry) || Number(amountTry) <= 0) {
+        setError('Lütfen geçerli bir tutar girin');
+        return;
+      }
+    } else {
+      if (!Number(quantity) || Number(quantity) <= 0) {
+        setError('Lütfen geçerli bir miktar girin');
+        return;
+      }
+      if (Number(quantity) > maxQuantity) {
+        setError(`Maksimum ${maxQuantity} adet satabilirsiniz`);
+        return;
+      }
     }
     setConfirming(true);
   };
@@ -74,15 +145,23 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
     setLoading(true);
     setError(null);
     setProcessingStep(0);
+
+    const payload = {
+      assetType: position.assetType,
+      assetCode: position.assetCode,
+      side: 'SELL',
+      feeTry: 0,
+    };
+
+    if (isFractional && inputMode === 'amount') {
+      payload.amountTry = Number(amountTry);
+    } else {
+      payload.quantity = Number(quantity);
+    }
+
     try {
       await Promise.all([
-        portfolioService.executeTransaction(portfolioId, {
-          assetType: position.assetType,
-          assetCode: position.assetCode,
-          side: 'SELL',
-          quantity: Number(quantity),
-          feeTry: 0,
-        }),
+        portfolioService.executeTransaction(portfolioId, payload),
         runProcessingAnimation(),
       ]);
       setSuccess(true);
@@ -94,6 +173,10 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
       setLoading(false);
     }
   };
+
+  const displayQuantity = isFractional && inputMode === 'amount'
+    ? computedQuantity?.toLocaleString('tr-TR', { maximumFractionDigits: 6 })
+    : Number(quantity).toLocaleString('tr-TR', { maximumFractionDigits: isFractional ? 6 : 0 });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -119,9 +202,7 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
             </div>
             <div>
               <h2 className="text-base font-semibold text-fg">Sat</h2>
-              <p className="text-xs text-fg-muted">
-                {position.assetCode} · {ASSET_TYPE_LABELS[position.assetType] || position.assetType}
-              </p>
+              <p className="text-xs text-fg-muted">{position.assetCode} · {position.assetType}</p>
             </div>
           </div>
           <button
@@ -154,7 +235,11 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
               className="text-center space-y-1"
             >
               <p className="text-sm font-semibold text-fg">İşleminiz onaylandı</p>
-              <p className="text-xs text-fg-muted">{quantity} adet {position.assetCode} satıldı</p>
+              <p className="text-xs text-fg-muted">
+                {isFractional && inputMode === 'amount'
+                  ? `${formatPriceTRY(Number(amountTry))} tutarında ${position.assetCode} satıldı`
+                  : `${displayQuantity} adet ${position.assetCode} satıldı`}
+              </p>
             </motion.div>
             <motion.div
               initial={{ opacity: 0 }}
@@ -210,23 +295,56 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
               <div className="text-center space-y-1">
                 <p className="text-sm font-semibold text-fg">İşleminizi onaylıyor musunuz?</p>
                 <p className="text-xs text-fg-muted">
-                  {quantity} adet <span className="font-medium text-fg">{position.assetCode}</span> satılacak
+                  {isFractional && inputMode === 'amount'
+                    ? <>{formatPriceTRY(Number(amountTry))} tutarında <span className="font-medium text-fg">{position.assetCode}</span> satılacak</>
+                    : <>{displayQuantity} adet <span className="font-medium text-fg">{position.assetCode}</span> satılacak</>}
                 </p>
               </div>
             </div>
             <div className="rounded-xl border border-border-default bg-bg-base px-4 py-3 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-fg-muted">Miktar</span>
-                <span className="font-mono font-medium text-fg">{Number(quantity).toLocaleString('tr-TR', { maximumFractionDigits: 6 })}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-fg-muted">Birim Fiyat</span>
-                <span className="font-mono font-medium text-fg">{formatPriceTRY(position.currentPriceTry)}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs border-t border-border-default pt-2">
-                <span className="text-fg-muted font-semibold">Toplam Tutar</span>
-                <span className="font-mono font-bold text-danger">{formatPriceTRY(totalValue)}</span>
-              </div>
+              {isFractional && inputMode === 'amount' ? (
+                <>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-fg-muted">Tutar</span>
+                    <span className="font-mono font-medium text-fg">{formatPriceTRY(Number(amountTry))}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-fg-muted">Birim Fiyat</span>
+                    <span className="font-mono font-medium text-fg">{formatPriceTRY(sellPrice)}</span>
+                  </div>
+                  {commissionRate > 0 && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-fg-muted">Komisyon (%{(commissionRate * 100).toFixed(1)})</span>
+                      <span className="font-mono text-warning">-{formatPriceTRY(commissionTry)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-xs border-t border-border-default pt-2">
+                    <span className="text-fg-muted font-semibold">Tahmini Miktar</span>
+                    <span className="font-mono font-bold text-danger">{computedQuantity?.toLocaleString('tr-TR', { maximumFractionDigits: 6 })}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-fg-muted">Miktar</span>
+                    <span className="font-mono font-medium text-fg">{displayQuantity}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-fg-muted">Birim Fiyat</span>
+                    <span className="font-mono font-medium text-fg">{formatPriceTRY(sellPrice)}</span>
+                  </div>
+                  {commissionRate > 0 && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-fg-muted">Komisyon (%{(commissionRate * 100).toFixed(1)})</span>
+                      <span className="font-mono text-warning">-{formatPriceTRY(commissionTry)}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-xs border-t border-border-default pt-2">
+                    <span className="text-fg-muted font-semibold">{commissionRate > 0 ? 'Net Tutar' : 'Satış Tutarı'}</span>
+                    <span className="font-mono font-bold text-danger">{formatPriceTRY(commissionRate > 0 ? netTotal : totalValue)}</span>
+                  </div>
+                </>
+              )}
             </div>
             <div className="flex gap-2">
               <button
@@ -248,45 +366,114 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-border-default bg-bg-base px-3 py-2.5">
-                <p className="text-[11px] text-fg-muted mb-1">Güncel Fiyat</p>
-                <p className="text-sm font-bold font-mono text-fg">{formatPriceTRY(position.currentPriceTry)}</p>
+                <p className="text-[11px] text-fg-muted mb-1">Satış Fiyatı</p>
+                <p className="text-sm font-bold font-mono text-fg">{formatPriceTRY(sellPrice)}</p>
               </div>
               <div className="rounded-lg border border-border-default bg-bg-base px-3 py-2.5">
                 <p className="text-[11px] text-fg-muted mb-1">Sahip Olunan</p>
                 <p className="text-sm font-bold font-mono text-fg">
-                  {maxQuantity.toLocaleString('tr-TR', { maximumFractionDigits: 6 })}
+                  {maxQuantity.toLocaleString('tr-TR', { maximumFractionDigits: isFractional ? 6 : 0 })}
                 </p>
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-fg-muted">Satılacak Miktar</label>
+            {isFractional && (
+              <div className="flex rounded-lg border border-border-default bg-bg-base p-0.5">
                 <button
                   type="button"
-                  onClick={handleSetMax}
-                  className="text-[11px] font-medium text-accent hover:text-accent-bright transition-colors bg-transparent border-none cursor-pointer"
+                  onClick={() => handleModeSwitch('quantity')}
+                  className={`flex-1 rounded-md py-2 text-xs font-medium transition-all cursor-pointer border-none ${
+                    inputMode === 'quantity'
+                      ? 'bg-danger text-white'
+                      : 'bg-transparent text-fg-muted hover:text-fg'
+                  }`}
                 >
-                  Tümünü Sat
+                  Adet
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeSwitch('amount')}
+                  className={`flex-1 rounded-md py-2 text-xs font-medium transition-all cursor-pointer border-none ${
+                    inputMode === 'amount'
+                      ? 'bg-danger text-white'
+                      : 'bg-transparent text-fg-muted hover:text-fg'
+                  }`}
+                >
+                  TRY Tutarı
                 </button>
               </div>
-              <input
-                type="number"
-                step="any"
-                min="0"
-                max={maxQuantity}
-                value={quantity}
-                onChange={(e) => { setQuantity(e.target.value); setError(null); }}
-                placeholder="0.00"
-                autoFocus
-                className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+            )}
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-fg-muted">
+                {isFractional && inputMode === 'amount' ? 'Tutar (TRY)' : 'Satılacak Miktar'}
+              </label>
+              {isFractional && inputMode === 'amount' ? (
+                <input
+                  type="number"
+                  step="any"
+                  value={amountTry}
+                  onChange={(e) => { setAmountTry(e.target.value); syncSliderFromInput(e.target.value); setError(null); }}
+                  placeholder="min. 10 TRY"
+                  autoFocus
+                  className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+                />
+              ) : (
+                <input
+                  type="number"
+                  step={isFractional ? 'any' : '1'}
+                  value={quantity}
+                  onChange={(e) => { setQuantity(e.target.value); syncSliderFromInput(e.target.value); setError(null); }}
+                  placeholder={isFractional ? '0.00' : 'min. 1 adet'}
+                  autoFocus
+                  className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+                />
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[11px] text-fg-subtle px-0.5">
+                <span>%{sliderPercent}</span>
+                <span>
+                  {isFractional && inputMode === 'amount'
+                    ? formatPriceTRY((maxValueTry * sliderPercent) / 100)
+                    : `${((maxQuantity * sliderPercent) / 100).toLocaleString('tr-TR', { maximumFractionDigits: isFractional ? 6 : 0 })} adet`}
+                </span>
+              </div>
+              <PercentageSlider
+                value={sliderPercent}
+                onChange={handleSliderChange}
+                color="danger"
               />
             </div>
 
+            {isFractional && inputMode === 'amount' && computedQuantity != null && (
+              <div className="flex items-center justify-between text-xs px-1">
+                <span className="text-fg-muted">Tahmini Miktar</span>
+                <span className="font-mono font-medium text-fg">
+                  ~{computedQuantity.toLocaleString('tr-TR', { maximumFractionDigits: 6 })} {position.assetCode}
+                </span>
+              </div>
+            )}
+
             {totalValue != null && (
-              <div className="rounded-xl border border-danger/30 bg-gradient-to-r from-danger/5 to-transparent px-4 py-3 flex items-center justify-between">
-                <span className="text-xs font-semibold text-danger">Satış Tutarı</span>
-                <span className="text-lg font-bold font-mono text-danger">{formatPriceTRY(totalValue)}</span>
+              <div className="space-y-2">
+                <div className="rounded-xl border border-danger/30 bg-gradient-to-r from-danger/5 to-transparent px-4 py-3 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-danger">Satış Tutarı</span>
+                  <span className="text-lg font-bold font-mono text-danger">{formatPriceTRY(totalValue)}</span>
+                </div>
+                {commissionRate > 0 && (
+                  <div className="rounded-lg border border-border-default bg-bg-base px-4 py-2.5 space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-fg-muted">Komisyon (%{(commissionRate * 100).toFixed(1)})</span>
+                      <span className="font-mono text-warning">-{formatPriceTRY(commissionTry)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs border-t border-border-default pt-1.5">
+                      <span className="text-fg-muted font-semibold">Net Tutar</span>
+                      <span className="font-mono font-bold text-fg">{formatPriceTRY(netTotal)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -306,7 +493,7 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
 
             <button
               type="submit"
-              disabled={loading || !quantity || Number(quantity) <= 0}
+              disabled={loading}
               className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white bg-danger hover:bg-danger/90 transition-all border-none cursor-pointer disabled:opacity-50"
             >
               <ArrowUpRight className="h-4 w-4" />

@@ -188,10 +188,8 @@ export default function PerformanceChart({ portfolioId }) {
   const mainColor = activeType ? (ASSET_TYPE_COLORS[activeType] || '#6366f1') : '#6366f1';
 
   const currentValue = perfData.length > 0 ? perfData[perfData.length - 1] : null;
-  const startValue = perfData.length > 0 ? perfData[0] : null;
-  const totalPnl = currentValue && startValue ? currentValue.value - startValue.value : null;
-  const totalPnlPercent = currentValue && startValue && startValue.value > 0
-    ? ((currentValue.value - startValue.value) / startValue.value * 100) : null;
+  const totalPnl = currentValue?.pnl ?? null;
+  const totalPnlPercent = currentValue?.pnlPercent ?? null;
   const pnlPositive = totalPnl != null && totalPnl >= 0;
 
   return (

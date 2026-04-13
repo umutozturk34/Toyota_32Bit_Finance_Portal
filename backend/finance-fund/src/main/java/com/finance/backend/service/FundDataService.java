@@ -1,6 +1,8 @@
 package com.finance.backend.service;
 
 import com.finance.backend.exception.BusinessException;
+import com.finance.backend.model.Fund;
+import com.finance.backend.model.FundCandle;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -10,7 +12,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class FundDataService {
 
-    private final MarketCacheService<com.finance.backend.model.Fund, com.finance.backend.model.FundCandle> fundCacheService;
+    private final MarketCacheService<Fund, FundCandle> fundCacheService;
     private final FundSnapshotService fundSnapshotService;
     private final FundCandleService fundCandleService;
 

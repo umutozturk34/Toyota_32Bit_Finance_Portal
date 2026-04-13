@@ -35,9 +35,7 @@ public class NewsQueryService {
                                                       int page, int size) {
         Specification<NewsArticle> spec = buildSpecification(category, searchTerm);
 
-        PageRequest pageRequest = (sortBy != null && !sortBy.isBlank())
-                ? PageRequest.of(page, size, buildSort(sortBy, direction))
-                : PageRequest.of(page, size);
+        PageRequest pageRequest = PageRequest.of(page, size, buildSort(sortBy, direction));
         Page<NewsArticle> result = articleRepository.findAll(spec, pageRequest);
 
         return PagedResponse.of(

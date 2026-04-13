@@ -58,12 +58,16 @@ public class UnifiedMarketService implements MarketUpdatePort {
         if (subType != null && !subType.isBlank()) filters.put("subType", subType);
         if (filter != null && !"all".equalsIgnoreCase(filter)) filters.put("filter", filter);
 
+        String filterValue = filter != null && !"all".equalsIgnoreCase(filter) ? filter : null;
+
         List<MarketAssetResponse> allResults = new ArrayList<>();
         for (MarketType type : types) {
             MarketAssetProvider provider = providers.get(type);
             if (provider == null) continue;
             allResults.addAll(provider.search(search, filters, resolveSort(sort), direction, page, size));
         }
+
+        List<MarketAssetResponse> filtered = applyFilter(allResults, filterValue);
 
         long total = 0;
         for (MarketType type : types) {
@@ -72,7 +76,7 @@ public class UnifiedMarketService implements MarketUpdatePort {
             total += hasSearch ? provider.countBySearch(search, filters) : provider.count(filters);
         }
 
-        return PagedResponse.of(applySort(allResults, sort, direction), page, size, total);
+        return PagedResponse.of(applySort(filtered, sort, direction), page, size, total);
     }
 
     public MarketOverviewResponse getOverview(int limit) {

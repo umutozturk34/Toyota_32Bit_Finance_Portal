@@ -50,7 +50,8 @@ export default function TransactionHistory({ portfolioId }) {
       if (!groups[dateKey]) groups[dateKey] = [];
       groups[dateKey].push(txn);
     }
-    return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
+    const dir = listParams.direction === 'asc' ? 1 : -1;
+    return Object.entries(groups).sort(([a], [b]) => dir * a.localeCompare(b));
   }, [transactions]);
 
   if (!portfolioId) return null;

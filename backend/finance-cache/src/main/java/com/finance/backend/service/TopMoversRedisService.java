@@ -60,17 +60,13 @@ public class TopMoversRedisService {
         Map<MarketType, List<MarketAssetResponse>> result = new EnumMap<>(MarketType.class);
         try {
             Map<Object, Object> entries = stringRedisTemplate.opsForHash().entries(KEY);
-            entries.forEach((key, value) -> {
-                String keyStr = key.toString();
-                if (INDICES_FIELD.equals(keyStr)) return;
-                try {
-                    MarketType type = MarketType.valueOf(keyStr);
-                    List<MarketAssetResponse> movers = objectMapper.readValue(value.toString(), LIST_TYPE);
-                    result.put(type, movers);
-                } catch (Exception e) {
-                    log.warn("Failed to deserialize movers for {}: {}", keyStr, e.getMessage());
-                }
-            });
+            for (Map.Entry<Object, Object> entry : entries.entrySet()) {
+                String keyStr = entry.getKey().toString();
+                if (INDICES_FIELD.equals(keyStr)) continue;
+                MarketType type = MarketType.valueOf(keyStr);
+                List<MarketAssetResponse> movers = objectMapper.readValue(entry.getValue().toString(), LIST_TYPE);
+                result.put(type, movers);
+            }
         } catch (Exception e) {
             log.warn("Failed to read all movers: {}", e.getMessage());
         }

@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
@@ -76,7 +75,7 @@ public class AssetPricingAdapter implements AssetPricingPort {
                 case "CRYPTO" -> {
                     Crypto c = cryptoCacheService.getSnapshot(assetCode);
                     yield c != null
-                            ? new AssetMeta(resolveAssetName(c), resolveStringProperty(c, "getImage"))
+                            ? new AssetMeta(resolveAssetName(c), c.getImage())
                             : new AssetMeta(null, null);
                 }
                 case "STOCK" -> {
@@ -140,37 +139,12 @@ public class AssetPricingAdapter implements AssetPricingPort {
             return null;
         }
         return switch (asset) {
-            case Crypto ignored -> firstNonBlank(
-                    resolveStringProperty(asset, "getName"),
-                    resolveStringProperty(asset, "getSymbol"),
-                    resolveStringProperty(asset, "getId")
-            );
-            case Stock ignored -> firstNonBlank(
-                    resolveStringProperty(asset, "getName"),
-                    resolveStringProperty(asset, "getSymbol")
-            );
-            case Forex ignored -> firstNonBlank(
-                    resolveStringProperty(asset, "getName"),
-                    resolveStringProperty(asset, "getCurrencyNameTr"),
-                    resolveStringProperty(asset, "getCurrencyName"),
-                    resolveStringProperty(asset, "getCurrencyCode")
-            );
-            case Fund ignored -> firstNonBlank(
-                    resolveStringProperty(asset, "getName"),
-                    resolveStringProperty(asset, "getFundCode")
-            );
-            default -> resolveStringProperty(asset, "getName");
+            case Crypto c -> firstNonBlank(c.getName(), c.getSymbol(), c.getId());
+            case Stock s -> firstNonBlank(s.getName(), s.getSymbol());
+            case Forex f -> firstNonBlank(f.getName(), f.getCurrencyNameTr(), f.getCurrencyName(), f.getCurrencyCode());
+            case Fund fu -> firstNonBlank(fu.getName(), fu.getFundCode());
+            default -> null;
         };
-    }
-
-    private String resolveStringProperty(Object target, String methodName) {
-        try {
-            Method method = target.getClass().getMethod(methodName);
-            Object value = method.invoke(target);
-            return value instanceof String str && !str.isBlank() ? str : null;
-        } catch (ReflectiveOperationException ignored) {
-            return null;
-        }
     }
 
     private String firstNonBlank(String... candidates) {

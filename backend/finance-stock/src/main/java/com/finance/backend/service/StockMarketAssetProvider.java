@@ -57,10 +57,9 @@ public class StockMarketAssetProvider implements MarketAssetProvider {
         Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.STOCK));
         Specification<Stock> spec = buildSpecification(searchTerm, enabledCodes);
         String segment = filters != null ? filters.get("segment") : null;
-        if (segment != null && !segment.isBlank()) {
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("stockSegment"),
-                    StockSegment.valueOf(segment)));
-        }
+        if (segment != null && !segment.isBlank()) 
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("stockSegment"), StockSegment.valueOf(segment)));
+        
         List<Stock> stocks = stockRepository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS))).getContent();
         return withDisplayNames(stockResponseMapper.toMarketAssetResponses(stocks));
     }

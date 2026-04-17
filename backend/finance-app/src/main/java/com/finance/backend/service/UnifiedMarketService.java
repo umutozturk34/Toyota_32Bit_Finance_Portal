@@ -102,7 +102,7 @@ public class UnifiedMarketService implements MarketUpdatePort {
                         .toList();
             }
         }
-        indices = indices.stream().limit(limit).toList();
+        indices = indices.stream().toList();
 
         List<MarketOverviewResponse.AssetTypeMovers> movers = new ArrayList<>();
         for (MarketType type : MarketType.values()) {

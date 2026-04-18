@@ -115,4 +115,14 @@ public class Forex extends BaseAsset {
         if (value == null || unit <= 1) return value;
         return value.divide(new BigDecimal(unit), scale, RoundingMode.HALF_UP);
     }
+
+    @Override
+    public String getCode() {
+        return currencyCode;
+    }
+
+    @Override
+    public String resolveDisplayName() {
+        return firstNonBlank(getName(), currencyNameTr, currencyName, currencyCode);
+    }
 }

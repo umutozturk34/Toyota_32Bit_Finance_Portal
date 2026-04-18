@@ -1,5 +1,6 @@
 package com.finance.backend.config;
 
+import com.finance.backend.model.BaseAsset;
 import com.finance.backend.model.Crypto;
 import com.finance.backend.model.CryptoCandle;
 import com.finance.backend.model.Forex;
@@ -135,24 +136,6 @@ public class AssetPricingAdapter implements AssetPricingPort {
     }
 
     private String resolveAssetName(Object asset) {
-        if (asset == null) {
-            return null;
-        }
-        return switch (asset) {
-            case Crypto c -> firstNonBlank(c.getName(), c.getSymbol(), c.getId());
-            case Stock s -> firstNonBlank(s.getName(), s.getSymbol());
-            case Forex f -> firstNonBlank(f.getName(), f.getCurrencyNameTr(), f.getCurrencyName(), f.getCurrencyCode());
-            case Fund fu -> firstNonBlank(fu.getName(), fu.getFundCode());
-            default -> null;
-        };
-    }
-
-    private String firstNonBlank(String... candidates) {
-        for (String candidate : candidates) {
-            if (candidate != null && !candidate.isBlank()) {
-                return candidate;
-            }
-        }
-        return null;
+        return asset instanceof BaseAsset base ? base.resolveDisplayName() : null;
     }
 }

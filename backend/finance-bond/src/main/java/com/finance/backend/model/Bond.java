@@ -222,4 +222,9 @@ public class Bond extends BaseAsset {
         this.simpleYield = scaleValue(this.simpleYield, scale);
         this.baseIndex = scaleValue(this.baseIndex, scale);
     }
+
+    @Override
+    public String getCode() {
+        return seriesCode;
+    }
 }

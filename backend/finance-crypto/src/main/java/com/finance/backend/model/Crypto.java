@@ -47,4 +47,14 @@ public class Crypto extends BaseAsset {
         this.marketCap = scaleValue(this.marketCap, scale);
         this.totalVolume = scaleValue(this.totalVolume, scale);
     }
+
+    @Override
+    public String getCode() {
+        return id;
+    }
+
+    @Override
+    public String resolveDisplayName() {
+        return firstNonBlank(getName(), symbol, id);
+    }
 }

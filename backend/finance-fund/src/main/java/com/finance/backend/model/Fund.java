@@ -57,4 +57,9 @@ public class Fund extends BaseAsset {
         this.investorCount = scaleValue(this.investorCount, 2);
         this.portfolioSize = scaleValue(this.portfolioSize, 2);
     }
+
+    @Override
+    public String getCode() {
+        return fundCode;
+    }
 }

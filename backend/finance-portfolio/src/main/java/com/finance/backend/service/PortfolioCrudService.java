@@ -5,10 +5,10 @@ import com.finance.backend.dto.request.PortfolioCreateRequest;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.dto.response.PortfolioResponse;
 import com.finance.backend.dto.response.TransactionResponse;
-import com.finance.backend.exception.BadRequestException;
 import com.finance.backend.exception.BusinessException;
 import com.finance.backend.model.AssetType;
 import com.finance.backend.mapper.PortfolioResponseMapper;
+import com.finance.backend.util.EnumParser;
 import com.finance.backend.model.Portfolio;
 import com.finance.backend.model.PortfolioTransaction;
 import com.finance.backend.model.UserWallet;
@@ -77,13 +77,12 @@ public class PortfolioCrudService {
         Specification<PortfolioTransaction> spec = (root, query, cb) ->
                 cb.equal(root.get("portfolioId"), portfolioId);
 
-        if (assetType != null && !assetType.isBlank()) {
-            try {
-                AssetType type = AssetType.valueOf(assetType.toUpperCase());
-                spec = spec.and((root, query, cb) -> cb.equal(root.get("assetType"), type));
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Invalid asset type: " + assetType);
-            }
+        AssetType filterType = assetType == null || assetType.isBlank()
+                ? null
+                : EnumParser.parseOrBadRequest(AssetType.class, assetType.toUpperCase(), "asset type");
+        if (filterType != null) {
+            AssetType fixed = filterType;
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("assetType"), fixed));
         }
 
         if (search != null && !search.isBlank()) {

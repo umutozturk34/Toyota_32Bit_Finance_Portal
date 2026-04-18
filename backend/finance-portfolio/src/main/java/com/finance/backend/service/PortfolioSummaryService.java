@@ -4,7 +4,6 @@ import com.finance.backend.dto.response.AllocationItem;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.dto.response.PortfolioSummaryResponse;
 import com.finance.backend.dto.response.PositionResponse;
-import com.finance.backend.exception.BadRequestException;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.mapper.PortfolioResponseMapper;
 import com.finance.backend.model.AssetType;
@@ -18,6 +17,7 @@ import com.finance.backend.repository.UserWalletRepository;
 import com.finance.backend.service.AssetPricingPort.AssetKey;
 import com.finance.backend.service.AssetPricingPort.AssetMeta;
 import com.finance.backend.service.AssetPricingPort.PriceBundle;
+import com.finance.backend.util.EnumParser;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.model.TransactionSide;
 import lombok.RequiredArgsConstructor;
@@ -107,7 +107,7 @@ public class PortfolioSummaryService {
         List<PortfolioPosition> positions = positionRepository
                 .findByPortfolioIdAndQuantityGreaterThan(portfolioId, BigDecimal.ZERO);
 
-        AssetType filterType = parseAssetTypeOrNull(assetType);
+        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetType, "asset type");
 
         if (filterType != null) {
             positions = positions.stream()
@@ -152,13 +152,10 @@ public class PortfolioSummaryService {
         List<PortfolioPosition> positions = positionRepository
                 .findByPortfolioIdAndQuantityGreaterThan(portfolioId, BigDecimal.ZERO);
 
-        if (assetTypeFilter != null && !assetTypeFilter.isBlank()) {
-            try {
-                AssetType filterType = AssetType.valueOf(assetTypeFilter);
-                positions = positions.stream().filter(p -> p.getAssetType() == filterType).toList();
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Invalid asset type: " + assetTypeFilter);
-            }
+        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetTypeFilter, "asset type");
+        if (filterType != null) {
+            AssetType fixed = filterType;
+            positions = positions.stream().filter(p -> p.getAssetType() == fixed).toList();
         }
 
         UserWallet wallet = findWallet(portfolioId);
@@ -238,17 +235,6 @@ public class PortfolioSummaryService {
                 .stream()
                 .map(txn -> txn.getRealizedPnlTry() != null ? txn.getRealizedPnlTry() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private AssetType parseAssetTypeOrNull(String assetType) {
-        if (assetType == null || assetType.isBlank()) {
-            return null;
-        }
-        try {
-            return AssetType.valueOf(assetType);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid asset type: " + assetType);
-        }
     }
 
     private UserWallet findWallet(Long portfolioId) {

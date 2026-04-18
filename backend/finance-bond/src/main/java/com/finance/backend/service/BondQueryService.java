@@ -4,8 +4,8 @@ import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.response.BondRateResponse;
 import com.finance.backend.dto.response.BondResponse;
 import com.finance.backend.dto.response.PagedResponse;
-import com.finance.backend.exception.BadRequestException;
 import com.finance.backend.exception.ResourceNotFoundException;
+import com.finance.backend.util.EnumParser;
 import com.finance.backend.mapper.BondResponseMapper;
 import com.finance.backend.model.Bond;
 import com.finance.backend.model.BondRateHistory;
@@ -45,13 +45,12 @@ public class BondQueryService {
                     cb.like(cb.lower(root.get("isinCode")), pattern)));
         }
 
-        if (bondType != null && !bondType.isBlank()) {
-            try {
-                BondType type = BondType.valueOf(bondType.toUpperCase());
-                spec = spec.and((root, query, cb) -> cb.equal(root.get("bondType"), type));
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Invalid bond type: " + bondType);
-            }
+        BondType filterType = bondType == null || bondType.isBlank()
+                ? null
+                : EnumParser.parseOrBadRequest(BondType.class, bondType.toUpperCase(), "bond type");
+        if (filterType != null) {
+            BondType fixed = filterType;
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("bondType"), fixed));
         }
 
         int resolvedSize = resolvePageSize(size);

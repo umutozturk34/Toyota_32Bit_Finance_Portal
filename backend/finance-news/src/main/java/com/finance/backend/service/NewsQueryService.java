@@ -3,8 +3,8 @@ package com.finance.backend.service;
 import com.finance.backend.dto.response.NewsArticleDetailResponse;
 import com.finance.backend.dto.response.NewsArticleResponse;
 import com.finance.backend.dto.response.PagedResponse;
-import com.finance.backend.exception.BadRequestException;
 import com.finance.backend.exception.ResourceNotFoundException;
+import com.finance.backend.util.EnumParser;
 import com.finance.backend.mapper.NewsResponseMapper;
 import com.finance.backend.model.NewsArticle;
 import com.finance.backend.model.NewsCategory;
@@ -60,13 +60,12 @@ public class NewsQueryService {
     private Specification<NewsArticle> buildSpecification(String category, String searchTerm) {
         Specification<NewsArticle> spec = (root, query, cb) -> cb.conjunction();
 
-        if (category != null && !category.isBlank()) {
-            try {
-                NewsCategory newsCategory = NewsCategory.valueOf(category.toUpperCase());
-                spec = spec.and((root, query, cb) -> cb.equal(root.get("category"), newsCategory));
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Invalid news category: " + category);
-            }
+        NewsCategory newsCategory = category == null || category.isBlank()
+                ? null
+                : EnumParser.parseOrBadRequest(NewsCategory.class, category.toUpperCase(), "news category");
+        if (newsCategory != null) {
+            NewsCategory fixed = newsCategory;
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("category"), fixed));
         }
 
         if (searchTerm != null && !searchTerm.isBlank()) {

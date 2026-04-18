@@ -12,6 +12,7 @@ import com.finance.backend.repository.*;
 import com.finance.backend.service.transaction.ResolvedInput;
 import com.finance.backend.service.transaction.TransactionInputResolver;
 import com.finance.backend.service.transaction.TransactionInputResolverFactory;
+import com.finance.backend.util.EnumParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -45,18 +46,8 @@ public class PortfolioTransactionService {
         Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
                 .orElseThrow(() -> new ResourceNotFoundException("Portfolio not found"));
 
-        AssetType assetType;
-        TransactionSide side;
-        try {
-            assetType = AssetType.valueOf(request.assetType());
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid asset type: " + request.assetType());
-        }
-        try {
-            side = TransactionSide.valueOf(request.side());
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid transaction side: " + request.side());
-        }
+        AssetType assetType = EnumParser.parseOrBadRequest(AssetType.class, request.assetType(), "asset type");
+        TransactionSide side = EnumParser.parseOrBadRequest(TransactionSide.class, request.side(), "transaction side");
         BigDecimal fee = request.feeTry() != null ? request.feeTry().setScale(PRICE_SCALE, RoundingMode.HALF_UP) : BigDecimal.ZERO;
 
         BigDecimal unitPrice = side == TransactionSide.SELL

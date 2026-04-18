@@ -4,8 +4,8 @@ import com.finance.backend.dto.response.AssetSeriesPoint;
 import com.finance.backend.dto.response.PerformanceAssetDetail;
 import com.finance.backend.dto.response.PerformanceEvent;
 import com.finance.backend.dto.response.PerformancePoint;
-import com.finance.backend.exception.BadRequestException;
 import com.finance.backend.mapper.PortfolioSnapshotMapper;
+import com.finance.backend.util.EnumParser;
 import com.finance.backend.model.AssetType;
 import com.finance.backend.model.PortfolioAssetDailySnapshot;
 import com.finance.backend.model.PortfolioDailySnapshot;
@@ -39,14 +39,10 @@ public class PortfolioPerformanceService {
         LocalDateTime end = LocalDateTime.now();
         LocalDateTime start = resolveStartDateTime(end, range);
 
-        if (assetType != null && !assetType.isBlank()) {
-            try {
-                return getAssetTypePerformance(portfolioId, AssetType.valueOf(assetType), start, end);
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Invalid asset type: " + assetType);
-            }
+        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetType, "asset type");
+        if (filterType != null) {
+            return getAssetTypePerformance(portfolioId, filterType, start, end);
         }
-
         return getAggregatePerformance(portfolioId, start, end);
     }
 
@@ -56,12 +52,7 @@ public class PortfolioPerformanceService {
         LocalDateTime end = LocalDateTime.now();
         LocalDateTime start = resolveStartDateTime(end, range);
 
-        AssetType type;
-        try {
-            type = AssetType.valueOf(assetType);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid asset type: " + assetType);
-        }
+        AssetType type = EnumParser.parseOrBadRequest(AssetType.class, assetType, "asset type");
 
         List<PortfolioAssetDailySnapshot> snapshots = assetSnapshotRepository
                 .findByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtBetweenOrderByCreatedAtAsc(

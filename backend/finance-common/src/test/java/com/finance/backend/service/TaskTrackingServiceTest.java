@@ -7,6 +7,12 @@ import com.finance.backend.service.TaskTrackingService.TaskInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -130,5 +136,82 @@ class TaskTrackingServiceTest {
 
         TaskStatusResponse status = service.getTypedStatus();
         assertThat(status.history().get(0).durationMs()).isGreaterThanOrEqualTo(0);
+    }
+
+    @Test
+    void concurrentStartTaskAllowsExactlyOneWinner() throws InterruptedException {
+        int threadCount = 16;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch ready = new CountDownLatch(threadCount);
+        CountDownLatch go = new CountDownLatch(1);
+        CountDownLatch done = new CountDownLatch(threadCount);
+        AtomicInteger successes = new AtomicInteger();
+        AtomicInteger failures = new AtomicInteger();
+
+        try {
+            for (int i = 0; i < threadCount; i++) {
+                executor.submit(() -> {
+                    ready.countDown();
+                    try {
+                        go.await();
+                        service.startTask("CONCURRENT_TASK", "contested");
+                        successes.incrementAndGet();
+                    } catch (TaskAlreadyRunningException e) {
+                        failures.incrementAndGet();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    } finally {
+                        done.countDown();
+                    }
+                });
+            }
+
+            ready.await(5, TimeUnit.SECONDS);
+            go.countDown();
+            assertThat(done.await(5, TimeUnit.SECONDS)).isTrue();
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertThat(successes.get()).isEqualTo(1);
+        assertThat(failures.get()).isEqualTo(threadCount - 1);
+        assertThat(service.isRunning("CONCURRENT_TASK")).isTrue();
+    }
+
+    @Test
+    void runTrackedRunsTaskAndCompletesIt() {
+        AtomicInteger ran = new AtomicInteger();
+
+        service.runTracked("RUN_TRACKED_OK", "happy path", ran::incrementAndGet);
+
+        assertThat(ran.get()).isEqualTo(1);
+        assertThat(service.isRunning("RUN_TRACKED_OK")).isFalse();
+        TaskStatusResponse status = service.getTypedStatus();
+        assertThat(status.history()).hasSize(1);
+        assertThat(status.history().get(0).status()).isEqualTo("COMPLETED");
+        assertThat(status.history().get(0).error()).isNull();
+    }
+
+    @Test
+    void runTrackedMarksTaskFailedWhenTaskThrows() {
+        service.runTracked("RUN_TRACKED_FAIL", "boom path", () -> {
+            throw new IllegalStateException("boom");
+        });
+
+        assertThat(service.isRunning("RUN_TRACKED_FAIL")).isFalse();
+        TaskStatusResponse status = service.getTypedStatus();
+        assertThat(status.history()).hasSize(1);
+        assertThat(status.history().get(0).status()).isEqualTo("FAILED");
+        assertThat(status.history().get(0).error()).isEqualTo("boom");
+    }
+
+    @Test
+    void runTrackedReleasesLockSoTaskCanBeRunAgain() {
+        service.runTracked("REENTRANT", "first", () -> {});
+        service.runTracked("REENTRANT", "second", () -> {});
+
+        assertThat(service.isRunning("REENTRANT")).isFalse();
+        TaskStatusResponse status = service.getTypedStatus();
+        assertThat(status.history()).hasSize(2);
     }
 }

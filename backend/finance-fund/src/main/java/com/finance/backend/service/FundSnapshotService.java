@@ -8,6 +8,7 @@ import com.finance.backend.exception.BusinessException;
 import com.finance.backend.mapper.FundMapper;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.FundRepository;
 import com.finance.backend.util.BatchLogHelper;
@@ -31,7 +32,7 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Service
-public class FundSnapshotService {
+public class FundSnapshotService implements SnapshotBatchRefresher {
 
     private final TefasClient tefasClient;
     private final FundMapper fundMapper;
@@ -78,7 +79,13 @@ public class FundSnapshotService {
         }
     }
 
-    public void updateFundSnapshots() {
+    @Override
+    public MarketType getMarketType() {
+        return MarketType.FUND;
+    }
+
+    @Override
+    public void refreshAll() {
         long snapshotStart = System.currentTimeMillis();
         LocalDate today = findLastBusinessDay(LocalDate.now());
         log.info("Starting fund snapshot update for {}", today);

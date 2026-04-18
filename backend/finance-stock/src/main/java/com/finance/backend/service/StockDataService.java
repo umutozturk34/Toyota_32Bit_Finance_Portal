@@ -31,7 +31,7 @@ public class StockDataService implements TrackedAssetDataService {
     }
 
     public void updateStockSnapshots() {
-        stockSnapshotService.updateStockSnapshots();
+        stockSnapshotService.refreshAll();
     }
 
     @Override
@@ -55,6 +55,6 @@ public class StockDataService implements TrackedAssetDataService {
     }
 
     public void updateStockCandles() {
-        stockCandleService.updateStockCandles();
+        stockCandleService.refreshAll();
     }
 }

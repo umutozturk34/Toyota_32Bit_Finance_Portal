@@ -7,6 +7,7 @@ import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.mapper.FundMapper;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.FundCandleRepository;
 import com.finance.backend.repository.FundRepository;
 import com.finance.backend.util.BatchLogHelper;
@@ -27,7 +28,7 @@ import java.util.List;
 
 @Log4j2
 @Service
-public class FundCandleService {
+public class FundCandleService implements CandleBatchRefresher {
 
     private final TefasClient tefasClient;
     private final FundMapper fundMapper;
@@ -66,7 +67,13 @@ public class FundCandleService {
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
-    public void updateFundCandles() {
+    @Override
+    public MarketType getMarketType() {
+        return MarketType.FUND;
+    }
+
+    @Override
+    public void refreshAll() {
         long totalStart = System.currentTimeMillis();
         log.info("Starting fund candle update");
         pruneOldCandles();

@@ -31,7 +31,7 @@ public class FundDataService implements TrackedAssetDataService {
     }
 
     public void updateFundSnapshots() {
-        fundSnapshotService.updateFundSnapshots();
+        fundSnapshotService.refreshAll();
     }
 
     @Override
@@ -55,6 +55,6 @@ public class FundDataService implements TrackedAssetDataService {
     }
 
     public void updateFundCandles() {
-        fundCandleService.updateFundCandles();
+        fundCandleService.refreshAll();
     }
 }

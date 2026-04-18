@@ -7,6 +7,7 @@ import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.ForexMapper;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.ForexCandleRepository;
 import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.util.BatchLogHelper;
@@ -31,7 +32,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Log4j2
-public class ForexCandleService {
+public class ForexCandleService implements CandleBatchRefresher {
 
     private final YahooForexClient yahooForexClient;
     private final ForexMapper forexMapper;
@@ -64,7 +65,13 @@ public class ForexCandleService {
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
-    public void syncAllYahooCandles() {
+    @Override
+    public MarketType getMarketType() {
+        return MarketType.FOREX;
+    }
+
+    @Override
+    public void refreshAll() {
         pruneOldForexCandles();
         List<Forex> allForex = forexRepository.findAll();
         log.info("Starting Yahoo forex candle sync for {} pairs", allForex.size());

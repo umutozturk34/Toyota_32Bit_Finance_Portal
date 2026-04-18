@@ -36,7 +36,7 @@ public class CryptoDataService implements TrackedAssetDataService {
     }
 
     public void updateOnlySnapshots() {
-        cryptoSnapshotService.updateOnlySnapshots();
+        cryptoSnapshotService.refreshAll();
     }
 
     @Override
@@ -60,6 +60,6 @@ public class CryptoDataService implements TrackedAssetDataService {
     }
 
     public void updateOnlyCandles() {
-        cryptoCandleService.updateOnlyCandles();
+        cryptoCandleService.refreshAll();
     }
 }

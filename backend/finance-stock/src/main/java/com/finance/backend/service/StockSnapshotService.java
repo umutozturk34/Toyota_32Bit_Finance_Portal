@@ -5,6 +5,7 @@ import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.YahooStockQuoteDto;
 import com.finance.backend.exception.BusinessException;
 import com.finance.backend.mapper.StockMapper;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
 import com.finance.backend.model.StockSegment;
@@ -23,7 +24,7 @@ import java.util.function.Function;
 
 @Log4j2
 @Service
-public class StockSnapshotService {
+public class StockSnapshotService implements SnapshotBatchRefresher {
 
     private final YahooStockClient yahooStockClient;
     private final StockMapper stockMapper;
@@ -61,7 +62,13 @@ public class StockSnapshotService {
         }
     }
 
-    public void updateStockSnapshots() {
+    @Override
+    public MarketType getMarketType() {
+        return MarketType.STOCK;
+    }
+
+    @Override
+    public void refreshAll() {
         List<String> bistStocks = marketConstants.getTrackedBistStocks();
         if (bistStocks.isEmpty()) {
             log.warn("No BIST stocks configured in environment variables");

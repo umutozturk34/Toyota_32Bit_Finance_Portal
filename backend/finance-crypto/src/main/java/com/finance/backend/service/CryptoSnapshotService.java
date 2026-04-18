@@ -6,6 +6,7 @@ import com.finance.backend.dto.external.CoinGeckoSnapshotDto;
 import com.finance.backend.mapper.CryptoMapper;
 import com.finance.backend.model.Crypto;
 import com.finance.backend.model.CryptoCandle;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.CryptoRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
 @Log4j2
 @Service
 @RequiredArgsConstructor
-public class CryptoSnapshotService {
+public class CryptoSnapshotService implements SnapshotBatchRefresher {
 
     private final CoinGeckoClient coinGeckoClient;
     private final CryptoMapper cryptoMapper;
@@ -46,7 +47,13 @@ public class CryptoSnapshotService {
         }
     }
 
-    public void updateOnlySnapshots() {
+    @Override
+    public MarketType getMarketType() {
+        return MarketType.CRYPTO;
+    }
+
+    @Override
+    public void refreshAll() {
         TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
         List<String> trackedCoins = marketConstants.getTrackedCryptos();
         log.info("Starting crypto snapshot update for {} coins", trackedCoins.size());

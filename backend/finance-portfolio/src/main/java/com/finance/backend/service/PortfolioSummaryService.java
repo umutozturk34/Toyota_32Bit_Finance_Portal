@@ -15,6 +15,9 @@ import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.repository.PortfolioRepository;
 import com.finance.backend.repository.PortfolioTransactionRepository;
 import com.finance.backend.repository.UserWalletRepository;
+import com.finance.backend.service.AssetPricingPort.AssetKey;
+import com.finance.backend.service.AssetPricingPort.AssetMeta;
+import com.finance.backend.service.AssetPricingPort.PriceBundle;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.model.TransactionSide;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +50,10 @@ public class PortfolioSummaryService {
         List<PortfolioPosition> positions = positionRepository
                 .findByPortfolioIdAndQuantityGreaterThan(portfolioId, BigDecimal.ZERO);
 
-        return positions.stream().map(this::toPositionResponse).toList();
+        Map<AssetKey, PriceBundle> bundles = pricingPort.getBundles(toKeys(positions));
+        return positions.stream()
+                .map(pos -> toPositionResponse(pos, bundles.get(toKey(pos))))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -111,11 +117,13 @@ public class PortfolioSummaryService {
 
         UserWallet wallet = findWallet(portfolioId);
 
+        Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(toKeys(positions));
+
         BigDecimal totalValue = BigDecimal.ZERO;
         BigDecimal totalCost = BigDecimal.ZERO;
 
         for (PortfolioPosition pos : positions) {
-            BigDecimal price = pricingPort.getPriceTry(pos.getAssetType().name(), pos.getAssetCode());
+            BigDecimal price = prices.get(toKey(pos));
             if (price != null) {
                 totalValue = totalValue.add(price.multiply(pos.getQuantity()));
             }
@@ -160,8 +168,10 @@ public class PortfolioSummaryService {
         Map<String, String> bucketTypes = new LinkedHashMap<>();
         BigDecimal totalValue = BigDecimal.ZERO;
 
+        Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(toKeys(positions));
+
         for (PortfolioPosition pos : positions) {
-            BigDecimal price = pricingPort.getPriceTry(pos.getAssetType().name(), pos.getAssetCode());
+            BigDecimal price = prices.get(toKey(pos));
             BigDecimal marketValue = price != null
                     ? price.multiply(pos.getQuantity()).setScale(SCALE, RoundingMode.HALF_UP)
                     : BigDecimal.ZERO;
@@ -186,22 +196,30 @@ public class PortfolioSummaryService {
                 .toList();
     }
 
-    private PositionResponse toPositionResponse(PortfolioPosition pos) {
-        String type = pos.getAssetType().name();
-        BigDecimal price = pricingPort.getPriceTry(type, pos.getAssetCode());
-        BigDecimal currentPrice = price != null ? price : BigDecimal.ZERO;
+    private PositionResponse toPositionResponse(PortfolioPosition pos, PriceBundle bundle) {
+        PriceBundle effective = bundle != null ? bundle : new PriceBundle(null, null, new AssetMeta(null, null));
+        BigDecimal currentPrice = effective.price() != null ? effective.price() : BigDecimal.ZERO;
         BigDecimal marketValue = currentPrice.multiply(pos.getQuantity()).setScale(SCALE, RoundingMode.HALF_UP);
         BigDecimal pnl = marketValue.subtract(pos.getTotalCostTry());
         BigDecimal pnlPercent = pos.getTotalCostTry().compareTo(BigDecimal.ZERO) > 0
                 ? pnl.multiply(new BigDecimal("100")).divide(pos.getTotalCostTry(), SCALE, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
-        BigDecimal sellPrice = pricingPort.getSellPriceTry(type, pos.getAssetCode());
-        BigDecimal sellPriceTry = sellPrice != null ? sellPrice : currentPrice;
+        BigDecimal sellPriceTry = effective.sellPrice() != null ? effective.sellPrice() : currentPrice;
         BigDecimal commissionRate = getCommissionRate(pos.getAssetType());
+        AssetMeta meta = effective.meta() != null ? effective.meta() : new AssetMeta(null, null);
 
-        AssetPricingPort.AssetMeta meta = pricingPort.getAssetMeta(type, pos.getAssetCode());
         return responseMapper.toPositionResponse(pos, currentPrice, sellPriceTry, commissionRate, marketValue, pnl, pnlPercent, meta.name(), meta.image());
+    }
+
+    private List<AssetKey> toKeys(List<PortfolioPosition> positions) {
+        return positions.stream()
+                .map(this::toKey)
+                .toList();
+    }
+
+    private AssetKey toKey(PortfolioPosition pos) {
+        return new AssetKey(pos.getAssetType().name(), pos.getAssetCode());
     }
 
     private BigDecimal getCommissionRate(AssetType assetType) {

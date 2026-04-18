@@ -35,4 +35,12 @@ public interface AssetPricingPort {
         }
         return result;
     }
+
+    default Map<AssetKey, BigDecimal> getPricesTry(Collection<AssetKey> keys) {
+        Map<AssetKey, BigDecimal> result = new LinkedHashMap<>();
+        for (AssetKey key : keys) {
+            result.put(key, getPriceTry(key.assetType(), key.assetCode()));
+        }
+        return result;
+    }
 }

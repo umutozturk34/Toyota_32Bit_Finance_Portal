@@ -4,9 +4,11 @@ import com.finance.backend.config.AppProperties;
 import com.finance.backend.model.*;
 import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.repository.UserWalletRepository;
+import com.finance.backend.service.support.CountingAssetPricingPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -21,7 +23,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class SnapshotCalculationServiceTest {
 
-    @Mock private AssetPricingPort pricingPort;
+    @Mock(answer = Answers.CALLS_REAL_METHODS) private AssetPricingPort pricingPort;
     @Mock private PortfolioPositionRepository positionRepository;
     @Mock private UserWalletRepository walletRepository;
 
@@ -93,6 +95,31 @@ class SnapshotCalculationServiceTest {
         PortfolioDailySnapshot snapshot = service.buildAggregateSnapshot(portfolio, LocalDateTime.now());
 
         assertThat(snapshot.getPnlPercent()).isEqualByComparingTo(new BigDecimal("10.0000"));
+    }
+
+    @Test
+    void aggregateSnapshotIssuesExactlyOneBatchPricingCall() {
+        CountingAssetPricingPort counting = new CountingAssetPricingPort();
+        counting.seedPrice("CRYPTO", "bitcoin", new BigDecimal("2500000.0000"));
+        counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("50.0000"));
+        counting.seedPrice("FUND", "AAK", new BigDecimal("110.0000"));
+
+        SnapshotCalculationService countedService = new SnapshotCalculationService(
+                counting, positionRepository, walletRepository, new AppProperties());
+
+        Portfolio portfolio = Portfolio.builder().id(1L).build();
+        when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
+                .thenReturn(List.of(
+                        stubPosition(AssetType.CRYPTO, "bitcoin", new BigDecimal("1.00000000"), new BigDecimal("2400000.0000")),
+                        stubPosition(AssetType.STOCK, "THYAO.IS", new BigDecimal("100.00000000"), new BigDecimal("4000.0000")),
+                        stubPosition(AssetType.FUND, "AAK", new BigDecimal("50.00000000"), new BigDecimal("5000.0000"))));
+        when(walletRepository.findByPortfolioIdAndCurrency(1L, "TRY"))
+                .thenReturn(Optional.of(stubWallet(BigDecimal.ZERO)));
+
+        countedService.buildAggregateSnapshot(portfolio, LocalDateTime.now());
+
+        assertThat(counting.batchPricesCalls()).isEqualTo(1);
+        assertThat(counting.priceCalls()).isEqualTo(0);
     }
 
     @Test

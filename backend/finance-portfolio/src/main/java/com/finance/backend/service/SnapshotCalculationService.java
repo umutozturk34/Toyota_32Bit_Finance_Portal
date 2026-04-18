@@ -4,6 +4,7 @@ import com.finance.backend.config.AppProperties;
 import com.finance.backend.model.*;
 import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.repository.UserWalletRepository;
+import com.finance.backend.service.AssetPricingPort.AssetKey;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @Service
@@ -52,11 +54,16 @@ public class SnapshotCalculationService {
         List<PortfolioPosition> allPositions = positionRepository
                 .findByPortfolioIdAndQuantityGreaterThan(pid, BigDecimal.ZERO);
 
+        List<AssetKey> keys = allPositions.stream()
+                .map(p -> new AssetKey(p.getAssetType().name(), p.getAssetCode()))
+                .toList();
+        Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(keys);
+
         BigDecimal totalMarketValue = BigDecimal.ZERO;
         BigDecimal totalCost = BigDecimal.ZERO;
 
         for (PortfolioPosition pos : allPositions) {
-            BigDecimal price = pricingPort.getPriceTry(pos.getAssetType().name(), pos.getAssetCode());
+            BigDecimal price = prices.get(new AssetKey(pos.getAssetType().name(), pos.getAssetCode()));
             BigDecimal unitPrice = price != null ? price : BigDecimal.ZERO;
             BigDecimal marketValue = unitPrice.multiply(pos.getQuantity()).setScale(SCALE, RoundingMode.HALF_UP);
 

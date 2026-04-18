@@ -63,7 +63,7 @@ public class UnifiedMarketService implements MarketUpdatePort {
         for (MarketType type : types) {
             MarketAssetProvider provider = providers.get(type);
             if (provider == null) continue;
-            allResults.addAll(provider.search(search, filters, resolveSort(sort), direction, page, size));
+            allResults.addAll(provider.search(search, filters, sort, direction, page, size));
             total += hasSearch ? provider.countBySearch(search, filters) : provider.count(filters);
         }
 
@@ -202,7 +202,8 @@ public class UnifiedMarketService implements MarketUpdatePort {
 
     private List<MarketAssetResponse> applySort(List<MarketAssetResponse> items,
                                                 String sort, String direction) {
-        Comparator<MarketAssetResponse> comparator = switch (resolveSort(sort)) {
+        if (sort == null || sort.isBlank()) return items;
+        Comparator<MarketAssetResponse> comparator = switch (sort) {
             case "price" -> Comparator.comparing(MarketAssetResponse::price,
                     Comparator.nullsLast(Comparator.naturalOrder()));
             case "name" -> Comparator.comparing(MarketAssetResponse::name,
@@ -214,10 +215,5 @@ public class UnifiedMarketService implements MarketUpdatePort {
             return items.stream().sorted(comparator).toList();
         }
         return items.stream().sorted(comparator.reversed()).toList();
-    }
-
-    private String resolveSort(String sort) {
-        if (sort == null || sort.isBlank()) return "changePercent";
-        return sort;
     }
 }

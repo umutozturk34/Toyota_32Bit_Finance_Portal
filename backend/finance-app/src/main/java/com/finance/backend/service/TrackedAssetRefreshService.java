@@ -1,46 +1,36 @@
 package com.finance.backend.service;
 
 import com.finance.backend.model.TrackedAssetType;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+
 @Service
 @Log4j2
-@RequiredArgsConstructor
 public class TrackedAssetRefreshService {
 
-    private final CryptoDataService marketDataService;
-    private final StockDataService stockDataService;
-    private final FundDataService fundDataService;
+    private final Map<TrackedAssetType, TrackedAssetDataService> dataServices;
+
+    public TrackedAssetRefreshService(List<TrackedAssetDataService> services) {
+        this.dataServices = new EnumMap<>(TrackedAssetType.class);
+        services.forEach(s -> this.dataServices.put(s.getAssetType(), s));
+    }
 
     public void validateAssetExists(TrackedAssetType type, String code) {
-        switch (type) {
-            case CRYPTO -> marketDataService.validateCryptoExists(code);
-            case STOCK -> stockDataService.validateStockExists(code);
-            case FUND -> fundDataService.validateFundExists(code);
-        }
+        resolve(type).validateExists(code);
     }
 
     @Async("taskExecutor")
     public void refreshAsync(TrackedAssetType type, String code) {
         log.info("Async refresh started for {} / {}", type, code);
         try {
-            switch (type) {
-                case CRYPTO -> {
-                    marketDataService.refreshTrackedCryptoSnapshot(code);
-                    marketDataService.refreshTrackedCryptoCandles(code);
-                }
-                case STOCK -> {
-                    stockDataService.refreshTrackedStockSnapshot(code);
-                    stockDataService.refreshTrackedStockCandles(code);
-                }
-                case FUND -> {
-                    fundDataService.refreshTrackedFundSnapshot(code);
-                    fundDataService.refreshTrackedFundCandles(code);
-                }
-            }
+            TrackedAssetDataService service = resolve(type);
+            service.refreshSnapshot(code);
+            service.refreshCandles(code);
             log.info("Async refresh completed for {} / {}", type, code);
         } catch (Exception ex) {
             log.warn("Async refresh failed for {} / {}: {}", type, code, ex.getMessage());
@@ -50,13 +40,17 @@ public class TrackedAssetRefreshService {
     @Async("taskExecutor")
     public void clearCacheAsync(TrackedAssetType type, String code) {
         try {
-            switch (type) {
-                case CRYPTO -> marketDataService.clearTrackedCryptoCache(code);
-                case STOCK -> stockDataService.clearTrackedStockCache(code);
-                case FUND -> fundDataService.clearTrackedFundCache(code);
-            }
+            resolve(type).clearCache(code);
         } catch (Exception ex) {
             log.warn("Async cache clear failed for {} / {}: {}", type, code, ex.getMessage());
         }
+    }
+
+    private TrackedAssetDataService resolve(TrackedAssetType type) {
+        TrackedAssetDataService service = dataServices.get(type);
+        if (service == null) {
+            throw new IllegalArgumentException("No data service registered for " + type);
+        }
+        return service;
     }
 }

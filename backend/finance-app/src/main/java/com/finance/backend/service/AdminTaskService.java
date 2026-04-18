@@ -3,23 +3,22 @@ package com.finance.backend.service;
 import com.finance.backend.dto.response.TaskStatusResponse;
 import com.finance.backend.dto.response.TaskTriggerResponse;
 import com.finance.backend.model.MarketType;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
 @Log4j2
 @Service
-@RequiredArgsConstructor
 public class AdminTaskService {
 
-    private final CryptoDataService marketDataService;
-    private final StockDataService stockDataService;
+    private final Map<MarketType, SnapshotBatchRefresher> snapshotRefreshers;
+    private final Map<MarketType, CandleBatchRefresher> candleRefreshers;
     private final TcmbForexService tcmbForexService;
-    private final ForexDataService yahooForexService;
-    private final FundDataService fundDataService;
     private final BondDataService bondDataService;
     private final NewsDataService newsDataService;
     private final TaskTrackingService taskTracker;
@@ -27,105 +26,53 @@ public class AdminTaskService {
     private final Optional<PortfolioSnapshotPort> portfolioSnapshotPort;
     private final Optional<MarketUpdatePort> marketUpdatePort;
 
-    public TaskTriggerResponse triggerCryptoSnapshot() {
-        return executeTask("crypto-snapshot",
-                "Crypto snapshot update started in background",
-                () -> {
-                    marketDataService.updateOnlySnapshots();
-                    triggerPortfolioSnapshot(MarketType.CRYPTO);
-                });
+    public AdminTaskService(List<SnapshotBatchRefresher> snapshotRefreshers,
+                            List<CandleBatchRefresher> candleRefreshers,
+                            TcmbForexService tcmbForexService,
+                            BondDataService bondDataService,
+                            NewsDataService newsDataService,
+                            TaskTrackingService taskTracker,
+                            Executor taskExecutor,
+                            Optional<PortfolioSnapshotPort> portfolioSnapshotPort,
+                            Optional<MarketUpdatePort> marketUpdatePort) {
+        this.snapshotRefreshers = new EnumMap<>(MarketType.class);
+        snapshotRefreshers.forEach(r -> this.snapshotRefreshers.put(r.getMarketType(), r));
+        this.candleRefreshers = new EnumMap<>(MarketType.class);
+        candleRefreshers.forEach(r -> this.candleRefreshers.put(r.getMarketType(), r));
+        this.tcmbForexService = tcmbForexService;
+        this.bondDataService = bondDataService;
+        this.newsDataService = newsDataService;
+        this.taskTracker = taskTracker;
+        this.taskExecutor = taskExecutor;
+        this.portfolioSnapshotPort = portfolioSnapshotPort;
+        this.marketUpdatePort = marketUpdatePort;
     }
 
-    public TaskTriggerResponse triggerCryptoCandles() {
-        return executeTask("crypto-candles",
-                "Crypto candle update started in background",
-                marketDataService::updateOnlyCandles);
+    public TaskTriggerResponse triggerSnapshot(MarketType type) {
+        String taskType = type.name().toLowerCase() + "-snapshot";
+        String message = type.name() + " snapshot update started in background";
+        return executeTask(taskType, message, () -> {
+            runForexPreStep(type);
+            resolveSnapshotRefresher(type).refreshAll();
+            triggerPortfolioSnapshot(type);
+        });
     }
 
-    public TaskTriggerResponse triggerCryptoFull() {
-        return executeTask("crypto-full",
-                "Full crypto market update started in background",
-                () -> {
-                    marketDataService.fullMarketUpdate();
-                    triggerPortfolioSnapshot(MarketType.CRYPTO);
-                });
+    public TaskTriggerResponse triggerCandles(MarketType type) {
+        String taskType = type.name().toLowerCase() + "-candles";
+        String message = type.name() + " candle update started in background";
+        return executeTask(taskType, message, () -> resolveCandleRefresher(type).refreshAll());
     }
 
-    public TaskTriggerResponse triggerStockSnapshot() {
-        return executeTask("stock-snapshot",
-                "Stock snapshot update started in background",
-                () -> {
-                    stockDataService.updateStockSnapshots();
-                    triggerPortfolioSnapshot(MarketType.STOCK);
-                });
-    }
-
-    public TaskTriggerResponse triggerStockCandles() {
-        return executeTask("stock-candles",
-                "Stock candle update started in background (5 years data)",
-                stockDataService::updateStockCandles);
-    }
-
-    public TaskTriggerResponse triggerStockFull() {
-        return executeTask("stock-full",
-                "Full stock market update started in background",
-                () -> {
-                    stockDataService.updateStockSnapshots();
-                    stockDataService.updateStockCandles();
-                    triggerPortfolioSnapshot(MarketType.STOCK);
-                });
-    }
-
-    public TaskTriggerResponse triggerForexSnapshot() {
-        return executeTask("forex-snapshot",
-                "TCMB + Yahoo snapshot update started (~2 min)",
-                () -> {
-                    tcmbForexService.fetchAndSaveTcmbRates();
-                    yahooForexService.syncAllYahooSnapshots();
-                    triggerPortfolioSnapshot(MarketType.FOREX);
-                });
-    }
-
-    public TaskTriggerResponse triggerForexCandles() {
-        return executeTask("forex-candles",
-                "Yahoo Finance candles update started (~10 min, 5 years OHLC)",
-                yahooForexService::syncAllYahooCandles);
-    }
-
-    public TaskTriggerResponse triggerForexFull() {
-        return executeTask("forex-full",
-                "Full forex update started (TCMB + Yahoo snapshots + 5y candles)",
-                () -> {
-                    tcmbForexService.fetchAndSaveTcmbRates();
-                    yahooForexService.syncAllYahooSnapshots();
-                    yahooForexService.syncAllYahooCandles();
-                    triggerPortfolioSnapshot(MarketType.FOREX);
-                });
-    }
-
-    public TaskTriggerResponse triggerFundSnapshot() {
-        return executeTask("fund-snapshot",
-                "Fund snapshot update started in background",
-                () -> {
-                    fundDataService.updateFundSnapshots();
-                    triggerPortfolioSnapshot(MarketType.FUND);
-                });
-    }
-
-    public TaskTriggerResponse triggerFundCandles() {
-        return executeTask("fund-candles",
-                "Fund candle update started in background (5 years data)",
-                fundDataService::updateFundCandles);
-    }
-
-    public TaskTriggerResponse triggerFundFull() {
-        return executeTask("fund-full",
-                "Full fund update started in background",
-                () -> {
-                    fundDataService.updateFundSnapshots();
-                    fundDataService.updateFundCandles();
-                    triggerPortfolioSnapshot(MarketType.FUND);
-                });
+    public TaskTriggerResponse triggerFull(MarketType type) {
+        String taskType = type.name().toLowerCase() + "-full";
+        String message = "Full " + type.name() + " market update started in background";
+        return executeTask(taskType, message, () -> {
+            runForexPreStep(type);
+            resolveSnapshotRefresher(type).refreshAll();
+            resolveCandleRefresher(type).refreshAll();
+            triggerPortfolioSnapshot(type);
+        });
     }
 
     public TaskTriggerResponse triggerBondUpdate() {
@@ -138,6 +85,28 @@ public class AdminTaskService {
         return executeTask("news-update",
                 "News feed update started in background",
                 newsDataService::updateNews);
+    }
+
+    private SnapshotBatchRefresher resolveSnapshotRefresher(MarketType type) {
+        SnapshotBatchRefresher refresher = snapshotRefreshers.get(type);
+        if (refresher == null) {
+            throw new IllegalArgumentException("No snapshot refresher registered for " + type);
+        }
+        return refresher;
+    }
+
+    private CandleBatchRefresher resolveCandleRefresher(MarketType type) {
+        CandleBatchRefresher refresher = candleRefreshers.get(type);
+        if (refresher == null) {
+            throw new IllegalArgumentException("No candle refresher registered for " + type);
+        }
+        return refresher;
+    }
+
+    private void runForexPreStep(MarketType type) {
+        if (type == MarketType.FOREX) {
+            tcmbForexService.fetchAndSaveTcmbRates();
+        }
     }
 
     public TaskStatusResponse getTaskStatus() {

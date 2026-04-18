@@ -4,7 +4,6 @@ import com.finance.backend.service.MarketUpdatePort;
 import com.finance.backend.service.PortfolioSnapshotPort;
 import com.finance.backend.service.StockDataService;
 import com.finance.backend.service.TaskTrackingService;
-import com.finance.backend.service.TaskTrackingService.TaskInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -37,16 +36,11 @@ public class StockScheduler {
     }
 
     private void executeStockUpdate(String taskType, String description) {
-        TaskInfo started = taskTracker.startTask(taskType, description);
-        try {
+        taskTracker.runTracked(taskType, description, () -> {
             stockDataService.updateStockSnapshots();
             stockDataService.updateStockCandles();
             portfolioSnapshotPort.ifPresent(port -> port.onMarketUpdate(MarketType.STOCK));
             marketUpdatePort.ifPresent(port -> port.onMarketDataUpdated(MarketType.STOCK));
-            taskTracker.completeTask(taskType, started);
-        } catch (Exception e) {
-            taskTracker.failTask(taskType, started, e.getMessage());
-            log.error("{} failed", taskType, e);
-        }
+        });
     }
 }

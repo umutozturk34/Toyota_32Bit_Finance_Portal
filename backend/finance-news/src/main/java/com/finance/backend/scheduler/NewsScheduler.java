@@ -2,7 +2,6 @@ package com.finance.backend.scheduler;
 
 import com.finance.backend.service.NewsDataService;
 import com.finance.backend.service.TaskTrackingService;
-import com.finance.backend.service.TaskTrackingService.TaskInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,13 +31,6 @@ public class NewsScheduler {
     }
 
     private void executeUpdate(String taskType, String description) {
-        TaskInfo started = taskTracker.startTask(taskType, description);
-        try {
-            newsDataService.updateNews();
-            taskTracker.completeTask(taskType, started);
-        } catch (Exception e) {
-            taskTracker.failTask(taskType, started, e.getMessage());
-            log.error("{} failed", taskType, e);
-        }
+        taskTracker.runTracked(taskType, description, newsDataService::updateNews);
     }
 }

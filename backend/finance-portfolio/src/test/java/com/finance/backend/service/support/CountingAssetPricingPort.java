@@ -1,5 +1,6 @@
 package com.finance.backend.service.support;
 
+import com.finance.backend.model.MarketType;
 import com.finance.backend.service.AssetPricingPort;
 
 import java.math.BigDecimal;
@@ -22,33 +23,33 @@ public final class CountingAssetPricingPort implements AssetPricingPort {
     private final AtomicInteger batchBundlesCalls = new AtomicInteger();
 
     public void seedPrice(String type, String code, BigDecimal value) {
-        prices.put(new AssetKey(type, code), value);
+        prices.put(new AssetKey(MarketType.valueOf(type), code), value);
     }
 
     public void seedSellPrice(String type, String code, BigDecimal value) {
-        sellPrices.put(new AssetKey(type, code), value);
+        sellPrices.put(new AssetKey(MarketType.valueOf(type), code), value);
     }
 
     public void seedMeta(String type, String code, AssetMeta meta) {
-        metas.put(new AssetKey(type, code), meta);
+        metas.put(new AssetKey(MarketType.valueOf(type), code), meta);
     }
 
     @Override
-    public BigDecimal getPriceTry(String assetType, String assetCode) {
+    public BigDecimal getPriceTry(MarketType type, String assetCode) {
         priceCalls.incrementAndGet();
-        return prices.get(new AssetKey(assetType, assetCode));
+        return prices.get(new AssetKey(type, assetCode));
     }
 
     @Override
-    public BigDecimal getSellPriceTry(String assetType, String assetCode) {
+    public BigDecimal getSellPriceTry(MarketType type, String assetCode) {
         sellPriceCalls.incrementAndGet();
-        return sellPrices.get(new AssetKey(assetType, assetCode));
+        return sellPrices.get(new AssetKey(type, assetCode));
     }
 
     @Override
-    public AssetMeta getAssetMeta(String assetType, String assetCode) {
+    public AssetMeta getAssetMeta(MarketType type, String assetCode) {
         metaCalls.incrementAndGet();
-        return metas.getOrDefault(new AssetKey(assetType, assetCode), new AssetMeta(null, null));
+        return metas.getOrDefault(new AssetKey(type, assetCode), new AssetMeta(null, null));
     }
 
     @Override

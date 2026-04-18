@@ -7,6 +7,7 @@ import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
 import com.finance.backend.service.AssetPricingPort;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -32,9 +34,9 @@ public class AssetPricingAdapter implements AssetPricingPort {
     private final MarketCacheService<Fund, FundCandle> fundCacheService;
     private final AppProperties appProperties;
 
-    private final Map<String, Function<String, BigDecimal>> priceLookups;
-    private final Map<String, Function<String, BigDecimal>> sellPriceLookups;
-    private final Map<String, Function<String, AssetMeta>> metaLookups;
+    private final Map<MarketType, Function<String, BigDecimal>> priceLookups;
+    private final Map<MarketType, Function<String, BigDecimal>> sellPriceLookups;
+    private final Map<MarketType, Function<String, AssetMeta>> metaLookups;
 
     public AssetPricingAdapter(MarketCacheService<Crypto, CryptoCandle> cryptoCacheService,
                                MarketCacheService<Stock, StockCandle> stockCacheService,
@@ -46,48 +48,48 @@ public class AssetPricingAdapter implements AssetPricingPort {
         this.forexCacheService = forexCacheService;
         this.fundCacheService = fundCacheService;
         this.appProperties = appProperties;
-        this.priceLookups = Map.of(
-                "CRYPTO", this::getCryptoPrice,
-                "STOCK", this::getStockPrice,
-                "FOREX", this::getForexPrice,
-                "FUND", this::getFundPrice);
-        this.sellPriceLookups = Map.of(
-                "CRYPTO", code -> applyCommission(getCryptoPrice(code), appProperties.getCommission().getCryptoRate()),
-                "STOCK", code -> applyCommission(getStockPrice(code), appProperties.getCommission().getStockRate()),
-                "FOREX", this::getForexSellPrice,
-                "FUND", code -> applyCommission(getFundPrice(code), appProperties.getCommission().getFundRate()));
-        this.metaLookups = Map.of(
-                "CRYPTO", code -> cryptoMeta(cryptoCacheService.getSnapshot(code)),
-                "STOCK", code -> baseMeta(stockCacheService.getSnapshot(code)),
-                "FOREX", code -> baseMeta(forexCacheService.getSnapshot(code)),
-                "FUND", code -> baseMeta(fundCacheService.getSnapshot(code)));
+        this.priceLookups = new EnumMap<>(MarketType.class);
+        this.priceLookups.put(MarketType.CRYPTO, this::getCryptoPrice);
+        this.priceLookups.put(MarketType.STOCK, this::getStockPrice);
+        this.priceLookups.put(MarketType.FOREX, this::getForexPrice);
+        this.priceLookups.put(MarketType.FUND, this::getFundPrice);
+        this.sellPriceLookups = new EnumMap<>(MarketType.class);
+        this.sellPriceLookups.put(MarketType.CRYPTO, code -> applyCommission(getCryptoPrice(code), appProperties.getCommission().getCryptoRate()));
+        this.sellPriceLookups.put(MarketType.STOCK, code -> applyCommission(getStockPrice(code), appProperties.getCommission().getStockRate()));
+        this.sellPriceLookups.put(MarketType.FOREX, this::getForexSellPrice);
+        this.sellPriceLookups.put(MarketType.FUND, code -> applyCommission(getFundPrice(code), appProperties.getCommission().getFundRate()));
+        this.metaLookups = new EnumMap<>(MarketType.class);
+        this.metaLookups.put(MarketType.CRYPTO, code -> cryptoMeta(cryptoCacheService.getSnapshot(code)));
+        this.metaLookups.put(MarketType.STOCK, code -> baseMeta(stockCacheService.getSnapshot(code)));
+        this.metaLookups.put(MarketType.FOREX, code -> baseMeta(forexCacheService.getSnapshot(code)));
+        this.metaLookups.put(MarketType.FUND, code -> baseMeta(fundCacheService.getSnapshot(code)));
     }
 
     @Override
-    public BigDecimal getPriceTry(String assetType, String assetCode) {
-        return dispatch(priceLookups, assetType, assetCode, "price", null);
+    public BigDecimal getPriceTry(MarketType type, String assetCode) {
+        return dispatch(priceLookups, type, assetCode, "price", null);
     }
 
     @Override
-    public BigDecimal getSellPriceTry(String assetType, String assetCode) {
-        return dispatch(sellPriceLookups, assetType, assetCode, "sell price", null);
+    public BigDecimal getSellPriceTry(MarketType type, String assetCode) {
+        return dispatch(sellPriceLookups, type, assetCode, "sell price", null);
     }
 
     @Override
-    public AssetMeta getAssetMeta(String assetType, String assetCode) {
-        return dispatch(metaLookups, assetType, assetCode, "metadata", EMPTY_META);
+    public AssetMeta getAssetMeta(MarketType type, String assetCode) {
+        return dispatch(metaLookups, type, assetCode, "metadata", EMPTY_META);
     }
 
-    private <T> T dispatch(Map<String, Function<String, T>> lookups, String assetType, String assetCode, String label, T fallback) {
-        Function<String, T> fn = lookups.get(assetType);
+    private <T> T dispatch(Map<MarketType, Function<String, T>> lookups, MarketType type, String assetCode, String label, T fallback) {
+        Function<String, T> fn = lookups.get(type);
         if (fn == null) {
-            log.warn("Unknown asset type: {}", assetType);
+            log.warn("Unknown asset type: {}", type);
             return fallback;
         }
         try {
             return fn.apply(assetCode);
         } catch (Exception e) {
-            log.warn("Failed to get {} for {}:{} - {}", label, assetType, assetCode, e.getMessage());
+            log.warn("Failed to get {} for {}:{} - {}", label, type, assetCode, e.getMessage());
             return fallback;
         }
     }

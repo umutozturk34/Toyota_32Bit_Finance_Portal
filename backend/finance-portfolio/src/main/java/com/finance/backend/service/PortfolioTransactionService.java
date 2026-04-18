@@ -51,8 +51,8 @@ public class PortfolioTransactionService {
         BigDecimal fee = request.feeTry() != null ? request.feeTry().setScale(PRICE_SCALE, RoundingMode.HALF_UP) : BigDecimal.ZERO;
 
         BigDecimal unitPrice = side == TransactionSide.SELL
-                ? pricingPort.getSellPriceTry(request.assetType(), request.assetCode())
-                : pricingPort.getPriceTry(request.assetType(), request.assetCode());
+                ? pricingPort.getSellPriceTry(assetType.marketType(), request.assetCode())
+                : pricingPort.getPriceTry(assetType.marketType(), request.assetCode());
         if (unitPrice == null) {
             throw new BadRequestException("Price not available for " + request.assetType() + ":" + request.assetCode());
         }

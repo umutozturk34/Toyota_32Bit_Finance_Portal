@@ -6,9 +6,6 @@ import com.finance.backend.service.MarketCacheService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -69,7 +66,7 @@ class AssetPricingAdapterTest {
     void getPriceTryCryptoReturnsNormalizedPrice() {
         when(cryptoCacheService.getSnapshot("bitcoin")).thenReturn(cryptoWith("65432.123456"));
 
-        BigDecimal price = adapter.getPriceTry("CRYPTO", "bitcoin");
+        BigDecimal price = adapter.getPriceTry(MarketType.CRYPTO, "bitcoin");
 
         assertThat(price).isEqualByComparingTo(new BigDecimal("65432.1235"));
         assertThat(price.scale()).isEqualTo(4);
@@ -79,7 +76,7 @@ class AssetPricingAdapterTest {
     void getPriceTryStockReturnsNormalizedPrice() {
         when(stockCacheService.getSnapshot("THYAO.IS")).thenReturn(stockWith("45.678"));
 
-        BigDecimal price = adapter.getPriceTry("STOCK", "THYAO.IS");
+        BigDecimal price = adapter.getPriceTry(MarketType.STOCK, "THYAO.IS");
 
         assertThat(price).isEqualByComparingTo(new BigDecimal("45.6780"));
     }
@@ -88,7 +85,7 @@ class AssetPricingAdapterTest {
     void getPriceTryForexUsesSellingPriceWhenAvailable() {
         when(forexCacheService.getSnapshot("USD")).thenReturn(forexWith("38.0000", "38.5000"));
 
-        BigDecimal price = adapter.getPriceTry("FOREX", "USD");
+        BigDecimal price = adapter.getPriceTry(MarketType.FOREX, "USD");
 
         assertThat(price).isEqualByComparingTo(new BigDecimal("38.5000"));
     }
@@ -97,7 +94,7 @@ class AssetPricingAdapterTest {
     void getPriceTryForexFallsBackToCurrentPriceWhenSellingPriceNull() {
         when(forexCacheService.getSnapshot("USD")).thenReturn(forexWith("38.0000", null));
 
-        BigDecimal price = adapter.getPriceTry("FOREX", "USD");
+        BigDecimal price = adapter.getPriceTry(MarketType.FOREX, "USD");
 
         assertThat(price).isEqualByComparingTo(new BigDecimal("38.0000"));
     }
@@ -106,29 +103,23 @@ class AssetPricingAdapterTest {
     void getPriceTryFundReturnsNormalizedPrice() {
         when(fundCacheService.getSnapshot("AAK")).thenReturn(fundWith("1.234567"));
 
-        BigDecimal price = adapter.getPriceTry("FUND", "AAK");
+        BigDecimal price = adapter.getPriceTry(MarketType.FUND, "AAK");
 
         assertThat(price).isEqualByComparingTo(new BigDecimal("1.2346"));
-    }
-
-    @ParameterizedTest
-    @CsvSource({"BOND, TRT123", "COMMODITY, GOLD", "UNKNOWN, X"})
-    void getPriceTryUnknownTypesReturnNull(String type, String code) {
-        assertThat(adapter.getPriceTry(type, code)).isNull();
     }
 
     @Test
     void getPriceTryNullSnapshotReturnsNull() {
         when(cryptoCacheService.getSnapshot("unknown")).thenReturn(null);
 
-        assertThat(adapter.getPriceTry("CRYPTO", "unknown")).isNull();
+        assertThat(adapter.getPriceTry(MarketType.CRYPTO, "unknown")).isNull();
     }
 
     @Test
     void getSellPriceTryCryptoAppliesCommission() {
         when(cryptoCacheService.getSnapshot("bitcoin")).thenReturn(cryptoWith("100000.0000"));
 
-        BigDecimal sellPrice = adapter.getSellPriceTry("CRYPTO", "bitcoin");
+        BigDecimal sellPrice = adapter.getSellPriceTry(MarketType.CRYPTO, "bitcoin");
 
         assertThat(sellPrice).isEqualByComparingTo(new BigDecimal("99850.0000"));
     }
@@ -137,7 +128,7 @@ class AssetPricingAdapterTest {
     void getSellPriceTryStockAppliesCommission() {
         when(stockCacheService.getSnapshot("THYAO.IS")).thenReturn(stockWith("50.0000"));
 
-        BigDecimal sellPrice = adapter.getSellPriceTry("STOCK", "THYAO.IS");
+        BigDecimal sellPrice = adapter.getSellPriceTry(MarketType.STOCK, "THYAO.IS");
 
         assertThat(sellPrice).isEqualByComparingTo(new BigDecimal("49.9000"));
     }
@@ -146,7 +137,7 @@ class AssetPricingAdapterTest {
     void getSellPriceTryFundAppliesCommission() {
         when(fundCacheService.getSnapshot("BBK")).thenReturn(fundWith("200.0000"));
 
-        BigDecimal sellPrice = adapter.getSellPriceTry("FUND", "BBK");
+        BigDecimal sellPrice = adapter.getSellPriceTry(MarketType.FUND, "BBK");
 
         assertThat(sellPrice).isEqualByComparingTo(new BigDecimal("199.8000"));
     }
@@ -155,7 +146,7 @@ class AssetPricingAdapterTest {
     void getSellPriceTryForexUsesCurrentPriceNotSellingPrice() {
         when(forexCacheService.getSnapshot("USD")).thenReturn(forexWith("37.5000", "38.5000"));
 
-        BigDecimal sellPrice = adapter.getSellPriceTry("FOREX", "USD");
+        BigDecimal sellPrice = adapter.getSellPriceTry(MarketType.FOREX, "USD");
 
         assertThat(sellPrice).isEqualByComparingTo(new BigDecimal("37.5000"));
     }
@@ -164,13 +155,7 @@ class AssetPricingAdapterTest {
     void getSellPriceTryNullSnapshotReturnsNull() {
         when(stockCacheService.getSnapshot("DELISTED")).thenReturn(null);
 
-        assertThat(adapter.getSellPriceTry("STOCK", "DELISTED")).isNull();
-    }
-
-    @ParameterizedTest
-    @CsvSource({"BOND, TRT123", "COMMODITY, GOLD", "UNKNOWN, X"})
-    void getSellPriceTryUnknownTypesReturnNull(String type, String code) {
-        assertThat(adapter.getSellPriceTry(type, code)).isNull();
+        assertThat(adapter.getSellPriceTry(MarketType.STOCK, "DELISTED")).isNull();
     }
 
     @Test
@@ -180,7 +165,7 @@ class AssetPricingAdapterTest {
         crypto.setImage("https://example.com/btc.png");
         when(cryptoCacheService.getSnapshot("bitcoin")).thenReturn(crypto);
 
-        AssetMeta meta = adapter.getAssetMeta("CRYPTO", "bitcoin");
+        AssetMeta meta = adapter.getAssetMeta(MarketType.CRYPTO, "bitcoin");
 
         assertThat(meta.name()).isEqualTo("Bitcoin");
         assertThat(meta.image()).isEqualTo("https://example.com/btc.png");
@@ -192,7 +177,7 @@ class AssetPricingAdapterTest {
         stock.setName("Türk Hava Yolları");
         when(stockCacheService.getSnapshot("THYAO.IS")).thenReturn(stock);
 
-        AssetMeta meta = adapter.getAssetMeta("STOCK", "THYAO.IS");
+        AssetMeta meta = adapter.getAssetMeta(MarketType.STOCK, "THYAO.IS");
 
         assertThat(meta.name()).isEqualTo("Türk Hava Yolları");
         assertThat(meta.image()).isNull();
@@ -202,16 +187,7 @@ class AssetPricingAdapterTest {
     void getAssetMetaNullSnapshotReturnsEmptyMeta() {
         when(forexCacheService.getSnapshot("UNKNOWN")).thenReturn(null);
 
-        AssetMeta meta = adapter.getAssetMeta("FOREX", "UNKNOWN");
-
-        assertThat(meta.name()).isNull();
-        assertThat(meta.image()).isNull();
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"BOND", "COMMODITY", "UNKNOWN"})
-    void getAssetMetaUnknownTypesReturnEmptyMeta(String type) {
-        AssetMeta meta = adapter.getAssetMeta(type, "X");
+        AssetMeta meta = adapter.getAssetMeta(MarketType.FOREX, "UNKNOWN");
 
         assertThat(meta.name()).isNull();
         assertThat(meta.image()).isNull();

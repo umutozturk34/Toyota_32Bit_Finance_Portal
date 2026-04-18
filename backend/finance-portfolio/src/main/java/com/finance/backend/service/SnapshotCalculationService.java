@@ -29,7 +29,7 @@ public class SnapshotCalculationService {
 
     public PortfolioAssetDailySnapshot buildAssetSnapshot(Long portfolioId, PortfolioPosition pos,
                                                               LocalDateTime batchTimestamp) {
-        BigDecimal price = pricingPort.getPriceTry(pos.getAssetType().name(), pos.getAssetCode());
+        BigDecimal price = pricingPort.getPriceTry(pos.getAssetType().marketType(), pos.getAssetCode());
         BigDecimal unitPrice = price != null ? price : BigDecimal.ZERO;
         BigDecimal marketValue = unitPrice.multiply(pos.getQuantity()).setScale(SCALE, RoundingMode.HALF_UP);
         BigDecimal pnl = marketValue.subtract(pos.getTotalCostTry());
@@ -55,7 +55,7 @@ public class SnapshotCalculationService {
                 .findByPortfolioIdAndQuantityGreaterThan(pid, BigDecimal.ZERO);
 
         List<AssetKey> keys = allPositions.stream()
-                .map(p -> new AssetKey(p.getAssetType().name(), p.getAssetCode()))
+                .map(p -> new AssetKey(p.getAssetType().marketType(), p.getAssetCode()))
                 .toList();
         Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(keys);
 
@@ -63,7 +63,7 @@ public class SnapshotCalculationService {
         BigDecimal totalCost = BigDecimal.ZERO;
 
         for (PortfolioPosition pos : allPositions) {
-            BigDecimal price = prices.get(new AssetKey(pos.getAssetType().name(), pos.getAssetCode()));
+            BigDecimal price = prices.get(new AssetKey(pos.getAssetType().marketType(), pos.getAssetCode()));
             BigDecimal unitPrice = price != null ? price : BigDecimal.ZERO;
             BigDecimal marketValue = unitPrice.multiply(pos.getQuantity()).setScale(SCALE, RoundingMode.HALF_UP);
 

@@ -216,7 +216,7 @@ public class PortfolioSummaryService {
     }
 
     private AssetKey toKey(PortfolioPosition pos) {
-        return new AssetKey(pos.getAssetType().name(), pos.getAssetCode());
+        return new AssetKey(pos.getAssetType().marketType(), pos.getAssetCode());
     }
 
     private BigDecimal getCommissionRate(AssetType assetType) {

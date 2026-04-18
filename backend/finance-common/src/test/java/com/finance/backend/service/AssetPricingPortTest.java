@@ -1,5 +1,6 @@
 package com.finance.backend.service;
 
+import com.finance.backend.model.MarketType;
 import com.finance.backend.service.AssetPricingPort.AssetKey;
 import com.finance.backend.service.AssetPricingPort.PriceBundle;
 import org.junit.jupiter.api.Test;
@@ -14,24 +15,24 @@ class AssetPricingPortTest {
 
     private final AssetPricingPort port = new AssetPricingPort() {
         @Override
-        public BigDecimal getPriceTry(String assetType, String assetCode) {
+        public BigDecimal getPriceTry(MarketType type, String assetCode) {
             return BigDecimal.valueOf(100);
         }
 
         @Override
-        public BigDecimal getSellPriceTry(String assetType, String assetCode) {
+        public BigDecimal getSellPriceTry(MarketType type, String assetCode) {
             return BigDecimal.valueOf(99);
         }
 
         @Override
-        public AssetMeta getAssetMeta(String assetType, String assetCode) {
+        public AssetMeta getAssetMeta(MarketType type, String assetCode) {
             return new AssetMeta("NAME-" + assetCode, "IMG-" + assetCode);
         }
     };
 
     @Test
     void getBundleCombinesPriceSellPriceAndMeta() {
-        PriceBundle bundle = port.getBundle("CRYPTO", "bitcoin");
+        PriceBundle bundle = port.getBundle(MarketType.CRYPTO, "bitcoin");
 
         assertThat(bundle.price()).isEqualByComparingTo(BigDecimal.valueOf(100));
         assertThat(bundle.sellPrice()).isEqualByComparingTo(BigDecimal.valueOf(99));
@@ -42,29 +43,29 @@ class AssetPricingPortTest {
     @Test
     void getBundlesBuildsMapFromKeys() {
         List<AssetKey> keys = List.of(
-                new AssetKey("CRYPTO", "bitcoin"),
-                new AssetKey("STOCK", "THYAO.IS"));
+                new AssetKey(MarketType.CRYPTO, "bitcoin"),
+                new AssetKey(MarketType.STOCK, "THYAO.IS"));
 
         Map<AssetKey, PriceBundle> bundles = port.getBundles(keys);
 
         assertThat(bundles).hasSize(2);
-        assertThat(bundles.get(new AssetKey("CRYPTO", "bitcoin")).meta().name()).isEqualTo("NAME-bitcoin");
-        assertThat(bundles.get(new AssetKey("STOCK", "THYAO.IS")).meta().name()).isEqualTo("NAME-THYAO.IS");
+        assertThat(bundles.get(new AssetKey(MarketType.CRYPTO, "bitcoin")).meta().name()).isEqualTo("NAME-bitcoin");
+        assertThat(bundles.get(new AssetKey(MarketType.STOCK, "THYAO.IS")).meta().name()).isEqualTo("NAME-THYAO.IS");
     }
 
     @Test
     void getBundlesPreservesInsertionOrder() {
         List<AssetKey> keys = List.of(
-                new AssetKey("CRYPTO", "a"),
-                new AssetKey("STOCK", "b"),
-                new AssetKey("FOREX", "c"));
+                new AssetKey(MarketType.CRYPTO, "a"),
+                new AssetKey(MarketType.STOCK, "b"),
+                new AssetKey(MarketType.FOREX, "c"));
 
         Map<AssetKey, PriceBundle> bundles = port.getBundles(keys);
 
         assertThat(bundles.keySet()).containsExactly(
-                new AssetKey("CRYPTO", "a"),
-                new AssetKey("STOCK", "b"),
-                new AssetKey("FOREX", "c"));
+                new AssetKey(MarketType.CRYPTO, "a"),
+                new AssetKey(MarketType.STOCK, "b"),
+                new AssetKey(MarketType.FOREX, "c"));
     }
 
     @Test

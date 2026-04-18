@@ -11,19 +11,20 @@ import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
 import com.finance.backend.service.AssetPricingPort;
 import com.finance.backend.service.MarketCacheService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Map;
+import java.util.function.Function;
 
 @Log4j2
 @Component
-@RequiredArgsConstructor
 public class AssetPricingAdapter implements AssetPricingPort {
 
     private static final int PRICE_SCALE = 4;
+    private static final AssetMeta EMPTY_META = new AssetMeta(null, null);
 
     private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
@@ -31,72 +32,72 @@ public class AssetPricingAdapter implements AssetPricingPort {
     private final MarketCacheService<Fund, FundCandle> fundCacheService;
     private final AppProperties appProperties;
 
+    private final Map<String, Function<String, BigDecimal>> priceLookups;
+    private final Map<String, Function<String, BigDecimal>> sellPriceLookups;
+    private final Map<String, Function<String, AssetMeta>> metaLookups;
+
+    public AssetPricingAdapter(MarketCacheService<Crypto, CryptoCandle> cryptoCacheService,
+                               MarketCacheService<Stock, StockCandle> stockCacheService,
+                               MarketCacheService<Forex, ForexCandle> forexCacheService,
+                               MarketCacheService<Fund, FundCandle> fundCacheService,
+                               AppProperties appProperties) {
+        this.cryptoCacheService = cryptoCacheService;
+        this.stockCacheService = stockCacheService;
+        this.forexCacheService = forexCacheService;
+        this.fundCacheService = fundCacheService;
+        this.appProperties = appProperties;
+        this.priceLookups = Map.of(
+                "CRYPTO", this::getCryptoPrice,
+                "STOCK", this::getStockPrice,
+                "FOREX", this::getForexPrice,
+                "FUND", this::getFundPrice);
+        this.sellPriceLookups = Map.of(
+                "CRYPTO", code -> applyCommission(getCryptoPrice(code), appProperties.getCommission().getCryptoRate()),
+                "STOCK", code -> applyCommission(getStockPrice(code), appProperties.getCommission().getStockRate()),
+                "FOREX", this::getForexSellPrice,
+                "FUND", code -> applyCommission(getFundPrice(code), appProperties.getCommission().getFundRate()));
+        this.metaLookups = Map.of(
+                "CRYPTO", code -> cryptoMeta(cryptoCacheService.getSnapshot(code)),
+                "STOCK", code -> baseMeta(stockCacheService.getSnapshot(code)),
+                "FOREX", code -> baseMeta(forexCacheService.getSnapshot(code)),
+                "FUND", code -> baseMeta(fundCacheService.getSnapshot(code)));
+    }
+
     @Override
     public BigDecimal getPriceTry(String assetType, String assetCode) {
-        try {
-            return switch (assetType) {
-                case "CRYPTO" -> getCryptoPrice(assetCode);
-                case "STOCK" -> getStockPrice(assetCode);
-                case "FOREX" -> getForexPrice(assetCode);
-                case "FUND" -> getFundPrice(assetCode);
-                default -> {
-                    log.warn("Unknown asset type: {}", assetType);
-                    yield null;
-                }
-            };
-        } catch (Exception e) {
-            log.warn("Failed to get price for {}:{} - {}", assetType, assetCode, e.getMessage());
-            return null;
-        }
+        return dispatch(priceLookups, assetType, assetCode, "price", null);
     }
 
     @Override
     public BigDecimal getSellPriceTry(String assetType, String assetCode) {
-        try {
-            return switch (assetType) {
-                case "CRYPTO" -> applyCommission(getCryptoPrice(assetCode), appProperties.getCommission().getCryptoRate());
-                case "STOCK" -> applyCommission(getStockPrice(assetCode), appProperties.getCommission().getStockRate());
-                case "FOREX" -> getForexSellPrice(assetCode);
-                case "FUND" -> applyCommission(getFundPrice(assetCode), appProperties.getCommission().getFundRate());
-                default -> {
-                    log.warn("Unknown asset type: {}", assetType);
-                    yield null;
-                }
-            };
-        } catch (Exception e) {
-            log.warn("Failed to get sell price for {}:{} - {}", assetType, assetCode, e.getMessage());
-            return null;
-        }
+        return dispatch(sellPriceLookups, assetType, assetCode, "sell price", null);
     }
 
     @Override
     public AssetMeta getAssetMeta(String assetType, String assetCode) {
-        try {
-            return switch (assetType) {
-                case "CRYPTO" -> {
-                    Crypto c = cryptoCacheService.getSnapshot(assetCode);
-                    yield c != null
-                            ? new AssetMeta(resolveAssetName(c), c.getImage())
-                            : new AssetMeta(null, null);
-                }
-                case "STOCK" -> {
-                    Stock s = stockCacheService.getSnapshot(assetCode);
-                    yield s != null ? new AssetMeta(resolveAssetName(s), null) : new AssetMeta(null, null);
-                }
-                case "FOREX" -> {
-                    Forex f = forexCacheService.getSnapshot(assetCode);
-                    yield f != null ? new AssetMeta(resolveAssetName(f), null) : new AssetMeta(null, null);
-                }
-                case "FUND" -> {
-                    Fund fd = fundCacheService.getSnapshot(assetCode);
-                    yield fd != null ? new AssetMeta(resolveAssetName(fd), null) : new AssetMeta(null, null);
-                }
-                default -> new AssetMeta(null, null);
-            };
-        } catch (Exception e) {
-            log.warn("Failed to get metadata for {}:{} - {}", assetType, assetCode, e.getMessage());
-            return new AssetMeta(null, null);
+        return dispatch(metaLookups, assetType, assetCode, "metadata", EMPTY_META);
+    }
+
+    private <T> T dispatch(Map<String, Function<String, T>> lookups, String assetType, String assetCode, String label, T fallback) {
+        Function<String, T> fn = lookups.get(assetType);
+        if (fn == null) {
+            log.warn("Unknown asset type: {}", assetType);
+            return fallback;
         }
+        try {
+            return fn.apply(assetCode);
+        } catch (Exception e) {
+            log.warn("Failed to get {} for {}:{} - {}", label, assetType, assetCode, e.getMessage());
+            return fallback;
+        }
+    }
+
+    private AssetMeta cryptoMeta(Crypto crypto) {
+        return crypto != null ? new AssetMeta(resolveAssetName(crypto), crypto.getImage()) : EMPTY_META;
+    }
+
+    private AssetMeta baseMeta(BaseAsset asset) {
+        return asset != null ? new AssetMeta(resolveAssetName(asset), null) : EMPTY_META;
     }
 
     private BigDecimal getCryptoPrice(String assetCode) {

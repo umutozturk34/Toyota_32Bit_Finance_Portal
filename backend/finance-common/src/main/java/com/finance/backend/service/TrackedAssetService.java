@@ -1,6 +1,5 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.backend.dto.request.TrackedAssetOrderItemRequest;
 import com.finance.backend.dto.response.TrackedAssetResponse;
@@ -15,19 +14,16 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Log4j2
 @Service
 @RequiredArgsConstructor
 public class TrackedAssetService {
-    private final AppProperties appProperties;
     private final TrackedAssetRepository trackedAssetRepository;
     private final TrackedAssetMapper trackedAssetMapper;
-    private final Map<TrackedAssetType, CachedCodeList> activeCodeCache = new ConcurrentHashMap<>();
+    private final TrackedAssetCodeCache codeCache;
 
     @Transactional(readOnly = true)
     public List<TrackedAssetResponse> getTrackedAssets(TrackedAssetType type, boolean includeDisabled) {
@@ -106,19 +102,7 @@ public class TrackedAssetService {
 
     @Transactional(readOnly = true)
     public List<String> getEnabledCodes(TrackedAssetType type) {
-        CachedCodeList cached = activeCodeCache.get(type);
-        if (cached != null && cached.expiresAt().isAfter(Instant.now())) {
-            return cached.codes();
-        }
-
-        List<String> codes = trackedAssetRepository.findByAssetTypeAndEnabledTrueOrderBySortOrderAscAssetCodeAsc(type)
-                .stream()
-                .map(TrackedAsset::getAssetCode)
-                .toList();
-        activeCodeCache.put(type, new CachedCodeList(
-                codes,
-                Instant.now().plusSeconds(appProperties.getTrackedAsset().getCodeCacheTtlSeconds())));
-        return codes;
+        return codeCache.get(type);
     }
 
     @Transactional(readOnly = true)
@@ -223,9 +207,6 @@ public class TrackedAssetService {
     }
 
     private void invalidate(TrackedAssetType type) {
-        activeCodeCache.remove(type);
-    }
-
-    private record CachedCodeList(List<String> codes, Instant expiresAt) {
+        codeCache.invalidate(type);
     }
 }

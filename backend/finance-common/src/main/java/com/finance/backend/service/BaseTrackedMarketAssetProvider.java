@@ -1,0 +1,117 @@
+package com.finance.backend.service;
+
+import com.finance.backend.dto.response.MarketAssetResponse;
+import com.finance.backend.model.BaseAsset;
+import com.finance.backend.model.TrackedAssetType;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static com.finance.backend.service.MarketProviderHelper.applyDisplayNames;
+import static com.finance.backend.service.MarketProviderHelper.buildSort;
+
+public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implements MarketAssetProvider {
+
+    private final JpaSpecificationExecutor<T> repository;
+    private final TrackedAssetService trackedAssetService;
+
+    protected BaseTrackedMarketAssetProvider(JpaSpecificationExecutor<T> repository,
+                                             TrackedAssetService trackedAssetService) {
+        this.repository = repository;
+        this.trackedAssetService = trackedAssetService;
+    }
+
+    protected abstract TrackedAssetType trackedAssetType();
+
+    protected abstract String codeField();
+
+    protected abstract List<String> searchFields();
+
+    protected abstract String changePercentField();
+
+    protected abstract Map<String, String> sortFields();
+
+    protected abstract T getSnapshotByCode(String code);
+
+    protected abstract List<MarketAssetResponse> mapToResponses(List<T> entities);
+
+    protected Specification<T> applyCustomFilters(Specification<T> spec, Map<String, String> filters) {
+        return spec;
+    }
+
+    @Override
+    public MarketAssetResponse getByCode(String code) {
+        T snapshot = getSnapshotByCode(code);
+        if (snapshot == null) return null;
+        return withDisplayNames(mapToResponses(List.of(snapshot))).stream().findFirst().orElse(null);
+    }
+
+    @Override
+    public List<MarketAssetResponse> search(String searchTerm, Map<String, String> filters,
+                                            String sortBy, String direction, int page, int size) {
+        Set<String> enabledCodes = enabledCodes();
+        Specification<T> spec = applyCustomFilters(buildSearchSpec(searchTerm, enabledCodes), filters);
+        List<T> entities = repository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, sortFields()))).getContent();
+        return withDisplayNames(mapToResponses(entities));
+    }
+
+    @Override
+    public List<MarketAssetResponse> getTopMovers(int limit, boolean gainers) {
+        Set<String> enabledCodes = enabledCodes();
+        Specification<T> spec = enabledCodesSpec(enabledCodes).and(nonNullChangePercent());
+        Sort sort = gainers
+                ? Sort.by(Sort.Direction.DESC, changePercentField())
+                : Sort.by(Sort.Direction.ASC, changePercentField());
+        List<T> entities = repository.findAll(spec, PageRequest.of(0, limit, sort)).getContent();
+        return withDisplayNames(mapToResponses(entities));
+    }
+
+    @Override
+    public long count(Map<String, String> filters) {
+        Set<String> enabledCodes = enabledCodes();
+        Specification<T> spec = applyCustomFilters(enabledCodesSpec(enabledCodes), filters);
+        return repository.count(spec);
+    }
+
+    @Override
+    public long countBySearch(String searchTerm, Map<String, String> filters) {
+        Set<String> enabledCodes = enabledCodes();
+        Specification<T> spec = applyCustomFilters(buildSearchSpec(searchTerm, enabledCodes), filters);
+        return repository.count(spec);
+    }
+
+    private Set<String> enabledCodes() {
+        return new HashSet<>(trackedAssetService.getEnabledCodes(trackedAssetType()));
+    }
+
+    private Specification<T> buildSearchSpec(String searchTerm, Set<String> enabledCodes) {
+        Specification<T> spec = enabledCodesSpec(enabledCodes);
+        if (searchTerm == null || searchTerm.isBlank()) return spec;
+        String pattern = "%" + searchTerm.toLowerCase() + "%";
+        List<String> fields = searchFields();
+        return spec.and((root, query, cb) -> {
+            var predicates = fields.stream()
+                    .map(field -> cb.like(cb.lower(root.get(field)), pattern))
+                    .toArray(jakarta.persistence.criteria.Predicate[]::new);
+            return cb.or(predicates);
+        });
+    }
+
+    private Specification<T> enabledCodesSpec(Set<String> enabledCodes) {
+        return (root, query, cb) -> root.get(codeField()).in(enabledCodes);
+    }
+
+    private Specification<T> nonNullChangePercent() {
+        return (root, query, cb) -> cb.isNotNull(root.get(changePercentField()));
+    }
+
+    private List<MarketAssetResponse> withDisplayNames(List<MarketAssetResponse> responses) {
+        return applyDisplayNames(responses, trackedAssetService.getEnabledDisplayNameMap(trackedAssetType()));
+    }
+}

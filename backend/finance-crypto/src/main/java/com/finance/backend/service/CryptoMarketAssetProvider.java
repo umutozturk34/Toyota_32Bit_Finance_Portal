@@ -7,25 +7,15 @@ import com.finance.backend.model.CryptoCandle;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.CryptoRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import static com.finance.backend.service.MarketProviderHelper.applyDisplayNames;
-import static com.finance.backend.service.MarketProviderHelper.buildSort;
 
 @Log4j2
 @Service
-@RequiredArgsConstructor
-public class CryptoMarketAssetProvider implements MarketAssetProvider {
+public class CryptoMarketAssetProvider extends BaseTrackedMarketAssetProvider<Crypto> {
 
     private static final Map<String, String> SORT_FIELDS = Map.of(
             "price", "currentPriceTry",
@@ -33,11 +23,19 @@ public class CryptoMarketAssetProvider implements MarketAssetProvider {
             "name", "name",
             "default", "changePercent"
     );
+    private static final List<String> SEARCH_FIELDS = List.of("id", "name", "symbol");
 
-    private final CryptoRepository cryptoRepository;
     private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
     private final CryptoResponseMapper cryptoResponseMapper;
-    private final TrackedAssetService trackedAssetService;
+
+    public CryptoMarketAssetProvider(CryptoRepository cryptoRepository,
+                                     MarketCacheService<Crypto, CryptoCandle> cryptoCacheService,
+                                     CryptoResponseMapper cryptoResponseMapper,
+                                     TrackedAssetService trackedAssetService) {
+        super(cryptoRepository, trackedAssetService);
+        this.cryptoCacheService = cryptoCacheService;
+        this.cryptoResponseMapper = cryptoResponseMapper;
+    }
 
     @Override
     public MarketType getType() {
@@ -45,68 +43,37 @@ public class CryptoMarketAssetProvider implements MarketAssetProvider {
     }
 
     @Override
-    public MarketAssetResponse getByCode(String code) {
-        Crypto crypto = cryptoCacheService.getSnapshot(code);
-        if (crypto == null) return null;
-        return withDisplayNames(cryptoResponseMapper.toMarketAssetResponses(List.of(crypto))).stream().findFirst().orElse(null);
+    protected TrackedAssetType trackedAssetType() {
+        return TrackedAssetType.CRYPTO;
     }
 
     @Override
-    public List<MarketAssetResponse> search(String searchTerm, Map<String, String> filters, String sortBy, String direction, int page, int size) {
-        Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.CRYPTO));
-        Specification<Crypto> spec = buildSpecification(searchTerm, enabledCodes);
-
-        List<Crypto> cryptos = cryptoRepository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS))).getContent();
-        return withDisplayNames(cryptoResponseMapper.toMarketAssetResponses(cryptos));
+    protected String codeField() {
+        return "id";
     }
 
     @Override
-    public List<MarketAssetResponse> getTopMovers(int limit, boolean gainers) {
-        Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.CRYPTO));
-        Specification<Crypto> spec = enabledCodesSpec(enabledCodes)
-                .and(nonNullChangePercent());
-
-        Sort sort = gainers
-                ? Sort.by(Sort.Direction.DESC, "changePercent")
-                : Sort.by(Sort.Direction.ASC, "changePercent");
-
-        List<Crypto> cryptos = cryptoRepository.findAll(spec, PageRequest.of(0, limit, sort)).getContent();
-        return withDisplayNames(cryptoResponseMapper.toMarketAssetResponses(cryptos));
+    protected List<String> searchFields() {
+        return SEARCH_FIELDS;
     }
 
     @Override
-    public long count(Map<String, String> filters) {
-        Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.CRYPTO));
-        return cryptoRepository.count(enabledCodesSpec(enabledCodes));
+    protected String changePercentField() {
+        return "changePercent";
     }
 
     @Override
-    public long countBySearch(String searchTerm, Map<String, String> filters) {
-        Set<String> enabledCodes = new HashSet<>(trackedAssetService.getEnabledCodes(TrackedAssetType.CRYPTO));
-        return cryptoRepository.count(buildSpecification(searchTerm, enabledCodes));
+    protected Map<String, String> sortFields() {
+        return SORT_FIELDS;
     }
 
-    private Specification<Crypto> buildSpecification(String searchTerm, Set<String> enabledCodes) {
-        Specification<Crypto> spec = enabledCodesSpec(enabledCodes);
-        if (searchTerm != null && !searchTerm.isBlank()) {
-            String pattern = "%" + searchTerm.toLowerCase() + "%";
-            spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("id")), pattern),
-                    cb.like(cb.lower(root.get("name")), pattern),
-                    cb.like(cb.lower(root.get("symbol")), pattern)));
-        }
-        return spec;
+    @Override
+    protected Crypto getSnapshotByCode(String code) {
+        return cryptoCacheService.getSnapshot(code);
     }
 
-    private Specification<Crypto> enabledCodesSpec(Set<String> enabledCodes) {
-        return (root, query, cb) -> root.get("id").in(enabledCodes);
-    }
-
-    private Specification<Crypto> nonNullChangePercent() {
-        return (root, query, cb) -> cb.isNotNull(root.get("changePercent"));
-    }
-
-    private List<MarketAssetResponse> withDisplayNames(List<MarketAssetResponse> responses) {
-        return applyDisplayNames(responses, trackedAssetService.getEnabledDisplayNameMap(TrackedAssetType.CRYPTO));
+    @Override
+    protected List<MarketAssetResponse> mapToResponses(List<Crypto> entities) {
+        return cryptoResponseMapper.toMarketAssetResponses(entities);
     }
 }

@@ -24,25 +24,17 @@ import java.util.stream.Stream;
 public class UnifiedMarketService implements MarketUpdatePort {
 
     private final Map<MarketType, MarketAssetProvider> providers;
+    private final Map<MarketType, MarketHistoryProvider> historyProviders;
     private final TopMoversRedisService topMoversRedisService;
-    private final StockQueryService stockQueryService;
-    private final CryptoQueryService cryptoQueryService;
-    private final FundQueryService fundQueryService;
-    private final ForexQueryService forexQueryService;
 
     public UnifiedMarketService(List<MarketAssetProvider> providerList,
-                                TopMoversRedisService topMoversRedisService,
-                                StockQueryService stockQueryService,
-                                CryptoQueryService cryptoQueryService,
-                                FundQueryService fundQueryService,
-                                ForexQueryService forexQueryService) {
+                                List<MarketHistoryProvider> historyProviderList,
+                                TopMoversRedisService topMoversRedisService) {
         this.providers = new EnumMap<>(MarketType.class);
         providerList.forEach(p -> this.providers.put(p.getType(), p));
+        this.historyProviders = new EnumMap<>(MarketType.class);
+        historyProviderList.forEach(p -> this.historyProviders.put(p.getMarketType(), p));
         this.topMoversRedisService = topMoversRedisService;
-        this.stockQueryService = stockQueryService;
-        this.cryptoQueryService = cryptoQueryService;
-        this.fundQueryService = fundQueryService;
-        this.forexQueryService = forexQueryService;
     }
 
     public PagedResponse<MarketAssetResponse> search(List<MarketType> types, String code,
@@ -141,12 +133,11 @@ public class UnifiedMarketService implements MarketUpdatePort {
     }
 
     public List<?> getHistory(MarketType type, String code, CandlePeriod period) {
-        return switch (type) {
-            case STOCK -> stockQueryService.getStockHistory(code, period);
-            case CRYPTO -> cryptoQueryService.getCryptoHistory(code, period);
-            case FUND -> fundQueryService.getFundHistory(code, period);
-            case FOREX -> forexQueryService.getForexHistory(code, period);
-        };
+        MarketHistoryProvider provider = historyProviders.get(type);
+        if (provider == null) {
+            throw new ResourceNotFoundException("No history provider registered for " + type);
+        }
+        return provider.getHistory(code, period);
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.finance.backend.service;
 import com.finance.backend.dto.response.CandleResponse;
 import com.finance.backend.mapper.StockResponseMapper;
 import com.finance.backend.model.CandlePeriod;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
 import com.finance.backend.model.TrackedAssetType;
@@ -17,14 +18,20 @@ import java.util.List;
 @Log4j2
 @Service
 @RequiredArgsConstructor
-public class StockQueryService {
+public class StockQueryService implements MarketHistoryProvider {
 
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
     private final StockCandleRepository stockCandleRepository;
     private final StockResponseMapper stockResponseMapper;
     private final TrackedAssetService trackedAssetService;
 
-    public List<CandleResponse> getStockHistory(String symbol, CandlePeriod period) {
+    @Override
+    public MarketType getMarketType() {
+        return MarketType.STOCK;
+    }
+
+    @Override
+    public List<CandleResponse> getHistory(String symbol, CandlePeriod period) {
         String normalizedCode = trackedAssetService.resolveEnabledCodeOrThrow(TrackedAssetType.STOCK, symbol);
         if (period == CandlePeriod.ALL) {
             return stockResponseMapper.toStockCandleResponses(stockCacheService.getHistory(normalizedCode));

@@ -82,7 +82,7 @@ public class TrackedAssetService {
 
     @Transactional(readOnly = true)
     public Optional<TrackedAssetResponse> getTrackedAsset(TrackedAssetType type, String assetCode) {
-        String normalizedCode = normalizeCode(type, assetCode);
+        String normalizedCode = type.normalizeCode(assetCode);
         return trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
             .map(trackedAssetMapper::toResponse);
     }
@@ -94,7 +94,7 @@ public class TrackedAssetService {
 
     @Transactional(readOnly = true)
     public String resolveEnabledCodeOrThrow(TrackedAssetType type, String assetCode) {
-        String normalizedCode = normalizeCode(type, assetCode);
+        String normalizedCode = type.normalizeCode(assetCode);
         boolean enabled = trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
                 .map(TrackedAsset::isEnabled)
                 .orElse(false);
@@ -139,7 +139,7 @@ public class TrackedAssetService {
     @Transactional
     public TrackedAssetResponse upsert(TrackedAssetUpsertCommand command) {
         TrackedAssetType type = command.getAssetType();
-        String normalizedCode = normalizeCode(type, command.getAssetCode());
+        String normalizedCode = type.normalizeCode(command.getAssetCode());
 
         TrackedAsset entity = trackedAssetRepository
                 .findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
@@ -148,14 +148,14 @@ public class TrackedAssetService {
                         .assetCode(normalizedCode)
                         .build());
 
-        entity.setDisplayName(resolveDisplayName(normalizedCode, command.getDisplayName(), entity.getDisplayName()));
-        entity.setBinanceSymbol(resolveBinanceSymbol(type, command.getBinanceSymbol()));
+        entity.setDisplayName(resolveDisplayName(command.getDisplayName(), entity.getDisplayName()));
+        entity.setBinanceSymbol(type.resolveBinanceSymbol(command.getBinanceSymbol()));
         entity.setEnabled(command.getEnabled() == null || command.getEnabled());
         entity.setSortOrder(command.getSortOrder() == null ? 0 : command.getSortOrder());
-        StockSegment resolvedSegment = resolveStockSegment(type, command.getStockSegment(), entity.getStockSegment());
+        StockSegment resolvedSegment = type.resolveSegment(command.getStockSegment(), entity.getStockSegment());
         entity.setStockSegment(resolvedSegment);
-        entity.setIndexAsset(resolveIndexAsset(type, resolvedSegment, command.getIndexAsset(), entity.isIndexAsset()));
-        entity.setCompareOnly(resolveCompareOnly(type, resolvedSegment, command.getCompareOnly(), entity.isCompareOnly()));
+        entity.setIndexAsset(type.resolveIndexAsset(resolvedSegment, command.getIndexAsset(), entity.isIndexAsset()));
+        entity.setCompareOnly(type.resolveCompareOnly(resolvedSegment, command.getCompareOnly(), entity.isCompareOnly()));
 
         TrackedAsset saved = trackedAssetRepository.save(entity);
         invalidate(type);
@@ -164,7 +164,7 @@ public class TrackedAssetService {
 
     @Transactional
     public void setEnabled(TrackedAssetType type, String assetCode, boolean enabled) {
-        String normalizedCode = normalizeCode(type, assetCode);
+        String normalizedCode = type.normalizeCode(assetCode);
         TrackedAsset entity = trackedAssetRepository
                 .findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Tracked asset not found: " + type + " / " + normalizedCode));
@@ -175,7 +175,7 @@ public class TrackedAssetService {
 
     @Transactional
     public void delete(TrackedAssetType type, String assetCode) {
-        String normalizedCode = normalizeCode(type, assetCode);
+        String normalizedCode = type.normalizeCode(assetCode);
         TrackedAsset entity = trackedAssetRepository
                 .findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Tracked asset not found: " + type + " / " + normalizedCode));
@@ -191,7 +191,7 @@ public class TrackedAssetService {
 
         List<TrackedAsset> entitiesToUpdate = new ArrayList<>();
         for (TrackedAssetOrderItemRequest item : items) {
-            String normalizedCode = normalizeCode(type, item.getAssetCode());
+            String normalizedCode = type.normalizeCode(item.getAssetCode());
             TrackedAsset entity = trackedAssetRepository
                     .findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
                     .orElseThrow(() -> new ResourceNotFoundException("Tracked asset not found: " + type + " / " + normalizedCode));
@@ -205,27 +205,14 @@ public class TrackedAssetService {
 
     @Transactional(readOnly = true)
     public Optional<String> getCryptoBinanceSymbol(String coinGeckoId) {
-        String normalizedCode = normalizeCode(TrackedAssetType.CRYPTO, coinGeckoId);
+        String normalizedCode = TrackedAssetType.CRYPTO.normalizeCode(coinGeckoId);
         return trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType.CRYPTO, normalizedCode)
                 .map(TrackedAsset::getBinanceSymbol)
                 .map(String::trim)
                 .filter(symbol -> !symbol.isEmpty());
     }
 
-    private StockSegment resolveStockSegment(TrackedAssetType type, StockSegment requestedSegment, StockSegment existingSegment) {
-        if (type != TrackedAssetType.STOCK) {
-            return null;
-        }
-        if (requestedSegment != null) {
-            return requestedSegment;
-        }
-        if (existingSegment != null) {
-            return existingSegment;
-        }
-        return StockSegment.EQUITY;
-    }
-
-    private String resolveDisplayName(String normalizedCode, String requestedDisplayName, String existingDisplayName) {
+    private String resolveDisplayName(String requestedDisplayName, String existingDisplayName) {
         if (requestedDisplayName == null) {
             return existingDisplayName;
         }
@@ -233,59 +220,6 @@ public class TrackedAssetService {
             return null;
         }
         return requestedDisplayName.trim();
-    }
-
-    private boolean resolveIndexAsset(TrackedAssetType type,
-                                      StockSegment resolvedSegment,
-                                      Boolean requested,
-                                      boolean existing) {
-        if (type != TrackedAssetType.STOCK) {
-            return false;
-        }
-        if (requested != null) {
-            return requested;
-        }
-        if (resolvedSegment != null && resolvedSegment != StockSegment.EQUITY) {
-            return true;
-        }
-        return existing;
-    }
-
-    private boolean resolveCompareOnly(TrackedAssetType type,
-                                       StockSegment resolvedSegment,
-                                       Boolean requested,
-                                       boolean existing) {
-        if (type != TrackedAssetType.STOCK) {
-            return false;
-        }
-        if (requested != null) {
-            return requested;
-        }
-        if (resolvedSegment == StockSegment.SECONDARY_INDEX) {
-            return true;
-        }
-        return existing;
-    }
-
-    private String resolveBinanceSymbol(TrackedAssetType type, String requestedBinanceSymbol) {
-        if (type != TrackedAssetType.CRYPTO) {
-            return null;
-        }
-        if (requestedBinanceSymbol == null || requestedBinanceSymbol.isBlank()) {
-            return null;
-        }
-        return requestedBinanceSymbol.trim().toUpperCase();
-    }
-
-    private String normalizeCode(TrackedAssetType type, String assetCode) {
-        String trimmed = assetCode == null ? "" : assetCode.trim();
-        if (trimmed.isEmpty()) {
-            throw new IllegalArgumentException("Asset code cannot be blank");
-        }
-        return switch (type) {
-            case CRYPTO -> trimmed.toLowerCase();
-            case STOCK, FUND -> trimmed.toUpperCase();
-        };
     }
 
     private void invalidate(TrackedAssetType type) {

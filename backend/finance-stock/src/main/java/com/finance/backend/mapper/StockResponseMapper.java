@@ -2,15 +2,14 @@ package com.finance.backend.mapper;
 
 import com.finance.backend.dto.response.CandleResponse;
 import com.finance.backend.dto.response.MarketAssetResponse;
+import com.finance.backend.dto.response.StockMetadata;
 import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Mapper(componentModel = "spring")
 public abstract class StockResponseMapper {
@@ -28,26 +27,14 @@ public abstract class StockResponseMapper {
     public abstract List<MarketAssetResponse> toMarketAssetResponses(List<Stock> stocks);
 
     @Named("stockMetadata")
-    protected Map<String, Object> buildStockMetadata(Stock stock) {
-        Map<String, Object> metadata = new HashMap<>();
-        if (stock.getStockSegment() != null) {
-            metadata.put("stockSegment", stock.getStockSegment().name());
-        }
-        if (stock.getVolume() != null) {
-            metadata.put("volume", stock.getVolume());
-        }
-        if (stock.getExchange() != null) {
-            metadata.put("exchange", stock.getExchange());
-        }
-        if (stock.getOpenPrice() != null) {
-            metadata.put("openPrice", stock.getOpenPrice());
-        }
-        if (stock.getDayHigh() != null) {
-            metadata.put("dayHigh", stock.getDayHigh());
-        }
-        if (stock.getDayLow() != null) {
-            metadata.put("dayLow", stock.getDayLow());
-        }
-        return metadata;
+    protected StockMetadata buildStockMetadata(Stock stock) {
+        return new StockMetadata(
+                stock.getStockSegment(),
+                stock.getVolume(),
+                stock.getExchange(),
+                stock.getOpenPrice(),
+                stock.getDayHigh(),
+                stock.getDayLow()
+        );
     }
 }

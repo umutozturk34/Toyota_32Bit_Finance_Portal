@@ -1,6 +1,7 @@
 package com.finance.backend.mapper;
 
 import com.finance.backend.dto.response.CandleResponse;
+import com.finance.backend.dto.response.CryptoMetadata;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.model.Crypto;
 import com.finance.backend.model.CryptoCandle;
@@ -8,9 +9,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Mapper(componentModel = "spring")
 public abstract class CryptoResponseMapper {
@@ -28,20 +27,12 @@ public abstract class CryptoResponseMapper {
     public abstract List<MarketAssetResponse> toMarketAssetResponses(List<Crypto> cryptos);
 
     @Named("cryptoMetadata")
-    protected Map<String, Object> buildCryptoMetadata(Crypto crypto) {
-        Map<String, Object> metadata = new HashMap<>();
-        if (crypto.getMarketCap() != null) {
-            metadata.put("marketCap", crypto.getMarketCap());
-        }
-        if (crypto.getTotalVolume() != null) {
-            metadata.put("totalVolume", crypto.getTotalVolume());
-        }
-        if (crypto.getSymbol() != null) {
-            metadata.put("symbol", crypto.getSymbol());
-        }
-        if (crypto.getCurrentPrice() != null) {
-            metadata.put("currentPriceUsd", crypto.getCurrentPrice());
-        }
-        return metadata;
+    protected CryptoMetadata buildCryptoMetadata(Crypto crypto) {
+        return new CryptoMetadata(
+                crypto.getMarketCap(),
+                crypto.getTotalVolume(),
+                crypto.getSymbol(),
+                crypto.getCurrentPrice()
+        );
     }
 }

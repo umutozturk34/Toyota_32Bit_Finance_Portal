@@ -2,7 +2,9 @@ package com.finance.backend.service;
 
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.dto.response.MarketOverviewResponse;
+import com.finance.backend.dto.response.StockMetadata;
 import com.finance.backend.model.MarketType;
+import com.finance.backend.model.StockSegment;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -57,7 +59,7 @@ public class MarketOverviewService {
         MarketAssetProvider stockProvider = providers.get(MarketType.STOCK);
         if (stockProvider == null) return List.of();
         return stockProvider.search(null, Map.of("segment", "MAIN_INDEX"), "changePercent", "desc", 0, 100).stream()
-                .filter(a -> a.metadata() != null && "MAIN_INDEX".equals(a.metadata().get("stockSegment")))
+                .filter(a -> a.metadata() instanceof StockMetadata sm && sm.stockSegment() == StockSegment.MAIN_INDEX)
                 .toList();
     }
 }

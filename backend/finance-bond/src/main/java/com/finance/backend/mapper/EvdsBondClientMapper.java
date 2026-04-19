@@ -106,12 +106,15 @@ public class EvdsBondClientMapper {
         }
     }
 
-    private static BigDecimal extractBigDecimal(Map<String, Object> item, String key) {
+    static BigDecimal extractBigDecimal(Map<String, Object> item, String key) {
         Object raw = item.get(key);
         if (raw == null) return null;
         try {
+            if (raw instanceof BigDecimal bd) {
+                return bd;
+            }
             if (raw instanceof Number num) {
-                return BigDecimal.valueOf(num.doubleValue());
+                return new BigDecimal(num.toString());
             }
             String str = raw.toString().trim();
             if (str.isEmpty()) return null;

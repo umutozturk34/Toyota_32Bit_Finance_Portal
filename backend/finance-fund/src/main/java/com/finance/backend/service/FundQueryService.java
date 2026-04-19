@@ -23,7 +23,7 @@ public class FundQueryService implements MarketHistoryProvider {
     private final MarketCacheService<Fund, FundCandle> fundCacheService;
     private final FundCandleRepository fundCandleRepository;
     private final FundResponseMapper fundResponseMapper;
-    private final TrackedAssetService trackedAssetService;
+    private final TrackedAssetQueryService trackedAssetQueryService;
 
     @Override
     public MarketType getMarketType() {
@@ -32,7 +32,7 @@ public class FundQueryService implements MarketHistoryProvider {
 
     @Override
     public List<FundCandleResponse> getHistory(String fundCode, CandlePeriod period) {
-        String normalizedCode = trackedAssetService.resolveEnabledCodeOrThrow(TrackedAssetType.FUND, fundCode);
+        String normalizedCode = trackedAssetQueryService.resolveEnabledCodeOrThrow(TrackedAssetType.FUND, fundCode);
         if (period == CandlePeriod.ALL) {
             return fundResponseMapper.toFundCandleResponses(fundCacheService.getHistory(normalizedCode));
         }

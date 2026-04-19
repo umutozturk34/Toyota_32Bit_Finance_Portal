@@ -19,12 +19,12 @@ import static com.finance.backend.service.MarketProviderHelper.buildSort;
 public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implements MarketAssetProvider {
 
     private final JpaSpecificationExecutor<T> repository;
-    private final TrackedAssetService trackedAssetService;
+    private final TrackedAssetQueryService trackedAssetQueryService;
 
     protected BaseTrackedMarketAssetProvider(JpaSpecificationExecutor<T> repository,
-                                             TrackedAssetService trackedAssetService) {
+                                             TrackedAssetQueryService trackedAssetQueryService) {
         this.repository = repository;
-        this.trackedAssetService = trackedAssetService;
+        this.trackedAssetQueryService = trackedAssetQueryService;
     }
 
     protected abstract TrackedAssetType trackedAssetType();
@@ -87,7 +87,7 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
     }
 
     private Set<String> enabledCodes() {
-        return new HashSet<>(trackedAssetService.getEnabledCodes(trackedAssetType()));
+        return new HashSet<>(trackedAssetQueryService.getEnabledCodes(trackedAssetType()));
     }
 
     private Specification<T> buildSearchSpec(String searchTerm, Set<String> enabledCodes) {
@@ -112,6 +112,6 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
     }
 
     private List<MarketAssetResponse> withDisplayNames(List<MarketAssetResponse> responses) {
-        return applyDisplayNames(responses, trackedAssetService.getEnabledDisplayNameMap(trackedAssetType()));
+        return applyDisplayNames(responses, trackedAssetQueryService.getEnabledDisplayNameMap(trackedAssetType()));
     }
 }

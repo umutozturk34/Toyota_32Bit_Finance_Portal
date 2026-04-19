@@ -23,7 +23,7 @@ public class StockQueryService implements MarketHistoryProvider {
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
     private final StockCandleRepository stockCandleRepository;
     private final StockResponseMapper stockResponseMapper;
-    private final TrackedAssetService trackedAssetService;
+    private final TrackedAssetQueryService trackedAssetQueryService;
 
     @Override
     public MarketType getMarketType() {
@@ -32,7 +32,7 @@ public class StockQueryService implements MarketHistoryProvider {
 
     @Override
     public List<CandleResponse> getHistory(String symbol, CandlePeriod period) {
-        String normalizedCode = trackedAssetService.resolveEnabledCodeOrThrow(TrackedAssetType.STOCK, symbol);
+        String normalizedCode = trackedAssetQueryService.resolveEnabledCodeOrThrow(TrackedAssetType.STOCK, symbol);
         if (period == CandlePeriod.ALL) {
             return stockResponseMapper.toStockCandleResponses(stockCacheService.getHistory(normalizedCode));
         }

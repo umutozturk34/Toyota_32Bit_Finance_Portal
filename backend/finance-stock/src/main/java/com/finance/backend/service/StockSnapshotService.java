@@ -30,7 +30,7 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
     private final StockMapper stockMapper;
     private final StockRepository stockRepository;
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
-    private final TrackedAssetService trackedAssetService;
+    private final TrackedAssetQueryService trackedAssetQueryService;
     private final MarketConstants marketConstants;
     private final TransactionTemplate transactionTemplate;
 
@@ -38,14 +38,14 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
                                 StockMapper stockMapper,
                                 StockRepository stockRepository,
                                 MarketCacheService<Stock, StockCandle> stockCacheService,
-                                TrackedAssetService trackedAssetService,
+                                TrackedAssetQueryService trackedAssetQueryService,
                                 MarketConstants marketConstants,
                                 PlatformTransactionManager transactionManager) {
         this.yahooStockClient = yahooStockClient;
         this.stockMapper = stockMapper;
         this.stockRepository = stockRepository;
         this.stockCacheService = stockCacheService;
-        this.trackedAssetService = trackedAssetService;
+        this.trackedAssetQueryService = trackedAssetQueryService;
         this.marketConstants = marketConstants;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
@@ -129,7 +129,7 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
     }
 
     private StockSegment resolveStockSegment(String symbol) {
-        return trackedAssetService.getTrackedAsset(TrackedAssetType.STOCK, symbol)
+        return trackedAssetQueryService.getTrackedAsset(TrackedAssetType.STOCK, symbol)
                 .map(tracked -> tracked.getStockSegment() != null
                         ? tracked.getStockSegment()
                         : StockSegment.EQUITY)

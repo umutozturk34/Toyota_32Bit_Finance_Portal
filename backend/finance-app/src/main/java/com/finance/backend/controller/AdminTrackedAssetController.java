@@ -6,7 +6,7 @@ import com.finance.backend.dto.request.UpsertTrackedAssetRequest;
 import com.finance.backend.dto.response.TrackedAssetResponse;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.service.TrackedAssetAdminService;
-import com.finance.backend.service.TrackedAssetService;
+import com.finance.backend.service.TrackedAssetQueryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +30,7 @@ import java.util.List;
 public class AdminTrackedAssetController {
 
     private final TrackedAssetAdminService trackedAssetAdminService;
-    private final TrackedAssetService trackedAssetService;
+    private final TrackedAssetQueryService trackedAssetQueryService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TrackedAssetResponse>>> getTrackedAssets(
@@ -41,7 +41,7 @@ public class AdminTrackedAssetController {
             @RequestParam(defaultValue = "false") boolean includeDisabled
     ) {
         List<TrackedAssetType> types = MarketRequestHelper.parseTrackedTypes(type);
-        List<TrackedAssetResponse> data = trackedAssetService.searchTrackedAssets(
+        List<TrackedAssetResponse> data = trackedAssetQueryService.searchTrackedAssets(
                 types, includeDisabled, search, sort, direction);
         return ResponseEntity.ok(ApiResponse.success("Tracked assets retrieved successfully", data));
     }

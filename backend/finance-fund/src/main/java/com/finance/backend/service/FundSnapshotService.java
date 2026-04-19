@@ -38,7 +38,8 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
     private final FundMapper fundMapper;
     private final FundRepository fundRepository;
     private final MarketCacheService<Fund, FundCandle> fundCacheService;
-    private final TrackedAssetService trackedAssetService;
+    private final TrackedAssetQueryService trackedAssetQueryService;
+    private final TrackedAssetCommandService trackedAssetCommandService;
     private final MarketConstants marketConstants;
     private final FundChangeCalculator fundChangeCalculator;
     private final TransactionTemplate transactionTemplate;
@@ -48,7 +49,8 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
                                FundMapper fundMapper,
                                FundRepository fundRepository,
                                MarketCacheService<Fund, FundCandle> fundCacheService,
-                               TrackedAssetService trackedAssetService,
+                               TrackedAssetQueryService trackedAssetQueryService,
+                               TrackedAssetCommandService trackedAssetCommandService,
                                MarketConstants marketConstants,
                                FundChangeCalculator fundChangeCalculator,
                                PlatformTransactionManager transactionManager,
@@ -57,7 +59,8 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         this.fundMapper = fundMapper;
         this.fundRepository = fundRepository;
         this.fundCacheService = fundCacheService;
-        this.trackedAssetService = trackedAssetService;
+        this.trackedAssetQueryService = trackedAssetQueryService;
+        this.trackedAssetCommandService = trackedAssetCommandService;
         this.marketConstants = marketConstants;
         this.fundChangeCalculator = fundChangeCalculator;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
@@ -204,11 +207,11 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
     }
 
     private void ensureByfTracked(String fundCode, String tefasName) {
-        if (trackedAssetService.getTrackedAsset(TrackedAssetType.FUND, fundCode).isPresent()) {
+        if (trackedAssetQueryService.getTrackedAsset(TrackedAssetType.FUND, fundCode).isPresent()) {
             return;
         }
 
-        trackedAssetService.upsert(TrackedAssetUpsertCommand.builder()
+        trackedAssetCommandService.upsert(TrackedAssetUpsertCommand.builder()
             .assetType(TrackedAssetType.FUND)
             .assetCode(fundCode)
             .displayName(tefasName)

@@ -31,8 +31,8 @@ public class CryptoMarketAssetProvider extends BaseTrackedMarketAssetProvider<Cr
     public CryptoMarketAssetProvider(CryptoRepository cryptoRepository,
                                      MarketCacheService<Crypto, CryptoCandle> cryptoCacheService,
                                      CryptoResponseMapper cryptoResponseMapper,
-                                     TrackedAssetService trackedAssetService) {
-        super(cryptoRepository, trackedAssetService);
+                                     TrackedAssetQueryService trackedAssetQueryService) {
+        super(cryptoRepository, trackedAssetQueryService);
         this.cryptoCacheService = cryptoCacheService;
         this.cryptoResponseMapper = cryptoResponseMapper;
     }

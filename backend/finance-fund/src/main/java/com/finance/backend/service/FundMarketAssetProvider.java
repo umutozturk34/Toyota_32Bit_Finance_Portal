@@ -33,8 +33,8 @@ public class FundMarketAssetProvider extends BaseTrackedMarketAssetProvider<Fund
     public FundMarketAssetProvider(FundRepository fundRepository,
                                    MarketCacheService<Fund, FundCandle> fundCacheService,
                                    FundResponseMapper fundResponseMapper,
-                                   TrackedAssetService trackedAssetService) {
-        super(fundRepository, trackedAssetService);
+                                   TrackedAssetQueryService trackedAssetQueryService) {
+        super(fundRepository, trackedAssetQueryService);
         this.fundRepository = fundRepository;
         this.fundCacheService = fundCacheService;
         this.fundResponseMapper = fundResponseMapper;

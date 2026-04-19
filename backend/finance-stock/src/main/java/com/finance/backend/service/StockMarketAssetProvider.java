@@ -34,8 +34,8 @@ public class StockMarketAssetProvider extends BaseTrackedMarketAssetProvider<Sto
     public StockMarketAssetProvider(StockRepository stockRepository,
                                     MarketCacheService<Stock, StockCandle> stockCacheService,
                                     StockResponseMapper stockResponseMapper,
-                                    TrackedAssetService trackedAssetService) {
-        super(stockRepository, trackedAssetService);
+                                    TrackedAssetQueryService trackedAssetQueryService) {
+        super(stockRepository, trackedAssetQueryService);
         this.stockRepository = stockRepository;
         this.stockCacheService = stockCacheService;
         this.stockResponseMapper = stockResponseMapper;

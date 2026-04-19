@@ -23,7 +23,7 @@ public class CryptoQueryService implements MarketHistoryProvider {
     private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
     private final CryptoCandleRepository cryptoCandleRepository;
     private final CryptoResponseMapper cryptoResponseMapper;
-    private final TrackedAssetService trackedAssetService;
+    private final TrackedAssetQueryService trackedAssetQueryService;
 
     @Override
     public MarketType getMarketType() {
@@ -32,7 +32,7 @@ public class CryptoQueryService implements MarketHistoryProvider {
 
     @Override
     public List<CandleResponse> getHistory(String id, CandlePeriod period) {
-        String normalizedCode = trackedAssetService.resolveEnabledCodeOrThrow(TrackedAssetType.CRYPTO, id);
+        String normalizedCode = trackedAssetQueryService.resolveEnabledCodeOrThrow(TrackedAssetType.CRYPTO, id);
         if (period == CandlePeriod.ALL) {
             return cryptoResponseMapper.toCryptoCandleResponses(cryptoCacheService.getHistory(normalizedCode));
         }

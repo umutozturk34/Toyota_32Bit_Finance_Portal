@@ -82,8 +82,8 @@ public class UnifiedMarketService implements MarketUpdatePort {
         if (provider == null) return;
 
         try {
-            topMoversRedisService.updateGainers(type, filterMainIndexForStock(type, provider.getTopMovers(10, true)));
-            topMoversRedisService.updateLosers(type, filterMainIndexForStock(type, provider.getTopMovers(10, false)));
+            topMoversRedisService.updateGainers(type, MarketTopMoversFilter.apply(type, provider.getTopMovers(10, true)));
+            topMoversRedisService.updateLosers(type, MarketTopMoversFilter.apply(type, provider.getTopMovers(10, false)));
 
             if (type == MarketType.STOCK) {
                 List<MarketAssetResponse> allStocks = provider.search(null, Map.of("segment", "MAIN_INDEX"), "changePercent", "desc", 0, 100);
@@ -97,13 +97,6 @@ public class UnifiedMarketService implements MarketUpdatePort {
         } catch (Exception e) {
             log.warn("Failed to update write-through cache for {}: {}", type, e.getMessage());
         }
-    }
-
-    private List<MarketAssetResponse> filterMainIndexForStock(MarketType type, List<MarketAssetResponse> items) {
-        if (type != MarketType.STOCK) return items;
-        return items.stream()
-                .filter(a -> !(a.metadata() instanceof StockMetadata sm) || sm.stockSegment() != StockSegment.MAIN_INDEX)
-                .toList();
     }
 
     private PagedResponse<MarketAssetResponse> handleSingleAssetLookup(List<MarketType> types, String code) {

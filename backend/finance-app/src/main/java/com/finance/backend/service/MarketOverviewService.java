@@ -34,8 +34,8 @@ public class MarketOverviewService {
         for (MarketType type : MarketType.values()) {
             MarketAssetProvider provider = providers.get(type);
             if (provider == null) continue;
-            gainers.computeIfAbsent(type, t -> provider.getTopMovers(limit, true));
-            losers.computeIfAbsent(type, t -> provider.getTopMovers(limit, false));
+            gainers.computeIfAbsent(type, t -> MarketTopMoversFilter.apply(t, provider.getTopMovers(limit, true)));
+            losers.computeIfAbsent(type, t -> MarketTopMoversFilter.apply(t, provider.getTopMovers(limit, false)));
         }
 
         List<MarketAssetResponse> indices = topMoversRedisService.getIndices();

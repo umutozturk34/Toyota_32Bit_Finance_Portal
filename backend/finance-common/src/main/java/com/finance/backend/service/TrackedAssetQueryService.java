@@ -11,8 +11,9 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Comparator;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,29 +43,49 @@ public class TrackedAssetQueryService {
                                                            String search,
                                                            String sortBy,
                                                            String direction) {
-        List<TrackedAsset> all = new ArrayList<>();
-        for (TrackedAssetType type : types) {
-            List<TrackedAsset> assets = includeDisabled
-                    ? trackedAssetRepository.findByAssetTypeOrderBySortOrderAscAssetCodeAsc(type)
-                    : trackedAssetRepository.findByAssetTypeAndEnabledTrueOrderBySortOrderAscAssetCodeAsc(type);
-            all.addAll(assets);
+        if (types == null || types.isEmpty()) {
+            return List.of();
         }
+        Specification<TrackedAsset> spec = buildSearchSpecification(types, includeDisabled, search);
+        Sort sort = buildSort(sortBy, direction);
+        return trackedAssetRepository.findAll(spec, sort).stream()
+                .map(trackedAssetMapper::toResponse)
+                .toList();
+    }
 
+    private Specification<TrackedAsset> buildSearchSpecification(List<TrackedAssetType> types,
+                                                                  boolean includeDisabled,
+                                                                  String search) {
+        Specification<TrackedAsset> spec = (root, query, cb) -> root.get("assetType").in(types);
+        if (!includeDisabled) {
+            spec = spec.and((root, query, cb) -> cb.isTrue(root.get("enabled")));
+        }
         if (search != null && !search.isBlank()) {
-            String lower = search.toLowerCase();
-            all = all.stream()
-                    .filter(a -> a.getAssetCode().toLowerCase().contains(lower)
-                            || (a.getDisplayName() != null && a.getDisplayName().toLowerCase().contains(lower)))
-                    .toList();
+            String pattern = "%" + search.toLowerCase() + "%";
+            spec = spec.and((root, query, cb) -> cb.or(
+                    cb.like(cb.lower(root.get("assetCode")), pattern),
+                    cb.like(cb.lower(root.get("displayName")), pattern)));
         }
+        return spec;
+    }
 
-        Comparator<TrackedAsset> comparator = buildTrackedAssetComparator(sortBy);
-        if ("desc".equalsIgnoreCase(direction)) {
-            comparator = comparator.reversed();
-        }
-        all = all.stream().sorted(comparator).toList();
+    private Sort buildSort(String sortBy, String direction) {
+        boolean desc = "desc".equalsIgnoreCase(direction);
+        return switch (sortBy != null ? sortBy : "sortOrder") {
+            case "assetCode" -> Sort.by(order("assetCode", desc));
+            case "displayName" -> Sort.by(withNaturalNulls(order("displayName", desc), desc));
+            default -> Sort.by(
+                    withNaturalNulls(order("sortOrder", desc), desc),
+                    order("assetCode", desc));
+        };
+    }
 
-        return all.stream().map(trackedAssetMapper::toResponse).toList();
+    private Sort.Order order(String property, boolean desc) {
+        return desc ? Sort.Order.desc(property) : Sort.Order.asc(property);
+    }
+
+    private Sort.Order withNaturalNulls(Sort.Order o, boolean desc) {
+        return desc ? o.nullsFirst() : o.nullsLast();
     }
 
     public Optional<TrackedAssetResponse> getTrackedAsset(TrackedAssetType type, String assetCode) {
@@ -112,13 +133,4 @@ public class TrackedAssetQueryService {
                 .filter(symbol -> !symbol.isEmpty());
     }
 
-    private Comparator<TrackedAsset> buildTrackedAssetComparator(String sortBy) {
-        return switch (sortBy != null ? sortBy : "sortOrder") {
-            case "assetCode" -> Comparator.comparing(TrackedAsset::getAssetCode);
-            case "displayName" -> Comparator.comparing(
-                    TrackedAsset::getDisplayName, Comparator.nullsLast(Comparator.naturalOrder()));
-            default -> Comparator.comparing(TrackedAsset::getSortOrder, Comparator.nullsLast(Comparator.naturalOrder()))
-                    .thenComparing(TrackedAsset::getAssetCode);
-        };
-    }
 }

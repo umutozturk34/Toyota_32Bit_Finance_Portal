@@ -7,8 +7,10 @@ import com.finance.backend.dto.response.PerformancePoint;
 import com.finance.backend.mapper.PortfolioSnapshotMapper;
 import com.finance.backend.util.EnumParser;
 import com.finance.backend.model.AssetType;
+import com.finance.backend.model.PerformanceEventType;
 import com.finance.backend.model.PortfolioAssetDailySnapshot;
 import com.finance.backend.model.PortfolioDailySnapshot;
+import com.finance.backend.model.PortfolioRange;
 import com.finance.backend.model.PortfolioTransaction;
 import com.finance.backend.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.backend.repository.PortfolioDailySnapshotRepository;
@@ -37,7 +39,7 @@ public class PortfolioPerformanceService {
     @Transactional(readOnly = true)
     public List<PerformancePoint> getPerformance(Long portfolioId, String range, String assetType) {
         LocalDateTime end = LocalDateTime.now();
-        LocalDateTime start = resolveStartDateTime(end, range);
+        LocalDateTime start = PortfolioRange.fromCode(range).toStartDateTime(end);
 
         AssetType filterType = EnumParser.parseNullable(AssetType.class, assetType, "asset type");
         if (filterType != null) {
@@ -50,7 +52,7 @@ public class PortfolioPerformanceService {
     public List<AssetSeriesPoint> getAssetSeries(Long portfolioId,
                                                   String assetType, String assetCode, String range) {
         LocalDateTime end = LocalDateTime.now();
-        LocalDateTime start = resolveStartDateTime(end, range);
+        LocalDateTime start = PortfolioRange.fromCode(range).toStartDateTime(end);
 
         AssetType type = EnumParser.parseOrBadRequest(AssetType.class, assetType, "asset type");
 
@@ -172,7 +174,7 @@ public class PortfolioPerformanceService {
         if (!matched.isEmpty()) {
             for (PortfolioTransaction tx : matched) {
                 events.add(new PerformanceEvent(
-                        tx.getSide().name(),
+                        PerformanceEventType.fromTransactionSide(tx.getSide()),
                         tx.getAssetType().name(),
                         tx.getAssetCode(),
                         tx.getTotalCostTry()));
@@ -188,23 +190,12 @@ public class PortfolioPerformanceService {
                 BigDecimal diff = curr.subtract(prev);
                 if (diff.compareTo(BigDecimal.ZERO) != 0) {
                     events.add(new PerformanceEvent(
-                            diff.compareTo(BigDecimal.ZERO) > 0 ? "MARKET_UP" : "MARKET_DOWN",
+                            diff.compareTo(BigDecimal.ZERO) > 0 ? PerformanceEventType.MARKET_UP : PerformanceEventType.MARKET_DOWN,
                             key, null, diff.abs()));
                 }
             }
         }
 
         return events;
-    }
-
-    private LocalDateTime resolveStartDateTime(LocalDateTime end, String range) {
-        return switch (range) {
-            case "1M" -> end.minusMonths(1);
-            case "3M" -> end.minusMonths(3);
-            case "6M" -> end.minusMonths(6);
-            case "1Y" -> end.minusYears(1);
-            case "ALL" -> end.minusYears(10);
-            default -> end.minusMonths(1);
-        };
     }
 }

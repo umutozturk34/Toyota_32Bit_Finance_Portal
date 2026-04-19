@@ -1,6 +1,5 @@
 package com.finance.backend.service;
 import com.finance.backend.dto.response.MarketAssetResponse;
-import com.finance.backend.dto.response.MarketOverviewResponse;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.model.CandlePeriod;
 import com.finance.backend.exception.ResourceNotFoundException;
@@ -13,11 +12,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
 
 @Log4j2
 @Service
@@ -63,69 +59,6 @@ public class UnifiedMarketService implements MarketUpdatePort {
         return PagedResponse.of(applySort(filtered, sort, direction), page, size, total);
     }
 
-    public MarketOverviewResponse getOverview(int limit) {
-        Map<MarketType, List<MarketAssetResponse>> cached = topMoversRedisService.getAllMovers();
-
-        List<MarketAssetResponse> allMovers = new ArrayList<>(cached.values().stream()
-                .flatMap(List::stream)
-                .toList());
-
-        Set<String> seenCodes = new HashSet<>(allMovers.stream().map(MarketAssetResponse::code).toList());
-        for (MarketType type : MarketType.values()) {
-            if (!cached.containsKey(type)) {
-                MarketAssetProvider provider = providers.get(type);
-                if (provider != null) {
-                    for (MarketAssetResponse a : provider.getTopMovers(limit, true)) {
-                        if (seenCodes.add(a.code())) allMovers.add(a);
-                    }
-                    for (MarketAssetResponse a : provider.getTopMovers(limit, false)) {
-                        if (seenCodes.add(a.code())) allMovers.add(a);
-                    }
-                }
-            }
-        }
-
-        List<MarketAssetResponse> indices = topMoversRedisService.getIndices();
-        if (indices.isEmpty()) {
-            MarketAssetProvider stockProvider = providers.get(MarketType.STOCK);
-            if (stockProvider != null) {
-                indices = stockProvider.search(null, Map.of("segment", "MAIN_INDEX"), "changePercent", "desc", 0, 100).stream()
-                        .filter(a -> a.metadata() != null && "MAIN_INDEX".equals(a.metadata().get("stockSegment")))
-                        .toList();
-            }
-        }
-        indices = indices.stream().toList();
-
-        List<MarketOverviewResponse.AssetTypeMovers> movers = new ArrayList<>();
-        for (MarketType type : MarketType.values()) {
-            Set<String> typeSeen = new HashSet<>();
-            List<MarketAssetResponse> typeAssets = allMovers.stream()
-                    .filter(a -> a.type() == type && a.changePercent() != null)
-                    .filter(a -> type != MarketType.STOCK || !"MAIN_INDEX".equals(
-                            a.metadata() != null ? a.metadata().get("stockSegment") : null))
-                    .filter(a -> typeSeen.add(a.code()))
-                    .toList();
-
-            List<MarketAssetResponse> gainers = typeAssets.stream()
-                    .filter(a -> a.changePercent().signum() > 0)
-                    .sorted(Comparator.comparing(MarketAssetResponse::changePercent).reversed())
-                    .limit(limit)
-                    .toList();
-
-            List<MarketAssetResponse> losers = typeAssets.stream()
-                    .filter(a -> a.changePercent().signum() < 0)
-                    .sorted(Comparator.comparing(MarketAssetResponse::changePercent))
-                    .limit(limit)
-                    .toList();
-
-            if (!gainers.isEmpty() || !losers.isEmpty()) {
-                movers.add(new MarketOverviewResponse.AssetTypeMovers(type.name(), gainers, losers));
-            }
-        }
-
-        return new MarketOverviewResponse(indices, movers);
-    }
-
     public List<Map<String, Object>> getGroupCounts(MarketType type) {
         MarketAssetProvider provider = providers.get(type);
         if (provider == null) return List.of();
@@ -146,10 +79,8 @@ public class UnifiedMarketService implements MarketUpdatePort {
         if (provider == null) return;
 
         try {
-            List<MarketAssetResponse> topGainers = provider.getTopMovers(10, true);
-            List<MarketAssetResponse> topLosers = provider.getTopMovers(10, false);
-            List<MarketAssetResponse> combined = Stream.concat(topGainers.stream(), topLosers.stream()).toList();
-            topMoversRedisService.updateMovers(type, combined);
+            topMoversRedisService.updateGainers(type, filterMainIndexForStock(type, provider.getTopMovers(10, true)));
+            topMoversRedisService.updateLosers(type, filterMainIndexForStock(type, provider.getTopMovers(10, false)));
 
             if (type == MarketType.STOCK) {
                 List<MarketAssetResponse> allStocks = provider.search(null, Map.of("segment", "MAIN_INDEX"), "changePercent", "desc", 0, 100);
@@ -163,6 +94,13 @@ public class UnifiedMarketService implements MarketUpdatePort {
         } catch (Exception e) {
             log.warn("Failed to update write-through cache for {}: {}", type, e.getMessage());
         }
+    }
+
+    private List<MarketAssetResponse> filterMainIndexForStock(MarketType type, List<MarketAssetResponse> items) {
+        if (type != MarketType.STOCK) return items;
+        return items.stream()
+                .filter(a -> a.metadata() == null || !"MAIN_INDEX".equals(a.metadata().get("stockSegment")))
+                .toList();
     }
 
     private PagedResponse<MarketAssetResponse> handleSingleAssetLookup(List<MarketType> types, String code) {

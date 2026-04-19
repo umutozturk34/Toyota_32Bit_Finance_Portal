@@ -20,56 +20,89 @@ public class TopMoversRedisService {
 
     private static final String KEY = "market:topMovers";
     private static final String INDICES_FIELD = "INDICES";
+    private static final String GAINERS_SUFFIX = ":GAINERS";
+    private static final String LOSERS_SUFFIX = ":LOSERS";
     private static final TypeReference<List<MarketAssetResponse>> LIST_TYPE = new TypeReference<>() {};
 
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
 
-    public void updateMovers(MarketType type, List<MarketAssetResponse> movers) {
-        try {
-            String json = objectMapper.writeValueAsString(movers);
-            stringRedisTemplate.opsForHash().put(KEY, type.name(), json);
-            log.debug("Updated top movers for {}: {} items", type, movers.size());
-        } catch (Exception e) {
-            log.warn("Failed to write top movers for {}: {}", type, e.getMessage());
-        }
+    public void updateGainers(MarketType type, List<MarketAssetResponse> gainers) {
+        writeField(gainersField(type), gainers, "gainers " + type);
+    }
+
+    public void updateLosers(MarketType type, List<MarketAssetResponse> losers) {
+        writeField(losersField(type), losers, "losers " + type);
     }
 
     public void updateIndices(List<MarketAssetResponse> indices) {
-        try {
-            String json = objectMapper.writeValueAsString(indices);
-            stringRedisTemplate.opsForHash().put(KEY, INDICES_FIELD, json);
-            log.debug("Updated indices: {} items", indices.size());
-        } catch (Exception e) {
-            log.warn("Failed to write indices: {}", e.getMessage());
-        }
+        writeField(INDICES_FIELD, indices, "indices");
+    }
+
+    public List<MarketAssetResponse> getGainers(MarketType type) {
+        return readField(gainersField(type), "gainers " + type);
+    }
+
+    public List<MarketAssetResponse> getLosers(MarketType type) {
+        return readField(losersField(type), "losers " + type);
     }
 
     public List<MarketAssetResponse> getIndices() {
+        return readField(INDICES_FIELD, "indices");
+    }
+
+    public Map<MarketType, List<MarketAssetResponse>> getAllGainers() {
+        return readAllByType(GAINERS_SUFFIX);
+    }
+
+    public Map<MarketType, List<MarketAssetResponse>> getAllLosers() {
+        return readAllByType(LOSERS_SUFFIX);
+    }
+
+    private void writeField(String field, List<MarketAssetResponse> payload, String label) {
         try {
-            Object raw = stringRedisTemplate.opsForHash().get(KEY, INDICES_FIELD);
+            String json = objectMapper.writeValueAsString(payload);
+            stringRedisTemplate.opsForHash().put(KEY, field, json);
+            log.debug("Updated {}: {} items", label, payload.size());
+        } catch (Exception e) {
+            log.warn("Failed to write {}: {}", label, e.getMessage());
+        }
+    }
+
+    private List<MarketAssetResponse> readField(String field, String label) {
+        try {
+            Object raw = stringRedisTemplate.opsForHash().get(KEY, field);
             if (raw == null) return List.of();
             return objectMapper.readValue(raw.toString(), LIST_TYPE);
         } catch (Exception e) {
-            log.warn("Failed to read indices: {}", e.getMessage());
+            log.warn("Failed to read {}: {}", label, e.getMessage());
             return List.of();
         }
     }
 
-    public Map<MarketType, List<MarketAssetResponse>> getAllMovers() {
+    private Map<MarketType, List<MarketAssetResponse>> readAllByType(String suffix) {
         Map<MarketType, List<MarketAssetResponse>> result = new EnumMap<>(MarketType.class);
         try {
             Map<Object, Object> entries = stringRedisTemplate.opsForHash().entries(KEY);
             for (Map.Entry<Object, Object> entry : entries.entrySet()) {
-                String keyStr = entry.getKey().toString();
-                if (INDICES_FIELD.equals(keyStr)) continue;
-                MarketType type = MarketType.valueOf(keyStr);
-                List<MarketAssetResponse> movers = objectMapper.readValue(entry.getValue().toString(), LIST_TYPE);
-                result.put(type, movers);
+                String field = entry.getKey().toString();
+                if (!field.endsWith(suffix)) continue;
+                String typeName = field.substring(0, field.length() - suffix.length());
+                MarketType type = MarketType.valueOf(typeName);
+                List<MarketAssetResponse> values = objectMapper.readValue(entry.getValue().toString(), LIST_TYPE);
+                result.put(type, values);
             }
         } catch (Exception e) {
-            log.warn("Failed to read all movers: {}", e.getMessage());
+            log.warn("Failed to read {} entries: {}", suffix, e.getMessage());
         }
         return result;
+    }
+
+    private static String gainersField(MarketType type) {
+        return type.name() + GAINERS_SUFFIX;
+    }
+
+    private static String losersField(MarketType type) {
+        return type.name() + LOSERS_SUFFIX;
     }
 }

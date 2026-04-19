@@ -7,6 +7,7 @@ import com.finance.backend.dto.response.MarketOverviewResponse;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.model.CandlePeriod;
 import com.finance.backend.model.MarketType;
+import com.finance.backend.service.MarketOverviewService;
 import com.finance.backend.service.UnifiedMarketService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -25,6 +26,7 @@ public class UnifiedMarketController {
 
     private final AppProperties appProperties;
     private final UnifiedMarketService unifiedMarketService;
+    private final MarketOverviewService marketOverviewService;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -65,7 +67,7 @@ public class UnifiedMarketController {
         int resolvedLimit = MarketRequestHelper.clamp(limit, market.getDefaultOverviewLimit(), market.getMaxOverviewLimit());
 
         return ResponseEntity.ok(ApiResponse.success("Market overview retrieved successfully",
-                unifiedMarketService.getOverview(resolvedLimit)));
+                marketOverviewService.getOverview(resolvedLimit)));
     }
 
     @GetMapping("/history")

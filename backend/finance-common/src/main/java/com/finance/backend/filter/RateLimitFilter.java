@@ -3,7 +3,6 @@ package com.finance.backend.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.ErrorResponse;
-import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.ConsumptionProbe;
 import io.github.bucket4j.distributed.ExpirationAfterWriteStrategy;
@@ -45,10 +44,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 .build();
     }
 
-    private enum Tier {
-        ADMIN_TRIGGER, ADMIN_READ, API
-    }
-
     @Override
     protected void doFilterInternal(HttpServletRequest request,
             HttpServletResponse response,
@@ -74,7 +69,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } else {
             long retryAfterSeconds = Math.max(1, probe.getNanosToWaitForRefill() / 1_000_000_000);
-            TierError tierError = resolveTierError(tier);
 
             log.warn("Rate limit exceeded for user={} tier={} path={} retryAfter={}s",
                     userId, tier, path, retryAfterSeconds);
@@ -85,10 +79,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             response.setHeader("X-Rate-Limit-Remaining", "0");
             response.setHeader("X-Rate-Limit-Retry-After-Seconds", String.valueOf(retryAfterSeconds));
 
-            ErrorResponse error = ErrorResponse.of(
-            tierError.message(),
-            tierError.code(),
-                    path);
+            ErrorResponse error = ErrorResponse.of(tier.errorMessage(), tier.errorCode(), path);
             response.getWriter().write(objectMapper.writeValueAsString(error));
         }
     }
@@ -103,37 +94,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return Tier.API;
     }
 
-    private TierError resolveTierError(Tier tier) {
-        return switch (tier) {
-            case ADMIN_TRIGGER -> new TierError(
-                    "RATE_LIMIT_ADMIN_TRIGGER_EXCEEDED",
-                    "Admin güncelleme tetikleme sınırına ulaştın. Lütfen daha sonra tekrar dene.");
-            case ADMIN_READ -> new TierError(
-                    "RATE_LIMIT_ADMIN_READ_EXCEEDED",
-                    "Admin okuma isteği sınırına ulaştın. Lütfen kısa bir süre sonra tekrar dene.");
-            case API -> new TierError(
-                    "RATE_LIMIT_API_EXCEEDED",
-                    "API istek sınırına ulaştın. Lütfen biraz bekleyip tekrar dene.");
-        };
-    }
-
     private BucketConfiguration createBucketConfiguration(Tier tier) {
-        AppProperties.RateLimit rl = appProperties.getRateLimit();
-        Bandwidth bandwidth = switch (tier) {
-            case ADMIN_TRIGGER -> Bandwidth.builder()
-                    .capacity(rl.getAdminTriggerLimit())
-                    .refillIntervally(rl.getAdminTriggerLimit(), Duration.ofHours(1))
-                    .build();
-            case ADMIN_READ -> Bandwidth.builder()
-                    .capacity(rl.getAdminReadLimit())
-                    .refillIntervally(rl.getAdminReadLimit(), Duration.ofMinutes(1))
-                    .build();
-            case API -> Bandwidth.builder()
-                    .capacity(rl.getApiLimit())
-                    .refillGreedy(rl.getApiLimit(), Duration.ofMinutes(1))
-                    .build();
-        };
-        return BucketConfiguration.builder().addLimit(bandwidth).build();
+        return BucketConfiguration.builder()
+                .addLimit(tier.toBandwidth(appProperties.getRateLimit()))
+                .build();
     }
 
     private String resolveUserId() {
@@ -142,9 +106,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
             return jwt.getSubject();
         }
         return "anonymous";
-    }
-
-    private record TierError(String code, String message) {
     }
 
     @Override

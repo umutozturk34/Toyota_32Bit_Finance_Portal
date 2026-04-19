@@ -18,7 +18,7 @@ public class GlobalExceptionHandler {
         log.warn("Business exception: {} - {}", ex.getErrorCode(), ex.getMessage());
         ErrorResponse error = ErrorResponse.of(ex.getMessage(), ex.getErrorCode(), request.getRequestURI());
         return ResponseEntity
-                .status(422) 
+                .status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(error);
     }
     @ExceptionHandler(ResourceNotFoundException.class)

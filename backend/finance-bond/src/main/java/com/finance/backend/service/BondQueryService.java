@@ -3,6 +3,7 @@ package com.finance.backend.service;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.response.BondRateResponse;
 import com.finance.backend.dto.response.BondResponse;
+import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.util.EnumParser;
@@ -82,9 +83,9 @@ public class BondQueryService {
         return bondResponseMapper.toRateResponses(history);
     }
 
-    public List<Map<String, Object>> getTypeCounts() {
+    public List<GroupCount> getTypeCounts() {
         return bondRepository.countByBondType().stream()
-                .map(row -> Map.<String, Object>of("type", row[0].toString(), "count", row[1]))
+                .map(row -> new GroupCount(row[0].toString(), ((Number) row[1]).longValue()))
                 .toList();
     }
 

@@ -2,6 +2,7 @@ package com.finance.backend.controller;
 
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.ApiResponse;
+import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.NewsArticleDetailResponse;
 import com.finance.backend.dto.response.NewsArticleResponse;
 import com.finance.backend.dto.response.PagedResponse;
@@ -40,7 +41,7 @@ public class NewsController {
 
     @GetMapping("/categories")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getCategoryCounts() {
+    public ResponseEntity<ApiResponse<List<GroupCount>>> getCategoryCounts() {
         return ResponseEntity.ok(ApiResponse.success("News categories retrieved", newsQueryService.getCategoryCounts()));
     }
 

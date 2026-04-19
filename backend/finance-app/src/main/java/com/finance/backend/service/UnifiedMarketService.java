@@ -1,4 +1,5 @@
 package com.finance.backend.service;
+import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.dto.response.StockMetadata;
@@ -61,7 +62,7 @@ public class UnifiedMarketService implements MarketUpdatePort {
         return PagedResponse.of(applySort(filtered, sort, direction), page, size, total);
     }
 
-    public List<Map<String, Object>> getGroupCounts(MarketType type) {
+    public List<GroupCount> getGroupCounts(MarketType type) {
         MarketAssetProvider provider = providers.get(type);
         if (provider == null) return List.of();
         return provider.getGroupCounts();

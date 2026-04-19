@@ -1,5 +1,6 @@
 package com.finance.backend.service;
 
+import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.model.MarketType;
 
@@ -20,7 +21,7 @@ public interface MarketAssetProvider {
 
     List<MarketAssetResponse> getTopMovers(int limit, boolean gainers);
 
-    default List<Map<String, Object>> getGroupCounts() {
+    default List<GroupCount> getGroupCounts() {
         return List.of();
     }
 }

@@ -1,5 +1,6 @@
 package com.finance.backend.service;
 
+import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.NewsArticleDetailResponse;
 import com.finance.backend.dto.response.NewsArticleResponse;
 import com.finance.backend.dto.response.PagedResponse;
@@ -51,9 +52,9 @@ public class NewsQueryService {
     }
 
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getCategoryCounts() {
+    public List<GroupCount> getCategoryCounts() {
         return articleRepository.countByCategory().stream()
-                .map(row -> Map.<String, Object>of("type", row[0].toString(), "count", row[1]))
+                .map(row -> new GroupCount(row[0].toString(), ((Number) row[1]).longValue()))
                 .toList();
     }
 

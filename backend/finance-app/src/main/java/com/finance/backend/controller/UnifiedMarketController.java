@@ -2,6 +2,7 @@ package com.finance.backend.controller;
 
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.ApiResponse;
+import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.dto.response.MarketOverviewResponse;
 import com.finance.backend.dto.response.PagedResponse;
@@ -84,7 +85,7 @@ public class UnifiedMarketController {
 
     @GetMapping("/group-counts")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getGroupCounts(
+    public ResponseEntity<ApiResponse<List<GroupCount>>> getGroupCounts(
             @RequestParam MarketType type) {
         return ResponseEntity.ok(ApiResponse.success("Group counts retrieved",
                 unifiedMarketService.getGroupCounts(type)));

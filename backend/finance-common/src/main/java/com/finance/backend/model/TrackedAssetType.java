@@ -1,22 +1,24 @@
 package com.finance.backend.model;
 
+import java.util.Locale;
+
 public enum TrackedAssetType {
-    CRYPTO {
+    CRYPTO(MarketType.CRYPTO) {
         @Override
         public String normalizeCode(String raw) {
-            return ensureNonBlank(raw).toLowerCase();
+            return ensureNonBlank(raw).toLowerCase(Locale.ROOT);
         }
 
         @Override
         public String resolveBinanceSymbol(String requested) {
             if (requested == null || requested.isBlank()) return null;
-            return requested.trim().toUpperCase();
+            return requested.trim().toUpperCase(Locale.ROOT);
         }
     },
-    STOCK {
+    STOCK(MarketType.STOCK) {
         @Override
         public String normalizeCode(String raw) {
-            return ensureNonBlank(raw).toUpperCase();
+            return ensureNonBlank(raw).toUpperCase(Locale.ROOT);
         }
 
         @Override
@@ -40,12 +42,22 @@ public enum TrackedAssetType {
             return existing;
         }
     },
-    FUND {
+    FUND(MarketType.FUND) {
         @Override
         public String normalizeCode(String raw) {
-            return ensureNonBlank(raw).toUpperCase();
+            return ensureNonBlank(raw).toUpperCase(Locale.ROOT);
         }
     };
+
+    private final MarketType marketType;
+
+    TrackedAssetType(MarketType marketType) {
+        this.marketType = marketType;
+    }
+
+    public MarketType marketType() {
+        return marketType;
+    }
 
     public abstract String normalizeCode(String raw);
 

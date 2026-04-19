@@ -4,7 +4,6 @@ import com.finance.backend.dto.request.BulkTrackedAssetOrderUpdateRequest;
 import com.finance.backend.dto.request.UpsertTrackedAssetRequest;
 import com.finance.backend.dto.response.TrackedAssetResponse;
 import com.finance.backend.mapper.TrackedAssetMapper;
-import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -117,17 +116,6 @@ public class TrackedAssetAdminService {
     }
 
     private void refreshDefaultPage(TrackedAssetType type) {
-        MarketType marketType = toMarketType(type);
-        if (marketType != null) {
-            marketUpdatePort.ifPresent(port -> port.onMarketDataUpdated(marketType));
-        }
-    }
-
-    private MarketType toMarketType(TrackedAssetType type) {
-        return switch (type) {
-            case STOCK -> MarketType.STOCK;
-            case CRYPTO -> MarketType.CRYPTO;
-            case FUND -> MarketType.FUND;
-        };
+        marketUpdatePort.ifPresent(port -> port.onMarketDataUpdated(type.marketType()));
     }
 }

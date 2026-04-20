@@ -12,7 +12,6 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
@@ -46,9 +45,7 @@ public class UnifiedMarketService implements MarketUpdatePort {
 
         boolean hasSearch = search != null && !search.isBlank();
 
-        Map<String, String> filters = new HashMap<>();
-        if (segment != null && !segment.isBlank()) filters.put("segment", segment);
-        if (subType != null && !subType.isBlank()) filters.put("subType", subType);
+        MarketAssetProvider.MarketAssetFilters filters = new MarketAssetProvider.MarketAssetFilters(segment, subType);
         List<MarketAssetResponse> allResults = new ArrayList<>();
         long total = 0;
         for (MarketType type : types) {
@@ -86,7 +83,9 @@ public class UnifiedMarketService implements MarketUpdatePort {
             topMoversRedisService.updateLosers(type, MarketTopMoversFilter.apply(type, provider.getTopMovers(10, false)));
 
             if (type == MarketType.STOCK) {
-                List<MarketAssetResponse> allStocks = provider.search(null, Map.of("segment", "MAIN_INDEX"), "changePercent", "desc", 0, 100);
+                List<MarketAssetResponse> allStocks = provider.search(null,
+                        MarketAssetProvider.MarketAssetFilters.ofSegment("MAIN_INDEX"),
+                        "changePercent", "desc", 0, 100);
                 List<MarketAssetResponse> indexAssets = allStocks.stream()
                         .filter(a -> a.metadata() instanceof StockMetadata sm && sm.stockSegment() == StockSegment.MAIN_INDEX)
                         .toList();

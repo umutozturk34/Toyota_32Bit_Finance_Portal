@@ -58,7 +58,9 @@ public class MarketOverviewService {
     private List<MarketAssetResponse> loadIndicesFromStockProvider() {
         MarketAssetProvider stockProvider = providers.get(MarketType.STOCK);
         if (stockProvider == null) return List.of();
-        return stockProvider.search(null, Map.of("segment", "MAIN_INDEX"), "changePercent", "desc", 0, 100).stream()
+        return stockProvider.search(null,
+                        MarketAssetProvider.MarketAssetFilters.ofSegment("MAIN_INDEX"),
+                        "changePercent", "desc", 0, 100).stream()
                 .filter(a -> a.metadata() instanceof StockMetadata sm && sm.stockSegment() == StockSegment.MAIN_INDEX)
                 .toList();
     }

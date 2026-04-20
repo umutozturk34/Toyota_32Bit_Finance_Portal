@@ -3,6 +3,7 @@ package com.finance.backend.service;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.model.BaseAsset;
 import com.finance.backend.model.TrackedAssetType;
+import com.finance.backend.service.MarketAssetProvider.MarketAssetFilters;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -41,7 +42,7 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
 
     protected abstract List<MarketAssetResponse> mapToResponses(List<T> entities);
 
-    protected Specification<T> applyCustomFilters(Specification<T> spec, Map<String, String> filters) {
+    protected Specification<T> applyCustomFilters(Specification<T> spec, MarketAssetFilters filters) {
         return spec;
     }
 
@@ -53,7 +54,7 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
     }
 
     @Override
-    public List<MarketAssetResponse> search(String searchTerm, Map<String, String> filters,
+    public List<MarketAssetResponse> search(String searchTerm, MarketAssetFilters filters,
                                             String sortBy, String direction, int page, int size) {
         Set<String> enabledCodes = enabledCodes();
         Specification<T> spec = applyCustomFilters(buildSearchSpec(searchTerm, enabledCodes), filters);
@@ -73,14 +74,14 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
     }
 
     @Override
-    public long count(Map<String, String> filters) {
+    public long count(MarketAssetFilters filters) {
         Set<String> enabledCodes = enabledCodes();
         Specification<T> spec = applyCustomFilters(enabledCodesSpec(enabledCodes), filters);
         return repository.count(spec);
     }
 
     @Override
-    public long countBySearch(String searchTerm, Map<String, String> filters) {
+    public long countBySearch(String searchTerm, MarketAssetFilters filters) {
         Set<String> enabledCodes = enabledCodes();
         Specification<T> spec = applyCustomFilters(buildSearchSpec(searchTerm, enabledCodes), filters);
         return repository.count(spec);

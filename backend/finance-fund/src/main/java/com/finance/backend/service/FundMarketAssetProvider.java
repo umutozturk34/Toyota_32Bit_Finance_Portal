@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.MarketAssetResponse;
+import com.finance.backend.service.MarketAssetProvider.MarketAssetFilters;
 import com.finance.backend.mapper.FundResponseMapper;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;
@@ -82,10 +83,9 @@ public class FundMarketAssetProvider extends BaseTrackedMarketAssetProvider<Fund
     }
 
     @Override
-    protected Specification<Fund> applyCustomFilters(Specification<Fund> spec, Map<String, String> filters) {
-        String subType = filters != null ? filters.get("subType") : null;
-        if (subType == null || subType.isBlank()) return spec;
-        return spec.and((root, query, cb) -> cb.equal(root.get("fundType"), subType));
+    protected Specification<Fund> applyCustomFilters(Specification<Fund> spec, MarketAssetFilters filters) {
+        if (filters == null || !filters.hasSubType()) return spec;
+        return spec.and((root, query, cb) -> cb.equal(root.get("fundType"), filters.subType()));
     }
 
     @Override

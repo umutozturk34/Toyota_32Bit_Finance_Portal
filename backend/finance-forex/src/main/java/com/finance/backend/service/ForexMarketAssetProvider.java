@@ -6,6 +6,7 @@ import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.ForexRepository;
+import com.finance.backend.service.MarketAssetProvider.MarketAssetFilters;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.PageRequest;
@@ -47,7 +48,7 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
     }
 
     @Override
-    public List<MarketAssetResponse> search(String searchTerm, Map<String, String> filters, String sortBy, String direction, int page, int size) {
+    public List<MarketAssetResponse> search(String searchTerm, MarketAssetFilters filters, String sortBy, String direction, int page, int size) {
         Specification<Forex> spec = buildSpecification(searchTerm);
 
         List<Forex> forexList = forexRepository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS))).getContent();
@@ -66,12 +67,12 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
     }
 
     @Override
-    public long count(Map<String, String> filters) {
+    public long count(MarketAssetFilters filters) {
         return forexRepository.count();
     }
 
     @Override
-    public long countBySearch(String searchTerm, Map<String, String> filters) {
+    public long countBySearch(String searchTerm, MarketAssetFilters filters) {
         return forexRepository.count(buildSpecification(searchTerm));
     }
 

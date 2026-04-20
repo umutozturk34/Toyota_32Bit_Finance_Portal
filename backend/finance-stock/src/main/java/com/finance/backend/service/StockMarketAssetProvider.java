@@ -9,6 +9,7 @@ import com.finance.backend.model.StockCandle;
 import com.finance.backend.model.StockSegment;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.StockRepository;
+import com.finance.backend.service.MarketAssetProvider.MarketAssetFilters;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -83,10 +84,9 @@ public class StockMarketAssetProvider extends BaseTrackedMarketAssetProvider<Sto
     }
 
     @Override
-    protected Specification<Stock> applyCustomFilters(Specification<Stock> spec, Map<String, String> filters) {
-        String segment = filters != null ? filters.get("segment") : null;
-        if (segment == null || segment.isBlank()) return spec;
-        StockSegment segmentValue = StockSegment.valueOf(segment);
+    protected Specification<Stock> applyCustomFilters(Specification<Stock> spec, MarketAssetFilters filters) {
+        if (filters == null || !filters.hasSegment()) return spec;
+        StockSegment segmentValue = StockSegment.valueOf(filters.segment());
         return spec.and((root, query, cb) -> cb.equal(root.get("stockSegment"), segmentValue));
     }
 

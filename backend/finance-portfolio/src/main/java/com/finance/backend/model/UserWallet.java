@@ -12,7 +12,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "user_wallets")
+@Table(name = "user_wallets",
+        indexes = @Index(name = "idx_user_wallets_pf_currency",
+                columnList = "portfolio_id, currency"))
 public class UserWallet {
 
     private static final int SCALE = 4;

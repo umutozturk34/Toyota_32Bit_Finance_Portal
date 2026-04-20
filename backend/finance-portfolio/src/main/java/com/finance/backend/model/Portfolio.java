@@ -12,7 +12,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "portfolios")
+@Table(name = "portfolios",
+        indexes = @Index(name = "idx_portfolios_user_sub", columnList = "user_sub"))
 public class Portfolio {
 
     @Id

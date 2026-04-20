@@ -127,14 +127,7 @@ public class PortfolioTransactionService {
 
         PortfolioPosition position = positionRepository
                 .findByPortfolioIdAndAssetTypeAndAssetCode(portfolio.getId(), assetType, assetCode)
-                .orElseGet(() -> PortfolioPosition.builder()
-                        .portfolio(portfolio)
-                        .assetType(assetType)
-                        .assetCode(assetCode)
-                        .quantity(BigDecimal.ZERO)
-                        .averageCostTry(BigDecimal.ZERO)
-                        .totalCostTry(BigDecimal.ZERO)
-                        .build());
+                .orElseGet(() -> PortfolioPosition.empty(portfolio, assetType, assetCode));
 
         position.addQuantity(quantity, totalCost);
         positionRepository.save(position);
@@ -151,8 +144,7 @@ public class PortfolioTransactionService {
             throw new BusinessException("Yetersiz miktar. Sahip olunan: " + position.getQuantity() + ", satılmak istenen: " + quantity);
         }
 
-        BigDecimal costBasis = position.getAverageCostTry().multiply(quantity).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
-        BigDecimal realizedPnl = totalCost.subtract(costBasis).subtract(fee);
+        BigDecimal realizedPnl = position.calculateRealizedPnl(quantity, totalCost, fee);
         portfolio.addRealizedPnl(realizedPnl);
         portfolioRepository.save(portfolio);
 

@@ -3,6 +3,7 @@ package com.finance.backend.service;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.dto.external.YahooQuoteDto;
+import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -100,7 +101,7 @@ class PriceCalculationServiceTest {
 
     @Test
     void applySyntheticSnapshotUsdBaseDivides() {
-        com.finance.backend.model.Forex forex = com.finance.backend.model.Forex.builder()
+        Forex forex = Forex.builder()
                 .currencyCode("EUR").build();
         YahooQuoteDto pairQuote = new YahooQuoteDto(new BigDecimal("1.0800"), new BigDecimal("1.0750"));
         BigDecimal usdtryPrice = new BigDecimal("38.0000");
@@ -114,7 +115,7 @@ class PriceCalculationServiceTest {
 
     @Test
     void applySyntheticSnapshotNonUsdBaseMultiplies() {
-        com.finance.backend.model.Forex forex = com.finance.backend.model.Forex.builder()
+        Forex forex = Forex.builder()
                 .currencyCode("GBP").build();
         YahooQuoteDto pairQuote = new YahooQuoteDto(new BigDecimal("0.7900"), new BigDecimal("0.7850"));
         BigDecimal usdtryPrice = new BigDecimal("38.0000");
@@ -127,7 +128,7 @@ class PriceCalculationServiceTest {
 
     @Test
     void applySyntheticSnapshotZeroPairPriceDoesNothing() {
-        com.finance.backend.model.Forex forex = com.finance.backend.model.Forex.builder()
+        Forex forex = Forex.builder()
                 .currencyCode("CHF").currentPrice(new BigDecimal("42.0000")).build();
         YahooQuoteDto pairQuote = new YahooQuoteDto(BigDecimal.ZERO, null);
 
@@ -138,7 +139,7 @@ class PriceCalculationServiceTest {
 
     @Test
     void applySyntheticSnapshotNullPairPriceDoesNothing() {
-        com.finance.backend.model.Forex forex = com.finance.backend.model.Forex.builder()
+        Forex forex = Forex.builder()
                 .currencyCode("JPY").currentPrice(new BigDecimal("0.2500")).build();
         YahooQuoteDto pairQuote = new YahooQuoteDto(null, null);
 

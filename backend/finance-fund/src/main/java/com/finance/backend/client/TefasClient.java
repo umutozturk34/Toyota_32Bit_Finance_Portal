@@ -8,6 +8,7 @@ import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.exception.ExternalApiRequestException;
 import com.finance.backend.filter.TefasSessionManager;
 import com.finance.backend.mapper.TefasClientMapper;
+import com.finance.backend.model.FundType;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.extern.log4j.Log4j2;
@@ -48,12 +49,12 @@ public class TefasClient {
 
     @CircuitBreaker(name = "tefas")
     @Retry(name = "tefas")
-    public List<TefasFundDto> post(String fundType, String fundCode, LocalDate startDate, LocalDate endDate) {
+    public List<TefasFundDto> post(FundType fundType, String fundCode, LocalDate startDate, LocalDate endDate) {
         long reqStart = System.currentTimeMillis();
         log.debug("TEFAS request: type={}, code={}, from={}, to={}", fundType, fundCode, startDate, endDate);
         try {
             MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-            formData.add("fontip", fundType);
+            formData.add("fontip", fundType.name());
             formData.add("bastarih", startDate.format(DATE_FORMAT));
             formData.add("bittarih", endDate.format(DATE_FORMAT));
             if (fundCode != null && !fundCode.isBlank()) {

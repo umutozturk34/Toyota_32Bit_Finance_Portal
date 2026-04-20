@@ -13,10 +13,10 @@ public class ForexDataService {
     private final ForexCandleService yahooForexCandleService;
 
     public void syncAllYahooSnapshots() {
-        yahooForexSnapshotService.syncAllYahooSnapshots();
+        yahooForexSnapshotService.refreshAll();
     }
 
     public void syncAllYahooCandles() {
-        yahooForexCandleService.syncAllYahooCandles();
+        yahooForexCandleService.refreshAll();
     }
 }

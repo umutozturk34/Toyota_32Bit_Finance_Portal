@@ -5,6 +5,7 @@ import com.finance.backend.mapper.CryptoResponseMapper;
 import com.finance.backend.model.CandlePeriod;
 import com.finance.backend.model.Crypto;
 import com.finance.backend.model.CryptoCandle;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.CryptoCandleRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,15 +18,21 @@ import java.util.List;
 @Log4j2
 @Service
 @RequiredArgsConstructor
-public class CryptoQueryService {
+public class CryptoQueryService implements MarketHistoryProvider {
 
     private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
     private final CryptoCandleRepository cryptoCandleRepository;
     private final CryptoResponseMapper cryptoResponseMapper;
-    private final TrackedAssetService trackedAssetService;
+    private final TrackedAssetQueryService trackedAssetQueryService;
 
-    public List<CandleResponse> getCryptoHistory(String id, CandlePeriod period) {
-        String normalizedCode = trackedAssetService.resolveEnabledCodeOrThrow(TrackedAssetType.CRYPTO, id);
+    @Override
+    public MarketType getMarketType() {
+        return MarketType.CRYPTO;
+    }
+
+    @Override
+    public List<CandleResponse> getHistory(String id, CandlePeriod period) {
+        String normalizedCode = trackedAssetQueryService.resolveEnabledCodeOrThrow(TrackedAssetType.CRYPTO, id);
         if (period == CandlePeriod.ALL) {
             return cryptoResponseMapper.toCryptoCandleResponses(cryptoCacheService.getHistory(normalizedCode));
         }

@@ -1,6 +1,9 @@
 package com.finance.backend.service;
 
 import com.finance.backend.exception.BusinessException;
+import com.finance.backend.model.Fund;
+import com.finance.backend.model.FundCandle;
+import com.finance.backend.model.TrackedAssetType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -8,13 +11,19 @@ import org.springframework.stereotype.Service;
 @Log4j2
 @Service
 @RequiredArgsConstructor
-public class FundDataService {
+public class FundDataService implements TrackedAssetDataService {
 
-    private final MarketCacheService<com.finance.backend.model.Fund, com.finance.backend.model.FundCandle> fundCacheService;
+    private final MarketCacheService<Fund, FundCandle> fundCacheService;
     private final FundSnapshotService fundSnapshotService;
     private final FundCandleService fundCandleService;
 
-    public void validateFundExists(String fundCode) {
+    @Override
+    public TrackedAssetType getAssetType() {
+        return TrackedAssetType.FUND;
+    }
+
+    @Override
+    public void validateExists(String fundCode) {
         if (!fundSnapshotService.existsInApi(fundCode)) {
             throw new BusinessException(
                     "Fon bulunamadı: " + fundCode, "ASSET_NOT_FOUND");
@@ -22,18 +31,21 @@ public class FundDataService {
     }
 
     public void updateFundSnapshots() {
-        fundSnapshotService.updateFundSnapshots();
+        fundSnapshotService.refreshAll();
     }
 
-    public void refreshTrackedFundSnapshot(String fundCode) {
+    @Override
+    public void refreshSnapshot(String fundCode) {
         fundSnapshotService.refreshTrackedFundSnapshot(fundCode);
     }
 
-    public void refreshTrackedFundCandles(String fundCode) {
+    @Override
+    public void refreshCandles(String fundCode) {
         fundCandleService.refreshTrackedFundCandles(fundCode);
     }
 
-    public void clearTrackedFundCache(String fundCode) {
+    @Override
+    public void clearCache(String fundCode) {
         String normalized = fundCode == null ? "" : fundCode.trim().toUpperCase();
         if (normalized.isBlank()) {
             return;
@@ -43,6 +55,6 @@ public class FundDataService {
     }
 
     public void updateFundCandles() {
-        fundCandleService.updateFundCandles();
+        fundCandleService.refreshAll();
     }
 }

@@ -4,16 +4,18 @@ import com.finance.backend.client.TefasClient;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.TefasFundDto;
-import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.FundMapper;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;
+import com.finance.backend.model.FundType;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.FundCandleRepository;
 import com.finance.backend.repository.FundRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
+import com.finance.backend.util.TefasHelper;
 import com.finance.backend.util.WindowedFetchPlanner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
@@ -27,7 +29,7 @@ import java.util.List;
 
 @Log4j2
 @Service
-public class FundCandleService {
+public class FundCandleService implements CandleBatchRefresher {
 
     private final TefasClient tefasClient;
     private final FundMapper fundMapper;
@@ -66,15 +68,21 @@ public class FundCandleService {
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
-    public void updateFundCandles() {
+    @Override
+    public MarketType getMarketType() {
+        return MarketType.FUND;
+    }
+
+    @Override
+    public void refreshAll() {
         long totalStart = System.currentTimeMillis();
         log.info("Starting fund candle update");
         pruneOldCandles();
         long byfStart = System.currentTimeMillis();
-        updateCandlesForType("BYF");
+        updateCandlesForType(FundType.BYF);
         log.info("[TIMING] BYF candle update took {}s", (System.currentTimeMillis() - byfStart) / 1000);
         long yatStart = System.currentTimeMillis();
-        updateCandlesForType("YAT");
+        updateCandlesForType(FundType.YAT);
         log.info("[TIMING] YAT candle update took {}s", (System.currentTimeMillis() - yatStart) / 1000);
         log.info("[TIMING] Total fund candle update took {}s", (System.currentTimeMillis() - totalStart) / 1000);
     }
@@ -97,7 +105,7 @@ public class FundCandleService {
         }
 
         Fund targetFund = fund;
-        String fundType = targetFund.getFundType() == null ? "YAT" : targetFund.getFundType();
+        FundType fundType = targetFund.getFundType() == null ? FundType.YAT : targetFund.getFundType();
         long existingCount = fundCandleRepository.countByFundCode(targetFund.getFundCode());
         if (existingCount >= minCandlesForIncremental) {
             transactionTemplate.execute(status -> fetchAndSaveSinceLastCandle(targetFund, fundType));
@@ -116,14 +124,14 @@ public class FundCandleService {
                 cutoffDate -> fundCandleRepository.deleteByCandleDateBefore(cutoffDate));
     }
 
-    private void updateCandlesForType(String fundType) {
+    private void updateCandlesForType(FundType fundType) {
         List<Fund> funds;
-        if ("BYF".equals(fundType)) {
-            funds = fundRepository.findByFundType("BYF");
+        if (fundType == FundType.BYF) {
+            funds = fundRepository.findByFundType(FundType.BYF);
         } else {
             List<String> yatCodes = marketConstants.getTrackedFunds();
             funds = fundRepository.findAllById(yatCodes).stream()
-                    .filter(f -> !"BYF".equals(f.getFundType()))
+                    .filter(f -> f.getFundType() != FundType.BYF)
                     .toList();
         }
 
@@ -156,7 +164,7 @@ public class FundCandleService {
         BatchLogHelper.logSummary(log, fundType + " candle update", result);
     }
 
-    private int fetchAndSaveSinceLastCandle(Fund fund, String fundType) {
+    private int fetchAndSaveSinceLastCandle(Fund fund, FundType fundType) {
         LocalDate today = findLastBusinessDay(LocalDate.now());
         LocalDate fromDate = fundCandleRepository.findFirstByFundCodeOrderByCandleDateDesc(fund.getFundCode())
                 .map(candle -> candle.getCandleDate().toLocalDate())
@@ -168,7 +176,7 @@ public class FundCandleService {
         return saveCandleBatch(fund, fundType, candles);
     }
 
-    private int fetchAndSaveFullHistory(Fund fund, String fundType) {
+    private int fetchAndSaveFullHistory(Fund fund, FundType fundType) {
         long histStart = System.currentTimeMillis();
         LocalDate finalEndDate = findLastBusinessDay(LocalDate.now(appZone));
         LocalDate limitDate = finalEndDate.minusYears(yearsToFetch);
@@ -196,7 +204,7 @@ public class FundCandleService {
         return totalSaved;
     }
 
-    private int tryFetchWindow(Fund fund, String fundType, LocalDate start, LocalDate end) {
+    private int tryFetchWindow(Fund fund, FundType fundType, LocalDate start, LocalDate end) {
         try {
             long windowStart = System.currentTimeMillis();
             List<TefasFundDto> candles = fetchTefas(fundType, fund.getFundCode(), start, end);
@@ -221,7 +229,7 @@ public class FundCandleService {
         }
     }
 
-    private int saveCandleBatch(Fund fund, String fundType, List<TefasFundDto> dtos) {
+    private int saveCandleBatch(Fund fund, FundType fundType, List<TefasFundDto> dtos) {
         CandleBatchUpsertTemplate.UpsertResult<FundCandle> upsertResult = CandleBatchUpsertTemplate.upsert(
                 dtos,
                 TefasFundDto::date,
@@ -239,12 +247,12 @@ public class FundCandleService {
         return upsertResult.totalChanged();
     }
 
-    private List<TefasFundDto> fetchTefas(String fundType, String fundCode,
+    private List<TefasFundDto> fetchTefas(FundType fundType, String fundCode,
                                           LocalDate startDate, LocalDate endDate) {
-        return com.finance.backend.util.TefasHelper.fetchTefas(tefasClient, fundType, fundCode, startDate, endDate);
+        return TefasHelper.fetchTefas(tefasClient, fundType, fundCode, startDate, endDate);
     }
 
     private LocalDate findLastBusinessDay(LocalDate from) {
-        return com.finance.backend.util.TefasHelper.findLastBusinessDay(from, appZone);
+        return TefasHelper.findLastBusinessDay(from, appZone);
     }
 }

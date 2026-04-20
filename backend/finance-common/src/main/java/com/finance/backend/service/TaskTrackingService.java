@@ -54,6 +54,17 @@ public class TaskTrackingService {
         runningTasks.remove(taskType);
     }
 
+    public void runTracked(String taskType, String description, Runnable task) {
+        TaskInfo started = startTask(taskType, description);
+        try {
+            task.run();
+            completeTask(taskType, started);
+        } catch (Exception e) {
+            failTask(taskType, started, e.getMessage());
+            log.error("{} failed", taskType, e);
+        }
+    }
+
     public TaskStatusResponse getTypedStatus() {
         List<TaskInfoResponse> running = runningTasks.values().stream()
                 .map(this::toInfoResponse)

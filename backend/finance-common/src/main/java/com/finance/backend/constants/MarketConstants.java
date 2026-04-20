@@ -1,7 +1,7 @@
 package com.finance.backend.constants;
 
 import com.finance.backend.model.TrackedAssetType;
-import com.finance.backend.service.TrackedAssetService;
+import com.finance.backend.service.TrackedAssetQueryService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -12,18 +12,18 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class MarketConstants {
-    private final TrackedAssetService trackedAssetService;
+    private final TrackedAssetQueryService trackedAssetQueryService;
 
     public List<String> getTrackedCryptos() {
-        return trackedAssetService.getEnabledCodes(TrackedAssetType.CRYPTO);
+        return trackedAssetQueryService.getEnabledCodes(TrackedAssetType.CRYPTO);
     }
 
     public List<String> getTrackedBistStocks() {
-        return trackedAssetService.getEnabledCodes(TrackedAssetType.STOCK);
+        return trackedAssetQueryService.getEnabledCodes(TrackedAssetType.STOCK);
     }
 
     public List<String> getTrackedFunds() {
-        return trackedAssetService.getEnabledCodes(TrackedAssetType.FUND);
+        return trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND);
     }
 
     public String getBinanceSymbol(String coinGeckoId) {
@@ -32,7 +32,7 @@ public class MarketConstants {
         }
 
         String normalizedId = coinGeckoId.trim().toLowerCase();
-        return trackedAssetService.getCryptoBinanceSymbol(normalizedId)
+        return trackedAssetQueryService.getCryptoBinanceSymbol(normalizedId)
                 .orElse(null);
     }
 }

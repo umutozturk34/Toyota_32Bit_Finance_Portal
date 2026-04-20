@@ -12,7 +12,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "portfolio_positions")
+@Table(name = "portfolio_positions",
+        indexes = @Index(name = "idx_portfolio_positions_portfolio", columnList = "portfolio_id"))
 public class PortfolioPosition {
 
     @Id
@@ -63,6 +64,17 @@ public class PortfolioPosition {
     private static final int PRICE_SCALE = 4;
     private static final int QTY_SCALE = 8;
 
+    public static PortfolioPosition empty(Portfolio portfolio, AssetType assetType, String assetCode) {
+        return PortfolioPosition.builder()
+                .portfolio(portfolio)
+                .assetType(assetType)
+                .assetCode(assetCode)
+                .quantity(BigDecimal.ZERO)
+                .averageCostTry(BigDecimal.ZERO)
+                .totalCostTry(BigDecimal.ZERO)
+                .build();
+    }
+
     public boolean hasSufficientQuantity(BigDecimal amount) {
         return quantity.compareTo(amount) >= 0;
     }
@@ -82,5 +94,10 @@ public class PortfolioPosition {
         BigDecimal costReduction = averageCostTry.multiply(qty).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
         this.quantity = quantity.subtract(qty).setScale(QTY_SCALE, RoundingMode.HALF_UP);
         this.totalCostTry = totalCostTry.subtract(costReduction).max(BigDecimal.ZERO);
+    }
+
+    public BigDecimal calculateRealizedPnl(BigDecimal quantityToSell, BigDecimal proceeds, BigDecimal fee) {
+        BigDecimal costBasis = averageCostTry.multiply(quantityToSell).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
+        return proceeds.subtract(costBasis).subtract(fee);
     }
 }

@@ -4,7 +4,6 @@ import com.finance.backend.dto.response.AllocationItem;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.dto.response.PortfolioSummaryResponse;
 import com.finance.backend.dto.response.PositionResponse;
-import com.finance.backend.exception.BadRequestException;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.mapper.PortfolioResponseMapper;
 import com.finance.backend.model.AssetType;
@@ -15,6 +14,10 @@ import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.repository.PortfolioRepository;
 import com.finance.backend.repository.PortfolioTransactionRepository;
 import com.finance.backend.repository.UserWalletRepository;
+import com.finance.backend.service.AssetPricingPort.AssetKey;
+import com.finance.backend.service.AssetPricingPort.AssetMeta;
+import com.finance.backend.service.AssetPricingPort.PriceBundle;
+import com.finance.backend.util.EnumParser;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.model.TransactionSide;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +50,10 @@ public class PortfolioSummaryService {
         List<PortfolioPosition> positions = positionRepository
                 .findByPortfolioIdAndQuantityGreaterThan(portfolioId, BigDecimal.ZERO);
 
-        return positions.stream().map(this::toPositionResponse).toList();
+        Map<AssetKey, PriceBundle> bundles = pricingPort.getBundles(toKeys(positions));
+        return positions.stream()
+                .map(pos -> toPositionResponse(pos, bundles.get(toKey(pos))))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -101,7 +107,7 @@ public class PortfolioSummaryService {
         List<PortfolioPosition> positions = positionRepository
                 .findByPortfolioIdAndQuantityGreaterThan(portfolioId, BigDecimal.ZERO);
 
-        AssetType filterType = parseAssetTypeOrNull(assetType);
+        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetType, "asset type");
 
         if (filterType != null) {
             positions = positions.stream()
@@ -111,11 +117,13 @@ public class PortfolioSummaryService {
 
         UserWallet wallet = findWallet(portfolioId);
 
+        Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(toKeys(positions));
+
         BigDecimal totalValue = BigDecimal.ZERO;
         BigDecimal totalCost = BigDecimal.ZERO;
 
         for (PortfolioPosition pos : positions) {
-            BigDecimal price = pricingPort.getPriceTry(pos.getAssetType().name(), pos.getAssetCode());
+            BigDecimal price = prices.get(toKey(pos));
             if (price != null) {
                 totalValue = totalValue.add(price.multiply(pos.getQuantity()));
             }
@@ -144,13 +152,10 @@ public class PortfolioSummaryService {
         List<PortfolioPosition> positions = positionRepository
                 .findByPortfolioIdAndQuantityGreaterThan(portfolioId, BigDecimal.ZERO);
 
-        if (assetTypeFilter != null && !assetTypeFilter.isBlank()) {
-            try {
-                AssetType filterType = AssetType.valueOf(assetTypeFilter);
-                positions = positions.stream().filter(p -> p.getAssetType() == filterType).toList();
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Invalid asset type: " + assetTypeFilter);
-            }
+        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetTypeFilter, "asset type");
+        if (filterType != null) {
+            AssetType fixed = filterType;
+            positions = positions.stream().filter(p -> p.getAssetType() == fixed).toList();
         }
 
         UserWallet wallet = findWallet(portfolioId);
@@ -160,8 +165,10 @@ public class PortfolioSummaryService {
         Map<String, String> bucketTypes = new LinkedHashMap<>();
         BigDecimal totalValue = BigDecimal.ZERO;
 
+        Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(toKeys(positions));
+
         for (PortfolioPosition pos : positions) {
-            BigDecimal price = pricingPort.getPriceTry(pos.getAssetType().name(), pos.getAssetCode());
+            BigDecimal price = prices.get(toKey(pos));
             BigDecimal marketValue = price != null
                     ? price.multiply(pos.getQuantity()).setScale(SCALE, RoundingMode.HALF_UP)
                     : BigDecimal.ZERO;
@@ -186,32 +193,30 @@ public class PortfolioSummaryService {
                 .toList();
     }
 
-    private PositionResponse toPositionResponse(PortfolioPosition pos) {
-        String type = pos.getAssetType().name();
-        BigDecimal price = pricingPort.getPriceTry(type, pos.getAssetCode());
-        BigDecimal currentPrice = price != null ? price : BigDecimal.ZERO;
+    private PositionResponse toPositionResponse(PortfolioPosition pos, PriceBundle bundle) {
+        PriceBundle effective = bundle != null ? bundle : new PriceBundle(null, null, new AssetMeta(null, null));
+        BigDecimal currentPrice = effective.price() != null ? effective.price() : BigDecimal.ZERO;
         BigDecimal marketValue = currentPrice.multiply(pos.getQuantity()).setScale(SCALE, RoundingMode.HALF_UP);
         BigDecimal pnl = marketValue.subtract(pos.getTotalCostTry());
         BigDecimal pnlPercent = pos.getTotalCostTry().compareTo(BigDecimal.ZERO) > 0
                 ? pnl.multiply(new BigDecimal("100")).divide(pos.getTotalCostTry(), SCALE, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
-        BigDecimal sellPrice = pricingPort.getSellPriceTry(type, pos.getAssetCode());
-        BigDecimal sellPriceTry = sellPrice != null ? sellPrice : currentPrice;
-        BigDecimal commissionRate = getCommissionRate(pos.getAssetType());
+        BigDecimal sellPriceTry = effective.sellPrice() != null ? effective.sellPrice() : currentPrice;
+        BigDecimal commissionRate = pos.getAssetType().commissionRate(appProperties.getCommission());
+        AssetMeta meta = effective.meta() != null ? effective.meta() : new AssetMeta(null, null);
 
-        AssetPricingPort.AssetMeta meta = pricingPort.getAssetMeta(type, pos.getAssetCode());
         return responseMapper.toPositionResponse(pos, currentPrice, sellPriceTry, commissionRate, marketValue, pnl, pnlPercent, meta.name(), meta.image());
     }
 
-    private BigDecimal getCommissionRate(AssetType assetType) {
-        AppProperties.Commission commission = appProperties.getCommission();
-        return switch (assetType) {
-            case STOCK -> commission.getStockRate();
-            case CRYPTO -> commission.getCryptoRate();
-            case FUND -> commission.getFundRate();
-            default -> BigDecimal.ZERO;
-        };
+    private List<AssetKey> toKeys(List<PortfolioPosition> positions) {
+        return positions.stream()
+                .map(this::toKey)
+                .toList();
+    }
+
+    private AssetKey toKey(PortfolioPosition pos) {
+        return new AssetKey(pos.getAssetType().marketType(), pos.getAssetCode());
     }
 
     private BigDecimal calculateRealizedPnlByType(Long portfolioId, AssetType assetType) {
@@ -220,17 +225,6 @@ public class PortfolioSummaryService {
                 .stream()
                 .map(txn -> txn.getRealizedPnlTry() != null ? txn.getRealizedPnlTry() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    private AssetType parseAssetTypeOrNull(String assetType) {
-        if (assetType == null || assetType.isBlank()) {
-            return null;
-        }
-        try {
-            return AssetType.valueOf(assetType);
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid asset type: " + assetType);
-        }
     }
 
     private UserWallet findWallet(Long portfolioId) {

@@ -45,6 +45,11 @@ public class Stock extends BaseAsset {
     @Enumerated(EnumType.STRING)
     private StockSegment stockSegment;
 
+    @Override
+    public String getCode() {
+        return symbol;
+    }
+
     public void scaleAndComputeChange(int scale) {
         this.currentPrice = scaleValue(this.currentPrice, scale);
         this.previousClose = scaleValue(this.previousClose, scale);

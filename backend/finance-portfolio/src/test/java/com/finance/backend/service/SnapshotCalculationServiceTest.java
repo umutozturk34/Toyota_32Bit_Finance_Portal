@@ -4,9 +4,11 @@ import com.finance.backend.config.AppProperties;
 import com.finance.backend.model.*;
 import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.repository.UserWalletRepository;
+import com.finance.backend.service.support.CountingAssetPricingPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -21,7 +23,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class SnapshotCalculationServiceTest {
 
-    @Mock private AssetPricingPort pricingPort;
+    @Mock(answer = Answers.CALLS_REAL_METHODS) private AssetPricingPort pricingPort;
     @Mock private PortfolioPositionRepository positionRepository;
     @Mock private UserWalletRepository walletRepository;
 
@@ -36,7 +38,7 @@ class SnapshotCalculationServiceTest {
     void assetSnapshotCalculatesPnlFromCurrentPriceVsTotalCost() {
         PortfolioPosition pos = stubPosition(AssetType.CRYPTO, "bitcoin",
                 new BigDecimal("0.50000000"), new BigDecimal("1250000.0000"));
-        when(pricingPort.getPriceTry("CRYPTO", "bitcoin")).thenReturn(new BigDecimal("2600000.0000"));
+        when(pricingPort.getPriceTry(MarketType.CRYPTO,"bitcoin")).thenReturn(new BigDecimal("2600000.0000"));
         LocalDateTime timestamp = LocalDateTime.of(2026, 4, 10, 23, 0);
 
         PortfolioAssetDailySnapshot snapshot = service.buildAssetSnapshot(1L, pos, timestamp);
@@ -52,7 +54,7 @@ class SnapshotCalculationServiceTest {
     void assetSnapshotWithNullPriceShowsFullLoss() {
         PortfolioPosition pos = stubPosition(AssetType.STOCK, "DELISTED",
                 new BigDecimal("100.00000000"), new BigDecimal("5000.0000"));
-        when(pricingPort.getPriceTry("STOCK", "DELISTED")).thenReturn(null);
+        when(pricingPort.getPriceTry(MarketType.STOCK,"DELISTED")).thenReturn(null);
 
         PortfolioAssetDailySnapshot snapshot = service.buildAssetSnapshot(1L, pos, LocalDateTime.now());
 
@@ -68,8 +70,8 @@ class SnapshotCalculationServiceTest {
                 .thenReturn(List.of(
                         stubPosition(AssetType.CRYPTO, "bitcoin", new BigDecimal("1.00000000"), new BigDecimal("2400000.0000")),
                         stubPosition(AssetType.STOCK, "THYAO.IS", new BigDecimal("100.00000000"), new BigDecimal("4000.0000"))));
-        when(pricingPort.getPriceTry("CRYPTO", "bitcoin")).thenReturn(new BigDecimal("2500000.0000"));
-        when(pricingPort.getPriceTry("STOCK", "THYAO.IS")).thenReturn(new BigDecimal("50.0000"));
+        when(pricingPort.getPriceTry(MarketType.CRYPTO,"bitcoin")).thenReturn(new BigDecimal("2500000.0000"));
+        when(pricingPort.getPriceTry(MarketType.STOCK,"THYAO.IS")).thenReturn(new BigDecimal("50.0000"));
         when(walletRepository.findByPortfolioIdAndCurrency(1L, "TRY"))
                 .thenReturn(Optional.of(stubWallet(new BigDecimal("500000.0000"))));
 
@@ -86,13 +88,38 @@ class SnapshotCalculationServiceTest {
         Portfolio portfolio = Portfolio.builder().id(1L).build();
         when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
                 .thenReturn(List.of(stubPosition(AssetType.FUND, "AAK", new BigDecimal("100.00000000"), new BigDecimal("10000.0000"))));
-        when(pricingPort.getPriceTry("FUND", "AAK")).thenReturn(new BigDecimal("110.0000"));
+        when(pricingPort.getPriceTry(MarketType.FUND,"AAK")).thenReturn(new BigDecimal("110.0000"));
         when(walletRepository.findByPortfolioIdAndCurrency(1L, "TRY"))
                 .thenReturn(Optional.of(stubWallet(BigDecimal.ZERO)));
 
         PortfolioDailySnapshot snapshot = service.buildAggregateSnapshot(portfolio, LocalDateTime.now());
 
         assertThat(snapshot.getPnlPercent()).isEqualByComparingTo(new BigDecimal("10.0000"));
+    }
+
+    @Test
+    void aggregateSnapshotIssuesExactlyOneBatchPricingCall() {
+        CountingAssetPricingPort counting = new CountingAssetPricingPort();
+        counting.seedPrice("CRYPTO", "bitcoin", new BigDecimal("2500000.0000"));
+        counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("50.0000"));
+        counting.seedPrice("FUND", "AAK", new BigDecimal("110.0000"));
+
+        SnapshotCalculationService countedService = new SnapshotCalculationService(
+                counting, positionRepository, walletRepository, new AppProperties());
+
+        Portfolio portfolio = Portfolio.builder().id(1L).build();
+        when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
+                .thenReturn(List.of(
+                        stubPosition(AssetType.CRYPTO, "bitcoin", new BigDecimal("1.00000000"), new BigDecimal("2400000.0000")),
+                        stubPosition(AssetType.STOCK, "THYAO.IS", new BigDecimal("100.00000000"), new BigDecimal("4000.0000")),
+                        stubPosition(AssetType.FUND, "AAK", new BigDecimal("50.00000000"), new BigDecimal("5000.0000"))));
+        when(walletRepository.findByPortfolioIdAndCurrency(1L, "TRY"))
+                .thenReturn(Optional.of(stubWallet(BigDecimal.ZERO)));
+
+        countedService.buildAggregateSnapshot(portfolio, LocalDateTime.now());
+
+        assertThat(counting.batchPricesCalls()).isEqualTo(1);
+        assertThat(counting.priceCalls()).isEqualTo(0);
     }
 
     @Test

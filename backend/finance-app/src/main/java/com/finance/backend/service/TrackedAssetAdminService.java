@@ -4,7 +4,6 @@ import com.finance.backend.dto.request.BulkTrackedAssetOrderUpdateRequest;
 import com.finance.backend.dto.request.UpsertTrackedAssetRequest;
 import com.finance.backend.dto.response.TrackedAssetResponse;
 import com.finance.backend.mapper.TrackedAssetMapper;
-import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -20,14 +19,15 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class TrackedAssetAdminService {
 
-    private final TrackedAssetService trackedAssetService;
+    private final TrackedAssetQueryService trackedAssetQueryService;
+    private final TrackedAssetCommandService trackedAssetCommandService;
     private final TrackedAssetMapper trackedAssetMapper;
     private final TrackedAssetRefreshService trackedAssetRefreshService;
     private final Optional<MarketUpdatePort> marketUpdatePort;
 
     @Transactional
     public TrackedAssetResponse upsert(UpsertTrackedAssetRequest request) {
-        TrackedAssetResponse previous = trackedAssetService
+        TrackedAssetResponse previous = trackedAssetQueryService
             .getTrackedAsset(request.getAssetType(), request.getAssetCode())
             .orElse(null);
 
@@ -37,7 +37,7 @@ public class TrackedAssetAdminService {
             trackedAssetRefreshService.validateAssetExists(request.getAssetType(), request.getAssetCode());
         }
 
-        TrackedAssetResponse data = trackedAssetService.upsert(trackedAssetMapper.toUpsertCommand(request));
+        TrackedAssetResponse data = trackedAssetCommandService.upsert(trackedAssetMapper.toUpsertCommand(request));
 
         boolean shouldRefresh = shouldRefreshAfterUpsert(previous, data);
         boolean shouldClear = !data.isEnabled();
@@ -78,7 +78,7 @@ public class TrackedAssetAdminService {
 
     @Transactional
     public void setEnabled(TrackedAssetType type, String code, boolean enabled) {
-        trackedAssetService.setEnabled(type, code, enabled);
+        trackedAssetCommandService.setEnabled(type, code, enabled);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -94,7 +94,7 @@ public class TrackedAssetAdminService {
 
     @Transactional
     public void delete(TrackedAssetType type, String code) {
-        trackedAssetService.delete(type, code);
+        trackedAssetCommandService.delete(type, code);
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -106,7 +106,7 @@ public class TrackedAssetAdminService {
 
     @Transactional
     public void updateSortOrders(BulkTrackedAssetOrderUpdateRequest request) {
-        trackedAssetService.updateSortOrders(request.getAssetType(), request.getItems());
+        trackedAssetCommandService.updateSortOrders(request.getAssetType(), request.getItems());
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -116,17 +116,6 @@ public class TrackedAssetAdminService {
     }
 
     private void refreshDefaultPage(TrackedAssetType type) {
-        MarketType marketType = toMarketType(type);
-        if (marketType != null) {
-            marketUpdatePort.ifPresent(port -> port.onMarketDataUpdated(marketType));
-        }
-    }
-
-    private MarketType toMarketType(TrackedAssetType type) {
-        return switch (type) {
-            case STOCK -> MarketType.STOCK;
-            case CRYPTO -> MarketType.CRYPTO;
-            case FUND -> MarketType.FUND;
-        };
+        marketUpdatePort.ifPresent(port -> port.onMarketDataUpdated(type.marketType()));
     }
 }

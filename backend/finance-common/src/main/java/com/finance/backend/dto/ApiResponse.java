@@ -2,6 +2,8 @@ package com.finance.backend.dto;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
+import com.finance.backend.dto.response.PagedResponse;
+import java.util.Collection;
 @Data
 @NoArgsConstructor
 public class ApiResponse<T> {
@@ -22,4 +24,14 @@ public class ApiResponse<T> {
         return new ApiResponse<>(true, message, data);
     }
 
+    public static <T extends Collection<?>> ApiResponse<T> successOrEmpty(String message, String emptyMessage, T data) {
+        String msg = (data == null || data.isEmpty()) ? emptyMessage : message;
+        return new ApiResponse<>(true, msg, data);
+    }
+
+    public static <T> ApiResponse<PagedResponse<T>> successOrEmpty(
+            String message, String emptyMessage, PagedResponse<T> data) {
+        String msg = (data == null || data.content().isEmpty()) ? emptyMessage : message;
+        return new ApiResponse<>(true, msg, data);
+    }
 }

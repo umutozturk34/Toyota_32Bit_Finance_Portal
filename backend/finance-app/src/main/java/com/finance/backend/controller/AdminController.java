@@ -3,7 +3,9 @@ package com.finance.backend.controller;
 import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.response.TaskStatusResponse;
 import com.finance.backend.dto.response.TaskTriggerResponse;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.service.AdminTaskService;
+import com.finance.backend.util.EnumParser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,64 +19,25 @@ public class AdminController {
 
     private final AdminTaskService adminTaskService;
 
-    @PostMapping("/trigger/crypto/snapshot")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerCryptoSnapshot() {
-        return ResponseEntity.accepted().body(ApiResponse.success("Crypto snapshot triggered", adminTaskService.triggerCryptoSnapshot()));
+    @PostMapping("/trigger/{type}/snapshot")
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerSnapshot(@PathVariable String type) {
+        MarketType marketType = parseMarketType(type);
+        String label = capitalize(type) + " snapshot triggered";
+        return ResponseEntity.accepted().body(ApiResponse.success(label, adminTaskService.triggerSnapshot(marketType)));
     }
 
-    @PostMapping("/trigger/crypto/candles")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerCryptoCandles() {
-        return ResponseEntity.accepted().body(ApiResponse.success("Crypto candles triggered", adminTaskService.triggerCryptoCandles()));
+    @PostMapping("/trigger/{type}/candles")
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerCandles(@PathVariable String type) {
+        MarketType marketType = parseMarketType(type);
+        String label = capitalize(type) + " candles triggered";
+        return ResponseEntity.accepted().body(ApiResponse.success(label, adminTaskService.triggerCandles(marketType)));
     }
 
-    @PostMapping("/trigger/crypto/full")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerCryptoFull() {
-        return ResponseEntity.accepted().body(ApiResponse.success("Crypto full update triggered", adminTaskService.triggerCryptoFull()));
-    }
-
-    @PostMapping("/trigger/stock/snapshot")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerStockSnapshot() {
-        return ResponseEntity.accepted().body(ApiResponse.success("Stock snapshot triggered", adminTaskService.triggerStockSnapshot()));
-    }
-
-    @PostMapping("/trigger/stock/candles")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerStockCandles() {
-        return ResponseEntity.accepted().body(ApiResponse.success("Stock candles triggered", adminTaskService.triggerStockCandles()));
-    }
-
-    @PostMapping("/trigger/stock/full")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerStockFull() {
-        return ResponseEntity.accepted().body(ApiResponse.success("Stock full update triggered", adminTaskService.triggerStockFull()));
-    }
-
-    @PostMapping("/trigger/forex/snapshot")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerForexSnapshot() {
-        return ResponseEntity.accepted().body(ApiResponse.success("Forex snapshot triggered", adminTaskService.triggerForexSnapshot()));
-    }
-
-    @PostMapping("/trigger/forex/candles")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerForexCandles() {
-        return ResponseEntity.accepted().body(ApiResponse.success("Forex candles triggered", adminTaskService.triggerForexCandles()));
-    }
-
-    @PostMapping("/trigger/forex/full")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerForexFull() {
-        return ResponseEntity.accepted().body(ApiResponse.success("Forex full update triggered", adminTaskService.triggerForexFull()));
-    }
-
-    @PostMapping("/trigger/fund/snapshot")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerFundSnapshot() {
-        return ResponseEntity.accepted().body(ApiResponse.success("Fund snapshot triggered", adminTaskService.triggerFundSnapshot()));
-    }
-
-    @PostMapping("/trigger/fund/candles")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerFundCandles() {
-        return ResponseEntity.accepted().body(ApiResponse.success("Fund candles triggered", adminTaskService.triggerFundCandles()));
-    }
-
-    @PostMapping("/trigger/fund/full")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerFundFull() {
-        return ResponseEntity.accepted().body(ApiResponse.success("Fund full update triggered", adminTaskService.triggerFundFull()));
+    @PostMapping("/trigger/{type}/full")
+    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerFull(@PathVariable String type) {
+        MarketType marketType = parseMarketType(type);
+        String label = capitalize(type) + " full update triggered";
+        return ResponseEntity.accepted().body(ApiResponse.success(label, adminTaskService.triggerFull(marketType)));
     }
 
     @PostMapping("/trigger/bond/update")
@@ -90,5 +53,14 @@ public class AdminController {
     @GetMapping("/tasks/status")
     public ResponseEntity<ApiResponse<TaskStatusResponse>> getTaskStatus() {
         return ResponseEntity.ok(ApiResponse.success("Task status retrieved", adminTaskService.getTaskStatus()));
+    }
+
+    private MarketType parseMarketType(String raw) {
+        return EnumParser.parseOrBadRequest(MarketType.class, raw == null ? null : raw.toUpperCase(), "market type");
+    }
+
+    private String capitalize(String value) {
+        if (value == null || value.isBlank()) return value;
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1).toLowerCase();
     }
 }

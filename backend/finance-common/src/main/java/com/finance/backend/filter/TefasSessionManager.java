@@ -14,6 +14,7 @@ public class TefasSessionManager {
 
     private final WebClient webClient;
     private final String sessionPath;
+    private final Object refreshLock = new Object();
     private volatile String sessionCookie;
 
     public TefasSessionManager(@Qualifier("tefasBaseWebClient") WebClient webClient,
@@ -23,13 +24,31 @@ public class TefasSessionManager {
     }
 
     public String getCookie() {
-        if (sessionCookie == null) {
-            refresh();
+        String snapshot = sessionCookie;
+        if (snapshot != null) {
+            return snapshot;
         }
-        return sessionCookie;
+        synchronized (refreshLock) {
+            snapshot = sessionCookie;
+            if (snapshot == null) {
+                fetchCookie();
+                snapshot = sessionCookie;
+            }
+        }
+        return snapshot;
     }
 
-    public synchronized void refresh() {
+    public void refresh() {
+        synchronized (refreshLock) {
+            fetchCookie();
+        }
+    }
+
+    public void invalidate() {
+        sessionCookie = null;
+    }
+
+    protected void fetchCookie() {
         try {
             webClient.get()
                     .uri(sessionPath)
@@ -56,7 +75,7 @@ public class TefasSessionManager {
         }
     }
 
-    public void invalidate() {
-        sessionCookie = null;
+    protected void setSessionCookie(String cookie) {
+        this.sessionCookie = cookie;
     }
 }

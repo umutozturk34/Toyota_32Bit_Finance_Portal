@@ -7,6 +7,7 @@ import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.ForexMapper;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.ForexCandleRepository;
 import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.util.BatchLogHelper;
@@ -21,13 +22,17 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @Log4j2
-public class ForexCandleService {
+public class ForexCandleService implements CandleBatchRefresher {
 
     private final YahooForexClient yahooForexClient;
     private final ForexMapper forexMapper;
@@ -60,7 +65,13 @@ public class ForexCandleService {
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
-    public void syncAllYahooCandles() {
+    @Override
+    public MarketType getMarketType() {
+        return MarketType.FOREX;
+    }
+
+    @Override
+    public void refreshAll() {
         pruneOldForexCandles();
         List<Forex> allForex = forexRepository.findAll();
         log.info("Starting Yahoo forex candle sync for {} pairs", allForex.size());
@@ -112,7 +123,7 @@ public class ForexCandleService {
                 .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, "5y"))
                 .orElse("5y");
         try {
-            List<YahooCandleDto> candles = yahooForexClient.fetchCandles(yahooSymbol, range, "1d", false);
+            List<YahooCandleDto> candles = yahooForexClient.fetchCandles(yahooSymbol, range, "1d", true);
             if (!candles.isEmpty()) {
                 int saved = transactionTemplate.execute(status -> saveCandleBatch(forex, candles));
                 if (saved > 0 && (!"5y".equals(range) || candleCount + saved >= minCandlesForIncremental)) {
@@ -144,7 +155,7 @@ public class ForexCandleService {
         String[] attempts = {baseCurrency + "USD=X", "USD" + baseCurrency + "=X"};
         for (String symbol : attempts) {
             try {
-                List<YahooCandleDto> pairCandles = yahooForexClient.fetchCandles(symbol, "5y", "1d", false);
+                List<YahooCandleDto> pairCandles = yahooForexClient.fetchCandles(symbol, "5y", "1d", true);
                 if (!pairCandles.isEmpty()) {
                     boolean isUsdBase = symbol.startsWith("USD");
                     List<YahooCandleDto> syntheticCandles = priceCalculationService.buildSyntheticCandles(
@@ -162,11 +173,16 @@ public class ForexCandleService {
     }
 
     private int saveCandleBatch(Forex forex, List<YahooCandleDto> candleDtos) {
+        List<YahooCandleDto> uniqueDtos = candleDtos.stream()
+                .collect(Collectors.toMap(
+                        dto -> dto.candleDate().truncatedTo(ChronoUnit.DAYS),
+                        dto -> dto, (a, b) -> b, LinkedHashMap::new))
+                .values().stream().toList();
         CandleBatchUpsertTemplate.UpsertResult<ForexCandle> upsertResult = CandleBatchUpsertTemplate.upsert(
-                candleDtos,
-                dto -> dto.candleDate().truncatedTo(java.time.temporal.ChronoUnit.DAYS),
+                uniqueDtos,
+                dto -> dto.candleDate().truncatedTo(ChronoUnit.DAYS),
                 keys -> forexCandleRepository.findByCurrencyCodeAndCandleDateIn(forex.getCurrencyCode(), keys),
-                candle -> candle.getCandleDate().truncatedTo(java.time.temporal.ChronoUnit.DAYS),
+                candle -> candle.getCandleDate().truncatedTo(ChronoUnit.DAYS),
                 forexMapper::updateCandleEntity,
                 dto -> forexMapper.toCandleEntity(dto, forex.getCurrencyCode(), forex));
 

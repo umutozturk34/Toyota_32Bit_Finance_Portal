@@ -12,6 +12,7 @@ import com.finance.backend.repository.*;
 import com.finance.backend.service.transaction.ResolvedInput;
 import com.finance.backend.service.transaction.TransactionInputResolver;
 import com.finance.backend.service.transaction.TransactionInputResolverFactory;
+import com.finance.backend.util.EnumParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -45,23 +46,13 @@ public class PortfolioTransactionService {
         Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
                 .orElseThrow(() -> new ResourceNotFoundException("Portfolio not found"));
 
-        AssetType assetType;
-        TransactionSide side;
-        try {
-            assetType = AssetType.valueOf(request.assetType());
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid asset type: " + request.assetType());
-        }
-        try {
-            side = TransactionSide.valueOf(request.side());
-        } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid transaction side: " + request.side());
-        }
+        AssetType assetType = EnumParser.parseOrBadRequest(AssetType.class, request.assetType(), "asset type");
+        TransactionSide side = EnumParser.parseOrBadRequest(TransactionSide.class, request.side(), "transaction side");
         BigDecimal fee = request.feeTry() != null ? request.feeTry().setScale(PRICE_SCALE, RoundingMode.HALF_UP) : BigDecimal.ZERO;
 
         BigDecimal unitPrice = side == TransactionSide.SELL
-                ? pricingPort.getSellPriceTry(request.assetType(), request.assetCode())
-                : pricingPort.getPriceTry(request.assetType(), request.assetCode());
+                ? pricingPort.getSellPriceTry(assetType.marketType(), request.assetCode())
+                : pricingPort.getPriceTry(assetType.marketType(), request.assetCode());
         if (unitPrice == null) {
             throw new BadRequestException("Price not available for " + request.assetType() + ":" + request.assetCode());
         }
@@ -136,14 +127,7 @@ public class PortfolioTransactionService {
 
         PortfolioPosition position = positionRepository
                 .findByPortfolioIdAndAssetTypeAndAssetCode(portfolio.getId(), assetType, assetCode)
-                .orElseGet(() -> PortfolioPosition.builder()
-                        .portfolio(portfolio)
-                        .assetType(assetType)
-                        .assetCode(assetCode)
-                        .quantity(BigDecimal.ZERO)
-                        .averageCostTry(BigDecimal.ZERO)
-                        .totalCostTry(BigDecimal.ZERO)
-                        .build());
+                .orElseGet(() -> PortfolioPosition.empty(portfolio, assetType, assetCode));
 
         position.addQuantity(quantity, totalCost);
         positionRepository.save(position);
@@ -160,8 +144,7 @@ public class PortfolioTransactionService {
             throw new BusinessException("Yetersiz miktar. Sahip olunan: " + position.getQuantity() + ", satılmak istenen: " + quantity);
         }
 
-        BigDecimal costBasis = position.getAverageCostTry().multiply(quantity).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
-        BigDecimal realizedPnl = totalCost.subtract(costBasis).subtract(fee);
+        BigDecimal realizedPnl = position.calculateRealizedPnl(quantity, totalCost, fee);
         portfolio.addRealizedPnl(realizedPnl);
         portfolioRepository.save(portfolio);
 
@@ -180,7 +163,7 @@ public class PortfolioTransactionService {
         return realizedPnl;
     }
 
-    private void recordLedger(UserWallet wallet, LedgerType type, BigDecimal amount, String description) {
+        private void recordLedger(UserWallet wallet, LedgerType type, BigDecimal amount, String description) {
         WalletLedger ledger = WalletLedger.builder()
                 .wallet(wallet)
                 .ledgerType(type)

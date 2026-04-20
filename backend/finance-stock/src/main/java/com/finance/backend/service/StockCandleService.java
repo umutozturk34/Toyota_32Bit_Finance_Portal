@@ -5,6 +5,7 @@ import com.finance.backend.config.AppProperties;
 import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.mapper.StockMapper;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
 import com.finance.backend.repository.StockCandleRepository;
@@ -22,10 +23,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.function.Function;
 
 @Log4j2
 @Service
-public class StockCandleService {
+public class StockCandleService implements CandleBatchRefresher {
 
     private final YahooStockClient yahooStockClient;
     private final StockMapper stockMapper;
@@ -58,7 +60,13 @@ public class StockCandleService {
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
-    public void updateStockCandles() {
+    @Override
+    public MarketType getMarketType() {
+        return MarketType.STOCK;
+    }
+
+    @Override
+    public void refreshAll() {
         List<String> bistStocks = marketConstants.getTrackedBistStocks();
         if (bistStocks.isEmpty()) {
             log.warn("No BIST stocks configured in environment variables");
@@ -74,7 +82,7 @@ public class StockCandleService {
                     stockCacheService.refreshHistory(symbol);
                     totalCandles[0] += candleCount;
                 },
-                java.util.function.Function.identity(),
+                Function.identity(),
                 "candle",
                 10,
                 (symbol, e) -> log.error("Failed to update candles for {} (transaction rolled back): {}", symbol, e.getMessage(), e),

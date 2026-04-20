@@ -11,7 +11,8 @@ public final class MarketProviderHelper {
     private MarketProviderHelper() {}
 
     public static Sort buildSort(String sortBy, String direction, Map<String, String> fieldMapping) {
-        String field = fieldMapping.getOrDefault(sortBy, fieldMapping.get("default"));
+        if (sortBy == null || sortBy.isBlank()) return Sort.unsorted();
+        String field = fieldMapping.getOrDefault(sortBy, sortBy);
         Sort.Direction dir = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
         return Sort.by(dir, field);
     }

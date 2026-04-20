@@ -1,6 +1,7 @@
 package com.finance.backend.repository;
 
 import com.finance.backend.model.AssetType;
+import java.math.BigDecimal;
 import com.finance.backend.model.PortfolioPosition;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -17,8 +18,8 @@ public interface PortfolioPositionRepository extends JpaRepository<PortfolioPosi
             Long portfolioId, AssetType assetType, String assetCode);
 
     List<PortfolioPosition> findByPortfolioIdAndQuantityGreaterThan(
-            Long portfolioId, java.math.BigDecimal minQuantity);
+            Long portfolioId, BigDecimal minQuantity);
 
     List<PortfolioPosition> findByPortfolioIdAndAssetTypeAndQuantityGreaterThan(
-            Long portfolioId, AssetType assetType, java.math.BigDecimal minQuantity);
+            Long portfolioId, AssetType assetType, BigDecimal minQuantity);
 }

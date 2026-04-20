@@ -7,6 +7,7 @@ import com.finance.backend.dto.external.CoinGeckoCandleDto;
 import com.finance.backend.mapper.CryptoMapper;
 import com.finance.backend.model.Crypto;
 import com.finance.backend.model.CryptoCandle;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.CryptoCandleRepository;
 import com.finance.backend.repository.CryptoRepository;
 import com.finance.backend.util.BatchLogHelper;
@@ -22,10 +23,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.function.Function;
 
 @Log4j2
 @Service
-public class CryptoCandleService {
+public class CryptoCandleService implements CandleBatchRefresher {
 
     private final CoinGeckoClient coinGeckoClient;
     private final CryptoMapper cryptoMapper;
@@ -56,7 +58,13 @@ public class CryptoCandleService {
         this.minCandlesForHealthy = appProperties.getCrypto().getMinCandlesForHealthy();
     }
 
-    public void updateOnlyCandles() {
+    @Override
+    public MarketType getMarketType() {
+        return MarketType.CRYPTO;
+    }
+
+    @Override
+    public void refreshAll() {
         List<String> trackedCoins = marketConstants.getTrackedCryptos();
         log.info("Starting crypto candle update for {} coins", trackedCoins.size());
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
@@ -87,7 +95,7 @@ public class CryptoCandleService {
 
                     cryptoCacheService.refreshHistory(coinId);
                 },
-                java.util.function.Function.identity(),
+                Function.identity(),
                 "candle",
                 5,
                 (coinId, e) -> log.error("Failed to fetch candle for {}: {}", coinId, e.getMessage(), e),

@@ -2,11 +2,13 @@ package com.finance.backend.controller;
 
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.ApiResponse;
+import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.dto.response.MarketOverviewResponse;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.model.CandlePeriod;
 import com.finance.backend.model.MarketType;
+import com.finance.backend.service.MarketOverviewService;
 import com.finance.backend.service.UnifiedMarketService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +27,7 @@ public class UnifiedMarketController {
 
     private final AppProperties appProperties;
     private final UnifiedMarketService unifiedMarketService;
+    private final MarketOverviewService marketOverviewService;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -49,10 +51,11 @@ public class UnifiedMarketController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) Integer size) {
 
-        List<MarketType> types = parseTypes(type);
-        int resolvedSize = resolveSize(size, appProperties.getPagination().getMarket());
+        AppProperties.Market market = appProperties.getPagination().getMarket();
+        List<MarketType> types = MarketRequestHelper.parseMarketTypes(type);
+        int resolvedSize = MarketRequestHelper.clamp(size, market.getDefaultSize(), market.getMaxSize());
 
-        return ResponseEntity.ok(ApiResponse.success("Market assets retrieved successfully",
+        return ResponseEntity.ok(ApiResponse.successOrEmpty("Market assets retrieved successfully", "No data found",
                 unifiedMarketService.search(types, code, segment, subType, search, sort, direction, filter, page, resolvedSize)));
     }
 
@@ -61,10 +64,11 @@ public class UnifiedMarketController {
     public ResponseEntity<ApiResponse<MarketOverviewResponse>> getMarketOverview(
             @Parameter(description = "Max items per category")
             @RequestParam(required = false) Integer limit) {
-        int resolvedLimit = resolveLimit(limit, appProperties.getPagination().getMarket());
+        AppProperties.Market market = appProperties.getPagination().getMarket();
+        int resolvedLimit = MarketRequestHelper.clamp(limit, market.getDefaultOverviewLimit(), market.getMaxOverviewLimit());
 
         return ResponseEntity.ok(ApiResponse.success("Market overview retrieved successfully",
-                unifiedMarketService.getOverview(resolvedLimit)));
+                marketOverviewService.getOverview(resolvedLimit)));
     }
 
     @GetMapping("/history")
@@ -81,28 +85,9 @@ public class UnifiedMarketController {
 
     @GetMapping("/group-counts")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getGroupCounts(
+    public ResponseEntity<ApiResponse<List<GroupCount>>> getGroupCounts(
             @RequestParam MarketType type) {
         return ResponseEntity.ok(ApiResponse.success("Group counts retrieved",
                 unifiedMarketService.getGroupCounts(type)));
-    }
-
-    private List<MarketType> parseTypes(String type) {
-        if (type == null || type.isBlank()) return List.of(MarketType.values());
-        try {
-            return Arrays.stream(type.split(",")).map(String::trim).map(String::toUpperCase).map(MarketType::valueOf).toList();
-        } catch (IllegalArgumentException e) {
-            throw new com.finance.backend.exception.BadRequestException("Invalid market type: " + type);
-        }
-    }
-
-    private int resolveSize(Integer size, AppProperties.Market market) {
-        int requested = size == null ? market.getDefaultSize() : size;
-        return Math.max(1, Math.min(requested, market.getMaxSize()));
-    }
-
-    private int resolveLimit(Integer limit, AppProperties.Market market) {
-        int resolved = limit == null ? market.getDefaultOverviewLimit() : limit;
-        return Math.max(1, Math.min(resolved, market.getMaxOverviewLimit()));
     }
 }

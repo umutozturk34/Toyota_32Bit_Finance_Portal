@@ -99,6 +99,53 @@ class PortfolioPositionTest {
         assertThat(pos.getAverageCostTry()).isEqualByComparingTo(new BigDecimal("50.0000"));
     }
 
+    @Test
+    void emptyFactoryCreatesZeroedPositionLinkedToPortfolio() {
+        Portfolio portfolio = Portfolio.builder().id(42L).userSub("user-1").build();
+
+        PortfolioPosition position = PortfolioPosition.empty(portfolio, AssetType.STOCK, "THYAO.IS");
+
+        assertThat(position.getPortfolio()).isSameAs(portfolio);
+        assertThat(position.getAssetType()).isEqualTo(AssetType.STOCK);
+        assertThat(position.getAssetCode()).isEqualTo("THYAO.IS");
+        assertThat(position.getQuantity()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(position.getAverageCostTry()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(position.getTotalCostTry()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    void calculateRealizedPnlUsesAverageCostAsBasisAndDeductsFee() {
+        PortfolioPosition pos = buildPosition(
+                new BigDecimal("10.00000000"), new BigDecimal("50.0000"), new BigDecimal("500.0000"));
+
+        BigDecimal pnl = pos.calculateRealizedPnl(
+                new BigDecimal("4.00000000"), new BigDecimal("280.0000"), new BigDecimal("5.0000"));
+
+        assertThat(pnl).isEqualByComparingTo(new BigDecimal("75.0000"));
+    }
+
+    @Test
+    void calculateRealizedPnlIsNegativeWhenProceedsBelowCostBasis() {
+        PortfolioPosition pos = buildPosition(
+                new BigDecimal("5.00000000"), new BigDecimal("100.0000"), new BigDecimal("500.0000"));
+
+        BigDecimal pnl = pos.calculateRealizedPnl(
+                new BigDecimal("2.00000000"), new BigDecimal("150.0000"), new BigDecimal("1.0000"));
+
+        assertThat(pnl).isEqualByComparingTo(new BigDecimal("-51.0000"));
+    }
+
+    @Test
+    void calculateRealizedPnlWithZeroFeeStillReturnsGrossMinusCostBasis() {
+        PortfolioPosition pos = buildPosition(
+                new BigDecimal("2.00000000"), new BigDecimal("1000.0000"), new BigDecimal("2000.0000"));
+
+        BigDecimal pnl = pos.calculateRealizedPnl(
+                new BigDecimal("1.00000000"), new BigDecimal("1200.0000"), BigDecimal.ZERO);
+
+        assertThat(pnl).isEqualByComparingTo(new BigDecimal("200.0000"));
+    }
+
     private PortfolioPosition buildPosition(BigDecimal qty, BigDecimal avgCost, BigDecimal totalCost) {
         return PortfolioPosition.builder()
                 .quantity(qty)

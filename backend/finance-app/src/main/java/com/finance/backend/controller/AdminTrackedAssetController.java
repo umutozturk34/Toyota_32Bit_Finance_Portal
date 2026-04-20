@@ -6,7 +6,7 @@ import com.finance.backend.dto.request.UpsertTrackedAssetRequest;
 import com.finance.backend.dto.response.TrackedAssetResponse;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.service.TrackedAssetAdminService;
-import com.finance.backend.service.TrackedAssetService;
+import com.finance.backend.service.TrackedAssetQueryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -31,7 +30,7 @@ import java.util.List;
 public class AdminTrackedAssetController {
 
     private final TrackedAssetAdminService trackedAssetAdminService;
-    private final TrackedAssetService trackedAssetService;
+    private final TrackedAssetQueryService trackedAssetQueryService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<TrackedAssetResponse>>> getTrackedAssets(
@@ -41,8 +40,8 @@ public class AdminTrackedAssetController {
             @RequestParam(defaultValue = "asc") String direction,
             @RequestParam(defaultValue = "false") boolean includeDisabled
     ) {
-        List<TrackedAssetType> types = parseTypes(type);
-        List<TrackedAssetResponse> data = trackedAssetService.searchTrackedAssets(
+        List<TrackedAssetType> types = MarketRequestHelper.parseTrackedTypes(type);
+        List<TrackedAssetResponse> data = trackedAssetQueryService.searchTrackedAssets(
                 types, includeDisabled, search, sort, direction);
         return ResponseEntity.ok(ApiResponse.success("Tracked assets retrieved successfully", data));
     }
@@ -82,13 +81,4 @@ public class AdminTrackedAssetController {
         return ResponseEntity.ok(ApiResponse.success("Tracked asset deleted", null));
     }
 
-    private List<TrackedAssetType> parseTypes(String type) {
-        if (type == null || type.isBlank()) {
-            return List.of(TrackedAssetType.values());
-        }
-        return Arrays.stream(type.split(","))
-                .map(String::trim)
-                .map(TrackedAssetType::valueOf)
-                .toList();
-    }
 }

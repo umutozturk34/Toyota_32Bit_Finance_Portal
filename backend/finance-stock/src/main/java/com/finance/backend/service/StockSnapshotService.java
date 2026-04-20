@@ -5,6 +5,7 @@ import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.YahooStockQuoteDto;
 import com.finance.backend.exception.BusinessException;
 import com.finance.backend.mapper.StockMapper;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
 import com.finance.backend.model.StockSegment;
@@ -19,16 +20,17 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.function.Function;
 
 @Log4j2
 @Service
-public class StockSnapshotService {
+public class StockSnapshotService implements SnapshotBatchRefresher {
 
     private final YahooStockClient yahooStockClient;
     private final StockMapper stockMapper;
     private final StockRepository stockRepository;
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
-    private final TrackedAssetService trackedAssetService;
+    private final TrackedAssetQueryService trackedAssetQueryService;
     private final MarketConstants marketConstants;
     private final TransactionTemplate transactionTemplate;
 
@@ -36,14 +38,14 @@ public class StockSnapshotService {
                                 StockMapper stockMapper,
                                 StockRepository stockRepository,
                                 MarketCacheService<Stock, StockCandle> stockCacheService,
-                                TrackedAssetService trackedAssetService,
+                                TrackedAssetQueryService trackedAssetQueryService,
                                 MarketConstants marketConstants,
                                 PlatformTransactionManager transactionManager) {
         this.yahooStockClient = yahooStockClient;
         this.stockMapper = stockMapper;
         this.stockRepository = stockRepository;
         this.stockCacheService = stockCacheService;
-        this.trackedAssetService = trackedAssetService;
+        this.trackedAssetQueryService = trackedAssetQueryService;
         this.marketConstants = marketConstants;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
@@ -60,7 +62,13 @@ public class StockSnapshotService {
         }
     }
 
-    public void updateStockSnapshots() {
+    @Override
+    public MarketType getMarketType() {
+        return MarketType.STOCK;
+    }
+
+    @Override
+    public void refreshAll() {
         List<String> bistStocks = marketConstants.getTrackedBistStocks();
         if (bistStocks.isEmpty()) {
             log.warn("No BIST stocks configured in environment variables");
@@ -74,7 +82,7 @@ public class StockSnapshotService {
                     Stock stock = transactionTemplate.execute(status -> updateSingleStockSnapshot(symbol));
                     stockCacheService.putSnapshot(symbol, stock);
                 },
-                java.util.function.Function.identity(),
+                Function.identity(),
                 "snapshot",
                 10,
                 (symbol, e) -> log.error("Failed to update snapshot for {}: {}", symbol, e.getMessage(), e),
@@ -121,7 +129,7 @@ public class StockSnapshotService {
     }
 
     private StockSegment resolveStockSegment(String symbol) {
-        return trackedAssetService.getTrackedAsset(TrackedAssetType.STOCK, symbol)
+        return trackedAssetQueryService.getTrackedAsset(TrackedAssetType.STOCK, symbol)
                 .map(tracked -> tracked.getStockSegment() != null
                         ? tracked.getStockSegment()
                         : StockSegment.EQUITY)

@@ -1,6 +1,7 @@
 package com.finance.backend.repository;
 
 import com.finance.backend.model.BondRateHistory;
+import java.time.LocalDate;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -16,8 +17,8 @@ public interface BondRateHistoryRepository extends JpaRepository<BondRateHistory
 
     long countByIsinCode(String isinCode);
 
-    boolean existsByIsinCodeAndRateDate(String isinCode, java.time.LocalDate rateDate);
+    boolean existsByIsinCodeAndRateDate(String isinCode, LocalDate rateDate);
 
     List<BondRateHistory> findByIsinCodeAndRateDateAfterOrderByRateDateAsc(
-            String isinCode, java.time.LocalDate afterDate);
+            String isinCode, LocalDate afterDate);
 }

@@ -1,10 +1,11 @@
 package com.finance.backend.service;
 
+import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.NewsArticleDetailResponse;
 import com.finance.backend.dto.response.NewsArticleResponse;
 import com.finance.backend.dto.response.PagedResponse;
-import com.finance.backend.exception.BadRequestException;
 import com.finance.backend.exception.ResourceNotFoundException;
+import com.finance.backend.util.EnumParser;
 import com.finance.backend.mapper.NewsResponseMapper;
 import com.finance.backend.model.NewsArticle;
 import com.finance.backend.model.NewsCategory;
@@ -35,9 +36,7 @@ public class NewsQueryService {
                                                       int page, int size) {
         Specification<NewsArticle> spec = buildSpecification(category, searchTerm);
 
-        PageRequest pageRequest = (sortBy != null && !sortBy.isBlank())
-                ? PageRequest.of(page, size, buildSort(sortBy, direction))
-                : PageRequest.of(page, size);
+        PageRequest pageRequest = PageRequest.of(page, size, buildSort(sortBy, direction));
         Page<NewsArticle> result = articleRepository.findAll(spec, pageRequest);
 
         return PagedResponse.of(
@@ -53,22 +52,21 @@ public class NewsQueryService {
     }
 
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getCategoryCounts() {
+    public List<GroupCount> getCategoryCounts() {
         return articleRepository.countByCategory().stream()
-                .map(row -> Map.<String, Object>of("type", row[0].toString(), "count", row[1]))
+                .map(row -> new GroupCount(row[0].toString(), ((Number) row[1]).longValue()))
                 .toList();
     }
 
     private Specification<NewsArticle> buildSpecification(String category, String searchTerm) {
         Specification<NewsArticle> spec = (root, query, cb) -> cb.conjunction();
 
-        if (category != null && !category.isBlank()) {
-            try {
-                NewsCategory newsCategory = NewsCategory.valueOf(category.toUpperCase());
-                spec = spec.and((root, query, cb) -> cb.equal(root.get("category"), newsCategory));
-            } catch (IllegalArgumentException e) {
-                throw new BadRequestException("Invalid news category: " + category);
-            }
+        NewsCategory newsCategory = category == null || category.isBlank()
+                ? null
+                : EnumParser.parseOrBadRequest(NewsCategory.class, category.toUpperCase(), "news category");
+        if (newsCategory != null) {
+            NewsCategory fixed = newsCategory;
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("category"), fixed));
         }
 
         if (searchTerm != null && !searchTerm.isBlank()) {

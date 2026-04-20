@@ -5,6 +5,7 @@ import com.finance.backend.dto.external.YahooQuoteDto;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
+import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
@@ -18,7 +19,7 @@ import java.util.List;
 
 @Service
 @Log4j2
-public class ForexSnapshotService {
+public class ForexSnapshotService implements SnapshotBatchRefresher {
 
     private final YahooForexClient yahooForexClient;
     private final PriceCalculationService priceCalculationService;
@@ -38,7 +39,13 @@ public class ForexSnapshotService {
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
-    public void syncAllYahooSnapshots() {
+    @Override
+    public MarketType getMarketType() {
+        return MarketType.FOREX;
+    }
+
+    @Override
+    public void refreshAll() {
         List<Forex> allForex = forexRepository.findAll();
         log.info("Starting Yahoo forex snapshot sync for {} pairs", allForex.size());
 

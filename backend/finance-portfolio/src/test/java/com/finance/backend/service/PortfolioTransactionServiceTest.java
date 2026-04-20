@@ -74,7 +74,7 @@ class PortfolioTransactionServiceTest {
         BigDecimal unitPrice = new BigDecimal("65000.0000");
 
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
-        when(pricingPort.getPriceTry("CRYPTO", "bitcoin")).thenReturn(unitPrice);
+        when(pricingPort.getPriceTry(MarketType.CRYPTO,"bitcoin")).thenReturn(unitPrice);
         when(walletRepository.findByPortfolioIdAndCurrency(PORTFOLIO_ID, "TRY")).thenReturn(Optional.of(wallet));
         when(positionRepository.findByPortfolioIdAndAssetTypeAndAssetCode(PORTFOLIO_ID, AssetType.CRYPTO, "bitcoin"))
                 .thenReturn(Optional.empty());
@@ -110,7 +110,7 @@ class PortfolioTransactionServiceTest {
         BigDecimal newPrice = new BigDecimal("70000.0000");
 
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
-        when(pricingPort.getPriceTry("CRYPTO", "bitcoin")).thenReturn(newPrice);
+        when(pricingPort.getPriceTry(MarketType.CRYPTO,"bitcoin")).thenReturn(newPrice);
         when(walletRepository.findByPortfolioIdAndCurrency(PORTFOLIO_ID, "TRY")).thenReturn(Optional.of(wallet));
         when(positionRepository.findByPortfolioIdAndAssetTypeAndAssetCode(PORTFOLIO_ID, AssetType.CRYPTO, "bitcoin"))
                 .thenReturn(Optional.of(existing));
@@ -129,7 +129,7 @@ class PortfolioTransactionServiceTest {
     @Test
     void buyWithInsufficientBalanceThrowsBusinessException() {
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(buildPortfolio()));
-        when(pricingPort.getPriceTry("STOCK", "THYAO.IS")).thenReturn(new BigDecimal("45.0000"));
+        when(pricingPort.getPriceTry(MarketType.STOCK,"THYAO.IS")).thenReturn(new BigDecimal("45.0000"));
         when(walletRepository.findByPortfolioIdAndCurrency(PORTFOLIO_ID, "TRY"))
                 .thenReturn(Optional.of(buildWallet(new BigDecimal("100.0000"))));
 
@@ -147,7 +147,7 @@ class PortfolioTransactionServiceTest {
                 new BigDecimal("10.00000000"), new BigDecimal("40.0000"), new BigDecimal("400.0000"));
 
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
-        when(pricingPort.getSellPriceTry("STOCK", "THYAO.IS")).thenReturn(new BigDecimal("50.0000"));
+        when(pricingPort.getSellPriceTry(MarketType.STOCK,"THYAO.IS")).thenReturn(new BigDecimal("50.0000"));
         when(walletRepository.findByPortfolioIdAndCurrency(PORTFOLIO_ID, "TRY")).thenReturn(Optional.of(wallet));
         when(positionRepository.findByPortfolioIdAndAssetTypeAndAssetCode(PORTFOLIO_ID, AssetType.STOCK, "THYAO.IS"))
                 .thenReturn(Optional.of(position));
@@ -174,7 +174,7 @@ class PortfolioTransactionServiceTest {
                 new BigDecimal("10.00000000"), new BigDecimal("40.0000"), new BigDecimal("400.0000"));
 
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
-        when(pricingPort.getSellPriceTry("STOCK", "THYAO.IS")).thenReturn(new BigDecimal("50.0000"));
+        when(pricingPort.getSellPriceTry(MarketType.STOCK,"THYAO.IS")).thenReturn(new BigDecimal("50.0000"));
         when(walletRepository.findByPortfolioIdAndCurrency(PORTFOLIO_ID, "TRY")).thenReturn(Optional.of(wallet));
         when(positionRepository.findByPortfolioIdAndAssetTypeAndAssetCode(PORTFOLIO_ID, AssetType.STOCK, "THYAO.IS"))
                 .thenReturn(Optional.of(position));
@@ -198,7 +198,7 @@ class PortfolioTransactionServiceTest {
                 new BigDecimal("3.00000000"), new BigDecimal("40.0000"), new BigDecimal("120.0000"));
 
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
-        when(pricingPort.getSellPriceTry("STOCK", "THYAO.IS")).thenReturn(new BigDecimal("50.0000"));
+        when(pricingPort.getSellPriceTry(MarketType.STOCK,"THYAO.IS")).thenReturn(new BigDecimal("50.0000"));
         when(walletRepository.findByPortfolioIdAndCurrency(PORTFOLIO_ID, "TRY"))
                 .thenReturn(Optional.of(buildWallet(new BigDecimal("1000000.0000"))));
         when(positionRepository.findByPortfolioIdAndAssetTypeAndAssetCode(PORTFOLIO_ID, AssetType.STOCK, "THYAO.IS"))
@@ -213,7 +213,7 @@ class PortfolioTransactionServiceTest {
     @Test
     void priceUnavailableThrowsBadRequestException() {
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(buildPortfolio()));
-        when(pricingPort.getPriceTry("CRYPTO", "unknown")).thenReturn(null);
+        when(pricingPort.getPriceTry(MarketType.CRYPTO,"unknown")).thenReturn(null);
 
         assertThatThrownBy(() -> service.execute(USER_SUB, PORTFOLIO_ID,
                 new TransactionRequest("CRYPTO", "unknown", "BUY", null, new BigDecimal("1000"), null)))
@@ -237,7 +237,7 @@ class PortfolioTransactionServiceTest {
                 new BigDecimal("100.00000000"), new BigDecimal("38.0000"), new BigDecimal("3800.0000"));
 
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
-        when(pricingPort.getSellPriceTry("FOREX", "USD")).thenReturn(new BigDecimal("37.5000"));
+        when(pricingPort.getSellPriceTry(MarketType.FOREX,"USD")).thenReturn(new BigDecimal("37.5000"));
         when(walletRepository.findByPortfolioIdAndCurrency(PORTFOLIO_ID, "TRY"))
                 .thenReturn(Optional.of(buildWallet(new BigDecimal("1000000.0000"))));
         when(positionRepository.findByPortfolioIdAndAssetTypeAndAssetCode(PORTFOLIO_ID, AssetType.FOREX, "USD"))
@@ -248,7 +248,7 @@ class PortfolioTransactionServiceTest {
         service.execute(USER_SUB, PORTFOLIO_ID,
                 new TransactionRequest("FOREX", "USD", "SELL", null, new BigDecimal("500"), null));
 
-        verify(pricingPort).getSellPriceTry("FOREX", "USD");
+        verify(pricingPort).getSellPriceTry(MarketType.FOREX,"USD");
         verify(pricingPort, never()).getPriceTry(any(), any());
     }
 

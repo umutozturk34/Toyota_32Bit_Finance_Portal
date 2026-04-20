@@ -3,6 +3,7 @@ package com.finance.backend.controller;
 import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.response.BondRateResponse;
 import com.finance.backend.dto.response.BondResponse;
+import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.model.CandlePeriod;
 import com.finance.backend.service.BondQueryService;
@@ -36,7 +37,7 @@ public class BondController {
 
     @GetMapping("/types")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getDistinctBondTypes() {
+    public ResponseEntity<ApiResponse<List<GroupCount>>> getDistinctBondTypes() {
         return ResponseEntity.ok(ApiResponse.success("Bond types retrieved",
                 bondQueryService.getTypeCounts()));
     }

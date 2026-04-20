@@ -7,8 +7,9 @@ export const getCryptoHistory = async (id, period = 'ALL') => {
 
 export const trackedAssetService = {
   getByType: async (type, includeDisabled = false) => {
-    const response = await api.get('/tracked-assets', {
-      params: { type, includeDisabled },
+    const endpoint = includeDisabled ? '/admin/tracked-assets' : '/tracked-assets';
+    const response = await api.get(endpoint, {
+      params: { type, ...(includeDisabled && { includeDisabled }) },
     });
     return response.data.data;
   },

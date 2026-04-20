@@ -2,7 +2,6 @@ package com.finance.backend.scheduler;
 
 import com.finance.backend.service.PortfolioSnapshotService;
 import com.finance.backend.service.TaskTrackingService;
-import com.finance.backend.service.TaskTrackingService.TaskInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,13 +17,8 @@ public class PortfolioSnapshotScheduler {
 
     @Scheduled(cron = "${app.scheduler.portfolio.snapshot-cron}", zone = "${app.timezone}")
     public void runDailySnapshots() {
-        TaskInfo started = taskTracker.startTask("scheduled-portfolio-snapshot", "Daily portfolio snapshot generation");
-        try {
-            snapshotService.generateDailySnapshots();
-            taskTracker.completeTask("scheduled-portfolio-snapshot", started);
-        } catch (Exception e) {
-            log.error("Portfolio snapshot generation failed", e);
-            taskTracker.failTask("scheduled-portfolio-snapshot", started, e.getMessage());
-        }
+        taskTracker.runTracked("scheduled-portfolio-snapshot",
+                "Daily portfolio snapshot generation",
+                snapshotService::generateDailySnapshots);
     }
 }

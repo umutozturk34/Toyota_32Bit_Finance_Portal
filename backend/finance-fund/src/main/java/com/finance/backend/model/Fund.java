@@ -21,8 +21,9 @@ public class Fund extends BaseAsset {
     @Column(name = "fund_code", length = 20)
     private String fundCode;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "fund_type", length = 20)
-    private String fundType;
+    private FundType fundType;
 
     @Column(name = "price", precision = 19, scale = 6)
     private BigDecimal price;
@@ -42,11 +43,11 @@ public class Fund extends BaseAsset {
     @Column(name = "change_percent", precision = 19, scale = 4)
     private BigDecimal changePercent;
 
-    public void applyScaling(String fundType) {
+    public void applyScaling(FundType fundType) {
         this.price = scaleValue(this.price, 6);
-        this.bulletinPrice = "BYF".equals(fundType) ? scaleValue(this.bulletinPrice, 4) : null;
+        this.bulletinPrice = fundType != null && fundType.scalesBulletinPrice() ? scaleValue(this.bulletinPrice, 4) : null;
         this.shareCount = scaleValue(this.shareCount, 2);
-        this.investorCount = "YAT".equals(fundType) ? scaleValue(this.investorCount, 2) : null;
+        this.investorCount = fundType != null && fundType.scalesInvestorCount() ? scaleValue(this.investorCount, 2) : null;
         this.portfolioSize = scaleValue(this.portfolioSize, 2);
     }
 

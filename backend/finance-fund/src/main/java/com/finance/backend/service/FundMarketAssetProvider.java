@@ -6,6 +6,7 @@ import com.finance.backend.service.MarketAssetProvider.MarketAssetFilters;
 import com.finance.backend.mapper.FundResponseMapper;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;
+import com.finance.backend.model.FundType;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.FundRepository;
@@ -85,7 +86,8 @@ public class FundMarketAssetProvider extends BaseTrackedMarketAssetProvider<Fund
     @Override
     protected Specification<Fund> applyCustomFilters(Specification<Fund> spec, MarketAssetFilters filters) {
         if (filters == null || !filters.hasSubType()) return spec;
-        return spec.and((root, query, cb) -> cb.equal(root.get("fundType"), filters.subType()));
+        FundType fundTypeFilter = FundType.valueOf(filters.subType());
+        return spec.and((root, query, cb) -> cb.equal(root.get("fundType"), fundTypeFilter));
     }
 
     @Override

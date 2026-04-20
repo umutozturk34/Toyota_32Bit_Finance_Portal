@@ -3,6 +3,7 @@ package com.finance.backend.util;
 import com.finance.backend.client.TefasClient;
 import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.exception.ExternalApiException;
+import com.finance.backend.model.FundType;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -14,7 +15,7 @@ public final class TefasHelper {
 
     private TefasHelper() {}
 
-    public static List<TefasFundDto> fetchTefas(TefasClient client, String fundType,
+    public static List<TefasFundDto> fetchTefas(TefasClient client, FundType fundType,
                                                  String fundCode, LocalDate startDate, LocalDate endDate) {
         List<TefasFundDto> result = client.post(fundType, fundCode, startDate, endDate);
         if (result == null) {

@@ -30,7 +30,7 @@ public abstract class FundResponseMapper {
     @Named("fundMetadata")
     protected FundMetadata buildFundMetadata(Fund fund) {
         return new FundMetadata(
-                fund.getFundType(),
+                fund.getFundType() == null ? null : fund.getFundType().name(),
                 fund.getPortfolioSize(),
                 fund.getInvestorCount(),
                 fund.getBulletinPrice(),

@@ -42,8 +42,9 @@ public class FundCandle {
     @Column(name = "fund_code", insertable = false, updatable = false, nullable = false)
     private String fundCode;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "fund_type", length = 20)
-    private String fundType;
+    private FundType fundType;
 
     @Column(name = "candle_date", nullable = false)
     private LocalDateTime candleDate;
@@ -75,11 +76,11 @@ public class FundCandle {
         return getClass().hashCode();
     }
 
-    public void applyScaling(String fundType) {
+    public void applyScaling(FundType fundType) {
         this.price = scaleValue(this.price, 6);
-        this.bulletinPrice = "BYF".equals(fundType) ? scaleValue(this.bulletinPrice, 4) : null;
+        this.bulletinPrice = fundType != null && fundType.scalesBulletinPrice() ? scaleValue(this.bulletinPrice, 4) : null;
         this.shareCount = scaleValue(this.shareCount, 2);
-        this.investorCount = "YAT".equals(fundType) ? scaleValue(this.investorCount, 2) : null;
+        this.investorCount = fundType != null && fundType.scalesInvestorCount() ? scaleValue(this.investorCount, 2) : null;
         this.portfolioSize = scaleValue(this.portfolioSize, 2);
     }
 

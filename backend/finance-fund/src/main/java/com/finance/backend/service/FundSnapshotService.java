@@ -8,6 +8,7 @@ import com.finance.backend.exception.BusinessException;
 import com.finance.backend.mapper.FundMapper;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;
+import com.finance.backend.model.FundType;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.FundRepository;
@@ -72,9 +73,9 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         if (normalized.isBlank()) return false;
         LocalDate today = findLastBusinessDay(LocalDate.now());
         try {
-            List<TefasFundDto> yat = fetchTefas("YAT", normalized, today, today);
+            List<TefasFundDto> yat = fetchTefas(FundType.YAT, normalized, today, today);
             if (!yat.isEmpty()) return true;
-            List<TefasFundDto> byf = fetchTefas("BYF", normalized, today, today);
+            List<TefasFundDto> byf = fetchTefas(FundType.BYF, normalized, today, today);
             return !byf.isEmpty();
         } catch (Exception e) {
             log.warn("Fund existence check failed for {}: {}", normalized, e.getMessage());
@@ -96,12 +97,12 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         Set<String> byfCodes = Set.of();
 
         try {
-            List<TefasFundDto> byfFunds = fetchTefas("BYF", null, today, today);
+            List<TefasFundDto> byfFunds = fetchTefas(FundType.BYF, null, today, today);
             byfCodes = byfFunds.stream().map(TefasFundDto::fundCode).collect(Collectors.toSet());
             byfResult = BatchUpdateRunner.run(
                     byfFunds,
                     dto -> {
-                        Fund saved = transactionTemplate.execute(status -> saveFundSnapshot(dto, "BYF"));
+                        Fund saved = transactionTemplate.execute(status -> saveFundSnapshot(dto, FundType.BYF));
                         ensureByfTracked(saved.getFundCode(), saved.getName());
                         fundCacheService.putSnapshot(saved.getFundCode(), saved);
                     },
@@ -131,9 +132,9 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
             BatchUpdateRunner.Result yatResult = BatchUpdateRunner.run(
                     yatCodes,
                     code -> {
-                        List<TefasFundDto> yatFunds = fetchTefas("YAT", code, today, today);
+                        List<TefasFundDto> yatFunds = fetchTefas(FundType.YAT, code, today, today);
                         if (!yatFunds.isEmpty()) {
-                            Fund saved = transactionTemplate.execute(status -> saveFundSnapshot(yatFunds.getFirst(), "YAT"));
+                            Fund saved = transactionTemplate.execute(status -> saveFundSnapshot(yatFunds.getFirst(), FundType.YAT));
                             fundCacheService.putSnapshot(saved.getFundCode(), saved);
                         }
                     },
@@ -163,13 +164,13 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         }
 
         LocalDate today = findLastBusinessDay(LocalDate.now());
-        List<TefasFundDto> yatFunds = fetchTefas("YAT", normalized, today, today);
-        String fundType = "YAT";
+        List<TefasFundDto> yatFunds = fetchTefas(FundType.YAT, normalized, today, today);
+        FundType fundType = FundType.YAT;
         TefasFundDto dto = yatFunds.isEmpty() ? null : yatFunds.getFirst();
 
         if (dto == null) {
-            List<TefasFundDto> byfFunds = fetchTefas("BYF", normalized, today, today);
-            fundType = "BYF";
+            List<TefasFundDto> byfFunds = fetchTefas(FundType.BYF, normalized, today, today);
+            fundType = FundType.BYF;
             dto = byfFunds.isEmpty() ? null : byfFunds.getFirst();
         }
 
@@ -178,14 +179,14 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
             return;
         }
 
-        String finalFundType = fundType;
+        FundType finalFundType = fundType;
         TefasFundDto selectedDto = dto;
         Fund saved = transactionTemplate.execute(status -> saveFundSnapshot(selectedDto, finalFundType));
         fundCacheService.putSnapshot(saved.getFundCode(), saved);
         log.info("Refreshed tracked fund snapshot for {}", normalized);
     }
 
-    private Fund saveFundSnapshot(TefasFundDto dto, String fundType) {
+    private Fund saveFundSnapshot(TefasFundDto dto, FundType fundType) {
         LocalDateTime now = LocalDateTime.now();
         Fund fund = fundRepository.findById(dto.fundCode()).orElse(null);
         Fund toPersist;
@@ -201,7 +202,7 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         return toPersist;
     }
 
-    private List<TefasFundDto> fetchTefas(String fundType, String fundCode,
+    private List<TefasFundDto> fetchTefas(FundType fundType, String fundCode,
                                           LocalDate startDate, LocalDate endDate) {
         return TefasHelper.fetchTefas(tefasClient, fundType, fundCode, startDate, endDate);
     }

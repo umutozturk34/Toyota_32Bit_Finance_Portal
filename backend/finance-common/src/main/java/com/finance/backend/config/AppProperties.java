@@ -14,30 +14,38 @@ import java.util.Map;
 @Setter
 @ConfigurationProperties(prefix = "app")
 public class AppProperties {
-    private Api api = new Api();
-    private Tcmb tcmb = new Tcmb();
+
     private String tefasApiPath;
     private String tefasBaseUrl;
     private String tefasSessionPath = "/TarihselVeriler.aspx";
     private String timezone = "Europe/Istanbul";
     private int scale = 4;
+
+    private Api api = new Api();
+    private Tcmb tcmb = new Tcmb();
+
     private Http http = new Http();
     private Async async = new Async();
+    private Cache cache = new Cache();
+
     private Crypto crypto = new Crypto();
     private Stock stock = new Stock();
     private Forex forex = new Forex();
     private Fund fund = new Fund();
-    private RateLimit rateLimit = new RateLimit();
     private Bond bond = new Bond();
     private News news = new News();
-    private Commission commission = new Commission();
+
     private Scheduler scheduler = new Scheduler();
+
     private Pagination pagination = new Pagination();
+
+    private Commission commission = new Commission();
     private Portfolio portfolio = new Portfolio();
     private Task task = new Task();
     private TrackedAsset trackedAsset = new TrackedAsset();
+
     private Security security = new Security();
-    private Cache cache = new Cache();
+    private RateLimit rateLimit = new RateLimit();
 
     @Getter
     @Setter

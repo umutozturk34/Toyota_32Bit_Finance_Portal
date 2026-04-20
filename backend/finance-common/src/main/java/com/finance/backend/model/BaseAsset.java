@@ -1,4 +1,5 @@
 package com.finance.backend.model;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import lombok.AllArgsConstructor;
@@ -37,6 +38,7 @@ public abstract class BaseAsset {
     @Column(name = "last_updated")
     private LocalDateTime lastUpdated;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public abstract String getCode();
 
     public String resolveDisplayName() {

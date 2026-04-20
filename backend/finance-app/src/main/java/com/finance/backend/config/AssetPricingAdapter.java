@@ -37,6 +37,7 @@ public class AssetPricingAdapter implements AssetPricingPort {
     private final Map<MarketType, Function<String, BigDecimal>> priceLookups;
     private final Map<MarketType, Function<String, BigDecimal>> sellPriceLookups;
     private final Map<MarketType, Function<String, AssetMeta>> metaLookups;
+    private final Map<MarketType, Function<String, PriceBundle>> bundleLookups;
 
     public AssetPricingAdapter(MarketCacheService<Crypto, CryptoCandle> cryptoCacheService,
                                MarketCacheService<Stock, StockCandle> stockCacheService,
@@ -63,6 +64,11 @@ public class AssetPricingAdapter implements AssetPricingPort {
         this.metaLookups.put(MarketType.STOCK, code -> baseMeta(stockCacheService.getSnapshot(code)));
         this.metaLookups.put(MarketType.FOREX, code -> baseMeta(forexCacheService.getSnapshot(code)));
         this.metaLookups.put(MarketType.FUND, code -> baseMeta(fundCacheService.getSnapshot(code)));
+        this.bundleLookups = new EnumMap<>(MarketType.class);
+        this.bundleLookups.put(MarketType.CRYPTO, this::buildCryptoBundle);
+        this.bundleLookups.put(MarketType.STOCK, this::buildStockBundle);
+        this.bundleLookups.put(MarketType.FOREX, this::buildForexBundle);
+        this.bundleLookups.put(MarketType.FUND, this::buildFundBundle);
     }
 
     @Override
@@ -78,6 +84,12 @@ public class AssetPricingAdapter implements AssetPricingPort {
     @Override
     public AssetMeta getAssetMeta(MarketType type, String assetCode) {
         return dispatch(metaLookups, type, assetCode, "metadata", EMPTY_META);
+    }
+
+    @Override
+    public PriceBundle getBundle(MarketType type, String assetCode) {
+        return dispatch(bundleLookups, type, assetCode, "bundle",
+                new PriceBundle(null, null, EMPTY_META));
     }
 
     private <T> T dispatch(Map<MarketType, Function<String, T>> lookups, MarketType type, String assetCode, String label, T fallback) {
@@ -127,6 +139,38 @@ public class AssetPricingAdapter implements AssetPricingPort {
         Forex forex = forexCacheService.getSnapshot(assetCode);
         if (forex == null) return null;
         return normalize(forex.getCurrentPrice());
+    }
+
+    private PriceBundle buildCryptoBundle(String assetCode) {
+        Crypto crypto = cryptoCacheService.getSnapshot(assetCode);
+        if (crypto == null) return new PriceBundle(null, null, EMPTY_META);
+        BigDecimal price = crypto.getCurrentPriceTry() != null ? normalize(crypto.getCurrentPriceTry()) : null;
+        BigDecimal sellPrice = applyCommission(price, appProperties.getCommission().getCryptoRate());
+        return new PriceBundle(price, sellPrice, new AssetMeta(resolveAssetName(crypto), crypto.getImage()));
+    }
+
+    private PriceBundle buildStockBundle(String assetCode) {
+        Stock stock = stockCacheService.getSnapshot(assetCode);
+        if (stock == null) return new PriceBundle(null, null, EMPTY_META);
+        BigDecimal price = stock.getCurrentPrice() != null ? normalize(stock.getCurrentPrice()) : null;
+        BigDecimal sellPrice = applyCommission(price, appProperties.getCommission().getStockRate());
+        return new PriceBundle(price, sellPrice, new AssetMeta(resolveAssetName(stock), stock.getImage()));
+    }
+
+    private PriceBundle buildForexBundle(String assetCode) {
+        Forex forex = forexCacheService.getSnapshot(assetCode);
+        if (forex == null) return new PriceBundle(null, null, EMPTY_META);
+        BigDecimal price = normalize(forex.getSellingPrice() != null ? forex.getSellingPrice() : forex.getCurrentPrice());
+        BigDecimal sellPrice = forex.getCurrentPrice() != null ? normalize(forex.getCurrentPrice()) : null;
+        return new PriceBundle(price, sellPrice, new AssetMeta(resolveAssetName(forex), forex.getImage()));
+    }
+
+    private PriceBundle buildFundBundle(String assetCode) {
+        Fund fund = fundCacheService.getSnapshot(assetCode);
+        if (fund == null) return new PriceBundle(null, null, EMPTY_META);
+        BigDecimal price = fund.getPrice() != null ? normalize(fund.getPrice()) : null;
+        BigDecimal sellPrice = applyCommission(price, appProperties.getCommission().getFundRate());
+        return new PriceBundle(price, sellPrice, new AssetMeta(resolveAssetName(fund), fund.getImage()));
     }
 
     private BigDecimal applyCommission(BigDecimal price, BigDecimal rate) {

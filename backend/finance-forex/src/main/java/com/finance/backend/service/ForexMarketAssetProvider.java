@@ -57,7 +57,7 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
 
     @Override
     public List<MarketAssetResponse> getTopMovers(int limit, boolean gainers) {
-        Specification<Forex> spec = nonNullChangePercent();
+        Specification<Forex> spec = nonNullChangePercent().and(signSpec(gainers));
         Sort sort = gainers
                 ? Sort.by(Sort.Direction.DESC, "changePercent24h")
                 : Sort.by(Sort.Direction.ASC, "changePercent24h");
@@ -89,5 +89,11 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
 
     private Specification<Forex> nonNullChangePercent() {
         return (root, query, cb) -> cb.isNotNull(root.get("changePercent24h"));
+    }
+
+    private Specification<Forex> signSpec(boolean gainers) {
+        return (root, query, cb) -> gainers
+                ? cb.greaterThan(root.get("changePercent24h"), java.math.BigDecimal.ZERO)
+                : cb.lessThan(root.get("changePercent24h"), java.math.BigDecimal.ZERO);
     }
 }

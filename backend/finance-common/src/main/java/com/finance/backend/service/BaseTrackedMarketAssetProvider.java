@@ -3,7 +3,6 @@ package com.finance.backend.service;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.model.BaseAsset;
 import com.finance.backend.model.TrackedAssetType;
-import com.finance.backend.service.MarketAssetProvider.MarketAssetFilters;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -65,7 +64,9 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
     @Override
     public List<MarketAssetResponse> getTopMovers(int limit, boolean gainers) {
         Set<String> enabledCodes = enabledCodes();
-        Specification<T> spec = enabledCodesSpec(enabledCodes).and(nonNullChangePercent());
+        Specification<T> spec = enabledCodesSpec(enabledCodes)
+                .and(nonNullChangePercent())
+                .and(signSpec(gainers));
         Sort sort = gainers
                 ? Sort.by(Sort.Direction.DESC, changePercentField())
                 : Sort.by(Sort.Direction.ASC, changePercentField());
@@ -110,6 +111,12 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
 
     private Specification<T> nonNullChangePercent() {
         return (root, query, cb) -> cb.isNotNull(root.get(changePercentField()));
+    }
+
+    private Specification<T> signSpec(boolean gainers) {
+        return (root, query, cb) -> gainers
+                ? cb.greaterThan(root.get(changePercentField()), java.math.BigDecimal.ZERO)
+                : cb.lessThan(root.get(changePercentField()), java.math.BigDecimal.ZERO);
     }
 
     private List<MarketAssetResponse> withDisplayNames(List<MarketAssetResponse> responses) {

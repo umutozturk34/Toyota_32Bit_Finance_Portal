@@ -203,7 +203,7 @@ public class PortfolioSummaryService {
                 : BigDecimal.ZERO;
 
         BigDecimal sellPriceTry = effective.sellPrice() != null ? effective.sellPrice() : currentPrice;
-        BigDecimal commissionRate = getCommissionRate(pos.getAssetType());
+        BigDecimal commissionRate = pos.getAssetType().commissionRate(appProperties.getCommission());
         AssetMeta meta = effective.meta() != null ? effective.meta() : new AssetMeta(null, null);
 
         return responseMapper.toPositionResponse(pos, currentPrice, sellPriceTry, commissionRate, marketValue, pnl, pnlPercent, meta.name(), meta.image());
@@ -217,16 +217,6 @@ public class PortfolioSummaryService {
 
     private AssetKey toKey(PortfolioPosition pos) {
         return new AssetKey(pos.getAssetType().marketType(), pos.getAssetCode());
-    }
-
-    private BigDecimal getCommissionRate(AssetType assetType) {
-        AppProperties.Commission commission = appProperties.getCommission();
-        return switch (assetType) {
-            case STOCK -> commission.getStockRate();
-            case CRYPTO -> commission.getCryptoRate();
-            case FUND -> commission.getFundRate();
-            default -> BigDecimal.ZERO;
-        };
     }
 
     private BigDecimal calculateRealizedPnlByType(Long portfolioId, AssetType assetType) {

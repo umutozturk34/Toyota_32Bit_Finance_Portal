@@ -3,6 +3,10 @@ package com.finance.backend.config;
 import com.finance.backend.model.*;
 import com.finance.backend.service.AssetPricingPort.AssetMeta;
 import com.finance.backend.service.MarketCacheService;
+import com.finance.backend.service.assetpricing.CryptoPricingStrategy;
+import com.finance.backend.service.assetpricing.ForexPricingStrategy;
+import com.finance.backend.service.assetpricing.FundPricingStrategy;
+import com.finance.backend.service.assetpricing.StockPricingStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -33,8 +38,12 @@ class AssetPricingAdapterTest {
         commission.setFundRate(new BigDecimal("0.001"));
         props.setCommission(commission);
 
-        adapter = new AssetPricingAdapter(cryptoCacheService, stockCacheService,
-                forexCacheService, fundCacheService, props);
+        adapter = new AssetPricingAdapter(List.of(
+            new CryptoPricingStrategy(cryptoCacheService, props),
+            new StockPricingStrategy(stockCacheService, props),
+            new ForexPricingStrategy(forexCacheService),
+            new FundPricingStrategy(fundCacheService, props)
+        ));
     }
 
     private Crypto cryptoWith(String priceTry) {

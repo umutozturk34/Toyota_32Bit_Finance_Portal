@@ -190,8 +190,32 @@ function CommoditiesPage() {
                                     )}
                                     {meta.sellingPrice != null && (
                                         <div className="flex items-center justify-between text-xs">
-                                            <span className="text-fg-muted">Satış Fiyatı</span>
+                                            <span className="text-fg-muted">Alım Fiyatı</span>
                                             <span className="font-mono text-fg">₺{formatCommodityPrice(meta.sellingPrice)}</span>
+                                        </div>
+                                    )}
+                                    {meta.openPrice != null && (
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="text-fg-muted">Açılış</span>
+                                            <span className="font-mono text-fg">₺{formatCommodityPrice(meta.openPrice)}</span>
+                                        </div>
+                                    )}
+                                    {meta.dayHigh != null && (
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="flex items-center gap-1 text-fg-muted"><ChevronUp className="h-3 w-3 text-success" />En Yüksek</span>
+                                            <span className="font-mono text-fg">₺{formatCommodityPrice(meta.dayHigh)}</span>
+                                        </div>
+                                    )}
+                                    {meta.dayLow != null && (
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="flex items-center gap-1 text-fg-muted"><ChevronDown className="h-3 w-3 text-danger" />En Düşük</span>
+                                            <span className="font-mono text-fg">₺{formatCommodityPrice(meta.dayLow)}</span>
+                                        </div>
+                                    )}
+                                    {meta.volume != null && meta.volume > 0 && (
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="text-fg-muted">Hacim</span>
+                                            <span className="font-mono text-fg">{meta.volume.toLocaleString('tr-TR')}</span>
                                         </div>
                                     )}
                                 </div>

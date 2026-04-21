@@ -38,7 +38,11 @@ public abstract class ForexResponseMapper {
                 forex.getBanknoteBuying(),
                 forex.getBanknoteSelling(),
                 forex.getYahooUpdatedAt(),
-                forex.getTcmbUpdatedAt()
+                forex.getTcmbUpdatedAt(),
+                forex.getOpenPrice(),
+                forex.getDayHigh(),
+                forex.getDayLow(),
+                forex.getVolume()
         );
     }
 }

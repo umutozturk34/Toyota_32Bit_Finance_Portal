@@ -52,6 +52,14 @@ public class Forex extends BaseAsset {
     private BigDecimal crossRateUsd;
     @Column(name = "cross_rate_other", precision = 19, scale = 4)
     private BigDecimal crossRateOther;
+    @Column(name = "open_price", precision = 19, scale = 4)
+    private BigDecimal openPrice;
+    @Column(name = "day_high", precision = 19, scale = 4)
+    private BigDecimal dayHigh;
+    @Column(name = "day_low", precision = 19, scale = 4)
+    private BigDecimal dayLow;
+    @Column(name = "volume")
+    private Long volume;
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -80,10 +88,15 @@ public class Forex extends BaseAsset {
     }
 
     public void applyYahooSnapshot(BigDecimal marketPrice, BigDecimal previousClose,
-                                   BigDecimal spreadRate, int scale) {
+                                   BigDecimal openPrice, BigDecimal dayHigh, BigDecimal dayLow,
+                                   Long volume, BigDecimal spreadRate, int scale) {
         if (marketPrice == null) return;
         this.currentPrice = scaleValue(marketPrice, scale);
         this.sellingPrice = scaleValue(marketPrice.multiply(BigDecimal.ONE.add(spreadRate)), scale);
+        this.openPrice = scaleValue(openPrice, scale);
+        this.dayHigh = scaleValue(dayHigh, scale);
+        this.dayLow = scaleValue(dayLow, scale);
+        this.volume = volume;
         applyChangeFields(marketPrice, previousClose, scale);
         this.yahooUpdatedAt = LocalDateTime.now();
     }

@@ -18,7 +18,11 @@ class CommodityTest {
                 new BigDecimal("100000"),
                 new BigDecimal("99000"),
                 new BigDecimal("4000"),
-                new BigDecimal("3960"));
+                new BigDecimal("3960"),
+                new BigDecimal("99500"),
+                new BigDecimal("101000"),
+                new BigDecimal("98500"),
+                250000L);
 
         commodity.applyYahooSnapshot(input, SPREAD, SCALE);
 
@@ -26,6 +30,10 @@ class CommodityTest {
         assertThat(commodity.getCurrentPriceUsd()).isEqualByComparingTo(new BigDecimal("4000.0000"));
         assertThat(commodity.getPreviousPriceUsd()).isEqualByComparingTo(new BigDecimal("3960.0000"));
         assertThat(commodity.getSellingPrice()).isEqualByComparingTo(new BigDecimal("101500.0000"));
+        assertThat(commodity.getOpenPrice()).isEqualByComparingTo(new BigDecimal("99500.0000"));
+        assertThat(commodity.getDayHigh()).isEqualByComparingTo(new BigDecimal("101000.0000"));
+        assertThat(commodity.getDayLow()).isEqualByComparingTo(new BigDecimal("98500.0000"));
+        assertThat(commodity.getVolume()).isEqualTo(250000L);
         assertThat(commodity.getYahooUpdatedAt()).isNotNull();
     }
 
@@ -36,7 +44,8 @@ class CommodityTest {
                 new BigDecimal("110"),
                 new BigDecimal("100"),
                 new BigDecimal("10"),
-                new BigDecimal("9"));
+                new BigDecimal("9"),
+                null, null, null, null);
 
         commodity.applyYahooSnapshot(input, SPREAD, SCALE);
 
@@ -48,7 +57,7 @@ class CommodityTest {
     void applyYahooSnapshotSkipsWhenTryPriceNull() {
         Commodity commodity = new Commodity();
         commodity.setCurrentPrice(new BigDecimal("999"));
-        CommoditySnapshotInput input = new CommoditySnapshotInput(null, null, null, null);
+        CommoditySnapshotInput input = new CommoditySnapshotInput(null, null, null, null, null, null, null, null);
 
         commodity.applyYahooSnapshot(input, SPREAD, SCALE);
 

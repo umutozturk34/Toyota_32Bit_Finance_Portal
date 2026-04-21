@@ -6,5 +6,9 @@ public record CommoditySnapshotInput(
         BigDecimal tryPrice,
         BigDecimal tryPreviousClose,
         BigDecimal usdPrice,
-        BigDecimal usdPreviousClose
+        BigDecimal usdPreviousClose,
+        BigDecimal tryOpenPrice,
+        BigDecimal tryDayHigh,
+        BigDecimal tryDayLow,
+        Long volume
 ) {}

@@ -75,7 +75,10 @@ public class ForexSnapshotService implements SnapshotBatchRefresher {
             YahooQuoteDto quote = yahooForexClient.fetchQuote(yahooSymbol);
             if (quote != null && quote.regularMarketPrice() != null) {
                 transactionTemplate.executeWithoutResult(status -> {
-                    forex.applyYahooSnapshot(quote.regularMarketPrice(), quote.previousClose(), spreadRate, scale);
+                    forex.applyYahooSnapshot(
+                            quote.regularMarketPrice(), quote.previousClose(),
+                            quote.openPrice(), quote.dayHigh(), quote.dayLow(), quote.volume(),
+                            spreadRate, scale);
                     forexRepository.save(forex);
                 });
                 forexCacheService.putSnapshot(baseSymbol, forex);

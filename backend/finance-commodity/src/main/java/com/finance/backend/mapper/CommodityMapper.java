@@ -31,6 +31,12 @@ public interface CommodityMapper {
         BigDecimal usdPreviousClose = quote.previousClose();
         BigDecimal tryPrice = SyntheticPriceCalculator.calculateSyntheticPrice(usdPrice, usdTryRate, false, scale);
         BigDecimal tryPreviousClose = SyntheticPriceCalculator.calculateSyntheticPrice(usdPreviousClose, usdTryRate, false, scale);
-        return new CommoditySnapshotInput(tryPrice, tryPreviousClose, usdPrice, usdPreviousClose);
+        BigDecimal tryOpenPrice = SyntheticPriceCalculator.calculateSyntheticPrice(quote.openPrice(), usdTryRate, false, scale);
+        BigDecimal tryDayHigh = SyntheticPriceCalculator.calculateSyntheticPrice(quote.dayHigh(), usdTryRate, false, scale);
+        BigDecimal tryDayLow = SyntheticPriceCalculator.calculateSyntheticPrice(quote.dayLow(), usdTryRate, false, scale);
+        return new CommoditySnapshotInput(
+                tryPrice, tryPreviousClose, usdPrice, usdPreviousClose,
+                tryOpenPrice, tryDayHigh, tryDayLow, quote.volume()
+        );
     }
 }

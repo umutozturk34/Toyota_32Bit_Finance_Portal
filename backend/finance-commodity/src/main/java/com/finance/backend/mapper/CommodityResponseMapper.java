@@ -34,7 +34,11 @@ public abstract class CommodityResponseMapper {
                 commodity.getSellingPrice(),
                 commodity.getCurrentPriceUsd(),
                 commodity.getPreviousPriceUsd(),
-                commodity.getUnit()
+                commodity.getUnit(),
+                commodity.getOpenPrice(),
+                commodity.getDayHigh(),
+                commodity.getDayLow(),
+                commodity.getVolume()
         );
     }
 }

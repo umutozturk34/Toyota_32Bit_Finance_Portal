@@ -11,6 +11,10 @@ public record ForexMetadata(
         BigDecimal banknoteBuying,
         BigDecimal banknoteSelling,
         LocalDateTime yahooUpdatedAt,
-        LocalDateTime tcmbUpdatedAt
+        LocalDateTime tcmbUpdatedAt,
+        BigDecimal openPrice,
+        BigDecimal dayHigh,
+        BigDecimal dayLow,
+        Long volume
 ) implements MarketAssetMetadata {
 }

@@ -56,6 +56,18 @@ public class Commodity extends BaseAsset {
     @Column(name = "unit")
     private String unit;
 
+    @Column(name = "open_price", precision = 19, scale = 4)
+    private BigDecimal openPrice;
+
+    @Column(name = "day_high", precision = 19, scale = 4)
+    private BigDecimal dayHigh;
+
+    @Column(name = "day_low", precision = 19, scale = 4)
+    private BigDecimal dayLow;
+
+    @Column(name = "volume")
+    private Long volume;
+
     @Column(name = "yahoo_updated_at")
     private LocalDateTime yahooUpdatedAt;
 
@@ -77,6 +89,10 @@ public class Commodity extends BaseAsset {
         this.sellingPrice = scaleValue(snapshot.tryPrice().multiply(BigDecimal.ONE.add(spreadRate)), scale);
         this.currentPriceUsd = scaleValue(snapshot.usdPrice(), scale);
         this.previousPriceUsd = scaleValue(snapshot.usdPreviousClose(), scale);
+        this.openPrice = scaleValue(snapshot.tryOpenPrice(), scale);
+        this.dayHigh = scaleValue(snapshot.tryDayHigh(), scale);
+        this.dayLow = scaleValue(snapshot.tryDayLow(), scale);
+        this.volume = snapshot.volume();
         applyChangeFields(snapshot.tryPrice(), snapshot.tryPreviousClose(), scale);
         this.yahooUpdatedAt = LocalDateTime.now();
     }

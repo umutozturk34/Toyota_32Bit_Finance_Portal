@@ -6,6 +6,10 @@ public record CommodityMetadata(
         BigDecimal sellingPrice,
         BigDecimal currentPriceUsd,
         BigDecimal previousPriceUsd,
-        String unit
+        String unit,
+        BigDecimal openPrice,
+        BigDecimal dayHigh,
+        BigDecimal dayLow,
+        Long volume
 ) implements MarketAssetMetadata {
 }

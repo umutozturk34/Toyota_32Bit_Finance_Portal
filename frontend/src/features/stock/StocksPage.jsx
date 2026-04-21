@@ -26,6 +26,7 @@ import BuyModal from '../../shared/components/BuyModal';
 import FilterTabs from '../../shared/components/FilterTabs';
 import { toast } from '../../shared/components/Toast';
 import useListParams from '../../shared/hooks/useListParams';
+import { assetCodeLabel } from '../../shared/constants/commodities';
 
 const SORT_OPTIONS = [
     { id: 'changePercent', label: 'Değişim %' },
@@ -196,7 +197,7 @@ function StocksPage() {
                             >
                                 <div className="flex items-start justify-between">
                                     <div className="min-w-0 flex-1">
-                                        <h3 className="truncate text-sm font-semibold text-fg">{stock.code}</h3>
+                                        <h3 className="truncate text-sm font-semibold text-fg">{assetCodeLabel('STOCK', stock.code)}</h3>
                                         <span className="block truncate text-xs text-fg-muted">{stock.name}</span>
                                     </div>
                                     <div className="flex items-center gap-2">

@@ -1,6 +1,7 @@
 package com.finance.backend.service;
 
 import com.finance.backend.client.YahooForexClient;
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.YahooQuoteDto;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.model.Forex;
@@ -9,12 +10,14 @@ import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.SyntheticPriceCalculator;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -22,21 +25,23 @@ import java.util.List;
 public class ForexSnapshotService implements SnapshotBatchRefresher {
 
     private final YahooForexClient yahooForexClient;
-    private final PriceCalculationService priceCalculationService;
     private final ForexRepository forexRepository;
     private final MarketCacheService<Forex, ForexCandle> forexCacheService;
     private final TransactionTemplate transactionTemplate;
+    private final int scale;
+    private final BigDecimal spreadRate;
 
     public ForexSnapshotService(YahooForexClient yahooForexClient,
-                                     PriceCalculationService priceCalculationService,
-                                     ForexRepository forexRepository,
-                                     MarketCacheService<Forex, ForexCandle> forexCacheService,
-                                     PlatformTransactionManager transactionManager) {
+                                ForexRepository forexRepository,
+                                MarketCacheService<Forex, ForexCandle> forexCacheService,
+                                PlatformTransactionManager transactionManager,
+                                AppProperties appProperties) {
         this.yahooForexClient = yahooForexClient;
-        this.priceCalculationService = priceCalculationService;
         this.forexRepository = forexRepository;
         this.forexCacheService = forexCacheService;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.scale = appProperties.getScale();
+        this.spreadRate = appProperties.getForex().getSpreadRate();
     }
 
     @Override
@@ -70,7 +75,7 @@ public class ForexSnapshotService implements SnapshotBatchRefresher {
             YahooQuoteDto quote = yahooForexClient.fetchQuote(yahooSymbol);
             if (quote != null && quote.regularMarketPrice() != null) {
                 transactionTemplate.executeWithoutResult(status -> {
-                    priceCalculationService.applyDirectSnapshot(forex, quote);
+                    forex.applyYahooSnapshot(quote.regularMarketPrice(), quote.previousClose(), spreadRate, scale);
                     forexRepository.save(forex);
                 });
                 forexCacheService.putSnapshot(baseSymbol, forex);
@@ -102,8 +107,8 @@ public class ForexSnapshotService implements SnapshotBatchRefresher {
                 if (pairQuote != null && pairQuote.regularMarketPrice() != null) {
                     boolean isUsdBase = symbol.startsWith("USD");
                     transactionTemplate.executeWithoutResult(status -> {
-                        priceCalculationService.applySyntheticSnapshot(forex, pairQuote,
-                                usdtry.getCurrentPrice(), usdtry.getChange24h(), isUsdBase);
+                        applySyntheticSnapshot(forex, pairQuote, usdtry.getCurrentPrice(),
+                                usdtry.getChange24h(), isUsdBase);
                         forexRepository.save(forex);
                     });
                     forexCacheService.putSnapshot(forex.getCurrencyCode(), forex);
@@ -115,5 +120,16 @@ public class ForexSnapshotService implements SnapshotBatchRefresher {
         }
         throw new ExternalApiException("Yahoo Finance",
                 "All snapshot attempts failed for " + forex.getCurrencyCode());
+    }
+
+    private void applySyntheticSnapshot(Forex forex, YahooQuoteDto pairQuote,
+                                        BigDecimal usdtryPrice, BigDecimal usdtryChange,
+                                        boolean isUsdBase) {
+        BigDecimal syntheticPrice = SyntheticPriceCalculator.calculateSyntheticPrice(
+                pairQuote.regularMarketPrice(), usdtryPrice, isUsdBase, scale);
+        if (syntheticPrice == null) return;
+        BigDecimal syntheticPreviousClose = SyntheticPriceCalculator.calculateSyntheticPreviousClose(
+                pairQuote.previousClose(), usdtryPrice, usdtryChange, isUsdBase, scale);
+        forex.applySyntheticPrice(syntheticPrice, syntheticPreviousClose, spreadRate, scale);
     }
 }

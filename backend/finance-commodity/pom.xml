@@ -19,6 +19,10 @@
 			<groupId>com.finance</groupId>
 			<artifactId>finance-cache</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.finance</groupId>
+			<artifactId>finance-forex</artifactId>
+		</dependency>
 	</dependencies>
 
 </project>

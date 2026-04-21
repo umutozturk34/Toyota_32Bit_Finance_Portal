@@ -112,6 +112,8 @@ app:
     years-to-keep: 5
     min-candles-for-incremental: 1200
     spread-rate: 0.015
+    gold-source-code: "GC=F"
+    silver-source-code: "SI=F"
     gold-gram-divisor: 31.1035
     gold-tam-multiplier: 7.02
     gold-yarim-divisor: 2.0

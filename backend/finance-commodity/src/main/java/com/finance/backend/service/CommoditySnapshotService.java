@@ -4,6 +4,7 @@ import com.finance.backend.client.YahooCommodityClient;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.YahooQuoteDto;
 import com.finance.backend.exception.ExternalApiException;
+import com.finance.backend.mapper.CommodityMapper;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
 import com.finance.backend.model.CommoditySnapshotInput;
@@ -14,7 +15,6 @@ import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.CommodityRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
-import com.finance.backend.util.SyntheticPriceCalculator;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 
@@ -30,6 +30,7 @@ import java.util.List;
 public class CommoditySnapshotService implements SnapshotBatchRefresher {
 
     private final YahooCommodityClient yahooCommodityClient;
+    private final CommodityMapper commodityMapper;
     private final CommodityRepository commodityRepository;
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
     private final MarketCacheService<Forex, ForexCandle> forexCacheService;
@@ -40,6 +41,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
     private final BigDecimal spreadRate;
 
     public CommoditySnapshotService(YahooCommodityClient yahooCommodityClient,
+                                    CommodityMapper commodityMapper,
                                     CommodityRepository commodityRepository,
                                     MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
                                     MarketCacheService<Forex, ForexCandle> forexCacheService,
@@ -48,6 +50,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
                                     PlatformTransactionManager transactionManager,
                                     AppProperties appProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
+        this.commodityMapper = commodityMapper;
         this.commodityRepository = commodityRepository;
         this.commodityCacheService = commodityCacheService;
         this.forexCacheService = forexCacheService;
@@ -101,7 +104,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
                     "No price for " + yahooSymbol);
         }
         BigDecimal usdtryRate = getUsdTryRate();
-        CommoditySnapshotInput snapshot = buildSnapshotInput(quote, usdtryRate);
+        CommoditySnapshotInput snapshot = commodityMapper.toSnapshotInput(quote, usdtryRate, scale);
         Commodity commodity = commodityRepository.findById(yahooSymbol)
                 .orElseGet(() -> Commodity.builder().commodityCode(yahooSymbol).build());
         transactionTemplate.executeWithoutResult(status -> {
@@ -112,16 +115,6 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
         if (derivativeCalculator.hasDerivatives(yahooSymbol)) {
             derivativeCalculator.refreshDerivatives(commodity, usdtryRate);
         }
-    }
-
-    private CommoditySnapshotInput buildSnapshotInput(YahooQuoteDto quote, BigDecimal usdtryRate) {
-        BigDecimal usdPrice = quote.regularMarketPrice();
-        BigDecimal usdPreviousClose = quote.previousClose();
-        BigDecimal tryPrice = SyntheticPriceCalculator.calculateSyntheticPrice(
-                usdPrice, usdtryRate, false, scale);
-        BigDecimal tryPreviousClose = SyntheticPriceCalculator.calculateSyntheticPrice(
-                usdPreviousClose, usdtryRate, false, scale);
-        return new CommoditySnapshotInput(tryPrice, tryPreviousClose, usdPrice, usdPreviousClose);
     }
 
     private BigDecimal getUsdTryRate() {

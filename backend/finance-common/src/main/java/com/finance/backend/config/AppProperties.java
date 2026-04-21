@@ -142,6 +142,8 @@ public class AppProperties {
         private int yearsToKeep = 5;
         private int minCandlesForIncremental = 1200;
         private BigDecimal spreadRate = new BigDecimal("0.015");
+        private String goldSourceCode = "GC=F";
+        private String silverSourceCode = "SI=F";
         private BigDecimal goldGramDivisor = new BigDecimal("31.1035");
         private BigDecimal goldTamMultiplier = new BigDecimal("7.02");
         private BigDecimal goldYarimDivisor = new BigDecimal("2.0");

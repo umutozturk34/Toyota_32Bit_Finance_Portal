@@ -16,10 +16,6 @@ import java.util.Set;
 @Log4j2
 public class PreciousMetalDerivativeCalculator {
 
-    private static final String GOLD_CODE = "GC=F";
-    private static final String SILVER_CODE = "SI=F";
-    private static final Set<String> SOURCES_WITH_DERIVATIVES = Set.of(GOLD_CODE, SILVER_CODE);
-
     private static final String GOLD_GRAM_CODE = "GOLD_GRAM";
     private static final String GOLD_YARIM_CODE = "GOLD_YARIM";
     private static final String GOLD_TAM_CODE = "GOLD_TAM";
@@ -31,6 +27,9 @@ public class PreciousMetalDerivativeCalculator {
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
     private final int scale;
     private final BigDecimal spreadRate;
+    private final String goldSourceCode;
+    private final String silverSourceCode;
+    private final Set<String> sourcesWithDerivatives;
     private final BigDecimal gramDivisor;
     private final BigDecimal tamMultiplier;
     private final BigDecimal yarimDivisor;
@@ -40,19 +39,23 @@ public class PreciousMetalDerivativeCalculator {
     public PreciousMetalDerivativeCalculator(CommodityRepository commodityRepository,
                                              MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
                                              AppProperties appProperties) {
+        AppProperties.Commodity props = appProperties.getCommodity();
         this.commodityRepository = commodityRepository;
         this.commodityCacheService = commodityCacheService;
         this.scale = appProperties.getScale();
-        this.spreadRate = appProperties.getCommodity().getSpreadRate();
-        this.gramDivisor = appProperties.getCommodity().getGoldGramDivisor();
-        this.tamMultiplier = appProperties.getCommodity().getGoldTamMultiplier();
-        this.yarimDivisor = appProperties.getCommodity().getGoldYarimDivisor();
-        this.ceyrekDivisor = appProperties.getCommodity().getGoldCeyrekDivisor();
-        this.cumhuriyetMultiplier = appProperties.getCommodity().getGoldCumhuriyetMultiplier();
+        this.spreadRate = props.getSpreadRate();
+        this.goldSourceCode = props.getGoldSourceCode();
+        this.silverSourceCode = props.getSilverSourceCode();
+        this.sourcesWithDerivatives = Set.of(goldSourceCode, silverSourceCode);
+        this.gramDivisor = props.getGoldGramDivisor();
+        this.tamMultiplier = props.getGoldTamMultiplier();
+        this.yarimDivisor = props.getGoldYarimDivisor();
+        this.ceyrekDivisor = props.getGoldCeyrekDivisor();
+        this.cumhuriyetMultiplier = props.getGoldCumhuriyetMultiplier();
     }
 
     public boolean hasDerivatives(String commodityCode) {
-        return SOURCES_WITH_DERIVATIVES.contains(commodityCode);
+        return sourcesWithDerivatives.contains(commodityCode);
     }
 
     public void refreshDerivatives(Commodity source, BigDecimal usdTryRate) {
@@ -64,9 +67,9 @@ public class PreciousMetalDerivativeCalculator {
         BigDecimal gramPrice = onsUsdToGramTry(source.getCurrentPriceUsd(), usdTryRate);
         BigDecimal gramPrevious = onsUsdToGramTry(source.getPreviousPriceUsd(), usdTryRate);
 
-        if (GOLD_CODE.equals(source.getCommodityCode())) {
+        if (goldSourceCode.equals(source.getCommodityCode())) {
             refreshGoldDerivatives(gramPrice, gramPrevious);
-        } else if (SILVER_CODE.equals(source.getCommodityCode())) {
+        } else if (silverSourceCode.equals(source.getCommodityCode())) {
             persistDerivative(SILVER_GRAM_CODE, gramPrice, gramPrevious);
         }
     }

@@ -36,6 +36,8 @@ class PreciousMetalDerivativeCalculatorTest {
         AppProperties props = new AppProperties();
         AppProperties.Commodity commodityProps = new AppProperties.Commodity();
         commodityProps.setSpreadRate(new BigDecimal("0.015"));
+        commodityProps.setGoldSourceCode("GC=F");
+        commodityProps.setSilverSourceCode("SI=F");
         commodityProps.setGoldGramDivisor(new BigDecimal("31.1035"));
         commodityProps.setGoldTamMultiplier(new BigDecimal("7.02"));
         commodityProps.setGoldYarimDivisor(new BigDecimal("2.0"));

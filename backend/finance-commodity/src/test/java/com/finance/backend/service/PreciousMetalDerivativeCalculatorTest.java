@@ -61,8 +61,8 @@ class PreciousMetalDerivativeCalculatorTest {
 
     @Test
     void hasDerivativesReturnsTrueForGoldAndSilver() {
-        assertThat(calculator.hasDerivatives("GOLD")).isTrue();
-        assertThat(calculator.hasDerivatives("SILVER")).isTrue();
+        assertThat(calculator.hasDerivatives("GC=F")).isTrue();
+        assertThat(calculator.hasDerivatives("SI=F")).isTrue();
     }
 
     @Test
@@ -74,7 +74,7 @@ class PreciousMetalDerivativeCalculatorTest {
 
     @Test
     void refreshDerivativesComputesFiveGoldVariantsForGoldSource() {
-        Commodity gold = buildCommodity("GOLD", new BigDecimal("4000"));
+        Commodity gold = buildCommodity("GC=F", new BigDecimal("4000"));
         BigDecimal usdTry = new BigDecimal("40.0");
 
         calculator.refreshDerivatives(gold, usdTry);
@@ -88,7 +88,7 @@ class PreciousMetalDerivativeCalculatorTest {
 
     @Test
     void refreshDerivativesComputesSingleGramForSilverSource() {
-        Commodity silver = buildCommodity("SILVER", new BigDecimal("50"));
+        Commodity silver = buildCommodity("SI=F", new BigDecimal("50"));
         BigDecimal usdTry = new BigDecimal("40.0");
 
         calculator.refreshDerivatives(silver, usdTry);
@@ -100,7 +100,7 @@ class PreciousMetalDerivativeCalculatorTest {
     @Test
     void refreshDerivativesSkipsWhenUsdPriceMissing() {
         Commodity gold = new Commodity();
-        gold.setCommodityCode("GOLD");
+        gold.setCommodityCode("GC=F");
         gold.setCurrentPriceUsd(null);
 
         calculator.refreshDerivatives(gold, new BigDecimal("40"));
@@ -110,7 +110,7 @@ class PreciousMetalDerivativeCalculatorTest {
 
     @Test
     void refreshDerivativesSkipsWhenUsdTryRateMissing() {
-        Commodity gold = buildCommodity("GOLD", new BigDecimal("4000"));
+        Commodity gold = buildCommodity("GC=F", new BigDecimal("4000"));
 
         calculator.refreshDerivatives(gold, null);
 
@@ -119,7 +119,7 @@ class PreciousMetalDerivativeCalculatorTest {
 
     @Test
     void refreshDerivativesAppliesCorrectGoldGramMath() {
-        Commodity gold = buildCommodity("GOLD", new BigDecimal("4000"));
+        Commodity gold = buildCommodity("GC=F", new BigDecimal("4000"));
         BigDecimal usdTry = new BigDecimal("40.0");
 
         calculator.refreshDerivatives(gold, usdTry);

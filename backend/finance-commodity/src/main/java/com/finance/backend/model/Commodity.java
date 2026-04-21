@@ -35,9 +35,6 @@ public class Commodity extends BaseAsset {
     @Column(name = "commodity_name_tr")
     private String commodityNameTr;
 
-    @Column(name = "yahoo_symbol", length = 20)
-    private String yahooSymbol;
-
     @Column(name = "current_price", precision = 19, scale = 4)
     private BigDecimal currentPrice;
 

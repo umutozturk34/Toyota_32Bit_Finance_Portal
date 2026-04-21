@@ -16,8 +16,8 @@ import java.util.Set;
 @Log4j2
 public class PreciousMetalDerivativeCalculator {
 
-    private static final String GOLD_CODE = "GOLD";
-    private static final String SILVER_CODE = "SILVER";
+    private static final String GOLD_CODE = "GC=F";
+    private static final String SILVER_CODE = "SI=F";
     private static final Set<String> SOURCES_WITH_DERIVATIVES = Set.of(GOLD_CODE, SILVER_CODE);
 
     private static final String GOLD_GRAM_CODE = "GOLD_GRAM";
@@ -96,12 +96,8 @@ public class PreciousMetalDerivativeCalculator {
 
     private void persistDerivative(String code, BigDecimal tryPrice, BigDecimal tryPrevious) {
         if (tryPrice == null) return;
-        Optional<Commodity> maybe = commodityRepository.findById(code);
-        if (maybe.isEmpty()) {
-            log.warn("Derivative commodity {} not found in DB, skipping", code);
-            return;
-        }
-        Commodity derivative = maybe.get();
+        Commodity derivative = commodityRepository.findById(code)
+                .orElseGet(() -> Commodity.builder().commodityCode(code).build());
         derivative.applyDerivedSnapshot(tryPrice, tryPrevious, spreadRate, scale);
         commodityRepository.save(derivative);
         commodityCacheService.putSnapshot(code, derivative);

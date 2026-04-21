@@ -66,23 +66,23 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
     @Override
     public void refreshAll() {
         List<String> enabledCodes = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.COMMODITY);
-        if (enabledCodes.isEmpty()) {
-            log.info("No tracked commodities enabled, skipping snapshot sync");
+        List<String> yahooCodes = enabledCodes.stream()
+                .filter(this::isYahooFetchable)
+                .toList();
+        if (yahooCodes.isEmpty()) {
+            log.info("No Yahoo-fetchable commodities enabled, skipping snapshot sync");
             return;
         }
-        List<Commodity> yahooTracked = commodityRepository.findAllById(enabledCodes).stream()
-                .filter(c -> c.getYahooSymbol() != null && !c.getYahooSymbol().isBlank())
-                .toList();
 
-        log.info("Starting commodity snapshot sync for {} items", yahooTracked.size());
+        log.info("Starting commodity snapshot sync for {} items", yahooCodes.size());
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
-                yahooTracked,
+                yahooCodes,
                 this::updateCommoditySnapshot,
-                Commodity::getCommodityCode,
+                code -> code,
                 "snapshot",
                 5,
-                (commodity, e) -> log.error("Snapshot failed for {}: {}", commodity.getCommodityCode(), e.getMessage(), e),
+                (code, e) -> log.error("Snapshot failed for {}: {}", code, e.getMessage(), e),
                 e -> e instanceof CallNotPermittedException,
                 (stopped, e) -> log.warn("Yahoo CB is OPEN, stopping commodity sync. {} success, {} failed so far",
                         stopped.successCount(), stopped.failCount()));
@@ -90,20 +90,26 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
         BatchLogHelper.logSummary(log, "Commodity snapshot sync", result);
     }
 
-    private void updateCommoditySnapshot(Commodity commodity) {
-        YahooQuoteDto quote = yahooCommodityClient.fetchQuote(commodity.getYahooSymbol());
+    private boolean isYahooFetchable(String code) {
+        return code != null && code.contains("=F");
+    }
+
+    private void updateCommoditySnapshot(String yahooSymbol) {
+        YahooQuoteDto quote = yahooCommodityClient.fetchQuote(yahooSymbol);
         if (quote == null || quote.regularMarketPrice() == null) {
             throw new ExternalApiException("Yahoo Finance",
-                    "No price for " + commodity.getCommodityCode());
+                    "No price for " + yahooSymbol);
         }
         BigDecimal usdtryRate = getUsdTryRate();
         CommoditySnapshotInput snapshot = buildSnapshotInput(quote, usdtryRate);
+        Commodity commodity = commodityRepository.findById(yahooSymbol)
+                .orElseGet(() -> Commodity.builder().commodityCode(yahooSymbol).build());
         transactionTemplate.executeWithoutResult(status -> {
             commodity.applyYahooSnapshot(snapshot, spreadRate, scale);
             commodityRepository.save(commodity);
         });
-        commodityCacheService.putSnapshot(commodity.getCommodityCode(), commodity);
-        if (derivativeCalculator.hasDerivatives(commodity.getCommodityCode())) {
+        commodityCacheService.putSnapshot(yahooSymbol, commodity);
+        if (derivativeCalculator.hasDerivatives(yahooSymbol)) {
             derivativeCalculator.refreshDerivatives(commodity, usdtryRate);
         }
     }

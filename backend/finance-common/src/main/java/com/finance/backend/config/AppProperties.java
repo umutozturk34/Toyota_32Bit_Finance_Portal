@@ -33,6 +33,7 @@ public class AppProperties {
     private Forex forex = new Forex();
     private Fund fund = new Fund();
     private Bond bond = new Bond();
+    private Commodity commodity = new Commodity();
     private News news = new News();
 
     private Scheduler scheduler = new Scheduler();
@@ -137,6 +138,19 @@ public class AppProperties {
 
     @Getter
     @Setter
+    public static class Commodity {
+        private int yearsToKeep = 5;
+        private int minCandlesForIncremental = 1200;
+        private BigDecimal spreadRate = new BigDecimal("0.015");
+        private BigDecimal goldGramDivisor = new BigDecimal("31.1035");
+        private BigDecimal goldTamMultiplier = new BigDecimal("7.02");
+        private BigDecimal goldYarimDivisor = new BigDecimal("2.0");
+        private BigDecimal goldCeyrekDivisor = new BigDecimal("4.0");
+        private BigDecimal goldCumhuriyetMultiplier = new BigDecimal("7.216");
+    }
+
+    @Getter
+    @Setter
     public static class Stock {
         private int minCandlesForIncremental = 1200;
         private int historyYears = 5;
@@ -181,6 +195,7 @@ public class AppProperties {
         private MarketSchedule crypto = new MarketSchedule();
         private MarketSchedule stock = new MarketSchedule();
         private MarketSchedule forex = new MarketSchedule();
+        private MarketSchedule commodity = new MarketSchedule();
         private MarketSchedule news = new MarketSchedule();
         private SingleSchedule fund = new SingleSchedule();
         private SingleSchedule bond = new SingleSchedule();

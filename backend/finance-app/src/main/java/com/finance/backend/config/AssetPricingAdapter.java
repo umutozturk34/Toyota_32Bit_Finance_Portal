@@ -21,7 +21,6 @@ public class AssetPricingAdapter implements AssetPricingPort {
 
     private final Map<MarketType, AssetPricingStrategy> strategies;
 
-    @Autowired
     public AssetPricingAdapter(List<AssetPricingStrategy> strategyList) {
         this.strategies = new EnumMap<>(MarketType.class);
         strategyList.forEach(strategy -> this.strategies.put(strategy.marketType(), strategy));

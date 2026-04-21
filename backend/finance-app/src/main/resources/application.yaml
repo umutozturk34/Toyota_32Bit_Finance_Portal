@@ -108,6 +108,16 @@ app:
     min-candles-for-incremental: 30
     window-sizes: 95
 
+  commodity:
+    years-to-keep: 5
+    min-candles-for-incremental: 1200
+    spread-rate: 0.015
+    gold-gram-divisor: 31.1035
+    gold-tam-multiplier: 7.02
+    gold-yarim-divisor: 2.0
+    gold-ceyrek-divisor: 4.0
+    gold-cumhuriyet-multiplier: 7.216
+
   news:
     max-articles-per-source: 50
     cache-ttl-hours: 24
@@ -145,6 +155,10 @@ app:
       evening-cron: "0 30 21 * * *"
     fund:
       daily-cron: "0 30 11 * * *"
+    commodity:
+      morning-cron: "0 45 10 * * *"
+      afternoon-cron: "0 30 16 * * *"
+      evening-cron: "0 30 22 * * *"
     bond:
       daily-cron: "0 0 20 * * *"
     portfolio:

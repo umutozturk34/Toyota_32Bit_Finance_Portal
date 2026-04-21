@@ -15,7 +15,7 @@ import SearchSuggestions from '../../shared/components/SearchSuggestions';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
 import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../../shared/constants/assetTypes';
 
-const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds' };
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
 
 function assetRoute(asset) {
   return (TYPE_ROUTES[asset.type] || '/market') + '/' + asset.code;

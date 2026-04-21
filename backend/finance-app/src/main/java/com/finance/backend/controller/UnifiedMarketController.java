@@ -18,7 +18,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/market")
@@ -32,7 +31,7 @@ public class UnifiedMarketController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<PagedResponse<MarketAssetResponse>>> getMarketAssets(
-            @Parameter(description = "Asset types (comma-separated)", schema = @Schema(allowableValues = {"STOCK", "CRYPTO", "FOREX", "FUND"}))
+            @Parameter(description = "Asset types (comma-separated)", schema = @Schema(allowableValues = {"STOCK", "CRYPTO", "FOREX", "FUND", "COMMODITY"}))
             @RequestParam(required = false) String type,
             @Parameter(description = "Single asset code lookup", example = "THYAO.IS")
             @RequestParam(required = false) String code,

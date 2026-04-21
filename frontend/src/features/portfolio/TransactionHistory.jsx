@@ -10,6 +10,7 @@ import SortSelect from '../../shared/components/SortSelect';
 import FilterTabs from '../../shared/components/FilterTabs';
 import Pagination from '../../shared/components/Pagination';
 import { ASSET_TYPE_LABELS, ASSET_TYPE_FILTERS } from '../../shared/constants/assetTypes';
+import { assetCodeLabel } from '../../shared/constants/commodities';
 import { usePortfolioTransactions } from './usePortfolioData';
 import useListParams from '../../shared/hooks/useListParams';
 
@@ -105,7 +106,7 @@ export default function TransactionHistory({ portfolioId }) {
                         <span className={`text-xs font-semibold ${isBuy ? 'text-success' : 'text-danger'}`}>{isBuy ? 'ALIŞ' : 'SATIŞ'}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-fg">{txn.assetCode}</p>
+                        <p className="text-sm font-semibold text-fg">{assetCodeLabel(txn.assetType, txn.assetCode)}</p>
                         <p className="text-[11px] text-fg-muted">{ASSET_TYPE_LABELS[txn.assetType] || txn.assetType}</p>
                       </div>
                       <div className="text-right w-28">
@@ -132,7 +133,7 @@ export default function TransactionHistory({ portfolioId }) {
                             {isBuy ? <ArrowDownRight className="h-4 w-4 text-success" /> : <ArrowUpRight className="h-4 w-4 text-danger" />}
                           </span>
                           <div>
-                            <p className="text-sm font-semibold text-fg">{txn.assetCode}</p>
+                            <p className="text-sm font-semibold text-fg">{assetCodeLabel(txn.assetType, txn.assetCode)}</p>
                             <p className="text-[11px] text-fg-muted">{ASSET_TYPE_LABELS[txn.assetType] || txn.assetType}</p>
                           </div>
                         </div>

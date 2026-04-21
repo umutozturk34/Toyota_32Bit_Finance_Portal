@@ -8,7 +8,7 @@ import {
   Newspaper, BarChart3, TrendingUp, Bitcoin,
   DollarSign, Shield,
   LogOut, Sun, Moon, Briefcase, Activity,
-  ChevronLeft, ChevronRight, Menu, Landmark, Wallet, Database,
+  ChevronLeft, ChevronRight, Menu, Landmark, Wallet, Database, Gem,
 } from 'lucide-react';
 import TasksPanel from '../../features/admin/TasksPanel';
 
@@ -19,6 +19,7 @@ const navItems = [
   { to: '/crypto', label: 'Crypto', Icon: Bitcoin },
   { to: '/forex', label: 'Forex', Icon: DollarSign },
   { to: '/funds', label: 'Funds', Icon: Briefcase },
+  { to: '/commodities', label: 'Emtia', Icon: Gem },
   { to: '/bonds', label: 'Bonds', Icon: Landmark },
   { to: '/portfolio', label: 'Portfolio', Icon: Wallet },
 ];

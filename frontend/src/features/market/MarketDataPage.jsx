@@ -14,6 +14,7 @@ import ErrorState from '../../shared/components/ErrorState';
 import SearchSuggestions from '../../shared/components/SearchSuggestions';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
 import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../../shared/constants/assetTypes';
+import { commodityLabel } from '../../shared/constants/commodities';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
 
@@ -79,7 +80,7 @@ function AssetRow({ asset, onClick }) {
           {(asset.name || asset.code).slice(0, 2).toUpperCase()}
         </span>
       )}
-      <span className="text-[13px] font-medium text-fg truncate flex-1 group-hover:text-accent transition-colors">{asset.code.replace('.IS', '')}</span>
+      <span className="text-[13px] font-medium text-fg truncate flex-1 group-hover:text-accent transition-colors">{commodityLabel(asset)}</span>
       <span className="text-[13px] font-mono font-bold text-fg tabular-nums">{formatPriceTRY(asset.price)}</span>
       {asset.changePercent != null && (
         <span className={`text-[11px] font-mono font-semibold tabular-nums min-w-[52px] text-right ${changeColors[cls]}`}>

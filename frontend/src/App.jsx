@@ -19,6 +19,7 @@ import ForexPage from './features/forex/ForexPage';
 import ForexDetail from './features/forex/ForexDetail';
 import FundsPage from './features/fund/FundsPage';
 import FundDetail from './features/fund/FundDetail';
+import CommoditiesPage from './features/commodity/CommoditiesPage';
 import BondsPage from './features/bond/BondsPage';
 import Portfolio from './features/portfolio';
 import AdminTrackedAssetsPage from './features/admin/AdminTrackedAssetsPage';
@@ -58,6 +59,7 @@ function App() {
             <Route path="forex/:code" element={<ForexDetail />} />
             <Route path="funds" element={<FundsPage />} />
             <Route path="funds/:code" element={<FundDetail />} />
+            <Route path="commodities" element={<CommoditiesPage />} />
             <Route path="bonds" element={<BondsPage />} />
             <Route path="admin/tracked-assets" element={<AdminTrackedAssetsPage />} />
             <Route path="portfolio" element={<Portfolio />} />

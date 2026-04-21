@@ -15,6 +15,7 @@ import java.util.List;
 public abstract class CommodityResponseMapper {
 
     @Mapping(target = "code", source = "commodityCode")
+    @Mapping(target = "name", source = "commodityNameTr")
     @Mapping(target = "price", source = "currentPrice")
     @Mapping(target = "changeAmount", source = "change24h")
     @Mapping(target = "changePercent", source = "changePercent24h")

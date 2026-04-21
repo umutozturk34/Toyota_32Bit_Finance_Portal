@@ -36,7 +36,6 @@ public class StockCandleService implements CandleBatchRefresher {
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
     private final MarketConstants marketConstants;
     private final TransactionTemplate transactionTemplate;
-    private final int minCandlesForIncremental;
     private final int historyYears;
     private final ZoneId appZone;
 
@@ -55,7 +54,6 @@ public class StockCandleService implements CandleBatchRefresher {
         this.stockCacheService = stockCacheService;
         this.marketConstants = marketConstants;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
-        this.minCandlesForIncremental = appProperties.getStock().getMinCandlesForIncremental();
         this.historyYears = appProperties.getStock().getHistoryYears();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
@@ -104,13 +102,11 @@ public class StockCandleService implements CandleBatchRefresher {
 
     private int updateCandlesForStock(String symbol) {
         Stock stock = stockRepository.getReferenceById(symbol);
-        long existingCount = stockCandleRepository.countByStockSymbol(symbol);
-        String range = existingCount < minCandlesForIncremental
-                ? historyYears + "y"
-                : stockCandleRepository.findFirstByStockSymbolOrderByCandleDateDesc(symbol)
-                .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, historyYears + "y"))
-                .orElse(historyYears + "y");
-        log.debug("{} - existing: {}, range: {}", symbol, existingCount, range);
+        String fallbackRange = historyYears + "y";
+        String range = stockCandleRepository.findFirstByStockSymbolOrderByCandleDateDesc(symbol)
+                .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, fallbackRange))
+                .orElse(fallbackRange);
+        log.debug("{} - range: {}", symbol, range);
         List<YahooCandleDto> candleDtos = yahooStockClient.fetchCandles(symbol, range, "1d", true);
         if (candleDtos.isEmpty()) {
             log.warn("{} - No valid candle data", symbol);

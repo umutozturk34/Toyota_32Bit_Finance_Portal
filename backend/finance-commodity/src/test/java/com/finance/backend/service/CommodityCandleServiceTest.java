@@ -52,7 +52,6 @@ class CommodityCandleServiceTest {
         AppProperties props = new AppProperties();
         AppProperties.Commodity commodityProps = new AppProperties.Commodity();
         commodityProps.setYearsToKeep(5);
-        commodityProps.setMinCandlesForIncremental(1200);
         props.setCommodity(commodityProps);
         props.setScale(4);
         props.setTimezone("Europe/Istanbul");

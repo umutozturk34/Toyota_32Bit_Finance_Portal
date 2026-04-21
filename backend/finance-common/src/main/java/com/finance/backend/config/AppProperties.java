@@ -140,7 +140,6 @@ public class AppProperties {
     @Setter
     public static class Commodity {
         private int yearsToKeep = 5;
-        private int minCandlesForIncremental = 1200;
         private BigDecimal spreadRate = new BigDecimal("0.015");
         private String goldSourceCode = "GC=F";
         private String silverSourceCode = "SI=F";
@@ -154,7 +153,6 @@ public class AppProperties {
     @Getter
     @Setter
     public static class Stock {
-        private int minCandlesForIncremental = 1200;
         private int historyYears = 5;
     }
 

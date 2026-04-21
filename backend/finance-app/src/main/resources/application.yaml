@@ -95,7 +95,6 @@ app:
     days-in-year: 365
 
   stock:
-    min-candles-for-incremental: 1200
     history-years: 5
 
   forex:
@@ -110,7 +109,6 @@ app:
 
   commodity:
     years-to-keep: 5
-    min-candles-for-incremental: 1200
     spread-rate: 0.015
     gold-source-code: "GC=F"
     silver-source-code: "SI=F"

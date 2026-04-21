@@ -46,7 +46,6 @@ public class CommodityCandleService implements CandleBatchRefresher {
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final TransactionTemplate transactionTemplate;
     private final int yearsToKeep;
-    private final int minCandlesForIncremental;
     private final int scale;
     private final ZoneId appZone;
 
@@ -68,7 +67,6 @@ public class CommodityCandleService implements CandleBatchRefresher {
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.yearsToKeep = appProperties.getCommodity().getYearsToKeep();
-        this.minCandlesForIncremental = appProperties.getCommodity().getMinCandlesForIncremental();
         this.scale = appProperties.getScale();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
@@ -142,10 +140,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
     }
 
     private void updateCommodityCandles(String yahooSymbol, Map<String, YahooCandleDto> usdtryCandleMap) {
-        long candleCount = commodityCandleRepository.countByCommodityCode(yahooSymbol);
-        String range = candleCount < minCandlesForIncremental
-                ? "5y"
-                : commodityCandleRepository.findFirstByCommodityCodeOrderByCandleDateDesc(yahooSymbol)
+        String range = commodityCandleRepository.findFirstByCommodityCodeOrderByCandleDateDesc(yahooSymbol)
                 .map(last -> YahooRangePolicy.fromLastCandle(last.getCandleDate(), appZone, "5y"))
                 .orElse("5y");
 

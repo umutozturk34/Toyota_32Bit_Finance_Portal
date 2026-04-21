@@ -160,7 +160,6 @@ public class AppProperties {
     @Setter
     public static class Forex {
         private int yearsToKeep = 5;
-        private int minCandlesForIncremental = 1200;
         private BigDecimal spreadRate = new BigDecimal("0.01");
     }
 

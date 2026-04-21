@@ -40,7 +40,6 @@ public class ForexCandleService implements CandleBatchRefresher {
     private final MarketCacheService<Forex, ForexCandle> forexCacheService;
     private final TransactionTemplate transactionTemplate;
     private final int yearsToKeep;
-    private final int minCandlesForIncremental;
     private final int scale;
     private final ZoneId appZone;
 
@@ -58,7 +57,6 @@ public class ForexCandleService implements CandleBatchRefresher {
         this.forexCacheService = forexCacheService;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.yearsToKeep = appProperties.getForex().getYearsToKeep();
-        this.minCandlesForIncremental = appProperties.getForex().getMinCandlesForIncremental();
         this.scale = appProperties.getScale();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
@@ -114,22 +112,20 @@ public class ForexCandleService implements CandleBatchRefresher {
     private void updateForexCandles(Forex forex, Map<String, YahooCandleDto> usdtryCandleMap) {
         String baseSymbol = forex.getCurrencyCode();
         String yahooSymbol = baseSymbol + "=X";
-        long candleCount = forexCandleRepository.countByCurrencyCode(baseSymbol);
-        String range = candleCount < minCandlesForIncremental
-                ? "5y"
-                : forexCandleRepository.findFirstByCurrencyCodeOrderByCandleDateDesc(baseSymbol)
+        boolean wasEmpty = forexCandleRepository.countByCurrencyCode(baseSymbol) == 0;
+        String range = forexCandleRepository.findFirstByCurrencyCodeOrderByCandleDateDesc(baseSymbol)
                 .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, "5y"))
                 .orElse("5y");
         try {
             List<YahooCandleDto> candles = yahooForexClient.fetchCandles(yahooSymbol, range, "1d", true);
             if (!candles.isEmpty()) {
                 int saved = transactionTemplate.execute(status -> saveCandleBatch(forex, candles));
-                if (saved > 0 && (!"5y".equals(range) || candleCount + saved >= minCandlesForIncremental)) {
+                if (saved > 0 && !wasEmpty) {
                     return;
                 }
-                if ("5y".equals(range)) {
-                    log.info("{} has only {} candles (need {}), also trying synthetic",
-                            baseSymbol, candleCount + saved, minCandlesForIncremental);
+                if (wasEmpty) {
+                    log.info("{} first-time fetch returned {} direct candles, also trying synthetic",
+                            baseSymbol, saved);
                 }
             }
         } catch (CallNotPermittedException e) {

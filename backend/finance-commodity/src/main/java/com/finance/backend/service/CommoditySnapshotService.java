@@ -66,6 +66,29 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
         return MarketType.COMMODITY;
     }
 
+    public boolean existsInApi(String code) {
+        String normalized = normalize(code);
+        if (normalized.isBlank() || !isYahooFetchable(normalized)) return false;
+        try {
+            YahooQuoteDto quote = yahooCommodityClient.fetchQuote(normalized);
+            return quote != null && quote.regularMarketPrice() != null;
+        } catch (Exception e) {
+            log.warn("Commodity existence check failed for {}: {}", normalized, e.getMessage());
+            return false;
+        }
+    }
+
+    public void refreshTrackedCommoditySnapshot(String code) {
+        String normalized = normalize(code);
+        if (normalized.isBlank() || !isYahooFetchable(normalized)) return;
+        updateCommoditySnapshot(normalized);
+        log.info("Refreshed tracked commodity snapshot for {}", normalized);
+    }
+
+    private String normalize(String code) {
+        return code == null ? "" : code.trim().toUpperCase();
+    }
+
     @Override
     public void refreshAll() {
         List<String> enabledCodes = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.COMMODITY);

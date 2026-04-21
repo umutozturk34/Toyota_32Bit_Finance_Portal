@@ -112,6 +112,18 @@ public class CommodityCandleService implements CandleBatchRefresher {
         BatchLogHelper.logSummary(log, "Commodity candle sync", result);
     }
 
+    public void refreshTrackedCommodityCandles(String code) {
+        String normalized = code == null ? "" : code.trim().toUpperCase();
+        if (normalized.isBlank() || !isYahooFetchable(normalized)) return;
+        Map<String, YahooCandleDto> usdtryCandleMap = loadUsdTryCandleMap();
+        if (usdtryCandleMap.isEmpty()) {
+            log.error("USDTRY candles unavailable, skipping single refresh for {}", normalized);
+            return;
+        }
+        updateCommodityCandles(normalized, usdtryCandleMap);
+        log.info("Refreshed tracked commodity candles for {}", normalized);
+    }
+
     private boolean isYahooFetchable(String code) {
         return code != null && code.contains("=F");
     }

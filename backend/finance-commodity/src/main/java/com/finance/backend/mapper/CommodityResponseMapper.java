@@ -1,8 +1,10 @@
 package com.finance.backend.mapper;
 
+import com.finance.backend.dto.response.CandleResponse;
 import com.finance.backend.dto.response.CommodityMetadata;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.model.Commodity;
+import com.finance.backend.model.CommodityCandle;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -22,6 +24,8 @@ public abstract class CommodityResponseMapper {
     public abstract MarketAssetResponse toMarketAssetResponse(Commodity commodity);
 
     public abstract List<MarketAssetResponse> toMarketAssetResponses(List<Commodity> commodities);
+
+    public abstract List<CandleResponse> toCommodityCandleResponses(List<CommodityCandle> candles);
 
     @Named("commodityMetadata")
     protected CommodityMetadata buildCommodityMetadata(Commodity commodity) {

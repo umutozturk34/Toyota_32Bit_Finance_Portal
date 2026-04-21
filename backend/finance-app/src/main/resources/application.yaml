@@ -135,6 +135,7 @@ app:
     stock-rate: 0.002
     crypto-rate: 0.0015
     fund-rate: 0.001
+    commodity-rate: 0.0025
 
   scheduler:
     crypto:

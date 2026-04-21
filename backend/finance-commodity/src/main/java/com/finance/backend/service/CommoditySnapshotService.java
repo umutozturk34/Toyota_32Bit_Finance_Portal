@@ -10,6 +10,7 @@ import com.finance.backend.model.CommoditySnapshotInput;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
 import com.finance.backend.model.MarketType;
+import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.CommodityRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
@@ -33,6 +34,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
     private final MarketCacheService<Forex, ForexCandle> forexCacheService;
     private final PreciousMetalDerivativeCalculator derivativeCalculator;
+    private final TrackedAssetQueryService trackedAssetQueryService;
     private final TransactionTemplate transactionTemplate;
     private final int scale;
     private final BigDecimal spreadRate;
@@ -42,6 +44,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
                                     MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
                                     MarketCacheService<Forex, ForexCandle> forexCacheService,
                                     PreciousMetalDerivativeCalculator derivativeCalculator,
+                                    TrackedAssetQueryService trackedAssetQueryService,
                                     PlatformTransactionManager transactionManager,
                                     AppProperties appProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
@@ -49,6 +52,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
         this.commodityCacheService = commodityCacheService;
         this.forexCacheService = forexCacheService;
         this.derivativeCalculator = derivativeCalculator;
+        this.trackedAssetQueryService = trackedAssetQueryService;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.scale = appProperties.getScale();
         this.spreadRate = appProperties.getCommodity().getSpreadRate();
@@ -61,7 +65,12 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
 
     @Override
     public void refreshAll() {
-        List<Commodity> yahooTracked = commodityRepository.findAllByOrderByCommodityCodeAsc().stream()
+        List<String> enabledCodes = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.COMMODITY);
+        if (enabledCodes.isEmpty()) {
+            log.info("No tracked commodities enabled, skipping snapshot sync");
+            return;
+        }
+        List<Commodity> yahooTracked = commodityRepository.findAllById(enabledCodes).stream()
                 .filter(c -> c.getYahooSymbol() != null && !c.getYahooSymbol().isBlank())
                 .toList();
 

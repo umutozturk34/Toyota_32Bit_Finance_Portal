@@ -28,6 +28,12 @@ public enum AssetType {
         public BigDecimal commissionRate(AppProperties.Commission commission) {
             return commission.getFundRate();
         }
+    },
+    COMMODITY(MarketType.COMMODITY) {
+        @Override
+        public BigDecimal commissionRate(AppProperties.Commission commission) {
+            return commission.getCommodityRate();
+        }
     };
 
     private final MarketType marketType;

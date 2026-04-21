@@ -1,6 +1,7 @@
 package com.finance.backend.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.finance.backend.dto.external.TcmbRateDto;
+import com.finance.backend.util.PercentChangeCalculator;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -99,16 +100,9 @@ public class Forex extends BaseAsset {
     }
 
     private void applyChangeFields(BigDecimal current, BigDecimal previous, int scale) {
-        if (previous == null || previous.signum() == 0) {
-            this.change24h = null;
-            this.changePercent24h = null;
-            return;
-        }
-        BigDecimal change = current.subtract(previous);
-        this.change24h = scaleValue(change, scale);
-        this.changePercent24h = change.divide(previous, scale + 2, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.valueOf(100))
-                .setScale(scale, RoundingMode.HALF_UP);
+        PercentChangeCalculator.Result result = PercentChangeCalculator.compute(current, previous, scale);
+        this.change24h = result.amount();
+        this.changePercent24h = result.percent();
     }
 
     private BigDecimal divideByUnit(BigDecimal value, int unit, int scale) {

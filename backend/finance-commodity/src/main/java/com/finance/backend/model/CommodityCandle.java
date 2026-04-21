@@ -8,7 +8,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -65,17 +64,4 @@ public class CommodityCandle extends BaseCandle {
         return getClass().hashCode();
     }
 
-    public void scaleAndNormalizeOhlc(int scale) {
-        scaleOhlc(scale);
-        normalizeHighLow();
-    }
-
-    private void normalizeHighLow() {
-        if (getOpen() != null && getClose() != null && getHigh() != null && getLow() != null) {
-            BigDecimal maxOC = getOpen().max(getClose());
-            BigDecimal minOC = getOpen().min(getClose());
-            if (getHigh().compareTo(maxOC) < 0) setHigh(maxOC);
-            if (getLow().compareTo(minOC) > 0) setLow(minOC);
-        }
-    }
 }

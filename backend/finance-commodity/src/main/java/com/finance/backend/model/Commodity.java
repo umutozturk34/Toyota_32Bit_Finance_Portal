@@ -1,6 +1,7 @@
 package com.finance.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.finance.backend.util.PercentChangeCalculator;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -9,7 +10,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -44,6 +44,12 @@ public class Commodity extends BaseAsset {
     @Column(name = "selling_price", precision = 19, scale = 4)
     private BigDecimal sellingPrice;
 
+    @Column(name = "current_price_usd", precision = 19, scale = 4)
+    private BigDecimal currentPriceUsd;
+
+    @Column(name = "previous_price_usd", precision = 19, scale = 4)
+    private BigDecimal previousPriceUsd;
+
     @Column(name = "change_24h", precision = 19, scale = 4)
     private BigDecimal change24h;
 
@@ -68,37 +74,29 @@ public class Commodity extends BaseAsset {
     @JsonIgnore
     private List<CommodityCandle> candles;
 
-    public void applyYahooSnapshot(BigDecimal marketPrice, BigDecimal previousClose,
-                                   BigDecimal spreadRate, int scale) {
-        if (marketPrice == null) return;
-        this.currentPrice = scaleValue(marketPrice, scale);
-        this.sellingPrice = scaleValue(marketPrice.multiply(BigDecimal.ONE.add(spreadRate)), scale);
-        applyChangeFields(marketPrice, previousClose, scale);
+    public void applyYahooSnapshot(CommoditySnapshotInput snapshot, BigDecimal spreadRate, int scale) {
+        if (snapshot == null || snapshot.tryPrice() == null) return;
+        this.currentPrice = scaleValue(snapshot.tryPrice(), scale);
+        this.sellingPrice = scaleValue(snapshot.tryPrice().multiply(BigDecimal.ONE.add(spreadRate)), scale);
+        this.currentPriceUsd = scaleValue(snapshot.usdPrice(), scale);
+        this.previousPriceUsd = scaleValue(snapshot.usdPreviousClose(), scale);
+        applyChangeFields(snapshot.tryPrice(), snapshot.tryPreviousClose(), scale);
         this.yahooUpdatedAt = LocalDateTime.now();
     }
 
-    public void applySyntheticPrice(BigDecimal syntheticPrice, BigDecimal syntheticPreviousClose,
-                                    BigDecimal spreadRate, int scale) {
-        if (syntheticPrice == null) return;
-        this.currentPrice = scaleValue(syntheticPrice, scale);
-        this.sellingPrice = scaleValue(syntheticPrice.multiply(BigDecimal.ONE.add(spreadRate)), scale);
-        if (syntheticPreviousClose != null) {
-            applyChangeFields(syntheticPrice, syntheticPreviousClose, scale);
-        }
+    public void applyDerivedSnapshot(BigDecimal tryPrice, BigDecimal tryPreviousClose,
+                                     BigDecimal spreadRate, int scale) {
+        if (tryPrice == null) return;
+        this.currentPrice = scaleValue(tryPrice, scale);
+        this.sellingPrice = scaleValue(tryPrice.multiply(BigDecimal.ONE.add(spreadRate)), scale);
+        applyChangeFields(tryPrice, tryPreviousClose, scale);
         this.yahooUpdatedAt = LocalDateTime.now();
     }
 
     private void applyChangeFields(BigDecimal current, BigDecimal previous, int scale) {
-        if (previous == null || previous.signum() == 0) {
-            this.change24h = null;
-            this.changePercent24h = null;
-            return;
-        }
-        BigDecimal change = current.subtract(previous);
-        this.change24h = scaleValue(change, scale);
-        this.changePercent24h = change.divide(previous, scale + 2, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.valueOf(100))
-                .setScale(scale, RoundingMode.HALF_UP);
+        PercentChangeCalculator.Result result = PercentChangeCalculator.compute(current, previous, scale);
+        this.change24h = result.amount();
+        this.changePercent24h = result.percent();
     }
 
     @Override

@@ -34,6 +34,20 @@ public abstract class BaseCandle {
         this.close = scaleValue(this.close, scale);
     }
 
+    public void scaleAndNormalizeOhlc(int scale) {
+        scaleOhlc(scale);
+        normalizeHighLow();
+    }
+
+    private void normalizeHighLow() {
+        if (open != null && close != null && high != null && low != null) {
+            BigDecimal maxOC = open.max(close);
+            BigDecimal minOC = open.min(close);
+            if (high.compareTo(maxOC) < 0) this.high = maxOC;
+            if (low.compareTo(minOC) > 0) this.low = minOC;
+        }
+    }
+
     protected static BigDecimal scaleValue(BigDecimal value, int scale) {
         return value != null ? value.setScale(scale, RoundingMode.HALF_UP) : null;
     }

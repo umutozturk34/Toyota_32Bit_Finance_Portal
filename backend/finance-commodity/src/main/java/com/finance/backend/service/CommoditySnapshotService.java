@@ -6,6 +6,7 @@ import com.finance.backend.dto.external.YahooQuoteDto;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
+import com.finance.backend.model.CommoditySnapshotInput;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
 import com.finance.backend.model.MarketType;
@@ -31,6 +32,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
     private final CommodityRepository commodityRepository;
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
     private final MarketCacheService<Forex, ForexCandle> forexCacheService;
+    private final GoldCalculationService goldCalculationService;
     private final TransactionTemplate transactionTemplate;
     private final int scale;
     private final BigDecimal spreadRate;
@@ -39,12 +41,14 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
                                     CommodityRepository commodityRepository,
                                     MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
                                     MarketCacheService<Forex, ForexCandle> forexCacheService,
+                                    GoldCalculationService goldCalculationService,
                                     PlatformTransactionManager transactionManager,
                                     AppProperties appProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
         this.commodityRepository = commodityRepository;
         this.commodityCacheService = commodityCacheService;
         this.forexCacheService = forexCacheService;
+        this.goldCalculationService = goldCalculationService;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.scale = appProperties.getScale();
         this.spreadRate = appProperties.getCommodity().getSpreadRate();
@@ -84,15 +88,25 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
                     "No price for " + commodity.getCommodityCode());
         }
         BigDecimal usdtryRate = getUsdTryRate();
-        BigDecimal tryPrice = SyntheticPriceCalculator.calculateSyntheticPrice(
-                quote.regularMarketPrice(), usdtryRate, false, scale);
-        BigDecimal tryPreviousClose = SyntheticPriceCalculator.calculateSyntheticPrice(
-                quote.previousClose(), usdtryRate, false, scale);
+        CommoditySnapshotInput snapshot = buildSnapshotInput(quote, usdtryRate);
         transactionTemplate.executeWithoutResult(status -> {
-            commodity.applyYahooSnapshot(tryPrice, tryPreviousClose, spreadRate, scale);
+            commodity.applyYahooSnapshot(snapshot, spreadRate, scale);
             commodityRepository.save(commodity);
         });
         commodityCacheService.putSnapshot(commodity.getCommodityCode(), commodity);
+        if (goldCalculationService.isGoldSource(commodity.getCommodityCode())) {
+            goldCalculationService.refreshDerivatives(commodity, usdtryRate);
+        }
+    }
+
+    private CommoditySnapshotInput buildSnapshotInput(YahooQuoteDto quote, BigDecimal usdtryRate) {
+        BigDecimal usdPrice = quote.regularMarketPrice();
+        BigDecimal usdPreviousClose = quote.previousClose();
+        BigDecimal tryPrice = SyntheticPriceCalculator.calculateSyntheticPrice(
+                usdPrice, usdtryRate, false, scale);
+        BigDecimal tryPreviousClose = SyntheticPriceCalculator.calculateSyntheticPrice(
+                usdPreviousClose, usdtryRate, false, scale);
+        return new CommoditySnapshotInput(tryPrice, tryPreviousClose, usdPrice, usdPreviousClose);
     }
 
     private BigDecimal getUsdTryRate() {

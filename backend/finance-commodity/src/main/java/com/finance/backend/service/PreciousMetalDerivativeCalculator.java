@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.model.Commodity;
+import com.finance.backend.model.CommodityCandle;
 import com.finance.backend.repository.CommodityRepository;
 import com.finance.backend.util.SyntheticPriceCalculator;
 import lombok.extern.log4j.Log4j2;
@@ -9,20 +10,25 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @Log4j2
-public class GoldCalculationService {
+public class PreciousMetalDerivativeCalculator {
 
     private static final String GOLD_CODE = "GOLD";
+    private static final String SILVER_CODE = "SILVER";
+    private static final Set<String> SOURCES_WITH_DERIVATIVES = Set.of(GOLD_CODE, SILVER_CODE);
+
     private static final String GOLD_GRAM_CODE = "GOLD_GRAM";
     private static final String GOLD_YARIM_CODE = "GOLD_YARIM";
     private static final String GOLD_TAM_CODE = "GOLD_TAM";
     private static final String GOLD_CEYREK_CODE = "GOLD_CEYREK";
     private static final String GOLD_CUMHURIYET_CODE = "GOLD_CUMHURIYET";
+    private static final String SILVER_GRAM_CODE = "SILVER_GRAM";
 
     private final CommodityRepository commodityRepository;
-    private final MarketCacheService<Commodity, com.finance.backend.model.CommodityCandle> commodityCacheService;
+    private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
     private final int scale;
     private final BigDecimal spreadRate;
     private final BigDecimal gramDivisor;
@@ -31,9 +37,9 @@ public class GoldCalculationService {
     private final BigDecimal ceyrekDivisor;
     private final BigDecimal cumhuriyetMultiplier;
 
-    public GoldCalculationService(CommodityRepository commodityRepository,
-                                  MarketCacheService<Commodity, com.finance.backend.model.CommodityCandle> commodityCacheService,
-                                  AppProperties appProperties) {
+    public PreciousMetalDerivativeCalculator(CommodityRepository commodityRepository,
+                                             MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
+                                             AppProperties appProperties) {
         this.commodityRepository = commodityRepository;
         this.commodityCacheService = commodityCacheService;
         this.scale = appProperties.getScale();
@@ -45,18 +51,27 @@ public class GoldCalculationService {
         this.cumhuriyetMultiplier = appProperties.getCommodity().getGoldCumhuriyetMultiplier();
     }
 
-    public void refreshDerivatives(Commodity gold, BigDecimal usdTryRate) {
-        if (gold == null || gold.getCurrentPriceUsd() == null || usdTryRate == null) {
-            log.debug("Skipping gold derivatives: missing gold USD price or USDTRY rate");
+    public boolean hasDerivatives(String commodityCode) {
+        return SOURCES_WITH_DERIVATIVES.contains(commodityCode);
+    }
+
+    public void refreshDerivatives(Commodity source, BigDecimal usdTryRate) {
+        if (source == null || source.getCurrentPriceUsd() == null || usdTryRate == null) {
+            log.debug("Skipping derivatives: missing source USD price or USDTRY rate for {}",
+                    source == null ? "null" : source.getCommodityCode());
             return;
         }
-        BigDecimal onsTry = gold.getCurrentPriceUsd().multiply(usdTryRate);
-        BigDecimal onsTryPrevious = gold.getPreviousPriceUsd() != null
-                ? gold.getPreviousPriceUsd().multiply(usdTryRate)
-                : null;
+        BigDecimal gramPrice = onsUsdToGramTry(source.getCurrentPriceUsd(), usdTryRate);
+        BigDecimal gramPrevious = onsUsdToGramTry(source.getPreviousPriceUsd(), usdTryRate);
 
-        BigDecimal gramPrice = divide(onsTry, gramDivisor);
-        BigDecimal gramPrevious = divide(onsTryPrevious, gramDivisor);
+        if (GOLD_CODE.equals(source.getCommodityCode())) {
+            refreshGoldDerivatives(gramPrice, gramPrevious);
+        } else if (SILVER_CODE.equals(source.getCommodityCode())) {
+            persistDerivative(SILVER_GRAM_CODE, gramPrice, gramPrevious);
+        }
+    }
+
+    private void refreshGoldDerivatives(BigDecimal gramPrice, BigDecimal gramPrevious) {
         BigDecimal tamPrice = multiply(gramPrice, tamMultiplier);
         BigDecimal tamPrevious = multiply(gramPrevious, tamMultiplier);
         BigDecimal yarimPrice = divide(tamPrice, yarimDivisor);
@@ -73,8 +88,10 @@ public class GoldCalculationService {
         persistDerivative(GOLD_CUMHURIYET_CODE, cumhuriyetPrice, cumhuriyetPrevious);
     }
 
-    public boolean isGoldSource(String commodityCode) {
-        return GOLD_CODE.equals(commodityCode);
+    private BigDecimal onsUsdToGramTry(BigDecimal onsUsd, BigDecimal usdTryRate) {
+        if (onsUsd == null) return null;
+        BigDecimal onsTry = onsUsd.multiply(usdTryRate);
+        return divide(onsTry, gramDivisor);
     }
 
     private void persistDerivative(String code, BigDecimal tryPrice, BigDecimal tryPrevious) {

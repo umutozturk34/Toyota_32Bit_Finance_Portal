@@ -32,7 +32,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
     private final CommodityRepository commodityRepository;
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
     private final MarketCacheService<Forex, ForexCandle> forexCacheService;
-    private final GoldCalculationService goldCalculationService;
+    private final PreciousMetalDerivativeCalculator derivativeCalculator;
     private final TransactionTemplate transactionTemplate;
     private final int scale;
     private final BigDecimal spreadRate;
@@ -41,14 +41,14 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
                                     CommodityRepository commodityRepository,
                                     MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
                                     MarketCacheService<Forex, ForexCandle> forexCacheService,
-                                    GoldCalculationService goldCalculationService,
+                                    PreciousMetalDerivativeCalculator derivativeCalculator,
                                     PlatformTransactionManager transactionManager,
                                     AppProperties appProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
         this.commodityRepository = commodityRepository;
         this.commodityCacheService = commodityCacheService;
         this.forexCacheService = forexCacheService;
-        this.goldCalculationService = goldCalculationService;
+        this.derivativeCalculator = derivativeCalculator;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.scale = appProperties.getScale();
         this.spreadRate = appProperties.getCommodity().getSpreadRate();
@@ -94,8 +94,8 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
             commodityRepository.save(commodity);
         });
         commodityCacheService.putSnapshot(commodity.getCommodityCode(), commodity);
-        if (goldCalculationService.isGoldSource(commodity.getCommodityCode())) {
-            goldCalculationService.refreshDerivatives(commodity, usdtryRate);
+        if (derivativeCalculator.hasDerivatives(commodity.getCommodityCode())) {
+            derivativeCalculator.refreshDerivatives(commodity, usdtryRate);
         }
     }
 

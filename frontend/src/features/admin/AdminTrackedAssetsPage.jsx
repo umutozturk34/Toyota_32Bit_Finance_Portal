@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Database, Plus, Bitcoin, TrendingUp, Briefcase, Newspaper } from 'lucide-react';
+import { Database, Plus, Bitcoin, TrendingUp, Briefcase, Newspaper, Gem } from 'lucide-react';
 import PageHeader from '../../shared/components/PageHeader';
 import ErrorState from '../../shared/components/ErrorState';
 import { useAuth } from '../auth/AuthContext';
@@ -14,6 +14,7 @@ const INITIAL_FORMS = {
     CRYPTO: { assetCode: '', displayName: '', binanceSymbol: '', sortOrder: 0 },
     STOCK: { assetCode: '', displayName: '', sortOrder: 0, stockSegment: 'EQUITY' },
     FUND: { assetCode: '', displayName: '', sortOrder: 0 },
+    COMMODITY: { assetCode: '', displayName: '', sortOrder: 0 },
 };
 
 function TrackedAssetForm({ type, title, onSaved }) {
@@ -124,6 +125,7 @@ const ADMIN_TABS = [
     { id: 'CRYPTO', label: 'Kripto', icon: Bitcoin },
     { id: 'STOCK', label: 'Hisse', icon: TrendingUp },
     { id: 'FUND', label: 'Fon', icon: Briefcase },
+    { id: 'COMMODITY', label: 'Emtia', icon: Gem },
     { id: 'NEWS', label: 'Haber Kaynakları', icon: Newspaper },
 ];
 

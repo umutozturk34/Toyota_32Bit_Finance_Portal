@@ -56,6 +56,13 @@ public class Commodity extends BaseAsset {
     @Column(name = "unit")
     private String unit;
 
+    @Column(name = "commodity_segment", length = 20)
+    @Enumerated(EnumType.STRING)
+    private CommoditySegment commoditySegment;
+
+    @Column(name = "display_code", length = 30)
+    private String displayCode;
+
     @Column(name = "open_price", precision = 19, scale = 4)
     private BigDecimal openPrice;
 

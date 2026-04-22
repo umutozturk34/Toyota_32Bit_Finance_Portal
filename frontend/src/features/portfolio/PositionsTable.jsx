@@ -102,7 +102,7 @@ export default function PositionsTable({ portfolioId, onAssetClick, onSellClick 
                     <AssetBadge pos={pos} />
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-fg leading-tight truncate">{assetCodeLabel(pos.assetType, pos.assetCode)}</p>
-                      <p className="text-[11px] text-fg-muted truncate">{pos.assetName || ASSET_TYPE_LABELS[pos.assetType]}</p>
+                      <p className="text-[11px] text-fg-muted truncate">{pos.assetName && pos.assetName !== pos.assetCode ? pos.assetName : ASSET_TYPE_LABELS[pos.assetType]}</p>
                     </div>
                   </div>
                   <p className="text-right text-[11px] font-mono text-fg truncate">{Number(pos.quantity).toLocaleString('tr-TR', { maximumFractionDigits: 6 })}</p>
@@ -127,7 +127,7 @@ export default function PositionsTable({ portfolioId, onAssetClick, onSellClick 
                       <AssetBadge pos={pos} />
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-fg truncate">{pos.assetCode}</p>
-                        <p className="text-[11px] text-fg-muted truncate">{pos.assetName || ASSET_TYPE_LABELS[pos.assetType]}</p>
+                        <p className="text-[11px] text-fg-muted truncate">{pos.assetName && pos.assetName !== pos.assetCode ? pos.assetName : ASSET_TYPE_LABELS[pos.assetType]}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

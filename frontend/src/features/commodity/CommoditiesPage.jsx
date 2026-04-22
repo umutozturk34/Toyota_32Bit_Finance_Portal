@@ -17,15 +17,20 @@ import SearchInput from '../../shared/components/SearchInput';
 import SortSelect from '../../shared/components/SortSelect';
 import Pagination from '../../shared/components/Pagination';
 import BuyModal from '../../shared/components/BuyModal';
+import FilterTabs from '../../shared/components/FilterTabs';
 import { toast } from '../../shared/components/Toast';
 import useListParams from '../../shared/hooks/useListParams';
-import { commodityDisplayCode, isCommodityIndex } from '../../shared/constants/commodities';
 
 const SORT_OPTIONS = [
     { id: 'changePercent', label: 'Değişim %' },
     { id: 'price', label: 'Fiyat' },
     { id: 'name', label: 'İsim' },
 ];
+
+const SEGMENT_LABELS = {
+    PRECIOUS_METAL: 'Kıymetli Metaller',
+    OTHER: 'Diğerleri',
+};
 
 function CommoditiesPage() {
     const navigate = useNavigate();
@@ -34,18 +39,33 @@ function CommoditiesPage() {
     const [updating, setUpdating] = useState({ snapshot: false, candles: false, full: false });
     const isAdmin = hasRole('ADMIN');
     const listParams = useListParams();
+    const segment = listParams.filter || 'PRECIOUS_METAL';
+
+    const { data: segmentCounts = [] } = useQuery({
+        queryKey: ['commoditySegments'],
+        queryFn: commodityService.getSegmentCounts,
+        staleTime: 60_000,
+    });
+
+    const tabItems = segmentCounts.map(s => ({
+        type: s.type,
+        count: s.count,
+        label: SEGMENT_LABELS[s.type] || s.type,
+    }));
+
+    const queryParams = { ...listParams.params, segment };
 
     const { data, isLoading: loading, error, refetch } = useQuery({
-        queryKey: ['commodities', listParams.params],
-        queryFn: () => commodityService.getAllCommodities(listParams.params),
+        queryKey: ['commodities', queryParams],
+        queryFn: () => commodityService.getAllCommodities(queryParams),
         placeholderData: (prev) => prev,
     });
 
-    const all = data?.content || [];
-    const indices = all.filter(c => isCommodityIndex(c.code));
-    const futures = all.filter(c => !isCommodityIndex(c.code));
+    const commodities = data?.content || [];
     const totalPages = data?.totalPages || 0;
     const totalElements = data?.totalElements || 0;
+
+    const handleSegmentChange = (id) => listParams.setFilter(id);
 
     const handleTrigger = async (action, triggerFn, successMsg) => {
         setUpdating(prev => ({ ...prev, [action]: true }));
@@ -68,7 +88,7 @@ function CommoditiesPage() {
         { key: 'full', label: 'Full Update', title: 'Tam güncelleme (snapshot + 5y candles)', handler: () => handleTrigger('full', adminService.triggerCommodityFull, 'Emtia tam güncelleme başlatıldı') },
     ];
 
-    if (loading && all.length === 0) return <LoadingState message="Emtia verileri yükleniyor…" />;
+    if (loading && commodities.length === 0) return <LoadingState message="Emtia verileri yükleniyor…" />;
     if (error) return <ErrorState message="Emtia verileri yüklenirken hata oluştu" onRetry={refetch} />;
 
     return (
@@ -97,50 +117,29 @@ function CommoditiesPage() {
                     onSortChange={listParams.setSort}
                     onDirectionChange={listParams.setDirection}
                 />
+                {tabItems.length > 0 && (
+                    <FilterTabs
+                        items={tabItems}
+                        activeId={segment}
+                        onSelect={handleSegmentChange}
+                        showAll={false}
+                        layoutId="commodity-segment"
+                    />
+                )}
             </div>
 
-            {indices.length > 0 && (
-                <motion.div
-                    variants={containerVariants()}
-                    initial="hidden"
-                    animate="show"
-                    className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-                >
-                    {indices.map((commodity) => {
-                        const cls = getChangeClass(commodity.changePercent);
-                        return (
-                            <motion.div
-                                key={commodity.code}
-                                variants={cardVariants}
-                                onClick={() => navigate(`/commodities/${encodeURIComponent(commodity.code)}`)}
-                                className="group cursor-pointer rounded-2xl border border-border-default bg-bg-elevated p-5 card-hover transition-all duration-200 hover:border-border-hover"
-                            >
-                                <div>
-                                    <h3 className="text-base font-semibold text-fg">{commodity.name || commodity.code}</h3>
-                                    <span className="text-xs text-fg-muted">Endeks</span>
-                                </div>
-                                <p className="mt-3 font-mono text-2xl font-bold text-fg">₺{formatCommodityPrice(commodity.price)}</p>
-                                <div className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
-                                    {commodity.changePercent > 0 ? <ChevronUp className="h-3.5 w-3.5" /> : commodity.changePercent < 0 ? <ChevronDown className="h-3.5 w-3.5" /> : null}
-                                    {Math.abs(commodity.changePercent || 0).toFixed(2)}%
-                                </div>
-                            </motion.div>
-                        );
-                    })}
-                </motion.div>
-            )}
-
-            {futures.length > 0 && (
+            {commodities.length > 0 && (
                 <motion.div
                     variants={containerVariants()}
                     initial="hidden"
                     animate="show"
                     className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-[400px] content-start"
                 >
-                    {futures.map((commodity) => {
+                    {commodities.map((commodity) => {
                         const cls = getChangeClass(commodity.changePercent);
                         const meta = commodity.metadata || {};
                         const usd = meta.currentPriceUsd;
+                        const secondary = meta.displayCode || commodity.code;
                         return (
                             <motion.div
                                 key={commodity.code}
@@ -150,8 +149,8 @@ function CommoditiesPage() {
                             >
                                 <div className="flex items-start justify-between">
                                     <div className="min-w-0 flex-1">
-                                        <h3 className="truncate text-sm font-semibold text-fg">{commodity.name || commodityDisplayCode(commodity.code)}</h3>
-                                        <span className="block truncate text-xs text-fg-muted">{commodityDisplayCode(commodity.code)}</span>
+                                        <h3 className="truncate text-sm font-semibold text-fg">{commodity.name || secondary}</h3>
+                                        <span className="block truncate text-xs text-fg-muted">{secondary}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {meta.unit && (
@@ -162,7 +161,7 @@ function CommoditiesPage() {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                setBuyTarget({ assetCode: commodity.code, assetName: commodity.name || commodityDisplayCode(commodity.code), price: commodity.price });
+                                                setBuyTarget({ assetCode: commodity.code, assetName: commodity.name || secondary, price: commodity.price });
                                             }}
                                             title="Satın Al"
                                             className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base transition-colors duration-150 hover:bg-surface"
@@ -215,7 +214,7 @@ function CommoditiesPage() {
                                     {meta.volume != null && meta.volume > 0 && (
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="text-fg-muted">Hacim</span>
-                                            <span className="font-mono text-fg">{meta.volume.toLocaleString('tr-TR')}</span>
+                                            <span className="font-mono text-fg">{meta.volume.toLocaleString('tr-TR')} kontrat</span>
                                         </div>
                                     )}
                                 </div>
@@ -230,7 +229,7 @@ function CommoditiesPage() {
                 </motion.div>
             )}
 
-            {all.length === 0 && !loading && (
+            {commodities.length === 0 && !loading && (
                 <EmptyState
                     icon={<Gem className="h-7 w-7 text-fg-subtle" />}
                     message={listParams.search ? 'Aramayla eşleşen emtia bulunamadı.' : 'Henüz emtia verisi yok.'}

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Activity, Play, CheckCircle2, XCircle, Clock,
     RefreshCw, Loader2, Zap, Database, X,
-    TrendingUp, DollarSign, Bitcoin, Briefcase, Landmark, Newspaper,
+    TrendingUp, DollarSign, Bitcoin, Briefcase, Landmark, Newspaper, Gem,
 } from 'lucide-react';
 import { adminService } from './adminService';
 import { toast } from '../../shared/components/Toast';
@@ -52,6 +52,17 @@ const TASK_GROUPS = [
             { key: 'fund-snapshot', label: 'Snapshot', trigger: () => adminService.triggerFundSnapshot() },
             { key: 'fund-candles', label: 'Candles', trigger: () => adminService.triggerFundCandles() },
             { key: 'fund-full', label: 'Full Update', trigger: () => adminService.triggerFundFull() },
+        ],
+    },
+    {
+        category: 'Commodities',
+        icon: Gem,
+        color: 'text-orange-400',
+        bg: 'bg-orange-400/10',
+        tasks: [
+            { key: 'commodity-snapshot', label: 'Snapshot', trigger: () => adminService.triggerCommoditySnapshot() },
+            { key: 'commodity-candles', label: 'Candles', trigger: () => adminService.triggerCommodityCandles() },
+            { key: 'commodity-full', label: 'Full Update', trigger: () => adminService.triggerCommodityFull() },
         ],
     },
     {

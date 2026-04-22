@@ -3,6 +3,7 @@ package com.finance.backend.service;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
+import com.finance.backend.model.CommoditySegment;
 import com.finance.backend.repository.CommodityCandleRepository;
 import com.finance.backend.repository.CommodityRepository;
 import com.finance.backend.util.SyntheticPriceCalculator;
@@ -205,7 +206,10 @@ public class PreciousMetalDerivativeCalculator {
     private void persistDerivative(String code, BigDecimal tryPrice, BigDecimal tryPrevious) {
         if (tryPrice == null) return;
         Commodity derivative = commodityRepository.findById(code)
-                .orElseGet(() -> Commodity.builder().commodityCode(code).build());
+                .orElseGet(() -> Commodity.builder()
+                        .commodityCode(code)
+                        .commoditySegment(CommoditySegment.fromCode(code))
+                        .build());
         derivative.applyDerivedSnapshot(tryPrice, tryPrevious, spreadRate, scale);
         commodityRepository.save(derivative);
         commodityCacheService.putSnapshot(code, derivative);

@@ -5,7 +5,6 @@ import com.finance.backend.model.MarketType;
 import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
 import com.finance.backend.service.AssetPricingPort;
-import com.finance.backend.service.assetpricing.BaseAssetPricingStrategy;
 import com.finance.backend.service.MarketCacheService;
 import org.springframework.stereotype.Component;
 

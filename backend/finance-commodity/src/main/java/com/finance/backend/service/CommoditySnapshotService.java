@@ -7,6 +7,7 @@ import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.CommodityMapper;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
+import com.finance.backend.model.CommoditySegment;
 import com.finance.backend.model.CommoditySnapshotInput;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
@@ -129,7 +130,10 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
         BigDecimal usdtryRate = getUsdTryRate();
         CommoditySnapshotInput snapshot = commodityMapper.toSnapshotInput(quote, usdtryRate, scale);
         Commodity commodity = commodityRepository.findById(yahooSymbol)
-                .orElseGet(() -> Commodity.builder().commodityCode(yahooSymbol).build());
+                .orElseGet(() -> Commodity.builder()
+                        .commodityCode(yahooSymbol)
+                        .commoditySegment(CommoditySegment.fromCode(yahooSymbol))
+                        .build());
         transactionTemplate.executeWithoutResult(status -> {
             commodity.applyYahooSnapshot(snapshot, spreadRate, scale);
             commodityRepository.save(commodity);

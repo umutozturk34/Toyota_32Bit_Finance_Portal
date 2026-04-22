@@ -167,7 +167,7 @@ export default function SearchSuggestions({
                           className="flex items-center justify-center w-8 h-8 rounded-lg text-[10px] font-bold shrink-0"
                           style={{ backgroundColor: typeColor + '18', color: typeColor }}
                         >
-                          {assetCodeLabel(asset.type, asset.code).slice(0, 3).toUpperCase()}
+                          {(asset.metadata?.displayCode || assetCodeLabel(asset.type, asset.code)).slice(0, 3).toUpperCase()}
                         </span>
                       )}
 

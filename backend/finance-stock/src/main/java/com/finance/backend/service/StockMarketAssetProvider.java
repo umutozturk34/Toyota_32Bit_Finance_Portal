@@ -14,18 +14,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Log4j2
 @Service
 public class StockMarketAssetProvider extends BaseTrackedMarketAssetProvider<Stock> {
 
-    private static final Map<String, String> SORT_FIELDS = Map.of(
-            "price", "currentPrice",
-            "changePercent", "priceChangePercent",
-            "name", "name",
-            "default", "priceChangePercent"
-    );
     private static final List<String> SEARCH_FIELDS = List.of("symbol", "name");
 
     private final StockRepository stockRepository;
@@ -68,8 +61,8 @@ public class StockMarketAssetProvider extends BaseTrackedMarketAssetProvider<Sto
     }
 
     @Override
-    protected Map<String, String> sortFields() {
-        return SORT_FIELDS;
+    protected String priceField() {
+        return "currentPrice";
     }
 
     @Override

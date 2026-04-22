@@ -11,18 +11,11 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Log4j2
 @Service
 public class CryptoMarketAssetProvider extends BaseTrackedMarketAssetProvider<Crypto> {
 
-    private static final Map<String, String> SORT_FIELDS = Map.of(
-            "price", "currentPriceTry",
-            "changePercent", "changePercent",
-            "name", "name",
-            "default", "changePercent"
-    );
     private static final List<String> SEARCH_FIELDS = List.of("id", "name", "symbol");
 
     private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
@@ -63,8 +56,8 @@ public class CryptoMarketAssetProvider extends BaseTrackedMarketAssetProvider<Cr
     }
 
     @Override
-    protected Map<String, String> sortFields() {
-        return SORT_FIELDS;
+    protected String priceField() {
+        return "currentPriceTry";
     }
 
     @Override

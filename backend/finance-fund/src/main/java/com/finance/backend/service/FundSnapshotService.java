@@ -13,6 +13,7 @@ import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.FundRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.CodeNormalizer;
 import com.finance.backend.util.TefasHelper;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
@@ -64,7 +65,7 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
     }
 
     public boolean existsInApi(String fundCode) {
-        String normalized = fundCode == null ? "" : fundCode.trim().toUpperCase();
+        String normalized = CodeNormalizer.upper(fundCode);
         if (normalized.isBlank()) return false;
         LocalDate today = findLastBusinessDay(LocalDate.now());
         try {
@@ -153,7 +154,7 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
     }
 
     public void refreshTrackedFundSnapshot(String fundCode) {
-        String normalized = fundCode == null ? "" : fundCode.trim().toUpperCase();
+        String normalized = CodeNormalizer.upper(fundCode);
         if (normalized.isBlank()) {
             return;
         }

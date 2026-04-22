@@ -1,5 +1,6 @@
 package com.finance.backend.service;
 
+import com.finance.backend.util.CodeNormalizer;
 import org.apache.logging.log4j.Logger;
 
 public final class MarketAssetCacheHelper {
@@ -12,17 +13,11 @@ public final class MarketAssetCacheHelper {
                                            boolean toUpper,
                                            Logger log,
                                            String marketName) {
-        String normalized = normalizeCode(code, toUpper);
+        String normalized = toUpper ? CodeNormalizer.upper(code) : CodeNormalizer.lower(code);
         if (normalized.isBlank()) {
             return;
         }
         cache.clearCache(normalized);
         log.info("Cleared tracked {} cache for {}", marketName, normalized);
-    }
-
-    public static String normalizeCode(String code, boolean toUpper) {
-        if (code == null) return "";
-        String trimmed = code.trim();
-        return toUpper ? trimmed.toUpperCase() : trimmed.toLowerCase();
     }
 }

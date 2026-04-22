@@ -10,6 +10,7 @@ import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.CryptoRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.CodeNormalizer;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -35,7 +36,7 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
     private final TransactionTemplate transactionTemplate;
 
     public boolean existsInApi(String coinId) {
-        String normalized = coinId == null ? "" : coinId.trim().toLowerCase();
+        String normalized = CodeNormalizer.lower(coinId);
         if (normalized.isBlank()) return false;
         try {
             List<CoinGeckoSnapshotDto> result = coinGeckoClient.fetchMarkets("usd", List.of(normalized));
@@ -79,7 +80,7 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
     }
 
     public void refreshTrackedCryptoSnapshot(String coinId) {
-        String normalizedId = coinId == null ? "" : coinId.trim().toLowerCase();
+        String normalizedId = CodeNormalizer.lower(coinId);
         if (normalizedId.isBlank()) {
             return;
         }

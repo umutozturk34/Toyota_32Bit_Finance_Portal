@@ -13,6 +13,7 @@ import com.finance.backend.repository.FundCandleRepository;
 import com.finance.backend.repository.FundRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.CodeNormalizer;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
 import com.finance.backend.util.TefasHelper;
@@ -88,7 +89,7 @@ public class FundCandleService implements CandleBatchRefresher {
     }
 
     public void refreshTrackedFundCandles(String fundCode) {
-        String normalized = fundCode == null ? "" : fundCode.trim().toUpperCase();
+        String normalized = CodeNormalizer.upper(fundCode);
         if (normalized.isBlank()) {
             return;
         }

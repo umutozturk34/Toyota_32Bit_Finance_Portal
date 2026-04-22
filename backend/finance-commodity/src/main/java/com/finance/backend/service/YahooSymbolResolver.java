@@ -1,6 +1,7 @@
 package com.finance.backend.service;
 
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.util.CodeNormalizer;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -25,6 +26,6 @@ public class YahooSymbolResolver {
     }
 
     public String normalize(String code) {
-        return code == null ? "" : code.trim().toUpperCase();
+        return CodeNormalizer.upper(code);
     }
 }

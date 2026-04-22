@@ -12,6 +12,7 @@ import com.finance.backend.repository.StockCandleRepository;
 import com.finance.backend.repository.StockRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.CodeNormalizer;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
 import com.finance.backend.util.YahooRangePolicy;
@@ -90,7 +91,7 @@ public class StockCandleService implements CandleBatchRefresher {
     }
 
     public void refreshTrackedStockCandles(String symbol) {
-        String normalized = symbol == null ? "" : symbol.trim().toUpperCase();
+        String normalized = CodeNormalizer.upper(symbol);
         if (normalized.isBlank()) {
             return;
         }

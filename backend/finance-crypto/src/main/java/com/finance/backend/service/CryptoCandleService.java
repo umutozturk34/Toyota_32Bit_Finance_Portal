@@ -12,6 +12,7 @@ import com.finance.backend.repository.CryptoCandleRepository;
 import com.finance.backend.repository.CryptoRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.CodeNormalizer;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
@@ -111,7 +112,7 @@ public class CryptoCandleService implements CandleBatchRefresher {
     }
 
     public void refreshTrackedCryptoCandles(String coinId) {
-        String normalizedId = coinId == null ? "" : coinId.trim().toLowerCase();
+        String normalizedId = CodeNormalizer.lower(coinId);
         if (normalizedId.isBlank()) {
             return;
         }

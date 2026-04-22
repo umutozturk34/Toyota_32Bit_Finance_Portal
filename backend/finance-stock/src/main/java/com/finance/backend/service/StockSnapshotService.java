@@ -12,6 +12,7 @@ import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.StockRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.CodeNormalizer;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -46,7 +47,7 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
     }
 
     public boolean existsInApi(String symbol) {
-        String normalized = symbol == null ? "" : symbol.trim().toUpperCase();
+        String normalized = CodeNormalizer.upper(symbol);
         if (normalized.isBlank()) return false;
         try {
             YahooStockQuoteDto dto = yahooStockClient.fetchQuote(normalized);
@@ -88,7 +89,7 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
     }
 
     public void refreshTrackedStockSnapshot(String symbol) {
-        String normalized = symbol == null ? "" : symbol.trim().toUpperCase();
+        String normalized = CodeNormalizer.upper(symbol);
         if (normalized.isBlank()) {
             return;
         }

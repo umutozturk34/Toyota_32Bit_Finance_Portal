@@ -1,14 +1,12 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, X } from 'lucide-react';
-import { TrendingUp, TrendingDown } from './AnimatedIcons';
-import { unifiedMarketService } from '../services/unifiedMarketService';
 import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../constants/assetTypes';
 import { formatPriceTRY, getChangeClass, changeColors } from '../utils/formatters';
 import { assetCodeLabel } from '../utils/assetCode';
 import { BOND_TYPE_LABELS } from '../../features/bond/bondConstants';
+import useSearchSuggestions from '../hooks/useSearchSuggestions';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
 
@@ -17,10 +15,16 @@ export default function SearchInput({ value, onChange, placeholder = 'Ara...', d
   const [local, setLocal] = useState(value || '');
   const [sugQuery, setSugQuery] = useState('');
   const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
   const timerRef = useRef(null);
   const sugTimerRef = useRef(null);
-  const containerRef = useRef(null);
+
+  const { containerRef, suggestions, activeIndex, setActiveIndex, buildKeyDown } = useSearchSuggestions({
+    query: sugQuery,
+    filterType,
+    suggestFn,
+    enabled: withSuggestions,
+    onClose: () => setOpen(false),
+  });
 
   const handleChange = (e) => {
     const val = e.target.value;
@@ -48,32 +52,6 @@ export default function SearchInput({ value, onChange, placeholder = 'Ara...', d
     setOpen(false);
   };
 
-  const { data } = useQuery({
-    queryKey: ['searchSuggestions', sugQuery, filterType, !!suggestFn],
-    queryFn: () => suggestFn
-      ? suggestFn(sugQuery)
-      : unifiedMarketService.search({
-          search: sugQuery,
-          ...(filterType && { type: filterType }),
-          size: 6,
-        }),
-    enabled: withSuggestions && sugQuery.length >= 2,
-    staleTime: 15_000,
-  });
-
-  const suggestions = suggestFn ? (data || []) : (data?.content || []);
-
-  useEffect(() => { setActiveIndex(-1); }, [sugQuery]);
-
-  useEffect(() => {
-    if (!withSuggestions) return;
-    const handler = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [withSuggestions]);
-
   const handleSelect = useCallback((asset) => {
     setOpen(false);
     clearTimeout(timerRef.current);
@@ -94,21 +72,7 @@ export default function SearchInput({ value, onChange, placeholder = 'Ara...', d
     }
   }, [navigate, onChange, suggestFn, suggestLabelFn]);
 
-  const handleKeyDown = (e) => {
-    if (!withSuggestions || !open || suggestions.length === 0) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIndex(i => (i + 1) % suggestions.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIndex(i => (i - 1 + suggestions.length) % suggestions.length);
-    } else if (e.key === 'Enter' && activeIndex >= 0) {
-      e.preventDefault();
-      handleSelect(suggestions[activeIndex]);
-    } else if (e.key === 'Escape') {
-      setOpen(false);
-    }
-  };
+  const handleKeyDown = buildKeyDown(handleSelect);
 
   return (
     <div ref={containerRef} className="relative">

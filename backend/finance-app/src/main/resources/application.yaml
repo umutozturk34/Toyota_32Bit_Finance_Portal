@@ -108,7 +108,6 @@ app:
 
   commodity:
     years-to-keep: 5
-    spread-rate: 0.015
     yahoo-symbol-overrides:
       XAUTRY: "GC=F"
       XAGTRY: "SI=F"
@@ -139,7 +138,7 @@ app:
     stock-rate: 0.002
     crypto-rate: 0.0015
     fund-rate: 0.001
-    commodity-rate: 0.0025
+    commodity-rate: 0.015
 
   scheduler:
     crypto:

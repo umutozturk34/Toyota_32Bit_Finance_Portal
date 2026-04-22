@@ -30,7 +30,6 @@ public class PreciousMetalDerivativeCalculator {
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
     private final CommoditySegmentResolver segmentResolver;
     private final int scale;
-    private final BigDecimal spreadRate;
     private final List<CommodityDerivativeRule> rules;
 
     public PreciousMetalDerivativeCalculator(CommodityRepository commodityRepository,
@@ -44,7 +43,6 @@ public class PreciousMetalDerivativeCalculator {
         this.commodityCacheService = commodityCacheService;
         this.segmentResolver = segmentResolver;
         this.scale = appProperties.getScale();
-        this.spreadRate = props.getSpreadRate();
         this.rules = List.copyOf(props.getDerivatives());
     }
 
@@ -156,7 +154,7 @@ public class PreciousMetalDerivativeCalculator {
                         .commodityCode(code)
                         .commoditySegment(segmentResolver.resolve(code))
                         .build());
-        derivative.applyPriceSnapshot(snapshot, spreadRate, scale);
+        derivative.applyPriceSnapshot(snapshot, scale);
         commodityRepository.save(derivative);
         commodityCacheService.putSnapshot(code, derivative);
     }

@@ -8,7 +8,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CommodityTest {
 
-    private static final BigDecimal SPREAD = new BigDecimal("0.015");
     private static final int SCALE = 4;
 
     @Test
@@ -24,12 +23,11 @@ class CommodityTest {
                 new BigDecimal("98500"),
                 250000L);
 
-        commodity.applyPriceSnapshot(input, SPREAD, SCALE);
+        commodity.applyPriceSnapshot(input, SCALE);
 
         assertThat(commodity.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("100000.0000"));
         assertThat(commodity.getCurrentPriceUsd()).isEqualByComparingTo(new BigDecimal("4000.0000"));
         assertThat(commodity.getPreviousPriceUsd()).isEqualByComparingTo(new BigDecimal("3960.0000"));
-        assertThat(commodity.getSellingPrice()).isEqualByComparingTo(new BigDecimal("101500.0000"));
         assertThat(commodity.getOpenPrice()).isEqualByComparingTo(new BigDecimal("99500.0000"));
         assertThat(commodity.getDayHigh()).isEqualByComparingTo(new BigDecimal("101000.0000"));
         assertThat(commodity.getDayLow()).isEqualByComparingTo(new BigDecimal("98500.0000"));
@@ -47,7 +45,7 @@ class CommodityTest {
                 new BigDecimal("9"),
                 null, null, null, null);
 
-        commodity.applyPriceSnapshot(input, SPREAD, SCALE);
+        commodity.applyPriceSnapshot(input, SCALE);
 
         assertThat(commodity.getChange24h()).isEqualByComparingTo(new BigDecimal("10.0000"));
         assertThat(commodity.getChangePercent24h()).isEqualByComparingTo(new BigDecimal("10.0000"));
@@ -59,7 +57,7 @@ class CommodityTest {
         commodity.setCurrentPrice(new BigDecimal("999"));
         CommoditySnapshotInput input = new CommoditySnapshotInput(null, null, null, null, null, null, null, null);
 
-        commodity.applyPriceSnapshot(input, SPREAD, SCALE);
+        commodity.applyPriceSnapshot(input, SCALE);
 
         assertThat(commodity.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("999"));
     }
@@ -72,10 +70,9 @@ class CommodityTest {
                 null, null,
                 new BigDecimal("4480"), new BigDecimal("4520"), new BigDecimal("4440"), 1000L);
 
-        derivative.applyPriceSnapshot(input, SPREAD, SCALE);
+        derivative.applyPriceSnapshot(input, SCALE);
 
         assertThat(derivative.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("4500.0000"));
-        assertThat(derivative.getSellingPrice()).isEqualByComparingTo(new BigDecimal("4567.5000"));
         assertThat(derivative.getCurrentPriceUsd()).isNull();
         assertThat(derivative.getPreviousPriceUsd()).isNull();
     }

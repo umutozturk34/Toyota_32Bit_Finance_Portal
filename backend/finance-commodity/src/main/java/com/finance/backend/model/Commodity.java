@@ -38,9 +38,6 @@ public class Commodity extends BaseAsset {
     @Column(name = "current_price", precision = 19, scale = 4)
     private BigDecimal currentPrice;
 
-    @Column(name = "selling_price", precision = 19, scale = 4)
-    private BigDecimal sellingPrice;
-
     @Column(name = "current_price_usd", precision = 19, scale = 4)
     private BigDecimal currentPriceUsd;
 
@@ -90,10 +87,9 @@ public class Commodity extends BaseAsset {
     @JsonIgnore
     private List<CommodityCandle> candles;
 
-    public void applyPriceSnapshot(CommoditySnapshotInput snapshot, BigDecimal spreadRate, int scale) {
+    public void applyPriceSnapshot(CommoditySnapshotInput snapshot, int scale) {
         if (snapshot == null || snapshot.tryPrice() == null) return;
         this.currentPrice = scaleValue(snapshot.tryPrice(), scale);
-        this.sellingPrice = scaleValue(snapshot.tryPrice().multiply(BigDecimal.ONE.add(spreadRate)), scale);
         this.currentPriceUsd = scaleValue(snapshot.usdPrice(), scale);
         this.previousPriceUsd = scaleValue(snapshot.usdPreviousClose(), scale);
         this.openPrice = scaleValue(snapshot.tryOpenPrice(), scale);

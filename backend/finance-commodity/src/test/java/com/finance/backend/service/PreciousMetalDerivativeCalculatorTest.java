@@ -39,7 +39,6 @@ class PreciousMetalDerivativeCalculatorTest {
     void setUp() {
         AppProperties props = new AppProperties();
         AppProperties.Commodity commodityProps = new AppProperties.Commodity();
-        commodityProps.setSpreadRate(new BigDecimal("0.015"));
         commodityProps.setDerivatives(List.of(
                 new CommodityDerivativeRule("GC=F", "XAUTRYG", new BigDecimal("31.1035")),
                 new CommodityDerivativeRule("SI=F", "XAGTRYG", new BigDecimal("31.1035"))

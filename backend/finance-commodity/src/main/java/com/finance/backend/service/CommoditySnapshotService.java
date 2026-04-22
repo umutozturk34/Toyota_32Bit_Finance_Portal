@@ -38,7 +38,6 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
     private final CommoditySegmentResolver segmentResolver;
     private final TransactionTemplate transactionTemplate;
     private final int scale;
-    private final BigDecimal spreadRate;
 
     public CommoditySnapshotService(YahooCommodityClient yahooCommodityClient,
                                     CommodityMapper commodityMapper,
@@ -62,7 +61,6 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
         this.segmentResolver = segmentResolver;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.scale = appProperties.getScale();
-        this.spreadRate = appProperties.getCommodity().getSpreadRate();
     }
 
     @Override
@@ -138,7 +136,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
                         .commoditySegment(segmentResolver.resolve(commodityCode))
                         .build());
         transactionTemplate.executeWithoutResult(status -> {
-            commodity.applyPriceSnapshot(snapshot, spreadRate, scale);
+            commodity.applyPriceSnapshot(snapshot, scale);
             if (commodity.getYahooSymbol() == null) {
                 commodity.setYahooSymbol(yahooSymbol);
             }

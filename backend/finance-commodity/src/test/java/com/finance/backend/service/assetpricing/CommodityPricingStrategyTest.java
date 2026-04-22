@@ -25,7 +25,7 @@ class CommodityPricingStrategyTest {
     void setUp() {
         AppProperties props = new AppProperties();
         AppProperties.Commission commission = new AppProperties.Commission();
-        commission.setCommodityRate(new BigDecimal("0.0025"));
+        commission.setCommodityRate(new BigDecimal("0.015"));
         props.setCommission(commission);
 
         strategy = new CommodityPricingStrategy(cacheService, props);
@@ -38,9 +38,9 @@ class CommodityPricingStrategyTest {
 
     @Test
     void getPriceTryReturnsNormalizedCurrentPrice() {
-        when(cacheService.getSnapshot("GC=F")).thenReturn(buildCommodity(new BigDecimal("160000.1234567")));
+        when(cacheService.getSnapshot("XAUTRY")).thenReturn(buildCommodity(new BigDecimal("160000.1234567")));
 
-        BigDecimal price = strategy.getPriceTry("GC=F");
+        BigDecimal price = strategy.getPriceTry("XAUTRY");
 
         assertThat(price).isEqualByComparingTo("160000.1235");
     }
@@ -53,21 +53,21 @@ class CommodityPricingStrategyTest {
     }
 
     @Test
-    void getSellPriceTryAppliesCommissionRate() {
-        when(cacheService.getSnapshot("GC=F")).thenReturn(buildCommodity(new BigDecimal("160000.0000")));
+    void getSellPriceTryAppliesCommodityCommissionRate() {
+        when(cacheService.getSnapshot("XAUTRY")).thenReturn(buildCommodity(new BigDecimal("160000.0000")));
 
-        BigDecimal sellPrice = strategy.getSellPriceTry("GC=F");
+        BigDecimal sellPrice = strategy.getSellPriceTry("XAUTRY");
 
-        assertThat(sellPrice).isEqualByComparingTo("159600.0000");
+        assertThat(sellPrice).isEqualByComparingTo("157600.0000");
     }
 
     @Test
     void getAssetMetaReturnsDisplayNameFromCommodity() {
         Commodity commodity = buildCommodity(new BigDecimal("100"));
         commodity.setName("Altın");
-        when(cacheService.getSnapshot("GC=F")).thenReturn(commodity);
+        when(cacheService.getSnapshot("XAUTRY")).thenReturn(commodity);
 
-        AssetPricingPort.AssetMeta meta = strategy.getAssetMeta("GC=F");
+        AssetPricingPort.AssetMeta meta = strategy.getAssetMeta("XAUTRY");
 
         assertThat(meta.name()).isEqualTo("Altın");
     }
@@ -85,23 +85,23 @@ class CommodityPricingStrategyTest {
     }
 
     @Test
-    void getBundleBuildsCompleteBundleWithImage() {
+    void getBundleBuildsPriceAndSellWithCommission() {
         Commodity commodity = buildCommodity(new BigDecimal("160000.0000"));
         commodity.setName("Altın");
         commodity.setImage("/img/gold.svg");
-        when(cacheService.getSnapshot("GC=F")).thenReturn(commodity);
+        when(cacheService.getSnapshot("XAUTRY")).thenReturn(commodity);
 
-        AssetPricingPort.PriceBundle bundle = strategy.getBundle("GC=F");
+        AssetPricingPort.PriceBundle bundle = strategy.getBundle("XAUTRY");
 
         assertThat(bundle.price()).isEqualByComparingTo("160000.0000");
-        assertThat(bundle.sellPrice()).isEqualByComparingTo("159600.0000");
+        assertThat(bundle.sellPrice()).isEqualByComparingTo("157600.0000");
         assertThat(bundle.meta().name()).isEqualTo("Altın");
         assertThat(bundle.meta().image()).isEqualTo("/img/gold.svg");
     }
 
     private Commodity buildCommodity(BigDecimal currentPrice) {
         Commodity commodity = new Commodity();
-        commodity.setCommodityCode("GC=F");
+        commodity.setCommodityCode("XAUTRY");
         commodity.setCurrentPrice(currentPrice);
         return commodity;
     }

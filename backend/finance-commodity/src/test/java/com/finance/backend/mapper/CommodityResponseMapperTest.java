@@ -45,7 +45,6 @@ class CommodityResponseMapperTest {
 
         assertThat(response.metadata()).isInstanceOf(CommodityMetadata.class);
         CommodityMetadata metadata = (CommodityMetadata) response.metadata();
-        assertThat(metadata.sellingPrice()).isEqualByComparingTo("162400.5075");
         assertThat(metadata.currentPriceUsd()).isEqualByComparingTo("4000.0000");
         assertThat(metadata.previousPriceUsd()).isEqualByComparingTo("3960.0000");
         assertThat(metadata.unit()).isEqualTo("oz");
@@ -70,7 +69,6 @@ class CommodityResponseMapperTest {
         Commodity commodity = new Commodity();
         commodity.setCommodityCode(code);
         commodity.setCurrentPrice(new BigDecimal("160000.5000"));
-        commodity.setSellingPrice(new BigDecimal("162400.5075"));
         commodity.setCurrentPriceUsd(new BigDecimal("4000.0000"));
         commodity.setPreviousPriceUsd(new BigDecimal("3960.0000"));
         commodity.setChange24h(new BigDecimal("1600.0000"));

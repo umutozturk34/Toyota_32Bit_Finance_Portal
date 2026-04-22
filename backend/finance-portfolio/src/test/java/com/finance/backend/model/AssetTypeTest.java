@@ -20,13 +20,15 @@ class AssetTypeTest {
         commission.setStockRate(new BigDecimal("0.003"));
         commission.setCryptoRate(new BigDecimal("0.0025"));
         commission.setFundRate(new BigDecimal("0.0005"));
+        commission.setCommodityRate(new BigDecimal("0.015"));
     }
 
     @ParameterizedTest
     @CsvSource({
-            "STOCK,  0.003",
-            "CRYPTO, 0.0025",
-            "FUND,   0.0005"
+            "STOCK,     0.003",
+            "CRYPTO,    0.0025",
+            "FUND,      0.0005",
+            "COMMODITY, 0.015"
     })
     void commissionRateReadsConfiguredRateForTradableTypes(AssetType type, String expected) {
         BigDecimal rate = type.commissionRate(commission);
@@ -36,7 +38,7 @@ class AssetTypeTest {
 
     @ParameterizedTest
     @EnumSource(value = AssetType.class, names = {"FOREX"})
-    void commissionRateIsZeroForNonTradableTypes(AssetType type) {
+    void commissionRateIsZeroForSpreadBasedTypes(AssetType type) {
         BigDecimal rate = type.commissionRate(commission);
 
         assertThat(rate).isEqualByComparingTo(BigDecimal.ZERO);
@@ -48,6 +50,7 @@ class AssetTypeTest {
         commission.setStockRate(new BigDecimal("1"));
         commission.setCryptoRate(new BigDecimal("1"));
         commission.setFundRate(new BigDecimal("1"));
+        commission.setCommodityRate(new BigDecimal("1"));
 
         BigDecimal rate = type.commissionRate(commission);
 
@@ -60,10 +63,11 @@ class AssetTypeTest {
 
     @ParameterizedTest
     @CsvSource({
-            "STOCK,  STOCK",
-            "CRYPTO, CRYPTO",
-            "FOREX,  FOREX",
-            "FUND,   FUND"
+            "STOCK,     STOCK",
+            "CRYPTO,    CRYPTO",
+            "FOREX,     FOREX",
+            "FUND,      FUND",
+            "COMMODITY, COMMODITY"
     })
     void marketTypeMapsOneToOneWithAssetType(AssetType assetType, MarketType expected) {
         assertThat(assetType.marketType()).isEqualTo(expected);

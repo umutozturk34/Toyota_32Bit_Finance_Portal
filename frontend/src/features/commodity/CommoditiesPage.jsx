@@ -193,12 +193,6 @@ function CommoditiesPage() {
                                             <span className="font-mono text-fg">${formatCommodityPrice(usd)}</span>
                                         </div>
                                     )}
-                                    {meta.sellingPrice != null && (
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="text-fg-muted">Alım Fiyatı</span>
-                                            <span className="font-mono text-fg">₺{formatCommodityPrice(meta.sellingPrice)}</span>
-                                        </div>
-                                    )}
                                     {meta.openPrice != null && (
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="text-fg-muted">Açılış</span>

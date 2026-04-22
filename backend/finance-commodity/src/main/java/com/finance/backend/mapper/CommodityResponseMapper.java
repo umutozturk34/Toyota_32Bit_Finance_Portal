@@ -31,7 +31,6 @@ public abstract class CommodityResponseMapper {
     @Named("commodityMetadata")
     protected CommodityMetadata buildCommodityMetadata(Commodity commodity) {
         return new CommodityMetadata(
-                commodity.getSellingPrice(),
                 commodity.getCurrentPriceUsd(),
                 commodity.getPreviousPriceUsd(),
                 commodity.getUnit(),

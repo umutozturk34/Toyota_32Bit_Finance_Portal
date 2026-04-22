@@ -142,7 +142,6 @@ public class AppProperties {
     @Setter
     public static class Commodity {
         private int yearsToKeep = 5;
-        private BigDecimal spreadRate = new BigDecimal("0.015");
         private Map<String, String> yahooSymbolOverrides = new HashMap<>(Map.of(
                 "XAUTRY", "GC=F",
                 "XAGTRY", "SI=F",
@@ -201,7 +200,7 @@ public class AppProperties {
         private BigDecimal stockRate = new BigDecimal("0.002");
         private BigDecimal cryptoRate = new BigDecimal("0.0015");
         private BigDecimal fundRate = new BigDecimal("0.001");
-        private BigDecimal commodityRate = new BigDecimal("0.0025");
+        private BigDecimal commodityRate = new BigDecimal("0.015");
     }
 
     @Getter

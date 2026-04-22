@@ -33,7 +33,6 @@ public class AppProperties {
     private Pagination pagination = new Pagination();
 
     private Commission commission = new Commission();
-    private Portfolio portfolio = new Portfolio();
     private Task task = new Task();
     private TrackedAsset trackedAsset = new TrackedAsset();
 
@@ -191,15 +190,6 @@ public class AppProperties {
         private int transactionsDefaultSize = 10;
         private int positionsDefaultSize = 10;
         private int maxSize = 100;
-    }
-
-    @Getter
-    @Setter
-    public static class Portfolio {
-        private String defaultName = "Ana Portföy";
-        private String defaultCurrency = "TRY";
-        private BigDecimal initialBalance = new BigDecimal("1000000.0000");
-        private BigDecimal minTransactionAmountTry = new BigDecimal("10");
     }
 
     @Getter

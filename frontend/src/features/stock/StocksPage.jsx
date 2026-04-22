@@ -26,6 +26,7 @@ import BuyModal from '../../shared/components/BuyModal';
 import FilterTabs from '../../shared/components/FilterTabs';
 import { toast } from '../../shared/components/Toast';
 import useListParams from '../../shared/hooks/useListParams';
+import useMarketListData from '../../shared/hooks/useMarketListData';
 import { assetCodeLabel } from '../../shared/utils/assetCode';
 
 const SORT_OPTIONS = [
@@ -75,11 +76,8 @@ function StocksPage() {
         segment,
     };
 
-    const { data, isLoading: loading, isFetching, error, refetch } = useQuery({
-        queryKey: ['stocks', queryParams],
-        queryFn: () => stockService.getAllStocks(queryParams),
-        placeholderData: (prev) => prev,
-    });
+    const { data, isLoading: loading, isFetching, error, refetch } = useMarketListData(
+        'stocks', stockService.getAllStocks, queryParams);
 
     const stocks = data?.content || [];
     const totalPages = data?.totalPages || 0;

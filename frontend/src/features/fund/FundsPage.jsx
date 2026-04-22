@@ -26,6 +26,7 @@ import BuyModal from '../../shared/components/BuyModal';
 import FilterTabs from '../../shared/components/FilterTabs';
 import { toast } from '../../shared/components/Toast';
 import useListParams from '../../shared/hooks/useListParams';
+import useMarketListData from '../../shared/hooks/useMarketListData';
 
 const FUND_TYPE_LABELS = {
     BYF: 'Borsa Yatırım Fonları',
@@ -62,11 +63,8 @@ function FundsPage() {
         ...(typeFilter !== 'ALL' && { subType: typeFilter }),
     };
 
-    const { data, isLoading: loading, error, refetch } = useQuery({
-        queryKey: ['funds', queryParams],
-        queryFn: () => fundService.getAllFunds(queryParams),
-        placeholderData: (prev) => prev,
-    });
+    const { data, isLoading: loading, error, refetch } = useMarketListData(
+        'funds', fundService.getAllFunds, queryParams);
 
     const funds = data?.content || [];
     const totalPages = data?.totalPages || 0;

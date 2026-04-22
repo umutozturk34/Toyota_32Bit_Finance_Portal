@@ -20,6 +20,7 @@ import BuyModal from '../../shared/components/BuyModal';
 import FilterTabs from '../../shared/components/FilterTabs';
 import { toast } from '../../shared/components/Toast';
 import useListParams from '../../shared/hooks/useListParams';
+import useMarketListData from '../../shared/hooks/useMarketListData';
 
 const SORT_OPTIONS = [
     { id: 'changePercent', label: 'Değişim %' },
@@ -62,11 +63,8 @@ function CommoditiesPage() {
         ...(segment && segment !== 'ALL' && { segment }),
     };
 
-    const { data, isLoading: loading, error, refetch } = useQuery({
-        queryKey: ['commodities', queryParams],
-        queryFn: () => commodityService.getAllCommodities(queryParams),
-        placeholderData: (prev) => prev,
-    });
+    const { data, isLoading: loading, error, refetch } = useMarketListData(
+        'commodities', commodityService.getAllCommodities, queryParams);
 
     const commodities = data?.content || [];
     const totalPages = data?.totalPages || 0;

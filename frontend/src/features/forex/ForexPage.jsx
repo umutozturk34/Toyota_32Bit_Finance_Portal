@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     DollarSign,
@@ -26,6 +25,7 @@ import Pagination from '../../shared/components/Pagination';
 import BuyModal from '../../shared/components/BuyModal';
 import { toast } from '../../shared/components/Toast';
 import useListParams from '../../shared/hooks/useListParams';
+import useMarketListData from '../../shared/hooks/useMarketListData';
 
 const SORT_OPTIONS = [
     { id: 'changePercent', label: 'Değişim %' },
@@ -45,11 +45,8 @@ function ForexPage() {
     const isAdmin = hasRole('ADMIN');
     const listParams = useListParams();
 
-    const { data, isLoading: loading, error, refetch } = useQuery({
-        queryKey: ['forex', listParams.params],
-        queryFn: () => forexService.getAllForex(listParams.params),
-        placeholderData: (prev) => prev,
-    });
+    const { data, isLoading: loading, error, refetch } = useMarketListData(
+        'forex', forexService.getAllForex, listParams.params);
 
     const forexData = data?.content || [];
     const totalPages = data?.totalPages || 0;

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bitcoin,
@@ -24,6 +23,7 @@ import Pagination from '../../shared/components/Pagination';
 import BuyModal from '../../shared/components/BuyModal';
 import { toast } from '../../shared/components/Toast';
 import useListParams from '../../shared/hooks/useListParams';
+import useMarketListData from '../../shared/hooks/useMarketListData';
 
 const SORT_OPTIONS = [
     { id: 'changePercent', label: 'Değişim %' },
@@ -39,11 +39,8 @@ export default function CryptoPage() {
     const isAdmin = hasRole('ADMIN');
     const listParams = useListParams();
 
-    const { data, isLoading, isFetching, error, refetch } = useQuery({
-        queryKey: ['cryptos', listParams.params],
-        queryFn: () => cryptoService.getAll(listParams.params),
-        placeholderData: (prev) => prev,
-    });
+    const { data, isLoading, isFetching, error, refetch } = useMarketListData(
+        'cryptos', cryptoService.getAll, listParams.params);
 
     const cryptos = data?.content || [];
     const totalPages = data?.totalPages || 0;

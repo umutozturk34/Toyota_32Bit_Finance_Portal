@@ -32,8 +32,8 @@ public class FundScheduler extends AbstractMarketScheduler {
 
     @Override
     protected void runRefresh() {
-        fundDataService.updateFundSnapshots();
-        fundDataService.updateFundCandles();
+        fundDataService.refreshAllSnapshots();
+        fundDataService.refreshAllCandles();
     }
 
     @Scheduled(cron = "${app.scheduler.fund.daily-cron}", zone = "${app.timezone}")

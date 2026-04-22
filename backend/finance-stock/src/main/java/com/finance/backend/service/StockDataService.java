@@ -30,10 +30,6 @@ public class StockDataService implements TrackedAssetDataService {
         }
     }
 
-    public void updateStockSnapshots() {
-        stockSnapshotService.refreshAll();
-    }
-
     @Override
     public void refreshSnapshot(String symbol) {
         stockSnapshotService.refreshTrackedStockSnapshot(symbol);
@@ -45,11 +41,17 @@ public class StockDataService implements TrackedAssetDataService {
     }
 
     @Override
-    public void clearCache(String symbol) {
-        MarketAssetCacheHelper.clearIfValid(symbol, stockCacheService, true, log, "stock");
+    public void refreshAllSnapshots() {
+        stockSnapshotService.refreshAll();
     }
 
-    public void updateStockCandles() {
+    @Override
+    public void refreshAllCandles() {
         stockCandleService.refreshAll();
+    }
+
+    @Override
+    public void clearCache(String symbol) {
+        MarketAssetCacheHelper.clearIfValid(symbol, stockCacheService, true, log, "stock");
     }
 }

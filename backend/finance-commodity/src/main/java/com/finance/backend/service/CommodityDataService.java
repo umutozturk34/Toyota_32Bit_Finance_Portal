@@ -44,15 +44,17 @@ public class CommodityDataService implements TrackedAssetDataService {
     }
 
     @Override
-    public void clearCache(String code) {
-        MarketAssetCacheHelper.clearIfValid(code, commodityCacheService, true, log, "commodity");
-    }
-
-    public void updateCommoditySnapshots() {
+    public void refreshAllSnapshots() {
         commoditySnapshotService.refreshAll();
     }
 
-    public void updateCommodityCandles() {
+    @Override
+    public void refreshAllCandles() {
         commodityCandleService.refreshAll();
+    }
+
+    @Override
+    public void clearCache(String code) {
+        MarketAssetCacheHelper.clearIfValid(code, commodityCacheService, true, log, "commodity");
     }
 }

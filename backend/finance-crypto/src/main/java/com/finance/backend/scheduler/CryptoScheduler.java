@@ -32,8 +32,8 @@ public class CryptoScheduler extends AbstractMarketScheduler {
 
     @Override
     protected void runRefresh() {
-        marketDataService.updateOnlySnapshots();
-        marketDataService.updateOnlyCandles();
+        marketDataService.refreshAllSnapshots();
+        marketDataService.refreshAllCandles();
     }
 
     @Scheduled(cron = "${app.scheduler.crypto.morning-cron}", zone = "${app.timezone}")

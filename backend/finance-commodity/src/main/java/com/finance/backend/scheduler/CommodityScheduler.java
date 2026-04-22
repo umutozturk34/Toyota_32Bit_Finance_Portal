@@ -30,8 +30,8 @@ public class CommodityScheduler extends AbstractMarketScheduler {
 
     @Override
     protected void runRefresh() {
-        commodityDataService.updateCommoditySnapshots();
-        commodityDataService.updateCommodityCandles();
+        commodityDataService.refreshAllSnapshots();
+        commodityDataService.refreshAllCandles();
     }
 
     @Scheduled(cron = "${app.scheduler.commodity.morning-cron}", zone = "${app.timezone}")

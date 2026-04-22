@@ -38,22 +38,24 @@ public class MarketDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        initIfEmpty("crypto", cryptoRepository.count(), cryptoCandleRepository.count(),
-                cryptoDataService::fullMarketUpdate);
+        initIfEmpty("crypto", cryptoRepository.count(), cryptoCandleRepository.count(), () -> {
+            cryptoDataService.refreshAllSnapshots();
+            cryptoDataService.refreshAllCandles();
+        });
 
         initIfEmpty("stock", stockRepository.count(), stockCandleRepository.count(), () -> {
-            stockDataService.updateStockSnapshots();
-            stockDataService.updateStockCandles();
+            stockDataService.refreshAllSnapshots();
+            stockDataService.refreshAllCandles();
         });
 
         initIfEmpty("fund", fundRepository.count(), fundCandleRepository.count(), () -> {
-            fundDataService.updateFundSnapshots();
-            fundDataService.updateFundCandles();
+            fundDataService.refreshAllSnapshots();
+            fundDataService.refreshAllCandles();
         });
 
         initIfEmpty("commodity", commodityRepository.count(), commodityCandleRepository.count(), () -> {
-            commodityDataService.updateCommoditySnapshots();
-            commodityDataService.updateCommodityCandles();
+            commodityDataService.refreshAllSnapshots();
+            commodityDataService.refreshAllCandles();
         });
 
         initIfEmpty("bond", bondRepository.count(), 1, bondDataService::updateBonds);

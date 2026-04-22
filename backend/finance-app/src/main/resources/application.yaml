@@ -112,10 +112,6 @@ app:
     gold-source-code: "GC=F"
     silver-source-code: "SI=F"
     gold-gram-divisor: 31.1035
-    gold-tam-multiplier: 7.02
-    gold-yarim-divisor: 2.0
-    gold-ceyrek-divisor: 4.0
-    gold-cumhuriyet-multiplier: 7.216
 
   news:
     max-articles-per-source: 50

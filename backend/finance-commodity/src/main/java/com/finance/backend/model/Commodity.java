@@ -105,10 +105,15 @@ public class Commodity extends BaseAsset {
     }
 
     public void applyDerivedSnapshot(BigDecimal tryPrice, BigDecimal tryPreviousClose,
-                                     BigDecimal spreadRate, int scale) {
+                                     BigDecimal tryOpenPrice, BigDecimal tryDayHigh, BigDecimal tryDayLow,
+                                     Long volume, BigDecimal spreadRate, int scale) {
         if (tryPrice == null) return;
         this.currentPrice = scaleValue(tryPrice, scale);
         this.sellingPrice = scaleValue(tryPrice.multiply(BigDecimal.ONE.add(spreadRate)), scale);
+        this.openPrice = scaleValue(tryOpenPrice, scale);
+        this.dayHigh = scaleValue(tryDayHigh, scale);
+        this.dayLow = scaleValue(tryDayLow, scale);
+        this.volume = volume;
         applyChangeFields(tryPrice, tryPreviousClose, scale);
         this.yahooUpdatedAt = LocalDateTime.now();
     }

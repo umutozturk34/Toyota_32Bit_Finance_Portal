@@ -39,7 +39,7 @@ function CommoditiesPage() {
     const [updating, setUpdating] = useState({ snapshot: false, candles: false, full: false });
     const isAdmin = hasRole('ADMIN');
     const listParams = useListParams();
-    const segment = listParams.filter || 'PRECIOUS_METAL';
+    const segment = listParams.filter || 'ALL';
 
     const { data: segmentCounts = [] } = useQuery({
         queryKey: ['commoditySegments'],
@@ -53,7 +53,10 @@ function CommoditiesPage() {
         label: SEGMENT_LABELS[s.type] || s.type,
     }));
 
-    const queryParams = { ...listParams.params, segment };
+    const queryParams = {
+        ...listParams.params,
+        ...(segment && segment !== 'ALL' && { segment }),
+    };
 
     const { data, isLoading: loading, error, refetch } = useQuery({
         queryKey: ['commodities', queryParams],
@@ -121,8 +124,8 @@ function CommoditiesPage() {
                     <FilterTabs
                         items={tabItems}
                         activeId={segment}
-                        onSelect={handleSegmentChange}
-                        showAll={false}
+                        onSelect={(id) => handleSegmentChange(id === 'ALL' ? '' : id)}
+                        showAll={true}
                         layoutId="commodity-segment"
                     />
                 )}
@@ -150,7 +153,9 @@ function CommoditiesPage() {
                                 <div className="flex items-start justify-between">
                                     <div className="min-w-0 flex-1">
                                         <h3 className="truncate text-sm font-semibold text-fg">{commodity.name || secondary}</h3>
-                                        <span className="block truncate text-xs text-fg-muted">{secondary}</span>
+                                        {meta.displayCode && (
+                                            <span className="block truncate text-xs text-fg-muted">{meta.displayCode}</span>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {meta.unit && (

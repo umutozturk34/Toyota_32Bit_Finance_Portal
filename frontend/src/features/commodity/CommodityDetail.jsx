@@ -5,21 +5,21 @@ import { commodityService } from './commodityService';
 import { getChangeClass, changeColors, formatPrice } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
 import AssetDetailPage from '../../shared/components/AssetDetailPage';
-import { commodityDisplayCode } from '../../shared/constants/commodities';
 
 const fmt = (price) => formatPrice(price, { locale: 'tr-TR' });
 
 function CommodityHeader({ asset }) {
-  const display = asset.name || commodityDisplayCode(asset.code || '');
-  const secondary = commodityDisplayCode(asset.code || '');
+  const meta = asset.metadata || {};
+  const display = asset.name || meta.displayCode || asset.code;
+  const subtitle = [meta.displayCode, meta.unit].filter(Boolean).join(' · ');
   return (
     <>
       <span className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-400/10 text-orange-400 text-sm font-bold">
-        {secondary.slice(0, 3).toUpperCase()}
+        {(meta.displayCode || asset.code || '').slice(0, 3).toUpperCase()}
       </span>
       <div>
         <h1 className="text-xl font-bold text-fg">{display}</h1>
-        <p className="text-xs text-fg-muted">{secondary}{asset.metadata?.unit ? ` · ${asset.metadata.unit}` : ''}</p>
+        {subtitle && <p className="text-xs text-fg-muted">{subtitle}</p>}
       </div>
     </>
   );
@@ -111,7 +111,7 @@ export default function CommodityDetail() {
       getBuyProps={(asset) => ({
         assetType: 'COMMODITY',
         assetCode: asset.code || code,
-        assetName: asset.name || commodityDisplayCode(code),
+        assetName: asset.name || asset.metadata?.displayCode || code,
         currentPrice: asset.price,
       })}
     />

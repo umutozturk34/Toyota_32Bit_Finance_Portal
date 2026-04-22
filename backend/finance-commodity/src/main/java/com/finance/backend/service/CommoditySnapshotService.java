@@ -127,8 +127,12 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
             throw new ExternalApiException("Yahoo Finance",
                     "No price for " + yahooSymbol);
         }
-        BigDecimal usdtryRate = getUsdTryRate();
-        CommoditySnapshotInput snapshot = commodityMapper.toSnapshotInput(quote, usdtryRate, scale);
+        Forex usdtry = getUsdTrySnapshot();
+        BigDecimal usdtryToday = usdtry.getCurrentPrice();
+        BigDecimal usdtryYesterday = usdtry.getChange24h() != null
+                ? usdtryToday.subtract(usdtry.getChange24h())
+                : usdtryToday;
+        CommoditySnapshotInput snapshot = commodityMapper.toSnapshotInput(quote, usdtryToday, scale);
         Commodity commodity = commodityRepository.findById(yahooSymbol)
                 .orElseGet(() -> Commodity.builder()
                         .commodityCode(yahooSymbol)
@@ -140,16 +144,16 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
         });
         commodityCacheService.putSnapshot(yahooSymbol, commodity);
         if (derivativeCalculator.hasDerivatives(yahooSymbol)) {
-            derivativeCalculator.refreshDerivatives(commodity, usdtryRate);
+            derivativeCalculator.refreshDerivatives(commodity, usdtryToday, usdtryYesterday);
         }
     }
 
-    private BigDecimal getUsdTryRate() {
+    private Forex getUsdTrySnapshot() {
         Forex usdtry = forexCacheService.getSnapshot("USDTRY");
         if (usdtry == null || usdtry.getCurrentPrice() == null) {
             throw new ExternalApiException("Yahoo Finance",
                     "USDTRY rate not available for commodity TRY conversion");
         }
-        return usdtry.getCurrentPrice();
+        return usdtry;
     }
 }

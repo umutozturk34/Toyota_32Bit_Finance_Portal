@@ -144,10 +144,6 @@ public class AppProperties {
         private String goldSourceCode = "GC=F";
         private String silverSourceCode = "SI=F";
         private BigDecimal goldGramDivisor = new BigDecimal("31.1035");
-        private BigDecimal goldTamMultiplier = new BigDecimal("7.02");
-        private BigDecimal goldYarimDivisor = new BigDecimal("2.0");
-        private BigDecimal goldCeyrekDivisor = new BigDecimal("4.0");
-        private BigDecimal goldCumhuriyetMultiplier = new BigDecimal("7.216");
     }
 
     @Getter

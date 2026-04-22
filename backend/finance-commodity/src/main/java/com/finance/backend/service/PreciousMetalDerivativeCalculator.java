@@ -26,10 +26,6 @@ import java.util.stream.Collectors;
 public class PreciousMetalDerivativeCalculator {
 
     private static final String GOLD_GRAM_CODE = "GOLD_GRAM";
-    private static final String GOLD_YARIM_CODE = "GOLD_YARIM";
-    private static final String GOLD_TAM_CODE = "GOLD_TAM";
-    private static final String GOLD_CEYREK_CODE = "GOLD_CEYREK";
-    private static final String GOLD_CUMHURIYET_CODE = "GOLD_CUMHURIYET";
     private static final String SILVER_GRAM_CODE = "SILVER_GRAM";
 
     private final CommodityRepository commodityRepository;
@@ -41,10 +37,6 @@ public class PreciousMetalDerivativeCalculator {
     private final String silverSourceCode;
     private final Set<String> sourcesWithDerivatives;
     private final BigDecimal gramDivisor;
-    private final BigDecimal tamMultiplier;
-    private final BigDecimal yarimDivisor;
-    private final BigDecimal ceyrekDivisor;
-    private final BigDecimal cumhuriyetMultiplier;
 
     public PreciousMetalDerivativeCalculator(CommodityRepository commodityRepository,
                                              CommodityCandleRepository commodityCandleRepository,
@@ -60,55 +52,46 @@ public class PreciousMetalDerivativeCalculator {
         this.silverSourceCode = props.getSilverSourceCode();
         this.sourcesWithDerivatives = Set.of(goldSourceCode, silverSourceCode);
         this.gramDivisor = props.getGoldGramDivisor();
-        this.tamMultiplier = props.getGoldTamMultiplier();
-        this.yarimDivisor = props.getGoldYarimDivisor();
-        this.ceyrekDivisor = props.getGoldCeyrekDivisor();
-        this.cumhuriyetMultiplier = props.getGoldCumhuriyetMultiplier();
     }
 
     public boolean hasDerivatives(String commodityCode) {
         return sourcesWithDerivatives.contains(commodityCode);
     }
 
-    public void refreshDerivatives(Commodity source, BigDecimal usdTryRate) {
-        if (source == null || source.getCurrentPriceUsd() == null || usdTryRate == null) {
+    public void refreshDerivatives(Commodity source, BigDecimal usdTryCurrent, BigDecimal usdTryPrevious) {
+        if (source == null || source.getCurrentPriceUsd() == null || usdTryCurrent == null) {
             log.debug("Skipping derivatives: missing source USD price or USDTRY rate for {}",
                     source == null ? "null" : source.getCommodityCode());
             return;
         }
-        BigDecimal gramPrice = onsUsdToGramTry(source.getCurrentPriceUsd(), usdTryRate);
-        BigDecimal gramPrevious = onsUsdToGramTry(source.getPreviousPriceUsd(), usdTryRate);
+        BigDecimal gramCurrent = divide(source.getCurrentPrice(), gramDivisor);
+        BigDecimal gramOpen = divide(source.getOpenPrice(), gramDivisor);
+        BigDecimal gramHigh = divide(source.getDayHigh(), gramDivisor);
+        BigDecimal gramLow = divide(source.getDayLow(), gramDivisor);
+        BigDecimal gramPrevious = onsUsdToGramTry(source.getPreviousPriceUsd(),
+                usdTryPrevious != null ? usdTryPrevious : usdTryCurrent);
+        Long volume = source.getVolume();
 
         if (goldSourceCode.equals(source.getCommodityCode())) {
-            refreshGoldDerivatives(gramPrice, gramPrevious);
+            persistDerivative(GOLD_GRAM_CODE, gramCurrent, gramPrevious, gramOpen, gramHigh, gramLow, volume);
         } else if (silverSourceCode.equals(source.getCommodityCode())) {
-            persistDerivative(SILVER_GRAM_CODE, gramPrice, gramPrevious);
+            persistDerivative(SILVER_GRAM_CODE, gramCurrent, gramPrevious, gramOpen, gramHigh, gramLow, volume);
         }
     }
 
     public void refreshDerivativeCandles() {
-        refreshFromSource(goldSourceCode, List.of(
-                new DerivativeSpec(GOLD_GRAM_CODE, this::onsTryToGram),
-                new DerivativeSpec(GOLD_TAM_CODE, this::onsTryToTam),
-                new DerivativeSpec(GOLD_YARIM_CODE, this::onsTryToYarim),
-                new DerivativeSpec(GOLD_CEYREK_CODE, this::onsTryToCeyrek),
-                new DerivativeSpec(GOLD_CUMHURIYET_CODE, this::onsTryToCumhuriyet)
-        ));
-        refreshFromSource(silverSourceCode, List.of(
-                new DerivativeSpec(SILVER_GRAM_CODE, this::onsTryToGram)
-        ));
+        refreshFromSource(goldSourceCode, GOLD_GRAM_CODE);
+        refreshFromSource(silverSourceCode, SILVER_GRAM_CODE);
     }
 
-    private void refreshFromSource(String sourceCode, List<DerivativeSpec> derivatives) {
+    private void refreshFromSource(String sourceCode, String derivativeCode) {
         List<CommodityCandle> sourceCandles = commodityCandleRepository
                 .findByCommodityCodeOrderByCandleDateAsc(sourceCode);
         if (sourceCandles.isEmpty()) {
             log.debug("No source candles for {} — skipping derivative candle refresh", sourceCode);
             return;
         }
-        for (DerivativeSpec spec : derivatives) {
-            regenerateDerivativeCandles(spec.code(), sourceCandles, spec.transform());
-        }
+        regenerateDerivativeCandles(derivativeCode, sourceCandles, this::onsTryToGram);
     }
 
     @Transactional
@@ -164,53 +147,21 @@ public class PreciousMetalDerivativeCalculator {
         return divide(onsTry, gramDivisor);
     }
 
-    private BigDecimal onsTryToTam(BigDecimal onsTry) {
-        return multiply(onsTryToGram(onsTry), tamMultiplier);
-    }
-
-    private BigDecimal onsTryToYarim(BigDecimal onsTry) {
-        return divide(onsTryToTam(onsTry), yarimDivisor);
-    }
-
-    private BigDecimal onsTryToCeyrek(BigDecimal onsTry) {
-        return divide(onsTryToTam(onsTry), ceyrekDivisor);
-    }
-
-    private BigDecimal onsTryToCumhuriyet(BigDecimal onsTry) {
-        return multiply(onsTryToGram(onsTry), cumhuriyetMultiplier);
-    }
-
-    private void refreshGoldDerivatives(BigDecimal gramPrice, BigDecimal gramPrevious) {
-        BigDecimal tamPrice = multiply(gramPrice, tamMultiplier);
-        BigDecimal tamPrevious = multiply(gramPrevious, tamMultiplier);
-        BigDecimal yarimPrice = divide(tamPrice, yarimDivisor);
-        BigDecimal yarimPrevious = divide(tamPrevious, yarimDivisor);
-        BigDecimal ceyrekPrice = divide(tamPrice, ceyrekDivisor);
-        BigDecimal ceyrekPrevious = divide(tamPrevious, ceyrekDivisor);
-        BigDecimal cumhuriyetPrice = multiply(gramPrice, cumhuriyetMultiplier);
-        BigDecimal cumhuriyetPrevious = multiply(gramPrevious, cumhuriyetMultiplier);
-
-        persistDerivative(GOLD_GRAM_CODE, gramPrice, gramPrevious);
-        persistDerivative(GOLD_TAM_CODE, tamPrice, tamPrevious);
-        persistDerivative(GOLD_YARIM_CODE, yarimPrice, yarimPrevious);
-        persistDerivative(GOLD_CEYREK_CODE, ceyrekPrice, ceyrekPrevious);
-        persistDerivative(GOLD_CUMHURIYET_CODE, cumhuriyetPrice, cumhuriyetPrevious);
-    }
-
     private BigDecimal onsUsdToGramTry(BigDecimal onsUsd, BigDecimal usdTryRate) {
         if (onsUsd == null) return null;
         BigDecimal onsTry = onsUsd.multiply(usdTryRate);
         return divide(onsTry, gramDivisor);
     }
 
-    private void persistDerivative(String code, BigDecimal tryPrice, BigDecimal tryPrevious) {
+    private void persistDerivative(String code, BigDecimal tryPrice, BigDecimal tryPrevious,
+                                   BigDecimal tryOpen, BigDecimal tryHigh, BigDecimal tryLow, Long volume) {
         if (tryPrice == null) return;
         Commodity derivative = commodityRepository.findById(code)
                 .orElseGet(() -> Commodity.builder()
                         .commodityCode(code)
                         .commoditySegment(CommoditySegment.fromCode(code))
                         .build());
-        derivative.applyDerivedSnapshot(tryPrice, tryPrevious, spreadRate, scale);
+        derivative.applyDerivedSnapshot(tryPrice, tryPrevious, tryOpen, tryHigh, tryLow, volume, spreadRate, scale);
         commodityRepository.save(derivative);
         commodityCacheService.putSnapshot(code, derivative);
     }
@@ -218,10 +169,4 @@ public class PreciousMetalDerivativeCalculator {
     private BigDecimal divide(BigDecimal value, BigDecimal divisor) {
         return SyntheticPriceCalculator.safeDivide(value, divisor, scale);
     }
-
-    private BigDecimal multiply(BigDecimal value, BigDecimal multiplier) {
-        return SyntheticPriceCalculator.safeMultiply(value, multiplier, scale);
-    }
-
-    private record DerivativeSpec(String code, UnaryOperator<BigDecimal> transform) {}
 }

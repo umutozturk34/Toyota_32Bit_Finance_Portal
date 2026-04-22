@@ -68,7 +68,8 @@ class CommodityTest {
     void applyDerivedSnapshotSetsTryOnlyWithoutUsdFields() {
         Commodity derivative = new Commodity();
 
-        derivative.applyDerivedSnapshot(new BigDecimal("4500"), new BigDecimal("4450"), SPREAD, SCALE);
+        derivative.applyDerivedSnapshot(new BigDecimal("4500"), new BigDecimal("4450"),
+                new BigDecimal("4480"), new BigDecimal("4520"), new BigDecimal("4440"), 1000L, SPREAD, SCALE);
 
         assertThat(derivative.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("4500.0000"));
         assertThat(derivative.getSellingPrice()).isEqualByComparingTo(new BigDecimal("4567.5000"));

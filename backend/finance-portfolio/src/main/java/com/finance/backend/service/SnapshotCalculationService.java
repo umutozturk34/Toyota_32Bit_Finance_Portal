@@ -1,6 +1,6 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.model.*;
 import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.repository.UserWalletRepository;
@@ -25,7 +25,7 @@ public class SnapshotCalculationService {
     private final AssetPricingPort pricingPort;
     private final PortfolioPositionRepository positionRepository;
     private final UserWalletRepository walletRepository;
-    private final AppProperties appProperties;
+    private final PortfolioProperties portfolioProperties;
 
     public PortfolioAssetDailySnapshot buildAssetSnapshot(Long portfolioId, PortfolioPosition pos,
                                                               LocalDateTime batchTimestamp) {
@@ -73,7 +73,7 @@ public class SnapshotCalculationService {
 
         BigDecimal cashBalance = walletRepository.findByPortfolioIdAndCurrency(
                         pid,
-                        appProperties.getPortfolio().getDefaultCurrency())
+                        portfolioProperties.getDefaultCurrency())
                 .map(UserWallet::getBalance)
                 .orElse(BigDecimal.ZERO);
 

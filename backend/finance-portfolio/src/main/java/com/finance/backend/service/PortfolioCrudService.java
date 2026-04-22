@@ -1,6 +1,6 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.dto.request.PortfolioCreateRequest;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.dto.response.PortfolioResponse;
@@ -32,7 +32,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PortfolioCrudService {
 
-    private final AppProperties appProperties;
+    private final PortfolioProperties portfolioProperties;
     private final PortfolioRepository portfolioRepository;
     private final UserWalletRepository walletRepository;
     private final PortfolioTransactionRepository transactionRepository;
@@ -55,7 +55,7 @@ public class PortfolioCrudService {
 
         UserWallet wallet = UserWallet.builder()
                 .portfolio(portfolio)
-                .currency(appProperties.getPortfolio().getDefaultCurrency())
+                .currency(portfolioProperties.getDefaultCurrency())
                 .balance(BigDecimal.ZERO)
                 .availableBalance(BigDecimal.ZERO)
                 .build();
@@ -112,7 +112,7 @@ public class PortfolioCrudService {
     private PortfolioResponse toResponse(Portfolio portfolio) {
         BigDecimal cash = walletRepository.findByPortfolioIdAndCurrency(
                         portfolio.getId(),
-                        appProperties.getPortfolio().getDefaultCurrency())
+                        portfolioProperties.getDefaultCurrency())
                 .map(UserWallet::getBalance)
                 .orElse(BigDecimal.ZERO);
         return mapper.toPortfolioResponse(portfolio, cash);

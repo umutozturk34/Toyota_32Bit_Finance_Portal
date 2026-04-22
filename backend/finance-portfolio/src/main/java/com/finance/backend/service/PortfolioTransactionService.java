@@ -1,6 +1,6 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.dto.request.TransactionRequest;
 import com.finance.backend.dto.response.TransactionResponse;
 import com.finance.backend.exception.BadRequestException;
@@ -39,7 +39,7 @@ public class PortfolioTransactionService {
     private final PortfolioResponseMapper mapper;
     private final PortfolioSnapshotService snapshotService;
     private final TransactionInputResolverFactory resolverFactory;
-    private final AppProperties appProperties;
+    private final PortfolioProperties portfolioProperties;
 
     @Transactional
     public TransactionResponse execute(String userSub, Long portfolioId, TransactionRequest request) {
@@ -62,7 +62,7 @@ public class PortfolioTransactionService {
         BigDecimal quantity = resolved.quantity();
         BigDecimal totalCost = resolved.totalCostTry();
 
-        String currency = appProperties.getPortfolio().getDefaultCurrency();
+        String currency = portfolioProperties.getDefaultCurrency();
         UserWallet wallet = walletRepository.findByPortfolioIdAndCurrency(portfolioId, currency)
                 .orElseThrow(() -> new ResourceNotFoundException(currency + " wallet not found"));
 
@@ -88,7 +88,7 @@ public class PortfolioTransactionService {
 
         log.info("{} {} {} @ {} {} (fee={}) for portfolio {}",
                 side, quantity, request.assetCode(), unitPrice,
-                appProperties.getPortfolio().getDefaultCurrency(), fee, portfolioId);
+                portfolioProperties.getDefaultCurrency(), fee, portfolioId);
 
         final Long pid = portfolioId;
         final AssetType snapshotType = assetType;
@@ -112,7 +112,7 @@ public class PortfolioTransactionService {
                             BigDecimal quantity, BigDecimal totalCost, BigDecimal fee) {
         BigDecimal totalDebit = totalCost.add(fee);
         if (!wallet.hasSufficientBalance(totalDebit)) {
-            String currency = appProperties.getPortfolio().getDefaultCurrency();
+            String currency = portfolioProperties.getDefaultCurrency();
             throw new BusinessException("Alım gücü yetersiz. Gereken: " + totalDebit + " " + currency
                     + ", mevcut: " + wallet.getAvailableBalance());
         }

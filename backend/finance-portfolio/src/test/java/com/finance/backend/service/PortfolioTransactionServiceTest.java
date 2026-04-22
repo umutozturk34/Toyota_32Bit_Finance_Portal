@@ -1,6 +1,6 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.dto.request.TransactionRequest;
 import com.finance.backend.dto.response.TransactionResponse;
 import com.finance.backend.exception.BadRequestException;
@@ -52,13 +52,13 @@ class PortfolioTransactionServiceTest {
 
     @BeforeEach
     void setUp() {
-        AppProperties appProperties = new AppProperties();
+        PortfolioProperties portfolioProperties = new PortfolioProperties();
         TransactionInputResolverFactory factory = new TransactionInputResolverFactory(
-                List.of(new AmountBasedResolver(appProperties), new QuantityBasedResolver()));
+                List.of(new AmountBasedResolver(portfolioProperties), new QuantityBasedResolver()));
         service = new PortfolioTransactionService(
                 pricingPort, portfolioRepository, positionRepository,
                 transactionRepository, walletRepository, ledgerRepository,
-                mapper, snapshotService, factory, appProperties);
+                mapper, snapshotService, factory, portfolioProperties);
         tsmMock = mockStatic(TransactionSynchronizationManager.class);
     }
 

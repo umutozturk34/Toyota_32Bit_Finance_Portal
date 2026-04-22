@@ -2,16 +2,12 @@ import { motion } from 'framer-motion';
 import { ChevronRight, Package } from 'lucide-react';
 import { ArrowUpRight } from '../../shared/components/AnimatedIcons';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../shared/utils/formatters';
-import { containerVariants, cardVariants } from '../../shared/utils/animations';
-import EmptyState from '../../shared/components/EmptyState';
-import SearchInput from '../../shared/components/SearchInput';
-import SortSelect from '../../shared/components/SortSelect';
-import FilterTabs from '../../shared/components/FilterTabs';
-import Pagination from '../../shared/components/Pagination';
-import { ASSET_TYPE_LABELS, ASSET_TYPE_STYLES, ASSET_TYPE_FILTERS } from '../../shared/constants/assetTypes';
+import { cardVariants } from '../../shared/utils/animations';
+import { ASSET_TYPE_LABELS, ASSET_TYPE_STYLES } from '../../shared/constants/assetTypes';
 import { assetCodeLabel } from '../../shared/utils/assetCode';
 import { usePortfolioPositions } from './usePortfolioData';
 import useListParams from '../../shared/hooks/useListParams';
+import PortfolioListShell from './PortfolioListShell';
 
 const SORT_OPTIONS = [
   { id: 'currentValue', label: 'Piyasa Değeri' },
@@ -34,11 +30,10 @@ function AssetBadge({ pos }) {
 
 export default function PositionsTable({ portfolioId, onAssetClick, onSellClick }) {
   const listParams = useListParams({ defaultSize: 8, prefix: 'pos' });
-  const assetTypeFilter = listParams.filter || '';
 
   const queryParams = {
     ...listParams.params,
-    ...(assetTypeFilter && { assetType: assetTypeFilter }),
+    ...(listParams.filter && { assetType: listParams.filter }),
   };
 
   const { data } = usePortfolioPositions(portfolioId, queryParams);
@@ -48,41 +43,18 @@ export default function PositionsTable({ portfolioId, onAssetClick, onSellClick 
   if (!portfolioId) return null;
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="w-48">
-          <SearchInput value={listParams.search} onChange={listParams.setSearch} placeholder="Pozisyon ara..." />
-        </div>
-        <SortSelect
-          value={listParams.sort}
-          direction={listParams.direction}
-          options={SORT_OPTIONS}
-          onSortChange={listParams.setSort}
-          onDirectionChange={listParams.setDirection}
-        />
-        <FilterTabs
-          items={ASSET_TYPE_FILTERS.filter(f => f.id).map(f => ({ type: f.id, label: f.label }))}
-          activeId={assetTypeFilter || 'ALL'}
-          onSelect={(id) => listParams.setFilter(id === 'ALL' ? '' : id)}
-          showAll={true}
-          layoutId="pos-type"
-        />
-      </div>
-
-      {positions.length === 0 ? (
-        <EmptyState
-          icon={<Package className="h-8 w-8 text-fg-muted" />}
-          message={listParams.search ? 'Aramayla eşleşen pozisyon bulunamadı.' : 'Henüz pozisyon bulunmuyor'}
-          hint={!listParams.search ? 'Kripto, Hisse, Döviz veya Fon sayfalarından alım yapabilirsiniz' : undefined}
-        />
-      ) : (
-        <motion.div
-          variants={containerVariants(0.04)}
-          initial="hidden"
-          animate="show"
-          className="space-y-2 min-h-[500px]"
-        >
-          <div className="hidden lg:grid lg:grid-cols-[1.3fr_0.7fr_1fr_1fr_1fr_1.2fr_48px_20px] gap-2 px-4 py-2 text-xs text-fg-muted font-medium">
+    <PortfolioListShell
+      listParams={listParams}
+      totalPages={totalPages}
+      sortOptions={SORT_OPTIONS}
+      searchPlaceholder="Pozisyon ara..."
+      filterLayoutId="pos-type"
+      isEmpty={positions.length === 0}
+      emptyIcon={<Package className="h-8 w-8 text-fg-muted" />}
+      emptyMessage={listParams.search ? 'Aramayla eşleşen pozisyon bulunamadı.' : 'Henüz pozisyon bulunmuyor'}
+      emptyHint={!listParams.search ? 'Kripto, Hisse, Döviz veya Fon sayfalarından alım yapabilirsiniz' : undefined}
+    >
+      <div className="hidden lg:grid lg:grid-cols-[1.3fr_0.7fr_1fr_1fr_1fr_1.2fr_48px_20px] gap-2 px-4 py-2 text-xs text-fg-muted font-medium">
             <span>Varlık</span>
             <span className="text-right">Miktar</span>
             <span className="text-right">Ort. Maliyet</span>
@@ -147,10 +119,6 @@ export default function PositionsTable({ portfolioId, onAssetClick, onSellClick 
               </motion.div>
             );
           })}
-        </motion.div>
-      )}
-
-      <Pagination page={listParams.page} totalPages={totalPages} onPageChange={listParams.setPage} />
-    </div>
+    </PortfolioListShell>
   );
 }

@@ -14,6 +14,7 @@ import com.finance.backend.repository.CommodityRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.MarketBatchRunner;
+import com.finance.backend.util.TrackedRefreshRunner;
 import lombok.extern.log4j.Log4j2;
 
 import org.springframework.stereotype.Service;
@@ -81,10 +82,11 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
     }
 
     public void refreshTrackedCommoditySnapshot(String code) {
-        String normalized = yahooSymbolResolver.normalize(code);
-        if (yahooSymbolResolver.resolve(normalized) == null) return;
-        updateCommoditySnapshot(normalized);
-        log.info("Refreshed tracked commodity snapshot for {}", normalized);
+        TrackedRefreshRunner.refreshSnapshot(code, yahooSymbolResolver::normalize, normalized -> {
+            if (yahooSymbolResolver.resolve(normalized) == null) return false;
+            updateCommoditySnapshot(normalized);
+            return true;
+        }, log, "commodity");
     }
 
     @Override

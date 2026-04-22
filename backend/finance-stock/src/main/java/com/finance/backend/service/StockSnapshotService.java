@@ -15,6 +15,7 @@ import com.finance.backend.util.ApiAssetValidator;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CodeNormalizer;
 import com.finance.backend.util.MarketBatchRunner;
+import com.finance.backend.util.TrackedRefreshRunner;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -82,13 +83,11 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
     }
 
     public void refreshTrackedStockSnapshot(String symbol) {
-        String normalized = CodeNormalizer.upper(symbol);
-        if (normalized.isBlank()) {
-            return;
-        }
-        Stock stock = transactionTemplate.execute(status -> updateSingleStockSnapshot(normalized));
-        stockCacheService.putSnapshot(normalized, stock);
-        log.info("Refreshed tracked stock snapshot for {}", normalized);
+        TrackedRefreshRunner.refreshSnapshot(symbol, CodeNormalizer::upper, normalized -> {
+            Stock stock = transactionTemplate.execute(status -> updateSingleStockSnapshot(normalized));
+            stockCacheService.putSnapshot(normalized, stock);
+            return true;
+        }, log, "stock");
     }
 
     private Stock updateSingleStockSnapshot(String symbol) {

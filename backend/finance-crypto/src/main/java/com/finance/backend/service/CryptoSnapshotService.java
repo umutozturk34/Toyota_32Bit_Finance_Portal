@@ -13,6 +13,7 @@ import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CodeNormalizer;
 import com.finance.backend.util.MarketBatchRunner;
+import com.finance.backend.util.TrackedRefreshRunner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -71,23 +72,18 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
     }
 
     public void refreshTrackedCryptoSnapshot(String coinId) {
-        String normalizedId = CodeNormalizer.lower(coinId);
-        if (normalizedId.isBlank()) {
-            return;
-        }
-
-        List<CoinGeckoSnapshotDto> usdMarkets = coinGeckoClient.fetchMarkets("usd", List.of(normalizedId));
-        if (usdMarkets.isEmpty()) {
-            log.warn("No USD snapshot found for tracked crypto {}", normalizedId);
-            return;
-        }
-
-        List<CoinGeckoSnapshotDto> tryMarkets = coinGeckoClient.fetchMarkets("try", List.of(normalizedId));
-        BigDecimal tryPrice = tryMarkets.isEmpty() ? null : tryMarkets.getFirst().currentPrice();
-
-        Crypto saved = transactionTemplate.execute(status -> saveSingleSnapshot(usdMarkets.getFirst(), tryPrice));
-        cryptoCacheService.putSnapshot(saved.getId(), saved);
-        log.info("Refreshed tracked crypto snapshot for {}", normalizedId);
+        TrackedRefreshRunner.refreshSnapshot(coinId, CodeNormalizer::lower, normalizedId -> {
+            List<CoinGeckoSnapshotDto> usdMarkets = coinGeckoClient.fetchMarkets("usd", List.of(normalizedId));
+            if (usdMarkets.isEmpty()) {
+                log.warn("No USD snapshot found for tracked crypto {}", normalizedId);
+                return false;
+            }
+            List<CoinGeckoSnapshotDto> tryMarkets = coinGeckoClient.fetchMarkets("try", List.of(normalizedId));
+            BigDecimal tryPrice = tryMarkets.isEmpty() ? null : tryMarkets.getFirst().currentPrice();
+            Crypto saved = transactionTemplate.execute(status -> saveSingleSnapshot(usdMarkets.getFirst(), tryPrice));
+            cryptoCacheService.putSnapshot(saved.getId(), saved);
+            return true;
+        }, log, "crypto");
     }
 
     private Crypto saveSingleSnapshot(CoinGeckoSnapshotDto usdDto, BigDecimal tryPrice) {

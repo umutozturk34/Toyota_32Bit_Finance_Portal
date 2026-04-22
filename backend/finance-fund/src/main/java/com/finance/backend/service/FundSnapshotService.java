@@ -17,6 +17,7 @@ import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CodeNormalizer;
 import com.finance.backend.util.MarketBatchRunner;
 import com.finance.backend.util.TefasHelper;
+import com.finance.backend.util.TrackedRefreshRunner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -143,32 +144,26 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
     }
 
     public void refreshTrackedFundSnapshot(String fundCode) {
-        String normalized = CodeNormalizer.upper(fundCode);
-        if (normalized.isBlank()) {
-            return;
-        }
-
-        LocalDate today = findLastBusinessDay(LocalDate.now());
-        List<TefasFundDto> yatFunds = fetchTefas(FundType.YAT, normalized, today, today);
-        FundType fundType = FundType.YAT;
-        TefasFundDto dto = yatFunds.isEmpty() ? null : yatFunds.getFirst();
-
-        if (dto == null) {
-            List<TefasFundDto> byfFunds = fetchTefas(FundType.BYF, normalized, today, today);
-            fundType = FundType.BYF;
-            dto = byfFunds.isEmpty() ? null : byfFunds.getFirst();
-        }
-
-        if (dto == null) {
-            log.warn("No snapshot data found for tracked fund {}", normalized);
-            return;
-        }
-
-        FundType finalFundType = fundType;
-        TefasFundDto selectedDto = dto;
-        Fund saved = transactionTemplate.execute(status -> saveFundSnapshot(selectedDto, finalFundType));
-        fundCacheService.putSnapshot(saved.getFundCode(), saved);
-        log.info("Refreshed tracked fund snapshot for {}", normalized);
+        TrackedRefreshRunner.refreshSnapshot(fundCode, CodeNormalizer::upper, normalized -> {
+            LocalDate today = findLastBusinessDay(LocalDate.now());
+            List<TefasFundDto> yatFunds = fetchTefas(FundType.YAT, normalized, today, today);
+            FundType fundType = FundType.YAT;
+            TefasFundDto dto = yatFunds.isEmpty() ? null : yatFunds.getFirst();
+            if (dto == null) {
+                List<TefasFundDto> byfFunds = fetchTefas(FundType.BYF, normalized, today, today);
+                fundType = FundType.BYF;
+                dto = byfFunds.isEmpty() ? null : byfFunds.getFirst();
+            }
+            if (dto == null) {
+                log.warn("No snapshot data found for tracked fund {}", normalized);
+                return false;
+            }
+            FundType finalFundType = fundType;
+            TefasFundDto selectedDto = dto;
+            Fund saved = transactionTemplate.execute(status -> saveFundSnapshot(selectedDto, finalFundType));
+            fundCacheService.putSnapshot(saved.getFundCode(), saved);
+            return true;
+        }, log, "fund");
     }
 
     private Fund saveFundSnapshot(TefasFundDto dto, FundType fundType) {

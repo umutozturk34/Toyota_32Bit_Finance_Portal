@@ -76,7 +76,8 @@ public class FundCandleService implements CandleBatchRefresher {
     public void refreshAll() {
         long totalStart = System.currentTimeMillis();
         log.info("Starting fund candle update");
-        pruneOldCandles();
+        CandlePruner.pruneByYears(transactionTemplate, yearsToFetch,
+                cutoffDate -> fundCandleRepository.deleteByCandleDateBefore(cutoffDate));
         long byfStart = System.currentTimeMillis();
         updateCandlesForType(FundType.BYF);
         log.info("[TIMING] BYF candle update took {}s", (System.currentTimeMillis() - byfStart) / 1000);
@@ -114,13 +115,6 @@ public class FundCandleService implements CandleBatchRefresher {
 
         fundCacheService.refreshHistory(targetFund.getFundCode());
         log.info("Refreshed tracked fund candles for {}", normalized);
-    }
-
-    private void pruneOldCandles() {
-        CandlePruner.pruneByYears(
-                transactionTemplate,
-                yearsToFetch,
-                cutoffDate -> fundCandleRepository.deleteByCandleDateBefore(cutoffDate));
     }
 
     private void updateCandlesForType(FundType fundType) {

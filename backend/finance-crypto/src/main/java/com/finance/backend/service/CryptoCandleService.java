@@ -105,7 +105,8 @@ public class CryptoCandleService implements CandleBatchRefresher {
                 (stopped, e) -> log.warn("Crypto candle batch stopped early (circuit breaker open): {} success, {} failed",
                         stopped.successCount(), stopped.failCount()));
 
-        pruneOldCandles();
+        CandlePruner.pruneByDays(transactionTemplate, historyDays,
+                cutoffDate -> cryptoCandleRepository.deleteByCandleDateBefore(cutoffDate));
         BatchLogHelper.logSummary(log, "Crypto candle update", result);
     }
 
@@ -178,10 +179,4 @@ public class CryptoCandleService implements CandleBatchRefresher {
         });
     }
 
-    private void pruneOldCandles() {
-        CandlePruner.pruneByDays(
-                transactionTemplate,
-                historyDays,
-                cutoffDate -> cryptoCandleRepository.deleteByCandleDateBefore(cutoffDate));
-    }
 }

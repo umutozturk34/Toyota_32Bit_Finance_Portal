@@ -8,6 +8,7 @@ import com.finance.backend.model.CryptoCandle;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.CryptoRepository;
+import com.finance.backend.util.ApiAssetValidator;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CodeNormalizer;
@@ -36,15 +37,10 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
     private final TransactionTemplate transactionTemplate;
 
     public boolean existsInApi(String coinId) {
-        String normalized = CodeNormalizer.lower(coinId);
-        if (normalized.isBlank()) return false;
-        try {
-            List<CoinGeckoSnapshotDto> result = coinGeckoClient.fetchMarkets("usd", List.of(normalized));
+        return ApiAssetValidator.validate(coinId, false, cid -> {
+            List<CoinGeckoSnapshotDto> result = coinGeckoClient.fetchMarkets("usd", List.of(cid));
             return !result.isEmpty();
-        } catch (Exception e) {
-            log.warn("Crypto existence check failed for {}: {}", normalized, e.getMessage());
-            return false;
-        }
+        }, log, "Crypto");
     }
 
     @Override

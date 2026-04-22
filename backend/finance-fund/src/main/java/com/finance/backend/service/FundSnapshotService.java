@@ -11,6 +11,7 @@ import com.finance.backend.model.FundType;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.FundRepository;
+import com.finance.backend.util.ApiAssetValidator;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CodeNormalizer;
@@ -66,18 +67,13 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
     }
 
     public boolean existsInApi(String fundCode) {
-        String normalized = CodeNormalizer.upper(fundCode);
-        if (normalized.isBlank()) return false;
-        LocalDate today = findLastBusinessDay(LocalDate.now());
-        try {
-            List<TefasFundDto> yat = fetchTefas(FundType.YAT, normalized, today, today);
+        return ApiAssetValidator.validate(fundCode, true, code -> {
+            LocalDate today = findLastBusinessDay(LocalDate.now());
+            List<TefasFundDto> yat = fetchTefas(FundType.YAT, code, today, today);
             if (!yat.isEmpty()) return true;
-            List<TefasFundDto> byf = fetchTefas(FundType.BYF, normalized, today, today);
+            List<TefasFundDto> byf = fetchTefas(FundType.BYF, code, today, today);
             return !byf.isEmpty();
-        } catch (Exception e) {
-            log.warn("Fund existence check failed for {}: {}", normalized, e.getMessage());
-            return false;
-        }
+        }, log, "Fund");
     }
 
     @Override

@@ -11,6 +11,7 @@ import com.finance.backend.model.StockSegment;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.StockRepository;
 import com.finance.backend.util.BatchLogHelper;
+import com.finance.backend.util.ApiAssetValidator;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CodeNormalizer;
 import com.finance.backend.util.MarketBatchRunner;
@@ -48,15 +49,10 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
     }
 
     public boolean existsInApi(String symbol) {
-        String normalized = CodeNormalizer.upper(symbol);
-        if (normalized.isBlank()) return false;
-        try {
-            YahooStockQuoteDto dto = yahooStockClient.fetchQuote(normalized);
+        return ApiAssetValidator.validate(symbol, true, sym -> {
+            YahooStockQuoteDto dto = yahooStockClient.fetchQuote(sym);
             return dto != null && dto.currentPrice() != null;
-        } catch (Exception e) {
-            log.warn("Stock existence check failed for {}: {}", normalized, e.getMessage());
-            return false;
-        }
+        }, log, "Stock");
     }
 
     @Override

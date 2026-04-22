@@ -1,6 +1,7 @@
 package com.finance.backend.service;
 
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.AppProperties.CommodityDerivativeRule;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
 import com.finance.backend.repository.CommodityCandleRepository;
@@ -11,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -38,21 +40,23 @@ class PreciousMetalDerivativeCalculatorTest {
         AppProperties props = new AppProperties();
         AppProperties.Commodity commodityProps = new AppProperties.Commodity();
         commodityProps.setSpreadRate(new BigDecimal("0.015"));
-        commodityProps.setGoldSourceCode("GC=F");
-        commodityProps.setSilverSourceCode("SI=F");
-        commodityProps.setGoldGramDivisor(new BigDecimal("31.1035"));
+        commodityProps.setDerivatives(List.of(
+                new CommodityDerivativeRule("GC=F", "XAUTRYG", new BigDecimal("31.1035")),
+                new CommodityDerivativeRule("SI=F", "XAGTRYG", new BigDecimal("31.1035"))
+        ));
         props.setCommodity(commodityProps);
         props.setScale(4);
 
         derivativeStore = new HashMap<>();
-        seedDerivative("GOLD_GRAM");
-        seedDerivative("SILVER_GRAM");
+        seedDerivative("XAUTRYG");
+        seedDerivative("XAGTRYG");
 
         when(repository.findById(any())).thenAnswer(inv ->
                 Optional.ofNullable(derivativeStore.get((String) inv.getArgument(0))));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        calculator = new PreciousMetalDerivativeCalculator(repository, candleRepository, cacheService, props);
+        calculator = new PreciousMetalDerivativeCalculator(repository, candleRepository, cacheService,
+                new CommoditySegmentResolver(props), props);
     }
 
     @Test
@@ -75,8 +79,8 @@ class PreciousMetalDerivativeCalculatorTest {
 
         calculator.refreshDerivatives(gold, usdTry, usdTry);
 
-        verify(cacheService).putSnapshot(eq("GOLD_GRAM"), any(Commodity.class));
-        verify(cacheService, never()).putSnapshot(eq("SILVER_GRAM"), any(Commodity.class));
+        verify(cacheService).putSnapshot(eq("XAUTRYG"), any(Commodity.class));
+        verify(cacheService, never()).putSnapshot(eq("XAGTRYG"), any(Commodity.class));
     }
 
     @Test
@@ -86,8 +90,8 @@ class PreciousMetalDerivativeCalculatorTest {
 
         calculator.refreshDerivatives(silver, usdTry, usdTry);
 
-        verify(cacheService).putSnapshot(eq("SILVER_GRAM"), any(Commodity.class));
-        verify(cacheService, never()).putSnapshot(eq("GOLD_GRAM"), any(Commodity.class));
+        verify(cacheService).putSnapshot(eq("XAGTRYG"), any(Commodity.class));
+        verify(cacheService, never()).putSnapshot(eq("XAUTRYG"), any(Commodity.class));
     }
 
     @Test
@@ -118,7 +122,7 @@ class PreciousMetalDerivativeCalculatorTest {
         calculator.refreshDerivatives(gold, usdTry, usdTry);
 
         ArgumentCaptor<Commodity> captor = ArgumentCaptor.forClass(Commodity.class);
-        verify(cacheService, atLeastOnce()).putSnapshot(eq("GOLD_GRAM"), captor.capture());
+        verify(cacheService, atLeastOnce()).putSnapshot(eq("XAUTRYG"), captor.capture());
         BigDecimal expectedGram = new BigDecimal("4000").multiply(usdTry)
                 .divide(new BigDecimal("31.1035"), 4, java.math.RoundingMode.HALF_UP);
         assertThat(captor.getValue().getCurrentPrice()).isEqualByComparingTo(expectedGram);

@@ -32,7 +32,7 @@ class TrackedAssetTypeTest {
             "STOCK,     '  xu100 ',       XU100",
             "FUND,      afa,              AFA",
             "COMMODITY, gold,             GOLD",
-            "COMMODITY, '  gold_gram  ',  GOLD_GRAM"
+            "COMMODITY, '  xautryg  ',    XAUTRYG"
     })
     void normalizeCodeRespectsPerTypeCasingRules(TrackedAssetType tracked, String raw, String expected) {
         String actual = tracked.normalizeCode(raw);

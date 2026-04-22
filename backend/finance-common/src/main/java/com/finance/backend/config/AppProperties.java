@@ -1,6 +1,8 @@
 package com.finance.backend.config;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -141,15 +143,26 @@ public class AppProperties {
     public static class Commodity {
         private int yearsToKeep = 5;
         private BigDecimal spreadRate = new BigDecimal("0.015");
-        private String goldSourceCode = "XAUTRY";
-        private String silverSourceCode = "XAGTRY";
-        private BigDecimal goldGramDivisor = new BigDecimal("31.1035");
         private Map<String, String> yahooSymbolOverrides = new HashMap<>(Map.of(
                 "XAUTRY", "GC=F",
                 "XAGTRY", "SI=F",
                 "XPTTRY", "PL=F",
                 "XPDTRY", "PA=F"
         ));
+        private List<CommodityDerivativeRule> derivatives = new ArrayList<>(List.of(
+                new CommodityDerivativeRule("XAUTRY", "XAUTRYG", new BigDecimal("31.1035")),
+                new CommodityDerivativeRule("XAGTRY", "XAGTRYG", new BigDecimal("31.1035"))
+        ));
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CommodityDerivativeRule {
+        private String sourceCode;
+        private String derivativeCode;
+        private BigDecimal divisor;
     }
 
     @Getter

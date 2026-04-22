@@ -16,6 +16,7 @@ public class CommodityDataService implements TrackedAssetDataService {
     private final CommoditySnapshotService commoditySnapshotService;
     private final CommodityCandleService commodityCandleService;
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
+    private final PreciousMetalDerivativeCalculator derivativeCalculator;
 
     @Override
     public TrackedAssetType getAssetType() {
@@ -24,6 +25,8 @@ public class CommodityDataService implements TrackedAssetDataService {
 
     @Override
     public void validateExists(String code) {
+        String normalized = code == null ? "" : code.trim().toUpperCase();
+        if (derivativeCalculator.isKnownDerivative(normalized)) return;
         if (!commoditySnapshotService.existsInApi(code)) {
             throw new BusinessException("Emtia bulunamadı: " + code, "ASSET_NOT_FOUND");
         }

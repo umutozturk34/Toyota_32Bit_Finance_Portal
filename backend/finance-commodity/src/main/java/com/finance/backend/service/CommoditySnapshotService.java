@@ -7,10 +7,7 @@ import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.CommodityMapper;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
-import com.finance.backend.model.CommoditySegment;
 import com.finance.backend.model.CommoditySnapshotInput;
-import com.finance.backend.model.Forex;
-import com.finance.backend.model.ForexCandle;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.CommodityRepository;
@@ -34,10 +31,11 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
     private final CommodityMapper commodityMapper;
     private final CommodityRepository commodityRepository;
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
-    private final MarketCacheService<Forex, ForexCandle> forexCacheService;
+    private final ExchangeRateProvider exchangeRateProvider;
     private final PreciousMetalDerivativeCalculator derivativeCalculator;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final YahooSymbolResolver yahooSymbolResolver;
+    private final CommoditySegmentResolver segmentResolver;
     private final TransactionTemplate transactionTemplate;
     private final int scale;
     private final BigDecimal spreadRate;
@@ -46,20 +44,22 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
                                     CommodityMapper commodityMapper,
                                     CommodityRepository commodityRepository,
                                     MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
-                                    MarketCacheService<Forex, ForexCandle> forexCacheService,
+                                    ExchangeRateProvider exchangeRateProvider,
                                     PreciousMetalDerivativeCalculator derivativeCalculator,
                                     TrackedAssetQueryService trackedAssetQueryService,
                                     YahooSymbolResolver yahooSymbolResolver,
+                                    CommoditySegmentResolver segmentResolver,
                                     PlatformTransactionManager transactionManager,
                                     AppProperties appProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
         this.commodityMapper = commodityMapper;
         this.commodityRepository = commodityRepository;
         this.commodityCacheService = commodityCacheService;
-        this.forexCacheService = forexCacheService;
+        this.exchangeRateProvider = exchangeRateProvider;
         this.derivativeCalculator = derivativeCalculator;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.yahooSymbolResolver = yahooSymbolResolver;
+        this.segmentResolver = segmentResolver;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.scale = appProperties.getScale();
         this.spreadRate = appProperties.getCommodity().getSpreadRate();
@@ -125,20 +125,20 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
             throw new ExternalApiException("Yahoo Finance",
                     "No price for " + yahooSymbol);
         }
-        Forex usdtry = getUsdTrySnapshot();
-        BigDecimal usdtryToday = usdtry.getCurrentPrice();
-        BigDecimal usdtryYesterday = usdtry.getChange24h() != null
-                ? usdtryToday.subtract(usdtry.getChange24h())
-                : usdtryToday;
-        CommoditySnapshotInput snapshot = commodityMapper.toSnapshotInput(quote, usdtryToday, scale);
+        ExchangeRateSnapshot usdTry = exchangeRateProvider.getCurrentUsdTry();
+        if (!usdTry.isAvailable()) {
+            throw new ExternalApiException("Yahoo Finance",
+                    "USDTRY rate not available for commodity TRY conversion");
+        }
+        CommoditySnapshotInput snapshot = commodityMapper.toSnapshotInput(quote, usdTry.currentRate(), scale);
         Commodity commodity = commodityRepository.findById(commodityCode)
                 .orElseGet(() -> Commodity.builder()
                         .commodityCode(commodityCode)
                         .yahooSymbol(yahooSymbol)
-                        .commoditySegment(CommoditySegment.fromCode(commodityCode))
+                        .commoditySegment(segmentResolver.resolve(commodityCode))
                         .build());
         transactionTemplate.executeWithoutResult(status -> {
-            commodity.applyYahooSnapshot(snapshot, spreadRate, scale);
+            commodity.applyPriceSnapshot(snapshot, spreadRate, scale);
             if (commodity.getYahooSymbol() == null) {
                 commodity.setYahooSymbol(yahooSymbol);
             }
@@ -146,16 +146,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
         });
         commodityCacheService.putSnapshot(commodityCode, commodity);
         if (derivativeCalculator.hasDerivatives(commodityCode)) {
-            derivativeCalculator.refreshDerivatives(commodity, usdtryToday, usdtryYesterday);
+            derivativeCalculator.refreshDerivatives(commodity, usdTry.currentRate(), usdTry.previousRate());
         }
-    }
-
-    private Forex getUsdTrySnapshot() {
-        Forex usdtry = forexCacheService.getSnapshot("USDTRY");
-        if (usdtry == null || usdtry.getCurrentPrice() == null) {
-            throw new ExternalApiException("Yahoo Finance",
-                    "USDTRY rate not available for commodity TRY conversion");
-        }
-        return usdtry;
     }
 }

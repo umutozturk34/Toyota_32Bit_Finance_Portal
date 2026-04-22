@@ -90,7 +90,7 @@ public class Commodity extends BaseAsset {
     @JsonIgnore
     private List<CommodityCandle> candles;
 
-    public void applyYahooSnapshot(CommoditySnapshotInput snapshot, BigDecimal spreadRate, int scale) {
+    public void applyPriceSnapshot(CommoditySnapshotInput snapshot, BigDecimal spreadRate, int scale) {
         if (snapshot == null || snapshot.tryPrice() == null) return;
         this.currentPrice = scaleValue(snapshot.tryPrice(), scale);
         this.sellingPrice = scaleValue(snapshot.tryPrice().multiply(BigDecimal.ONE.add(spreadRate)), scale);
@@ -101,20 +101,6 @@ public class Commodity extends BaseAsset {
         this.dayLow = scaleValue(snapshot.tryDayLow(), scale);
         this.volume = snapshot.volume();
         applyChangeFields(snapshot.tryPrice(), snapshot.tryPreviousClose(), scale);
-        this.yahooUpdatedAt = LocalDateTime.now();
-    }
-
-    public void applyDerivedSnapshot(BigDecimal tryPrice, BigDecimal tryPreviousClose,
-                                     BigDecimal tryOpenPrice, BigDecimal tryDayHigh, BigDecimal tryDayLow,
-                                     Long volume, BigDecimal spreadRate, int scale) {
-        if (tryPrice == null) return;
-        this.currentPrice = scaleValue(tryPrice, scale);
-        this.sellingPrice = scaleValue(tryPrice.multiply(BigDecimal.ONE.add(spreadRate)), scale);
-        this.openPrice = scaleValue(tryOpenPrice, scale);
-        this.dayHigh = scaleValue(tryDayHigh, scale);
-        this.dayLow = scaleValue(tryDayLow, scale);
-        this.volume = volume;
-        applyChangeFields(tryPrice, tryPreviousClose, scale);
         this.yahooUpdatedAt = LocalDateTime.now();
     }
 

@@ -7,8 +7,6 @@ import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.CommodityMapper;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
-import com.finance.backend.model.Forex;
-import com.finance.backend.model.ForexCandle;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.CommodityCandleRepository;
@@ -42,7 +40,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
     private final CommodityRepository commodityRepository;
     private final CommodityCandleRepository commodityCandleRepository;
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
-    private final MarketCacheService<Forex, ForexCandle> forexCacheService;
+    private final ExchangeRateProvider exchangeRateProvider;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final PreciousMetalDerivativeCalculator derivativeCalculator;
     private final YahooSymbolResolver yahooSymbolResolver;
@@ -56,7 +54,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
                                   CommodityRepository commodityRepository,
                                   CommodityCandleRepository commodityCandleRepository,
                                   MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
-                                  MarketCacheService<Forex, ForexCandle> forexCacheService,
+                                  ExchangeRateProvider exchangeRateProvider,
                                   TrackedAssetQueryService trackedAssetQueryService,
                                   PreciousMetalDerivativeCalculator derivativeCalculator,
                                   YahooSymbolResolver yahooSymbolResolver,
@@ -67,7 +65,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
         this.commodityRepository = commodityRepository;
         this.commodityCandleRepository = commodityCandleRepository;
         this.commodityCacheService = commodityCacheService;
-        this.forexCacheService = forexCacheService;
+        this.exchangeRateProvider = exchangeRateProvider;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.derivativeCalculator = derivativeCalculator;
         this.yahooSymbolResolver = yahooSymbolResolver;
@@ -130,16 +128,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
     }
 
     private Map<String, YahooCandleDto> loadUsdTryCandleMap() {
-        return forexCacheService.getHistory("USDTRY").stream()
-                .collect(Collectors.toMap(
-                        c -> c.getCandleDate().toLocalDate().toString(),
-                        this::toYahooCandleDto,
-                        (a, b) -> a));
-    }
-
-    private YahooCandleDto toYahooCandleDto(ForexCandle candle) {
-        return new YahooCandleDto(candle.getCandleDate(), candle.getOpen(), candle.getHigh(),
-                candle.getLow(), candle.getClose(), null);
+        return exchangeRateProvider.getUsdTryHistory();
     }
 
     private void updateCommodityCandles(String commodityCode, Map<String, YahooCandleDto> usdtryCandleMap) {

@@ -12,7 +12,7 @@ class CommodityTest {
     private static final int SCALE = 4;
 
     @Test
-    void applyYahooSnapshotSetsTryAndUsdFields() {
+    void applyPriceSnapshotSetsTryAndUsdFields() {
         Commodity commodity = new Commodity();
         CommoditySnapshotInput input = new CommoditySnapshotInput(
                 new BigDecimal("100000"),
@@ -24,7 +24,7 @@ class CommodityTest {
                 new BigDecimal("98500"),
                 250000L);
 
-        commodity.applyYahooSnapshot(input, SPREAD, SCALE);
+        commodity.applyPriceSnapshot(input, SPREAD, SCALE);
 
         assertThat(commodity.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("100000.0000"));
         assertThat(commodity.getCurrentPriceUsd()).isEqualByComparingTo(new BigDecimal("4000.0000"));
@@ -38,7 +38,7 @@ class CommodityTest {
     }
 
     @Test
-    void applyYahooSnapshotComputesChangeFields() {
+    void applyPriceSnapshotComputesChangeFields() {
         Commodity commodity = new Commodity();
         CommoditySnapshotInput input = new CommoditySnapshotInput(
                 new BigDecimal("110"),
@@ -47,29 +47,32 @@ class CommodityTest {
                 new BigDecimal("9"),
                 null, null, null, null);
 
-        commodity.applyYahooSnapshot(input, SPREAD, SCALE);
+        commodity.applyPriceSnapshot(input, SPREAD, SCALE);
 
         assertThat(commodity.getChange24h()).isEqualByComparingTo(new BigDecimal("10.0000"));
         assertThat(commodity.getChangePercent24h()).isEqualByComparingTo(new BigDecimal("10.0000"));
     }
 
     @Test
-    void applyYahooSnapshotSkipsWhenTryPriceNull() {
+    void applyPriceSnapshotSkipsWhenTryPriceNull() {
         Commodity commodity = new Commodity();
         commodity.setCurrentPrice(new BigDecimal("999"));
         CommoditySnapshotInput input = new CommoditySnapshotInput(null, null, null, null, null, null, null, null);
 
-        commodity.applyYahooSnapshot(input, SPREAD, SCALE);
+        commodity.applyPriceSnapshot(input, SPREAD, SCALE);
 
         assertThat(commodity.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("999"));
     }
 
     @Test
-    void applyDerivedSnapshotSetsTryOnlyWithoutUsdFields() {
+    void applyPriceSnapshotWithoutUsdFieldsLeavesThemNull() {
         Commodity derivative = new Commodity();
+        CommoditySnapshotInput input = new CommoditySnapshotInput(
+                new BigDecimal("4500"), new BigDecimal("4450"),
+                null, null,
+                new BigDecimal("4480"), new BigDecimal("4520"), new BigDecimal("4440"), 1000L);
 
-        derivative.applyDerivedSnapshot(new BigDecimal("4500"), new BigDecimal("4450"),
-                new BigDecimal("4480"), new BigDecimal("4520"), new BigDecimal("4440"), 1000L, SPREAD, SCALE);
+        derivative.applyPriceSnapshot(input, SPREAD, SCALE);
 
         assertThat(derivative.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("4500.0000"));
         assertThat(derivative.getSellingPrice()).isEqualByComparingTo(new BigDecimal("4567.5000"));
@@ -80,9 +83,9 @@ class CommodityTest {
     @Test
     void getCodeReturnsCommodityCode() {
         Commodity commodity = new Commodity();
-        commodity.setCommodityCode("GOLD_GRAM");
+        commodity.setCommodityCode("XAUTRYG");
 
-        assertThat(commodity.getCode()).isEqualTo("GOLD_GRAM");
+        assertThat(commodity.getCode()).isEqualTo("XAUTRYG");
     }
 
     @Test

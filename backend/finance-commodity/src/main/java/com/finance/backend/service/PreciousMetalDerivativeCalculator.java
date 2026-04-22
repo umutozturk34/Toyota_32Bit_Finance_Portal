@@ -1,9 +1,10 @@
 package com.finance.backend.service;
 
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.AppProperties.CommodityDerivativeRule;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
-import com.finance.backend.model.CommoditySegment;
+import com.finance.backend.model.CommoditySnapshotInput;
 import com.finance.backend.repository.CommodityCandleRepository;
 import com.finance.backend.repository.CommodityRepository;
 import com.finance.backend.util.SyntheticPriceCalculator;
@@ -16,7 +17,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -25,37 +25,35 @@ import java.util.stream.Collectors;
 @Log4j2
 public class PreciousMetalDerivativeCalculator {
 
-    private static final String GOLD_GRAM_CODE = "GOLD_GRAM";
-    private static final String SILVER_GRAM_CODE = "SILVER_GRAM";
-
     private final CommodityRepository commodityRepository;
     private final CommodityCandleRepository commodityCandleRepository;
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
+    private final CommoditySegmentResolver segmentResolver;
     private final int scale;
     private final BigDecimal spreadRate;
-    private final String goldSourceCode;
-    private final String silverSourceCode;
-    private final Set<String> sourcesWithDerivatives;
-    private final BigDecimal gramDivisor;
+    private final List<CommodityDerivativeRule> rules;
 
     public PreciousMetalDerivativeCalculator(CommodityRepository commodityRepository,
                                              CommodityCandleRepository commodityCandleRepository,
                                              MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
+                                             CommoditySegmentResolver segmentResolver,
                                              AppProperties appProperties) {
         AppProperties.Commodity props = appProperties.getCommodity();
         this.commodityRepository = commodityRepository;
         this.commodityCandleRepository = commodityCandleRepository;
         this.commodityCacheService = commodityCacheService;
+        this.segmentResolver = segmentResolver;
         this.scale = appProperties.getScale();
         this.spreadRate = props.getSpreadRate();
-        this.goldSourceCode = props.getGoldSourceCode();
-        this.silverSourceCode = props.getSilverSourceCode();
-        this.sourcesWithDerivatives = Set.of(goldSourceCode, silverSourceCode);
-        this.gramDivisor = props.getGoldGramDivisor();
+        this.rules = List.copyOf(props.getDerivatives());
     }
 
     public boolean hasDerivatives(String commodityCode) {
-        return sourcesWithDerivatives.contains(commodityCode);
+        return rules.stream().anyMatch(r -> r.getSourceCode().equals(commodityCode));
+    }
+
+    public boolean isKnownDerivative(String commodityCode) {
+        return rules.stream().anyMatch(r -> r.getDerivativeCode().equals(commodityCode));
     }
 
     public void refreshDerivatives(Commodity source, BigDecimal usdTryCurrent, BigDecimal usdTryPrevious) {
@@ -64,34 +62,36 @@ public class PreciousMetalDerivativeCalculator {
                     source == null ? "null" : source.getCommodityCode());
             return;
         }
-        BigDecimal gramCurrent = divide(source.getCurrentPrice(), gramDivisor);
-        BigDecimal gramOpen = divide(source.getOpenPrice(), gramDivisor);
-        BigDecimal gramHigh = divide(source.getDayHigh(), gramDivisor);
-        BigDecimal gramLow = divide(source.getDayLow(), gramDivisor);
-        BigDecimal gramPrevious = onsUsdToGramTry(source.getPreviousPriceUsd(),
-                usdTryPrevious != null ? usdTryPrevious : usdTryCurrent);
-        Long volume = source.getVolume();
-
-        if (goldSourceCode.equals(source.getCommodityCode())) {
-            persistDerivative(GOLD_GRAM_CODE, gramCurrent, gramPrevious, gramOpen, gramHigh, gramLow, volume);
-        } else if (silverSourceCode.equals(source.getCommodityCode())) {
-            persistDerivative(SILVER_GRAM_CODE, gramCurrent, gramPrevious, gramOpen, gramHigh, gramLow, volume);
-        }
+        BigDecimal usdTryForPrevious = usdTryPrevious != null ? usdTryPrevious : usdTryCurrent;
+        rules.stream()
+                .filter(rule -> rule.getSourceCode().equals(source.getCommodityCode()))
+                .forEach(rule -> applyRule(rule, source, usdTryForPrevious));
     }
 
     public void refreshDerivativeCandles() {
-        refreshFromSource(goldSourceCode, GOLD_GRAM_CODE);
-        refreshFromSource(silverSourceCode, SILVER_GRAM_CODE);
+        rules.forEach(this::refreshCandlesFromRule);
     }
 
-    private void refreshFromSource(String sourceCode, String derivativeCode) {
+    private void applyRule(CommodityDerivativeRule rule, Commodity source, BigDecimal usdTryForPrevious) {
+        BigDecimal current = divide(source.getCurrentPrice(), rule.getDivisor());
+        BigDecimal open = divide(source.getOpenPrice(), rule.getDivisor());
+        BigDecimal high = divide(source.getDayHigh(), rule.getDivisor());
+        BigDecimal low = divide(source.getDayLow(), rule.getDivisor());
+        BigDecimal previous = previousFromOnsUsd(source.getPreviousPriceUsd(), usdTryForPrevious, rule.getDivisor());
+        CommoditySnapshotInput snapshot = new CommoditySnapshotInput(
+                current, previous, null, null, open, high, low, source.getVolume());
+        persistDerivative(rule.getDerivativeCode(), snapshot);
+    }
+
+    private void refreshCandlesFromRule(CommodityDerivativeRule rule) {
         List<CommodityCandle> sourceCandles = commodityCandleRepository
-                .findByCommodityCodeOrderByCandleDateAsc(sourceCode);
+                .findByCommodityCodeOrderByCandleDateAsc(rule.getSourceCode());
         if (sourceCandles.isEmpty()) {
-            log.debug("No source candles for {} — skipping derivative candle refresh", sourceCode);
+            log.debug("No source candles for {} — skipping derivative candle refresh", rule.getSourceCode());
             return;
         }
-        regenerateDerivativeCandles(derivativeCode, sourceCandles, this::onsTryToGram);
+        UnaryOperator<BigDecimal> transform = value -> divide(value, rule.getDivisor());
+        regenerateDerivativeCandles(rule.getDerivativeCode(), sourceCandles, transform);
     }
 
     @Transactional
@@ -143,25 +143,20 @@ public class PreciousMetalDerivativeCalculator {
         target.scaleAndNormalizeOhlc(scale);
     }
 
-    private BigDecimal onsTryToGram(BigDecimal onsTry) {
-        return divide(onsTry, gramDivisor);
-    }
-
-    private BigDecimal onsUsdToGramTry(BigDecimal onsUsd, BigDecimal usdTryRate) {
+    private BigDecimal previousFromOnsUsd(BigDecimal onsUsd, BigDecimal usdTryRate, BigDecimal divisor) {
         if (onsUsd == null) return null;
         BigDecimal onsTry = onsUsd.multiply(usdTryRate);
-        return divide(onsTry, gramDivisor);
+        return divide(onsTry, divisor);
     }
 
-    private void persistDerivative(String code, BigDecimal tryPrice, BigDecimal tryPrevious,
-                                   BigDecimal tryOpen, BigDecimal tryHigh, BigDecimal tryLow, Long volume) {
-        if (tryPrice == null) return;
+    private void persistDerivative(String code, CommoditySnapshotInput snapshot) {
+        if (snapshot.tryPrice() == null) return;
         Commodity derivative = commodityRepository.findById(code)
                 .orElseGet(() -> Commodity.builder()
                         .commodityCode(code)
-                        .commoditySegment(CommoditySegment.fromCode(code))
+                        .commoditySegment(segmentResolver.resolve(code))
                         .build());
-        derivative.applyDerivedSnapshot(tryPrice, tryPrevious, tryOpen, tryHigh, tryLow, volume, spreadRate, scale);
+        derivative.applyPriceSnapshot(snapshot, spreadRate, scale);
         commodityRepository.save(derivative);
         commodityCacheService.putSnapshot(code, derivative);
     }

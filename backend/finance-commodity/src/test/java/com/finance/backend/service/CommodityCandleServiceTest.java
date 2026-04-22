@@ -5,8 +5,6 @@ import com.finance.backend.config.AppProperties;
 import com.finance.backend.mapper.CommodityMapper;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
-import com.finance.backend.model.Forex;
-import com.finance.backend.model.ForexCandle;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.CommodityCandleRepository;
@@ -35,8 +33,7 @@ class CommodityCandleServiceTest {
     private CommodityCandleRepository commodityCandleRepository;
     @SuppressWarnings("unchecked")
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService = mock(MarketCacheService.class);
-    @SuppressWarnings("unchecked")
-    private final MarketCacheService<Forex, ForexCandle> forexCacheService = mock(MarketCacheService.class);
+    private final ExchangeRateProvider exchangeRateProvider = mock(ExchangeRateProvider.class);
     private TrackedAssetQueryService trackedAssetQueryService;
     private CommodityCandleService service;
 
@@ -66,7 +63,7 @@ class CommodityCandleServiceTest {
                 commodityRepository,
                 commodityCandleRepository,
                 commodityCacheService,
-                forexCacheService,
+                exchangeRateProvider,
                 trackedAssetQueryService,
                 derivativeCalculator,
                 yahooSymbolResolver,
@@ -87,25 +84,25 @@ class CommodityCandleServiceTest {
         service.refreshAll();
 
         verify(yahooCommodityClient, never()).fetchCandles(anyString(), anyString(), anyString(), any(Boolean.class));
-        verify(forexCacheService, never()).getHistory(anyString());
+        verify(exchangeRateProvider, never()).getUsdTryHistory();
     }
 
     @Test
     void refreshAllSkipsWhenAllCodesAreDerivatives() {
         when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.COMMODITY))
-                .thenReturn(List.of("GOLD_GRAM", "SILVER_GRAM", "GOLD_TAM"));
+                .thenReturn(List.of("XAUTRYG", "XAGTRYG", "GOLD_TAM"));
 
         service.refreshAll();
 
         verify(yahooCommodityClient, never()).fetchCandles(anyString(), anyString(), anyString(), any(Boolean.class));
-        verify(forexCacheService, never()).getHistory(anyString());
+        verify(exchangeRateProvider, never()).getUsdTryHistory();
     }
 
     @Test
     void refreshAllSkipsWhenUsdTryCandlesUnavailable() {
         when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.COMMODITY))
-                .thenReturn(List.of("GC=F", "SI=F", "GOLD_GRAM"));
-        when(forexCacheService.getHistory("USDTRY")).thenReturn(Collections.emptyList());
+                .thenReturn(List.of("GC=F", "SI=F", "XAUTRYG"));
+        when(exchangeRateProvider.getUsdTryHistory()).thenReturn(Collections.emptyMap());
 
         service.refreshAll();
 
@@ -115,12 +112,12 @@ class CommodityCandleServiceTest {
     @Test
     void refreshAllFiltersDerivativesFromYahooFetch() {
         when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.COMMODITY))
-                .thenReturn(List.of("GC=F", "GOLD_GRAM", "SI=F", "SILVER_GRAM"));
-        when(forexCacheService.getHistory("USDTRY")).thenReturn(Collections.emptyList());
+                .thenReturn(List.of("GC=F", "XAUTRYG", "SI=F", "XAGTRYG"));
+        when(exchangeRateProvider.getUsdTryHistory()).thenReturn(Collections.emptyMap());
 
         service.refreshAll();
 
-        verify(yahooCommodityClient, never()).fetchCandles(eq("GOLD_GRAM"), anyString(), anyString(), any(Boolean.class));
-        verify(yahooCommodityClient, never()).fetchCandles(eq("SILVER_GRAM"), anyString(), anyString(), any(Boolean.class));
+        verify(yahooCommodityClient, never()).fetchCandles(eq("XAUTRYG"), anyString(), anyString(), any(Boolean.class));
+        verify(yahooCommodityClient, never()).fetchCandles(eq("XAGTRYG"), anyString(), anyString(), any(Boolean.class));
     }
 }

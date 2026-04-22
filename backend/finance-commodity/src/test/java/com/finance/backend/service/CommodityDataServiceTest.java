@@ -20,13 +20,15 @@ class CommodityDataServiceTest {
     private CommodityCandleService candleService;
     @SuppressWarnings("unchecked")
     private final MarketCacheService<Commodity, CommodityCandle> cacheService = mock(MarketCacheService.class);
+    private PreciousMetalDerivativeCalculator derivativeCalculator;
     private CommodityDataService service;
 
     @BeforeEach
     void setUp() {
         snapshotService = mock(CommoditySnapshotService.class);
         candleService = mock(CommodityCandleService.class);
-        service = new CommodityDataService(snapshotService, candleService, cacheService);
+        derivativeCalculator = mock(PreciousMetalDerivativeCalculator.class);
+        service = new CommodityDataService(snapshotService, candleService, cacheService, derivativeCalculator);
     }
 
     @Test
@@ -50,6 +52,15 @@ class CommodityDataServiceTest {
         service.validateExists("GC=F");
 
         verify(snapshotService).existsInApi("GC=F");
+    }
+
+    @Test
+    void validateExistsSkipsApiCheckForKnownDerivative() {
+        when(derivativeCalculator.isKnownDerivative("XAUTRYG")).thenReturn(true);
+
+        service.validateExists("  xautryg  ");
+
+        verify(snapshotService, never()).existsInApi(org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test

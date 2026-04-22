@@ -28,7 +28,6 @@ public class AppProperties {
     private Async async = new Async();
     private Cache cache = new Cache();
 
-    private Bond bond = new Bond();
     private News news = new News();
 
     private Scheduler scheduler = new Scheduler();
@@ -111,18 +110,6 @@ public class AppProperties {
         private int queueCapacity = 25;
     }
 
-    @Getter
-    @Setter
-    public static class Bond {
-        private int batchSize = 10;
-        private String datagroupCode = "bie_pydibs";
-        private int maxDaysPerRequest = 1000;
-        private BigDecimal rateThreshold = new BigDecimal("0.5");
-        private BigDecimal auctionThreshold = new BigDecimal("14");
-        private BigDecimal cpiFixedThreshold = new BigDecimal("5");
-        private BigDecimal faceValue = new BigDecimal("100");
-        private int daysInYear = 365;
-    }
 
 
     @Getter

@@ -1,7 +1,7 @@
 package com.finance.backend.service;
 
 import com.finance.backend.client.EvdsClient;
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.BondProperties;
 import com.finance.backend.dto.external.BondSerieDto;
 import com.finance.backend.dto.external.BondSnapshotDto;
 import com.finance.backend.dto.internal.EvdsBondDataResponse;
@@ -31,10 +31,10 @@ public class BondSnapshotService {
 
     public BondSnapshotService(EvdsClient evdsClient,
                                EvdsBondClientMapper clientMapper,
-                               AppProperties appProperties) {
+                               BondProperties bondProperties) {
         this.evdsClient = evdsClient;
         this.clientMapper = clientMapper;
-        this.batchSize = appProperties.getBond().getBatchSize();
+        this.batchSize = bondProperties.getBatchSize();
     }
 
     public List<BondSerieDto> fetchAndFilterSeries() {

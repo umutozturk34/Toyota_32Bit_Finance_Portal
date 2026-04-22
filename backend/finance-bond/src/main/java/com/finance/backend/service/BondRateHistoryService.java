@@ -1,7 +1,7 @@
 package com.finance.backend.service;
 
 import com.finance.backend.client.EvdsClient;
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.BondProperties;
 import com.finance.backend.dto.external.BondRateItemDto;
 import com.finance.backend.dto.external.BondSnapshotDto;
 import com.finance.backend.dto.internal.EvdsBondDataResponse;
@@ -55,7 +55,7 @@ public class BondRateHistoryService {
                                   BondRateHistoryRepository rateHistoryRepository,
                                   MarketCacheService<Bond, BondRateHistory> bondCacheService,
                                   TransactionTemplate transactionTemplate,
-                                  AppProperties appProperties) {
+                                  BondProperties bondProperties) {
         this.evdsClient = evdsClient;
         this.clientMapper = clientMapper;
         this.bondMapper = bondMapper;
@@ -63,12 +63,12 @@ public class BondRateHistoryService {
         this.rateHistoryRepository = rateHistoryRepository;
         this.bondCacheService = bondCacheService;
         this.transactionTemplate = transactionTemplate;
-        this.maxDaysPerRequest = appProperties.getBond().getMaxDaysPerRequest();
-        this.rateThreshold = appProperties.getBond().getRateThreshold();
-        this.auctionThreshold = appProperties.getBond().getAuctionThreshold();
-        this.cpiFixedThreshold = appProperties.getBond().getCpiFixedThreshold();
-        this.faceValue = appProperties.getBond().getFaceValue();
-        this.daysInYear = appProperties.getBond().getDaysInYear();
+        this.maxDaysPerRequest = bondProperties.getMaxDaysPerRequest();
+        this.rateThreshold = bondProperties.getRateThreshold();
+        this.auctionThreshold = bondProperties.getAuctionThreshold();
+        this.cpiFixedThreshold = bondProperties.getCpiFixedThreshold();
+        this.faceValue = bondProperties.getFaceValue();
+        this.daysInYear = bondProperties.getDaysInYear();
     }
 
     public void processSingleBond(BondSnapshotDto dto, LocalDateTime now) {

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShieldCheck } from 'lucide-react';
 import { ArrowUpRight, Loader2, Check, AlertCircle, RefreshCw, AlertTriangle } from '../../shared/components/AnimatedIcons';
@@ -6,6 +6,7 @@ import { portfolioService } from './portfolioService';
 import { formatPriceTRY } from '../../shared/utils/formatters';
 import { assetCodeLabel } from '../../shared/utils/assetCode';
 import PercentageSlider from '../../shared/components/PercentageSlider';
+import useProcessingAnimation from '../../shared/hooks/useProcessingAnimation';
 
 const PROCESSING_STEPS = [
   { label: 'Satış emri doğrulanıyor...', duration: 700 },
@@ -25,14 +26,9 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
   const [sliderPercent, setSliderPercent] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [processingStep, setProcessingStep] = useState(-1);
   const [success, setSuccess] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const stepTimers = useRef([]);
-
-  useEffect(() => {
-    return () => stepTimers.current.forEach(clearTimeout);
-  }, []);
+  const { processingStep, runAnimation, reset: resetProcessing } = useProcessingAnimation();
 
   const commissionRate = Number(position.commissionRate) || 0;
   const currentPrice = Number(position.currentPriceTry) || Number(position.sellPriceTry) || 0;
@@ -102,19 +98,6 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
     setError(null);
   };
 
-  const runProcessingAnimation = () => {
-    return new Promise((resolve) => {
-      let elapsed = 0;
-      PROCESSING_STEPS.forEach((step, idx) => {
-        const timer = setTimeout(() => setProcessingStep(idx), elapsed);
-        stepTimers.current.push(timer);
-        elapsed += step.duration;
-      });
-      const finalTimer = setTimeout(resolve, elapsed);
-      stepTimers.current.push(finalTimer);
-    });
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -140,7 +123,6 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
     setConfirming(false);
     setLoading(true);
     setError(null);
-    setProcessingStep(0);
 
     const payload = {
       assetType: position.assetType,
@@ -158,12 +140,12 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
     try {
       await Promise.all([
         portfolioService.executeTransaction(portfolioId, payload),
-        runProcessingAnimation(),
+        runAnimation(PROCESSING_STEPS),
       ]);
       setSuccess(true);
       setTimeout(() => onComplete(), 1800);
     } catch (err) {
-      setProcessingStep(-1);
+      resetProcessing();
       setError(err.response?.data?.message || 'Satış başarısız');
     } finally {
       setLoading(false);

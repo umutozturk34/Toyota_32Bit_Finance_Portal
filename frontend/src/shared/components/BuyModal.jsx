@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,6 +9,7 @@ import { unifiedMarketService } from '../services/unifiedMarketService';
 import { formatPriceTRY } from '../utils/formatters';
 import { assetCodeLabel } from '../utils/assetCode';
 import PercentageSlider from './PercentageSlider';
+import useProcessingAnimation from '../hooks/useProcessingAnimation';
 
 const PROCESSING_STEPS = [
   { label: 'İşlem doğrulanıyor...', duration: 800 },
@@ -41,14 +42,9 @@ export default function BuyModal({ assetType, assetCode, assetName, currentPrice
   const [walletBalance, setWalletBalance] = useState(null);
   const [noPortfolio, setNoPortfolio] = useState(false);
   const [error, setError] = useState(null);
-  const [processingStep, setProcessingStep] = useState(-1);
   const [success, setSuccess] = useState(false);
   const [confirming, setConfirming] = useState(false);
-  const stepTimers = useRef([]);
-
-  useEffect(() => {
-    return () => stepTimers.current.forEach(clearTimeout);
-  }, []);
+  const { processingStep, runAnimation, reset: resetProcessing } = useProcessingAnimation();
 
   useEffect(() => {
     let cancelled = false;
@@ -126,19 +122,6 @@ export default function BuyModal({ assetType, assetCode, assetName, currentPrice
     setError(null);
   };
 
-  const runProcessingAnimation = () => {
-    return new Promise((resolve) => {
-      let elapsed = 0;
-      PROCESSING_STEPS.forEach((step, idx) => {
-        const timer = setTimeout(() => setProcessingStep(idx), elapsed);
-        stepTimers.current.push(timer);
-        elapsed += step.duration;
-      });
-      const finalTimer = setTimeout(resolve, elapsed);
-      stepTimers.current.push(finalTimer);
-    });
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!portfolioId) return;
@@ -161,7 +144,6 @@ export default function BuyModal({ assetType, assetCode, assetName, currentPrice
     setConfirming(false);
     setLoading(true);
     setError(null);
-    setProcessingStep(0);
 
     const payload = {
       assetType,
@@ -179,7 +161,7 @@ export default function BuyModal({ assetType, assetCode, assetName, currentPrice
     try {
       await Promise.all([
         portfolioService.executeTransaction(portfolioId, payload),
-        runProcessingAnimation(),
+        runAnimation(PROCESSING_STEPS),
       ]);
       setSuccess(true);
       setTimeout(() => {
@@ -187,7 +169,7 @@ export default function BuyModal({ assetType, assetCode, assetName, currentPrice
         onClose();
       }, 1800);
     } catch (err) {
-      setProcessingStep(-1);
+      resetProcessing();
       setError(err.response?.data?.message || 'Satın alma başarısız');
     } finally {
       setLoading(false);

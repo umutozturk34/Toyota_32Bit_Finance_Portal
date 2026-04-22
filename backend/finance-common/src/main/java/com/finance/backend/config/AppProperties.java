@@ -28,7 +28,6 @@ public class AppProperties {
     private Async async = new Async();
     private Cache cache = new Cache();
 
-    private Fund fund = new Fund();
     private Bond bond = new Bond();
     private News news = new News();
 
@@ -125,13 +124,6 @@ public class AppProperties {
         private int daysInYear = 365;
     }
 
-    @Getter
-    @Setter
-    public static class Fund {
-        private int yearsToFetch = 5;
-        private int minCandlesForIncremental = 30;
-        private int windowSizes = 95;
-    }
 
     @Getter
     @Setter

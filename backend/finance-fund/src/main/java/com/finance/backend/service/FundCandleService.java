@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.client.TefasClient;
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.FundProperties;
 import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.mapper.FundMapper;
 import com.finance.backend.model.Fund;
@@ -53,7 +54,8 @@ public class FundCandleService implements CandleBatchRefresher {
                              TrackedAssetQueryService trackedAssetQueryService,
                              FundSnapshotService fundSnapshotService,
                              TransactionTemplate transactionTemplate,
-                             AppProperties appProperties) {
+                             AppProperties appProperties,
+                             FundProperties fundProperties) {
         this.tefasClient = tefasClient;
         this.fundMapper = fundMapper;
         this.fundRepository = fundRepository;
@@ -62,10 +64,9 @@ public class FundCandleService implements CandleBatchRefresher {
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.fundSnapshotService = fundSnapshotService;
         this.transactionTemplate = transactionTemplate;
-        AppProperties.Fund fundConfig = appProperties.getFund();
-        this.windowSize = fundConfig.getWindowSizes();
-        this.minCandlesForIncremental = fundConfig.getMinCandlesForIncremental();
-        this.yearsToFetch = fundConfig.getYearsToFetch();
+        this.windowSize = fundProperties.getWindowSizes();
+        this.minCandlesForIncremental = fundProperties.getMinCandlesForIncremental();
+        this.yearsToFetch = fundProperties.getYearsToFetch();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 

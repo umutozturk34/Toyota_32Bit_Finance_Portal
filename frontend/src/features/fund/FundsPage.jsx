@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { LineChart, Activity, Clock, Users as UsersIcon, Wallet } from 'lucide-react';
-import { TrendingUp, TrendingDown, ShoppingCart } from '../../shared/components/AnimatedIcons';
+import { TrendingUp, TrendingDown } from '../../shared/components/AnimatedIcons';
 import { fundService } from './fundService';
 import { adminService } from '../admin/adminService';
-import { formatPriceTRY, formatCompactTRY, formatVolume, changeColors, changeBg, formatPercentAbs } from '../../shared/utils/formatters';
-import { cardVariants } from '../../shared/utils/animations';
+import { formatPriceTRY, formatCompactTRY, formatVolume } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/MarketListPage';
+import AssetCard from '../../shared/components/AssetCard';
+import AssetBuyButton from '../../shared/components/AssetBuyButton';
+import ChangePercentBadge from '../../shared/components/ChangePercentBadge';
 import useListParams from '../../shared/hooks/useListParams';
 
 const FUND_TYPE_LABELS = {
@@ -37,14 +38,13 @@ function FundsPage() {
         ...(typeFilter !== 'ALL' && { subType: typeFilter }),
     };
 
-    const renderCard = (fund, { cls, setBuyTarget }) => {
+    const renderCard = (fund, { setBuyTarget }) => {
         const meta = fund.metadata || {};
         return (
-            <motion.div
+            <AssetCard
                 key={fund.code}
-                variants={cardVariants}
                 onClick={() => navigate(`/funds/${fund.code}`)}
-                className="group cursor-pointer rounded-2xl border border-border-default bg-bg-elevated p-5 card-hover transition-all duration-200 hover:border-border-hover overflow-hidden min-w-0 relative"
+                className="overflow-hidden min-w-0 relative"
             >
                 <div className="flex items-start justify-between gap-2 min-w-0">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -60,17 +60,9 @@ function FundsPage() {
                         <span className="rounded-md border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent-bright">
                             {meta.fundType || 'FON'}
                         </span>
-                        <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setBuyTarget({ assetCode: fund.code, assetName: fund.name || fund.code, price: fund.price });
-                            }}
-                            title="Satın Al"
-                            className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base transition-colors duration-150 hover:bg-surface"
-                        >
-                            <ShoppingCart className="h-3.5 w-3.5 text-fg-subtle group-hover:text-success transition-colors duration-150" />
-                        </button>
+                        <AssetBuyButton
+                            onClick={() => setBuyTarget({ assetCode: fund.code, assetName: fund.name || fund.code, price: fund.price })}
+                        />
                     </div>
                 </div>
 
@@ -86,13 +78,15 @@ function FundsPage() {
                     )}
                 </div>
 
-                {fund.changePercent != null && (
-                    <div className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
-                        {fund.changePercent > 0 ? <TrendingUp className="h-3.5 w-3.5" /> : fund.changePercent < 0 ? <TrendingDown className="h-3.5 w-3.5" /> : null}
-                        {formatPercentAbs(fund.changePercent)}
-                        <span className="ml-1 opacity-75">24h</span>
-                    </div>
-                )}
+                <ChangePercentBadge
+                    value={fund.changePercent}
+                    positiveIcon={<TrendingUp className="h-3.5 w-3.5" />}
+                    negativeIcon={<TrendingDown className="h-3.5 w-3.5" />}
+                    size="sm"
+                    className="mt-2"
+                >
+                    <span className="ml-1 opacity-75">24h</span>
+                </ChangePercentBadge>
 
                 <div className="mt-3 space-y-1 border-t border-border-default pt-3">
                     {meta.fundType === 'YAT' && meta.investorCount != null && (
@@ -115,7 +109,7 @@ function FundsPage() {
                     <Clock className="h-3 w-3" />
                     {fund.lastUpdated ? new Date(fund.lastUpdated).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'N/A'}
                 </div>
-            </motion.div>
+            </AssetCard>
         );
     };
 

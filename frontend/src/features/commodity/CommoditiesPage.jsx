@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Gem, ChevronUp, ChevronDown, Clock } from 'lucide-react';
-import { TrendingUp, TrendingDown, ShoppingCart } from '../../shared/components/AnimatedIcons';
+import { TrendingUp, TrendingDown } from '../../shared/components/AnimatedIcons';
 import { commodityService } from './commodityService';
 import { adminService } from '../admin/adminService';
-import { changeColors, changeBg, formatPrice, formatPercentAbs } from '../../shared/utils/formatters';
-import { cardVariants } from '../../shared/utils/animations';
+import { formatPrice } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/MarketListPage';
+import AssetCard from '../../shared/components/AssetCard';
+import AssetBuyButton from '../../shared/components/AssetBuyButton';
+import ChangePercentBadge from '../../shared/components/ChangePercentBadge';
 import useListParams from '../../shared/hooks/useListParams';
 
 const SORT_OPTIONS = [
@@ -40,15 +41,14 @@ function CommoditiesPage() {
         .sort((a, b) => SEGMENT_ORDER.indexOf(a.type) - SEGMENT_ORDER.indexOf(b.type))
         .map(s => ({ type: s.type, count: s.count, label: SEGMENT_LABELS[s.type] || s.type }));
 
-    const renderCard = (commodity, { cls, setBuyTarget }) => {
+    const renderCard = (commodity, { setBuyTarget }) => {
         const meta = commodity.metadata || {};
         const usd = meta.currentPriceUsd;
         return (
-            <motion.div
+            <AssetCard
                 key={commodity.code}
-                variants={cardVariants}
                 onClick={() => navigate(`/commodities/${encodeURIComponent(commodity.code)}`)}
-                className="group cursor-pointer rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover"
+                size="sm"
             >
                 <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
@@ -61,26 +61,23 @@ function CommoditiesPage() {
                                 {meta.unit}
                             </span>
                         )}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setBuyTarget({ assetCode: commodity.code, assetName: commodity.name || commodity.code, price: commodity.price });
-                            }}
-                            title="Satın Al"
-                            className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base transition-colors duration-150 hover:bg-surface"
-                        >
-                            <ShoppingCart className="h-3.5 w-3.5 text-fg-subtle group-hover:text-success transition-colors duration-150" />
-                        </button>
+                        <AssetBuyButton
+                            onClick={() => setBuyTarget({ assetCode: commodity.code, assetName: commodity.name || commodity.code, price: commodity.price })}
+                        />
                     </div>
                 </div>
 
                 <div className="mt-3">
                     <p className="font-mono text-xl font-bold text-fg">₺{formatCommodityPrice(commodity.price)}</p>
-                    <div className={`mt-1 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
-                        {commodity.changePercent > 0 ? <TrendingUp className="h-3.5 w-3.5" /> : commodity.changePercent < 0 ? <TrendingDown className="h-3.5 w-3.5" /> : null}
-                        {formatPercentAbs(commodity.changePercent)}
+                    <ChangePercentBadge
+                        value={commodity.changePercent}
+                        positiveIcon={<TrendingUp className="h-3.5 w-3.5" />}
+                        negativeIcon={<TrendingDown className="h-3.5 w-3.5" />}
+                        size="sm"
+                        className="mt-1"
+                    >
                         <span className="ml-1 opacity-75">({commodity.changeAmount > 0 ? '+' : ''}₺{formatCommodityPrice(commodity.changeAmount)})</span>
-                    </div>
+                    </ChangePercentBadge>
                 </div>
 
                 <div className="mt-3 space-y-1 border-t border-border-default pt-3">
@@ -120,7 +117,7 @@ function CommoditiesPage() {
                     <Clock className="h-3 w-3" />
                     {commodity.lastUpdated ? new Date(commodity.lastUpdated).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'N/A'}
                 </div>
-            </motion.div>
+            </AssetCard>
         );
     };
 

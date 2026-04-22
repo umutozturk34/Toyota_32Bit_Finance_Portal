@@ -1,14 +1,14 @@
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { BarChart2, Activity, Clock, Coins } from 'lucide-react';
-import { ArrowUpRight, ArrowDownRight, ShoppingCart } from '../../shared/components/AnimatedIcons';
+import { ArrowUpRight, ArrowDownRight } from '../../shared/components/AnimatedIcons';
 import { forexService } from './forexService';
 import { adminService } from '../admin/adminService';
 import { getForexFlag, getBaseCurrency } from '../../shared/constants/forex';
 import { useAuth } from '../auth/AuthContext';
 import { changeColors, changeBg, formatPrice, formatChange, formatPercent } from '../../shared/utils/formatters';
-import { cardVariants } from '../../shared/utils/animations';
 import MarketListPage from '../../shared/components/MarketListPage';
+import AssetCard from '../../shared/components/AssetCard';
+import AssetBuyButton from '../../shared/components/AssetBuyButton';
 import useListParams from '../../shared/hooks/useListParams';
 
 const SORT_OPTIONS = [
@@ -29,11 +29,10 @@ function ForexPage() {
         const meta = forex.metadata || {};
         const sellingPrice = meta.sellingPrice;
         return (
-            <motion.div
+            <AssetCard
                 key={forex.code}
-                variants={cardVariants}
                 onClick={() => navigate(`/forex/${forex.code}`)}
-                className="group cursor-pointer rounded-2xl border border-border-default bg-bg-elevated p-5 card-hover transition-all duration-200 hover:border-border-hover overflow-hidden relative"
+                className="overflow-hidden relative"
             >
                 <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
@@ -47,16 +46,9 @@ function ForexPage() {
                             {forex.name}
                         </span>
                     </div>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setBuyTarget({ assetCode: forex.code, assetName: forex.name, price: sellingPrice ?? forex.price });
-                        }}
-                        title="Satın Al"
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base text-fg-subtle transition-colors duration-150 hover:bg-surface hover:text-accent"
-                    >
-                        <ShoppingCart className="h-3.5 w-3.5" />
-                    </button>
+                    <AssetBuyButton
+                        onClick={() => setBuyTarget({ assetCode: forex.code, assetName: forex.name, price: sellingPrice ?? forex.price })}
+                    />
                 </div>
 
                 {isAdmin && forex.lastUpdated && (
@@ -147,7 +139,7 @@ function ForexPage() {
                         </span>
                     )}
                 </div>
-            </motion.div>
+            </AssetCard>
         );
     };
 

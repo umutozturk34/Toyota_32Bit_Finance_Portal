@@ -1,12 +1,13 @@
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Bitcoin, BarChart2, Activity, Clock } from 'lucide-react';
-import { TrendingUp, ArrowUpRight, ArrowDownRight, ShoppingCart } from '../../shared/components/AnimatedIcons';
+import { TrendingUp, ArrowUpRight, ArrowDownRight } from '../../shared/components/AnimatedIcons';
 import { cryptoService } from './cryptoService';
 import { adminService } from '../admin/adminService';
-import { changeColors, changeBg, formatPriceUSD, formatPriceTRY, formatCompactNumber, formatPercentAbs } from '../../shared/utils/formatters';
-import { cardVariants } from '../../shared/utils/animations';
+import { formatPriceUSD, formatPriceTRY, formatCompactNumber } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/MarketListPage';
+import AssetCard from '../../shared/components/AssetCard';
+import AssetBuyButton from '../../shared/components/AssetBuyButton';
+import ChangePercentBadge from '../../shared/components/ChangePercentBadge';
 import useListParams from '../../shared/hooks/useListParams';
 
 const SORT_OPTIONS = [
@@ -19,15 +20,14 @@ export default function CryptoPage() {
     const navigate = useNavigate();
     const listParams = useListParams();
 
-    const renderCard = (crypto, { cls, setBuyTarget }) => {
+    const renderCard = (crypto, { setBuyTarget }) => {
         const symbol = crypto.metadata?.symbol;
         const priceUsd = crypto.metadata?.currentPriceUsd;
         return (
-            <motion.div
+            <AssetCard
                 key={crypto.code}
-                variants={cardVariants}
                 onClick={() => navigate(`/crypto/${crypto.code}`)}
-                className="group cursor-pointer rounded-2xl border border-border-default bg-bg-elevated p-5 card-hover transition-all duration-200 hover:border-border-hover overflow-hidden relative"
+                className="overflow-hidden relative"
             >
                 <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
@@ -43,17 +43,9 @@ export default function CryptoPage() {
                             <span className="block truncate text-xs text-fg-muted">{crypto.name}</span>
                         </div>
                     </div>
-                    <button
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setBuyTarget({ assetCode: crypto.code, assetName: `${symbol} - ${crypto.name}`, price: crypto.price });
-                        }}
-                        title="Satın Al"
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base transition-colors duration-150 hover:bg-surface"
-                    >
-                        <ShoppingCart className="h-3.5 w-3.5 text-fg-subtle group-hover:text-success transition-colors duration-150" />
-                    </button>
+                    <AssetBuyButton
+                        onClick={() => setBuyTarget({ assetCode: crypto.code, assetName: `${symbol} - ${crypto.name}`, price: crypto.price })}
+                    />
                 </div>
 
                 <div className="mt-3 space-y-1">
@@ -64,17 +56,15 @@ export default function CryptoPage() {
                     </div>
                 </div>
 
-                {crypto.changePercent !== null && crypto.changePercent !== undefined && (
-                    <div className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
-                        {crypto.changePercent > 0 ? (
-                            <ArrowUpRight className="h-3.5 w-3.5" />
-                        ) : crypto.changePercent < 0 ? (
-                            <ArrowDownRight className="h-3.5 w-3.5" />
-                        ) : null}
-                        {formatPercentAbs(crypto.changePercent)}
-                        <span className="ml-1 opacity-75">24h</span>
-                    </div>
-                )}
+                <ChangePercentBadge
+                    value={crypto.changePercent}
+                    positiveIcon={<ArrowUpRight className="h-3.5 w-3.5" />}
+                    negativeIcon={<ArrowDownRight className="h-3.5 w-3.5" />}
+                    size="sm"
+                    className="mt-2"
+                >
+                    <span className="ml-1 opacity-75">24h</span>
+                </ChangePercentBadge>
 
                 <div className="mt-3 space-y-1 border-t border-border-default pt-3">
                     <div className="flex items-center justify-between text-xs">
@@ -95,7 +85,7 @@ export default function CryptoPage() {
                     <Clock className="h-3 w-3" />
                     {crypto.lastUpdated ? new Date(crypto.lastUpdated).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'N/A'}
                 </div>
-            </motion.div>
+            </AssetCard>
         );
     };
 

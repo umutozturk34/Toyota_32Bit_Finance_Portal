@@ -2,12 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BarChart2, ChevronUp, ChevronDown, Activity, Clock } from 'lucide-react';
-import { TrendingUp, TrendingDown, ShoppingCart } from '../../shared/components/AnimatedIcons';
+import { TrendingUp, TrendingDown } from '../../shared/components/AnimatedIcons';
 import { stockService } from './stockService';
 import { adminService } from '../admin/adminService';
 import { getChangeClass, changeColors, changeBg, formatPrice, formatVolume, formatPercentAbs } from '../../shared/utils/formatters';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
 import MarketListPage from '../../shared/components/MarketListPage';
+import AssetCard from '../../shared/components/AssetCard';
+import AssetBuyButton from '../../shared/components/AssetBuyButton';
+import ChangePercentBadge from '../../shared/components/ChangePercentBadge';
 import useListParams from '../../shared/hooks/useListParams';
 import { assetCodeLabel } from '../../shared/utils/assetCode';
 
@@ -79,12 +82,11 @@ function StocksPage() {
         </motion.div>
     ) : null;
 
-    const renderCard = (stock, { cls, setBuyTarget }) => (
-        <motion.div
+    const renderCard = (stock, { setBuyTarget }) => (
+        <AssetCard
             key={stock.code}
-            variants={cardVariants}
             onClick={() => navigate(`/stocks/${stock.code}`)}
-            className="group cursor-pointer rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover"
+            size="sm"
         >
             <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
@@ -95,26 +97,23 @@ function StocksPage() {
                     <span className="rounded-md border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent-bright">
                         {stock.metadata?.exchange || 'BIST'}
                     </span>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setBuyTarget({ assetCode: stock.code, assetName: stock.name || stock.code, price: stock.price });
-                        }}
-                        title="Satın Al"
-                        className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base transition-colors duration-150 hover:bg-surface"
-                    >
-                        <ShoppingCart className="h-3.5 w-3.5 text-fg-subtle group-hover:text-success transition-colors duration-150" />
-                    </button>
+                    <AssetBuyButton
+                        onClick={() => setBuyTarget({ assetCode: stock.code, assetName: stock.name || stock.code, price: stock.price })}
+                    />
                 </div>
             </div>
 
             <div className="mt-3">
                 <p className="font-mono text-xl font-bold text-fg">₺{formatStockPrice(stock.price)}</p>
-                <div className={`mt-1 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
-                    {stock.changePercent > 0 ? <TrendingUp className="h-3.5 w-3.5" /> : stock.changePercent < 0 ? <TrendingDown className="h-3.5 w-3.5" /> : null}
-                    {formatPercentAbs(stock.changePercent)}
+                <ChangePercentBadge
+                    value={stock.changePercent}
+                    positiveIcon={<TrendingUp className="h-3.5 w-3.5" />}
+                    negativeIcon={<TrendingDown className="h-3.5 w-3.5" />}
+                    size="sm"
+                    className="mt-1"
+                >
                     <span className="ml-1 opacity-75">({stock.changeAmount > 0 ? '+' : ''}₺{formatStockPrice(stock.changeAmount)})</span>
-                </div>
+                </ChangePercentBadge>
             </div>
 
             <div className="mt-3 space-y-1 border-t border-border-default pt-3">
@@ -146,7 +145,7 @@ function StocksPage() {
                 <Clock className="h-3 w-3" />
                 {stock.lastUpdated ? new Date(stock.lastUpdated).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'N/A'}
             </div>
-        </motion.div>
+        </AssetCard>
     );
 
     return (

@@ -28,7 +28,6 @@ public class AppProperties {
     private Async async = new Async();
     private Cache cache = new Cache();
 
-    private Crypto crypto = new Crypto();
     private Fund fund = new Fund();
     private Bond bond = new Bond();
     private News news = new News();
@@ -111,13 +110,6 @@ public class AppProperties {
         private int corePoolSize = 3;
         private int maxPoolSize = 5;
         private int queueCapacity = 25;
-    }
-
-    @Getter
-    @Setter
-    public static class Crypto {
-        private int historyDays = 365;
-        private int minCandlesForHealthy = 350;
     }
 
     @Getter

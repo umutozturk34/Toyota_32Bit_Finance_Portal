@@ -1,7 +1,7 @@
 package com.finance.backend.service;
 
 import com.finance.backend.client.CoinGeckoClient;
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CryptoProperties;
 import com.finance.backend.dto.external.CoinGeckoCandleDto;
 import com.finance.backend.mapper.CryptoMapper;
 import com.finance.backend.model.Crypto;
@@ -48,7 +48,7 @@ public class CryptoCandleService implements CandleBatchRefresher {
                                TrackedAssetQueryService trackedAssetQueryService,
                                CryptoSymbolResolver cryptoSymbolResolver,
                                TransactionTemplate transactionTemplate,
-                               AppProperties appProperties) {
+                               CryptoProperties cryptoProperties) {
         this.coinGeckoClient = coinGeckoClient;
         this.cryptoMapper = cryptoMapper;
         this.cryptoRepository = cryptoRepository;
@@ -57,8 +57,8 @@ public class CryptoCandleService implements CandleBatchRefresher {
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.cryptoSymbolResolver = cryptoSymbolResolver;
         this.transactionTemplate = transactionTemplate;
-        this.historyDays = appProperties.getCrypto().getHistoryDays();
-        this.minCandlesForHealthy = appProperties.getCrypto().getMinCandlesForHealthy();
+        this.historyDays = cryptoProperties.getHistoryDays();
+        this.minCandlesForHealthy = cryptoProperties.getMinCandlesForHealthy();
     }
 
     @Override

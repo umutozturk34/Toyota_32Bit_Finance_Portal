@@ -10,6 +10,7 @@ import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.MarketBatchRunner;
 import com.finance.backend.util.SyntheticPriceCalculator;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
@@ -53,16 +54,11 @@ public class ForexSnapshotService implements SnapshotBatchRefresher {
         List<Forex> allForex = forexRepository.findAll();
         log.info("Starting Yahoo forex snapshot sync for {} pairs", allForex.size());
 
-        BatchUpdateRunner.Result result = BatchUpdateRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 allForex,
                 this::updateForexSnapshot,
                 Forex::getCurrencyCode,
-                "snapshot",
-                5,
-                (forex, e) -> log.error("Snapshot failed for {}: {}", forex.getCurrencyCode(), e.getMessage(), e),
-                e -> e instanceof CallNotPermittedException,
-                (stopped, e) -> log.warn("Yahoo CB is OPEN, stopping snapshot sync. {} success, {} failed so far",
-                        stopped.successCount(), stopped.failCount()));
+                log, "Forex", "snapshot", 5);
 
         BatchLogHelper.logSummary(log, "Yahoo snapshot sync", result);
     }

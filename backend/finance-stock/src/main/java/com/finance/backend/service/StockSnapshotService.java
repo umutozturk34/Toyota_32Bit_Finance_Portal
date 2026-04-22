@@ -13,6 +13,7 @@ import com.finance.backend.repository.StockRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CodeNormalizer;
+import com.finance.backend.util.MarketBatchRunner;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -72,18 +73,14 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
         }
         log.info("Starting snapshot update for {} BIST stocks", bistStocks.size());
 
-        BatchUpdateRunner.Result result = BatchUpdateRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 bistStocks,
                 symbol -> {
                     Stock stock = transactionTemplate.execute(status -> updateSingleStockSnapshot(symbol));
                     stockCacheService.putSnapshot(symbol, stock);
                 },
                 Function.identity(),
-                "snapshot",
-                10,
-                (symbol, e) -> log.error("Failed to update snapshot for {}: {}", symbol, e.getMessage(), e),
-                null,
-                null);
+                log, "Stock", "snapshot", 10);
 
         BatchLogHelper.logSummary(log, "Stock snapshot update", result);
     }

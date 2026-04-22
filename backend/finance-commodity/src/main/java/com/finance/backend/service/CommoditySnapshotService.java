@@ -13,7 +13,7 @@ import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.CommodityRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import com.finance.backend.util.MarketBatchRunner;
 import lombok.extern.log4j.Log4j2;
 
 import org.springframework.stereotype.Service;
@@ -100,16 +100,11 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
 
         log.info("Starting commodity snapshot sync for {} items", fetchableCodes.size());
 
-        BatchUpdateRunner.Result result = BatchUpdateRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 fetchableCodes,
                 this::updateCommoditySnapshot,
                 code -> code,
-                "snapshot",
-                5,
-                (code, e) -> log.error("Snapshot failed for {}: {}", code, e.getMessage(), e),
-                e -> e instanceof CallNotPermittedException,
-                (stopped, e) -> log.warn("Yahoo CB is OPEN, stopping commodity sync. {} success, {} failed so far",
-                        stopped.successCount(), stopped.failCount()));
+                log, "Commodity", "snapshot", 5);
 
         BatchLogHelper.logSummary(log, "Commodity snapshot sync", result);
     }

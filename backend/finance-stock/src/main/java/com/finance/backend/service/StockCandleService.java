@@ -13,6 +13,7 @@ import com.finance.backend.repository.StockRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CodeNormalizer;
+import com.finance.backend.util.MarketBatchRunner;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
 import com.finance.backend.util.YahooRangePolicy;
@@ -73,7 +74,7 @@ public class StockCandleService implements CandleBatchRefresher {
         log.info("Starting candle update for {} BIST stocks", bistStocks.size());
         final int[] totalCandles = {0};
 
-        BatchUpdateRunner.Result result = BatchUpdateRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 bistStocks,
                 symbol -> {
                     int candleCount = transactionTemplate.execute(status -> updateCandlesForStock(symbol));
@@ -81,11 +82,7 @@ public class StockCandleService implements CandleBatchRefresher {
                     totalCandles[0] += candleCount;
                 },
                 Function.identity(),
-                "candle",
-                10,
-                (symbol, e) -> log.error("Failed to update candles for {} (transaction rolled back): {}", symbol, e.getMessage(), e),
-                null,
-                null);
+                log, "Stock", "candle", 10);
 
         BatchLogHelper.logSummaryWithMetric(log, "Stock candle update", result, "total", totalCandles[0]);
     }

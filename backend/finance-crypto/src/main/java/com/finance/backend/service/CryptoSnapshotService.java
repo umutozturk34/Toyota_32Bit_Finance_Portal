@@ -11,7 +11,7 @@ import com.finance.backend.repository.CryptoRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CodeNormalizer;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import com.finance.backend.util.MarketBatchRunner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -61,7 +61,7 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
         Map<String, BigDecimal> tryPriceMap = tryMarkets.stream()
                 .collect(Collectors.toMap(CoinGeckoSnapshotDto::id, CoinGeckoSnapshotDto::currentPrice));
 
-        BatchUpdateRunner.Result result = BatchUpdateRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 usdMarkets,
                 usdDto -> {
                     BigDecimal tryPrice = tryPriceMap.get(usdDto.id());
@@ -69,12 +69,7 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
                     cryptoCacheService.putSnapshot(saved.getId(), saved);
                 },
                 CoinGeckoSnapshotDto::id,
-                "snapshot",
-                5,
-                (usdDto, e) -> log.error("Failed to save snapshot for {}: {}", usdDto.id(), e.getMessage(), e),
-                e -> e instanceof CallNotPermittedException,
-                (stopped, e) -> log.warn("Crypto snapshot batch stopped early (circuit breaker open): {} success, {} failed",
-                        stopped.successCount(), stopped.failCount()));
+                log, "Crypto", "snapshot", 5);
 
         BatchLogHelper.logSummary(log, "Crypto snapshot update", result);
     }

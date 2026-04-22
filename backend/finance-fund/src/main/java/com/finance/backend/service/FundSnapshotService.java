@@ -14,6 +14,7 @@ import com.finance.backend.repository.FundRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CodeNormalizer;
+import com.finance.backend.util.MarketBatchRunner;
 import com.finance.backend.util.TefasHelper;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
@@ -95,7 +96,7 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         try {
             List<TefasFundDto> byfFunds = fetchTefas(FundType.BYF, null, today, today);
             byfCodes = byfFunds.stream().map(TefasFundDto::fundCode).collect(Collectors.toSet());
-            byfResult = BatchUpdateRunner.run(
+            byfResult = MarketBatchRunner.run(
                     byfFunds,
                     dto -> {
                         Fund saved = transactionTemplate.execute(status -> saveFundSnapshot(dto, FundType.BYF));
@@ -103,11 +104,7 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
                         fundCacheService.putSnapshot(saved.getFundCode(), saved);
                     },
                     TefasFundDto::fundCode,
-                    "BYF snapshot",
-                    5,
-                    (dto, e) -> log.error("BYF snapshot failed {}: {}", dto.fundCode(), e.getMessage(), e),
-                    null,
-                    null);
+                    log, "BYF", "snapshot", 5);
         } catch (CallNotPermittedException e) {
             log.warn("TEFAS circuit breaker is OPEN, aborting snapshot update");
             return;
@@ -125,7 +122,7 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         if (yatCodes.isEmpty()) {
             log.info("No YAT-only fund codes to update (all handled as BYF)");
         } else {
-            BatchUpdateRunner.Result yatResult = BatchUpdateRunner.run(
+            BatchUpdateRunner.Result yatResult = MarketBatchRunner.run(
                     yatCodes,
                     code -> {
                         List<TefasFundDto> yatFunds = fetchTefas(FundType.YAT, code, today, today);
@@ -135,11 +132,7 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
                         }
                     },
                     Function.identity(),
-                    "YAT snapshot",
-                    5,
-                    (code, e) -> log.error("YAT snapshot failed {}: {}", code, e.getMessage(), e),
-                    e -> e instanceof CallNotPermittedException,
-                    (result, e) -> log.warn("TEFAS circuit breaker is OPEN, stopping YAT snapshot update"));
+                    log, "YAT", "snapshot", 5);
 
             byfResult = new BatchUpdateRunner.Result(
                     byfResult.successCount() + yatResult.successCount(),

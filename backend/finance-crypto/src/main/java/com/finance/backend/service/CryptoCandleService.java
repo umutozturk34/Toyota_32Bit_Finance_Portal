@@ -13,9 +13,9 @@ import com.finance.backend.repository.CryptoRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CodeNormalizer;
+import com.finance.backend.util.MarketBatchRunner;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -70,7 +70,7 @@ public class CryptoCandleService implements CandleBatchRefresher {
     public void refreshAll() {
         List<String> trackedCoins = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.CRYPTO);
         log.info("Starting crypto candle update for {} coins", trackedCoins.size());
-        BatchUpdateRunner.Result result = BatchUpdateRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 trackedCoins,
                 coinId -> {
                     String binanceSymbol = cryptoSymbolResolver.resolveBinanceSymbol(coinId);
@@ -99,12 +99,7 @@ public class CryptoCandleService implements CandleBatchRefresher {
                     cryptoCacheService.refreshHistory(coinId);
                 },
                 Function.identity(),
-                "candle",
-                5,
-                (coinId, e) -> log.error("Failed to fetch candle for {}: {}", coinId, e.getMessage(), e),
-                e -> e instanceof CallNotPermittedException,
-                (stopped, e) -> log.warn("Crypto candle batch stopped early (circuit breaker open): {} success, {} failed",
-                        stopped.successCount(), stopped.failCount()));
+                log, "Crypto", "candle", 5);
 
         CandlePruner.pruneByDays(transactionTemplate, historyDays,
                 cutoffDate -> cryptoCandleRepository.deleteByCandleDateBefore(cutoffDate));

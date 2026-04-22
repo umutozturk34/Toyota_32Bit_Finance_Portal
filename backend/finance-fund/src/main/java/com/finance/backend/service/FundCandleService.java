@@ -14,6 +14,7 @@ import com.finance.backend.repository.FundRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CodeNormalizer;
+import com.finance.backend.util.MarketBatchRunner;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
 import com.finance.backend.util.TefasHelper;
@@ -134,7 +135,7 @@ public class FundCandleService implements CandleBatchRefresher {
             return;
         }
 
-        BatchUpdateRunner.Result result = BatchUpdateRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 funds,
                 fund -> {
                     long existingCount = fundCandleRepository.countByFundCode(fund.getFundCode());
@@ -148,12 +149,7 @@ public class FundCandleService implements CandleBatchRefresher {
                     fundCacheService.refreshHistory(fund.getFundCode());
                 },
                 Fund::getFundCode,
-                fundType + " candle",
-                5,
-                (fund, e) -> log.error("Failed candle update for {} ({}): {}", fund.getFundCode(), fundType, e.getMessage(), e),
-                e -> e instanceof CallNotPermittedException,
-                (stopped, e) -> log.warn("TEFAS circuit breaker is OPEN, stopping {} candle update after {} success, {} failed",
-                        fundType, stopped.successCount(), stopped.failCount()));
+                log, String.valueOf(fundType), "candle", 5);
 
         BatchLogHelper.logSummary(log, fundType + " candle update", result);
     }

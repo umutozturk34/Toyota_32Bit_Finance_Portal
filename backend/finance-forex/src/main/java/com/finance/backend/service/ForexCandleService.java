@@ -12,6 +12,7 @@ import com.finance.backend.repository.ForexCandleRepository;
 import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.MarketBatchRunner;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
 import com.finance.backend.util.SyntheticPriceCalculator;
@@ -91,19 +92,14 @@ public class ForexCandleService implements CandleBatchRefresher {
                 .filter(forex -> !"USDTRY".equals(forex.getCurrencyCode()))
                 .toList();
 
-        BatchUpdateRunner.Result result = BatchUpdateRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 nonUsdTryForex,
                 forex -> {
                     updateForexCandles(forex, usdtryCandleMap);
                     forexCacheService.refreshHistory(forex.getCurrencyCode());
                 },
                 Forex::getCurrencyCode,
-                "candle",
-                5,
-                (forex, e) -> log.error("Candle sync failed for {}: {}", forex.getCurrencyCode(), e.getMessage(), e),
-                e -> e instanceof CallNotPermittedException,
-                (stopped, e) -> log.warn("Yahoo CB is OPEN, stopping candle sync. {} success, {} failed so far",
-                        stopped.successCount(), stopped.failCount()));
+                log, "Forex", "candle", 5);
 
         BatchLogHelper.logSummary(log, "Yahoo candle sync", result);
     }

@@ -12,7 +12,7 @@ import org.mapstruct.Named;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public abstract class StockResponseMapper {
+public abstract class StockResponseMapper implements MarketMetadataBuilder<Stock, StockMetadata> {
 
     public abstract List<CandleResponse> toStockCandleResponses(List<StockCandle> candles);
 
@@ -21,13 +21,14 @@ public abstract class StockResponseMapper {
     @Mapping(target = "changeAmount", source = "priceChangeAmount")
     @Mapping(target = "changePercent", source = "priceChangePercent")
     @Mapping(target = "type", expression = "java(MarketType.STOCK)")
-    @Mapping(target = "metadata", source = "stock", qualifiedByName = "stockMetadata")
+    @Mapping(target = "metadata", source = "stock", qualifiedByName = "metadata")
     public abstract MarketAssetResponse toMarketAssetResponse(Stock stock);
 
     public abstract List<MarketAssetResponse> toMarketAssetResponses(List<Stock> stocks);
 
-    @Named("stockMetadata")
-    protected StockMetadata buildStockMetadata(Stock stock) {
+    @Override
+    @Named("metadata")
+    public StockMetadata buildMetadata(Stock stock) {
         return new StockMetadata(
                 stock.getStockSegment(),
                 stock.getVolume(),

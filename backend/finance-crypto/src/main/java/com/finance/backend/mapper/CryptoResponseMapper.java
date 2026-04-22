@@ -12,7 +12,7 @@ import org.mapstruct.Named;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public abstract class CryptoResponseMapper {
+public abstract class CryptoResponseMapper implements MarketMetadataBuilder<Crypto, CryptoMetadata> {
 
     public abstract List<CandleResponse> toCryptoCandleResponses(List<CryptoCandle> candles);
 
@@ -21,13 +21,14 @@ public abstract class CryptoResponseMapper {
     @Mapping(target = "changeAmount", source = "changeAmount")
     @Mapping(target = "changePercent", source = "changePercent")
     @Mapping(target = "type", expression = "java(MarketType.CRYPTO)")
-    @Mapping(target = "metadata", source = "crypto", qualifiedByName = "cryptoMetadata")
+    @Mapping(target = "metadata", source = "crypto", qualifiedByName = "metadata")
     public abstract MarketAssetResponse toMarketAssetResponse(Crypto crypto);
 
     public abstract List<MarketAssetResponse> toMarketAssetResponses(List<Crypto> cryptos);
 
-    @Named("cryptoMetadata")
-    protected CryptoMetadata buildCryptoMetadata(Crypto crypto) {
+    @Override
+    @Named("metadata")
+    public CryptoMetadata buildMetadata(Crypto crypto) {
         return new CryptoMetadata(
                 crypto.getMarketCap(),
                 crypto.getTotalVolume(),

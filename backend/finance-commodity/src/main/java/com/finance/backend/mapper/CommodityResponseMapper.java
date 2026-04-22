@@ -12,7 +12,7 @@ import org.mapstruct.Named;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public abstract class CommodityResponseMapper {
+public abstract class CommodityResponseMapper implements MarketMetadataBuilder<Commodity, CommodityMetadata> {
 
     @Mapping(target = "code", source = "commodityCode")
     @Mapping(target = "name", source = "commodityNameTr")
@@ -21,15 +21,16 @@ public abstract class CommodityResponseMapper {
     @Mapping(target = "changePercent", source = "changePercent24h")
     @Mapping(target = "lastUpdated", source = "yahooUpdatedAt")
     @Mapping(target = "type", expression = "java(MarketType.COMMODITY)")
-    @Mapping(target = "metadata", source = "commodity", qualifiedByName = "commodityMetadata")
+    @Mapping(target = "metadata", source = "commodity", qualifiedByName = "metadata")
     public abstract MarketAssetResponse toMarketAssetResponse(Commodity commodity);
 
     public abstract List<MarketAssetResponse> toMarketAssetResponses(List<Commodity> commodities);
 
     public abstract List<CandleResponse> toCommodityCandleResponses(List<CommodityCandle> candles);
 
-    @Named("commodityMetadata")
-    protected CommodityMetadata buildCommodityMetadata(Commodity commodity) {
+    @Override
+    @Named("metadata")
+    public CommodityMetadata buildMetadata(Commodity commodity) {
         return new CommodityMetadata(
                 commodity.getCurrentPriceUsd(),
                 commodity.getPreviousPriceUsd(),

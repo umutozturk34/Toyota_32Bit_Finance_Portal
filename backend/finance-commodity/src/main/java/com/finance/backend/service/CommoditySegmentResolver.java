@@ -1,6 +1,6 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommodityProperties;
 import com.finance.backend.model.CommoditySegment;
 import org.springframework.stereotype.Component;
 
@@ -14,10 +14,9 @@ public class CommoditySegmentResolver {
 
     private final Set<String> preciousMetalCodes;
 
-    public CommoditySegmentResolver(AppProperties appProperties) {
-        AppProperties.Commodity commodity = appProperties.getCommodity();
-        Set<String> keys = new HashSet<>(commodity.getYahooSymbolOverrides().keySet());
-        commodity.getDerivatives().forEach(rule -> keys.add(rule.getDerivativeCode()));
+    public CommoditySegmentResolver(CommodityProperties commodityProperties) {
+        Set<String> keys = new HashSet<>(commodityProperties.getYahooSymbolOverrides().keySet());
+        commodityProperties.getDerivatives().forEach(rule -> keys.add(rule.getDerivativeCode()));
         this.preciousMetalCodes = Set.copyOf(keys);
     }
 

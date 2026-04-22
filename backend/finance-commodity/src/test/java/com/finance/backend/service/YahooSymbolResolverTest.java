@@ -1,6 +1,6 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommodityProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,16 +19,14 @@ class YahooSymbolResolverTest {
 
     @BeforeEach
     void setUp() {
-        AppProperties.Commodity commodityProps = new AppProperties.Commodity();
+        CommodityProperties commodityProps = new CommodityProperties();
         commodityProps.setYahooSymbolOverrides(Map.of(
                 "XAUTRY", "GC=F",
                 "XAGTRY", "SI=F",
                 "XPTTRY", "PL=F",
                 "XPDTRY", "PA=F"
         ));
-        AppProperties appProperties = new AppProperties();
-        appProperties.setCommodity(commodityProps);
-        resolver = new YahooSymbolResolver(appProperties);
+        resolver = new YahooSymbolResolver(commodityProps);
     }
 
     @ParameterizedTest

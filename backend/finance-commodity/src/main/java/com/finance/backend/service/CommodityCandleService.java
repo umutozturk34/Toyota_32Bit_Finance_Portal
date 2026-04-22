@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.client.YahooCommodityClient;
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommodityProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.CommodityMapper;
@@ -58,7 +59,8 @@ public class CommodityCandleService implements CandleBatchRefresher {
                                   PreciousMetalDerivativeCalculator derivativeCalculator,
                                   YahooSymbolResolver yahooSymbolResolver,
                                   TransactionTemplate transactionTemplate,
-                                  AppProperties appProperties) {
+                                  AppProperties appProperties,
+                                  CommodityProperties commodityProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
         this.commodityMapper = commodityMapper;
         this.commodityRepository = commodityRepository;
@@ -69,7 +71,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
         this.derivativeCalculator = derivativeCalculator;
         this.yahooSymbolResolver = yahooSymbolResolver;
         this.transactionTemplate = transactionTemplate;
-        this.yearsToKeep = appProperties.getCommodity().getYearsToKeep();
+        this.yearsToKeep = commodityProperties.getYearsToKeep();
         this.scale = appProperties.getScale();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }

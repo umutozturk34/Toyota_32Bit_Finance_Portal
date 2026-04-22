@@ -1,6 +1,6 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommodityProperties;
 import com.finance.backend.util.CodeNormalizer;
 import org.springframework.stereotype.Component;
 
@@ -16,8 +16,8 @@ public class YahooSymbolResolver {
     private final Map<String, String> overrides;
     private final Map<String, String> reverseOverrides;
 
-    public YahooSymbolResolver(AppProperties appProperties) {
-        this.overrides = Map.copyOf(appProperties.getCommodity().getYahooSymbolOverrides());
+    public YahooSymbolResolver(CommodityProperties commodityProperties) {
+        this.overrides = Map.copyOf(commodityProperties.getYahooSymbolOverrides());
         this.reverseOverrides = overrides.entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(
                         entry -> entry.getValue().toUpperCase(),

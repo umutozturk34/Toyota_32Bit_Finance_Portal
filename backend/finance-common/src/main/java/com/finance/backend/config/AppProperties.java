@@ -1,8 +1,6 @@
 package com.finance.backend.config;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -35,7 +33,6 @@ public class AppProperties {
     private Forex forex = new Forex();
     private Fund fund = new Fund();
     private Bond bond = new Bond();
-    private Commodity commodity = new Commodity();
     private News news = new News();
 
     private Scheduler scheduler = new Scheduler();
@@ -136,32 +133,6 @@ public class AppProperties {
         private BigDecimal cpiFixedThreshold = new BigDecimal("5");
         private BigDecimal faceValue = new BigDecimal("100");
         private int daysInYear = 365;
-    }
-
-    @Getter
-    @Setter
-    public static class Commodity {
-        private int yearsToKeep = 5;
-        private Map<String, String> yahooSymbolOverrides = new HashMap<>(Map.of(
-                "XAUTRY", "GC=F",
-                "XAGTRY", "SI=F",
-                "XPTTRY", "PL=F",
-                "XPDTRY", "PA=F"
-        ));
-        private List<CommodityDerivativeRule> derivatives = new ArrayList<>(List.of(
-                new CommodityDerivativeRule("XAUTRY", "XAUTRYG", new BigDecimal("31.1035")),
-                new CommodityDerivativeRule("XAGTRY", "XAGTRYG", new BigDecimal("31.1035"))
-        ));
-    }
-
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class CommodityDerivativeRule {
-        private String sourceCode;
-        private String derivativeCode;
-        private BigDecimal divisor;
     }
 
     @Getter

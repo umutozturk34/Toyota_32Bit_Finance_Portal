@@ -1,7 +1,8 @@
 package com.finance.backend.service;
 
 import com.finance.backend.config.AppProperties;
-import com.finance.backend.config.AppProperties.CommodityDerivativeRule;
+import com.finance.backend.config.CommodityProperties;
+import com.finance.backend.config.CommodityProperties.DerivativeRule;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
 import com.finance.backend.repository.CommodityCandleRepository;
@@ -38,13 +39,12 @@ class PreciousMetalDerivativeCalculatorTest {
     @BeforeEach
     void setUp() {
         AppProperties props = new AppProperties();
-        AppProperties.Commodity commodityProps = new AppProperties.Commodity();
-        commodityProps.setDerivatives(List.of(
-                new CommodityDerivativeRule("GC=F", "XAUTRYG", new BigDecimal("31.1035")),
-                new CommodityDerivativeRule("SI=F", "XAGTRYG", new BigDecimal("31.1035"))
-        ));
-        props.setCommodity(commodityProps);
         props.setScale(4);
+        CommodityProperties commodityProps = new CommodityProperties();
+        commodityProps.setDerivatives(List.of(
+                new DerivativeRule("GC=F", "XAUTRYG", new BigDecimal("31.1035")),
+                new DerivativeRule("SI=F", "XAGTRYG", new BigDecimal("31.1035"))
+        ));
 
         derivativeStore = new HashMap<>();
         seedDerivative("XAUTRYG");
@@ -55,7 +55,7 @@ class PreciousMetalDerivativeCalculatorTest {
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         calculator = new PreciousMetalDerivativeCalculator(repository, candleRepository, cacheService,
-                new CommoditySegmentResolver(props), props);
+                new CommoditySegmentResolver(commodityProps), props, commodityProps);
     }
 
     @Test

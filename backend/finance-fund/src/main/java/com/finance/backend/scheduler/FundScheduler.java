@@ -2,14 +2,10 @@ package com.finance.backend.scheduler;
 
 import com.finance.backend.model.MarketType;
 import com.finance.backend.service.FundDataService;
-import com.finance.backend.service.MarketUpdatePort;
-import com.finance.backend.service.PortfolioSnapshotPort;
 import com.finance.backend.service.TaskTrackingService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 @Log4j2
 @Component
@@ -19,9 +15,8 @@ public class FundScheduler extends AbstractMarketScheduler {
 
     public FundScheduler(FundDataService fundDataService,
                          TaskTrackingService taskTracker,
-                         Optional<PortfolioSnapshotPort> portfolioSnapshotPort,
-                         Optional<MarketUpdatePort> marketUpdatePort) {
-        super(taskTracker, portfolioSnapshotPort, marketUpdatePort);
+                         SchedulerPorts ports) {
+        super(taskTracker, ports);
         this.fundDataService = fundDataService;
     }
 

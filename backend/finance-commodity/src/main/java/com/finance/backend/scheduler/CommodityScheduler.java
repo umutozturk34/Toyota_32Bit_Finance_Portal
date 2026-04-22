@@ -2,13 +2,9 @@ package com.finance.backend.scheduler;
 
 import com.finance.backend.model.MarketType;
 import com.finance.backend.service.CommodityDataService;
-import com.finance.backend.service.MarketUpdatePort;
-import com.finance.backend.service.PortfolioSnapshotPort;
 import com.finance.backend.service.TaskTrackingService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 @Component
 public class CommodityScheduler extends AbstractMarketScheduler {
@@ -17,9 +13,8 @@ public class CommodityScheduler extends AbstractMarketScheduler {
 
     public CommodityScheduler(CommodityDataService commodityDataService,
                               TaskTrackingService taskTracker,
-                              Optional<PortfolioSnapshotPort> portfolioSnapshotPort,
-                              Optional<MarketUpdatePort> marketUpdatePort) {
-        super(taskTracker, portfolioSnapshotPort, marketUpdatePort);
+                              SchedulerPorts ports) {
+        super(taskTracker, ports);
         this.commodityDataService = commodityDataService;
     }
 

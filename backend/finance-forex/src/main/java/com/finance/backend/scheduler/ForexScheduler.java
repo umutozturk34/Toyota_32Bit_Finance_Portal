@@ -2,15 +2,11 @@ package com.finance.backend.scheduler;
 
 import com.finance.backend.model.MarketType;
 import com.finance.backend.service.ForexDataService;
-import com.finance.backend.service.MarketUpdatePort;
-import com.finance.backend.service.PortfolioSnapshotPort;
 import com.finance.backend.service.TaskTrackingService;
 import com.finance.backend.service.TcmbForexService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 @Log4j2
 @Component
@@ -22,9 +18,8 @@ public class ForexScheduler extends AbstractMarketScheduler {
     public ForexScheduler(TcmbForexService tcmbForexService,
                           ForexDataService yahooForexService,
                           TaskTrackingService taskTracker,
-                          Optional<PortfolioSnapshotPort> portfolioSnapshotPort,
-                          Optional<MarketUpdatePort> marketUpdatePort) {
-        super(taskTracker, portfolioSnapshotPort, marketUpdatePort);
+                          SchedulerPorts ports) {
+        super(taskTracker, ports);
         this.tcmbForexService = tcmbForexService;
         this.yahooForexService = yahooForexService;
     }

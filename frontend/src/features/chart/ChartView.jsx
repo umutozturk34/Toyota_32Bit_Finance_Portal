@@ -37,6 +37,15 @@ const ASSET_TYPE_TO_ROUTE = {
   FOREX: 'forex',
   FUND: 'fund',
 };
+const ensureBistSuffix = (code) => (code.endsWith('.IS') ? code : `${code}.IS`);
+const HISTORY_FETCHERS = {
+  CRYPTO: (code, range) => getCryptoHistory(code, range),
+  STOCK: (code, range) => stockService.getHistory(ensureBistSuffix(code), range),
+  BIST: (code, range) => stockService.getHistory(ensureBistSuffix(code), range),
+  US: (code, range) => stockService.getHistory(ensureBistSuffix(code), range),
+  FOREX: (code, range) => forexService.getHistory(code, range),
+  FUND: (code, range) => fundService.getHistory(code, range),
+};
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -135,13 +144,8 @@ const ChartView = () => {
   const { data: compareRaw } = useQuery({
     queryKey: ['chartCompare', compareAsset?.type, compareAsset?.code, timeRange],
     queryFn: () => {
-      const code = compareAsset.code;
-      const type = compareAsset.type;
-      if (type === 'CRYPTO') return getCryptoHistory(code, timeRange);
-      if (type === 'STOCK') return stockService.getHistory(code.endsWith('.IS') ? code : `${code}.IS`, timeRange);
-      if (type === 'FOREX') return forexService.getHistory(code, timeRange);
-      if (type === 'FUND') return fundService.getHistory(code, timeRange);
-      return Promise.resolve([]);
+      const fetcher = HISTORY_FETCHERS[compareAsset.type];
+      return fetcher ? fetcher(compareAsset.code, timeRange) : Promise.resolve([]);
     },
     enabled: !!compareAsset,
     placeholderData: (prev) => prev,
@@ -216,11 +220,8 @@ const ChartView = () => {
   const fetchSymbol = assetType === 'BIST' && symbol && !symbol.endsWith('.IS') ? `${symbol}.IS` : symbol;
 
   const fetchHistory = (sym, type, range) => {
-    if (type === 'CRYPTO') return getCryptoHistory(sym, range);
-    if (type === 'BIST' || type === 'US') return stockService.getHistory(sym.endsWith('.IS') ? sym : `${sym}.IS`, range);
-    if (type === 'FOREX') return forexService.getHistory(sym, range);
-    if (type === 'FUND') return fundService.getHistory(sym, range);
-    return Promise.resolve([]);
+    const fetcher = HISTORY_FETCHERS[type];
+    return fetcher ? fetcher(sym, range) : Promise.resolve([]);
   };
 
   const { data: historyRaw, isLoading: loading, refetch: refetchHistory } = useQuery({

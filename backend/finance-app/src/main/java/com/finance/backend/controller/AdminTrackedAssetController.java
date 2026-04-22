@@ -9,7 +9,6 @@ import com.finance.backend.service.TrackedAssetAdminService;
 import com.finance.backend.service.TrackedAssetQueryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +32,7 @@ public class AdminTrackedAssetController {
     private final TrackedAssetQueryService trackedAssetQueryService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TrackedAssetResponse>>> getTrackedAssets(
+    public ApiResponse<List<TrackedAssetResponse>> getTrackedAssets(
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "sortOrder") String sort,
@@ -43,42 +42,42 @@ public class AdminTrackedAssetController {
         List<TrackedAssetType> types = MarketRequestHelper.parseTrackedTypes(type);
         List<TrackedAssetResponse> data = trackedAssetQueryService.searchTrackedAssets(
                 types, includeDisabled, search, sort, direction);
-        return ResponseEntity.ok(ApiResponse.success("Tracked assets retrieved successfully", data));
+        return ApiResponse.success("Tracked assets retrieved successfully", data);
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<TrackedAssetResponse>> upsertTrackedAsset(
+    public ApiResponse<TrackedAssetResponse> upsertTrackedAsset(
             @Valid @RequestBody UpsertTrackedAssetRequest request
     ) {
         TrackedAssetResponse data = trackedAssetAdminService.upsert(request);
-        return ResponseEntity.ok(ApiResponse.success("Tracked asset saved successfully", data));
+        return ApiResponse.success("Tracked asset saved successfully", data);
     }
 
     @PatchMapping("/{type}/{code}/enabled")
-    public ResponseEntity<ApiResponse<Void>> setEnabled(
+    public ApiResponse<Void> setEnabled(
             @PathVariable TrackedAssetType type,
             @PathVariable String code,
             @RequestParam boolean enabled
     ) {
         trackedAssetAdminService.setEnabled(type, code, enabled);
-        return ResponseEntity.ok(ApiResponse.success("Tracked asset status updated", null));
+        return ApiResponse.success("Tracked asset status updated", null);
     }
 
     @PatchMapping("/order")
-    public ResponseEntity<ApiResponse<Void>> updateSortOrders(
+    public ApiResponse<Void> updateSortOrders(
             @Valid @RequestBody BulkTrackedAssetOrderUpdateRequest request
     ) {
         trackedAssetAdminService.updateSortOrders(request);
-        return ResponseEntity.ok(ApiResponse.success("Tracked asset order updated", null));
+        return ApiResponse.success("Tracked asset order updated", null);
     }
 
     @DeleteMapping("/{type}/{code}")
-    public ResponseEntity<ApiResponse<Void>> deleteTrackedAsset(
+    public ApiResponse<Void> deleteTrackedAsset(
             @PathVariable TrackedAssetType type,
             @PathVariable String code
     ) {
         trackedAssetAdminService.delete(type, code);
-        return ResponseEntity.ok(ApiResponse.success("Tracked asset deleted", null));
+        return ApiResponse.success("Tracked asset deleted", null);
     }
 
 }

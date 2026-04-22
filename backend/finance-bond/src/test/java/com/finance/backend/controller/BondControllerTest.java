@@ -39,7 +39,7 @@ class BondControllerTest {
 
         var result = controller.getAllBonds(null, null, "simpleYield", "desc", 0, null);
 
-        assertThat(result.getBody().getData().content()).hasSize(1);
+        assertThat(result.getData().content()).hasSize(1);
     }
 
     @Test
@@ -50,7 +50,7 @@ class BondControllerTest {
 
         var result = controller.getAllBonds(null, "DISCOUNTED", "simpleYield", "desc", 0, null);
 
-        assertThat(result.getBody().getData().content()).hasSize(1);
-        assertThat(result.getBody().getData().content().getFirst().bondType()).isEqualTo("DISCOUNTED");
+        assertThat(result.getData().content()).hasSize(1);
+        assertThat(result.getData().content().getFirst().bondType()).isEqualTo("DISCOUNTED");
     }
 }

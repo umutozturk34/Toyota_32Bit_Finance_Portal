@@ -8,11 +8,9 @@ import com.finance.backend.dto.response.NewsArticleResponse;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.service.NewsQueryService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/news")
@@ -24,7 +22,7 @@ public class NewsController {
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<PagedResponse<NewsArticleResponse>>> getNews(
+    public ApiResponse<PagedResponse<NewsArticleResponse>> getNews(
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String sort,
@@ -36,19 +34,19 @@ public class NewsController {
         resolvedSize = Math.max(1, Math.min(resolvedSize, pagination.getMaxSize()));
         PagedResponse<NewsArticleResponse> result = newsQueryService.search(
                 category, search, sort, direction, page, resolvedSize);
-        return ResponseEntity.ok(ApiResponse.success("News retrieved successfully", result));
+        return ApiResponse.success("News retrieved successfully", result);
     }
 
     @GetMapping("/categories")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<GroupCount>>> getCategoryCounts() {
-        return ResponseEntity.ok(ApiResponse.success("News categories retrieved", newsQueryService.getCategoryCounts()));
+    public ApiResponse<List<GroupCount>> getCategoryCounts() {
+        return ApiResponse.success("News categories retrieved", newsQueryService.getCategoryCounts());
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<NewsArticleDetailResponse>> getNewsById(@PathVariable Long id) {
-        return ResponseEntity.ok(ApiResponse.success("News article retrieved successfully",
-                newsQueryService.getById(id)));
+    public ApiResponse<NewsArticleDetailResponse> getNewsById(@PathVariable Long id) {
+        return ApiResponse.success("News article retrieved successfully",
+                newsQueryService.getById(id));
     }
 }

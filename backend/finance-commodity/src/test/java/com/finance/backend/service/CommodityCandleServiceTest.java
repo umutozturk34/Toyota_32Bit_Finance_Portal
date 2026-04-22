@@ -58,6 +58,7 @@ class CommodityCandleServiceTest {
 
         when(commodityCandleRepository.deleteByCandleDateBefore(any())).thenReturn(0);
 
+        PreciousMetalDerivativeCalculator derivativeCalculator = mock(PreciousMetalDerivativeCalculator.class);
         service = new CommodityCandleService(
                 yahooCommodityClient,
                 commodityMapper,
@@ -66,6 +67,7 @@ class CommodityCandleServiceTest {
                 commodityCacheService,
                 forexCacheService,
                 trackedAssetQueryService,
+                derivativeCalculator,
                 transactionManager,
                 props);
     }

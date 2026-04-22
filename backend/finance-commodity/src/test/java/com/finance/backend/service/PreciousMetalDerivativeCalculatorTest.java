@@ -27,6 +27,8 @@ class PreciousMetalDerivativeCalculatorTest {
     @SuppressWarnings("unchecked")
     private final MarketCacheService<Commodity, CommodityCandle> cacheService = mock(MarketCacheService.class);
     private final CommodityRepository repository = mock(CommodityRepository.class);
+    private final com.finance.backend.repository.CommodityCandleRepository candleRepository =
+            mock(com.finance.backend.repository.CommodityCandleRepository.class);
 
     private Map<String, Commodity> derivativeStore;
     private PreciousMetalDerivativeCalculator calculator;
@@ -58,7 +60,7 @@ class PreciousMetalDerivativeCalculatorTest {
                 Optional.ofNullable(derivativeStore.get((String) inv.getArgument(0))));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        calculator = new PreciousMetalDerivativeCalculator(repository, cacheService, props);
+        calculator = new PreciousMetalDerivativeCalculator(repository, candleRepository, cacheService, props);
     }
 
     @Test

@@ -44,6 +44,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
     private final MarketCacheService<Forex, ForexCandle> forexCacheService;
     private final TrackedAssetQueryService trackedAssetQueryService;
+    private final PreciousMetalDerivativeCalculator derivativeCalculator;
     private final TransactionTemplate transactionTemplate;
     private final int yearsToKeep;
     private final int scale;
@@ -56,6 +57,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
                                   MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
                                   MarketCacheService<Forex, ForexCandle> forexCacheService,
                                   TrackedAssetQueryService trackedAssetQueryService,
+                                  PreciousMetalDerivativeCalculator derivativeCalculator,
                                   PlatformTransactionManager transactionManager,
                                   AppProperties appProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
@@ -65,6 +67,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
         this.commodityCacheService = commodityCacheService;
         this.forexCacheService = forexCacheService;
         this.trackedAssetQueryService = trackedAssetQueryService;
+        this.derivativeCalculator = derivativeCalculator;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.yearsToKeep = appProperties.getCommodity().getYearsToKeep();
         this.scale = appProperties.getScale();
@@ -108,6 +111,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
                         stopped.successCount(), stopped.failCount()));
 
         BatchLogHelper.logSummary(log, "Commodity candle sync", result);
+        derivativeCalculator.refreshDerivativeCandles();
     }
 
     public void refreshTrackedCommodityCandles(String code) {

@@ -21,7 +21,7 @@ public class AmountBasedResolver implements TransactionInputResolver {
 
     @Override
     public boolean supports(AssetType assetType) {
-        return assetType == AssetType.CRYPTO || assetType == AssetType.FOREX;
+        return assetType == AssetType.CRYPTO || assetType == AssetType.FOREX || assetType == AssetType.COMMODITY;
     }
 
     @Override

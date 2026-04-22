@@ -29,7 +29,6 @@ public class AppProperties {
     private Cache cache = new Cache();
 
     private Crypto crypto = new Crypto();
-    private Forex forex = new Forex();
     private Fund fund = new Fund();
     private Bond bond = new Bond();
     private News news = new News();
@@ -132,13 +131,6 @@ public class AppProperties {
         private BigDecimal cpiFixedThreshold = new BigDecimal("5");
         private BigDecimal faceValue = new BigDecimal("100");
         private int daysInYear = 365;
-    }
-
-    @Getter
-    @Setter
-    public static class Forex {
-        private int yearsToKeep = 5;
-        private BigDecimal spreadRate = new BigDecimal("0.01");
     }
 
     @Getter

@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.client.YahooForexClient;
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.ForexProperties;
 import com.finance.backend.dto.external.YahooQuoteDto;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.model.Forex;
@@ -35,13 +36,14 @@ public class ForexSnapshotService implements SnapshotBatchRefresher {
                                 ForexRepository forexRepository,
                                 MarketCacheService<Forex, ForexCandle> forexCacheService,
                                 TransactionTemplate transactionTemplate,
-                                AppProperties appProperties) {
+                                AppProperties appProperties,
+                                ForexProperties forexProperties) {
         this.yahooForexClient = yahooForexClient;
         this.forexRepository = forexRepository;
         this.forexCacheService = forexCacheService;
         this.transactionTemplate = transactionTemplate;
         this.scale = appProperties.getScale();
-        this.spreadRate = appProperties.getForex().getSpreadRate();
+        this.spreadRate = forexProperties.getSpreadRate();
     }
 
     @Override

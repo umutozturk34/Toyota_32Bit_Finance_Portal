@@ -103,7 +103,10 @@ public class PreciousMetalDerivativeCalculator {
 
         Map<LocalDateTime, CommodityCandle> existingByDate = commodityCandleRepository
                 .findByCommodityCodeOrderByCandleDateAsc(derivativeCode).stream()
-                .collect(Collectors.toMap(CommodityCandle::getCandleDate, Function.identity(), (a, b) -> a));
+                .collect(Collectors.toMap(CommodityCandle::getCandleDate, Function.identity(), (a, b) -> {
+                    log.warn("Duplicate derivative candle for {} at {}, keeping first", derivativeCode, a.getCandleDate());
+                    return a;
+                }));
 
         List<CommodityCandle> toInsert = new ArrayList<>();
         int updated = 0;

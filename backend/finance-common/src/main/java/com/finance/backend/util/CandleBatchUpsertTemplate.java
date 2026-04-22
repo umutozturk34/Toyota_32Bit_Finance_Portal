@@ -28,7 +28,7 @@ public final class CandleBatchUpsertTemplate {
 
         List<K> keys = dtos.stream().map(dtoKeyExtractor::apply).toList();
         Map<K, E> existingMap = existingLoader.apply(keys).stream()
-                .collect(Collectors.toMap(entityKeyExtractor, Function.identity(), (a, b) -> a));
+                .collect(Collectors.toMap(entityKeyExtractor, Function.identity()));
 
         List<E> toInsert = new ArrayList<>();
         int updateCount = 0;

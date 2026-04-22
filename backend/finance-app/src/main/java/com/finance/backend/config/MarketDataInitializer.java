@@ -26,6 +26,9 @@ public class MarketDataInitializer implements CommandLineRunner {
     private final FundRepository fundRepository;
     private final FundCandleRepository fundCandleRepository;
     private final FundDataService fundDataService;
+    private final CommodityRepository commodityRepository;
+    private final CommodityCandleRepository commodityCandleRepository;
+    private final CommodityDataService commodityDataService;
     private final BondRepository bondRepository;
     private final BondDataService bondDataService;
     private final NewsArticleRepository articleRepository;
@@ -46,6 +49,11 @@ public class MarketDataInitializer implements CommandLineRunner {
         initIfEmpty("fund", fundRepository.count(), fundCandleRepository.count(), () -> {
             fundDataService.updateFundSnapshots();
             fundDataService.updateFundCandles();
+        });
+
+        initIfEmpty("commodity", commodityRepository.count(), commodityCandleRepository.count(), () -> {
+            commodityDataService.updateCommoditySnapshots();
+            commodityDataService.updateCommodityCandles();
         });
 
         initIfEmpty("bond", bondRepository.count(), 1, bondDataService::updateBonds);

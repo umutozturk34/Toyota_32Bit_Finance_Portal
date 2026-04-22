@@ -12,9 +12,10 @@ class TrackedAssetTypeTest {
 
     @ParameterizedTest
     @CsvSource({
-            "CRYPTO, CRYPTO",
-            "STOCK,  STOCK",
-            "FUND,   FUND"
+            "CRYPTO,    CRYPTO",
+            "STOCK,     STOCK",
+            "FUND,      FUND",
+            "COMMODITY, COMMODITY"
     })
     void marketTypeMapsEachConstantToMatchingMarketType(TrackedAssetType tracked, MarketType expected) {
         MarketType actual = tracked.marketType();
@@ -24,12 +25,14 @@ class TrackedAssetTypeTest {
 
     @ParameterizedTest
     @CsvSource({
-            "CRYPTO,   bitcoin,     bitcoin",
-            "CRYPTO,   BITCOIN,     bitcoin",
-            "CRYPTO,   '  ETH  ',   eth",
-            "STOCK,    thyao,       THYAO",
-            "STOCK,    '  xu100 ',  XU100",
-            "FUND,     afa,         AFA"
+            "CRYPTO,    bitcoin,          bitcoin",
+            "CRYPTO,    BITCOIN,          bitcoin",
+            "CRYPTO,    '  ETH  ',        eth",
+            "STOCK,     thyao,            THYAO",
+            "STOCK,     '  xu100 ',       XU100",
+            "FUND,      afa,              AFA",
+            "COMMODITY, gold,             GOLD",
+            "COMMODITY, '  xautryg  ',    XAUTRYG"
     })
     void normalizeCodeRespectsPerTypeCasingRules(TrackedAssetType tracked, String raw, String expected) {
         String actual = tracked.normalizeCode(raw);

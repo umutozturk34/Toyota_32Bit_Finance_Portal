@@ -6,9 +6,10 @@ import { Search, X } from 'lucide-react';
 import { TrendingUp, TrendingDown } from './AnimatedIcons';
 import { unifiedMarketService } from '../services/unifiedMarketService';
 import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../constants/assetTypes';
+import { assetCodeLabel } from '../utils/assetCode';
 import { formatPriceTRY, getChangeClass, changeColors } from '../utils/formatters';
 
-const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds' };
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
 
 function assetRoute(asset) {
   return (TYPE_ROUTES[asset.type] || '/market') + '/' + asset.code;
@@ -166,13 +167,13 @@ export default function SearchSuggestions({
                           className="flex items-center justify-center w-8 h-8 rounded-lg text-[10px] font-bold shrink-0"
                           style={{ backgroundColor: typeColor + '18', color: typeColor }}
                         >
-                          {asset.code.replace('.IS', '').slice(0, 3).toUpperCase()}
+                          {assetCodeLabel(asset.type, asset.code).slice(0, 3).toUpperCase()}
                         </span>
                       )}
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-fg truncate">{asset.code}</span>
+                          <span className="text-sm font-semibold text-fg truncate">{assetCodeLabel(asset.type, asset.code)}</span>
                           <span
                             className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
                             style={{ backgroundColor: typeColor + '18', color: typeColor }}

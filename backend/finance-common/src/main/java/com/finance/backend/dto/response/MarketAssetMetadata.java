@@ -8,8 +8,9 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
         @JsonSubTypes.Type(StockMetadata.class),
         @JsonSubTypes.Type(CryptoMetadata.class),
         @JsonSubTypes.Type(FundMetadata.class),
-        @JsonSubTypes.Type(ForexMetadata.class)
+        @JsonSubTypes.Type(ForexMetadata.class),
+        @JsonSubTypes.Type(CommodityMetadata.class)
 })
 public sealed interface MarketAssetMetadata
-        permits StockMetadata, CryptoMetadata, FundMetadata, ForexMetadata {
+        permits StockMetadata, CryptoMetadata, FundMetadata, ForexMetadata, CommodityMetadata {
 }

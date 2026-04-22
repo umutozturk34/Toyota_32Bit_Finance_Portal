@@ -15,7 +15,7 @@ class ForexTest {
     void applyYahooSnapshotSetsCurrentPriceAndSellingWithSpread() {
         Forex forex = Forex.builder().currencyCode("USD").build();
 
-        forex.applyYahooSnapshot(new BigDecimal("38.0000"), new BigDecimal("37.5000"), SPREAD, SCALE);
+        forex.applyYahooSnapshot(new BigDecimal("38.0000"), new BigDecimal("37.5000"), null, null, null, null, SPREAD, SCALE);
 
         assertThat(forex.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("38.0000"));
         assertThat(forex.getSellingPrice()).isEqualByComparingTo(new BigDecimal("38.3800"));
@@ -25,7 +25,7 @@ class ForexTest {
     void applyYahooSnapshotCalculatesChangeFields() {
         Forex forex = Forex.builder().currencyCode("USD").build();
 
-        forex.applyYahooSnapshot(new BigDecimal("38.0000"), new BigDecimal("37.5000"), SPREAD, SCALE);
+        forex.applyYahooSnapshot(new BigDecimal("38.0000"), new BigDecimal("37.5000"), null, null, null, null, SPREAD, SCALE);
 
         assertThat(forex.getChange24h()).isEqualByComparingTo(new BigDecimal("0.5000"));
         assertThat(forex.getChangePercent24h()).isEqualByComparingTo(new BigDecimal("1.3333"));
@@ -36,7 +36,7 @@ class ForexTest {
         Forex forex = Forex.builder().currencyCode("USD")
                 .currentPrice(new BigDecimal("37.0000")).build();
 
-        forex.applyYahooSnapshot(null, new BigDecimal("37.5000"), SPREAD, SCALE);
+        forex.applyYahooSnapshot(null, new BigDecimal("37.5000"), null, null, null, null, SPREAD, SCALE);
 
         assertThat(forex.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("37.0000"));
     }
@@ -45,7 +45,7 @@ class ForexTest {
     void applyYahooSnapshotNullPreviousCloseNullsChangeFields() {
         Forex forex = Forex.builder().currencyCode("USD").build();
 
-        forex.applyYahooSnapshot(new BigDecimal("38.0000"), null, SPREAD, SCALE);
+        forex.applyYahooSnapshot(new BigDecimal("38.0000"), null, null, null, null, null, SPREAD, SCALE);
 
         assertThat(forex.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("38.0000"));
         assertThat(forex.getChange24h()).isNull();
@@ -56,7 +56,7 @@ class ForexTest {
     void applyYahooSnapshotZeroPreviousCloseNullsChangeFields() {
         Forex forex = Forex.builder().currencyCode("EUR").build();
 
-        forex.applyYahooSnapshot(new BigDecimal("41.0000"), BigDecimal.ZERO, SPREAD, SCALE);
+        forex.applyYahooSnapshot(new BigDecimal("41.0000"), BigDecimal.ZERO, null, null, null, null, SPREAD, SCALE);
 
         assertThat(forex.getChange24h()).isNull();
         assertThat(forex.getChangePercent24h()).isNull();
@@ -110,7 +110,7 @@ class ForexTest {
     void applyYahooSnapshotNegativeChangePercent() {
         Forex forex = Forex.builder().currencyCode("USD").build();
 
-        forex.applyYahooSnapshot(new BigDecimal("37.0000"), new BigDecimal("38.0000"), SPREAD, SCALE);
+        forex.applyYahooSnapshot(new BigDecimal("37.0000"), new BigDecimal("38.0000"), null, null, null, null, SPREAD, SCALE);
 
         assertThat(forex.getChange24h()).isEqualByComparingTo(new BigDecimal("-1.0000"));
         assertThat(forex.getChangePercent24h()).isEqualByComparingTo(new BigDecimal("-2.6316"));
@@ -120,7 +120,7 @@ class ForexTest {
     void applyYahooSnapshotSellingPriceScaledCorrectly() {
         Forex forex = Forex.builder().currencyCode("EUR").build();
 
-        forex.applyYahooSnapshot(new BigDecimal("41.1234"), new BigDecimal("40.0000"), new BigDecimal("0.015"), SCALE);
+        forex.applyYahooSnapshot(new BigDecimal("41.1234"), new BigDecimal("40.0000"), null, null, null, null, new BigDecimal("0.015"), SCALE);
 
         assertThat(forex.getSellingPrice()).isEqualByComparingTo(new BigDecimal("41.7403"));
         assertThat(forex.getSellingPrice().scale()).isEqualTo(SCALE);

@@ -95,18 +95,31 @@ app:
     days-in-year: 365
 
   stock:
-    min-candles-for-incremental: 1200
     history-years: 5
 
   forex:
     years-to-keep: 5
-    min-candles-for-incremental: 1200
     spread-rate: 0.01
 
   fund:
     years-to-fetch: 5
     min-candles-for-incremental: 30
     window-sizes: 95
+
+  commodity:
+    years-to-keep: 5
+    yahoo-symbol-overrides:
+      XAUTRY: "GC=F"
+      XAGTRY: "SI=F"
+      XPTTRY: "PL=F"
+      XPDTRY: "PA=F"
+    derivatives:
+      - source-code: "XAUTRY"
+        derivative-code: "XAUTRYG"
+        divisor: 31.1035
+      - source-code: "XAGTRY"
+        derivative-code: "XAGTRYG"
+        divisor: 31.1035
 
   news:
     max-articles-per-source: 50
@@ -125,6 +138,7 @@ app:
     stock-rate: 0.002
     crypto-rate: 0.0015
     fund-rate: 0.001
+    commodity-rate: 0.015
 
   scheduler:
     crypto:
@@ -145,6 +159,10 @@ app:
       evening-cron: "0 30 21 * * *"
     fund:
       daily-cron: "0 30 11 * * *"
+    commodity:
+      morning-cron: "0 45 10 * * *"
+      afternoon-cron: "0 30 16 * * *"
+      evening-cron: "0 30 22 * * *"
     bond:
       daily-cron: "0 0 20 * * *"
     portfolio:

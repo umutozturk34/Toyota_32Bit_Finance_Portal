@@ -79,6 +79,22 @@ public class MarketCacheConfig {
     }
 
     @Bean
+    public MarketCacheService<Commodity, CommodityCandle> commodityCacheService(
+            RedisTemplate<String, Object> redisTemplate,
+            @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
+            CommodityRepository commodityRepository,
+            CommodityCandleRepository commodityCandleRepository) {
+        return new MarketCacheService<>(
+                redisTemplate, objectMapper,
+                "market:commodity:snapshot:", "market:commodity:history:",
+                Duration.ofHours(24), Commodity.class,
+                new TypeReference<>() {}, "Commodity",
+                commodityRepository::findById,
+                commodityCandleRepository::findByCommodityCodeOrderByCandleDateAsc
+        );
+    }
+
+    @Bean
     public MarketCacheService<Bond, BondRateHistory> bondCacheService(
             RedisTemplate<String, Object> redisTemplate,
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,

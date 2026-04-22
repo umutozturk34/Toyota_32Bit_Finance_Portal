@@ -1,6 +1,5 @@
 package com.finance.backend.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.math.BigDecimal;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -55,17 +54,4 @@ public class ForexCandle extends BaseCandle {
         return getClass().hashCode();
     }
 
-    public void scaleAndNormalizeOhlc(int scale) {
-        scaleOhlc(scale);
-        normalizeHighLow();
-    }
-
-    private void normalizeHighLow() {
-        if (getOpen() != null && getClose() != null && getHigh() != null && getLow() != null) {
-            BigDecimal maxOC = getOpen().max(getClose());
-            BigDecimal minOC = getOpen().min(getClose());
-            if (getHigh().compareTo(maxOC) < 0) setHigh(maxOC);
-            if (getLow().compareTo(minOC) > 0) setLow(minOC);
-        }
-    }
 }

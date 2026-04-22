@@ -22,6 +22,10 @@ export const adminService = {
   triggerFundCandles: () => api.post('/admin/trigger/fund/candles').then(r => r.data.data),
   triggerFundFull: () => api.post('/admin/trigger/fund/full').then(r => r.data.data),
 
+  triggerCommoditySnapshot: () => api.post('/admin/trigger/commodity/snapshot').then(r => r.data.data),
+  triggerCommodityCandles: () => api.post('/admin/trigger/commodity/candles').then(r => r.data.data),
+  triggerCommodityFull: () => api.post('/admin/trigger/commodity/full').then(r => r.data.data),
+
   triggerBondUpdate: () => api.post('/admin/trigger/bond/update').then(r => r.data.data),
   triggerNewsUpdate: () => api.post('/admin/trigger/news/update').then(r => r.data.data),
 

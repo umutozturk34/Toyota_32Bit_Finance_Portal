@@ -7,7 +7,7 @@ import com.finance.backend.model.MarketType;
 import com.finance.backend.service.AdminTaskService;
 import com.finance.backend.util.EnumParser;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,39 +20,44 @@ public class AdminController {
     private final AdminTaskService adminTaskService;
 
     @PostMapping("/trigger/{type}/snapshot")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerSnapshot(@PathVariable String type) {
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ApiResponse<TaskTriggerResponse> triggerSnapshot(@PathVariable String type) {
         MarketType marketType = parseMarketType(type);
         String label = capitalize(type) + " snapshot triggered";
-        return ResponseEntity.accepted().body(ApiResponse.success(label, adminTaskService.triggerSnapshot(marketType)));
+        return ApiResponse.success(label, adminTaskService.triggerSnapshot(marketType));
     }
 
     @PostMapping("/trigger/{type}/candles")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerCandles(@PathVariable String type) {
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ApiResponse<TaskTriggerResponse> triggerCandles(@PathVariable String type) {
         MarketType marketType = parseMarketType(type);
         String label = capitalize(type) + " candles triggered";
-        return ResponseEntity.accepted().body(ApiResponse.success(label, adminTaskService.triggerCandles(marketType)));
+        return ApiResponse.success(label, adminTaskService.triggerCandles(marketType));
     }
 
     @PostMapping("/trigger/{type}/full")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerFull(@PathVariable String type) {
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ApiResponse<TaskTriggerResponse> triggerFull(@PathVariable String type) {
         MarketType marketType = parseMarketType(type);
         String label = capitalize(type) + " full update triggered";
-        return ResponseEntity.accepted().body(ApiResponse.success(label, adminTaskService.triggerFull(marketType)));
+        return ApiResponse.success(label, adminTaskService.triggerFull(marketType));
     }
 
     @PostMapping("/trigger/bond/update")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerBondUpdate() {
-        return ResponseEntity.accepted().body(ApiResponse.success("Bond update triggered", adminTaskService.triggerBondUpdate()));
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ApiResponse<TaskTriggerResponse> triggerBondUpdate() {
+        return ApiResponse.success("Bond update triggered", adminTaskService.triggerBondUpdate());
     }
 
     @PostMapping("/trigger/news/update")
-    public ResponseEntity<ApiResponse<TaskTriggerResponse>> triggerNewsUpdate() {
-        return ResponseEntity.accepted().body(ApiResponse.success("News update triggered", adminTaskService.triggerNewsUpdate()));
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ApiResponse<TaskTriggerResponse> triggerNewsUpdate() {
+        return ApiResponse.success("News update triggered", adminTaskService.triggerNewsUpdate());
     }
 
     @GetMapping("/tasks/status")
-    public ResponseEntity<ApiResponse<TaskStatusResponse>> getTaskStatus() {
-        return ResponseEntity.ok(ApiResponse.success("Task status retrieved", adminTaskService.getTaskStatus()));
+    public ApiResponse<TaskStatusResponse> getTaskStatus() {
+        return ApiResponse.success("Task status retrieved", adminTaskService.getTaskStatus());
     }
 
     private MarketType parseMarketType(String raw) {

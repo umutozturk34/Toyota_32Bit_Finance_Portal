@@ -7,7 +7,6 @@ import com.finance.backend.service.NewsSourceAdminService;
 import com.finance.backend.service.NewsSourceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,48 +22,48 @@ public class AdminNewsSourceController {
     private final NewsSourceAdminService newsSourceAdminService;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<NewsSourceResponse>>> getAll(
+    public ApiResponse<List<NewsSourceResponse>> getAll(
             @RequestParam(defaultValue = "true") boolean includeDisabled
     ) {
         List<NewsSourceResponse> data = newsSourceService.getAllSources(includeDisabled);
-        return ResponseEntity.ok(ApiResponse.success("News sources retrieved", data));
+        return ApiResponse.success("News sources retrieved", data);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<NewsSourceResponse>> getById(@PathVariable Long id) {
+    public ApiResponse<NewsSourceResponse> getById(@PathVariable Long id) {
         NewsSourceResponse data = newsSourceService.getById(id);
-        return ResponseEntity.ok(ApiResponse.success("News source retrieved", data));
+        return ApiResponse.success("News source retrieved", data);
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<NewsSourceResponse>> create(
+    public ApiResponse<NewsSourceResponse> create(
             @Valid @RequestBody UpsertNewsSourceRequest request
     ) {
         NewsSourceResponse data = newsSourceAdminService.create(request);
-        return ResponseEntity.ok(ApiResponse.success("News source created", data));
+        return ApiResponse.success("News source created", data);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<NewsSourceResponse>> update(
+    public ApiResponse<NewsSourceResponse> update(
             @PathVariable Long id,
             @Valid @RequestBody UpsertNewsSourceRequest request
     ) {
         NewsSourceResponse data = newsSourceAdminService.update(id, request);
-        return ResponseEntity.ok(ApiResponse.success("News source updated", data));
+        return ApiResponse.success("News source updated", data);
     }
 
     @PatchMapping("/{id}/enabled")
-    public ResponseEntity<ApiResponse<Void>> setEnabled(
+    public ApiResponse<Void> setEnabled(
             @PathVariable Long id,
             @RequestParam boolean enabled
     ) {
         newsSourceAdminService.setEnabled(id, enabled);
-        return ResponseEntity.ok(ApiResponse.success("News source status updated", null));
+        return ApiResponse.success("News source status updated", null);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+    public ApiResponse<Void> delete(@PathVariable Long id) {
         newsSourceAdminService.delete(id);
-        return ResponseEntity.ok(ApiResponse.success("News source deleted", null));
+        return ApiResponse.success("News source deleted", null);
     }
 }

@@ -25,7 +25,18 @@ public class YahooClientMapper {
     }
 
     public YahooQuoteDto toQuoteDto(Result result) {
-        return new YahooQuoteDto(result.meta().regularMarketPrice(), result.meta().previousClose());
+        var meta = result.meta();
+        Quote firstQuote = result.firstQuote();
+        BigDecimal openPrice = (firstQuote != null && firstQuote.open() != null && !firstQuote.open().isEmpty())
+                ? firstQuote.open().getFirst() : null;
+        return new YahooQuoteDto(
+                meta.regularMarketPrice(),
+                meta.previousClose(),
+                openPrice,
+                meta.dayHigh(),
+                meta.dayLow(),
+                meta.volume()
+        );
     }
 
     public List<YahooCandleDto> toCandleDtos(Result result, boolean truncateToDays) {

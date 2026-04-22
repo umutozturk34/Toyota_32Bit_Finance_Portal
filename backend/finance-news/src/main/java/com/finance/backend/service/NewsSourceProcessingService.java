@@ -12,7 +12,6 @@ import com.finance.backend.util.BatchFailureGuard;
 import com.finance.backend.util.NewsDuplicateChecker;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
@@ -34,13 +33,13 @@ public class NewsSourceProcessingService {
                                        NewsArticleMapper articleMapper,
                                        NewsArticleRepository articleRepository,
                                        NewsCacheService newsCacheService,
-                                       PlatformTransactionManager transactionManager,
+                                       TransactionTemplate transactionTemplate,
                                        com.finance.backend.config.AppProperties appProperties) {
         this.rssClient = rssClient;
         this.articleMapper = articleMapper;
         this.articleRepository = articleRepository;
         this.newsCacheService = newsCacheService;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = transactionTemplate;
         this.maxArticlesPerSource = appProperties.getNews().getMaxArticlesPerSource();
     }
 

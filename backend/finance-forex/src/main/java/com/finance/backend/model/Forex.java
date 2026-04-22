@@ -1,6 +1,7 @@
 package com.finance.backend.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.finance.backend.dto.external.TcmbRateDto;
+import com.finance.backend.util.PercentChangeCalculator;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -51,6 +52,14 @@ public class Forex extends BaseAsset {
     private BigDecimal crossRateUsd;
     @Column(name = "cross_rate_other", precision = 19, scale = 4)
     private BigDecimal crossRateOther;
+    @Column(name = "open_price", precision = 19, scale = 4)
+    private BigDecimal openPrice;
+    @Column(name = "day_high", precision = 19, scale = 4)
+    private BigDecimal dayHigh;
+    @Column(name = "day_low", precision = 19, scale = 4)
+    private BigDecimal dayLow;
+    @Column(name = "volume")
+    private Long volume;
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -79,10 +88,15 @@ public class Forex extends BaseAsset {
     }
 
     public void applyYahooSnapshot(BigDecimal marketPrice, BigDecimal previousClose,
-                                   BigDecimal spreadRate, int scale) {
+                                   BigDecimal openPrice, BigDecimal dayHigh, BigDecimal dayLow,
+                                   Long volume, BigDecimal spreadRate, int scale) {
         if (marketPrice == null) return;
         this.currentPrice = scaleValue(marketPrice, scale);
         this.sellingPrice = scaleValue(marketPrice.multiply(BigDecimal.ONE.add(spreadRate)), scale);
+        this.openPrice = scaleValue(openPrice, scale);
+        this.dayHigh = scaleValue(dayHigh, scale);
+        this.dayLow = scaleValue(dayLow, scale);
+        this.volume = volume;
         applyChangeFields(marketPrice, previousClose, scale);
         this.yahooUpdatedAt = LocalDateTime.now();
     }
@@ -99,16 +113,9 @@ public class Forex extends BaseAsset {
     }
 
     private void applyChangeFields(BigDecimal current, BigDecimal previous, int scale) {
-        if (previous == null || previous.signum() == 0) {
-            this.change24h = null;
-            this.changePercent24h = null;
-            return;
-        }
-        BigDecimal change = current.subtract(previous);
-        this.change24h = scaleValue(change, scale);
-        this.changePercent24h = change.divide(previous, scale + 2, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.valueOf(100))
-                .setScale(scale, RoundingMode.HALF_UP);
+        PercentChangeCalculator.Result result = PercentChangeCalculator.compute(current, previous, scale);
+        this.change24h = result.amount();
+        this.changePercent24h = result.percent();
     }
 
     private BigDecimal divideByUnit(BigDecimal value, int unit, int scale) {

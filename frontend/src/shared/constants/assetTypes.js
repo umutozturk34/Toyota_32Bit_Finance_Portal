@@ -3,6 +3,7 @@ export const ASSET_TYPE_LABELS = {
   STOCK: 'Hisse',
   FOREX: 'Döviz',
   FUND: 'Fon',
+  COMMODITY: 'Emtia',
   CASH: 'Nakit',
 };
 
@@ -11,6 +12,7 @@ export const ASSET_TYPE_COLORS = {
   STOCK: '#10b981',
   FOREX: '#06b6d4',
   FUND: '#8b5cf6',
+  COMMODITY: '#f97316',
 };
 
 export const ASSET_TYPE_CHART_COLORS = {
@@ -18,6 +20,7 @@ export const ASSET_TYPE_CHART_COLORS = {
   STOCK: '#34d399',
   FOREX: '#22d3ee',
   FUND: '#c084fc',
+  COMMODITY: '#fb923c',
 };
 
 export const ASSET_TYPE_STYLES = {
@@ -25,6 +28,7 @@ export const ASSET_TYPE_STYLES = {
   STOCK: { bg: 'bg-success/10', text: 'text-success' },
   FOREX: { bg: 'bg-cyan-400/10', text: 'text-cyan-400' },
   FUND: { bg: 'bg-violet-400/10', text: 'text-violet-400' },
+  COMMODITY: { bg: 'bg-orange-400/10', text: 'text-orange-400' },
 };
 
 export const ASSET_TYPE_FILTERS = [
@@ -33,6 +37,7 @@ export const ASSET_TYPE_FILTERS = [
   { id: 'STOCK', label: 'Hisse' },
   { id: 'FOREX', label: 'Döviz' },
   { id: 'FUND', label: 'Fon' },
+  { id: 'COMMODITY', label: 'Emtia' },
 ];
 
 export const ASSET_TYPE_TABS = [
@@ -41,6 +46,7 @@ export const ASSET_TYPE_TABS = [
   { id: 'STOCK', label: 'Hisse' },
   { id: 'FOREX', label: 'Döviz' },
   { id: 'FUND', label: 'Fon' },
+  { id: 'COMMODITY', label: 'Emtia' },
 ];
 
 export const PORTFOLIO_RANGES = [

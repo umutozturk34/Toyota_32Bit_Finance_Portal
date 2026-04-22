@@ -4,5 +4,6 @@ public enum MarketType {
     STOCK,
     CRYPTO,
     FOREX,
-    FUND
+    FUND,
+    COMMODITY
 }

@@ -6,7 +6,6 @@ import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.service.TrackedAssetQueryService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,7 +24,7 @@ public class TrackedAssetController {
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<TrackedAssetResponse>>> getTrackedAssets(
+    public ApiResponse<List<TrackedAssetResponse>> getTrackedAssets(
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "sortOrder") String sort,
@@ -34,18 +33,18 @@ public class TrackedAssetController {
         List<TrackedAssetType> types = MarketRequestHelper.parseTrackedTypes(type);
         List<TrackedAssetResponse> data = trackedAssetQueryService.searchTrackedAssets(
                 types, false, search, sort, direction);
-        return ResponseEntity.ok(ApiResponse.successOrEmpty("Tracked assets retrieved successfully", "No tracked assets found", data));
+        return ApiResponse.successOrEmpty("Tracked assets retrieved successfully", "No tracked assets found", data);
     }
 
     @GetMapping("/{type}/{code}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<TrackedAssetResponse>> getTrackedAsset(
+    public ApiResponse<TrackedAssetResponse> getTrackedAsset(
             @PathVariable TrackedAssetType type,
             @PathVariable String code
     ) {
         TrackedAssetResponse data = trackedAssetQueryService.getTrackedAsset(type, code)
             .orElseThrow(() -> new ResourceNotFoundException("Tracked asset not found: " + type + " / " + code));
-        return ResponseEntity.ok(ApiResponse.success("Tracked asset retrieved successfully", data));
+        return ApiResponse.success("Tracked asset retrieved successfully", data);
     }
 
 }

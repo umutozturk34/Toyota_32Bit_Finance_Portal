@@ -2,12 +2,12 @@ package com.finance.backend.service;
 
 import com.finance.backend.client.YahooStockClient;
 import com.finance.backend.config.AppProperties;
-import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.mapper.StockMapper;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
+import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.StockCandleRepository;
 import com.finance.backend.repository.StockRepository;
 import com.finance.backend.util.BatchLogHelper;
@@ -17,7 +17,6 @@ import com.finance.backend.util.CandlePruner;
 import com.finance.backend.util.YahooRangePolicy;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.ZoneId;
@@ -34,9 +33,8 @@ public class StockCandleService implements CandleBatchRefresher {
     private final StockRepository stockRepository;
     private final StockCandleRepository stockCandleRepository;
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
-    private final MarketConstants marketConstants;
+    private final TrackedAssetQueryService trackedAssetQueryService;
     private final TransactionTemplate transactionTemplate;
-    private final int minCandlesForIncremental;
     private final int historyYears;
     private final ZoneId appZone;
 
@@ -45,17 +43,16 @@ public class StockCandleService implements CandleBatchRefresher {
                               StockRepository stockRepository,
                               StockCandleRepository stockCandleRepository,
                               MarketCacheService<Stock, StockCandle> stockCacheService,
-                              MarketConstants marketConstants,
-                              PlatformTransactionManager transactionManager,
+                              TrackedAssetQueryService trackedAssetQueryService,
+                              TransactionTemplate transactionTemplate,
                               AppProperties appProperties) {
         this.yahooStockClient = yahooStockClient;
         this.stockMapper = stockMapper;
         this.stockRepository = stockRepository;
         this.stockCandleRepository = stockCandleRepository;
         this.stockCacheService = stockCacheService;
-        this.marketConstants = marketConstants;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
-        this.minCandlesForIncremental = appProperties.getStock().getMinCandlesForIncremental();
+        this.trackedAssetQueryService = trackedAssetQueryService;
+        this.transactionTemplate = transactionTemplate;
         this.historyYears = appProperties.getStock().getHistoryYears();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
@@ -67,7 +64,7 @@ public class StockCandleService implements CandleBatchRefresher {
 
     @Override
     public void refreshAll() {
-        List<String> bistStocks = marketConstants.getTrackedBistStocks();
+        List<String> bistStocks = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.STOCK);
         if (bistStocks.isEmpty()) {
             log.warn("No BIST stocks configured in environment variables");
             return;
@@ -104,13 +101,11 @@ public class StockCandleService implements CandleBatchRefresher {
 
     private int updateCandlesForStock(String symbol) {
         Stock stock = stockRepository.getReferenceById(symbol);
-        long existingCount = stockCandleRepository.countByStockSymbol(symbol);
-        String range = existingCount < minCandlesForIncremental
-                ? historyYears + "y"
-                : stockCandleRepository.findFirstByStockSymbolOrderByCandleDateDesc(symbol)
-                .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, historyYears + "y"))
-                .orElse(historyYears + "y");
-        log.debug("{} - existing: {}, range: {}", symbol, existingCount, range);
+        String fallbackRange = historyYears + "y";
+        String range = stockCandleRepository.findFirstByStockSymbolOrderByCandleDateDesc(symbol)
+                .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, fallbackRange))
+                .orElse(fallbackRange);
+        log.debug("{} - range: {}", symbol, range);
         List<YahooCandleDto> candleDtos = yahooStockClient.fetchCandles(symbol, range, "1d", true);
         if (candleDtos.isEmpty()) {
             log.warn("{} - No valid candle data", symbol);

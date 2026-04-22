@@ -2,7 +2,6 @@ package com.finance.backend.service;
 
 import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.MarketAssetResponse;
-import com.finance.backend.service.MarketAssetProvider.MarketAssetFilters;
 import com.finance.backend.mapper.FundResponseMapper;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;

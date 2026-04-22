@@ -9,6 +9,7 @@ import SortSelect from '../../shared/components/SortSelect';
 import FilterTabs from '../../shared/components/FilterTabs';
 import Pagination from '../../shared/components/Pagination';
 import { ASSET_TYPE_LABELS, ASSET_TYPE_STYLES, ASSET_TYPE_FILTERS } from '../../shared/constants/assetTypes';
+import { assetCodeLabel } from '../../shared/utils/assetCode';
 import { usePortfolioPositions } from './usePortfolioData';
 import useListParams from '../../shared/hooks/useListParams';
 
@@ -26,7 +27,7 @@ function AssetBadge({ pos }) {
     <img src={pos.assetImage} alt={pos.assetCode} className="w-8 h-8 rounded-lg shrink-0" />
   ) : (
     <span className={`flex items-center justify-center w-8 h-8 rounded-lg ${typeStyle.bg} text-sm font-bold ${typeStyle.text} shrink-0`}>
-      {pos.assetCode.replace('.IS', '').slice(0, 3).toUpperCase()}
+      {assetCodeLabel(pos.assetType, pos.assetCode).slice(0, 3).toUpperCase()}
     </span>
   );
 }
@@ -100,8 +101,8 @@ export default function PositionsTable({ portfolioId, onAssetClick, onSellClick 
                   <div className="flex items-center gap-2.5 cursor-pointer min-w-0" onClick={() => onAssetClick(pos)}>
                     <AssetBadge pos={pos} />
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-fg leading-tight truncate">{pos.assetCode}</p>
-                      <p className="text-[11px] text-fg-muted truncate">{pos.assetName || ASSET_TYPE_LABELS[pos.assetType]}</p>
+                      <p className="text-sm font-semibold text-fg leading-tight truncate">{assetCodeLabel(pos.assetType, pos.assetCode)}</p>
+                      <p className="text-[11px] text-fg-muted truncate">{pos.assetName && pos.assetName !== pos.assetCode ? pos.assetName : ASSET_TYPE_LABELS[pos.assetType]}</p>
                     </div>
                   </div>
                   <p className="text-right text-[11px] font-mono text-fg truncate">{Number(pos.quantity).toLocaleString('tr-TR', { maximumFractionDigits: 6 })}</p>
@@ -126,7 +127,7 @@ export default function PositionsTable({ portfolioId, onAssetClick, onSellClick 
                       <AssetBadge pos={pos} />
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-fg truncate">{pos.assetCode}</p>
-                        <p className="text-[11px] text-fg-muted truncate">{pos.assetName || ASSET_TYPE_LABELS[pos.assetType]}</p>
+                        <p className="text-[11px] text-fg-muted truncate">{pos.assetName && pos.assetName !== pos.assetCode ? pos.assetName : ASSET_TYPE_LABELS[pos.assetType]}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

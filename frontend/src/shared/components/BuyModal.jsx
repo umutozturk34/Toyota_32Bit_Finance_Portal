@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Wallet, ShieldCheck } from 'lucide-react';
 import { ArrowDownRight, Loader2, Check, AlertCircle, RefreshCw, AlertTriangle } from './AnimatedIcons';
 import { portfolioService } from '../../features/portfolio/portfolioService';
+import { unifiedMarketService } from '../services/unifiedMarketService';
 import { formatPriceTRY } from '../utils/formatters';
+import { assetCodeLabel } from '../utils/assetCode';
 import PercentageSlider from './PercentageSlider';
 
 const PROCESSING_STEPS = [
@@ -13,11 +16,21 @@ const PROCESSING_STEPS = [
   { label: 'Portföy güncelleniyor...', duration: 700 },
 ];
 
-const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX'];
+const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX', 'COMMODITY'];
 
-export default function BuyModal({ assetType, assetCode, assetName, currentPrice, onClose, onComplete }) {
+export default function BuyModal({ assetType, assetCode, assetName, currentPrice: initialPrice, onClose, onComplete }) {
   const navigate = useNavigate();
   const isFractional = FRACTIONAL_TYPES.includes(assetType);
+  const displayAssetCode = assetCodeLabel(assetType, assetCode);
+
+  const { data: freshAsset } = useQuery({
+    queryKey: ['marketAsset', assetType, assetCode],
+    queryFn: () => unifiedMarketService.getByCode(assetType, assetCode),
+    enabled: Boolean(assetType && assetCode),
+    refetchOnMount: 'always',
+    staleTime: 0,
+  });
+  const currentPrice = freshAsset?.price ?? initialPrice;
   const [inputMode, setInputMode] = useState('amount');
   const [amountTry, setAmountTry] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -209,7 +222,7 @@ export default function BuyModal({ assetType, assetCode, assetName, currentPrice
             </div>
             <div>
               <h2 className="text-base font-semibold text-fg">Satın Al</h2>
-              <p className="text-xs text-fg-muted">{assetName || assetCode}</p>
+              <p className="text-xs text-fg-muted">{assetName || displayAssetCode}</p>
             </div>
           </div>
           <button
@@ -265,8 +278,8 @@ export default function BuyModal({ assetType, assetCode, assetName, currentPrice
               <p className="text-sm font-semibold text-fg">İşleminiz onaylandı</p>
               <p className="text-xs text-fg-muted">
                 {isFractional && inputMode === 'amount'
-                  ? `${formatPriceTRY(Number(amountTry))} tutarında ${assetCode} satın alındı`
-                  : `${displayQuantity} adet ${assetCode} satın alındı`}
+                  ? `${formatPriceTRY(Number(amountTry))} tutarında ${displayAssetCode} satın alındı`
+                  : `${displayQuantity} adet ${displayAssetCode} satın alındı`}
               </p>
             </motion.div>
             <motion.div
@@ -324,8 +337,8 @@ export default function BuyModal({ assetType, assetCode, assetName, currentPrice
                 <p className="text-sm font-semibold text-fg">İşleminizi onaylıyor musunuz?</p>
                 <p className="text-xs text-fg-muted">
                   {isFractional && inputMode === 'amount'
-                    ? <>{formatPriceTRY(Number(amountTry))} tutarında <span className="font-medium text-fg">{assetCode}</span> satın alınacak</>
-                    : <>{displayQuantity} adet <span className="font-medium text-fg">{assetCode}</span> satın alınacak</>}
+                    ? <>{formatPriceTRY(Number(amountTry))} tutarında <span className="font-medium text-fg">{displayAssetCode}</span> satın alınacak</>
+                    : <>{displayQuantity} adet <span className="font-medium text-fg">{displayAssetCode}</span> satın alınacak</>}
                 </p>
               </div>
             </div>
@@ -468,7 +481,7 @@ export default function BuyModal({ assetType, assetCode, assetName, currentPrice
               <div className="flex items-center justify-between text-xs px-1">
                 <span className="text-fg-muted">Tahmini Miktar</span>
                 <span className="font-mono font-medium text-fg">
-                  ~{computedQuantity.toLocaleString('tr-TR', { maximumFractionDigits: 6 })} {assetCode}
+                  ~{computedQuantity.toLocaleString('tr-TR', { maximumFractionDigits: 6 })} {displayAssetCode}
                 </span>
               </div>
             )}

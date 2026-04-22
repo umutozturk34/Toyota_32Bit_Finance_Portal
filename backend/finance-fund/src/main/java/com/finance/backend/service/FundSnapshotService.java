@@ -1,7 +1,6 @@
 package com.finance.backend.service;
 
 import com.finance.backend.client.TefasClient;
-import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.backend.exception.BusinessException;
@@ -19,7 +18,6 @@ import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
@@ -41,7 +39,6 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
     private final MarketCacheService<Fund, FundCandle> fundCacheService;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final TrackedAssetCommandService trackedAssetCommandService;
-    private final MarketConstants marketConstants;
     private final FundChangeCalculator fundChangeCalculator;
     private final TransactionTemplate transactionTemplate;
     private final ZoneId appZone;
@@ -52,9 +49,8 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
                                MarketCacheService<Fund, FundCandle> fundCacheService,
                                TrackedAssetQueryService trackedAssetQueryService,
                                TrackedAssetCommandService trackedAssetCommandService,
-                               MarketConstants marketConstants,
                                FundChangeCalculator fundChangeCalculator,
-                               PlatformTransactionManager transactionManager,
+                               TransactionTemplate transactionTemplate,
                                @Value("${app.timezone}") String timezone) {
         this.tefasClient = tefasClient;
         this.fundMapper = fundMapper;
@@ -62,9 +58,8 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         this.fundCacheService = fundCacheService;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.trackedAssetCommandService = trackedAssetCommandService;
-        this.marketConstants = marketConstants;
         this.fundChangeCalculator = fundChangeCalculator;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = transactionTemplate;
         this.appZone = ZoneId.of(timezone);
     }
 
@@ -122,7 +117,7 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         }
 
         Set<String> handledByfCodes = byfCodes;
-        List<String> yatCodes = marketConstants.getTrackedFunds().stream()
+        List<String> yatCodes = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND).stream()
                 .filter(code -> !handledByfCodes.contains(code))
                 .toList();
 

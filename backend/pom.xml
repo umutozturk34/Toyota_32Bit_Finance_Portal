@@ -30,6 +30,7 @@
 		<module>finance-forex</module>
 		<module>finance-fund</module>
 		<module>finance-bond</module>
+		<module>finance-commodity</module>
 		<module>finance-news</module>
 		<module>finance-user</module>
 		<module>finance-portfolio</module>
@@ -93,6 +94,11 @@
 			<dependency>
 				<groupId>com.finance</groupId>
 				<artifactId>finance-bond</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.finance</groupId>
+				<artifactId>finance-commodity</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

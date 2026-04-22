@@ -14,6 +14,7 @@ COPY finance-forex/pom.xml finance-forex/pom.xml
 COPY finance-user/pom.xml finance-user/pom.xml
 COPY finance-fund/pom.xml finance-fund/pom.xml
 COPY finance-bond/pom.xml finance-bond/pom.xml
+COPY finance-commodity/pom.xml finance-commodity/pom.xml
 COPY finance-news/pom.xml finance-news/pom.xml
 COPY finance-portfolio/pom.xml finance-portfolio/pom.xml
 COPY finance-app/pom.xml finance-app/pom.xml
@@ -27,6 +28,7 @@ COPY finance-forex/src finance-forex/src
 COPY finance-user/src finance-user/src
 COPY finance-fund/src finance-fund/src
 COPY finance-bond/src finance-bond/src
+COPY finance-commodity/src finance-commodity/src
 COPY finance-news/src finance-news/src
 COPY finance-portfolio/src finance-portfolio/src
 COPY finance-app/src finance-app/src

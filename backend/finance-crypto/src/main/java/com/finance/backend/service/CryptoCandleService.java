@@ -2,12 +2,12 @@ package com.finance.backend.service;
 
 import com.finance.backend.client.CoinGeckoClient;
 import com.finance.backend.config.AppProperties;
-import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.CoinGeckoCandleDto;
 import com.finance.backend.mapper.CryptoMapper;
 import com.finance.backend.model.Crypto;
 import com.finance.backend.model.CryptoCandle;
 import com.finance.backend.model.MarketType;
+import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.CryptoCandleRepository;
 import com.finance.backend.repository.CryptoRepository;
 import com.finance.backend.util.BatchLogHelper;
@@ -17,7 +17,6 @@ import com.finance.backend.util.CandlePruner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
@@ -34,7 +33,8 @@ public class CryptoCandleService implements CandleBatchRefresher {
     private final CryptoRepository cryptoRepository;
     private final CryptoCandleRepository cryptoCandleRepository;
     private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
-    private final MarketConstants marketConstants;
+    private final TrackedAssetQueryService trackedAssetQueryService;
+    private final CryptoSymbolResolver cryptoSymbolResolver;
     private final TransactionTemplate transactionTemplate;
     private final int historyDays;
     private final int minCandlesForHealthy;
@@ -44,16 +44,18 @@ public class CryptoCandleService implements CandleBatchRefresher {
                                CryptoRepository cryptoRepository,
                                CryptoCandleRepository cryptoCandleRepository,
                                MarketCacheService<Crypto, CryptoCandle> cryptoCacheService,
-                               MarketConstants marketConstants,
-                               PlatformTransactionManager transactionManager,
+                               TrackedAssetQueryService trackedAssetQueryService,
+                               CryptoSymbolResolver cryptoSymbolResolver,
+                               TransactionTemplate transactionTemplate,
                                AppProperties appProperties) {
         this.coinGeckoClient = coinGeckoClient;
         this.cryptoMapper = cryptoMapper;
         this.cryptoRepository = cryptoRepository;
         this.cryptoCandleRepository = cryptoCandleRepository;
         this.cryptoCacheService = cryptoCacheService;
-        this.marketConstants = marketConstants;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.trackedAssetQueryService = trackedAssetQueryService;
+        this.cryptoSymbolResolver = cryptoSymbolResolver;
+        this.transactionTemplate = transactionTemplate;
         this.historyDays = appProperties.getCrypto().getHistoryDays();
         this.minCandlesForHealthy = appProperties.getCrypto().getMinCandlesForHealthy();
     }
@@ -65,12 +67,12 @@ public class CryptoCandleService implements CandleBatchRefresher {
 
     @Override
     public void refreshAll() {
-        List<String> trackedCoins = marketConstants.getTrackedCryptos();
+        List<String> trackedCoins = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.CRYPTO);
         log.info("Starting crypto candle update for {} coins", trackedCoins.size());
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
                 trackedCoins,
                 coinId -> {
-                    String binanceSymbol = marketConstants.getBinanceSymbol(coinId);
+                    String binanceSymbol = cryptoSymbolResolver.resolveBinanceSymbol(coinId);
                     if (binanceSymbol == null) {
                         log.warn("No Binance mapping for coinId: {}, skipping candle update", coinId);
                         return;
@@ -113,7 +115,7 @@ public class CryptoCandleService implements CandleBatchRefresher {
             return;
         }
 
-        String binanceSymbol = marketConstants.getBinanceSymbol(normalizedId);
+        String binanceSymbol = cryptoSymbolResolver.resolveBinanceSymbol(normalizedId);
         if (binanceSymbol == null) {
             log.warn("No Binance mapping for coinId: {}, skipping tracked candle refresh", normalizedId);
             return;

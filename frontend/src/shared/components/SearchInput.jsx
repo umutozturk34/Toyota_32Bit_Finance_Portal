@@ -7,10 +7,10 @@ import { TrendingUp, TrendingDown } from './AnimatedIcons';
 import { unifiedMarketService } from '../services/unifiedMarketService';
 import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../constants/assetTypes';
 import { formatPriceTRY, getChangeClass, changeColors } from '../utils/formatters';
-
+import { assetCodeLabel } from '../utils/assetCode';
 import { BOND_TYPE_LABELS } from '../../features/bond/bondConstants';
 
-const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds' };
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
 
 export default function SearchInput({ value, onChange, placeholder = 'Ara...', debounceMs = 400, withSuggestions = false, filterType, suggestFn, suggestLabelFn }) {
   const navigate = useNavigate();
@@ -78,7 +78,10 @@ export default function SearchInput({ value, onChange, placeholder = 'Ara...', d
     setOpen(false);
     clearTimeout(timerRef.current);
     if (suggestFn) {
-      const label = suggestLabelFn ? suggestLabelFn(asset) : (asset.code || asset.seriesCode || asset.isinCode || '');
+      const rawLabel = asset.code || asset.seriesCode || asset.isinCode || '';
+      const label = suggestLabelFn
+        ? suggestLabelFn(asset)
+        : assetCodeLabel(asset.type, rawLabel);
       setLocal(label);
       setSugQuery('');
       onChange(label);
@@ -140,14 +143,15 @@ export default function SearchInput({ value, onChange, placeholder = 'Ara...', d
             >
               <div className="overflow-y-auto max-h-[300px]">
                 {suggestions.map((asset, i) => {
-                  const code = asset.code || asset.isinCode || asset.seriesCode || '';
+                  const rawCode = asset.code || asset.isinCode || asset.seriesCode || '';
+                  const code = assetCodeLabel(asset.type, rawCode);
                   const name = asset.name || (asset.isinCode && asset.seriesCode ? asset.seriesCode : '');
                   const typeColor = ASSET_TYPE_COLORS[asset.type] || '#8b5cf6';
                   const typeLabel = asset.type ? (ASSET_TYPE_LABELS[asset.type] || asset.type) : (BOND_TYPE_LABELS[asset.bondType] || asset.bondType || '');
                   const cls = getChangeClass(asset.changePercent);
                   return (
                     <button
-                      key={`${asset.type || 'bond'}-${code}-${i}`}
+                      key={`${asset.type || 'bond'}-${rawCode}-${i}`}
                       onClick={() => handleSelect(asset)}
                       onMouseEnter={() => setActiveIndex(i)}
                       className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors cursor-pointer border-none ${

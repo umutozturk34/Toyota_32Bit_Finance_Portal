@@ -1,12 +1,12 @@
 package com.finance.backend.service;
 
 import com.finance.backend.client.CoinGeckoClient;
-import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.CoinGeckoSnapshotDto;
 import com.finance.backend.mapper.CryptoMapper;
 import com.finance.backend.model.Crypto;
 import com.finance.backend.model.CryptoCandle;
 import com.finance.backend.model.MarketType;
+import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.CryptoRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
@@ -14,7 +14,6 @@ import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
@@ -32,8 +31,8 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
     private final CryptoMapper cryptoMapper;
     private final CryptoRepository cryptoRepository;
     private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
-    private final MarketConstants marketConstants;
-    private final PlatformTransactionManager transactionManager;
+    private final TrackedAssetQueryService trackedAssetQueryService;
+    private final TransactionTemplate transactionTemplate;
 
     public boolean existsInApi(String coinId) {
         String normalized = coinId == null ? "" : coinId.trim().toLowerCase();
@@ -54,8 +53,7 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
 
     @Override
     public void refreshAll() {
-        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
-        List<String> trackedCoins = marketConstants.getTrackedCryptos();
+        List<String> trackedCoins = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.CRYPTO);
         log.info("Starting crypto snapshot update for {} coins", trackedCoins.size());
         List<CoinGeckoSnapshotDto> usdMarkets = coinGeckoClient.fetchMarkets("usd", trackedCoins);
         List<CoinGeckoSnapshotDto> tryMarkets = coinGeckoClient.fetchMarkets("try", trackedCoins);
@@ -81,7 +79,6 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
     }
 
     public void refreshTrackedCryptoSnapshot(String coinId) {
-        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
         String normalizedId = coinId == null ? "" : coinId.trim().toLowerCase();
         if (normalizedId.isBlank()) {
             return;

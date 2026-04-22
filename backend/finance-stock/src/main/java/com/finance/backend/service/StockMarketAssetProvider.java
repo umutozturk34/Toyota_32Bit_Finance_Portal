@@ -9,7 +9,6 @@ import com.finance.backend.model.StockCandle;
 import com.finance.backend.model.StockSegment;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.StockRepository;
-import com.finance.backend.service.MarketAssetProvider.MarketAssetFilters;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;

@@ -13,12 +13,10 @@ import com.finance.backend.service.UnifiedMarketService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/market")
@@ -31,8 +29,8 @@ public class UnifiedMarketController {
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<PagedResponse<MarketAssetResponse>>> getMarketAssets(
-            @Parameter(description = "Asset types (comma-separated)", schema = @Schema(allowableValues = {"STOCK", "CRYPTO", "FOREX", "FUND"}))
+    public ApiResponse<PagedResponse<MarketAssetResponse>> getMarketAssets(
+            @Parameter(description = "Asset types (comma-separated)", schema = @Schema(allowableValues = {"STOCK", "CRYPTO", "FOREX", "FUND", "COMMODITY"}))
             @RequestParam(required = false) String type,
             @Parameter(description = "Single asset code lookup", example = "THYAO.IS")
             @RequestParam(required = false) String code,
@@ -55,39 +53,39 @@ public class UnifiedMarketController {
         List<MarketType> types = MarketRequestHelper.parseMarketTypes(type);
         int resolvedSize = MarketRequestHelper.clamp(size, market.getDefaultSize(), market.getMaxSize());
 
-        return ResponseEntity.ok(ApiResponse.successOrEmpty("Market assets retrieved successfully", "No data found",
-                unifiedMarketService.search(types, code, segment, subType, search, sort, direction, filter, page, resolvedSize)));
+        return ApiResponse.successOrEmpty("Market assets retrieved successfully", "No data found",
+                unifiedMarketService.search(types, code, segment, subType, search, sort, direction, filter, page, resolvedSize));
     }
 
     @GetMapping("/overview")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<MarketOverviewResponse>> getMarketOverview(
+    public ApiResponse<MarketOverviewResponse> getMarketOverview(
             @Parameter(description = "Max items per category")
             @RequestParam(required = false) Integer limit) {
         AppProperties.Market market = appProperties.getPagination().getMarket();
         int resolvedLimit = MarketRequestHelper.clamp(limit, market.getDefaultOverviewLimit(), market.getMaxOverviewLimit());
 
-        return ResponseEntity.ok(ApiResponse.success("Market overview retrieved successfully",
-                marketOverviewService.getOverview(resolvedLimit)));
+        return ApiResponse.success("Market overview retrieved successfully",
+                marketOverviewService.getOverview(resolvedLimit));
     }
 
     @GetMapping("/history")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<?>>> getMarketHistory(
+    public ApiResponse<List<?>> getMarketHistory(
             @RequestParam MarketType type,
             @Parameter(description = "Asset code", example = "THYAO.IS")
             @RequestParam String code,
             @RequestParam(defaultValue = "ALL") CandlePeriod period) {
 
-        return ResponseEntity.ok(ApiResponse.success("Market history retrieved successfully",
-                unifiedMarketService.getHistory(type, code, period)));
+        return ApiResponse.success("Market history retrieved successfully",
+                unifiedMarketService.getHistory(type, code, period));
     }
 
     @GetMapping("/group-counts")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<List<GroupCount>>> getGroupCounts(
+    public ApiResponse<List<GroupCount>> getGroupCounts(
             @RequestParam MarketType type) {
-        return ResponseEntity.ok(ApiResponse.success("Group counts retrieved",
-                unifiedMarketService.getGroupCounts(type)));
+        return ApiResponse.success("Group counts retrieved",
+                unifiedMarketService.getGroupCounts(type));
     }
 }

@@ -1,6 +1,8 @@
 package com.finance.backend.config;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -33,6 +35,7 @@ public class AppProperties {
     private Forex forex = new Forex();
     private Fund fund = new Fund();
     private Bond bond = new Bond();
+    private Commodity commodity = new Commodity();
     private News news = new News();
 
     private Scheduler scheduler = new Scheduler();
@@ -137,8 +140,33 @@ public class AppProperties {
 
     @Getter
     @Setter
+    public static class Commodity {
+        private int yearsToKeep = 5;
+        private Map<String, String> yahooSymbolOverrides = new HashMap<>(Map.of(
+                "XAUTRY", "GC=F",
+                "XAGTRY", "SI=F",
+                "XPTTRY", "PL=F",
+                "XPDTRY", "PA=F"
+        ));
+        private List<CommodityDerivativeRule> derivatives = new ArrayList<>(List.of(
+                new CommodityDerivativeRule("XAUTRY", "XAUTRYG", new BigDecimal("31.1035")),
+                new CommodityDerivativeRule("XAGTRY", "XAGTRYG", new BigDecimal("31.1035"))
+        ));
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CommodityDerivativeRule {
+        private String sourceCode;
+        private String derivativeCode;
+        private BigDecimal divisor;
+    }
+
+    @Getter
+    @Setter
     public static class Stock {
-        private int minCandlesForIncremental = 1200;
         private int historyYears = 5;
     }
 
@@ -146,7 +174,6 @@ public class AppProperties {
     @Setter
     public static class Forex {
         private int yearsToKeep = 5;
-        private int minCandlesForIncremental = 1200;
         private BigDecimal spreadRate = new BigDecimal("0.01");
     }
 
@@ -173,6 +200,7 @@ public class AppProperties {
         private BigDecimal stockRate = new BigDecimal("0.002");
         private BigDecimal cryptoRate = new BigDecimal("0.0015");
         private BigDecimal fundRate = new BigDecimal("0.001");
+        private BigDecimal commodityRate = new BigDecimal("0.015");
     }
 
     @Getter
@@ -181,6 +209,7 @@ public class AppProperties {
         private MarketSchedule crypto = new MarketSchedule();
         private MarketSchedule stock = new MarketSchedule();
         private MarketSchedule forex = new MarketSchedule();
+        private MarketSchedule commodity = new MarketSchedule();
         private MarketSchedule news = new MarketSchedule();
         private SingleSchedule fund = new SingleSchedule();
         private SingleSchedule bond = new SingleSchedule();

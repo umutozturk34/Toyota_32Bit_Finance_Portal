@@ -18,23 +18,23 @@ public abstract class StockMapper {
     protected AppProperties appProperties;
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-    @Mapping(target = "priceChangeAmount", ignore = true)
-    @Mapping(target = "priceChangePercent", ignore = true)
+    @Mapping(target = "priceChangeAmount", source = "dto.changeAmount")
+    @Mapping(target = "priceChangePercent", source = "dto.changePercent")
     @Mapping(target = "stockSegment", ignore = true)
     @Mapping(target = "lastUpdated", expression = "java(now)")
     public abstract Stock toEntity(YahooStockQuoteDto dto, LocalDateTime now);
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
     @Mapping(target = "symbol", ignore = true)
-    @Mapping(target = "priceChangeAmount", ignore = true)
-    @Mapping(target = "priceChangePercent", ignore = true)
+    @Mapping(target = "priceChangeAmount", source = "dto.changeAmount")
+    @Mapping(target = "priceChangePercent", source = "dto.changePercent")
     @Mapping(target = "stockSegment", ignore = true)
     @Mapping(target = "lastUpdated", expression = "java(now)")
     public abstract void updateEntityFromDto(@MappingTarget Stock stock, YahooStockQuoteDto dto, LocalDateTime now);
 
     @AfterMapping
     void enrichStock(@MappingTarget Stock stock) {
-        stock.scaleAndComputeChange(appProperties.getScale());
+        stock.scaleOnly(appProperties.getScale());
         if (stock.getStockSegment() == null && stock.getSymbol() != null) {
             stock.setStockSegment(StockSegment.EQUITY);
         }

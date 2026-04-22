@@ -19,62 +19,10 @@ class StockTest {
     }
 
     @Test
-    void scaleAndComputeChangeCalculatesPositiveChange() {
-        Stock stock = createStock("55", "50", "51", "56", "49");
-
-        stock.scaleAndComputeChange(4);
-
-        assertThat(stock.getPriceChangeAmount()).isEqualByComparingTo(new BigDecimal("5.0000"));
-        assertThat(stock.getPriceChangePercent()).isEqualByComparingTo(new BigDecimal("10.0000"));
-        assertThat(stock.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("55.0000"));
-        assertThat(stock.getCurrentPrice().scale()).isEqualTo(4);
-    }
-
-    @Test
-    void scaleAndComputeChangeCalculatesNegativeChange() {
-        Stock stock = createStock("45", "50", "49", "50", "44");
-
-        stock.scaleAndComputeChange(4);
-
-        assertThat(stock.getPriceChangeAmount()).isEqualByComparingTo(new BigDecimal("-5.0000"));
-        assertThat(stock.getPriceChangePercent()).isEqualByComparingTo(new BigDecimal("-10.0000"));
-    }
-
-    @Test
-    void scaleAndComputeChangeNullPreviousCloseNullsOutChange() {
-        Stock stock = createStock("55", null, "51", "56", "49");
-
-        stock.scaleAndComputeChange(4);
-
-        assertThat(stock.getPriceChangeAmount()).isNull();
-        assertThat(stock.getPriceChangePercent()).isNull();
-    }
-
-    @Test
-    void scaleAndComputeChangeZeroPreviousCloseNullsOutChange() {
-        Stock stock = createStock("55", "0", "51", "56", "49");
-
-        stock.scaleAndComputeChange(4);
-
-        assertThat(stock.getPriceChangeAmount()).isNull();
-        assertThat(stock.getPriceChangePercent()).isNull();
-    }
-
-    @Test
-    void scaleAndComputeChangeNullCurrentPriceNullsOutChange() {
-        Stock stock = createStock(null, "50", "49", "50", "48");
-
-        stock.scaleAndComputeChange(4);
-
-        assertThat(stock.getPriceChangeAmount()).isNull();
-        assertThat(stock.getPriceChangePercent()).isNull();
-    }
-
-    @Test
-    void scaleAndComputeChangeScalesAllPriceFields() {
+    void scaleOnlyScalesAllPriceFields() {
         Stock stock = createStock("55.123456", "50.987654", "51.111111", "56.666666", "49.333333");
 
-        stock.scaleAndComputeChange(4);
+        stock.scaleOnly(4);
 
         assertThat(stock.getCurrentPrice().scale()).isEqualTo(4);
         assertThat(stock.getPreviousClose().scale()).isEqualTo(4);
@@ -84,24 +32,35 @@ class StockTest {
     }
 
     @Test
-    void scaleAndComputeChangeFractionalPercent() {
-        Stock stock = createStock("103", "100", "100", "104", "99");
+    void scaleOnlyScalesProvidedChangeFields() {
+        Stock stock = createStock("55", "50", "51", "56", "49");
+        stock.setPriceChangeAmount(new BigDecimal("5.123456"));
+        stock.setPriceChangePercent(new BigDecimal("10.246912"));
 
-        stock.scaleAndComputeChange(4);
+        stock.scaleOnly(4);
 
-        assertThat(stock.getPriceChangeAmount()).isEqualByComparingTo(new BigDecimal("3.0000"));
-        assertThat(stock.getPriceChangePercent()).isEqualByComparingTo(new BigDecimal("3.0000"));
+        assertThat(stock.getPriceChangeAmount()).isEqualByComparingTo(new BigDecimal("5.1235"));
+        assertThat(stock.getPriceChangePercent()).isEqualByComparingTo(new BigDecimal("10.2469"));
     }
 
     @Test
-    void scaleAndComputeChangeNullFieldsStayNull() {
+    void scaleOnlyPreservesNullChangeFields() {
+        Stock stock = createStock("55", null, "51", "56", "49");
+
+        stock.scaleOnly(4);
+
+        assertThat(stock.getPriceChangeAmount()).isNull();
+        assertThat(stock.getPriceChangePercent()).isNull();
+    }
+
+    @Test
+    void scaleOnlyLeavesNullPriceFieldsNull() {
         Stock stock = createStock("55", "50", null, null, null);
 
-        stock.scaleAndComputeChange(4);
+        stock.scaleOnly(4);
 
         assertThat(stock.getOpenPrice()).isNull();
         assertThat(stock.getDayHigh()).isNull();
         assertThat(stock.getDayLow()).isNull();
-        assertThat(stock.getPriceChangeAmount()).isEqualByComparingTo(new BigDecimal("5.0000"));
     }
 }

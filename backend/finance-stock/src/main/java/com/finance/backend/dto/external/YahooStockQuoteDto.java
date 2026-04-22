@@ -5,6 +5,8 @@ public record YahooStockQuoteDto(
         String name,
         BigDecimal currentPrice,
         BigDecimal previousClose,
+        BigDecimal changeAmount,
+        BigDecimal changePercent,
         BigDecimal openPrice,
         BigDecimal dayHigh,
         BigDecimal dayLow,

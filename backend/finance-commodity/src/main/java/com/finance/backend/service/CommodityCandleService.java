@@ -45,6 +45,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
     private final MarketCacheService<Forex, ForexCandle> forexCacheService;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final PreciousMetalDerivativeCalculator derivativeCalculator;
+    private final YahooSymbolResolver yahooSymbolResolver;
     private final TransactionTemplate transactionTemplate;
     private final int yearsToKeep;
     private final int scale;
@@ -58,6 +59,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
                                   MarketCacheService<Forex, ForexCandle> forexCacheService,
                                   TrackedAssetQueryService trackedAssetQueryService,
                                   PreciousMetalDerivativeCalculator derivativeCalculator,
+                                  YahooSymbolResolver yahooSymbolResolver,
                                   PlatformTransactionManager transactionManager,
                                   AppProperties appProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
@@ -68,6 +70,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
         this.forexCacheService = forexCacheService;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.derivativeCalculator = derivativeCalculator;
+        this.yahooSymbolResolver = yahooSymbolResolver;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.yearsToKeep = appProperties.getCommodity().getYearsToKeep();
         this.scale = appProperties.getScale();
@@ -83,10 +86,10 @@ public class CommodityCandleService implements CandleBatchRefresher {
     public void refreshAll() {
         pruneOldCommodityCandles();
         List<String> enabledCodes = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.COMMODITY);
-        List<String> yahooCodes = enabledCodes.stream()
-                .filter(this::isYahooFetchable)
+        List<String> fetchableCodes = enabledCodes.stream()
+                .filter(code -> yahooSymbolResolver.resolve(code) != null)
                 .toList();
-        if (yahooCodes.isEmpty()) {
+        if (fetchableCodes.isEmpty()) {
             log.info("No Yahoo-fetchable commodities enabled, skipping candle sync");
             return;
         }
@@ -97,10 +100,10 @@ public class CommodityCandleService implements CandleBatchRefresher {
             return;
         }
 
-        log.info("Starting commodity candle sync for {} items", yahooCodes.size());
+        log.info("Starting commodity candle sync for {} items", fetchableCodes.size());
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
-                yahooCodes,
+                fetchableCodes,
                 code -> updateCommodityCandles(code, usdtryCandleMap),
                 code -> code,
                 "candle",
@@ -115,8 +118,8 @@ public class CommodityCandleService implements CandleBatchRefresher {
     }
 
     public void refreshTrackedCommodityCandles(String code) {
-        String normalized = code == null ? "" : code.trim().toUpperCase();
-        if (normalized.isBlank() || !isYahooFetchable(normalized)) return;
+        String normalized = yahooSymbolResolver.normalize(code);
+        if (yahooSymbolResolver.resolve(normalized) == null) return;
         Map<String, YahooCandleDto> usdtryCandleMap = loadUsdTryCandleMap();
         if (usdtryCandleMap.isEmpty()) {
             log.error("USDTRY candles unavailable, skipping single refresh for {}", normalized);
@@ -124,10 +127,6 @@ public class CommodityCandleService implements CandleBatchRefresher {
         }
         updateCommodityCandles(normalized, usdtryCandleMap);
         log.info("Refreshed tracked commodity candles for {}", normalized);
-    }
-
-    private boolean isYahooFetchable(String code) {
-        return code != null && code.contains("=F");
     }
 
     private Map<String, YahooCandleDto> loadUsdTryCandleMap() {
@@ -143,8 +142,10 @@ public class CommodityCandleService implements CandleBatchRefresher {
                 candle.getLow(), candle.getClose(), null);
     }
 
-    private void updateCommodityCandles(String yahooSymbol, Map<String, YahooCandleDto> usdtryCandleMap) {
-        String range = commodityCandleRepository.findFirstByCommodityCodeOrderByCandleDateDesc(yahooSymbol)
+    private void updateCommodityCandles(String commodityCode, Map<String, YahooCandleDto> usdtryCandleMap) {
+        String yahooSymbol = yahooSymbolResolver.resolve(commodityCode);
+        if (yahooSymbol == null) return;
+        String range = commodityCandleRepository.findFirstByCommodityCodeOrderByCandleDateDesc(commodityCode)
                 .map(last -> YahooRangePolicy.fromLastCandle(last.getCandleDate(), appZone, "5y"))
                 .orElse("5y");
 
@@ -157,14 +158,17 @@ public class CommodityCandleService implements CandleBatchRefresher {
                 usdCandles, usdtryCandleMap, false, scale);
         if (tryCandles.isEmpty()) {
             log.warn("No USDTRY-aligned candles for {} (usd={}, usdtry={} entries)",
-                    yahooSymbol, usdCandles.size(), usdtryCandleMap.size());
+                    commodityCode, usdCandles.size(), usdtryCandleMap.size());
             return;
         }
 
-        Commodity commodity = commodityRepository.findById(yahooSymbol)
-                .orElseGet(() -> Commodity.builder().commodityCode(yahooSymbol).build());
+        Commodity commodity = commodityRepository.findById(commodityCode)
+                .orElseGet(() -> Commodity.builder()
+                        .commodityCode(commodityCode)
+                        .yahooSymbol(yahooSymbol)
+                        .build());
         transactionTemplate.executeWithoutResult(status -> saveCandleBatch(commodity, tryCandles));
-        commodityCacheService.refreshHistory(yahooSymbol);
+        commodityCacheService.refreshHistory(commodityCode);
     }
 
     private void saveCandleBatch(Commodity commodity, List<YahooCandleDto> candleDtos) {

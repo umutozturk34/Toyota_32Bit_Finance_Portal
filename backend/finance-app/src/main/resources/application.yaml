@@ -109,9 +109,14 @@ app:
   commodity:
     years-to-keep: 5
     spread-rate: 0.015
-    gold-source-code: "GC=F"
-    silver-source-code: "SI=F"
+    gold-source-code: "XAUTRY"
+    silver-source-code: "XAGTRY"
     gold-gram-divisor: 31.1035
+    yahoo-symbol-overrides:
+      XAUTRY: "GC=F"
+      XAGTRY: "SI=F"
+      XPTTRY: "PL=F"
+      XPDTRY: "PA=F"
 
   news:
     max-articles-per-source: 50

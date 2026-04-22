@@ -59,6 +59,7 @@ class CommodityCandleServiceTest {
         when(commodityCandleRepository.deleteByCandleDateBefore(any())).thenReturn(0);
 
         PreciousMetalDerivativeCalculator derivativeCalculator = mock(PreciousMetalDerivativeCalculator.class);
+        YahooSymbolResolver yahooSymbolResolver = new YahooSymbolResolver(props);
         service = new CommodityCandleService(
                 yahooCommodityClient,
                 commodityMapper,
@@ -68,6 +69,7 @@ class CommodityCandleServiceTest {
                 forexCacheService,
                 trackedAssetQueryService,
                 derivativeCalculator,
+                yahooSymbolResolver,
                 transactionManager,
                 props);
     }

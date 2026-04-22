@@ -5,7 +5,7 @@ import { X, Wallet, ShieldCheck } from 'lucide-react';
 import { ArrowDownRight, Loader2, Check, AlertCircle, RefreshCw, AlertTriangle } from './AnimatedIcons';
 import { portfolioService } from '../../features/portfolio/portfolioService';
 import { formatPriceTRY } from '../utils/formatters';
-import { assetCodeLabel } from '../constants/commodities';
+import { assetCodeLabel } from '../utils/assetCode';
 import PercentageSlider from './PercentageSlider';
 
 const PROCESSING_STEPS = [

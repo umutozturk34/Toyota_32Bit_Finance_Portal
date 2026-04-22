@@ -38,8 +38,7 @@ public abstract class CommodityResponseMapper {
                 commodity.getOpenPrice(),
                 commodity.getDayHigh(),
                 commodity.getDayLow(),
-                commodity.getVolume(),
-                commodity.getDisplayCode()
+                commodity.getVolume()
         );
     }
 }

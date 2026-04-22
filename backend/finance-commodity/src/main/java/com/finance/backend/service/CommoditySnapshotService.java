@@ -37,6 +37,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
     private final MarketCacheService<Forex, ForexCandle> forexCacheService;
     private final PreciousMetalDerivativeCalculator derivativeCalculator;
     private final TrackedAssetQueryService trackedAssetQueryService;
+    private final YahooSymbolResolver yahooSymbolResolver;
     private final TransactionTemplate transactionTemplate;
     private final int scale;
     private final BigDecimal spreadRate;
@@ -48,6 +49,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
                                     MarketCacheService<Forex, ForexCandle> forexCacheService,
                                     PreciousMetalDerivativeCalculator derivativeCalculator,
                                     TrackedAssetQueryService trackedAssetQueryService,
+                                    YahooSymbolResolver yahooSymbolResolver,
                                     PlatformTransactionManager transactionManager,
                                     AppProperties appProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
@@ -57,6 +59,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
         this.forexCacheService = forexCacheService;
         this.derivativeCalculator = derivativeCalculator;
         this.trackedAssetQueryService = trackedAssetQueryService;
+        this.yahooSymbolResolver = yahooSymbolResolver;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.scale = appProperties.getScale();
         this.spreadRate = appProperties.getCommodity().getSpreadRate();
@@ -68,10 +71,11 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
     }
 
     public boolean existsInApi(String code) {
-        String normalized = normalize(code);
-        if (normalized.isBlank() || !isYahooFetchable(normalized)) return false;
+        String normalized = yahooSymbolResolver.normalize(code);
+        String yahooSymbol = yahooSymbolResolver.resolve(normalized);
+        if (yahooSymbol == null) return false;
         try {
-            YahooQuoteDto quote = yahooCommodityClient.fetchQuote(normalized);
+            YahooQuoteDto quote = yahooCommodityClient.fetchQuote(yahooSymbol);
             return quote != null && quote.regularMarketPrice() != null;
         } catch (Exception e) {
             log.warn("Commodity existence check failed for {}: {}", normalized, e.getMessage());
@@ -80,31 +84,27 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
     }
 
     public void refreshTrackedCommoditySnapshot(String code) {
-        String normalized = normalize(code);
-        if (normalized.isBlank() || !isYahooFetchable(normalized)) return;
+        String normalized = yahooSymbolResolver.normalize(code);
+        if (yahooSymbolResolver.resolve(normalized) == null) return;
         updateCommoditySnapshot(normalized);
         log.info("Refreshed tracked commodity snapshot for {}", normalized);
-    }
-
-    private String normalize(String code) {
-        return code == null ? "" : code.trim().toUpperCase();
     }
 
     @Override
     public void refreshAll() {
         List<String> enabledCodes = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.COMMODITY);
-        List<String> yahooCodes = enabledCodes.stream()
-                .filter(this::isYahooFetchable)
+        List<String> fetchableCodes = enabledCodes.stream()
+                .filter(code -> yahooSymbolResolver.resolve(code) != null)
                 .toList();
-        if (yahooCodes.isEmpty()) {
+        if (fetchableCodes.isEmpty()) {
             log.info("No Yahoo-fetchable commodities enabled, skipping snapshot sync");
             return;
         }
 
-        log.info("Starting commodity snapshot sync for {} items", yahooCodes.size());
+        log.info("Starting commodity snapshot sync for {} items", fetchableCodes.size());
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
-                yahooCodes,
+                fetchableCodes,
                 this::updateCommoditySnapshot,
                 code -> code,
                 "snapshot",
@@ -117,11 +117,9 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
         BatchLogHelper.logSummary(log, "Commodity snapshot sync", result);
     }
 
-    private boolean isYahooFetchable(String code) {
-        return code != null && code.contains("=F");
-    }
-
-    private void updateCommoditySnapshot(String yahooSymbol) {
+    private void updateCommoditySnapshot(String commodityCode) {
+        String yahooSymbol = yahooSymbolResolver.resolve(commodityCode);
+        if (yahooSymbol == null) return;
         YahooQuoteDto quote = yahooCommodityClient.fetchQuote(yahooSymbol);
         if (quote == null || quote.regularMarketPrice() == null) {
             throw new ExternalApiException("Yahoo Finance",
@@ -133,17 +131,21 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
                 ? usdtryToday.subtract(usdtry.getChange24h())
                 : usdtryToday;
         CommoditySnapshotInput snapshot = commodityMapper.toSnapshotInput(quote, usdtryToday, scale);
-        Commodity commodity = commodityRepository.findById(yahooSymbol)
+        Commodity commodity = commodityRepository.findById(commodityCode)
                 .orElseGet(() -> Commodity.builder()
-                        .commodityCode(yahooSymbol)
-                        .commoditySegment(CommoditySegment.fromCode(yahooSymbol))
+                        .commodityCode(commodityCode)
+                        .yahooSymbol(yahooSymbol)
+                        .commoditySegment(CommoditySegment.fromCode(commodityCode))
                         .build());
         transactionTemplate.executeWithoutResult(status -> {
             commodity.applyYahooSnapshot(snapshot, spreadRate, scale);
+            if (commodity.getYahooSymbol() == null) {
+                commodity.setYahooSymbol(yahooSymbol);
+            }
             commodityRepository.save(commodity);
         });
-        commodityCacheService.putSnapshot(yahooSymbol, commodity);
-        if (derivativeCalculator.hasDerivatives(yahooSymbol)) {
+        commodityCacheService.putSnapshot(commodityCode, commodity);
+        if (derivativeCalculator.hasDerivatives(commodityCode)) {
             derivativeCalculator.refreshDerivatives(commodity, usdtryToday, usdtryYesterday);
         }
     }

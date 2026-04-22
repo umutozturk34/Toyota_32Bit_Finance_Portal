@@ -6,7 +6,7 @@ import { Search, X } from 'lucide-react';
 import { TrendingUp, TrendingDown } from './AnimatedIcons';
 import { unifiedMarketService } from '../services/unifiedMarketService';
 import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../constants/assetTypes';
-import { assetCodeLabel } from '../constants/commodities';
+import { assetCodeLabel } from '../utils/assetCode';
 import { formatPriceTRY, getChangeClass, changeColors } from '../utils/formatters';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
@@ -167,7 +167,7 @@ export default function SearchSuggestions({
                           className="flex items-center justify-center w-8 h-8 rounded-lg text-[10px] font-bold shrink-0"
                           style={{ backgroundColor: typeColor + '18', color: typeColor }}
                         >
-                          {(asset.metadata?.displayCode || assetCodeLabel(asset.type, asset.code)).slice(0, 3).toUpperCase()}
+                          {assetCodeLabel(asset.type, asset.code).slice(0, 3).toUpperCase()}
                         </span>
                       )}
 

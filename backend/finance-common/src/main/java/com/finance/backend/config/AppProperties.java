@@ -141,9 +141,15 @@ public class AppProperties {
     public static class Commodity {
         private int yearsToKeep = 5;
         private BigDecimal spreadRate = new BigDecimal("0.015");
-        private String goldSourceCode = "GC=F";
-        private String silverSourceCode = "SI=F";
+        private String goldSourceCode = "XAUTRY";
+        private String silverSourceCode = "XAGTRY";
         private BigDecimal goldGramDivisor = new BigDecimal("31.1035");
+        private Map<String, String> yahooSymbolOverrides = new HashMap<>(Map.of(
+                "XAUTRY", "GC=F",
+                "XAGTRY", "SI=F",
+                "XPTTRY", "PL=F",
+                "XPDTRY", "PA=F"
+        ));
     }
 
     @Getter

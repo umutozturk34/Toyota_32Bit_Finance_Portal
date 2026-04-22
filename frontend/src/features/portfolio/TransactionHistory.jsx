@@ -10,7 +10,7 @@ import SortSelect from '../../shared/components/SortSelect';
 import FilterTabs from '../../shared/components/FilterTabs';
 import Pagination from '../../shared/components/Pagination';
 import { ASSET_TYPE_LABELS, ASSET_TYPE_FILTERS } from '../../shared/constants/assetTypes';
-import { assetCodeLabel } from '../../shared/constants/commodities';
+import { assetCodeLabel } from '../../shared/utils/assetCode';
 import { usePortfolioTransactions } from './usePortfolioData';
 import useListParams from '../../shared/hooks/useListParams';
 

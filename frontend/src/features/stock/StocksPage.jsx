@@ -26,7 +26,7 @@ import BuyModal from '../../shared/components/BuyModal';
 import FilterTabs from '../../shared/components/FilterTabs';
 import { toast } from '../../shared/components/Toast';
 import useListParams from '../../shared/hooks/useListParams';
-import { assetCodeLabel } from '../../shared/constants/commodities';
+import { assetCodeLabel } from '../../shared/utils/assetCode';
 
 const SORT_OPTIONS = [
     { id: 'changePercent', label: 'Değişim %' },

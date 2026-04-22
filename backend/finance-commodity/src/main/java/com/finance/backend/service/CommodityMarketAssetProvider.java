@@ -26,7 +26,7 @@ public class CommodityMarketAssetProvider extends BaseTrackedMarketAssetProvider
             "name", "name",
             "default", "changePercent24h"
     );
-    private static final List<String> SEARCH_FIELDS = List.of("commodityCode", "commodityName", "commodityNameTr", "name", "displayCode");
+    private static final List<String> SEARCH_FIELDS = List.of("commodityCode", "commodityName", "commodityNameTr", "name");
 
     private final CommodityRepository commodityRepository;
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;

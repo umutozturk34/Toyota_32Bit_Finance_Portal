@@ -6,7 +6,7 @@ public enum CommoditySegment {
     PRECIOUS_METAL,
     OTHER;
 
-    private static final Set<String> PRECIOUS_BASE = Set.of("GC=F", "SI=F", "PL=F", "PA=F");
+    private static final Set<String> PRECIOUS_BASE = Set.of("XAUTRY", "XAGTRY", "XPTTRY", "XPDTRY");
 
     public static CommoditySegment fromCode(String code) {
         if (code == null) return null;

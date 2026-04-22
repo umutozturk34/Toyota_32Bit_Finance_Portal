@@ -32,6 +32,8 @@ const SEGMENT_LABELS = {
     OTHER: 'Diğerleri',
 };
 
+const SEGMENT_ORDER = ['PRECIOUS_METAL', 'OTHER'];
+
 function CommoditiesPage() {
     const navigate = useNavigate();
     const { hasRole } = useAuth();
@@ -47,11 +49,13 @@ function CommoditiesPage() {
         staleTime: 60_000,
     });
 
-    const tabItems = segmentCounts.map(s => ({
-        type: s.type,
-        count: s.count,
-        label: SEGMENT_LABELS[s.type] || s.type,
-    }));
+    const tabItems = [...segmentCounts]
+        .sort((a, b) => SEGMENT_ORDER.indexOf(a.type) - SEGMENT_ORDER.indexOf(b.type))
+        .map(s => ({
+            type: s.type,
+            count: s.count,
+            label: SEGMENT_LABELS[s.type] || s.type,
+        }));
 
     const queryParams = {
         ...listParams.params,
@@ -142,7 +146,6 @@ function CommoditiesPage() {
                         const cls = getChangeClass(commodity.changePercent);
                         const meta = commodity.metadata || {};
                         const usd = meta.currentPriceUsd;
-                        const secondary = meta.displayCode || commodity.code;
                         return (
                             <motion.div
                                 key={commodity.code}
@@ -152,10 +155,8 @@ function CommoditiesPage() {
                             >
                                 <div className="flex items-start justify-between">
                                     <div className="min-w-0 flex-1">
-                                        <h3 className="truncate text-sm font-semibold text-fg">{commodity.name || secondary}</h3>
-                                        {meta.displayCode && (
-                                            <span className="block truncate text-xs text-fg-muted">{meta.displayCode}</span>
-                                        )}
+                                        <h3 className="truncate text-sm font-semibold text-fg">{commodity.name || commodity.code}</h3>
+                                        <span className="block truncate text-xs text-fg-muted">{commodity.code}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {meta.unit && (
@@ -166,7 +167,7 @@ function CommoditiesPage() {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                setBuyTarget({ assetCode: commodity.code, assetName: commodity.name || secondary, price: commodity.price });
+                                                setBuyTarget({ assetCode: commodity.code, assetName: commodity.name || commodity.code, price: commodity.price });
                                             }}
                                             title="Satın Al"
                                             className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base transition-colors duration-150 hover:bg-surface"

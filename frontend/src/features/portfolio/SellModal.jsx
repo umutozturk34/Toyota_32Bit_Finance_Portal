@@ -4,7 +4,7 @@ import { X, ShieldCheck } from 'lucide-react';
 import { ArrowUpRight, Loader2, Check, AlertCircle, RefreshCw, AlertTriangle } from '../../shared/components/AnimatedIcons';
 import { portfolioService } from './portfolioService';
 import { formatPriceTRY } from '../../shared/utils/formatters';
-import { assetCodeLabel } from '../../shared/constants/commodities';
+import { assetCodeLabel } from '../../shared/utils/assetCode';
 import PercentageSlider from '../../shared/components/PercentageSlider';
 
 const PROCESSING_STEPS = [

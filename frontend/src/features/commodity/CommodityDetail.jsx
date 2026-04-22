@@ -10,12 +10,12 @@ const fmt = (price) => formatPrice(price, { locale: 'tr-TR' });
 
 function CommodityHeader({ asset }) {
   const meta = asset.metadata || {};
-  const display = asset.name || meta.displayCode || asset.code;
-  const subtitle = [meta.displayCode, meta.unit].filter(Boolean).join(' · ');
+  const display = asset.name || asset.code;
+  const subtitle = [asset.code, meta.unit].filter(Boolean).join(' · ');
   return (
     <>
       <span className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-400/10 text-orange-400 text-sm font-bold">
-        {(meta.displayCode || asset.code || '').slice(0, 3).toUpperCase()}
+        {(asset.code || '').slice(0, 3).toUpperCase()}
       </span>
       <div>
         <h1 className="text-xl font-bold text-fg">{display}</h1>
@@ -111,7 +111,7 @@ export default function CommodityDetail() {
       getBuyProps={(asset) => ({
         assetType: 'COMMODITY',
         assetCode: asset.code || code,
-        assetName: asset.name || asset.metadata?.displayCode || code,
+        assetName: asset.name || asset.code || code,
         currentPrice: asset.price,
       })}
     />

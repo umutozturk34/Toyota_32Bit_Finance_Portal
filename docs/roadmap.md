@@ -25,25 +25,36 @@
 
 ## Aktif Gelistirme Plani (15 Nisan — 25 Mayis)
 
-### v0.13.0 — Emtia Modulu (15 Nisan | 1 gun)
+### v0.13.0 — Emtia Modulu — ✅ TAMAMLANDI (15 Nisan → 22 Nisan | 8 gun)
 
-**Backend:**
-- `finance-commodity` modul: Yahoo Finance commodity data
-- Varliklar: Altin (GC=F), Gumus (SI=F), Petrol (CL=F), Bakir (HG=F), Dogalgaz (NG=F)
-- `CommodityCalculationService`: USD fiyat x USD/TRY kuru = TRY fiyat
-- Altin endeksleri: Gram = Ons x USDTRY / 31.1035, Tam = Gram x 7.02, Yarim = Tam / 2, Ceyrek = Tam / 4
-- Katsayilar `application.yaml`'da config
-- `CommodityMarketAssetProvider implements MarketAssetProvider`
-- Entity, repository, mapper, scheduler, cache service
-- `AssetType.COMMODITY` + `MarketType.COMMODITY` enum ekleme
-- `AssetPricingAdapter`'a commodity destegiportfolio BUY/SELL otomatik calisir
-- Flyway migration V33
+**Branch:** `feat/emtia` (merge'e hazir)
 
-**Frontend:**
-- `features/commodity/` — CommodityPage, commodityService
-- AssetDetailPage ile detay sayfasi
-- Sidebar'a ekleme
-- MarketDataPage overview'da commodity movers
+**Gerçeklesen kapsam (orijinal plandan genisledi):**
+
+Backend — finance-commodity modul:
+- Yahoo Finance commodity data (metaller: XAUTRY/XAGTRY/XPTTRY/XPDTRY; futures: BZ=F/HG=F/ZW=F/NG=F/vs.)
+- `CommodityDerivativeRule` registry (YAML-driven) — gram derivatives: XAUTRYG (altin gram), XAGTRYG (gumus gram). Diger coin derivatives (GOLD_TAM/YARIM/CEYREK/CUMHURIYET) kullanici talebiyle kaldirildi — piyasa gercekligi ile uyumsuzdu
+- `SyntheticPriceCalculator` (finance-common) USD × USDTRY conversion — stock ve forex ile paylasimli
+- `ExchangeRateProvider` port (finance-common) + `ForexExchangeRateProvider` impl — commodity artik finance-forex modulune bagli degil
+- `YahooSymbolResolver` bean — domain code → Yahoo symbol cevrimi tek noktada
+- `CommoditySegmentResolver` — PRECIOUS_METAL / OTHER segment'i config map + derivative codes'tan turetir, `CommoditySegment.fromCode` string-pattern factory kaldirildi
+- `PreciousMetalDerivativeCalculator` — snapshot + candle regeneration, registry-driven (if/else dispatch yok)
+- `CommodityPricingStrategy` — stock/fund/crypto commission pattern (forex spread degil), `commodity-rate: 0.015`
+- `CommodityMarketAssetProvider`, `CommodityResponseMapper`, `CommodityMetadata` sealed record
+- `CommodityScheduler` (3x daily cron, Europe/Istanbul), `CommodityDataService` (admin trigger), `CommodityQueryService` (history endpoint)
+- `AssetType.COMMODITY` + `MarketType.COMMODITY` + `TrackedAssetType.COMMODITY` enum'lari
+- Flyway migrations V36-V50: table create, USD price storage, silver+wheat seed, copper seed, OHLC+volume, segment+categories, metal code rename, derivative code rename, sellingPrice column drop
+
+Frontend:
+- `features/commodity/` — CommoditiesPage (tab'li segment filter: Tumu / Kiymetli Metaller / Digerleri), CommodityDetail
+- `commodityService` TanStack Query ile
+- MarketDataPage overview'da commodity movers (ASSET_TYPE_COLORS turuncu)
+- SearchInput + SearchSuggestions commodity destegi (XAU → XAUTRY match)
+- BuyModal / SellModal commodity destegi (fractional trading aktif)
+- Admin panel: AdminTrackedAssetsPage'e COMMODITY tab, TasksPanel'e Commodity action group
+- UI bug fixes: SellModal double-commission fix, BuyModal stale price refetch
+
+**Toplam:** ~2500 LOC backend + tests, ~37 commit (orijinal Commit 1-7 plani + refactor arc'i R1-R4 + cesitli fix/UI).
 
 ---
 

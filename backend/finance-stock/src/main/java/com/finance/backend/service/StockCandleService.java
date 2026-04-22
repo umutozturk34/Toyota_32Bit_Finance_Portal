@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.client.YahooStockClient;
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.StockProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.mapper.StockMapper;
 import com.finance.backend.model.MarketType;
@@ -47,7 +48,8 @@ public class StockCandleService implements CandleBatchRefresher {
                               MarketCacheService<Stock, StockCandle> stockCacheService,
                               TrackedAssetQueryService trackedAssetQueryService,
                               TransactionTemplate transactionTemplate,
-                              AppProperties appProperties) {
+                              AppProperties appProperties,
+                              StockProperties stockProperties) {
         this.yahooStockClient = yahooStockClient;
         this.stockMapper = stockMapper;
         this.stockRepository = stockRepository;
@@ -55,7 +57,7 @@ public class StockCandleService implements CandleBatchRefresher {
         this.stockCacheService = stockCacheService;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.transactionTemplate = transactionTemplate;
-        this.historyYears = appProperties.getStock().getHistoryYears();
+        this.historyYears = stockProperties.getHistoryYears();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 

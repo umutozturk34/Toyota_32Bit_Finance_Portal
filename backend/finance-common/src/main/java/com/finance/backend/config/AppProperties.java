@@ -29,7 +29,6 @@ public class AppProperties {
     private Cache cache = new Cache();
 
     private Crypto crypto = new Crypto();
-    private Stock stock = new Stock();
     private Forex forex = new Forex();
     private Fund fund = new Fund();
     private Bond bond = new Bond();
@@ -133,12 +132,6 @@ public class AppProperties {
         private BigDecimal cpiFixedThreshold = new BigDecimal("5");
         private BigDecimal faceValue = new BigDecimal("100");
         private int daysInYear = 365;
-    }
-
-    @Getter
-    @Setter
-    public static class Stock {
-        private int historyYears = 5;
     }
 
     @Getter

@@ -1,7 +1,6 @@
 package com.finance.backend.service;
 
 import com.finance.backend.client.TefasClient;
-import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.backend.exception.BusinessException;
@@ -41,7 +40,6 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
     private final MarketCacheService<Fund, FundCandle> fundCacheService;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final TrackedAssetCommandService trackedAssetCommandService;
-    private final MarketConstants marketConstants;
     private final FundChangeCalculator fundChangeCalculator;
     private final TransactionTemplate transactionTemplate;
     private final ZoneId appZone;
@@ -52,7 +50,6 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
                                MarketCacheService<Fund, FundCandle> fundCacheService,
                                TrackedAssetQueryService trackedAssetQueryService,
                                TrackedAssetCommandService trackedAssetCommandService,
-                               MarketConstants marketConstants,
                                FundChangeCalculator fundChangeCalculator,
                                PlatformTransactionManager transactionManager,
                                @Value("${app.timezone}") String timezone) {
@@ -62,7 +59,6 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         this.fundCacheService = fundCacheService;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.trackedAssetCommandService = trackedAssetCommandService;
-        this.marketConstants = marketConstants;
         this.fundChangeCalculator = fundChangeCalculator;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.appZone = ZoneId.of(timezone);
@@ -122,7 +118,7 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         }
 
         Set<String> handledByfCodes = byfCodes;
-        List<String> yatCodes = marketConstants.getTrackedFunds().stream()
+        List<String> yatCodes = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND).stream()
                 .filter(code -> !handledByfCodes.contains(code))
                 .toList();
 

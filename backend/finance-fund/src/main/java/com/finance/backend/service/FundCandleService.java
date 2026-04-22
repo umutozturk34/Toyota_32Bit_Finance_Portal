@@ -2,13 +2,13 @@ package com.finance.backend.service;
 
 import com.finance.backend.client.TefasClient;
 import com.finance.backend.config.AppProperties;
-import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.mapper.FundMapper;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;
 import com.finance.backend.model.FundType;
 import com.finance.backend.model.MarketType;
+import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.FundCandleRepository;
 import com.finance.backend.repository.FundRepository;
 import com.finance.backend.util.BatchLogHelper;
@@ -36,7 +36,7 @@ public class FundCandleService implements CandleBatchRefresher {
     private final FundRepository fundRepository;
     private final FundCandleRepository fundCandleRepository;
     private final MarketCacheService<Fund, FundCandle> fundCacheService;
-    private final MarketConstants marketConstants;
+    private final TrackedAssetQueryService trackedAssetQueryService;
     private final FundSnapshotService fundSnapshotService;
     private final TransactionTemplate transactionTemplate;
     private final int windowSize;
@@ -49,7 +49,7 @@ public class FundCandleService implements CandleBatchRefresher {
                              FundRepository fundRepository,
                              FundCandleRepository fundCandleRepository,
                              MarketCacheService<Fund, FundCandle> fundCacheService,
-                             MarketConstants marketConstants,
+                             TrackedAssetQueryService trackedAssetQueryService,
                              FundSnapshotService fundSnapshotService,
                              PlatformTransactionManager transactionManager,
                              AppProperties appProperties) {
@@ -58,7 +58,7 @@ public class FundCandleService implements CandleBatchRefresher {
         this.fundRepository = fundRepository;
         this.fundCandleRepository = fundCandleRepository;
         this.fundCacheService = fundCacheService;
-        this.marketConstants = marketConstants;
+        this.trackedAssetQueryService = trackedAssetQueryService;
         this.fundSnapshotService = fundSnapshotService;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         AppProperties.Fund fundConfig = appProperties.getFund();
@@ -129,7 +129,7 @@ public class FundCandleService implements CandleBatchRefresher {
         if (fundType == FundType.BYF) {
             funds = fundRepository.findByFundType(FundType.BYF);
         } else {
-            List<String> yatCodes = marketConstants.getTrackedFunds();
+            List<String> yatCodes = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND);
             funds = fundRepository.findAllById(yatCodes).stream()
                     .filter(f -> f.getFundType() != FundType.BYF)
                     .toList();

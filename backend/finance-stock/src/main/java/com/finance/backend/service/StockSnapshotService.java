@@ -1,7 +1,6 @@
 package com.finance.backend.service;
 
 import com.finance.backend.client.YahooStockClient;
-import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.YahooStockQuoteDto;
 import com.finance.backend.exception.BusinessException;
 import com.finance.backend.mapper.StockMapper;
@@ -31,7 +30,6 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
     private final StockRepository stockRepository;
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
     private final TrackedAssetQueryService trackedAssetQueryService;
-    private final MarketConstants marketConstants;
     private final TransactionTemplate transactionTemplate;
 
     public StockSnapshotService(YahooStockClient yahooStockClient,
@@ -39,14 +37,12 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
                                 StockRepository stockRepository,
                                 MarketCacheService<Stock, StockCandle> stockCacheService,
                                 TrackedAssetQueryService trackedAssetQueryService,
-                                MarketConstants marketConstants,
                                 PlatformTransactionManager transactionManager) {
         this.yahooStockClient = yahooStockClient;
         this.stockMapper = stockMapper;
         this.stockRepository = stockRepository;
         this.stockCacheService = stockCacheService;
         this.trackedAssetQueryService = trackedAssetQueryService;
-        this.marketConstants = marketConstants;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
@@ -69,7 +65,7 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
 
     @Override
     public void refreshAll() {
-        List<String> bistStocks = marketConstants.getTrackedBistStocks();
+        List<String> bistStocks = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.STOCK);
         if (bistStocks.isEmpty()) {
             log.warn("No BIST stocks configured in environment variables");
             return;

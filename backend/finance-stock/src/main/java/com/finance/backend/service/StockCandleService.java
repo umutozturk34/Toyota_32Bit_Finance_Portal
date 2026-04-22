@@ -2,12 +2,12 @@ package com.finance.backend.service;
 
 import com.finance.backend.client.YahooStockClient;
 import com.finance.backend.config.AppProperties;
-import com.finance.backend.constants.MarketConstants;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.mapper.StockMapper;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.Stock;
 import com.finance.backend.model.StockCandle;
+import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.StockCandleRepository;
 import com.finance.backend.repository.StockRepository;
 import com.finance.backend.util.BatchLogHelper;
@@ -34,7 +34,7 @@ public class StockCandleService implements CandleBatchRefresher {
     private final StockRepository stockRepository;
     private final StockCandleRepository stockCandleRepository;
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
-    private final MarketConstants marketConstants;
+    private final TrackedAssetQueryService trackedAssetQueryService;
     private final TransactionTemplate transactionTemplate;
     private final int historyYears;
     private final ZoneId appZone;
@@ -44,7 +44,7 @@ public class StockCandleService implements CandleBatchRefresher {
                               StockRepository stockRepository,
                               StockCandleRepository stockCandleRepository,
                               MarketCacheService<Stock, StockCandle> stockCacheService,
-                              MarketConstants marketConstants,
+                              TrackedAssetQueryService trackedAssetQueryService,
                               PlatformTransactionManager transactionManager,
                               AppProperties appProperties) {
         this.yahooStockClient = yahooStockClient;
@@ -52,7 +52,7 @@ public class StockCandleService implements CandleBatchRefresher {
         this.stockRepository = stockRepository;
         this.stockCandleRepository = stockCandleRepository;
         this.stockCacheService = stockCacheService;
-        this.marketConstants = marketConstants;
+        this.trackedAssetQueryService = trackedAssetQueryService;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.historyYears = appProperties.getStock().getHistoryYears();
         this.appZone = ZoneId.of(appProperties.getTimezone());
@@ -65,7 +65,7 @@ public class StockCandleService implements CandleBatchRefresher {
 
     @Override
     public void refreshAll() {
-        List<String> bistStocks = marketConstants.getTrackedBistStocks();
+        List<String> bistStocks = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.STOCK);
         if (bistStocks.isEmpty()) {
             log.warn("No BIST stocks configured in environment variables");
             return;

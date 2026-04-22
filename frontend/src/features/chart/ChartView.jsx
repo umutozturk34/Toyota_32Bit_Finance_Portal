@@ -106,7 +106,7 @@ const ChartView = () => {
 
   const { data: fundListRaw = [] } = useQuery({
     queryKey: ['fundList'],
-    queryFn: fundService.getAllFunds,
+    queryFn: fundService.getAll,
     enabled: assetType === 'FUND',
     staleTime: 60_000,
   });
@@ -138,9 +138,9 @@ const ChartView = () => {
       const code = compareAsset.code;
       const type = compareAsset.type;
       if (type === 'CRYPTO') return getCryptoHistory(code, timeRange);
-      if (type === 'STOCK') return stockService.getStockHistory(code.endsWith('.IS') ? code : `${code}.IS`, timeRange);
-      if (type === 'FOREX') return forexService.getForexHistory(code, timeRange);
-      if (type === 'FUND') return fundService.getFundHistory(code, timeRange);
+      if (type === 'STOCK') return stockService.getHistory(code.endsWith('.IS') ? code : `${code}.IS`, timeRange);
+      if (type === 'FOREX') return forexService.getHistory(code, timeRange);
+      if (type === 'FUND') return fundService.getHistory(code, timeRange);
       return Promise.resolve([]);
     },
     enabled: !!compareAsset,
@@ -217,9 +217,9 @@ const ChartView = () => {
 
   const fetchHistory = (sym, type, range) => {
     if (type === 'CRYPTO') return getCryptoHistory(sym, range);
-    if (type === 'BIST' || type === 'US') return stockService.getStockHistory(sym.endsWith('.IS') ? sym : `${sym}.IS`, range);
-    if (type === 'FOREX') return forexService.getForexHistory(sym, range);
-    if (type === 'FUND') return fundService.getFundHistory(sym, range);
+    if (type === 'BIST' || type === 'US') return stockService.getHistory(sym.endsWith('.IS') ? sym : `${sym}.IS`, range);
+    if (type === 'FOREX') return forexService.getHistory(sym, range);
+    if (type === 'FUND') return fundService.getHistory(sym, range);
     return Promise.resolve([]);
   };
 

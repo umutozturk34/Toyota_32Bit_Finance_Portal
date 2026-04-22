@@ -56,13 +56,13 @@ function StocksPage() {
 
     const { data: segmentCounts = [] } = useQuery({
         queryKey: ['stockSegments'],
-        queryFn: stockService.getSegmentCounts,
+        queryFn: stockService.getGroupCounts,
         staleTime: 60_000,
     });
 
     const { data: indicesData } = useQuery({
         queryKey: ['stocks', 'indices'],
-        queryFn: () => stockService.getAllStocks({ segment: 'MAIN_INDEX', size: 10 }),
+        queryFn: () => stockService.getAll({ segment: 'MAIN_INDEX', size: 10 }),
     });
     const indices = indicesData?.content || [];
 
@@ -77,7 +77,7 @@ function StocksPage() {
     };
 
     const { data, isLoading: loading, isFetching, error, refetch } = useMarketListData(
-        'stocks', stockService.getAllStocks, queryParams);
+        'stocks', stockService.getAll, queryParams);
 
     const stocks = data?.content || [];
     const totalPages = data?.totalPages || 0;

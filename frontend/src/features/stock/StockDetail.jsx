@@ -89,8 +89,8 @@ export default function StockDetail() {
       assetType="STOCK"
       chartAssetType="BIST"
       queryKeyPrefix="stock"
-      fetchAsset={() => stockService.getStockBySymbol(symbol)}
-      fetchHistory={(_, range) => stockService.getStockHistory(historySym, range)}
+      fetchAsset={() => stockService.getByCode(symbol)}
+      fetchHistory={(_, range) => stockService.getHistory(historySym, range)}
       backRoute="/stocks"
       excludeCompare={[historySym]}
       renderHeader={(asset) => <StockHeader asset={asset} />}

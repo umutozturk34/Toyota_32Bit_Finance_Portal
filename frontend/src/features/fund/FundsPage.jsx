@@ -54,7 +54,7 @@ function FundsPage() {
 
     const { data: fundTypes = [] } = useQuery({
         queryKey: ['fundTypes'],
-        queryFn: fundService.getTypes,
+        queryFn: fundService.getGroupCounts,
         staleTime: 60_000,
     });
 
@@ -64,7 +64,7 @@ function FundsPage() {
     };
 
     const { data, isLoading: loading, error, refetch } = useMarketListData(
-        'funds', fundService.getAllFunds, queryParams);
+        'funds', fundService.getAll, queryParams);
 
     const funds = data?.content || [];
     const totalPages = data?.totalPages || 0;

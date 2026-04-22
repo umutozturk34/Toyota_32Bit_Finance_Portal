@@ -77,7 +77,7 @@ export default function CryptoDetail() {
       assetType="CRYPTO"
       chartAssetType="CRYPTO"
       queryKeyPrefix="crypto"
-      fetchAsset={cryptoService.getById}
+      fetchAsset={cryptoService.getByCode}
       fetchHistory={cryptoService.getHistory}
       backRoute="/crypto"
       renderHeader={(asset) => <CryptoHeader asset={asset} />}

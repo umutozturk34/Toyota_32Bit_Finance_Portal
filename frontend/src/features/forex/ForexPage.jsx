@@ -46,7 +46,7 @@ function ForexPage() {
     const listParams = useListParams();
 
     const { data, isLoading: loading, error, refetch } = useMarketListData(
-        'forex', forexService.getAllForex, listParams.params);
+        'forex', forexService.getAll, listParams.params);
 
     const forexData = data?.content || [];
     const totalPages = data?.totalPages || 0;

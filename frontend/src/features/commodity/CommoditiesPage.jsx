@@ -46,7 +46,7 @@ function CommoditiesPage() {
 
     const { data: segmentCounts = [] } = useQuery({
         queryKey: ['commoditySegments'],
-        queryFn: commodityService.getSegmentCounts,
+        queryFn: commodityService.getGroupCounts,
         staleTime: 60_000,
     });
 
@@ -64,7 +64,7 @@ function CommoditiesPage() {
     };
 
     const { data, isLoading: loading, error, refetch } = useMarketListData(
-        'commodities', commodityService.getAllCommodities, queryParams);
+        'commodities', commodityService.getAll, queryParams);
 
     const commodities = data?.content || [];
     const totalPages = data?.totalPages || 0;

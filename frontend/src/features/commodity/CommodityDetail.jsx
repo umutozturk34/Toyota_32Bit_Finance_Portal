@@ -101,8 +101,8 @@ export default function CommodityDetail() {
       assetType="COMMODITY"
       chartAssetType="COMMODITY"
       queryKeyPrefix="commodity"
-      fetchAsset={() => commodityService.getCommodityByCode(code)}
-      fetchHistory={(_, range) => commodityService.getCommodityHistory(code, range)}
+      fetchAsset={() => commodityService.getByCode(code)}
+      fetchHistory={(_, range) => commodityService.getHistory(code, range)}
       backRoute="/commodities"
       excludeCompare={[code]}
       renderHeader={(asset) => <CommodityHeader asset={asset} />}

@@ -28,8 +28,6 @@ public class AppProperties {
     private Async async = new Async();
     private Cache cache = new Cache();
 
-    private News news = new News();
-
     private Scheduler scheduler = new Scheduler();
 
     private Pagination pagination = new Pagination();
@@ -112,14 +110,6 @@ public class AppProperties {
 
 
 
-    @Getter
-    @Setter
-    public static class News {
-        private int maxArticlesPerSource = 50;
-        private int cacheTtlHours = 24;
-        private int defaultCategoryLimit = 20;
-        private Map<String, Integer> categoryLimits = new HashMap<>();
-    }
 
     @Getter
     @Setter

@@ -12,6 +12,7 @@ import com.finance.backend.repository.CommodityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Collections;
 import java.util.List;
@@ -44,7 +45,7 @@ class CommodityCandleServiceTest {
         commodityRepository = mock(CommodityRepository.class);
         commodityCandleRepository = mock(CommodityCandleRepository.class);
         trackedAssetQueryService = mock(TrackedAssetQueryService.class);
-        PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
+        TransactionTemplate transactionTemplate = new TransactionTemplate(mock(PlatformTransactionManager.class));
 
         AppProperties props = new AppProperties();
         AppProperties.Commodity commodityProps = new AppProperties.Commodity();
@@ -67,7 +68,7 @@ class CommodityCandleServiceTest {
                 trackedAssetQueryService,
                 derivativeCalculator,
                 yahooSymbolResolver,
-                transactionManager,
+                transactionTemplate,
                 props);
     }
 

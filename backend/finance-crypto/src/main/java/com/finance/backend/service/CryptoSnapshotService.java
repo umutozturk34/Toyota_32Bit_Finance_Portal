@@ -14,7 +14,6 @@ import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
@@ -33,7 +32,7 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
     private final CryptoRepository cryptoRepository;
     private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
     private final TrackedAssetQueryService trackedAssetQueryService;
-    private final PlatformTransactionManager transactionManager;
+    private final TransactionTemplate transactionTemplate;
 
     public boolean existsInApi(String coinId) {
         String normalized = coinId == null ? "" : coinId.trim().toLowerCase();
@@ -54,7 +53,6 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
 
     @Override
     public void refreshAll() {
-        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
         List<String> trackedCoins = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.CRYPTO);
         log.info("Starting crypto snapshot update for {} coins", trackedCoins.size());
         List<CoinGeckoSnapshotDto> usdMarkets = coinGeckoClient.fetchMarkets("usd", trackedCoins);
@@ -81,7 +79,6 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
     }
 
     public void refreshTrackedCryptoSnapshot(String coinId) {
-        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
         String normalizedId = coinId == null ? "" : coinId.trim().toLowerCase();
         if (normalizedId.isBlank()) {
             return;

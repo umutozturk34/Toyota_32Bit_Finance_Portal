@@ -17,7 +17,6 @@ import com.finance.backend.util.WindowedFetchPlanner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
@@ -55,7 +54,7 @@ public class BondRateHistoryService {
                                   BondRepository bondRepository,
                                   BondRateHistoryRepository rateHistoryRepository,
                                   MarketCacheService<Bond, BondRateHistory> bondCacheService,
-                                  PlatformTransactionManager transactionManager,
+                                  TransactionTemplate transactionTemplate,
                                   AppProperties appProperties) {
         this.evdsClient = evdsClient;
         this.clientMapper = clientMapper;
@@ -63,7 +62,7 @@ public class BondRateHistoryService {
         this.bondRepository = bondRepository;
         this.rateHistoryRepository = rateHistoryRepository;
         this.bondCacheService = bondCacheService;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = transactionTemplate;
         this.maxDaysPerRequest = appProperties.getBond().getMaxDaysPerRequest();
         this.rateThreshold = appProperties.getBond().getRateThreshold();
         this.auctionThreshold = appProperties.getBond().getAuctionThreshold();

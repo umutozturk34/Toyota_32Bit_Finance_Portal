@@ -17,7 +17,6 @@ import com.finance.backend.util.CandlePruner;
 import com.finance.backend.util.YahooRangePolicy;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.ZoneId;
@@ -45,7 +44,7 @@ public class StockCandleService implements CandleBatchRefresher {
                               StockCandleRepository stockCandleRepository,
                               MarketCacheService<Stock, StockCandle> stockCacheService,
                               TrackedAssetQueryService trackedAssetQueryService,
-                              PlatformTransactionManager transactionManager,
+                              TransactionTemplate transactionTemplate,
                               AppProperties appProperties) {
         this.yahooStockClient = yahooStockClient;
         this.stockMapper = stockMapper;
@@ -53,7 +52,7 @@ public class StockCandleService implements CandleBatchRefresher {
         this.stockCandleRepository = stockCandleRepository;
         this.stockCacheService = stockCacheService;
         this.trackedAssetQueryService = trackedAssetQueryService;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = transactionTemplate;
         this.historyYears = appProperties.getStock().getHistoryYears();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }

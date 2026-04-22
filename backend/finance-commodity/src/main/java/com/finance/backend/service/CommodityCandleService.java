@@ -20,7 +20,6 @@ import com.finance.backend.util.YahooRangePolicy;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
@@ -58,7 +57,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
                                   TrackedAssetQueryService trackedAssetQueryService,
                                   PreciousMetalDerivativeCalculator derivativeCalculator,
                                   YahooSymbolResolver yahooSymbolResolver,
-                                  PlatformTransactionManager transactionManager,
+                                  TransactionTemplate transactionTemplate,
                                   AppProperties appProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
         this.commodityMapper = commodityMapper;
@@ -69,7 +68,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.derivativeCalculator = derivativeCalculator;
         this.yahooSymbolResolver = yahooSymbolResolver;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = transactionTemplate;
         this.yearsToKeep = appProperties.getCommodity().getYearsToKeep();
         this.scale = appProperties.getScale();
         this.appZone = ZoneId.of(appProperties.getTimezone());

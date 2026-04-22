@@ -18,7 +18,6 @@ import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
@@ -51,7 +50,7 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
                                TrackedAssetQueryService trackedAssetQueryService,
                                TrackedAssetCommandService trackedAssetCommandService,
                                FundChangeCalculator fundChangeCalculator,
-                               PlatformTransactionManager transactionManager,
+                               TransactionTemplate transactionTemplate,
                                @Value("${app.timezone}") String timezone) {
         this.tefasClient = tefasClient;
         this.fundMapper = fundMapper;
@@ -60,7 +59,7 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.trackedAssetCommandService = trackedAssetCommandService;
         this.fundChangeCalculator = fundChangeCalculator;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = transactionTemplate;
         this.appZone = ZoneId.of(timezone);
     }
 

@@ -17,7 +17,6 @@ import com.finance.backend.util.CandlePruner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
@@ -47,7 +46,7 @@ public class CryptoCandleService implements CandleBatchRefresher {
                                MarketCacheService<Crypto, CryptoCandle> cryptoCacheService,
                                TrackedAssetQueryService trackedAssetQueryService,
                                CryptoSymbolResolver cryptoSymbolResolver,
-                               PlatformTransactionManager transactionManager,
+                               TransactionTemplate transactionTemplate,
                                AppProperties appProperties) {
         this.coinGeckoClient = coinGeckoClient;
         this.cryptoMapper = cryptoMapper;
@@ -56,7 +55,7 @@ public class CryptoCandleService implements CandleBatchRefresher {
         this.cryptoCacheService = cryptoCacheService;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.cryptoSymbolResolver = cryptoSymbolResolver;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = transactionTemplate;
         this.historyDays = appProperties.getCrypto().getHistoryDays();
         this.minCandlesForHealthy = appProperties.getCrypto().getMinCandlesForHealthy();
     }

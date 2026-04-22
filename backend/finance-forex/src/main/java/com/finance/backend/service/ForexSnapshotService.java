@@ -14,7 +14,6 @@ import com.finance.backend.util.SyntheticPriceCalculator;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
@@ -34,12 +33,12 @@ public class ForexSnapshotService implements SnapshotBatchRefresher {
     public ForexSnapshotService(YahooForexClient yahooForexClient,
                                 ForexRepository forexRepository,
                                 MarketCacheService<Forex, ForexCandle> forexCacheService,
-                                PlatformTransactionManager transactionManager,
+                                TransactionTemplate transactionTemplate,
                                 AppProperties appProperties) {
         this.yahooForexClient = yahooForexClient;
         this.forexRepository = forexRepository;
         this.forexCacheService = forexCacheService;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = transactionTemplate;
         this.scale = appProperties.getScale();
         this.spreadRate = appProperties.getForex().getSpreadRate();
     }

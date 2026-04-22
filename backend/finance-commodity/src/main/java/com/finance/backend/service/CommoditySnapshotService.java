@@ -17,7 +17,6 @@ import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
@@ -48,7 +47,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
                                     TrackedAssetQueryService trackedAssetQueryService,
                                     YahooSymbolResolver yahooSymbolResolver,
                                     CommoditySegmentResolver segmentResolver,
-                                    PlatformTransactionManager transactionManager,
+                                    TransactionTemplate transactionTemplate,
                                     AppProperties appProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
         this.commodityMapper = commodityMapper;
@@ -59,7 +58,7 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher {
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.yahooSymbolResolver = yahooSymbolResolver;
         this.segmentResolver = segmentResolver;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = transactionTemplate;
         this.scale = appProperties.getScale();
     }
 

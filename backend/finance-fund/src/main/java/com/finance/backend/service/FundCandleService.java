@@ -20,7 +20,6 @@ import com.finance.backend.util.WindowedFetchPlanner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
@@ -51,7 +50,7 @@ public class FundCandleService implements CandleBatchRefresher {
                              MarketCacheService<Fund, FundCandle> fundCacheService,
                              TrackedAssetQueryService trackedAssetQueryService,
                              FundSnapshotService fundSnapshotService,
-                             PlatformTransactionManager transactionManager,
+                             TransactionTemplate transactionTemplate,
                              AppProperties appProperties) {
         this.tefasClient = tefasClient;
         this.fundMapper = fundMapper;
@@ -60,7 +59,7 @@ public class FundCandleService implements CandleBatchRefresher {
         this.fundCacheService = fundCacheService;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.fundSnapshotService = fundSnapshotService;
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate = transactionTemplate;
         AppProperties.Fund fundConfig = appProperties.getFund();
         this.windowSize = fundConfig.getWindowSizes();
         this.minCandlesForIncremental = fundConfig.getMinCandlesForIncremental();

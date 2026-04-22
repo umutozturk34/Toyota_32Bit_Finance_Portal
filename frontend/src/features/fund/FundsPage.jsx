@@ -13,7 +13,7 @@ import { TrendingUp, TrendingDown, ShoppingCart } from '../../shared/components/
 import { fundService } from './fundService';
 import { adminService } from '../admin/adminService';
 import { useAuth } from '../auth/AuthContext';
-import { formatPriceTRY, formatCompactTRY, formatVolume, getChangeClass, changeColors, changeBg } from '../../shared/utils/formatters';
+import { formatPriceTRY, formatCompactTRY, formatVolume, getChangeClass, changeColors, changeBg, formatPercentAbs } from '../../shared/utils/formatters';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
 import LoadingState from '../../shared/components/LoadingState';
 import ErrorState from '../../shared/components/ErrorState';
@@ -192,7 +192,7 @@ function FundsPage() {
                                         ) : fund.changePercent < 0 ? (
                                             <TrendingDown className="h-3.5 w-3.5" />
                                         ) : null}
-                                        {Math.abs(fund.changePercent).toFixed(2)}%
+                                        {formatPercentAbs(fund.changePercent)}
                                         <span className="ml-1 opacity-75">24h</span>
                                     </div>
                                 )}

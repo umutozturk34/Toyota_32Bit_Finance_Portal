@@ -8,7 +8,7 @@ import {
 import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, RefreshCw } from '../../shared/components/AnimatedIcons';
 import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
 import { newsService } from '../news/newsService';
-import { formatPriceTRY, getChangeClass, changeColors, changeBg } from '../../shared/utils/formatters';
+import { formatPriceTRY, getChangeClass, changeColors, changeBg, formatPercentAbs, formatPercent } from '../../shared/utils/formatters';
 import LoadingState from '../../shared/components/LoadingState';
 import ErrorState from '../../shared/components/ErrorState';
 import SearchSuggestions from '../../shared/components/SearchSuggestions';
@@ -55,7 +55,7 @@ function IndexCard({ asset, index, navigate }) {
         {asset.changePercent != null && (
           <div className={`mt-3 inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold ${changeBg[cls]} ${changeColors[cls]}`}>
             {isUp ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-            {Math.abs(asset.changePercent).toFixed(2)}%
+            {formatPercentAbs(asset.changePercent)}
           </div>
         )}
       </div>
@@ -83,7 +83,7 @@ function AssetRow({ asset, onClick }) {
       <span className="text-[13px] font-mono font-bold text-fg tabular-nums">{formatPriceTRY(asset.price)}</span>
       {asset.changePercent != null && (
         <span className={`text-[11px] font-mono font-semibold tabular-nums min-w-[52px] text-right ${changeColors[cls]}`}>
-          {asset.changePercent > 0 ? '+' : ''}{asset.changePercent.toFixed(2)}%
+          {formatPercent(asset.changePercent)}
         </span>
       )}
     </div>

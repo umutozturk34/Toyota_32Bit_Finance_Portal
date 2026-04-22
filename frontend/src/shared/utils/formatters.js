@@ -86,6 +86,11 @@ export const formatPercent = (percent) => {
     return `${prefix}${percent.toFixed(2)}%`;
 };
 
+export const formatPercentAbs = (percent, decimals = 2) => {
+    if (percent === null || percent === undefined) return '0.00%';
+    return `${Math.abs(percent).toFixed(decimals)}%`;
+};
+
 export const formatDateLong = (dateString, locale = 'tr-TR') => {
     const date = new Date(dateString);
     return date.toLocaleDateString(locale, {

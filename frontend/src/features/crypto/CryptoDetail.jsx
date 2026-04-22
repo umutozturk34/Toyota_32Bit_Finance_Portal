@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Activity, BarChart2 } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/AnimatedIcons';
 import { cryptoService } from './cryptoService';
-import { getChangeClass, changeColors, changeBg, formatPriceUSD, formatPriceTRY, formatCompactNumber } from '../../shared/utils/formatters';
+import { getChangeClass, changeColors, changeBg, formatPriceUSD, formatPriceTRY, formatCompactNumber, formatPercentAbs } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
 import AssetDetailPage from '../../shared/components/AssetDetailPage';
 
@@ -45,7 +45,7 @@ function CryptoMetadata({ asset }) {
           <p className="text-xs text-fg-muted mb-1">24s Değişim</p>
           <div className={`flex items-center gap-1 text-lg font-mono font-bold ${changeColors[cls]}`}>
             {asset.changePercent > 0 ? <ArrowUpRight className="h-4 w-4" /> : asset.changePercent < 0 ? <ArrowDownRight className="h-4 w-4" /> : null}
-            {Math.abs(asset.changePercent || 0).toFixed(2)}%
+            {formatPercentAbs(asset.changePercent)}
           </div>
         </div>
         <div className="rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">

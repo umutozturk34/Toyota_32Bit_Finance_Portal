@@ -7,7 +7,7 @@ import { TrendingUp, TrendingDown, ShoppingCart } from '../../shared/components/
 import { commodityService } from './commodityService';
 import { adminService } from '../admin/adminService';
 import { useAuth } from '../auth/AuthContext';
-import { getChangeClass, changeColors, changeBg, formatPrice } from '../../shared/utils/formatters';
+import { getChangeClass, changeColors, changeBg, formatPrice, formatPercentAbs } from '../../shared/utils/formatters';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
 import LoadingState from '../../shared/components/LoadingState';
 import ErrorState from '../../shared/components/ErrorState';
@@ -179,7 +179,7 @@ function CommoditiesPage() {
                                     <p className="font-mono text-xl font-bold text-fg">₺{formatCommodityPrice(commodity.price)}</p>
                                     <div className={`mt-1 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
                                         {commodity.changePercent > 0 ? <TrendingUp className="h-3.5 w-3.5" /> : commodity.changePercent < 0 ? <TrendingDown className="h-3.5 w-3.5" /> : null}
-                                        {Math.abs(commodity.changePercent || 0).toFixed(2)}%
+                                        {formatPercentAbs(commodity.changePercent)}
                                         <span className="ml-1 opacity-75">({commodity.changeAmount > 0 ? '+' : ''}₺{formatCommodityPrice(commodity.changeAmount)})</span>
                                     </div>
                                 </div>

@@ -11,7 +11,7 @@ import { TrendingUp, ArrowUpRight, ArrowDownRight, ShoppingCart } from '../../sh
 import { cryptoService } from './cryptoService';
 import { adminService } from '../admin/adminService';
 import { useAuth } from '../auth/AuthContext';
-import { getChangeClass, changeColors, changeBg, formatPriceUSD, formatPriceTRY, formatCompactNumber } from '../../shared/utils/formatters';
+import { getChangeClass, changeColors, changeBg, formatPriceUSD, formatPriceTRY, formatCompactNumber, formatPercentAbs } from '../../shared/utils/formatters';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
 import LoadingState from '../../shared/components/LoadingState';
 import ErrorState from '../../shared/components/ErrorState';
@@ -159,7 +159,7 @@ export default function CryptoPage() {
                                             ) : crypto.changePercent < 0 ? (
                                                 <ArrowDownRight className="h-3.5 w-3.5" />
                                             ) : null}
-                                            {Math.abs(crypto.changePercent).toFixed(2)}%
+                                            {formatPercentAbs(crypto.changePercent)}
                                             <span className="ml-1 opacity-75">24h</span>
                                         </div>
                                     )}

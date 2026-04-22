@@ -44,10 +44,7 @@ public class CommodityDataService implements TrackedAssetDataService {
 
     @Override
     public void clearCache(String code) {
-        String normalized = code == null ? "" : code.trim().toUpperCase();
-        if (normalized.isBlank()) return;
-        commodityCacheService.clearCache(normalized);
-        log.info("Cleared tracked commodity cache for {}", normalized);
+        MarketAssetCacheHelper.clearIfValid(code, commodityCacheService, true, log, "commodity");
     }
 
     public void updateCommoditySnapshots() {

@@ -51,12 +51,7 @@ public class CryptoDataService implements TrackedAssetDataService {
 
     @Override
     public void clearCache(String coinId) {
-        String normalizedId = coinId == null ? "" : coinId.trim().toLowerCase();
-        if (normalizedId.isBlank()) {
-            return;
-        }
-        cryptoCacheService.clearCache(normalizedId);
-        log.info("Cleared tracked crypto cache for {}", normalizedId);
+        MarketAssetCacheHelper.clearIfValid(coinId, cryptoCacheService, false, log, "crypto");
     }
 
     public void updateOnlyCandles() {

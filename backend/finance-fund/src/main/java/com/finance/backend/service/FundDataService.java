@@ -46,12 +46,7 @@ public class FundDataService implements TrackedAssetDataService {
 
     @Override
     public void clearCache(String fundCode) {
-        String normalized = fundCode == null ? "" : fundCode.trim().toUpperCase();
-        if (normalized.isBlank()) {
-            return;
-        }
-        fundCacheService.clearCache(normalized);
-        log.info("Cleared tracked fund cache for {}", normalized);
+        MarketAssetCacheHelper.clearIfValid(fundCode, fundCacheService, true, log, "fund");
     }
 
     public void updateFundCandles() {

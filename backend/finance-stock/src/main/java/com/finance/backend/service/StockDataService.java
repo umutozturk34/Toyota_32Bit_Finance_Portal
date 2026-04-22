@@ -46,12 +46,7 @@ public class StockDataService implements TrackedAssetDataService {
 
     @Override
     public void clearCache(String symbol) {
-        String normalized = symbol == null ? "" : symbol.trim().toUpperCase();
-        if (normalized.isBlank()) {
-            return;
-        }
-        stockCacheService.clearCache(normalized);
-        log.info("Cleared tracked stock cache for {}", normalized);
+        MarketAssetCacheHelper.clearIfValid(symbol, stockCacheService, true, log, "stock");
     }
 
     public void updateStockCandles() {

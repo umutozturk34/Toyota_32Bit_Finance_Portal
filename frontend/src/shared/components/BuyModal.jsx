@@ -402,6 +402,11 @@ export default function BuyModal({ assetType, assetCode, assetName, currentPrice
               )}
             </div>
 
+            <div className="flex items-center justify-between text-[11px] px-1 text-fg-subtle">
+              <span>Alım komisyonu</span>
+              <span className="font-mono">Alınmaz</span>
+            </div>
+
             {walletBalance != null && (
               <div className="flex items-center justify-between text-xs px-1">
                 <span className="text-fg-muted">Kullanılabilir Bakiye</span>

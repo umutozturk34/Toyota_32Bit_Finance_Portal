@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Wallet, ShieldCheck } from 'lucide-react';
 import { ArrowDownRight, Loader2, Check, AlertCircle, RefreshCw, AlertTriangle } from './AnimatedIcons';
 import { portfolioService } from '../../features/portfolio/portfolioService';
+import { unifiedMarketService } from '../services/unifiedMarketService';
 import { formatPriceTRY } from '../utils/formatters';
 import { assetCodeLabel } from '../utils/assetCode';
 import PercentageSlider from './PercentageSlider';
@@ -16,10 +18,19 @@ const PROCESSING_STEPS = [
 
 const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX', 'COMMODITY'];
 
-export default function BuyModal({ assetType, assetCode, assetName, currentPrice, onClose, onComplete }) {
+export default function BuyModal({ assetType, assetCode, assetName, currentPrice: initialPrice, onClose, onComplete }) {
   const navigate = useNavigate();
   const isFractional = FRACTIONAL_TYPES.includes(assetType);
   const displayAssetCode = assetCodeLabel(assetType, assetCode);
+
+  const { data: freshAsset } = useQuery({
+    queryKey: ['marketAsset', assetType, assetCode],
+    queryFn: () => unifiedMarketService.getByCode(assetType, assetCode),
+    enabled: Boolean(assetType && assetCode),
+    refetchOnMount: 'always',
+    staleTime: 0,
+  });
+  const currentPrice = freshAsset?.price ?? initialPrice;
   const [inputMode, setInputMode] = useState('amount');
   const [amountTry, setAmountTry] = useState('');
   const [quantity, setQuantity] = useState('');

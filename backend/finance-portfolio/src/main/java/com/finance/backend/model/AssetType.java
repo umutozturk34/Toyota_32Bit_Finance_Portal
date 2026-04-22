@@ -1,37 +1,37 @@
 package com.finance.backend.model;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommissionProperties;
 
 import java.math.BigDecimal;
 
 public enum AssetType {
     CRYPTO(MarketType.CRYPTO) {
         @Override
-        public BigDecimal commissionRate(AppProperties.Commission commission) {
+        public BigDecimal commissionRate(CommissionProperties commission) {
             return commission.getCryptoRate();
         }
     },
     STOCK(MarketType.STOCK) {
         @Override
-        public BigDecimal commissionRate(AppProperties.Commission commission) {
+        public BigDecimal commissionRate(CommissionProperties commission) {
             return commission.getStockRate();
         }
     },
     FOREX(MarketType.FOREX) {
         @Override
-        public BigDecimal commissionRate(AppProperties.Commission commission) {
+        public BigDecimal commissionRate(CommissionProperties commission) {
             return BigDecimal.ZERO;
         }
     },
     FUND(MarketType.FUND) {
         @Override
-        public BigDecimal commissionRate(AppProperties.Commission commission) {
+        public BigDecimal commissionRate(CommissionProperties commission) {
             return commission.getFundRate();
         }
     },
     COMMODITY(MarketType.COMMODITY) {
         @Override
-        public BigDecimal commissionRate(AppProperties.Commission commission) {
+        public BigDecimal commissionRate(CommissionProperties commission) {
             return commission.getCommodityRate();
         }
     };
@@ -46,5 +46,5 @@ public enum AssetType {
         return marketType;
     }
 
-    public abstract BigDecimal commissionRate(AppProperties.Commission commission);
+    public abstract BigDecimal commissionRate(CommissionProperties commission);
 }

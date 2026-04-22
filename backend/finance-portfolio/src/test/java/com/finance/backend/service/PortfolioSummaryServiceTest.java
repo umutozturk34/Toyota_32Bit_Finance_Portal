@@ -1,6 +1,6 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommissionProperties;
 import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.dto.response.PositionResponse;
 import com.finance.backend.mapper.PortfolioResponseMapper;
@@ -46,7 +46,7 @@ class PortfolioSummaryServiceTest {
                 transactionRepository,
                 walletRepository,
                 responseMapper,
-                new AppProperties(),
+                new CommissionProperties(),
                 new PortfolioProperties());
     }
 

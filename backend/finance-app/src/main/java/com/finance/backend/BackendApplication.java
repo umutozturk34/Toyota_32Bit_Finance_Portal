@@ -1,6 +1,7 @@
 package com.finance.backend;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.config.BondProperties;
+import com.finance.backend.config.CommissionProperties;
 import com.finance.backend.config.CommodityProperties;
 import com.finance.backend.config.CryptoProperties;
 import com.finance.backend.config.ForexProperties;
@@ -18,7 +19,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableAsync
 @EnableJpaAuditing
-@EnableConfigurationProperties({AppProperties.class, BondProperties.class, CommodityProperties.class, CryptoProperties.class, ForexProperties.class, FundProperties.class, NewsProperties.class, PortfolioProperties.class, StockProperties.class})
+@EnableConfigurationProperties({AppProperties.class, BondProperties.class, CommissionProperties.class, CommodityProperties.class, CryptoProperties.class, ForexProperties.class, FundProperties.class, NewsProperties.class, PortfolioProperties.class, StockProperties.class})
 public class BackendApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(BackendApplication.class, args);

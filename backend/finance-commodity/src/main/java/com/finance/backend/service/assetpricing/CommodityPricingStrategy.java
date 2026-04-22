@@ -1,6 +1,6 @@
 package com.finance.backend.service.assetpricing;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommissionProperties;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
 import com.finance.backend.model.MarketType;
@@ -14,12 +14,12 @@ import java.math.BigDecimal;
 public class CommodityPricingStrategy extends BaseAssetPricingStrategy {
 
     private final MarketCacheService<Commodity, CommodityCandle> cacheService;
-    private final AppProperties appProperties;
+    private final CommissionProperties commissionProperties;
 
     public CommodityPricingStrategy(MarketCacheService<Commodity, CommodityCandle> cacheService,
-                                    AppProperties appProperties) {
+                                    CommissionProperties commissionProperties) {
         this.cacheService = cacheService;
-        this.appProperties = appProperties;
+        this.commissionProperties = commissionProperties;
     }
 
     @Override
@@ -59,6 +59,6 @@ public class CommodityPricingStrategy extends BaseAssetPricingStrategy {
     }
 
     private BigDecimal commodityCommissionRate() {
-        return appProperties.getCommission().getCommodityRate();
+        return commissionProperties.getCommodityRate();
     }
 }

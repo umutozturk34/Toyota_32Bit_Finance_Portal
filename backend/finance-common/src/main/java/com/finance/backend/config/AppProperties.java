@@ -32,7 +32,6 @@ public class AppProperties {
 
     private Pagination pagination = new Pagination();
 
-    private Commission commission = new Commission();
     private Task task = new Task();
     private TrackedAsset trackedAsset = new TrackedAsset();
 
@@ -110,14 +109,6 @@ public class AppProperties {
 
 
 
-    @Getter
-    @Setter
-    public static class Commission {
-        private BigDecimal stockRate = new BigDecimal("0.002");
-        private BigDecimal cryptoRate = new BigDecimal("0.0015");
-        private BigDecimal fundRate = new BigDecimal("0.001");
-        private BigDecimal commodityRate = new BigDecimal("0.015");
-    }
 
     @Getter
     @Setter

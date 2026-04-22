@@ -18,7 +18,7 @@ import com.finance.backend.service.AssetPricingPort.AssetKey;
 import com.finance.backend.service.AssetPricingPort.AssetMeta;
 import com.finance.backend.service.AssetPricingPort.PriceBundle;
 import com.finance.backend.util.EnumParser;
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommissionProperties;
 import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.model.TransactionSide;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +44,7 @@ public class PortfolioSummaryService {
     private final PortfolioTransactionRepository transactionRepository;
     private final UserWalletRepository walletRepository;
     private final PortfolioResponseMapper responseMapper;
-    private final AppProperties appProperties;
+    private final CommissionProperties commissionProperties;
     private final PortfolioProperties portfolioProperties;
 
     @Transactional(readOnly = true)
@@ -205,7 +205,7 @@ public class PortfolioSummaryService {
                 : BigDecimal.ZERO;
 
         BigDecimal sellPriceTry = effective.sellPrice() != null ? effective.sellPrice() : currentPrice;
-        BigDecimal commissionRate = pos.getAssetType().commissionRate(appProperties.getCommission());
+        BigDecimal commissionRate = pos.getAssetType().commissionRate(commissionProperties);
         AssetMeta meta = effective.meta() != null ? effective.meta() : new AssetMeta(null, null);
 
         return responseMapper.toPositionResponse(pos, currentPrice, sellPriceTry, commissionRate, marketValue, pnl, pnlPercent, meta.name(), meta.image());

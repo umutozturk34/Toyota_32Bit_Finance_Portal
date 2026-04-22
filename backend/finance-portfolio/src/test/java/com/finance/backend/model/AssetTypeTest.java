@@ -1,6 +1,6 @@
 package com.finance.backend.model;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommissionProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -12,11 +12,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AssetTypeTest {
 
-    private AppProperties.Commission commission;
+    private CommissionProperties commission;
 
     @BeforeEach
     void setUp() {
-        commission = new AppProperties.Commission();
+        commission = new CommissionProperties();
         commission.setStockRate(new BigDecimal("0.003"));
         commission.setCryptoRate(new BigDecimal("0.0025"));
         commission.setFundRate(new BigDecimal("0.0005"));

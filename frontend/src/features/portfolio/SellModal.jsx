@@ -22,7 +22,9 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
   const displayAssetCode = assetCodeLabel(position.assetType, position.assetCode);
 
   const currentPrice = Number(position.currentPriceTry) || Number(position.sellPriceTry) || 0;
-  const sellPriceNet = Number(position.sellPriceTry) || currentPrice;
+  const sellPrice = Number(position.sellPriceTry) || currentPrice;
+  const sellPriceNet = sellPrice;
+  const commissionRate = Number(position.commissionRate) || 0;
   const maxQuantity = Number(position.quantity);
   const maxValueTry = useMemo(() => {
     if (!sellPriceNet || maxQuantity <= 0) return 0;

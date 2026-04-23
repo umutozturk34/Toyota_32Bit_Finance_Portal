@@ -90,18 +90,12 @@ public class StockMarketAssetProvider extends BaseTrackedMarketAssetProvider<Sto
     }
 
     @Override
-    public List<MarketAssetResponse> getTopMovers(int limit, boolean gainers) {
-        return super.getTopMovers(limit, gainers).stream()
-                .filter(a -> !(a.metadata() instanceof com.finance.backend.dto.response.StockMetadata sm)
-                        || sm.stockSegment() != StockSegment.MAIN_INDEX)
-                .toList();
+    protected Specification<Stock> topMoversAdditionalSpec() {
+        return (root, query, cb) -> cb.notEqual(root.get("stockSegment"), StockSegment.MAIN_INDEX);
     }
 
     @Override
     public List<MarketAssetResponse> getIndices() {
-        return search(null, MarketAssetFilters.ofSegment("MAIN_INDEX"), "changePercent", "desc", 0, 100).stream()
-                .filter(a -> a.metadata() instanceof com.finance.backend.dto.response.StockMetadata sm
-                        && sm.stockSegment() == StockSegment.MAIN_INDEX)
-                .toList();
+        return search(null, MarketAssetFilters.ofSegment("MAIN_INDEX"), "changePercent", "desc", 0, 100);
     }
 }

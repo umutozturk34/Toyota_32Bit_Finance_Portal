@@ -2,9 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.dto.response.MarketOverviewResponse;
-import com.finance.backend.dto.response.StockMetadata;
 import com.finance.backend.model.MarketType;
-import com.finance.backend.model.StockSegment;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -34,13 +32,14 @@ public class MarketOverviewService {
         for (MarketType type : MarketType.values()) {
             MarketAssetProvider provider = providers.get(type);
             if (provider == null) continue;
-            gainers.computeIfAbsent(type, t -> MarketTopMoversFilter.apply(t, provider.getTopMovers(limit, true)));
-            losers.computeIfAbsent(type, t -> MarketTopMoversFilter.apply(t, provider.getTopMovers(limit, false)));
+            gainers.computeIfAbsent(type, t -> provider.getTopMovers(limit, true));
+            losers.computeIfAbsent(type, t -> provider.getTopMovers(limit, false));
         }
 
         List<MarketAssetResponse> indices = topMoversRedisService.getIndices();
         if (indices.isEmpty()) {
-            indices = loadIndicesFromStockProvider();
+            MarketAssetProvider stockProvider = providers.get(MarketType.STOCK);
+            indices = stockProvider != null ? stockProvider.getIndices() : List.of();
         }
 
         List<MarketOverviewResponse.AssetTypeMovers> movers = new ArrayList<>();
@@ -53,15 +52,5 @@ public class MarketOverviewService {
         }
 
         return new MarketOverviewResponse(indices, movers);
-    }
-
-    private List<MarketAssetResponse> loadIndicesFromStockProvider() {
-        MarketAssetProvider stockProvider = providers.get(MarketType.STOCK);
-        if (stockProvider == null) return List.of();
-        return stockProvider.search(null,
-                        MarketAssetProvider.MarketAssetFilters.ofSegment("MAIN_INDEX"),
-                        "changePercent", "desc", 0, 100).stream()
-                .filter(a -> a.metadata() instanceof StockMetadata sm && sm.stockSegment() == StockSegment.MAIN_INDEX)
-                .toList();
     }
 }

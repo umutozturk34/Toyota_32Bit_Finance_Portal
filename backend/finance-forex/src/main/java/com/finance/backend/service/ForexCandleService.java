@@ -106,6 +106,22 @@ public class ForexCandleService implements CandleBatchRefresher {
         BatchLogHelper.logSummary(log, "Yahoo candle sync", result);
     }
 
+    @Override
+    public void refreshCandles(String code) {
+        Forex forex = forexRepository.findById(code).orElse(null);
+        if (forex == null) {
+            log.warn("Forex pair {} not found for single-code candle refresh", code);
+            return;
+        }
+        Map<String, YahooCandleDto> usdtryCandleMap = forexCacheService.getHistory("USDTRY").stream()
+                .collect(Collectors.toMap(
+                        c -> c.getCandleDate().toLocalDate().toString(),
+                        this::toYahooCandleDto,
+                        (a, b) -> a));
+        updateForexCandles(forex, usdtryCandleMap);
+        forexCacheService.refreshHistory(code);
+    }
+
     private void updateForexCandles(Forex forex, Map<String, YahooCandleDto> usdtryCandleMap) {
         String baseSymbol = forex.getCurrencyCode();
         String yahooSymbol = baseSymbol + "=X";

@@ -106,7 +106,8 @@ public class CryptoCandleService implements CandleBatchRefresher {
         BatchLogHelper.logSummary(log, "Crypto candle update", result);
     }
 
-    public void refreshTrackedCryptoCandles(String coinId) {
+    @Override
+    public void refreshCandles(String coinId) {
         String normalizedId = CodeNormalizer.lower(coinId);
         if (normalizedId.isBlank()) {
             return;

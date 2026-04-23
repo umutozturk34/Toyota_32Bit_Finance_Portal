@@ -65,6 +65,16 @@ public class ForexSnapshotService implements SnapshotBatchRefresher {
         BatchLogHelper.logSummary(log, "Yahoo snapshot sync", result);
     }
 
+    @Override
+    public void refreshSnapshot(String code) {
+        Forex forex = forexRepository.findById(code).orElse(null);
+        if (forex == null) {
+            log.warn("Forex pair {} not found for single-code refresh", code);
+            return;
+        }
+        updateForexSnapshot(forex);
+    }
+
     private void updateForexSnapshot(Forex forex) {
         String baseSymbol = forex.getCurrencyCode();
         String yahooSymbol = baseSymbol + "=X";

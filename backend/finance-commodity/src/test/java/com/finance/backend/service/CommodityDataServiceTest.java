@@ -67,14 +67,14 @@ class CommodityDataServiceTest {
     void refreshSnapshotDelegatesToSnapshotService() {
         service.refreshSnapshot("GC=F");
 
-        verify(snapshotService).refreshTrackedCommoditySnapshot("GC=F");
+        verify(snapshotService).refreshSnapshot("GC=F");
     }
 
     @Test
     void refreshCandlesDelegatesToCandleService() {
         service.refreshCandles("GC=F");
 
-        verify(candleService).refreshTrackedCommodityCandles("GC=F");
+        verify(candleService).refreshCandles("GC=F");
     }
 
     @Test

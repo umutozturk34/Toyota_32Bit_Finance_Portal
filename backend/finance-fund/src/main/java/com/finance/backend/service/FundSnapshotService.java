@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Service
-public class FundSnapshotService implements SnapshotBatchRefresher {
+public class FundSnapshotService implements SnapshotBatchRefresher, AssetExistenceChecker {
 
     private final TefasClient tefasClient;
     private final FundMapper fundMapper;
@@ -67,6 +67,7 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         this.appZone = ZoneId.of(timezone);
     }
 
+    @Override
     public boolean existsInApi(String fundCode) {
         return ApiAssetValidator.validate(fundCode, true, code -> {
             LocalDate today = findLastBusinessDay(LocalDate.now());
@@ -143,7 +144,8 @@ public class FundSnapshotService implements SnapshotBatchRefresher {
         BatchLogHelper.logSummary(log, "Fund snapshot update", byfResult);
     }
 
-    public void refreshTrackedFundSnapshot(String fundCode) {
+    @Override
+    public void refreshSnapshot(String fundCode) {
         TrackedRefreshRunner.refreshSnapshot(fundCode, CodeNormalizer::upper, normalized -> {
             LocalDate today = findLastBusinessDay(LocalDate.now());
             List<TefasFundDto> yatFunds = fetchTefas(FundType.YAT, normalized, today, today);

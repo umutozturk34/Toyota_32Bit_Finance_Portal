@@ -32,12 +32,12 @@ public class StockDataService implements TrackedAssetDataService {
 
     @Override
     public void refreshSnapshot(String symbol) {
-        stockSnapshotService.refreshTrackedStockSnapshot(symbol);
+        stockSnapshotService.refreshSnapshot(symbol);
     }
 
     @Override
     public void refreshCandles(String symbol) {
-        stockCandleService.refreshTrackedStockCandles(symbol);
+        stockCandleService.refreshCandles(symbol);
     }
 
     @Override

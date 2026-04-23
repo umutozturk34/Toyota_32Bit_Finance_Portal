@@ -111,7 +111,8 @@ public class CommodityCandleService implements CandleBatchRefresher {
         derivativeCalculator.refreshDerivativeCandles();
     }
 
-    public void refreshTrackedCommodityCandles(String code) {
+    @Override
+    public void refreshCandles(String code) {
         String normalized = yahooSymbolResolver.normalize(code);
         if (yahooSymbolResolver.resolve(normalized) == null) return;
         Map<String, YahooCandleDto> usdtryCandleMap = loadUsdTryCandleMap();

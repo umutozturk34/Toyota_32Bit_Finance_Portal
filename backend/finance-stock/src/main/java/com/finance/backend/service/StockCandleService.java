@@ -89,7 +89,8 @@ public class StockCandleService implements CandleBatchRefresher {
         BatchLogHelper.logSummaryWithMetric(log, "Stock candle update", result, "total", totalCandles[0]);
     }
 
-    public void refreshTrackedStockCandles(String symbol) {
+    @Override
+    public void refreshCandles(String symbol) {
         String normalized = CodeNormalizer.upper(symbol);
         if (normalized.isBlank()) {
             return;

@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 @Log4j2
 @Service
 @RequiredArgsConstructor
-public class CryptoSnapshotService implements SnapshotBatchRefresher {
+public class CryptoSnapshotService implements SnapshotBatchRefresher, AssetExistenceChecker {
 
     private final CoinGeckoClient coinGeckoClient;
     private final CryptoMapper cryptoMapper;
@@ -37,6 +37,7 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final TransactionTemplate transactionTemplate;
 
+    @Override
     public boolean existsInApi(String coinId) {
         return ApiAssetValidator.validate(coinId, false, cid -> {
             List<CoinGeckoSnapshotDto> result = coinGeckoClient.fetchMarkets("usd", List.of(cid));
@@ -71,7 +72,8 @@ public class CryptoSnapshotService implements SnapshotBatchRefresher {
         BatchLogHelper.logSummary(log, "Crypto snapshot update", result);
     }
 
-    public void refreshTrackedCryptoSnapshot(String coinId) {
+    @Override
+    public void refreshSnapshot(String coinId) {
         TrackedRefreshRunner.refreshSnapshot(coinId, CodeNormalizer::lower, normalizedId -> {
             List<CoinGeckoSnapshotDto> usdMarkets = coinGeckoClient.fetchMarkets("usd", List.of(normalizedId));
             if (usdMarkets.isEmpty()) {

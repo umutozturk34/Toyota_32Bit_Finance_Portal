@@ -7,4 +7,6 @@ public interface CandleBatchRefresher {
     MarketType getMarketType();
 
     void refreshAll();
+
+    void refreshCandles(String code);
 }

@@ -7,4 +7,6 @@ public interface SnapshotBatchRefresher {
     MarketType getMarketType();
 
     void refreshAll();
+
+    void refreshSnapshot(String code);
 }

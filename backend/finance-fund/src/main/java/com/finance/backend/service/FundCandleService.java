@@ -90,7 +90,8 @@ public class FundCandleService implements CandleBatchRefresher {
         log.info("[TIMING] Total fund candle update took {}s", (System.currentTimeMillis() - totalStart) / 1000);
     }
 
-    public void refreshTrackedFundCandles(String fundCode) {
+    @Override
+    public void refreshCandles(String fundCode) {
         String normalized = CodeNormalizer.upper(fundCode);
         if (normalized.isBlank()) {
             return;
@@ -98,7 +99,7 @@ public class FundCandleService implements CandleBatchRefresher {
 
         Fund fund = fundRepository.findById(normalized).orElse(null);
         if (fund == null) {
-            fundSnapshotService.refreshTrackedFundSnapshot(normalized);
+            fundSnapshotService.refreshSnapshot(normalized);
             fund = fundRepository.findById(normalized).orElse(null);
         }
 

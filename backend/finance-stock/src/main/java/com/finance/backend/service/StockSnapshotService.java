@@ -26,7 +26,7 @@ import java.util.function.Function;
 
 @Log4j2
 @Service
-public class StockSnapshotService implements SnapshotBatchRefresher {
+public class StockSnapshotService implements SnapshotBatchRefresher, AssetExistenceChecker {
 
     private final YahooStockClient yahooStockClient;
     private final StockMapper stockMapper;
@@ -49,6 +49,7 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
         this.transactionTemplate = transactionTemplate;
     }
 
+    @Override
     public boolean existsInApi(String symbol) {
         return ApiAssetValidator.validate(symbol, true, sym -> {
             YahooStockQuoteDto dto = yahooStockClient.fetchQuote(sym);
@@ -82,7 +83,8 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
         BatchLogHelper.logSummary(log, "Stock snapshot update", result);
     }
 
-    public void refreshTrackedStockSnapshot(String symbol) {
+    @Override
+    public void refreshSnapshot(String symbol) {
         TrackedRefreshRunner.refreshSnapshot(symbol, CodeNormalizer::upper, normalized -> {
             Stock stock = transactionTemplate.execute(status -> updateSingleStockSnapshot(normalized));
             stockCacheService.putSnapshot(normalized, stock);

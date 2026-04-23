@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,7 +9,7 @@ import { unifiedMarketService } from '../services/unifiedMarketService';
 import { formatPriceTRY } from '../utils/formatters';
 import { assetCodeLabel } from '../utils/assetCode';
 import PercentageSlider from './PercentageSlider';
-import useProcessingAnimation from '../hooks/useProcessingAnimation';
+import useTransactionFlow from '../hooks/useTransactionFlow';
 
 const PROCESSING_STEPS = [
   { label: 'İşlem doğrulanıyor...', duration: 800 },
@@ -32,19 +32,26 @@ export default function BuyModal({ assetType, assetCode, assetName, currentPrice
     staleTime: 0,
   });
   const currentPrice = freshAsset?.price ?? initialPrice;
-  const [inputMode, setInputMode] = useState('amount');
-  const [amountTry, setAmountTry] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [sliderPercent, setSliderPercent] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [portfolioLoading, setPortfolioLoading] = useState(true);
   const [portfolioId, setPortfolioId] = useState(null);
   const [walletBalance, setWalletBalance] = useState(null);
   const [noPortfolio, setNoPortfolio] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const { processingStep, runAnimation, reset: resetProcessing } = useProcessingAnimation();
+
+  const maxAmount = walletBalance || 0;
+  const maxQuantity = currentPrice > 0 ? maxAmount / currentPrice : 0;
+
+  const flow = useTransactionFlow({
+    isFractional,
+    initialInputMode: 'amount',
+    maxAmount,
+    maxQuantity,
+  });
+  const {
+    inputMode, amountTry, quantity, sliderPercent,
+    loading, error, success, confirming, processingStep, isAmountMode,
+    setAmountTry, setQuantity, setError, setConfirming,
+    handleSliderChange, syncSliderFromInput, handleModeSwitch, execute,
+  } = flow;
 
   useEffect(() => {
     let cancelled = false;
@@ -72,61 +79,29 @@ export default function BuyModal({ assetType, assetCode, assetName, currentPrice
 
   const computedQuantity = useMemo(() => {
     if (!currentPrice || currentPrice <= 0) return null;
-    if (isFractional && inputMode === 'amount') {
+    if (isAmountMode) {
       const amt = Number(amountTry);
-      if (!amt || amt <= 0) return null;
-      return amt / currentPrice;
+      return amt > 0 ? amt / currentPrice : null;
     }
     const qty = Number(quantity);
-    if (!qty || qty <= 0) return null;
-    return qty;
-  }, [currentPrice, amountTry, quantity, inputMode, isFractional]);
+    return qty > 0 ? qty : null;
+  }, [currentPrice, amountTry, quantity, isAmountMode]);
 
   const totalCost = useMemo(() => {
     if (!currentPrice || currentPrice <= 0) return null;
-    if (isFractional && inputMode === 'amount') {
+    if (isAmountMode) {
       const amt = Number(amountTry);
       return amt > 0 ? amt : null;
     }
     const qty = Number(quantity);
     return qty > 0 ? currentPrice * qty : null;
-  }, [currentPrice, amountTry, quantity, inputMode, isFractional]);
-
-  const handleSliderChange = useCallback((pct) => {
-    if (!walletBalance || walletBalance <= 0) return;
-    setSliderPercent(pct);
-    setError(null);
-    const amount = (walletBalance * pct) / 100;
-    if (isFractional && inputMode === 'amount') {
-      setAmountTry(pct === 0 ? '' : String(Math.floor(amount * 100) / 100));
-    } else if (currentPrice > 0) {
-      const qty = isFractional
-        ? amount / currentPrice
-        : Math.floor(amount / currentPrice);
-      setQuantity(pct === 0 ? '' : String(qty));
-    }
-  }, [walletBalance, inputMode, isFractional, currentPrice]);
-
-  const syncSliderFromInput = useCallback((val) => {
-    if (!walletBalance || walletBalance <= 0) { setSliderPercent(0); return; }
-    const cost = isFractional && inputMode === 'amount' ? Number(val) : Number(val) * (currentPrice || 0);
-    const pct = Math.min(100, Math.round((cost / walletBalance) * 100));
-    setSliderPercent(pct > 0 ? pct : 0);
-  }, [walletBalance, inputMode, isFractional, currentPrice]);
-
-  const handleModeSwitch = (mode) => {
-    setInputMode(mode);
-    setAmountTry('');
-    setQuantity('');
-    setSliderPercent(0);
-    setError(null);
-  };
+  }, [currentPrice, amountTry, quantity, isAmountMode]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!portfolioId) return;
 
-    if (isFractional && inputMode === 'amount') {
+    if (isAmountMode) {
       if (!Number(amountTry) || Number(amountTry) <= 0) {
         setError('Lütfen geçerli bir tutar girin');
         return;
@@ -140,40 +115,20 @@ export default function BuyModal({ assetType, assetCode, assetName, currentPrice
     setConfirming(true);
   };
 
-  const handleConfirm = async () => {
-    setConfirming(false);
-    setLoading(true);
-    setError(null);
-
+  const handleConfirm = () => {
     const payload = {
       assetType,
       assetCode,
       side: 'BUY',
       feeTry: 0,
+      ...(isAmountMode ? { amountTry: Number(amountTry) } : { quantity: Number(quantity) }),
     };
-
-    if (isFractional && inputMode === 'amount') {
-      payload.amountTry = Number(amountTry);
-    } else {
-      payload.quantity = Number(quantity);
-    }
-
-    try {
-      await Promise.all([
-        portfolioService.executeTransaction(portfolioId, payload),
-        runAnimation(PROCESSING_STEPS),
-      ]);
-      setSuccess(true);
-      setTimeout(() => {
-        onComplete?.();
-        onClose();
-      }, 1800);
-    } catch (err) {
-      resetProcessing();
-      setError(err.response?.data?.message || 'Satın alma başarısız');
-    } finally {
-      setLoading(false);
-    }
+    execute({
+      executor: () => portfolioService.executeTransaction(portfolioId, payload),
+      processingSteps: PROCESSING_STEPS,
+      onSuccess: () => { onComplete?.(); onClose(); },
+      defaultErrorMessage: 'Satın alma başarısız',
+    });
   };
 
   const displayQuantity = isFractional && inputMode === 'amount'

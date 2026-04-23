@@ -7,7 +7,6 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

@@ -79,11 +79,11 @@ class PortfolioSummaryServiceTest {
     }
 
     private PortfolioPosition stubPosition(AssetType type, String code, BigDecimal qty, BigDecimal totalCost) {
-        PortfolioPosition pos = new PortfolioPosition();
-        pos.setAssetType(type);
-        pos.setAssetCode(code);
-        pos.setQuantity(qty);
-        pos.setTotalCostTry(totalCost);
-        return pos;
+        return PortfolioPosition.builder()
+                .assetType(type)
+                .assetCode(code)
+                .quantity(qty)
+                .totalCostTry(totalCost)
+                .build();
     }
 }

@@ -35,8 +35,7 @@ public class OnboardingService {
             throw new BusinessException("Initial deposit already applied for this portfolio");
         }
 
-        wallet.setBalance(initialBalance);
-        wallet.setAvailableBalance(initialBalance);
+        wallet.credit(initialBalance);
         walletRepository.save(wallet);
 
         WalletLedger ledger = WalletLedger.builder()

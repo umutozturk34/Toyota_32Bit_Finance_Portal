@@ -133,7 +133,7 @@ public class PortfolioSummaryService {
         }
 
         totalValue = totalValue.setScale(SCALE, RoundingMode.HALF_UP);
-        BigDecimal cashBalance = filterType == null ? wallet.getBalance() : BigDecimal.ZERO;
+        BigDecimal cashBalance = filterType == null ? wallet.getBalance().amount() : BigDecimal.ZERO;
         BigDecimal grandTotal = totalValue.add(cashBalance);
         BigDecimal unrealizedPnl = totalValue.subtract(totalCost).setScale(SCALE, RoundingMode.HALF_UP);
         BigDecimal realizedPnl = filterType == null
@@ -181,7 +181,7 @@ public class PortfolioSummaryService {
             totalValue = totalValue.add(marketValue);
         }
 
-        BigDecimal finalTotal = totalValue.add(wallet.getBalance());
+        BigDecimal finalTotal = totalValue.add(wallet.getBalance().amount());
         return buckets.entrySet().stream()
                 .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
                 .map(e -> new AllocationItem(

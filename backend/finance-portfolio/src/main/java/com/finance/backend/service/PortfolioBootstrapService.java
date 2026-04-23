@@ -3,14 +3,13 @@ package com.finance.backend.service;
 import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.model.Portfolio;
 import com.finance.backend.model.UserWallet;
+import com.finance.backend.model.value.MoneyTRY;
 import com.finance.backend.repository.PortfolioRepository;
 import com.finance.backend.repository.UserWalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
 
 @Log4j2
 @Service
@@ -36,8 +35,8 @@ public class PortfolioBootstrapService {
         UserWallet wallet = UserWallet.builder()
                 .portfolio(portfolio)
                 .currency(portfolioProperties.getDefaultCurrency())
-                .balance(BigDecimal.ZERO)
-                .availableBalance(BigDecimal.ZERO)
+                .balance(MoneyTRY.ZERO)
+                .availableBalance(MoneyTRY.ZERO)
                 .build();
         walletRepository.save(wallet);
 

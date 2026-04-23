@@ -8,6 +8,7 @@ import com.finance.backend.exception.BusinessException;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.mapper.PortfolioResponseMapper;
 import com.finance.backend.model.*;
+import com.finance.backend.model.value.MoneyTRY;
 import com.finance.backend.repository.*;
 import com.finance.backend.service.transaction.AmountBasedResolver;
 import com.finance.backend.service.transaction.QuantityBasedResolver;
@@ -94,7 +95,7 @@ class PortfolioTransactionServiceTest {
         assertThat(saved.getQuantity()).isEqualByComparingTo(expectedQty);
         assertThat(saved.getTotalCostTry()).isEqualByComparingTo(expectedCost);
         assertThat(saved.getAverageCostTry()).isEqualByComparingTo(unitPrice);
-        assertThat(wallet.getBalance()).isEqualByComparingTo(new BigDecimal("1000000.0000").subtract(expectedCost));
+        assertThat(wallet.getBalance().amount()).isEqualByComparingTo(new BigDecimal("1000000.0000").subtract(expectedCost));
     }
 
     @Test
@@ -161,7 +162,7 @@ class PortfolioTransactionServiceTest {
         verify(transactionRepository).save(txnCaptor.capture());
         assertThat(txnCaptor.getValue().getRealizedPnlTry()).isEqualByComparingTo(new BigDecimal("50.0000"));
         assertThat(portfolio.getRealizedPnlTry()).isEqualByComparingTo(new BigDecimal("50.0000"));
-        assertThat(wallet.getBalance()).isEqualByComparingTo(new BigDecimal("600250.0000"));
+        assertThat(wallet.getBalance().amount()).isEqualByComparingTo(new BigDecimal("600250.0000"));
         assertThat(position.getQuantity()).isEqualByComparingTo(new BigDecimal("5.00000000"));
         assertThat(position.getTotalCostTry()).isEqualByComparingTo(new BigDecimal("200.0000"));
     }
@@ -187,7 +188,7 @@ class PortfolioTransactionServiceTest {
         ArgumentCaptor<PortfolioTransaction> txnCaptor = ArgumentCaptor.forClass(PortfolioTransaction.class);
         verify(transactionRepository).save(txnCaptor.capture());
         assertThat(txnCaptor.getValue().getRealizedPnlTry()).isEqualByComparingTo(new BigDecimal("48.0000"));
-        assertThat(wallet.getBalance()).isEqualByComparingTo(new BigDecimal("600248.0000"));
+        assertThat(wallet.getBalance().amount()).isEqualByComparingTo(new BigDecimal("600248.0000"));
         verify(ledgerRepository, times(2)).save(any(WalletLedger.class));
     }
 
@@ -259,9 +260,10 @@ class PortfolioTransactionServiceTest {
     }
 
     private UserWallet buildWallet(BigDecimal balance) {
+        MoneyTRY money = MoneyTRY.of(balance);
         return UserWallet.builder()
                 .id(1L).currency("TRY")
-                .balance(balance).availableBalance(balance).build();
+                .balance(money).availableBalance(money).build();
     }
 
     private PortfolioPosition buildPosition(Portfolio portfolio, AssetType type, String code,

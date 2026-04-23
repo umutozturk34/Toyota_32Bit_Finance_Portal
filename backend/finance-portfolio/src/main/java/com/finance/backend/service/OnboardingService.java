@@ -4,6 +4,7 @@ import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.exception.BusinessException;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.model.*;
+import com.finance.backend.model.value.MoneyTRY;
 import com.finance.backend.repository.UserWalletRepository;
 import com.finance.backend.repository.WalletLedgerRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,7 @@ public class OnboardingService {
     @Transactional
     public void initialize(String userSub) {
         Portfolio portfolio = bootstrapService.ensurePortfolio(userSub);
-        BigDecimal initialBalance = portfolioProperties.getInitialBalance();
+        MoneyTRY initialBalance = MoneyTRY.of(portfolioProperties.getInitialBalance());
         String currency = portfolioProperties.getDefaultCurrency();
 
         UserWallet wallet = walletRepository.findByPortfolioIdAndCurrency(portfolio.getId(), currency)
@@ -38,15 +39,16 @@ public class OnboardingService {
         wallet.credit(initialBalance);
         walletRepository.save(wallet);
 
+        BigDecimal depositAmount = initialBalance.amount();
         WalletLedger ledger = WalletLedger.builder()
                 .wallet(wallet)
                 .ledgerType(LedgerType.INITIAL_DEPOSIT)
-                .amount(initialBalance)
-                .balanceAfter(initialBalance)
+                .amount(depositAmount)
+                .balanceAfter(depositAmount)
                 .description("Demo initial deposit")
                 .build();
         ledgerRepository.save(ledger);
 
-        log.info("Onboarding completed for user {}: {} {} deposited", userSub, initialBalance, currency);
+        log.info("Onboarding completed for user {}: {} {} deposited", userSub, depositAmount, currency);
     }
 }

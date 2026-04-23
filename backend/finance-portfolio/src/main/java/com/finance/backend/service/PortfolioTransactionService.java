@@ -8,6 +8,7 @@ import com.finance.backend.exception.BusinessException;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.mapper.PortfolioResponseMapper;
 import com.finance.backend.model.*;
+import com.finance.backend.model.value.MoneyTRY;
 import com.finance.backend.repository.*;
 import com.finance.backend.service.transaction.ResolvedInput;
 import com.finance.backend.service.transaction.TransactionInputResolver;
@@ -110,11 +111,11 @@ public class PortfolioTransactionService {
     private void executeBuy(Portfolio portfolio, UserWallet wallet,
                             AssetType assetType, String assetCode,
                             BigDecimal quantity, BigDecimal totalCost, BigDecimal fee) {
-        BigDecimal totalDebit = totalCost.add(fee);
+        MoneyTRY totalDebit = MoneyTRY.of(totalCost.add(fee));
         if (!wallet.hasSufficientBalance(totalDebit)) {
             String currency = portfolioProperties.getDefaultCurrency();
-            throw new BusinessException("Alım gücü yetersiz. Gereken: " + totalDebit + " " + currency
-                    + ", mevcut: " + wallet.getAvailableBalance());
+            throw new BusinessException("Alım gücü yetersiz. Gereken: " + totalDebit.amount() + " " + currency
+                    + ", mevcut: " + wallet.getAvailableBalance().amount());
         }
 
         wallet.debit(totalDebit);
@@ -149,7 +150,7 @@ public class PortfolioTransactionService {
         portfolioRepository.save(portfolio);
 
         BigDecimal proceeds = totalCost.subtract(fee);
-        wallet.credit(proceeds);
+        wallet.credit(MoneyTRY.of(proceeds));
         walletRepository.save(wallet);
 
         recordLedger(wallet, LedgerType.SELL, proceeds, "SELL " + quantity + " " + assetCode);
@@ -168,7 +169,7 @@ public class PortfolioTransactionService {
                 .wallet(wallet)
                 .ledgerType(type)
                 .amount(amount)
-                .balanceAfter(wallet.getBalance())
+                .balanceAfter(wallet.getBalance().amount())
                 .description(description)
                 .build();
         ledgerRepository.save(ledger);

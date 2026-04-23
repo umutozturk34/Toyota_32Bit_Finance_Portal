@@ -1,9 +1,9 @@
 package com.finance.backend.model;
 
+import com.finance.backend.model.value.MoneyTRY;
+import com.finance.backend.model.value.MoneyTRYConverter;
 import jakarta.persistence.*;
 import lombok.*;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Getter
@@ -16,8 +16,6 @@ import java.time.LocalDateTime;
         indexes = @Index(name = "idx_user_wallets_pf_currency",
                 columnList = "portfolio_id, currency"))
 public class UserWallet {
-
-    private static final int SCALE = 4;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,11 +32,13 @@ public class UserWallet {
     @Column(name = "currency", nullable = false, length = 10)
     private String currency;
 
+    @Convert(converter = MoneyTRYConverter.class)
     @Column(name = "balance", nullable = false, precision = 19, scale = 4)
-    private BigDecimal balance;
+    private MoneyTRY balance;
 
+    @Convert(converter = MoneyTRYConverter.class)
     @Column(name = "available_balance", nullable = false, precision = 19, scale = 4)
-    private BigDecimal availableBalance;
+    private MoneyTRY availableBalance;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -58,17 +58,17 @@ public class UserWallet {
         updatedAt = LocalDateTime.now();
     }
 
-    public boolean hasSufficientBalance(BigDecimal amount) {
-        return availableBalance.compareTo(amount) >= 0;
+    public boolean hasSufficientBalance(MoneyTRY amount) {
+        return availableBalance.isGreaterThanOrEqualTo(amount);
     }
 
-    public void debit(BigDecimal amount) {
-        balance = balance.subtract(amount).setScale(SCALE, RoundingMode.HALF_UP);
-        availableBalance = availableBalance.subtract(amount).setScale(SCALE, RoundingMode.HALF_UP);
+    public void debit(MoneyTRY amount) {
+        balance = balance.minus(amount);
+        availableBalance = availableBalance.minus(amount);
     }
 
-    public void credit(BigDecimal amount) {
-        balance = balance.add(amount).setScale(SCALE, RoundingMode.HALF_UP);
-        availableBalance = availableBalance.add(amount).setScale(SCALE, RoundingMode.HALF_UP);
+    public void credit(MoneyTRY amount) {
+        balance = balance.plus(amount);
+        availableBalance = availableBalance.plus(amount);
     }
 }

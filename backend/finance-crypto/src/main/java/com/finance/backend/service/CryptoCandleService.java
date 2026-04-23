@@ -1,7 +1,7 @@
 package com.finance.backend.service;
 
 import com.finance.backend.client.CoinGeckoClient;
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CryptoProperties;
 import com.finance.backend.dto.external.CoinGeckoCandleDto;
 import com.finance.backend.mapper.CryptoMapper;
 import com.finance.backend.model.Crypto;
@@ -12,9 +12,10 @@ import com.finance.backend.repository.CryptoCandleRepository;
 import com.finance.backend.repository.CryptoRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.CodeNormalizer;
+import com.finance.backend.util.MarketBatchRunner;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -47,7 +48,7 @@ public class CryptoCandleService implements CandleBatchRefresher {
                                TrackedAssetQueryService trackedAssetQueryService,
                                CryptoSymbolResolver cryptoSymbolResolver,
                                TransactionTemplate transactionTemplate,
-                               AppProperties appProperties) {
+                               CryptoProperties cryptoProperties) {
         this.coinGeckoClient = coinGeckoClient;
         this.cryptoMapper = cryptoMapper;
         this.cryptoRepository = cryptoRepository;
@@ -56,8 +57,8 @@ public class CryptoCandleService implements CandleBatchRefresher {
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.cryptoSymbolResolver = cryptoSymbolResolver;
         this.transactionTemplate = transactionTemplate;
-        this.historyDays = appProperties.getCrypto().getHistoryDays();
-        this.minCandlesForHealthy = appProperties.getCrypto().getMinCandlesForHealthy();
+        this.historyDays = cryptoProperties.getHistoryDays();
+        this.minCandlesForHealthy = cryptoProperties.getMinCandlesForHealthy();
     }
 
     @Override
@@ -69,7 +70,7 @@ public class CryptoCandleService implements CandleBatchRefresher {
     public void refreshAll() {
         List<String> trackedCoins = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.CRYPTO);
         log.info("Starting crypto candle update for {} coins", trackedCoins.size());
-        BatchUpdateRunner.Result result = BatchUpdateRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 trackedCoins,
                 coinId -> {
                     String binanceSymbol = cryptoSymbolResolver.resolveBinanceSymbol(coinId);
@@ -98,19 +99,15 @@ public class CryptoCandleService implements CandleBatchRefresher {
                     cryptoCacheService.refreshHistory(coinId);
                 },
                 Function.identity(),
-                "candle",
-                5,
-                (coinId, e) -> log.error("Failed to fetch candle for {}: {}", coinId, e.getMessage(), e),
-                e -> e instanceof CallNotPermittedException,
-                (stopped, e) -> log.warn("Crypto candle batch stopped early (circuit breaker open): {} success, {} failed",
-                        stopped.successCount(), stopped.failCount()));
+                log, "Crypto", "candle", 5);
 
-        pruneOldCandles();
+        CandlePruner.pruneByDays(transactionTemplate, historyDays,
+                cutoffDate -> cryptoCandleRepository.deleteByCandleDateBefore(cutoffDate));
         BatchLogHelper.logSummary(log, "Crypto candle update", result);
     }
 
     public void refreshTrackedCryptoCandles(String coinId) {
-        String normalizedId = coinId == null ? "" : coinId.trim().toLowerCase();
+        String normalizedId = CodeNormalizer.lower(coinId);
         if (normalizedId.isBlank()) {
             return;
         }
@@ -178,10 +175,4 @@ public class CryptoCandleService implements CandleBatchRefresher {
         });
     }
 
-    private void pruneOldCandles() {
-        CandlePruner.pruneByDays(
-                transactionTemplate,
-                historyDays,
-                cutoffDate -> cryptoCandleRepository.deleteByCandleDateBefore(cutoffDate));
-    }
 }

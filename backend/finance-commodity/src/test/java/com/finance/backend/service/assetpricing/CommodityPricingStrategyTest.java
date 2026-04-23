@@ -1,6 +1,6 @@
 package com.finance.backend.service.assetpricing;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommissionProperties;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
 import com.finance.backend.model.MarketType;
@@ -23,12 +23,10 @@ class CommodityPricingStrategyTest {
 
     @BeforeEach
     void setUp() {
-        AppProperties props = new AppProperties();
-        AppProperties.Commission commission = new AppProperties.Commission();
+        CommissionProperties commission = new CommissionProperties();
         commission.setCommodityRate(new BigDecimal("0.015"));
-        props.setCommission(commission);
 
-        strategy = new CommodityPricingStrategy(cacheService, props);
+        strategy = new CommodityPricingStrategy(cacheService, commission);
     }
 
     @Test

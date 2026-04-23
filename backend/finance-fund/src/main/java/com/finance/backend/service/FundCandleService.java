@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.client.TefasClient;
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.FundProperties;
 import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.mapper.FundMapper;
 import com.finance.backend.model.Fund;
@@ -13,6 +14,8 @@ import com.finance.backend.repository.FundCandleRepository;
 import com.finance.backend.repository.FundRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.CodeNormalizer;
+import com.finance.backend.util.MarketBatchRunner;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
 import com.finance.backend.util.TefasHelper;
@@ -51,7 +54,8 @@ public class FundCandleService implements CandleBatchRefresher {
                              TrackedAssetQueryService trackedAssetQueryService,
                              FundSnapshotService fundSnapshotService,
                              TransactionTemplate transactionTemplate,
-                             AppProperties appProperties) {
+                             AppProperties appProperties,
+                             FundProperties fundProperties) {
         this.tefasClient = tefasClient;
         this.fundMapper = fundMapper;
         this.fundRepository = fundRepository;
@@ -60,10 +64,9 @@ public class FundCandleService implements CandleBatchRefresher {
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.fundSnapshotService = fundSnapshotService;
         this.transactionTemplate = transactionTemplate;
-        AppProperties.Fund fundConfig = appProperties.getFund();
-        this.windowSize = fundConfig.getWindowSizes();
-        this.minCandlesForIncremental = fundConfig.getMinCandlesForIncremental();
-        this.yearsToFetch = fundConfig.getYearsToFetch();
+        this.windowSize = fundProperties.getWindowSizes();
+        this.minCandlesForIncremental = fundProperties.getMinCandlesForIncremental();
+        this.yearsToFetch = fundProperties.getYearsToFetch();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
@@ -76,7 +79,8 @@ public class FundCandleService implements CandleBatchRefresher {
     public void refreshAll() {
         long totalStart = System.currentTimeMillis();
         log.info("Starting fund candle update");
-        pruneOldCandles();
+        CandlePruner.pruneByYears(transactionTemplate, yearsToFetch,
+                cutoffDate -> fundCandleRepository.deleteByCandleDateBefore(cutoffDate));
         long byfStart = System.currentTimeMillis();
         updateCandlesForType(FundType.BYF);
         log.info("[TIMING] BYF candle update took {}s", (System.currentTimeMillis() - byfStart) / 1000);
@@ -87,7 +91,7 @@ public class FundCandleService implements CandleBatchRefresher {
     }
 
     public void refreshTrackedFundCandles(String fundCode) {
-        String normalized = fundCode == null ? "" : fundCode.trim().toUpperCase();
+        String normalized = CodeNormalizer.upper(fundCode);
         if (normalized.isBlank()) {
             return;
         }
@@ -116,13 +120,6 @@ public class FundCandleService implements CandleBatchRefresher {
         log.info("Refreshed tracked fund candles for {}", normalized);
     }
 
-    private void pruneOldCandles() {
-        CandlePruner.pruneByYears(
-                transactionTemplate,
-                yearsToFetch,
-                cutoffDate -> fundCandleRepository.deleteByCandleDateBefore(cutoffDate));
-    }
-
     private void updateCandlesForType(FundType fundType) {
         List<Fund> funds;
         if (fundType == FundType.BYF) {
@@ -139,7 +136,7 @@ public class FundCandleService implements CandleBatchRefresher {
             return;
         }
 
-        BatchUpdateRunner.Result result = BatchUpdateRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 funds,
                 fund -> {
                     long existingCount = fundCandleRepository.countByFundCode(fund.getFundCode());
@@ -153,12 +150,7 @@ public class FundCandleService implements CandleBatchRefresher {
                     fundCacheService.refreshHistory(fund.getFundCode());
                 },
                 Fund::getFundCode,
-                fundType + " candle",
-                5,
-                (fund, e) -> log.error("Failed candle update for {} ({}): {}", fund.getFundCode(), fundType, e.getMessage(), e),
-                e -> e instanceof CallNotPermittedException,
-                (stopped, e) -> log.warn("TEFAS circuit breaker is OPEN, stopping {} candle update after {} success, {} failed",
-                        fundType, stopped.successCount(), stopped.failCount()));
+                log, String.valueOf(fundType), "candle", 5);
 
         BatchLogHelper.logSummary(log, fundType + " candle update", result);
     }

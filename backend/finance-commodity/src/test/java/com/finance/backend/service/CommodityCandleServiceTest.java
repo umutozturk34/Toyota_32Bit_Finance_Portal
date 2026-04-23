@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.client.YahooCommodityClient;
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommodityProperties;
 import com.finance.backend.mapper.CommodityMapper;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
@@ -48,16 +49,15 @@ class CommodityCandleServiceTest {
         TransactionTemplate transactionTemplate = new TransactionTemplate(mock(PlatformTransactionManager.class));
 
         AppProperties props = new AppProperties();
-        AppProperties.Commodity commodityProps = new AppProperties.Commodity();
-        commodityProps.setYearsToKeep(5);
-        props.setCommodity(commodityProps);
         props.setScale(4);
         props.setTimezone("Europe/Istanbul");
+        CommodityProperties commodityProps = new CommodityProperties();
+        commodityProps.setYearsToKeep(5);
 
         when(commodityCandleRepository.deleteByCandleDateBefore(any())).thenReturn(0);
 
         PreciousMetalDerivativeCalculator derivativeCalculator = mock(PreciousMetalDerivativeCalculator.class);
-        YahooSymbolResolver yahooSymbolResolver = new YahooSymbolResolver(props);
+        YahooSymbolResolver yahooSymbolResolver = new YahooSymbolResolver(commodityProps);
         service = new CommodityCandleService(
                 yahooCommodityClient,
                 commodityMapper,
@@ -69,7 +69,8 @@ class CommodityCandleServiceTest {
                 derivativeCalculator,
                 yahooSymbolResolver,
                 transactionTemplate,
-                props);
+                props,
+                commodityProps);
     }
 
     @Test

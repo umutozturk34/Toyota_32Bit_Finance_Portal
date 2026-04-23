@@ -23,6 +23,8 @@ public class YahooStockQuoteMapper {
                 Objects.toString(meta.longName(), Objects.toString(meta.shortName(), symbol)),
                 meta.regularMarketPrice(),
                 meta.chartPreviousClose(),
+                meta.regularMarketChange(),
+                meta.regularMarketChangePercent(),
                 openPrice,
                 meta.dayHigh(),
                 meta.dayLow(),

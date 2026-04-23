@@ -30,15 +30,6 @@ public class CryptoDataService implements TrackedAssetDataService {
         }
     }
 
-    public void fullMarketUpdate() {
-        updateOnlySnapshots();
-        updateOnlyCandles();
-    }
-
-    public void updateOnlySnapshots() {
-        cryptoSnapshotService.refreshAll();
-    }
-
     @Override
     public void refreshSnapshot(String coinId) {
         cryptoSnapshotService.refreshTrackedCryptoSnapshot(coinId);
@@ -50,16 +41,17 @@ public class CryptoDataService implements TrackedAssetDataService {
     }
 
     @Override
-    public void clearCache(String coinId) {
-        String normalizedId = coinId == null ? "" : coinId.trim().toLowerCase();
-        if (normalizedId.isBlank()) {
-            return;
-        }
-        cryptoCacheService.clearCache(normalizedId);
-        log.info("Cleared tracked crypto cache for {}", normalizedId);
+    public void refreshAllSnapshots() {
+        cryptoSnapshotService.refreshAll();
     }
 
-    public void updateOnlyCandles() {
+    @Override
+    public void refreshAllCandles() {
         cryptoCandleService.refreshAll();
+    }
+
+    @Override
+    public void clearCache(String coinId) {
+        MarketAssetCacheHelper.clearIfValid(coinId, cryptoCacheService, false, log, "crypto");
     }
 }

@@ -92,15 +92,15 @@ class CommodityDataServiceTest {
     }
 
     @Test
-    void updateCommoditySnapshotsDelegates() {
-        service.updateCommoditySnapshots();
+    void refreshAllSnapshotsDelegates() {
+        service.refreshAllSnapshots();
 
         verify(snapshotService).refreshAll();
     }
 
     @Test
-    void updateCommodityCandlesDelegates() {
-        service.updateCommodityCandles();
+    void refreshAllCandlesDelegates() {
+        service.refreshAllCandles();
 
         verify(candleService).refreshAll();
     }

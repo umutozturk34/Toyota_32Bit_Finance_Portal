@@ -90,7 +90,7 @@ class NewsQueryServiceTest {
     }
 
     @Test
-    void searchWithNoSortUsesUnsorted() {
+    void searchWithNoSortDefaultsToPublishedAtDesc() {
         when(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
         when(responseMapper.toResponses(List.of())).thenReturn(List.of());
@@ -99,6 +99,8 @@ class NewsQueryServiceTest {
 
         ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
         verify(articleRepository).findAll(any(Specification.class), captor.capture());
-        assertThat(captor.getValue().getSort().isUnsorted()).isTrue();
+        Pageable pageable = captor.getValue();
+        assertThat(pageable.getSort().getOrderFor("publishedAt")).isNotNull();
+        assertThat(pageable.getSort().getOrderFor("publishedAt").getDirection()).isEqualTo(Sort.Direction.DESC);
     }
 }

@@ -1,7 +1,8 @@
 package com.finance.backend.service;
 
 import com.finance.backend.config.AppProperties;
-import com.finance.backend.config.AppProperties.CommodityDerivativeRule;
+import com.finance.backend.config.CommodityProperties;
+import com.finance.backend.config.CommodityProperties.DerivativeRule;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
 import com.finance.backend.model.CommoditySnapshotInput;
@@ -30,20 +31,20 @@ public class PreciousMetalDerivativeCalculator {
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
     private final CommoditySegmentResolver segmentResolver;
     private final int scale;
-    private final List<CommodityDerivativeRule> rules;
+    private final List<DerivativeRule> rules;
 
     public PreciousMetalDerivativeCalculator(CommodityRepository commodityRepository,
                                              CommodityCandleRepository commodityCandleRepository,
                                              MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
                                              CommoditySegmentResolver segmentResolver,
-                                             AppProperties appProperties) {
-        AppProperties.Commodity props = appProperties.getCommodity();
+                                             AppProperties appProperties,
+                                             CommodityProperties commodityProperties) {
         this.commodityRepository = commodityRepository;
         this.commodityCandleRepository = commodityCandleRepository;
         this.commodityCacheService = commodityCacheService;
         this.segmentResolver = segmentResolver;
         this.scale = appProperties.getScale();
-        this.rules = List.copyOf(props.getDerivatives());
+        this.rules = List.copyOf(commodityProperties.getDerivatives());
     }
 
     public boolean hasDerivatives(String commodityCode) {
@@ -70,7 +71,7 @@ public class PreciousMetalDerivativeCalculator {
         rules.forEach(this::refreshCandlesFromRule);
     }
 
-    private void applyRule(CommodityDerivativeRule rule, Commodity source, BigDecimal usdTryForPrevious) {
+    private void applyRule(DerivativeRule rule, Commodity source, BigDecimal usdTryForPrevious) {
         BigDecimal current = divide(source.getCurrentPrice(), rule.getDivisor());
         BigDecimal open = divide(source.getOpenPrice(), rule.getDivisor());
         BigDecimal high = divide(source.getDayHigh(), rule.getDivisor());
@@ -81,7 +82,7 @@ public class PreciousMetalDerivativeCalculator {
         persistDerivative(rule.getDerivativeCode(), snapshot);
     }
 
-    private void refreshCandlesFromRule(CommodityDerivativeRule rule) {
+    private void refreshCandlesFromRule(DerivativeRule rule) {
         List<CommodityCandle> sourceCandles = commodityCandleRepository
                 .findByCommodityCodeOrderByCandleDateAsc(rule.getSourceCode());
         if (sourceCandles.isEmpty()) {
@@ -103,7 +104,10 @@ public class PreciousMetalDerivativeCalculator {
 
         Map<LocalDateTime, CommodityCandle> existingByDate = commodityCandleRepository
                 .findByCommodityCodeOrderByCandleDateAsc(derivativeCode).stream()
-                .collect(Collectors.toMap(CommodityCandle::getCandleDate, Function.identity(), (a, b) -> a));
+                .collect(Collectors.toMap(CommodityCandle::getCandleDate, Function.identity(), (a, b) -> {
+                    log.warn("Duplicate derivative candle for {} at {}, keeping first", derivativeCode, a.getCandleDate());
+                    return a;
+                }));
 
         List<CommodityCandle> toInsert = new ArrayList<>();
         int updated = 0;

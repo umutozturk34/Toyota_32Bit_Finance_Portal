@@ -1,6 +1,6 @@
 package com.finance.backend.service.transaction;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.exception.BadRequestException;
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class AmountBasedResolverTest {
 
-    private final AmountBasedResolver resolver = new AmountBasedResolver(new AppProperties());
+    private final AmountBasedResolver resolver = new AmountBasedResolver(new PortfolioProperties());
 
     @Test
     void totalCostIsRecalculatedFromQuantityTimesPrice() {

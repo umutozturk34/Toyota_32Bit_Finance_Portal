@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
 import { TrendingUp, TrendingDown } from './AnimatedIcons';
-import { unifiedMarketService } from '../services/unifiedMarketService';
 import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../constants/assetTypes';
 import { assetCodeLabel } from '../utils/assetCode';
 import { formatPriceTRY, getChangeClass, changeColors } from '../utils/formatters';
+import useSearchSuggestions from '../hooks/useSearchSuggestions';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
 
@@ -27,9 +26,7 @@ export default function SearchSuggestions({
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef(null);
-  const containerRef = useRef(null);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -42,32 +39,12 @@ export default function SearchSuggestions({
     return () => clearTimeout(timerRef.current);
   }, [query]);
 
-  const { data, isFetching } = useQuery({
-    queryKey: ['searchSuggestions', debouncedQuery, filterType],
-    queryFn: () => unifiedMarketService.search({
-      search: debouncedQuery,
-      ...(filterType && { type: filterType }),
-      size: 8,
-    }),
-    enabled: debouncedQuery.length >= 2,
-    staleTime: 15_000,
+  const { containerRef, suggestions, activeIndex, setActiveIndex, isFetching, buildKeyDown } = useSearchSuggestions({
+    query: debouncedQuery,
+    filterType,
+    excludeCodes,
+    onClose: () => setOpen(false),
   });
-
-  const suggestions = (data?.content || []).filter(a => !excludeCodes.includes(a.code));
-
-  useEffect(() => {
-    setActiveIndex(-1);
-  }, [debouncedQuery]);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   const handleSelect = useCallback((asset) => {
     setQuery('');
@@ -80,22 +57,10 @@ export default function SearchSuggestions({
     }
   }, [onSelect, navigateOnSelect, navigate]);
 
-  const handleKeyDown = (e) => {
-    if (!open || suggestions.length === 0) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActiveIndex(i => (i + 1) % suggestions.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActiveIndex(i => (i - 1 + suggestions.length) % suggestions.length);
-    } else if (e.key === 'Enter' && activeIndex >= 0) {
-      e.preventDefault();
-      handleSelect(suggestions[activeIndex]);
-    } else if (e.key === 'Escape') {
-      setOpen(false);
-      inputRef.current?.blur();
-    }
-  };
+  const handleKeyDown = buildKeyDown(handleSelect, () => {
+    setOpen(false);
+    inputRef.current?.blur();
+  });
 
   const isHero = variant === 'hero';
 

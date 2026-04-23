@@ -28,6 +28,8 @@ public record YahooChartResponse(Chart chart) {
             @JsonProperty("regularMarketPrice") BigDecimal regularMarketPrice,
             @JsonProperty("chartPreviousClose") BigDecimal chartPreviousClose,
             @JsonProperty("previousClose") BigDecimal previousClose,
+            @JsonProperty("regularMarketChange") BigDecimal regularMarketChange,
+            @JsonProperty("regularMarketChangePercent") BigDecimal regularMarketChangePercent,
             @JsonProperty("regularMarketDayHigh") BigDecimal dayHigh,
             @JsonProperty("regularMarketDayLow") BigDecimal dayLow,
             @JsonProperty("regularMarketVolume") Long volume,

@@ -30,10 +30,6 @@ public class FundDataService implements TrackedAssetDataService {
         }
     }
 
-    public void updateFundSnapshots() {
-        fundSnapshotService.refreshAll();
-    }
-
     @Override
     public void refreshSnapshot(String fundCode) {
         fundSnapshotService.refreshTrackedFundSnapshot(fundCode);
@@ -45,16 +41,17 @@ public class FundDataService implements TrackedAssetDataService {
     }
 
     @Override
-    public void clearCache(String fundCode) {
-        String normalized = fundCode == null ? "" : fundCode.trim().toUpperCase();
-        if (normalized.isBlank()) {
-            return;
-        }
-        fundCacheService.clearCache(normalized);
-        log.info("Cleared tracked fund cache for {}", normalized);
+    public void refreshAllSnapshots() {
+        fundSnapshotService.refreshAll();
     }
 
-    public void updateFundCandles() {
+    @Override
+    public void refreshAllCandles() {
         fundCandleService.refreshAll();
+    }
+
+    @Override
+    public void clearCache(String fundCode) {
+        MarketAssetCacheHelper.clearIfValid(fundCode, fundCacheService, true, log, "fund");
     }
 }

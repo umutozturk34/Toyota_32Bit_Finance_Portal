@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.client.YahooForexClient;
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.ForexProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.ForexMapper;
@@ -12,6 +13,7 @@ import com.finance.backend.repository.ForexCandleRepository;
 import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.MarketBatchRunner;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
 import com.finance.backend.util.SyntheticPriceCalculator;
@@ -48,14 +50,15 @@ public class ForexCandleService implements CandleBatchRefresher {
                                    ForexCandleRepository forexCandleRepository,
                                    MarketCacheService<Forex, ForexCandle> forexCacheService,
                                    TransactionTemplate transactionTemplate,
-                                   AppProperties appProperties) {
+                                   AppProperties appProperties,
+                                   ForexProperties forexProperties) {
         this.yahooForexClient = yahooForexClient;
         this.forexMapper = forexMapper;
         this.forexRepository = forexRepository;
         this.forexCandleRepository = forexCandleRepository;
         this.forexCacheService = forexCacheService;
         this.transactionTemplate = transactionTemplate;
-        this.yearsToKeep = appProperties.getForex().getYearsToKeep();
+        this.yearsToKeep = forexProperties.getYearsToKeep();
         this.scale = appProperties.getScale();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
@@ -91,19 +94,14 @@ public class ForexCandleService implements CandleBatchRefresher {
                 .filter(forex -> !"USDTRY".equals(forex.getCurrencyCode()))
                 .toList();
 
-        BatchUpdateRunner.Result result = BatchUpdateRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 nonUsdTryForex,
                 forex -> {
                     updateForexCandles(forex, usdtryCandleMap);
                     forexCacheService.refreshHistory(forex.getCurrencyCode());
                 },
                 Forex::getCurrencyCode,
-                "candle",
-                5,
-                (forex, e) -> log.error("Candle sync failed for {}: {}", forex.getCurrencyCode(), e.getMessage(), e),
-                e -> e instanceof CallNotPermittedException,
-                (stopped, e) -> log.warn("Yahoo CB is OPEN, stopping candle sync. {} success, {} failed so far",
-                        stopped.successCount(), stopped.failCount()));
+                log, "Forex", "candle", 5);
 
         BatchLogHelper.logSummary(log, "Yahoo candle sync", result);
     }

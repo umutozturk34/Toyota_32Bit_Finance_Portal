@@ -12,7 +12,7 @@ import org.mapstruct.Named;
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public abstract class ForexResponseMapper {
+public abstract class ForexResponseMapper implements MarketMetadataBuilder<Forex, ForexMetadata> {
 
     public abstract List<CandleResponse> toForexCandleResponses(List<ForexCandle> candles);
 
@@ -23,13 +23,14 @@ public abstract class ForexResponseMapper {
     @Mapping(target = "changePercent", source = "changePercent24h")
     @Mapping(target = "type", expression = "java(MarketType.FOREX)")
     @Mapping(target = "image", ignore = true)
-    @Mapping(target = "metadata", source = "forex", qualifiedByName = "forexMetadata")
+    @Mapping(target = "metadata", source = "forex", qualifiedByName = "metadata")
     public abstract MarketAssetResponse toMarketAssetResponse(Forex forex);
 
     public abstract List<MarketAssetResponse> toMarketAssetResponses(List<Forex> forexList);
 
-    @Named("forexMetadata")
-    protected ForexMetadata buildForexMetadata(Forex forex) {
+    @Override
+    @Named("metadata")
+    public ForexMetadata buildMetadata(Forex forex) {
         return new ForexMetadata(
                 forex.getSellingPrice(),
                 forex.getForexBuying(),

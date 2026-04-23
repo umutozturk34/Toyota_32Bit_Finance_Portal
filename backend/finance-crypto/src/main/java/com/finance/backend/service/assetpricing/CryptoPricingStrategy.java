@@ -1,6 +1,6 @@
 package com.finance.backend.service.assetpricing;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommissionProperties;
 import com.finance.backend.model.Crypto;
 import com.finance.backend.model.CryptoCandle;
 import com.finance.backend.model.MarketType;
@@ -15,12 +15,12 @@ import java.math.BigDecimal;
 public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
 
     private final MarketCacheService<Crypto, CryptoCandle> cacheService;
-    private final AppProperties appProperties;
+    private final CommissionProperties commissionProperties;
 
     public CryptoPricingStrategy(MarketCacheService<Crypto, CryptoCandle> cacheService,
-                                 AppProperties appProperties) {
+                                 CommissionProperties commissionProperties) {
         this.cacheService = cacheService;
-        this.appProperties = appProperties;
+        this.commissionProperties = commissionProperties;
     }
 
     @Override
@@ -39,7 +39,7 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
 
     @Override
     public BigDecimal getSellPriceTry(String assetCode) {
-        return applyCommission(getPriceTry(assetCode), appProperties.getCommission().getCryptoRate());
+        return applyCommission(getPriceTry(assetCode), commissionProperties.getCryptoRate());
     }
 
     @Override
@@ -58,7 +58,7 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
             return new AssetPricingPort.PriceBundle(null, null, EMPTY_META);
         }
         BigDecimal price = normalize(crypto.getCurrentPriceTry());
-        BigDecimal sellPrice = applyCommission(price, appProperties.getCommission().getCryptoRate());
+        BigDecimal sellPrice = applyCommission(price, commissionProperties.getCryptoRate());
         return new AssetPricingPort.PriceBundle(
                 price,
                 sellPrice,

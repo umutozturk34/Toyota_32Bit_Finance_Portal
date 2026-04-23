@@ -1,6 +1,7 @@
 package com.finance.backend.client;
 
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.BondProperties;
 import com.finance.backend.dto.internal.EvdsBondDataResponse;
 import com.finance.backend.dto.internal.EvdsBondSerieResponse;
 import com.finance.backend.exception.ExternalApiException;
@@ -24,9 +25,10 @@ public class EvdsClient {
     private final String seriesPath;
 
     public EvdsClient(@Qualifier("bondWebClient") WebClient webClient,
-                      AppProperties appProperties) {
+                      AppProperties appProperties,
+                      BondProperties bondProperties) {
         this.webClient = webClient;
-        this.datagroupCode = appProperties.getBond().getDatagroupCode();
+        this.datagroupCode = bondProperties.getDatagroupCode();
         this.serieListPath = appProperties.getApi().getBond().getSerieListPath();
         this.seriesPath = appProperties.getApi().getBond().getSeriesPath();
     }

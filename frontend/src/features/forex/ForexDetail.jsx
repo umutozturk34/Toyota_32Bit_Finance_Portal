@@ -98,8 +98,8 @@ export default function ForexDetail() {
       assetType="FOREX"
       chartAssetType="FOREX"
       queryKeyPrefix="forex"
-      fetchAsset={() => forexService.getForexByCode(code)}
-      fetchHistory={(_, range) => forexService.getForexHistory(code, range)}
+      fetchAsset={() => forexService.getByCode(code)}
+      fetchHistory={(_, range) => forexService.getHistory(code, range)}
       backRoute="/forex"
       renderHeader={(asset) => <ForexHeader asset={asset} code={code} />}
       renderMetadata={(asset) => <ForexMetadata asset={asset} code={code} />}

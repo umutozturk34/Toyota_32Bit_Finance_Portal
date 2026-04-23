@@ -18,7 +18,8 @@ import com.finance.backend.service.AssetPricingPort.AssetKey;
 import com.finance.backend.service.AssetPricingPort.AssetMeta;
 import com.finance.backend.service.AssetPricingPort.PriceBundle;
 import com.finance.backend.util.EnumParser;
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommissionProperties;
+import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.model.TransactionSide;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -43,7 +44,8 @@ public class PortfolioSummaryService {
     private final PortfolioTransactionRepository transactionRepository;
     private final UserWalletRepository walletRepository;
     private final PortfolioResponseMapper responseMapper;
-    private final AppProperties appProperties;
+    private final CommissionProperties commissionProperties;
+    private final PortfolioProperties portfolioProperties;
 
     @Transactional(readOnly = true)
     public List<PositionResponse> getPositions(Long portfolioId) {
@@ -140,7 +142,7 @@ public class PortfolioSummaryService {
         BigDecimal totalPnl = unrealizedPnl.add(realizedPnl).setScale(SCALE, RoundingMode.HALF_UP);
         BigDecimal denominator = totalCost.compareTo(BigDecimal.ZERO) > 0
                 ? totalCost
-                : appProperties.getPortfolio().getInitialBalance();
+                : portfolioProperties.getInitialBalance();
         BigDecimal pnlPercent = totalPnl.multiply(new BigDecimal("100"))
                 .divide(denominator, SCALE, RoundingMode.HALF_UP);
 
@@ -203,7 +205,7 @@ public class PortfolioSummaryService {
                 : BigDecimal.ZERO;
 
         BigDecimal sellPriceTry = effective.sellPrice() != null ? effective.sellPrice() : currentPrice;
-        BigDecimal commissionRate = pos.getAssetType().commissionRate(appProperties.getCommission());
+        BigDecimal commissionRate = pos.getAssetType().commissionRate(commissionProperties);
         AssetMeta meta = effective.meta() != null ? effective.meta() : new AssetMeta(null, null);
 
         return responseMapper.toPositionResponse(pos, currentPrice, sellPriceTry, commissionRate, marketValue, pnl, pnlPercent, meta.name(), meta.image());
@@ -228,7 +230,7 @@ public class PortfolioSummaryService {
     }
 
     private UserWallet findWallet(Long portfolioId) {
-        String currency = appProperties.getPortfolio().getDefaultCurrency();
+        String currency = portfolioProperties.getDefaultCurrency();
         return walletRepository.findByPortfolioIdAndCurrency(portfolioId, currency)
                 .orElseThrow(() -> new ResourceNotFoundException(currency + " wallet not found for portfolio " + portfolioId));
     }

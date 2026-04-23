@@ -1,0 +1,155 @@
+package com.finance.backend.service;
+
+import com.finance.backend.dto.request.UpsertNewsSourceRequest;
+import com.finance.backend.dto.response.NewsSourceResponse;
+import com.finance.backend.exception.BadRequestException;
+import com.finance.backend.exception.ResourceNotFoundException;
+import com.finance.backend.mapper.NewsSourceMapper;
+import com.finance.backend.model.NewsSource;
+import com.finance.backend.repository.NewsSourceRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+class NewsSourceAdminServiceTest {
+
+    private NewsSourceRepository repository;
+    private NewsSourceMapper mapper;
+    private NewsSourceService sourceService;
+    private NewsSourceRefreshService refreshService;
+    private NewsSourceAdminService service;
+    private MockedStatic<TransactionSynchronizationManager> tsmMock;
+
+    @BeforeEach
+    void setUp() {
+        repository = mock(NewsSourceRepository.class);
+        mapper = mock(NewsSourceMapper.class);
+        sourceService = mock(NewsSourceService.class);
+        refreshService = mock(NewsSourceRefreshService.class);
+        service = new NewsSourceAdminService(repository, mapper, sourceService, refreshService);
+        tsmMock = mockStatic(TransactionSynchronizationManager.class);
+    }
+
+    @AfterEach
+    void tearDown() {
+        tsmMock.close();
+    }
+
+    private UpsertNewsSourceRequest request(String name) {
+        UpsertNewsSourceRequest req = new UpsertNewsSourceRequest();
+        req.setName(name);
+        req.setUrl("https://" + name + ".com/rss");
+        req.setSourceType("RSS");
+        req.setDefaultCategory("CRYPTO");
+        req.setEnabled(true);
+        req.setSortOrder(0);
+        return req;
+    }
+
+    private NewsSource entity(Long id, String name) {
+        NewsSource s = new NewsSource();
+        s.setId(id);
+        s.setName(name);
+        s.setUrl("https://" + name + ".com/rss");
+        s.setEnabled(true);
+        return s;
+    }
+
+    private NewsSourceResponse response(Long id, String name) {
+        return new NewsSourceResponse(id, name, "https://" + name + ".com/rss", "RSS", "CRYPTO", true, 0,
+                LocalDateTime.now(), LocalDateTime.now());
+    }
+
+    @Test
+    void createSavesAndReturnsResponse() {
+        UpsertNewsSourceRequest req = request("BBC");
+        NewsSource saved = entity(1L, "BBC");
+        when(repository.findByNameIgnoreCase("BBC")).thenReturn(Optional.empty());
+        when(mapper.toEntity(req)).thenReturn(saved);
+        when(repository.save(saved)).thenReturn(saved);
+        when(mapper.toResponse(saved)).thenReturn(response(1L, "BBC"));
+
+        NewsSourceResponse result = service.create(req);
+
+        verify(repository).save(saved);
+        assertThat(result.name()).isEqualTo("BBC");
+    }
+
+    @Test
+    void createThrowsOnDuplicateName() {
+        UpsertNewsSourceRequest req = request("BBC");
+        when(repository.findByNameIgnoreCase("BBC")).thenReturn(Optional.of(entity(1L, "BBC")));
+
+        Throwable thrown = org.assertj.core.api.Assertions.catchThrowable(() -> service.create(req));
+
+        assertThat(thrown).isInstanceOf(BadRequestException.class).hasMessageContaining("BBC");
+    }
+
+    @Test
+    void updateSavesAndReturnsResponse() {
+        NewsSource existing = entity(1L, "BBC");
+        UpsertNewsSourceRequest req = request("BBC");
+        when(sourceService.findOrThrow(1L)).thenReturn(existing);
+        when(repository.findByNameIgnoreCase("BBC")).thenReturn(Optional.of(existing));
+        when(repository.save(existing)).thenReturn(existing);
+        when(mapper.toResponse(existing)).thenReturn(response(1L, "BBC"));
+
+        service.update(1L, req);
+
+        verify(mapper).updateEntity(req, existing);
+        verify(repository).save(existing);
+    }
+
+    @Test
+    void updateThrowsWhenRenamingToExistingName() {
+        NewsSource target = entity(1L, "BBC");
+        NewsSource other = entity(2L, "CNN");
+        UpsertNewsSourceRequest req = request("CNN");
+        when(sourceService.findOrThrow(1L)).thenReturn(target);
+        when(repository.findByNameIgnoreCase("CNN")).thenReturn(Optional.of(other));
+
+        assertThatThrownBy(() -> service.update(1L, req)).isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    void setEnabledTogglesFlag() {
+        NewsSource existing = entity(1L, "BBC");
+        existing.setEnabled(true);
+        when(sourceService.findOrThrow(1L)).thenReturn(existing);
+
+        service.setEnabled(1L, false);
+
+        assertThat(existing.isEnabled()).isFalse();
+        verify(repository).save(existing);
+    }
+
+    @Test
+    void deleteRemovesSource() {
+        NewsSource existing = entity(1L, "BBC");
+        when(sourceService.findOrThrow(1L)).thenReturn(existing);
+
+        service.delete(1L);
+
+        verify(repository).delete(existing);
+    }
+
+    @Test
+    void updateThrowsWhenSourceMissing() {
+        UpsertNewsSourceRequest req = request("BBC");
+        when(sourceService.findOrThrow(99L)).thenThrow(new ResourceNotFoundException("News source not found: 99"));
+
+        assertThatThrownBy(() -> service.update(99L, req)).isInstanceOf(ResourceNotFoundException.class);
+    }
+}

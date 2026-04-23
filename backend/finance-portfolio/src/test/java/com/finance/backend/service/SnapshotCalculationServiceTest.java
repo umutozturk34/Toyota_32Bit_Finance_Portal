@@ -1,6 +1,6 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.model.*;
 import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.repository.UserWalletRepository;
@@ -31,7 +31,7 @@ class SnapshotCalculationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SnapshotCalculationService(pricingPort, positionRepository, walletRepository, new AppProperties());
+        service = new SnapshotCalculationService(pricingPort, positionRepository, walletRepository, new PortfolioProperties());
     }
 
     @Test
@@ -105,7 +105,7 @@ class SnapshotCalculationServiceTest {
         counting.seedPrice("FUND", "AAK", new BigDecimal("110.0000"));
 
         SnapshotCalculationService countedService = new SnapshotCalculationService(
-                counting, positionRepository, walletRepository, new AppProperties());
+                counting, positionRepository, walletRepository, new PortfolioProperties());
 
         Portfolio portfolio = Portfolio.builder().id(1L).build();
         when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))

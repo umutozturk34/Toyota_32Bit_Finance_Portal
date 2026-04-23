@@ -1,5 +1,6 @@
 package com.finance.backend.service;
 
+import com.finance.backend.util.CodeNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -10,10 +11,10 @@ public class CryptoSymbolResolver {
     private final TrackedAssetQueryService trackedAssetQueryService;
 
     public String resolveBinanceSymbol(String coinGeckoId) {
-        if (coinGeckoId == null || coinGeckoId.isBlank()) {
+        String normalizedId = CodeNormalizer.lower(coinGeckoId);
+        if (normalizedId.isBlank()) {
             return null;
         }
-        String normalizedId = coinGeckoId.trim().toLowerCase();
         return trackedAssetQueryService.getCryptoBinanceSymbol(normalizedId).orElse(null);
     }
 }

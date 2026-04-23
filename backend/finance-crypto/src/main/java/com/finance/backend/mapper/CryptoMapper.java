@@ -1,21 +1,16 @@
 package com.finance.backend.mapper;
 
-import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.CoinGeckoCandleDto;
 import com.finance.backend.dto.external.CoinGeckoSnapshotDto;
 import com.finance.backend.model.Crypto;
 import com.finance.backend.model.CryptoCandle;
 import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Mapper(componentModel = "spring")
-public abstract class CryptoMapper {
-
-    @Autowired
-    protected AppProperties appProperties;
+public abstract class CryptoMapper extends BaseMarketMapper {
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
     @Mapping(source = "usdDto.priceChange24h", target = "changeAmount")
@@ -44,7 +39,7 @@ public abstract class CryptoMapper {
 
     @AfterMapping
     void enrichCrypto(@MappingTarget Crypto crypto) {
-        crypto.scaleFields(appProperties.getScale());
+        crypto.scaleFields(scale());
     }
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -57,6 +52,6 @@ public abstract class CryptoMapper {
 
     @AfterMapping
     void enrichCryptoCandle(@MappingTarget CryptoCandle candle) {
-        candle.scaleOhlc(appProperties.getScale());
+        candle.scaleOhlc(scale());
     }
 }

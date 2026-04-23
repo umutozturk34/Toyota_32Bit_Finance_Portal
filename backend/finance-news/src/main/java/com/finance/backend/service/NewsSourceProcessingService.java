@@ -34,13 +34,13 @@ public class NewsSourceProcessingService {
                                        NewsArticleRepository articleRepository,
                                        NewsCacheService newsCacheService,
                                        TransactionTemplate transactionTemplate,
-                                       com.finance.backend.config.AppProperties appProperties) {
+                                       com.finance.backend.config.NewsProperties newsProperties) {
         this.rssClient = rssClient;
         this.articleMapper = articleMapper;
         this.articleRepository = articleRepository;
         this.newsCacheService = newsCacheService;
         this.transactionTemplate = transactionTemplate;
-        this.maxArticlesPerSource = appProperties.getNews().getMaxArticlesPerSource();
+        this.maxArticlesPerSource = newsProperties.getMaxArticlesPerSource();
     }
 
     public int processSource(NewsSource source) {

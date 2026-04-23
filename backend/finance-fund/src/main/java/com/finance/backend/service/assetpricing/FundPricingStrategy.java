@@ -1,6 +1,6 @@
 package com.finance.backend.service.assetpricing;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommissionProperties;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;
 import com.finance.backend.model.MarketType;
@@ -14,12 +14,12 @@ import java.math.BigDecimal;
 public class FundPricingStrategy extends BaseAssetPricingStrategy {
 
     private final MarketCacheService<Fund, FundCandle> cacheService;
-    private final AppProperties appProperties;
+    private final CommissionProperties commissionProperties;
 
     public FundPricingStrategy(MarketCacheService<Fund, FundCandle> cacheService,
-                               AppProperties appProperties) {
+                               CommissionProperties commissionProperties) {
         this.cacheService = cacheService;
-        this.appProperties = appProperties;
+        this.commissionProperties = commissionProperties;
     }
 
     @Override
@@ -38,7 +38,7 @@ public class FundPricingStrategy extends BaseAssetPricingStrategy {
 
     @Override
     public BigDecimal getSellPriceTry(String assetCode) {
-        return applyCommission(getPriceTry(assetCode), appProperties.getCommission().getFundRate());
+        return applyCommission(getPriceTry(assetCode), commissionProperties.getFundRate());
     }
 
     @Override
@@ -53,7 +53,7 @@ public class FundPricingStrategy extends BaseAssetPricingStrategy {
             return new AssetPricingPort.PriceBundle(null, null, EMPTY_META);
         }
         BigDecimal price = normalize(fund.getPrice());
-        BigDecimal sellPrice = applyCommission(price, appProperties.getCommission().getFundRate());
+        BigDecimal sellPrice = applyCommission(price, commissionProperties.getFundRate());
         return new AssetPricingPort.PriceBundle(
                 price,
                 sellPrice,

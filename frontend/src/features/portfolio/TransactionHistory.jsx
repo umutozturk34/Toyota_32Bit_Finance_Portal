@@ -3,16 +3,12 @@ import { motion } from 'framer-motion';
 import { History } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/AnimatedIcons';
 import { formatPriceTRY } from '../../shared/utils/formatters';
-import { containerVariants, cardVariants } from '../../shared/utils/animations';
-import EmptyState from '../../shared/components/EmptyState';
-import SearchInput from '../../shared/components/SearchInput';
-import SortSelect from '../../shared/components/SortSelect';
-import FilterTabs from '../../shared/components/FilterTabs';
-import Pagination from '../../shared/components/Pagination';
-import { ASSET_TYPE_LABELS, ASSET_TYPE_FILTERS } from '../../shared/constants/assetTypes';
+import { cardVariants } from '../../shared/utils/animations';
+import { ASSET_TYPE_LABELS } from '../../shared/constants/assetTypes';
 import { assetCodeLabel } from '../../shared/utils/assetCode';
 import { usePortfolioTransactions } from './usePortfolioData';
 import useListParams from '../../shared/hooks/useListParams';
+import PortfolioListShell from './PortfolioListShell';
 
 const SORT_OPTIONS = [
   { id: 'createdAt', label: 'Tarih' },
@@ -32,11 +28,10 @@ function formatTxnTime(dateStr) {
 
 export default function TransactionHistory({ portfolioId }) {
   const listParams = useListParams({ defaultSize: 8, prefix: 'txn' });
-  const assetTypeFilter = listParams.filter || '';
 
   const queryParams = {
     ...listParams.params,
-    ...(assetTypeFilter && { assetType: assetTypeFilter }),
+    ...(listParams.filter && { assetType: listParams.filter }),
   };
 
   const { data } = usePortfolioTransactions(portfolioId, queryParams);
@@ -58,35 +53,17 @@ export default function TransactionHistory({ portfolioId }) {
   if (!portfolioId) return null;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="w-48">
-          <SearchInput value={listParams.search} onChange={listParams.setSearch} placeholder="İşlem ara..." />
-        </div>
-        <SortSelect
-          value={listParams.sort}
-          direction={listParams.direction}
-          options={SORT_OPTIONS}
-          onSortChange={listParams.setSort}
-          onDirectionChange={listParams.setDirection}
-        />
-        <FilterTabs
-          items={ASSET_TYPE_FILTERS.filter(f => f.id).map(f => ({ type: f.id, label: f.label }))}
-          activeId={assetTypeFilter || 'ALL'}
-          onSelect={(id) => listParams.setFilter(id === 'ALL' ? '' : id)}
-          showAll={true}
-          layoutId="txn-type"
-        />
-      </div>
-
-      {transactions.length === 0 ? (
-        <EmptyState
-          icon={<History className="h-8 w-8 text-fg-muted" />}
-          message={listParams.search ? 'Aramayla eşleşen işlem bulunamadı.' : 'Henüz işlem bulunmuyor'}
-        />
-      ) : (
-        <motion.div variants={containerVariants(0.04)} initial="hidden" animate="show" className="space-y-4 min-h-[500px]">
-          {grouped.map(([dateKey, txns]) => (
+    <PortfolioListShell
+      listParams={listParams}
+      totalPages={totalPages}
+      sortOptions={SORT_OPTIONS}
+      searchPlaceholder="İşlem ara..."
+      filterLayoutId="txn-type"
+      isEmpty={transactions.length === 0}
+      emptyIcon={<History className="h-8 w-8 text-fg-muted" />}
+      emptyMessage={listParams.search ? 'Aramayla eşleşen işlem bulunamadı.' : 'Henüz işlem bulunmuyor'}
+    >
+      {grouped.map(([dateKey, txns]) => (
             <div key={dateKey} className="space-y-2">
               <div className="flex items-center gap-3 py-1">
                 <span className="h-px flex-1 bg-border-default" />
@@ -151,11 +128,7 @@ export default function TransactionHistory({ portfolioId }) {
                 );
               })}
             </div>
-          ))}
-        </motion.div>
-      )}
-
-      <Pagination page={listParams.page} totalPages={totalPages} onPageChange={listParams.setPage} />
-    </div>
+      ))}
+    </PortfolioListShell>
   );
 }

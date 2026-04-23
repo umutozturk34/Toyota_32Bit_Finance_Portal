@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.client.YahooCommodityClient;
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommodityProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.CommodityMapper;
@@ -13,11 +14,11 @@ import com.finance.backend.repository.CommodityCandleRepository;
 import com.finance.backend.repository.CommodityRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.MarketBatchRunner;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
 import com.finance.backend.util.SyntheticPriceCalculator;
 import com.finance.backend.util.YahooRangePolicy;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -58,7 +59,8 @@ public class CommodityCandleService implements CandleBatchRefresher {
                                   PreciousMetalDerivativeCalculator derivativeCalculator,
                                   YahooSymbolResolver yahooSymbolResolver,
                                   TransactionTemplate transactionTemplate,
-                                  AppProperties appProperties) {
+                                  AppProperties appProperties,
+                                  CommodityProperties commodityProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
         this.commodityMapper = commodityMapper;
         this.commodityRepository = commodityRepository;
@@ -69,7 +71,7 @@ public class CommodityCandleService implements CandleBatchRefresher {
         this.derivativeCalculator = derivativeCalculator;
         this.yahooSymbolResolver = yahooSymbolResolver;
         this.transactionTemplate = transactionTemplate;
-        this.yearsToKeep = appProperties.getCommodity().getYearsToKeep();
+        this.yearsToKeep = commodityProperties.getYearsToKeep();
         this.scale = appProperties.getScale();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
@@ -99,16 +101,11 @@ public class CommodityCandleService implements CandleBatchRefresher {
 
         log.info("Starting commodity candle sync for {} items", fetchableCodes.size());
 
-        BatchUpdateRunner.Result result = BatchUpdateRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 fetchableCodes,
                 code -> updateCommodityCandles(code, usdtryCandleMap),
                 code -> code,
-                "candle",
-                5,
-                (code, e) -> log.error("Candle sync failed for {}: {}", code, e.getMessage(), e),
-                e -> e instanceof CallNotPermittedException,
-                (stopped, e) -> log.warn("Yahoo CB is OPEN, stopping commodity candle sync. {} success, {} failed so far",
-                        stopped.successCount(), stopped.failCount()));
+                log, "Commodity", "candle", 5);
 
         BatchLogHelper.logSummary(log, "Commodity candle sync", result);
         derivativeCalculator.refreshDerivativeCandles();

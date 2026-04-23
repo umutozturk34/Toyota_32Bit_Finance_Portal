@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { stockService } from './stockService';
-import { getChangeClass, changeColors, changeBg, formatPrice, formatVolume } from '../../shared/utils/formatters';
+import { getChangeClass, changeColors, changeBg, formatPrice, formatVolume, formatPercentAbs } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
 import AssetDetailPage from '../../shared/components/AssetDetailPage';
 
@@ -38,7 +38,7 @@ function StockMetadata({ asset }) {
           <p className="text-xs text-fg-muted mb-1">Değişim</p>
           <div className={`flex items-center gap-1 text-lg font-mono font-bold ${changeColors[cls]}`}>
             {asset.changePercent > 0 ? <ChevronUp className="h-4 w-4" /> : asset.changePercent < 0 ? <ChevronDown className="h-4 w-4" /> : null}
-            {Math.abs(asset.changePercent || 0).toFixed(2)}%
+            {formatPercentAbs(asset.changePercent)}
           </div>
         </div>
         <div className="rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
@@ -89,8 +89,8 @@ export default function StockDetail() {
       assetType="STOCK"
       chartAssetType="BIST"
       queryKeyPrefix="stock"
-      fetchAsset={() => stockService.getStockBySymbol(symbol)}
-      fetchHistory={(_, range) => stockService.getStockHistory(historySym, range)}
+      fetchAsset={() => stockService.getByCode(symbol)}
+      fetchHistory={(_, range) => stockService.getHistory(historySym, range)}
       backRoute="/stocks"
       excludeCompare={[historySym]}
       renderHeader={(asset) => <StockHeader asset={asset} />}

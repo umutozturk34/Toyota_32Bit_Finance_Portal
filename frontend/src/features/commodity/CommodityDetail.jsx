@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { commodityService } from './commodityService';
-import { getChangeClass, changeColors, formatPrice } from '../../shared/utils/formatters';
+import { getChangeClass, changeColors, formatPrice, formatPercentAbs } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
 import AssetDetailPage from '../../shared/components/AssetDetailPage';
 
@@ -45,7 +45,7 @@ function CommodityMetadata({ asset }) {
           <p className="text-xs text-fg-muted mb-1">24s Değişim</p>
           <div className={`flex items-center gap-1 text-lg font-mono font-bold ${changeColors[cls]}`}>
             {asset.changePercent > 0 ? <ChevronUp className="h-4 w-4" /> : asset.changePercent < 0 ? <ChevronDown className="h-4 w-4" /> : null}
-            {Math.abs(asset.changePercent || 0).toFixed(2)}%
+            {formatPercentAbs(asset.changePercent)}
           </div>
         </div>
         <div className="rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
@@ -101,8 +101,8 @@ export default function CommodityDetail() {
       assetType="COMMODITY"
       chartAssetType="COMMODITY"
       queryKeyPrefix="commodity"
-      fetchAsset={() => commodityService.getCommodityByCode(code)}
-      fetchHistory={(_, range) => commodityService.getCommodityHistory(code, range)}
+      fetchAsset={() => commodityService.getByCode(code)}
+      fetchHistory={(_, range) => commodityService.getHistory(code, range)}
       backRoute="/commodities"
       excludeCompare={[code]}
       renderHeader={(asset) => <CommodityHeader asset={asset} />}

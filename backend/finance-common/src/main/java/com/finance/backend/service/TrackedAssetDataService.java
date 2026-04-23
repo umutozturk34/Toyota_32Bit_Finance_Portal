@@ -12,5 +12,9 @@ public interface TrackedAssetDataService {
 
     void refreshCandles(String code);
 
+    void refreshAllSnapshots();
+
+    void refreshAllCandles();
+
     void clearCache(String code);
 }

@@ -3,7 +3,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 @Getter
 @Setter
 @SuperBuilder
@@ -50,25 +49,13 @@ public class Stock extends BaseAsset {
         return symbol;
     }
 
-    public void scaleAndComputeChange(int scale) {
+    public void scaleOnly(int scale) {
         this.currentPrice = scaleValue(this.currentPrice, scale);
         this.previousClose = scaleValue(this.previousClose, scale);
         this.openPrice = scaleValue(this.openPrice, scale);
         this.dayHigh = scaleValue(this.dayHigh, scale);
         this.dayLow = scaleValue(this.dayLow, scale);
-        computePriceChange(scale);
-    }
-
-    private void computePriceChange(int scale) {
-        if (currentPrice == null || previousClose == null || previousClose.signum() == 0) {
-            this.priceChangeAmount = null;
-            this.priceChangePercent = null;
-            return;
-        }
-        BigDecimal change = currentPrice.subtract(previousClose);
-        this.priceChangeAmount = change.setScale(scale, RoundingMode.HALF_UP);
-        this.priceChangePercent = change.divide(previousClose, scale + 2, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.valueOf(100))
-                .setScale(scale, RoundingMode.HALF_UP);
+        this.priceChangeAmount = scaleValue(this.priceChangeAmount, scale);
+        this.priceChangePercent = scaleValue(this.priceChangePercent, scale);
     }
 }

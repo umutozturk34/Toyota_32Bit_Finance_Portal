@@ -1,8 +1,6 @@
 package com.finance.backend.config;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -30,20 +28,10 @@ public class AppProperties {
     private Async async = new Async();
     private Cache cache = new Cache();
 
-    private Crypto crypto = new Crypto();
-    private Stock stock = new Stock();
-    private Forex forex = new Forex();
-    private Fund fund = new Fund();
-    private Bond bond = new Bond();
-    private Commodity commodity = new Commodity();
-    private News news = new News();
-
     private Scheduler scheduler = new Scheduler();
 
     private Pagination pagination = new Pagination();
 
-    private Commission commission = new Commission();
-    private Portfolio portfolio = new Portfolio();
     private Task task = new Task();
     private TrackedAsset trackedAsset = new TrackedAsset();
 
@@ -118,90 +106,9 @@ public class AppProperties {
         private int queueCapacity = 25;
     }
 
-    @Getter
-    @Setter
-    public static class Crypto {
-        private int historyDays = 365;
-        private int minCandlesForHealthy = 350;
-    }
 
-    @Getter
-    @Setter
-    public static class Bond {
-        private int batchSize = 10;
-        private String datagroupCode = "bie_pydibs";
-        private int maxDaysPerRequest = 1000;
-        private BigDecimal rateThreshold = new BigDecimal("0.5");
-        private BigDecimal auctionThreshold = new BigDecimal("14");
-        private BigDecimal cpiFixedThreshold = new BigDecimal("5");
-        private BigDecimal faceValue = new BigDecimal("100");
-        private int daysInYear = 365;
-    }
 
-    @Getter
-    @Setter
-    public static class Commodity {
-        private int yearsToKeep = 5;
-        private Map<String, String> yahooSymbolOverrides = new HashMap<>(Map.of(
-                "XAUTRY", "GC=F",
-                "XAGTRY", "SI=F",
-                "XPTTRY", "PL=F",
-                "XPDTRY", "PA=F"
-        ));
-        private List<CommodityDerivativeRule> derivatives = new ArrayList<>(List.of(
-                new CommodityDerivativeRule("XAUTRY", "XAUTRYG", new BigDecimal("31.1035")),
-                new CommodityDerivativeRule("XAGTRY", "XAGTRYG", new BigDecimal("31.1035"))
-        ));
-    }
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class CommodityDerivativeRule {
-        private String sourceCode;
-        private String derivativeCode;
-        private BigDecimal divisor;
-    }
-
-    @Getter
-    @Setter
-    public static class Stock {
-        private int historyYears = 5;
-    }
-
-    @Getter
-    @Setter
-    public static class Forex {
-        private int yearsToKeep = 5;
-        private BigDecimal spreadRate = new BigDecimal("0.01");
-    }
-
-    @Getter
-    @Setter
-    public static class Fund {
-        private int yearsToFetch = 5;
-        private int minCandlesForIncremental = 30;
-        private int windowSizes = 95;
-    }
-
-    @Getter
-    @Setter
-    public static class News {
-        private int maxArticlesPerSource = 50;
-        private int cacheTtlHours = 24;
-        private int defaultCategoryLimit = 20;
-        private Map<String, Integer> categoryLimits = new HashMap<>();
-    }
-
-    @Getter
-    @Setter
-    public static class Commission {
-        private BigDecimal stockRate = new BigDecimal("0.002");
-        private BigDecimal cryptoRate = new BigDecimal("0.0015");
-        private BigDecimal fundRate = new BigDecimal("0.001");
-        private BigDecimal commodityRate = new BigDecimal("0.015");
-    }
 
     @Getter
     @Setter
@@ -274,15 +181,6 @@ public class AppProperties {
         private int transactionsDefaultSize = 10;
         private int positionsDefaultSize = 10;
         private int maxSize = 100;
-    }
-
-    @Getter
-    @Setter
-    public static class Portfolio {
-        private String defaultName = "Ana Portföy";
-        private String defaultCurrency = "TRY";
-        private BigDecimal initialBalance = new BigDecimal("1000000.0000");
-        private BigDecimal minTransactionAmountTry = new BigDecimal("10");
     }
 
     @Getter

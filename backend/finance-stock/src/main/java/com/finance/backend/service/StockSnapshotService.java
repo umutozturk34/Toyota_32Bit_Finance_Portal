@@ -11,7 +11,11 @@ import com.finance.backend.model.StockSegment;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.StockRepository;
 import com.finance.backend.util.BatchLogHelper;
+import com.finance.backend.util.ApiAssetValidator;
 import com.finance.backend.util.BatchUpdateRunner;
+import com.finance.backend.util.CodeNormalizer;
+import com.finance.backend.util.MarketBatchRunner;
+import com.finance.backend.util.TrackedRefreshRunner;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -46,15 +50,10 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
     }
 
     public boolean existsInApi(String symbol) {
-        String normalized = symbol == null ? "" : symbol.trim().toUpperCase();
-        if (normalized.isBlank()) return false;
-        try {
-            YahooStockQuoteDto dto = yahooStockClient.fetchQuote(normalized);
+        return ApiAssetValidator.validate(symbol, true, sym -> {
+            YahooStockQuoteDto dto = yahooStockClient.fetchQuote(sym);
             return dto != null && dto.currentPrice() != null;
-        } catch (Exception e) {
-            log.warn("Stock existence check failed for {}: {}", normalized, e.getMessage());
-            return false;
-        }
+        }, log, "Stock");
     }
 
     @Override
@@ -71,30 +70,24 @@ public class StockSnapshotService implements SnapshotBatchRefresher {
         }
         log.info("Starting snapshot update for {} BIST stocks", bistStocks.size());
 
-        BatchUpdateRunner.Result result = BatchUpdateRunner.run(
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 bistStocks,
                 symbol -> {
                     Stock stock = transactionTemplate.execute(status -> updateSingleStockSnapshot(symbol));
                     stockCacheService.putSnapshot(symbol, stock);
                 },
                 Function.identity(),
-                "snapshot",
-                10,
-                (symbol, e) -> log.error("Failed to update snapshot for {}: {}", symbol, e.getMessage(), e),
-                null,
-                null);
+                log, "Stock", "snapshot", 10);
 
         BatchLogHelper.logSummary(log, "Stock snapshot update", result);
     }
 
     public void refreshTrackedStockSnapshot(String symbol) {
-        String normalized = symbol == null ? "" : symbol.trim().toUpperCase();
-        if (normalized.isBlank()) {
-            return;
-        }
-        Stock stock = transactionTemplate.execute(status -> updateSingleStockSnapshot(normalized));
-        stockCacheService.putSnapshot(normalized, stock);
-        log.info("Refreshed tracked stock snapshot for {}", normalized);
+        TrackedRefreshRunner.refreshSnapshot(symbol, CodeNormalizer::upper, normalized -> {
+            Stock stock = transactionTemplate.execute(status -> updateSingleStockSnapshot(normalized));
+            stockCacheService.putSnapshot(normalized, stock);
+            return true;
+        }, log, "stock");
     }
 
     private Stock updateSingleStockSnapshot(String symbol) {

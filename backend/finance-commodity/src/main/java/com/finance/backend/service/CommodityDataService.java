@@ -4,6 +4,7 @@ import com.finance.backend.exception.BusinessException;
 import com.finance.backend.model.Commodity;
 import com.finance.backend.model.CommodityCandle;
 import com.finance.backend.model.TrackedAssetType;
+import com.finance.backend.util.CodeNormalizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -25,7 +26,7 @@ public class CommodityDataService implements TrackedAssetDataService {
 
     @Override
     public void validateExists(String code) {
-        String normalized = code == null ? "" : code.trim().toUpperCase();
+        String normalized = CodeNormalizer.upper(code);
         if (derivativeCalculator.isKnownDerivative(normalized)) return;
         if (!commoditySnapshotService.existsInApi(code)) {
             throw new BusinessException("Emtia bulunamadı: " + code, "ASSET_NOT_FOUND");
@@ -43,18 +44,17 @@ public class CommodityDataService implements TrackedAssetDataService {
     }
 
     @Override
-    public void clearCache(String code) {
-        String normalized = code == null ? "" : code.trim().toUpperCase();
-        if (normalized.isBlank()) return;
-        commodityCacheService.clearCache(normalized);
-        log.info("Cleared tracked commodity cache for {}", normalized);
-    }
-
-    public void updateCommoditySnapshots() {
+    public void refreshAllSnapshots() {
         commoditySnapshotService.refreshAll();
     }
 
-    public void updateCommodityCandles() {
+    @Override
+    public void refreshAllCandles() {
         commodityCandleService.refreshAll();
+    }
+
+    @Override
+    public void clearCache(String code) {
+        MarketAssetCacheHelper.clearIfValid(code, commodityCacheService, true, log, "commodity");
     }
 }

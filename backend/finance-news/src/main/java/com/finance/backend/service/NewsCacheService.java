@@ -1,6 +1,6 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.NewsProperties;
 import com.finance.backend.model.NewsArticle;
 import com.finance.backend.repository.NewsArticleRepository;
 import lombok.extern.log4j.Log4j2;
@@ -27,12 +27,12 @@ public class NewsCacheService {
             RedisTemplate<String, Object> redisTemplate,
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
             NewsArticleRepository articleRepository,
-            AppProperties appProperties
+            NewsProperties newsProperties
     ) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.articleRepository = articleRepository;
-        this.cacheTtl = Duration.ofHours(appProperties.getNews().getCacheTtlHours());
+        this.cacheTtl = Duration.ofHours(newsProperties.getCacheTtlHours());
     }
 
     public Optional<NewsArticle> getById(Long id) {

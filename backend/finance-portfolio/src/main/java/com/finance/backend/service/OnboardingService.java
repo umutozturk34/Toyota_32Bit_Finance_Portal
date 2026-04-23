@@ -1,6 +1,6 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.exception.BusinessException;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.model.*;
@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 @Service
 @RequiredArgsConstructor
 public class OnboardingService {
-    private final AppProperties appProperties;
+    private final PortfolioProperties portfolioProperties;
     private final PortfolioBootstrapService bootstrapService;
     private final UserWalletRepository walletRepository;
     private final WalletLedgerRepository ledgerRepository;
@@ -25,8 +25,8 @@ public class OnboardingService {
     @Transactional
     public void initialize(String userSub) {
         Portfolio portfolio = bootstrapService.ensurePortfolio(userSub);
-        BigDecimal initialBalance = appProperties.getPortfolio().getInitialBalance();
-        String currency = appProperties.getPortfolio().getDefaultCurrency();
+        BigDecimal initialBalance = portfolioProperties.getInitialBalance();
+        String currency = portfolioProperties.getDefaultCurrency();
 
         UserWallet wallet = walletRepository.findByPortfolioIdAndCurrency(portfolio.getId(), currency)
                 .orElseThrow(() -> new ResourceNotFoundException(currency + " wallet not found for portfolio " + portfolio.getId()));

@@ -31,7 +31,7 @@ class CommoditySchedulerTest {
         portfolioPort = mock(PortfolioSnapshotPort.class);
         marketPort = mock(MarketUpdatePort.class);
         scheduler = new CommodityScheduler(dataService, taskTracker,
-                Optional.of(portfolioPort), Optional.of(marketPort));
+                new SchedulerPorts(Optional.of(portfolioPort), Optional.of(marketPort)));
 
         doAnswer(inv -> {
             Runnable r = inv.getArgument(2);
@@ -44,8 +44,8 @@ class CommoditySchedulerTest {
     void runMorningTriggersSnapshotCandlesAndPorts() {
         scheduler.runMorningCommodityUpdate();
 
-        verify(dataService).updateCommoditySnapshots();
-        verify(dataService).updateCommodityCandles();
+        verify(dataService).refreshAllSnapshots();
+        verify(dataService).refreshAllCandles();
         verify(portfolioPort).onMarketUpdate(MarketType.COMMODITY);
         verify(marketPort).onMarketDataUpdated(MarketType.COMMODITY);
     }
@@ -54,16 +54,16 @@ class CommoditySchedulerTest {
     void runAfternoonTriggersFullPipeline() {
         scheduler.runAfternoonCommodityUpdate();
 
-        verify(dataService).updateCommoditySnapshots();
-        verify(dataService).updateCommodityCandles();
+        verify(dataService).refreshAllSnapshots();
+        verify(dataService).refreshAllCandles();
     }
 
     @Test
     void runEveningTriggersFullPipeline() {
         scheduler.runEveningCommodityUpdate();
 
-        verify(dataService).updateCommoditySnapshots();
-        verify(dataService).updateCommodityCandles();
+        verify(dataService).refreshAllSnapshots();
+        verify(dataService).refreshAllCandles();
     }
 
 }

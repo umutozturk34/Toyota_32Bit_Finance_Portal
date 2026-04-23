@@ -31,18 +31,16 @@ class AssetPricingAdapterTest {
 
     @BeforeEach
     void setUp() {
-        AppProperties props = new AppProperties();
-        AppProperties.Commission commission = new AppProperties.Commission();
+        CommissionProperties commission = new CommissionProperties();
         commission.setStockRate(new BigDecimal("0.002"));
         commission.setCryptoRate(new BigDecimal("0.0015"));
         commission.setFundRate(new BigDecimal("0.001"));
-        props.setCommission(commission);
 
         adapter = new AssetPricingAdapter(List.of(
-            new CryptoPricingStrategy(cryptoCacheService, props),
-            new StockPricingStrategy(stockCacheService, props),
+            new CryptoPricingStrategy(cryptoCacheService, commission),
+            new StockPricingStrategy(stockCacheService, commission),
             new ForexPricingStrategy(forexCacheService),
-            new FundPricingStrategy(fundCacheService, props)
+            new FundPricingStrategy(fundCacheService, commission)
         ));
     }
 

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ShieldCheck } from 'lucide-react';
 import { ArrowUpRight, Loader2, Check, AlertCircle, RefreshCw, AlertTriangle } from '../../shared/components/AnimatedIcons';
@@ -6,6 +6,7 @@ import { portfolioService } from './portfolioService';
 import { formatPriceTRY } from '../../shared/utils/formatters';
 import { assetCodeLabel } from '../../shared/utils/assetCode';
 import PercentageSlider from '../../shared/components/PercentageSlider';
+import useTransactionFlow from '../../shared/hooks/useTransactionFlow';
 
 const PROCESSING_STEPS = [
   { label: 'Satış emri doğrulanıyor...', duration: 700 },
@@ -19,22 +20,7 @@ const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX', 'COMMODITY'];
 export default function SellModal({ portfolioId, position, onClose, onComplete }) {
   const isFractional = FRACTIONAL_TYPES.includes(position.assetType);
   const displayAssetCode = assetCodeLabel(position.assetType, position.assetCode);
-  const [inputMode, setInputMode] = useState('quantity');
-  const [amountTry, setAmountTry] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [sliderPercent, setSliderPercent] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [processingStep, setProcessingStep] = useState(-1);
-  const [success, setSuccess] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const stepTimers = useRef([]);
 
-  useEffect(() => {
-    return () => stepTimers.current.forEach(clearTimeout);
-  }, []);
-
-  const commissionRate = Number(position.commissionRate) || 0;
   const currentPrice = Number(position.currentPriceTry) || Number(position.sellPriceTry) || 0;
   const sellPriceNet = Number(position.sellPriceTry) || currentPrice;
   const maxQuantity = Number(position.quantity);
@@ -43,15 +29,28 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
     return sellPriceNet * maxQuantity;
   }, [sellPriceNet, maxQuantity]);
 
+  const flow = useTransactionFlow({
+    isFractional,
+    initialInputMode: 'quantity',
+    maxAmount: maxValueTry,
+    maxQuantity,
+  });
+  const {
+    inputMode, amountTry, quantity, sliderPercent,
+    loading, error, success, confirming, processingStep, isAmountMode,
+    setError, setConfirming,
+    handleSliderChange, syncSliderFromInput, handleModeSwitch, execute,
+  } = flow;
+
   const computedQuantity = useMemo(() => {
-    if (isFractional && inputMode === 'amount') {
+    if (isAmountMode) {
       const amt = Number(amountTry);
       if (!amt || amt <= 0 || !sellPriceNet) return null;
       return amt / sellPriceNet;
     }
     const qty = Number(quantity);
     return qty > 0 ? qty : null;
-  }, [sellPriceNet, amountTry, quantity, inputMode, isFractional]);
+  }, [sellPriceNet, amountTry, quantity, isAmountMode]);
 
   const grossValue = useMemo(() => {
     if (!computedQuantity || !currentPrice) return null;
@@ -68,57 +67,9 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
     return grossValue - netTotal;
   }, [grossValue, netTotal]);
 
-  const handleSliderChange = useCallback((pct) => {
-    setSliderPercent(pct);
-    setError(null);
-    if (isFractional && inputMode === 'amount') {
-      const amount = (maxValueTry * pct) / 100;
-      setAmountTry(pct === 0 ? '' : String(Math.floor(amount * 100) / 100));
-    } else {
-      const qty = isFractional
-        ? (maxQuantity * pct) / 100
-        : Math.floor((maxQuantity * pct) / 100);
-      setQuantity(pct === 0 ? '' : String(qty));
-    }
-  }, [maxQuantity, maxValueTry, inputMode, isFractional]);
-
-  const syncSliderFromInput = useCallback((val) => {
-    if (isFractional && inputMode === 'amount') {
-      if (maxValueTry <= 0) { setSliderPercent(0); return; }
-      const pct = Math.min(100, Math.round((Number(val) / maxValueTry) * 100));
-      setSliderPercent(pct > 0 ? pct : 0);
-    } else {
-      if (maxQuantity <= 0) { setSliderPercent(0); return; }
-      const pct = Math.min(100, Math.round((Number(val) / maxQuantity) * 100));
-      setSliderPercent(pct > 0 ? pct : 0);
-    }
-  }, [maxQuantity, maxValueTry, inputMode, isFractional]);
-
-  const handleModeSwitch = (mode) => {
-    setInputMode(mode);
-    setAmountTry('');
-    setQuantity('');
-    setSliderPercent(0);
-    setError(null);
-  };
-
-  const runProcessingAnimation = () => {
-    return new Promise((resolve) => {
-      let elapsed = 0;
-      PROCESSING_STEPS.forEach((step, idx) => {
-        const timer = setTimeout(() => setProcessingStep(idx), elapsed);
-        stepTimers.current.push(timer);
-        elapsed += step.duration;
-      });
-      const finalTimer = setTimeout(resolve, elapsed);
-      stepTimers.current.push(finalTimer);
-    });
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (isFractional && inputMode === 'amount') {
+    if (isAmountMode) {
       if (!Number(amountTry) || Number(amountTry) <= 0) {
         setError('Lütfen geçerli bir tutar girin');
         return;
@@ -136,38 +87,20 @@ export default function SellModal({ portfolioId, position, onClose, onComplete }
     setConfirming(true);
   };
 
-  const handleConfirm = async () => {
-    setConfirming(false);
-    setLoading(true);
-    setError(null);
-    setProcessingStep(0);
-
+  const handleConfirm = () => {
     const payload = {
       assetType: position.assetType,
       assetCode: position.assetCode,
       side: 'SELL',
       feeTry: 0,
+      ...(isAmountMode ? { amountTry: Number(amountTry) } : { quantity: Number(quantity) }),
     };
-
-    if (isFractional && inputMode === 'amount') {
-      payload.amountTry = Number(amountTry);
-    } else {
-      payload.quantity = Number(quantity);
-    }
-
-    try {
-      await Promise.all([
-        portfolioService.executeTransaction(portfolioId, payload),
-        runProcessingAnimation(),
-      ]);
-      setSuccess(true);
-      setTimeout(() => onComplete(), 1800);
-    } catch (err) {
-      setProcessingStep(-1);
-      setError(err.response?.data?.message || 'Satış başarısız');
-    } finally {
-      setLoading(false);
-    }
+    execute({
+      executor: () => portfolioService.executeTransaction(portfolioId, payload),
+      processingSteps: PROCESSING_STEPS,
+      onSuccess: () => onComplete(),
+      defaultErrorMessage: 'Satış başarısız',
+    });
   };
 
   const displayQuantity = isFractional && inputMode === 'amount'

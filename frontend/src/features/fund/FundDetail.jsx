@@ -73,8 +73,8 @@ export default function FundDetail() {
       assetType="FUND"
       chartAssetType="FUND"
       queryKeyPrefix="fund"
-      fetchAsset={() => fundService.getFundByCode(code)}
-      fetchHistory={(_, range) => fundService.getFundHistory(code, range)}
+      fetchAsset={() => fundService.getByCode(code)}
+      fetchHistory={(_, range) => fundService.getHistory(code, range)}
       backRoute="/funds"
       renderHeader={(asset) => <FundHeader asset={asset} />}
       renderMetadata={(asset) => <FundMetadata asset={asset} />}

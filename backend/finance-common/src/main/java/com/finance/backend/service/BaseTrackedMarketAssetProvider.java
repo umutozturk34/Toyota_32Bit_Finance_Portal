@@ -35,7 +35,21 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
 
     protected abstract String changePercentField();
 
-    protected abstract Map<String, String> sortFields();
+    protected abstract String priceField();
+
+    protected String nameField() {
+        return "name";
+    }
+
+    protected Map<String, String> sortFields() {
+        String changePercent = changePercentField();
+        return Map.of(
+                "price", priceField(),
+                "changePercent", changePercent,
+                "name", nameField(),
+                "default", changePercent
+        );
+    }
 
     protected abstract T getSnapshotByCode(String code);
 

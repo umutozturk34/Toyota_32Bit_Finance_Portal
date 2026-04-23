@@ -1,18 +1,13 @@
 package com.finance.backend.mapper;
 
-import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.TcmbRateDto;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
 import org.mapstruct.*;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Mapper(componentModel = "spring")
-public abstract class ForexMapper {
-
-    @Autowired
-    protected AppProperties appProperties;
+public abstract class ForexMapper extends BaseMarketMapper {
 
     public String toCurrencyPairCode(String rawCurrencyCode) {
         return rawCurrencyCode + "TRY";
@@ -28,7 +23,7 @@ public abstract class ForexMapper {
 
     @AfterMapping
     void enrichFromTcmb(@MappingTarget Forex forex, TcmbRateDto dto) {
-        forex.applyTcmbData(dto, appProperties.getScale());
+        forex.applyTcmbData(dto, scale());
     }
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -41,7 +36,7 @@ public abstract class ForexMapper {
 
     @AfterMapping
     void enrichForexCandle(@MappingTarget ForexCandle candle) {
-        candle.scaleAndNormalizeOhlc(appProperties.getScale());
+        candle.scaleAndNormalizeOhlc(scale());
         if (candle.getCandleDate() != null) {
             candle.setCandleDate(candle.getCandleDate().toLocalDate().atStartOfDay());
         }

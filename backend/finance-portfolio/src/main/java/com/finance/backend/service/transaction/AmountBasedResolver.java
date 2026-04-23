@@ -1,6 +1,6 @@
 package com.finance.backend.service.transaction;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.exception.BadRequestException;
 import com.finance.backend.model.AssetType;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ public class AmountBasedResolver implements TransactionInputResolver {
 
     private static final int QTY_SCALE = 8;
     private static final int PRICE_SCALE = 4;
-    private final AppProperties appProperties;
+    private final PortfolioProperties portfolioProperties;
 
     @Override
     public boolean supports(AssetType assetType) {
@@ -36,8 +36,8 @@ public class AmountBasedResolver implements TransactionInputResolver {
     }
 
     private ResolvedInput resolveByAmount(BigDecimal amountTry, BigDecimal unitPrice) {
-        BigDecimal minAmountTry = appProperties.getPortfolio().getMinTransactionAmountTry();
-        String currency = appProperties.getPortfolio().getDefaultCurrency();
+        BigDecimal minAmountTry = portfolioProperties.getMinTransactionAmountTry();
+        String currency = portfolioProperties.getDefaultCurrency();
         if (amountTry.compareTo(minAmountTry) < 0) {
             throw new BadRequestException("Minimum işlem tutarı " + minAmountTry + " " + currency);
         }
@@ -47,8 +47,8 @@ public class AmountBasedResolver implements TransactionInputResolver {
     }
 
     private ResolvedInput resolveByQuantity(BigDecimal quantity, BigDecimal unitPrice) {
-        BigDecimal minAmountTry = appProperties.getPortfolio().getMinTransactionAmountTry();
-        String currency = appProperties.getPortfolio().getDefaultCurrency();
+        BigDecimal minAmountTry = portfolioProperties.getMinTransactionAmountTry();
+        String currency = portfolioProperties.getDefaultCurrency();
         BigDecimal qty = quantity.setScale(QTY_SCALE, RoundingMode.DOWN);
         BigDecimal totalCost = unitPrice.multiply(qty).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
         if (totalCost.compareTo(minAmountTry) < 0) {

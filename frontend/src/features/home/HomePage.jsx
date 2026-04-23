@@ -5,7 +5,7 @@ import { useTheme } from '../../shared/context/ThemeContext';
 import { useAuth } from '../auth/AuthContext';
 import { motion } from 'framer-motion';
 import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
-import { formatPriceTRY } from '../../shared/utils/formatters';
+import { formatPriceTRY, formatPercent } from '../../shared/utils/formatters';
 import {
   Shield, BarChart3, Briefcase, UserPlus, LogIn,
   TrendingUp, Zap, LineChart, ArrowRight,
@@ -86,7 +86,7 @@ function buildFloatingCards(overview) {
     return {
       label: asset.name || asset.code,
       price: formatPriceTRY(asset.price),
-      change: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`,
+      change: formatPercent(pct),
       changeColor: pct >= 0 ? 'text-success' : 'text-danger',
       iconBg: gradients[i],
     };

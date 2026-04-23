@@ -32,14 +32,19 @@ public class MarketOverviewService {
         for (MarketType type : MarketType.values()) {
             MarketAssetProvider provider = providers.get(type);
             if (provider == null) continue;
-            gainers.computeIfAbsent(type, t -> provider.getTopMovers(limit, true));
-            losers.computeIfAbsent(type, t -> provider.getTopMovers(limit, false));
+            if (gainers.getOrDefault(type, List.of()).isEmpty()) {
+                gainers.put(type, provider.getTopMovers(limit, true));
+            }
+            if (losers.getOrDefault(type, List.of()).isEmpty()) {
+                losers.put(type, provider.getTopMovers(limit, false));
+            }
         }
 
         List<MarketAssetResponse> indices = topMoversRedisService.getIndices();
         if (indices.isEmpty()) {
-            MarketAssetProvider stockProvider = providers.get(MarketType.STOCK);
-            indices = stockProvider != null ? stockProvider.getIndices() : List.of();
+            indices = providers.values().stream()
+                    .flatMap(p -> p.getIndices().stream())
+                    .toList();
         }
 
         List<MarketOverviewResponse.AssetTypeMovers> movers = new ArrayList<>();

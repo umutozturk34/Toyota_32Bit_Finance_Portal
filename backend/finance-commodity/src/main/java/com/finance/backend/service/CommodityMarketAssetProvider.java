@@ -57,7 +57,7 @@ public class CommodityMarketAssetProvider extends BaseTrackedMarketAssetProvider
 
     @Override
     protected String changePercentField() {
-        return "changePercent24h";
+        return "changePercent";
     }
 
     @Override

@@ -24,10 +24,6 @@ public interface MarketAssetProvider {
         return List.of();
     }
 
-    default List<MarketAssetResponse> getIndices() {
-        return List.of();
-    }
-
     record MarketAssetFilters(String segment, String subType) {
         public static MarketAssetFilters none() {
             return new MarketAssetFilters(null, null);

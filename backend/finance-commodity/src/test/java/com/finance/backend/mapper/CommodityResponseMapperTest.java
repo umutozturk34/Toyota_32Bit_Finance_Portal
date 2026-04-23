@@ -71,8 +71,8 @@ class CommodityResponseMapperTest {
         commodity.setCurrentPrice(new BigDecimal("160000.5000"));
         commodity.setCurrentPriceUsd(new BigDecimal("4000.0000"));
         commodity.setPreviousPriceUsd(new BigDecimal("3960.0000"));
-        commodity.setChange24h(new BigDecimal("1600.0000"));
-        commodity.setChangePercent24h(new BigDecimal("1.0000"));
+        commodity.setChangeAmount(new BigDecimal("1600.0000"));
+        commodity.setChangePercent(new BigDecimal("1.0000"));
         commodity.setUnit("oz");
         commodity.setYahooUpdatedAt(LocalDateTime.of(2026, 4, 21, 9, 0));
         return commodity;

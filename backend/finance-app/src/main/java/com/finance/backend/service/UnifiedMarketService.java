@@ -2,9 +2,11 @@ package com.finance.backend.service;
 import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.dto.response.PagedResponse;
+import com.finance.backend.dto.response.StockMetadata;
 import com.finance.backend.model.CandlePeriod;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.model.MarketType;
+import com.finance.backend.model.StockSegment;
 
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -77,12 +79,17 @@ public class UnifiedMarketService implements MarketUpdatePort {
         if (provider == null) return;
 
         try {
-            topMoversRedisService.updateGainers(type, provider.getTopMovers(10, true));
-            topMoversRedisService.updateLosers(type, provider.getTopMovers(10, false));
+            topMoversRedisService.updateGainers(type, MarketTopMoversFilter.apply(type, provider.getTopMovers(10, true)));
+            topMoversRedisService.updateLosers(type, MarketTopMoversFilter.apply(type, provider.getTopMovers(10, false)));
 
-            List<MarketAssetResponse> indices = provider.getIndices();
-            if (!indices.isEmpty()) {
-                topMoversRedisService.updateIndices(indices);
+            if (type == MarketType.STOCK) {
+                List<MarketAssetResponse> allStocks = provider.search(null,
+                        MarketAssetProvider.MarketAssetFilters.ofSegment("MAIN_INDEX"),
+                        "changePercent", "desc", 0, 100);
+                List<MarketAssetResponse> indexAssets = allStocks.stream()
+                        .filter(a -> a.metadata() instanceof StockMetadata sm && sm.stockSegment() == StockSegment.MAIN_INDEX)
+                        .toList();
+                topMoversRedisService.updateIndices(indexAssets);
             }
 
             log.debug("Write-through cache updated for {}", type);

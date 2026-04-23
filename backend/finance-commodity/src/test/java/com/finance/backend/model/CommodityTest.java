@@ -47,8 +47,8 @@ class CommodityTest {
 
         commodity.applyPriceSnapshot(input, SCALE);
 
-        assertThat(commodity.getChange24h()).isEqualByComparingTo(new BigDecimal("10.0000"));
-        assertThat(commodity.getChangePercent24h()).isEqualByComparingTo(new BigDecimal("10.0000"));
+        assertThat(commodity.getChangeAmount()).isEqualByComparingTo(new BigDecimal("10.0000"));
+        assertThat(commodity.getChangePercent()).isEqualByComparingTo(new BigDecimal("10.0000"));
     }
 
     @Test

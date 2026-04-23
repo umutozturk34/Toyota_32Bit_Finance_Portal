@@ -2,12 +2,12 @@ package com.finance.backend.service;
 
 import com.finance.backend.model.FundCandle;
 import com.finance.backend.repository.FundCandleRepository;
+import com.finance.backend.util.PercentChangeCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 
 @Log4j2
@@ -20,7 +20,7 @@ public class FundChangeCalculator {
     private final FundCandleRepository fundCandleRepository;
 
     public BigDecimal calculateChangePercent(String fundCode, BigDecimal currentPrice) {
-        if (currentPrice == null || currentPrice.compareTo(BigDecimal.ZERO) == 0) {
+        if (currentPrice == null || currentPrice.signum() == 0) {
             return BigDecimal.ZERO;
         }
 
@@ -30,12 +30,7 @@ public class FundChangeCalculator {
         }
 
         BigDecimal previousPrice = recent.get(1).getPrice();
-        if (previousPrice == null || previousPrice.compareTo(BigDecimal.ZERO) == 0) {
-            return BigDecimal.ZERO;
-        }
-
-        return currentPrice.subtract(previousPrice)
-                .multiply(new BigDecimal("100"))
-                .divide(previousPrice, SCALE, RoundingMode.HALF_UP);
+        PercentChangeCalculator.Result result = PercentChangeCalculator.compute(currentPrice, previousPrice, SCALE);
+        return result.percent() != null ? result.percent() : BigDecimal.ZERO;
     }
 }

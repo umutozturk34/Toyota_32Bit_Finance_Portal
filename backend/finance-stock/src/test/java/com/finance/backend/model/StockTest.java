@@ -32,25 +32,23 @@ class StockTest {
     }
 
     @Test
-    void scaleOnlyScalesProvidedChangeFields() {
+    void applyChangeComputesAmountAndPercentFromPriceAndPreviousClose() {
         Stock stock = createStock("55", "50", "51", "56", "49");
-        stock.setPriceChangeAmount(new BigDecimal("5.123456"));
-        stock.setPriceChangePercent(new BigDecimal("10.246912"));
 
-        stock.scaleOnly(4);
+        stock.applyChange(stock.getCurrentPrice(), stock.getPreviousClose(), 4);
 
-        assertThat(stock.getPriceChangeAmount()).isEqualByComparingTo(new BigDecimal("5.1235"));
-        assertThat(stock.getPriceChangePercent()).isEqualByComparingTo(new BigDecimal("10.2469"));
+        assertThat(stock.getChangeAmount()).isEqualByComparingTo(new BigDecimal("5.0000"));
+        assertThat(stock.getChangePercent()).isEqualByComparingTo(new BigDecimal("10.0000"));
     }
 
     @Test
-    void scaleOnlyPreservesNullChangeFields() {
+    void applyChangeLeavesFieldsNullWhenPreviousCloseMissing() {
         Stock stock = createStock("55", null, "51", "56", "49");
 
-        stock.scaleOnly(4);
+        stock.applyChange(stock.getCurrentPrice(), stock.getPreviousClose(), 4);
 
-        assertThat(stock.getPriceChangeAmount()).isNull();
-        assertThat(stock.getPriceChangePercent()).isNull();
+        assertThat(stock.getChangeAmount()).isNull();
+        assertThat(stock.getChangePercent()).isNull();
     }
 
     @Test

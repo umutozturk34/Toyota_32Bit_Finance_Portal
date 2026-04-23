@@ -13,22 +13,19 @@ import java.time.LocalDateTime;
 public abstract class StockMapper extends BaseMarketMapper {
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
-    @Mapping(target = "priceChangeAmount", source = "dto.changeAmount")
-    @Mapping(target = "priceChangePercent", source = "dto.changePercent")
     @Mapping(target = "stockSegment", ignore = true)
     @Mapping(target = "lastUpdated", expression = "java(now)")
     public abstract Stock toEntity(YahooStockQuoteDto dto, LocalDateTime now);
 
     @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
     @Mapping(target = "symbol", ignore = true)
-    @Mapping(target = "priceChangeAmount", source = "dto.changeAmount")
-    @Mapping(target = "priceChangePercent", source = "dto.changePercent")
     @Mapping(target = "stockSegment", ignore = true)
     @Mapping(target = "lastUpdated", expression = "java(now)")
     public abstract void updateEntityFromDto(@MappingTarget Stock stock, YahooStockQuoteDto dto, LocalDateTime now);
 
     @AfterMapping
     void enrichStock(@MappingTarget Stock stock) {
+        stock.applyChange(stock.getCurrentPrice(), stock.getPreviousClose(), scale());
         stock.scaleOnly(scale());
         if (stock.getStockSegment() == null && stock.getSymbol() != null) {
             stock.setStockSegment(StockSegment.EQUITY);

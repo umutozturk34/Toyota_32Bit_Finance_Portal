@@ -26,10 +26,6 @@ public class Crypto extends BaseAsset {
     private BigDecimal currentPrice;
     @Column(name = "current_price_try", precision = 19, scale = 4)
     private BigDecimal currentPriceTry;
-    @Column(name = "change_amount", precision = 19, scale = 4)
-    private BigDecimal changeAmount;
-    @Column(name = "change_percent", precision = 19, scale = 4)
-    private BigDecimal changePercent;
     @Column(name = "market_cap", precision = 19, scale = 4)
     private BigDecimal marketCap;
     @Column(name = "total_volume", precision = 19, scale = 4)
@@ -42,8 +38,8 @@ public class Crypto extends BaseAsset {
     public void scaleFields(int scale) {
         this.currentPrice = scaleValue(this.currentPrice, scale);
         this.currentPriceTry = scaleValue(this.currentPriceTry, scale);
-        this.changeAmount = scaleValue(this.changeAmount, scale);
-        this.changePercent = scaleValue(this.changePercent, scale);
+        setChangeAmount(scaleValue(getChangeAmount(), scale));
+        setChangePercent(scaleValue(getChangePercent(), scale));
         this.marketCap = scaleValue(this.marketCap, scale);
         this.totalVolume = scaleValue(this.totalVolume, scale);
     }

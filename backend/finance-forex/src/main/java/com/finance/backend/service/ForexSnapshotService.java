@@ -118,7 +118,7 @@ public class ForexSnapshotService implements SnapshotBatchRefresher {
                     boolean isUsdBase = symbol.startsWith("USD");
                     transactionTemplate.executeWithoutResult(status -> {
                         applySyntheticSnapshot(forex, pairQuote, usdtry.getCurrentPrice(),
-                                usdtry.getChange24h(), isUsdBase);
+                                usdtry.getChangeAmount(), isUsdBase);
                         forexRepository.save(forex);
                     });
                     forexCacheService.putSnapshot(forex.getCurrencyCode(), forex);

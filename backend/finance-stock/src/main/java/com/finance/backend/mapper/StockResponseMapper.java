@@ -18,8 +18,8 @@ public abstract class StockResponseMapper implements MarketMetadataBuilder<Stock
 
     @Mapping(target = "code", source = "symbol")
     @Mapping(target = "price", source = "currentPrice")
-    @Mapping(target = "changeAmount", source = "priceChangeAmount")
-    @Mapping(target = "changePercent", source = "priceChangePercent")
+    @Mapping(target = "changeAmount", source = "changeAmount")
+    @Mapping(target = "changePercent", source = "changePercent")
     @Mapping(target = "type", expression = "java(MarketType.STOCK)")
     @Mapping(target = "metadata", source = "stock", qualifiedByName = "metadata")
     public abstract MarketAssetResponse toMarketAssetResponse(Stock stock);

@@ -80,17 +80,12 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
         Set<String> enabledCodes = enabledCodes();
         Specification<T> spec = enabledCodesSpec(enabledCodes)
                 .and(nonNullChangePercent())
-                .and(signSpec(gainers))
-                .and(topMoversAdditionalSpec());
+                .and(signSpec(gainers));
         Sort sort = gainers
                 ? Sort.by(Sort.Direction.DESC, changePercentField())
                 : Sort.by(Sort.Direction.ASC, changePercentField());
         List<T> entities = repository.findAll(spec, PageRequest.of(0, limit, sort)).getContent();
         return withDisplayNames(mapToResponses(entities));
-    }
-
-    protected Specification<T> topMoversAdditionalSpec() {
-        return (root, query, cb) -> cb.conjunction();
     }
 
     @Override

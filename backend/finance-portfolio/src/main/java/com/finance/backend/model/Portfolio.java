@@ -40,10 +40,6 @@ public class Portfolio {
         if (realizedPnlTry == null) realizedPnlTry = BigDecimal.ZERO;
     }
 
-    public boolean isOwnedBy(String sub) {
-        return userSub != null && userSub.equals(sub);
-    }
-
     public void addRealizedPnl(BigDecimal pnl) {
         this.realizedPnlTry = this.realizedPnlTry.add(pnl).setScale(4, RoundingMode.HALF_UP);
     }

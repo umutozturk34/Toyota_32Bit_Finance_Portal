@@ -42,6 +42,6 @@ public abstract class StockMapper extends BaseMarketMapper {
 
     @AfterMapping
     void enrichStockCandle(@MappingTarget StockCandle candle) {
-        candle.scaleOhlc(scale());
+        candle.scaleFields(scale());
     }
 }

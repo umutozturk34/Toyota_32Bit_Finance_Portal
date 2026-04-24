@@ -27,7 +27,7 @@ public abstract class BaseCandle {
     @Column(name = "close", nullable = false, precision = 19, scale = 4)
     private BigDecimal close;
 
-    public void scaleOhlc(int scale) {
+    public void scaleFields(int scale) {
         this.open = scaleValue(this.open, scale);
         this.high = scaleValue(this.high, scale);
         this.low = scaleValue(this.low, scale);
@@ -35,7 +35,7 @@ public abstract class BaseCandle {
     }
 
     public void scaleAndNormalizeOhlc(int scale) {
-        scaleOhlc(scale);
+        scaleFields(scale);
         normalizeHighLow();
     }
 

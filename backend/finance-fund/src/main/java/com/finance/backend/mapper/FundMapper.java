@@ -48,6 +48,6 @@ public abstract class FundMapper {
 
     @AfterMapping
     void scaleExistingFundCandle(@MappingTarget FundCandle candle) {
-        candle.scaleAllFields();
+        candle.scaleFields(4);
     }
 }

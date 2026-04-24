@@ -46,5 +46,9 @@ class RedisConfigTest {
         public String getCode() {
             return symbol;
         }
+
+        @Override
+        public void scaleFields(int scale) {
+        }
     }
 }

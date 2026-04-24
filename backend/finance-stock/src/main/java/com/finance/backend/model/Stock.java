@@ -45,7 +45,8 @@ public class Stock extends BaseAsset {
         return symbol;
     }
 
-    public void scaleOnly(int scale) {
+    @Override
+    public void scaleFields(int scale) {
         this.currentPrice = scaleValue(this.currentPrice, scale);
         this.previousClose = scaleValue(this.previousClose, scale);
         this.openPrice = scaleValue(this.openPrice, scale);

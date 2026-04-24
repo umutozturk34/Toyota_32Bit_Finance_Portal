@@ -49,6 +49,8 @@ public abstract class BaseAsset {
         this.changePercent = result.percent();
     }
 
+    public abstract void scaleFields(int scale);
+
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public abstract String getCode();
 

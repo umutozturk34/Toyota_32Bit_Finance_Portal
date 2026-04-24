@@ -26,7 +26,7 @@ public abstract class StockMapper extends BaseMarketMapper {
     @AfterMapping
     void enrichStock(@MappingTarget Stock stock) {
         stock.applyChange(stock.getCurrentPrice(), stock.getPreviousClose(), scale());
-        stock.scaleOnly(scale());
+        stock.scaleFields(scale());
         if (stock.getStockSegment() == null && stock.getSymbol() != null) {
             stock.setStockSegment(StockSegment.EQUITY);
         }

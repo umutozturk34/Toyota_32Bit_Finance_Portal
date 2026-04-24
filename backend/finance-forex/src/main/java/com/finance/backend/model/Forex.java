@@ -107,6 +107,20 @@ public class Forex extends BaseAsset {
         this.yahooUpdatedAt = LocalDateTime.now();
     }
 
+    @Override
+    public void scaleFields(int scale) {
+        this.currentPrice = scaleValue(this.currentPrice, scale);
+        this.sellingPrice = scaleValue(this.sellingPrice, scale);
+        this.openPrice = scaleValue(this.openPrice, scale);
+        this.dayHigh = scaleValue(this.dayHigh, scale);
+        this.dayLow = scaleValue(this.dayLow, scale);
+        this.forexBuying = scaleValue(this.forexBuying, scale);
+        this.forexSelling = scaleValue(this.forexSelling, scale);
+        this.banknoteBuying = scaleValue(this.banknoteBuying, scale);
+        this.banknoteSelling = scaleValue(this.banknoteSelling, scale);
+        this.crossRateUsd = scaleValue(this.crossRateUsd, scale);
+    }
+
     private BigDecimal divideByUnit(BigDecimal value, int unit, int scale) {
         if (value == null || unit <= 1) return value;
         return value.divide(new BigDecimal(unit), scale, RoundingMode.HALF_UP);

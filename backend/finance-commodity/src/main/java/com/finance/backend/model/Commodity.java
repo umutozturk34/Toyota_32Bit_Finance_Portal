@@ -94,6 +94,16 @@ public class Commodity extends BaseAsset {
     }
 
     @Override
+    public void scaleFields(int scale) {
+        this.currentPrice = scaleValue(this.currentPrice, scale);
+        this.currentPriceUsd = scaleValue(this.currentPriceUsd, scale);
+        this.previousPriceUsd = scaleValue(this.previousPriceUsd, scale);
+        this.openPrice = scaleValue(this.openPrice, scale);
+        this.dayHigh = scaleValue(this.dayHigh, scale);
+        this.dayLow = scaleValue(this.dayLow, scale);
+    }
+
+    @Override
     public String getCode() {
         return commodityCode;
     }

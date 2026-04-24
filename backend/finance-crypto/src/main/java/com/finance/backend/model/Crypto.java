@@ -35,6 +35,7 @@ public class Crypto extends BaseAsset {
     @Column(name = "currency")
     private String currency;
 
+    @Override
     public void scaleFields(int scale) {
         this.currentPrice = scaleValue(this.currentPrice, scale);
         this.currentPriceTry = scaleValue(this.currentPriceTry, scale);

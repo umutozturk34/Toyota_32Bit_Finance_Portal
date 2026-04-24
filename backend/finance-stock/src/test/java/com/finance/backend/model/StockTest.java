@@ -19,10 +19,10 @@ class StockTest {
     }
 
     @Test
-    void scaleOnlyScalesAllPriceFields() {
+    void scaleFieldsScalesAllPriceFields() {
         Stock stock = createStock("55.123456", "50.987654", "51.111111", "56.666666", "49.333333");
 
-        stock.scaleOnly(4);
+        stock.scaleFields(4);
 
         assertThat(stock.getCurrentPrice().scale()).isEqualTo(4);
         assertThat(stock.getPreviousClose().scale()).isEqualTo(4);
@@ -52,10 +52,10 @@ class StockTest {
     }
 
     @Test
-    void scaleOnlyLeavesNullPriceFieldsNull() {
+    void scaleFieldsLeavesNullPriceFieldsNull() {
         Stock stock = createStock("55", "50", null, null, null);
 
-        stock.scaleOnly(4);
+        stock.scaleFields(4);
 
         assertThat(stock.getOpenPrice()).isNull();
         assertThat(stock.getDayHigh()).isNull();

@@ -83,6 +83,11 @@ public class StockMarketAssetProvider extends BaseTrackedMarketAssetProvider<Sto
     }
 
     @Override
+    protected Specification<Stock> topMoversAdditionalSpec() {
+        return (root, query, cb) -> cb.notEqual(root.get("stockSegment"), StockSegment.MAIN_INDEX);
+    }
+
+    @Override
     public List<GroupCount> getGroupCounts() {
         return stockRepository.countBySegment().stream()
                 .map(row -> new GroupCount(row[0].toString(), ((Number) row[1]).longValue()))

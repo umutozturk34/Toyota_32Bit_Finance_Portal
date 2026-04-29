@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -15,12 +14,12 @@ import java.util.Optional;
 @Repository
 public interface FundCandleRepository extends JpaRepository<FundCandle, Long> {
 
-    @Query("SELECT DISTINCT CAST(c.candleDate AS LocalDate) FROM FundCandle c "
+    @Query("SELECT c.candleDate FROM FundCandle c "
             + "WHERE c.fundCode = :fundCode "
             + "AND c.candleDate >= :from AND c.candleDate <= :to")
-    List<LocalDate> findCandleDates(@Param("fundCode") String fundCode,
-                                     @Param("from") LocalDateTime from,
-                                     @Param("to") LocalDateTime to);
+    List<LocalDateTime> findCandleDateTimes(@Param("fundCode") String fundCode,
+                                             @Param("from") LocalDateTime from,
+                                             @Param("to") LocalDateTime to);
 
 
     List<FundCandle> findByFundCodeOrderByCandleDateDesc(String fundCode);

@@ -135,7 +135,10 @@ public class FundCandleService implements CandleBatchRefresher {
         LocalDateTime fromTs = from.atStartOfDay();
         LocalDateTime toTs = to.atTime(LocalTime.MAX);
         List<List<LocalDate>> existingPerFund = funds.stream()
-                .map(f -> fundCandleRepository.findCandleDates(f.getFundCode(), fromTs, toTs))
+                .map(f -> fundCandleRepository.findCandleDateTimes(f.getFundCode(), fromTs, toTs).stream()
+                        .map(LocalDateTime::toLocalDate)
+                        .distinct()
+                        .toList())
                 .toList();
         return MissingWindowFinder.findMissingWindows(
                 existingPerFund, from, to, windowing.windowSizeDays());

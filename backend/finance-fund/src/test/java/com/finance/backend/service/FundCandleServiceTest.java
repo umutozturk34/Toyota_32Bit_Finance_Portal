@@ -73,7 +73,7 @@ class FundCandleServiceTest {
         when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND))
                 .thenReturn(List.of());
         when(fundRepository.findAllById(List.of())).thenReturn(List.of());
-        when(fundCandleRepository.findCandleDates(eq("BLH"), any(LocalDateTime.class), any(LocalDateTime.class)))
+        when(fundCandleRepository.findCandleDateTimes(eq("BLH"), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(List.of());
 
         service.refreshAll();
@@ -94,7 +94,7 @@ class FundCandleServiceTest {
                 .thenReturn(List.of("TI2", "BLH"));
         when(fundRepository.findAllById(List.of("TI2", "BLH")))
                 .thenReturn(List.of(yatFund, byfFund));
-        when(fundCandleRepository.findCandleDates(anyString(), any(LocalDateTime.class), any(LocalDateTime.class)))
+        when(fundCandleRepository.findCandleDateTimes(anyString(), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(List.of());
 
         service.refreshAll();

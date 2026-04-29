@@ -66,7 +66,8 @@ class ForexTest {
     void applySyntheticPriceSetsCurrentAndSellingPrice() {
         Forex forex = Forex.builder().currencyCode("EUR").build();
 
-        forex.applySyntheticPrice(new BigDecimal("41.5000"), new BigDecimal("41.0000"), SPREAD, SCALE);
+        forex.applySyntheticPrice(new BigDecimal("41.5000"), new BigDecimal("41.0000"),
+                null, null, null, SPREAD, SCALE);
 
         assertThat(forex.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("41.5000"));
         assertThat(forex.getSellingPrice()).isEqualByComparingTo(new BigDecimal("41.9150"));
@@ -76,7 +77,8 @@ class ForexTest {
     void applySyntheticPriceCalculatesChangeFromPreviousClose() {
         Forex forex = Forex.builder().currencyCode("EUR").build();
 
-        forex.applySyntheticPrice(new BigDecimal("41.5000"), new BigDecimal("40.0000"), SPREAD, SCALE);
+        forex.applySyntheticPrice(new BigDecimal("41.5000"), new BigDecimal("40.0000"),
+                null, null, null, SPREAD, SCALE);
 
         assertThat(forex.getChangeAmount()).isEqualByComparingTo(new BigDecimal("1.5000"));
         assertThat(forex.getChangePercent()).isEqualByComparingTo(new BigDecimal("3.7500"));
@@ -89,7 +91,8 @@ class ForexTest {
                 .changePercent(new BigDecimal("1.0000"))
                 .build();
 
-        forex.applySyntheticPrice(new BigDecimal("48.0000"), null, SPREAD, SCALE);
+        forex.applySyntheticPrice(new BigDecimal("48.0000"), null,
+                null, null, null, SPREAD, SCALE);
 
         assertThat(forex.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("48.0000"));
         assertThat(forex.getChangeAmount()).isEqualByComparingTo(new BigDecimal("0.5000"));
@@ -101,9 +104,23 @@ class ForexTest {
         Forex forex = Forex.builder().currencyCode("CHF")
                 .currentPrice(new BigDecimal("42.0000")).build();
 
-        forex.applySyntheticPrice(null, new BigDecimal("41.0000"), SPREAD, SCALE);
+        forex.applySyntheticPrice(null, new BigDecimal("41.0000"),
+                null, null, null, SPREAD, SCALE);
 
         assertThat(forex.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("42.0000"));
+    }
+
+    @Test
+    void applySyntheticPriceSetsOhlcFromCandle() {
+        Forex forex = Forex.builder().currencyCode("EUR").build();
+
+        forex.applySyntheticPrice(new BigDecimal("41.5000"), new BigDecimal("41.0000"),
+                new BigDecimal("41.2000"), new BigDecimal("41.6000"), new BigDecimal("41.1000"),
+                SPREAD, SCALE);
+
+        assertThat(forex.getOpenPrice()).isEqualByComparingTo(new BigDecimal("41.2000"));
+        assertThat(forex.getDayHigh()).isEqualByComparingTo(new BigDecimal("41.6000"));
+        assertThat(forex.getDayLow()).isEqualByComparingTo(new BigDecimal("41.1000"));
     }
 
     @Test

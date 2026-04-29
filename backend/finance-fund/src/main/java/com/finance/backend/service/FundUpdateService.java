@@ -89,9 +89,16 @@ public class FundUpdateService implements MarketRefresher {
 
     private void recomputeChangePercents() {
         long start = System.currentTimeMillis();
+        Map<String, LocalDateTime> latestCandleDates = fundCandleRepository.findCandleDateRangePerFund().stream()
+                .collect(Collectors.toMap(
+                        row -> (String) row[0],
+                        row -> (LocalDateTime) row[2]));
         int updated = 0;
         for (Fund fund : fundRepository.findAll()) {
-            if (entityWriter.refreshChangePercent(fund, fund.getLastUpdated())) {
+            LocalDateTime latestDate = latestCandleDates.get(fund.getFundCode());
+            if (latestDate == null) continue;
+            if (entityWriter.refreshChangePercent(fund, latestDate)) {
+                fundCacheService.putSnapshot(fund.getFundCode(), fund);
                 updated++;
             }
         }
@@ -212,6 +219,12 @@ public class FundUpdateService implements MarketRefresher {
         } else {
             fetchAndSaveFullHistory(targetFund, fundType);
         }
+        fundCandleRepository.findFirstByFundCodeOrderByCandleDateDesc(targetFund.getFundCode())
+                .ifPresent(latest -> {
+                    if (entityWriter.refreshChangePercent(targetFund, latest.getCandleDate())) {
+                        fundCacheService.putSnapshot(targetFund.getFundCode(), targetFund);
+                    }
+                });
         fundCacheService.refreshHistory(targetFund.getFundCode());
         log.info("Refreshed tracked fund candles for {}", normalized);
     }

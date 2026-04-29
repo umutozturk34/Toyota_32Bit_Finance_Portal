@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Component
@@ -107,7 +108,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
             return;
         }
         Map<String, YahooCandleDto> usdtryCandleMap = forexCacheService.getHistory(baseCurrency).stream()
-                .collect(java.util.stream.Collectors.toMap(
+                .collect(Collectors.toMap(
                         c -> c.getCandleDate().toLocalDate().toString(),
                         forexMapper::toYahooCandleDto,
                         (a, b) -> a));
@@ -142,10 +143,13 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
                 YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(symbol, chartRange, chartInterval, true);
                 if (!hasUsableQuote(result) || result.candles().isEmpty()) continue;
                 boolean isUsdBase = symbol.startsWith("USD");
+                List<YahooCandleDto> syntheticCandles = SyntheticPriceCalculator.buildSyntheticCandles(
+                        result.candles(), usdtryCandleMap, isUsdBase, scale);
+                if (syntheticCandles.isEmpty()) continue;
+                YahooCandleDto todayTryCandle = syntheticCandles.get(syntheticCandles.size() - 1);
                 int saved = transactionTemplate.execute(status -> {
-                    entityWriter.applySynthetic(forex, result.quote(), usdtry, isUsdBase, spreadRate, scale);
-                    List<YahooCandleDto> syntheticCandles = SyntheticPriceCalculator.buildSyntheticCandles(
-                            result.candles(), usdtryCandleMap, isUsdBase, scale);
+                    entityWriter.applySynthetic(forex, result.quote(), usdtry, isUsdBase,
+                            spreadRate, scale, todayTryCandle);
                     return entityWriter.upsertCandles(forex, syntheticCandles);
                 });
                 forexCacheService.putSnapshot(forex.getCurrencyCode(), forex);

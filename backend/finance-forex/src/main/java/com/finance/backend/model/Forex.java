@@ -97,10 +97,14 @@ public class Forex extends BaseAsset {
     }
 
     public void applySyntheticPrice(BigDecimal syntheticPrice, BigDecimal syntheticPreviousClose,
+                                    BigDecimal openPrice, BigDecimal dayHigh, BigDecimal dayLow,
                                     BigDecimal spreadRate, int scale) {
         if (syntheticPrice == null) return;
-        this.currentPrice = syntheticPrice;
+        this.currentPrice = scaleValue(syntheticPrice, scale);
         this.sellingPrice = scaleValue(syntheticPrice.multiply(BigDecimal.ONE.add(spreadRate)), scale);
+        this.openPrice = scaleValue(openPrice, scale);
+        this.dayHigh = scaleValue(dayHigh, scale);
+        this.dayLow = scaleValue(dayLow, scale);
         if (syntheticPreviousClose != null) {
             applyChange(syntheticPrice, syntheticPreviousClose, scale);
         }

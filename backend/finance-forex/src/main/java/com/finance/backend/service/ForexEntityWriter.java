@@ -37,13 +37,13 @@ public class ForexEntityWriter implements MarketEntityWriter {
     }
 
     public void applySynthetic(Forex forex, YahooQuoteDto pairQuote, Forex usdtry,
-                               boolean isUsdBase, BigDecimal spreadRate, int scale) {
-        BigDecimal syntheticPrice = SyntheticPriceCalculator.calculateSyntheticPrice(
-                pairQuote.regularMarketPrice(), usdtry.getCurrentPrice(), isUsdBase, scale);
-        if (syntheticPrice == null) return;
-        BigDecimal syntheticPreviousClose = SyntheticPriceCalculator.calculateSyntheticPreviousClose(
+                               boolean isUsdBase, BigDecimal spreadRate, int scale,
+                               YahooCandleDto todayTryCandle) {
+        BigDecimal previousClose = SyntheticPriceCalculator.calculateSyntheticPreviousClose(
                 pairQuote.previousClose(), usdtry.getCurrentPrice(), usdtry.getChangeAmount(), isUsdBase, scale);
-        forex.applySyntheticPrice(syntheticPrice, syntheticPreviousClose, spreadRate, scale);
+        forex.applySyntheticPrice(todayTryCandle.close(), previousClose,
+                todayTryCandle.open(), todayTryCandle.high(), todayTryCandle.low(),
+                spreadRate, scale);
         forexRepository.save(forex);
     }
 

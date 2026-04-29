@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.client.YahooCommodityClient;
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.CommodityProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.dto.external.YahooQuoteDto;
 import com.finance.backend.dto.internal.YahooChartFullResult;
@@ -27,9 +28,6 @@ import java.util.Map;
 @Component
 public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
 
-    private static final String DEFAULT_RANGE = "5y";
-    private static final String INTERVAL_DAILY = "1d";
-
     private final YahooCommodityClient yahooCommodityClient;
     private final CommodityMapper commodityMapper;
     private final CommodityRepository commodityRepository;
@@ -43,6 +41,8 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
     private final TransactionTemplate transactionTemplate;
     private final int scale;
     private final ZoneId appZone;
+    private final String chartRange;
+    private final String chartInterval;
 
     public CommoditySnapshotProcessor(YahooCommodityClient yahooCommodityClient,
                                       CommodityMapper commodityMapper,
@@ -55,7 +55,8 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
                                       CommoditySegmentResolver segmentResolver,
                                       CommodityEntityWriter entityWriter,
                                       TransactionTemplate transactionTemplate,
-                                      AppProperties appProperties) {
+                                      AppProperties appProperties,
+                                      CommodityProperties commodityProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
         this.commodityMapper = commodityMapper;
         this.commodityRepository = commodityRepository;
@@ -69,6 +70,8 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
         this.transactionTemplate = transactionTemplate;
         this.scale = appProperties.getScale();
         this.appZone = ZoneId.of(appProperties.getTimezone());
+        this.chartRange = commodityProperties.getChartRange();
+        this.chartInterval = commodityProperties.getChartInterval();
     }
 
     public void updateOne(String commodityCode, Map<String, YahooCandleDto> usdtryCandleMap,
@@ -76,10 +79,10 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
         String yahooSymbol = yahooSymbolResolver.resolve(commodityCode);
         if (yahooSymbol == null) return;
         String range = commodityCandleRepository.findFirstByCommodityCodeOrderByCandleDateDesc(commodityCode)
-                .map(last -> YahooRangePolicy.fromLastCandle(last.getCandleDate(), appZone, DEFAULT_RANGE))
-                .orElse(DEFAULT_RANGE);
+                .map(last -> YahooRangePolicy.fromLastCandle(last.getCandleDate(), appZone, chartRange))
+                .orElse(chartRange);
 
-        YahooChartFullResult<YahooQuoteDto> result = yahooCommodityClient.fetchChartFull(yahooSymbol, range, INTERVAL_DAILY, true);
+        YahooChartFullResult<YahooQuoteDto> result = yahooCommodityClient.fetchChartFull(yahooSymbol, range, chartInterval, true);
         YahooQuoteDto quote = result.quote();
         if (quote == null || quote.regularMarketPrice() == null) {
             throw new ExternalApiException("Yahoo Finance", "No price for " + yahooSymbol);
@@ -135,7 +138,7 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
         String yahooSymbol = yahooSymbolResolver.resolve(normalized);
         if (yahooSymbol == null) return false;
         try {
-            YahooChartFullResult<YahooQuoteDto> result = yahooCommodityClient.fetchChartFull(yahooSymbol, "1d", INTERVAL_DAILY, true);
+            YahooChartFullResult<YahooQuoteDto> result = yahooCommodityClient.fetchChartFull(yahooSymbol, "1d", chartInterval, true);
             return result.quote() != null && result.quote().regularMarketPrice() != null;
         } catch (Exception e) {
             log.warn("Commodity existence check failed for {}: {}", normalized, e.getMessage());

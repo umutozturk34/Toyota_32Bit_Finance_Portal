@@ -28,8 +28,6 @@ import java.util.function.Function;
 @Service
 public class CryptoUpdateService implements MarketRefresher {
 
-    private static final int BATCH_PARALLELISM = 5;
-
     private final CoinGeckoClient coinGeckoClient;
     private final CryptoMapper cryptoMapper;
     private final CryptoRepository cryptoRepository;
@@ -42,6 +40,7 @@ public class CryptoUpdateService implements MarketRefresher {
     private final TransactionTemplate transactionTemplate;
     private final int historyDays;
     private final int minCandlesForHealthy;
+    private final int batchMinSample;
 
     public CryptoUpdateService(CoinGeckoClient coinGeckoClient,
                                CryptoMapper cryptoMapper,
@@ -66,6 +65,7 @@ public class CryptoUpdateService implements MarketRefresher {
         this.transactionTemplate = transactionTemplate;
         this.historyDays = cryptoProperties.getHistoryDays();
         this.minCandlesForHealthy = cryptoProperties.getMinCandlesForHealthy();
+        this.batchMinSample = cryptoProperties.getBatchMinSample();
     }
 
     @Override
@@ -103,7 +103,7 @@ public class CryptoUpdateService implements MarketRefresher {
                     cryptoCacheService.refreshHistory(coinId);
                 },
                 Function.identity(),
-                log, "Crypto", "candle", BATCH_PARALLELISM);
+                log, "Crypto", "candle", batchMinSample);
 
         CandlePruner.pruneByDays(transactionTemplate, historyDays,
                 cutoffDate -> cryptoCandleRepository.deleteByCandleDateBefore(cutoffDate));

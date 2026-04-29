@@ -22,14 +22,13 @@ import java.time.ZoneId;
 @Component
 public class StockSnapshotProcessor implements MarketSnapshotProcessor {
 
-    private static final String INTERVAL_DAILY = "1d";
-
     private final YahooStockClient yahooStockClient;
     private final StockCandleRepository stockCandleRepository;
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
     private final StockEntityWriter entityWriter;
     private final TransactionTemplate transactionTemplate;
     private final String fallbackRange;
+    private final String chartInterval;
     private final ZoneId appZone;
 
     public StockSnapshotProcessor(YahooStockClient yahooStockClient,
@@ -45,6 +44,7 @@ public class StockSnapshotProcessor implements MarketSnapshotProcessor {
         this.entityWriter = entityWriter;
         this.transactionTemplate = transactionTemplate;
         this.fallbackRange = stockProperties.getHistoryYears() + "y";
+        this.chartInterval = stockProperties.getChartInterval();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
@@ -52,7 +52,7 @@ public class StockSnapshotProcessor implements MarketSnapshotProcessor {
         String range = stockCandleRepository.findFirstByStockSymbolOrderByCandleDateDesc(symbol)
                 .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, fallbackRange))
                 .orElse(fallbackRange);
-        YahooChartFullResult<YahooStockQuoteDto> result = yahooStockClient.fetchStockChartFull(symbol, range, INTERVAL_DAILY, true);
+        YahooChartFullResult<YahooStockQuoteDto> result = yahooStockClient.fetchStockChartFull(symbol, range, chartInterval, true);
         return transactionTemplate.execute(status -> {
             Stock stock = entityWriter.saveSnapshot(result.quote(), symbol);
             int saved = result.candles().isEmpty()
@@ -73,7 +73,7 @@ public class StockSnapshotProcessor implements MarketSnapshotProcessor {
 
     public boolean exists(String symbol) {
         return ApiAssetValidator.validate(symbol, true, sym -> {
-            YahooChartFullResult<YahooStockQuoteDto> result = yahooStockClient.fetchStockChartFull(sym, "1d", INTERVAL_DAILY, true);
+            YahooChartFullResult<YahooStockQuoteDto> result = yahooStockClient.fetchStockChartFull(sym, "1d", chartInterval, true);
             return result.quote() != null && result.quote().currentPrice() != null;
         }, log, "Stock");
     }

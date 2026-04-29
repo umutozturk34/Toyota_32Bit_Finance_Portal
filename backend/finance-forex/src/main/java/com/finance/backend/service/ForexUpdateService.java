@@ -24,9 +24,6 @@ import java.util.stream.Collectors;
 @Service
 public class ForexUpdateService implements MarketRefresher {
 
-    private static final String USDTRY = "USDTRY";
-    private static final int BATCH_PARALLELISM = 5;
-
     private final ForexRepository forexRepository;
     private final ForexCandleRepository forexCandleRepository;
     private final MarketCacheService<Forex, ForexCandle> forexCacheService;
@@ -34,6 +31,8 @@ public class ForexUpdateService implements MarketRefresher {
     private final ForexMapper forexMapper;
     private final TransactionTemplate transactionTemplate;
     private final int yearsToKeep;
+    private final String baseCurrency;
+    private final int batchMinSample;
 
     public ForexUpdateService(ForexRepository forexRepository,
                               ForexCandleRepository forexCandleRepository,
@@ -49,6 +48,8 @@ public class ForexUpdateService implements MarketRefresher {
         this.forexMapper = forexMapper;
         this.transactionTemplate = transactionTemplate;
         this.yearsToKeep = forexProperties.getYearsToKeep();
+        this.baseCurrency = forexProperties.getBaseCurrency();
+        this.batchMinSample = forexProperties.getBatchMinSample();
     }
 
     @Override
@@ -63,19 +64,19 @@ public class ForexUpdateService implements MarketRefresher {
         log.info("Starting Yahoo forex sync for {} pairs", allForex.size());
 
         Forex usdtry = allForex.stream()
-                .filter(f -> USDTRY.equals(f.getCurrencyCode()))
+                .filter(f -> baseCurrency.equals(f.getCurrencyCode()))
                 .findFirst()
                 .orElse(null);
         if (usdtry == null) {
-            log.error("USDTRY not found, skipping forex sync");
+            log.error("{} not found, skipping forex sync", baseCurrency);
             return;
         }
         snapshotProcessor.updatePair(usdtry, Map.of());
-        forexCacheService.refreshHistory(USDTRY);
+        forexCacheService.refreshHistory(baseCurrency);
         Map<String, YahooCandleDto> usdtryCandleMap = buildUsdtryCandleMap();
 
         List<Forex> nonUsdTryForex = allForex.stream()
-                .filter(forex -> !USDTRY.equals(forex.getCurrencyCode()))
+                .filter(forex -> !baseCurrency.equals(forex.getCurrencyCode()))
                 .toList();
 
         BatchUpdateRunner.Result result = MarketBatchRunner.run(
@@ -85,7 +86,7 @@ public class ForexUpdateService implements MarketRefresher {
                     forexCacheService.refreshHistory(forex.getCurrencyCode());
                 },
                 Forex::getCurrencyCode,
-                log, "Forex", "update", BATCH_PARALLELISM);
+                log, "Forex", "update", batchMinSample);
         BatchLogHelper.logSummary(log, "Yahoo forex sync", result);
     }
 
@@ -99,7 +100,7 @@ public class ForexUpdateService implements MarketRefresher {
     }
 
     private Map<String, YahooCandleDto> buildUsdtryCandleMap() {
-        return forexCacheService.getHistory(USDTRY).stream()
+        return forexCacheService.getHistory(baseCurrency).stream()
                 .collect(Collectors.toMap(
                         c -> c.getCandleDate().toLocalDate().toString(),
                         forexMapper::toYahooCandleDto,

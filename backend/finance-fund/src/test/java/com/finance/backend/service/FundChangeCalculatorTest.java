@@ -24,7 +24,8 @@ class FundChangeCalculatorTest {
 
     @BeforeEach
     void setUp() {
-        calculator = new FundChangeCalculator(fundCandleRepository);
+        com.finance.backend.config.AppProperties props = new com.finance.backend.config.AppProperties();
+        calculator = new FundChangeCalculator(fundCandleRepository, props);
     }
 
     @Test

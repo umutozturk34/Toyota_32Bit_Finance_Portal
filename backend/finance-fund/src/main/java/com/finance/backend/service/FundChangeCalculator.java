@@ -1,9 +1,9 @@
 package com.finance.backend.service;
 
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.model.FundCandle;
 import com.finance.backend.repository.FundCandleRepository;
 import com.finance.backend.util.PercentChangeCalculator;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
@@ -12,12 +12,16 @@ import java.util.List;
 
 @Log4j2
 @Component
-@RequiredArgsConstructor
 public class FundChangeCalculator {
 
-    private static final int SCALE = 4;
-
     private final FundCandleRepository fundCandleRepository;
+    private final int scale;
+
+    public FundChangeCalculator(FundCandleRepository fundCandleRepository,
+                                AppProperties appProperties) {
+        this.fundCandleRepository = fundCandleRepository;
+        this.scale = appProperties.getScale();
+    }
 
     public BigDecimal calculateChangePercent(String fundCode, BigDecimal currentPrice) {
         if (currentPrice == null || currentPrice.signum() == 0) {
@@ -30,7 +34,7 @@ public class FundChangeCalculator {
         }
 
         BigDecimal previousPrice = recent.get(1).getPrice();
-        PercentChangeCalculator.Result result = PercentChangeCalculator.compute(currentPrice, previousPrice, SCALE);
+        PercentChangeCalculator.Result result = PercentChangeCalculator.compute(currentPrice, previousPrice, scale);
         return result.percent() != null ? result.percent() : BigDecimal.ZERO;
     }
 }

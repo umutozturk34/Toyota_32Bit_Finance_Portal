@@ -5,7 +5,6 @@ import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundType;
 import com.finance.backend.util.WindowedFetchPlanner;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;

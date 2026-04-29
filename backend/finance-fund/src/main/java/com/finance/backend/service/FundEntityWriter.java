@@ -1,5 +1,6 @@
 package com.finance.backend.service;
 
+import com.finance.backend.config.FundProperties;
 import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.backend.mapper.FundMapper;
@@ -9,7 +10,6 @@ import com.finance.backend.model.FundType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.FundCandleRepository;
 import com.finance.backend.repository.FundRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
@@ -17,10 +17,7 @@ import java.time.LocalDateTime;
 
 @Log4j2
 @Component
-@RequiredArgsConstructor
 public class FundEntityWriter {
-
-    private static final int AUTO_TRACK_SORT_ORDER = 9999;
 
     private final FundRepository fundRepository;
     private final FundCandleRepository fundCandleRepository;
@@ -28,6 +25,23 @@ public class FundEntityWriter {
     private final FundChangeCalculator fundChangeCalculator;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final TrackedAssetCommandService trackedAssetCommandService;
+    private final int autoTrackSortOrder;
+
+    public FundEntityWriter(FundRepository fundRepository,
+                            FundCandleRepository fundCandleRepository,
+                            FundMapper fundMapper,
+                            FundChangeCalculator fundChangeCalculator,
+                            TrackedAssetQueryService trackedAssetQueryService,
+                            TrackedAssetCommandService trackedAssetCommandService,
+                            FundProperties fundProperties) {
+        this.fundRepository = fundRepository;
+        this.fundCandleRepository = fundCandleRepository;
+        this.fundMapper = fundMapper;
+        this.fundChangeCalculator = fundChangeCalculator;
+        this.trackedAssetQueryService = trackedAssetQueryService;
+        this.trackedAssetCommandService = trackedAssetCommandService;
+        this.autoTrackSortOrder = fundProperties.getAutoTrackSortOrder();
+    }
 
     public Fund saveSnapshot(TefasFundDto dto, FundType fundType) {
         LocalDateTime now = LocalDateTime.now();
@@ -67,7 +81,7 @@ public class FundEntityWriter {
                 .assetCode(fundCode)
                 .displayName(tefasName)
                 .enabled(true)
-                .sortOrder(AUTO_TRACK_SORT_ORDER)
+                .sortOrder(autoTrackSortOrder)
                 .build());
         log.info("Auto-added BYF fund to tracked assets: {}", fundCode);
     }

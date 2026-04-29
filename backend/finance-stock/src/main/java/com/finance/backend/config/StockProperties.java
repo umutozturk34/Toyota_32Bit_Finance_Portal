@@ -10,4 +10,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class StockProperties {
 
     private int historyYears = 5;
+    private String chartInterval = "1d";
+    private int batchMinSample = 10;
 }

@@ -28,10 +28,6 @@ import java.util.Map;
 @Component
 public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
 
-    private static final String USDTRY = "USDTRY";
-    private static final String DEFAULT_RANGE = "5y";
-    private static final String INTERVAL_DAILY = "1d";
-
     private final YahooForexClient yahooForexClient;
     private final ForexRepository forexRepository;
     private final ForexCandleRepository forexCandleRepository;
@@ -42,6 +38,9 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
     private final BigDecimal spreadRate;
     private final int scale;
     private final ZoneId appZone;
+    private final String baseCurrency;
+    private final String chartRange;
+    private final String chartInterval;
 
     public ForexSnapshotProcessor(YahooForexClient yahooForexClient,
                                   ForexRepository forexRepository,
@@ -62,6 +61,9 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
         this.spreadRate = forexProperties.getSpreadRate();
         this.scale = appProperties.getScale();
         this.appZone = ZoneId.of(appProperties.getTimezone());
+        this.baseCurrency = forexProperties.getBaseCurrency();
+        this.chartRange = forexProperties.getChartRange();
+        this.chartInterval = forexProperties.getChartInterval();
     }
 
     public void updatePair(Forex forex, Map<String, YahooCandleDto> usdtryCandleMap) {
@@ -69,17 +71,17 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
         String yahooSymbol = baseSymbol + "=X";
         boolean wasEmpty = forexCandleRepository.countByCurrencyCode(baseSymbol) == 0;
         String range = forexCandleRepository.findFirstByCurrencyCodeOrderByCandleDateDesc(baseSymbol)
-                .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, DEFAULT_RANGE))
-                .orElse(DEFAULT_RANGE);
+                .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, chartRange))
+                .orElse(chartRange);
         try {
-            YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(yahooSymbol, range, INTERVAL_DAILY, true);
+            YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(yahooSymbol, range, chartInterval, true);
             if (hasUsableQuote(result)) {
                 int saved = transactionTemplate.execute(status -> {
                     entityWriter.applyDirect(forex, result.quote(), spreadRate, scale);
                     return entityWriter.upsertCandles(forex, result.candles());
                 });
                 forexCacheService.putSnapshot(baseSymbol, forex);
-                if (saved > 0 && (!wasEmpty || USDTRY.equals(baseSymbol))) {
+                if (saved > 0 && (!wasEmpty || baseCurrency.equals(baseSymbol))) {
                     return;
                 }
                 if (saved > 0) {
@@ -92,7 +94,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
         } catch (Exception e) {
             log.warn("Direct fetch failed for {}, trying synthetic", baseSymbol, e);
         }
-        if (USDTRY.equals(baseSymbol)) {
+        if (baseCurrency.equals(baseSymbol)) {
             throw new ExternalApiException("Yahoo Finance", "All forex attempts failed for " + baseSymbol);
         }
         trySyntheticUpdate(forex, usdtryCandleMap);
@@ -104,7 +106,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
             log.warn("Forex pair {} not found for single-code refresh", code);
             return;
         }
-        Map<String, YahooCandleDto> usdtryCandleMap = forexCacheService.getHistory(USDTRY).stream()
+        Map<String, YahooCandleDto> usdtryCandleMap = forexCacheService.getHistory(baseCurrency).stream()
                 .collect(java.util.stream.Collectors.toMap(
                         c -> c.getCandleDate().toLocalDate().toString(),
                         forexMapper::toYahooCandleDto,
@@ -115,7 +117,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
 
     public boolean exists(String code) {
         try {
-            YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(code + "=X", "1d", INTERVAL_DAILY, true);
+            YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(code + "=X", "1d", chartInterval, true);
             return hasUsableQuote(result);
         } catch (Exception e) {
             log.warn("Forex existence check failed for {}: {}", code, e.getMessage());
@@ -126,18 +128,18 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
     private void trySyntheticUpdate(Forex forex, Map<String, YahooCandleDto> usdtryCandleMap) {
         if (usdtryCandleMap.isEmpty()) {
             throw new ExternalApiException("Yahoo Finance",
-                    "USDTRY candles not available for " + forex.getCurrencyCode());
+                    baseCurrency + " candles not available for " + forex.getCurrencyCode());
         }
-        Forex usdtry = forexRepository.findById(USDTRY).orElse(null);
+        Forex usdtry = forexRepository.findById(baseCurrency).orElse(null);
         if (usdtry == null || usdtry.getCurrentPrice() == null) {
             throw new ExternalApiException("Yahoo Finance",
-                    "USDTRY snapshot not available for synthetic of " + forex.getCurrencyCode());
+                    baseCurrency + " snapshot not available for synthetic of " + forex.getCurrencyCode());
         }
-        String baseCurrency = forex.getCurrencyCode().replace("TRY", "");
-        String[] attempts = {baseCurrency + "USD=X", "USD" + baseCurrency + "=X"};
+        String coinPart = forex.getCurrencyCode().replace("TRY", "");
+        String[] attempts = {coinPart + "USD=X", "USD" + coinPart + "=X"};
         for (String symbol : attempts) {
             try {
-                YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(symbol, DEFAULT_RANGE, INTERVAL_DAILY, true);
+                YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(symbol, chartRange, chartInterval, true);
                 if (!hasUsableQuote(result) || result.candles().isEmpty()) continue;
                 boolean isUsdBase = symbol.startsWith("USD");
                 int saved = transactionTemplate.execute(status -> {

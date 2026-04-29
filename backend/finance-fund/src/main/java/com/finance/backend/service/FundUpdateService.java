@@ -44,6 +44,7 @@ public class FundUpdateService implements MarketRefresher {
     private final TransactionTemplate transactionTemplate;
     private final WindowingPolicy windowing;
     private final ZoneId appZone;
+    private final int backfillGapThresholdDays;
 
     public FundUpdateService(TefasClient tefasClient,
                              FundMapper fundMapper,
@@ -67,6 +68,7 @@ public class FundUpdateService implements MarketRefresher {
         this.transactionTemplate = transactionTemplate;
         this.windowing = WindowingPolicy.from(fundProperties);
         this.appZone = ZoneId.of(appProperties.getTimezone());
+        this.backfillGapThresholdDays = fundProperties.getBackfillGapThresholdDays();
     }
 
     @Override
@@ -141,8 +143,6 @@ public class FundUpdateService implements MarketRefresher {
         };
     }
 
-    private static final int BACKFILL_GAP_THRESHOLD_DAYS = 30;
-
     private List<WindowedFetchPlanner.DateWindow> computeRequiredWindows(
             List<Fund> funds, LocalDate earliest, LocalDate today) {
         Map<String, CandleDateRange> rangePerFund = fundCandleRepository.findCandleDateRangePerFund().stream()
@@ -165,7 +165,7 @@ public class FundUpdateService implements MarketRefresher {
 
     private LocalDate computeFetchFrom(CandleDateRange range, LocalDate earliest, LocalDate today) {
         if (range == null) return earliest;
-        if (range.min().isAfter(earliest.plusDays(BACKFILL_GAP_THRESHOLD_DAYS))) return earliest;
+        if (range.min().isAfter(earliest.plusDays(backfillGapThresholdDays))) return earliest;
         if (range.max().isBefore(today)) return range.max().plusDays(1);
         return null;
     }

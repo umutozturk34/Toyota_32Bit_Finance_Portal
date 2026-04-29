@@ -18,6 +18,9 @@ import java.util.Map;
 public class CommodityProperties {
 
     private int yearsToKeep = 5;
+    private String chartRange = "5y";
+    private String chartInterval = "1d";
+    private int batchMinSample = 5;
 
     private Map<String, String> yahooSymbolOverrides = new HashMap<>(Map.of(
             "XAUTRY", "GC=F",

@@ -22,8 +22,6 @@ import java.util.Map;
 @Service
 public class CommodityUpdateService implements MarketRefresher {
 
-    private static final int BATCH_PARALLELISM = 5;
-
     private final CommodityCandleRepository commodityCandleRepository;
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
     private final CommoditySnapshotProcessor snapshotProcessor;
@@ -33,6 +31,7 @@ public class CommodityUpdateService implements MarketRefresher {
     private final YahooSymbolResolver yahooSymbolResolver;
     private final TransactionTemplate transactionTemplate;
     private final int yearsToKeep;
+    private final int batchMinSample;
 
     public CommodityUpdateService(CommodityCandleRepository commodityCandleRepository,
                                   MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
@@ -52,6 +51,7 @@ public class CommodityUpdateService implements MarketRefresher {
         this.yahooSymbolResolver = yahooSymbolResolver;
         this.transactionTemplate = transactionTemplate;
         this.yearsToKeep = commodityProperties.getYearsToKeep();
+        this.batchMinSample = commodityProperties.getBatchMinSample();
     }
 
     @Override
@@ -87,7 +87,7 @@ public class CommodityUpdateService implements MarketRefresher {
                     commodityCacheService.refreshHistory(code);
                 },
                 code -> code,
-                log, "Commodity", "update", BATCH_PARALLELISM);
+                log, "Commodity", "update", batchMinSample);
 
         BatchLogHelper.logSummary(log, "Commodity sync", result);
         derivativeCalculator.refreshDerivativeCandles();

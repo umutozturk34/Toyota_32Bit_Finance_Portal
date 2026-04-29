@@ -18,4 +18,6 @@ public class FundProperties {
     private String tefasUserAgent =
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
                     + "(KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+    private int autoTrackSortOrder = 9999;
+    private int backfillGapThresholdDays = 30;
 }

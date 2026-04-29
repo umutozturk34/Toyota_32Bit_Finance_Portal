@@ -24,14 +24,13 @@ import java.util.function.Function;
 @Service
 public class StockUpdateService implements MarketRefresher {
 
-    private static final int BATCH_PARALLELISM = 10;
-
     private final StockCandleRepository stockCandleRepository;
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
     private final StockSnapshotProcessor snapshotProcessor;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final TransactionTemplate transactionTemplate;
     private final int historyYears;
+    private final int batchMinSample;
     private final ZoneId appZone;
 
     public StockUpdateService(StockCandleRepository stockCandleRepository,
@@ -47,6 +46,7 @@ public class StockUpdateService implements MarketRefresher {
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.transactionTemplate = transactionTemplate;
         this.historyYears = stockProperties.getHistoryYears();
+        this.batchMinSample = stockProperties.getBatchMinSample();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
@@ -73,7 +73,7 @@ public class StockUpdateService implements MarketRefresher {
                     totalCandles[0] += candleCount;
                 },
                 Function.identity(),
-                log, "Stock", "update", BATCH_PARALLELISM);
+                log, "Stock", "update", batchMinSample);
 
         BatchLogHelper.logSummaryWithMetric(log, "Stock update", result, "candles", totalCandles[0]);
         pruneOldCandles(bistStocks);

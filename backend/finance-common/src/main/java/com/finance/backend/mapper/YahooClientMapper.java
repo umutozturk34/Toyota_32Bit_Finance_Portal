@@ -36,12 +36,22 @@ public class YahooClientMapper {
                 ? firstQuote.open().getFirst() : null;
         return new YahooQuoteDto(
                 meta.regularMarketPrice(),
-                meta.previousClose(),
+                resolvePreviousClose(firstQuote, meta.previousClose()),
                 openPrice,
                 meta.dayHigh(),
                 meta.dayLow(),
                 meta.volume()
         );
+    }
+
+    private static BigDecimal resolvePreviousClose(Quote quote, BigDecimal metaPreviousClose) {
+        if (metaPreviousClose != null) return metaPreviousClose;
+        if (quote == null || quote.close() == null) return null;
+        List<BigDecimal> closes = quote.close();
+        for (int i = closes.size() - 2; i >= 0; i--) {
+            if (closes.get(i) != null) return closes.get(i);
+        }
+        return null;
     }
 
     public List<YahooCandleDto> toCandleDtos(Result result, boolean truncateToDays) {

@@ -4,6 +4,7 @@ import com.finance.backend.client.YahooForexClient;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.config.ForexProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
+import com.finance.backend.exception.BusinessException;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.ForexMapper;
 import com.finance.backend.model.Forex;
@@ -94,16 +95,19 @@ public class ForexCandleService implements CandleBatchRefresher {
                 .filter(forex -> !"USDTRY".equals(forex.getCurrencyCode()))
                 .toList();
 
-        BatchUpdateRunner.Result result = MarketBatchRunner.run(
-                nonUsdTryForex,
-                forex -> {
-                    updateForexCandles(forex, usdtryCandleMap);
-                    forexCacheService.refreshHistory(forex.getCurrencyCode());
-                },
-                Forex::getCurrencyCode,
-                log, "Forex", "candle", 5);
-
-        BatchLogHelper.logSummary(log, "Yahoo candle sync", result);
+        try {
+            BatchUpdateRunner.Result result = MarketBatchRunner.run(
+                    nonUsdTryForex,
+                    forex -> {
+                        updateForexCandles(forex, usdtryCandleMap);
+                        forexCacheService.refreshHistory(forex.getCurrencyCode());
+                    },
+                    Forex::getCurrencyCode,
+                    log, "Forex", "candle", 5);
+            BatchLogHelper.logSummary(log, "Yahoo candle sync", result);
+        } catch (BusinessException e) {
+            log.warn("Yahoo forex candle best-effort failed (TCMB remains primary): {}", e.getMessage());
+        }
     }
 
     @Override

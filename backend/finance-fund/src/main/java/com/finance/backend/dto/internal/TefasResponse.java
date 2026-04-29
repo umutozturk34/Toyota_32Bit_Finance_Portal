@@ -1,7 +1,6 @@
 package com.finance.backend.dto.internal;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.finance.backend.dto.external.deserializer.SafeBigDecimalDeserializer;
 
@@ -10,20 +9,22 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record TefasResponse(
-        int draw,
-        int recordsTotal,
-        int recordsFiltered,
-        List<FundData> data
+        String errorCode,
+        String errorMessage,
+        List<FundData> resultList,
+        Integer toplamSayi,
+        Integer toplamSayfa
 ) {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record FundData(
-            @JsonProperty("TARIH") String tarih,
-            @JsonProperty("FONKODU") String fonKodu,
-            @JsonProperty("FONUNVAN") String fonUnvan,
-            @JsonProperty("BORSABULTENFIYAT") @JsonDeserialize(using = SafeBigDecimalDeserializer.class) BigDecimal borsaBultenFiyat,
-            @JsonProperty("TEDPAYSAYISI") @JsonDeserialize(using = SafeBigDecimalDeserializer.class) BigDecimal tedPaySayisi,
-            @JsonProperty("KISISAYISI") @JsonDeserialize(using = SafeBigDecimalDeserializer.class) BigDecimal kisiSayisi,
-            @JsonProperty("PORTFOYBUYUKLUK") @JsonDeserialize(using = SafeBigDecimalDeserializer.class) BigDecimal portfolyoBuyukluk,
-            @JsonProperty("FIYAT") @JsonDeserialize(using = SafeBigDecimalDeserializer.class) BigDecimal fiyat
+            String fonKodu,
+            String fonUnvan,
+            String tarih,
+            @JsonDeserialize(using = SafeBigDecimalDeserializer.class) BigDecimal fiyat,
+            @JsonDeserialize(using = SafeBigDecimalDeserializer.class) BigDecimal borsaBultenFiyat,
+            @JsonDeserialize(using = SafeBigDecimalDeserializer.class) BigDecimal tedPaySayisi,
+            @JsonDeserialize(using = SafeBigDecimalDeserializer.class) BigDecimal kisiSayisi,
+            @JsonDeserialize(using = SafeBigDecimalDeserializer.class) BigDecimal portfoyBuyukluk,
+            Integer rn
     ) {}
 }

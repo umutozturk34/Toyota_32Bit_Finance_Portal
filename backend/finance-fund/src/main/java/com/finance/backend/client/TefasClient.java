@@ -2,7 +2,9 @@ package com.finance.backend.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.backend.config.AppProperties;
+import com.finance.backend.config.FundProperties;
 import com.finance.backend.dto.external.TefasFundDto;
+import com.finance.backend.dto.internal.TefasFundQueryRequest;
 import com.finance.backend.dto.internal.TefasResponse;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.exception.ExternalApiRequestException;
@@ -15,8 +17,6 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDate;
@@ -27,16 +27,20 @@ import java.util.List;
 @Component
 public class TefasClient {
 
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final int DEFAULT_PAGE_SIZE = 100;
+    private static final String LANGUAGE = "TR";
 
     private final WebClient webClient;
     private final String tefasApiPath;
     private final ObjectMapper objectMapper;
     private final TefasClientMapper tefasClientMapper;
     private final TefasSessionManager sessionManager;
+    private final int bulkPageSize;
 
     public TefasClient(@Qualifier("tefasWebClient") WebClient webClient,
                        AppProperties appProperties,
+                       FundProperties fundProperties,
                        ObjectMapper objectMapper,
                        TefasClientMapper tefasClientMapper,
                        TefasSessionManager sessionManager) {
@@ -45,23 +49,37 @@ public class TefasClient {
         this.objectMapper = objectMapper;
         this.tefasClientMapper = tefasClientMapper;
         this.sessionManager = sessionManager;
+        this.bulkPageSize = fundProperties.getTefasBulkPageSize();
     }
 
     @CircuitBreaker(name = "tefas")
     @Retry(name = "tefas")
     public List<TefasFundDto> post(FundType fundType, String fundCode, LocalDate startDate, LocalDate endDate) {
-        long reqStart = System.currentTimeMillis();
-        log.debug("TEFAS request: type={}, code={}, from={}, to={}", fundType, fundCode, startDate, endDate);
-        try {
-            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-            formData.add("fontip", fundType.name());
-            formData.add("bastarih", startDate.format(DATE_FORMAT));
-            formData.add("bittarih", endDate.format(DATE_FORMAT));
-            if (fundCode != null && !fundCode.isBlank()) {
-                formData.add("fonkod", fundCode);
-            }
+        return executeRequest(fundType, fundCode, startDate, endDate, DEFAULT_PAGE_SIZE);
+    }
 
-            String body = doPost(formData);
+    @CircuitBreaker(name = "tefas")
+    @Retry(name = "tefas-bulk")
+    public List<TefasFundDto> bulkFetch(FundType fundType, LocalDate startDate, LocalDate endDate) {
+        return executeRequest(fundType, null, startDate, endDate, bulkPageSize);
+    }
+
+    private List<TefasFundDto> executeRequest(FundType fundType, String fundCode,
+                                              LocalDate startDate, LocalDate endDate, int pageSize) {
+        long reqStart = System.currentTimeMillis();
+        log.debug("TEFAS request: type={}, code={}, from={}, to={}, pageSize={}",
+                fundType, fundCode, startDate, endDate, pageSize);
+        try {
+            TefasFundQueryRequest request = new TefasFundQueryRequest(
+                    fundType.name(),
+                    fundCode,
+                    null, null, null, null,
+                    startDate.format(DATE_FORMAT),
+                    endDate.format(DATE_FORMAT),
+                    1, pageSize,
+                    null, LANGUAGE, null);
+
+            String body = doPost(request);
 
             if (body != null && body.trim().startsWith("<")) {
                 log.warn("TEFAS WAF block: {} {} ({} to {})", fundType, fundCode, startDate, endDate);
@@ -90,12 +108,12 @@ public class TefasClient {
         }
     }
 
-    private String doPost(MultiValueMap<String, String> formData) {
+    private String doPost(TefasFundQueryRequest request) {
         return webClient.post()
                 .uri(tefasApiPath)
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header("Accept", "*/*")
-                .bodyValue(formData)
+                .bodyValue(request)
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
@@ -105,14 +123,20 @@ public class TefasClient {
         String trimmed = body.trim();
         try {
             TefasResponse response = objectMapper.readValue(trimmed, TefasResponse.class);
-            if (response.recordsTotal() == 0) {
+            if (response.errorCode() != null) {
+                throw new ExternalApiException("TEFAS",
+                        "TEFAS error " + response.errorCode() + ": " + response.errorMessage());
+            }
+            if (response.resultList() == null || response.resultList().isEmpty()) {
                 return List.of();
             }
-            List<TefasFundDto> result = response.data().stream()
+            List<TefasFundDto> result = response.resultList().stream()
                     .map(tefasClientMapper::toDto)
                     .toList();
             log.debug("TEFAS returned {} records", result.size());
             return result;
+        } catch (ExternalApiException e) {
+            throw e;
         } catch (Exception e) {
             log.error("TEFAS parse failed. Response body (first 500 chars): {}", trimmed.substring(0, Math.min(trimmed.length(), 500)));
             throw new ExternalApiException("TEFAS", "Failed to parse TEFAS response", e);

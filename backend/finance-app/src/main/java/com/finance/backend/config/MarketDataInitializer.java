@@ -9,6 +9,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 @Log4j2
@@ -26,6 +27,10 @@ public class MarketDataInitializer implements CommandLineRunner {
     private final FundRepository fundRepository;
     private final FundCandleRepository fundCandleRepository;
     private final FundDataService fundDataService;
+    private final ForexRepository forexRepository;
+    private final ForexCandleRepository forexCandleRepository;
+    private final ForexDataService forexDataService;
+    private final TcmbForexService tcmbForexService;
     private final CommodityRepository commodityRepository;
     private final CommodityCandleRepository commodityCandleRepository;
     private final CommodityDataService commodityDataService;
@@ -38,40 +43,52 @@ public class MarketDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        initIfEmpty("crypto", cryptoRepository.count(), cryptoCandleRepository.count(), () -> {
+        init("crypto", cryptoRepository.count(), cryptoCandleRepository.count(), null, () -> {
             cryptoDataService.refreshAllSnapshots();
             cryptoDataService.refreshAllCandles();
         });
 
-        initIfEmpty("stock", stockRepository.count(), stockCandleRepository.count(), () -> {
-            stockDataService.refreshAllSnapshots();
-            stockDataService.refreshAllCandles();
-        });
-
-        initIfEmpty("fund", fundRepository.count(), fundCandleRepository.count(), () -> {
+        init("fund", fundRepository.count(), fundCandleRepository.count(), null, () -> {
             fundDataService.refreshAllSnapshots();
             fundDataService.refreshAllCandles();
         });
 
-        initIfEmpty("commodity", commodityRepository.count(), commodityCandleRepository.count(), () -> {
+        init("bond", bondRepository.count(), 1, null, bondDataService::updateBonds);
+
+        init("news", articleRepository.count(), 1, null, newsDataService::updateNews);
+
+        CompletableFuture<Void> forexFuture = init(
+                "forex", forexRepository.count(), forexCandleRepository.count(), null, () -> {
+            tcmbForexService.fetchAndSaveTcmbRates();
+            forexDataService.syncAllYahooSnapshots();
+            forexDataService.syncAllYahooCandles();
+        });
+
+        CompletableFuture<Void> stockFuture = init(
+                "stock", stockRepository.count(), stockCandleRepository.count(), forexFuture, () -> {
+            stockDataService.refreshAllSnapshots();
+            stockDataService.refreshAllCandles();
+        });
+
+        init("commodity", commodityRepository.count(), commodityCandleRepository.count(), stockFuture, () -> {
             commodityDataService.refreshAllSnapshots();
             commodityDataService.refreshAllCandles();
         });
-
-        initIfEmpty("bond", bondRepository.count(), 1, bondDataService::updateBonds);
-
-        initIfEmpty("news", articleRepository.count(), 1, newsDataService::updateNews);
     }
 
-    private void initIfEmpty(String name, long snapshotCount, long candleCount, Runnable action) {
+    private CompletableFuture<Void> init(String name, long snapshotCount, long candleCount,
+                                         CompletableFuture<?> prerequisite, Runnable action) {
         if (snapshotCount > 0 && candleCount > 0) {
             log.info("{} data exists - skipping init", name);
-            return;
+            return CompletableFuture.completedFuture(null);
         }
         log.info("No {} data - starting initial fetch", name);
         TaskInfo started = taskTracker.startTask("init-" + name, "Initial " + name + " data fetch");
-        taskExecutor.execute(() -> {
+        return CompletableFuture.runAsync(() -> {
             try {
+                if (prerequisite != null) {
+                    prerequisite.handle((r, ex) -> null).join();
+                }
                 action.run();
                 taskTracker.completeTask("init-" + name, started);
                 log.info("{} init completed", name);
@@ -79,6 +96,6 @@ public class MarketDataInitializer implements CommandLineRunner {
                 taskTracker.failTask("init-" + name, started, e.getMessage());
                 log.error("{} init failed: {}", name, e.getMessage(), e);
             }
-        });
+        }, taskExecutor);
     }
 }

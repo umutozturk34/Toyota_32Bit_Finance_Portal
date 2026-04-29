@@ -3,6 +3,7 @@ package com.finance.backend.service;
 import com.finance.backend.client.TefasClient;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.config.FundProperties;
+import com.finance.backend.config.WindowingPolicy;
 import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.mapper.FundMapper;
 import com.finance.backend.model.Fund;
@@ -12,12 +13,10 @@ import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.FundCandleRepository;
 import com.finance.backend.repository.FundRepository;
-import com.finance.backend.util.BatchLogHelper;
-import com.finance.backend.util.BatchUpdateRunner;
 import com.finance.backend.util.CodeNormalizer;
-import com.finance.backend.util.MarketBatchRunner;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
+import com.finance.backend.util.MissingWindowFinder;
 import com.finance.backend.util.TefasHelper;
 import com.finance.backend.util.WindowedFetchPlanner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
@@ -26,8 +25,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -40,10 +43,9 @@ public class FundCandleService implements CandleBatchRefresher {
     private final MarketCacheService<Fund, FundCandle> fundCacheService;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final FundSnapshotService fundSnapshotService;
+    private final FundBulkFetchExecutor bulkFetchExecutor;
     private final TransactionTemplate transactionTemplate;
-    private final int windowSize;
-    private final int minCandlesForIncremental;
-    private final int yearsToFetch;
+    private final WindowingPolicy windowing;
     private final ZoneId appZone;
 
     public FundCandleService(TefasClient tefasClient,
@@ -53,6 +55,7 @@ public class FundCandleService implements CandleBatchRefresher {
                              MarketCacheService<Fund, FundCandle> fundCacheService,
                              TrackedAssetQueryService trackedAssetQueryService,
                              FundSnapshotService fundSnapshotService,
+                             FundBulkFetchExecutor bulkFetchExecutor,
                              TransactionTemplate transactionTemplate,
                              AppProperties appProperties,
                              FundProperties fundProperties) {
@@ -63,10 +66,9 @@ public class FundCandleService implements CandleBatchRefresher {
         this.fundCacheService = fundCacheService;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.fundSnapshotService = fundSnapshotService;
+        this.bulkFetchExecutor = bulkFetchExecutor;
         this.transactionTemplate = transactionTemplate;
-        this.windowSize = fundProperties.getWindowSizes();
-        this.minCandlesForIncremental = fundProperties.getMinCandlesForIncremental();
-        this.yearsToFetch = fundProperties.getYearsToFetch();
+        this.windowing = WindowingPolicy.from(fundProperties);
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
@@ -78,16 +80,65 @@ public class FundCandleService implements CandleBatchRefresher {
     @Override
     public void refreshAll() {
         long totalStart = System.currentTimeMillis();
-        log.info("Starting fund candle update");
-        CandlePruner.pruneByYears(transactionTemplate, yearsToFetch,
+        log.info("Starting fund candle update (bulk strategy)");
+        CandlePruner.pruneByYears(transactionTemplate, windowing.yearsToFetch(),
                 cutoffDate -> fundCandleRepository.deleteByCandleDateBefore(cutoffDate));
         long byfStart = System.currentTimeMillis();
-        updateCandlesForType(FundType.BYF);
-        log.info("[TIMING] BYF candle update took {}s", (System.currentTimeMillis() - byfStart) / 1000);
+        bulkUpdateForType(FundType.BYF);
+        log.info("[TIMING] BYF bulk candle update took {}s", (System.currentTimeMillis() - byfStart) / 1000);
         long yatStart = System.currentTimeMillis();
-        updateCandlesForType(FundType.YAT);
-        log.info("[TIMING] YAT candle update took {}s", (System.currentTimeMillis() - yatStart) / 1000);
+        bulkUpdateForType(FundType.YAT);
+        log.info("[TIMING] YAT bulk candle update took {}s", (System.currentTimeMillis() - yatStart) / 1000);
         log.info("[TIMING] Total fund candle update took {}s", (System.currentTimeMillis() - totalStart) / 1000);
+    }
+
+    private void bulkUpdateForType(FundType fundType) {
+        List<Fund> trackedFunds = collectTrackedFunds(fundType);
+        if (trackedFunds.isEmpty()) {
+            log.warn("No tracked {} funds found", fundType);
+            return;
+        }
+        Map<String, Fund> trackedByCode = trackedFunds.stream()
+                .collect(Collectors.toMap(Fund::getFundCode, f -> f));
+        LocalDate today = TefasHelper.findLastBusinessDay(
+                LocalDate.now(appZone), appZone, windowing.eodCutoverHour());
+        LocalDate earliest = today.minusYears(windowing.yearsToFetch());
+
+        List<WindowedFetchPlanner.DateWindow> windows = computeRequiredWindows(
+                trackedFunds, earliest, today);
+        if (windows.isEmpty()) {
+            log.info("All tracked {} funds up to date, skipping fetch", fundType);
+            return;
+        }
+
+        bulkFetchExecutor.runWindows(fundType, windows, trackedByCode,
+                (fund, dtos) -> {
+                    int saved = saveCandleBatch(fund, fundType, dtos);
+                    fundCacheService.refreshHistory(fund.getFundCode());
+                    return saved;
+                });
+    }
+
+    private List<Fund> collectTrackedFunds(FundType fundType) {
+        return switch (fundType) {
+            case BYF -> fundRepository.findByFundType(FundType.BYF);
+            case YAT -> fundRepository.findAllById(
+                            trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND))
+                    .stream()
+                    .filter(f -> f.getFundType() != FundType.BYF)
+                    .toList();
+        };
+    }
+
+    private List<WindowedFetchPlanner.DateWindow> computeRequiredWindows(
+            List<Fund> funds, LocalDate from, LocalDate to) {
+        LocalDateTime fromTs = from.atStartOfDay();
+        LocalDateTime toTs = to.atTime(LocalTime.MAX);
+        List<List<LocalDate>> existingPerFund = funds.stream()
+                .map(f -> fundCandleRepository.findCandleDates(f.getFundCode(), fromTs, toTs))
+                .toList();
+        return MissingWindowFinder.findMissingWindows(
+                existingPerFund, from, to, windowing.windowSizeDays());
     }
 
     @Override
@@ -111,7 +162,7 @@ public class FundCandleService implements CandleBatchRefresher {
         Fund targetFund = fund;
         FundType fundType = targetFund.getFundType() == null ? FundType.YAT : targetFund.getFundType();
         long existingCount = fundCandleRepository.countByFundCode(targetFund.getFundCode());
-        if (existingCount >= minCandlesForIncremental) {
+        if (existingCount >= windowing.minCandlesForIncremental()) {
             transactionTemplate.execute(status -> fetchAndSaveSinceLastCandle(targetFund, fundType));
         } else {
             fetchAndSaveFullHistory(targetFund, fundType);
@@ -121,102 +172,53 @@ public class FundCandleService implements CandleBatchRefresher {
         log.info("Refreshed tracked fund candles for {}", normalized);
     }
 
-    private void updateCandlesForType(FundType fundType) {
-        List<Fund> funds;
-        if (fundType == FundType.BYF) {
-            funds = fundRepository.findByFundType(FundType.BYF);
-        } else {
-            List<String> yatCodes = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND);
-            funds = fundRepository.findAllById(yatCodes).stream()
-                    .filter(f -> f.getFundType() != FundType.BYF)
-                    .toList();
-        }
-
-        if (funds.isEmpty()) {
-            log.warn("No {} funds found", fundType);
-            return;
-        }
-
-        BatchUpdateRunner.Result result = MarketBatchRunner.run(
-                funds,
-                fund -> {
-                    long existingCount = fundCandleRepository.countByFundCode(fund.getFundCode());
-
-                    if (existingCount >= minCandlesForIncremental) {
-                        transactionTemplate.execute(status -> fetchAndSaveSinceLastCandle(fund, fundType));
-                    } else {
-                        fetchAndSaveFullHistory(fund, fundType);
-                    }
-
-                    fundCacheService.refreshHistory(fund.getFundCode());
-                },
-                Fund::getFundCode,
-                log, String.valueOf(fundType), "candle", 5);
-
-        BatchLogHelper.logSummary(log, fundType + " candle update", result);
-    }
-
     private int fetchAndSaveSinceLastCandle(Fund fund, FundType fundType) {
-        LocalDate today = findLastBusinessDay(LocalDate.now());
+        LocalDate today = TefasHelper.findLastBusinessDay(
+                LocalDate.now(appZone), appZone, windowing.eodCutoverHour());
         LocalDate fromDate = fundCandleRepository.findFirstByFundCodeOrderByCandleDateDesc(fund.getFundCode())
                 .map(candle -> candle.getCandleDate().toLocalDate())
                 .orElse(today);
-        List<TefasFundDto> candles = fetchTefas(fundType, fund.getFundCode(), fromDate, today);
-        if (candles.isEmpty()) {
-            return 0;
-        }
-        return saveCandleBatch(fund, fundType, candles);
+        return fromDate.isBefore(today)
+                ? runWindowedSingleFund(fund, fundType, fromDate, today)
+                : 0;
     }
 
     private int fetchAndSaveFullHistory(Fund fund, FundType fundType) {
-        long histStart = System.currentTimeMillis();
-        LocalDate finalEndDate = findLastBusinessDay(LocalDate.now(appZone));
-        LocalDate limitDate = finalEndDate.minusYears(yearsToFetch);
-        int totalSaved = 0;
+        LocalDate today = TefasHelper.findLastBusinessDay(
+                LocalDate.now(appZone), appZone, windowing.eodCutoverHour());
+        LocalDate earliest = today.minusYears(windowing.yearsToFetch());
+        long start = System.currentTimeMillis();
+        int total = runWindowedSingleFund(fund, fundType, earliest, today);
+        log.info("[TIMING] {} full history done - {} candles in {}s",
+                fund.getFundCode(), total, (System.currentTimeMillis() - start) / 1000);
+        return total;
+    }
+
+    private int runWindowedSingleFund(Fund fund, FundType fundType, LocalDate from, LocalDate to) {
         List<WindowedFetchPlanner.DateWindow> windows = WindowedFetchPlanner
-                .planBackward(limitDate, finalEndDate, windowSize);
-
-        log.info("[TIMING] {} full history start - {} windows planned", fund.getFundCode(), windows.size());
-
+                .planBackward(from, to, windowing.windowSizeDays());
+        int totalSaved = 0;
         for (WindowedFetchPlanner.DateWindow window : windows) {
             int saved = tryFetchWindow(fund, fundType, window.start(), window.end());
-
             if (saved > 0) {
                 totalSaved += saved;
             }
-
-            if (totalSaved > 0 && saved <= 0 && window.start().isBefore(finalEndDate.minusYears(1))) {
-                log.info("[TIMING] {} early exit at window {} (no data past 1yr)", fund.getFundCode(), window.start());
-                break;
-            }
         }
-
-        long histMs = System.currentTimeMillis() - histStart;
-        log.info("[TIMING] {} full history done - {} candles in {}s ({} windows)", fund.getFundCode(), totalSaved, histMs / 1000, windows.size());
         return totalSaved;
     }
 
     private int tryFetchWindow(Fund fund, FundType fundType, LocalDate start, LocalDate end) {
         try {
-            long windowStart = System.currentTimeMillis();
-            List<TefasFundDto> candles = fetchTefas(fundType, fund.getFundCode(), start, end);
-            long fetchMs = System.currentTimeMillis() - windowStart;
-
+            List<TefasFundDto> candles = tefasClient.post(fundType, fund.getFundCode(), start, end);
             if (candles.isEmpty()) {
-                log.info("[TIMING] {} window {} to {} - fetch={}ms, empty response", fund.getFundCode(), start, end, fetchMs);
                 return 0;
             }
-
-            int saved = transactionTemplate.execute(status -> saveCandleBatch(fund, fundType, candles));
-            long totalMs = System.currentTimeMillis() - windowStart;
-            log.info("[TIMING] {} window {} to {} - fetch={}ms, save={}ms, total={}ms, {} candles",
-                    fund.getFundCode(), start, end, fetchMs, totalMs - fetchMs, totalMs, saved);
-            return saved;
+            return transactionTemplate.execute(status -> saveCandleBatch(fund, fundType, candles));
         } catch (CallNotPermittedException e) {
             log.warn("{} - TEFAS circuit breaker is OPEN, skipping", fund.getFundCode());
             throw e;
         } catch (Exception e) {
-            log.warn("{} - Window {} to {} failed: {}", fund.getFundCode(), start, end, e.getMessage(), e);
+            log.warn("{} - Window {} to {} failed", fund.getFundCode(), start, end, e);
             return -1;
         }
     }
@@ -233,18 +235,6 @@ public class FundCandleService implements CandleBatchRefresher {
         if (!upsertResult.newEntities().isEmpty()) {
             fundCandleRepository.saveAll(upsertResult.newEntities());
         }
-
-        log.debug("{} - Batch: {} new, {} updated",
-                fund.getFundCode(), upsertResult.insertCount(), upsertResult.updateCount());
         return upsertResult.totalChanged();
-    }
-
-    private List<TefasFundDto> fetchTefas(FundType fundType, String fundCode,
-                                          LocalDate startDate, LocalDate endDate) {
-        return TefasHelper.fetchTefas(tefasClient, fundType, fundCode, startDate, endDate);
-    }
-
-    private LocalDate findLastBusinessDay(LocalDate from) {
-        return TefasHelper.findLastBusinessDay(from, appZone);
     }
 }

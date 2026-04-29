@@ -7,7 +7,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
@@ -24,11 +24,11 @@ public abstract class TefasClientMapper {
     @Mapping(target = "bulletinPrice", source = "borsaBultenFiyat")
     @Mapping(target = "shareCount", source = "tedPaySayisi")
     @Mapping(target = "investorCount", source = "kisiSayisi")
-    @Mapping(target = "portfolioSize", source = "portfolyoBuyukluk")
+    @Mapping(target = "portfolioSize", source = "portfoyBuyukluk")
     public abstract TefasFundDto toDto(TefasResponse.FundData data);
 
-    protected LocalDateTime parseDate(String epochMillis) {
+    protected LocalDateTime parseDate(String isoDate) {
         ZoneId zone = ZoneId.of(appProperties.getTimezone());
-        return LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(epochMillis)), zone);
+        return LocalDate.parse(isoDate).atStartOfDay(zone).toLocalDateTime();
     }
 }

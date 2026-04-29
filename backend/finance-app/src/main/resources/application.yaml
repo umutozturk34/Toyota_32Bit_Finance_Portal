@@ -62,7 +62,7 @@ app:
     base-url: ${TCMB_BASE_URL:https://www.tcmb.gov.tr}
     xml-path: /kurlar/today.xml
 
-  tefas-api-path: /api/DB/BindHistoryInfo
+  tefas-api-path: /api/funds/fonGnlBlgSiraliGetir
   tefas-base-url: https://www.tefas.gov.tr
   tefas-session-path: /TarihselVeriler.aspx
   timezone: Europe/Istanbul
@@ -104,7 +104,7 @@ app:
   fund:
     years-to-fetch: 5
     min-candles-for-incremental: 30
-    window-sizes: 95
+    window-sizes: 30
 
   commodity:
     years-to-keep: 5
@@ -330,6 +330,18 @@ resilience4j:
         wait-duration: 1s
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - io.netty.handler.timeout.ReadTimeoutException
+        ignore-exceptions:
+          - com.finance.backend.exception.BusinessException
+          - com.finance.backend.exception.ExternalApiRequestException
+      tefas-bulk:
+        max-attempts: 3
+        wait-duration: 30s
+        enable-exponential-backoff: false
         retry-exceptions:
           - com.finance.backend.exception.ExternalApiException
           - java.net.SocketTimeoutException

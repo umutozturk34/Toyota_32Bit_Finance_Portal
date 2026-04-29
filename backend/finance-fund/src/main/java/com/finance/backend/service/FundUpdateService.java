@@ -18,7 +18,6 @@ import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
 import com.finance.backend.util.TefasHelper;
 import com.finance.backend.util.WindowedFetchPlanner;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -223,17 +222,9 @@ public class FundUpdateService implements CandleBatchRefresher {
     }
 
     private int tryFetchWindow(Fund fund, FundType fundType, LocalDate start, LocalDate end) {
-        try {
-            List<TefasFundDto> candles = tefasClient.post(fundType, fund.getFundCode(), start, end);
-            if (candles.isEmpty()) return 0;
-            return transactionTemplate.execute(status -> saveCandleBatch(fund, fundType, candles));
-        } catch (CallNotPermittedException e) {
-            log.warn("{} - TEFAS circuit breaker is OPEN, skipping", fund.getFundCode());
-            throw e;
-        } catch (Exception e) {
-            log.warn("{} - Window {} to {} failed", fund.getFundCode(), start, end, e);
-            return -1;
-        }
+        List<TefasFundDto> candles = tefasClient.post(fundType, fund.getFundCode(), start, end);
+        if (candles.isEmpty()) return 0;
+        return transactionTemplate.execute(status -> saveCandleBatch(fund, fundType, candles));
     }
 
     private int saveCandleBatch(Fund fund, FundType fundType, List<TefasFundDto> dtos) {

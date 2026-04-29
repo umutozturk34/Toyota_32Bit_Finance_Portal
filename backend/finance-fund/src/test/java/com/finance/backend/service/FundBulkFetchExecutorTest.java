@@ -85,7 +85,7 @@ class FundBulkFetchExecutorTest {
     }
 
     @Test
-    void should_returnFailedWindow_when_bulkFetchThrowsExternalException() {
+    void should_propagateException_when_bulkFetchThrowsUnexpectedError() {
         LocalDate from = LocalDate.of(2026, 3, 1);
         LocalDate to = LocalDate.of(2026, 4, 1);
         Fund tracked = fundWith("TI2");
@@ -93,12 +93,10 @@ class FundBulkFetchExecutorTest {
         when(tefasClient.bulkFetch(FundType.YAT, from, to))
                 .thenThrow(new RuntimeException("WAF block"));
 
-        FundBulkFetchExecutor.BulkRunResult result = executor.runBackwardWindowed(
-                FundType.YAT, from, to, 31, trackedByCode, (f, dtos) -> 0);
-
-        assertThat(result.windowsFailed()).isEqualTo(1);
-        assertThat(result.windowsProcessed()).isZero();
-        assertThat(result.totalSaved()).isZero();
+        assertThatThrownBy(() -> executor.runBackwardWindowed(
+                FundType.YAT, from, to, 31, trackedByCode, (f, dtos) -> 0))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("WAF block");
     }
 
     @Test

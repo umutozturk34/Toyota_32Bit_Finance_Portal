@@ -4,7 +4,6 @@ import com.finance.backend.client.TefasClient;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.config.FundProperties;
 import com.finance.backend.dto.external.TefasFundDto;
-import com.finance.backend.exception.ExternalApiRequestException;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundCandle;
 import com.finance.backend.model.FundType;
@@ -138,12 +137,6 @@ public class FundSnapshotProcessor {
             return saved;
         } catch (CallNotPermittedException e) {
             log.warn("TEFAS circuit breaker is OPEN, aborting {} snapshot", fundType);
-            return -1;
-        } catch (ExternalApiRequestException e) {
-            log.error("WAF block on {} snapshot, propagating: {}", fundType, e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.error("Failed to bulk fetch {} snapshot", fundType, e);
             return -1;
         }
     }

@@ -50,41 +50,25 @@ public class FundBulkFetchExecutor {
 
         int totalSaved = 0;
         int processed = 0;
-        int failed = 0;
         for (WindowedFetchPlanner.DateWindow window : windows) {
-            int saved = processWindow(fundType, window, trackedByCode, saver);
-            if (saved >= 0) {
-                totalSaved += saved;
-                processed++;
-            } else {
-                failed++;
-            }
+            totalSaved += processWindow(fundType, window, trackedByCode, saver);
+            processed++;
         }
-        log.info("Bulk {} done: {} candles saved across {} windows ({} failed)",
-                fundType, totalSaved, processed, failed);
-        return new BulkRunResult(totalSaved, processed, failed);
+        log.info("Bulk {} done: {} candles saved across {} windows", fundType, totalSaved, processed);
+        return new BulkRunResult(totalSaved, processed, 0);
     }
 
     private int processWindow(FundType fundType, WindowedFetchPlanner.DateWindow window,
                                Map<String, Fund> trackedByCode,
                                BiFunction<Fund, List<TefasFundDto>, Integer> saver) {
         long start = System.currentTimeMillis();
-        try {
-            List<TefasFundDto> bulk = tefasClient.bulkFetch(fundType, window.start(), window.end());
-            Map<Fund, List<TefasFundDto>> grouped = groupByTrackedFund(bulk, trackedByCode);
-            int saved = persistGrouped(fundType, grouped, saver);
-            log.info("[TIMING] {} bulk window {}-{}: {} bulk rows, {} tracked matched, {} saved, {}ms",
-                    fundType, window.start(), window.end(), bulk.size(), grouped.size(),
-                    saved, System.currentTimeMillis() - start);
-            return saved;
-        } catch (CallNotPermittedException e) {
-            log.warn("{} bulk circuit breaker OPEN, aborting", fundType);
-            throw e;
-        } catch (Exception e) {
-            log.warn("{} bulk window {}-{} permanently failed",
-                    fundType, window.start(), window.end(), e);
-            return -1;
-        }
+        List<TefasFundDto> bulk = tefasClient.bulkFetch(fundType, window.start(), window.end());
+        Map<Fund, List<TefasFundDto>> grouped = groupByTrackedFund(bulk, trackedByCode);
+        int saved = persistGrouped(fundType, grouped, saver);
+        log.info("[TIMING] {} bulk window {}-{}: {} bulk rows, {} tracked matched, {} saved, {}ms",
+                fundType, window.start(), window.end(), bulk.size(), grouped.size(),
+                saved, System.currentTimeMillis() - start);
+        return saved;
     }
 
     private Map<Fund, List<TefasFundDto>> groupByTrackedFund(List<TefasFundDto> bulk,

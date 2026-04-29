@@ -25,8 +25,8 @@ public class YahooClientMapper {
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
-    public YahooChartFullResult toFullResult(Result result, boolean truncateToDays) {
-        return new YahooChartFullResult(toQuoteDto(result), toCandleDtos(result, truncateToDays));
+    public YahooChartFullResult<YahooQuoteDto> toFullResult(Result result, boolean truncateToDays) {
+        return new YahooChartFullResult<>(toQuoteDto(result), toCandleDtos(result, truncateToDays));
     }
 
     public YahooQuoteDto toQuoteDto(Result result) {

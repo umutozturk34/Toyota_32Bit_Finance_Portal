@@ -14,8 +14,7 @@ import org.springframework.stereotype.Service;
 public class StockDataService implements TrackedAssetDataService {
 
     private final MarketCacheService<Stock, StockCandle> stockCacheService;
-    private final StockSnapshotService stockSnapshotService;
-    private final StockCandleService stockCandleService;
+    private final StockUpdateService stockUpdateService;
 
     @Override
     public TrackedAssetType getAssetType() {
@@ -24,7 +23,7 @@ public class StockDataService implements TrackedAssetDataService {
 
     @Override
     public void validateExists(String symbol) {
-        if (!stockSnapshotService.existsInApi(symbol)) {
+        if (!stockUpdateService.exists(symbol)) {
             throw new BusinessException(
                     "Hisse senedi bulunamadı: " + symbol, "ASSET_NOT_FOUND");
         }
@@ -32,14 +31,12 @@ public class StockDataService implements TrackedAssetDataService {
 
     @Override
     public void refresh(String symbol) {
-        stockSnapshotService.refreshSnapshot(symbol);
-        stockCandleService.refreshCandles(symbol);
+        stockUpdateService.refreshSnapshot(symbol);
     }
 
     @Override
     public void refreshAll() {
-        stockSnapshotService.refreshAll();
-        stockCandleService.refreshAll();
+        stockUpdateService.refreshAll();
     }
 
     @Override

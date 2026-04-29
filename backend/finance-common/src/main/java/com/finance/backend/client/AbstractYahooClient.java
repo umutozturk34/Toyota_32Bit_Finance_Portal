@@ -1,6 +1,7 @@
 package com.finance.backend.client;
 
 import com.finance.backend.dto.external.YahooCandleDto;
+import com.finance.backend.dto.external.YahooQuoteDto;
 import com.finance.backend.dto.internal.YahooChartFullResult;
 import com.finance.backend.dto.internal.YahooChartResponse;
 import com.finance.backend.dto.internal.YahooChartResponse.Result;
@@ -41,7 +42,8 @@ public abstract class AbstractYahooClient {
 
     @CircuitBreaker(name = "yahoo")
     @Retry(name = "yahoo")
-    public YahooChartFullResult fetchChartFull(String symbol, String range, String interval, boolean truncateToDays) {
+    public YahooChartFullResult<YahooQuoteDto> fetchChartFull(
+            String symbol, String range, String interval, boolean truncateToDays) {
         log.debug("Fetching chart (quote+candles): symbol={}, range={}, interval={}", symbol, range, interval);
         Result result = fetchChart(symbol, range, interval);
         return yahooClientMapper.toFullResult(result, truncateToDays);

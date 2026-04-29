@@ -4,6 +4,7 @@ import com.finance.backend.client.YahooForexClient;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.config.ForexProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
+import com.finance.backend.dto.external.YahooQuoteDto;
 import com.finance.backend.dto.internal.YahooChartFullResult;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.ForexMapper;
@@ -71,7 +72,7 @@ public class ForexSnapshotProcessor {
                 .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, DEFAULT_RANGE))
                 .orElse(DEFAULT_RANGE);
         try {
-            YahooChartFullResult result = yahooForexClient.fetchChartFull(yahooSymbol, range, INTERVAL_DAILY, true);
+            YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(yahooSymbol, range, INTERVAL_DAILY, true);
             if (hasUsableQuote(result)) {
                 int saved = transactionTemplate.execute(status -> {
                     entityWriter.applyDirect(forex, result.quote(), spreadRate, scale);
@@ -114,7 +115,7 @@ public class ForexSnapshotProcessor {
 
     public boolean exists(String code) {
         try {
-            YahooChartFullResult result = yahooForexClient.fetchChartFull(code + "=X", "1d", INTERVAL_DAILY, true);
+            YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(code + "=X", "1d", INTERVAL_DAILY, true);
             return hasUsableQuote(result);
         } catch (Exception e) {
             log.warn("Forex existence check failed for {}: {}", code, e.getMessage());
@@ -136,7 +137,7 @@ public class ForexSnapshotProcessor {
         String[] attempts = {baseCurrency + "USD=X", "USD" + baseCurrency + "=X"};
         for (String symbol : attempts) {
             try {
-                YahooChartFullResult result = yahooForexClient.fetchChartFull(symbol, DEFAULT_RANGE, INTERVAL_DAILY, true);
+                YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(symbol, DEFAULT_RANGE, INTERVAL_DAILY, true);
                 if (!hasUsableQuote(result) || result.candles().isEmpty()) continue;
                 boolean isUsdBase = symbol.startsWith("USD");
                 int saved = transactionTemplate.execute(status -> {
@@ -156,7 +157,7 @@ public class ForexSnapshotProcessor {
                 "All synthetic attempts failed for " + forex.getCurrencyCode());
     }
 
-    private boolean hasUsableQuote(YahooChartFullResult result) {
+    private boolean hasUsableQuote(YahooChartFullResult<YahooQuoteDto> result) {
         return result.quote() != null && result.quote().regularMarketPrice() != null;
     }
 }

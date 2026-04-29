@@ -2,6 +2,7 @@ package com.finance.backend.client;
 
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.YahooStockQuoteDto;
+import com.finance.backend.dto.internal.YahooChartFullResult;
 import com.finance.backend.dto.internal.YahooChartResponse.Result;
 import com.finance.backend.mapper.YahooClientMapper;
 import com.finance.backend.mapper.YahooStockQuoteMapper;
@@ -32,5 +33,16 @@ public class YahooStockClient extends AbstractYahooClient {
         log.debug("Fetching stock quote for {}", symbol);
         Result result = fetchChart(symbol, "1d", "1d");
         return yahooStockQuoteMapper.toDto(result, symbol);
+    }
+
+    @CircuitBreaker(name = "yahoo")
+    @Retry(name = "yahoo")
+    public YahooChartFullResult<YahooStockQuoteDto> fetchStockChartFull(
+            String symbol, String range, String interval, boolean truncateToDays) {
+        log.debug("Fetching stock chart (quote+candles): symbol={}, range={}, interval={}", symbol, range, interval);
+        Result result = fetchChart(symbol, range, interval);
+        return new YahooChartFullResult<>(
+                yahooStockQuoteMapper.toDto(result, symbol),
+                yahooClientMapper.toCandleDtos(result, truncateToDays));
     }
 }

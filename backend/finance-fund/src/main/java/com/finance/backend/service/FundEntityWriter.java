@@ -13,6 +13,7 @@ import com.finance.backend.repository.FundRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Log4j2
@@ -53,10 +54,20 @@ public class FundEntityWriter implements MarketEntityWriter {
         } else {
             toPersist = fundMapper.toEntity(dto, fundType, now);
         }
-        toPersist.setChangePercent(fundChangeCalculator.calculateChangePercent(dto.fundCode(), dto.price()));
+        toPersist.setChangePercent(fundChangeCalculator.calculateChangePercent(dto.fundCode(), dto.price(), dto.date()));
         fundRepository.save(toPersist);
         log.debug("Saved snapshot: {} ({}) - {}", dto.fundCode(), fundType, dto.price());
         return toPersist;
+    }
+
+    public boolean refreshChangePercent(Fund fund, LocalDateTime currentDate) {
+        if (fund.getPrice() == null || currentDate == null) return false;
+        BigDecimal pct = fundChangeCalculator.calculateChangePercent(
+                fund.getFundCode(), fund.getPrice(), currentDate);
+        if (java.util.Objects.equals(pct, fund.getChangePercent())) return false;
+        fund.setChangePercent(pct);
+        fundRepository.save(fund);
+        return true;
     }
 
     public void upsertCandleFromDto(Fund fund, FundType fundType, TefasFundDto dto) {

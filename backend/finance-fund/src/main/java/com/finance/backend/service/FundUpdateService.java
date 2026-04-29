@@ -40,6 +40,7 @@ public class FundUpdateService implements MarketRefresher {
     private final MarketCacheService<Fund, FundCandle> fundCacheService;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final FundSnapshotProcessor snapshotProcessor;
+    private final FundEntityWriter entityWriter;
     private final FundBulkFetchExecutor bulkFetchExecutor;
     private final TransactionTemplate transactionTemplate;
     private final WindowingPolicy windowing;
@@ -53,6 +54,7 @@ public class FundUpdateService implements MarketRefresher {
                              MarketCacheService<Fund, FundCandle> fundCacheService,
                              TrackedAssetQueryService trackedAssetQueryService,
                              FundSnapshotProcessor snapshotProcessor,
+                             FundEntityWriter entityWriter,
                              FundBulkFetchExecutor bulkFetchExecutor,
                              TransactionTemplate transactionTemplate,
                              AppProperties appProperties,
@@ -64,6 +66,7 @@ public class FundUpdateService implements MarketRefresher {
         this.fundCacheService = fundCacheService;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.snapshotProcessor = snapshotProcessor;
+        this.entityWriter = entityWriter;
         this.bulkFetchExecutor = bulkFetchExecutor;
         this.transactionTemplate = transactionTemplate;
         this.windowing = WindowingPolicy.from(fundProperties);
@@ -80,7 +83,20 @@ public class FundUpdateService implements MarketRefresher {
         long totalStart = System.currentTimeMillis();
         snapshotProcessor.refreshAll();
         refreshAllCandles();
+        recomputeChangePercents();
         log.info("[TIMING] Total fund update took {}s", (System.currentTimeMillis() - totalStart) / 1000);
+    }
+
+    private void recomputeChangePercents() {
+        long start = System.currentTimeMillis();
+        int updated = 0;
+        for (Fund fund : fundRepository.findAll()) {
+            if (entityWriter.refreshChangePercent(fund, fund.getLastUpdated())) {
+                updated++;
+            }
+        }
+        log.info("[TIMING] Fund change percent recompute: {} updated in {}ms",
+                updated, System.currentTimeMillis() - start);
     }
 
     @Override

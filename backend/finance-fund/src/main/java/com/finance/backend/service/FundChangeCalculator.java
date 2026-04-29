@@ -8,7 +8,8 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Log4j2
 @Component
@@ -23,18 +24,17 @@ public class FundChangeCalculator {
         this.scale = appProperties.getScale();
     }
 
-    public BigDecimal calculateChangePercent(String fundCode, BigDecimal currentPrice) {
+    public BigDecimal calculateChangePercent(String fundCode, BigDecimal currentPrice, LocalDateTime currentDate) {
         if (currentPrice == null || currentPrice.signum() == 0) {
             return BigDecimal.ZERO;
         }
-
-        List<FundCandle> recent = fundCandleRepository.findTop2ByFundCodeOrderByCandleDateDesc(fundCode);
-        if (recent.size() < 2) {
+        Optional<FundCandle> previous = fundCandleRepository
+                .findFirstByFundCodeAndCandleDateBeforeOrderByCandleDateDesc(fundCode, currentDate);
+        if (previous.isEmpty()) {
             return BigDecimal.ZERO;
         }
-
-        BigDecimal previousPrice = recent.get(1).getPrice();
-        PercentChangeCalculator.Result result = PercentChangeCalculator.compute(currentPrice, previousPrice, scale);
+        PercentChangeCalculator.Result result = PercentChangeCalculator.compute(
+                currentPrice, previous.get().getPrice(), scale);
         return result.percent() != null ? result.percent() : BigDecimal.ZERO;
     }
 }

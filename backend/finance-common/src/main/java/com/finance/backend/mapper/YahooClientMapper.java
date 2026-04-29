@@ -6,6 +6,7 @@ import com.finance.backend.dto.external.YahooQuoteDto;
 import com.finance.backend.dto.internal.YahooChartFullResult;
 import com.finance.backend.dto.internal.YahooChartResponse.Quote;
 import com.finance.backend.dto.internal.YahooChartResponse.Result;
+import com.finance.backend.util.YahooMetaHelpers;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -32,26 +33,14 @@ public class YahooClientMapper {
     public YahooQuoteDto toQuoteDto(Result result) {
         var meta = result.meta();
         Quote firstQuote = result.firstQuote();
-        BigDecimal openPrice = (firstQuote != null && firstQuote.open() != null && !firstQuote.open().isEmpty())
-                ? firstQuote.open().getFirst() : null;
         return new YahooQuoteDto(
                 meta.regularMarketPrice(),
-                resolvePreviousClose(firstQuote, meta.previousClose()),
-                openPrice,
+                YahooMetaHelpers.resolvePreviousClose(firstQuote, meta.previousClose()),
+                YahooMetaHelpers.latestNonNull(firstQuote == null ? null : firstQuote.open()),
                 meta.dayHigh(),
                 meta.dayLow(),
                 meta.volume()
         );
-    }
-
-    private static BigDecimal resolvePreviousClose(Quote quote, BigDecimal metaPreviousClose) {
-        if (metaPreviousClose != null) return metaPreviousClose;
-        if (quote == null || quote.close() == null) return null;
-        List<BigDecimal> closes = quote.close();
-        for (int i = closes.size() - 2; i >= 0; i--) {
-            if (closes.get(i) != null) return closes.get(i);
-        }
-        return null;
     }
 
     public List<YahooCandleDto> toCandleDtos(Result result, boolean truncateToDays) {

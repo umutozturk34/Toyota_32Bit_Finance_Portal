@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Service
-public class FundUpdateService implements CandleBatchRefresher {
+public class FundUpdateService implements CandleBatchRefresher, SnapshotBatchRefresher {
 
     private final TefasClient tefasClient;
     private final FundMapper fundMapper;
@@ -88,6 +88,11 @@ public class FundUpdateService implements CandleBatchRefresher {
 
     public boolean exists(String fundCode) {
         return snapshotProcessor.exists(fundCode);
+    }
+
+    @Override
+    public void refreshSnapshot(String fundCode) {
+        snapshotProcessor.refreshOne(fundCode);
     }
 
     private void refreshAllCandles() {

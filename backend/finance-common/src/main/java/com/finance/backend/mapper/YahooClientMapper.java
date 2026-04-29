@@ -3,6 +3,7 @@ package com.finance.backend.mapper;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.dto.external.YahooQuoteDto;
+import com.finance.backend.dto.internal.YahooChartFullResult;
 import com.finance.backend.dto.internal.YahooChartResponse.Quote;
 import com.finance.backend.dto.internal.YahooChartResponse.Result;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,10 @@ public class YahooClientMapper {
 
     public YahooClientMapper(AppProperties appProperties) {
         this.appZone = ZoneId.of(appProperties.getTimezone());
+    }
+
+    public YahooChartFullResult toFullResult(Result result, boolean truncateToDays) {
+        return new YahooChartFullResult(toQuoteDto(result), toCandleDtos(result, truncateToDays));
     }
 
     public YahooQuoteDto toQuoteDto(Result result) {

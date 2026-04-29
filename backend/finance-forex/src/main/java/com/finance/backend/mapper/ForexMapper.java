@@ -41,4 +41,9 @@ public abstract class ForexMapper extends BaseMarketMapper {
             candle.setCandleDate(candle.getCandleDate().toLocalDate().atStartOfDay());
         }
     }
+
+    public YahooCandleDto toYahooCandleDto(ForexCandle candle) {
+        return new YahooCandleDto(candle.getCandleDate(), candle.getOpen(), candle.getHigh(),
+                candle.getLow(), candle.getClose(), null);
+    }
 }

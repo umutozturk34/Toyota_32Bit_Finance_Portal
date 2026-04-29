@@ -87,7 +87,7 @@ public class ForexCandleService implements CandleBatchRefresher {
                 .stream()
                 .collect(Collectors.toMap(
                         c -> c.getCandleDate().toLocalDate().toString(),
-                        this::toYahooCandleDto,
+                        forexMapper::toYahooCandleDto,
                         (a, b) -> a));
 
         List<Forex> nonUsdTryForex = allForex.stream()
@@ -115,7 +115,7 @@ public class ForexCandleService implements CandleBatchRefresher {
         Map<String, YahooCandleDto> usdtryCandleMap = forexCacheService.getHistory("USDTRY").stream()
                 .collect(Collectors.toMap(
                         c -> c.getCandleDate().toLocalDate().toString(),
-                        this::toYahooCandleDto,
+                        forexMapper::toYahooCandleDto,
                         (a, b) -> a));
         updateForexCandles(forex, usdtryCandleMap);
         forexCacheService.refreshHistory(code);
@@ -176,11 +176,6 @@ public class ForexCandleService implements CandleBatchRefresher {
         }
         throw new ExternalApiException("Yahoo Finance",
                 "All candle attempts failed for " + forex.getCurrencyCode());
-    }
-
-    private YahooCandleDto toYahooCandleDto(ForexCandle candle) {
-        return new YahooCandleDto(candle.getCandleDate(), candle.getOpen(), candle.getHigh(),
-                candle.getLow(), candle.getClose(), null);
     }
 
     private int saveCandleBatch(Forex forex, List<YahooCandleDto> candleDtos) {

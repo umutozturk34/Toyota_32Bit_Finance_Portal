@@ -14,8 +14,7 @@ import org.springframework.stereotype.Service;
 public class FundDataService implements TrackedAssetDataService {
 
     private final MarketCacheService<Fund, FundCandle> fundCacheService;
-    private final FundSnapshotService fundSnapshotService;
-    private final FundCandleService fundCandleService;
+    private final FundUpdateService fundUpdateService;
 
     @Override
     public TrackedAssetType getAssetType() {
@@ -24,7 +23,7 @@ public class FundDataService implements TrackedAssetDataService {
 
     @Override
     public void validateExists(String fundCode) {
-        if (!fundSnapshotService.existsInApi(fundCode)) {
+        if (!fundUpdateService.exists(fundCode)) {
             throw new BusinessException(
                     "Fon bulunamadı: " + fundCode, "ASSET_NOT_FOUND");
         }
@@ -32,14 +31,12 @@ public class FundDataService implements TrackedAssetDataService {
 
     @Override
     public void refresh(String fundCode) {
-        fundSnapshotService.refreshSnapshot(fundCode);
-        fundCandleService.refreshCandles(fundCode);
+        fundUpdateService.refresh(fundCode);
     }
 
     @Override
     public void refreshAll() {
-        fundSnapshotService.refreshAll();
-        fundCandleService.refreshAll();
+        fundUpdateService.refreshAll();
     }
 
     @Override

@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class FundCandleServiceTest {
+class FundUpdateServiceTest {
 
     @Mock private TefasClient tefasClient;
     @Mock private FundMapper fundMapper;
@@ -38,20 +38,20 @@ class FundCandleServiceTest {
     @Mock private FundCandleRepository fundCandleRepository;
     @Mock private MarketCacheService<Fund, FundCandle> fundCacheService;
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
-    @Mock private FundSnapshotService fundSnapshotService;
+    @Mock private FundSnapshotProcessor snapshotProcessor;
     @Mock private FundBulkFetchExecutor bulkFetchExecutor;
     @Mock private TransactionTemplate transactionTemplate;
 
-    private FundCandleService service;
+    private FundUpdateService service;
 
     @BeforeEach
     void setUp() {
         FundProperties props = new FundProperties();
         AppProperties app = new AppProperties();
         app.setTimezone("Europe/Istanbul");
-        service = new FundCandleService(tefasClient, fundMapper, fundRepository,
+        service = new FundUpdateService(tefasClient, fundMapper, fundRepository,
                 fundCandleRepository, fundCacheService, trackedAssetQueryService,
-                fundSnapshotService, bulkFetchExecutor, transactionTemplate, app, props);
+                snapshotProcessor, bulkFetchExecutor, transactionTemplate, app, props);
     }
 
     @Test
@@ -64,6 +64,7 @@ class FundCandleServiceTest {
         service.refreshAll();
 
         verify(bulkFetchExecutor, never()).runWindows(any(), anyList(), any(), any());
+        verify(snapshotProcessor).refreshAll();
     }
 
     @Test
@@ -116,6 +117,16 @@ class FundCandleServiceTest {
         service.refreshAll();
 
         verify(bulkFetchExecutor, never()).runWindows(any(), anyList(), any(), any());
+    }
+
+    @Test
+    void should_delegateToSnapshotProcessor_when_existsCalled() {
+        when(snapshotProcessor.exists("TI2")).thenReturn(true);
+
+        boolean result = service.exists("TI2");
+
+        org.assertj.core.api.Assertions.assertThat(result).isTrue();
+        verify(snapshotProcessor).exists("TI2");
     }
 
     private Fund fundWith(String code, FundType type) {

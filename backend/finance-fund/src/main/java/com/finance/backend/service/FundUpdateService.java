@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Service
-public class FundCandleService implements CandleBatchRefresher {
+public class FundUpdateService implements CandleBatchRefresher {
 
     private final TefasClient tefasClient;
     private final FundMapper fundMapper;
@@ -40,19 +40,19 @@ public class FundCandleService implements CandleBatchRefresher {
     private final FundCandleRepository fundCandleRepository;
     private final MarketCacheService<Fund, FundCandle> fundCacheService;
     private final TrackedAssetQueryService trackedAssetQueryService;
-    private final FundSnapshotService fundSnapshotService;
+    private final FundSnapshotProcessor snapshotProcessor;
     private final FundBulkFetchExecutor bulkFetchExecutor;
     private final TransactionTemplate transactionTemplate;
     private final WindowingPolicy windowing;
     private final ZoneId appZone;
 
-    public FundCandleService(TefasClient tefasClient,
+    public FundUpdateService(TefasClient tefasClient,
                              FundMapper fundMapper,
                              FundRepository fundRepository,
                              FundCandleRepository fundCandleRepository,
                              MarketCacheService<Fund, FundCandle> fundCacheService,
                              TrackedAssetQueryService trackedAssetQueryService,
-                             FundSnapshotService fundSnapshotService,
+                             FundSnapshotProcessor snapshotProcessor,
                              FundBulkFetchExecutor bulkFetchExecutor,
                              TransactionTemplate transactionTemplate,
                              AppProperties appProperties,
@@ -63,7 +63,7 @@ public class FundCandleService implements CandleBatchRefresher {
         this.fundCandleRepository = fundCandleRepository;
         this.fundCacheService = fundCacheService;
         this.trackedAssetQueryService = trackedAssetQueryService;
-        this.fundSnapshotService = fundSnapshotService;
+        this.snapshotProcessor = snapshotProcessor;
         this.bulkFetchExecutor = bulkFetchExecutor;
         this.transactionTemplate = transactionTemplate;
         this.windowing = WindowingPolicy.from(fundProperties);
@@ -75,9 +75,23 @@ public class FundCandleService implements CandleBatchRefresher {
         return MarketType.FUND;
     }
 
-    @Override
     public void refreshAll() {
         long totalStart = System.currentTimeMillis();
+        snapshotProcessor.refreshAll();
+        refreshAllCandles();
+        log.info("[TIMING] Total fund update took {}s", (System.currentTimeMillis() - totalStart) / 1000);
+    }
+
+    public void refresh(String fundCode) {
+        snapshotProcessor.refreshOne(fundCode);
+        refreshCandles(fundCode);
+    }
+
+    public boolean exists(String fundCode) {
+        return snapshotProcessor.exists(fundCode);
+    }
+
+    private void refreshAllCandles() {
         log.info("Starting fund candle update (bulk strategy)");
         CandlePruner.pruneByYears(transactionTemplate, windowing.yearsToFetch(),
                 cutoffDate -> fundCandleRepository.deleteByCandleDateBefore(cutoffDate));
@@ -87,7 +101,6 @@ public class FundCandleService implements CandleBatchRefresher {
         long yatStart = System.currentTimeMillis();
         bulkUpdateForType(FundType.YAT);
         log.info("[TIMING] YAT bulk candle update took {}s", (System.currentTimeMillis() - yatStart) / 1000);
-        log.info("[TIMING] Total fund candle update took {}s", (System.currentTimeMillis() - totalStart) / 1000);
     }
 
     private void bulkUpdateForType(FundType fundType) {
@@ -156,10 +169,9 @@ public class FundCandleService implements CandleBatchRefresher {
 
         Fund fund = fundRepository.findById(normalized).orElse(null);
         if (fund == null) {
-            fundSnapshotService.refreshSnapshot(normalized);
+            snapshotProcessor.refreshOne(normalized);
             fund = fundRepository.findById(normalized).orElse(null);
         }
-
         if (fund == null) {
             log.warn("Tracked fund {} is not available for candle refresh", normalized);
             return;
@@ -173,7 +185,6 @@ public class FundCandleService implements CandleBatchRefresher {
         } else {
             fetchAndSaveFullHistory(targetFund, fundType);
         }
-
         fundCacheService.refreshHistory(targetFund.getFundCode());
         log.info("Refreshed tracked fund candles for {}", normalized);
     }
@@ -206,9 +217,7 @@ public class FundCandleService implements CandleBatchRefresher {
         int totalSaved = 0;
         for (WindowedFetchPlanner.DateWindow window : windows) {
             int saved = tryFetchWindow(fund, fundType, window.start(), window.end());
-            if (saved > 0) {
-                totalSaved += saved;
-            }
+            if (saved > 0) totalSaved += saved;
         }
         return totalSaved;
     }
@@ -216,9 +225,7 @@ public class FundCandleService implements CandleBatchRefresher {
     private int tryFetchWindow(Fund fund, FundType fundType, LocalDate start, LocalDate end) {
         try {
             List<TefasFundDto> candles = tefasClient.post(fundType, fund.getFundCode(), start, end);
-            if (candles.isEmpty()) {
-                return 0;
-            }
+            if (candles.isEmpty()) return 0;
             return transactionTemplate.execute(status -> saveCandleBatch(fund, fundType, candles));
         } catch (CallNotPermittedException e) {
             log.warn("{} - TEFAS circuit breaker is OPEN, skipping", fund.getFundCode());

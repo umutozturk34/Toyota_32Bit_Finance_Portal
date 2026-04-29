@@ -16,7 +16,6 @@ import com.finance.backend.repository.FundRepository;
 import com.finance.backend.util.CodeNormalizer;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
 import com.finance.backend.util.CandlePruner;
-import com.finance.backend.util.MissingWindowFinder;
 import com.finance.backend.util.TefasHelper;
 import com.finance.backend.util.WindowedFetchPlanner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
@@ -26,7 +25,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
@@ -131,17 +129,22 @@ public class FundCandleService implements CandleBatchRefresher {
     }
 
     private List<WindowedFetchPlanner.DateWindow> computeRequiredWindows(
-            List<Fund> funds, LocalDate from, LocalDate to) {
-        LocalDateTime fromTs = from.atStartOfDay();
-        LocalDateTime toTs = to.atTime(LocalTime.MAX);
-        List<List<LocalDate>> existingPerFund = funds.stream()
-                .map(f -> fundCandleRepository.findCandleDateTimes(f.getFundCode(), fromTs, toTs).stream()
-                        .map(LocalDateTime::toLocalDate)
-                        .distinct()
-                        .toList())
-                .toList();
-        return MissingWindowFinder.findMissingWindows(
-                existingPerFund, from, to, windowing.windowSizeDays());
+            List<Fund> funds, LocalDate earliest, LocalDate today) {
+        Map<String, LocalDate> latestPerFund = fundCandleRepository.findLatestCandleDatePerFund().stream()
+                .collect(Collectors.toMap(
+                        row -> (String) row[0],
+                        row -> ((LocalDateTime) row[1]).toLocalDate()));
+        LocalDate minFetchFrom = null;
+        for (Fund fund : funds) {
+            LocalDate latest = latestPerFund.get(fund.getFundCode());
+            LocalDate fetchFrom = latest == null ? earliest : latest.plusDays(1);
+            if (fetchFrom.isAfter(today)) continue;
+            if (minFetchFrom == null || fetchFrom.isBefore(minFetchFrom)) {
+                minFetchFrom = fetchFrom;
+            }
+        }
+        if (minFetchFrom == null) return List.of();
+        return WindowedFetchPlanner.planBackward(minFetchFrom, today, windowing.windowSizeDays());
     }
 
     @Override

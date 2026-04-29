@@ -3,7 +3,6 @@ package com.finance.backend.repository;
 import com.finance.backend.model.FundCandle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -14,13 +13,8 @@ import java.util.Optional;
 @Repository
 public interface FundCandleRepository extends JpaRepository<FundCandle, Long> {
 
-    @Query("SELECT c.candleDate FROM FundCandle c "
-            + "WHERE c.fundCode = :fundCode "
-            + "AND c.candleDate >= :from AND c.candleDate <= :to")
-    List<LocalDateTime> findCandleDateTimes(@Param("fundCode") String fundCode,
-                                             @Param("from") LocalDateTime from,
-                                             @Param("to") LocalDateTime to);
-
+    @Query("SELECT c.fundCode, MAX(c.candleDate) FROM FundCandle c GROUP BY c.fundCode")
+    List<Object[]> findLatestCandleDatePerFund();
 
     List<FundCandle> findByFundCodeOrderByCandleDateDesc(String fundCode);
 

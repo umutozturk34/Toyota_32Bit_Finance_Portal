@@ -18,11 +18,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -73,8 +73,6 @@ class FundCandleServiceTest {
         when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND))
                 .thenReturn(List.of());
         when(fundRepository.findAllById(List.of())).thenReturn(List.of());
-        when(fundCandleRepository.findCandleDateTimes(eq("BLH"), any(LocalDateTime.class), any(LocalDateTime.class)))
-                .thenReturn(List.of());
 
         service.refreshAll();
 
@@ -94,8 +92,6 @@ class FundCandleServiceTest {
                 .thenReturn(List.of("TI2", "BLH"));
         when(fundRepository.findAllById(List.of("TI2", "BLH")))
                 .thenReturn(List.of(yatFund, byfFund));
-        when(fundCandleRepository.findCandleDateTimes(anyString(), any(LocalDateTime.class), any(LocalDateTime.class)))
-                .thenReturn(List.of());
 
         service.refreshAll();
 
@@ -104,6 +100,22 @@ class FundCandleServiceTest {
                 anyList(),
                 argThat(map -> map.containsKey("TI2") && !map.containsKey("BLH")),
                 any());
+    }
+
+    @Test
+    void should_skipFetch_when_allFundsUpToDate() {
+        Fund byf = fundWith("BLH", FundType.BYF);
+        when(fundRepository.findByFundType(FundType.BYF)).thenReturn(List.of(byf));
+        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND))
+                .thenReturn(List.of());
+        when(fundRepository.findAllById(List.of())).thenReturn(List.of());
+        LocalDateTime futureLatest = LocalDateTime.now().plusDays(1);
+        when(fundCandleRepository.findLatestCandleDatePerFund())
+                .thenReturn(Collections.singletonList(new Object[]{"BLH", futureLatest}));
+
+        service.refreshAll();
+
+        verify(bulkFetchExecutor, never()).runWindows(any(), anyList(), any(), any());
     }
 
     private Fund fundWith(String code, FundType type) {

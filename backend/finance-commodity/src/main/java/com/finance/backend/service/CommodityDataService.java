@@ -34,7 +34,7 @@ public class CommodityDataService implements TrackedAssetDataService {
 
     @Override
     public void refresh(String code) {
-        commodityUpdateService.refreshSnapshot(code);
+        commodityUpdateService.refresh(code);
     }
 
     @Override

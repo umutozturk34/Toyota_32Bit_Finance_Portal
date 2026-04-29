@@ -31,7 +31,7 @@ public class StockDataService implements TrackedAssetDataService {
 
     @Override
     public void refresh(String symbol) {
-        stockUpdateService.refreshSnapshot(symbol);
+        stockUpdateService.refresh(symbol);
     }
 
     @Override

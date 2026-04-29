@@ -20,7 +20,7 @@ import java.util.Map;
 
 @Log4j2
 @Service
-public class CommodityUpdateService implements SnapshotBatchRefresher, CandleBatchRefresher {
+public class CommodityUpdateService implements MarketRefresher {
 
     private static final int BATCH_PARALLELISM = 5;
 
@@ -94,12 +94,7 @@ public class CommodityUpdateService implements SnapshotBatchRefresher, CandleBat
     }
 
     @Override
-    public void refreshSnapshot(String code) {
-        snapshotProcessor.refreshOne(code);
-    }
-
-    @Override
-    public void refreshCandles(String code) {
+    public void refresh(String code) {
         snapshotProcessor.refreshOne(code);
     }
 

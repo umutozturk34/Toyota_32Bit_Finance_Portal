@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Service
-public class FundUpdateService implements CandleBatchRefresher, SnapshotBatchRefresher {
+public class FundUpdateService implements MarketRefresher {
 
     private final TefasClient tefasClient;
     private final FundMapper fundMapper;
@@ -81,18 +81,14 @@ public class FundUpdateService implements CandleBatchRefresher, SnapshotBatchRef
         log.info("[TIMING] Total fund update took {}s", (System.currentTimeMillis() - totalStart) / 1000);
     }
 
+    @Override
     public void refresh(String fundCode) {
         snapshotProcessor.refreshOne(fundCode);
-        refreshCandles(fundCode);
+        refreshCandlesInternal(fundCode);
     }
 
     public boolean exists(String fundCode) {
         return snapshotProcessor.exists(fundCode);
-    }
-
-    @Override
-    public void refreshSnapshot(String fundCode) {
-        snapshotProcessor.refreshOne(fundCode);
     }
 
     private void refreshAllCandles() {
@@ -176,8 +172,7 @@ public class FundUpdateService implements CandleBatchRefresher, SnapshotBatchRef
 
     private record CandleDateRange(LocalDate min, LocalDate max) {}
 
-    @Override
-    public void refreshCandles(String fundCode) {
+    private void refreshCandlesInternal(String fundCode) {
         String normalized = CodeNormalizer.upper(fundCode);
         if (normalized.isBlank()) {
             return;

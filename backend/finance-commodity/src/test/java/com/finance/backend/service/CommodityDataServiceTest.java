@@ -65,7 +65,7 @@ class CommodityDataServiceTest {
     void refreshDelegatesToUpdateService() {
         service.refresh("GC=F");
 
-        verify(updateService).refreshSnapshot("GC=F");
+        verify(updateService).refresh("GC=F");
     }
 
     @Test

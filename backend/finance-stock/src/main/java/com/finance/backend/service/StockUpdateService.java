@@ -22,7 +22,7 @@ import java.util.function.Function;
 
 @Log4j2
 @Service
-public class StockUpdateService implements SnapshotBatchRefresher, CandleBatchRefresher {
+public class StockUpdateService implements MarketRefresher {
 
     private static final int BATCH_PARALLELISM = 10;
 
@@ -80,12 +80,7 @@ public class StockUpdateService implements SnapshotBatchRefresher, CandleBatchRe
     }
 
     @Override
-    public void refreshSnapshot(String code) {
-        snapshotProcessor.refreshOne(code);
-    }
-
-    @Override
-    public void refreshCandles(String code) {
+    public void refresh(String code) {
         String normalized = CodeNormalizer.upper(code);
         if (normalized.isBlank()) return;
         snapshotProcessor.updateOne(normalized);

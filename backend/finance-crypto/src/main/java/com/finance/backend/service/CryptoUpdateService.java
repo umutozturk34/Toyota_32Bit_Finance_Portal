@@ -26,7 +26,7 @@ import java.util.function.Function;
 
 @Log4j2
 @Service
-public class CryptoUpdateService implements SnapshotBatchRefresher, CandleBatchRefresher {
+public class CryptoUpdateService implements MarketRefresher {
 
     private static final int BATCH_PARALLELISM = 5;
 
@@ -80,12 +80,8 @@ public class CryptoUpdateService implements SnapshotBatchRefresher, CandleBatchR
     }
 
     @Override
-    public void refreshSnapshot(String code) {
-        snapshotProcessor.refreshOne(code);
-    }
-
-    @Override
-    public void refreshCandles(String coinId) {
+    public void refresh(String coinId) {
+        snapshotProcessor.refreshOne(coinId);
         String normalizedId = CodeNormalizer.lower(coinId);
         if (normalizedId.isBlank()) return;
         updateCandlesForCoin(normalizedId);

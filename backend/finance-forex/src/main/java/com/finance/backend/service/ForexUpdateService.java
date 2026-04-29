@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Service
-public class ForexUpdateService implements SnapshotBatchRefresher, CandleBatchRefresher {
+public class ForexUpdateService implements MarketRefresher {
 
     private static final String USDTRY = "USDTRY";
     private static final int BATCH_PARALLELISM = 5;
@@ -90,12 +90,7 @@ public class ForexUpdateService implements SnapshotBatchRefresher, CandleBatchRe
     }
 
     @Override
-    public void refreshSnapshot(String code) {
-        snapshotProcessor.refreshOne(code);
-    }
-
-    @Override
-    public void refreshCandles(String code) {
+    public void refresh(String code) {
         snapshotProcessor.refreshOne(code);
     }
 

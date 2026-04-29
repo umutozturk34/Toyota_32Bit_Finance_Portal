@@ -56,8 +56,7 @@ public class MarketDataInitializer implements CommandLineRunner {
         CompletableFuture<Void> forexFuture = init(
                 "forex", forexRepository.count(), forexCandleRepository.count(), null, () -> {
             tcmbForexService.fetchAndSaveTcmbRates();
-            forexDataService.syncAllYahooSnapshots();
-            forexDataService.syncAllYahooCandles();
+            forexDataService.syncAllYahoo();
         });
 
         CompletableFuture<Void> stockFuture = init(

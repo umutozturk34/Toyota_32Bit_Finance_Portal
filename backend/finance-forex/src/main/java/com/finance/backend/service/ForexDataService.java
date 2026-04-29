@@ -9,14 +9,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ForexDataService {
 
-    private final ForexSnapshotService yahooForexSnapshotService;
-    private final ForexCandleService yahooForexCandleService;
+    private final ForexUpdateService forexUpdateService;
 
-    public void syncAllYahooSnapshots() {
-        yahooForexSnapshotService.refreshAll();
-    }
-
-    public void syncAllYahooCandles() {
-        yahooForexCandleService.refreshAll();
+    public void syncAllYahoo() {
+        forexUpdateService.refreshAll();
     }
 }

@@ -11,7 +11,6 @@ import com.finance.backend.repository.CommodityRepository;
 import com.finance.backend.util.SyntheticPriceCalculator;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -93,7 +92,6 @@ public class PreciousMetalDerivativeCalculator {
         regenerateDerivativeCandles(rule.getDerivativeCode(), sourceCandles, transform);
     }
 
-    @Transactional
     public void regenerateDerivativeCandles(String derivativeCode, List<CommodityCandle> sourceCandles,
                                             UnaryOperator<BigDecimal> transform) {
         Commodity derivative = commodityRepository.findById(derivativeCode).orElse(null);
@@ -110,12 +108,12 @@ public class PreciousMetalDerivativeCalculator {
                 }));
 
         List<CommodityCandle> toInsert = new ArrayList<>();
-        int updated = 0;
+        List<CommodityCandle> toUpdate = new ArrayList<>();
         for (CommodityCandle src : sourceCandles) {
             CommodityCandle existing = existingByDate.get(src.getCandleDate());
             if (existing != null) {
                 applyTransform(existing, src, transform);
-                updated++;
+                toUpdate.add(existing);
             } else {
                 CommodityCandle fresh = CommodityCandle.builder()
                         .commodity(derivative)
@@ -133,8 +131,11 @@ public class PreciousMetalDerivativeCalculator {
         if (!toInsert.isEmpty()) {
             commodityCandleRepository.saveAll(toInsert);
         }
+        if (!toUpdate.isEmpty()) {
+            commodityCandleRepository.saveAll(toUpdate);
+        }
         commodityCacheService.refreshHistory(derivativeCode);
-        log.info("Derivative candles refreshed for {}: {} inserted, {} updated", derivativeCode, toInsert.size(), updated);
+        log.info("Derivative candles refreshed for {}: {} inserted, {} updated", derivativeCode, toInsert.size(), toUpdate.size());
     }
 
     private void applyTransform(CommodityCandle target, CommodityCandle source, UnaryOperator<BigDecimal> transform) {

@@ -20,7 +20,7 @@ import java.time.ZoneId;
 
 @Log4j2
 @Component
-public class StockSnapshotProcessor {
+public class StockSnapshotProcessor implements MarketSnapshotProcessor {
 
     private static final String INTERVAL_DAILY = "1d";
 

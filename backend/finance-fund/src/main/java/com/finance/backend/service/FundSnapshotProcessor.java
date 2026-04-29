@@ -25,7 +25,7 @@ import java.util.function.Predicate;
 
 @Log4j2
 @Component
-public class FundSnapshotProcessor {
+public class FundSnapshotProcessor implements MarketSnapshotProcessor {
 
     private final TefasClient tefasClient;
     private final FundEntityWriter entityWriter;

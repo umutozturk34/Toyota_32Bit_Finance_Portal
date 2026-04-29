@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class CryptoSnapshotProcessor {
+public class CryptoSnapshotProcessor implements MarketSnapshotProcessor {
 
     private static final int BATCH_PARALLELISM = 5;
     private static final String VS_USD = "usd";

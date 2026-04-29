@@ -26,7 +26,7 @@ import java.util.Map;
 
 @Log4j2
 @Component
-public class ForexSnapshotProcessor {
+public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
 
     private static final String USDTRY = "USDTRY";
     private static final String DEFAULT_RANGE = "5y";

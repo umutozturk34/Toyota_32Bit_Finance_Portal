@@ -25,7 +25,7 @@ import java.util.Map;
 
 @Log4j2
 @Component
-public class CommoditySnapshotProcessor {
+public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
 
     private static final String DEFAULT_RANGE = "5y";
     private static final String INTERVAL_DAILY = "1d";

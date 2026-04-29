@@ -36,8 +36,6 @@ public interface FundCandleRepository extends JpaRepository<FundCandle, Long> {
 
     List<FundCandle> findTop1825ByFundCodeOrderByCandleDateDesc(String fundCode);
 
-    List<FundCandle> findTop2ByFundCodeOrderByCandleDateDesc(String fundCode);
-
     long countByFundCode(String fundCode);
 
     void deleteByFundCodeAndCandleDateBefore(String fundCode, LocalDateTime beforeDate);

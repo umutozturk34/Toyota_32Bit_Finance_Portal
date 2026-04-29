@@ -102,21 +102,22 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
                         .commoditySegment(segmentResolver.resolve(commodityCode))
                         .build());
 
-        CommoditySnapshotInput snapshot = commodityMapper.toSnapshotInput(quote, usdTry.currentRate(), scale);
         List<YahooCandleDto> tryCandles = SyntheticPriceCalculator.buildSyntheticCandles(
                 result.candles(), usdtryCandleMap, false, scale);
+        if (tryCandles.isEmpty()) {
+            log.warn("No USDTRY-aligned candles for {} (usd={}, usdtry={} entries), skipping",
+                    commodityCode, result.candles().size(), usdtryCandleMap.size());
+            return;
+        }
+        YahooCandleDto todayTryCandle = tryCandles.get(tryCandles.size() - 1);
+        YahooCandleDto previousTryCandle = tryCandles.size() >= 2 ? tryCandles.get(tryCandles.size() - 2) : null;
+        CommoditySnapshotInput snapshot = commodityMapper.toSnapshotInput(quote, todayTryCandle, previousTryCandle);
 
         transactionTemplate.executeWithoutResult(status -> {
             entityWriter.applySnapshot(commodity, snapshot, yahooSymbol, scale);
-            if (!tryCandles.isEmpty()) {
-                entityWriter.upsertCandles(commodity, tryCandles, scale);
-            }
+            entityWriter.upsertCandles(commodity, tryCandles, scale);
         });
         commodityCacheService.putSnapshot(commodityCode, commodity);
-        if (tryCandles.isEmpty()) {
-            log.warn("No USDTRY-aligned candles for {} (usd={}, usdtry={} entries)",
-                    commodityCode, result.candles().size(), usdtryCandleMap.size());
-        }
         if (derivativeCalculator.hasDerivatives(commodityCode)) {
             derivativeCalculator.refreshDerivatives(commodity, usdTry.currentRate(), usdTry.previousRate());
         }

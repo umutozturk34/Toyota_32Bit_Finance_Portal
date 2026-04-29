@@ -123,7 +123,8 @@ public class TefasClient {
         String trimmed = body.trim();
         try {
             TefasResponse response = objectMapper.readValue(trimmed, TefasResponse.class);
-            if (response.errorCode() != null) {
+            if (response.errorCode() != null
+                    || (response.errorMessage() != null && !response.errorMessage().isBlank())) {
                 throw new ExternalApiException("TEFAS",
                         "TEFAS error " + response.errorCode() + ": " + response.errorMessage());
             }

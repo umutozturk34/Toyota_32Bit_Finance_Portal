@@ -40,6 +40,7 @@ public class FundUpdateService implements MarketRefresher {
     private final MarketCacheService<Fund, FundCandle> fundCacheService;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final FundSnapshotProcessor snapshotProcessor;
+    private final FundEntityWriter entityWriter;
     private final FundBulkFetchExecutor bulkFetchExecutor;
     private final TransactionTemplate transactionTemplate;
     private final WindowingPolicy windowing;
@@ -53,6 +54,7 @@ public class FundUpdateService implements MarketRefresher {
                              MarketCacheService<Fund, FundCandle> fundCacheService,
                              TrackedAssetQueryService trackedAssetQueryService,
                              FundSnapshotProcessor snapshotProcessor,
+                             FundEntityWriter entityWriter,
                              FundBulkFetchExecutor bulkFetchExecutor,
                              TransactionTemplate transactionTemplate,
                              AppProperties appProperties,
@@ -64,6 +66,7 @@ public class FundUpdateService implements MarketRefresher {
         this.fundCacheService = fundCacheService;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.snapshotProcessor = snapshotProcessor;
+        this.entityWriter = entityWriter;
         this.bulkFetchExecutor = bulkFetchExecutor;
         this.transactionTemplate = transactionTemplate;
         this.windowing = WindowingPolicy.from(fundProperties);
@@ -80,7 +83,27 @@ public class FundUpdateService implements MarketRefresher {
         long totalStart = System.currentTimeMillis();
         snapshotProcessor.refreshAll();
         refreshAllCandles();
+        recomputeChangePercents();
         log.info("[TIMING] Total fund update took {}s", (System.currentTimeMillis() - totalStart) / 1000);
+    }
+
+    private void recomputeChangePercents() {
+        long start = System.currentTimeMillis();
+        Map<String, LocalDateTime> latestCandleDates = fundCandleRepository.findCandleDateRangePerFund().stream()
+                .collect(Collectors.toMap(
+                        row -> (String) row[0],
+                        row -> (LocalDateTime) row[2]));
+        int updated = 0;
+        for (Fund fund : fundRepository.findAll()) {
+            LocalDateTime latestDate = latestCandleDates.get(fund.getFundCode());
+            if (latestDate == null) continue;
+            if (entityWriter.refreshChangePercent(fund, latestDate)) {
+                fundCacheService.putSnapshot(fund.getFundCode(), fund);
+                updated++;
+            }
+        }
+        log.info("[TIMING] Fund change percent recompute: {} updated in {}ms",
+                updated, System.currentTimeMillis() - start);
     }
 
     @Override
@@ -115,7 +138,7 @@ public class FundUpdateService implements MarketRefresher {
                 .collect(Collectors.toMap(Fund::getFundCode, f -> f));
         LocalDate today = TefasHelper.findLastBusinessDay(
                 LocalDate.now(appZone), appZone, windowing.eodCutoverHour());
-        LocalDate earliest = today.minusYears(windowing.yearsToFetch());
+        LocalDate earliest = today.minusYears(windowing.yearsToFetch()).plusDays(1);
 
         List<WindowedFetchPlanner.DateWindow> windows = computeRequiredWindows(
                 trackedFunds, earliest, today);
@@ -196,6 +219,12 @@ public class FundUpdateService implements MarketRefresher {
         } else {
             fetchAndSaveFullHistory(targetFund, fundType);
         }
+        fundCandleRepository.findFirstByFundCodeOrderByCandleDateDesc(targetFund.getFundCode())
+                .ifPresent(latest -> {
+                    if (entityWriter.refreshChangePercent(targetFund, latest.getCandleDate())) {
+                        fundCacheService.putSnapshot(targetFund.getFundCode(), targetFund);
+                    }
+                });
         fundCacheService.refreshHistory(targetFund.getFundCode());
         log.info("Refreshed tracked fund candles for {}", normalized);
     }
@@ -214,7 +243,7 @@ public class FundUpdateService implements MarketRefresher {
     private int fetchAndSaveFullHistory(Fund fund, FundType fundType) {
         LocalDate today = TefasHelper.findLastBusinessDay(
                 LocalDate.now(appZone), appZone, windowing.eodCutoverHour());
-        LocalDate earliest = today.minusYears(windowing.yearsToFetch());
+        LocalDate earliest = today.minusYears(windowing.yearsToFetch()).plusDays(1);
         long start = System.currentTimeMillis();
         int total = runWindowedSingleFund(fund, fundType, earliest, today);
         log.info("[TIMING] {} full history done - {} candles in {}s",

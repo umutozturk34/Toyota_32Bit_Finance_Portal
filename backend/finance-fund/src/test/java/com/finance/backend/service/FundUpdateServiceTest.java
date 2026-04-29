@@ -39,6 +39,7 @@ class FundUpdateServiceTest {
     @Mock private MarketCacheService<Fund, FundCandle> fundCacheService;
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
     @Mock private FundSnapshotProcessor snapshotProcessor;
+    @Mock private FundEntityWriter entityWriter;
     @Mock private FundBulkFetchExecutor bulkFetchExecutor;
     @Mock private TransactionTemplate transactionTemplate;
 
@@ -51,7 +52,7 @@ class FundUpdateServiceTest {
         app.setTimezone("Europe/Istanbul");
         service = new FundUpdateService(tefasClient, fundMapper, fundRepository,
                 fundCandleRepository, fundCacheService, trackedAssetQueryService,
-                snapshotProcessor, bulkFetchExecutor, transactionTemplate, app, props);
+                snapshotProcessor, entityWriter, bulkFetchExecutor, transactionTemplate, app, props);
     }
 
     @Test

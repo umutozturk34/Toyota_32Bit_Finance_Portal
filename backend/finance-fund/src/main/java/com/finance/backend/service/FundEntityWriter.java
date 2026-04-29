@@ -1,5 +1,6 @@
 package com.finance.backend.service;
 
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.config.FundProperties;
 import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.dto.internal.TrackedAssetUpsertCommand;
@@ -13,7 +14,9 @@ import com.finance.backend.repository.FundRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Log4j2
 @Component
@@ -22,25 +25,25 @@ public class FundEntityWriter implements MarketEntityWriter {
     private final FundRepository fundRepository;
     private final FundCandleRepository fundCandleRepository;
     private final FundMapper fundMapper;
-    private final FundChangeCalculator fundChangeCalculator;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final TrackedAssetCommandService trackedAssetCommandService;
     private final int autoTrackSortOrder;
+    private final int scale;
 
     public FundEntityWriter(FundRepository fundRepository,
                             FundCandleRepository fundCandleRepository,
                             FundMapper fundMapper,
-                            FundChangeCalculator fundChangeCalculator,
                             TrackedAssetQueryService trackedAssetQueryService,
                             TrackedAssetCommandService trackedAssetCommandService,
+                            AppProperties appProperties,
                             FundProperties fundProperties) {
         this.fundRepository = fundRepository;
         this.fundCandleRepository = fundCandleRepository;
         this.fundMapper = fundMapper;
-        this.fundChangeCalculator = fundChangeCalculator;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.trackedAssetCommandService = trackedAssetCommandService;
         this.autoTrackSortOrder = fundProperties.getAutoTrackSortOrder();
+        this.scale = appProperties.getScale();
     }
 
     public Fund saveSnapshot(TefasFundDto dto, FundType fundType) {
@@ -53,10 +56,22 @@ public class FundEntityWriter implements MarketEntityWriter {
         } else {
             toPersist = fundMapper.toEntity(dto, fundType, now);
         }
-        toPersist.setChangePercent(fundChangeCalculator.calculateChangePercent(dto.fundCode(), dto.price()));
         fundRepository.save(toPersist);
         log.debug("Saved snapshot: {} ({}) - {}", dto.fundCode(), fundType, dto.price());
         return toPersist;
+    }
+
+    public boolean refreshChangePercent(Fund fund, LocalDateTime currentDate) {
+        if (fund.getPrice() == null || currentDate == null) return false;
+        BigDecimal previousPrice = fundCandleRepository
+                .findFirstByFundCodeAndCandleDateBeforeOrderByCandleDateDesc(fund.getFundCode(), currentDate)
+                .map(FundCandle::getPrice)
+                .orElse(null);
+        BigDecimal oldPercent = fund.getChangePercent();
+        fund.applyChange(fund.getPrice(), previousPrice, scale);
+        if (Objects.equals(oldPercent, fund.getChangePercent())) return false;
+        fundRepository.save(fund);
+        return true;
     }
 
     public void upsertCandleFromDto(Fund fund, FundType fundType, TefasFundDto dto) {

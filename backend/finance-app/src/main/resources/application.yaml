@@ -64,7 +64,7 @@ app:
 
   tefas-api-path: /api/funds/fonGnlBlgSiraliGetir
   tefas-base-url: https://www.tefas.gov.tr
-  tefas-session-path: /TarihselVeriler.aspx
+  tefas-session-path: /tr
   timezone: Europe/Istanbul
   scale: 4
 

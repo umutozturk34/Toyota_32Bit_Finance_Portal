@@ -14,7 +14,7 @@ public class AppProperties {
 
     private String tefasApiPath;
     private String tefasBaseUrl;
-    private String tefasSessionPath = "/TarihselVeriler.aspx";
+    private String tefasSessionPath = "/tr";
     private String timezone = "Europe/Istanbul";
     private int scale = 4;
 

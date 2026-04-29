@@ -31,6 +31,6 @@ public class TefasSessionFilter implements ExchangeFilterFunction {
     }
 
     private boolean isSessionRequest(ClientRequest request) {
-        return request.url().getPath().contains("TarihselVeriler.aspx");
-    }       
+        return sessionManager.isSessionPath(request.url().getPath());
+    }
 }

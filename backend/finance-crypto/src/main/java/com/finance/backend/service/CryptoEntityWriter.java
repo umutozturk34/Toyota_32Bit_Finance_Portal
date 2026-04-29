@@ -19,7 +19,7 @@ import java.util.List;
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class CryptoEntityWriter {
+public class CryptoEntityWriter implements MarketEntityWriter {
 
     private final CryptoRepository cryptoRepository;
     private final CryptoCandleRepository cryptoCandleRepository;

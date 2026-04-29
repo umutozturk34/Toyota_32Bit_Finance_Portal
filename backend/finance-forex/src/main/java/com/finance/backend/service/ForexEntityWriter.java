@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class ForexEntityWriter {
+public class ForexEntityWriter implements MarketEntityWriter {
 
     private final ForexRepository forexRepository;
     private final ForexCandleRepository forexCandleRepository;

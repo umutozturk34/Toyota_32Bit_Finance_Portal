@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 
 @Log4j2
 @Component
-public class FundEntityWriter {
+public class FundEntityWriter implements MarketEntityWriter {
 
     private final FundRepository fundRepository;
     private final FundCandleRepository fundCandleRepository;

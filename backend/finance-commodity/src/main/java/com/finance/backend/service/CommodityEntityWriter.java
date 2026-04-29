@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class CommodityEntityWriter {
+public class CommodityEntityWriter implements MarketEntityWriter {
 
     private final CommodityRepository commodityRepository;
     private final CommodityCandleRepository commodityCandleRepository;

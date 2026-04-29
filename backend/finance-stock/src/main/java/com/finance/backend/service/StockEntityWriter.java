@@ -22,7 +22,7 @@ import java.util.List;
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class StockEntityWriter {
+public class StockEntityWriter implements MarketEntityWriter {
 
     private final StockRepository stockRepository;
     private final StockCandleRepository stockCandleRepository;

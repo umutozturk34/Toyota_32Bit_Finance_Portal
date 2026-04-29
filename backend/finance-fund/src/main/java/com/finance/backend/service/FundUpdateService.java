@@ -140,17 +140,20 @@ public class FundUpdateService implements CandleBatchRefresher {
         };
     }
 
+    private static final int BACKFILL_GAP_THRESHOLD_DAYS = 30;
+
     private List<WindowedFetchPlanner.DateWindow> computeRequiredWindows(
             List<Fund> funds, LocalDate earliest, LocalDate today) {
-        Map<String, LocalDate> latestPerFund = fundCandleRepository.findLatestCandleDatePerFund().stream()
+        Map<String, CandleDateRange> rangePerFund = fundCandleRepository.findCandleDateRangePerFund().stream()
                 .collect(Collectors.toMap(
                         row -> (String) row[0],
-                        row -> ((LocalDateTime) row[1]).toLocalDate()));
+                        row -> new CandleDateRange(
+                                ((LocalDateTime) row[1]).toLocalDate(),
+                                ((LocalDateTime) row[2]).toLocalDate())));
         LocalDate minFetchFrom = null;
         for (Fund fund : funds) {
-            LocalDate latest = latestPerFund.get(fund.getFundCode());
-            LocalDate fetchFrom = latest == null ? earliest : latest.plusDays(1);
-            if (fetchFrom.isAfter(today)) continue;
+            LocalDate fetchFrom = computeFetchFrom(rangePerFund.get(fund.getFundCode()), earliest, today);
+            if (fetchFrom == null) continue;
             if (minFetchFrom == null || fetchFrom.isBefore(minFetchFrom)) {
                 minFetchFrom = fetchFrom;
             }
@@ -158,6 +161,15 @@ public class FundUpdateService implements CandleBatchRefresher {
         if (minFetchFrom == null) return List.of();
         return WindowedFetchPlanner.planBackward(minFetchFrom, today, windowing.windowSizeDays());
     }
+
+    private LocalDate computeFetchFrom(CandleDateRange range, LocalDate earliest, LocalDate today) {
+        if (range == null) return earliest;
+        if (range.min().isAfter(earliest.plusDays(BACKFILL_GAP_THRESHOLD_DAYS))) return earliest;
+        if (range.max().isBefore(today)) return range.max().plusDays(1);
+        return null;
+    }
+
+    private record CandleDateRange(LocalDate min, LocalDate max) {}
 
     @Override
     public void refreshCandles(String fundCode) {

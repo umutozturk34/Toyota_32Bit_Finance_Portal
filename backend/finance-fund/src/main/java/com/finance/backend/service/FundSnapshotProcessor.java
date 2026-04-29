@@ -72,7 +72,12 @@ public class FundSnapshotProcessor {
             for (FundType type : List.of(FundType.YAT, FundType.BYF)) {
                 List<TefasFundDto> funds = tefasClient.post(type, normalized, today, today);
                 if (funds.isEmpty()) continue;
-                Fund saved = transactionTemplate.execute(s -> entityWriter.saveSnapshot(funds.getFirst(), type));
+                TefasFundDto dto = funds.getFirst();
+                Fund saved = transactionTemplate.execute(s -> {
+                    Fund f = entityWriter.saveSnapshot(dto, type);
+                    entityWriter.upsertCandleFromDto(f, type, dto);
+                    return f;
+                });
                 fundCacheService.putSnapshot(saved.getFundCode(), saved);
                 return true;
             }
@@ -104,7 +109,11 @@ public class FundSnapshotProcessor {
     }
 
     private boolean persistByf(TefasFundDto dto) {
-        Fund persisted = transactionTemplate.execute(s -> entityWriter.saveSnapshot(dto, FundType.BYF));
+        Fund persisted = transactionTemplate.execute(s -> {
+            Fund f = entityWriter.saveSnapshot(dto, FundType.BYF);
+            entityWriter.upsertCandleFromDto(f, FundType.BYF, dto);
+            return f;
+        });
         if (persisted == null) return false;
         entityWriter.ensureByfTracked(persisted.getFundCode(), persisted.getName());
         fundCacheService.putSnapshot(persisted.getFundCode(), persisted);
@@ -112,7 +121,11 @@ public class FundSnapshotProcessor {
     }
 
     private boolean persistYat(TefasFundDto dto) {
-        Fund persisted = transactionTemplate.execute(s -> entityWriter.saveSnapshot(dto, FundType.YAT));
+        Fund persisted = transactionTemplate.execute(s -> {
+            Fund f = entityWriter.saveSnapshot(dto, FundType.YAT);
+            entityWriter.upsertCandleFromDto(f, FundType.YAT, dto);
+            return f;
+        });
         if (persisted == null) return false;
         fundCacheService.putSnapshot(persisted.getFundCode(), persisted);
         return true;

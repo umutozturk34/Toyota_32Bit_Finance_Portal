@@ -110,9 +110,10 @@ class FundUpdateServiceTest {
         when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND))
                 .thenReturn(List.of());
         when(fundRepository.findAllById(List.of())).thenReturn(List.of());
+        LocalDateTime fiveYearsAgo = LocalDateTime.now().minusYears(5);
         LocalDateTime futureLatest = LocalDateTime.now().plusDays(1);
-        when(fundCandleRepository.findLatestCandleDatePerFund())
-                .thenReturn(Collections.singletonList(new Object[]{"BLH", futureLatest}));
+        when(fundCandleRepository.findCandleDateRangePerFund())
+                .thenReturn(Collections.singletonList(new Object[]{"BLH", fiveYearsAgo, futureLatest}));
 
         service.refreshAll();
 

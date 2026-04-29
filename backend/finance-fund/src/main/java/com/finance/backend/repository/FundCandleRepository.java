@@ -13,8 +13,8 @@ import java.util.Optional;
 @Repository
 public interface FundCandleRepository extends JpaRepository<FundCandle, Long> {
 
-    @Query("SELECT c.fundCode, MAX(c.candleDate) FROM FundCandle c GROUP BY c.fundCode")
-    List<Object[]> findLatestCandleDatePerFund();
+    @Query("SELECT c.fundCode, MIN(c.candleDate), MAX(c.candleDate) FROM FundCandle c GROUP BY c.fundCode")
+    List<Object[]> findCandleDateRangePerFund();
 
     List<FundCandle> findByFundCodeOrderByCandleDateDesc(String fundCode);
 

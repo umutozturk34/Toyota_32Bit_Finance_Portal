@@ -4,8 +4,10 @@ import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.backend.mapper.FundMapper;
 import com.finance.backend.model.Fund;
+import com.finance.backend.model.FundCandle;
 import com.finance.backend.model.FundType;
 import com.finance.backend.model.TrackedAssetType;
+import com.finance.backend.repository.FundCandleRepository;
 import com.finance.backend.repository.FundRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -21,6 +23,7 @@ public class FundEntityWriter {
     private static final int AUTO_TRACK_SORT_ORDER = 9999;
 
     private final FundRepository fundRepository;
+    private final FundCandleRepository fundCandleRepository;
     private final FundMapper fundMapper;
     private final FundChangeCalculator fundChangeCalculator;
     private final TrackedAssetQueryService trackedAssetQueryService;
@@ -40,6 +43,19 @@ public class FundEntityWriter {
         fundRepository.save(toPersist);
         log.debug("Saved snapshot: {} ({}) - {}", dto.fundCode(), fundType, dto.price());
         return toPersist;
+    }
+
+    public void upsertCandleFromDto(Fund fund, FundType fundType, TefasFundDto dto) {
+        FundCandle existing = fundCandleRepository
+                .findByFundCodeAndCandleDate(fund.getFundCode(), dto.date())
+                .orElse(null);
+        if (existing != null) {
+            fundMapper.updateCandleEntity(existing, dto);
+            fundCandleRepository.save(existing);
+        } else {
+            FundCandle candle = fundMapper.toCandleEntity(dto, fund, fundType);
+            fundCandleRepository.save(candle);
+        }
     }
 
     public void ensureByfTracked(String fundCode, String tefasName) {

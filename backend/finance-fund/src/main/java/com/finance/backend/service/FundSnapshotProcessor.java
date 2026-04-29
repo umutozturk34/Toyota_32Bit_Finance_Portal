@@ -54,7 +54,7 @@ public class FundSnapshotProcessor {
 
     public void refreshAll() {
         long start = System.currentTimeMillis();
-        LocalDate today = TefasHelper.findLastBusinessDay(LocalDate.now(appZone), appZone, eodCutoverHour);
+        LocalDate today = today();
         log.info("Starting bulk fund snapshot update for {}", today);
 
         int byfSaved = bulkUpdateAndAutoTrackBYF(today);
@@ -69,62 +69,54 @@ public class FundSnapshotProcessor {
 
     public void refreshOne(String fundCode) {
         TrackedRefreshRunner.refreshSnapshot(fundCode, CodeNormalizer::upper, normalized -> {
-            LocalDate today = TefasHelper.findLastBusinessDay(LocalDate.now(appZone), appZone, eodCutoverHour);
-            FoundDto found = lookupFundDto(normalized, today);
-            if (found == null) {
-                log.warn("No snapshot data found for tracked fund {}", normalized);
-                return false;
+            LocalDate today = today();
+            for (FundType type : List.of(FundType.YAT, FundType.BYF)) {
+                List<TefasFundDto> funds = tefasClient.post(type, normalized, today, today);
+                if (funds.isEmpty()) continue;
+                Fund saved = transactionTemplate.execute(s -> entityWriter.saveSnapshot(funds.getFirst(), type));
+                fundCacheService.putSnapshot(saved.getFundCode(), saved);
+                return true;
             }
-            Fund saved = transactionTemplate.execute(status ->
-                    entityWriter.saveSnapshot(found.dto(), found.fundType()));
-            fundCacheService.putSnapshot(saved.getFundCode(), saved);
-            return true;
+            log.warn("No snapshot data found for tracked fund {}", normalized);
+            return false;
         }, log, "fund");
     }
 
     public boolean exists(String fundCode) {
         return ApiAssetValidator.validate(fundCode, true, code -> {
-            LocalDate today = TefasHelper.findLastBusinessDay(LocalDate.now(appZone), appZone, eodCutoverHour);
-            if (!tefasClient.post(FundType.YAT, code, today, today).isEmpty()) {
-                return true;
-            }
-            return !tefasClient.post(FundType.BYF, code, today, today).isEmpty();
+            LocalDate today = today();
+            return !tefasClient.post(FundType.YAT, code, today, today).isEmpty()
+                    || !tefasClient.post(FundType.BYF, code, today, today).isEmpty();
         }, log, "Fund");
     }
 
-    private FoundDto lookupFundDto(String code, LocalDate today) {
-        List<TefasFundDto> yatFunds = tefasClient.post(FundType.YAT, code, today, today);
-        if (!yatFunds.isEmpty()) {
-            return new FoundDto(yatFunds.getFirst(), FundType.YAT);
-        }
-        List<TefasFundDto> byfFunds = tefasClient.post(FundType.BYF, code, today, today);
-        if (!byfFunds.isEmpty()) {
-            return new FoundDto(byfFunds.getFirst(), FundType.BYF);
-        }
-        return null;
+    private LocalDate today() {
+        return TefasHelper.findLastBusinessDay(LocalDate.now(appZone), appZone, eodCutoverHour);
     }
 
     private int bulkUpdateAndAutoTrackBYF(LocalDate today) {
-        return executeBulk(FundType.BYF, today, dto -> true, dto -> {
-            Fund persisted = transactionTemplate.execute(status ->
-                    entityWriter.saveSnapshot(dto, FundType.BYF));
-            if (persisted == null) return false;
-            entityWriter.ensureByfTracked(persisted.getFundCode(), persisted.getName());
-            fundCacheService.putSnapshot(persisted.getFundCode(), persisted);
-            return true;
-        });
+        return executeBulk(FundType.BYF, today, dto -> true, this::persistByf);
     }
 
     private int bulkUpdateForTrackedYAT(LocalDate today, Set<String> trackedCodes) {
         return executeBulk(FundType.YAT, today,
                 dto -> trackedCodes.contains(dto.fundCode()),
-                dto -> {
-                    Fund persisted = transactionTemplate.execute(status ->
-                            entityWriter.saveSnapshot(dto, FundType.YAT));
-                    if (persisted == null) return false;
-                    fundCacheService.putSnapshot(persisted.getFundCode(), persisted);
-                    return true;
-                });
+                this::persistYat);
+    }
+
+    private boolean persistByf(TefasFundDto dto) {
+        Fund persisted = transactionTemplate.execute(s -> entityWriter.saveSnapshot(dto, FundType.BYF));
+        if (persisted == null) return false;
+        entityWriter.ensureByfTracked(persisted.getFundCode(), persisted.getName());
+        fundCacheService.putSnapshot(persisted.getFundCode(), persisted);
+        return true;
+    }
+
+    private boolean persistYat(TefasFundDto dto) {
+        Fund persisted = transactionTemplate.execute(s -> entityWriter.saveSnapshot(dto, FundType.YAT));
+        if (persisted == null) return false;
+        fundCacheService.putSnapshot(persisted.getFundCode(), persisted);
+        return true;
     }
 
     private int executeBulk(FundType fundType, LocalDate today,
@@ -155,6 +147,4 @@ public class FundSnapshotProcessor {
             return -1;
         }
     }
-
-    private record FoundDto(TefasFundDto dto, FundType fundType) {}
 }

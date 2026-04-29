@@ -64,16 +64,10 @@ class CommodityDataServiceTest {
     }
 
     @Test
-    void refreshSnapshotDelegatesToSnapshotService() {
-        service.refreshSnapshot("GC=F");
+    void refreshDelegatesToBothServices() {
+        service.refresh("GC=F");
 
         verify(snapshotService).refreshSnapshot("GC=F");
-    }
-
-    @Test
-    void refreshCandlesDelegatesToCandleService() {
-        service.refreshCandles("GC=F");
-
         verify(candleService).refreshCandles("GC=F");
     }
 
@@ -92,16 +86,10 @@ class CommodityDataServiceTest {
     }
 
     @Test
-    void refreshAllSnapshotsDelegates() {
-        service.refreshAllSnapshots();
+    void refreshAllDelegatesToBothServices() {
+        service.refreshAll();
 
         verify(snapshotService).refreshAll();
-    }
-
-    @Test
-    void refreshAllCandlesDelegates() {
-        service.refreshAllCandles();
-
         verify(candleService).refreshAll();
     }
 }

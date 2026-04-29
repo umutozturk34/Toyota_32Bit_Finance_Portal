@@ -34,22 +34,14 @@ public class CommodityDataService implements TrackedAssetDataService {
     }
 
     @Override
-    public void refreshSnapshot(String code) {
+    public void refresh(String code) {
         commoditySnapshotService.refreshSnapshot(code);
-    }
-
-    @Override
-    public void refreshCandles(String code) {
         commodityCandleService.refreshCandles(code);
     }
 
     @Override
-    public void refreshAllSnapshots() {
+    public void refreshAll() {
         commoditySnapshotService.refreshAll();
-    }
-
-    @Override
-    public void refreshAllCandles() {
         commodityCandleService.refreshAll();
     }
 

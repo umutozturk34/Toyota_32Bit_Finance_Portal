@@ -31,22 +31,14 @@ public class FundDataService implements TrackedAssetDataService {
     }
 
     @Override
-    public void refreshSnapshot(String fundCode) {
+    public void refresh(String fundCode) {
         fundSnapshotService.refreshSnapshot(fundCode);
-    }
-
-    @Override
-    public void refreshCandles(String fundCode) {
         fundCandleService.refreshCandles(fundCode);
     }
 
     @Override
-    public void refreshAllSnapshots() {
+    public void refreshAll() {
         fundSnapshotService.refreshAll();
-    }
-
-    @Override
-    public void refreshAllCandles() {
         fundCandleService.refreshAll();
     }
 

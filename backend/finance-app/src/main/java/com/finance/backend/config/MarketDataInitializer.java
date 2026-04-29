@@ -43,15 +43,11 @@ public class MarketDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        init("crypto", cryptoRepository.count(), cryptoCandleRepository.count(), null, () -> {
-            cryptoDataService.refreshAllSnapshots();
-            cryptoDataService.refreshAllCandles();
-        });
+        init("crypto", cryptoRepository.count(), cryptoCandleRepository.count(), null,
+                cryptoDataService::refreshAll);
 
-        init("fund", fundRepository.count(), fundCandleRepository.count(), null, () -> {
-            fundDataService.refreshAllSnapshots();
-            fundDataService.refreshAllCandles();
-        });
+        init("fund", fundRepository.count(), fundCandleRepository.count(), null,
+                fundDataService::refreshAll);
 
         init("bond", bondRepository.count(), 1, null, bondDataService::updateBonds);
 
@@ -65,15 +61,11 @@ public class MarketDataInitializer implements CommandLineRunner {
         });
 
         CompletableFuture<Void> stockFuture = init(
-                "stock", stockRepository.count(), stockCandleRepository.count(), forexFuture, () -> {
-            stockDataService.refreshAllSnapshots();
-            stockDataService.refreshAllCandles();
-        });
+                "stock", stockRepository.count(), stockCandleRepository.count(), forexFuture,
+                stockDataService::refreshAll);
 
-        init("commodity", commodityRepository.count(), commodityCandleRepository.count(), stockFuture, () -> {
-            commodityDataService.refreshAllSnapshots();
-            commodityDataService.refreshAllCandles();
-        });
+        init("commodity", commodityRepository.count(), commodityCandleRepository.count(), stockFuture,
+                commodityDataService::refreshAll);
     }
 
     private CompletableFuture<Void> init(String name, long snapshotCount, long candleCount,

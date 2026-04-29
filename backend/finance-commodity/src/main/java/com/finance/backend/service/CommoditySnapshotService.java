@@ -23,7 +23,7 @@ import java.util.List;
 
 @Service
 @Log4j2
-public class CommoditySnapshotService implements SnapshotBatchRefresher, AssetExistenceChecker {
+public class CommoditySnapshotService implements SnapshotBatchRefresher {
 
     private final YahooCommodityClient yahooCommodityClient;
     private final CommodityMapper commodityMapper;
@@ -66,7 +66,6 @@ public class CommoditySnapshotService implements SnapshotBatchRefresher, AssetEx
         return MarketType.COMMODITY;
     }
 
-    @Override
     public boolean existsInApi(String code) {
         String normalized = yahooSymbolResolver.normalize(code);
         String yahooSymbol = yahooSymbolResolver.resolve(normalized);

@@ -8,13 +8,9 @@ public interface TrackedAssetDataService {
 
     void validateExists(String code);
 
-    void refreshSnapshot(String code);
+    void refresh(String code);
 
-    void refreshCandles(String code);
-
-    void refreshAllSnapshots();
-
-    void refreshAllCandles();
+    void refreshAll();
 
     void clearCache(String code);
 }

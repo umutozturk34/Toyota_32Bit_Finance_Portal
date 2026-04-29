@@ -31,22 +31,14 @@ public class CryptoDataService implements TrackedAssetDataService {
     }
 
     @Override
-    public void refreshSnapshot(String coinId) {
+    public void refresh(String coinId) {
         cryptoSnapshotService.refreshSnapshot(coinId);
-    }
-
-    @Override
-    public void refreshCandles(String coinId) {
         cryptoCandleService.refreshCandles(coinId);
     }
 
     @Override
-    public void refreshAllSnapshots() {
+    public void refreshAll() {
         cryptoSnapshotService.refreshAll();
-    }
-
-    @Override
-    public void refreshAllCandles() {
         cryptoCandleService.refreshAll();
     }
 

@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 
 @Log4j2
 @Service
-public class FundSnapshotService implements SnapshotBatchRefresher, AssetExistenceChecker {
+public class FundSnapshotService implements SnapshotBatchRefresher {
 
     private final TefasClient tefasClient;
     private final FundMapper fundMapper;
@@ -66,7 +66,6 @@ public class FundSnapshotService implements SnapshotBatchRefresher, AssetExisten
         this.eodCutoverHour = fundProperties.getTefasEodCutoverHour();
     }
 
-    @Override
     public boolean existsInApi(String fundCode) {
         return ApiAssetValidator.validate(fundCode, true, code -> {
             LocalDate today = TefasHelper.findLastBusinessDay(LocalDate.now(), appZone, eodCutoverHour);

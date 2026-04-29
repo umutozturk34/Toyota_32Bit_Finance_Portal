@@ -16,8 +16,7 @@ import static org.mockito.Mockito.when;
 
 class CommodityDataServiceTest {
 
-    private CommoditySnapshotService snapshotService;
-    private CommodityCandleService candleService;
+    private CommodityUpdateService updateService;
     @SuppressWarnings("unchecked")
     private final MarketCacheService<Commodity, CommodityCandle> cacheService = mock(MarketCacheService.class);
     private PreciousMetalDerivativeCalculator derivativeCalculator;
@@ -25,10 +24,9 @@ class CommodityDataServiceTest {
 
     @BeforeEach
     void setUp() {
-        snapshotService = mock(CommoditySnapshotService.class);
-        candleService = mock(CommodityCandleService.class);
+        updateService = mock(CommodityUpdateService.class);
         derivativeCalculator = mock(PreciousMetalDerivativeCalculator.class);
-        service = new CommodityDataService(snapshotService, candleService, cacheService, derivativeCalculator);
+        service = new CommodityDataService(updateService, cacheService, derivativeCalculator);
     }
 
     @Test
@@ -38,7 +36,7 @@ class CommodityDataServiceTest {
 
     @Test
     void validateExistsThrowsWhenApiReportsMissing() {
-        when(snapshotService.existsInApi("GC=F")).thenReturn(false);
+        when(updateService.exists("GC=F")).thenReturn(false);
 
         assertThatThrownBy(() -> service.validateExists("GC=F"))
                 .isInstanceOf(BusinessException.class)
@@ -47,11 +45,11 @@ class CommodityDataServiceTest {
 
     @Test
     void validateExistsPassesWhenApiConfirms() {
-        when(snapshotService.existsInApi("GC=F")).thenReturn(true);
+        when(updateService.exists("GC=F")).thenReturn(true);
 
         service.validateExists("GC=F");
 
-        verify(snapshotService).existsInApi("GC=F");
+        verify(updateService).exists("GC=F");
     }
 
     @Test
@@ -60,21 +58,14 @@ class CommodityDataServiceTest {
 
         service.validateExists("  xautryg  ");
 
-        verify(snapshotService, never()).existsInApi(org.mockito.ArgumentMatchers.anyString());
+        verify(updateService, never()).exists(org.mockito.ArgumentMatchers.anyString());
     }
 
     @Test
-    void refreshSnapshotDelegatesToSnapshotService() {
-        service.refreshSnapshot("GC=F");
+    void refreshDelegatesToUpdateService() {
+        service.refresh("GC=F");
 
-        verify(snapshotService).refreshTrackedCommoditySnapshot("GC=F");
-    }
-
-    @Test
-    void refreshCandlesDelegatesToCandleService() {
-        service.refreshCandles("GC=F");
-
-        verify(candleService).refreshTrackedCommodityCandles("GC=F");
+        verify(updateService).refresh("GC=F");
     }
 
     @Test
@@ -92,16 +83,9 @@ class CommodityDataServiceTest {
     }
 
     @Test
-    void refreshAllSnapshotsDelegates() {
-        service.refreshAllSnapshots();
+    void refreshAllDelegatesToUpdateService() {
+        service.refreshAll();
 
-        verify(snapshotService).refreshAll();
-    }
-
-    @Test
-    void refreshAllCandlesDelegates() {
-        service.refreshAllCandles();
-
-        verify(candleService).refreshAll();
+        verify(updateService).refreshAll();
     }
 }

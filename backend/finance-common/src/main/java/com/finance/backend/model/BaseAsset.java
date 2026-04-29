@@ -1,5 +1,6 @@
 package com.finance.backend.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.finance.backend.util.PercentChangeCalculator;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import lombok.AllArgsConstructor;
@@ -37,6 +38,18 @@ public abstract class BaseAsset {
     private String image;
     @Column(name = "last_updated")
     private LocalDateTime lastUpdated;
+    @Column(name = "change_amount", precision = 19, scale = 4)
+    private BigDecimal changeAmount;
+    @Column(name = "change_percent", precision = 19, scale = 4)
+    private BigDecimal changePercent;
+
+    public final void applyChange(BigDecimal current, BigDecimal previous, int scale) {
+        PercentChangeCalculator.Result result = PercentChangeCalculator.compute(current, previous, scale);
+        this.changeAmount = result.amount();
+        this.changePercent = result.percent();
+    }
+
+    public abstract void scaleFields(int scale);
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public abstract String getCode();

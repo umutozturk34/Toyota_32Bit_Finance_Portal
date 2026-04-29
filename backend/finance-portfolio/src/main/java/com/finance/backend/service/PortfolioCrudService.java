@@ -12,6 +12,7 @@ import com.finance.backend.util.EnumParser;
 import com.finance.backend.model.Portfolio;
 import com.finance.backend.model.PortfolioTransaction;
 import com.finance.backend.model.UserWallet;
+import com.finance.backend.model.value.MoneyTRY;
 import com.finance.backend.repository.PortfolioRepository;
 import com.finance.backend.repository.PortfolioTransactionRepository;
 import com.finance.backend.repository.UserWalletRepository;
@@ -56,8 +57,8 @@ public class PortfolioCrudService {
         UserWallet wallet = UserWallet.builder()
                 .portfolio(portfolio)
                 .currency(portfolioProperties.getDefaultCurrency())
-                .balance(BigDecimal.ZERO)
-                .availableBalance(BigDecimal.ZERO)
+                .balance(MoneyTRY.ZERO)
+                .availableBalance(MoneyTRY.ZERO)
                 .build();
         walletRepository.save(wallet);
 
@@ -114,6 +115,7 @@ public class PortfolioCrudService {
                         portfolio.getId(),
                         portfolioProperties.getDefaultCurrency())
                 .map(UserWallet::getBalance)
+                .map(MoneyTRY::amount)
                 .orElse(BigDecimal.ZERO);
         return mapper.toPortfolioResponse(portfolio, cash);
     }

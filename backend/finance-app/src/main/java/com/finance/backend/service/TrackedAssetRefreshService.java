@@ -28,9 +28,7 @@ public class TrackedAssetRefreshService {
     public void refreshAsync(TrackedAssetType type, String code) {
         log.info("Async refresh started for {} / {}", type, code);
         try {
-            TrackedAssetDataService service = resolve(type);
-            service.refreshSnapshot(code);
-            service.refreshCandles(code);
+            resolve(type).refresh(code);
             log.info("Async refresh completed for {} / {}", type, code);
         } catch (Exception ex) {
             log.warn("Async refresh failed for {} / {}: {}", type, code, ex.getMessage());

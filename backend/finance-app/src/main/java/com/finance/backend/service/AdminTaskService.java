@@ -16,8 +16,7 @@ import java.util.concurrent.Executor;
 @Service
 public class AdminTaskService {
 
-    private final Map<MarketType, SnapshotBatchRefresher> snapshotRefreshers;
-    private final Map<MarketType, CandleBatchRefresher> candleRefreshers;
+    private final Map<MarketType, MarketRefresher> refreshers;
     private final TcmbForexService tcmbForexService;
     private final BondDataService bondDataService;
     private final NewsDataService newsDataService;
@@ -26,8 +25,7 @@ public class AdminTaskService {
     private final Optional<PortfolioSnapshotPort> portfolioSnapshotPort;
     private final Optional<MarketUpdatePort> marketUpdatePort;
 
-    public AdminTaskService(List<SnapshotBatchRefresher> snapshotRefreshers,
-                            List<CandleBatchRefresher> candleRefreshers,
+    public AdminTaskService(List<MarketRefresher> refreshers,
                             TcmbForexService tcmbForexService,
                             BondDataService bondDataService,
                             NewsDataService newsDataService,
@@ -35,10 +33,8 @@ public class AdminTaskService {
                             Executor taskExecutor,
                             Optional<PortfolioSnapshotPort> portfolioSnapshotPort,
                             Optional<MarketUpdatePort> marketUpdatePort) {
-        this.snapshotRefreshers = new EnumMap<>(MarketType.class);
-        snapshotRefreshers.forEach(r -> this.snapshotRefreshers.put(r.getMarketType(), r));
-        this.candleRefreshers = new EnumMap<>(MarketType.class);
-        candleRefreshers.forEach(r -> this.candleRefreshers.put(r.getMarketType(), r));
+        this.refreshers = new EnumMap<>(MarketType.class);
+        refreshers.forEach(r -> this.refreshers.put(r.getMarketType(), r));
         this.tcmbForexService = tcmbForexService;
         this.bondDataService = bondDataService;
         this.newsDataService = newsDataService;
@@ -49,30 +45,15 @@ public class AdminTaskService {
     }
 
     public TaskTriggerResponse triggerSnapshot(MarketType type) {
-        String taskType = type.name().toLowerCase() + "-snapshot";
-        String message = type.name() + " snapshot update started in background";
-        return executeTask(taskType, message, () -> {
-            runForexPreStep(type);
-            resolveSnapshotRefresher(type).refreshAll();
-            triggerPortfolioSnapshot(type);
-        });
+        return triggerMarketRefresh(type, "snapshot", " snapshot update started in background");
     }
 
     public TaskTriggerResponse triggerCandles(MarketType type) {
-        String taskType = type.name().toLowerCase() + "-candles";
-        String message = type.name() + " candle update started in background";
-        return executeTask(taskType, message, () -> resolveCandleRefresher(type).refreshAll());
+        return triggerMarketRefresh(type, "candles", " candle update started in background");
     }
 
     public TaskTriggerResponse triggerFull(MarketType type) {
-        String taskType = type.name().toLowerCase() + "-full";
-        String message = "Full " + type.name() + " market update started in background";
-        return executeTask(taskType, message, () -> {
-            runForexPreStep(type);
-            resolveSnapshotRefresher(type).refreshAll();
-            resolveCandleRefresher(type).refreshAll();
-            triggerPortfolioSnapshot(type);
-        });
+        return triggerMarketRefresh(type, "full", " full market update started in background");
     }
 
     public TaskTriggerResponse triggerBondUpdate() {
@@ -87,18 +68,24 @@ public class AdminTaskService {
                 newsDataService::updateNews);
     }
 
-    private SnapshotBatchRefresher resolveSnapshotRefresher(MarketType type) {
-        SnapshotBatchRefresher refresher = snapshotRefreshers.get(type);
-        if (refresher == null) {
-            throw new IllegalArgumentException("No snapshot refresher registered for " + type);
-        }
-        return refresher;
+    public TaskStatusResponse getTaskStatus() {
+        return taskTracker.getTypedStatus();
     }
 
-    private CandleBatchRefresher resolveCandleRefresher(MarketType type) {
-        CandleBatchRefresher refresher = candleRefreshers.get(type);
+    private TaskTriggerResponse triggerMarketRefresh(MarketType type, String suffix, String messageTail) {
+        String taskType = type.name().toLowerCase() + "-" + suffix;
+        String message = type.name() + messageTail;
+        return executeTask(taskType, message, () -> {
+            runForexPreStep(type);
+            resolveRefresher(type).refreshAll();
+            triggerPortfolioSnapshot(type);
+        });
+    }
+
+    private MarketRefresher resolveRefresher(MarketType type) {
+        MarketRefresher refresher = refreshers.get(type);
         if (refresher == null) {
-            throw new IllegalArgumentException("No candle refresher registered for " + type);
+            throw new IllegalArgumentException("No refresher registered for " + type);
         }
         return refresher;
     }
@@ -107,10 +94,6 @@ public class AdminTaskService {
         if (type == MarketType.FOREX) {
             tcmbForexService.fetchAndSaveTcmbRates();
         }
-    }
-
-    public TaskStatusResponse getTaskStatus() {
-        return taskTracker.getTypedStatus();
     }
 
     private void triggerPortfolioSnapshot(MarketType assetType) {

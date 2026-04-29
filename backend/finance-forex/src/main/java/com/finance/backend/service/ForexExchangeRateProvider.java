@@ -28,8 +28,8 @@ public class ForexExchangeRateProvider implements ExchangeRateProvider {
             return new ExchangeRateSnapshot(null, null);
         }
         BigDecimal current = snapshot.getCurrentPrice();
-        BigDecimal previous = snapshot.getChange24h() != null
-                ? current.subtract(snapshot.getChange24h())
+        BigDecimal previous = snapshot.getChangeAmount() != null
+                ? current.subtract(snapshot.getChangeAmount())
                 : current;
         return new ExchangeRateSnapshot(current, previous);
     }

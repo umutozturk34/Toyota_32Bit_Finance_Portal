@@ -52,6 +52,6 @@ public abstract class CryptoMapper extends BaseMarketMapper {
 
     @AfterMapping
     void enrichCryptoCandle(@MappingTarget CryptoCandle candle) {
-        candle.scaleOhlc(scale());
+        candle.scaleFields(scale());
     }
 }

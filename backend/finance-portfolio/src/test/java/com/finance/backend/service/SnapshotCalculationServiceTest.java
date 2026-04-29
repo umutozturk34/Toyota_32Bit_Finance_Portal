@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.model.*;
+import com.finance.backend.model.value.MoneyTRY;
 import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.repository.UserWalletRepository;
 import com.finance.backend.service.support.CountingAssetPricingPort;
@@ -137,15 +138,15 @@ class SnapshotCalculationServiceTest {
     }
 
     private PortfolioPosition stubPosition(AssetType type, String code, BigDecimal qty, BigDecimal totalCost) {
-        PortfolioPosition pos = new PortfolioPosition();
-        pos.setAssetType(type);
-        pos.setAssetCode(code);
-        pos.setQuantity(qty);
-        pos.setTotalCostTry(totalCost);
-        return pos;
+        return PortfolioPosition.builder()
+                .assetType(type)
+                .assetCode(code)
+                .quantity(qty)
+                .totalCostTry(totalCost)
+                .build();
     }
 
     private UserWallet stubWallet(BigDecimal balance) {
-        return UserWallet.builder().balance(balance).build();
+        return UserWallet.builder().balance(MoneyTRY.of(balance)).build();
     }
 }

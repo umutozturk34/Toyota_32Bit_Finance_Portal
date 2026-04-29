@@ -3,8 +3,10 @@ package com.finance.backend.mapper;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.dto.external.YahooQuoteDto;
+import com.finance.backend.dto.internal.YahooChartFullResult;
 import com.finance.backend.dto.internal.YahooChartResponse.Quote;
 import com.finance.backend.dto.internal.YahooChartResponse.Result;
+import com.finance.backend.util.YahooMetaHelpers;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -24,15 +26,17 @@ public class YahooClientMapper {
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
+    public YahooChartFullResult<YahooQuoteDto> toFullResult(Result result, boolean truncateToDays) {
+        return new YahooChartFullResult<>(toQuoteDto(result), toCandleDtos(result, truncateToDays));
+    }
+
     public YahooQuoteDto toQuoteDto(Result result) {
         var meta = result.meta();
         Quote firstQuote = result.firstQuote();
-        BigDecimal openPrice = (firstQuote != null && firstQuote.open() != null && !firstQuote.open().isEmpty())
-                ? firstQuote.open().getFirst() : null;
         return new YahooQuoteDto(
                 meta.regularMarketPrice(),
-                meta.previousClose(),
-                openPrice,
+                YahooMetaHelpers.resolvePreviousClose(firstQuote, meta.previousClose()),
+                YahooMetaHelpers.latestNonNull(firstQuote == null ? null : firstQuote.open()),
                 meta.dayHigh(),
                 meta.dayLow(),
                 meta.volume()

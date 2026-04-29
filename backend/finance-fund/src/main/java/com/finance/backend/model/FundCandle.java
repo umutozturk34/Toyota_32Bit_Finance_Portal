@@ -88,9 +88,9 @@ public class FundCandle {
         return value != null ? value.setScale(scale, RoundingMode.HALF_UP) : null;
     }
 
-    public void scaleAllFields() {
+    public void scaleFields(int scale) {
         this.price = scaleValue(this.price, 6);
-        this.bulletinPrice = scaleValue(this.bulletinPrice, 4);
+        this.bulletinPrice = scaleValue(this.bulletinPrice, scale);
         this.shareCount = scaleValue(this.shareCount, 2);
         this.investorCount = scaleValue(this.investorCount, 2);
         this.portfolioSize = scaleValue(this.portfolioSize, 2);

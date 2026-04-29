@@ -1,7 +1,6 @@
 package com.finance.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.finance.backend.util.PercentChangeCalculator;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -43,12 +42,6 @@ public class Commodity extends BaseAsset {
 
     @Column(name = "previous_price_usd", precision = 19, scale = 4)
     private BigDecimal previousPriceUsd;
-
-    @Column(name = "change_24h", precision = 19, scale = 4)
-    private BigDecimal change24h;
-
-    @Column(name = "change_percent_24h", precision = 19, scale = 4)
-    private BigDecimal changePercent24h;
 
     @Column(name = "unit")
     private String unit;
@@ -96,14 +89,18 @@ public class Commodity extends BaseAsset {
         this.dayHigh = scaleValue(snapshot.tryDayHigh(), scale);
         this.dayLow = scaleValue(snapshot.tryDayLow(), scale);
         this.volume = snapshot.volume();
-        applyChangeFields(snapshot.tryPrice(), snapshot.tryPreviousClose(), scale);
+        applyChange(snapshot.tryPrice(), snapshot.tryPreviousClose(), scale);
         this.yahooUpdatedAt = LocalDateTime.now();
     }
 
-    private void applyChangeFields(BigDecimal current, BigDecimal previous, int scale) {
-        PercentChangeCalculator.Result result = PercentChangeCalculator.compute(current, previous, scale);
-        this.change24h = result.amount();
-        this.changePercent24h = result.percent();
+    @Override
+    public void scaleFields(int scale) {
+        this.currentPrice = scaleValue(this.currentPrice, scale);
+        this.currentPriceUsd = scaleValue(this.currentPriceUsd, scale);
+        this.previousPriceUsd = scaleValue(this.previousPriceUsd, scale);
+        this.openPrice = scaleValue(this.openPrice, scale);
+        this.dayHigh = scaleValue(this.dayHigh, scale);
+        this.dayLow = scaleValue(this.dayLow, scale);
     }
 
     @Override

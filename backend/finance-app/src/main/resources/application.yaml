@@ -62,9 +62,9 @@ app:
     base-url: ${TCMB_BASE_URL:https://www.tcmb.gov.tr}
     xml-path: /kurlar/today.xml
 
-  tefas-api-path: /api/DB/BindHistoryInfo
+  tefas-api-path: /api/funds/fonGnlBlgSiraliGetir
   tefas-base-url: https://www.tefas.gov.tr
-  tefas-session-path: /TarihselVeriler.aspx
+  tefas-session-path: /tr
   timezone: Europe/Istanbul
   scale: 4
 
@@ -83,6 +83,9 @@ app:
   crypto:
     history-days: 365
     min-candles-for-healthy: 350
+    batch-min-sample: 5
+    vs-usd: usd
+    vs-try: try
 
   bond:
     batch-size: 10
@@ -96,18 +99,29 @@ app:
 
   stock:
     history-years: 5
+    chart-interval: 1d
+    batch-min-sample: 10
 
   forex:
     years-to-keep: 5
     spread-rate: 0.01
+    chart-range: 5y
+    chart-interval: 1d
+    batch-min-sample: 5
+    base-currency: USDTRY
 
   fund:
     years-to-fetch: 5
     min-candles-for-incremental: 30
-    window-sizes: 95
+    window-sizes: 30
+    auto-track-sort-order: 9999
+    backfill-gap-threshold-days: 30
 
   commodity:
     years-to-keep: 5
+    chart-range: 5y
+    chart-interval: 1d
+    batch-min-sample: 5
     yahoo-symbol-overrides:
       XAUTRY: "GC=F"
       XAGTRY: "SI=F"
@@ -330,6 +344,18 @@ resilience4j:
         wait-duration: 1s
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.finance.backend.exception.ExternalApiException
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - io.netty.handler.timeout.ReadTimeoutException
+        ignore-exceptions:
+          - com.finance.backend.exception.BusinessException
+          - com.finance.backend.exception.ExternalApiRequestException
+      tefas-bulk:
+        max-attempts: 3
+        wait-duration: 30s
+        enable-exponential-backoff: false
         retry-exceptions:
           - com.finance.backend.exception.ExternalApiException
           - java.net.SocketTimeoutException

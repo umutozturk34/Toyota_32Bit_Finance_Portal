@@ -14,8 +14,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CommodityDataService implements TrackedAssetDataService {
 
-    private final CommoditySnapshotService commoditySnapshotService;
-    private final CommodityCandleService commodityCandleService;
+    private final CommodityUpdateService commodityUpdateService;
     private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
     private final PreciousMetalDerivativeCalculator derivativeCalculator;
 
@@ -28,29 +27,19 @@ public class CommodityDataService implements TrackedAssetDataService {
     public void validateExists(String code) {
         String normalized = CodeNormalizer.upper(code);
         if (derivativeCalculator.isKnownDerivative(normalized)) return;
-        if (!commoditySnapshotService.existsInApi(code)) {
+        if (!commodityUpdateService.exists(code)) {
             throw new BusinessException("Emtia bulunamadı: " + code, "ASSET_NOT_FOUND");
         }
     }
 
     @Override
-    public void refreshSnapshot(String code) {
-        commoditySnapshotService.refreshTrackedCommoditySnapshot(code);
+    public void refresh(String code) {
+        commodityUpdateService.refresh(code);
     }
 
     @Override
-    public void refreshCandles(String code) {
-        commodityCandleService.refreshTrackedCommodityCandles(code);
-    }
-
-    @Override
-    public void refreshAllSnapshots() {
-        commoditySnapshotService.refreshAll();
-    }
-
-    @Override
-    public void refreshAllCandles() {
-        commodityCandleService.refreshAll();
+    public void refreshAll() {
+        commodityUpdateService.refreshAll();
     }
 
     @Override

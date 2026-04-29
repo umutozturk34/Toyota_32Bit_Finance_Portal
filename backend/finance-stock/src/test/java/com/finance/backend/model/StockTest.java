@@ -19,10 +19,10 @@ class StockTest {
     }
 
     @Test
-    void scaleOnlyScalesAllPriceFields() {
+    void scaleFieldsScalesAllPriceFields() {
         Stock stock = createStock("55.123456", "50.987654", "51.111111", "56.666666", "49.333333");
 
-        stock.scaleOnly(4);
+        stock.scaleFields(4);
 
         assertThat(stock.getCurrentPrice().scale()).isEqualTo(4);
         assertThat(stock.getPreviousClose().scale()).isEqualTo(4);
@@ -32,32 +32,30 @@ class StockTest {
     }
 
     @Test
-    void scaleOnlyScalesProvidedChangeFields() {
+    void applyChangeComputesAmountAndPercentFromPriceAndPreviousClose() {
         Stock stock = createStock("55", "50", "51", "56", "49");
-        stock.setPriceChangeAmount(new BigDecimal("5.123456"));
-        stock.setPriceChangePercent(new BigDecimal("10.246912"));
 
-        stock.scaleOnly(4);
+        stock.applyChange(stock.getCurrentPrice(), stock.getPreviousClose(), 4);
 
-        assertThat(stock.getPriceChangeAmount()).isEqualByComparingTo(new BigDecimal("5.1235"));
-        assertThat(stock.getPriceChangePercent()).isEqualByComparingTo(new BigDecimal("10.2469"));
+        assertThat(stock.getChangeAmount()).isEqualByComparingTo(new BigDecimal("5.0000"));
+        assertThat(stock.getChangePercent()).isEqualByComparingTo(new BigDecimal("10.0000"));
     }
 
     @Test
-    void scaleOnlyPreservesNullChangeFields() {
+    void applyChangeLeavesFieldsNullWhenPreviousCloseMissing() {
         Stock stock = createStock("55", null, "51", "56", "49");
 
-        stock.scaleOnly(4);
+        stock.applyChange(stock.getCurrentPrice(), stock.getPreviousClose(), 4);
 
-        assertThat(stock.getPriceChangeAmount()).isNull();
-        assertThat(stock.getPriceChangePercent()).isNull();
+        assertThat(stock.getChangeAmount()).isNull();
+        assertThat(stock.getChangePercent()).isNull();
     }
 
     @Test
-    void scaleOnlyLeavesNullPriceFieldsNull() {
+    void scaleFieldsLeavesNullPriceFieldsNull() {
         Stock stock = createStock("55", "50", null, null, null);
 
-        stock.scaleOnly(4);
+        stock.scaleFields(4);
 
         assertThat(stock.getOpenPrice()).isNull();
         assertThat(stock.getDayHigh()).isNull();

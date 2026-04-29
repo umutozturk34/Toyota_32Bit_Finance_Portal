@@ -4,11 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Getter
 @Setter
@@ -17,7 +14,7 @@ public class AppProperties {
 
     private String tefasApiPath;
     private String tefasBaseUrl;
-    private String tefasSessionPath = "/TarihselVeriler.aspx";
+    private String tefasSessionPath = "/tr";
     private String timezone = "Europe/Istanbul";
     private int scale = 4;
 

@@ -20,14 +20,15 @@
 | v0.10.0 | News Module (RSS, score-based categorization) | ✅ |
 | v0.11.0 | Portfolio Module (BUY/SELL, WAC, snapshots, performance) | ✅ |
 | v0.12.0 | Unified Endpoint & Frontend Refactor (Strategy pattern, SearchSuggestions, AnimatedIcons, chart comparison) | ✅ |
+| v0.13.0 | Emtia Modulu + Broad Refactor Sprint (40 sprint commits; 9 XxxProperties extracted; MarketListPage + AssetCard + 3 hooks frontend) | ✅ |
 
 ---
 
 ## Aktif Gelistirme Plani (15 Nisan — 25 Mayis)
 
-### v0.13.0 — Emtia Modulu — ✅ TAMAMLANDI (15 Nisan → 22 Nisan | 8 gun)
+### v0.13.0 — Emtia Modulu — ✅ TAMAMLANDI (15 Nisan → 23 Nisan | 9 gun)
 
-**Branch:** `feat/emtia` (merge'e hazir)
+**Branch:** `feat/emtia` (merged)
 
 **Gerçeklesen kapsam (orijinal plandan genisledi):**
 
@@ -55,6 +56,15 @@ Frontend:
 - UI bug fixes: SellModal double-commission fix, BuyModal stale price refetch
 
 **Toplam:** ~2500 LOC backend + tests, ~37 commit (orijinal Commit 1-7 plani + refactor arc'i R1-R4 + cesitli fix/UI).
+
+**Post-review refactor sprint (22-23 Nisan, `feat/emtia` uzerinde):** 40 sprint commit + 5 AAA test commit
+- Phase 5.1: `AppProperties` 9 ayri `XxxProperties`'e bolundu (Commodity, Stock, Forex, Crypto, Fund, Bond, News, Portfolio, Commission)
+- Phase 5.2: WebClient bean'ler 6 modulne dagitildi (`WebClientBaseConfig` + 5 per-module)
+- Phase 3: `ApiAssetValidator`, `BaseMarketMapper`, `TrackedRefreshRunner`, `MarketMetadataBuilder`, provider `SORT_FIELDS` lift
+- Code smells: `YahooSymbolResolver.resolveByYahooSymbol` reverse lookup, `TrackedAssetDataService` ISP fix, silent dup merger fix, `SchedulerPorts` record
+- Frontend F1/F4/F7/F10/F11/F12: `MarketListPage` template (-333 LOC), `AssetCard` + `AssetBuyButton` + `ChangePercentBadge`, `createMarketService` factory, `formatPercentAbs`, `PortfolioListShell`, `HISTORY_FETCHERS` registry
+- Frontend F3/F5 hooks: `useSearchSuggestions`, `useProcessingAnimation`, `useTransactionFlow`
+- News module AAA tests: 5 service test dosyasi (+28 test case), `NewsQueryServiceTest` fix
 
 ---
 

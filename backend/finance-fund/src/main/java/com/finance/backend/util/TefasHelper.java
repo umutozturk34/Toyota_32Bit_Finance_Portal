@@ -1,34 +1,18 @@
 package com.finance.backend.util;
 
-import com.finance.backend.client.TefasClient;
-import com.finance.backend.dto.external.TefasFundDto;
-import com.finance.backend.exception.ExternalApiException;
-import com.finance.backend.model.FundType;
-
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.List;
 
 public final class TefasHelper {
 
     private TefasHelper() {}
 
-    public static List<TefasFundDto> fetchTefas(TefasClient client, FundType fundType,
-                                                 String fundCode, LocalDate startDate, LocalDate endDate) {
-        List<TefasFundDto> result = client.post(fundType, fundCode, startDate, endDate);
-        if (result == null) {
-            throw new ExternalApiException("TEFAS",
-                    "Non-JSON response for " + fundType + " " + (fundCode != null ? fundCode : "all"));
-        }
-        return result;
-    }
-
-    public static LocalDate findLastBusinessDay(LocalDate from, ZoneId appZone) {
+    public static LocalDate findLastBusinessDay(LocalDate from, ZoneId appZone, int eodCutoverHour) {
         var istanbulNow = ZonedDateTime.now(appZone);
         LocalDate date = from;
-        if (date.equals(istanbulNow.toLocalDate()) && istanbulNow.getHour() < 11) {
+        if (date.equals(istanbulNow.toLocalDate()) && istanbulNow.getHour() < eodCutoverHour) {
             date = date.minusDays(1);
         }
         for (int i = 0; i < 5; i++) {

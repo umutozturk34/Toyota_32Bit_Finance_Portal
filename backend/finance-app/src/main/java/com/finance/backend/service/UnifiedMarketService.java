@@ -79,8 +79,8 @@ public class UnifiedMarketService implements MarketUpdatePort {
         if (provider == null) return;
 
         try {
-            topMoversRedisService.updateGainers(type, MarketTopMoversFilter.apply(type, provider.getTopMovers(10, true)));
-            topMoversRedisService.updateLosers(type, MarketTopMoversFilter.apply(type, provider.getTopMovers(10, false)));
+            topMoversRedisService.updateGainers(type, provider.getTopMovers(10, true));
+            topMoversRedisService.updateLosers(type, provider.getTopMovers(10, false));
 
             if (type == MarketType.STOCK) {
                 List<MarketAssetResponse> allStocks = provider.search(null,

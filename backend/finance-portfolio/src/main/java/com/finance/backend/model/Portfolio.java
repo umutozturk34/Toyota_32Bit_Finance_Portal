@@ -7,10 +7,10 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "portfolios",
         indexes = @Index(name = "idx_portfolios_user_sub", columnList = "user_sub"))
@@ -18,6 +18,7 @@ public class Portfolio {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(name = "user_sub", nullable = false)
@@ -37,10 +38,6 @@ public class Portfolio {
     void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (realizedPnlTry == null) realizedPnlTry = BigDecimal.ZERO;
-    }
-
-    public boolean isOwnedBy(String sub) {
-        return userSub != null && userSub.equals(sub);
     }
 
     public void addRealizedPnl(BigDecimal pnl) {

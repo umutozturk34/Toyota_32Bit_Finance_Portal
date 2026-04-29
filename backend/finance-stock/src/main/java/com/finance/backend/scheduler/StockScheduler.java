@@ -27,8 +27,7 @@ public class StockScheduler extends AbstractMarketScheduler {
 
     @Override
     protected void runRefresh() {
-        stockDataService.refreshAllSnapshots();
-        stockDataService.refreshAllCandles();
+        stockDataService.refreshAll();
     }
 
     @Scheduled(cron = "${app.scheduler.stock.morning-cron}", zone = "${app.timezone}")

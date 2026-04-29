@@ -2,6 +2,7 @@ package com.finance.backend.repository;
 
 import com.finance.backend.model.FundCandle;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -11,6 +12,9 @@ import java.util.Optional;
 
 @Repository
 public interface FundCandleRepository extends JpaRepository<FundCandle, Long> {
+
+    @Query("SELECT c.fundCode, MIN(c.candleDate), MAX(c.candleDate) FROM FundCandle c GROUP BY c.fundCode")
+    List<Object[]> findCandleDateRangePerFund();
 
     List<FundCandle> findByFundCodeOrderByCandleDateDesc(String fundCode);
 

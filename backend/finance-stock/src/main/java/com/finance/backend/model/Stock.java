@@ -32,10 +32,6 @@ public class Stock extends BaseAsset {
     private BigDecimal dayLow;
     @Column(name = "volume")
     private Long volume;
-    @Column(name = "price_change_percent", precision = 19, scale = 4)
-    private BigDecimal priceChangePercent;
-    @Column(name = "price_change_amount", precision = 19, scale = 4)
-    private BigDecimal priceChangeAmount;
     @Column(name = "exchange")
     private String exchange;
     @Column(name = "currency")
@@ -49,13 +45,12 @@ public class Stock extends BaseAsset {
         return symbol;
     }
 
-    public void scaleOnly(int scale) {
+    @Override
+    public void scaleFields(int scale) {
         this.currentPrice = scaleValue(this.currentPrice, scale);
         this.previousClose = scaleValue(this.previousClose, scale);
         this.openPrice = scaleValue(this.openPrice, scale);
         this.dayHigh = scaleValue(this.dayHigh, scale);
         this.dayLow = scaleValue(this.dayLow, scale);
-        this.priceChangeAmount = scaleValue(this.priceChangeAmount, scale);
-        this.priceChangePercent = scaleValue(this.priceChangePercent, scale);
     }
 }

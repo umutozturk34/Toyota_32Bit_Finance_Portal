@@ -57,7 +57,7 @@ public class StockMarketAssetProvider extends BaseTrackedMarketAssetProvider<Sto
 
     @Override
     protected String changePercentField() {
-        return "priceChangePercent";
+        return "changePercent";
     }
 
     @Override
@@ -80,6 +80,11 @@ public class StockMarketAssetProvider extends BaseTrackedMarketAssetProvider<Sto
         if (filters == null || !filters.hasSegment()) return spec;
         StockSegment segmentValue = StockSegment.valueOf(filters.segment());
         return spec.and((root, query, cb) -> cb.equal(root.get("stockSegment"), segmentValue));
+    }
+
+    @Override
+    protected Specification<Stock> topMoversAdditionalSpec() {
+        return (root, query, cb) -> cb.notEqual(root.get("stockSegment"), StockSegment.MAIN_INDEX);
     }
 
     @Override

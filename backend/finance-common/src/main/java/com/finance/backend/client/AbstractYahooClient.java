@@ -1,6 +1,8 @@
 package com.finance.backend.client;
 
 import com.finance.backend.dto.external.YahooCandleDto;
+import com.finance.backend.dto.external.YahooQuoteDto;
+import com.finance.backend.dto.internal.YahooChartFullResult;
 import com.finance.backend.dto.internal.YahooChartResponse;
 import com.finance.backend.dto.internal.YahooChartResponse.Result;
 import com.finance.backend.exception.ExternalApiException;
@@ -36,6 +38,15 @@ public abstract class AbstractYahooClient {
         List<YahooCandleDto> candles = yahooClientMapper.toCandleDtos(result, truncateToDays);
         log.debug("Yahoo returned {} candles for {}", candles.size(), symbol);
         return candles;
+    }
+
+    @CircuitBreaker(name = "yahoo")
+    @Retry(name = "yahoo")
+    public YahooChartFullResult<YahooQuoteDto> fetchChartFull(
+            String symbol, String range, String interval, boolean truncateToDays) {
+        log.debug("Fetching chart (quote+candles): symbol={}, range={}, interval={}", symbol, range, interval);
+        Result result = fetchChart(symbol, range, interval);
+        return yahooClientMapper.toFullResult(result, truncateToDays);
     }
 
     protected Result fetchChart(String symbol, String range, String interval) {

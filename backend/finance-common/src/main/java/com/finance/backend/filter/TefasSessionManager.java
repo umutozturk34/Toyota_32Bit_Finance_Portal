@@ -38,6 +38,10 @@ public class TefasSessionManager {
         return snapshot;
     }
 
+    public boolean isSessionPath(String path) {
+        return sessionPath.equals(path);
+    }
+
     public void refresh() {
         synchronized (refreshLock) {
             fetchCookie();

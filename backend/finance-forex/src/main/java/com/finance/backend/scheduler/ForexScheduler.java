@@ -32,8 +32,7 @@ public class ForexScheduler extends AbstractMarketScheduler {
     @Override
     protected void runRefresh() {
         tcmbForexService.fetchAndSaveTcmbRates();
-        yahooForexService.syncAllYahooSnapshots();
-        yahooForexService.syncAllYahooCandles();
+        yahooForexService.syncAllYahoo();
     }
 
     @Scheduled(cron = "${app.scheduler.forex.morning-cron}", zone = "${app.timezone}")

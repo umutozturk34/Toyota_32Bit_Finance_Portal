@@ -1,7 +1,6 @@
 package com.finance.backend.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.finance.backend.dto.external.TcmbRateDto;
-import com.finance.backend.util.PercentChangeCalculator;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -44,10 +43,6 @@ public class Forex extends BaseAsset {
     private BigDecimal currentPrice;
     @Column(name = "selling_price", precision = 19, scale = 4)
     private BigDecimal sellingPrice;
-    @Column(name = "change_24h", precision = 19, scale = 4)
-    private BigDecimal change24h;
-    @Column(name = "change_percent_24h", precision = 19, scale = 4)
-    private BigDecimal changePercent24h;
     @Column(name = "cross_rate_usd", precision = 19, scale = 4)
     private BigDecimal crossRateUsd;
     @Column(name = "cross_rate_other", precision = 19, scale = 4)
@@ -97,7 +92,7 @@ public class Forex extends BaseAsset {
         this.dayHigh = scaleValue(dayHigh, scale);
         this.dayLow = scaleValue(dayLow, scale);
         this.volume = volume;
-        applyChangeFields(marketPrice, previousClose, scale);
+        applyChange(marketPrice, previousClose, scale);
         this.yahooUpdatedAt = LocalDateTime.now();
     }
 
@@ -107,15 +102,23 @@ public class Forex extends BaseAsset {
         this.currentPrice = syntheticPrice;
         this.sellingPrice = scaleValue(syntheticPrice.multiply(BigDecimal.ONE.add(spreadRate)), scale);
         if (syntheticPreviousClose != null) {
-            applyChangeFields(syntheticPrice, syntheticPreviousClose, scale);
+            applyChange(syntheticPrice, syntheticPreviousClose, scale);
         }
         this.yahooUpdatedAt = LocalDateTime.now();
     }
 
-    private void applyChangeFields(BigDecimal current, BigDecimal previous, int scale) {
-        PercentChangeCalculator.Result result = PercentChangeCalculator.compute(current, previous, scale);
-        this.change24h = result.amount();
-        this.changePercent24h = result.percent();
+    @Override
+    public void scaleFields(int scale) {
+        this.currentPrice = scaleValue(this.currentPrice, scale);
+        this.sellingPrice = scaleValue(this.sellingPrice, scale);
+        this.openPrice = scaleValue(this.openPrice, scale);
+        this.dayHigh = scaleValue(this.dayHigh, scale);
+        this.dayLow = scaleValue(this.dayLow, scale);
+        this.forexBuying = scaleValue(this.forexBuying, scale);
+        this.forexSelling = scaleValue(this.forexSelling, scale);
+        this.banknoteBuying = scaleValue(this.banknoteBuying, scale);
+        this.banknoteSelling = scaleValue(this.banknoteSelling, scale);
+        this.crossRateUsd = scaleValue(this.crossRateUsd, scale);
     }
 
     private BigDecimal divideByUnit(BigDecimal value, int unit, int scale) {

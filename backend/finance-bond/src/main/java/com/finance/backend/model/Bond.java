@@ -217,6 +217,7 @@ public class Bond extends BaseAsset {
         this.simpleYield = rawYield.compareTo(BigDecimal.ZERO) < 0 ? null : rawYield;
     }
 
+    @Override
     public void scaleFields(int scale) {
         this.couponRate = scaleValue(this.couponRate, scale);
         this.simpleYield = scaleValue(this.simpleYield, scale);

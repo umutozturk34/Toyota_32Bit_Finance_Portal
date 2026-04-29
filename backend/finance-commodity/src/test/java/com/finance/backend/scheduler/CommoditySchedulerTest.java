@@ -44,8 +44,7 @@ class CommoditySchedulerTest {
     void runMorningTriggersSnapshotCandlesAndPorts() {
         scheduler.runMorningCommodityUpdate();
 
-        verify(dataService).refreshAllSnapshots();
-        verify(dataService).refreshAllCandles();
+        verify(dataService).refreshAll();
         verify(portfolioPort).onMarketUpdate(MarketType.COMMODITY);
         verify(marketPort).onMarketDataUpdated(MarketType.COMMODITY);
     }
@@ -54,16 +53,14 @@ class CommoditySchedulerTest {
     void runAfternoonTriggersFullPipeline() {
         scheduler.runAfternoonCommodityUpdate();
 
-        verify(dataService).refreshAllSnapshots();
-        verify(dataService).refreshAllCandles();
+        verify(dataService).refreshAll();
     }
 
     @Test
     void runEveningTriggersFullPipeline() {
         scheduler.runEveningCommodityUpdate();
 
-        verify(dataService).refreshAllSnapshots();
-        verify(dataService).refreshAllCandles();
+        verify(dataService).refreshAll();
     }
 
 }

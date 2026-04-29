@@ -1,8 +1,9 @@
 package com.finance.backend.model;
 
+import com.finance.backend.model.value.MoneyTRY;
 import org.junit.jupiter.api.Test;
-
-import java.math.BigDecimal;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,61 +11,62 @@ class UserWalletTest {
 
     @Test
     void debitReducesBothBalanceAndAvailableBalance() {
-        UserWallet wallet = buildWallet(new BigDecimal("1000.0000"));
+        UserWallet wallet = buildWallet(MoneyTRY.of("1000.0000"));
 
-        wallet.debit(new BigDecimal("300.0000"));
+        wallet.debit(MoneyTRY.of("300.0000"));
 
-        assertThat(wallet.getBalance()).isEqualByComparingTo(new BigDecimal("700.0000"));
-        assertThat(wallet.getAvailableBalance()).isEqualByComparingTo(new BigDecimal("700.0000"));
+        assertThat(wallet.getBalance()).isEqualTo(MoneyTRY.of("700.0000"));
+        assertThat(wallet.getAvailableBalance()).isEqualTo(MoneyTRY.of("700.0000"));
     }
 
     @Test
     void creditIncreasesBothBalanceAndAvailableBalance() {
-        UserWallet wallet = buildWallet(new BigDecimal("500.0000"));
+        UserWallet wallet = buildWallet(MoneyTRY.of("500.0000"));
 
-        wallet.credit(new BigDecimal("250.0000"));
+        wallet.credit(MoneyTRY.of("250.0000"));
 
-        assertThat(wallet.getBalance()).isEqualByComparingTo(new BigDecimal("750.0000"));
-        assertThat(wallet.getAvailableBalance()).isEqualByComparingTo(new BigDecimal("750.0000"));
+        assertThat(wallet.getBalance()).isEqualTo(MoneyTRY.of("750.0000"));
+        assertThat(wallet.getAvailableBalance()).isEqualTo(MoneyTRY.of("750.0000"));
     }
 
     @Test
-    void debitMaintainsScale4() {
-        UserWallet wallet = buildWallet(new BigDecimal("1000.0000"));
+    void debitMaintainsScaleFour() {
+        UserWallet wallet = buildWallet(MoneyTRY.of("1000.0000"));
 
-        wallet.debit(new BigDecimal("333.3333"));
+        wallet.debit(MoneyTRY.of("333.3333"));
 
-        assertThat(wallet.getBalance().scale()).isEqualTo(4);
-        assertThat(wallet.getAvailableBalance().scale()).isEqualTo(4);
+        assertThat(wallet.getBalance().amount().scale()).isEqualTo(4);
+        assertThat(wallet.getAvailableBalance().amount().scale()).isEqualTo(4);
     }
 
-    @Test
-    void hasSufficientBalanceReturnsTrueWhenEnough() {
-        UserWallet wallet = buildWallet(new BigDecimal("1000.0000"));
+    @ParameterizedTest
+    @CsvSource({
+            "1000.0000, 999.9999, true",
+            "1000.0000, 1000.0000, true",
+            "100.0000, 100.0001, false",
+            "0.0000, 0.0001, false",
+            "500.0000, 500.0000, true"
+    })
+    void hasSufficientBalanceComparesAgainstAvailableBalance(String startingBalance, String probe, boolean expected) {
+        UserWallet wallet = buildWallet(MoneyTRY.of(startingBalance));
 
-        assertThat(wallet.hasSufficientBalance(new BigDecimal("999.9999"))).isTrue();
-        assertThat(wallet.hasSufficientBalance(new BigDecimal("1000.0000"))).isTrue();
-    }
+        boolean sufficient = wallet.hasSufficientBalance(MoneyTRY.of(probe));
 
-    @Test
-    void hasSufficientBalanceReturnsFalseWhenInsufficient() {
-        UserWallet wallet = buildWallet(new BigDecimal("100.0000"));
-
-        assertThat(wallet.hasSufficientBalance(new BigDecimal("100.0001"))).isFalse();
+        assertThat(sufficient).isEqualTo(expected);
     }
 
     @Test
     void debitThenCreditRestoresOriginalBalance() {
-        UserWallet wallet = buildWallet(new BigDecimal("500.0000"));
+        UserWallet wallet = buildWallet(MoneyTRY.of("500.0000"));
 
-        wallet.debit(new BigDecimal("200.0000"));
-        wallet.credit(new BigDecimal("200.0000"));
+        wallet.debit(MoneyTRY.of("200.0000"));
+        wallet.credit(MoneyTRY.of("200.0000"));
 
-        assertThat(wallet.getBalance()).isEqualByComparingTo(new BigDecimal("500.0000"));
-        assertThat(wallet.getAvailableBalance()).isEqualByComparingTo(new BigDecimal("500.0000"));
+        assertThat(wallet.getBalance()).isEqualTo(MoneyTRY.of("500.0000"));
+        assertThat(wallet.getAvailableBalance()).isEqualTo(MoneyTRY.of("500.0000"));
     }
 
-    private UserWallet buildWallet(BigDecimal balance) {
+    private UserWallet buildWallet(MoneyTRY balance) {
         return UserWallet.builder()
                 .balance(balance)
                 .availableBalance(balance)

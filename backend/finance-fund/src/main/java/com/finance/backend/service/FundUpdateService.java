@@ -138,7 +138,7 @@ public class FundUpdateService implements MarketRefresher {
                 .collect(Collectors.toMap(Fund::getFundCode, f -> f));
         LocalDate today = TefasHelper.findLastBusinessDay(
                 LocalDate.now(appZone), appZone, windowing.eodCutoverHour());
-        LocalDate earliest = today.minusYears(windowing.yearsToFetch());
+        LocalDate earliest = today.minusYears(windowing.yearsToFetch()).plusDays(1);
 
         List<WindowedFetchPlanner.DateWindow> windows = computeRequiredWindows(
                 trackedFunds, earliest, today);
@@ -243,7 +243,7 @@ public class FundUpdateService implements MarketRefresher {
     private int fetchAndSaveFullHistory(Fund fund, FundType fundType) {
         LocalDate today = TefasHelper.findLastBusinessDay(
                 LocalDate.now(appZone), appZone, windowing.eodCutoverHour());
-        LocalDate earliest = today.minusYears(windowing.yearsToFetch());
+        LocalDate earliest = today.minusYears(windowing.yearsToFetch()).plusDays(1);
         long start = System.currentTimeMillis();
         int total = runWindowedSingleFund(fund, fundType, earliest, today);
         log.info("[TIMING] {} full history done - {} candles in {}s",

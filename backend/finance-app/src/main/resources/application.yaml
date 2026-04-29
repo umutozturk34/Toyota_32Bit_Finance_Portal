@@ -113,9 +113,9 @@ app:
   fund:
     years-to-fetch: 5
     min-candles-for-incremental: 30
-    window-sizes: 30
+    window-sizes: 28
     auto-track-sort-order: 9999
-    backfill-gap-threshold-days: 30
+    backfill-gap-threshold-days: 7
 
   commodity:
     years-to-keep: 5

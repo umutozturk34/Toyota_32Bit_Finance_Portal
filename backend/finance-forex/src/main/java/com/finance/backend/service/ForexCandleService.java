@@ -4,7 +4,6 @@ import com.finance.backend.client.YahooForexClient;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.config.ForexProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
-import com.finance.backend.exception.BusinessException;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.ForexMapper;
 import com.finance.backend.model.Forex;
@@ -95,19 +94,15 @@ public class ForexCandleService implements CandleBatchRefresher {
                 .filter(forex -> !"USDTRY".equals(forex.getCurrencyCode()))
                 .toList();
 
-        try {
-            BatchUpdateRunner.Result result = MarketBatchRunner.run(
-                    nonUsdTryForex,
-                    forex -> {
-                        updateForexCandles(forex, usdtryCandleMap);
-                        forexCacheService.refreshHistory(forex.getCurrencyCode());
-                    },
-                    Forex::getCurrencyCode,
-                    log, "Forex", "candle", 5);
-            BatchLogHelper.logSummary(log, "Yahoo candle sync", result);
-        } catch (BusinessException e) {
-            log.warn("Yahoo forex candle best-effort failed (TCMB remains primary): {}", e.getMessage());
-        }
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
+                nonUsdTryForex,
+                forex -> {
+                    updateForexCandles(forex, usdtryCandleMap);
+                    forexCacheService.refreshHistory(forex.getCurrencyCode());
+                },
+                Forex::getCurrencyCode,
+                log, "Forex", "candle", 5);
+        BatchLogHelper.logSummary(log, "Yahoo candle sync", result);
     }
 
     @Override
@@ -137,10 +132,10 @@ public class ForexCandleService implements CandleBatchRefresher {
             List<YahooCandleDto> candles = yahooForexClient.fetchCandles(yahooSymbol, range, "1d", true);
             if (!candles.isEmpty()) {
                 int saved = transactionTemplate.execute(status -> saveCandleBatch(forex, candles));
-                if (saved > 0 && !wasEmpty) {
-                    return;
-                }
-                if (wasEmpty) {
+                if (saved > 0) {
+                    if (!wasEmpty || "USDTRY".equals(baseSymbol)) {
+                        return;
+                    }
                     log.info("{} first-time fetch returned {} direct candles, also trying synthetic",
                             baseSymbol, saved);
                 }

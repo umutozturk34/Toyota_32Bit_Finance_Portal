@@ -4,7 +4,6 @@ import com.finance.backend.client.YahooForexClient;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.config.ForexProperties;
 import com.finance.backend.dto.external.YahooQuoteDto;
-import com.finance.backend.exception.BusinessException;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
@@ -57,16 +56,12 @@ public class ForexSnapshotService implements SnapshotBatchRefresher {
         List<Forex> allForex = forexRepository.findAll();
         log.info("Starting Yahoo forex snapshot sync for {} pairs", allForex.size());
 
-        try {
-            BatchUpdateRunner.Result result = MarketBatchRunner.run(
-                    allForex,
-                    this::updateForexSnapshot,
-                    Forex::getCurrencyCode,
-                    log, "Forex", "snapshot", 5);
-            BatchLogHelper.logSummary(log, "Yahoo snapshot sync", result);
-        } catch (BusinessException e) {
-            log.warn("Yahoo forex snapshot best-effort failed (TCMB remains primary): {}", e.getMessage());
-        }
+        BatchUpdateRunner.Result result = MarketBatchRunner.run(
+                allForex,
+                this::updateForexSnapshot,
+                Forex::getCurrencyCode,
+                log, "Forex", "snapshot", 5);
+        BatchLogHelper.logSummary(log, "Yahoo snapshot sync", result);
     }
 
     @Override

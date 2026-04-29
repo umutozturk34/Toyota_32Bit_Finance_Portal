@@ -14,8 +14,7 @@ import org.springframework.stereotype.Service;
 public class CryptoDataService implements TrackedAssetDataService {
 
     private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
-    private final CryptoSnapshotService cryptoSnapshotService;
-    private final CryptoCandleService cryptoCandleService;
+    private final CryptoUpdateService cryptoUpdateService;
 
     @Override
     public TrackedAssetType getAssetType() {
@@ -24,7 +23,7 @@ public class CryptoDataService implements TrackedAssetDataService {
 
     @Override
     public void validateExists(String coinId) {
-        if (!cryptoSnapshotService.existsInApi(coinId)) {
+        if (!cryptoUpdateService.exists(coinId)) {
             throw new BusinessException(
                     "Kripto varlık bulunamadı: " + coinId, "ASSET_NOT_FOUND");
         }
@@ -32,14 +31,13 @@ public class CryptoDataService implements TrackedAssetDataService {
 
     @Override
     public void refresh(String coinId) {
-        cryptoSnapshotService.refreshSnapshot(coinId);
-        cryptoCandleService.refreshCandles(coinId);
+        cryptoUpdateService.refreshSnapshot(coinId);
+        cryptoUpdateService.refreshCandles(coinId);
     }
 
     @Override
     public void refreshAll() {
-        cryptoSnapshotService.refreshAll();
-        cryptoCandleService.refreshAll();
+        cryptoUpdateService.refreshAll();
     }
 
     @Override

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 @Repository
 public interface ForexCandleRepository extends JpaRepository<ForexCandle, Long> {
+    List<ForexCandle> findByCurrencyCodeOrderByCandleDateAsc(String currencyCode);
     List<ForexCandle> findByCurrencyCodeOrderByCandleDateDesc(String currencyCode);
     List<ForexCandle> findByCurrencyCodeAndCandleDateBetweenOrderByCandleDateAsc(
         String currencyCode, LocalDateTime start, LocalDateTime end
@@ -17,9 +18,5 @@ public interface ForexCandleRepository extends JpaRepository<ForexCandle, Long> 
 
     List<ForexCandle> findByCurrencyCodeAndCandleDateIn(String currencyCode, Collection<LocalDateTime> candleDates);
 
-    List<ForexCandle> findTop1825ByCurrencyCodeOrderByCandleDateDesc(String currencyCode);
-    List<ForexCandle> findTop1825ByCurrencyCodeOrderByCandleDateAsc(String currencyCode);
     Long countByCurrencyCode(String currencyCode);
-    int deleteByCandleDateBefore(LocalDateTime cutoffDate);
-    int deleteByCurrencyCodeAndCandleDateBefore(String currencyCode, LocalDateTime cutoffDate);
 }

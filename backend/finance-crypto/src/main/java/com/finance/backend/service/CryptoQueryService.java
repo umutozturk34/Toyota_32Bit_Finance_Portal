@@ -20,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CryptoQueryService implements MarketHistoryProvider {
 
-    private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
+    private final MarketCacheService<Crypto> cryptoCacheService;
     private final CryptoCandleRepository cryptoCandleRepository;
     private final CryptoResponseMapper cryptoResponseMapper;
     private final TrackedAssetQueryService trackedAssetQueryService;
@@ -33,12 +33,9 @@ public class CryptoQueryService implements MarketHistoryProvider {
     @Override
     public List<CandleResponse> getHistory(String id, CandlePeriod period) {
         String normalizedCode = trackedAssetQueryService.resolveEnabledCodeOrThrow(TrackedAssetType.CRYPTO, id);
-        if (period == CandlePeriod.ALL) {
-            return cryptoResponseMapper.toCryptoCandleResponses(cryptoCacheService.getHistory(normalizedCode));
-        }
-        LocalDateTime start = period.toStartDateTime();
         List<CryptoCandle> candles = cryptoCandleRepository
-                .findByCryptoIdAndCandleDateBetweenOrderByCandleDateAsc(normalizedCode, start, LocalDateTime.now());
+                .findByCryptoIdAndCandleDateBetweenOrderByCandleDateAsc(
+                        normalizedCode, period.toStartDateTime(), LocalDateTime.now());
         return cryptoResponseMapper.toCryptoCandleResponses(candles);
     }
 }

@@ -16,6 +16,9 @@ public interface FundCandleRepository extends JpaRepository<FundCandle, Long> {
     @Query("SELECT c.fundCode, MIN(c.candleDate), MAX(c.candleDate) FROM FundCandle c GROUP BY c.fundCode")
     List<Object[]> findCandleDateRangePerFund();
 
+    @Query("SELECT c.fundCode, COUNT(c) FROM FundCandle c GROUP BY c.fundCode")
+    List<Object[]> countCandlesPerFund();
+
     List<FundCandle> findByFundCodeOrderByCandleDateDesc(String fundCode);
 
     List<FundCandle> findByFundCodeOrderByCandleDateAsc(String fundCode);

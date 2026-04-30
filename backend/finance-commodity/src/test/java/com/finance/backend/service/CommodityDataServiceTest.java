@@ -18,7 +18,7 @@ class CommodityDataServiceTest {
 
     private CommodityUpdateService updateService;
     @SuppressWarnings("unchecked")
-    private final MarketCacheService<Commodity, CommodityCandle> cacheService = mock(MarketCacheService.class);
+    private final MarketCacheService<Commodity> cacheService = mock(MarketCacheService.class);
     private PreciousMetalDerivativeCalculator derivativeCalculator;
     private CommodityDataService service;
 

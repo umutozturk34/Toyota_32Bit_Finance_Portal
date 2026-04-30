@@ -9,7 +9,6 @@ import com.finance.backend.dto.internal.YahooChartFullResult;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.ForexMapper;
 import com.finance.backend.model.Forex;
-import com.finance.backend.model.ForexCandle;
 import com.finance.backend.repository.ForexCandleRepository;
 import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.util.SyntheticPriceCalculator;
@@ -32,7 +31,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
     private final YahooForexClient yahooForexClient;
     private final ForexRepository forexRepository;
     private final ForexCandleRepository forexCandleRepository;
-    private final MarketCacheService<Forex, ForexCandle> forexCacheService;
+    private final MarketCacheService<Forex> forexCacheService;
     private final ForexEntityWriter entityWriter;
     private final ForexMapper forexMapper;
     private final TransactionTemplate transactionTemplate;
@@ -46,7 +45,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
     public ForexSnapshotProcessor(YahooForexClient yahooForexClient,
                                   ForexRepository forexRepository,
                                   ForexCandleRepository forexCandleRepository,
-                                  MarketCacheService<Forex, ForexCandle> forexCacheService,
+                                  MarketCacheService<Forex> forexCacheService,
                                   ForexEntityWriter entityWriter,
                                   ForexMapper forexMapper,
                                   TransactionTemplate transactionTemplate,
@@ -107,13 +106,13 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
             log.warn("Forex pair {} not found for single-code refresh", code);
             return;
         }
-        Map<String, YahooCandleDto> usdtryCandleMap = forexCacheService.getHistory(baseCurrency).stream()
+        Map<String, YahooCandleDto> usdtryCandleMap = forexCandleRepository
+                .findByCurrencyCodeOrderByCandleDateAsc(baseCurrency).stream()
                 .collect(Collectors.toMap(
                         c -> c.getCandleDate().toLocalDate().toString(),
                         forexMapper::toYahooCandleDto,
                         (a, b) -> a));
         updatePair(forex, usdtryCandleMap);
-        forexCacheService.refreshHistory(code);
     }
 
     public boolean exists(String code) {

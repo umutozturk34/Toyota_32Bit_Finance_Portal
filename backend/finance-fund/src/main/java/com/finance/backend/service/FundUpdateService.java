@@ -15,7 +15,6 @@ import com.finance.backend.repository.FundCandleRepository;
 import com.finance.backend.repository.FundRepository;
 import com.finance.backend.util.CodeNormalizer;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
-import com.finance.backend.util.CandlePruner;
 import com.finance.backend.util.TefasHelper;
 import com.finance.backend.util.WindowedFetchPlanner;
 import lombok.extern.log4j.Log4j2;
@@ -37,7 +36,7 @@ public class FundUpdateService implements MarketRefresher {
     private final FundMapper fundMapper;
     private final FundRepository fundRepository;
     private final FundCandleRepository fundCandleRepository;
-    private final MarketCacheService<Fund, FundCandle> fundCacheService;
+    private final MarketCacheService<Fund> fundCacheService;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final FundSnapshotProcessor snapshotProcessor;
     private final FundEntityWriter entityWriter;
@@ -45,13 +44,12 @@ public class FundUpdateService implements MarketRefresher {
     private final TransactionTemplate transactionTemplate;
     private final WindowingPolicy windowing;
     private final ZoneId appZone;
-    private final int backfillGapThresholdDays;
 
     public FundUpdateService(TefasClient tefasClient,
                              FundMapper fundMapper,
                              FundRepository fundRepository,
                              FundCandleRepository fundCandleRepository,
-                             MarketCacheService<Fund, FundCandle> fundCacheService,
+                             MarketCacheService<Fund> fundCacheService,
                              TrackedAssetQueryService trackedAssetQueryService,
                              FundSnapshotProcessor snapshotProcessor,
                              FundEntityWriter entityWriter,
@@ -71,7 +69,6 @@ public class FundUpdateService implements MarketRefresher {
         this.transactionTemplate = transactionTemplate;
         this.windowing = WindowingPolicy.from(fundProperties);
         this.appZone = ZoneId.of(appProperties.getTimezone());
-        this.backfillGapThresholdDays = fundProperties.getBackfillGapThresholdDays();
     }
 
     @Override
@@ -118,8 +115,6 @@ public class FundUpdateService implements MarketRefresher {
 
     private void refreshAllCandles() {
         log.info("Starting fund candle update (bulk strategy)");
-        CandlePruner.pruneByYears(transactionTemplate, windowing.yearsToFetch(),
-                cutoffDate -> fundCandleRepository.deleteByCandleDateBefore(cutoffDate));
         long byfStart = System.currentTimeMillis();
         bulkUpdateForType(FundType.BYF);
         log.info("[TIMING] BYF bulk candle update took {}s", (System.currentTimeMillis() - byfStart) / 1000);
@@ -150,7 +145,6 @@ public class FundUpdateService implements MarketRefresher {
         bulkFetchExecutor.runWindows(fundType, windows, trackedByCode,
                 (fund, dtos) -> {
                     int saved = saveCandleBatch(fund, fundType, dtos);
-                    fundCacheService.refreshHistory(fund.getFundCode());
                     return saved;
                 });
     }
@@ -168,32 +162,37 @@ public class FundUpdateService implements MarketRefresher {
 
     private List<WindowedFetchPlanner.DateWindow> computeRequiredWindows(
             List<Fund> funds, LocalDate earliest, LocalDate today) {
-        Map<String, CandleDateRange> rangePerFund = fundCandleRepository.findCandleDateRangePerFund().stream()
+        Map<String, Long> countPerFund = fundCandleRepository.countCandlesPerFund().stream()
+                .collect(Collectors.toMap(row -> (String) row[0], row -> (Long) row[1]));
+        Map<String, LocalDate> maxPerFund = fundCandleRepository.findCandleDateRangePerFund().stream()
                 .collect(Collectors.toMap(
                         row -> (String) row[0],
-                        row -> new CandleDateRange(
-                                ((LocalDateTime) row[1]).toLocalDate(),
-                                ((LocalDateTime) row[2]).toLocalDate())));
-        LocalDate minFetchFrom = null;
+                        row -> ((LocalDateTime) row[2]).toLocalDate()));
+
+        boolean anyNeedsFullFetch = false;
+        LocalDate forwardStart = null;
+        int minCandles = windowing.minCandlesForIncremental();
         for (Fund fund : funds) {
-            LocalDate fetchFrom = computeFetchFrom(rangePerFund.get(fund.getFundCode()), earliest, today);
-            if (fetchFrom == null) continue;
-            if (minFetchFrom == null || fetchFrom.isBefore(minFetchFrom)) {
-                minFetchFrom = fetchFrom;
+            long count = countPerFund.getOrDefault(fund.getFundCode(), 0L);
+            if (count < minCandles) {
+                anyNeedsFullFetch = true;
+                continue;
+            }
+            LocalDate max = maxPerFund.get(fund.getFundCode());
+            if (max != null && max.isBefore(today)) {
+                LocalDate fundForwardStart = max.plusDays(1);
+                if (forwardStart == null || fundForwardStart.isBefore(forwardStart)) forwardStart = fundForwardStart;
             }
         }
-        if (minFetchFrom == null) return List.of();
-        return WindowedFetchPlanner.planBackward(minFetchFrom, today, windowing.windowSizeDays());
-    }
 
-    private LocalDate computeFetchFrom(CandleDateRange range, LocalDate earliest, LocalDate today) {
-        if (range == null) return earliest;
-        if (range.min().isAfter(earliest.plusDays(backfillGapThresholdDays))) return earliest;
-        if (range.max().isBefore(today)) return range.max().plusDays(1);
-        return null;
+        if (anyNeedsFullFetch) {
+            return WindowedFetchPlanner.planBackward(earliest, today, windowing.windowSizeDays());
+        }
+        if (forwardStart != null) {
+            return WindowedFetchPlanner.planForward(forwardStart, today, windowing.windowSizeDays());
+        }
+        return List.of();
     }
-
-    private record CandleDateRange(LocalDate min, LocalDate max) {}
 
     private void refreshCandlesInternal(String fundCode) {
         String normalized = CodeNormalizer.upper(fundCode);
@@ -225,7 +224,6 @@ public class FundUpdateService implements MarketRefresher {
                         fundCacheService.putSnapshot(targetFund.getFundCode(), targetFund);
                     }
                 });
-        fundCacheService.refreshHistory(targetFund.getFundCode());
         log.info("Refreshed tracked fund candles for {}", normalized);
     }
 

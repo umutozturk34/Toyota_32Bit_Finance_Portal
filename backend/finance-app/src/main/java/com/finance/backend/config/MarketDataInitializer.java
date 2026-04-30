@@ -1,6 +1,8 @@
 package com.finance.backend.config;
 
+import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.*;
+import com.finance.backend.scheduler.SchedulerPorts;
 import com.finance.backend.service.*;
 import com.finance.backend.service.TaskTrackingService.TaskInfo;
 import lombok.RequiredArgsConstructor;
@@ -40,34 +42,35 @@ public class MarketDataInitializer implements CommandLineRunner {
     private final NewsDataService newsDataService;
     private final TaskTrackingService taskTracker;
     private final Executor taskExecutor;
+    private final SchedulerPorts ports;
 
     @Override
     public void run(String... args) {
-        init("crypto", cryptoRepository.count(), cryptoCandleRepository.count(), null,
+        init("crypto", MarketType.CRYPTO, cryptoRepository.count(), cryptoCandleRepository.count(), null,
                 cryptoDataService::refreshAll);
 
-        init("fund", fundRepository.count(), fundCandleRepository.count(), null,
+        init("fund", MarketType.FUND, fundRepository.count(), fundCandleRepository.count(), null,
                 fundDataService::refreshAll);
 
-        init("bond", bondRepository.count(), 1, null, bondDataService::updateBonds);
+        init("bond", null, bondRepository.count(), 1, null, bondDataService::updateBonds);
 
-        init("news", articleRepository.count(), 1, null, newsDataService::updateNews);
+        init("news", null, articleRepository.count(), 1, null, newsDataService::updateNews);
 
         CompletableFuture<Void> forexFuture = init(
-                "forex", forexRepository.count(), forexCandleRepository.count(), null, () -> {
+                "forex", MarketType.FOREX, forexRepository.count(), forexCandleRepository.count(), null, () -> {
             tcmbForexService.fetchAndSaveTcmbRates();
             forexDataService.syncAllYahoo();
         });
 
         CompletableFuture<Void> stockFuture = init(
-                "stock", stockRepository.count(), stockCandleRepository.count(), forexFuture,
+                "stock", MarketType.STOCK, stockRepository.count(), stockCandleRepository.count(), forexFuture,
                 stockDataService::refreshAll);
 
-        init("commodity", commodityRepository.count(), commodityCandleRepository.count(), stockFuture,
+        init("commodity", MarketType.COMMODITY, commodityRepository.count(), commodityCandleRepository.count(), stockFuture,
                 commodityDataService::refreshAll);
     }
 
-    private CompletableFuture<Void> init(String name, long snapshotCount, long candleCount,
+    private CompletableFuture<Void> init(String name, MarketType type, long snapshotCount, long candleCount,
                                          CompletableFuture<?> prerequisite, Runnable action) {
         if (snapshotCount > 0 && candleCount > 0) {
             log.info("{} data exists - skipping init", name);
@@ -81,6 +84,10 @@ public class MarketDataInitializer implements CommandLineRunner {
                     prerequisite.handle((r, ex) -> null).join();
                 }
                 action.run();
+                if (type != null) {
+                    ports.portfolio().ifPresent(p -> p.onMarketUpdate(type));
+                    ports.market().ifPresent(p -> p.onMarketDataUpdated(type));
+                }
                 taskTracker.completeTask("init-" + name, started);
                 log.info("{} init completed", name);
             } catch (Exception e) {

@@ -53,7 +53,7 @@ public abstract class AbstractYahooClient {
         YahooChartResponse response;
         try {
             response = webClient.get()
-                    .uri(chartPath + symbol + "?range=" + range + "&interval=" + interval)
+                    .uri(chartPath + symbol + "?" + buildRangeQuery(range) + "&interval=" + interval)
                     .retrieve()
                     .bodyToMono(YahooChartResponse.class)
                     .block();
@@ -67,5 +67,12 @@ public abstract class AbstractYahooClient {
             throw new SymbolNotFoundException(symbol);
         }
         return response.chart().result().getFirst();
+    }
+
+    private String buildRangeQuery(String range) {
+        if ("max".equalsIgnoreCase(range)) {
+            return "period1=0&period2=" + (System.currentTimeMillis() / 1000L);
+        }
+        return "range=" + range;
     }
 }

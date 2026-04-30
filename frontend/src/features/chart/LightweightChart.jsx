@@ -25,6 +25,7 @@ const TIME_RANGES = [
     { id: '3M', label: '3A', months: 3 },
     { id: '6M', label: '6A', months: 6 },
     { id: '1Y', label: '1Y', months: 12 },
+    { id: '5Y', label: '5Y', months: 60 },
     { id: 'MAX', label: 'Maks', months: 0 },
 ];
 

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class FundDataService implements TrackedAssetDataService {
 
-    private final MarketCacheService<Fund, FundCandle> fundCacheService;
+    private final MarketCacheService<Fund> fundCacheService;
     private final FundUpdateService fundUpdateService;
 
     @Override

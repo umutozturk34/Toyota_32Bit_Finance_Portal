@@ -22,10 +22,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class AssetPricingAdapterTest {
 
-    @Mock private MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
-    @Mock private MarketCacheService<Stock, StockCandle> stockCacheService;
-    @Mock private MarketCacheService<Forex, ForexCandle> forexCacheService;
-    @Mock private MarketCacheService<Fund, FundCandle> fundCacheService;
+    @Mock private MarketCacheService<Crypto> cryptoCacheService;
+    @Mock private MarketCacheService<Stock> stockCacheService;
+    @Mock private MarketCacheService<Forex> forexCacheService;
+    @Mock private MarketCacheService<Fund> fundCacheService;
 
     private AssetPricingAdapter adapter;
 

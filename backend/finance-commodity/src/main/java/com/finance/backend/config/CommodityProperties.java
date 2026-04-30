@@ -17,8 +17,7 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "app.commodity")
 public class CommodityProperties {
 
-    private int yearsToKeep = 5;
-    private String chartRange = "5y";
+    private String chartRange = "max";
     private String chartInterval = "1d";
     private int batchMinSample = 5;
 

@@ -85,7 +85,7 @@ const ChartView = () => {
     if (urlType === 'BIST' && sym.endsWith('.IS')) sym = sym.replace('.IS', '');
     return sym;
   });
-  const [timeRange, setTimeRange] = useState('MAX');
+  const [timeRange, setTimeRange] = useState('6M');
   const [customSymbol, setCustomSymbol] = useState('');
   const [compareAsset, setCompareAsset] = useState(null);
 

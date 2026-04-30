@@ -9,7 +9,7 @@ public final class MarketAssetCacheHelper {
     }
 
     public static <T, C> void clearIfValid(String code,
-                                           MarketCacheService<T, C> cache,
+                                           MarketCacheService<T> cache,
                                            boolean toUpper,
                                            Logger log,
                                            String marketName) {

@@ -27,14 +27,14 @@ public class PreciousMetalDerivativeCalculator {
 
     private final CommodityRepository commodityRepository;
     private final CommodityCandleRepository commodityCandleRepository;
-    private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
+    private final MarketCacheService<Commodity> commodityCacheService;
     private final CommoditySegmentResolver segmentResolver;
     private final int scale;
     private final List<DerivativeRule> rules;
 
     public PreciousMetalDerivativeCalculator(CommodityRepository commodityRepository,
                                              CommodityCandleRepository commodityCandleRepository,
-                                             MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
+                                             MarketCacheService<Commodity> commodityCacheService,
                                              CommoditySegmentResolver segmentResolver,
                                              AppProperties appProperties,
                                              CommodityProperties commodityProperties) {
@@ -134,7 +134,6 @@ public class PreciousMetalDerivativeCalculator {
         if (!toUpdate.isEmpty()) {
             commodityCandleRepository.saveAll(toUpdate);
         }
-        commodityCacheService.refreshHistory(derivativeCode);
         log.info("Derivative candles refreshed for {}: {} inserted, {} updated", derivativeCode, toInsert.size(), toUpdate.size());
     }
 

@@ -2,11 +2,10 @@ package com.finance.backend.service;
 
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.model.Forex;
-import com.finance.backend.model.ForexCandle;
+import com.finance.backend.repository.ForexCandleRepository;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -15,10 +14,13 @@ public class ForexExchangeRateProvider implements ExchangeRateProvider {
 
     private static final String USD_TRY_CODE = "USDTRY";
 
-    private final MarketCacheService<Forex, ForexCandle> forexCacheService;
+    private final MarketCacheService<Forex> forexCacheService;
+    private final ForexCandleRepository forexCandleRepository;
 
-    public ForexExchangeRateProvider(MarketCacheService<Forex, ForexCandle> forexCacheService) {
+    public ForexExchangeRateProvider(MarketCacheService<Forex> forexCacheService,
+                                     ForexCandleRepository forexCandleRepository) {
         this.forexCacheService = forexCacheService;
+        this.forexCandleRepository = forexCandleRepository;
     }
 
     @Override
@@ -36,13 +38,10 @@ public class ForexExchangeRateProvider implements ExchangeRateProvider {
 
     @Override
     public Map<String, YahooCandleDto> getUsdTryHistory() {
-        var candles = forexCacheService.getHistory(USD_TRY_CODE);
-        if (candles == null || candles.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        return candles.stream().collect(Collectors.toMap(
-                c -> c.getCandleDate().toLocalDate().toString(),
-                c -> new YahooCandleDto(c.getCandleDate(), c.getOpen(), c.getHigh(), c.getLow(), c.getClose(), null),
-                (a, b) -> a));
+        return forexCandleRepository.findByCurrencyCodeOrderByCandleDateAsc(USD_TRY_CODE).stream()
+                .collect(Collectors.toMap(
+                        c -> c.getCandleDate().toLocalDate().toString(),
+                        c -> new YahooCandleDto(c.getCandleDate(), c.getOpen(), c.getHigh(), c.getLow(), c.getClose(), null),
+                        (a, b) -> a));
     }
 }

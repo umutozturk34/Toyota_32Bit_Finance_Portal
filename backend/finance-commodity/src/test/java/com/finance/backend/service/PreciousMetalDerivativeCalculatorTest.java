@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 class PreciousMetalDerivativeCalculatorTest {
 
     @SuppressWarnings("unchecked")
-    private final MarketCacheService<Commodity, CommodityCandle> cacheService = mock(MarketCacheService.class);
+    private final MarketCacheService<Commodity> cacheService = mock(MarketCacheService.class);
     private final CommodityRepository repository = mock(CommodityRepository.class);
     private final CommodityCandleRepository candleRepository = mock(CommodityCandleRepository.class);
 

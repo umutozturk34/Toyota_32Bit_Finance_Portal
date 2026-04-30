@@ -5,7 +5,6 @@ import com.finance.backend.config.AppProperties;
 import com.finance.backend.config.FundProperties;
 import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.model.Fund;
-import com.finance.backend.model.FundCandle;
 import com.finance.backend.model.FundType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.util.ApiAssetValidator;
@@ -29,7 +28,7 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
 
     private final TefasClient tefasClient;
     private final FundEntityWriter entityWriter;
-    private final MarketCacheService<Fund, FundCandle> fundCacheService;
+    private final MarketCacheService<Fund> fundCacheService;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final TransactionTemplate transactionTemplate;
     private final ZoneId appZone;
@@ -37,7 +36,7 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
 
     public FundSnapshotProcessor(TefasClient tefasClient,
                                  FundEntityWriter entityWriter,
-                                 MarketCacheService<Fund, FundCandle> fundCacheService,
+                                 MarketCacheService<Fund> fundCacheService,
                                  TrackedAssetQueryService trackedAssetQueryService,
                                  TransactionTemplate transactionTemplate,
                                  AppProperties appProperties,

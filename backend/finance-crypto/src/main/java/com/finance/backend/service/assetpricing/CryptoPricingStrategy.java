@@ -14,10 +14,10 @@ import java.math.BigDecimal;
 @Component
 public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
 
-    private final MarketCacheService<Crypto, CryptoCandle> cacheService;
+    private final MarketCacheService<Crypto> cacheService;
     private final CommissionProperties commissionProperties;
 
-    public CryptoPricingStrategy(MarketCacheService<Crypto, CryptoCandle> cacheService,
+    public CryptoPricingStrategy(MarketCacheService<Crypto> cacheService,
                                  CommissionProperties commissionProperties) {
         this.cacheService = cacheService;
         this.commissionProperties = commissionProperties;

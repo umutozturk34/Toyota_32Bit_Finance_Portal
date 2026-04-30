@@ -22,11 +22,11 @@ public class StockMarketAssetProvider extends BaseTrackedMarketAssetProvider<Sto
     private static final List<String> SEARCH_FIELDS = List.of("symbol", "name");
 
     private final StockRepository stockRepository;
-    private final MarketCacheService<Stock, StockCandle> stockCacheService;
+    private final MarketCacheService<Stock> stockCacheService;
     private final StockResponseMapper stockResponseMapper;
 
     public StockMarketAssetProvider(StockRepository stockRepository,
-                                    MarketCacheService<Stock, StockCandle> stockCacheService,
+                                    MarketCacheService<Stock> stockCacheService,
                                     StockResponseMapper stockResponseMapper,
                                     TrackedAssetQueryService trackedAssetQueryService) {
         super(stockRepository, trackedAssetQueryService);

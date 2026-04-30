@@ -23,7 +23,7 @@ class CommodityMarketAssetProviderTest {
 
     private CommodityRepository commodityRepository;
     @SuppressWarnings("unchecked")
-    private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService = mock(MarketCacheService.class);
+    private final MarketCacheService<Commodity> commodityCacheService = mock(MarketCacheService.class);
     private CommodityResponseMapper commodityResponseMapper;
     private TrackedAssetQueryService trackedAssetQueryService;
     private CommodityMarketAssetProvider provider;

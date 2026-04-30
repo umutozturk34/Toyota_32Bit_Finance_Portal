@@ -18,11 +18,11 @@ public class CryptoMarketAssetProvider extends BaseTrackedMarketAssetProvider<Cr
 
     private static final List<String> SEARCH_FIELDS = List.of("id", "name", "symbol");
 
-    private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
+    private final MarketCacheService<Crypto> cryptoCacheService;
     private final CryptoResponseMapper cryptoResponseMapper;
 
     public CryptoMarketAssetProvider(CryptoRepository cryptoRepository,
-                                     MarketCacheService<Crypto, CryptoCandle> cryptoCacheService,
+                                     MarketCacheService<Crypto> cryptoCacheService,
                                      CryptoResponseMapper cryptoResponseMapper,
                                      TrackedAssetQueryService trackedAssetQueryService) {
         super(cryptoRepository, trackedAssetQueryService);

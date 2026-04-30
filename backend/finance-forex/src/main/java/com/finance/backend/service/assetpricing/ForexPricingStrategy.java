@@ -13,9 +13,9 @@ import java.math.BigDecimal;
 @Component
 public class ForexPricingStrategy extends BaseAssetPricingStrategy {
 
-    private final MarketCacheService<Forex, ForexCandle> cacheService;
+    private final MarketCacheService<Forex> cacheService;
 
-    public ForexPricingStrategy(MarketCacheService<Forex, ForexCandle> cacheService) {
+    public ForexPricingStrategy(MarketCacheService<Forex> cacheService) {
         this.cacheService = cacheService;
     }
 

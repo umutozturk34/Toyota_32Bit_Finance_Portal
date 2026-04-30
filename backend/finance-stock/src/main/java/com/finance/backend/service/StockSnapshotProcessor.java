@@ -6,7 +6,6 @@ import com.finance.backend.config.StockProperties;
 import com.finance.backend.dto.external.YahooStockQuoteDto;
 import com.finance.backend.dto.internal.YahooChartFullResult;
 import com.finance.backend.model.Stock;
-import com.finance.backend.model.StockCandle;
 import com.finance.backend.repository.StockCandleRepository;
 import com.finance.backend.util.ApiAssetValidator;
 import com.finance.backend.util.CodeNormalizer;
@@ -24,7 +23,7 @@ public class StockSnapshotProcessor implements MarketSnapshotProcessor {
 
     private final YahooStockClient yahooStockClient;
     private final StockCandleRepository stockCandleRepository;
-    private final MarketCacheService<Stock, StockCandle> stockCacheService;
+    private final MarketCacheService<Stock> stockCacheService;
     private final StockEntityWriter entityWriter;
     private final TransactionTemplate transactionTemplate;
     private final String fallbackRange;
@@ -33,7 +32,7 @@ public class StockSnapshotProcessor implements MarketSnapshotProcessor {
 
     public StockSnapshotProcessor(YahooStockClient yahooStockClient,
                                   StockCandleRepository stockCandleRepository,
-                                  MarketCacheService<Stock, StockCandle> stockCacheService,
+                                  MarketCacheService<Stock> stockCacheService,
                                   StockEntityWriter entityWriter,
                                   TransactionTemplate transactionTemplate,
                                   AppProperties appProperties,
@@ -43,7 +42,7 @@ public class StockSnapshotProcessor implements MarketSnapshotProcessor {
         this.stockCacheService = stockCacheService;
         this.entityWriter = entityWriter;
         this.transactionTemplate = transactionTemplate;
-        this.fallbackRange = stockProperties.getHistoryYears() + "y";
+        this.fallbackRange = stockProperties.getChartRange();
         this.chartInterval = stockProperties.getChartInterval();
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
@@ -66,7 +65,6 @@ public class StockSnapshotProcessor implements MarketSnapshotProcessor {
     public void refreshOne(String symbol) {
         TrackedRefreshRunner.refreshSnapshot(symbol, CodeNormalizer::upper, normalized -> {
             updateOne(normalized);
-            stockCacheService.refreshHistory(normalized);
             return true;
         }, log, "stock");
     }

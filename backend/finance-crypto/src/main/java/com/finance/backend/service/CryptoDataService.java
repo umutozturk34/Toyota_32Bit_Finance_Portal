@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CryptoDataService implements TrackedAssetDataService {
 
-    private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
+    private final MarketCacheService<Crypto> cryptoCacheService;
     private final CryptoUpdateService cryptoUpdateService;
 
     @Override

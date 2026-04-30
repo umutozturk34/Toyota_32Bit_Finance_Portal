@@ -1,5 +1,5 @@
 package com.finance.backend.config;
-import com.fasterxml.jackson.core.type.TypeReference;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.backend.model.*;
 import com.finance.backend.repository.*;
@@ -8,105 +8,71 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
+
 import java.time.Duration;
-import java.util.List;
 
 @Configuration
 public class MarketCacheConfig {
 
+    private static final Duration TTL = Duration.ofHours(24);
+
     @Bean
-    public MarketCacheService<Crypto, CryptoCandle> cryptoCacheService(
+    public MarketCacheService<Crypto> cryptoCacheService(
             RedisTemplate<String, Object> redisTemplate,
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
-            CryptoRepository cryptoRepository,
-            CryptoCandleRepository cryptoCandleRepository) {
-        return new MarketCacheService<>(
-                redisTemplate, objectMapper,
-                "market:crypto:snapshot:", "market:crypto:history:",
-                Duration.ofHours(24), Crypto.class,
-                new TypeReference<>() {}, "Crypto",
-                cryptoRepository::findById,
-                cryptoCandleRepository::findByCryptoIdOrderByCandleDateAsc
-        );
+            CryptoRepository cryptoRepository) {
+        return new MarketCacheService<>(redisTemplate, objectMapper,
+                "market:crypto:snapshot:", TTL, Crypto.class, "Crypto",
+                cryptoRepository::findById);
     }
 
     @Bean
-    public MarketCacheService<Stock, StockCandle> stockCacheService(
+    public MarketCacheService<Stock> stockCacheService(
             RedisTemplate<String, Object> redisTemplate,
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
-            StockRepository stockRepository,
-            StockCandleRepository stockCandleRepository) {
-        return new MarketCacheService<>(
-                redisTemplate, objectMapper,
-                "market:stock:snapshot:", "market:stock:history:",
-                Duration.ofHours(24), Stock.class,
-                new TypeReference<>() {}, "Stock",
-                stockRepository::findById,
-                stockCandleRepository::findByStockSymbolOrderByCandleDateAsc
-        );
+            StockRepository stockRepository) {
+        return new MarketCacheService<>(redisTemplate, objectMapper,
+                "market:stock:snapshot:", TTL, Stock.class, "Stock",
+                stockRepository::findById);
     }
 
     @Bean
-    public MarketCacheService<Forex, ForexCandle> forexCacheService(
+    public MarketCacheService<Forex> forexCacheService(
             RedisTemplate<String, Object> redisTemplate,
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
-            ForexRepository forexRepository,
-            ForexCandleRepository forexCandleRepository) {
-        return new MarketCacheService<>(
-                redisTemplate, objectMapper,
-                "market:forex:snapshot:", "market:forex:history:",
-                Duration.ofHours(24), Forex.class,
-                new TypeReference<>() {}, "Forex",
-                forexRepository::findById,
-                forexCandleRepository::findTop1825ByCurrencyCodeOrderByCandleDateAsc
-        );
+            ForexRepository forexRepository) {
+        return new MarketCacheService<>(redisTemplate, objectMapper,
+                "market:forex:snapshot:", TTL, Forex.class, "Forex",
+                forexRepository::findById);
     }
 
     @Bean
-    public MarketCacheService<Fund, FundCandle> fundCacheService(
+    public MarketCacheService<Fund> fundCacheService(
             RedisTemplate<String, Object> redisTemplate,
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
-            FundRepository fundRepository,
-            FundCandleRepository fundCandleRepository) {
-        return new MarketCacheService<>(
-                redisTemplate, objectMapper,
-                "market:fund:snapshot:", "market:fund:history:",
-                Duration.ofHours(24), Fund.class,
-                new TypeReference<>() {}, "Fund",
-                fundRepository::findById,
-                fundCandleRepository::findByFundCodeOrderByCandleDateAsc
-        );
+            FundRepository fundRepository) {
+        return new MarketCacheService<>(redisTemplate, objectMapper,
+                "market:fund:snapshot:", TTL, Fund.class, "Fund",
+                fundRepository::findById);
     }
 
     @Bean
-    public MarketCacheService<Commodity, CommodityCandle> commodityCacheService(
+    public MarketCacheService<Commodity> commodityCacheService(
             RedisTemplate<String, Object> redisTemplate,
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
-            CommodityRepository commodityRepository,
-            CommodityCandleRepository commodityCandleRepository) {
-        return new MarketCacheService<>(
-                redisTemplate, objectMapper,
-                "market:commodity:snapshot:", "market:commodity:history:",
-                Duration.ofHours(24), Commodity.class,
-                new TypeReference<>() {}, "Commodity",
-                commodityRepository::findById,
-                commodityCandleRepository::findByCommodityCodeOrderByCandleDateAsc
-        );
+            CommodityRepository commodityRepository) {
+        return new MarketCacheService<>(redisTemplate, objectMapper,
+                "market:commodity:snapshot:", TTL, Commodity.class, "Commodity",
+                commodityRepository::findById);
     }
 
     @Bean
-    public MarketCacheService<Bond, BondRateHistory> bondCacheService(
+    public MarketCacheService<Bond> bondCacheService(
             RedisTemplate<String, Object> redisTemplate,
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
-            BondRepository bondRepository,
-            BondRateHistoryRepository bondRateHistoryRepository) {
-        return new MarketCacheService<>(
-                redisTemplate, objectMapper,
-                "market:bond:snapshot:", "market:bond:rate-history:",
-                Duration.ofHours(24), Bond.class,
-                new TypeReference<List<BondRateHistory>>() {}, "Bond",
-                bondRepository::findById,
-                bondRateHistoryRepository::findByIsinCodeOrderByRateDateAsc
-        );
+            BondRepository bondRepository) {
+        return new MarketCacheService<>(redisTemplate, objectMapper,
+                "market:bond:snapshot:", TTL, Bond.class, "Bond",
+                bondRepository::findById);
     }
 }

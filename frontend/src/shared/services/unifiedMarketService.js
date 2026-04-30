@@ -7,6 +7,7 @@ const PERIOD_MAP = {
   '3M': 'THREE_MONTHS',
   '6M': 'SIX_MONTHS',
   '1Y': 'ONE_YEAR',
+  '5Y': 'FIVE_YEARS',
   'MAX': 'ALL',
   'ALL': 'ALL',
 };

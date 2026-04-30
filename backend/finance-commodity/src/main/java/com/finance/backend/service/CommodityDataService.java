@@ -2,7 +2,6 @@ package com.finance.backend.service;
 
 import com.finance.backend.exception.BusinessException;
 import com.finance.backend.model.Commodity;
-import com.finance.backend.model.CommodityCandle;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.util.CodeNormalizer;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +14,7 @@ import org.springframework.stereotype.Service;
 public class CommodityDataService implements TrackedAssetDataService {
 
     private final CommodityUpdateService commodityUpdateService;
-    private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
+    private final MarketCacheService<Commodity> commodityCacheService;
     private final PreciousMetalDerivativeCalculator derivativeCalculator;
 
     @Override

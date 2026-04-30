@@ -39,7 +39,7 @@ public class BondRateHistoryService {
     private final BondMapper bondMapper;
     private final BondRepository bondRepository;
     private final BondRateHistoryRepository rateHistoryRepository;
-    private final MarketCacheService<Bond, BondRateHistory> bondCacheService;
+    private final MarketCacheService<Bond> bondCacheService;
     private final TransactionTemplate transactionTemplate;
     private final int maxDaysPerRequest;
     private final BigDecimal rateThreshold;
@@ -53,7 +53,7 @@ public class BondRateHistoryService {
                                   BondMapper bondMapper,
                                   BondRepository bondRepository,
                                   BondRateHistoryRepository rateHistoryRepository,
-                                  MarketCacheService<Bond, BondRateHistory> bondCacheService,
+                                  MarketCacheService<Bond> bondCacheService,
                                   TransactionTemplate transactionTemplate,
                                   BondProperties bondProperties) {
         this.evdsClient = evdsClient;
@@ -115,7 +115,6 @@ public class BondRateHistoryService {
 
         transactionTemplate.executeWithoutResult(status -> bondRepository.save(savedBond));
         bondCacheService.putSnapshot(savedBond.getSeriesCode(), savedBond);
-        bondCacheService.refreshHistory(dto.isinCode());
 
         log.info("Bond {} processed: type={}, yield={}, rateHistory={} records, newRates={}, new={}, zeroCoupon={}",
                 dto.isinCode(), savedBond.getBondType(), savedBond.getSimpleYield(),

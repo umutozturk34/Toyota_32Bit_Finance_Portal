@@ -3,8 +3,10 @@ package com.finance.backend.controller;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.request.PortfolioCreateRequest;
-import com.finance.backend.dto.request.TransactionRequest;
+import com.finance.backend.dto.request.PositionRequest;
 import com.finance.backend.dto.response.*;
+import com.finance.backend.mapper.PortfolioResponseMapper;
+import com.finance.backend.model.PortfolioPosition;
 import com.finance.backend.service.PortfolioFacade;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -27,12 +30,7 @@ public class PortfolioController {
 
     private final AppProperties appProperties;
     private final PortfolioFacade portfolioFacade;
-
-    @PostMapping("/onboarding/initialize")
-    public ApiResponse<Void> initialize(@AuthenticationPrincipal Jwt jwt) {
-        portfolioFacade.initialize(jwt.getSubject());
-        return ApiResponse.success("Onboarding completed", null);
-    }
+    private final PortfolioResponseMapper mapper;
 
     @GetMapping
     public ApiResponse<List<PortfolioResponse>> listPortfolios(@AuthenticationPrincipal Jwt jwt) {
@@ -49,30 +47,33 @@ public class PortfolioController {
                 portfolioFacade.createPortfolio(jwt.getSubject(), request));
     }
 
-    @PostMapping("/{portfolioId}/transactions")
+    @PostMapping("/{portfolioId}/positions")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<TransactionResponse> executeTransaction(
+    public ApiResponse<PositionResponse> addPosition(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
-            @Valid @RequestBody TransactionRequest request) {
-        return ApiResponse.success("Transaction executed",
-                portfolioFacade.executeTransaction(jwt.getSubject(), portfolioId, request));
+            @Valid @RequestBody PositionRequest request) {
+        PortfolioPosition saved = portfolioFacade.addPosition(jwt.getSubject(), portfolioId, request);
+        return ApiResponse.success("Position created", toResponseShell(saved));
     }
 
-    @GetMapping("/{portfolioId}/transactions")
-    public ApiResponse<PagedResponse<TransactionResponse>> listTransactions(
+    @PutMapping("/{portfolioId}/positions/{positionId}")
+    public ApiResponse<PositionResponse> updatePosition(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) String assetType,
-            @RequestParam(required = false) String sort,
-            @RequestParam(required = false) String direction,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(required = false) Integer size) {
-        int resolvedSize = resolvePageSize(size, appProperties.getPagination().getPortfolio().getTransactionsDefaultSize());
-        return ApiResponse.success("Transactions retrieved",
-                portfolioFacade.listTransactionsPaged(jwt.getSubject(), portfolioId,
-                        search, assetType, sort, direction, page, resolvedSize));
+            @PathVariable Long positionId,
+            @Valid @RequestBody PositionRequest request) {
+        PortfolioPosition saved = portfolioFacade.updatePosition(jwt.getSubject(), portfolioId, positionId, request);
+        return ApiResponse.success("Position updated", toResponseShell(saved));
+    }
+
+    @DeleteMapping("/{portfolioId}/positions/{positionId}")
+    public ApiResponse<Void> deletePosition(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long portfolioId,
+            @PathVariable Long positionId) {
+        portfolioFacade.deletePosition(jwt.getSubject(), portfolioId, positionId);
+        return ApiResponse.success("Position deleted", null);
     }
 
     @GetMapping("/{portfolioId}/positions")
@@ -114,7 +115,7 @@ public class PortfolioController {
     public ApiResponse<PortfolioViewResponse> getPortfolioView(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
-            @RequestParam(defaultValue = "summary,positions,transactions,allocation") String include) {
+            @RequestParam(defaultValue = "summary,positions,allocation") String include) {
         Set<String> includes = Arrays.stream(include.split(","))
                 .map(String::trim)
                 .collect(Collectors.toSet());
@@ -132,6 +133,11 @@ public class PortfolioController {
             @RequestParam(required = false) String assetCode) {
         return ApiResponse.success("Chart data retrieved",
                 portfolioFacade.getChart(jwt.getSubject(), portfolioId, type, range, assetType, assetCode));
+    }
+
+    private PositionResponse toResponseShell(PortfolioPosition position) {
+        return mapper.toPositionResponse(position, BigDecimal.ZERO, position.entryValue(),
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, null, null);
     }
 
     private int resolvePageSize(Integer size, int defaultSize) {

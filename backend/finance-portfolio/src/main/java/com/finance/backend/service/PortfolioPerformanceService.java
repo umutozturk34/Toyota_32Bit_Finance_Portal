@@ -5,25 +5,31 @@ import com.finance.backend.dto.response.PerformanceAssetDetail;
 import com.finance.backend.dto.response.PerformanceEvent;
 import com.finance.backend.dto.response.PerformancePoint;
 import com.finance.backend.mapper.PortfolioSnapshotMapper;
-import com.finance.backend.util.EnumParser;
 import com.finance.backend.model.AssetType;
 import com.finance.backend.model.PerformanceEventType;
 import com.finance.backend.model.PortfolioAssetDailySnapshot;
 import com.finance.backend.model.PortfolioDailySnapshot;
+import com.finance.backend.model.PortfolioPosition;
 import com.finance.backend.model.PortfolioRange;
-import com.finance.backend.model.PortfolioTransaction;
 import com.finance.backend.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.backend.repository.PortfolioDailySnapshotRepository;
-import com.finance.backend.repository.PortfolioTransactionRepository;
+import com.finance.backend.repository.PortfolioPositionRepository;
+import com.finance.backend.util.EnumParser;
+import com.finance.backend.util.PercentChangeCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -31,9 +37,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PortfolioPerformanceService {
 
+    private static final int SCALE = 4;
+
     private final PortfolioDailySnapshotRepository dailySnapshotRepository;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
-    private final PortfolioTransactionRepository transactionRepository;
+    private final PortfolioPositionRepository positionRepository;
     private final PortfolioSnapshotMapper snapshotMapper;
 
     @Transactional(readOnly = true)
@@ -42,10 +50,9 @@ public class PortfolioPerformanceService {
         LocalDateTime start = PortfolioRange.fromCode(range).toStartDateTime(end);
 
         AssetType filterType = EnumParser.parseNullable(AssetType.class, assetType, "asset type");
-        if (filterType != null) {
-            return getAssetTypePerformance(portfolioId, filterType, start, end);
-        }
-        return getAggregatePerformance(portfolioId, start, end);
+        return filterType != null
+                ? getAssetTypePerformance(portfolioId, filterType, start, end)
+                : getAggregatePerformance(portfolioId, start, end);
     }
 
     @Transactional(readOnly = true)
@@ -53,13 +60,10 @@ public class PortfolioPerformanceService {
                                                   String assetType, String assetCode, String range) {
         LocalDateTime end = LocalDateTime.now();
         LocalDateTime start = PortfolioRange.fromCode(range).toStartDateTime(end);
-
         AssetType type = EnumParser.parseOrBadRequest(AssetType.class, assetType, "asset type");
-
         List<PortfolioAssetDailySnapshot> snapshots = assetSnapshotRepository
                 .findByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtBetweenOrderByCreatedAtAsc(
                         portfolioId, type, assetCode, start, end);
-
         return snapshotMapper.toAssetSeriesPoints(snapshots);
     }
 
@@ -67,22 +71,19 @@ public class PortfolioPerformanceService {
                                                             LocalDateTime start, LocalDateTime end) {
         List<PortfolioDailySnapshot> snapshots = dailySnapshotRepository
                 .findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(portfolioId, start, end);
-
         List<PortfolioAssetDailySnapshot> assetSnapshots = assetSnapshotRepository
                 .findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(portfolioId, start, end);
-
-        List<PortfolioTransaction> transactions = transactionRepository
-                .findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(portfolioId, start, end);
+        List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
 
         Map<LocalDateTime, List<PortfolioAssetDailySnapshot>> assetsByTimestamp = assetSnapshots.stream()
-                .collect(Collectors.groupingBy(PortfolioAssetDailySnapshot::getCreatedAt, LinkedHashMap::new, Collectors.toList()));
+                .collect(Collectors.groupingBy(PortfolioAssetDailySnapshot::getCreatedAt,
+                        LinkedHashMap::new, Collectors.toList()));
 
         List<PerformancePoint> result = new ArrayList<>();
         Map<String, BigDecimal> prevTypeValues = null;
         LocalDateTime prevTime = start;
 
         for (PortfolioDailySnapshot snap : snapshots) {
-            BigDecimal totalValue = snap.getTotalValueTry().subtract(snap.getCashBalanceTry());
             List<PortfolioAssetDailySnapshot> assets = assetsByTimestamp.getOrDefault(snap.getCreatedAt(), List.of());
 
             Map<String, BigDecimal[]> typeAgg = new LinkedHashMap<>();
@@ -99,13 +100,13 @@ public class PortfolioPerformanceService {
                     .sorted(Comparator.comparing(PerformanceAssetDetail::valueTry).reversed())
                     .toList();
 
-            List<PerformanceEvent> events = buildEvents(transactions, prevTime, snap.getCreatedAt(), prevTypeValues, currTypeValues);
+            List<PerformanceEvent> events = buildEvents(positions, prevTime, snap.getCreatedAt(), prevTypeValues, currTypeValues, true);
 
-            result.add(new PerformancePoint(snap.getCreatedAt(), totalValue, snap.getTotalPnlTry(), snap.getPnlPercent(), details, events));
+            result.add(new PerformancePoint(snap.getCreatedAt(), snap.getTotalValueTry(),
+                    snap.getTotalPnlTry(), snap.getPnlPercent(), details, events));
             prevTypeValues = currTypeValues;
             prevTime = snap.getCreatedAt();
         }
-
         return result;
     }
 
@@ -114,15 +115,13 @@ public class PortfolioPerformanceService {
         List<PortfolioAssetDailySnapshot> snapshots = assetSnapshotRepository
                 .findByPortfolioIdAndAssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
                         portfolioId, assetType, start, end);
-
-        List<PortfolioTransaction> transactions = transactionRepository
-                .findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(portfolioId, start, end)
-                .stream()
-                .filter(tx -> tx.getAssetType() == assetType)
+        List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId).stream()
+                .filter(p -> p.getAssetType() == assetType)
                 .toList();
 
         Map<LocalDateTime, List<PortfolioAssetDailySnapshot>> grouped = snapshots.stream()
-                .collect(Collectors.groupingBy(PortfolioAssetDailySnapshot::getCreatedAt, LinkedHashMap::new, Collectors.toList()));
+                .collect(Collectors.groupingBy(PortfolioAssetDailySnapshot::getCreatedAt,
+                        LinkedHashMap::new, Collectors.toList()));
 
         List<PerformancePoint> result = new ArrayList<>();
         Map<String, BigDecimal> prevAssetValues = null;
@@ -144,46 +143,45 @@ public class PortfolioPerformanceService {
                         snap.getMarketValueTry(), snap.getPnlTry()));
                 currAssetValues.put(snap.getAssetCode(), snap.getMarketValueTry());
             }
-
             details.sort(Comparator.comparing(PerformanceAssetDetail::valueTry).reversed());
 
-            BigDecimal pnlPercent = totalCost.compareTo(BigDecimal.ZERO) > 0
-                    ? totalPnl.multiply(BigDecimal.valueOf(100)).divide(totalCost, 4, RoundingMode.HALF_UP)
-                    : BigDecimal.ZERO;
+            PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalValue, totalCost, SCALE);
+            BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
 
-            List<PerformanceEvent> events = buildEvents(transactions, prevTime, e.getKey(), prevAssetValues, currAssetValues);
+            List<PerformanceEvent> events = buildEvents(positions, prevTime, e.getKey(), prevAssetValues, currAssetValues, false);
 
             result.add(new PerformancePoint(e.getKey(), totalValue, totalPnl, pnlPercent, details, events));
             prevAssetValues = currAssetValues;
             prevTime = e.getKey();
         }
-
         return result;
     }
 
-    private List<PerformanceEvent> buildEvents(List<PortfolioTransaction> allTransactions,
+    private List<PerformanceEvent> buildEvents(List<PortfolioPosition> positions,
                                                 LocalDateTime prevTime, LocalDateTime currentTime,
                                                 Map<String, BigDecimal> prevValues,
-                                                Map<String, BigDecimal> currValues) {
+                                                Map<String, BigDecimal> currValues,
+                                                boolean keyByType) {
         List<PerformanceEvent> events = new ArrayList<>();
 
-        List<PortfolioTransaction> matched = allTransactions.stream()
-                .filter(tx -> tx.getCreatedAt().isAfter(prevTime) && !tx.getCreatedAt().isAfter(currentTime))
+        List<PortfolioPosition> addedInWindow = positions.stream()
+                .filter(p -> p.getCreatedAt() != null
+                        && p.getCreatedAt().isAfter(prevTime)
+                        && !p.getCreatedAt().isAfter(currentTime))
                 .toList();
 
-        if (!matched.isEmpty()) {
-            for (PortfolioTransaction tx : matched) {
+        if (!addedInWindow.isEmpty()) {
+            for (PortfolioPosition pos : addedInWindow) {
                 events.add(new PerformanceEvent(
-                        PerformanceEventType.fromTransactionSide(tx.getSide()),
-                        tx.getAssetType().name(),
-                        tx.getAssetCode(),
-                        tx.getTotalCostTry()));
+                        PerformanceEventType.POSITION_ADDED,
+                        pos.getAssetType().name(),
+                        pos.getAssetCode(),
+                        pos.entryValue()));
             }
         } else if (prevValues != null) {
             Set<String> allKeys = new LinkedHashSet<>();
             allKeys.addAll(prevValues.keySet());
             allKeys.addAll(currValues.keySet());
-
             for (String key : allKeys) {
                 BigDecimal prev = prevValues.getOrDefault(key, BigDecimal.ZERO);
                 BigDecimal curr = currValues.getOrDefault(key, BigDecimal.ZERO);
@@ -191,11 +189,10 @@ public class PortfolioPerformanceService {
                 if (diff.compareTo(BigDecimal.ZERO) != 0) {
                     events.add(new PerformanceEvent(
                             diff.compareTo(BigDecimal.ZERO) > 0 ? PerformanceEventType.MARKET_UP : PerformanceEventType.MARKET_DOWN,
-                            key, null, diff.abs()));
+                            keyByType ? key : null, keyByType ? null : key, diff.abs()));
                 }
             }
         }
-
         return events;
     }
 }

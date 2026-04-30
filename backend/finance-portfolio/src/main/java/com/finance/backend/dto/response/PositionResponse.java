@@ -1,6 +1,7 @@
 package com.finance.backend.dto.response;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public record PositionResponse(
         Long id,
@@ -9,11 +10,10 @@ public record PositionResponse(
         String assetName,
         String assetImage,
         BigDecimal quantity,
-        BigDecimal averageCostTry,
-        BigDecimal totalCostTry,
+        LocalDateTime entryDate,
+        BigDecimal entryPrice,
         BigDecimal currentPriceTry,
-        BigDecimal sellPriceTry,
-        BigDecimal commissionRate,
+        BigDecimal entryValueTry,
         BigDecimal marketValueTry,
         BigDecimal pnlTry,
         BigDecimal pnlPercent

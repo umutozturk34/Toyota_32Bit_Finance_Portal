@@ -1,11 +1,9 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.model.*;
-import com.finance.backend.model.value.MoneyTRY;
 import com.finance.backend.repository.PortfolioPositionRepository;
-import com.finance.backend.repository.UserWalletRepository;
 import com.finance.backend.service.AssetPricingPort.AssetKey;
+import com.finance.backend.util.PercentChangeCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -25,15 +23,14 @@ public class SnapshotCalculationService {
 
     private final AssetPricingPort pricingPort;
     private final PortfolioPositionRepository positionRepository;
-    private final UserWalletRepository walletRepository;
-    private final PortfolioProperties portfolioProperties;
 
     public PortfolioAssetDailySnapshot buildAssetSnapshot(Long portfolioId, PortfolioPosition pos,
                                                               LocalDateTime batchTimestamp) {
         BigDecimal price = pricingPort.getPriceTry(pos.getAssetType().marketType(), pos.getAssetCode());
         BigDecimal unitPrice = price != null ? price : BigDecimal.ZERO;
-        BigDecimal marketValue = unitPrice.multiply(pos.getQuantity()).setScale(SCALE, RoundingMode.HALF_UP);
-        BigDecimal pnl = marketValue.subtract(pos.getTotalCostTry());
+        BigDecimal marketValue = pos.currentValue(unitPrice);
+        BigDecimal entryValue = pos.entryValue();
+        BigDecimal pnl = marketValue.subtract(entryValue).setScale(SCALE, RoundingMode.HALF_UP);
 
         return PortfolioAssetDailySnapshot.builder()
                 .portfolioId(portfolioId)
@@ -44,56 +41,43 @@ public class SnapshotCalculationService {
                 .quantity(pos.getQuantity())
                 .unitPriceTry(unitPrice)
                 .marketValueTry(marketValue)
-                .totalCostTry(pos.getTotalCostTry())
+                .totalCostTry(entryValue)
                 .pnlTry(pnl)
                 .build();
     }
 
     public PortfolioDailySnapshot buildAggregateSnapshot(Portfolio portfolio, LocalDateTime batchTimestamp) {
         Long pid = portfolio.getId();
+        List<PortfolioPosition> positions = positionRepository.findByPortfolioId(pid);
 
-        List<PortfolioPosition> allPositions = positionRepository
-                .findByPortfolioIdAndQuantityGreaterThan(pid, BigDecimal.ZERO);
-
-        List<AssetKey> keys = allPositions.stream()
+        List<AssetKey> keys = positions.stream()
                 .map(p -> new AssetKey(p.getAssetType().marketType(), p.getAssetCode()))
                 .toList();
         Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(keys);
 
         BigDecimal totalMarketValue = BigDecimal.ZERO;
-        BigDecimal totalCost = BigDecimal.ZERO;
-
-        for (PortfolioPosition pos : allPositions) {
+        BigDecimal totalEntryValue = BigDecimal.ZERO;
+        for (PortfolioPosition pos : positions) {
             BigDecimal price = prices.get(new AssetKey(pos.getAssetType().marketType(), pos.getAssetCode()));
             BigDecimal unitPrice = price != null ? price : BigDecimal.ZERO;
-            BigDecimal marketValue = unitPrice.multiply(pos.getQuantity()).setScale(SCALE, RoundingMode.HALF_UP);
-
-            totalMarketValue = totalMarketValue.add(marketValue);
-            totalCost = totalCost.add(pos.getTotalCostTry());
+            totalMarketValue = totalMarketValue.add(pos.currentValue(unitPrice));
+            totalEntryValue = totalEntryValue.add(pos.entryValue());
         }
+        totalMarketValue = totalMarketValue.setScale(SCALE, RoundingMode.HALF_UP);
+        totalEntryValue = totalEntryValue.setScale(SCALE, RoundingMode.HALF_UP);
 
-        BigDecimal cashBalance = walletRepository.findByPortfolioIdAndCurrency(
-                        pid,
-                        portfolioProperties.getDefaultCurrency())
-                .map(UserWallet::getBalance)
-                .map(MoneyTRY::amount)
-                .orElse(BigDecimal.ZERO);
-
-        BigDecimal grandTotal = totalMarketValue.add(cashBalance);
-        BigDecimal totalPnl = totalMarketValue.subtract(totalCost);
-        BigDecimal pnlPercent = totalCost.compareTo(BigDecimal.ZERO) > 0
-                ? totalPnl.multiply(new BigDecimal("100")).divide(totalCost, SCALE, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO;
+        PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalMarketValue, totalEntryValue, SCALE);
+        BigDecimal totalPnl = pct.amount() != null ? pct.amount() : BigDecimal.ZERO;
+        BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
 
         return PortfolioDailySnapshot.builder()
                 .portfolioId(pid)
                 .snapshotDate(batchTimestamp.toLocalDate())
                 .createdAt(batchTimestamp)
-                .totalValueTry(grandTotal)
-                .totalCostTry(totalCost)
+                .totalValueTry(totalMarketValue)
+                .totalCostTry(totalEntryValue)
                 .totalPnlTry(totalPnl)
                 .pnlPercent(pnlPercent)
-                .cashBalanceTry(cashBalance)
                 .build();
     }
 }

@@ -7,12 +7,15 @@ import com.finance.backend.exception.TaskAlreadyRunningException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Log4j2
 @Service
@@ -26,6 +29,7 @@ public class TaskTrackingService {
     private final AppProperties appProperties;
     private final Map<String, TaskInfo> runningTasks = new ConcurrentHashMap<>();
     private final Deque<TaskInfo> taskHistory = new ConcurrentLinkedDeque<>();
+    private final CopyOnWriteArrayList<SseEmitter> statusEmitters = new CopyOnWriteArrayList<>();
 
     public boolean isRunning(String taskType) {
         return runningTasks.containsKey(taskType);
@@ -37,6 +41,7 @@ public class TaskTrackingService {
         if (existing != null) {
             throw new TaskAlreadyRunningException(taskType);
         }
+        broadcastStatus();
         return info;
     }
 
@@ -45,6 +50,7 @@ public class TaskTrackingService {
                 started.startedAt(), Instant.now(), null);
         addToHistory(completed);
         runningTasks.remove(taskType);
+        broadcastStatus();
     }
 
     public void failTask(String taskType, TaskInfo started, String errorMsg) {
@@ -52,6 +58,33 @@ public class TaskTrackingService {
                 started.startedAt(), Instant.now(), errorMsg);
         addToHistory(failed);
         runningTasks.remove(taskType);
+        broadcastStatus();
+    }
+
+    public SseEmitter subscribeToStatus() {
+        SseEmitter emitter = new SseEmitter(0L);
+        statusEmitters.add(emitter);
+        emitter.onCompletion(() -> statusEmitters.remove(emitter));
+        emitter.onTimeout(() -> statusEmitters.remove(emitter));
+        emitter.onError((e) -> statusEmitters.remove(emitter));
+        sendStatus(emitter, getTypedStatus());
+        return emitter;
+    }
+
+    private void broadcastStatus() {
+        if (statusEmitters.isEmpty()) return;
+        TaskStatusResponse snapshot = getTypedStatus();
+        for (SseEmitter emitter : statusEmitters) {
+            sendStatus(emitter, snapshot);
+        }
+    }
+
+    private static void sendStatus(SseEmitter emitter, TaskStatusResponse snapshot) {
+        try {
+            emitter.send(SseEmitter.event().name("task-status").data(snapshot));
+        } catch (IOException e) {
+            emitter.completeWithError(e);
+        }
     }
 
     public void runTracked(String taskType, String description, Runnable task) {

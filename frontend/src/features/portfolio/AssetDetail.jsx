@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import useSessionState from '../../shared/hooks/useSessionState';
-import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet } from 'lucide-react';
+import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar } from 'lucide-react';
 import { TrendingUp, TrendingDown, Loader2 } from '../../shared/components/AnimatedIcons';
 import Chart from 'react-apexcharts';
 import { useTheme } from '../../shared/context/ThemeContext';
@@ -10,9 +10,12 @@ import { cardVariants } from '../../shared/utils/animations';
 import { getApexThemeOptions } from '../../shared/utils/apexTheme';
 import { PORTFOLIO_RANGES as RANGES, ASSET_TYPE_LABELS } from '../../shared/constants/assetTypes';
 
+const formatEntryDate = (v) => v ? new Date(v).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
 const STAT_CARDS = [
   { key: 'quantity', label: 'Miktar', Icon: Hash, format: (v) => Number(v).toLocaleString('tr-TR', { maximumFractionDigits: 6 }) },
-  { key: 'averageCostTry', label: 'Ort. Maliyet', Icon: DollarSign, format: formatPriceTRY },
+  { key: 'entryDate', label: 'Giriş Tarihi', Icon: Calendar, format: formatEntryDate },
+  { key: 'entryPrice', label: 'Giriş Fiyatı', Icon: DollarSign, format: formatPriceTRY },
   { key: 'currentPriceTry', label: 'Güncel Fiyat', Icon: BarChart3, format: formatPriceTRY },
   { key: 'marketValueTry', label: 'Piyasa Değeri', Icon: Wallet, format: formatPriceTRY },
 ];
@@ -137,7 +140,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
         variants={cardVariants}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+        className="grid grid-cols-2 sm:grid-cols-5 gap-3"
       >
         {STAT_CARDS.map(({ key, label, Icon, format }) => (
           <div key={key} className="rounded-xl border border-border-default bg-bg-elevated p-3 space-y-2 card-hover transition-all duration-200 hover:border-border-hover">

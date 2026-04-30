@@ -53,24 +53,22 @@ function buildCustomTooltip(dataPoints, isDark) {
     }
 
     let eventRows = '';
-    const txEvents = (point.events || []).filter(e => e.type === 'BUY' || e.type === 'SELL');
-    if (txEvents.length > 0) {
-      const rows = txEvents.map(ev => {
-        const isBuy = ev.type === 'BUY';
-        const evColor = isBuy ? '#10b981' : '#ef4444';
-        const evLabel = isBuy ? 'Alış' : 'Satış';
+    const lotEvents = (point.events || []).filter(e => POSITION_EVENT_META[e.type]);
+    if (lotEvents.length > 0) {
+      const rows = lotEvents.map(ev => {
+        const meta = POSITION_EVENT_META[ev.type];
         const codeLabel = ev.assetCode || (ASSET_TYPE_LABELS[ev.assetType] || ev.assetType);
         return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 0">
           <div style="display:flex;align-items:center;gap:5px">
-            <span style="width:5px;height:5px;border-radius:50%;background:${evColor};display:inline-block"></span>
-            <span style="font-size:10px;font-weight:600;color:${evColor}">${evLabel}</span>
+            <span style="width:5px;height:5px;border-radius:50%;background:${meta.color};display:inline-block"></span>
+            <span style="font-size:10px;font-weight:600;color:${meta.color}">${meta.label}</span>
             <span style="font-size:10px;color:${muted}">${codeLabel}</span>
           </div>
           <span style="font-size:10px;font-family:ui-monospace,monospace;color:${fg};opacity:0.8">${formatPriceTRY(ev.valueTry)}</span>
         </div>`;
       }).join('');
       eventRows = `<div style="border-top:1px solid ${border};margin-top:6px;padding-top:6px">
-        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:${muted};margin-bottom:4px">İşlemler</div>
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:${muted};margin-bottom:4px">Pozisyon Hareketleri</div>
         ${rows}
       </div>`;
     }
@@ -87,19 +85,19 @@ function buildCustomTooltip(dataPoints, isDark) {
   };
 }
 
+const POSITION_EVENT_META = {
+  POSITION_ADDED: { color: '#10b981', label: 'Lot Eklendi' },
+  POSITION_REMOVED: { color: '#ef4444', label: 'Lot Silindi' },
+  POSITION_UPDATED: { color: '#f59e0b', label: 'Lot Güncellendi' },
+};
+
 function buildAnnotations(data) {
   const points = [];
   data.forEach((d) => {
     if (!d.events || d.events.length === 0) return;
-    const hasTx = d.events.some(e => e.type === 'BUY' || e.type === 'SELL');
-    if (!hasTx) return;
-
-    const isBuy = d.events.some(e => e.type === 'BUY');
-    const isSell = d.events.some(e => e.type === 'SELL');
-    let markerColor = '#6366f1';
-    if (isBuy && !isSell) markerColor = '#10b981';
-    else if (isSell && !isBuy) markerColor = '#ef4444';
-    else if (isBuy && isSell) markerColor = '#f59e0b';
+    const lotEvent = d.events.find(e => POSITION_EVENT_META[e.type]);
+    if (!lotEvent) return;
+    const markerColor = POSITION_EVENT_META[lotEvent.type].color;
 
     points.push({
       x: d.time,
@@ -230,14 +228,14 @@ export default function PerformanceChart({ portfolioId }) {
                 <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-30" />
                 <span className="relative block w-2 h-2 rounded-full bg-success" />
               </span>
-              <span className="text-[10px] text-fg-muted font-medium">Alış</span>
+              <span className="text-[10px] text-fg-muted font-medium">Lot Eklendi</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="relative w-2 h-2">
                 <span className="absolute inset-0 rounded-full bg-danger animate-ping opacity-30" />
                 <span className="relative block w-2 h-2 rounded-full bg-danger" />
               </span>
-              <span className="text-[10px] text-fg-muted font-medium">Satış</span>
+              <span className="text-[10px] text-fg-muted font-medium">Lot Silindi</span>
             </div>
           </div>
         </div>

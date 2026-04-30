@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { portfolioService } from './portfolioService';
 
 export function usePortfolioList() {
@@ -66,12 +66,36 @@ export function usePortfolioPositions(portfolioId, params) {
   });
 }
 
-export function usePortfolioTransactions(portfolioId, params) {
-  return useQuery({
-    queryKey: ['portfolioTransactions', portfolioId, params],
-    queryFn: () => portfolioService.getTransactions(portfolioId, params),
-    enabled: !!portfolioId,
-    placeholderData: (prev) => prev,
+export function useAddPosition(portfolioId) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: (payload) => portfolioService.addPosition(portfolioId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdatePosition(portfolioId) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: ({ positionId, payload }) =>
+      portfolioService.updatePosition(portfolioId, positionId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeletePosition(portfolioId) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: (positionId) => portfolioService.deletePosition(portfolioId, positionId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCreatePortfolio() {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: portfolioService.create,
+    onSuccess: invalidate,
   });
 }
 
@@ -84,7 +108,6 @@ export function useInvalidatePortfolio() {
     queryClient.invalidateQueries({ queryKey: ['portfolioAllocation'] });
     queryClient.invalidateQueries({ queryKey: ['portfolioPerformance'] });
     queryClient.invalidateQueries({ queryKey: ['portfolioPositions'] });
-    queryClient.invalidateQueries({ queryKey: ['portfolioTransactions'] });
     queryClient.invalidateQueries({ queryKey: ['assetSeries'] });
   };
 }

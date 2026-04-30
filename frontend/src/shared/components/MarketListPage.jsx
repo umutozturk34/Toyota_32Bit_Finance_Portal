@@ -10,7 +10,7 @@ import PageHeader from './PageHeader';
 import SearchInput from './SearchInput';
 import SortSelect from './SortSelect';
 import Pagination from './Pagination';
-import BuyModal from './BuyModal';
+import MarketAddPositionModal from '../../features/portfolio/MarketAddPositionModal';
 import FilterTabs from './FilterTabs';
 import { toast } from './Toast';
 import useMarketListData from '../hooks/useMarketListData';
@@ -147,10 +147,11 @@ export default function MarketListPage({
       <Pagination page={listParams.page} totalPages={totalPages} onPageChange={listParams.setPage} />
 
       {buyTarget && (
-        <BuyModal
+        <MarketAddPositionModal
           assetType={marketType}
           assetCode={buyTarget.assetCode}
           assetName={buyTarget.assetName}
+          assetImage={buyTarget.assetImage}
           currentPrice={buyTarget.price}
           onClose={() => setBuyTarget(null)}
           onComplete={() => setBuyTarget(null)}

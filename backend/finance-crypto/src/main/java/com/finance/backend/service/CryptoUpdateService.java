@@ -35,7 +35,6 @@ public class CryptoUpdateService implements MarketRefresher {
     private final CryptoMapper cryptoMapper;
     private final CryptoRepository cryptoRepository;
     private final CryptoCandleRepository cryptoCandleRepository;
-    private final MarketCacheService<Crypto> cryptoCacheService;
     private final CryptoSnapshotProcessor snapshotProcessor;
     private final CryptoEntityWriter entityWriter;
     private final TrackedAssetQueryService trackedAssetQueryService;
@@ -51,7 +50,6 @@ public class CryptoUpdateService implements MarketRefresher {
                                CryptoMapper cryptoMapper,
                                CryptoRepository cryptoRepository,
                                CryptoCandleRepository cryptoCandleRepository,
-                               MarketCacheService<Crypto> cryptoCacheService,
                                CryptoSnapshotProcessor snapshotProcessor,
                                CryptoEntityWriter entityWriter,
                                TrackedAssetQueryService trackedAssetQueryService,
@@ -63,7 +61,6 @@ public class CryptoUpdateService implements MarketRefresher {
         this.cryptoMapper = cryptoMapper;
         this.cryptoRepository = cryptoRepository;
         this.cryptoCandleRepository = cryptoCandleRepository;
-        this.cryptoCacheService = cryptoCacheService;
         this.snapshotProcessor = snapshotProcessor;
         this.entityWriter = entityWriter;
         this.trackedAssetQueryService = trackedAssetQueryService;

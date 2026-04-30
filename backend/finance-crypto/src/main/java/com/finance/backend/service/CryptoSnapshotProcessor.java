@@ -4,7 +4,6 @@ import com.finance.backend.client.CoinGeckoClient;
 import com.finance.backend.config.CryptoProperties;
 import com.finance.backend.dto.external.CoinGeckoSnapshotDto;
 import com.finance.backend.model.Crypto;
-import com.finance.backend.model.CryptoCandle;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.util.ApiAssetValidator;
 import com.finance.backend.util.BatchLogHelper;

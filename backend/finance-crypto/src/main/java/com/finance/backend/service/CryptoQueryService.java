@@ -3,7 +3,6 @@ package com.finance.backend.service;
 import com.finance.backend.dto.response.CandleResponse;
 import com.finance.backend.mapper.CryptoResponseMapper;
 import com.finance.backend.model.CandlePeriod;
-import com.finance.backend.model.Crypto;
 import com.finance.backend.model.CryptoCandle;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;
@@ -20,7 +19,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CryptoQueryService implements MarketHistoryProvider {
 
-    private final MarketCacheService<Crypto> cryptoCacheService;
     private final CryptoCandleRepository cryptoCandleRepository;
     private final CryptoResponseMapper cryptoResponseMapper;
     private final TrackedAssetQueryService trackedAssetQueryService;

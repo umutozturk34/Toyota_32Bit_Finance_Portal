@@ -36,7 +36,7 @@ class FundUpdateServiceTest {
     @Mock private FundMapper fundMapper;
     @Mock private FundRepository fundRepository;
     @Mock private FundCandleRepository fundCandleRepository;
-    @Mock private MarketCacheService<Fund, FundCandle> fundCacheService;
+    @Mock private MarketCacheService<Fund> fundCacheService;
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
     @Mock private FundSnapshotProcessor snapshotProcessor;
     @Mock private FundEntityWriter entityWriter;
@@ -115,6 +115,8 @@ class FundUpdateServiceTest {
         LocalDateTime futureLatest = LocalDateTime.now().plusDays(1);
         when(fundCandleRepository.findCandleDateRangePerFund())
                 .thenReturn(Collections.singletonList(new Object[]{"BLH", fiveYearsAgo, futureLatest}));
+        when(fundCandleRepository.countCandlesPerFund())
+                .thenReturn(Collections.singletonList(new Object[]{"BLH", 1000L}));
 
         service.refreshAll();
 

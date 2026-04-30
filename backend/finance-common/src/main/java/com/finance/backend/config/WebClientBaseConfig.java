@@ -46,6 +46,7 @@ public class WebClientBaseConfig {
                 .clone()
                 .baseUrl(appProperties.getApi().getYahoo().getBaseUrl())
                 .filter(new RateLimiterFilter(rateLimiterRegistry.rateLimiter("yahoo")))
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024))
                 .build();
     }
 

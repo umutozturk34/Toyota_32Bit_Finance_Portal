@@ -25,16 +25,19 @@ public class CoinGeckoClient {
     private final CoinGeckoCandleMapper candleMapper;
     private final String marketsPath;
     private final String klinesPath;
+    private final String binanceInterval;
 
     public CoinGeckoClient(@Qualifier("coinGeckoWebClient") WebClient coinGeckoWebClient,
                            @Qualifier("binanceWebClient") WebClient binanceWebClient,
                            CoinGeckoCandleMapper candleMapper,
-                           com.finance.backend.config.AppProperties appProperties) {
+                           com.finance.backend.config.AppProperties appProperties,
+                           com.finance.backend.config.CryptoProperties cryptoProperties) {
         this.coinGeckoWebClient = coinGeckoWebClient;
         this.binanceWebClient = binanceWebClient;
         this.candleMapper = candleMapper;
         this.marketsPath = appProperties.getApi().getCoingecko().getMarketsPath();
         this.klinesPath = appProperties.getApi().getBinance().getKlinesPath();
+        this.binanceInterval = cryptoProperties.getBinanceInterval();
     }
 
     @CircuitBreaker(name = "coingecko")
@@ -58,17 +61,21 @@ public class CoinGeckoClient {
 
     @CircuitBreaker(name = "binance")
     @Retry(name = "binance")
-    public List<CoinGeckoCandleDto> fetchBinanceKlines(String coinId, String binanceSymbol, int days) {
+    public List<CoinGeckoCandleDto> fetchBinanceKlines(String coinId, String binanceSymbol,
+                                                       long startTime, int limit) {
         try {
             List<BinanceKlineResponse> raw = binanceWebClient.get()
                     .uri(klinesPath + "?symbol=" + binanceSymbol
-                            + "&interval=1d&limit=" + days)
+                            + "&interval=" + binanceInterval
+                            + "&startTime=" + startTime
+                            + "&limit=" + limit)
                     .retrieve()
                     .bodyToMono(new ParameterizedTypeReference<List<BinanceKlineResponse>>() {})
                     .block();
             if (raw == null || raw.isEmpty()) return List.of();
             List<CoinGeckoCandleDto> candles = candleMapper.toCandleDtos(raw, coinId);
-            log.debug("Binance klines for {} ({}): {} candles", coinId, binanceSymbol, candles.size());
+            log.debug("Binance klines for {} ({}): {} candles from startTime={}",
+                    coinId, binanceSymbol, candles.size(), startTime);
             return candles;
         } catch (Exception e) {
             throw new ExternalApiException("Binance", "Klines fetch failed for " + coinId, e);

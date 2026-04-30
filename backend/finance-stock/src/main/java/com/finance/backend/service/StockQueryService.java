@@ -20,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StockQueryService implements MarketHistoryProvider {
 
-    private final MarketCacheService<Stock, StockCandle> stockCacheService;
+    private final MarketCacheService<Stock> stockCacheService;
     private final StockCandleRepository stockCandleRepository;
     private final StockResponseMapper stockResponseMapper;
     private final TrackedAssetQueryService trackedAssetQueryService;
@@ -33,12 +33,9 @@ public class StockQueryService implements MarketHistoryProvider {
     @Override
     public List<CandleResponse> getHistory(String symbol, CandlePeriod period) {
         String normalizedCode = trackedAssetQueryService.resolveEnabledCodeOrThrow(TrackedAssetType.STOCK, symbol);
-        if (period == CandlePeriod.ALL) {
-            return stockResponseMapper.toStockCandleResponses(stockCacheService.getHistory(normalizedCode));
-        }
-        LocalDateTime start = period.toStartDateTime();
         List<StockCandle> candles = stockCandleRepository
-                .findByStockSymbolAndCandleDateBetweenOrderByCandleDateAsc(normalizedCode, start, LocalDateTime.now());
+                .findByStockSymbolAndCandleDateBetweenOrderByCandleDateAsc(
+                        normalizedCode, period.toStartDateTime(), LocalDateTime.now());
         return stockResponseMapper.toStockCandleResponses(candles);
     }
 }

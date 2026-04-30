@@ -22,11 +22,11 @@ public class CommodityMarketAssetProvider extends BaseTrackedMarketAssetProvider
     private static final List<String> SEARCH_FIELDS = List.of("commodityCode", "commodityName", "commodityNameTr", "name");
 
     private final CommodityRepository commodityRepository;
-    private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
+    private final MarketCacheService<Commodity> commodityCacheService;
     private final CommodityResponseMapper commodityResponseMapper;
 
     public CommodityMarketAssetProvider(CommodityRepository commodityRepository,
-                                        MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
+                                        MarketCacheService<Commodity> commodityCacheService,
                                         CommodityResponseMapper commodityResponseMapper,
                                         TrackedAssetQueryService trackedAssetQueryService) {
         super(commodityRepository, trackedAssetQueryService);

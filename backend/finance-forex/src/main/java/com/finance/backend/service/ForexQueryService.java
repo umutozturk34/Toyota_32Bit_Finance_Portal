@@ -4,7 +4,6 @@ import com.finance.backend.dto.response.CandleResponse;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.mapper.ForexResponseMapper;
 import com.finance.backend.model.CandlePeriod;
-import com.finance.backend.model.Forex;
 import com.finance.backend.model.ForexCandle;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.ForexCandleRepository;
@@ -21,7 +20,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ForexQueryService implements MarketHistoryProvider {
 
-    private final MarketCacheService<Forex, ForexCandle> forexCacheService;
     private final ForexCandleRepository forexCandleRepository;
     private final ForexResponseMapper forexResponseMapper;
     private final ForexRepository forexRepository;
@@ -37,12 +35,9 @@ public class ForexQueryService implements MarketHistoryProvider {
         if (!forexRepository.existsById(normalized)) {
             throw new ResourceNotFoundException("Forex not found: " + normalized);
         }
-        if (period == CandlePeriod.ALL) {
-            return forexResponseMapper.toForexCandleResponses(forexCacheService.getHistory(normalized));
-        }
-        LocalDateTime start = period.toStartDateTime();
         List<ForexCandle> candles = forexCandleRepository
-                .findByCurrencyCodeAndCandleDateBetweenOrderByCandleDateAsc(normalized, start, LocalDateTime.now());
+                .findByCurrencyCodeAndCandleDateBetweenOrderByCandleDateAsc(
+                        normalized, period.toStartDateTime(), LocalDateTime.now());
         return forexResponseMapper.toForexCandleResponses(candles);
     }
 }

@@ -27,7 +27,7 @@ public class CryptoSnapshotProcessor implements MarketSnapshotProcessor {
 
     private final CoinGeckoClient coinGeckoClient;
     private final CryptoEntityWriter entityWriter;
-    private final MarketCacheService<Crypto, CryptoCandle> cryptoCacheService;
+    private final MarketCacheService<Crypto> cryptoCacheService;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final TransactionTemplate transactionTemplate;
     private final int batchMinSample;
@@ -36,7 +36,7 @@ public class CryptoSnapshotProcessor implements MarketSnapshotProcessor {
 
     public CryptoSnapshotProcessor(CoinGeckoClient coinGeckoClient,
                                     CryptoEntityWriter entityWriter,
-                                    MarketCacheService<Crypto, CryptoCandle> cryptoCacheService,
+                                    MarketCacheService<Crypto> cryptoCacheService,
                                     TrackedAssetQueryService trackedAssetQueryService,
                                     TransactionTemplate transactionTemplate,
                                     CryptoProperties cryptoProperties) {

@@ -32,7 +32,7 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
     private final CommodityMapper commodityMapper;
     private final CommodityRepository commodityRepository;
     private final CommodityCandleRepository commodityCandleRepository;
-    private final MarketCacheService<Commodity, CommodityCandle> commodityCacheService;
+    private final MarketCacheService<Commodity> commodityCacheService;
     private final ExchangeRateProvider exchangeRateProvider;
     private final PreciousMetalDerivativeCalculator derivativeCalculator;
     private final YahooSymbolResolver yahooSymbolResolver;
@@ -48,7 +48,7 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
                                       CommodityMapper commodityMapper,
                                       CommodityRepository commodityRepository,
                                       CommodityCandleRepository commodityCandleRepository,
-                                      MarketCacheService<Commodity, CommodityCandle> commodityCacheService,
+                                      MarketCacheService<Commodity> commodityCacheService,
                                       ExchangeRateProvider exchangeRateProvider,
                                       PreciousMetalDerivativeCalculator derivativeCalculator,
                                       YahooSymbolResolver yahooSymbolResolver,
@@ -129,7 +129,6 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
             Map<String, YahooCandleDto> usdtryMap = exchangeRateProvider.getUsdTryHistory();
             ExchangeRateSnapshot usdTry = exchangeRateProvider.getCurrentUsdTry();
             updateOne(normalized, usdtryMap, usdTry);
-            commodityCacheService.refreshHistory(normalized);
             return true;
         }, log, "commodity");
     }

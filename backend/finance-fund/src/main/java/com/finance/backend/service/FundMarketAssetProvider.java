@@ -22,11 +22,11 @@ public class FundMarketAssetProvider extends BaseTrackedMarketAssetProvider<Fund
     private static final List<String> SEARCH_FIELDS = List.of("fundCode", "name");
 
     private final FundRepository fundRepository;
-    private final MarketCacheService<Fund, FundCandle> fundCacheService;
+    private final MarketCacheService<Fund> fundCacheService;
     private final FundResponseMapper fundResponseMapper;
 
     public FundMarketAssetProvider(FundRepository fundRepository,
-                                   MarketCacheService<Fund, FundCandle> fundCacheService,
+                                   MarketCacheService<Fund> fundCacheService,
                                    FundResponseMapper fundResponseMapper,
                                    TrackedAssetQueryService trackedAssetQueryService) {
         super(fundRepository, trackedAssetQueryService);

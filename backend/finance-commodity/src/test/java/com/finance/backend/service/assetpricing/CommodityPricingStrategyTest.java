@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 class CommodityPricingStrategyTest {
 
     @SuppressWarnings("unchecked")
-    private final MarketCacheService<Commodity, CommodityCandle> cacheService = mock(MarketCacheService.class);
+    private final MarketCacheService<Commodity> cacheService = mock(MarketCacheService.class);
     private CommodityPricingStrategy strategy;
 
     @BeforeEach

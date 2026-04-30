@@ -1,6 +1,5 @@
 package com.finance.backend.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.backend.exception.ResourceNotFoundException;
 
@@ -8,23 +7,19 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
 @Log4j2
 @RequiredArgsConstructor
-public class MarketCacheService<T, C> {
+public class MarketCacheService<T> {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
     private final String snapshotPrefix;
-    private final String historyPrefix;
     private final Duration ttl;
     private final Class<T> snapshotType;
-    private final TypeReference<List<C>> historyType;
     private final String entityName;
     private final Function<String, Optional<T>> snapshotFinder;
-    private final Function<String, List<C>> candleFinder;
 
     public T getSnapshot(String key) {
         String cacheKey = snapshotPrefix + key;
@@ -40,20 +35,7 @@ public class MarketCacheService<T, C> {
         throw new ResourceNotFoundException(entityName + " not found: " + key);
     }
 
-    public List<C> getHistory(String key) {
-        String cacheKey = historyPrefix + key;
-        Object cached = redisTemplate.opsForValue().get(cacheKey);
-        if (cached != null) {
-            return objectMapper.convertValue(cached, historyType);
-        }
-        List<C> candles = candleFinder.apply(key);
-        if (!candles.isEmpty()) {
-            redisTemplate.opsForValue().set(cacheKey, candles, ttl);
-        }
-        return candles;
-    }
-
-    public void clearSnapshotCache(String key) {
+    public void clearCache(String key) {
         String cacheKey = snapshotPrefix + key;
         Boolean deleted = redisTemplate.delete(cacheKey);
         if (Boolean.TRUE.equals(deleted)) {
@@ -61,31 +43,8 @@ public class MarketCacheService<T, C> {
         }
     }
 
-    public void clearHistoryCache(String key) {
-        String cacheKey = historyPrefix + key;
-        Boolean deleted = redisTemplate.delete(cacheKey);
-        if (Boolean.TRUE.equals(deleted)) {
-            log.debug("Cleared {} history cache: {}", entityName.toLowerCase(), cacheKey);
-        }
-    }
-
-    public void clearCache(String key) {
-        clearSnapshotCache(key);
-        clearHistoryCache(key);
-    }
-
     public void putSnapshot(String key, T entity) {
         String cacheKey = snapshotPrefix + key;
         redisTemplate.opsForValue().set(cacheKey, entity, ttl);
-    }
-
-    public void refreshHistory(String key) {
-        List<C> candles = candleFinder.apply(key);
-        String cacheKey = historyPrefix + key;
-        if (!candles.isEmpty()) {
-            redisTemplate.opsForValue().set(cacheKey, candles, ttl);
-        } else {
-            redisTemplate.delete(cacheKey);
-        }
     }
 }

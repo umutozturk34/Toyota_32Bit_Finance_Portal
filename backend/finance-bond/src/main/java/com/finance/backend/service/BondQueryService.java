@@ -23,7 +23,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Log4j2
 @Service
@@ -34,7 +33,7 @@ public class BondQueryService {
     private final BondRepository bondRepository;
     private final BondRateHistoryRepository bondRateHistoryRepository;
     private final BondResponseMapper bondResponseMapper;
-    private final MarketCacheService<Bond, BondRateHistory> bondCacheService;
+    private final MarketCacheService<Bond> bondCacheService;
 
     public PagedResponse<BondResponse> search(String search, String bondType, String sort, String direction, int page, Integer size) {
         Specification<Bond> spec = (root, query, cb) -> cb.conjunction();
@@ -73,13 +72,8 @@ public class BondQueryService {
     }
 
     public List<BondRateResponse> getRateHistory(String isinCode, CandlePeriod period) {
-        List<BondRateHistory> history;
-        if (period == CandlePeriod.ALL) {
-            history = bondCacheService.getHistory(isinCode);
-        } else {
-            history = bondRateHistoryRepository
-                    .findByIsinCodeAndRateDateAfterOrderByRateDateAsc(isinCode, period.toStartDate());
-        }
+        List<BondRateHistory> history = bondRateHistoryRepository
+                .findByIsinCodeAndRateDateAfterOrderByRateDateAsc(isinCode, period.toStartDate());
         return bondResponseMapper.toRateResponses(history);
     }
 

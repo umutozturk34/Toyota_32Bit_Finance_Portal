@@ -3,7 +3,6 @@ import com.finance.backend.client.TcmbForexClient;
 import com.finance.backend.dto.external.TcmbRateDto;
 import com.finance.backend.mapper.ForexMapper;
 import com.finance.backend.model.Forex;
-import com.finance.backend.model.ForexCandle;
 import com.finance.backend.repository.ForexRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -20,11 +19,11 @@ public class TcmbForexService {
     private final TcmbForexClient tcmbForexClient;
     private final ForexMapper forexMapper;
     private final ForexRepository forexRepository;
-    private final MarketCacheService<Forex, ForexCandle> forexCacheService;
+    private final MarketCacheService<Forex> forexCacheService;
     public TcmbForexService(TcmbForexClient tcmbForexClient,
                             ForexMapper forexMapper,
                             ForexRepository forexRepository,
-                            MarketCacheService<Forex, ForexCandle> forexCacheService) {
+                            MarketCacheService<Forex> forexCacheService) {
         this.tcmbForexClient = tcmbForexClient;
         this.forexMapper = forexMapper;
         this.forexRepository = forexRepository;

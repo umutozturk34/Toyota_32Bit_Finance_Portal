@@ -3,7 +3,6 @@ package com.finance.backend.service;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.mapper.ForexResponseMapper;
 import com.finance.backend.model.Forex;
-import com.finance.backend.model.ForexCandle;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.ForexRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +30,7 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
     );
 
     private final ForexRepository forexRepository;
-    private final MarketCacheService<Forex, ForexCandle> forexCacheService;
+    private final MarketCacheService<Forex> forexCacheService;
     private final ForexResponseMapper forexResponseMapper;
 
     @Override

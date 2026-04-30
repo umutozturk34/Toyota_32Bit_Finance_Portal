@@ -13,10 +13,10 @@ import java.math.BigDecimal;
 @Component
 public class CommodityPricingStrategy extends BaseAssetPricingStrategy {
 
-    private final MarketCacheService<Commodity, CommodityCandle> cacheService;
+    private final MarketCacheService<Commodity> cacheService;
     private final CommissionProperties commissionProperties;
 
-    public CommodityPricingStrategy(MarketCacheService<Commodity, CommodityCandle> cacheService,
+    public CommodityPricingStrategy(MarketCacheService<Commodity> cacheService,
                                     CommissionProperties commissionProperties) {
         this.cacheService = cacheService;
         this.commissionProperties = commissionProperties;

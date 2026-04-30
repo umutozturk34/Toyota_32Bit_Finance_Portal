@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import useSessionState from '../../shared/hooks/useSessionState';
-import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar } from 'lucide-react';
+import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, Plus } from 'lucide-react';
 import { TrendingUp, TrendingDown, Loader2 } from '../../shared/components/AnimatedIcons';
 import Chart from 'react-apexcharts';
 import { useTheme } from '../../shared/context/ThemeContext';
@@ -9,6 +10,7 @@ import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass }
 import { cardVariants } from '../../shared/utils/animations';
 import { getApexThemeOptions } from '../../shared/utils/apexTheme';
 import { PORTFOLIO_RANGES as RANGES, ASSET_TYPE_LABELS } from '../../shared/constants/assetTypes';
+import PositionFormModal from './PositionFormModal';
 
 const formatEntryDate = (v) => v ? new Date(v).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -96,6 +98,7 @@ function AssetChart({ data, isDark }) {
 export default function AssetDetail({ portfolioId, asset, onBack }) {
   const { isDark } = useTheme();
   const [range, setRange] = useSessionState(`portfolio-asset-range-${asset.assetCode}`, 'ALL');
+  const [addLotOpen, setAddLotOpen] = useState(false);
 
   const { data: series = [], isLoading: loading } = useAssetSeries(
     portfolioId, asset.assetType, asset.assetCode, range
@@ -113,27 +116,36 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="flex items-center gap-3"
+        className="flex items-center justify-between gap-3"
       >
-        <button
-          onClick={onBack}
-          className="flex items-center justify-center w-9 h-9 rounded-lg border border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:bg-surface hover:-translate-x-0.5 transition-all cursor-pointer"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
         <div className="flex items-center gap-3">
-          {displayBadge ? (
-            <img src={displayBadge} alt={displayLabel} className="w-10 h-10 rounded-xl" />
-          ) : (
-            <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 text-sm font-bold text-accent">
-              {displayBadgeText}
-            </span>
-          )}
-          <div>
-            <h1 className="text-xl font-bold text-fg">{displayLabel}</h1>
-            <p className="text-xs text-fg-muted">{displaySub}</p>
+          <button
+            onClick={onBack}
+            className="flex items-center justify-center w-9 h-9 rounded-lg border border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:bg-surface hover:-translate-x-0.5 transition-all cursor-pointer"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div className="flex items-center gap-3">
+            {displayBadge ? (
+              <img src={displayBadge} alt={displayLabel} className="w-10 h-10 rounded-xl" />
+            ) : (
+              <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 text-sm font-bold text-accent">
+                {displayBadgeText}
+              </span>
+            )}
+            <div>
+              <h1 className="text-xl font-bold text-fg">{displayLabel}</h1>
+              <p className="text-xs text-fg-muted">{displaySub}</p>
+            </div>
           </div>
         </div>
+        <button
+          onClick={() => setAddLotOpen(true)}
+          className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-bright transition-all border-none cursor-pointer"
+        >
+          <Plus className="h-4 w-4" />
+          Yeni Lot
+        </button>
       </motion.div>
 
       <motion.div
@@ -235,6 +247,22 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
           ) : null}
         </div>
       </motion.div>
+
+      {addLotOpen && (
+        <PositionFormModal
+          mode="add"
+          portfolioId={portfolioId}
+          asset={{
+            type: asset.assetType,
+            code: asset.assetCode,
+            name: asset.assetName,
+            image: asset.assetImage,
+            currentPrice: asset.currentPriceTry,
+          }}
+          onClose={() => setAddLotOpen(false)}
+          onComplete={() => setAddLotOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,12 +1,16 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Hash, Tag, Wallet } from 'lucide-react';
 import { Loader2, Check, AlertCircle } from '../../shared/components/AnimatedIcons';
+import DatePickerPopover from '../../shared/components/DatePickerPopover';
+import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
 import { formatPriceTRY } from '../../shared/utils/formatters';
 import { assetCodeLabel } from '../../shared/utils/assetCode';
 import { useAddPosition, useUpdatePosition } from './usePortfolioData';
 
 const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX', 'COMMODITY'];
+const ONE_HOUR_MS = 60 * 60 * 1000;
 
 function todayInputValue() {
   const now = new Date();
@@ -56,6 +60,17 @@ function resolveTarget(mode, asset, position) {
   };
 }
 
+function buildPriceIndex(history) {
+  const index = new Map();
+  if (!Array.isArray(history)) return index;
+  for (const candle of history) {
+    if (!candle?.candleDate) continue;
+    const key = candle.candleDate.slice(0, 10);
+    index.set(key, Number(candle.close));
+  }
+  return index;
+}
+
 export default function PositionFormModal({ mode, portfolioId, asset, position, onClose, onComplete }) {
   const target = resolveTarget(mode, asset, position);
   const isFractional = FRACTIONAL_TYPES.includes(target.assetType);
@@ -63,6 +78,19 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
 
   const [form, setForm] = useState(() => buildInitialState(mode, asset, position));
   const [error, setError] = useState(null);
+  const [priceTouched, setPriceTouched] = useState(isEdit);
+
+  const { data: history } = useQuery({
+    queryKey: ['marketHistory', target.assetType, target.assetCode, 'ALL'],
+    queryFn: () => unifiedMarketService.getHistory(target.assetType, target.assetCode, 'ALL'),
+    enabled: Boolean(target.assetType && target.assetCode),
+    staleTime: ONE_HOUR_MS,
+  });
+
+  const priceIndex = useMemo(() => buildPriceIndex(history), [history]);
+  const highlightedDates = useMemo(() => new Set(priceIndex.keys()), [priceIndex]);
+  const suggestedPrice = priceIndex.get(form.entryDate);
+  const dataAvailable = suggestedPrice != null;
 
   const addMutation = useAddPosition(portfolioId);
   const updateMutation = useUpdatePosition(portfolioId);
@@ -70,15 +98,39 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
   const loading = mutation.isPending;
   const success = mutation.isSuccess;
 
+  useEffect(() => {
+    if (priceTouched) return;
+    if (suggestedPrice == null) return;
+    setForm((prev) => ({ ...prev, entryPrice: String(suggestedPrice) }));
+  }, [suggestedPrice, priceTouched]);
+
   const totalCost = useMemo(() => {
     const q = Number(form.quantity);
     const p = Number(form.entryPrice);
     return q > 0 && p > 0 ? q * p : null;
   }, [form.quantity, form.entryPrice]);
 
-  const update = (field) => (e) => {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  const handleDateChange = (iso) => {
+    setForm((prev) => ({ ...prev, entryDate: iso }));
+    setPriceTouched(false);
     setError(null);
+  };
+
+  const handlePriceChange = (e) => {
+    setForm((prev) => ({ ...prev, entryPrice: e.target.value }));
+    setPriceTouched(true);
+    setError(null);
+  };
+
+  const handleQuantityChange = (e) => {
+    setForm((prev) => ({ ...prev, quantity: e.target.value }));
+    setError(null);
+  };
+
+  const useSuggestedPrice = () => {
+    if (suggestedPrice == null) return;
+    setForm((prev) => ({ ...prev, entryPrice: String(suggestedPrice) }));
+    setPriceTouched(false);
   };
 
   const validate = () => {
@@ -131,7 +183,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="relative w-full max-w-sm rounded-2xl border border-border-default modal-panel p-6 overflow-hidden"
+        className="relative w-full max-w-sm rounded-2xl border border-border-default modal-panel p-6 overflow-visible"
       >
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
         <div className="flex items-center justify-between mb-5">
@@ -181,12 +233,18 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
                 <Calendar className="h-3 w-3" />
                 Giriş Tarihi
               </label>
-              <input
-                type="date"
+              <DatePickerPopover
                 value={form.entryDate}
-                onChange={update('entryDate')}
-                max={todayInputValue()}
-                className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+                onChange={handleDateChange}
+                maxDate={todayInputValue()}
+                highlightedDates={highlightedDates}
+              />
+              <DataAvailabilityHint
+                dataAvailable={dataAvailable}
+                hasHistory={priceIndex.size > 0}
+                suggestedPrice={suggestedPrice}
+                onApply={useSuggestedPrice}
+                applied={!priceTouched && suggestedPrice != null && Number(form.entryPrice) === suggestedPrice}
               />
             </div>
 
@@ -199,7 +257,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
                 type="number"
                 step="any"
                 value={form.entryPrice}
-                onChange={update('entryPrice')}
+                onChange={handlePriceChange}
                 placeholder={asset?.currentPrice ? `önerilen: ${formatPriceTRY(asset.currentPrice)}` : '0.00'}
                 className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
               />
@@ -214,7 +272,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
                 type="number"
                 step={isFractional ? 'any' : '1'}
                 value={form.quantity}
-                onChange={update('quantity')}
+                onChange={handleQuantityChange}
                 placeholder={isFractional ? '0.00' : 'min. 1 adet'}
                 autoFocus
                 className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
@@ -257,6 +315,35 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
           </form>
         )}
       </motion.div>
+    </div>
+  );
+}
+
+function DataAvailabilityHint({ dataAvailable, hasHistory, suggestedPrice, onApply, applied }) {
+  if (!hasHistory) return null;
+  if (dataAvailable) {
+    return (
+      <div className="flex items-center justify-between gap-2 text-[11px] text-success bg-success/5 rounded-md px-2.5 py-1.5 border border-success/20">
+        <div className="flex items-center gap-1.5">
+          <Check className="h-3 w-3 shrink-0" />
+          <span>Bu tarih için veri mevcut: <span className="font-mono font-semibold">{formatPriceTRY(suggestedPrice)}</span></span>
+        </div>
+        {!applied && (
+          <button
+            type="button"
+            onClick={onApply}
+            className="text-[10px] font-semibold text-success hover:underline bg-transparent border-none cursor-pointer"
+          >
+            Uygula
+          </button>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1.5 text-[11px] text-warning bg-warning/5 rounded-md px-2.5 py-1.5 border border-warning/20">
+      <AlertCircle className="h-3 w-3 shrink-0" />
+      <span>Bu tarih için fiyat verisi yok, manuel girin.</span>
     </div>
   );
 }

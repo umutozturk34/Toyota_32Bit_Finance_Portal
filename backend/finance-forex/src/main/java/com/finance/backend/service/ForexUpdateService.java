@@ -4,17 +4,14 @@ import com.finance.backend.config.ForexProperties;
 import com.finance.backend.dto.external.YahooCandleDto;
 import com.finance.backend.mapper.ForexMapper;
 import com.finance.backend.model.Forex;
-import com.finance.backend.model.ForexCandle;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.ForexCandleRepository;
 import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.util.BatchLogHelper;
 import com.finance.backend.util.BatchUpdateRunner;
-import com.finance.backend.util.CandlePruner;
 import com.finance.backend.util.MarketBatchRunner;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -26,28 +23,20 @@ public class ForexUpdateService implements MarketRefresher {
 
     private final ForexRepository forexRepository;
     private final ForexCandleRepository forexCandleRepository;
-    private final MarketCacheService<Forex, ForexCandle> forexCacheService;
     private final ForexSnapshotProcessor snapshotProcessor;
     private final ForexMapper forexMapper;
-    private final TransactionTemplate transactionTemplate;
-    private final int yearsToKeep;
     private final String baseCurrency;
     private final int batchMinSample;
 
     public ForexUpdateService(ForexRepository forexRepository,
                               ForexCandleRepository forexCandleRepository,
-                              MarketCacheService<Forex, ForexCandle> forexCacheService,
                               ForexSnapshotProcessor snapshotProcessor,
                               ForexMapper forexMapper,
-                              TransactionTemplate transactionTemplate,
                               ForexProperties forexProperties) {
         this.forexRepository = forexRepository;
         this.forexCandleRepository = forexCandleRepository;
-        this.forexCacheService = forexCacheService;
         this.snapshotProcessor = snapshotProcessor;
         this.forexMapper = forexMapper;
-        this.transactionTemplate = transactionTemplate;
-        this.yearsToKeep = forexProperties.getYearsToKeep();
         this.baseCurrency = forexProperties.getBaseCurrency();
         this.batchMinSample = forexProperties.getBatchMinSample();
     }
@@ -59,7 +48,6 @@ public class ForexUpdateService implements MarketRefresher {
 
     @Override
     public void refreshAll() {
-        pruneOldForexCandles();
         List<Forex> allForex = forexRepository.findAll();
         log.info("Starting Yahoo forex sync for {} pairs", allForex.size());
 
@@ -72,7 +60,6 @@ public class ForexUpdateService implements MarketRefresher {
             return;
         }
         snapshotProcessor.updatePair(usdtry, Map.of());
-        forexCacheService.refreshHistory(baseCurrency);
         Map<String, YahooCandleDto> usdtryCandleMap = buildUsdtryCandleMap();
 
         List<Forex> nonUsdTryForex = allForex.stream()
@@ -83,7 +70,6 @@ public class ForexUpdateService implements MarketRefresher {
                 nonUsdTryForex,
                 forex -> {
                     snapshotProcessor.updatePair(forex, usdtryCandleMap);
-                    forexCacheService.refreshHistory(forex.getCurrencyCode());
                 },
                 Forex::getCurrencyCode,
                 log, "Forex", "update", batchMinSample);
@@ -100,15 +86,11 @@ public class ForexUpdateService implements MarketRefresher {
     }
 
     private Map<String, YahooCandleDto> buildUsdtryCandleMap() {
-        return forexCacheService.getHistory(baseCurrency).stream()
+        return forexCandleRepository.findByCurrencyCodeOrderByCandleDateAsc(baseCurrency).stream()
                 .collect(Collectors.toMap(
                         c -> c.getCandleDate().toLocalDate().toString(),
                         forexMapper::toYahooCandleDto,
                         (a, b) -> a));
     }
 
-    private void pruneOldForexCandles() {
-        CandlePruner.pruneByYears(transactionTemplate, yearsToKeep,
-                cutoffDate -> forexCandleRepository.deleteByCandleDateBefore(cutoffDate));
-    }
 }

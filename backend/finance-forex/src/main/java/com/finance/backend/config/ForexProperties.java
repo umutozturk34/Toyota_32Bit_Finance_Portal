@@ -11,9 +11,8 @@ import java.math.BigDecimal;
 @ConfigurationProperties(prefix = "app.forex")
 public class ForexProperties {
 
-    private int yearsToKeep = 5;
     private BigDecimal spreadRate = new BigDecimal("0.01");
-    private String chartRange = "5y";
+    private String chartRange = "max";
     private String chartInterval = "1d";
     private int batchMinSample = 5;
     private String baseCurrency = "USDTRY";

@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "app.stock")
 public class StockProperties {
 
-    private int historyYears = 5;
+    private String chartRange = "max";
     private String chartInterval = "1d";
     private int batchMinSample = 10;
 }

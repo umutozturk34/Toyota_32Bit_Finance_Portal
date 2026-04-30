@@ -36,7 +36,7 @@ class SnapshotCalculationServiceTest {
     }
 
     @Test
-    void assetSnapshotCalculatesPnlFromCurrentPriceVsEntryPrice() {
+    void shouldCalculatePnlFromCurrentVsEntryPrice_whenBuildingAssetSnapshot() {
         PortfolioPosition pos = stubPosition(AssetType.CRYPTO, "bitcoin",
                 new BigDecimal("0.50000000"), new BigDecimal("2500000.0000"));
         when(pricingPort.getPriceTry(MarketType.CRYPTO, "bitcoin"))
@@ -54,7 +54,7 @@ class SnapshotCalculationServiceTest {
     }
 
     @Test
-    void assetSnapshotWithNullPriceShowsFullLoss() {
+    void shouldShowFullLossInAssetSnapshot_whenPriceIsNull() {
         PortfolioPosition pos = stubPosition(AssetType.STOCK, "DELISTED",
                 new BigDecimal("100.00000000"), new BigDecimal("50.0000"));
         when(pricingPort.getPriceTry(MarketType.STOCK, "DELISTED")).thenReturn(null);
@@ -67,7 +67,7 @@ class SnapshotCalculationServiceTest {
     }
 
     @Test
-    void aggregateSnapshotSumsAllPositions() {
+    void shouldSumAllPositions_whenBuildingAggregateSnapshot() {
         Portfolio portfolio = Portfolio.builder().id(1L).build();
         when(positionRepository.findByPortfolioId(1L))
                 .thenReturn(List.of(
@@ -86,7 +86,7 @@ class SnapshotCalculationServiceTest {
     }
 
     @Test
-    void aggregateSnapshotPnlPercentRelativeToEntryValue() {
+    void shouldComputePnlPercentRelativeToEntryValue_whenBuildingAggregateSnapshot() {
         Portfolio portfolio = Portfolio.builder().id(1L).build();
         when(positionRepository.findByPortfolioId(1L))
                 .thenReturn(List.of(stubPosition(AssetType.FUND, "AAK",
@@ -100,7 +100,7 @@ class SnapshotCalculationServiceTest {
     }
 
     @Test
-    void aggregateSnapshotIssuesExactlyOneBatchPricingCall() {
+    void shouldIssueExactlyOneBatchPricingCall_whenBuildingAggregateSnapshot() {
         CountingAssetPricingPort counting = new CountingAssetPricingPort();
         counting.seedPrice("CRYPTO", "bitcoin", new BigDecimal("2500000.0000"));
         counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("50.0000"));
@@ -122,7 +122,7 @@ class SnapshotCalculationServiceTest {
     }
 
     @Test
-    void aggregateSnapshotWithNoPositionsReturnsZero() {
+    void shouldReturnZeroAggregate_whenNoPositionsExist() {
         Portfolio portfolio = Portfolio.builder().id(1L).build();
         when(positionRepository.findByPortfolioId(1L)).thenReturn(List.of());
 

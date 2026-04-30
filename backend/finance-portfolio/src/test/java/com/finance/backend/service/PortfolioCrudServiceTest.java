@@ -90,12 +90,11 @@ class PortfolioCrudServiceTest {
     @Test
     void shouldPersistNewPositionWithRequestFields_whenPortfolioOwnedByUser() {
         Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
-        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
-        when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
-
         LocalDateTime entryDate = LocalDateTime.of(2024, 1, 15, 10, 0);
         PositionRequest request = new PositionRequest(
                 "stock", "THYAO.IS", new BigDecimal("100"), entryDate, new BigDecimal("40"));
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
 
         PortfolioPosition saved = service.addPosition(PORTFOLIO_ID, USER_SUB, request);
 
@@ -122,13 +121,12 @@ class PortfolioCrudServiceTest {
         Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
         PortfolioPosition existing = stubPosition(PORTFOLIO_ID, AssetType.STOCK, "THYAO.IS",
                 new BigDecimal("100"), new BigDecimal("40"));
-        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
-        when(positionRepository.findById(33L)).thenReturn(Optional.of(existing));
-        when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
-
         LocalDateTime newDate = LocalDateTime.of(2025, 5, 1, 9, 0);
         PositionRequest request = new PositionRequest(
                 "STOCK", "THYAO.IS", new BigDecimal("150"), newDate, new BigDecimal("55"));
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.findById(33L)).thenReturn(Optional.of(existing));
+        when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
 
         PortfolioPosition updated = service.updatePosition(PORTFOLIO_ID, 33L, USER_SUB, request);
 
@@ -142,11 +140,10 @@ class PortfolioCrudServiceTest {
         Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
         PortfolioPosition foreign = stubPosition(999L, AssetType.STOCK, "THYAO.IS",
                 new BigDecimal("100"), new BigDecimal("40"));
-        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
-        when(positionRepository.findById(33L)).thenReturn(Optional.of(foreign));
-
         PositionRequest request = new PositionRequest(
                 "STOCK", "THYAO.IS", new BigDecimal("150"), LocalDateTime.now(), new BigDecimal("55"));
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.findById(33L)).thenReturn(Optional.of(foreign));
 
         assertThatThrownBy(() -> service.updatePosition(PORTFOLIO_ID, 33L, USER_SUB, request))
                 .isInstanceOf(BusinessException.class);

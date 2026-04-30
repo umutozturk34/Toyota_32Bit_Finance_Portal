@@ -38,7 +38,7 @@ class PortfolioSummaryServiceTest {
     }
 
     @Test
-    void getPositionsIssuesExactlyOneBundlesBatchCall() {
+    void shouldIssueExactlyOneBundlesBatchCall_whenFetchingPositions() {
         counting.seedPrice("CRYPTO", "bitcoin", new BigDecimal("2500000"));
         counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("50"));
         counting.seedPrice("FUND", "AAK", new BigDecimal("110"));
@@ -61,7 +61,7 @@ class PortfolioSummaryServiceTest {
     }
 
     @Test
-    void getSummaryAggregatesValueAndPnlAcrossPositions() {
+    void shouldAggregateValueAndPnlAcrossPositions_whenComputingSummary() {
         counting.seedPrice("CRYPTO", "bitcoin", new BigDecimal("2500000"));
         counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("60"));
 
@@ -78,7 +78,7 @@ class PortfolioSummaryServiceTest {
     }
 
     @Test
-    void getSummaryWithAssetTypeFilterRestrictsToOneType() {
+    void shouldRestrictSummaryToOneType_whenAssetTypeFilterProvided() {
         counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("60"));
         counting.seedPrice("CRYPTO", "bitcoin", new BigDecimal("2500000"));
 
@@ -94,7 +94,7 @@ class PortfolioSummaryServiceTest {
     }
 
     @Test
-    void getAllocationByAssetTypeGroupsValuesAndComputesPercentages() {
+    void shouldGroupValuesAndComputePercentages_whenAllocatingByAssetType() {
         counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("60"));
         counting.seedPrice("CRYPTO", "bitcoin", new BigDecimal("100"));
 

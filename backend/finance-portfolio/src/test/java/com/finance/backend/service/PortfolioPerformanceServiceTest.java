@@ -54,7 +54,6 @@ class PortfolioPerformanceServiceTest {
                 new BigDecimal("2000"), new BigDecimal("80"));
         PortfolioAssetDailySnapshot cryptoSnap = assetSnap(t, AssetType.CRYPTO, "bitcoin",
                 new BigDecimal("1000"), new BigDecimal("20"));
-
         when(dailySnapshotRepository.findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(eq(PORTFOLIO_ID), any(), any()))
                 .thenReturn(List.of(daily));
         when(assetSnapshotRepository.findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(eq(PORTFOLIO_ID), any(), any()))
@@ -77,7 +76,6 @@ class PortfolioPerformanceServiceTest {
                 new BigDecimal("4000"), new BigDecimal("0"), BigDecimal.ZERO);
         PortfolioPosition newLot = lot(AssetType.STOCK, "THYAO.IS",
                 new BigDecimal("100"), new BigDecimal("40"), now.minusDays(1));
-
         when(dailySnapshotRepository.findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(eq(PORTFOLIO_ID), any(), any()))
                 .thenReturn(List.of(daily));
         when(assetSnapshotRepository.findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(eq(PORTFOLIO_ID), any(), any()))
@@ -104,7 +102,6 @@ class PortfolioPerformanceServiceTest {
                 new BigDecimal("100"), BigDecimal.ZERO);
         PortfolioAssetDailySnapshot snap2 = assetSnap(t2, AssetType.STOCK, "THYAO.IS",
                 new BigDecimal("120"), new BigDecimal("20"));
-
         when(dailySnapshotRepository.findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(eq(PORTFOLIO_ID), any(), any()))
                 .thenReturn(List.of(d1, d2));
         when(assetSnapshotRepository.findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(eq(PORTFOLIO_ID), any(), any()))
@@ -126,7 +123,6 @@ class PortfolioPerformanceServiceTest {
                 new BigDecimal("6000"), new BigDecimal("4000"), new BigDecimal("2000"));
         PortfolioAssetDailySnapshot stockB = assetSnapWithCost(t, AssetType.STOCK, "ASELS.IS",
                 new BigDecimal("3000"), new BigDecimal("2000"), new BigDecimal("1000"));
-
         when(assetSnapshotRepository.findByPortfolioIdAndAssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
                 eq(PORTFOLIO_ID), eq(AssetType.STOCK), any(), any()))
                 .thenReturn(List.of(stockA, stockB));
@@ -149,7 +145,6 @@ class PortfolioPerformanceServiceTest {
                 new BigDecimal("2500000"), new BigDecimal("100000"));
         AssetSeriesPoint expected = new AssetSeriesPoint(LocalDateTime.now(),
                 new BigDecimal("2500000"), new BigDecimal("2500000"), new BigDecimal("100000"));
-
         when(assetSnapshotRepository.findByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtBetweenOrderByCreatedAtAsc(
                 eq(PORTFOLIO_ID), eq(AssetType.CRYPTO), eq("bitcoin"), any(), any()))
                 .thenReturn(List.of(snap));

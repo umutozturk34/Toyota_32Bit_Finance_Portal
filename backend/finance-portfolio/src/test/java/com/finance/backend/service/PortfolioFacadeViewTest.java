@@ -54,7 +54,7 @@ class PortfolioFacadeViewTest {
     }
 
     @Test
-    void getPortfolioViewIncludesAllSections() {
+    void shouldIncludeAllSections_whenAllRequested() {
         mockOwner();
         when(summaryService.getSummary(1L, null)).thenReturn(summary());
         when(summaryService.getPositionsPaged(eq(1L), isNull(), isNull(), isNull(), isNull(), eq(0), eq(10)))
@@ -70,7 +70,7 @@ class PortfolioFacadeViewTest {
     }
 
     @Test
-    void getPortfolioViewSkipsUnrequestedSections() {
+    void shouldSkipUnrequestedSections_whenIncludeListLimited() {
         mockOwner();
         when(summaryService.getSummary(1L, null)).thenReturn(summary());
 
@@ -85,7 +85,7 @@ class PortfolioFacadeViewTest {
     }
 
     @Test
-    void getChartDelegatesToPerformanceForPerformanceType() {
+    void shouldDelegateToPerformance_whenChartTypeIsPerformance() {
         mockOwner();
         when(performanceService.getPerformance(1L, "1M", null)).thenReturn(List.of());
 
@@ -96,7 +96,7 @@ class PortfolioFacadeViewTest {
     }
 
     @Test
-    void getChartDelegatesToAssetSeriesForAssetSeriesType() {
+    void shouldDelegateToAssetSeries_whenChartTypeIsAssetSeries() {
         mockOwner();
         when(performanceService.getAssetSeries(1L, "STOCK", "THYAO.IS", "3M")).thenReturn(List.of());
 

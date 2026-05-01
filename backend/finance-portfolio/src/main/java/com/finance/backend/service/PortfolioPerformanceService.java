@@ -85,29 +85,31 @@ public class PortfolioPerformanceService {
 
         for (PortfolioDailySnapshot snap : snapshots) {
             List<PortfolioAssetDailySnapshot> assets = assetsByTimestamp.getOrDefault(snap.getCreatedAt(), List.of());
-
-            Map<String, BigDecimal[]> typeAgg = new LinkedHashMap<>();
             Map<String, BigDecimal> currTypeValues = new LinkedHashMap<>();
-            for (PortfolioAssetDailySnapshot a : assets) {
-                typeAgg.merge(a.getAssetType().name(),
-                        new BigDecimal[]{a.getMarketValueTry(), a.getPnlTry()},
-                        (ex, inc) -> new BigDecimal[]{ex[0].add(inc[0]), ex[1].add(inc[1])});
-                currTypeValues.merge(a.getAssetType().name(), a.getMarketValueTry(), BigDecimal::add);
-            }
-
-            List<PerformanceAssetDetail> details = typeAgg.entrySet().stream()
-                    .map(e -> new PerformanceAssetDetail(e.getKey(), e.getKey(), e.getValue()[0], e.getValue()[1]))
-                    .sorted(Comparator.comparing(PerformanceAssetDetail::valueTry).reversed())
-                    .toList();
-
-            List<PerformanceEvent> events = buildEvents(positions, prevTime, snap.getCreatedAt(), prevTypeValues, currTypeValues, true);
-
+            List<PerformanceAssetDetail> details = aggregateByType(assets, currTypeValues);
+            List<PerformanceEvent> events = buildEvents(positions, prevTime, snap.getCreatedAt(),
+                    prevTypeValues, currTypeValues, true);
             result.add(new PerformancePoint(snap.getCreatedAt(), snap.getTotalValueTry(),
                     snap.getTotalPnlTry(), snap.getPnlPercent(), details, events));
             prevTypeValues = currTypeValues;
             prevTime = snap.getCreatedAt();
         }
         return result;
+    }
+
+    private List<PerformanceAssetDetail> aggregateByType(List<PortfolioAssetDailySnapshot> assets,
+                                                         Map<String, BigDecimal> outCurrTypeValues) {
+        Map<String, BigDecimal[]> typeAgg = new LinkedHashMap<>();
+        for (PortfolioAssetDailySnapshot a : assets) {
+            typeAgg.merge(a.getAssetType().name(),
+                    new BigDecimal[]{a.getMarketValueTry(), a.getPnlTry()},
+                    (ex, inc) -> new BigDecimal[]{ex[0].add(inc[0]), ex[1].add(inc[1])});
+            outCurrTypeValues.merge(a.getAssetType().name(), a.getMarketValueTry(), BigDecimal::add);
+        }
+        return typeAgg.entrySet().stream()
+                .map(e -> new PerformanceAssetDetail(e.getKey(), e.getKey(), e.getValue()[0], e.getValue()[1]))
+                .sorted(Comparator.comparing(PerformanceAssetDetail::valueTry).reversed())
+                .toList();
     }
 
     private List<PerformancePoint> getAssetTypePerformance(Long portfolioId, AssetType assetType,
@@ -128,33 +130,41 @@ public class PortfolioPerformanceService {
         LocalDateTime prevTime = start;
 
         for (Map.Entry<LocalDateTime, List<PortfolioAssetDailySnapshot>> e : grouped.entrySet()) {
-            BigDecimal totalValue = BigDecimal.ZERO;
-            BigDecimal totalPnl = BigDecimal.ZERO;
-            BigDecimal totalCost = BigDecimal.ZERO;
-            List<PerformanceAssetDetail> details = new ArrayList<>();
             Map<String, BigDecimal> currAssetValues = new LinkedHashMap<>();
-
-            for (PortfolioAssetDailySnapshot snap : e.getValue()) {
-                totalValue = totalValue.add(snap.getMarketValueTry());
-                totalPnl = totalPnl.add(snap.getPnlTry());
-                totalCost = totalCost.add(snap.getTotalCostTry());
-                details.add(new PerformanceAssetDetail(
-                        snap.getAssetCode(), snap.getAssetType().name(),
-                        snap.getMarketValueTry(), snap.getPnlTry()));
-                currAssetValues.put(snap.getAssetCode(), snap.getMarketValueTry());
-            }
-            details.sort(Comparator.comparing(PerformanceAssetDetail::valueTry).reversed());
-
-            PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalValue, totalCost, MoneyScale.PRICE);
-            BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
-
-            List<PerformanceEvent> events = buildEvents(positions, prevTime, e.getKey(), prevAssetValues, currAssetValues, false);
-
-            result.add(new PerformancePoint(e.getKey(), totalValue, totalPnl, pnlPercent, details, events));
+            AssetCodeAgg agg = aggregateByCode(e.getValue(), currAssetValues);
+            List<PerformanceEvent> events = buildEvents(positions, prevTime, e.getKey(),
+                    prevAssetValues, currAssetValues, false);
+            result.add(new PerformancePoint(e.getKey(), agg.totalValue, agg.totalPnl, agg.pnlPercent,
+                    agg.details, events));
             prevAssetValues = currAssetValues;
             prevTime = e.getKey();
         }
         return result;
+    }
+
+    private record AssetCodeAgg(BigDecimal totalValue, BigDecimal totalPnl, BigDecimal pnlPercent,
+                                 List<PerformanceAssetDetail> details) {
+    }
+
+    private AssetCodeAgg aggregateByCode(List<PortfolioAssetDailySnapshot> snaps,
+                                          Map<String, BigDecimal> outCurrAssetValues) {
+        BigDecimal totalValue = BigDecimal.ZERO;
+        BigDecimal totalPnl = BigDecimal.ZERO;
+        BigDecimal totalCost = BigDecimal.ZERO;
+        List<PerformanceAssetDetail> details = new ArrayList<>();
+        for (PortfolioAssetDailySnapshot snap : snaps) {
+            totalValue = totalValue.add(snap.getMarketValueTry());
+            totalPnl = totalPnl.add(snap.getPnlTry());
+            totalCost = totalCost.add(snap.getTotalCostTry());
+            details.add(new PerformanceAssetDetail(
+                    snap.getAssetCode(), snap.getAssetType().name(),
+                    snap.getMarketValueTry(), snap.getPnlTry()));
+            outCurrAssetValues.put(snap.getAssetCode(), snap.getMarketValueTry());
+        }
+        details.sort(Comparator.comparing(PerformanceAssetDetail::valueTry).reversed());
+        PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalValue, totalCost, MoneyScale.PRICE);
+        BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
+        return new AssetCodeAgg(totalValue, totalPnl, pnlPercent, details);
     }
 
     private List<PerformanceEvent> buildEvents(List<PortfolioPosition> positions,

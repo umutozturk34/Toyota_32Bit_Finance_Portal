@@ -1,5 +1,6 @@
 package com.finance.backend.mapper;
 
+import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.internal.RssArticleData;
 import com.rometools.rome.feed.synd.SyndContent;
 import com.rometools.rome.feed.synd.SyndEnclosure;
@@ -19,8 +20,13 @@ import java.util.List;
 @Log4j2
 public class RssClientMapper {
 
-    private static final ZoneId ISTANBUL_ZONE = ZoneId.of("Europe/Istanbul");
     private static final int RICH_HTML_MIN_LENGTH = 150;
+
+    private final ZoneId zone;
+
+    public RssClientMapper(AppProperties appProperties) {
+        this.zone = ZoneId.of(appProperties.getTimezone());
+    }
 
     public List<RssArticleData> toArticleDataList(SyndFeed feed) {
         return feed.getEntries().stream()
@@ -148,8 +154,8 @@ public class RssClientMapper {
 
     private LocalDateTime convertDate(Date date) {
         if (date == null) {
-            return LocalDateTime.now(ISTANBUL_ZONE);
+            return LocalDateTime.now(zone);
         }
-        return date.toInstant().atZone(ISTANBUL_ZONE).toLocalDateTime();
+        return date.toInstant().atZone(zone).toLocalDateTime();
     }
 }

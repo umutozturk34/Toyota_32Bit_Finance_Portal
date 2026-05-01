@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Log4j2
@@ -30,10 +32,18 @@ public class CryptoQueryService implements MarketHistoryProvider {
 
     @Override
     public List<CandleResponse> getHistory(String id, CandlePeriod period) {
+        return loadCandles(id, period.toStartDateTime(), LocalDateTime.now());
+    }
+
+    @Override
+    public List<CandleResponse> getHistoryInRange(String id, LocalDate from, LocalDate to) {
+        return loadCandles(id, from.atStartOfDay(), to.atTime(LocalTime.MAX));
+    }
+
+    private List<CandleResponse> loadCandles(String id, LocalDateTime from, LocalDateTime to) {
         String normalizedCode = trackedAssetQueryService.resolveEnabledCodeOrThrow(TrackedAssetType.CRYPTO, id);
         List<CryptoCandle> candles = cryptoCandleRepository
-                .findByCryptoIdAndCandleDateBetweenOrderByCandleDateAsc(
-                        normalizedCode, period.toStartDateTime(), LocalDateTime.now());
+                .findByCryptoIdAndCandleDateBetweenOrderByCandleDateAsc(normalizedCode, from, to);
         return cryptoResponseMapper.toCryptoCandleResponses(candles);
     }
 }

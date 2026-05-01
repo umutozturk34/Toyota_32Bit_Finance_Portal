@@ -12,7 +12,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Log4j2
@@ -32,10 +34,18 @@ public class StockQueryService implements MarketHistoryProvider {
 
     @Override
     public List<CandleResponse> getHistory(String symbol, CandlePeriod period) {
+        return loadCandles(symbol, period.toStartDateTime(), LocalDateTime.now());
+    }
+
+    @Override
+    public List<CandleResponse> getHistoryInRange(String symbol, LocalDate from, LocalDate to) {
+        return loadCandles(symbol, from.atStartOfDay(), to.atTime(LocalTime.MAX));
+    }
+
+    private List<CandleResponse> loadCandles(String symbol, LocalDateTime from, LocalDateTime to) {
         String normalizedCode = trackedAssetQueryService.resolveEnabledCodeOrThrow(TrackedAssetType.STOCK, symbol);
         List<StockCandle> candles = stockCandleRepository
-                .findByStockSymbolAndCandleDateBetweenOrderByCandleDateAsc(
-                        normalizedCode, period.toStartDateTime(), LocalDateTime.now());
+                .findByStockSymbolAndCandleDateBetweenOrderByCandleDateAsc(normalizedCode, from, to);
         return stockResponseMapper.toStockCandleResponses(candles);
     }
 }

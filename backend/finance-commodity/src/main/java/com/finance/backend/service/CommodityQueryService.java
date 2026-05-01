@@ -10,7 +10,9 @@ import com.finance.backend.repository.CommodityCandleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -28,11 +30,19 @@ public class CommodityQueryService implements MarketHistoryProvider {
 
     @Override
     public List<CandleResponse> getHistory(String code, CandlePeriod period) {
+        return loadCandles(code, period.toStartDateTime(), LocalDateTime.now());
+    }
+
+    @Override
+    public List<CandleResponse> getHistoryInRange(String code, LocalDate from, LocalDate to) {
+        return loadCandles(code, from.atStartOfDay(), to.atTime(LocalTime.MAX));
+    }
+
+    private List<CandleResponse> loadCandles(String code, LocalDateTime from, LocalDateTime to) {
         String normalizedCode = trackedAssetQueryService.resolveEnabledCodeOrThrow(
                 TrackedAssetType.COMMODITY, code);
         List<CommodityCandle> candles = commodityCandleRepository
-                .findByCommodityCodeAndCandleDateBetweenOrderByCandleDateAsc(
-                        normalizedCode, period.toStartDateTime(), LocalDateTime.now());
+                .findByCommodityCodeAndCandleDateBetweenOrderByCandleDateAsc(normalizedCode, from, to);
         return commodityResponseMapper.toCommodityCandleResponses(candles);
     }
 }

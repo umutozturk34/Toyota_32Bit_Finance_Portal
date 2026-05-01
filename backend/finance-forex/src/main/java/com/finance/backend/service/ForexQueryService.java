@@ -12,7 +12,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Log4j2
@@ -31,13 +33,21 @@ public class ForexQueryService implements MarketHistoryProvider {
 
     @Override
     public List<CandleResponse> getHistory(String currencyCode, CandlePeriod period) {
+        return loadCandles(currencyCode, period.toStartDateTime(), LocalDateTime.now());
+    }
+
+    @Override
+    public List<CandleResponse> getHistoryInRange(String currencyCode, LocalDate from, LocalDate to) {
+        return loadCandles(currencyCode, from.atStartOfDay(), to.atTime(LocalTime.MAX));
+    }
+
+    private List<CandleResponse> loadCandles(String currencyCode, LocalDateTime from, LocalDateTime to) {
         String normalized = currencyCode.strip().toUpperCase();
         if (!forexRepository.existsById(normalized)) {
             throw new ResourceNotFoundException("Forex not found: " + normalized);
         }
         List<ForexCandle> candles = forexCandleRepository
-                .findByCurrencyCodeAndCandleDateBetweenOrderByCandleDateAsc(
-                        normalized, period.toStartDateTime(), LocalDateTime.now());
+                .findByCurrencyCodeAndCandleDateBetweenOrderByCandleDateAsc(normalized, from, to);
         return forexResponseMapper.toForexCandleResponses(candles);
     }
 }

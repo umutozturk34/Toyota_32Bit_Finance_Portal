@@ -1,15 +1,17 @@
 package com.finance.backend.service;
 
+import com.finance.backend.config.PortfolioProperties;
+import com.finance.backend.config.PortfolioProperties.LotLimits;
 import com.finance.backend.dto.request.PortfolioCreateRequest;
 import com.finance.backend.dto.request.PositionRequest;
 import com.finance.backend.dto.response.*;
 import com.finance.backend.exception.ResourceNotFoundException;
-import com.finance.backend.model.PortfolioPosition;
 import com.finance.backend.repository.PortfolioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
@@ -22,6 +24,19 @@ public class PortfolioFacade {
     private final PortfolioCrudService crudService;
     private final PortfolioSummaryService summaryService;
     private final PortfolioPerformanceService performanceService;
+    private final PortfolioProperties portfolioProperties;
+
+    public LotLimitsResponse getLotLimits() {
+        LotLimits limits = portfolioProperties.getLotLimits();
+        return new LotLimitsResponse(
+                limits.getMinEntryDate(),
+                LocalDate.now(),
+                limits.getMinPriceTry(),
+                limits.getMaxPriceTry(),
+                limits.getMinQuantity(),
+                limits.getMaxQuantity()
+        );
+    }
 
     public List<PortfolioResponse> listPortfolios(String userSub) {
         return crudService.listPortfolios(userSub);
@@ -31,21 +46,16 @@ public class PortfolioFacade {
         return crudService.createPortfolio(userSub, request);
     }
 
-    public PortfolioPosition addPosition(String userSub, Long portfolioId, PositionRequest request) {
+    public PositionResponse addPosition(String userSub, Long portfolioId, PositionRequest request) {
         return crudService.addPosition(portfolioId, userSub, request);
     }
 
-    public PortfolioPosition updatePosition(String userSub, Long portfolioId, Long positionId, PositionRequest request) {
+    public PositionResponse updatePosition(String userSub, Long portfolioId, Long positionId, PositionRequest request) {
         return crudService.updatePosition(portfolioId, positionId, userSub, request);
     }
 
     public void deletePosition(String userSub, Long portfolioId, Long positionId) {
         crudService.deletePosition(portfolioId, positionId, userSub);
-    }
-
-    public List<PositionResponse> getPositions(String userSub, Long portfolioId) {
-        validateOwner(userSub, portfolioId);
-        return summaryService.getPositions(portfolioId);
     }
 
     public PagedResponse<PositionResponse> getPositionsPaged(String userSub, Long portfolioId,
@@ -63,18 +73,6 @@ public class PortfolioFacade {
     public List<AllocationItem> getAllocation(String userSub, Long portfolioId, String mode, String assetType) {
         validateOwner(userSub, portfolioId);
         return summaryService.getAllocation(portfolioId, mode, assetType);
-    }
-
-    public List<PerformancePoint> getPerformance(String userSub, Long portfolioId,
-                                                   String range, String assetType) {
-        validateOwner(userSub, portfolioId);
-        return performanceService.getPerformance(portfolioId, range, assetType);
-    }
-
-    public List<AssetSeriesPoint> getAssetSeries(String userSub, Long portfolioId,
-                                                   String assetType, String assetCode, String range) {
-        validateOwner(userSub, portfolioId);
-        return performanceService.getAssetSeries(portfolioId, assetType, assetCode, range);
     }
 
     public PortfolioViewResponse getPortfolioView(String userSub, Long portfolioId, Set<String> includes) {
@@ -99,6 +97,10 @@ public class PortfolioFacade {
             return performanceService.getAssetSeries(portfolioId, assetType, assetCode, range);
         }
         return performanceService.getPerformance(portfolioId, range, assetType);
+    }
+
+    public void requireOwnership(String userSub, Long portfolioId) {
+        validateOwner(userSub, portfolioId);
     }
 
     private void validateOwner(String userSub, Long portfolioId) {

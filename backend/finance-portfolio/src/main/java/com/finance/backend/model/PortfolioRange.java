@@ -30,7 +30,7 @@ public enum PortfolioRange {
     ALL("ALL") {
         @Override
         public LocalDateTime toStartDateTime(LocalDateTime end) {
-            return end.minusYears(10);
+            return LocalDateTime.of(1970, 1, 1, 0, 0);
         }
     };
 

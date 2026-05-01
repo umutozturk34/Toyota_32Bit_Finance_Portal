@@ -165,9 +165,9 @@ public class PortfolioPerformanceService {
         List<PerformanceEvent> events = new ArrayList<>();
 
         List<PortfolioPosition> addedInWindow = positions.stream()
-                .filter(p -> p.getCreatedAt() != null
-                        && p.getCreatedAt().isAfter(prevTime)
-                        && !p.getCreatedAt().isAfter(currentTime))
+                .filter(p -> p.getEntryDate() != null
+                        && p.getEntryDate().isAfter(prevTime)
+                        && !p.getEntryDate().isAfter(currentTime))
                 .toList();
 
         if (!addedInWindow.isEmpty()) {

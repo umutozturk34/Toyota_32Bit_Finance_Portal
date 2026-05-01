@@ -5,18 +5,18 @@ import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.request.PortfolioCreateRequest;
 import com.finance.backend.dto.request.PositionRequest;
 import com.finance.backend.dto.response.*;
-import com.finance.backend.mapper.PortfolioResponseMapper;
-import com.finance.backend.model.PortfolioPosition;
+import com.finance.backend.service.PortfolioBackfillTracker;
 import com.finance.backend.service.PortfolioFacade;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -30,12 +30,25 @@ public class PortfolioController {
 
     private final AppProperties appProperties;
     private final PortfolioFacade portfolioFacade;
-    private final PortfolioResponseMapper mapper;
+    private final PortfolioBackfillTracker backfillTracker;
 
     @GetMapping
     public ApiResponse<List<PortfolioResponse>> listPortfolios(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponse.success("Portfolios retrieved",
                 portfolioFacade.listPortfolios(jwt.getSubject()));
+    }
+
+    @GetMapping("/limits")
+    public ApiResponse<LotLimitsResponse> getLotLimits() {
+        return ApiResponse.success("Lot limits retrieved", portfolioFacade.getLotLimits());
+    }
+
+    @GetMapping(path = "/{portfolioId}/backfill-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamBackfillStatus(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long portfolioId) {
+        portfolioFacade.requireOwnership(jwt.getSubject(), portfolioId);
+        return backfillTracker.subscribe(portfolioId);
     }
 
     @PostMapping
@@ -53,8 +66,8 @@ public class PortfolioController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
             @Valid @RequestBody PositionRequest request) {
-        PortfolioPosition saved = portfolioFacade.addPosition(jwt.getSubject(), portfolioId, request);
-        return ApiResponse.success("Position created", toResponseShell(saved));
+        return ApiResponse.success("Position created",
+                portfolioFacade.addPosition(jwt.getSubject(), portfolioId, request));
     }
 
     @PutMapping("/{portfolioId}/positions/{positionId}")
@@ -63,8 +76,8 @@ public class PortfolioController {
             @PathVariable Long portfolioId,
             @PathVariable Long positionId,
             @Valid @RequestBody PositionRequest request) {
-        PortfolioPosition saved = portfolioFacade.updatePosition(jwt.getSubject(), portfolioId, positionId, request);
-        return ApiResponse.success("Position updated", toResponseShell(saved));
+        return ApiResponse.success("Position updated",
+                portfolioFacade.updatePosition(jwt.getSubject(), portfolioId, positionId, request));
     }
 
     @DeleteMapping("/{portfolioId}/positions/{positionId}")
@@ -133,11 +146,6 @@ public class PortfolioController {
             @RequestParam(required = false) String assetCode) {
         return ApiResponse.success("Chart data retrieved",
                 portfolioFacade.getChart(jwt.getSubject(), portfolioId, type, range, assetType, assetCode));
-    }
-
-    private PositionResponse toResponseShell(PortfolioPosition position) {
-        return mapper.toPositionResponse(position, BigDecimal.ZERO, position.entryValue(),
-                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, null, null);
     }
 
     private int resolvePageSize(Integer size, int defaultSize) {

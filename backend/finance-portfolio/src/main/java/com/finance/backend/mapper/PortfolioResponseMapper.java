@@ -37,4 +37,11 @@ public abstract class PortfolioResponseMapper {
                 pnlPercent
         );
     }
+
+    public PositionResponse toPositionResponseShell(PortfolioPosition pos) {
+        return toPositionResponse(pos,
+                BigDecimal.ZERO, pos.entryValue(),
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                null, null);
+    }
 }

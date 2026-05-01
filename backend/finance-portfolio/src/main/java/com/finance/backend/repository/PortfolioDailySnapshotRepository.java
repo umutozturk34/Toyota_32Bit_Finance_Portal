@@ -20,4 +20,6 @@ public interface PortfolioDailySnapshotRepository extends JpaRepository<Portfoli
             Long portfolioId, LocalDateTime start, LocalDateTime end);
 
     void deleteByPortfolioIdAndSnapshotDate(Long portfolioId, LocalDate snapshotDate);
+
+    void deleteByPortfolioIdAndSnapshotDateGreaterThanEqual(Long portfolioId, LocalDate from);
 }

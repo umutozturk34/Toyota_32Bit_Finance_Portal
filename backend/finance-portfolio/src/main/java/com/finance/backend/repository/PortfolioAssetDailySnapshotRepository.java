@@ -33,4 +33,6 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
     void deleteByPortfolioIdAndSnapshotDate(Long portfolioId, LocalDate snapshotDate);
 
     void deleteByPortfolioIdAndAssetTypeAndSnapshotDate(Long portfolioId, AssetType assetType, LocalDate snapshotDate);
+
+    void deleteByPortfolioIdAndSnapshotDateGreaterThanEqual(Long portfolioId, LocalDate from);
 }

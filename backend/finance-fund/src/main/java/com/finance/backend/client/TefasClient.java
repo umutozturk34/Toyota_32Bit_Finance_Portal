@@ -28,8 +28,6 @@ import java.util.List;
 public class TefasClient {
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
-    private static final int DEFAULT_PAGE_SIZE = 100;
-    private static final String LANGUAGE = "TR";
 
     private final WebClient webClient;
     private final String tefasApiPath;
@@ -37,6 +35,8 @@ public class TefasClient {
     private final TefasClientMapper tefasClientMapper;
     private final TefasSessionManager sessionManager;
     private final int bulkPageSize;
+    private final int defaultPageSize;
+    private final String language;
 
     public TefasClient(@Qualifier("tefasWebClient") WebClient webClient,
                        AppProperties appProperties,
@@ -50,12 +50,14 @@ public class TefasClient {
         this.tefasClientMapper = tefasClientMapper;
         this.sessionManager = sessionManager;
         this.bulkPageSize = fundProperties.getTefasBulkPageSize();
+        this.defaultPageSize = fundProperties.getTefasDefaultPageSize();
+        this.language = fundProperties.getTefasLanguage();
     }
 
     @CircuitBreaker(name = "tefas")
     @Retry(name = "tefas")
     public List<TefasFundDto> post(FundType fundType, String fundCode, LocalDate startDate, LocalDate endDate) {
-        return executeRequest(fundType, fundCode, startDate, endDate, DEFAULT_PAGE_SIZE);
+        return executeRequest(fundType, fundCode, startDate, endDate, defaultPageSize);
     }
 
     @CircuitBreaker(name = "tefas")
@@ -77,7 +79,7 @@ public class TefasClient {
                     startDate.format(DATE_FORMAT),
                     endDate.format(DATE_FORMAT),
                     1, pageSize,
-                    null, LANGUAGE, null);
+                    null, language, null);
 
             String body = doPost(request);
 

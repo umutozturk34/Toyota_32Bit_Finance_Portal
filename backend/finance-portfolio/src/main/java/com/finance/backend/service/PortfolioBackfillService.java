@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Log4j2
 @Service
@@ -122,8 +123,14 @@ public class PortfolioBackfillService {
         Map<AssetKey, BigDecimal> dayPrices = assetPricingPort.getPricesTry(keys);
         LocalDateTime ts = LocalDateTime.now();
 
-        if (!assetExists) writeAssetSnapshots(portfolioId, active, ts, dayPrices);
-        if (!dailyExists) writeAggregateSnapshot(portfolio, ts, active, dayPrices);
+        if (!assetExists) {
+            List<PortfolioAssetDailySnapshot> batch = new ArrayList<>();
+            collectAssetSnapshots(portfolioId, active, ts, dayPrices, batch);
+            assetSnapshotRepository.saveAll(batch);
+        }
+        if (!dailyExists) {
+            dailySnapshotRepository.saveAll(List.of(calculator.buildAggregateSnapshotAt(portfolio, ts, active, dayPrices)));
+        }
     }
 
     public void backfillSinceDate(Long portfolioId, LocalDate from) {
@@ -136,11 +143,18 @@ public class PortfolioBackfillService {
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
         if (positions.isEmpty()) return;
 
+        Set<LocalDate> dailyExisting = Set.copyOf(dailySnapshotRepository.findExistingDates(portfolioId, from, end));
+        Set<LocalDate> assetExisting = Set.copyOf(assetSnapshotRepository.findExistingDates(portfolioId, from, end));
         Map<AssetKey, Map<LocalDate, BigDecimal>> seriesByKey = loadHistoricalSeries(positions, from, end);
 
+        List<PortfolioAssetDailySnapshot> assetBatch = new ArrayList<>();
+        List<PortfolioDailySnapshot> dailyBatch = new ArrayList<>();
         for (LocalDate day = from; !day.isAfter(end); day = day.plusDays(1)) {
-            backfillDay(portfolio, day, positions, seriesByKey);
+            collectDay(portfolio, day, positions, seriesByKey, dailyExisting, assetExisting, assetBatch, dailyBatch);
         }
+
+        if (!assetBatch.isEmpty()) assetSnapshotRepository.saveAll(assetBatch);
+        if (!dailyBatch.isEmpty()) dailySnapshotRepository.saveAll(dailyBatch);
     }
 
     private Map<AssetKey, Map<LocalDate, BigDecimal>> loadHistoricalSeries(
@@ -155,12 +169,14 @@ public class PortfolioBackfillService {
         return result;
     }
 
-    private void backfillDay(Portfolio portfolio, LocalDate day,
-                             List<PortfolioPosition> allPositions,
-                             Map<AssetKey, Map<LocalDate, BigDecimal>> seriesByKey) {
-        Long portfolioId = portfolio.getId();
-        boolean dailyExists = dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(portfolioId, day);
-        boolean assetExists = assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(portfolioId, day);
+    private void collectDay(Portfolio portfolio, LocalDate day,
+                            List<PortfolioPosition> allPositions,
+                            Map<AssetKey, Map<LocalDate, BigDecimal>> seriesByKey,
+                            Set<LocalDate> dailyExisting, Set<LocalDate> assetExisting,
+                            List<PortfolioAssetDailySnapshot> assetBatch,
+                            List<PortfolioDailySnapshot> dailyBatch) {
+        boolean dailyExists = dailyExisting.contains(day);
+        boolean assetExists = assetExisting.contains(day);
         if (dailyExists && assetExists) return;
 
         List<PortfolioPosition> active = activePositionsOn(allPositions, day);
@@ -168,13 +184,15 @@ public class PortfolioBackfillService {
 
         Map<AssetKey, BigDecimal> dayPrices = pricesForDay(active, day, seriesByKey);
         LocalDateTime ts = day.atTime(SNAPSHOT_TIME);
+        Long portfolioId = portfolio.getId();
 
-        if (!assetExists) writeAssetSnapshots(portfolioId, active, ts, dayPrices);
-        if (!dailyExists) writeAggregateSnapshot(portfolio, ts, active, dayPrices);
+        if (!assetExists) collectAssetSnapshots(portfolioId, active, ts, dayPrices, assetBatch);
+        if (!dailyExists) dailyBatch.add(calculator.buildAggregateSnapshotAt(portfolio, ts, active, dayPrices));
     }
 
-    private void writeAssetSnapshots(Long portfolioId, List<PortfolioPosition> active,
-                                       LocalDateTime ts, Map<AssetKey, BigDecimal> dayPrices) {
+    private void collectAssetSnapshots(Long portfolioId, List<PortfolioPosition> active,
+                                        LocalDateTime ts, Map<AssetKey, BigDecimal> dayPrices,
+                                        List<PortfolioAssetDailySnapshot> batch) {
         Map<AssetKey, List<PortfolioPosition>> byAsset = groupByAsset(active);
         for (Map.Entry<AssetKey, List<PortfolioPosition>> entry : byAsset.entrySet()) {
             BigDecimal price = dayPrices.get(entry.getKey());
@@ -182,10 +200,9 @@ public class PortfolioBackfillService {
             PortfolioPosition first = entry.getValue().get(0);
             BigDecimal totalQty = sumField(entry.getValue(), PortfolioPosition::getQuantity);
             BigDecimal totalCost = sumField(entry.getValue(), PortfolioPosition::entryValue);
-            PortfolioAssetDailySnapshot snap = calculator.buildAggregatedAssetSnapshot(
+            batch.add(calculator.buildAggregatedAssetSnapshot(
                     portfolioId, first.getAssetType(), first.getAssetCode(),
-                    ts, totalQty, totalCost, price);
-            assetSnapshotRepository.save(snap);
+                    ts, totalQty, totalCost, price));
         }
     }
 
@@ -196,13 +213,6 @@ public class PortfolioBackfillService {
             total = total.add(extractor.apply(lot));
         }
         return total;
-    }
-
-    private void writeAggregateSnapshot(Portfolio portfolio, LocalDateTime ts,
-                                          List<PortfolioPosition> active,
-                                          Map<AssetKey, BigDecimal> dayPrices) {
-        PortfolioDailySnapshot snap = calculator.buildAggregateSnapshotAt(portfolio, ts, active, dayPrices);
-        dailySnapshotRepository.save(snap);
     }
 
     private static Map<AssetKey, List<PortfolioPosition>> groupByAsset(List<PortfolioPosition> positions) {

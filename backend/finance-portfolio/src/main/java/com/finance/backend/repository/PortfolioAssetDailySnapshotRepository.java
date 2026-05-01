@@ -3,6 +3,8 @@ package com.finance.backend.repository;
 import com.finance.backend.model.AssetType;
 import com.finance.backend.model.PortfolioAssetDailySnapshot;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -13,6 +15,11 @@ import java.util.List;
 public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<PortfolioAssetDailySnapshot, Long> {
 
     boolean existsByPortfolioIdAndSnapshotDate(Long portfolioId, LocalDate snapshotDate);
+
+    @Query("SELECT DISTINCT s.snapshotDate FROM PortfolioAssetDailySnapshot s WHERE s.portfolioId = :pid AND s.snapshotDate BETWEEN :from AND :to")
+    List<LocalDate> findExistingDates(@Param("pid") Long portfolioId,
+                                      @Param("from") LocalDate from,
+                                      @Param("to") LocalDate to);
 
     List<PortfolioAssetDailySnapshot> findByPortfolioIdAndAssetTypeAndAssetCodeAndSnapshotDateBetweenOrderBySnapshotDateAsc(
             Long portfolioId, AssetType assetType, String assetCode,

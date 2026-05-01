@@ -23,7 +23,7 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
 
     private static final int PRICE_SCALE = 4;
     private static final int RATE_LOOKBACK_DAYS = 7;
-    private static final String USD_CODE = "USD";
+    private static final String USD_CODE = "USDTRY";
 
     private final Map<MarketType, MarketHistoryProvider> providers;
 

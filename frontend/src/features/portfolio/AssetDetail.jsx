@@ -44,6 +44,9 @@ function AssetChart({ data, isDark }) {
     backgroundColor: 'transparent',
     animation: data.length < 200,
     grid: { left: 65, right: 24, top: 16, bottom: 30 },
+    dataZoom: [
+      { type: 'inside', xAxisIndex: 0, filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: 'shift', moveOnMouseWheel: false },
+    ],
     tooltip: {
       trigger: 'axis',
       backgroundColor: tooltipBg,

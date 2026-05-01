@@ -4,7 +4,6 @@ import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.mapper.CommodityResponseMapper;
 import com.finance.backend.model.Commodity;
-import com.finance.backend.model.CommodityCandle;
 import com.finance.backend.model.CommoditySegment;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.TrackedAssetType;

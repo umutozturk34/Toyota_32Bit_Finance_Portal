@@ -9,7 +9,6 @@ import com.finance.backend.dto.internal.YahooChartFullResult;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.mapper.CommodityMapper;
 import com.finance.backend.model.Commodity;
-import com.finance.backend.model.CommodityCandle;
 import com.finance.backend.model.CommoditySnapshotInput;
 import com.finance.backend.repository.CommodityCandleRepository;
 import com.finance.backend.repository.CommodityRepository;

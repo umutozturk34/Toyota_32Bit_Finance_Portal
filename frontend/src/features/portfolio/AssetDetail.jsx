@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import useSessionState from '../../shared/hooks/useSessionState';
 import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, Plus } from 'lucide-react';
@@ -26,6 +26,12 @@ const LINE_COLOR = '#6366f1';
 const UNIT_COLOR = '#f59e0b';
 
 function AssetChart({ data, isDark }) {
+  const option = useMemo(() => buildAssetChartOption(data, isDark), [data, isDark]);
+  if (!option) return null;
+  return <ReactECharts option={option} notMerge lazyUpdate style={{ height: 300 }} opts={{ renderer: 'canvas' }} />;
+}
+
+function buildAssetChartOption(data, isDark) {
   if (!data || data.length === 0) return null;
 
   const muted = isDark ? '#6b6b7a' : '#94a3b8';
@@ -40,7 +46,7 @@ function AssetChart({ data, isDark }) {
     quantity: Number(d.quantity ?? 0),
   }));
 
-  const option = {
+  return {
     backgroundColor: 'transparent',
     animation: data.length < 200,
     grid: { left: 65, right: 24, top: 16, bottom: 30 },
@@ -106,8 +112,6 @@ function AssetChart({ data, isDark }) {
       },
     }],
   };
-
-  return <ReactECharts option={option} notMerge style={{ height: 300 }} opts={{ renderer: 'canvas' }} />;
 }
 
 export default function AssetDetail({ portfolioId, asset, onBack }) {

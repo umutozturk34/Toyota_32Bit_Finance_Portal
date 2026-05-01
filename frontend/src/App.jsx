@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
 import ToastContainer from './shared/components/Toast';
 import ProtectedRoute from './shared/components/ProtectedRoute';
+import ErrorBoundary from './shared/components/ErrorBoundary';
 import NotFound from './shared/components/NotFound';
 import MainLayout from './shared/layouts/MainLayout';
 import HomePage from './features/home/HomePage';
@@ -42,6 +43,7 @@ function App() {
     <AuthProvider>
       <ToastContainer />
       <BrowserRouter>
+        <ErrorBoundary>
         <Routes>
           <Route index element={<LandingRedirect />} />
           <Route path="login" element={<PublicOnly><Login /></PublicOnly>} />
@@ -68,6 +70,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
+        </ErrorBoundary>
       </BrowserRouter>
     </AuthProvider>
   );

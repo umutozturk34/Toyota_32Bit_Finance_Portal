@@ -40,4 +40,11 @@ export const unifiedMarketService = {
     });
     return response.data.data;
   },
+
+  getMonthlyAvailability: async (type, code, yearMonth) => {
+    const response = await api.get(`${ASSETS}/availability`, {
+      params: { type, code, yearMonth },
+    });
+    return response.data?.data ?? response.data;
+  },
 };

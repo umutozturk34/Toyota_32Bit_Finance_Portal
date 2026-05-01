@@ -16,6 +16,7 @@ public interface StockCandleRepository extends JpaRepository<StockCandle, Long> 
         LocalDateTime endDate
     );
     Optional<StockCandle> findFirstByStockSymbolOrderByCandleDateDesc(String stockSymbol);
+    List<StockCandle> findTop2ByStockSymbolOrderByCandleDateDesc(String stockSymbol);
     Optional<StockCandle> findByStockSymbolAndCandleDate(String stockSymbol, LocalDateTime candleDate);
 
     List<StockCandle> findByStockSymbolAndCandleDateIn(String stockSymbol, Collection<LocalDateTime> candleDates);

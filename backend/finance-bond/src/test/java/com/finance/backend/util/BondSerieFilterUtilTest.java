@@ -218,15 +218,4 @@ class BondSerieFilterUtilTest {
 
         assertThat(batches).isEmpty();
     }
-
-    @Test
-    void buildWindowsDelegatesToWindowedFetchPlanner() {
-        LocalDate start = LocalDate.of(2025, 1, 1);
-        LocalDate end = LocalDate.of(2025, 1, 20);
-
-        List<LocalDate[]> windows = BondSerieFilterUtil.buildWindows(start, end, 10);
-
-        assertThat(windows).hasSize(2);
-        assertThat(windows.get(0)[0]).isEqualTo(start);
-    }
 }

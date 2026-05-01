@@ -52,11 +52,23 @@ public class StockSnapshotProcessor implements MarketSnapshotProcessor {
                 .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, fallbackRange))
                 .orElse(fallbackRange);
         YahooChartFullResult<YahooStockQuoteDto> result = yahooStockClient.fetchStockChartFull(symbol, range, chartInterval, true);
+        boolean hasFreshQuote = result.quote() != null && result.quote().currentPrice() != null;
+        if (!hasFreshQuote && result.candles().isEmpty()) {
+            log.info("No quote and no candles for {} (likely market closed) - skipping", symbol);
+            return 0;
+        }
         return transactionTemplate.execute(status -> {
-            Stock stock = entityWriter.saveSnapshot(result.quote(), symbol);
+            Stock stock = hasFreshQuote
+                    ? entityWriter.saveSnapshot(result.quote(), symbol)
+                    : entityWriter.findExisting(symbol);
+            if (stock == null) {
+                log.info("No fresh quote and no existing snapshot for {} - skipping", symbol);
+                return 0;
+            }
             int saved = result.candles().isEmpty()
                     ? 0
                     : entityWriter.upsertCandles(symbol, stock, result.candles());
+            entityWriter.refreshChangePercentFromCandles(stock);
             stockCacheService.putSnapshot(symbol, stock);
             return saved;
         });

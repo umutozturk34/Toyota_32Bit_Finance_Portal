@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.backend.model.*;
 import com.finance.backend.repository.*;
 import com.finance.backend.service.MarketCacheService;
+import com.finance.backend.util.RedisKeys;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +15,11 @@ import java.time.Duration;
 @Configuration
 public class MarketCacheConfig {
 
-    private static final Duration TTL = Duration.ofHours(24);
+    private final Duration ttl;
+
+    public MarketCacheConfig(AppProperties appProperties) {
+        this.ttl = Duration.ofHours(appProperties.getCache().getRedisDefaultTtlHours());
+    }
 
     @Bean
     public MarketCacheService<Crypto> cryptoCacheService(
@@ -22,7 +27,7 @@ public class MarketCacheConfig {
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
             CryptoRepository cryptoRepository) {
         return new MarketCacheService<>(redisTemplate, objectMapper,
-                "market:crypto:snapshot:", TTL, Crypto.class, "Crypto",
+                RedisKeys.marketSnapshotPrefix("Crypto"), ttl, Crypto.class, "Crypto",
                 cryptoRepository::findById);
     }
 
@@ -32,7 +37,7 @@ public class MarketCacheConfig {
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
             StockRepository stockRepository) {
         return new MarketCacheService<>(redisTemplate, objectMapper,
-                "market:stock:snapshot:", TTL, Stock.class, "Stock",
+                RedisKeys.marketSnapshotPrefix("Stock"), ttl, Stock.class, "Stock",
                 stockRepository::findById);
     }
 
@@ -42,7 +47,7 @@ public class MarketCacheConfig {
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
             ForexRepository forexRepository) {
         return new MarketCacheService<>(redisTemplate, objectMapper,
-                "market:forex:snapshot:", TTL, Forex.class, "Forex",
+                RedisKeys.marketSnapshotPrefix("Forex"), ttl, Forex.class, "Forex",
                 forexRepository::findById);
     }
 
@@ -52,7 +57,7 @@ public class MarketCacheConfig {
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
             FundRepository fundRepository) {
         return new MarketCacheService<>(redisTemplate, objectMapper,
-                "market:fund:snapshot:", TTL, Fund.class, "Fund",
+                RedisKeys.marketSnapshotPrefix("Fund"), ttl, Fund.class, "Fund",
                 fundRepository::findById);
     }
 
@@ -62,7 +67,7 @@ public class MarketCacheConfig {
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
             CommodityRepository commodityRepository) {
         return new MarketCacheService<>(redisTemplate, objectMapper,
-                "market:commodity:snapshot:", TTL, Commodity.class, "Commodity",
+                RedisKeys.marketSnapshotPrefix("Commodity"), ttl, Commodity.class, "Commodity",
                 commodityRepository::findById);
     }
 
@@ -72,7 +77,7 @@ public class MarketCacheConfig {
             @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
             BondRepository bondRepository) {
         return new MarketCacheService<>(redisTemplate, objectMapper,
-                "market:bond:snapshot:", TTL, Bond.class, "Bond",
+                RedisKeys.marketSnapshotPrefix("Bond"), ttl, Bond.class, "Bond",
                 bondRepository::findById);
     }
 }

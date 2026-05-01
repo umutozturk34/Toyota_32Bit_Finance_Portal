@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.model.MarketType;
+import com.finance.backend.util.RedisKeys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -18,10 +19,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TopMoversRedisService {
 
-    private static final String KEY = "market:topMovers";
-    private static final String INDICES_FIELD = "INDICES";
-    private static final String GAINERS_SUFFIX = ":GAINERS";
-    private static final String LOSERS_SUFFIX = ":LOSERS";
+    private static final String KEY = RedisKeys.TOP_MOVERS;
+    private static final String INDICES_FIELD = RedisKeys.INDICES_FIELD;
+    private static final String GAINERS_SUFFIX = RedisKeys.GAINERS_SUFFIX;
+    private static final String LOSERS_SUFFIX = RedisKeys.LOSERS_SUFFIX;
     private static final TypeReference<List<MarketAssetResponse>> LIST_TYPE = new TypeReference<>() {};
 
     private final StringRedisTemplate stringRedisTemplate;

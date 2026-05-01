@@ -3,11 +3,6 @@ import api from '../../shared/services/api';
 const BASE = '/portfolios';
 
 export const portfolioService = {
-  initialize: async () => {
-    const res = await api.post(`${BASE}/onboarding/initialize`);
-    return res.data;
-  },
-
   list: async () => {
     const res = await api.get(BASE);
     return res.data.data;
@@ -30,13 +25,18 @@ export const portfolioService = {
     return res.data.data;
   },
 
-  getTransactions: async (portfolioId, params = {}) => {
-    const res = await api.get(`${BASE}/${portfolioId}/transactions`, { params });
+  addPosition: async (portfolioId, payload) => {
+    const res = await api.post(`${BASE}/${portfolioId}/positions`, payload);
     return res.data.data;
   },
 
-  executeTransaction: async (portfolioId, data) => {
-    const res = await api.post(`${BASE}/${portfolioId}/transactions`, data);
+  updatePosition: async (portfolioId, positionId, payload) => {
+    const res = await api.put(`${BASE}/${portfolioId}/positions/${positionId}`, payload);
+    return res.data.data;
+  },
+
+  deletePosition: async (portfolioId, positionId) => {
+    const res = await api.delete(`${BASE}/${portfolioId}/positions/${positionId}`);
     return res.data.data;
   },
 
@@ -61,9 +61,8 @@ export const portfolioService = {
     return res.data.data;
   },
 
-  getView: async (portfolioId, include = 'summary,positions,transactions,allocation') => {
+  getView: async (portfolioId, include = 'summary,positions,allocation') => {
     const res = await api.get(`${BASE}/${portfolioId}/view`, { params: { include } });
     return res.data.data;
   },
-
 };

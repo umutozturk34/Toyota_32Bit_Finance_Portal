@@ -91,16 +91,6 @@ export const formatPercentAbs = (percent, decimals = 2) => {
     return `${Math.abs(percent).toFixed(decimals)}%`;
 };
 
-export const formatDateLong = (dateString, locale = 'tr-TR') => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(locale, {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        timeZone: 'Europe/Istanbul',
-    });
-};
-
 export const formatDateTimeShort = (dateString, locale = 'tr-TR') => {
     const date = new Date(dateString);
     return date.toLocaleString(locale, {

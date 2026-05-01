@@ -5,6 +5,7 @@ import com.finance.backend.mapper.ForexResponseMapper;
 import com.finance.backend.model.Forex;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.repository.ForexRepository;
+import com.finance.backend.util.LikeSearchSpec;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.PageRequest;
@@ -77,10 +78,8 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
     private Specification<Forex> buildSpecification(String searchTerm) {
         Specification<Forex> spec = (root, query, cb) -> cb.conjunction();
         if (searchTerm != null && !searchTerm.isBlank()) {
-            String pattern = "%" + searchTerm.toLowerCase() + "%";
-            spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("currencyCode")), pattern),
-                    cb.like(cb.lower(root.get("currencyName")), pattern)));
+            spec = spec.and((root, query, cb) ->
+                    LikeSearchSpec.byFieldsContains(root, cb, searchTerm, "currencyCode", "currencyName"));
         }
         return spec;
     }

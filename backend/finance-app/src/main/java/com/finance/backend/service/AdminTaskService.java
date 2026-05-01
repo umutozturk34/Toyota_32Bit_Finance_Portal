@@ -1,12 +1,11 @@
 package com.finance.backend.service;
 
-import com.finance.backend.dto.response.TaskStatusResponse;
 import com.finance.backend.dto.response.TaskTriggerResponse;
 import com.finance.backend.model.MarketType;
+import com.finance.backend.util.EnumDispatcher;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,8 +32,7 @@ public class AdminTaskService {
                             Executor taskExecutor,
                             Optional<PortfolioSnapshotPort> portfolioSnapshotPort,
                             Optional<MarketUpdatePort> marketUpdatePort) {
-        this.refreshers = new EnumMap<>(MarketType.class);
-        refreshers.forEach(r -> this.refreshers.put(r.getMarketType(), r));
+        this.refreshers = EnumDispatcher.from(MarketType.class, refreshers, MarketRefresher::getMarketType);
         this.tcmbForexService = tcmbForexService;
         this.bondDataService = bondDataService;
         this.newsDataService = newsDataService;
@@ -66,10 +64,6 @@ public class AdminTaskService {
         return executeTask("news-update",
                 "News feed update started in background",
                 newsDataService::updateNews);
-    }
-
-    public TaskStatusResponse getTaskStatus() {
-        return taskTracker.getTypedStatus();
     }
 
     private TaskTriggerResponse triggerMarketRefresh(MarketType type, String suffix, String messageTail) {

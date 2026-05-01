@@ -1,15 +1,17 @@
 package com.finance.backend.controller;
 
 import com.finance.backend.dto.ApiResponse;
-import com.finance.backend.dto.response.TaskStatusResponse;
 import com.finance.backend.dto.response.TaskTriggerResponse;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.service.AdminTaskService;
+import com.finance.backend.service.TaskTrackingService;
 import com.finance.backend.util.EnumParser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminTaskService adminTaskService;
+    private final TaskTrackingService taskTrackingService;
 
     @PostMapping("/trigger/{type}/snapshot")
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -55,9 +58,9 @@ public class AdminController {
         return ApiResponse.success("News update triggered", adminTaskService.triggerNewsUpdate());
     }
 
-    @GetMapping("/tasks/status")
-    public ApiResponse<TaskStatusResponse> getTaskStatus() {
-        return ApiResponse.success("Task status retrieved", adminTaskService.getTaskStatus());
+    @GetMapping(path = "/tasks/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamTaskStatus() {
+        return taskTrackingService.subscribeToStatus();
     }
 
     private MarketType parseMarketType(String raw) {

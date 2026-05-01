@@ -25,18 +25,6 @@ public class FundBulkFetchExecutor {
     private final TefasClient tefasClient;
     private final TransactionTemplate transactionTemplate;
 
-    public BulkRunResult runBackwardWindowed(FundType fundType, LocalDate earliest,
-                                              LocalDate today, int windowSize,
-                                              Map<String, Fund> trackedByCode,
-                                              BiFunction<Fund, List<TefasFundDto>, Integer> saver) {
-        if (!earliest.isBefore(today)) {
-            return BulkRunResult.empty();
-        }
-        List<WindowedFetchPlanner.DateWindow> windows = WindowedFetchPlanner
-                .planBackward(earliest, today, windowSize);
-        return runWindows(fundType, windows, trackedByCode, saver);
-    }
-
     public BulkRunResult runWindows(FundType fundType,
                                      List<WindowedFetchPlanner.DateWindow> windows,
                                      Map<String, Fund> trackedByCode,
@@ -54,7 +42,7 @@ public class FundBulkFetchExecutor {
             processed++;
         }
         log.info("Bulk {} done: {} candles saved across {} windows", fundType, totalSaved, processed);
-        return new BulkRunResult(totalSaved, processed, 0);
+        return new BulkRunResult(totalSaved, processed);
     }
 
     private int processWindow(FundType fundType, WindowedFetchPlanner.DateWindow window,
@@ -96,7 +84,7 @@ public class FundBulkFetchExecutor {
         return saved;
     }
 
-    public record BulkRunResult(int totalSaved, int windowsProcessed, int windowsFailed) {
-        public static BulkRunResult empty() { return new BulkRunResult(0, 0, 0); }
+    public record BulkRunResult(int totalSaved, int windowsProcessed) {
+        public static BulkRunResult empty() { return new BulkRunResult(0, 0); }
     }
 }

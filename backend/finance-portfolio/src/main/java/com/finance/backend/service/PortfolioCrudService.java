@@ -1,31 +1,29 @@
 package com.finance.backend.service;
 
 import com.finance.backend.config.PortfolioProperties;
+import com.finance.backend.config.PortfolioProperties.LotLimits;
 import com.finance.backend.dto.request.PortfolioCreateRequest;
-import com.finance.backend.dto.response.PagedResponse;
+import com.finance.backend.dto.request.PositionRequest;
 import com.finance.backend.dto.response.PortfolioResponse;
-import com.finance.backend.dto.response.TransactionResponse;
+import com.finance.backend.dto.response.PositionResponse;
 import com.finance.backend.exception.BusinessException;
-import com.finance.backend.model.AssetType;
+import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.mapper.PortfolioResponseMapper;
-import com.finance.backend.util.EnumParser;
+import com.finance.backend.model.AssetType;
 import com.finance.backend.model.Portfolio;
-import com.finance.backend.model.PortfolioTransaction;
-import com.finance.backend.model.UserWallet;
-import com.finance.backend.model.value.MoneyTRY;
+import com.finance.backend.model.PortfolioPosition;
+import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.repository.PortfolioRepository;
-import com.finance.backend.repository.PortfolioTransactionRepository;
-import com.finance.backend.repository.UserWalletRepository;
+import com.finance.backend.util.EnumParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Log4j2
@@ -33,16 +31,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PortfolioCrudService {
 
-    private final PortfolioProperties portfolioProperties;
     private final PortfolioRepository portfolioRepository;
-    private final UserWalletRepository walletRepository;
-    private final PortfolioTransactionRepository transactionRepository;
+    private final PortfolioPositionRepository positionRepository;
     private final PortfolioResponseMapper mapper;
+    private final ApplicationEventPublisher eventPublisher;
+    private final PortfolioProperties portfolioProperties;
 
     @Transactional(readOnly = true)
     public List<PortfolioResponse> listPortfolios(String userSub) {
         return portfolioRepository.findByUserSub(userSub).stream()
-                .map(this::toResponse)
+                .map(mapper::toPortfolioResponse)
                 .toList();
     }
 
@@ -52,71 +50,95 @@ public class PortfolioCrudService {
                 .ifPresent(p -> { throw new BusinessException("Portfolio with name '" + request.name() + "' already exists"); });
 
         Portfolio portfolio = Portfolio.builder().userSub(userSub).name(request.name()).build();
-        portfolio = portfolioRepository.save(portfolio);
+        return mapper.toPortfolioResponse(portfolioRepository.save(portfolio));
+    }
 
-        UserWallet wallet = UserWallet.builder()
+    @Transactional
+    public PositionResponse addPosition(Long portfolioId, String userSub, PositionRequest request) {
+        Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
+                .orElseThrow(() -> new ResourceNotFoundException("Portfolio not found: " + portfolioId));
+        validateLot(request);
+        AssetType assetType = EnumParser.parseOrBadRequest(AssetType.class,
+                request.assetType().toUpperCase(), "asset type");
+        PortfolioPosition position = PortfolioPosition.builder()
                 .portfolio(portfolio)
-                .currency(portfolioProperties.getDefaultCurrency())
-                .balance(MoneyTRY.ZERO)
-                .availableBalance(MoneyTRY.ZERO)
+                .assetType(assetType)
+                .assetCode(request.assetCode())
+                .quantity(request.quantity())
+                .entryDate(request.entryDate())
+                .entryPrice(request.entryPrice())
                 .build();
-        walletRepository.save(wallet);
+        PortfolioPosition saved = positionRepository.save(position);
 
-        return toResponse(portfolio);
+        publishLotChange(portfolioId, saved, saved.getEntryDate(), true);
+        return mapper.toPositionResponseShell(saved);
     }
 
-    @Transactional(readOnly = true)
-    public List<TransactionResponse> listTransactions(Long portfolioId) {
-        return mapper.toTransactionResponses(
-                transactionRepository.findByPortfolioIdOrderByCreatedAtDesc(portfolioId));
+    @Transactional
+    public PositionResponse updatePosition(Long portfolioId, Long positionId, String userSub, PositionRequest request) {
+        validateLot(request);
+        PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
+        LocalDateTime previousEntry = position.getEntryDate();
+        position.updateLot(request.entryDate(), request.entryPrice(), request.quantity());
+        PortfolioPosition saved = positionRepository.save(position);
+
+        publishLotChange(portfolioId, saved, earliestOf(previousEntry, saved.getEntryDate()), true);
+        return mapper.toPositionResponseShell(saved);
     }
 
-    @Transactional(readOnly = true)
-    public PagedResponse<TransactionResponse> listTransactionsPaged(Long portfolioId, String search,
-                                                                      String assetType, String sortBy, String direction,
-                                                                      int page, int size) {
-        Specification<PortfolioTransaction> spec = (root, query, cb) ->
-                cb.equal(root.get("portfolioId"), portfolioId);
+    @Transactional
+    public void deletePosition(Long portfolioId, Long positionId, String userSub) {
+        PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
+        LocalDateTime entryDate = position.getEntryDate();
+        positionRepository.delete(position);
+        publishLotChange(portfolioId, position, entryDate, false);
+    }
 
-        AssetType filterType = assetType == null || assetType.isBlank()
-                ? null
-                : EnumParser.parseOrBadRequest(AssetType.class, assetType.toUpperCase(), "asset type");
-        if (filterType != null) {
-            AssetType fixed = filterType;
-            spec = spec.and((root, query, cb) -> cb.equal(root.get("assetType"), fixed));
+    private PortfolioPosition loadOwnedPosition(Long portfolioId, Long positionId, String userSub) {
+        portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
+                .orElseThrow(() -> new ResourceNotFoundException("Portfolio not found: " + portfolioId));
+        PortfolioPosition position = positionRepository.findById(positionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Position not found: " + positionId));
+        if (!position.getPortfolioId().equals(portfolioId)) {
+            throw new BusinessException("Position does not belong to portfolio: " + portfolioId);
         }
+        return position;
+    }
 
-        if (search != null && !search.isBlank()) {
-            String pattern = "%" + search.toLowerCase() + "%";
-            spec = spec.and((root, query, cb) ->
-                    cb.like(cb.lower(root.get("assetCode")), pattern));
+    private void validateLot(PositionRequest request) {
+        LotLimits limits = portfolioProperties.getLotLimits();
+        LocalDate entryDay = request.entryDate() != null ? request.entryDate().toLocalDate() : null;
+        if (entryDay != null && limits.getMinEntryDate() != null && entryDay.isBefore(limits.getMinEntryDate())) {
+            throw new BusinessException("Giriş tarihi " + limits.getMinEntryDate() + " tarihinden eski olamaz");
         }
-
-        PageRequest pageRequest = PageRequest.of(page, size, buildTransactionSort(sortBy, direction));
-        Page<PortfolioTransaction> result = transactionRepository.findAll(spec, pageRequest);
-
-        return PagedResponse.of(
-                mapper.toTransactionResponses(result.getContent()),
-                page, size, result.getTotalElements());
+        if (entryDay != null && entryDay.isAfter(LocalDate.now())) {
+            throw new BusinessException("Giriş tarihi gelecekte olamaz");
+        }
+        BigDecimal price = request.entryPrice();
+        if (price != null && limits.getMinPriceTry() != null && price.compareTo(limits.getMinPriceTry()) < 0) {
+            throw new BusinessException("Giriş fiyatı en az " + limits.getMinPriceTry() + " TRY olmalı");
+        }
+        if (price != null && limits.getMaxPriceTry() != null && price.compareTo(limits.getMaxPriceTry()) > 0) {
+            throw new BusinessException("Giriş fiyatı en fazla " + limits.getMaxPriceTry() + " TRY olabilir");
+        }
+        BigDecimal qty = request.quantity();
+        if (qty != null && limits.getMinQuantity() != null && qty.compareTo(limits.getMinQuantity()) < 0) {
+            throw new BusinessException("Miktar en az " + limits.getMinQuantity() + " olmalı");
+        }
+        if (qty != null && limits.getMaxQuantity() != null && qty.compareTo(limits.getMaxQuantity()) > 0) {
+            throw new BusinessException("Miktar en fazla " + limits.getMaxQuantity() + " olabilir");
+        }
     }
 
-    private Sort buildTransactionSort(String sortBy, String direction) {
-        String field = switch (sortBy != null ? sortBy : "createdAt") {
-            case "totalCostTry" -> "totalCostTry";
-            case "assetCode" -> "assetCode";
-            default -> "createdAt";
-        };
-        Sort.Direction dir = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
-        return Sort.by(dir, field);
+    private void publishLotChange(Long portfolioId, PortfolioPosition position, LocalDateTime fromDate, boolean visibleToUi) {
+        if (fromDate == null) return;
+        eventPublisher.publishEvent(new PortfolioBackfillService.LotChangedEvent(
+                portfolioId, position.getAssetType(), position.getAssetCode(), fromDate.toLocalDate(), visibleToUi));
     }
 
-    private PortfolioResponse toResponse(Portfolio portfolio) {
-        BigDecimal cash = walletRepository.findByPortfolioIdAndCurrency(
-                        portfolio.getId(),
-                        portfolioProperties.getDefaultCurrency())
-                .map(UserWallet::getBalance)
-                .map(MoneyTRY::amount)
-                .orElse(BigDecimal.ZERO);
-        return mapper.toPortfolioResponse(portfolio, cash);
+    private static LocalDateTime earliestOf(LocalDateTime a, LocalDateTime b) {
+        if (a == null) return b;
+        if (b == null) return a;
+        return a.isBefore(b) ? a : b;
     }
 }

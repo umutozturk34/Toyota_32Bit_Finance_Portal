@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.config.CommodityProperties;
 import com.finance.backend.model.CommoditySegment;
+import com.finance.backend.util.YahooSymbolSuffix;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
@@ -9,8 +10,6 @@ import java.util.Set;
 
 @Component
 public class CommoditySegmentResolver {
-
-    private static final String YAHOO_FUTURES_SUFFIX = "=F";
 
     private final Set<String> preciousMetalCodes;
 
@@ -23,7 +22,7 @@ public class CommoditySegmentResolver {
     public CommoditySegment resolve(String commodityCode) {
         if (commodityCode == null) return null;
         if (preciousMetalCodes.contains(commodityCode)) return CommoditySegment.PRECIOUS_METAL;
-        if (commodityCode.contains(YAHOO_FUTURES_SUFFIX)) return CommoditySegment.OTHER;
+        if (commodityCode.contains(YahooSymbolSuffix.FUTURES)) return CommoditySegment.OTHER;
         return null;
     }
 }

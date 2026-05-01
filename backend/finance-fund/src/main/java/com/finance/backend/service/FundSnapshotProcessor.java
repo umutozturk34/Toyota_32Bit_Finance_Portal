@@ -50,18 +50,29 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
         this.eodCutoverHour = fundProperties.getTefasEodCutoverHour();
     }
 
+    private static final int HOLIDAY_LOOKBACK_DAYS = 5;
+
     public void refreshAll() {
         long start = System.currentTimeMillis();
-        LocalDate today = today();
-        log.info("Starting bulk fund snapshot update for {}", today);
+        LocalDate cursor = today();
+        log.info("Starting bulk fund snapshot update for {}", cursor);
 
-        int byfSaved = bulkUpdateAndAutoTrackBYF(today);
         Set<String> trackedCodes = Set.copyOf(
                 trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND));
-        int yatSaved = bulkUpdateForTrackedYAT(today, trackedCodes);
+        int byfSaved = -1;
+        int yatSaved = -1;
 
-        log.info("[TIMING] Fund snapshot update took {}s (BYF saved={}, YAT saved={})",
-                (System.currentTimeMillis() - start) / 1000,
+        for (int attempt = 0; attempt <= HOLIDAY_LOOKBACK_DAYS; attempt++) {
+            byfSaved = bulkUpdateAndAutoTrackBYF(cursor);
+            yatSaved = bulkUpdateForTrackedYAT(cursor, trackedCodes);
+            if (byfSaved > 0 || yatSaved > 0) break;
+            if (attempt == HOLIDAY_LOOKBACK_DAYS) break;
+            log.info("No fund data for {}, walking back one day (TEFAS likely closed for holiday)", cursor);
+            cursor = cursor.minusDays(1);
+        }
+
+        log.info("[TIMING] Fund snapshot update took {}s (effective date {}, BYF saved={}, YAT saved={})",
+                (System.currentTimeMillis() - start) / 1000, cursor,
                 byfSaved < 0 ? "FAILED" : byfSaved, yatSaved < 0 ? "FAILED" : yatSaved);
     }
 

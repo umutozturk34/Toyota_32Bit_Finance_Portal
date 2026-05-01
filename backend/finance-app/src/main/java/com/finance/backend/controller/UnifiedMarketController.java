@@ -4,6 +4,7 @@ import com.finance.backend.config.AppProperties;
 import com.finance.backend.dto.ApiResponse;
 import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.MarketAssetResponse;
+import com.finance.backend.dto.response.MarketAvailabilityResponse;
 import com.finance.backend.dto.response.MarketOverviewResponse;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.model.CandlePeriod;
@@ -87,5 +88,17 @@ public class UnifiedMarketController {
             @RequestParam MarketType type) {
         return ApiResponse.success("Group counts retrieved",
                 unifiedMarketService.getGroupCounts(type));
+    }
+
+    @GetMapping("/availability")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<MarketAvailabilityResponse> getMonthlyAvailability(
+            @RequestParam MarketType type,
+            @Parameter(description = "Asset code", example = "THYAO.IS")
+            @RequestParam String code,
+            @Parameter(description = "Year-month (yyyy-MM)", example = "2025-04")
+            @RequestParam String yearMonth) {
+        return ApiResponse.success("Monthly availability retrieved",
+                unifiedMarketService.getMonthlyAvailability(type, code, yearMonth));
     }
 }

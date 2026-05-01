@@ -1,19 +1,20 @@
 package com.finance.backend.service;
 import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.MarketAssetResponse;
+import com.finance.backend.dto.response.MarketAvailabilityResponse;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.dto.response.StockMetadata;
 import com.finance.backend.model.CandlePeriod;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.StockSegment;
+import com.finance.backend.util.EnumDispatcher;
 
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,15 +25,16 @@ public class UnifiedMarketService implements MarketUpdatePort {
     private final Map<MarketType, MarketAssetProvider> providers;
     private final Map<MarketType, MarketHistoryProvider> historyProviders;
     private final TopMoversRedisService topMoversRedisService;
+    private final HistoricalPricingPort historicalPricingPort;
 
     public UnifiedMarketService(List<MarketAssetProvider> providerList,
                                 List<MarketHistoryProvider> historyProviderList,
-                                TopMoversRedisService topMoversRedisService) {
-        this.providers = new EnumMap<>(MarketType.class);
-        providerList.forEach(p -> this.providers.put(p.getType(), p));
-        this.historyProviders = new EnumMap<>(MarketType.class);
-        historyProviderList.forEach(p -> this.historyProviders.put(p.getMarketType(), p));
+                                TopMoversRedisService topMoversRedisService,
+                                HistoricalPricingPort historicalPricingPort) {
+        this.providers = EnumDispatcher.from(MarketType.class, providerList, MarketAssetProvider::getType);
+        this.historyProviders = EnumDispatcher.from(MarketType.class, historyProviderList, MarketHistoryProvider::getMarketType);
         this.topMoversRedisService = topMoversRedisService;
+        this.historicalPricingPort = historicalPricingPort;
     }
 
     public PagedResponse<MarketAssetResponse> search(List<MarketType> types, String code,
@@ -71,6 +73,12 @@ public class UnifiedMarketService implements MarketUpdatePort {
             throw new ResourceNotFoundException("No history provider registered for " + type);
         }
         return provider.getHistory(code, period);
+    }
+
+    public MarketAvailabilityResponse getMonthlyAvailability(MarketType type, String code, String yearMonth) {
+        YearMonth ym = YearMonth.parse(yearMonth);
+        return new MarketAvailabilityResponse(
+                historicalPricingPort.getPriceSeries(type, code, ym.atDay(1), ym.atEndOfMonth()));
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.finance.backend.client.TefasClient;
 import com.finance.backend.dto.external.TefasFundDto;
 import com.finance.backend.model.Fund;
 import com.finance.backend.model.FundType;
+import com.finance.backend.util.WindowedFetchPlanner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
@@ -51,11 +52,9 @@ class FundBulkFetchExecutorTest {
     }
 
     @Test
-    void should_skipFetch_when_earliestNotBeforeToday() {
-        LocalDate today = LocalDate.of(2026, 4, 29);
-
-        FundBulkFetchExecutor.BulkRunResult result = executor.runBackwardWindowed(
-                FundType.YAT, today, today, 30, Map.of(), (f, dtos) -> 0);
+    void should_skipFetch_when_windowListEmpty() {
+        FundBulkFetchExecutor.BulkRunResult result = executor.runWindows(
+                FundType.YAT, List.of(), Map.of(), (f, dtos) -> 0);
 
         assertThat(result.windowsProcessed()).isZero();
         assertThat(result.totalSaved()).isZero();
@@ -75,8 +74,9 @@ class FundBulkFetchExecutorTest {
         stubTransactionTemplate();
         AtomicInteger savedFor = new AtomicInteger(0);
 
-        FundBulkFetchExecutor.BulkRunResult result = executor.runBackwardWindowed(
-                FundType.YAT, from, to, 31, trackedByCode,
+        FundBulkFetchExecutor.BulkRunResult result = executor.runWindows(
+                FundType.YAT, List.of(new WindowedFetchPlanner.DateWindow(from, to)),
+                trackedByCode,
                 (fund, dtos) -> { savedFor.set(dtos.size()); return dtos.size(); });
 
         assertThat(result.windowsProcessed()).isEqualTo(1);
@@ -93,8 +93,9 @@ class FundBulkFetchExecutorTest {
         when(tefasClient.bulkFetch(FundType.YAT, from, to))
                 .thenThrow(new RuntimeException("WAF block"));
 
-        assertThatThrownBy(() -> executor.runBackwardWindowed(
-                FundType.YAT, from, to, 31, trackedByCode, (f, dtos) -> 0))
+        assertThatThrownBy(() -> executor.runWindows(
+                FundType.YAT, List.of(new WindowedFetchPlanner.DateWindow(from, to)),
+                trackedByCode, (f, dtos) -> 0))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("WAF block");
     }
@@ -107,8 +108,9 @@ class FundBulkFetchExecutorTest {
         when(tefasClient.bulkFetch(FundType.YAT, from, to))
                 .thenThrow(CallNotPermittedException.createCallNotPermittedException(cb));
 
-        assertThatThrownBy(() -> executor.runBackwardWindowed(
-                FundType.YAT, from, to, 31, Map.of("X", fundWith("X")), (f, dtos) -> 0))
+        assertThatThrownBy(() -> executor.runWindows(
+                FundType.YAT, List.of(new WindowedFetchPlanner.DateWindow(from, to)),
+                Map.of("X", fundWith("X")), (f, dtos) -> 0))
                 .isInstanceOf(CallNotPermittedException.class);
     }
 

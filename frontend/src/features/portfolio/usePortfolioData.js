@@ -1,5 +1,8 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { EventSourcePolyfill } from 'event-source-polyfill';
 import { portfolioService } from './portfolioService';
+import { getToken } from '../auth/keycloak';
 
 export function usePortfolioList() {
   return useQuery({
@@ -7,6 +10,67 @@ export function usePortfolioList() {
     queryFn: portfolioService.list,
     retry: false,
   });
+}
+
+export function usePortfolioLimits() {
+  return useQuery({
+    queryKey: ['portfolioLimits'],
+    queryFn: portfolioService.getLimits,
+    staleTime: 1000 * 60 * 60,
+  });
+}
+
+const EMPTY_BACKFILL = { running: false, since: null, pendingKeys: new Set() };
+
+const lotKey = (assetType, assetCode) => `${assetType}:${assetCode}`;
+
+export function useBackfillStatus(portfolioId) {
+  const [state, setState] = useState(EMPTY_BACKFILL);
+  const invalidate = useInvalidatePortfolio();
+
+  useEffect(() => {
+    if (!portfolioId) return undefined;
+    let cancelled = false;
+    let source;
+
+    (async () => {
+      const token = await getToken();
+      if (cancelled || !token) return;
+      source = new EventSourcePolyfill(`/api/v1/portfolios/${portfolioId}/backfill-stream`, {
+        headers: { Authorization: `Bearer ${token}` },
+        heartbeatTimeout: 60_000,
+      });
+      source.addEventListener('backfill-status', (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          const pendingKeys = new Set(
+            (payload.pendingAssets || []).map((a) => lotKey(a.assetType, a.assetCode))
+          );
+          setState((prev) => {
+            const next = {
+              running: Boolean(payload.running),
+              since: payload.since ?? null,
+              pendingKeys,
+            };
+            if (prev.running && !next.running) invalidate();
+            return next;
+          });
+        } catch { /* malformed payload */ }
+      });
+      source.onerror = () => source.close();
+    })();
+
+    return () => {
+      cancelled = true;
+      if (source) source.close();
+    };
+  }, [portfolioId]);
+
+  return state;
+}
+
+export function isLotPending(backfill, assetType, assetCode) {
+  return backfill.pendingKeys?.has(lotKey(assetType, assetCode)) || false;
 }
 
 export function usePortfolioView(portfolioId) {
@@ -66,12 +130,36 @@ export function usePortfolioPositions(portfolioId, params) {
   });
 }
 
-export function usePortfolioTransactions(portfolioId, params) {
-  return useQuery({
-    queryKey: ['portfolioTransactions', portfolioId, params],
-    queryFn: () => portfolioService.getTransactions(portfolioId, params),
-    enabled: !!portfolioId,
-    placeholderData: (prev) => prev,
+export function useAddPosition(portfolioId) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: (payload) => portfolioService.addPosition(portfolioId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUpdatePosition(portfolioId) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: ({ positionId, payload }) =>
+      portfolioService.updatePosition(portfolioId, positionId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeletePosition(portfolioId) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: (positionId) => portfolioService.deletePosition(portfolioId, positionId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCreatePortfolio() {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: portfolioService.create,
+    onSuccess: invalidate,
   });
 }
 
@@ -84,7 +172,6 @@ export function useInvalidatePortfolio() {
     queryClient.invalidateQueries({ queryKey: ['portfolioAllocation'] });
     queryClient.invalidateQueries({ queryKey: ['portfolioPerformance'] });
     queryClient.invalidateQueries({ queryKey: ['portfolioPositions'] });
-    queryClient.invalidateQueries({ queryKey: ['portfolioTransactions'] });
     queryClient.invalidateQueries({ queryKey: ['assetSeries'] });
   };
 }

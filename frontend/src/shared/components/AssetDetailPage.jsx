@@ -8,7 +8,7 @@ import useSessionState from '../hooks/useSessionState';
 import { unifiedMarketService } from '../services/unifiedMarketService';
 import LoadingState from './LoadingState';
 import ErrorState from './ErrorState';
-import BuyModal from './BuyModal';
+import MarketAddPositionModal from '../../features/portfolio/MarketAddPositionModal';
 import CompareBar from './CompareBar';
 import LightweightChart from '../../features/chart/LightweightChart';
 import { cardVariants } from '../utils/animations';
@@ -98,7 +98,7 @@ export default function AssetDetailPage({
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer border-none bg-success text-white hover:bg-success/90 transition-colors"
           >
             <ShoppingCart className="h-4 w-4" />
-            Satın Al
+            Portföye Ekle
           </button>
         )}
       </motion.div>
@@ -125,7 +125,7 @@ export default function AssetDetailPage({
       />
 
       {buyOpen && buyProps && (
-        <BuyModal
+        <MarketAddPositionModal
           {...buyProps}
           onClose={() => setBuyOpen(false)}
           onComplete={() => setBuyOpen(false)}

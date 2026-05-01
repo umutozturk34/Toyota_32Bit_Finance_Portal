@@ -16,6 +16,9 @@ spring:
       hibernate:
         '[format_sql]': true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        '[jdbc.batch_size]': 50
+        '[order_inserts]': true
+        '[order_updates]': true
   
   flyway:
     enabled: true
@@ -203,6 +206,12 @@ app:
     default-currency: TRY
     initial-balance: 100000.0000
     min-transaction-amount-try: 10
+    lot-limits:
+      min-entry-date: 2000-01-01
+      min-price-try: 0.0001
+      max-price-try: 1000000000
+      min-quantity: 0.00000001
+      max-quantity: 1000000000
 
   task:
     max-history: 50
@@ -241,6 +250,12 @@ app:
     admin-trigger-limit: 20
     admin-read-limit: 20
     api-limit: 60
+
+server:
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+    min-response-size: 1024
 
 springdoc:
   api-docs:

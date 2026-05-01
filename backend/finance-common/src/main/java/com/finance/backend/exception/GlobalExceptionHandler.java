@@ -8,7 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import java.util.HashMap;
+import java.util.stream.Collectors;
 import java.util.Map;
 @Log4j2
 @RestControllerAdvice
@@ -71,12 +71,13 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
+        Map<String, String> errors = ex.getBindingResult().getAllErrors().stream()
+                .filter(FieldError.class::isInstance)
+                .map(FieldError.class::cast)
+                .collect(Collectors.toUnmodifiableMap(
+                        FieldError::getField,
+                        e -> e.getDefaultMessage() == null ? "" : e.getDefaultMessage(),
+                        (a, b) -> a));
         log.warn("Validation failed: {}", errors);
         ErrorResponse error = ErrorResponse.of(
             "Validation failed", 

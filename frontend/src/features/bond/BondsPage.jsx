@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import useSessionState from "../../shared/hooks/useSessionState";
 import { motion, AnimatePresence } from 'framer-motion';
-import Chart from 'react-apexcharts';
+import ReactECharts from 'echarts-for-react';
 import {
     Landmark,
     Clock,
@@ -29,7 +29,6 @@ import { toast } from '../../shared/components/Toast';
 import FilterTabs from '../../shared/components/FilterTabs';
 import useListParams from '../../shared/hooks/useListParams';
 import { useTheme } from '../../shared/context/ThemeContext';
-import { getApexThemeOptions } from '../../shared/utils/apexTheme';
 import { BOND_TYPE_LABELS, BOND_TYPE_COLORS, CHART_LINE_COLORS } from './bondConstants';
 
 const SORT_OPTIONS = [
@@ -51,33 +50,57 @@ function RateHistoryChart({ isinCode, bondType }) {
     if (!rateData || rateData.length === 0) return <div className="h-48 flex items-center justify-center text-fg-muted text-xs">Rate verisi yok</div>;
 
     const lineColor = CHART_LINE_COLORS[bondType] || '#8b5cf6';
-    const themeOpts = getApexThemeOptions(isDark);
 
-    const options = {
-        ...themeOpts,
-        chart: {
-            ...themeOpts.chart,
-            type: 'line', height: 200,
-            toolbar: { show: false }, zoom: { enabled: true },
+    const option = {
+        grid: { top: 12, right: 12, bottom: 24, left: 40, containLabel: true },
+        xAxis: {
+            type: 'category',
+            data: rateData.map(d => d.date),
+            boundaryGap: false,
+            axisLabel: { 
+                color: isDark ? '#9ca3af' : '#6b7280',
+                fontSize: 12,
+            },
+            axisLine: { lineStyle: { color: isDark ? '#374151' : '#e5e7eb' } },
         },
-        stroke: { curve: 'smooth', width: 2 },
-        colors: [lineColor],
-        xaxis: {
-            ...themeOpts.xaxis,
-            type: 'datetime',
-            categories: rateData.map(d => d.date),
-            labels: { ...themeOpts.xaxis.labels, datetimeFormatter: { month: 'MMM yy' } },
+        yAxis: {
+            type: 'value',
+            axisLabel: {
+                color: isDark ? '#9ca3af' : '#6b7280',
+                fontSize: 12,
+                formatter: (val) => `%${val.toFixed(2)}`,
+            },
+            axisLine: { lineStyle: { color: isDark ? '#374151' : '#e5e7eb' } },
+            splitLine: { lineStyle: { color: isDark ? '#1f2937' : '#f3f4f6' } },
         },
-        yaxis: {
-            ...themeOpts.yaxis,
-            labels: { ...themeOpts.yaxis.labels, formatter: (val) => `%${val.toFixed(2)}` },
+        tooltip: {
+            trigger: 'axis',
+            backgroundColor: isDark ? '#1f2937' : '#fff',
+            borderColor: isDark ? '#374151' : '#e5e7eb',
+            textStyle: { color: isDark ? '#f3f4f6' : '#1f2937' },
+            formatter: (params) => {
+                if (!params.length) return '';
+                const p = params[0];
+                return `${p.axisValue}<br/>${p.marker}${p.seriesName}: ${Number(p.value).toFixed(4)}%`;
+            },
         },
-        grid: { ...themeOpts.grid, xaxis: { lines: { show: false } } },
-        tooltip: { ...themeOpts.tooltip, x: { format: 'dd MMM yyyy' }, y: { formatter: (val) => `%${val.toFixed(4)}` } },
-        dataLabels: { enabled: false },
+        series: [{
+            name: 'Kupon Oranı',
+            type: 'line',
+            data: rateData.map(d => Number(d.rate)),
+            smooth: true,
+            lineStyle: { width: 2, color: lineColor },
+            itemStyle: { color: lineColor },
+            areaStyle: { color: `${lineColor}20` },
+            symbol: 'none',
+        }],
     };
 
-    return <Chart options={options} series={[{ name: 'Kupon Oranı', data: rateData.map(d => Number(d.rate)) }]} type="line" height={200} />;
+    return (
+        <div className="h-48">
+            <ReactECharts option={option} style={{ height: '100%' }} />
+        </div>
+    );
 }
 
 function BondCard({ bond, isExpanded, onToggleChart }) {

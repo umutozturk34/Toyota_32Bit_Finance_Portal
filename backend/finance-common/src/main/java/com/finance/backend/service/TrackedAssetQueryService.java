@@ -6,6 +6,7 @@ import com.finance.backend.mapper.TrackedAssetMapper;
 import com.finance.backend.model.TrackedAsset;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.TrackedAssetRepository;
+import com.finance.backend.util.LikeSearchSpec;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -61,10 +62,8 @@ public class TrackedAssetQueryService {
             spec = spec.and((root, query, cb) -> cb.isTrue(root.get("enabled")));
         }
         if (search != null && !search.isBlank()) {
-            String pattern = "%" + search.toLowerCase() + "%";
-            spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("assetCode")), pattern),
-                    cb.like(cb.lower(root.get("displayName")), pattern)));
+            spec = spec.and((root, query, cb) ->
+                    LikeSearchSpec.byFieldsContains(root, cb, search, "assetCode", "displayName"));
         }
         return spec;
     }

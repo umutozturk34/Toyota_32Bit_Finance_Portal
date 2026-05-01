@@ -4,8 +4,8 @@ import com.finance.backend.model.MarketType;
 
 import java.math.BigDecimal;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public interface AssetPricingPort {
 
@@ -31,18 +31,16 @@ public interface AssetPricingPort {
     }
 
     default Map<AssetKey, PriceBundle> getBundles(Collection<AssetKey> keys) {
-        Map<AssetKey, PriceBundle> result = new LinkedHashMap<>();
-        for (AssetKey key : keys) {
-            result.put(key, getBundle(key.type(), key.assetCode()));
-        }
-        return result;
+        return keys.stream().collect(Collectors.toUnmodifiableMap(
+                key -> key,
+                key -> getBundle(key.type(), key.assetCode()),
+                (a, b) -> a));
     }
 
     default Map<AssetKey, BigDecimal> getPricesTry(Collection<AssetKey> keys) {
-        Map<AssetKey, BigDecimal> result = new LinkedHashMap<>();
-        for (AssetKey key : keys) {
-            result.put(key, getPriceTry(key.type(), key.assetCode()));
-        }
-        return result;
+        return keys.stream().collect(Collectors.toUnmodifiableMap(
+                key -> key,
+                key -> getPriceTry(key.type(), key.assetCode()),
+                (a, b) -> a));
     }
 }

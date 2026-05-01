@@ -7,5 +7,10 @@ public enum BondType {
     FLOATING_CPI,
     FLOATING_AUCTION,
     SUKUK_FIXED,
-    SUKUK_CPI
+    SUKUK_CPI;
+
+    public boolean isFloating() {
+        return this == FLOATING_TLREF || this == FLOATING_CPI
+                || this == FLOATING_AUCTION || this == SUKUK_CPI;
+    }
 }

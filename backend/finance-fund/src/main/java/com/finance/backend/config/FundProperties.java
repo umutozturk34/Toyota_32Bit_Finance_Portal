@@ -15,6 +15,8 @@ public class FundProperties {
     private int tefasEodCutoverHour = 11;
     private int tefasMaxResponseMb = 32;
     private int tefasBulkPageSize = 100_000;
+    private int tefasDefaultPageSize = 100;
+    private String tefasLanguage = "TR";
     private String tefasUserAgent =
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
                     + "(KHTML, like Gecko) Chrome/120.0 Safari/537.36";

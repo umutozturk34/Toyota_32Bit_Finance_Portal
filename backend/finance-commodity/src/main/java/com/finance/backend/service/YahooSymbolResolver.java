@@ -2,6 +2,7 @@ package com.finance.backend.service;
 
 import com.finance.backend.config.CommodityProperties;
 import com.finance.backend.util.CodeNormalizer;
+import com.finance.backend.util.YahooSymbolSuffix;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -10,8 +11,6 @@ import java.util.stream.Collectors;
 
 @Component
 public class YahooSymbolResolver {
-
-    private static final String YAHOO_FUTURES_SUFFIX = "=F";
 
     private final Map<String, String> overrides;
     private final Map<String, String> reverseOverrides;
@@ -28,7 +27,7 @@ public class YahooSymbolResolver {
         if (commodityCode == null) return null;
         String override = overrides.get(commodityCode);
         if (override != null) return override;
-        if (commodityCode.contains(YAHOO_FUTURES_SUFFIX)) return commodityCode;
+        if (commodityCode.contains(YahooSymbolSuffix.FUTURES)) return commodityCode;
         return null;
     }
 

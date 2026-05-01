@@ -1,13 +1,47 @@
-import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { EventSourcePolyfill } from 'event-source-polyfill';
 import {
     Activity, Play, CheckCircle2, XCircle, Clock,
-    RefreshCw, Loader2, Zap, Database, X,
+    Loader2, Zap, Database, X,
     TrendingUp, DollarSign, Bitcoin, Briefcase, Landmark, Newspaper, Gem,
 } from 'lucide-react';
 import { adminService } from './adminService';
+import { getToken } from '../auth/keycloak';
 import { toast } from '../../shared/components/Toast';
+import useElapsedSeconds from '../../shared/hooks/useElapsedSeconds';
+
+const EMPTY_STATUS = { running: [], history: [], runningCount: 0 };
+
+function useTaskStatusStream(enabled) {
+    const [status, setStatus] = useState(EMPTY_STATUS);
+
+    useEffect(() => {
+        if (!enabled) return undefined;
+        let cancelled = false;
+        let source;
+
+        (async () => {
+            const token = await getToken();
+            if (cancelled || !token) return;
+            source = new EventSourcePolyfill('/api/v1/admin/tasks/stream', {
+                headers: { Authorization: `Bearer ${token}` },
+                heartbeatTimeout: 60_000,
+            });
+            source.addEventListener('task-status', (event) => {
+                try { setStatus(JSON.parse(event.data)); } catch { /* malformed payload */ }
+            });
+            source.onerror = () => source.close();
+        })();
+
+        return () => {
+            cancelled = true;
+            if (source) source.close();
+        };
+    }, [enabled]);
+
+    return status;
+}
 
 const TASK_GROUPS = [
     {
@@ -119,24 +153,33 @@ function StatusBadge({ status }) {
     );
 }
 
+function RunningTaskRow({ task }) {
+    const startedAtMs = task.startedAt ? Date.parse(task.startedAt) : null;
+    const elapsed = useElapsedSeconds(startedAtMs);
+    return (
+        <div className="flex items-center justify-between rounded-md border border-accent/20 bg-accent/5 px-3 py-2">
+            <div className="flex items-center gap-2">
+                <StatusBadge status="RUNNING" />
+                <span className="text-xs font-medium text-fg">{task.type}</span>
+            </div>
+            <span className="flex items-center gap-1 text-[10px] font-mono text-accent">
+                <Clock className="h-2.5 w-2.5" />
+                {formatDuration(elapsed * 1000)}
+            </span>
+        </div>
+    );
+}
+
 export default function TasksPanel({ open, onClose }) {
-    const queryClient = useQueryClient();
     const [triggering, setTriggering] = useState({});
 
-    const { data: taskData = { running: [], history: [], runningCount: 0 } } = useQuery({
-        queryKey: ['taskStatus'],
-        queryFn: adminService.getTaskStatus,
-        enabled: open,
-        refetchInterval: open ? 3000 : false,
-    });
-
+    const taskData = useTaskStatusStream(open);
     const runningSet = new Set(taskData.running.map(t => t.type));
 
     const handleTrigger = async (key, triggerFn) => {
         setTriggering(p => ({ ...p, [key]: true }));
         try {
             await triggerFn();
-            setTimeout(() => queryClient.invalidateQueries({ queryKey: ['taskStatus'] }), 500);
         } catch (err) {
             const msg = err.response?.data?.message || err.message;
             toast.info('Görev', msg);
@@ -175,21 +218,12 @@ export default function TasksPanel({ open, onClose }) {
                                     </span>
                                 )}
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <button
-                                    onClick={() => queryClient.invalidateQueries({ queryKey: ['taskStatus'] })}
-                                    className="p-1.5 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors"
-                                    title="Refresh"
-                                >
-                                    <RefreshCw className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                    onClick={onClose}
-                                    className="p-1.5 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
+                            <button
+                                onClick={onClose}
+                                className="p-1.5 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ scrollbarWidth: 'thin' }}>
@@ -236,19 +270,7 @@ export default function TasksPanel({ open, onClose }) {
                                         Active
                                     </h3>
                                     {taskData.running.map((t) => (
-                                        <div
-                                            key={t.type}
-                                            className="flex items-center justify-between rounded-md border border-accent/20 bg-accent/5 px-3 py-2"
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <StatusBadge status="RUNNING" />
-                                                <span className="text-xs font-medium text-fg">{t.type}</span>
-                                            </div>
-                                            <span className="flex items-center gap-1 text-[10px] text-fg-muted">
-                                                <Clock className="h-2.5 w-2.5" />
-                                                {formatDuration(t.durationMs)}
-                                            </span>
-                                        </div>
+                                        <RunningTaskRow key={t.type} task={t} />
                                     ))}
                                 </div>
                             )}

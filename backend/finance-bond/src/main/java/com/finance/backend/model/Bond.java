@@ -1,16 +1,15 @@
 package com.finance.backend.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.finance.backend.util.BondRateAnalyzer;
+import com.finance.backend.util.BondTypeResolver;
+import com.finance.backend.util.BondYieldCalculator;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.log4j.Log4j2;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Log4j2
@@ -73,30 +72,7 @@ public class Bond extends BaseAsset {
 
     @JsonIgnore
     public boolean isFloating() {
-        return bondType == BondType.FLOATING_TLREF || bondType == BondType.FLOATING_CPI
-                || bondType == BondType.FLOATING_AUCTION || bondType == BondType.SUKUK_CPI;
-    }
-
-    @JsonIgnore
-    public boolean isSukuk() {
-        return bondType == BondType.SUKUK_FIXED || bondType == BondType.SUKUK_CPI;
-    }
-
-    @JsonIgnore
-    public boolean isExpired() {
-        return maturityEnd != null && !maturityEnd.isAfter(LocalDate.now());
-    }
-
-    @JsonIgnore
-    public long daysToMaturity() {
-        if (maturityEnd == null) return -1;
-        return ChronoUnit.DAYS.between(LocalDate.now(), maturityEnd);
-    }
-
-    @JsonIgnore
-    public long daysToNextCoupon() {
-        if (nextCouponDate == null) return -1;
-        return ChronoUnit.DAYS.between(LocalDate.now(), nextCouponDate);
+        return bondType != null && bondType.isFloating();
     }
 
     public void resolveNextCouponDate() {
@@ -119,102 +95,13 @@ public class Bond extends BaseAsset {
         this.nextCouponDate = couponDate;
     }
 
-    public void resolveType(List<BondRateHistory> history, BigDecimal rateThreshold, BigDecimal auctionThreshold, BigDecimal cpiFixedThreshold) {
-        if (isinCode == null) {
-            log.warn("Null ISIN on bond {}, defaulting to FIXED_COUPON", seriesCode);
-            this.bondType = BondType.FIXED_COUPON;
-            return;
-        }
-
-        if (isinCode.startsWith("TRB")) {
-            this.bondType = BondType.DISCOUNTED;
-            return;
-        }
-
-        boolean highBaseIndex = baseIndex != null && baseIndex.compareTo(new BigDecimal("110")) > 0;
-
-        if (highBaseIndex) {
-            boolean sukuk = isinCode.startsWith("TRD");
-            this.bondType = sukuk ? BondType.SUKUK_CPI : BondType.FLOATING_CPI;
-            return;
-        }
-
-        if (couponRate == null || couponRate.compareTo(BigDecimal.ZERO) == 0) {
-            this.bondType = BondType.DISCOUNTED;
-            return;
-        }
-
-        boolean sukuk = isinCode.startsWith("TRD");
-
-        if (couponRate.compareTo(cpiFixedThreshold) < 0) {
-            this.bondType = sukuk ? BondType.SUKUK_CPI : BondType.FLOATING_CPI;
-            log.debug("Bond {} classified as {} (rate {} < cpiFixedThreshold {})",
-                    isinCode, bondType, couponRate, cpiFixedThreshold);
-            return;
-        }
-
-        boolean rateChanges = BondRateAnalyzer.hasRateChanges(history);
-
-        if (sukuk) {
-            this.bondType = rateChanges ? BondType.SUKUK_CPI : BondType.SUKUK_FIXED;
-        } else if (rateChanges) {
-            this.bondType = couponRate.compareTo(auctionThreshold) >= 0
-                    ? BondType.FLOATING_AUCTION
-                    : BondType.FLOATING_TLREF;
-        } else {
-            this.bondType = BondType.FIXED_COUPON;
-        }
-
-        log.debug("Bond {} classified as {} (sukuk={}, rateChanges={}, rate={}, historySize={})",
-                isinCode, bondType, sukuk, rateChanges, couponRate, history != null ? history.size() : 0);
+    public void resolveType(List<BondRateHistory> history,
+                             BigDecimal auctionThreshold, BigDecimal cpiFixedThreshold) {
+        this.bondType = BondTypeResolver.resolve(this, history, auctionThreshold, cpiFixedThreshold);
     }
 
     public void resolveSimpleYield(BigDecimal faceValue, int daysInYear) {
-        if (baseIndex == null || baseIndex.compareTo(BigDecimal.ZERO) == 0) {
-            log.debug("Cannot calculate yield for {}: baseIndex is null or zero", isinCode);
-            this.simpleYield = null;
-            return;
-        }
-
-        BigDecimal daysPerYear = new BigDecimal(daysInYear);
-
-        if (bondType == BondType.DISCOUNTED) {
-            if (maturityEnd == null) {
-                this.simpleYield = null;
-                return;
-            }
-            long days = daysToMaturity();
-            if (days <= 0) {
-                this.simpleYield = null;
-                return;
-            }
-            BigDecimal daysDecimal = new BigDecimal(days);
-            BigDecimal rawYield = faceValue.subtract(baseIndex)
-                    .divide(baseIndex, 10, RoundingMode.HALF_UP)
-                    .multiply(daysPerYear)
-                    .divide(daysDecimal, 10, RoundingMode.HALF_UP)
-                    .multiply(faceValue)
-                    .setScale(4, RoundingMode.HALF_UP);
-            this.simpleYield = rawYield.compareTo(BigDecimal.ZERO) < 0 ? null : rawYield;
-            return;
-        }
-
-        if (isFloating()) {
-            this.simpleYield = null;
-            return;
-        }
-
-        if (couponRate == null || couponRate.compareTo(BigDecimal.ZERO) <= 0) {
-            this.simpleYield = null;
-            return;
-        }
-
-        BigDecimal annualCoupon = couponRate.multiply(new BigDecimal("2"));
-        BigDecimal rawYield = annualCoupon
-                .divide(baseIndex, 10, RoundingMode.HALF_UP)
-                .multiply(faceValue)
-                .setScale(4, RoundingMode.HALF_UP);
-        this.simpleYield = rawYield.compareTo(BigDecimal.ZERO) < 0 ? null : rawYield;
+        this.simpleYield = BondYieldCalculator.compute(this, faceValue, daysInYear);
     }
 
     @Override

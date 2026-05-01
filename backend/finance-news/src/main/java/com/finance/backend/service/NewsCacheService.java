@@ -3,6 +3,7 @@ package com.finance.backend.service;
 import com.finance.backend.config.NewsProperties;
 import com.finance.backend.model.NewsArticle;
 import com.finance.backend.repository.NewsArticleRepository;
+import com.finance.backend.util.RedisKeys;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +17,7 @@ import java.util.Optional;
 @Log4j2
 public class NewsCacheService {
 
-    private static final String CACHE_ARTICLE = "news:article:";
+    private static final String CACHE_ARTICLE = RedisKeys.NEWS_ARTICLE;
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;

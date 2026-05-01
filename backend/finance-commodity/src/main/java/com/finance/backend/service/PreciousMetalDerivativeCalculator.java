@@ -92,8 +92,8 @@ public class PreciousMetalDerivativeCalculator {
         regenerateDerivativeCandles(rule.getDerivativeCode(), sourceCandles, transform);
     }
 
-    public void regenerateDerivativeCandles(String derivativeCode, List<CommodityCandle> sourceCandles,
-                                            UnaryOperator<BigDecimal> transform) {
+    private void regenerateDerivativeCandles(String derivativeCode, List<CommodityCandle> sourceCandles,
+                                              UnaryOperator<BigDecimal> transform) {
         Commodity derivative = commodityRepository.findById(derivativeCode).orElse(null);
         if (derivative == null) {
             log.debug("Derivative commodity {} not found — run snapshot first", derivativeCode);

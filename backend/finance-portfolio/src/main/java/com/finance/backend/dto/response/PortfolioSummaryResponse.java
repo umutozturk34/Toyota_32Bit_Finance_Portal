@@ -4,10 +4,7 @@ import java.math.BigDecimal;
 
 public record PortfolioSummaryResponse(
         BigDecimal totalValueTry,
-        BigDecimal totalCostTry,
-        BigDecimal cashBalanceTry,
-        BigDecimal unrealizedPnlTry,
-        BigDecimal realizedPnlTry,
+        BigDecimal totalEntryValueTry,
         BigDecimal totalPnlTry,
         BigDecimal pnlPercent
 ) {}

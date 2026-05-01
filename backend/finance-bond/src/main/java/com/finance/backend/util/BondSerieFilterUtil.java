@@ -110,12 +110,6 @@ public final class BondSerieFilterUtil {
         }
     }
 
-    public static List<LocalDate[]> buildWindows(LocalDate startDate, LocalDate endDate, int maxDays) {
-        return WindowedFetchPlanner.planForward(startDate, endDate, maxDays).stream()
-                .map(window -> new LocalDate[] { window.start(), window.end() })
-                .toList();
-    }
-
     public static <T> List<List<T>> partition(List<T> list, int size) {
         List<List<T>> batches = new ArrayList<>();
         for (int i = 0; i < list.size(); i += size) {

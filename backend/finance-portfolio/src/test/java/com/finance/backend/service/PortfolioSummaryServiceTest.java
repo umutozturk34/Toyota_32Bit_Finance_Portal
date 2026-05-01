@@ -1,15 +1,12 @@
 package com.finance.backend.service;
 
-import com.finance.backend.config.CommissionProperties;
-import com.finance.backend.config.PortfolioProperties;
+import com.finance.backend.dto.response.AllocationItem;
+import com.finance.backend.dto.response.PortfolioSummaryResponse;
 import com.finance.backend.dto.response.PositionResponse;
 import com.finance.backend.mapper.PortfolioResponseMapper;
 import com.finance.backend.model.AssetType;
 import com.finance.backend.model.PortfolioPosition;
 import com.finance.backend.repository.PortfolioPositionRepository;
-import com.finance.backend.repository.PortfolioRepository;
-import com.finance.backend.repository.PortfolioTransactionRepository;
-import com.finance.backend.repository.UserWalletRepository;
 import com.finance.backend.service.support.CountingAssetPricingPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,10 +25,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class PortfolioSummaryServiceTest {
 
-    @Mock private PortfolioRepository portfolioRepository;
     @Mock private PortfolioPositionRepository positionRepository;
-    @Mock private PortfolioTransactionRepository transactionRepository;
-    @Mock private UserWalletRepository walletRepository;
     @Mock private PortfolioResponseMapper responseMapper;
 
     private CountingAssetPricingPort counting;
@@ -39,34 +34,23 @@ class PortfolioSummaryServiceTest {
     @BeforeEach
     void setUp() {
         counting = new CountingAssetPricingPort();
-        service = new PortfolioSummaryService(
-                counting,
-                portfolioRepository,
-                positionRepository,
-                transactionRepository,
-                walletRepository,
-                responseMapper,
-                new CommissionProperties(),
-                new PortfolioProperties());
+        service = new PortfolioSummaryService(counting, positionRepository, responseMapper);
     }
 
     @Test
-    void getPositionsIssuesExactlyOneBundlesBatchCall() {
+    void shouldIssueExactlyOneBundlesBatchCall_whenFetchingPositions() {
         counting.seedPrice("CRYPTO", "bitcoin", new BigDecimal("2500000"));
         counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("50"));
         counting.seedPrice("FUND", "AAK", new BigDecimal("110"));
-        counting.seedSellPrice("CRYPTO", "bitcoin", new BigDecimal("2490000"));
-        counting.seedSellPrice("STOCK", "THYAO.IS", new BigDecimal("49.9"));
-        counting.seedSellPrice("FUND", "AAK", new BigDecimal("109.5"));
 
-        when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
+        when(positionRepository.findByPortfolioId(1L))
                 .thenReturn(List.of(
                         stubPosition(AssetType.CRYPTO, "bitcoin", new BigDecimal("1"), new BigDecimal("2400000")),
-                        stubPosition(AssetType.STOCK, "THYAO.IS", new BigDecimal("100"), new BigDecimal("4000")),
-                        stubPosition(AssetType.FUND, "AAK", new BigDecimal("50"), new BigDecimal("5000"))));
+                        stubPosition(AssetType.STOCK, "THYAO.IS", new BigDecimal("100"), new BigDecimal("40")),
+                        stubPosition(AssetType.FUND, "AAK", new BigDecimal("50"), new BigDecimal("100"))));
         when(responseMapper.toPositionResponse(
                 any(PortfolioPosition.class),
-                any(), any(), any(), any(), any(), any(), any(), any()))
+                any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(null);
 
         List<PositionResponse> result = service.getPositions(1L);
@@ -74,16 +58,69 @@ class PortfolioSummaryServiceTest {
         assertThat(result).hasSize(3);
         assertThat(counting.batchBundlesCalls()).isEqualTo(1);
         assertThat(counting.priceCalls()).isEqualTo(0);
-        assertThat(counting.sellPriceCalls()).isEqualTo(0);
-        assertThat(counting.metaCalls()).isEqualTo(0);
     }
 
-    private PortfolioPosition stubPosition(AssetType type, String code, BigDecimal qty, BigDecimal totalCost) {
+    @Test
+    void shouldAggregateValueAndPnlAcrossPositions_whenComputingSummary() {
+        counting.seedPrice("CRYPTO", "bitcoin", new BigDecimal("2500000"));
+        counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("60"));
+
+        when(positionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(
+                        stubPosition(AssetType.CRYPTO, "bitcoin", new BigDecimal("1"), new BigDecimal("2400000")),
+                        stubPosition(AssetType.STOCK, "THYAO.IS", new BigDecimal("100"), new BigDecimal("40"))));
+
+        PortfolioSummaryResponse summary = service.getSummary(1L, null);
+
+        assertThat(summary.totalValueTry()).isEqualByComparingTo(new BigDecimal("2506000.0000"));
+        assertThat(summary.totalEntryValueTry()).isEqualByComparingTo(new BigDecimal("2404000.0000"));
+        assertThat(summary.totalPnlTry()).isEqualByComparingTo(new BigDecimal("102000.0000"));
+    }
+
+    @Test
+    void shouldRestrictSummaryToOneType_whenAssetTypeFilterProvided() {
+        counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("60"));
+        counting.seedPrice("CRYPTO", "bitcoin", new BigDecimal("2500000"));
+
+        when(positionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(
+                        stubPosition(AssetType.STOCK, "THYAO.IS", new BigDecimal("100"), new BigDecimal("40")),
+                        stubPosition(AssetType.CRYPTO, "bitcoin", new BigDecimal("1"), new BigDecimal("2400000"))));
+
+        PortfolioSummaryResponse stockOnly = service.getSummary(1L, "STOCK");
+
+        assertThat(stockOnly.totalValueTry()).isEqualByComparingTo(new BigDecimal("6000.0000"));
+        assertThat(stockOnly.totalEntryValueTry()).isEqualByComparingTo(new BigDecimal("4000.0000"));
+    }
+
+    @Test
+    void shouldGroupValuesAndComputePercentages_whenAllocatingByAssetType() {
+        counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("60"));
+        counting.seedPrice("CRYPTO", "bitcoin", new BigDecimal("100"));
+
+        when(positionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(
+                        stubPosition(AssetType.STOCK, "THYAO.IS", new BigDecimal("100"), new BigDecimal("40")),
+                        stubPosition(AssetType.CRYPTO, "bitcoin", new BigDecimal("40"), new BigDecimal("80"))));
+
+        List<AllocationItem> allocation = service.getAllocation(1L, "assetType", null);
+
+        assertThat(allocation).hasSize(2);
+        BigDecimal totalValue = allocation.stream()
+                .map(AllocationItem::valueTry)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        assertThat(totalValue).isEqualByComparingTo(new BigDecimal("10000.0000"));
+        assertThat(allocation.get(0).label()).isEqualTo("STOCK");
+        assertThat(allocation.get(0).percent()).isEqualByComparingTo(new BigDecimal("60.0000"));
+    }
+
+    private PortfolioPosition stubPosition(AssetType type, String code, BigDecimal qty, BigDecimal entryPrice) {
         return PortfolioPosition.builder()
                 .assetType(type)
                 .assetCode(code)
                 .quantity(qty)
-                .totalCostTry(totalCost)
+                .entryPrice(entryPrice)
+                .entryDate(LocalDateTime.now())
                 .build();
     }
 }

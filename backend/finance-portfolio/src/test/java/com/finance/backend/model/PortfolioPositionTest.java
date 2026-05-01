@@ -1,156 +1,120 @@
 package com.finance.backend.model;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PortfolioPositionTest {
 
-    @Test
-    void addQuantityRecalculatesWeightedAverageCost() {
-        PortfolioPosition pos = buildPosition(
-                new BigDecimal("2.00000000"), new BigDecimal("60000.0000"), new BigDecimal("120000.0000"));
+    @ParameterizedTest
+    @CsvSource({
+            "100,    50,    5000.0000",
+            "0.5,    2400000, 1200000.0000",
+            "1,      1,     1.0000"
+    })
+    void shouldComputeEntryValueAsPriceTimesQuantity_whenPositive(String qty, String price, String expected) {
+        PortfolioPosition pos = lot(new BigDecimal(qty), new BigDecimal(price));
 
-        pos.addQuantity(new BigDecimal("1.00000000"), new BigDecimal("70000.0000"));
+        BigDecimal entryValue = pos.entryValue();
 
-        assertThat(pos.getQuantity()).isEqualByComparingTo(new BigDecimal("3.00000000"));
-        assertThat(pos.getTotalCostTry()).isEqualByComparingTo(new BigDecimal("190000.0000"));
-        assertThat(pos.getAverageCostTry()).isEqualByComparingTo(new BigDecimal("63333.3333"));
+        assertThat(entryValue).isEqualByComparingTo(new BigDecimal(expected));
     }
 
     @Test
-    void addQuantityFromZeroSetsAverageCostEqualToUnitPrice() {
-        PortfolioPosition pos = buildPosition(
-                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO);
+    void shouldComputeCurrentValueAsCurrentPriceTimesQuantity_whenPriceProvided() {
+        PortfolioPosition pos = lot(new BigDecimal("10"), new BigDecimal("100"));
 
-        pos.addQuantity(new BigDecimal("5.00000000"), new BigDecimal("250000.0000"));
+        BigDecimal currentValue = pos.currentValue(new BigDecimal("150"));
 
-        assertThat(pos.getQuantity()).isEqualByComparingTo(new BigDecimal("5.00000000"));
-        assertThat(pos.getTotalCostTry()).isEqualByComparingTo(new BigDecimal("250000.0000"));
-        assertThat(pos.getAverageCostTry()).isEqualByComparingTo(new BigDecimal("50000.0000"));
+        assertThat(currentValue).isEqualByComparingTo(new BigDecimal("1500.0000"));
     }
 
     @Test
-    void addQuantitySmallFractionMaintainsPrecision() {
-        PortfolioPosition pos = buildPosition(
-                new BigDecimal("0.50000000"), new BigDecimal("65000.0000"), new BigDecimal("32500.0000"));
+    void shouldReturnZeroCurrentValue_whenPriceIsNull() {
+        PortfolioPosition pos = lot(new BigDecimal("10"), new BigDecimal("100"));
 
-        pos.addQuantity(new BigDecimal("0.01538461"), new BigDecimal("1000.0000"));
+        BigDecimal currentValue = pos.currentValue(null);
 
-        assertThat(pos.getQuantity()).isEqualByComparingTo(new BigDecimal("0.51538461"));
-        assertThat(pos.getTotalCostTry()).isEqualByComparingTo(new BigDecimal("33500.0000"));
-        assertThat(pos.getQuantity().scale()).isEqualTo(8);
+        assertThat(currentValue).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
-    void removeQuantityReducesCostProportionally() {
-        PortfolioPosition pos = buildPosition(
-                new BigDecimal("10.00000000"), new BigDecimal("40.0000"), new BigDecimal("400.0000"));
+    void shouldComputePositiveUnrealizedPnl_whenCurrentPriceAboveEntry() {
+        PortfolioPosition pos = lot(new BigDecimal("100"), new BigDecimal("40"));
 
-        pos.removeQuantity(new BigDecimal("5.00000000"));
+        BigDecimal pnl = pos.unrealizedPnl(new BigDecimal("60"));
 
-        assertThat(pos.getQuantity()).isEqualByComparingTo(new BigDecimal("5.00000000"));
-        assertThat(pos.getTotalCostTry()).isEqualByComparingTo(new BigDecimal("200.0000"));
+        assertThat(pnl).isEqualByComparingTo(new BigDecimal("2000.0000"));
     }
 
     @Test
-    void removeQuantityFullPositionZeroesOut() {
-        PortfolioPosition pos = buildPosition(
-                new BigDecimal("3.00000000"), new BigDecimal("100.0000"), new BigDecimal("300.0000"));
+    void shouldComputeNegativeUnrealizedPnl_whenCurrentPriceBelowEntry() {
+        PortfolioPosition pos = lot(new BigDecimal("100"), new BigDecimal("80"));
 
-        pos.removeQuantity(new BigDecimal("3.00000000"));
+        BigDecimal pnl = pos.unrealizedPnl(new BigDecimal("60"));
 
-        assertThat(pos.getQuantity()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(pos.getTotalCostTry()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(pnl).isEqualByComparingTo(new BigDecimal("-2000.0000"));
     }
 
     @Test
-    void removeQuantityTotalCostNeverGoesNegative() {
-        PortfolioPosition pos = buildPosition(
-                new BigDecimal("1.00000000"), new BigDecimal("50000.0000"), new BigDecimal("50000.0000"));
+    void shouldReturnZeroUnrealizedPnl_whenPriceIsNull() {
+        PortfolioPosition pos = lot(new BigDecimal("100"), new BigDecimal("40"));
 
-        pos.removeQuantity(new BigDecimal("1.00000001"));
+        BigDecimal pnl = pos.unrealizedPnl(null);
 
-        assertThat(pos.getTotalCostTry().signum()).isGreaterThanOrEqualTo(0);
+        assertThat(pnl).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
-    void removeQuantityMaintainsScale() {
-        PortfolioPosition pos = buildPosition(
-                new BigDecimal("10.00000000"), new BigDecimal("38.1234"), new BigDecimal("381.2340"));
+    void shouldOverwriteAllLotFields_whenAllArgumentsProvided() {
+        PortfolioPosition pos = lot(new BigDecimal("100"), new BigDecimal("40"));
+        LocalDateTime newDate = LocalDateTime.of(2024, 1, 1, 12, 0);
 
-        pos.removeQuantity(new BigDecimal("3.00000000"));
+        pos.updateLot(newDate, new BigDecimal("55"), new BigDecimal("200"));
 
-        assertThat(pos.getQuantity().scale()).isEqualTo(8);
-        assertThat(pos.getTotalCostTry().scale()).isEqualTo(4);
+        assertThat(pos.getEntryDate()).isEqualTo(newDate);
+        assertThat(pos.getEntryPrice()).isEqualByComparingTo(new BigDecimal("55"));
+        assertThat(pos.getQuantity()).isEqualByComparingTo(new BigDecimal("200"));
     }
 
     @Test
-    void addQuantityMultipleBuysConvergesWeightedAverage() {
-        PortfolioPosition pos = buildPosition(
-                new BigDecimal("100.00000000"), new BigDecimal("45.0000"), new BigDecimal("4500.0000"));
+    void shouldKeepExistingFields_whenNullArgumentsProvided() {
+        LocalDateTime original = LocalDateTime.of(2023, 6, 15, 9, 30);
+        PortfolioPosition pos = PortfolioPosition.builder()
+                .assetType(AssetType.STOCK).assetCode("THYAO.IS")
+                .quantity(new BigDecimal("100"))
+                .entryDate(original)
+                .entryPrice(new BigDecimal("40"))
+                .build();
 
-        pos.addQuantity(new BigDecimal("100.00000000"), new BigDecimal("5500.0000"));
+        pos.updateLot(null, null, null);
 
-        assertThat(pos.getQuantity()).isEqualByComparingTo(new BigDecimal("200.00000000"));
-        assertThat(pos.getTotalCostTry()).isEqualByComparingTo(new BigDecimal("10000.0000"));
-        assertThat(pos.getAverageCostTry()).isEqualByComparingTo(new BigDecimal("50.0000"));
+        assertThat(pos.getEntryDate()).isEqualTo(original);
+        assertThat(pos.getEntryPrice()).isEqualByComparingTo(new BigDecimal("40"));
+        assertThat(pos.getQuantity()).isEqualByComparingTo(new BigDecimal("100"));
     }
 
     @Test
-    void emptyFactoryCreatesZeroedPositionLinkedToPortfolio() {
-        Portfolio portfolio = Portfolio.builder().id(42L).userSub("user-1").build();
+    void shouldUpdateOnlyProvidedFields_whenPartialArguments() {
+        PortfolioPosition pos = lot(new BigDecimal("100"), new BigDecimal("40"));
 
-        PortfolioPosition position = PortfolioPosition.empty(portfolio, AssetType.STOCK, "THYAO.IS");
+        pos.updateLot(null, new BigDecimal("55"), null);
 
-        assertThat(position.getPortfolio()).isSameAs(portfolio);
-        assertThat(position.getAssetType()).isEqualTo(AssetType.STOCK);
-        assertThat(position.getAssetCode()).isEqualTo("THYAO.IS");
-        assertThat(position.getQuantity()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(position.getAverageCostTry()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(position.getTotalCostTry()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(pos.getEntryPrice()).isEqualByComparingTo(new BigDecimal("55"));
+        assertThat(pos.getQuantity()).isEqualByComparingTo(new BigDecimal("100"));
     }
 
-    @Test
-    void calculateRealizedPnlUsesAverageCostAsBasisAndDeductsFee() {
-        PortfolioPosition pos = buildPosition(
-                new BigDecimal("10.00000000"), new BigDecimal("50.0000"), new BigDecimal("500.0000"));
-
-        BigDecimal pnl = pos.calculateRealizedPnl(
-                new BigDecimal("4.00000000"), new BigDecimal("280.0000"), new BigDecimal("5.0000"));
-
-        assertThat(pnl).isEqualByComparingTo(new BigDecimal("75.0000"));
-    }
-
-    @Test
-    void calculateRealizedPnlIsNegativeWhenProceedsBelowCostBasis() {
-        PortfolioPosition pos = buildPosition(
-                new BigDecimal("5.00000000"), new BigDecimal("100.0000"), new BigDecimal("500.0000"));
-
-        BigDecimal pnl = pos.calculateRealizedPnl(
-                new BigDecimal("2.00000000"), new BigDecimal("150.0000"), new BigDecimal("1.0000"));
-
-        assertThat(pnl).isEqualByComparingTo(new BigDecimal("-51.0000"));
-    }
-
-    @Test
-    void calculateRealizedPnlWithZeroFeeStillReturnsGrossMinusCostBasis() {
-        PortfolioPosition pos = buildPosition(
-                new BigDecimal("2.00000000"), new BigDecimal("1000.0000"), new BigDecimal("2000.0000"));
-
-        BigDecimal pnl = pos.calculateRealizedPnl(
-                new BigDecimal("1.00000000"), new BigDecimal("1200.0000"), BigDecimal.ZERO);
-
-        assertThat(pnl).isEqualByComparingTo(new BigDecimal("200.0000"));
-    }
-
-    private PortfolioPosition buildPosition(BigDecimal qty, BigDecimal avgCost, BigDecimal totalCost) {
+    private PortfolioPosition lot(BigDecimal qty, BigDecimal price) {
         return PortfolioPosition.builder()
+                .assetType(AssetType.STOCK).assetCode("THYAO.IS")
                 .quantity(qty)
-                .averageCostTry(avgCost)
-                .totalCostTry(totalCost)
+                .entryDate(LocalDateTime.now())
+                .entryPrice(price)
                 .build();
     }
 }

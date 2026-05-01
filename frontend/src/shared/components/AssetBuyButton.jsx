@@ -1,6 +1,6 @@
 import { ShoppingCart } from './AnimatedIcons';
 
-export default function AssetBuyButton({ onClick, title = 'Satın Al' }) {
+export default function AssetBuyButton({ onClick, title = 'Portföye Ekle' }) {
   return (
     <button
       onClick={(e) => {

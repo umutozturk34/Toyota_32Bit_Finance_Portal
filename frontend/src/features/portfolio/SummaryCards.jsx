@@ -1,20 +1,20 @@
 import { motion } from 'framer-motion';
 import useSessionState from '../../shared/hooks/useSessionState';
-import { Wallet, Banknote, BarChart3, CheckCircle2 } from 'lucide-react';
-import { TrendingUp, TrendingDown, AlertCircle } from '../../shared/components/AnimatedIcons';
+import { Wallet, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown } from '../../shared/components/AnimatedIcons';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../shared/utils/formatters';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
 import { usePortfolioSummary } from './usePortfolioData';
 import { ASSET_TYPE_FILTERS as SUMMARY_FILTERS } from '../../shared/constants/assetTypes';
 
-const valueCards = [
-  { key: 'totalValueTry', label: 'Toplam Değer', Icon: Wallet, iconBg: 'bg-accent/10', iconColor: 'text-accent', border: 'border-t-accent' },
-  { key: 'totalCostTry', label: 'Toplam Maliyet', Icon: BarChart3, iconBg: 'bg-fg-muted/10', iconColor: 'text-fg-muted', border: 'border-t-fg-muted' },
-  { key: 'cashBalanceTry', label: 'Nakit Bakiye', Icon: Banknote, iconBg: 'bg-warning/10', iconColor: 'text-warning', border: 'border-t-warning' },
+const VALUE_CARDS = [
+  { key: 'totalValueTry', label: 'Piyasa Değeri', Icon: Wallet, iconBg: 'bg-accent/10', iconColor: 'text-accent', border: 'border-t-accent' },
+  { key: 'totalEntryValueTry', label: 'Toplam Maliyet', Icon: BarChart3, iconBg: 'bg-fg-muted/10', iconColor: 'text-fg-muted', border: 'border-t-fg-muted' },
 ];
 
-function PnlCard({ label, value, icon: Icon, showPercent, percent }) {
+function PnlCard({ value, percent }) {
   const cls = getChangeClass(value);
+  const Icon = value >= 0 ? TrendingUp : TrendingDown;
   const border = value >= 0 ? 'border-t-success' : 'border-t-danger';
   return (
     <motion.div
@@ -25,16 +25,14 @@ function PnlCard({ label, value, icon: Icon, showPercent, percent }) {
         <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${value >= 0 ? 'bg-success/10' : 'bg-danger/10'}`}>
           <Icon className={`h-4 w-4 ${value >= 0 ? 'text-success' : 'text-danger'}`} />
         </div>
-        <span className="text-xs text-fg-muted font-medium">{label}</span>
+        <span className="text-xs text-fg-muted font-medium">Kar / Zarar</span>
       </div>
       <p className={`text-lg font-semibold font-mono ${changeColors[cls]}`}>
         {formatPriceTRY(value)}
       </p>
-      {showPercent && (
-        <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium font-mono ${changeBg[cls]} ${changeColors[cls]}`}>
-          {formatPercent(percent)}
-        </span>
-      )}
+      <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium font-mono ${changeBg[cls]} ${changeColors[cls]}`}>
+        {formatPercent(percent)}
+      </span>
     </motion.div>
   );
 }
@@ -42,10 +40,7 @@ function PnlCard({ label, value, icon: Icon, showPercent, percent }) {
 export default function SummaryCards({ summary: initialSummary, portfolioId }) {
   const [activeFilter, setActiveFilter] = useSessionState('portfolio-summary-filter', null);
 
-  const { data: filteredSummary, isFetching: loading } = usePortfolioSummary(
-    portfolioId, activeFilter
-  );
-
+  const { data: filteredSummary, isFetching: loading } = usePortfolioSummary(portfolioId, activeFilter);
   const summary = activeFilter ? (filteredSummary ?? initialSummary) : initialSummary;
 
   return (
@@ -81,50 +76,25 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {valueCards.map(({ key, label, Icon, iconBg, iconColor, border }) => {
-          const hidden = activeFilter && key === 'cashBalanceTry';
-          if (hidden) return null;
-          return (
-            <motion.div
-              key={key}
-              variants={cardVariants}
-              className={`rounded-xl border border-border-default border-t-2 ${border} bg-bg-elevated p-4 space-y-3 card-hover transition-all duration-200 hover:border-border-hover`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${iconBg}`}>
-                  <Icon className={`h-4 w-4 ${iconColor}`} />
-                </div>
-                <span className="text-xs text-fg-muted font-medium">{label}</span>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {VALUE_CARDS.map(({ key, label, Icon, iconBg, iconColor, border }) => (
+          <motion.div
+            key={key}
+            variants={cardVariants}
+            className={`rounded-xl border border-border-default border-t-2 ${border} bg-bg-elevated p-4 space-y-3 card-hover transition-all duration-200 hover:border-border-hover`}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${iconBg}`}>
+                <Icon className={`h-4 w-4 ${iconColor}`} />
               </div>
-              <p className="text-lg font-semibold font-mono text-fg">
-                {formatPriceTRY(summary[key])}
-              </p>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <PnlCard
-          label="Açık K/Z"
-          value={summary.unrealizedPnlTry ?? summary.totalPnlTry}
-          icon={summary.unrealizedPnlTry >= 0 ? TrendingUp : TrendingDown}
-        />
-        <PnlCard
-          label="Toplam K/Z"
-          value={summary.totalPnlTry}
-          icon={summary.totalPnlTry >= 0 ? TrendingUp : AlertCircle}
-          showPercent
-          percent={summary.pnlPercent}
-        />
-        {!activeFilter && (
-          <PnlCard
-            label="Gerçekleşen K/Z"
-            value={summary.realizedPnlTry ?? 0}
-            icon={CheckCircle2}
-          />
-        )}
+              <span className="text-xs text-fg-muted font-medium">{label}</span>
+            </div>
+            <p className="text-lg font-semibold font-mono text-fg">
+              {formatPriceTRY(summary?.[key])}
+            </p>
+          </motion.div>
+        ))}
+        <PnlCard value={summary?.totalPnlTry} percent={summary?.pnlPercent} />
       </div>
     </motion.div>
   );

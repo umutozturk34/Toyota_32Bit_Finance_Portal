@@ -6,11 +6,12 @@ import com.finance.backend.dto.response.PerformanceEvent;
 import com.finance.backend.dto.response.PerformancePoint;
 import com.finance.backend.mapper.PortfolioSnapshotMapper;
 import com.finance.backend.model.AssetType;
+import com.finance.backend.model.CandlePeriod;
 import com.finance.backend.model.PerformanceEventType;
 import com.finance.backend.model.PortfolioAssetDailySnapshot;
 import com.finance.backend.model.PortfolioDailySnapshot;
 import com.finance.backend.model.PortfolioPosition;
-import com.finance.backend.model.PortfolioRange;
+import com.finance.backend.model.MoneyScale;
 import com.finance.backend.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.backend.repository.PortfolioDailySnapshotRepository;
 import com.finance.backend.repository.PortfolioPositionRepository;
@@ -37,7 +38,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PortfolioPerformanceService {
 
-    private static final int SCALE = 4;
 
     private final PortfolioDailySnapshotRepository dailySnapshotRepository;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
@@ -47,7 +47,7 @@ public class PortfolioPerformanceService {
     @Transactional(readOnly = true)
     public List<PerformancePoint> getPerformance(Long portfolioId, String range, String assetType) {
         LocalDateTime end = LocalDateTime.now();
-        LocalDateTime start = PortfolioRange.fromCode(range).toStartDateTime(end);
+        LocalDateTime start = CandlePeriod.fromCode(range).toStartDateTime(end);
 
         AssetType filterType = EnumParser.parseNullable(AssetType.class, assetType, "asset type");
         return filterType != null
@@ -59,7 +59,7 @@ public class PortfolioPerformanceService {
     public List<AssetSeriesPoint> getAssetSeries(Long portfolioId,
                                                   String assetType, String assetCode, String range) {
         LocalDateTime end = LocalDateTime.now();
-        LocalDateTime start = PortfolioRange.fromCode(range).toStartDateTime(end);
+        LocalDateTime start = CandlePeriod.fromCode(range).toStartDateTime(end);
         AssetType type = EnumParser.parseOrBadRequest(AssetType.class, assetType, "asset type");
         List<PortfolioAssetDailySnapshot> snapshots = assetSnapshotRepository
                 .findByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtBetweenOrderByCreatedAtAsc(
@@ -145,7 +145,7 @@ public class PortfolioPerformanceService {
             }
             details.sort(Comparator.comparing(PerformanceAssetDetail::valueTry).reversed());
 
-            PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalValue, totalCost, SCALE);
+            PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalValue, totalCost, MoneyScale.PRICE);
             BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
 
             List<PerformanceEvent> events = buildEvents(positions, prevTime, e.getKey(), prevAssetValues, currAssetValues, false);

@@ -7,8 +7,6 @@ import com.finance.backend.util.BatchUpdateRunner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
@@ -72,28 +70,6 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
         );
 
         BatchLogHelper.logSummary(log, "Daily portfolio snapshot (fallback)", result);
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void snapshotInNewTransaction(Long portfolioId, AssetType assetType, String assetCode) {
-        Portfolio portfolio = portfolioRepository.findById(portfolioId).orElse(null);
-        if (portfolio == null) {
-            log.warn("Portfolio not found for snapshot: {}", portfolioId);
-            return;
-        }
-        LocalDateTime batchTimestamp = LocalDateTime.now();
-        insertAssetSnapshots(portfolio, assetType, batchTimestamp);
-        insertClosingSnapshotIfSold(portfolioId, assetType, assetCode, batchTimestamp);
-        insertAggregateSnapshot(portfolio, batchTimestamp);
-    }
-
-    private void insertClosingSnapshotIfSold(Long portfolioId, AssetType assetType,
-                                               String assetCode, LocalDateTime batchTimestamp) {
-        if (assetCode == null) return;
-        positionRepository.findByPortfolioIdAndAssetTypeAndAssetCode(portfolioId, assetType, assetCode)
-                .filter(pos -> pos.getQuantity().compareTo(BigDecimal.ZERO) == 0)
-                .ifPresent(pos -> assetSnapshotRepository.save(
-                        calculator.buildAssetSnapshot(portfolioId, pos, batchTimestamp)));
     }
 
     private void insertAssetSnapshots(Portfolio portfolio, AssetType assetType,

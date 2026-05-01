@@ -7,6 +7,7 @@ import com.finance.backend.dto.response.PositionResponse;
 import com.finance.backend.mapper.PortfolioResponseMapper;
 import com.finance.backend.model.AssetType;
 import com.finance.backend.model.PortfolioPosition;
+import com.finance.backend.model.MoneyScale;
 import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.service.AssetPricingPort.AssetKey;
 import com.finance.backend.service.AssetPricingPort.AssetMeta;
@@ -30,7 +31,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PortfolioSummaryService {
 
-    private static final int SCALE = 4;
 
     private final AssetPricingPort pricingPort;
     private final PortfolioPositionRepository positionRepository;
@@ -93,10 +93,10 @@ public class PortfolioSummaryService {
             }
             totalEntryValue = totalEntryValue.add(pos.entryValue());
         }
-        totalValue = totalValue.setScale(SCALE, RoundingMode.HALF_UP);
-        totalEntryValue = totalEntryValue.setScale(SCALE, RoundingMode.HALF_UP);
+        totalValue = totalValue.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        totalEntryValue = totalEntryValue.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
 
-        PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalValue, totalEntryValue, SCALE);
+        PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalValue, totalEntryValue, MoneyScale.PRICE);
         BigDecimal totalPnl = pct.amount() != null ? pct.amount() : BigDecimal.ZERO;
         BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
 
@@ -121,7 +121,7 @@ public class PortfolioSummaryService {
         for (PortfolioPosition pos : positions) {
             BigDecimal price = prices.get(toKey(pos));
             BigDecimal marketValue = price != null
-                    ? price.multiply(pos.getQuantity()).setScale(SCALE, RoundingMode.HALF_UP)
+                    ? price.multiply(pos.getQuantity()).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP)
                     : BigDecimal.ZERO;
             String key = byType ? pos.getAssetType().name() : pos.getAssetCode();
             buckets.merge(key, marketValue, BigDecimal::add);
@@ -135,10 +135,10 @@ public class PortfolioSummaryService {
                 .map(e -> new AllocationItem(
                         e.getKey(),
                         bucketTypes.get(e.getKey()),
-                        e.getValue().setScale(SCALE, RoundingMode.HALF_UP),
+                        e.getValue().setScale(MoneyScale.PRICE, RoundingMode.HALF_UP),
                         denominator.compareTo(BigDecimal.ZERO) > 0
                                 ? e.getValue().multiply(new BigDecimal("100"))
-                                        .divide(denominator, SCALE, RoundingMode.HALF_UP)
+                                        .divide(denominator, MoneyScale.PRICE, RoundingMode.HALF_UP)
                                 : BigDecimal.ZERO
                 ))
                 .toList();
@@ -160,7 +160,7 @@ public class PortfolioSummaryService {
         BigDecimal currentPrice = effective.price() != null ? effective.price() : BigDecimal.ZERO;
         BigDecimal entryValue = pos.entryValue();
         BigDecimal marketValue = pos.currentValue(currentPrice);
-        PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(marketValue, entryValue, SCALE);
+        PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(marketValue, entryValue, MoneyScale.PRICE);
         BigDecimal pnl = pct.amount() != null ? pct.amount() : BigDecimal.ZERO;
         BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
         AssetMeta meta = effective.meta() != null ? effective.meta() : new AssetMeta(null, null);

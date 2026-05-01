@@ -19,7 +19,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SnapshotCalculationService {
 
-    private static final int SCALE = 4;
 
     private final AssetPricingPort pricingPort;
     private final PortfolioPositionRepository positionRepository;
@@ -40,9 +39,9 @@ public class SnapshotCalculationService {
                                                                       BigDecimal unitPriceTry) {
         BigDecimal unitPrice = unitPriceTry != null ? unitPriceTry : BigDecimal.ZERO;
         BigDecimal qty = totalQuantity != null ? totalQuantity : BigDecimal.ZERO;
-        BigDecimal cost = (totalCost != null ? totalCost : BigDecimal.ZERO).setScale(SCALE, RoundingMode.HALF_UP);
-        BigDecimal marketValue = unitPrice.multiply(qty).setScale(SCALE, RoundingMode.HALF_UP);
-        BigDecimal pnl = marketValue.subtract(cost).setScale(SCALE, RoundingMode.HALF_UP);
+        BigDecimal cost = (totalCost != null ? totalCost : BigDecimal.ZERO).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        BigDecimal marketValue = unitPrice.multiply(qty).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        BigDecimal pnl = marketValue.subtract(cost).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
 
         return PortfolioAssetDailySnapshot.builder()
                 .portfolioId(portfolioId)
@@ -80,10 +79,10 @@ public class SnapshotCalculationService {
             totalMarketValue = totalMarketValue.add(pos.currentValue(unitPrice));
             totalEntryValue = totalEntryValue.add(pos.entryValue());
         }
-        totalMarketValue = totalMarketValue.setScale(SCALE, RoundingMode.HALF_UP);
-        totalEntryValue = totalEntryValue.setScale(SCALE, RoundingMode.HALF_UP);
+        totalMarketValue = totalMarketValue.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        totalEntryValue = totalEntryValue.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
 
-        PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalMarketValue, totalEntryValue, SCALE);
+        PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalMarketValue, totalEntryValue, MoneyScale.PRICE);
         BigDecimal totalPnl = pct.amount() != null ? pct.amount() : BigDecimal.ZERO;
         BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
 

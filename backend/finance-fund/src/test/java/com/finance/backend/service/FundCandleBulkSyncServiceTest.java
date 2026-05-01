@@ -1,11 +1,8 @@
 package com.finance.backend.service;
 
-import com.finance.backend.client.TefasClient;
 import com.finance.backend.config.AppProperties;
 import com.finance.backend.config.FundProperties;
-import com.finance.backend.mapper.FundMapper;
 import com.finance.backend.model.Fund;
-import com.finance.backend.model.FundCandle;
 import com.finance.backend.model.FundType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.FundCandleRepository;
@@ -15,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -30,29 +26,23 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class FundUpdateServiceTest {
+class FundCandleBulkSyncServiceTest {
 
-    @Mock private TefasClient tefasClient;
-    @Mock private FundMapper fundMapper;
     @Mock private FundRepository fundRepository;
     @Mock private FundCandleRepository fundCandleRepository;
-    @Mock private MarketCacheService<Fund> fundCacheService;
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
-    @Mock private FundSnapshotProcessor snapshotProcessor;
     @Mock private FundEntityWriter entityWriter;
     @Mock private FundBulkFetchExecutor bulkFetchExecutor;
-    @Mock private TransactionTemplate transactionTemplate;
 
-    private FundUpdateService service;
+    private FundCandleBulkSyncService service;
 
     @BeforeEach
     void setUp() {
         FundProperties props = new FundProperties();
         AppProperties app = new AppProperties();
         app.setTimezone("Europe/Istanbul");
-        service = new FundUpdateService(tefasClient, fundMapper, fundRepository,
-                fundCandleRepository, fundCacheService, trackedAssetQueryService,
-                snapshotProcessor, entityWriter, bulkFetchExecutor, transactionTemplate, app, props);
+        service = new FundCandleBulkSyncService(fundRepository, fundCandleRepository,
+                trackedAssetQueryService, entityWriter, bulkFetchExecutor, app, props);
     }
 
     @Test
@@ -62,10 +52,9 @@ class FundUpdateServiceTest {
         when(fundRepository.findAllById(List.of())).thenReturn(List.of());
         when(fundRepository.findByFundType(FundType.BYF)).thenReturn(List.of());
 
-        service.refreshAll();
+        service.refreshAllCandles();
 
         verify(bulkFetchExecutor, never()).runWindows(any(), anyList(), any(), any());
-        verify(snapshotProcessor).refreshAll();
     }
 
     @Test
@@ -76,7 +65,7 @@ class FundUpdateServiceTest {
                 .thenReturn(List.of());
         when(fundRepository.findAllById(List.of())).thenReturn(List.of());
 
-        service.refreshAll();
+        service.refreshAllCandles();
 
         verify(bulkFetchExecutor).runWindows(
                 eq(FundType.BYF),
@@ -95,7 +84,7 @@ class FundUpdateServiceTest {
         when(fundRepository.findAllById(List.of("TI2", "BLH")))
                 .thenReturn(List.of(yatFund, byfFund));
 
-        service.refreshAll();
+        service.refreshAllCandles();
 
         verify(bulkFetchExecutor).runWindows(
                 eq(FundType.YAT),
@@ -118,19 +107,9 @@ class FundUpdateServiceTest {
         when(fundCandleRepository.countCandlesPerFund())
                 .thenReturn(Collections.singletonList(new Object[]{"BLH", 1000L}));
 
-        service.refreshAll();
+        service.refreshAllCandles();
 
         verify(bulkFetchExecutor, never()).runWindows(any(), anyList(), any(), any());
-    }
-
-    @Test
-    void should_delegateToSnapshotProcessor_when_existsCalled() {
-        when(snapshotProcessor.exists("TI2")).thenReturn(true);
-
-        boolean result = service.exists("TI2");
-
-        org.assertj.core.api.Assertions.assertThat(result).isTrue();
-        verify(snapshotProcessor).exists("TI2");
     }
 
     private Fund fundWith(String code, FundType type) {

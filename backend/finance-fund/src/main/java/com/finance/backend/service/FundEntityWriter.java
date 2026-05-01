@@ -11,11 +11,13 @@ import com.finance.backend.model.FundType;
 import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.FundCandleRepository;
 import com.finance.backend.repository.FundRepository;
+import com.finance.backend.util.CandleBatchUpsertTemplate;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 @Log4j2
@@ -72,6 +74,20 @@ public class FundEntityWriter implements MarketEntityWriter {
         if (Objects.equals(oldPercent, fund.getChangePercent())) return false;
         fundRepository.save(fund);
         return true;
+    }
+
+    public int saveCandleBatch(Fund fund, FundType fundType, List<TefasFundDto> dtos) {
+        CandleBatchUpsertTemplate.UpsertResult<FundCandle> upsertResult = CandleBatchUpsertTemplate.upsert(
+                dtos,
+                TefasFundDto::date,
+                keys -> fundCandleRepository.findByFundCodeAndCandleDateIn(fund.getFundCode(), keys),
+                FundCandle::getCandleDate,
+                fundMapper::updateCandleEntity,
+                dto -> fundMapper.toCandleEntity(dto, fund, fundType));
+        if (!upsertResult.newEntities().isEmpty()) {
+            fundCandleRepository.saveAll(upsertResult.newEntities());
+        }
+        return upsertResult.totalChanged();
     }
 
     public void upsertCandleFromDto(Fund fund, FundType fundType, TefasFundDto dto) {

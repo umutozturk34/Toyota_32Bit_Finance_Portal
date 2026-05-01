@@ -11,14 +11,10 @@ import com.finance.backend.model.StockSegment;
 
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -83,13 +79,8 @@ public class UnifiedMarketService implements MarketUpdatePort {
 
     public MarketAvailabilityResponse getMonthlyAvailability(MarketType type, String code, String yearMonth) {
         YearMonth ym = YearMonth.parse(yearMonth);
-        LocalDate from = ym.atDay(1);
-        LocalDate to = ym.atEndOfMonth();
-        Map<LocalDate, BigDecimal> series = historicalPricingPort.getPriceSeries(type, code, from, to);
-
-        Map<String, BigDecimal> prices = new LinkedHashMap<>();
-        series.forEach((date, close) -> prices.put(date.toString(), close));
-        return new MarketAvailabilityResponse(yearMonth, from, to, prices);
+        return new MarketAvailabilityResponse(
+                historicalPricingPort.getPriceSeries(type, code, ym.atDay(1), ym.atEndOfMonth()));
     }
 
     @Override

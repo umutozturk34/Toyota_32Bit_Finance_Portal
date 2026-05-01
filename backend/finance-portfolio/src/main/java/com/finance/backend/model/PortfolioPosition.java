@@ -53,6 +53,10 @@ public class PortfolioPosition {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
+
     @PrePersist
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();

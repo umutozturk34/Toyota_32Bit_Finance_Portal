@@ -5,19 +5,25 @@ import com.finance.backend.dto.response.FundCandleResponse;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.service.HistoricalPricingPort;
 import com.finance.backend.service.MarketHistoryProvider;
+import com.finance.backend.util.SyntheticPriceCalculator;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.EnumMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Log4j2
 @Component
 public class HistoricalPricingAdapter implements HistoricalPricingPort {
+
+    private static final int PRICE_SCALE = 4;
+    private static final int RATE_LOOKBACK_DAYS = 7;
+    private static final String USD_CODE = "USD";
 
     private final Map<MarketType, MarketHistoryProvider> providers;
 
@@ -35,23 +41,51 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
             return Map.of();
         }
         try {
-            List<?> candles = provider.getHistoryInRange(assetCode, from, to);
-            return indexByDate(candles);
+            Map<LocalDate, BigDecimal> series = indexByDate(provider.getHistoryInRange(assetCode, from, to));
+            return type == MarketType.CRYPTO ? convertCryptoUsdToTry(series, from, to) : series;
         } catch (Exception e) {
             log.warn("Failed to fetch history for {}:{} - {}", type, assetCode, e.getMessage());
             return Map.of();
         }
     }
 
-    private static Map<LocalDate, BigDecimal> indexByDate(List<?> candles) {
-        Map<LocalDate, BigDecimal> result = new LinkedHashMap<>();
-        for (Object candle : candles) {
-            LocalDate date = candleDate(candle);
-            if (date == null) continue;
-            BigDecimal close = candleClose(candle);
-            if (close != null) result.put(date, close);
+    private Map<LocalDate, BigDecimal> convertCryptoUsdToTry(Map<LocalDate, BigDecimal> usdSeries,
+                                                              LocalDate from, LocalDate to) {
+        if (usdSeries.isEmpty()) return usdSeries;
+        MarketHistoryProvider forexProvider = providers.get(MarketType.FOREX);
+        if (forexProvider == null) {
+            log.warn("Forex provider missing — crypto series stays in USD");
+            return usdSeries;
         }
-        return result;
+        Map<LocalDate, BigDecimal> rates = indexByDate(
+                forexProvider.getHistoryInRange(USD_CODE, from.minusDays(RATE_LOOKBACK_DAYS), to));
+        if (rates.isEmpty()) {
+            log.warn("USDTRY rates empty for {}..{} — crypto series stays in USD", from, to);
+            return usdSeries;
+        }
+        return usdSeries.entrySet().stream()
+                .map(e -> Map.entry(e.getKey(),
+                        SyntheticPriceCalculator.safeMultiply(e.getValue(), closestPriorRate(rates, e.getKey()), PRICE_SCALE)))
+                .filter(e -> e.getValue() != null)
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private static BigDecimal closestPriorRate(Map<LocalDate, BigDecimal> rates, LocalDate target) {
+        return Stream.iterate(target, d -> d.minusDays(1))
+                .limit(RATE_LOOKBACK_DAYS + 1L)
+                .map(rates::get)
+                .filter(r -> r != null)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static Map<LocalDate, BigDecimal> indexByDate(List<?> candles) {
+        return candles.stream()
+                .filter(c -> candleDate(c) != null && candleClose(c) != null)
+                .collect(Collectors.toUnmodifiableMap(
+                        HistoricalPricingAdapter::candleDate,
+                        HistoricalPricingAdapter::candleClose,
+                        (a, b) -> a));
     }
 
     private static LocalDate candleDate(Object candle) {

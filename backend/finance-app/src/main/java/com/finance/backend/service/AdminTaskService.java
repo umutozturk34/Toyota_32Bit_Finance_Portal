@@ -1,6 +1,5 @@
 package com.finance.backend.service;
 
-import com.finance.backend.dto.response.TaskStatusResponse;
 import com.finance.backend.dto.response.TaskTriggerResponse;
 import com.finance.backend.model.MarketType;
 import lombok.extern.log4j.Log4j2;
@@ -66,10 +65,6 @@ public class AdminTaskService {
         return executeTask("news-update",
                 "News feed update started in background",
                 newsDataService::updateNews);
-    }
-
-    public TaskStatusResponse getTaskStatus() {
-        return taskTracker.getTypedStatus();
     }
 
     private TaskTriggerResponse triggerMarketRefresh(MarketType type, String suffix, String messageTail) {

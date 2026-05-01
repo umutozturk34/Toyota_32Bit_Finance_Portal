@@ -212,6 +212,7 @@ class TaskTrackingServiceTest {
 
         assertThat(service.isRunning("REENTRANT")).isFalse();
         TaskStatusResponse status = service.getTypedStatus();
-        assertThat(status.history()).hasSize(2);
+        assertThat(status.history()).hasSize(1);
+        assertThat(status.history().get(0).message()).isEqualTo("second");
     }
 }

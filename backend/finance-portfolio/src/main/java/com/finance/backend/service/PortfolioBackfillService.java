@@ -10,14 +10,14 @@ import com.finance.backend.repository.PortfolioDailySnapshotRepository;
 import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.repository.PortfolioRepository;
 import com.finance.backend.service.AssetPricingPort.AssetKey;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -31,11 +31,11 @@ import java.util.Map;
 
 @Log4j2
 @Service
-@RequiredArgsConstructor
 public class PortfolioBackfillService {
 
     private static final int PRICE_LOOKBACK_DAYS = 7;
     private static final LocalTime SNAPSHOT_TIME = LocalTime.of(23, 0);
+    private static final int LOCK_STRIPES = 32;
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioPositionRepository positionRepository;
@@ -45,25 +45,58 @@ public class PortfolioBackfillService {
     private final AssetPricingPort assetPricingPort;
     private final SnapshotCalculationService calculator;
     private final PortfolioBackfillTracker tracker;
+    private final TransactionTemplate transactionTemplate;
+    private final Object[] portfolioLocks;
 
-    public record LotChangedEvent(Long portfolioId, LocalDate fromDate) {
+    public PortfolioBackfillService(PortfolioRepository portfolioRepository,
+                                     PortfolioPositionRepository positionRepository,
+                                     PortfolioDailySnapshotRepository dailySnapshotRepository,
+                                     PortfolioAssetDailySnapshotRepository assetSnapshotRepository,
+                                     HistoricalPricingPort historicalPricingPort,
+                                     AssetPricingPort assetPricingPort,
+                                     SnapshotCalculationService calculator,
+                                     PortfolioBackfillTracker tracker,
+                                     PlatformTransactionManager transactionManager) {
+        this.portfolioRepository = portfolioRepository;
+        this.positionRepository = positionRepository;
+        this.dailySnapshotRepository = dailySnapshotRepository;
+        this.assetSnapshotRepository = assetSnapshotRepository;
+        this.historicalPricingPort = historicalPricingPort;
+        this.assetPricingPort = assetPricingPort;
+        this.calculator = calculator;
+        this.tracker = tracker;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.portfolioLocks = new Object[LOCK_STRIPES];
+        for (int i = 0; i < LOCK_STRIPES; i++) portfolioLocks[i] = new Object();
+    }
+
+    private Object lockFor(Long portfolioId) {
+        return portfolioLocks[Math.floorMod(portfolioId.hashCode(), LOCK_STRIPES)];
+    }
+
+    public record LotChangedEvent(Long portfolioId, com.finance.backend.model.AssetType assetType,
+                                  String assetCode, LocalDate fromDate, boolean visibleToUi) {
     }
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onLotChanged(LotChangedEvent event) {
         Long portfolioId = event.portfolioId();
-        tracker.start(portfolioId);
-        try {
-            wipeSnapshotsFrom(portfolioId, event.fromDate());
-            backfillSinceDate(portfolioId, event.fromDate());
-            snapshotToday(portfolioId);
-        } catch (Exception e) {
-            log.warn("Recompute failed for portfolio {} from {}: {}",
-                    portfolioId, event.fromDate(), e.getMessage(), e);
-        } finally {
-            tracker.finish(portfolioId);
+        synchronized (lockFor(portfolioId)) {
+            if (event.visibleToUi()) tracker.start(portfolioId, event.assetType(), event.assetCode());
+            try {
+                transactionTemplate.executeWithoutResult(status -> {
+                    wipeSnapshotsFrom(portfolioId, event.fromDate());
+                    backfillSinceDate(portfolioId, event.fromDate());
+                    snapshotToday(portfolioId);
+                });
+            } catch (Exception e) {
+                log.warn("Recompute failed for portfolio {} from {}: {}",
+                        portfolioId, event.fromDate(), e.getMessage(), e);
+            } finally {
+                if (event.visibleToUi()) tracker.finish(portfolioId, event.assetType(), event.assetCode());
+            }
         }
     }
 

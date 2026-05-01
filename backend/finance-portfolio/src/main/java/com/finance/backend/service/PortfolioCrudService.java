@@ -70,7 +70,7 @@ public class PortfolioCrudService {
                 .build();
         PortfolioPosition saved = positionRepository.save(position);
 
-        publishLotChange(portfolioId, saved.getEntryDate());
+        publishLotChange(portfolioId, saved, saved.getEntryDate(), true);
         return mapper.toPositionResponseShell(saved);
     }
 
@@ -82,7 +82,7 @@ public class PortfolioCrudService {
         position.updateLot(request.entryDate(), request.entryPrice(), request.quantity());
         PortfolioPosition saved = positionRepository.save(position);
 
-        publishLotChange(portfolioId, earliestOf(previousEntry, saved.getEntryDate()));
+        publishLotChange(portfolioId, saved, earliestOf(previousEntry, saved.getEntryDate()), true);
         return mapper.toPositionResponseShell(saved);
     }
 
@@ -91,7 +91,7 @@ public class PortfolioCrudService {
         PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
         LocalDateTime entryDate = position.getEntryDate();
         positionRepository.delete(position);
-        publishLotChange(portfolioId, entryDate);
+        publishLotChange(portfolioId, position, entryDate, false);
     }
 
     private PortfolioPosition loadOwnedPosition(Long portfolioId, Long positionId, String userSub) {
@@ -130,10 +130,10 @@ public class PortfolioCrudService {
         }
     }
 
-    private void publishLotChange(Long portfolioId, LocalDateTime fromDate) {
+    private void publishLotChange(Long portfolioId, PortfolioPosition position, LocalDateTime fromDate, boolean visibleToUi) {
         if (fromDate == null) return;
         eventPublisher.publishEvent(new PortfolioBackfillService.LotChangedEvent(
-                portfolioId, fromDate.toLocalDate()));
+                portfolioId, position.getAssetType(), position.getAssetCode(), fromDate.toLocalDate(), visibleToUi));
     }
 
     private static LocalDateTime earliestOf(LocalDateTime a, LocalDateTime b) {

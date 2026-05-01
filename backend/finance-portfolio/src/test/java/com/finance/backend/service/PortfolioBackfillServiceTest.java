@@ -16,6 +16,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,6 +29,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,15 +47,18 @@ class PortfolioBackfillServiceTest {
     @Mock private HistoricalPricingPort historicalPricingPort;
     @Mock private AssetPricingPort assetPricingPort;
     @Mock private SnapshotCalculationService calculator;
+    @Mock private PlatformTransactionManager transactionManager;
 
     private PortfolioBackfillService service;
 
     @BeforeEach
     void setUp() {
+        lenient().when(transactionManager.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
         service = new PortfolioBackfillService(
                 portfolioRepository, positionRepository,
                 dailySnapshotRepository, assetSnapshotRepository,
-                historicalPricingPort, assetPricingPort, calculator, new PortfolioBackfillTracker());
+                historicalPricingPort, assetPricingPort, calculator, new PortfolioBackfillTracker(),
+                transactionManager);
     }
 
     @Test
@@ -231,7 +237,7 @@ class PortfolioBackfillServiceTest {
         when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(portfolio()));
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
 
-        service.onLotChanged(new PortfolioBackfillService.LotChangedEvent(PORTFOLIO_ID, from));
+        service.onLotChanged(new PortfolioBackfillService.LotChangedEvent(PORTFOLIO_ID, AssetType.STOCK, "THYAO.IS", from, true));
 
         verify(dailySnapshotRepository).deleteByPortfolioIdAndSnapshotDateGreaterThanEqual(PORTFOLIO_ID, from);
         verify(assetSnapshotRepository).deleteByPortfolioIdAndSnapshotDateGreaterThanEqual(PORTFOLIO_ID, from);

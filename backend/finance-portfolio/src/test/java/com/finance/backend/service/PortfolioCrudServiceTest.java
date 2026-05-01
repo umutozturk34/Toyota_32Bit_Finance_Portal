@@ -1,5 +1,6 @@
 package com.finance.backend.service;
 
+import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.dto.request.PortfolioCreateRequest;
 import com.finance.backend.dto.request.PositionRequest;
 import com.finance.backend.dto.response.PortfolioResponse;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -39,12 +41,14 @@ class PortfolioCrudServiceTest {
     @Mock private PortfolioRepository portfolioRepository;
     @Mock private PortfolioPositionRepository positionRepository;
     @Mock private PortfolioResponseMapper mapper;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
+    private final PortfolioProperties portfolioProperties = new PortfolioProperties();
     private PortfolioCrudService service;
 
     @BeforeEach
     void setUp() {
-        service = new PortfolioCrudService(portfolioRepository, positionRepository, mapper);
+        service = new PortfolioCrudService(portfolioRepository, positionRepository, mapper, eventPublisher, portfolioProperties);
     }
 
     @Test
@@ -96,8 +100,11 @@ class PortfolioCrudServiceTest {
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
         when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        PortfolioPosition saved = service.addPosition(PORTFOLIO_ID, USER_SUB, request);
+        service.addPosition(PORTFOLIO_ID, USER_SUB, request);
 
+        ArgumentCaptor<PortfolioPosition> captor = ArgumentCaptor.forClass(PortfolioPosition.class);
+        verify(positionRepository).save(captor.capture());
+        PortfolioPosition saved = captor.getValue();
         assertThat(saved.getAssetType()).isEqualTo(AssetType.STOCK);
         assertThat(saved.getAssetCode()).isEqualTo("THYAO.IS");
         assertThat(saved.getQuantity()).isEqualByComparingTo(new BigDecimal("100"));
@@ -128,8 +135,11 @@ class PortfolioCrudServiceTest {
         when(positionRepository.findById(33L)).thenReturn(Optional.of(existing));
         when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        PortfolioPosition updated = service.updatePosition(PORTFOLIO_ID, 33L, USER_SUB, request);
+        service.updatePosition(PORTFOLIO_ID, 33L, USER_SUB, request);
 
+        ArgumentCaptor<PortfolioPosition> captor = ArgumentCaptor.forClass(PortfolioPosition.class);
+        verify(positionRepository).save(captor.capture());
+        PortfolioPosition updated = captor.getValue();
         assertThat(updated.getQuantity()).isEqualByComparingTo(new BigDecimal("150"));
         assertThat(updated.getEntryPrice()).isEqualByComparingTo(new BigDecimal("55"));
         assertThat(updated.getEntryDate()).isEqualTo(newDate);

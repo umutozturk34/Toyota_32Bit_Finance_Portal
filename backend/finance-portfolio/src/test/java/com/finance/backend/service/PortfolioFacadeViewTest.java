@@ -1,5 +1,6 @@
 package com.finance.backend.service;
 
+import com.finance.backend.config.PortfolioProperties;
 import com.finance.backend.dto.response.AllocationItem;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.dto.response.PortfolioSummaryResponse;
@@ -36,11 +37,12 @@ class PortfolioFacadeViewTest {
     @Mock private PortfolioSummaryService summaryService;
     @Mock private PortfolioPerformanceService performanceService;
 
+    private final PortfolioProperties portfolioProperties = new PortfolioProperties();
     private PortfolioFacade facade;
 
     @BeforeEach
     void setUp() {
-        facade = new PortfolioFacade(portfolioRepository, crudService, summaryService, performanceService);
+        facade = new PortfolioFacade(portfolioRepository, crudService, summaryService, performanceService, portfolioProperties);
     }
 
     private void mockOwner() {

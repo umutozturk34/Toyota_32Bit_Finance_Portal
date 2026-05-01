@@ -16,6 +16,7 @@ public class PortfolioProperties {
     private String defaultCurrency = "TRY";
     private BigDecimal initialBalance = new BigDecimal("1000000.0000");
     private BigDecimal minTransactionAmountTry = new BigDecimal("10");
+    private int historicalRateLookbackDays = 7;
     private LotLimits lotLimits = new LotLimits();
 
     @Getter

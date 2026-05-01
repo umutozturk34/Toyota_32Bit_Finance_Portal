@@ -7,6 +7,7 @@ import com.finance.backend.service.HistoricalPricingPort;
 import com.finance.backend.service.MarketHistoryProvider;
 import com.finance.backend.util.EnumDispatcher;
 import com.finance.backend.util.SyntheticPriceCalculator;
+import com.finance.backend.config.PortfolioProperties;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
@@ -21,14 +22,19 @@ import java.util.stream.Stream;
 @Component
 public class HistoricalPricingAdapter implements HistoricalPricingPort {
 
-    private static final int PRICE_SCALE = 4;
-    private static final int RATE_LOOKBACK_DAYS = 7;
-    private static final String USD_CODE = "USDTRY";
-
+    private final int priceScale;
+    private final int rateLookbackDays;
+    private final String usdPairCode;
     private final Map<MarketType, MarketHistoryProvider> providers;
 
-    public HistoricalPricingAdapter(List<MarketHistoryProvider> providerList) {
+    public HistoricalPricingAdapter(List<MarketHistoryProvider> providerList,
+                                     AppProperties appProperties,
+                                     ForexProperties forexProperties,
+                                     PortfolioProperties portfolioProperties) {
         this.providers = EnumDispatcher.from(MarketType.class, providerList, MarketHistoryProvider::getMarketType);
+        this.priceScale = appProperties.getScale();
+        this.rateLookbackDays = portfolioProperties.getHistoricalRateLookbackDays();
+        this.usdPairCode = forexProperties.getBaseCurrency();
     }
 
     @Override
@@ -57,21 +63,21 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
             return usdSeries;
         }
         Map<LocalDate, BigDecimal> rates = indexByDate(
-                forexProvider.getHistoryInRange(USD_CODE, from.minusDays(RATE_LOOKBACK_DAYS), to));
+                forexProvider.getHistoryInRange(usdPairCode, from.minusDays(rateLookbackDays), to));
         if (rates.isEmpty()) {
-            log.warn("USDTRY rates empty for {}..{} — crypto series stays in USD", from, to);
+            log.warn("{} rates empty for {}..{} — crypto series stays in USD", usdPairCode, from, to);
             return usdSeries;
         }
         return usdSeries.entrySet().stream()
                 .map(e -> Map.entry(e.getKey(),
-                        SyntheticPriceCalculator.safeMultiply(e.getValue(), closestPriorRate(rates, e.getKey()), PRICE_SCALE)))
+                        SyntheticPriceCalculator.safeMultiply(e.getValue(), closestPriorRate(rates, e.getKey()), priceScale)))
                 .filter(e -> e.getValue() != null)
                 .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private static BigDecimal closestPriorRate(Map<LocalDate, BigDecimal> rates, LocalDate target) {
+    private BigDecimal closestPriorRate(Map<LocalDate, BigDecimal> rates, LocalDate target) {
         return Stream.iterate(target, d -> d.minusDays(1))
-                .limit(RATE_LOOKBACK_DAYS + 1L)
+                .limit(rateLookbackDays + 1L)
                 .map(rates::get)
                 .filter(r -> r != null)
                 .findFirst()

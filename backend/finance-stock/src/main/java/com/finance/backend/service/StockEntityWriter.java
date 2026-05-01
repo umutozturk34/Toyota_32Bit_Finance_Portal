@@ -68,6 +68,10 @@ public class StockEntityWriter implements MarketEntityWriter {
         return toPersist;
     }
 
+    public Stock findExisting(String symbol) {
+        return stockRepository.findById(symbol).orElse(null);
+    }
+
     public boolean refreshChangePercentFromCandles(Stock stock) {
         if (stock.getCurrentPrice() == null) return false;
         List<StockCandle> latest = stockCandleRepository

@@ -235,7 +235,9 @@ public class PortfolioBackfillService {
         for (PortfolioPosition pos : positions) {
             AssetKey key = pos.toAssetKey();
             if (result.containsKey(key)) continue;
-            BigDecimal price = nearestPriceOnOrBefore(seriesByKey.get(key), day);
+            BigDecimal price = pos.getEntryDate() != null && pos.getEntryDate().toLocalDate().equals(day)
+                    ? pos.getEntryPrice()
+                    : nearestPriceOnOrBefore(seriesByKey.get(key), day);
             if (price == null) price = pos.getEntryPrice();
             if (price != null) result.put(key, price);
         }

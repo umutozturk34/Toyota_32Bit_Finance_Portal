@@ -186,7 +186,7 @@ class PortfolioBackfillServiceTest {
         ArgumentCaptor<BigDecimal> priceCaptor = ArgumentCaptor.forClass(BigDecimal.class);
         verify(calculator, times(2)).buildAggregatedAssetSnapshot(
                 any(), any(), any(), any(), any(), any(), priceCaptor.capture());
-        assertThat(priceCaptor.getAllValues()).allMatch(p -> p.compareTo(new BigDecimal("44")) == 0);
+        assertThat(priceCaptor.getAllValues()).containsExactly(new BigDecimal("40"), new BigDecimal("44"));
     }
 
     @Test
@@ -211,7 +211,7 @@ class PortfolioBackfillServiceTest {
         ArgumentCaptor<BigDecimal> qtyCaptor = ArgumentCaptor.forClass(BigDecimal.class);
         ArgumentCaptor<BigDecimal> costCaptor = ArgumentCaptor.forClass(BigDecimal.class);
         verify(calculator).buildAggregatedAssetSnapshot(any(), eq(AssetType.STOCK), eq("THYAO.IS"),
-                any(), qtyCaptor.capture(), costCaptor.capture(), eq(new BigDecimal("70")));
+                any(), qtyCaptor.capture(), costCaptor.capture(), eq(new BigDecimal("40")));
         assertThat(qtyCaptor.getValue()).isEqualByComparingTo(new BigDecimal("150"));
         assertThat(costCaptor.getValue()).isEqualByComparingTo(new BigDecimal("7000.0000"));
     }

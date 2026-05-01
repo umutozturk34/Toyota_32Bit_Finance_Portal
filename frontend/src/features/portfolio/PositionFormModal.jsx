@@ -72,12 +72,22 @@ function toYearMonth(isoDate) {
   return isoDate ? isoDate.slice(0, 7) : new Date().toISOString().slice(0, 7);
 }
 
-function buildPriceIndex(prices) {
-  const index = new Map();
-  if (!prices) return index;
-  for (const [date, close] of Object.entries(prices)) {
-    index.set(date, Number(close));
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function collectIsoDateEntries(node, out) {
+  if (!node || typeof node !== 'object') return;
+  for (const [key, value] of Object.entries(node)) {
+    if (ISO_DATE.test(key) && (typeof value === 'number' || typeof value === 'string')) {
+      out.set(key, Number(value));
+    } else if (typeof value === 'object') {
+      collectIsoDateEntries(value, out);
+    }
   }
+}
+
+function buildPriceIndex(response) {
+  const index = new Map();
+  collectIsoDateEntries(response, index);
   return index;
 }
 
@@ -117,22 +127,10 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
     staleTime: ONE_HOUR_MS,
   });
 
-  const entryQueryEnabled = Boolean(target.assetType && target.assetCode && entryMonth && entryMonth !== viewMonth);
-  const { data: entryAvailability, isPending: entryQueryPending } = useQuery({
-    queryKey: ['marketAvailability', target.assetType, target.assetCode, entryMonth],
-    queryFn: () => unifiedMarketService.getMonthlyAvailability(target.assetType, target.assetCode, entryMonth),
-    enabled: entryQueryEnabled,
-    staleTime: ONE_HOUR_MS,
-  });
-  const entryLoading = entryQueryEnabled ? entryQueryPending : viewLoading;
-
-  const viewPrices = useMemo(() => buildPriceIndex(viewAvailability?.prices), [viewAvailability]);
-  const entryPrices = useMemo(
-    () => entryMonth === viewMonth ? viewPrices : buildPriceIndex(entryAvailability?.prices),
-    [viewPrices, entryAvailability, entryMonth, viewMonth]
-  );
+  const entryLoading = viewLoading;
+  const viewPrices = useMemo(() => buildPriceIndex(viewAvailability), [viewAvailability]);
   const highlightedDates = useMemo(() => new Set(viewPrices.keys()), [viewPrices]);
-  const suggestedPrice = entryPrices.get(form.entryDate);
+  const suggestedPrice = entryMonth === viewMonth ? viewPrices.get(form.entryDate) : undefined;
   const dataAvailable = suggestedPrice != null;
 
   const addMutation = useAddPosition(portfolioId);
@@ -155,11 +153,6 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
     const p = Number(form.entryPrice);
     return q > 0 && p > 0 ? q * p : null;
   }, [form.quantity, form.entryPrice]);
-
-  const update = (field) => (e) => {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
-    setError(null);
-  };
 
   const handleDateChange = (iso) => {
     setForm((prev) => ({ ...prev, entryDate: iso }));
@@ -301,7 +294,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
               <DatePickerPopover
                 value={form.entryDate}
                 onChange={handleDateChange}
-                onMonthChange={setViewMonth}
+                onMonthChange={(y, m) => setViewMonth(`${y}-${String(m + 1).padStart(2, '0')}`)}
                 minDate={limits?.minEntryDate}
                 maxDate={limits?.maxEntryDate || todayInputValue()}
                 highlightedDates={highlightedDates}
@@ -326,7 +319,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
                 step="any"
                 value={form.entryPrice}
                 onChange={handlePriceChange}
-                placeholder={asset?.currentPrice ? `önerilen: ${formatPriceTRY(asset.currentPrice)}` : '0.00'}
+                placeholder="0.00"
                 className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
               />
             </div>

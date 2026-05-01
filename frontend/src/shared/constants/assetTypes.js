@@ -54,5 +54,6 @@ export const PORTFOLIO_RANGES = [
   { id: '3M', label: '3A' },
   { id: '6M', label: '6A' },
   { id: '1Y', label: '1Y' },
+  { id: '5Y', label: '5Y' },
   { id: 'ALL', label: 'Maks' },
 ];

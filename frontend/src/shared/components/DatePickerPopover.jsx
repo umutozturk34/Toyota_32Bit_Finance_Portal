@@ -4,166 +4,225 @@ import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const WEEKDAYS = ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'];
 const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+const MONTHS_SHORT = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
 
-function toIsoDate(date) {
-  const offset = date.getTimezoneOffset();
-  return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 10);
-}
-
-function fromIsoDate(iso) {
-  if (!iso) return null;
-  const [y, m, d] = iso.split('-').map(Number);
+const pad = (n) => String(n).padStart(2, '0');
+const toIso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const fromIso = (s) => {
+  if (!s) return null;
+  const [y, m, d] = s.split('-').map(Number);
   return new Date(y, m - 1, d);
-}
+};
+const sameDay = (a, b) => a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
-function isSameDay(a, b) {
-  if (!a || !b) return false;
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
-function buildMonthGrid(year, month) {
+function buildGrid(year, month) {
   const first = new Date(year, month, 1);
   const offset = (first.getDay() + 6) % 7;
-  const start = new Date(year, month, 1 - offset);
-  const days = [];
-  for (let i = 0; i < 42; i += 1) {
-    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
-    days.push(d);
-  }
-  return days;
+  return Array.from({ length: 42 }, (_, i) => new Date(year, month, 1 - offset + i));
 }
 
-export default function DatePickerPopover({ value, onChange, maxDate, highlightedDates }) {
+const NEXT_VIEW = { day: 'month', month: 'year', year: 'day' };
+const PREV_LABEL = { day: 'Önceki ay', month: 'Önceki yıl', year: '12 yıl geri' };
+const NEXT_LABEL = { day: 'Sonraki ay', month: 'Sonraki yıl', year: '12 yıl ileri' };
+
+export default function DatePickerPopover({
+  value, onChange, onMonthChange, minDate, maxDate, highlightedDates, loading,
+}) {
   const [open, setOpen] = useState(false);
-  const containerRef = useRef(null);
-  const selected = useMemo(() => fromIsoDate(value), [value]);
+  const [view, setView] = useState('day');
+  const ref = useRef(null);
+
+  const selected = useMemo(() => fromIso(value), [value]);
   const today = new Date();
-  const max = maxDate ? fromIsoDate(maxDate) : null;
-  const initialMonth = selected || today;
-  const [cursor, setCursor] = useState({ year: initialMonth.getFullYear(), month: initialMonth.getMonth() });
+  const min = useMemo(() => fromIso(minDate), [minDate]);
+  const max = useMemo(() => fromIso(maxDate), [maxDate]);
+  const initial = selected || today;
+  const [cursor, setCursor] = useState({ year: initial.getFullYear(), month: initial.getMonth() });
 
   useEffect(() => {
     if (selected) setCursor({ year: selected.getFullYear(), month: selected.getMonth() });
   }, [value]);
 
   useEffect(() => {
+    if (typeof onMonthChange === 'function') onMonthChange(cursor.year, cursor.month);
+  }, [cursor.year, cursor.month]);
+
+  useEffect(() => {
     if (!open) return undefined;
-    const handler = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
   }, [open]);
 
-  const grid = useMemo(() => buildMonthGrid(cursor.year, cursor.month), [cursor]);
+  useEffect(() => {
+    if (!open) setView('day');
+  }, [open]);
 
-  const shiftMonth = (delta) => {
-    setCursor((prev) => {
-      const next = new Date(prev.year, prev.month + delta, 1);
-      return { year: next.getFullYear(), month: next.getMonth() };
-    });
+  const grid = useMemo(() => buildGrid(cursor.year, cursor.month), [cursor.year, cursor.month]);
+  const outOfRange = (d) => (max && d > max) || (min && d < min);
+
+  const shift = (delta) => {
+    if (view === 'day') {
+      const next = new Date(cursor.year, cursor.month + delta, 1);
+      setCursor({ year: next.getFullYear(), month: next.getMonth() });
+    } else if (view === 'month') {
+      setCursor((p) => ({ ...p, year: p.year + delta }));
+    } else {
+      setCursor((p) => ({ ...p, year: p.year + delta * 12 }));
+    }
   };
 
-  const handleSelect = (date) => {
-    if (max && date > max) return;
-    onChange(toIsoDate(date));
+  const pick = (d) => {
+    if (outOfRange(d)) return;
+    onChange(toIso(d));
     setOpen(false);
   };
 
-  const displayLabel = selected
+  const display = selected
     ? selected.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' })
     : 'Tarih seçin';
 
   const highlights = highlightedDates instanceof Set ? highlightedDates : null;
+  const dataCount = highlights?.size ?? 0;
+
+  const headerLabel = view === 'year'
+    ? `${cursor.year - 11} – ${cursor.year + 12}`
+    : view === 'month'
+    ? cursor.year
+    : `${MONTHS[cursor.month]} ${cursor.year}`;
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="w-full flex items-center justify-between rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all cursor-pointer"
+        onClick={() => setOpen((p) => !p)}
+        className="w-full flex items-center justify-between rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-colors hover:border-border-hover cursor-pointer"
       >
-        <span className={selected ? 'text-fg' : 'text-fg-subtle'}>{displayLabel}</span>
+        <span className={selected ? 'text-fg' : 'text-fg-subtle'}>{display}</span>
         <Calendar className="h-3.5 w-3.5 text-fg-muted" />
       </button>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.12 }}
-            className="absolute z-50 left-0 right-0 mt-1.5 rounded-xl border border-border-default bg-bg-elevated shadow-2xl backdrop-blur-md p-3 space-y-2"
+            initial={{ opacity: 0, y: -2 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -2 }}
+            transition={{ duration: 0.1, ease: 'easeOut' }}
+            className="absolute z-50 left-0 right-0 mt-1.5 rounded-xl border border-border-default p-3 space-y-2"
+            style={{ backgroundColor: 'var(--color-bg-base, #0f0f17)', boxShadow: '0 12px 40px -8px rgba(0,0,0,0.6)' }}
           >
-            <div className="flex items-center justify-between px-1">
-              <button
-                type="button"
-                onClick={() => shiftMonth(-1)}
-                className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
-              >
+            <div className="flex items-center justify-between gap-1">
+              <NavBtn onClick={() => shift(-1)} title={PREV_LABEL[view]}>
                 <ChevronLeft className="h-3.5 w-3.5" />
-              </button>
-              <span className="text-xs font-semibold text-fg">
-                {MONTHS[cursor.month]} {cursor.year}
-              </span>
+              </NavBtn>
               <button
                 type="button"
-                onClick={() => shiftMonth(1)}
-                className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
+                onClick={() => setView((v) => NEXT_VIEW[v])}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium tracking-tight text-fg hover:text-accent hover:bg-surface transition-colors bg-transparent border-none cursor-pointer flex-1 justify-center"
+                title="Görünümü değiştir"
               >
-                <ChevronRight className="h-3.5 w-3.5" />
+                {headerLabel}
+                {loading && <span className="h-1 w-1 rounded-full bg-fg-muted animate-pulse" />}
               </button>
+              <NavBtn onClick={() => shift(1)} title={NEXT_LABEL[view]}>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </NavBtn>
             </div>
 
-            <div className="grid grid-cols-7 gap-0.5">
-              {WEEKDAYS.map((d) => (
-                <span key={d} className="text-center text-[10px] text-fg-subtle font-medium py-1">{d}</span>
-              ))}
-              {grid.map((date) => {
-                const inMonth = date.getMonth() === cursor.month;
-                const disabled = max && date > max;
-                const isSelected = isSameDay(date, selected);
-                const isToday = isSameDay(date, today);
-                const iso = toIsoDate(date);
-                const hasData = highlights ? highlights.has(iso) : false;
+            {view === 'day' && (
+              <>
+                <div className="grid grid-cols-7 gap-0.5">
+                  {WEEKDAYS.map((d) => (
+                    <span key={d} className="text-center text-[10px] text-fg-subtle font-medium py-1">{d}</span>
+                  ))}
+                  {grid.map((date) => {
+                    const inMonth = date.getMonth() === cursor.month;
+                    const disabled = outOfRange(date);
+                    const isSelected = sameDay(date, selected);
+                    const isToday = sameDay(date, today);
+                    const iso = toIso(date);
+                    const hasData = highlights ? highlights.has(iso) : false;
 
-                let cls = 'relative flex items-center justify-center h-8 rounded-md text-xs font-mono transition-all border-none cursor-pointer ';
-                if (disabled) cls += 'text-fg-subtle/40 cursor-not-allowed bg-transparent';
-                else if (isSelected) cls += 'bg-accent text-white';
-                else if (!inMonth) cls += 'text-fg-subtle bg-transparent hover:bg-surface';
-                else if (isToday) cls += 'text-accent bg-accent/10 hover:bg-accent/20';
-                else cls += 'text-fg bg-transparent hover:bg-surface';
+                    let cls = 'relative flex items-center justify-center h-8 rounded-md text-xs font-mono transition-colors border-none cursor-pointer ';
+                    if (disabled) cls += 'text-fg-subtle/40 cursor-not-allowed bg-transparent';
+                    else if (isSelected) cls += 'bg-accent text-white';
+                    else if (!inMonth) cls += 'text-fg-subtle bg-transparent hover:bg-surface';
+                    else if (isToday) cls += 'text-accent bg-accent/10 hover:bg-accent/20';
+                    else cls += 'text-fg bg-transparent hover:bg-surface';
 
-                return (
-                  <button
-                    type="button"
-                    key={iso}
-                    onClick={() => !disabled && handleSelect(date)}
-                    disabled={disabled}
-                    className={cls}
-                  >
-                    {date.getDate()}
-                    {hasData && !isSelected && (
-                      <span className="absolute bottom-1 w-1 h-1 rounded-full bg-success" />
-                    )}
-                    {hasData && isSelected && (
-                      <span className="absolute bottom-1 w-1 h-1 rounded-full bg-white" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                    return (
+                      <button type="button" key={iso} onClick={() => !disabled && pick(date)} disabled={disabled} className={cls}>
+                        {date.getDate()}
+                        {hasData && (
+                          <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-success'}`} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] text-fg-subtle pt-1 border-t border-border-default">
+                  <span className={`w-1 h-1 rounded-full ${dataCount > 0 ? 'bg-success' : 'bg-fg-subtle/40'}`} />
+                  <span>{dataCount > 0 ? `${dataCount} gün geçmiş veri` : 'bu ay için veri yok'}</span>
+                </div>
+              </>
+            )}
 
-            {highlights && highlights.size > 0 && (
-              <div className="flex items-center gap-1.5 text-[10px] text-fg-subtle pt-1 border-t border-border-default">
-                <span className="w-1 h-1 rounded-full bg-success" />
-                <span>geçmiş fiyat verisi mevcut</span>
+            {view === 'month' && (
+              <div className="grid grid-cols-3 gap-1 py-1">
+                {MONTHS_SHORT.map((m, i) => {
+                  const start = new Date(cursor.year, i, 1);
+                  const end = new Date(cursor.year, i + 1, 0);
+                  const disabled = (max && start > max) || (min && end < min);
+                  const current = cursor.month === i;
+                  let cls = 'text-xs py-2.5 rounded-md transition-colors border-none cursor-pointer font-medium tracking-wide ';
+                  if (disabled) cls += 'text-fg-subtle/40 cursor-not-allowed bg-transparent';
+                  else if (current) cls += 'bg-accent text-white';
+                  else cls += 'text-fg bg-transparent hover:bg-surface';
+                  return (
+                    <button key={m} type="button" disabled={disabled} onClick={() => { setCursor((p) => ({ ...p, month: i })); setView('day'); }} className={cls}>
+                      {m}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {view === 'year' && (
+              <div className="grid grid-cols-4 gap-1 py-1 max-h-60 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+                {Array.from({ length: 24 }, (_, i) => cursor.year - 11 + i).map((yr) => {
+                  const start = new Date(yr, 0, 1);
+                  const end = new Date(yr, 11, 31);
+                  const disabled = (max && start > max) || (min && end < min);
+                  const current = cursor.year === yr;
+                  let cls = 'text-[11px] py-2 rounded-md transition-colors border-none cursor-pointer font-mono font-medium tracking-tight ';
+                  if (disabled) cls += 'text-fg-subtle/40 cursor-not-allowed bg-transparent';
+                  else if (current) cls += 'bg-accent text-white';
+                  else cls += 'text-fg bg-transparent hover:bg-surface';
+                  return (
+                    <button key={yr} type="button" disabled={disabled} onClick={() => { setCursor((p) => ({ ...p, year: yr })); setView('month'); }} className={cls}>
+                      {yr}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </motion.div>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function NavBtn({ onClick, title, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
+    >
+      {children}
+    </button>
   );
 }

@@ -8,7 +8,8 @@ import { useTheme } from '../../shared/context/ThemeContext';
 import { useAssetSeries } from './usePortfolioData';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
-import { PORTFOLIO_RANGES as RANGES, ASSET_TYPE_LABELS } from '../../shared/constants/assetTypes';
+import { ASSET_TYPE_LABELS } from '../../shared/constants/assetTypes';
+import RangeSelector from '../../shared/components/RangeSelector';
 import PositionFormModal from './PositionFormModal';
 
 const formatEntryDate = (v) => v ? new Date(v).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -21,6 +22,9 @@ const STAT_CARDS = [
   { key: 'marketValueTry', label: 'Piyasa Değeri', Icon: Wallet, format: formatPriceTRY },
 ];
 
+const LINE_COLOR = '#6366f1';
+const UNIT_COLOR = '#f59e0b';
+
 function AssetChart({ data, isDark }) {
   if (!data || data.length === 0) return null;
 
@@ -30,26 +34,39 @@ function AssetChart({ data, isDark }) {
   const tooltipFg = isDark ? '#e2e2ea' : '#1a1a2e';
   const tooltipBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
 
-  const marketValues = data.map((d) => [new Date(d.timestamp).getTime(), Number(d.marketValueTry)]);
-  const unitPrices = data.map((d) => [new Date(d.timestamp).getTime(), Number(d.unitPriceTry)]);
+  const seriesData = data.map((d) => ({
+    value: [new Date(d.timestamp).getTime(), Number(d.marketValueTry)],
+    unitPrice: Number(d.unitPriceTry),
+    quantity: Number(d.quantity ?? 0),
+  }));
 
   const option = {
     backgroundColor: 'transparent',
     animation: data.length < 200,
-    grid: { left: 65, right: 65, top: 16, bottom: 30 },
+    grid: { left: 65, right: 24, top: 16, bottom: 30 },
     tooltip: {
       trigger: 'axis',
       backgroundColor: tooltipBg,
       borderColor: tooltipBorder,
       textStyle: { color: tooltipFg, fontSize: 11 },
       formatter: (params) => {
-        if (!params?.length) return '';
-        const date = new Date(params[0].value[0]).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
-        const rows = params.map((p) => `<div style="display:flex;justify-content:space-between;gap:14px;font-size:11px">
-            <span style="color:${tooltipFg};opacity:0.85">${p.seriesName}</span>
-            <span style="font-family:ui-monospace,monospace;font-weight:600;color:${p.color}">${formatPriceTRY(p.value[1])}</span>
-          </div>`).join('');
-        return `<div style="padding:6px 2px"><div style="font-size:10px;color:${tooltipFg};opacity:0.65;margin-bottom:6px">${date}</div>${rows}</div>`;
+        const point = params?.[0]?.data;
+        if (!point) return '';
+        const date = new Date(point.value[0]).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+        const market = formatPriceTRY(point.value[1]);
+        const unit = formatPriceTRY(point.unitPrice);
+        return `
+          <div style="padding:6px 2px;min-width:180px">
+            <div style="font-size:10px;color:${tooltipFg};opacity:0.65;margin-bottom:6px">${date}</div>
+            <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;margin-bottom:3px">
+              <span style="display:flex;align-items:center;gap:5px;color:${tooltipFg};opacity:0.85"><span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:${LINE_COLOR}"></span>Piyasa Değeri</span>
+              <span style="font-family:ui-monospace,monospace;font-weight:600;color:${LINE_COLOR}">${market}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px">
+              <span style="display:flex;align-items:center;gap:5px;color:${tooltipFg};opacity:0.85"><span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:${UNIT_COLOR}"></span>Birim Fiyat</span>
+              <span style="font-family:ui-monospace,monospace;font-weight:600;color:${UNIT_COLOR}">${unit}</span>
+            </div>
+          </div>`;
       },
     },
     xAxis: {
@@ -59,54 +76,32 @@ function AssetChart({ data, isDark }) {
       axisLabel: { color: muted, fontSize: 10 },
       splitLine: { show: false },
     },
-    yAxis: [
-      {
-        type: 'value',
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: { color: muted, fontSize: 10, formatter: (val) => formatPriceTRY(val) },
-        splitLine: { lineStyle: { color: grid, type: 'dashed' } },
-      },
-      {
-        type: 'value',
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: { color: muted, fontSize: 10, formatter: (val) => formatPriceTRY(val) },
-        splitLine: { show: false },
-      },
-    ],
-    series: [
-      {
-        name: 'Piyasa Değeri',
-        type: 'line',
-        smooth: data.length < 200,
-        showSymbol: false,
-        sampling: 'lttb',
-        data: marketValues,
-        itemStyle: { color: '#6366f1' },
-        lineStyle: { width: 2.5, color: '#6366f1' },
-        areaStyle: {
-          color: {
-            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [
-              { offset: 0, color: '#6366f155' },
-              { offset: 1, color: '#6366f100' },
-            ],
-          },
+    yAxis: {
+      type: 'value',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: muted, fontSize: 10, formatter: (val) => formatPriceTRY(val) },
+      splitLine: { lineStyle: { color: grid, type: 'dashed' } },
+    },
+    series: [{
+      name: 'Piyasa Değeri',
+      type: 'line',
+      smooth: data.length < 200,
+      showSymbol: false,
+      sampling: 'lttb',
+      data: seriesData,
+      itemStyle: { color: LINE_COLOR },
+      lineStyle: { width: 2.2, color: LINE_COLOR },
+      areaStyle: {
+        color: {
+          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: `${LINE_COLOR}55` },
+            { offset: 1, color: `${LINE_COLOR}00` },
+          ],
         },
       },
-      {
-        name: 'Birim Fiyat',
-        type: 'line',
-        yAxisIndex: 1,
-        smooth: data.length < 200,
-        showSymbol: false,
-        sampling: 'lttb',
-        data: unitPrices,
-        itemStyle: { color: '#f59e0b' },
-        lineStyle: { width: 1.5, color: '#f59e0b', type: 'dashed' },
-      },
-    ],
+    }],
   };
 
   return <ReactECharts option={option} notMerge style={{ height: 300 }} opts={{ renderer: 'canvas' }} />;
@@ -216,37 +211,8 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
         animate="show"
         className="rounded-2xl border border-border-default bg-bg-elevated backdrop-blur-md p-5 space-y-3 card-hover transition-all duration-200 hover:border-border-hover"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-1 rounded bg-[#6366f1]" />
-              <span className="text-[11px] text-fg-muted">Piyasa Değeri</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-0 border-t-2 border-dashed border-[#f59e0b]" />
-              <span className="text-[11px] text-fg-muted">Birim Fiyat</span>
-            </div>
-          </div>
-          <div className="flex gap-1 rounded-lg border border-border-default bg-bg-base p-0.5">
-            {RANGES.map(({ id, label }) => (
-              <button
-                key={id}
-                onClick={() => setRange(id)}
-                className="relative rounded-md px-2.5 py-1 text-[11px] font-medium transition-all border-none cursor-pointer bg-transparent"
-              >
-                {range === id && (
-                  <motion.span
-                    layoutId="asset-range"
-                    className="absolute inset-0 rounded-md bg-accent/15"
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  />
-                )}
-                <span className={`relative z-10 ${range === id ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
-                  {label}
-                </span>
-              </button>
-            ))}
-          </div>
+        <div className="flex items-center justify-end flex-wrap gap-2">
+          <RangeSelector value={range} onChange={setRange} layoutId="asset-range" size="sm" />
         </div>
 
         <div className="relative">

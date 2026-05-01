@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { portfolioService } from './portfolioService';
 import { getToken } from '../auth/keycloak';
-import { useClearPendingLots, useMarkPendingLot } from './usePendingLots';
 
 export function usePortfolioList() {
   return useQuery({
@@ -21,10 +20,13 @@ export function usePortfolioLimits() {
   });
 }
 
+const EMPTY_BACKFILL = { running: false, since: null, pendingKeys: new Set() };
+
+const lotKey = (assetType, assetCode) => `${assetType}:${assetCode}`;
+
 export function useBackfillStatus(portfolioId) {
-  const [state, setState] = useState({ running: false, since: null });
+  const [state, setState] = useState(EMPTY_BACKFILL);
   const invalidate = useInvalidatePortfolio();
-  const clearPending = useClearPendingLots();
 
   useEffect(() => {
     if (!portfolioId) return undefined;
@@ -39,16 +41,21 @@ export function useBackfillStatus(portfolioId) {
         heartbeatTimeout: 60_000,
       });
       source.addEventListener('backfill-status', (event) => {
-        const next = event.data === 'true' || event.data === true;
-        setState((prev) => {
-          if (prev.running && !next) {
-            invalidate();
-            clearPending();
-            return { running: false, since: null };
-          }
-          if (!prev.running && next) return { running: true, since: Date.now() };
-          return prev;
-        });
+        try {
+          const payload = JSON.parse(event.data);
+          const pendingKeys = new Set(
+            (payload.pendingAssets || []).map((a) => lotKey(a.assetType, a.assetCode))
+          );
+          setState((prev) => {
+            const next = {
+              running: Boolean(payload.running),
+              since: payload.since ?? null,
+              pendingKeys,
+            };
+            if (prev.running && !next.running) invalidate();
+            return next;
+          });
+        } catch { /* malformed payload */ }
       });
       source.onerror = () => source.close();
     })();
@@ -60,6 +67,10 @@ export function useBackfillStatus(portfolioId) {
   }, [portfolioId]);
 
   return state;
+}
+
+export function isLotPending(backfill, assetType, assetCode) {
+  return backfill.pendingKeys?.has(lotKey(assetType, assetCode)) || false;
 }
 
 export function usePortfolioView(portfolioId) {
@@ -121,26 +132,18 @@ export function usePortfolioPositions(portfolioId, params) {
 
 export function useAddPosition(portfolioId) {
   const invalidate = useInvalidatePortfolio();
-  const markPending = useMarkPendingLot();
   return useMutation({
     mutationFn: (payload) => portfolioService.addPosition(portfolioId, payload),
-    onSuccess: (_data, variables) => {
-      if (variables) markPending(variables.assetType, variables.assetCode);
-      invalidate();
-    },
+    onSuccess: invalidate,
   });
 }
 
 export function useUpdatePosition(portfolioId) {
   const invalidate = useInvalidatePortfolio();
-  const markPending = useMarkPendingLot();
   return useMutation({
     mutationFn: ({ positionId, payload }) =>
       portfolioService.updatePosition(portfolioId, positionId, payload),
-    onSuccess: (_data, variables) => {
-      if (variables?.payload) markPending(variables.payload.assetType, variables.payload.assetCode);
-      invalidate();
-    },
+    onSuccess: invalidate,
   });
 }
 

@@ -5,8 +5,7 @@ import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass }
 import { cardVariants } from '../../shared/utils/animations';
 import { ASSET_TYPE_LABELS, ASSET_TYPE_STYLES } from '../../shared/constants/assetTypes';
 import { assetCodeLabel } from '../../shared/utils/assetCode';
-import { useBackfillStatus, usePortfolioPositions } from './usePortfolioData';
-import { useIsLotPending, useLotPendingSince } from './usePendingLots';
+import { isLotPending, useBackfillStatus, usePortfolioPositions } from './usePortfolioData';
 import useListParams from '../../shared/hooks/useListParams';
 import useElapsedSeconds from '../../shared/hooks/useElapsedSeconds';
 import PortfolioListShell from './PortfolioListShell';
@@ -64,12 +63,6 @@ export default function PositionsTable({ portfolioId, onAssetClick: assetClickPr
       emptyMessage={listParams.search ? 'Aramayla eşleşen pozisyon bulunamadı.' : 'Henüz pozisyon bulunmuyor'}
       emptyHint={!listParams.search ? 'Kripto, Hisse, Döviz veya Fon sayfalarından lot ekleyebilirsiniz' : undefined}
     >
-      {backfill.running && (
-        <div className="flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2">
-          <Loader2 className="h-3.5 w-3.5 text-accent animate-spin" />
-          <span className="text-xs text-accent font-medium">Yeni eklenen pozisyonların verisi hazırlanıyor — yalnızca o pozisyonlara tıklayamazsınız ({elapsed}sn).</span>
-        </div>
-      )}
       <div className="space-y-3">
       <div className="hidden lg:grid lg:grid-cols-[1.3fr_0.7fr_1fr_1fr_1fr_1fr_1.2fr_72px_20px] gap-2 px-4 py-2 text-xs text-fg-muted font-medium">
         <span>Varlık</span>
@@ -87,6 +80,8 @@ export default function PositionsTable({ portfolioId, onAssetClick: assetClickPr
         <PositionRow
           key={pos.id}
           pos={pos}
+          pending={isLotPending(backfill, pos.assetType, pos.assetCode)}
+          elapsed={elapsed}
           onAssetClick={assetClickProp}
           onEditClick={editClickProp}
           onDeleteClick={deleteClickProp}
@@ -97,10 +92,7 @@ export default function PositionsTable({ portfolioId, onAssetClick: assetClickPr
   );
 }
 
-function PositionRow({ pos, onAssetClick, onEditClick, onDeleteClick }) {
-  const pending = useIsLotPending(pos.assetType, pos.assetCode);
-  const pendingSince = useLotPendingSince(pos.assetType, pos.assetCode);
-  const pendingElapsed = useElapsedSeconds(pendingSince);
+function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDeleteClick }) {
   const pnlClass = getChangeClass(pos.pnlTry);
 
   const guard = (fn) => () => { if (!pending) fn(pos); };
@@ -111,14 +103,29 @@ function PositionRow({ pos, onAssetClick, onEditClick, onDeleteClick }) {
   return (
     <motion.div
       variants={cardVariants}
-      className={`relative rounded-2xl border bg-bg-elevated backdrop-blur-md transition-all duration-200 group ${pending ? 'border-accent/40 opacity-70 pointer-events-none' : 'border-border-default card-hover hover:border-border-hover'}`}
+      className={`relative rounded-2xl border bg-bg-elevated backdrop-blur-md transition-all duration-200 group overflow-hidden ${pending ? 'border-accent/40 pointer-events-none' : 'border-border-default card-hover hover:border-border-hover'}`}
     >
       {pending && (
-        <div className="absolute top-2 right-3 flex items-center gap-1.5 rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-medium text-accent z-10">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          <span>hazırlanıyor · {pendingElapsed}sn</span>
-        </div>
+        <>
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent animate-pulse z-10" />
+          <div className="absolute top-2.5 left-3 right-3 flex items-center justify-between text-[11px] font-medium text-accent z-10 pointer-events-none">
+            <div className="flex items-center gap-1.5">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span className="tracking-tight">veriler hazırlanıyor</span>
+            </div>
+            <motion.span
+              key={elapsed}
+              initial={{ opacity: 0.4, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="font-mono tabular-nums text-accent/80"
+            >
+              {String(elapsed).padStart(2, '0')}s
+            </motion.span>
+          </div>
+        </>
       )}
+      <div className={pending ? 'pt-7 opacity-50' : ''}>
       <div className="hidden lg:grid lg:grid-cols-[1.3fr_0.7fr_1fr_1fr_1fr_1fr_1.2fr_72px_20px] gap-2 items-center p-4 min-w-0">
         <div className="flex items-center gap-2.5 cursor-pointer min-w-0" onClick={assetClick}>
           <AssetBadge pos={pos} />
@@ -172,6 +179,7 @@ function PositionRow({ pos, onAssetClick, onEditClick, onDeleteClick }) {
           <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">Giriş Fiyatı</p><p className="font-mono text-fg font-medium">{formatPriceTRY(pos.entryPrice)}</p></div>
           <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">K/Z</p><p className={`font-mono font-semibold ${changeColors[pnlClass]}`}>{formatPriceTRY(pos.pnlTry)}</p></div>
         </div>
+      </div>
       </div>
     </motion.div>
   );

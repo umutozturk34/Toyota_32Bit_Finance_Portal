@@ -8,8 +8,8 @@ import { formatPriceTRY } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
 import { useTheme } from '../../shared/context/ThemeContext';
 import useElapsedSeconds from '../../shared/hooks/useElapsedSeconds';
+import RangeSelector from '../../shared/components/RangeSelector';
 import {
-  PORTFOLIO_RANGES as RANGES,
   ASSET_TYPE_FILTERS as ASSET_TYPES,
   ASSET_TYPE_COLORS,
   ASSET_TYPE_LABELS,
@@ -238,9 +238,9 @@ export default function PerformanceChart({ portfolioId }) {
 
           <div className="flex items-center gap-3">
             {backfill.running && (
-              <div className="flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent/10 px-2 py-1">
-                <Loader2 className="h-3 w-3 text-accent animate-spin" />
-                <span className="text-[10px] text-accent font-semibold">veriler hazırlanıyor · {backfillElapsed}sn</span>
+              <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-tight text-accent/90">
+                <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                <span>hesaplanıyor · {String(backfillElapsed).padStart(2, '0')}s</span>
               </div>
             )}
             <div className="flex items-center gap-1.5">
@@ -274,26 +274,7 @@ export default function PerformanceChart({ portfolioId }) {
               </button>
             ))}
           </div>
-          <div className="inline-flex gap-0.5 rounded-xl border border-border-default bg-bg-base p-1">
-            {RANGES.map(({ id, label }) => (
-              <button
-                key={id}
-                onClick={() => setRange(id)}
-                className="relative rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all border-none cursor-pointer bg-transparent"
-              >
-                {range === id && (
-                  <motion.span
-                    layoutId="perf-range"
-                    className="absolute inset-0 rounded-lg bg-accent/15"
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                  />
-                )}
-                <span className={`relative z-10 ${range === id ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
-                  {label}
-                </span>
-              </button>
-            ))}
-          </div>
+          <RangeSelector value={range} onChange={setRange} layoutId="perf-range" size="md" />
         </div>
 
         <div className="relative min-h-[380px] px-2">

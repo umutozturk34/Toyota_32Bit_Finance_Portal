@@ -1,5 +1,6 @@
 package com.finance.backend.mapper;
 
+import com.finance.backend.client.EvdsClient;
 import com.finance.backend.dto.external.BondRateItemDto;
 import com.finance.backend.dto.external.BondSerieDto;
 import com.finance.backend.dto.internal.EvdsBondDataResponse;
@@ -19,7 +20,7 @@ import java.util.Map;
 @Log4j2
 public class EvdsBondClientMapper {
 
-    private static final DateTimeFormatter EVDS_DATE_FMT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    private static final DateTimeFormatter EVDS_DATE_FMT = EvdsClient.DATE_FMT;
 
     public List<BondSnapshotDto> toSnapshotDtos(
             List<BondSerieDto> bondSeries,

@@ -5,11 +5,11 @@ import com.finance.backend.dto.response.MarketOverviewResponse;
 import com.finance.backend.dto.response.StockMetadata;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.model.StockSegment;
+import com.finance.backend.util.EnumDispatcher;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,8 +22,7 @@ public class MarketOverviewService {
 
     public MarketOverviewService(List<MarketAssetProvider> providerList,
                                  TopMoversRedisService topMoversRedisService) {
-        this.providers = new EnumMap<>(MarketType.class);
-        providerList.forEach(p -> this.providers.put(p.getType(), p));
+        this.providers = EnumDispatcher.from(MarketType.class, providerList, MarketAssetProvider::getType);
         this.topMoversRedisService = topMoversRedisService;
     }
 

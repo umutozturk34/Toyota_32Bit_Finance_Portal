@@ -32,7 +32,7 @@ import java.util.Optional;
 @Log4j2
 public class BondRateHistoryService {
 
-    private static final DateTimeFormatter EVDS_DATE_FMT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    private static final DateTimeFormatter EVDS_DATE_FMT = EvdsClient.DATE_FMT;
 
     private final EvdsClient evdsClient;
     private final EvdsBondClientMapper clientMapper;

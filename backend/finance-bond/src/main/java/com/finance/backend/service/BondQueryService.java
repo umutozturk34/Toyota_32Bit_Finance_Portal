@@ -7,6 +7,7 @@ import com.finance.backend.dto.response.GroupCount;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.util.EnumParser;
+import com.finance.backend.util.LikeSearchSpec;
 import com.finance.backend.mapper.BondResponseMapper;
 import com.finance.backend.model.Bond;
 import com.finance.backend.model.BondRateHistory;
@@ -41,10 +42,8 @@ public class BondQueryService {
         Specification<Bond> spec = (root, query, cb) -> cb.conjunction();
 
         if (search != null && !search.isBlank()) {
-            String pattern = "%" + search.toLowerCase() + "%";
-            spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("seriesCode")), pattern),
-                    cb.like(cb.lower(root.get("isinCode")), pattern)));
+            spec = spec.and((root, query, cb) ->
+                    LikeSearchSpec.byFieldsContains(root, cb, search, "seriesCode", "isinCode"));
         }
 
         BondType filterType = bondType == null || bondType.isBlank()

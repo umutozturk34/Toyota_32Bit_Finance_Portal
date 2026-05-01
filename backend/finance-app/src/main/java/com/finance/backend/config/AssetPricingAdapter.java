@@ -3,12 +3,11 @@ package com.finance.backend.config;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.service.AssetPricingPort;
 import com.finance.backend.service.assetpricing.AssetPricingStrategy;
+import com.finance.backend.util.EnumDispatcher;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -22,8 +21,7 @@ public class AssetPricingAdapter implements AssetPricingPort {
     private final Map<MarketType, AssetPricingStrategy> strategies;
 
     public AssetPricingAdapter(List<AssetPricingStrategy> strategyList) {
-        this.strategies = new EnumMap<>(MarketType.class);
-        strategyList.forEach(strategy -> this.strategies.put(strategy.marketType(), strategy));
+        this.strategies = EnumDispatcher.from(MarketType.class, strategyList, AssetPricingStrategy::marketType);
     }
 
     @Override

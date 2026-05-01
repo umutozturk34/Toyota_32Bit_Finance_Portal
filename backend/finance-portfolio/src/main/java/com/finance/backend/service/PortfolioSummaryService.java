@@ -41,7 +41,7 @@ public class PortfolioSummaryService {
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
         Map<AssetKey, PriceBundle> bundles = pricingPort.getBundles(toKeys(positions));
         return positions.stream()
-                .map(pos -> toPositionResponse(pos, bundles.get(toKey(pos))))
+                .map(pos -> toPositionResponse(pos, bundles.get(pos.toAssetKey())))
                 .toList();
     }
 
@@ -87,7 +87,7 @@ public class PortfolioSummaryService {
         BigDecimal totalValue = BigDecimal.ZERO;
         BigDecimal totalEntryValue = BigDecimal.ZERO;
         for (PortfolioPosition pos : positions) {
-            BigDecimal price = prices.get(toKey(pos));
+            BigDecimal price = prices.get(pos.toAssetKey());
             if (price != null) {
                 totalValue = totalValue.add(price.multiply(pos.getQuantity()));
             }
@@ -119,7 +119,7 @@ public class PortfolioSummaryService {
 
         Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(toKeys(positions));
         for (PortfolioPosition pos : positions) {
-            BigDecimal price = prices.get(toKey(pos));
+            BigDecimal price = prices.get(pos.toAssetKey());
             BigDecimal marketValue = price != null
                     ? price.multiply(pos.getQuantity()).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP)
                     : BigDecimal.ZERO;
@@ -168,10 +168,6 @@ public class PortfolioSummaryService {
     }
 
     private List<AssetKey> toKeys(List<PortfolioPosition> positions) {
-        return positions.stream().map(this::toKey).toList();
-    }
-
-    private AssetKey toKey(PortfolioPosition pos) {
-        return new AssetKey(pos.getAssetType().marketType(), pos.getAssetCode());
+        return positions.stream().map(PortfolioPosition::toAssetKey).toList();
     }
 }

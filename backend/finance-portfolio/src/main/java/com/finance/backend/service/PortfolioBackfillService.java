@@ -119,7 +119,7 @@ public class PortfolioBackfillService {
         List<PortfolioPosition> active = activePositionsOn(positions, today);
         if (active.isEmpty()) return;
 
-        List<AssetKey> keys = active.stream().map(PortfolioBackfillService::toKey).distinct().toList();
+        List<AssetKey> keys = active.stream().map(PortfolioPosition::toAssetKey).distinct().toList();
         Map<AssetKey, BigDecimal> dayPrices = assetPricingPort.getPricesTry(keys);
         LocalDateTime ts = LocalDateTime.now();
 
@@ -161,7 +161,7 @@ public class PortfolioBackfillService {
             List<PortfolioPosition> positions, LocalDate from, LocalDate to) {
         Map<AssetKey, Map<LocalDate, BigDecimal>> result = new HashMap<>();
         for (PortfolioPosition pos : positions) {
-            AssetKey key = toKey(pos);
+            AssetKey key = pos.toAssetKey();
             if (result.containsKey(key)) continue;
             MarketType type = pos.getAssetType().marketType();
             result.put(key, historicalPricingPort.getPriceSeries(type, pos.getAssetCode(), from, to));
@@ -218,7 +218,7 @@ public class PortfolioBackfillService {
     private static Map<AssetKey, List<PortfolioPosition>> groupByAsset(List<PortfolioPosition> positions) {
         Map<AssetKey, List<PortfolioPosition>> grouped = new LinkedHashMap<>();
         for (PortfolioPosition pos : positions) {
-            grouped.computeIfAbsent(toKey(pos), k -> new ArrayList<>()).add(pos);
+            grouped.computeIfAbsent(pos.toAssetKey(), k -> new ArrayList<>()).add(pos);
         }
         return grouped;
     }
@@ -233,7 +233,7 @@ public class PortfolioBackfillService {
                                                             Map<AssetKey, Map<LocalDate, BigDecimal>> seriesByKey) {
         Map<AssetKey, BigDecimal> result = new HashMap<>();
         for (PortfolioPosition pos : positions) {
-            AssetKey key = toKey(pos);
+            AssetKey key = pos.toAssetKey();
             if (result.containsKey(key)) continue;
             BigDecimal price = nearestPriceOnOrBefore(seriesByKey.get(key), day);
             if (price != null) result.put(key, price);
@@ -252,7 +252,4 @@ public class PortfolioBackfillService {
         return null;
     }
 
-    private static AssetKey toKey(PortfolioPosition pos) {
-        return new AssetKey(pos.getAssetType().marketType(), pos.getAssetCode());
-    }
 }

@@ -1,5 +1,6 @@
 package com.finance.backend.model;
 
+import com.finance.backend.service.AssetPricingPort;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -67,6 +68,10 @@ public class PortfolioPosition {
     @PreUpdate
     void preUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public AssetPricingPort.AssetKey toAssetKey() {
+        return new AssetPricingPort.AssetKey(assetType.marketType(), assetCode);
     }
 
     public BigDecimal entryValue() {

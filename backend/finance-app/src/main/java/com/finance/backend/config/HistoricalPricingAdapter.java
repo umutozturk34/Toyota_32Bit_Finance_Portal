@@ -5,13 +5,13 @@ import com.finance.backend.dto.response.FundCandleResponse;
 import com.finance.backend.model.MarketType;
 import com.finance.backend.service.HistoricalPricingPort;
 import com.finance.backend.service.MarketHistoryProvider;
+import com.finance.backend.util.EnumDispatcher;
 import com.finance.backend.util.SyntheticPriceCalculator;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,8 +28,7 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
     private final Map<MarketType, MarketHistoryProvider> providers;
 
     public HistoricalPricingAdapter(List<MarketHistoryProvider> providerList) {
-        this.providers = new EnumMap<>(MarketType.class);
-        providerList.forEach(p -> this.providers.put(p.getMarketType(), p));
+        this.providers = EnumDispatcher.from(MarketType.class, providerList, MarketHistoryProvider::getMarketType);
     }
 
     @Override

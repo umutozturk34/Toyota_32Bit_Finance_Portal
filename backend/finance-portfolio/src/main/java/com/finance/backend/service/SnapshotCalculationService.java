@@ -61,9 +61,7 @@ public class SnapshotCalculationService {
         Long pid = portfolio.getId();
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(pid);
 
-        List<AssetKey> keys = positions.stream()
-                .map(p -> new AssetKey(p.getAssetType().marketType(), p.getAssetCode()))
-                .toList();
+        List<AssetKey> keys = positions.stream().map(PortfolioPosition::toAssetKey).toList();
         Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(keys);
         return buildAggregateSnapshotAt(portfolio, batchTimestamp, positions, prices);
     }
@@ -74,7 +72,7 @@ public class SnapshotCalculationService {
         BigDecimal totalMarketValue = BigDecimal.ZERO;
         BigDecimal totalEntryValue = BigDecimal.ZERO;
         for (PortfolioPosition pos : positions) {
-            BigDecimal price = prices.get(new AssetKey(pos.getAssetType().marketType(), pos.getAssetCode()));
+            BigDecimal price = prices.get(pos.toAssetKey());
             BigDecimal unitPrice = price != null ? price : BigDecimal.ZERO;
             totalMarketValue = totalMarketValue.add(pos.currentValue(unitPrice));
             totalEntryValue = totalEntryValue.add(pos.entryValue());

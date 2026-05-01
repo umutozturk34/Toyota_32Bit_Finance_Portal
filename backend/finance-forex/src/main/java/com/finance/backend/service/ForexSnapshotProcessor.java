@@ -13,6 +13,7 @@ import com.finance.backend.repository.ForexCandleRepository;
 import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.util.SyntheticPriceCalculator;
 import com.finance.backend.util.YahooRangePolicy;
+import com.finance.backend.util.YahooSymbolSuffix;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
@@ -68,7 +69,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
 
     public void updatePair(Forex forex, Map<String, YahooCandleDto> usdtryCandleMap) {
         String baseSymbol = forex.getCurrencyCode();
-        String yahooSymbol = baseSymbol + "=X";
+        String yahooSymbol = baseSymbol + YahooSymbolSuffix.FOREX;
         boolean wasEmpty = forexCandleRepository.countByCurrencyCode(baseSymbol) == 0;
         String range = forexCandleRepository.findFirstByCurrencyCodeOrderByCandleDateDesc(baseSymbol)
                 .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, chartRange))
@@ -117,7 +118,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
 
     public boolean exists(String code) {
         try {
-            YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(code + "=X", "1d", chartInterval, true);
+            YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(code + YahooSymbolSuffix.FOREX, "1d", chartInterval, true);
             return hasUsableQuote(result);
         } catch (Exception e) {
             log.warn("Forex existence check failed for {}: {}", code, e.getMessage());
@@ -136,7 +137,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
                     baseCurrency + " snapshot not available for synthetic of " + forex.getCurrencyCode());
         }
         String coinPart = forex.getCurrencyCode().replace("TRY", "");
-        String[] attempts = {coinPart + "USD=X", "USD" + coinPart + "=X"};
+        String[] attempts = {coinPart + "USD" + YahooSymbolSuffix.FOREX, "USD" + coinPart + YahooSymbolSuffix.FOREX};
         for (String symbol : attempts) {
             try {
                 YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(symbol, chartRange, chartInterval, true);

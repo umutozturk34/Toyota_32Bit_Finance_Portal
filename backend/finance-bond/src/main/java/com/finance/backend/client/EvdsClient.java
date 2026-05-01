@@ -13,11 +13,14 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Component
 @Log4j2
 public class EvdsClient {
+
+    public static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     private final WebClient webClient;
     private final String datagroupCode;

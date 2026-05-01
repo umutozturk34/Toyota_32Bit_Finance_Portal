@@ -6,6 +6,7 @@ import com.finance.backend.dto.response.NewsArticleResponse;
 import com.finance.backend.dto.response.PagedResponse;
 import com.finance.backend.exception.ResourceNotFoundException;
 import com.finance.backend.util.EnumParser;
+import com.finance.backend.util.LikeSearchSpec;
 import com.finance.backend.mapper.NewsResponseMapper;
 import com.finance.backend.model.NewsArticle;
 import com.finance.backend.model.NewsCategory;
@@ -70,10 +71,8 @@ public class NewsQueryService {
         }
 
         if (searchTerm != null && !searchTerm.isBlank()) {
-            String pattern = "%" + searchTerm.toLowerCase() + "%";
-            spec = spec.and((root, query, cb) -> cb.or(
-                    cb.like(cb.lower(root.get("title")), pattern),
-                    cb.like(cb.lower(root.get("description")), pattern)));
+            spec = spec.and((root, query, cb) ->
+                    LikeSearchSpec.byFieldsContains(root, cb, searchTerm, "title", "description"));
         }
 
         return spec;

@@ -3,6 +3,7 @@ package com.finance.backend.service;
 import com.finance.backend.dto.response.MarketAssetResponse;
 import com.finance.backend.model.BaseAsset;
 import com.finance.backend.model.TrackedAssetType;
+import com.finance.backend.util.LikeSearchSpec;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -114,14 +115,9 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
     private Specification<T> buildSearchSpec(String searchTerm, Set<String> enabledCodes) {
         Specification<T> spec = enabledCodesSpec(enabledCodes);
         if (searchTerm == null || searchTerm.isBlank()) return spec;
-        String pattern = "%" + searchTerm.toLowerCase() + "%";
         List<String> fields = searchFields();
-        return spec.and((root, query, cb) -> {
-            var predicates = fields.stream()
-                    .map(field -> cb.like(cb.lower(root.get(field)), pattern))
-                    .toArray(jakarta.persistence.criteria.Predicate[]::new);
-            return cb.or(predicates);
-        });
+        return spec.and((root, query, cb) ->
+                LikeSearchSpec.byFieldsContains(root, cb, searchTerm, fields));
     }
 
     private Specification<T> enabledCodesSpec(Set<String> enabledCodes) {

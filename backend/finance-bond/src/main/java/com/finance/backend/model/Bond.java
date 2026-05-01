@@ -77,26 +77,9 @@ public class Bond extends BaseAsset {
                 || bondType == BondType.FLOATING_AUCTION || bondType == BondType.SUKUK_CPI;
     }
 
-    @JsonIgnore
-    public boolean isSukuk() {
-        return bondType == BondType.SUKUK_FIXED || bondType == BondType.SUKUK_CPI;
-    }
-
-    @JsonIgnore
-    public boolean isExpired() {
-        return maturityEnd != null && !maturityEnd.isAfter(LocalDate.now());
-    }
-
-    @JsonIgnore
-    public long daysToMaturity() {
+    private long daysToMaturity() {
         if (maturityEnd == null) return -1;
         return ChronoUnit.DAYS.between(LocalDate.now(), maturityEnd);
-    }
-
-    @JsonIgnore
-    public long daysToNextCoupon() {
-        if (nextCouponDate == null) return -1;
-        return ChronoUnit.DAYS.between(LocalDate.now(), nextCouponDate);
     }
 
     public void resolveNextCouponDate() {

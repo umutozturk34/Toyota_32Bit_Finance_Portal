@@ -76,12 +76,8 @@ public class PortfolioSummaryService {
 
     @Transactional(readOnly = true)
     public PortfolioSummaryResponse getSummary(Long portfolioId, String assetType) {
-        List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
-        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetType, "asset type");
-        if (filterType != null) {
-            AssetType fixed = filterType;
-            positions = positions.stream().filter(p -> p.getAssetType() == fixed).toList();
-        }
+        List<PortfolioPosition> positions = filterByType(
+                positionRepository.findByPortfolioId(portfolioId), assetType);
 
         Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(toKeys(positions));
         BigDecimal totalValue = BigDecimal.ZERO;
@@ -105,12 +101,8 @@ public class PortfolioSummaryService {
 
     @Transactional(readOnly = true)
     public List<AllocationItem> getAllocation(Long portfolioId, String mode, String assetTypeFilter) {
-        List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
-        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetTypeFilter, "asset type");
-        if (filterType != null) {
-            AssetType fixed = filterType;
-            positions = positions.stream().filter(p -> p.getAssetType() == fixed).toList();
-        }
+        List<PortfolioPosition> positions = filterByType(
+                positionRepository.findByPortfolioId(portfolioId), assetTypeFilter);
 
         boolean byType = "assetType".equals(mode);
         Map<String, BigDecimal> buckets = new LinkedHashMap<>();
@@ -169,5 +161,11 @@ public class PortfolioSummaryService {
 
     private List<AssetKey> toKeys(List<PortfolioPosition> positions) {
         return positions.stream().map(PortfolioPosition::toAssetKey).toList();
+    }
+
+    private List<PortfolioPosition> filterByType(List<PortfolioPosition> positions, String assetTypeName) {
+        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetTypeName, "asset type");
+        if (filterType == null) return positions;
+        return positions.stream().filter(p -> p.getAssetType() == filterType).toList();
     }
 }

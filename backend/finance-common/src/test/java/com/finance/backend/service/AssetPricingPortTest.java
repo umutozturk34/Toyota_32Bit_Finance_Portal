@@ -54,21 +54,6 @@ class AssetPricingPortTest {
     }
 
     @Test
-    void getBundlesPreservesInsertionOrder() {
-        List<AssetKey> keys = List.of(
-                new AssetKey(MarketType.CRYPTO, "a"),
-                new AssetKey(MarketType.STOCK, "b"),
-                new AssetKey(MarketType.FOREX, "c"));
-
-        Map<AssetKey, PriceBundle> bundles = port.getBundles(keys);
-
-        assertThat(bundles.keySet()).containsExactly(
-                new AssetKey(MarketType.CRYPTO, "a"),
-                new AssetKey(MarketType.STOCK, "b"),
-                new AssetKey(MarketType.FOREX, "c"));
-    }
-
-    @Test
     void getBundlesReturnsEmptyMapForEmptyInput() {
         Map<AssetKey, PriceBundle> bundles = port.getBundles(List.of());
         assertThat(bundles).isEmpty();

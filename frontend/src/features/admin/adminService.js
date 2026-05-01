@@ -1,11 +1,6 @@
 import api from '../../shared/services/api';
 
 export const adminService = {
-  getTaskStatus: async () => {
-    const response = await api.get('/admin/tasks/status');
-    return response.data.data;
-  },
-
   triggerCryptoSnapshot: () => api.post('/admin/trigger/crypto/snapshot').then(r => r.data.data),
   triggerCryptoCandles: () => api.post('/admin/trigger/crypto/candles').then(r => r.data.data),
   triggerCryptoFull: () => api.post('/admin/trigger/crypto/full').then(r => r.data.data),

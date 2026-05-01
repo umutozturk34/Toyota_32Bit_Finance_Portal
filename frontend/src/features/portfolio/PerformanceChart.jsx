@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
-import useSessionState from "../../shared/hooks/useSessionState";
+import useSessionState from '../../shared/hooks/useSessionState';
 import { motion } from 'framer-motion';
+import ReactECharts from 'echarts-for-react';
 import { TrendingUp, Loader2 } from '../../shared/components/AnimatedIcons';
-import Chart from 'react-apexcharts';
-import { usePortfolioPerformance } from './usePortfolioData';
+import { usePortfolioPerformance, useBackfillStatus } from './usePortfolioData';
 import { formatPriceTRY } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
 import { useTheme } from '../../shared/context/ThemeContext';
-import { getApexThemeOptions } from '../../shared/utils/apexTheme';
+import useElapsedSeconds from '../../shared/hooks/useElapsedSeconds';
 import {
   PORTFOLIO_RANGES as RANGES,
   ASSET_TYPE_FILTERS as ASSET_TYPES,
@@ -15,165 +15,172 @@ import {
   ASSET_TYPE_LABELS,
 } from '../../shared/constants/assetTypes';
 
-function buildCustomTooltip(dataPoints, isDark) {
-  const bg = isDark ? 'rgba(12,12,20,0.95)' : 'rgba(255,255,255,0.97)';
-  const fg = isDark ? '#e2e2ea' : '#1a1a2e';
-  const muted = isDark ? '#6b6b7a' : '#94a3b8';
-  const border = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-
-  return function ({ dataPointIndex }) {
-    const point = dataPoints[dataPointIndex];
-    if (!point) return '';
-
-    const date = new Date(point.time).toLocaleDateString('tr-TR', {
-      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
-    });
-
-    const pnlColor = point.pnl >= 0 ? '#10b981' : '#ef4444';
-    const pnlPrefix = point.pnl >= 0 ? '+' : '';
-
-    let detailRows = '';
-    if (point.details?.length > 0) {
-      detailRows = point.details.map(d => {
-        const color = ASSET_TYPE_COLORS[d.assetType] || '#6366f1';
-        const label = d.label !== d.assetType ? d.label : (ASSET_TYPE_LABELS[d.assetType] || d.label);
-        const dColor = d.pnlTry >= 0 ? '#10b981' : '#ef4444';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0">
-          <div style="display:flex;align-items:center;gap:6px">
-            <span style="width:6px;height:6px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0"></span>
-            <span style="font-size:11px;color:${fg};opacity:0.85">${label}</span>
-          </div>
-          <div style="display:flex;gap:8px;align-items:baseline">
-            <span style="font-size:11px;font-family:ui-monospace,monospace;color:${fg}">${formatPriceTRY(d.valueTry)}</span>
-            <span style="font-size:10px;font-family:ui-monospace,monospace;color:${dColor}">${d.pnlTry >= 0 ? '+' : ''}${formatPriceTRY(d.pnlTry)}</span>
-          </div>
-        </div>`;
-      }).join('');
-      detailRows = `<div style="border-top:1px solid ${border};margin-top:8px;padding-top:8px">${detailRows}</div>`;
-    }
-
-    let eventRows = '';
-    const lotEvents = (point.events || []).filter(e => POSITION_EVENT_META[e.type]);
-    if (lotEvents.length > 0) {
-      const rows = lotEvents.map(ev => {
-        const meta = POSITION_EVENT_META[ev.type];
-        const codeLabel = ev.assetCode || (ASSET_TYPE_LABELS[ev.assetType] || ev.assetType);
-        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 0">
-          <div style="display:flex;align-items:center;gap:5px">
-            <span style="width:5px;height:5px;border-radius:50%;background:${meta.color};display:inline-block"></span>
-            <span style="font-size:10px;font-weight:600;color:${meta.color}">${meta.label}</span>
-            <span style="font-size:10px;color:${muted}">${codeLabel}</span>
-          </div>
-          <span style="font-size:10px;font-family:ui-monospace,monospace;color:${fg};opacity:0.8">${formatPriceTRY(ev.valueTry)}</span>
-        </div>`;
-      }).join('');
-      eventRows = `<div style="border-top:1px solid ${border};margin-top:6px;padding-top:6px">
-        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:${muted};margin-bottom:4px">Pozisyon Hareketleri</div>
-        ${rows}
-      </div>`;
-    }
-
-    return `<div style="padding:12px 16px;min-width:260px;background:${bg};border-radius:12px;border:1px solid ${border};backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,0.2)">
-      <div style="font-size:10px;color:${muted};margin-bottom:8px;letter-spacing:0.3px">${date}</div>
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px">
-        <span style="font-size:16px;font-weight:700;font-family:ui-monospace,monospace;color:${fg}">${formatPriceTRY(point.value)}</span>
-        <span style="font-size:11px;font-family:ui-monospace,monospace;color:${pnlColor};font-weight:600">${pnlPrefix}${formatPriceTRY(point.pnl)} (${pnlPrefix}${point.pnlPercent?.toFixed(2) ?? '0.00'}%)</span>
-      </div>
-      ${detailRows}
-      ${eventRows}
-    </div>`;
-  };
-}
-
 const POSITION_EVENT_META = {
   POSITION_ADDED: { color: '#10b981', label: 'Lot Eklendi' },
-  POSITION_REMOVED: { color: '#ef4444', label: 'Lot Silindi' },
-  POSITION_UPDATED: { color: '#f59e0b', label: 'Lot Güncellendi' },
 };
 
-function buildAnnotations(data) {
-  const points = [];
-  data.forEach((d) => {
-    if (!d.events || d.events.length === 0) return;
-    const lotEvent = d.events.find(e => POSITION_EVENT_META[e.type]);
-    if (!lotEvent) return;
-    const markerColor = POSITION_EVENT_META[lotEvent.type].color;
-
-    points.push({
-      x: d.time,
-      y: d.value,
-      marker: {
-        size: 4,
-        fillColor: markerColor,
-        strokeColor: markerColor + '30',
-        strokeWidth: 6,
-        shape: 'circle',
-      },
-      label: { text: '' },
-    });
-  });
-  return points;
+function themePalette(isDark) {
+  return isDark
+    ? { bg: 'rgba(12,12,20,0.96)', fg: '#e2e2ea', muted: '#6b6b7a', border: 'rgba(255,255,255,0.08)', grid: 'rgba(255,255,255,0.05)' }
+    : { bg: 'rgba(255,255,255,0.98)', fg: '#1a1a2e', muted: '#94a3b8', border: 'rgba(0,0,0,0.08)', grid: 'rgba(0,0,0,0.04)' };
 }
 
-function MainChart({ data, isDark, color }) {
-  if (!data || data.length === 0) return null;
+function buildTooltipHtml(point, palette) {
+  const { bg, fg, muted, border } = palette;
+  const totalValue = point.amount ?? (Array.isArray(point.value) ? Number(point.value[1]) : Number(point.value));
+  const date = new Date(point.time).toLocaleDateString('tr-TR', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  });
+  const pnlColor = point.pnl >= 0 ? '#10b981' : '#ef4444';
+  const pnlPrefix = point.pnl >= 0 ? '+' : '';
 
-  const values = data.map(d => d.value);
+  const detailRows = (point.details || []).map((d) => {
+    const color = ASSET_TYPE_COLORS[d.assetType] || '#6366f1';
+    const label = d.label !== d.assetType ? d.label : (ASSET_TYPE_LABELS[d.assetType] || d.label);
+    const dColor = d.pnlTry >= 0 ? '#10b981' : '#ef4444';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="width:6px;height:6px;border-radius:50%;background:${color};display:inline-block;flex-shrink:0"></span>
+        <span style="font-size:11px;color:${fg};opacity:0.85">${label}</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:11px;font-family:ui-monospace,monospace;color:${fg}">${formatPriceTRY(d.valueTry)}</span>
+        <span style="font-size:10px;font-family:ui-monospace,monospace;color:${dColor}">${d.pnlTry >= 0 ? '+' : ''}${formatPriceTRY(d.pnlTry)}</span>
+      </div>
+    </div>`;
+  }).join('');
+  const detailBlock = detailRows
+    ? `<div style="border-top:1px solid ${border};margin-top:8px;padding-top:8px">${detailRows}</div>`
+    : '';
+
+  const lotEvents = (point.events || []).filter((e) => POSITION_EVENT_META[e.type]);
+  const eventRows = lotEvents.map((ev) => {
+    const meta = POSITION_EVENT_META[ev.type];
+    const codeLabel = ev.assetCode || (ASSET_TYPE_LABELS[ev.assetType] || ev.assetType);
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 0">
+      <div style="display:flex;align-items:center;gap:5px">
+        <span style="width:5px;height:5px;border-radius:50%;background:${meta.color};display:inline-block"></span>
+        <span style="font-size:10px;font-weight:600;color:${meta.color}">${meta.label}</span>
+        <span style="font-size:10px;color:${muted}">${codeLabel}</span>
+      </div>
+      <span style="font-size:10px;font-family:ui-monospace,monospace;color:${fg};opacity:0.8">${formatPriceTRY(ev.valueTry)}</span>
+    </div>`;
+  }).join('');
+  const eventBlock = eventRows
+    ? `<div style="border-top:1px solid ${border};margin-top:6px;padding-top:6px">
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:${muted};margin-bottom:4px">Pozisyon Hareketleri</div>
+        ${eventRows}
+      </div>`
+    : '';
+
+  return `<div style="padding:12px 16px;min-width:260px;background:${bg};border-radius:12px;border:1px solid ${border};box-shadow:0 8px 32px rgba(0,0,0,0.25)">
+    <div style="font-size:10px;color:${muted};margin-bottom:8px;letter-spacing:0.3px">${date}</div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px">
+      <span style="font-size:16px;font-weight:700;font-family:ui-monospace,monospace;color:${fg}">${formatPriceTRY(totalValue)}</span>
+      <span style="font-size:11px;font-family:ui-monospace,monospace;color:${pnlColor};font-weight:600">${pnlPrefix}${formatPriceTRY(point.pnl)} (${pnlPrefix}${point.pnlPercent?.toFixed(2) ?? '0.00'}%)</span>
+    </div>
+    ${detailBlock}
+    ${eventBlock}
+  </div>`;
+}
+
+function buildEChartsOption(data, color, palette) {
+  const seriesData = data.map((d) => ({
+    value: [d.time, d.value],
+    amount: d.value,
+    pnl: d.pnl,
+    pnlPercent: d.pnlPercent,
+    details: d.details,
+    events: d.events,
+    time: d.time,
+  }));
+
+  const markPointData = data
+    .filter((d) => (d.events || []).some((e) => POSITION_EVENT_META[e.type]))
+    .map((d) => ({ coord: [d.time, d.value] }));
+
+  const values = data.map((d) => d.value);
   const dataMin = Math.min(...values);
   const dataMax = Math.max(...values);
   const span = dataMax - dataMin;
   const padding = span > 0 ? span * 0.08 : dataMax * 0.05;
-  const yMin = Math.max(0, dataMin - padding);
-  const yMax = dataMax + padding;
 
-  const annotationPoints = useMemo(() => buildAnnotations(data), [data]);
-  const themeOpts = getApexThemeOptions(isDark);
-
-  const seriesData = useMemo(() => data.map(d => ({ x: d.time, y: d.value })), [data]);
-
-  const options = {
-    ...themeOpts,
-    chart: {
-      ...themeOpts.chart,
-      type: 'area',
-      height: 380,
-      toolbar: { show: false },
-      zoom: { enabled: true, type: 'x', autoScaleYaxis: true },
-      animations: { enabled: data.length < 100, easing: 'easeinout', speed: 400 },
-      redrawOnParentResize: true,
-    },
-    colors: [color],
-    stroke: { curve: data.length > 200 ? 'straight' : 'smooth', width: 2 },
-    markers: { size: 0, hover: { size: 5, sizeOffset: 2 } },
-    fill: {
-      type: 'gradient',
-      gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.0, stops: [0, 95] },
-    },
-    annotations: { points: annotationPoints },
-    xaxis: {
-      ...themeOpts.xaxis,
-      type: 'datetime',
-      tickAmount: Math.min(data.length, 8),
-    },
-    yaxis: {
-      ...themeOpts.yaxis,
-      min: yMin,
-      max: yMax,
-      forceNiceScale: false,
-      tickAmount: 6,
-      labels: { ...themeOpts.yaxis.labels, formatter: (val) => formatPriceTRY(val) },
-    },
+  return {
+    backgroundColor: 'transparent',
+    animation: data.length < 200,
+    grid: { left: 70, right: 24, top: 16, bottom: 32, containLabel: false },
+    dataZoom: [
+      { type: 'inside', xAxisIndex: 0, filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: 'shift', moveOnMouseWheel: false },
+    ],
     tooltip: {
-      ...themeOpts.tooltip,
-      custom: buildCustomTooltip(data, isDark),
-      intersect: false,
-      shared: false,
+      trigger: 'axis',
+      backgroundColor: 'transparent',
+      borderWidth: 0,
+      padding: 0,
+      extraCssText: 'box-shadow:none;',
+      formatter: (params) => {
+        const point = params?.[0]?.data;
+        return point ? buildTooltipHtml(point, palette) : '';
+      },
     },
-    grid: { ...themeOpts.grid, padding: { left: 12, right: 12, top: 0, bottom: 0 } },
-    dataLabels: { enabled: false },
+    xAxis: {
+      type: 'time',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: palette.muted, fontSize: 10 },
+      splitLine: { show: false },
+    },
+    yAxis: {
+      type: 'value',
+      min: Math.max(0, dataMin - padding),
+      max: dataMax + padding,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: {
+        color: palette.muted,
+        fontSize: 10,
+        formatter: (val) => formatPriceTRY(val),
+      },
+      splitLine: { lineStyle: { color: palette.grid, type: 'dashed' } },
+    },
+    series: [{
+      type: 'line',
+      smooth: data.length < 200,
+      showSymbol: false,
+      sampling: 'lttb',
+      data: seriesData,
+      itemStyle: { color },
+      lineStyle: { width: 2, color },
+      areaStyle: {
+        color: {
+          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: color + '55' },
+            { offset: 1, color: color + '00' },
+          ],
+        },
+      },
+      markPoint: {
+        symbol: 'circle',
+        symbolSize: 12,
+        itemStyle: {
+          color: '#10b981',
+          borderColor: '#0a1f17',
+          borderWidth: 2,
+          shadowColor: 'rgba(16, 185, 129, 0.6)',
+          shadowBlur: 8,
+        },
+        label: { show: false },
+        emphasis: {
+          scale: 1.3,
+          label: { show: false },
+        },
+        animation: false,
+        data: markPointData,
+      },
+      emphasis: { focus: 'series' },
+    }],
   };
-
-  return <Chart options={options} series={[{ name: 'Portföy Değeri', data: seriesData }]} type="area" height={380} />;
 }
 
 export default function PerformanceChart({ portfolioId }) {
@@ -182,8 +189,15 @@ export default function PerformanceChart({ portfolioId }) {
   const [activeType, setActiveType] = useSessionState('portfolio-perf-type', null);
 
   const { data: perfData = [], isLoading: loading } = usePortfolioPerformance(portfolioId, range, activeType);
+  const backfill = useBackfillStatus(portfolioId);
+  const backfillElapsed = useElapsedSeconds(backfill.since);
 
   const mainColor = activeType ? (ASSET_TYPE_COLORS[activeType] || '#6366f1') : '#6366f1';
+  const palette = useMemo(() => themePalette(isDark), [isDark]);
+  const option = useMemo(
+    () => (perfData.length > 0 ? buildEChartsOption(perfData, mainColor, palette) : null),
+    [perfData, mainColor, palette]
+  );
 
   const currentValue = perfData.length > 0 ? perfData[perfData.length - 1] : null;
   const totalPnl = currentValue?.pnl ?? null;
@@ -206,7 +220,7 @@ export default function PerformanceChart({ portfolioId }) {
             <div>
               <p className="text-sm font-bold text-fg">
                 {activeType
-                  ? ASSET_TYPES.find(t => t.id === activeType)?.label + ' Performansı'
+                  ? ASSET_TYPES.find((t) => t.id === activeType)?.label + ' Performansı'
                   : 'Portföy Performansı'}
               </p>
               {currentValue && (
@@ -222,20 +236,19 @@ export default function PerformanceChart({ portfolioId }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {backfill.running && (
+              <div className="flex items-center gap-1.5 rounded-md border border-accent/30 bg-accent/10 px-2 py-1">
+                <Loader2 className="h-3 w-3 text-accent animate-spin" />
+                <span className="text-[10px] text-accent font-semibold">veriler hazırlanıyor · {backfillElapsed}sn</span>
+              </div>
+            )}
             <div className="flex items-center gap-1.5">
               <span className="relative w-2 h-2">
                 <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-30" />
                 <span className="relative block w-2 h-2 rounded-full bg-success" />
               </span>
               <span className="text-[10px] text-fg-muted font-medium">Lot Eklendi</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="relative w-2 h-2">
-                <span className="absolute inset-0 rounded-full bg-danger animate-ping opacity-30" />
-                <span className="relative block w-2 h-2 rounded-full bg-danger" />
-              </span>
-              <span className="text-[10px] text-fg-muted font-medium">Lot Silindi</span>
             </div>
           </div>
         </div>
@@ -288,8 +301,15 @@ export default function PerformanceChart({ portfolioId }) {
             <div className="absolute inset-0 flex items-center justify-center">
               <Loader2 className="h-6 w-6 animate-spin text-accent" />
             </div>
-          ) : perfData.length > 0 ? (
-            <MainChart key={`${activeType}-${range}`} data={perfData} isDark={isDark} color={mainColor} />
+          ) : option ? (
+            <ReactECharts
+              key={`${activeType}-${range}-${isDark}`}
+              option={option}
+              notMerge
+              lazyUpdate
+              style={{ height: 380 }}
+              opts={{ renderer: 'canvas' }}
+            />
           ) : (
             <div className="flex flex-col items-center justify-center h-[380px] gap-3">
               <TrendingUp className="h-8 w-8 text-fg-subtle" />

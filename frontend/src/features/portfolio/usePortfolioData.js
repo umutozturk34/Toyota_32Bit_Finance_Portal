@@ -1,5 +1,9 @@
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { EventSourcePolyfill } from 'event-source-polyfill';
 import { portfolioService } from './portfolioService';
+import { getToken } from '../auth/keycloak';
+import { useClearPendingLots, useMarkPendingLot } from './usePendingLots';
 
 export function usePortfolioList() {
   return useQuery({
@@ -7,6 +11,55 @@ export function usePortfolioList() {
     queryFn: portfolioService.list,
     retry: false,
   });
+}
+
+export function usePortfolioLimits() {
+  return useQuery({
+    queryKey: ['portfolioLimits'],
+    queryFn: portfolioService.getLimits,
+    staleTime: 1000 * 60 * 60,
+  });
+}
+
+export function useBackfillStatus(portfolioId) {
+  const [state, setState] = useState({ running: false, since: null });
+  const invalidate = useInvalidatePortfolio();
+  const clearPending = useClearPendingLots();
+
+  useEffect(() => {
+    if (!portfolioId) return undefined;
+    let cancelled = false;
+    let source;
+
+    (async () => {
+      const token = await getToken();
+      if (cancelled || !token) return;
+      source = new EventSourcePolyfill(`/api/v1/portfolios/${portfolioId}/backfill-stream`, {
+        headers: { Authorization: `Bearer ${token}` },
+        heartbeatTimeout: 60_000,
+      });
+      source.addEventListener('backfill-status', (event) => {
+        const next = event.data === 'true' || event.data === true;
+        setState((prev) => {
+          if (prev.running && !next) {
+            invalidate();
+            clearPending();
+            return { running: false, since: null };
+          }
+          if (!prev.running && next) return { running: true, since: Date.now() };
+          return prev;
+        });
+      });
+      source.onerror = () => source.close();
+    })();
+
+    return () => {
+      cancelled = true;
+      if (source) source.close();
+    };
+  }, [portfolioId]);
+
+  return state;
 }
 
 export function usePortfolioView(portfolioId) {
@@ -68,18 +121,26 @@ export function usePortfolioPositions(portfolioId, params) {
 
 export function useAddPosition(portfolioId) {
   const invalidate = useInvalidatePortfolio();
+  const markPending = useMarkPendingLot();
   return useMutation({
     mutationFn: (payload) => portfolioService.addPosition(portfolioId, payload),
-    onSuccess: invalidate,
+    onSuccess: (_data, variables) => {
+      if (variables) markPending(variables.assetType, variables.assetCode);
+      invalidate();
+    },
   });
 }
 
 export function useUpdatePosition(portfolioId) {
   const invalidate = useInvalidatePortfolio();
+  const markPending = useMarkPendingLot();
   return useMutation({
     mutationFn: ({ positionId, payload }) =>
       portfolioService.updatePosition(portfolioId, positionId, payload),
-    onSuccess: invalidate,
+    onSuccess: (_data, variables) => {
+      if (variables?.payload) markPending(variables.payload.assetType, variables.payload.assetCode);
+      invalidate();
+    },
   });
 }
 

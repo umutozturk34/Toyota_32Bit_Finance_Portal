@@ -3,12 +3,11 @@ import { motion } from 'framer-motion';
 import useSessionState from '../../shared/hooks/useSessionState';
 import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, Plus } from 'lucide-react';
 import { TrendingUp, TrendingDown, Loader2 } from '../../shared/components/AnimatedIcons';
-import Chart from 'react-apexcharts';
+import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../shared/context/ThemeContext';
 import { useAssetSeries } from './usePortfolioData';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
-import { getApexThemeOptions } from '../../shared/utils/apexTheme';
 import { PORTFOLIO_RANGES as RANGES, ASSET_TYPE_LABELS } from '../../shared/constants/assetTypes';
 import PositionFormModal from './PositionFormModal';
 
@@ -25,74 +24,92 @@ const STAT_CARDS = [
 function AssetChart({ data, isDark }) {
   if (!data || data.length === 0) return null;
 
-  const themeOpts = getApexThemeOptions(isDark);
-  const timestamps = data.map(d => new Date(d.timestamp).getTime());
-  const marketValues = data.map(d => Number(d.marketValueTry));
-  const unitPrices = data.map(d => Number(d.unitPriceTry));
+  const muted = isDark ? '#6b6b7a' : '#94a3b8';
+  const grid = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+  const tooltipBg = isDark ? 'rgba(12,12,20,0.95)' : 'rgba(255,255,255,0.97)';
+  const tooltipFg = isDark ? '#e2e2ea' : '#1a1a2e';
+  const tooltipBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
 
-  const options = {
-    ...themeOpts,
-    chart: {
-      ...themeOpts.chart,
-      height: 300,
-      toolbar: { show: false },
-      zoom: { enabled: true },
-      animations: { enabled: true, easing: 'easeinout', speed: 600 },
-    },
-    colors: ['#6366f1', '#f59e0b'],
-    stroke: {
-      curve: 'smooth',
-      width: [2.5, 1.5],
-      dashArray: [0, 6],
-    },
-    fill: {
-      type: ['gradient', 'none'],
-      gradient: {
-        shadeIntensity: 1,
-        opacityFrom: 0.35,
-        opacityTo: 0.02,
-        stops: [0, 100],
+  const marketValues = data.map((d) => [new Date(d.timestamp).getTime(), Number(d.marketValueTry)]);
+  const unitPrices = data.map((d) => [new Date(d.timestamp).getTime(), Number(d.unitPriceTry)]);
+
+  const option = {
+    backgroundColor: 'transparent',
+    animation: data.length < 200,
+    grid: { left: 65, right: 65, top: 16, bottom: 30 },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: tooltipBg,
+      borderColor: tooltipBorder,
+      textStyle: { color: tooltipFg, fontSize: 11 },
+      formatter: (params) => {
+        if (!params?.length) return '';
+        const date = new Date(params[0].value[0]).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+        const rows = params.map((p) => `<div style="display:flex;justify-content:space-between;gap:14px;font-size:11px">
+            <span style="color:${tooltipFg};opacity:0.85">${p.seriesName}</span>
+            <span style="font-family:ui-monospace,monospace;font-weight:600;color:${p.color}">${formatPriceTRY(p.value[1])}</span>
+          </div>`).join('');
+        return `<div style="padding:6px 2px"><div style="font-size:10px;color:${tooltipFg};opacity:0.65;margin-bottom:6px">${date}</div>${rows}</div>`;
       },
     },
-    xaxis: {
-      ...themeOpts.xaxis,
-      type: 'datetime',
-      categories: timestamps,
+    xAxis: {
+      type: 'time',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: muted, fontSize: 10 },
+      splitLine: { show: false },
     },
-    yaxis: [
+    yAxis: [
       {
-        ...themeOpts.yaxis,
-        title: { text: '' },
-        labels: {
-          ...themeOpts.yaxis.labels,
-          formatter: (val) => formatPriceTRY(val),
-        },
+        type: 'value',
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: muted, fontSize: 10, formatter: (val) => formatPriceTRY(val) },
+        splitLine: { lineStyle: { color: grid, type: 'dashed' } },
       },
       {
-        opposite: true,
-        ...themeOpts.yaxis,
-        title: { text: '' },
-        labels: {
-          ...themeOpts.yaxis.labels,
-          formatter: (val) => formatPriceTRY(val),
-        },
+        type: 'value',
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: { color: muted, fontSize: 10, formatter: (val) => formatPriceTRY(val) },
+        splitLine: { show: false },
       },
     ],
-    tooltip: {
-      ...themeOpts.tooltip,
-      x: { format: 'dd MMM yyyy' },
-    },
-    legend: { show: false },
-    grid: themeOpts.grid,
-    dataLabels: { enabled: false },
+    series: [
+      {
+        name: 'Piyasa Değeri',
+        type: 'line',
+        smooth: data.length < 200,
+        showSymbol: false,
+        sampling: 'lttb',
+        data: marketValues,
+        itemStyle: { color: '#6366f1' },
+        lineStyle: { width: 2.5, color: '#6366f1' },
+        areaStyle: {
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: '#6366f155' },
+              { offset: 1, color: '#6366f100' },
+            ],
+          },
+        },
+      },
+      {
+        name: 'Birim Fiyat',
+        type: 'line',
+        yAxisIndex: 1,
+        smooth: data.length < 200,
+        showSymbol: false,
+        sampling: 'lttb',
+        data: unitPrices,
+        itemStyle: { color: '#f59e0b' },
+        lineStyle: { width: 1.5, color: '#f59e0b', type: 'dashed' },
+      },
+    ],
   };
 
-  const series = [
-    { name: 'Piyasa Değeri', type: 'area', data: marketValues },
-    { name: 'Birim Fiyat', type: 'line', data: unitPrices },
-  ];
-
-  return <Chart options={options} series={series} type="line" height={300} />;
+  return <ReactECharts option={option} notMerge style={{ height: 300 }} opts={{ renderer: 'canvas' }} />;
 }
 
 export default function AssetDetail({ portfolioId, asset, onBack }) {

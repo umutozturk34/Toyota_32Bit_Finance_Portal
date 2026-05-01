@@ -1,12 +1,11 @@
 import { useMemo } from 'react';
-import useSessionState from "../../shared/hooks/useSessionState";
+import useSessionState from '../../shared/hooks/useSessionState';
 import { motion } from 'framer-motion';
 import { PieChart } from 'lucide-react';
+import ReactECharts from 'echarts-for-react';
 import { Loader2 } from '../../shared/components/AnimatedIcons';
-import Chart from 'react-apexcharts';
 import { useTheme } from '../../shared/context/ThemeContext';
 import { formatPriceTRY, formatCompactTRY } from '../../shared/utils/formatters';
-import { getApexThemeOptions } from '../../shared/utils/apexTheme';
 import { usePortfolioAllocation } from './usePortfolioData';
 import { cardVariants } from '../../shared/utils/animations';
 import {
@@ -31,130 +30,79 @@ export default function AllocationChart({ allocation, portfolioId }) {
 
   const availableTypes = useMemo(() => {
     if (!allocation) return new Set();
-    return new Set(allocation.map(i => i.label));
+    return new Set(allocation.map((i) => i.label));
   }, [allocation]);
 
   const loading = activeTab !== 'ALL' && assetLoading;
 
   const finalData = useMemo(() => {
-    let items;
-    if (activeTab === 'ALL') {
-      items = allocation || [];
-    } else {
-      if (!assetData) return [];
-      items = assetData;
-    }
-    return items.filter(i => Number(i.valueTry) > 0);
+    const items = activeTab === 'ALL' ? (allocation || []) : (assetData || []);
+    return items.filter((i) => Number(i.valueTry) > 0);
   }, [activeTab, allocation, assetData]);
 
-  const labels = useMemo(() =>
-    finalData.map(item =>
-      activeTab === 'ALL'
-        ? (ASSET_TYPE_LABELS[item.label] || item.label)
-        : item.label
-    ),
-  [finalData, activeTab]);
+  const totalValue = useMemo(
+    () => finalData.reduce((sum, item) => sum + Number(item.valueTry), 0),
+    [finalData]
+  );
 
-  const series = useMemo(() =>
-    finalData.map(item => Number(item.valueTry)),
-  [finalData]);
+  const seriesData = useMemo(() => finalData.map((item, idx) => {
+    const label = activeTab === 'ALL'
+      ? (ASSET_TYPE_LABELS[item.label] || item.label)
+      : item.label;
+    const color = activeTab === 'ALL'
+      ? (ASSET_TYPE_COLORS[item.label] || COLORS[0])
+      : (COLORS[idx % COLORS.length]);
+    return { name: label, value: Number(item.valueTry), itemStyle: { color } };
+  }), [finalData, activeTab]);
 
-  const totalValue = useMemo(() =>
-    series.reduce((sum, val) => sum + val, 0),
-  [series]);
+  const totalLabel = activeTab === 'ALL' ? 'Toplam' : (ASSET_TYPE_LABELS[activeTab] || activeTab);
+  const tooltipBg = isDark ? 'rgba(12,12,20,0.95)' : 'rgba(255,255,255,0.97)';
+  const tooltipFg = isDark ? '#e2e2ea' : '#1a1a2e';
+  const tooltipBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const labelFg = isDark ? '#e6edf3' : '#1b1f24';
+  const labelMuted = isDark ? '#7d8590' : '#636c76';
+  const ringStroke = isDark ? '#0d1117' : '#ffffff';
 
-  const chartColors = useMemo(() => {
-    if (activeTab === 'ALL') {
-      return finalData.map(item => ASSET_TYPE_COLORS[item.label] || COLORS[0]);
-    }
-    return COLORS.slice(0, labels.length);
-  }, [activeTab, finalData, labels.length]);
-
-  const baseTheme = getApexThemeOptions(isDark);
-
-  const options = useMemo(() => ({
-    ...baseTheme,
-    chart: {
-      ...baseTheme.chart,
-      type: 'donut',
-      animations: {
-        enabled: true,
-        easing: 'easeinout',
-        speed: 800,
-        dynamicAnimation: { enabled: true, speed: 400 },
-        animateGradually: { enabled: true, delay: 100 },
+  const option = useMemo(() => ({
+    backgroundColor: 'transparent',
+    animation: true,
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: tooltipBg,
+      borderColor: tooltipBorder,
+      textStyle: { color: tooltipFg, fontSize: 11 },
+      formatter: (params) => {
+        const pct = totalValue > 0 ? ((params.value / totalValue) * 100).toFixed(1) : '0.0';
+        return `<div style="padding:4px 0">
+          <div style="font-size:11px;color:${tooltipFg};opacity:0.85;margin-bottom:2px">${params.name}</div>
+          <div style="font-size:13px;font-family:ui-monospace,monospace;font-weight:700;color:${tooltipFg}">${formatPriceTRY(params.value)}</div>
+          <div style="font-size:10px;color:${labelMuted}">%${pct}</div>
+        </div>`;
       },
     },
-    labels,
-    colors: chartColors,
-    plotOptions: {
-      pie: {
-        expandOnClick: true,
-        donut: {
-          size: '72%',
-          labels: {
-            show: true,
-            name: {
-              show: true,
-              fontSize: '13px',
-              fontFamily: "'Nunito Sans', sans-serif",
-              fontWeight: 600,
-              color: isDark ? '#e6edf3' : '#1b1f24',
-              offsetY: -4,
-            },
-            value: {
-              show: true,
-              fontSize: '14px',
-              fontFamily: "'JetBrains Mono', monospace",
-              fontWeight: 700,
-              color: isDark ? '#e6edf3' : '#1b1f24',
-              offsetY: 4,
-              formatter: (val) => formatCompactTRY(Number(val)),
-            },
-            total: {
-              show: true,
-              showAlways: true,
-              label: activeTab === 'ALL' ? 'Toplam' : (ASSET_TYPE_LABELS[activeTab] || activeTab),
-              fontSize: '11px',
-              fontFamily: "'Nunito Sans', sans-serif",
-              fontWeight: 500,
-              color: isDark ? '#7d8590' : '#636c76',
-              formatter: (w) => formatCompactTRY(
-                w.globals.seriesTotals.reduce((a, b) => a + b, 0)
-              ),
-            },
-          },
+    series: [{
+      type: 'pie',
+      radius: ['58%', '80%'],
+      avoidLabelOverlap: true,
+      itemStyle: { borderColor: ringStroke, borderWidth: 3 },
+      label: {
+        show: true,
+        position: 'center',
+        formatter: () => `{label|${totalLabel}}\n{value|${formatCompactTRY(totalValue)}}`,
+        rich: {
+          label: { fontSize: 11, color: labelMuted, fontWeight: 500, padding: [0, 0, 4, 0] },
+          value: { fontSize: 14, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: labelFg },
         },
       },
-    },
-    dataLabels: {
-      enabled: false,
-    },
-    legend: {
-      show: false,
-    },
-    stroke: {
-      show: true,
-      width: 3,
-      colors: [isDark ? '#0d1117' : '#ffffff'],
-    },
-    tooltip: {
-      ...baseTheme.tooltip,
-      y: {
-        formatter: (val) => `${formatPriceTRY(val)} (${((val / totalValue) * 100).toFixed(1)}%)`,
+      labelLine: { show: false },
+      emphasis: {
+        scale: true,
+        scaleSize: 4,
+        label: { show: true },
       },
-    },
-    states: {
-      hover: { filter: { type: 'darken', value: 0.15 } },
-      active: { filter: { type: 'darken', value: 0.25 } },
-    },
-    responsive: [{
-      breakpoint: 768,
-      options: {
-        chart: { height: 170 },
-      },
+      data: seriesData,
     }],
-  }), [isDark, labels, activeTab, baseTheme, chartColors, totalValue]);
+  }), [seriesData, totalValue, totalLabel, tooltipBg, tooltipBorder, tooltipFg, labelFg, labelMuted, ringStroke]);
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="show" className="space-y-4">
@@ -188,29 +136,31 @@ export default function AllocationChart({ allocation, portfolioId }) {
       </div>
 
       <div className="rounded-2xl border border-border-default bg-bg-elevated backdrop-blur-md p-5 card-hover transition-all duration-200 hover:border-border-hover">
-        {loading && activeTab !== 'ALL' ? (
+        {loading ? (
           <div className="flex items-center justify-center h-80">
             <Loader2 className="h-6 w-6 animate-spin text-accent" />
           </div>
-        ) : series.length === 0 ? (
+        ) : seriesData.length === 0 ? (
           <div className="flex items-center justify-center h-80 text-sm text-fg-muted">
             Bu türde varlık bulunmuyor
           </div>
         ) : (
           <div className="space-y-4">
-            <Chart
+            <ReactECharts
               key={`${isDark}-${activeTab}`}
-              options={options}
-              series={series}
-              type="donut"
-              height={200}
+              option={option}
+              notMerge
+              style={{ height: 220 }}
+              opts={{ renderer: 'canvas' }}
             />
 
             <div className="space-y-1.5">
               {finalData.map((item, idx) => {
                 const value = Number(item.valueTry);
                 const pct = totalValue > 0 ? (value / totalValue) * 100 : 0;
-                const color = chartColors[idx] || COLORS[0];
+                const color = activeTab === 'ALL'
+                  ? (ASSET_TYPE_COLORS[item.label] || COLORS[0])
+                  : (COLORS[idx % COLORS.length]);
                 const label = activeTab === 'ALL'
                   ? (ASSET_TYPE_LABELS[item.label] || item.label)
                   : item.label;

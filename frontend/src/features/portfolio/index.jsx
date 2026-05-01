@@ -1,24 +1,32 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Wallet, LayoutDashboard, TrendingUp as TrendingUpIcon } from 'lucide-react';
-import { AlertTriangle } from '../../shared/components/AnimatedIcons';
+import { Wallet, LayoutDashboard, TrendingUp as TrendingUpIcon, ShieldCheck } from 'lucide-react';
+import { Check } from '../../shared/components/AnimatedIcons';
 import PageHeader from '../../shared/components/PageHeader';
 import LoadingState from '../../shared/components/LoadingState';
 import ErrorState from '../../shared/components/ErrorState';
-import ConfirmDialog from '../../shared/components/ConfirmDialog';
+import ProcessingSteps from '../../shared/components/ProcessingSteps';
+import useProcessingAnimation from '../../shared/hooks/useProcessingAnimation';
 import SummaryCards from './SummaryCards';
 import PositionsTable from './PositionsTable';
 import AllocationChart from './AllocationChart';
 import PerformanceChart from './PerformanceChart';
 import PositionFormModal from './PositionFormModal';
+import PositionDeleteDialog from './PositionDeleteDialog';
 import AssetDetail from './AssetDetail';
 import {
   usePortfolioList, usePortfolioView, usePortfolioPositions,
-  useCreatePortfolio, useDeletePosition, useInvalidatePortfolio,
+  useCreatePortfolio, useInvalidatePortfolio,
 } from './usePortfolioData';
 
 const DEFAULT_PORTFOLIO_NAME = 'Demo Portföy';
+const ONBOARDING_STEPS = [
+  { label: 'Hesap doğrulanıyor...', duration: 350 },
+  { label: 'Portföy oluşturuluyor...', duration: 400 },
+  { label: 'Hazırlanıyor...', duration: 350 },
+];
+const ONBOARDING_SUCCESS_HOLD_MS = 700;
 
 const TABS = [
   { id: 'overview', label: 'Genel Bakış', Icon: LayoutDashboard },
@@ -78,18 +86,26 @@ export default function Portfolio() {
 
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [onboardingPhase, setOnboardingPhase] = useState('idle');
   const createPortfolio = useCreatePortfolio();
-  const deletePosition = useDeletePosition(portfolio?.id);
+  const { processingStep, runAnimation, reset: resetOnboarding } = useProcessingAnimation();
 
-  const handleCreatePortfolio = () => {
-    createPortfolio.mutate(DEFAULT_PORTFOLIO_NAME, { onSuccess: invalidatePortfolio });
-  };
-
-  const handleDeleteConfirm = () => {
-    if (!deleteTarget) return;
-    deletePosition.mutate(deleteTarget.id, {
-      onSuccess: () => setDeleteTarget(null),
-    });
+  const handleCreatePortfolio = async () => {
+    setOnboardingPhase('processing');
+    try {
+      await Promise.all([
+        createPortfolio.mutateAsync(DEFAULT_PORTFOLIO_NAME),
+        runAnimation(ONBOARDING_STEPS),
+      ]);
+      setOnboardingPhase('success');
+      setTimeout(() => {
+        invalidatePortfolio();
+        setOnboardingPhase('idle');
+      }, ONBOARDING_SUCCESS_HOLD_MS);
+    } catch {
+      resetOnboarding();
+      setOnboardingPhase('idle');
+    }
   };
 
   if (loading) return <LoadingState message="Portföy yükleniyor..." />;
@@ -102,25 +118,50 @@ export default function Portfolio() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center justify-center gap-5 rounded-xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-12"
+          className="flex flex-col items-center justify-center gap-5 rounded-xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-12 min-h-[320px]"
         >
-          <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10">
-            <Wallet className="w-8 h-8 text-accent" />
-          </div>
-          <div className="text-center space-y-2">
-            <h2 className="text-xl font-semibold text-fg">Portföyünüzü Oluşturun</h2>
-            <p className="text-sm text-fg-muted max-w-md">
-              Geçmiş tarihli pozisyonlar tanımlayarak hipotetik portföy performansınızı izleyin.
-            </p>
-          </div>
-          <button
-            onClick={handleCreatePortfolio}
-            disabled={createPortfolio.isPending}
-            className="flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-bright border-none cursor-pointer disabled:opacity-50"
-          >
-            <Wallet className="h-4 w-4" />
-            {createPortfolio.isPending ? 'Oluşturuluyor...' : 'Portföyü Başlat'}
-          </button>
+          {onboardingPhase === 'success' ? (
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex flex-col items-center gap-3"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                className="flex items-center justify-center w-16 h-16 rounded-full bg-success/15"
+              >
+                <Check className="h-8 w-8 text-success" strokeWidth={2.5} />
+              </motion.div>
+              <p className="text-base font-semibold text-fg">Portföyünüz hazır</p>
+              <div className="flex items-center gap-1.5 text-[11px] text-success/70">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                Pozisyon eklemeye başlayabilirsiniz
+              </div>
+            </motion.div>
+          ) : onboardingPhase === 'processing' ? (
+            <ProcessingSteps steps={ONBOARDING_STEPS} currentStep={processingStep} />
+          ) : (
+            <>
+              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10">
+                <Wallet className="w-8 h-8 text-accent" />
+              </div>
+              <div className="text-center space-y-2">
+                <h2 className="text-xl font-semibold text-fg">Portföyünüzü Oluşturun</h2>
+                <p className="text-sm text-fg-muted max-w-md">
+                  Geçmiş tarihli pozisyonlar tanımlayarak hipotetik portföy performansınızı izleyin.
+                </p>
+              </div>
+              <button
+                onClick={handleCreatePortfolio}
+                className="flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-bright border-none cursor-pointer"
+              >
+                <Wallet className="h-4 w-4" />
+                Portföyü Başlat
+              </button>
+            </>
+          )}
         </motion.div>
       </div>
     );
@@ -197,17 +238,14 @@ export default function Portfolio() {
         />
       )}
 
-      <ConfirmDialog
-        open={Boolean(deleteTarget)}
-        title="Pozisyonu Sil"
-        message={deleteTarget ? `${deleteTarget.assetCode} pozisyonu silinecek. Bu işlem geri alınamaz.` : null}
-        confirmLabel="Sil"
-        variant="danger"
-        loading={deletePosition.isPending}
-        icon={AlertTriangle}
-        onConfirm={handleDeleteConfirm}
-        onCancel={() => setDeleteTarget(null)}
-      />
+      {deleteTarget && portfolio && (
+        <PositionDeleteDialog
+          portfolioId={portfolio.id}
+          position={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onComplete={invalidatePortfolio}
+        />
+      )}
     </div>
   );
 }

@@ -42,7 +42,6 @@ public class BondRateHistoryService {
     private final MarketCacheService<Bond> bondCacheService;
     private final TransactionTemplate transactionTemplate;
     private final int maxDaysPerRequest;
-    private final BigDecimal rateThreshold;
     private final BigDecimal auctionThreshold;
     private final BigDecimal cpiFixedThreshold;
     private final BigDecimal faceValue;
@@ -64,7 +63,6 @@ public class BondRateHistoryService {
         this.bondCacheService = bondCacheService;
         this.transactionTemplate = transactionTemplate;
         this.maxDaysPerRequest = bondProperties.getMaxDaysPerRequest();
-        this.rateThreshold = bondProperties.getRateThreshold();
         this.auctionThreshold = bondProperties.getAuctionThreshold();
         this.cpiFixedThreshold = bondProperties.getCpiFixedThreshold();
         this.faceValue = bondProperties.getFaceValue();
@@ -106,7 +104,7 @@ public class BondRateHistoryService {
         }
 
         List<BondRateHistory> fullHistory = rateHistoryRepository.findByIsinCodeOrderByRateDateAsc(dto.isinCode());
-        savedBond.resolveType(fullHistory, rateThreshold, auctionThreshold, cpiFixedThreshold);
+        savedBond.resolveType(fullHistory, auctionThreshold, cpiFixedThreshold);
         savedBond.resolveSimpleYield(faceValue, daysInYear);
 
         if (savedBond.isDiscounted()) {

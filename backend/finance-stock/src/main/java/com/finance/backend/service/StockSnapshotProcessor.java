@@ -57,6 +57,7 @@ public class StockSnapshotProcessor implements MarketSnapshotProcessor {
             int saved = result.candles().isEmpty()
                     ? 0
                     : entityWriter.upsertCandles(symbol, stock, result.candles());
+            entityWriter.refreshChangePercentFromCandles(stock);
             stockCacheService.putSnapshot(symbol, stock);
             return saved;
         });

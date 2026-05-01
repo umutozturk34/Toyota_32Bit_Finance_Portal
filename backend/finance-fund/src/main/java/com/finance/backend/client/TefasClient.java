@@ -123,12 +123,14 @@ public class TefasClient {
         String trimmed = body.trim();
         try {
             TefasResponse response = objectMapper.readValue(trimmed, TefasResponse.class);
-            if (response.errorCode() != null
-                    || (response.errorMessage() != null && !response.errorMessage().isBlank())) {
+            if (response.errorCode() != null) {
                 throw new ExternalApiException("TEFAS",
                         "TEFAS error " + response.errorCode() + ": " + response.errorMessage());
             }
             if (response.resultList() == null || response.resultList().isEmpty()) {
+                if (response.errorMessage() != null && !response.errorMessage().isBlank()) {
+                    log.debug("TEFAS no-data response: {}", response.errorMessage());
+                }
                 return List.of();
             }
             List<TefasFundDto> result = response.resultList().stream()

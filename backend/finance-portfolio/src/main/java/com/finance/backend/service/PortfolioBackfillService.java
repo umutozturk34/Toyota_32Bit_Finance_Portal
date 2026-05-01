@@ -238,7 +238,6 @@ public class PortfolioBackfillService {
             BigDecimal price = pos.getEntryDate() != null && pos.getEntryDate().toLocalDate().equals(day)
                     ? pos.getEntryPrice()
                     : nearestPriceOnOrBefore(seriesByKey.get(key), day);
-            if (price == null) price = pos.getEntryPrice();
             if (price != null) result.put(key, price);
         }
         return result;

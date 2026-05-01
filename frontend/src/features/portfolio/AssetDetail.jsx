@@ -46,6 +46,12 @@ function buildAssetChartOption(data, isDark) {
     quantity: Number(d.quantity ?? 0),
   }));
 
+  const values = seriesData.map((d) => d.value[1]);
+  const dataMin = Math.min(...values);
+  const dataMax = Math.max(...values);
+  const span = dataMax - dataMin;
+  const padding = span > 0 ? span * 0.08 : dataMax * 0.05;
+
   return {
     backgroundColor: 'transparent',
     animation: data.length < 200,
@@ -87,6 +93,8 @@ function buildAssetChartOption(data, isDark) {
     },
     yAxis: {
       type: 'value',
+      min: Math.max(0, dataMin - padding),
+      max: dataMax + padding,
       axisLine: { show: false },
       axisTick: { show: false },
       axisLabel: { color: muted, fontSize: 10, formatter: (val) => formatPriceTRY(val) },

@@ -20,6 +20,9 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
     Optional<PortfolioAssetDailySnapshot> findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
             Long portfolioId, AssetType assetType, String assetCode, LocalDateTime cutoff);
 
+    Optional<PortfolioAssetDailySnapshot> findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtGreaterThanOrderByCreatedAtAsc(
+            Long portfolioId, AssetType assetType, String assetCode, LocalDateTime cutoff);
+
     @Query("""
             SELECT s FROM PortfolioAssetDailySnapshot s
             WHERE s.portfolioId = :pid

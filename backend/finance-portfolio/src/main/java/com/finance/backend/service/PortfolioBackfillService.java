@@ -124,8 +124,18 @@ public class PortfolioBackfillService {
         LocalDateTime ts = LocalDateTime.now();
 
         if (!assetExists) {
+            Map<AssetKey, List<PortfolioPosition>> byAsset = groupByAsset(active);
             List<PortfolioAssetDailySnapshot> batch = new ArrayList<>();
-            collectAssetSnapshots(portfolioId, active, ts, dayPrices, batch);
+            for (Map.Entry<AssetKey, List<PortfolioPosition>> entry : byAsset.entrySet()) {
+                BigDecimal price = dayPrices.get(entry.getKey());
+                if (price == null) continue;
+                PortfolioPosition first = entry.getValue().get(0);
+                BigDecimal totalQty = sumField(entry.getValue(), PortfolioPosition::getQuantity);
+                BigDecimal totalCost = sumField(entry.getValue(), PortfolioPosition::entryValue);
+                batch.add(calculator.buildAggregatedAssetSnapshot(
+                        portfolioId, first.getAssetType(), first.getAssetCode(),
+                        ts, totalQty, totalCost, price));
+            }
             assetSnapshotRepository.saveAll(batch);
         }
         if (!dailyExists) {
@@ -146,15 +156,32 @@ public class PortfolioBackfillService {
         Set<LocalDate> dailyExisting = Set.copyOf(dailySnapshotRepository.findExistingDates(portfolioId, from, end));
         Set<LocalDate> assetExisting = Set.copyOf(assetSnapshotRepository.findExistingDates(portfolioId, from, end));
         Map<AssetKey, Map<LocalDate, BigDecimal>> seriesByKey = loadHistoricalSeries(positions, from, end);
+        Map<AssetKey, PortfolioAssetDailySnapshot> priorAssetByKey = preloadPriorAssetSnapshots(portfolioId, positions, from);
 
         List<PortfolioAssetDailySnapshot> assetBatch = new ArrayList<>();
         List<PortfolioDailySnapshot> dailyBatch = new ArrayList<>();
         for (LocalDate day = from; !day.isAfter(end); day = day.plusDays(1)) {
-            collectDay(portfolio, day, positions, seriesByKey, dailyExisting, assetExisting, assetBatch, dailyBatch);
+            collectDay(portfolio, day, positions, seriesByKey, dailyExisting, assetExisting,
+                    assetBatch, dailyBatch, priorAssetByKey);
         }
 
         if (!assetBatch.isEmpty()) assetSnapshotRepository.saveAll(assetBatch);
         if (!dailyBatch.isEmpty()) dailySnapshotRepository.saveAll(dailyBatch);
+    }
+
+    private Map<AssetKey, PortfolioAssetDailySnapshot> preloadPriorAssetSnapshots(
+            Long portfolioId, List<PortfolioPosition> positions, LocalDate from) {
+        LocalDateTime cutoff = from.atStartOfDay();
+        Map<AssetKey, PortfolioAssetDailySnapshot> result = new HashMap<>();
+        for (PortfolioPosition pos : positions) {
+            AssetKey key = pos.toAssetKey();
+            if (result.containsKey(key)) continue;
+            assetSnapshotRepository
+                    .findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
+                            portfolioId, pos.getAssetType(), pos.getAssetCode(), cutoff)
+                    .ifPresent(p -> result.put(key, p));
+        }
+        return result;
     }
 
     private Map<AssetKey, Map<LocalDate, BigDecimal>> loadHistoricalSeries(
@@ -174,7 +201,8 @@ public class PortfolioBackfillService {
                             Map<AssetKey, Map<LocalDate, BigDecimal>> seriesByKey,
                             Set<LocalDate> dailyExisting, Set<LocalDate> assetExisting,
                             List<PortfolioAssetDailySnapshot> assetBatch,
-                            List<PortfolioDailySnapshot> dailyBatch) {
+                            List<PortfolioDailySnapshot> dailyBatch,
+                            Map<AssetKey, PortfolioAssetDailySnapshot> priorAssetByKey) {
         boolean dailyExists = dailyExisting.contains(day);
         boolean assetExists = assetExisting.contains(day);
         if (dailyExists && assetExists) return;
@@ -186,13 +214,19 @@ public class PortfolioBackfillService {
         LocalDateTime ts = day.atTime(SNAPSHOT_TIME);
         Long portfolioId = portfolio.getId();
 
-        if (!assetExists) collectAssetSnapshots(portfolioId, active, ts, dayPrices, assetBatch);
-        if (!dailyExists) dailyBatch.add(calculator.buildAggregateSnapshotAt(portfolio, ts, active, dayPrices));
+        Map<AssetKey, PortfolioAssetDailySnapshot> aggregatePriors = new HashMap<>(priorAssetByKey);
+        if (!assetExists) {
+            collectAssetSnapshots(portfolioId, active, ts, dayPrices, assetBatch, priorAssetByKey);
+        }
+        if (!dailyExists) {
+            dailyBatch.add(calculator.buildAggregateSnapshotAtWithPriors(portfolio, ts, active, dayPrices, aggregatePriors));
+        }
     }
 
     private void collectAssetSnapshots(Long portfolioId, List<PortfolioPosition> active,
                                         LocalDateTime ts, Map<AssetKey, BigDecimal> dayPrices,
-                                        List<PortfolioAssetDailySnapshot> batch) {
+                                        List<PortfolioAssetDailySnapshot> batch,
+                                        Map<AssetKey, PortfolioAssetDailySnapshot> priorAssetByKey) {
         Map<AssetKey, List<PortfolioPosition>> byAsset = groupByAsset(active);
         for (Map.Entry<AssetKey, List<PortfolioPosition>> entry : byAsset.entrySet()) {
             BigDecimal price = dayPrices.get(entry.getKey());
@@ -200,9 +234,12 @@ public class PortfolioBackfillService {
             PortfolioPosition first = entry.getValue().get(0);
             BigDecimal totalQty = sumField(entry.getValue(), PortfolioPosition::getQuantity);
             BigDecimal totalCost = sumField(entry.getValue(), PortfolioPosition::entryValue);
-            batch.add(calculator.buildAggregatedAssetSnapshot(
+            PortfolioAssetDailySnapshot prior = priorAssetByKey.get(entry.getKey());
+            PortfolioAssetDailySnapshot snapshot = calculator.buildAggregatedAssetSnapshotWithPrior(
                     portfolioId, first.getAssetType(), first.getAssetCode(),
-                    ts, totalQty, totalCost, price));
+                    ts, totalQty, totalCost, price, prior);
+            batch.add(snapshot);
+            priorAssetByKey.put(entry.getKey(), snapshot);
         }
     }
 

@@ -67,7 +67,7 @@ public class FundCandleIncrementalRefreshService {
         FundType fundType = fund.getFundType() == null ? FundType.YAT : fund.getFundType();
         long existingCount = fundCandleRepository.countByFundCode(fund.getFundCode());
         if (existingCount >= windowing.minCandlesForIncremental()) {
-            transactionTemplate.execute(status -> fetchAndSaveSinceLastCandle(fund, fundType));
+            fetchAndSaveSinceLastCandle(fund, fundType);
         } else {
             fetchAndSaveFullHistory(fund, fundType);
         }

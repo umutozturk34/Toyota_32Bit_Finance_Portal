@@ -19,6 +19,9 @@ public interface PortfolioDailySnapshotRepository extends JpaRepository<Portfoli
     Optional<PortfolioDailySnapshot> findFirstByPortfolioIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
             Long portfolioId, LocalDateTime cutoff);
 
+    Optional<PortfolioDailySnapshot> findFirstByPortfolioIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
+            Long portfolioId, LocalDateTime cutoff);
+
     Optional<PortfolioDailySnapshot> findFirstByPortfolioIdOrderByCreatedAtDesc(Long portfolioId);
 
     @Query("SELECT s.snapshotDate FROM PortfolioDailySnapshot s WHERE s.portfolioId = :pid AND s.snapshotDate BETWEEN :from AND :to")

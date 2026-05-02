@@ -32,6 +32,7 @@
 		<module>finance-bond</module>
 		<module>finance-commodity</module>
 		<module>finance-news</module>
+		<module>finance-user</module>
 		<module>finance-portfolio</module>
 		<module>finance-app</module>
 	</modules>
@@ -78,6 +79,11 @@
 			<dependency>
 				<groupId>com.finance</groupId>
 				<artifactId>finance-forex</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.finance</groupId>
+				<artifactId>finance-user</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

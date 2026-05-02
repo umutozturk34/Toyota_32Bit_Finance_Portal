@@ -124,7 +124,7 @@ function buildAssetChartOption(data, isDark) {
 
 export default function AssetDetail({ portfolioId, asset, onBack }) {
   const { isDark } = useTheme();
-  const [range, setRange] = useSessionState(`portfolio-asset-range-${asset.assetCode}`, 'ALL');
+  const [range, setRange] = useSessionState(`portfolio-asset-range-${asset.assetCode}`, '6M');
   const [addLotOpen, setAddLotOpen] = useState(false);
 
   const { data: series = [], isLoading: loading } = useAssetSeries(

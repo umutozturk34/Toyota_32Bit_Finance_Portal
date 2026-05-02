@@ -7,10 +7,11 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Newspaper, BarChart3, TrendingUp, Bitcoin,
   DollarSign, Shield,
-  LogOut, Sun, Moon, Briefcase, Activity,
+  LogOut, Sun, Moon, Briefcase, Activity, Settings,
   ChevronLeft, ChevronRight, Menu, Landmark, Wallet, Database, Gem,
 } from 'lucide-react';
 import TasksPanel from '../../features/admin/TasksPanel';
+import SettingsSidebar from '../../features/settings/SettingsSidebar';
 
 const navItems = [
   { to: '/market', label: 'Market', Icon: BarChart3 },
@@ -32,6 +33,7 @@ const MainLayout = () => {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const navType = useNavigationType();
 
@@ -127,6 +129,16 @@ const MainLayout = () => {
       )}
 
       <div className="border-t border-border-default px-2 py-2 space-y-1 shrink-0">
+        <button
+          onClick={() => setSettingsOpen(true)}
+          title={collapsed && !isMobile ? 'Ayarlar' : undefined}
+          className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
+            collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
+          }`}
+        >
+          <Settings size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
+          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">Ayarlar</span>}
+        </button>
         <button
           onClick={toggleTheme}
           title={collapsed && !isMobile ? (isDark ? 'Light mode' : 'Dark mode') : undefined}
@@ -262,6 +274,7 @@ const MainLayout = () => {
       {hasRole('ADMIN') && (
         <TasksPanel open={tasksOpen} onClose={() => setTasksOpen(false)} />
       )}
+      <SettingsSidebar isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 };

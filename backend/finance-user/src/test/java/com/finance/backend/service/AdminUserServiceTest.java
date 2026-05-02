@@ -3,6 +3,8 @@ package com.finance.backend.service;
 import com.finance.backend.client.KeycloakAdminClient;
 import com.finance.backend.dto.AdminUserResponse;
 import com.finance.backend.dto.KeycloakUser;
+import com.finance.backend.exception.ExternalApiException;
+import com.finance.backend.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +14,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -84,5 +88,24 @@ class AdminUserServiceTest {
         List<AdminUserResponse> result = service.listUsers(0, 50, null);
 
         assertThat(result.get(0).enabled()).isFalse();
+    }
+
+    @Test
+    void shouldPropagateResourceNotFound_whenBanningUnknownUser() {
+        doThrow(new ResourceNotFoundException("Keycloak resource not found for setEnabled"))
+                .when(client).setEnabled("missing", false);
+
+        assertThatThrownBy(() -> service.banUser("missing"))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void shouldPropagateExternalApiException_whenKeycloakUnreachable() {
+        doThrow(new ExternalApiException("KEYCLOAK", "network failure"))
+                .when(client).setEnabled("user-1", true);
+
+        assertThatThrownBy(() -> service.unbanUser("user-1"))
+                .isInstanceOf(ExternalApiException.class)
+                .hasMessageContaining("network failure");
     }
 }

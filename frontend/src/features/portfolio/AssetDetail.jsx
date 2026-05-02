@@ -131,6 +131,10 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
     portfolioId, asset.assetType, asset.assetCode, range
   );
 
+  const latestPoint = series.length > 0 ? series[series.length - 1] : null;
+  const dailyPnlTry = latestPoint?.dailyPnlTry ?? null;
+  const dailyPnlPercent = latestPoint?.dailyPnlPercent ?? null;
+  const dailyClass = getChangeClass(dailyPnlTry);
   const pnlClass = getChangeClass(asset.pnlTry);
   const displayLabel = asset.assetCode;
   const displayBadge = asset.assetImage || null;
@@ -198,25 +202,57 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
         variants={cardVariants}
         initial="hidden"
         animate="show"
-        className={`flex items-center justify-between rounded-xl border p-4 card-hover transition-all duration-200 ${
+        className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+      >
+        <div className={`flex items-center justify-between rounded-xl border p-4 card-hover transition-all duration-200 ${
           asset.pnlTry >= 0
             ? 'border-success/20 bg-success/5 hover:border-success/40'
             : 'border-danger/20 bg-danger/5 hover:border-danger/40'
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          {asset.pnlTry >= 0
-            ? <TrendingUp className="h-5 w-5 text-success" />
-            : <TrendingDown className="h-5 w-5 text-danger" />}
-          <span className="text-sm font-medium text-fg">Kar/Zarar</span>
+        }`}>
+          <div className="flex items-center gap-2">
+            {asset.pnlTry >= 0
+              ? <TrendingUp className="h-5 w-5 text-success" />
+              : <TrendingDown className="h-5 w-5 text-danger" />}
+            <span className="text-sm font-medium text-fg">Kar/Zarar</span>
+          </div>
+          <div className="text-right flex items-center gap-3">
+            <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>
+              {formatPercent(asset.pnlPercent)}
+            </span>
+            <p className={`text-lg font-semibold font-mono ${changeColors[pnlClass]}`}>
+              {formatPriceTRY(asset.pnlTry)}
+            </p>
+          </div>
         </div>
-        <div className="text-right flex items-center gap-3">
-          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>
-            {formatPercent(asset.pnlPercent)}
-          </span>
-          <p className={`text-lg font-semibold font-mono ${changeColors[pnlClass]}`}>
-            {formatPriceTRY(asset.pnlTry)}
-          </p>
+        <div className={`flex items-center justify-between rounded-xl border p-4 card-hover transition-all duration-200 ${
+          dailyPnlTry == null
+            ? 'border-border-default bg-bg-elevated'
+            : dailyPnlTry >= 0
+              ? 'border-success/20 bg-success/5 hover:border-success/40'
+              : 'border-danger/20 bg-danger/5 hover:border-danger/40'
+        }`}>
+          <div className="flex items-center gap-2">
+            {dailyPnlTry == null
+              ? <TrendingUp className="h-5 w-5 text-fg-muted" />
+              : dailyPnlTry >= 0
+                ? <TrendingUp className="h-5 w-5 text-success" />
+                : <TrendingDown className="h-5 w-5 text-danger" />}
+            <span className="text-sm font-medium text-fg">Günlük K/Z</span>
+          </div>
+          <div className="text-right flex items-center gap-3">
+            {dailyPnlTry == null ? (
+              <p className="text-sm text-fg-muted">—</p>
+            ) : (
+              <>
+                <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[dailyClass]} ${changeColors[dailyClass]}`}>
+                  {formatPercent(dailyPnlPercent)}
+                </span>
+                <p className={`text-lg font-semibold font-mono ${changeColors[dailyClass]}`}>
+                  {formatPriceTRY(dailyPnlTry)}
+                </p>
+              </>
+            )}
+          </div>
         </div>
       </motion.div>
 

@@ -1,6 +1,8 @@
 package com.finance.backend.service;
 
 import com.finance.backend.model.*;
+import com.finance.backend.repository.PortfolioAssetDailySnapshotRepository;
+import com.finance.backend.repository.PortfolioDailySnapshotRepository;
 import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.service.AssetPricingPort.AssetKey;
 import com.finance.backend.util.PercentChangeCalculator;
@@ -19,9 +21,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SnapshotCalculationService {
 
+    private static final int DAILY_LOOKBACK_HOURS = 24;
+    private static final BigDecimal HUNDRED = new BigDecimal("100");
 
     private final AssetPricingPort pricingPort;
     private final PortfolioPositionRepository positionRepository;
+    private final PortfolioDailySnapshotRepository dailySnapshotRepository;
+    private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
 
     public PortfolioAssetDailySnapshot buildAssetSnapshot(Long portfolioId, PortfolioPosition pos,
                                                               LocalDateTime batchTimestamp) {
@@ -42,6 +48,7 @@ public class SnapshotCalculationService {
         BigDecimal cost = (totalCost != null ? totalCost : BigDecimal.ZERO).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
         BigDecimal marketValue = unitPrice.multiply(qty).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
         BigDecimal pnl = marketValue.subtract(cost).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        DailyDelta daily = computeAssetDailyDelta(portfolioId, assetType, assetCode, marketValue, batchTimestamp);
 
         return PortfolioAssetDailySnapshot.builder()
                 .portfolioId(portfolioId)
@@ -54,6 +61,8 @@ public class SnapshotCalculationService {
                 .marketValueTry(marketValue)
                 .totalCostTry(cost)
                 .pnlTry(pnl)
+                .dailyPnlTry(daily.amount())
+                .dailyPnlPercent(daily.percent())
                 .build();
     }
 
@@ -83,6 +92,7 @@ public class SnapshotCalculationService {
         PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalMarketValue, totalEntryValue, MoneyScale.PRICE);
         BigDecimal totalPnl = pct.amount() != null ? pct.amount() : BigDecimal.ZERO;
         BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
+        DailyDelta daily = computeAggregateDailyDelta(portfolio.getId(), totalMarketValue, batchTimestamp);
 
         return PortfolioDailySnapshot.builder()
                 .portfolioId(portfolio.getId())
@@ -92,6 +102,39 @@ public class SnapshotCalculationService {
                 .totalCostTry(totalEntryValue)
                 .totalPnlTry(totalPnl)
                 .pnlPercent(pnlPercent)
+                .dailyPnlTry(daily.amount())
+                .dailyPnlPercent(daily.percent())
                 .build();
+    }
+
+    private DailyDelta computeAssetDailyDelta(Long portfolioId, AssetType assetType, String assetCode,
+                                               BigDecimal currentMarketValue, LocalDateTime batchTimestamp) {
+        LocalDateTime cutoff = batchTimestamp.minusHours(DAILY_LOOKBACK_HOURS);
+        return assetSnapshotRepository
+                .findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
+                        portfolioId, assetType, assetCode, cutoff)
+                .map(prior -> deltaFrom(currentMarketValue, prior.getMarketValueTry()))
+                .orElse(DailyDelta.EMPTY);
+    }
+
+    private DailyDelta computeAggregateDailyDelta(Long portfolioId, BigDecimal currentTotalValue,
+                                                   LocalDateTime batchTimestamp) {
+        LocalDateTime cutoff = batchTimestamp.minusHours(DAILY_LOOKBACK_HOURS);
+        return dailySnapshotRepository
+                .findFirstByPortfolioIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(portfolioId, cutoff)
+                .map(prior -> deltaFrom(currentTotalValue, prior.getTotalValueTry()))
+                .orElse(DailyDelta.EMPTY);
+    }
+
+    private static DailyDelta deltaFrom(BigDecimal current, BigDecimal prior) {
+        BigDecimal amount = current.subtract(prior).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        BigDecimal percent = prior.compareTo(BigDecimal.ZERO) > 0
+                ? amount.multiply(HUNDRED).divide(prior, MoneyScale.PRICE, RoundingMode.HALF_UP)
+                : null;
+        return new DailyDelta(amount, percent);
+    }
+
+    private record DailyDelta(BigDecimal amount, BigDecimal percent) {
+        static final DailyDelta EMPTY = new DailyDelta(null, null);
     }
 }

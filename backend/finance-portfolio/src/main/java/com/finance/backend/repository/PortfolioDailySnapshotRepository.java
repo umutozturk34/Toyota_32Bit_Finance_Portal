@@ -9,11 +9,17 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PortfolioDailySnapshotRepository extends JpaRepository<PortfolioDailySnapshot, Long> {
 
     boolean existsByPortfolioIdAndSnapshotDate(Long portfolioId, LocalDate snapshotDate);
+
+    Optional<PortfolioDailySnapshot> findFirstByPortfolioIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
+            Long portfolioId, LocalDateTime cutoff);
+
+    Optional<PortfolioDailySnapshot> findFirstByPortfolioIdOrderByCreatedAtDesc(Long portfolioId);
 
     @Query("SELECT s.snapshotDate FROM PortfolioDailySnapshot s WHERE s.portfolioId = :pid AND s.snapshotDate BETWEEN :from AND :to")
     List<LocalDate> findExistingDates(@Param("pid") Long portfolioId,

@@ -6,6 +6,8 @@ import com.finance.backend.model.Portfolio;
 import com.finance.backend.model.PortfolioAssetDailySnapshot;
 import com.finance.backend.model.PortfolioDailySnapshot;
 import com.finance.backend.model.PortfolioPosition;
+import com.finance.backend.repository.PortfolioAssetDailySnapshotRepository;
+import com.finance.backend.repository.PortfolioDailySnapshotRepository;
 import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.service.support.CountingAssetPricingPort;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,12 +29,15 @@ class SnapshotCalculationServiceTest {
 
     @Mock(answer = Answers.CALLS_REAL_METHODS) private AssetPricingPort pricingPort;
     @Mock private PortfolioPositionRepository positionRepository;
+    @Mock private PortfolioDailySnapshotRepository dailySnapshotRepository;
+    @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
 
     private SnapshotCalculationService service;
 
     @BeforeEach
     void setUp() {
-        service = new SnapshotCalculationService(pricingPort, positionRepository);
+        service = new SnapshotCalculationService(pricingPort, positionRepository,
+                dailySnapshotRepository, assetSnapshotRepository);
     }
 
     @Test
@@ -106,7 +111,8 @@ class SnapshotCalculationServiceTest {
         counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("50.0000"));
         counting.seedPrice("FUND", "AAK", new BigDecimal("110.0000"));
 
-        SnapshotCalculationService countedService = new SnapshotCalculationService(counting, positionRepository);
+        SnapshotCalculationService countedService = new SnapshotCalculationService(counting, positionRepository,
+                dailySnapshotRepository, assetSnapshotRepository);
 
         Portfolio portfolio = Portfolio.builder().id(1L).build();
         when(positionRepository.findByPortfolioId(1L))

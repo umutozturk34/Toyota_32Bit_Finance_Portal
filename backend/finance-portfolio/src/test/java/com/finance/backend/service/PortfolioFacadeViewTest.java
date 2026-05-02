@@ -52,7 +52,7 @@ class PortfolioFacadeViewTest {
 
     private PortfolioSummaryResponse summary() {
         return new PortfolioSummaryResponse(
-                BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.ZERO);
+                BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.ZERO, null, null);
     }
 
     @Test

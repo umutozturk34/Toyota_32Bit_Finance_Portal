@@ -7,5 +7,7 @@ public record AssetSeriesPoint(
         LocalDateTime timestamp,
         BigDecimal unitPriceTry,
         BigDecimal marketValueTry,
-        BigDecimal pnlTry
+        BigDecimal pnlTry,
+        BigDecimal dailyPnlTry,
+        BigDecimal dailyPnlPercent
 ) {}

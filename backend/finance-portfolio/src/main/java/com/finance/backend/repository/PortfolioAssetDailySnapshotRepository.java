@@ -10,11 +10,26 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<PortfolioAssetDailySnapshot, Long> {
 
     boolean existsByPortfolioIdAndSnapshotDate(Long portfolioId, LocalDate snapshotDate);
+
+    Optional<PortfolioAssetDailySnapshot> findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
+            Long portfolioId, AssetType assetType, String assetCode, LocalDateTime cutoff);
+
+    @Query("""
+            SELECT s FROM PortfolioAssetDailySnapshot s
+            WHERE s.portfolioId = :pid
+              AND s.id IN (
+                  SELECT MAX(t.id) FROM PortfolioAssetDailySnapshot t
+                  WHERE t.portfolioId = :pid
+                  GROUP BY t.assetType, t.assetCode
+              )
+            """)
+    List<PortfolioAssetDailySnapshot> findLatestPerAsset(@Param("pid") Long portfolioId);
 
     @Query("SELECT DISTINCT s.snapshotDate FROM PortfolioAssetDailySnapshot s WHERE s.portfolioId = :pid AND s.snapshotDate BETWEEN :from AND :to")
     List<LocalDate> findExistingDates(@Param("pid") Long portfolioId,

@@ -144,7 +144,7 @@ class PortfolioPerformanceServiceTest {
                 LocalDateTime.now(), AssetType.CRYPTO, "bitcoin",
                 new BigDecimal("2500000"), new BigDecimal("100000"));
         AssetSeriesPoint expected = new AssetSeriesPoint(LocalDateTime.now(),
-                new BigDecimal("2500000"), new BigDecimal("2500000"), new BigDecimal("100000"));
+                new BigDecimal("2500000"), new BigDecimal("2500000"), new BigDecimal("100000"), null, null);
         when(assetSnapshotRepository.findByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtBetweenOrderByCreatedAtAsc(
                 eq(PORTFOLIO_ID), eq(AssetType.CRYPTO), eq("bitcoin"), any(), any()))
                 .thenReturn(List.of(snap));

@@ -55,6 +55,12 @@ public class PortfolioAssetDailySnapshot {
     @Column(name = "pnl_try", nullable = false, precision = 19, scale = 4)
     private BigDecimal pnlTry;
 
+    @Column(name = "daily_pnl_try", precision = 19, scale = 4)
+    private BigDecimal dailyPnlTry;
+
+    @Column(name = "daily_pnl_percent", precision = 19, scale = 4)
+    private BigDecimal dailyPnlPercent;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

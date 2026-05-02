@@ -185,7 +185,7 @@ function buildEChartsOption(data, color, palette) {
 
 export default function PerformanceChart({ portfolioId }) {
   const { isDark } = useTheme();
-  const [range, setRange] = useSessionState('portfolio-perf-range', 'ALL');
+  const [range, setRange] = useSessionState('portfolio-perf-range', '6M');
   const [activeType, setActiveType] = useSessionState('portfolio-perf-type', null);
 
   const { data: perfData = [], isLoading: loading } = usePortfolioPerformance(portfolioId, range, activeType);

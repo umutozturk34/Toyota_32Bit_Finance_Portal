@@ -12,7 +12,7 @@ const VALUE_CARDS = [
   { key: 'totalEntryValueTry', label: 'Toplam Maliyet', Icon: BarChart3, iconBg: 'bg-fg-muted/10', iconColor: 'text-fg-muted', border: 'border-t-fg-muted' },
 ];
 
-function PnlCard({ value, percent }) {
+function PnlCard({ label, value, percent }) {
   const cls = getChangeClass(value);
   const Icon = value >= 0 ? TrendingUp : TrendingDown;
   const border = value >= 0 ? 'border-t-success' : 'border-t-danger';
@@ -25,7 +25,7 @@ function PnlCard({ value, percent }) {
         <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${value >= 0 ? 'bg-success/10' : 'bg-danger/10'}`}>
           <Icon className={`h-4 w-4 ${value >= 0 ? 'text-success' : 'text-danger'}`} />
         </div>
-        <span className="text-xs text-fg-muted font-medium">Kar / Zarar</span>
+        <span className="text-xs text-fg-muted font-medium">{label}</span>
       </div>
       <p className={`text-lg font-semibold font-mono ${changeColors[cls]}`}>
         {formatPriceTRY(value)}
@@ -76,7 +76,7 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {VALUE_CARDS.map(({ key, label, Icon, iconBg, iconColor, border }) => (
           <motion.div
             key={key}
@@ -94,7 +94,8 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
             </p>
           </motion.div>
         ))}
-        <PnlCard value={summary?.totalPnlTry} percent={summary?.pnlPercent} />
+        <PnlCard label="Kar / Zarar" value={summary?.totalPnlTry} percent={summary?.pnlPercent} />
+        <PnlCard label="Günlük K/Z" value={summary?.dailyPnlTry} percent={summary?.dailyPnlPercent} />
       </div>
     </motion.div>
   );

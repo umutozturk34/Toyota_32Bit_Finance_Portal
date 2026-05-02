@@ -6,8 +6,12 @@ import com.finance.backend.dto.response.PortfolioSummaryResponse;
 import com.finance.backend.dto.response.PositionResponse;
 import com.finance.backend.mapper.PortfolioResponseMapper;
 import com.finance.backend.model.AssetType;
+import com.finance.backend.model.PortfolioAssetDailySnapshot;
+import com.finance.backend.model.PortfolioDailySnapshot;
 import com.finance.backend.model.PortfolioPosition;
 import com.finance.backend.model.MoneyScale;
+import com.finance.backend.repository.PortfolioAssetDailySnapshotRepository;
+import com.finance.backend.repository.PortfolioDailySnapshotRepository;
 import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.service.AssetPricingPort.AssetKey;
 import com.finance.backend.service.AssetPricingPort.AssetMeta;
@@ -35,6 +39,8 @@ public class PortfolioSummaryService {
     private final AssetPricingPort pricingPort;
     private final PortfolioPositionRepository positionRepository;
     private final PortfolioResponseMapper responseMapper;
+    private final PortfolioDailySnapshotRepository dailySnapshotRepository;
+    private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
 
     @Transactional(readOnly = true)
     public List<PositionResponse> getPositions(Long portfolioId) {
@@ -96,7 +102,44 @@ public class PortfolioSummaryService {
         BigDecimal totalPnl = pct.amount() != null ? pct.amount() : BigDecimal.ZERO;
         BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
 
-        return new PortfolioSummaryResponse(totalValue, totalEntryValue, totalPnl, pnlPercent);
+        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetType, "asset type");
+        DailyPnlSummary daily = filterType == null
+                ? aggregateDailyPnlOverall(portfolioId)
+                : aggregateDailyPnlByAssetType(portfolioId, filterType);
+
+        return new PortfolioSummaryResponse(totalValue, totalEntryValue, totalPnl, pnlPercent,
+                daily.amount(), daily.percent());
+    }
+
+    private DailyPnlSummary aggregateDailyPnlOverall(Long portfolioId) {
+        return dailySnapshotRepository.findFirstByPortfolioIdOrderByCreatedAtDesc(portfolioId)
+                .map(s -> new DailyPnlSummary(s.getDailyPnlTry(), s.getDailyPnlPercent()))
+                .orElse(DailyPnlSummary.EMPTY);
+    }
+
+    private DailyPnlSummary aggregateDailyPnlByAssetType(Long portfolioId, AssetType assetType) {
+        List<PortfolioAssetDailySnapshot> latestPerAsset = assetSnapshotRepository.findLatestPerAsset(portfolioId);
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal priorTotal = BigDecimal.ZERO;
+        BigDecimal currentTotal = BigDecimal.ZERO;
+        boolean any = false;
+        for (PortfolioAssetDailySnapshot s : latestPerAsset) {
+            if (s.getAssetType() != assetType) continue;
+            if (s.getDailyPnlTry() == null) continue;
+            totalAmount = totalAmount.add(s.getDailyPnlTry());
+            currentTotal = currentTotal.add(s.getMarketValueTry());
+            priorTotal = priorTotal.add(s.getMarketValueTry().subtract(s.getDailyPnlTry()));
+            any = true;
+        }
+        if (!any) return DailyPnlSummary.EMPTY;
+        BigDecimal percent = priorTotal.compareTo(BigDecimal.ZERO) > 0
+                ? totalAmount.multiply(new BigDecimal("100")).divide(priorTotal, MoneyScale.PRICE, RoundingMode.HALF_UP)
+                : null;
+        return new DailyPnlSummary(totalAmount.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP), percent);
+    }
+
+    private record DailyPnlSummary(BigDecimal amount, BigDecimal percent) {
+        static final DailyPnlSummary EMPTY = new DailyPnlSummary(null, null);
     }
 
     @Transactional(readOnly = true)

@@ -6,6 +6,8 @@ import com.finance.backend.dto.response.PositionResponse;
 import com.finance.backend.mapper.PortfolioResponseMapper;
 import com.finance.backend.model.AssetType;
 import com.finance.backend.model.PortfolioPosition;
+import com.finance.backend.repository.PortfolioAssetDailySnapshotRepository;
+import com.finance.backend.repository.PortfolioDailySnapshotRepository;
 import com.finance.backend.repository.PortfolioPositionRepository;
 import com.finance.backend.service.support.CountingAssetPricingPort;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +29,8 @@ class PortfolioSummaryServiceTest {
 
     @Mock private PortfolioPositionRepository positionRepository;
     @Mock private PortfolioResponseMapper responseMapper;
+    @Mock private PortfolioDailySnapshotRepository dailySnapshotRepository;
+    @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
 
     private CountingAssetPricingPort counting;
     private PortfolioSummaryService service;
@@ -34,7 +38,8 @@ class PortfolioSummaryServiceTest {
     @BeforeEach
     void setUp() {
         counting = new CountingAssetPricingPort();
-        service = new PortfolioSummaryService(counting, positionRepository, responseMapper);
+        service = new PortfolioSummaryService(counting, positionRepository, responseMapper,
+                dailySnapshotRepository, assetSnapshotRepository);
     }
 
     @Test

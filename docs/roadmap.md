@@ -1,236 +1,226 @@
-# Finance Portal — Roadmap
+# Finance Portal — Yol Haritası
 
-**Modular & Chronological Development Stages**
+Türkiye finansal piyasalarına odaklı, açık kaynaklı kişisel finans takip platformu. Kripto, hisse senedi, döviz, fon, emtia, tahvil ve bono varlıklarını tek bir uygulamada izleyin; portföyünüzü gerçek zamanlı verilerle yönetin.
 
----
-
-## Tamamlanan Versiyonlar
-
-| Versiyon | Icerik | Durum |
-|----------|--------|-------|
-| v0.1.0 | Infrastructure (Spring Boot, React, Docker, PostgreSQL) | ✅ |
-| v0.2.0 | Authentication & Keycloak (JWT, RBAC, LDAP) | ✅ |
-| v0.3.0 | Admin Module (asset/user management) | ✅ |
-| v0.4.0 | Crypto Module (CoinGecko + Binance) | ✅ |
-| v0.5.0 | Stock Module (Yahoo Finance BIST) | ✅ |
-| v0.6.0 | Forex Module (TCMB + Yahoo) | ✅ |
-| v0.7.0 | Fund Module (TEFAS) | ✅ |
-| v0.8.0 | Observability (OTel, Kafka, OpenSearch, Dashboards) | ✅ |
-| v0.9.0 | Bond & Bill Module (EVDS, rate history, yield calculation) | ✅ |
-| v0.10.0 | News Module (RSS, score-based categorization) | ✅ |
-| v0.11.0 | Portfolio Module (BUY/SELL, WAC, snapshots, performance) | ✅ |
-| v0.12.0 | Unified Endpoint & Frontend Refactor (Strategy pattern, SearchSuggestions, AnimatedIcons, chart comparison) | ✅ |
-| v0.13.0 | Emtia Modulu + Broad Refactor Sprint (40 sprint commits; 9 XxxProperties extracted; MarketListPage + AssetCard + 3 hooks frontend) | ✅ |
+**Hedef:** v0.20 (i18n) — Mayıs 2026 sonu
 
 ---
 
-## Aktif Gelistirme Plani (15 Nisan — 25 Mayis)
+## Mevcut Yetenekler (v0.13.x)
 
-### v0.13.0 — Emtia Modulu — ✅ TAMAMLANDI (15 Nisan → 23 Nisan | 9 gun)
+### Kimlik & Yetkilendirme
 
-**Branch:** `feat/emtia` (merged)
+- Keycloak tabanlı OAuth2 / OpenID Connect kimlik doğrulama
+- JWT tabanlı API erişimi
+- Rol bazlı yetkilendirme (USER / ADMIN)
+- LDAP entegrasyonu (kurumsal kullanım için)
+- Bucket4j ile katmanlı oran sınırlama (`API`, `ADMIN_READ`, `ADMIN_TRIGGER`)
 
-**Gerçeklesen kapsam (orijinal plandan genisledi):**
+### Piyasa Verileri
 
-Backend — finance-commodity modul:
-- Yahoo Finance commodity data (metaller: XAUTRY/XAGTRY/XPTTRY/XPDTRY; futures: BZ=F/HG=F/ZW=F/NG=F/vs.)
-- `CommodityDerivativeRule` registry (YAML-driven) — gram derivatives: XAUTRYG (altin gram), XAGTRYG (gumus gram). Diger coin derivatives (GOLD_TAM/YARIM/CEYREK/CUMHURIYET) kullanici talebiyle kaldirildi — piyasa gercekligi ile uyumsuzdu
-- `SyntheticPriceCalculator` (finance-common) USD × USDTRY conversion — stock ve forex ile paylasimli
-- `ExchangeRateProvider` port (finance-common) + `ForexExchangeRateProvider` impl — commodity artik finance-forex modulune bagli degil
-- `YahooSymbolResolver` bean — domain code → Yahoo symbol cevrimi tek noktada
-- `CommoditySegmentResolver` — PRECIOUS_METAL / OTHER segment'i config map + derivative codes'tan turetir, `CommoditySegment.fromCode` string-pattern factory kaldirildi
-- `PreciousMetalDerivativeCalculator` — snapshot + candle regeneration, registry-driven (if/else dispatch yok)
-- `CommodityPricingStrategy` — stock/fund/crypto commission pattern (forex spread degil), `commodity-rate: 0.015`
-- `CommodityMarketAssetProvider`, `CommodityResponseMapper`, `CommodityMetadata` sealed record
-- `CommodityScheduler` (3x daily cron, Europe/Istanbul), `CommodityDataService` (admin trigger), `CommodityQueryService` (history endpoint)
-- `AssetType.COMMODITY` + `MarketType.COMMODITY` + `TrackedAssetType.COMMODITY` enum'lari
-- Flyway migrations V36-V50: table create, USD price storage, silver+wheat seed, copper seed, OHLC+volume, segment+categories, metal code rename, derivative code rename, sellingPrice column drop
+| Modül | Kaynak | Kapsam |
+|-------|--------|--------|
+| Kripto | CoinGecko + Binance | 40+ coin, 1 yıllık geçmiş, USD → TRY otomatik dönüşüm |
+| Hisse Senedi | Yahoo Finance | BIST 100, BIST 30, MAIN_INDEX endeksleri |
+| Döviz | TCMB + Yahoo Finance | Resmi kurlar + çapraz pariteler |
+| Fon | TEFAS API | YAT (yatırım fonu) + BYF (borsa yatırım fonu), 5 yıl geçmiş |
+| Emtia | Yahoo Finance | Değerli metaller (altın/gümüş/platin/paladyum) + futures (petrol, doğalgaz, bakır, buğday vb.); altın gram türevi |
+| Tahvil & Bono | TCMB EVDS | Devlet tahvili, hazine bonosu; kupon oranı geçmişi, basit getiri hesabı, vade takvimi |
+| Haber | RSS Akışları | Çoklu kaynak; skor bazlı otomatik kategorilendirme (kripto / parite / hisse / tahvil / makro / genel finans) |
 
-Frontend:
-- `features/commodity/` — CommoditiesPage (tab'li segment filter: Tumu / Kiymetli Metaller / Digerleri), CommodityDetail
-- `commodityService` TanStack Query ile
-- MarketDataPage overview'da commodity movers (ASSET_TYPE_COLORS turuncu)
-- SearchInput + SearchSuggestions commodity destegi (XAU → XAUTRY match)
-- BuyModal / SellModal commodity destegi (fractional trading aktif)
-- Admin panel: AdminTrackedAssetsPage'e COMMODITY tab, TasksPanel'e Commodity action group
-- UI bug fixes: SellModal double-commission fix, BuyModal stale price refetch
+### Portföy Yönetimi
 
-**Toplam:** ~2500 LOC backend + tests, ~37 commit (orijinal Commit 1-7 plani + refactor arc'i R1-R4 + cesitli fix/UI).
+- **Lot bazlı pozisyon modeli** — aynı varlık için birden fazla giriş (farklı tarih ve fiyatla)
+- **Geçmişe yönelik kayıt** — bugün dahi 2015'ten girilen bir BTC için anlamlı performans grafiği
+- **Anlık değerleme** — her piyasa güncellemesinde portföy değeri yeniden hesaplanır
+- **Gün-içi granüler snapshot** — günde tek satır yerine her market güncellemesi ayrı kayıt
+- **Performans grafiği** — toplam değer, K/Z, K/Z yüzdesi; varlık tipi filtresi
+- **Dağılım grafiği** — varlık tipine veya varlık koduna göre pasta grafiği
+- **Pozisyon detay sayfası** — tek varlık için tarihsel piyasa değeri grafiği, lot listesi
+- **Tatil & no-data dayanıklılığı** — bayram günü TEFAS/Yahoo veri dönmediğinde graceful skip; değişim yüzdesi son 2 mum üstünden
 
-**Post-review refactor sprint (22-23 Nisan, `feat/emtia` uzerinde):** 40 sprint commit + 5 AAA test commit
-- Phase 5.1: `AppProperties` 9 ayri `XxxProperties`'e bolundu (Commodity, Stock, Forex, Crypto, Fund, Bond, News, Portfolio, Commission)
-- Phase 5.2: WebClient bean'ler 6 modulne dagitildi (`WebClientBaseConfig` + 5 per-module)
-- Phase 3: `ApiAssetValidator`, `BaseMarketMapper`, `TrackedRefreshRunner`, `MarketMetadataBuilder`, provider `SORT_FIELDS` lift
-- Code smells: `YahooSymbolResolver.resolveByYahooSymbol` reverse lookup, `TrackedAssetDataService` ISP fix, silent dup merger fix, `SchedulerPorts` record
-- Frontend F1/F4/F7/F10/F11/F12: `MarketListPage` template (-333 LOC), `AssetCard` + `AssetBuyButton` + `ChangePercentBadge`, `createMarketService` factory, `formatPercentAbs`, `PortfolioListShell`, `HISTORY_FETCHERS` registry
-- Frontend F3/F5 hooks: `useSearchSuggestions`, `useProcessingAnimation`, `useTransactionFlow`
-- News module AAA tests: 5 service test dosyasi (+28 test case), `NewsQueryServiceTest` fix
+### Yönetim Paneli
 
----
+- Takip edilen varlık listesi (her piyasa türü için aktif/pasif yönetimi)
+- Kullanıcı yönetimi (oluştur / güncelle / sil)
+- Manuel veri yenileme tetikleyicileri (her market için snapshot / candle / full update)
+- Görev geçmişi paneli (init, scheduler, manuel tetik kayıtları)
 
-### v0.14.0 — Notification Sistemi + Takip Listesi (16-20 Nisan | 5 gun)
+### Gözlemlenebilirlik
 
-**Veritabani (V34-V36):**
-- `notification_preferences` — user_sub, channel (EMAIL/IN_APP), category, enabled
-- `notifications` — user_sub, title, body, category, channel, read, created_at
-- `price_alerts` — user_sub, asset_type, asset_code, target_price, direction (ABOVE/BELOW), triggered, auto_buy, auto_buy_amount
-- `watchlist` — user_sub, asset_type, asset_code, change_threshold
-
-**Backend:**
-- `finance-notification` modul
-- `NotificationService` — CRUD, mark read, list (paginated)
-- `NotificationDispatcher` — tercih kontrol, kanal yonlendirme
-- `EmailNotificationService` — JavaMailSender (Mailpit dev, SMTP prod)
-- `InAppNotificationService` — DB'ye kaydet
-- `PriceAlertService` — CRUD + checkAlerts()
-- `WatchlistService` — CRUD + checkChanges()
-- `NotificationPreferenceService` — kullanici tercihleri
-- `NotificationCheckPort.onMarketUpdate()` — Observer pattern, scheduler sonrasi kontrol
-- Endpoint'ler: /notifications, /price-alerts, /watchlist, /notification-preferences
-
-**Frontend:**
-- Sidebar'da bildirim ikonu (okunmamis sayisi badge)
-- /notifications sayfasi
-- /price-alerts sayfasi — alarm olustur/sil/duzenle
-- /watchlist sayfasi — varlik ekle/cikar, esik ayarla
-- Ayarlar sayfasi — tercihler (email, in-app toggle)
-- Detay sayfalarinda "Alarm Ekle" ve "Takip Et" butonlari
+- OpenTelemetry ile dağıtık trace
+- Kafka üzerinden log akışı
+- OpenSearch + dashboard'lar
+- Resilience4j circuit breaker, retry, rate limiter
 
 ---
 
-### v0.15.0 — PDF Rapor Sistemi + AWS S3 (21-25 Nisan | 5 gun)
+## Yaklaşan Sürümler
 
-**Backend:**
-- `PdfGenerationService` — iText ile PDF olusturma
-- `ReportStorageService` — AWS S3 upload/download (dev: MinIO Docker, prod: S3)
-- `ReportScheduler` — gunluk/haftalik/aylik (kullanici tercihine gore)
-- `portfolio_reports` tablosu — user_sub, report_type, period, s3_key, file_size
-- Pre-signed URL ile guvenli download
-- 90 gun retention (S3 lifecycle)
-- Flyway migration V37-V38
+### v0.14 — Kullanıcı Modülü
 
-**PDF Icerigi:**
-- Portfolyo ozeti (toplam deger, K/Z, nakit)
-- Pozisyon tablosu (varlik, miktar, maliyet, piyasa degeri, K/Z)
-- Dagilim pasta grafigi
-- Performans cizgi grafigi
-- Islem listesi (donem ici)
-- Header: kullanici adi, tarih araligi
+**Hedef:** Kullanıcı profili ve kişiselleştirme.
 
-**Frontend:**
-- Rapor frekansi secimi (ayarlar)
-- Rapor gecmisi listesi (tarih, tip, boyut, indir)
-- Manuel "Rapor Olustur" butonu
+**Kapsam:**
+
+- Profil bilgileri (görüntüle / düzenle)
+- Kullanıcı tercihleri (tema, dil seçimi başlangıç değerleri)
+- Kayıt akışı (Keycloak federasyonu üzerinden)
+- Şifre sıfırlama
+- Avatar yükleme (S3 storage hazır olunca)
 
 ---
 
-### v0.16.0 — Alis Emri + Market Saatleri (26-28 Nisan | 3 gun)
+### v0.15 — Bildirim Sistemi & Takip Listesi
 
-**Market Saat Kurallari:**
-- BIST (Stock): 10:00-18:00 Hafta ici
-- TEFAS (Fund): 10:00-13:30 Hafta ici
-- Crypto: 7/24
-- Forex: 7/24
-- Commodity: 7/24
+**Hedef:** Kullanıcıya proaktif bilgi akışı.
 
-**Backend:**
-- `MarketHoursService` — market acik/kapali kontrol, config'den saat okuma
-- Kapali market'te alis/satis → `PENDING_ORDER` status
-- `pending_orders` tablosu — user_sub, asset_type, asset_code, side, quantity/amount, created_at
-- `OrderExecutionScheduler` — market acilinca pending order'lari execute et
-- Fiyat alarmi tetiklenince auto_buy → pending order veya anlik islem (market durumuna gore)
-- Flyway migration V39
+**Kapsam:**
 
-**Frontend:**
-- Market durumu gostergesi (acik/kapali badge)
-- Kapali market'te "Emir Ver" butonu (Satin Al yerine)
-- Bekleyen emirler listesi
-- Emir iptal
+- E-posta ve uygulama içi (in-app) bildirim kanalları
+- Fiyat alarmı (eşik üstü / altı; tetiklenince opsiyonel otomatik alış)
+- Takip listesi (watchlist) — varlık üzerinde değişim yüzdesi eşiği
+- Bildirim tercihleri (kategori bazlı toggle)
+- Sidebar bildirim ikonu, okunmamış sayısı
 
 ---
 
-### v0.17.0 — Grafik Kaydetme + MongoDB (29 Nisan - 1 Mayis | 3 gun)
+### v0.16 — PDF Rapor Sistemi & AWS S3
 
-**Altyapi:**
-- Docker Compose'a MongoDB ekleme
-- `spring-boot-starter-data-mongodb` dependency
+**Hedef:** Periyodik portföy raporu.
 
-**Backend:**
-- `ChartDrawing` document (userSub, assetType, assetCode, drawings, indicators, fibTools)
-- `ChartDrawingRepository extends MongoRepository`
-- CRUD endpoint: GET/PUT /api/v1/chart-drawings/{assetType}/{assetCode}
-- Kullanici bazli izolasyon (JWT sub)
+**Kapsam:**
 
-**Frontend:**
-- Chart acildiginda backend'den cizim yukle
-- Cizim degistiginde debounced auto-save
-- "Cizimleri Sil" butonu
+- Günlük / haftalık / aylık rapor üretimi (kullanıcı tercihine göre)
+- iText ile PDF oluşturma
+- AWS S3 (prod) / MinIO (geliştirme) storage
+- Pre-signed URL ile güvenli indirme
+- 90 gün retention politikası
+- Rapor içeriği: portföy özeti, pozisyon tablosu, dağılım pasta grafiği, performans çizgi grafiği, dönem işlemleri
+- Manuel "Rapor Oluştur" butonu
 
 ---
 
-### v0.18.0 — Vadeli Islem Modulu (2-11 Mayis | 10 gun)
+### v0.17 — Emir Yönetimi & Market Saatleri
 
-**Veritabani (V40-V43):**
-- `derivative_contracts` — asset_type, asset_code, contract_size, expiry_date, margin_rate
-- `derivative_positions` — user_sub, contract_id, side (LONG/SHORT), quantity, entry_price, margin_amount
-- `derivative_transactions` — islem gecmisi
-- `margin_calls` — teminat tamamlama kayitlari
+**Hedef:** Market kapalı iken verilen alış/satış emirlerinin yönetimi.
 
-**Backend:**
-- `finance-derivative` modul
-- `DerivativeContractService` — kontrat tanimlama
-- `DerivativePositionService` — pozisyon acma/kapatma
-- `MarginService` — teminat hesaplama, margin call kontrol
-- `DailySettlementService` — gunluk uzlasma (mark-to-market)
-- `DerivativeScheduler` — gunluk uzlasma + vade kontrol + margin call
-- Kaldirac hesaplamasi
+**Kapsam:**
+
+- BIST (10:00–18:00 hafta içi), TEFAS (10:00–13:30 hafta içi), 7/24 piyasalar (kripto, döviz, emtia)
+- `MarketHoursService` — açık/kapalı kontrol, kullanıcıya market durumu göstergesi
+- Kapalı market'te emir → `PENDING_ORDER` durumu
+- Market açılınca otomatik gerçekleşim (scheduler)
+- Bekleyen emirler listesi, iptal akışı
+- Fiyat alarmından gelen otomatik alış için emir entegrasyonu
+
+---
+
+### v0.18 — Grafik Çizimleri & MongoDB
+
+**Hedef:** Teknik analiz çizimlerinin kullanıcıya özel saklanması.
+
+**Kapsam:**
+
+- MongoDB altyapısı (Docker Compose'a entegre)
+- Trend çizgileri, fibonacci araçları, indikatörler
+- Kullanıcı bazlı izolasyon (JWT sub claim)
+- Otomatik debounced kaydetme
+- "Çizimleri Sil" butonu
+- Cihaz arası senkronizasyon
+
+---
+
+### v0.19 — Vadeli İşlem Modülü
+
+**Hedef:** Türev araçlarda kaldıraçlı pozisyon yönetimi.
+
+**Kapsam:**
+
+- `derivative_contracts`, `derivative_positions`, `margin_calls` veri modeli
+- Long / Short pozisyon açma
+- Marjin hesaplama, marjin tamamlama uyarıları
+- Günlük uzlaşma (mark-to-market)
 - Vade sonu otomatik kapatma
-
-**Frontend:**
-- Vadeli islem sayfasi — kontrat listesi
-- Pozisyon acma formu (LONG/SHORT, lot, kaldirac)
-- Acik pozisyonlar tablosu (K/Z, teminat durumu)
-- Margin call bildirimi
-- Vade takvimi
+- Kaldıraç oranları
+- Açık pozisyonlar tablosu, K/Z gerçek zamanlı
 
 ---
 
-### v0.19.0 — i18n + Kullanici Tercihleri + Tanitim (12-16 Mayis | 5 gun)
+### v0.20 — Çoklu Dil Desteği & Onboarding
 
-**i18n:**
-- react-i18next entegrasyonu
-- TR ve EN translation dosyalari
-- Mevcut label map'ler (ASSET_TYPE_LABELS, BOND_TYPE_LABELS, FUND_TYPE_LABELS, SEGMENT_LABELS) translation'a tasima
-- Keycloak tema i18n (FreeMarker locale switch)
-- Dil secimi header'da
+**Hedef:** Uluslararası kullanıcıya açılım ve ilk-giriş deneyimi.
 
-**User Preferences:**
-- `user_preferences` tablosu (V44) — user_sub, language, theme, notification settings
-- CRUD endpoint
-- Frontend ayarlar sayfasi
+**Kapsam:**
 
-**Tanitim Ekrani:**
-- Ilk giris onboarding tour (React Joyride veya custom stepper)
-- Temel ozelliklerin tanitimi (portfolio, chart, alarm)
-- "Bir daha gosterme" tercihi
+- `react-i18next` entegrasyonu
+- Türkçe + İngilizce çeviri dosyaları
+- Mevcut sabit etiketlerin (varlık tipi, tahvil tipi, fon tipi, segment) i18n'e taşınması
+- Keycloak teması için locale switch
+- Header'da dil seçici
+- İlk giriş tanıtım turu (React Joyride veya custom stepper)
+- "Bir daha gösterme" tercihi
 
 ---
 
-### Test + Debug + Polish (17-21 Mayis | 5 gun)
+## Mimari Prensipler
 
-- Tum endpoint'lerin Swagger'dan test edilmesi
-- Frontend tum sayfalarin cross-browser testi
-- Performance profiling (buyuk portfolio, cok haber)
-- Edge case'ler (bos portfolio, 0 bakiye, expired token)
-- Responsive tasarim kontrol
-- Dark/light mode tutarlilik
+- **Modüler monolit** — her varlık türü kendi Maven modülünde (`finance-crypto`, `finance-stock`, `finance-portfolio` vb.); ortak kod `finance-common`'da
+- **Strategy pattern** — `MarketAssetProvider`, `MarketHistoryProvider`, `AssetPricingStrategy` ile piyasa türü genişletmesi açık-kapalı prensibine uygun
+- **Sealed DTO'lar** — `MarketAssetMetadata` sealed interface; tip güvenliği `Map<String, Object>` yerine
+- **Port & Adapter** — modüller arası bağımlılığı tersine çevirmek için `AssetPricingPort`, `HistoricalPricingPort`, `PortfolioSnapshotPort`
+- **Optimistic locking** — `@Version` ile portföy yarış koşulu koruması
+- **Defansif hata yönetimi** — Resilience4j circuit breaker + retry; piyasa kapalıyken graceful skip
+- **API sözleşmesi** — tüm yanıtlar `ApiResponse<T>` zarfında; entity sınıfları controller'dan dışarı sızmaz
+
+---
+
+## Teknoloji Yığını
+
+### Backend
+
+- Java 21
+- Spring Boot 4
+- PostgreSQL 15 (Flyway migration)
+- Redis (önbellek)
+- Apache Kafka (log akışı)
+- Keycloak (kimlik)
+- Resilience4j
+- Maven multi-module
+
+### Frontend
+
+- React 19
+- Vite
+- TailwindCSS 4
+- Zustand (client state)
+- TanStack Query (server state)
+- ECharts + LightweightCharts
+- Framer Motion
+
+### DevOps
+
+- Docker Compose orkestrasyonu
+- OpenTelemetry + OpenSearch dashboards
+- Nginx reverse proxy
+- GitHub Actions CI
 
 ---
 
-### Buffer (22-25 Mayis | 4 gun)
+## Sürüm Geçmişi
 
-- Geciken isler icin yedek sure
-- Son dakika bug fix
-- Dokumandasyon finalizasyonu
-
----
+| Sürüm | Modül | Açıklama |
+|-------|-------|----------|
+| v0.13 | Emtia | Yahoo Finance commodity entegrasyonu, türev hesaplama, segment sınıflandırma; geniş refactor sprintleri |
+| v0.12 | Birleşik Market | Tek `/api/v1/market` endpoint'i, frontend yenilemesi, search suggestions |
+| v0.11 | Portföy | Pozisyon yönetimi, snapshot, performans grafiği |
+| v0.10 | Haber | RSS kaynakları, kategori sınıflandırma |
+| v0.9 | Tahvil & Bono | EVDS entegrasyonu, kupon geçmişi, getiri hesabı |
+| v0.8 | Gözlemlenebilirlik | OpenTelemetry, Kafka, OpenSearch |
+| v0.7 | Fon | TEFAS YAT + BYF |
+| v0.6 | Döviz | TCMB + Yahoo çapraz pariteler |
+| v0.5 | Hisse | Yahoo Finance BIST |
+| v0.4 | Kripto | CoinGecko + Binance |
+| v0.3 | Yönetim Paneli | Takip listesi, kullanıcı yönetimi |
+| v0.2 | Kimlik | Keycloak, JWT, LDAP |
+| v0.1 | Altyapı | Spring Boot, React, Docker, PostgreSQL |

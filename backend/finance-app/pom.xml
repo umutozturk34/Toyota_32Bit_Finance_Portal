@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>com.finance</groupId>
 		<artifactId>finance-portal</artifactId>
-		<version>0.9.0</version>
+		<version>0.14.0-SNAPSHOT</version>
 	</parent>
 	<artifactId>finance-app</artifactId>
 	<name>Finance App</name>
@@ -30,10 +30,6 @@
 		<dependency>
 			<groupId>com.finance</groupId>
 			<artifactId>finance-forex</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.finance</groupId>
-			<artifactId>finance-user</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.finance</groupId>

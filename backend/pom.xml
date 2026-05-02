@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.finance</groupId>
 	<artifactId>finance-portal</artifactId>
-	<version>0.9.0</version>
+	<version>0.14.0-SNAPSHOT</version>
 	<name>Finance Portal</name>
 	<description>Finance Portal - Multi Module</description>
 	<packaging>pom</packaging>
@@ -32,7 +32,6 @@
 		<module>finance-bond</module>
 		<module>finance-commodity</module>
 		<module>finance-news</module>
-		<module>finance-user</module>
 		<module>finance-portfolio</module>
 		<module>finance-app</module>
 	</modules>
@@ -79,11 +78,6 @@
 			<dependency>
 				<groupId>com.finance</groupId>
 				<artifactId>finance-forex</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.finance</groupId>
-				<artifactId>finance-user</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

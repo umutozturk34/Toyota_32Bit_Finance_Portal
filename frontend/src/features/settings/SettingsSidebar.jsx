@@ -1,17 +1,21 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings as SettingsIcon, Palette, Languages, BarChart3, Bell, Shield } from 'lucide-react';
+import {
+  X, Settings as SettingsIcon, Palette, Languages, BarChart3, Bell, Shield,
+  Sun, Moon, LogOut, KeyRound,
+} from 'lucide-react';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';
+import { useAuth } from '../auth/AuthContext';
+import { doForgotPassword } from '../auth/keycloak';
 import TwoFactorPanel from '../auth/TwoFactorPanel';
 
 const THEME_OPTIONS = [
-  { value: 'LIGHT', label: 'Açık' },
-  { value: 'DARK', label: 'Koyu' },
-  { value: 'SYSTEM', label: 'Sistem' },
+  { value: 'DARK', Icon: Moon, label: 'Koyu' },
+  { value: 'LIGHT', Icon: Sun, label: 'Açık' },
 ];
 
 const LANGUAGE_OPTIONS = [
-  { value: 'tr', label: 'Türkçe' },
-  { value: 'en', label: 'English' },
+  { value: 'tr', label: 'TR' },
+  { value: 'en', label: 'EN' },
 ];
 
 const CHART_RANGE_OPTIONS = [
@@ -19,38 +23,45 @@ const CHART_RANGE_OPTIONS = [
   { value: '3M', label: '3A' },
   { value: '6M', label: '6A' },
   { value: '1Y', label: '1Y' },
+  { value: '5Y', label: '5Y' },
   { value: 'ALL', label: 'TÜM' },
 ];
 
 const REPORT_OPTIONS = [
-  { value: 'NEVER', label: 'Hiçbir Zaman' },
+  { value: 'NEVER', label: 'Hiç' },
   { value: 'DAILY', label: 'Günlük' },
   { value: 'WEEKLY', label: 'Haftalık' },
   { value: 'MONTHLY', label: 'Aylık' },
 ];
 
-function SegmentedControl({ options, value, onChange, layoutId }) {
+function SegmentedControl({ options, value, onChange, layoutId, compact = false }) {
+  const padding = compact ? 'px-2 py-1' : 'px-2.5 py-1.5';
   return (
     <div className="flex gap-0.5 rounded-lg border border-border-default bg-bg-elevated p-0.5 overflow-hidden">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          onClick={() => onChange(opt.value)}
-          className="relative flex-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-all border-none cursor-pointer bg-transparent"
-        >
-          {value === opt.value && (
-            <motion.span
-              layoutId={layoutId}
-              className="absolute inset-0 rounded-md bg-accent/15"
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            />
-          )}
-          <span className={`relative z-10 ${value === opt.value ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
-            {opt.label}
-          </span>
-        </button>
-      ))}
+      {options.map((opt) => {
+        const Icon = opt.Icon;
+        const active = value === opt.value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            title={opt.label}
+            className={`relative flex-1 rounded-md ${padding} text-[11px] font-medium transition-all border-none cursor-pointer bg-transparent flex items-center justify-center`}
+          >
+            {active && (
+              <motion.span
+                layoutId={layoutId}
+                className="absolute inset-0 rounded-md bg-accent/15"
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              />
+            )}
+            <span className={`relative z-10 flex items-center justify-center gap-1 ${active ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
+              {Icon ? <Icon className="h-3.5 w-3.5" /> : opt.label}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -70,9 +81,15 @@ function Section({ icon: Icon, title, children }) {
 export default function SettingsSidebar({ isOpen, onClose }) {
   const { preferences } = useUserPreferences();
   const updatePreferences = useUpdateUserPreferences();
+  const { logout } = useAuth();
 
   const handleChange = (field) => (value) => {
     updatePreferences.mutate({ [field]: value });
+  };
+
+  const handleLogout = () => {
+    onClose();
+    logout();
   };
 
   return (
@@ -115,23 +132,25 @@ export default function SettingsSidebar({ isOpen, onClose }) {
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
-              <Section icon={Palette} title="Tema">
-                <SegmentedControl
-                  options={THEME_OPTIONS}
-                  value={preferences.theme}
-                  onChange={handleChange('theme')}
-                  layoutId="settings-theme"
-                />
-              </Section>
-
-              <Section icon={Languages} title="Dil">
-                <SegmentedControl
-                  options={LANGUAGE_OPTIONS}
-                  value={preferences.language}
-                  onChange={handleChange('language')}
-                  layoutId="settings-language"
-                />
-              </Section>
+              <div className="grid grid-cols-[1fr_auto] gap-4 items-start">
+                <Section icon={Palette} title="Tema">
+                  <SegmentedControl
+                    options={THEME_OPTIONS}
+                    value={preferences.theme}
+                    onChange={handleChange('theme')}
+                    layoutId="settings-theme"
+                  />
+                </Section>
+                <Section icon={Languages} title="Dil">
+                  <SegmentedControl
+                    options={LANGUAGE_OPTIONS}
+                    value={preferences.language}
+                    onChange={handleChange('language')}
+                    layoutId="settings-language"
+                    compact
+                  />
+                </Section>
+              </div>
 
               <Section icon={BarChart3} title="Varsayılan Grafik Aralığı">
                 <SegmentedControl
@@ -155,9 +174,32 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                 <TwoFactorPanel />
               </Section>
 
+              <Section icon={KeyRound} title="Şifre">
+                <button
+                  onClick={doForgotPassword}
+                  className="w-full flex items-center justify-between gap-2 rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-xs font-medium text-fg hover:bg-surface transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <KeyRound className="h-3.5 w-3.5 text-accent" />
+                    Şifre Değiştir
+                  </span>
+                  <span className="text-[10px] text-fg-muted">Keycloak →</span>
+                </button>
+              </Section>
+
               <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-[11px] text-fg-muted">
                 <span className="font-mono text-fg">{preferences.timezone}</span> saat dilimi (sabit)
               </div>
+            </div>
+
+            <div className="border-t border-border-default px-5 py-3">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold text-danger border border-danger/30 bg-danger/5 hover:bg-danger/10 transition-all cursor-pointer"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Çıkış Yap
+              </button>
             </div>
           </motion.aside>
         </>

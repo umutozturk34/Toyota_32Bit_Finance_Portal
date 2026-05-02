@@ -11,7 +11,7 @@ public record UserPreferenceUpdateRequest(
         String language,
         @Size(max = 32, message = "timezone max 32 chars")
         String timezone,
-        @Pattern(regexp = "1D|1W|1M|3M|6M|1Y|ALL", message = "defaultChartRange must be one of 1D|1W|1M|3M|6M|1Y|ALL")
+        @Pattern(regexp = "1D|1W|1M|3M|6M|1Y|5Y|ALL", message = "defaultChartRange must be one of 1D|1W|1M|3M|6M|1Y|5Y|ALL")
         String defaultChartRange,
         ReportFrequency reportFrequency,
         Boolean onboardingCompleted

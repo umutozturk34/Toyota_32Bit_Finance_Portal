@@ -43,6 +43,7 @@ services:
       MONGO_ROOT_USER: ${MONGO_ROOT_USER}
       MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
       MONGO_DATABASE: ${MONGO_DATABASE:-finance_app_db}
+      SPRING_MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DATABASE:-finance_app_db}?authSource=admin
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_SERVICE_NAME: finance-backend

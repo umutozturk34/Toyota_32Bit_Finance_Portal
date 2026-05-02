@@ -28,7 +28,7 @@ export default function TwoFactorPanel() {
     const handleSetup = () => {
         keycloak.login({
             action: 'CONFIGURE_TOTP',
-            redirectUri: window.location.origin + '/',
+            redirectUri: window.location.href,
         });
     };
 

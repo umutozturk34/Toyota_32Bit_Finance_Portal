@@ -63,10 +63,10 @@ public class UserPreference {
     public static UserPreference defaultsFor(String userSub) {
         return UserPreference.builder()
                 .userSub(userSub)
-                .theme(ThemePreference.SYSTEM)
+                .theme(ThemePreference.DARK)
                 .language("tr")
                 .timezone("Europe/Istanbul")
-                .defaultChartRange("6M")
+                .defaultChartRange("1M")
                 .reportFrequency(ReportFrequency.NEVER)
                 .onboardingCompleted(false)
                 .build();

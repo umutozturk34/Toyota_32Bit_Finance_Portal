@@ -7,11 +7,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Newspaper, BarChart3, TrendingUp, Bitcoin,
   DollarSign, Shield,
-  LogOut, Sun, Moon, Briefcase, Activity, Settings,
+  LogOut, Briefcase, Activity, Settings,
   ChevronLeft, ChevronRight, Menu, Landmark, Wallet, Database, Gem, Users,
 } from 'lucide-react';
 import TasksPanel from '../../features/admin/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
+import OnboardingGate from '../../features/onboarding/OnboardingGate';
 
 const navItems = [
   { to: '/market', label: 'Market', Icon: BarChart3 },
@@ -27,7 +28,7 @@ const navItems = [
 
 const MainLayout = () => {
   const { user, logout, hasRole } = useAuth();
-  const { isDark, toggleTheme } = useTheme();
+  const { isDark } = useTheme();
   const location = useLocation();
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
@@ -142,21 +143,6 @@ const MainLayout = () => {
         >
           <Settings size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
           {(!collapsed || isMobile) && <span className="text-[13px] font-medium">Ayarlar</span>}
-        </button>
-        <button
-          onClick={toggleTheme}
-          title={collapsed && !isMobile ? (isDark ? 'Light mode' : 'Dark mode') : undefined}
-          className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-            collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-          }`}
-        >
-          {isDark
-            ? <Sun size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-warning transition-colors" />
-            : <Moon size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
-          }
-          {(!collapsed || isMobile) && (
-            <span className="text-[13px] font-medium">{isDark ? 'Light mode' : 'Dark mode'}</span>
-          )}
         </button>
         {(!collapsed || isMobile) && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border-default">
@@ -279,6 +265,7 @@ const MainLayout = () => {
         <TasksPanel open={tasksOpen} onClose={() => setTasksOpen(false)} />
       )}
       <SettingsSidebar isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <OnboardingGate />
     </div>
   );
 };

@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,8 +37,10 @@ public class AdminUserController {
     }
 
     @PutMapping("/{id}/ban")
-    public ApiResponse<Void> banUser(@PathVariable String id) {
-        service.banUser(id);
+    public ApiResponse<Void> banUser(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String id) {
+        service.banUser(id, jwt.getSubject());
         return ApiResponse.success("User banned", null);
     }
 

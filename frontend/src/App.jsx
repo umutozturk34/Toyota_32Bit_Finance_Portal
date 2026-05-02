@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
+import { ThemeProvider } from './shared/context/ThemeContext';
 import ToastContainer from './shared/components/Toast';
 import ProtectedRoute from './shared/components/ProtectedRoute';
 import ErrorBoundary from './shared/components/ErrorBoundary';
@@ -41,6 +42,7 @@ function PublicOnly({ children }) {
 function App() {
   return (
     <AuthProvider>
+      <ThemeProvider>
       <ToastContainer />
       <BrowserRouter>
         <ErrorBoundary>
@@ -72,6 +74,7 @@ function App() {
         </Routes>
         </ErrorBoundary>
       </BrowserRouter>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

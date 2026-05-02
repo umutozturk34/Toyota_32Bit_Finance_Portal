@@ -59,9 +59,17 @@ class AdminUserServiceTest {
 
     @Test
     void shouldDelegateBan_toClientWithFalseEnabled() {
-        service.banUser("user-id-123");
+        service.banUser("user-id-123", "admin-sub");
 
         verify(client).setEnabled("user-id-123", false);
+    }
+
+    @Test
+    void shouldRejectSelfBan_whenCallerEqualsTarget() {
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.finance.backend.exception.BusinessException.class,
+                () -> service.banUser("admin-sub", "admin-sub"));
+        verify(client, org.mockito.Mockito.never()).setEnabled(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyBoolean());
     }
 
     @Test
@@ -95,7 +103,7 @@ class AdminUserServiceTest {
         doThrow(new ResourceNotFoundException("Keycloak resource not found for setEnabled"))
                 .when(client).setEnabled("missing", false);
 
-        assertThatThrownBy(() -> service.banUser("missing"))
+        assertThatThrownBy(() -> service.banUser("missing", "admin-sub"))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 

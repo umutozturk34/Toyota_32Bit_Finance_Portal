@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Search, Ban, ShieldCheck, Loader2, AlertCircle, Mail, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, Search, Ban, ShieldCheck, Loader2, AlertCircle, Mail, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import PageHeader from '../../shared/components/PageHeader';
 import ErrorState from '../../shared/components/ErrorState';
 import { toast } from '../../shared/components/Toast';
+import { useAuth } from '../auth/AuthContext';
 import { useAdminUsers, useAdminUserCount, useBanUser, useUnbanUser } from './useAdminUsers';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -15,7 +16,7 @@ function formatDate(iso) {
 
 function StatusBadge({ enabled }) {
   return (
-    <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold ${
+    <span className={`inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
       enabled ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
     }`}>
       {enabled ? <ShieldCheck className="h-3 w-3" /> : <Ban className="h-3 w-3" />}
@@ -25,6 +26,7 @@ function StatusBadge({ enabled }) {
 }
 
 export default function AdminUsersPage() {
+  const { user: currentUser } = useAuth();
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [pageSize, setPageSize] = useState(25);
@@ -32,10 +34,15 @@ export default function AdminUsersPage() {
   const [pendingId, setPendingId] = useState(null);
 
   const first = page * pageSize;
-  const { data: users, isLoading, error } = useAdminUsers({ first, max: pageSize, search });
-  const { data: total = 0 } = useAdminUserCount(search);
+  const { data: users, isLoading, isFetching, error, refetch } = useAdminUsers({ first, max: pageSize, search });
+  const { data: total = 0, refetch: refetchCount } = useAdminUserCount(search);
   const banMutation = useBanUser();
   const unbanMutation = useUnbanUser();
+
+  const handleRefresh = () => {
+    refetch();
+    refetchCount();
+  };
 
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total, pageSize]);
   const canPrev = page > 0;
@@ -73,7 +80,12 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader icon={<Users className="h-5 w-5" />} title="Kullanıcı Yönetimi" />
+      <PageHeader
+        icon={<Users className="h-5 w-5" />}
+        title="Kullanıcı Yönetimi"
+        onRefresh={handleRefresh}
+        loading={isFetching}
+      />
 
       <form onSubmit={handleSearchSubmit} className="flex gap-2">
         <div className="relative flex-1">
@@ -95,12 +107,12 @@ export default function AdminUsersPage() {
       </form>
 
       <div className="rounded-xl border border-border-default bg-bg-elevated overflow-hidden">
-        <div className="grid grid-cols-[2fr_2fr_1fr_1fr_auto] gap-3 px-4 py-3 border-b border-border-default text-[11px] font-semibold text-fg-muted uppercase tracking-wide">
+        <div className="grid grid-cols-[2fr_2fr_1fr_1fr_minmax(140px,auto)] gap-3 px-4 py-3 border-b border-border-default text-[11px] font-semibold text-fg-muted uppercase tracking-wide">
           <span>Kullanıcı</span>
           <span>E-posta</span>
           <span>Kayıt</span>
           <span>Durum</span>
-          <span></span>
+          <span className="text-right">İşlem</span>
         </div>
         {isLoading && (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-fg-muted">
@@ -119,7 +131,7 @@ export default function AdminUsersPage() {
             key={user.id}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-[2fr_2fr_1fr_1fr_auto] gap-3 items-center px-4 py-3 border-b border-border-default last:border-b-0 text-sm hover:bg-surface transition-colors"
+            className="grid grid-cols-[2fr_2fr_1fr_1fr_minmax(140px,auto)] gap-3 items-center px-4 py-3 border-b border-border-default last:border-b-0 text-sm hover:bg-surface transition-colors"
           >
             <div className="min-w-0">
               <div className="font-medium text-fg truncate">{user.username}</div>
@@ -135,23 +147,29 @@ export default function AdminUsersPage() {
             </div>
             <span className="text-[11px] text-fg-muted font-mono">{formatDate(user.createdAt)}</span>
             <StatusBadge enabled={user.enabled} />
-            <button
-              onClick={() => handleToggleBan(user)}
-              disabled={pendingId === user.id}
-              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold border-none cursor-pointer transition-all disabled:opacity-50 ${
-                user.enabled
-                  ? 'bg-danger/10 text-danger hover:bg-danger/20'
-                  : 'bg-success/10 text-success hover:bg-success/20'
-              }`}
-            >
-              {pendingId === user.id ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : user.enabled ? (
-                <><Ban className="h-3 w-3" /> Yasakla</>
-              ) : (
-                <><ShieldCheck className="h-3 w-3" /> Yasağı Kaldır</>
-              )}
-            </button>
+            {user.id === currentUser?.id ? (
+              <span className="justify-self-end flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold bg-accent/10 text-accent">
+                <User className="h-3 w-3" /> Sen
+              </span>
+            ) : (
+              <button
+                onClick={() => handleToggleBan(user)}
+                disabled={pendingId === user.id}
+                className={`justify-self-end flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold border-none cursor-pointer transition-all disabled:opacity-50 ${
+                  user.enabled
+                    ? 'bg-danger/10 text-danger hover:bg-danger/20'
+                    : 'bg-success/10 text-success hover:bg-success/20'
+                }`}
+              >
+                {pendingId === user.id ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : user.enabled ? (
+                  <><Ban className="h-3 w-3" /> Yasakla</>
+                ) : (
+                  <><ShieldCheck className="h-3 w-3" /> Yasağı Kaldır</>
+                )}
+              </button>
+            )}
           </motion.div>
         ))}
       </div>

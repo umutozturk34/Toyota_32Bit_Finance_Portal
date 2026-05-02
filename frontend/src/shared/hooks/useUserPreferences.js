@@ -1,24 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userPreferenceService } from '../services/userPreferenceService';
+import { useAuth } from '../../features/auth/AuthContext';
 
 const PREFERENCES_KEY = ['userPreferences'];
 
 const FALLBACK = Object.freeze({
   userSub: null,
-  theme: 'SYSTEM',
+  theme: 'DARK',
   language: 'tr',
   timezone: 'Europe/Istanbul',
-  defaultChartRange: '6M',
+  defaultChartRange: '1M',
   reportFrequency: 'NEVER',
   onboardingCompleted: false,
 });
 
 export function useUserPreferences() {
+  const { isAuthenticated, loading } = useAuth();
   const query = useQuery({
     queryKey: PREFERENCES_KEY,
     queryFn: userPreferenceService.get,
     staleTime: Infinity,
     retry: false,
+    enabled: isAuthenticated && !loading,
   });
   return {
     ...query,

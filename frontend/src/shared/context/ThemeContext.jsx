@@ -1,43 +1,24 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { useUserPreferences, useUpdateUserPreferences } from '../hooks/useUserPreferences';
 
 const ThemeContext = createContext({
     theme: 'dark',
-    themePreference: 'SYSTEM',
+    themePreference: 'DARK',
     setThemePreference: () => {},
     toggleTheme: () => {},
     isDark: true,
 });
 
-function systemTheme() {
-    return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-}
-
 function resolveTheme(preference) {
-    if (preference === 'DARK') return 'dark';
-    if (preference === 'LIGHT') return 'light';
-    return systemTheme();
+    return preference === 'LIGHT' ? 'light' : 'dark';
 }
 
 export function ThemeProvider({ children }) {
     const { preferences } = useUserPreferences();
     const updatePreferences = useUpdateUserPreferences();
-    const themePreference = preferences.theme || 'SYSTEM';
+    const themePreference = preferences.theme || 'DARK';
 
-    const [systemMatch, setSystemMatch] = useState(systemTheme());
-
-    useEffect(() => {
-        const media = window.matchMedia?.('(prefers-color-scheme: light)');
-        if (!media) return undefined;
-        const handler = (e) => setSystemMatch(e.matches ? 'light' : 'dark');
-        media.addEventListener('change', handler);
-        return () => media.removeEventListener('change', handler);
-    }, []);
-
-    const theme = useMemo(
-        () => (themePreference === 'SYSTEM' ? systemMatch : resolveTheme(themePreference)),
-        [themePreference, systemMatch]
-    );
+    const theme = useMemo(() => resolveTheme(themePreference), [themePreference]);
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);

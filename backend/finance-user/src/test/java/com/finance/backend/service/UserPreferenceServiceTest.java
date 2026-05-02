@@ -46,10 +46,10 @@ class UserPreferenceServiceTest {
         UserPreferenceResponse response = service.getOrDefault(USER_SUB);
 
         assertThat(response.userSub()).isEqualTo(USER_SUB);
-        assertThat(response.theme()).isEqualTo(ThemePreference.SYSTEM);
+        assertThat(response.theme()).isEqualTo(ThemePreference.DARK);
         assertThat(response.language()).isEqualTo("tr");
         assertThat(response.timezone()).isEqualTo("Europe/Istanbul");
-        assertThat(response.defaultChartRange()).isEqualTo("6M");
+        assertThat(response.defaultChartRange()).isEqualTo("1M");
         assertThat(response.reportFrequency()).isEqualTo(ReportFrequency.NEVER);
         assertThat(response.onboardingCompleted()).isFalse();
         verify(repository, never()).save(any());

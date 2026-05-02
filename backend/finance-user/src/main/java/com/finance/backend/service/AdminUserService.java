@@ -3,6 +3,7 @@ package com.finance.backend.service;
 import com.finance.backend.client.KeycloakAdminClient;
 import com.finance.backend.dto.AdminUserResponse;
 import com.finance.backend.dto.KeycloakUser;
+import com.finance.backend.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +26,10 @@ public class AdminUserService {
         return client.countUsers(search);
     }
 
-    public void banUser(String userId) {
+    public void banUser(String userId, String callerSub) {
+        if (userId != null && userId.equals(callerSub)) {
+            throw new BusinessException("You cannot ban your own account");
+        }
         client.setEnabled(userId, false);
     }
 

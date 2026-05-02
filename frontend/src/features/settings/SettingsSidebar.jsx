@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Settings as SettingsIcon, Palette, Languages, BarChart3, Bell, Shield,
@@ -5,7 +6,8 @@ import {
 } from 'lucide-react';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';
 import { useAuth } from '../auth/AuthContext';
-import { doChangePassword } from '../auth/keycloak';
+import { userCredentialService } from '../../shared/services/userCredentialService';
+import { toast } from '../../shared/components/Toast';
 import TwoFactorPanel from '../auth/TwoFactorPanel';
 
 const THEME_OPTIONS = [
@@ -82,6 +84,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
   const { preferences } = useUserPreferences();
   const updatePreferences = useUpdateUserPreferences();
   const { logout } = useAuth();
+  const [passwordSending, setPasswordSending] = useState(false);
 
   const handleChange = (field) => (value) => {
     updatePreferences.mutate({ [field]: value });
@@ -90,6 +93,19 @@ export default function SettingsSidebar({ isOpen, onClose }) {
   const handleLogout = () => {
     onClose();
     logout();
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordSending(true);
+    try {
+      await userCredentialService.initiatePasswordChange(window.location.origin);
+      toast.success('E-posta gönderildi', 'Gelen kutunuzdaki linke tıklayarak şifrenizi değiştirin');
+      onClose();
+    } catch (err) {
+      toast.error('İşlem başarısız', err?.response?.data?.message || 'E-posta gönderilemedi');
+    } finally {
+      setPasswordSending(false);
+    }
   };
 
   return (
@@ -176,15 +192,19 @@ export default function SettingsSidebar({ isOpen, onClose }) {
 
               <Section icon={KeyRound} title="Şifre">
                 <button
-                  onClick={doChangePassword}
-                  className="w-full flex items-center justify-between gap-2 rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-xs font-medium text-fg hover:bg-surface transition-colors cursor-pointer"
+                  onClick={handleChangePassword}
+                  disabled={passwordSending}
+                  className="w-full flex items-center justify-between gap-2 rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-xs font-medium text-fg hover:bg-surface transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <span className="flex items-center gap-2">
                     <KeyRound className="h-3.5 w-3.5 text-accent" />
                     Şifre Değiştir
                   </span>
-                  <span className="text-[10px] text-fg-muted">Keycloak →</span>
+                  <span className="text-[10px] text-fg-muted">{passwordSending ? '…' : 'E-posta →'}</span>
                 </button>
+                <p className="text-[10px] text-fg-subtle leading-relaxed px-1 mt-1.5">
+                  E-posta adresine gelen linke tıklayarak yeni şifre belirleyebilirsin.
+                </p>
               </Section>
 
               <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-[11px] text-fg-muted">

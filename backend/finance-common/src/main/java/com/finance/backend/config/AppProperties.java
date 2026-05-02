@@ -226,5 +226,6 @@ public class AppProperties {
         private int adminTriggerLimit = 3;
         private int adminReadLimit = 20;
         private int apiLimit = 60;
+        private int credentialActionLimit = 3;
     }
 }

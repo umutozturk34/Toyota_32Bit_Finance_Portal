@@ -69,7 +69,7 @@ export default function TwoFactorPanel() {
                     : <><Shield className="h-3.5 w-3.5" /> 2FA'yı Kur</>}
             </button>
             <p className="text-[10px] text-fg-subtle leading-relaxed px-1">
-                Keycloak Account Management'a yönlendirileceksin.
+                Doğrulama kurulum sayfasına yönlendirileceksin.
             </p>
         </div>
     );

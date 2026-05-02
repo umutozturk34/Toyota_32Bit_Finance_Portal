@@ -13,6 +13,7 @@ import {
 import TasksPanel from '../../features/admin/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
 import OnboardingGate from '../../features/onboarding/OnboardingGate';
+import KeycloakActionToast from '../../features/auth/KeycloakActionToast';
 
 const navItems = [
   { to: '/market', label: 'Market', Icon: BarChart3 },
@@ -266,6 +267,7 @@ const MainLayout = () => {
       )}
       <SettingsSidebar isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <OnboardingGate />
+      <KeycloakActionToast />
     </div>
   );
 };

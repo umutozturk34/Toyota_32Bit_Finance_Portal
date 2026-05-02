@@ -23,6 +23,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 import java.util.function.Supplier;
 
 @Log4j2
@@ -31,12 +32,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper;
     private final AppProperties appProperties;
     private final LettuceBasedProxyManager<String> proxyManager;
+    private final List<RateLimitTier> tiers;
 
     public RateLimitFilter(ObjectMapper objectMapper,
                            AppProperties appProperties,
-                           StatefulRedisConnection<String, byte[]> connection) {
+                           StatefulRedisConnection<String, byte[]> connection,
+                           List<RateLimitTier> tiers) {
         this.objectMapper = objectMapper;
         this.appProperties = appProperties;
+        this.tiers = tiers;
         this.proxyManager = Bucket4jLettuce.casBasedBuilder(connection)
                 .expirationAfterWrite(
                         ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(Duration.ofHours(2))
@@ -51,7 +55,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
         String method = request.getMethod();
-        Tier tier = resolveTier(path, method);
+        RateLimitTier tier = resolveTier(path, method);
 
         String userId = resolveUserId();
         String bucketKey = "rate-limit:" + userId + ":" + tier.name();
@@ -62,7 +66,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 .tryConsumeAndReturnRemaining(1);
 
         log.debug("[RateLimit] user={} tier={} path={} remaining={} consumed={}",
-                userId, tier, path, probe.getRemainingTokens(), probe.isConsumed());
+                userId, tier.name(), path, probe.getRemainingTokens(), probe.isConsumed());
 
         if (probe.isConsumed()) {
             response.setHeader("X-Rate-Limit-Remaining", String.valueOf(probe.getRemainingTokens()));
@@ -71,7 +75,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             long retryAfterSeconds = Math.max(1, probe.getNanosToWaitForRefill() / 1_000_000_000);
 
             log.warn("Rate limit exceeded for user={} tier={} path={} retryAfter={}s",
-                    userId, tier, path, retryAfterSeconds);
+                    userId, tier.name(), path, retryAfterSeconds);
 
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -84,17 +88,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
     }
 
-    private Tier resolveTier(String path, String method) {
-        if (path.startsWith("/api/v1/admin/trigger") && "POST".equalsIgnoreCase(method)) {
-            return Tier.ADMIN_TRIGGER;
-        }
-        if (path.startsWith("/api/v1/admin")) {
-            return Tier.ADMIN_READ;
-        }
-        return Tier.API;
+    private RateLimitTier resolveTier(String path, String method) {
+        return tiers.stream()
+                .filter(t -> t.matches(path, method))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No rate limit tier matched for " + method + " " + path));
     }
 
-    private BucketConfiguration createBucketConfiguration(Tier tier) {
+    private BucketConfiguration createBucketConfiguration(RateLimitTier tier) {
         return BucketConfiguration.builder()
                 .addLimit(tier.toBandwidth(appProperties.getRateLimit()))
                 .build();

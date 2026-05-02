@@ -75,6 +75,22 @@ public class KeycloakAdminClient {
                 .block());
     }
 
+    public void sendActionsEmail(String userId, List<String> actions, String clientId, String redirectUri, long lifespanSeconds) {
+        executeWithRetry("sendActionsEmail", token -> webClient.put()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/admin/realms/{realm}/users/{id}/execute-actions-email")
+                        .queryParam("client_id", clientId)
+                        .queryParam("redirect_uri", redirectUri)
+                        .queryParam("lifespan", lifespanSeconds)
+                        .build(properties.getRealm(), userId))
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(actions)
+                .retrieve()
+                .toBodilessEntity()
+                .block());
+    }
+
     private <T> T executeWithRetry(String operation, java.util.function.Function<String, T> call) {
         try {
             return call.apply(getAdminToken());

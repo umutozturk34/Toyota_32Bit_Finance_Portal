@@ -44,6 +44,13 @@ spring:
       uri: mongodb://${MONGO_ROOT_USER:finance_app}:${MONGO_ROOT_PASSWORD:}@${MONGO_HOST:mongodb}:${MONGO_PORT:27017}/${MONGO_DATABASE:finance_app_db}?authSource=admin
       auto-index-creation: true
 
+keycloak:
+  admin:
+    base-url: ${KEYCLOAK_URL:http://keycloak:8080}
+    realm: ${KEYCLOAK_REALM:finance-realm}
+    admin-user: ${KEYCLOAK_ADMIN_USER:admin}
+    admin-password: ${KEYCLOAK_ADMIN_PASSWORD:}
+
   
   security:
     oauth2:

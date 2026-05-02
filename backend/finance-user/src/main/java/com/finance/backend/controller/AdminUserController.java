@@ -1,0 +1,43 @@
+package com.finance.backend.controller;
+
+import com.finance.backend.dto.AdminUserResponse;
+import com.finance.backend.dto.ApiResponse;
+import com.finance.backend.service.AdminUserService;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/v1/admin/users")
+@PreAuthorize("hasRole('ADMIN')")
+@RequiredArgsConstructor
+@Validated
+public class AdminUserController {
+
+    private final AdminUserService service;
+
+    @GetMapping
+    public ApiResponse<List<AdminUserResponse>> listUsers(
+            @RequestParam(defaultValue = "0") @Min(0) int first,
+            @RequestParam(defaultValue = "50") @Min(1) @Max(200) int max,
+            @RequestParam(required = false) String search) {
+        return ApiResponse.success("Users retrieved", service.listUsers(first, max, search));
+    }
+
+    @PutMapping("/{id}/ban")
+    public ApiResponse<Void> banUser(@PathVariable String id) {
+        service.banUser(id);
+        return ApiResponse.success("User banned", null);
+    }
+
+    @PutMapping("/{id}/unban")
+    public ApiResponse<Void> unbanUser(@PathVariable String id) {
+        service.unbanUser(id);
+        return ApiResponse.success("User unbanned", null);
+    }
+}

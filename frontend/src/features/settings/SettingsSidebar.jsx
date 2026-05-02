@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';
 import { useAuth } from '../auth/AuthContext';
-import { doForgotPassword } from '../auth/keycloak';
+import { doChangePassword } from '../auth/keycloak';
 import TwoFactorPanel from '../auth/TwoFactorPanel';
 
 const THEME_OPTIONS = [
@@ -176,7 +176,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
 
               <Section icon={KeyRound} title="Şifre">
                 <button
-                  onClick={doForgotPassword}
+                  onClick={doChangePassword}
                   className="w-full flex items-center justify-between gap-2 rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-xs font-medium text-fg hover:bg-surface transition-colors cursor-pointer"
                 >
                   <span className="flex items-center gap-2">

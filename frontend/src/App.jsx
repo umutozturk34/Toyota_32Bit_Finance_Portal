@@ -24,6 +24,7 @@ import CommodityDetail from './features/commodity/CommodityDetail';
 import BondsPage from './features/bond/BondsPage';
 import Portfolio from './features/portfolio';
 import AdminTrackedAssetsPage from './features/admin/AdminTrackedAssetsPage';
+import AdminUsersPage from './features/admin/AdminUsersPage';
 
 function LandingRedirect() {
   const { isAuthenticated } = useAuth();
@@ -64,6 +65,7 @@ function App() {
             <Route path="commodities/:code" element={<CommodityDetail />} />
             <Route path="bonds" element={<BondsPage />} />
             <Route path="admin/tracked-assets" element={<AdminTrackedAssetsPage />} />
+            <Route path="admin/users" element={<AdminUsersPage />} />
             <Route path="portfolio" element={<Portfolio />} />
             <Route path="*" element={<NotFound />} />
           </Route>

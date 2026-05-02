@@ -8,7 +8,7 @@ import {
   Newspaper, BarChart3, TrendingUp, Bitcoin,
   DollarSign, Shield,
   LogOut, Sun, Moon, Briefcase, Activity, Settings,
-  ChevronLeft, ChevronRight, Menu, Landmark, Wallet, Database, Gem,
+  ChevronLeft, ChevronRight, Menu, Landmark, Wallet, Database, Gem, Users,
 } from 'lucide-react';
 import TasksPanel from '../../features/admin/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
@@ -46,7 +46,12 @@ const MainLayout = () => {
 
   const allNav = [
     ...navItems,
-    ...(hasRole('ADMIN') ? [{ to: '/admin/tracked-assets', label: 'Tracked Assets', Icon: Database }] : []),
+    ...(hasRole('ADMIN')
+      ? [
+          { to: '/admin/tracked-assets', label: 'Tracked Assets', Icon: Database },
+          { to: '/admin/users', label: 'Users', Icon: Users },
+        ]
+      : []),
   ];
 
   const isActive = (path) => location.pathname === path;

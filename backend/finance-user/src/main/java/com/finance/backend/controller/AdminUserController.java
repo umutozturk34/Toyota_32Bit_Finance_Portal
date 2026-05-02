@@ -29,6 +29,11 @@ public class AdminUserController {
         return ApiResponse.success("Users retrieved", service.listUsers(first, max, search));
     }
 
+    @GetMapping("/count")
+    public ApiResponse<Long> countUsers(@RequestParam(required = false) String search) {
+        return ApiResponse.success("User count retrieved", service.countUsers(search));
+    }
+
     @PutMapping("/{id}/ban")
     public ApiResponse<Void> banUser(@PathVariable String id) {
         service.banUser(id);

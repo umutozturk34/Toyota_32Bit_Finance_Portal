@@ -68,6 +68,15 @@ class AdminUserServiceTest {
     }
 
     @Test
+    void shouldDelegateCount_toClientReturningTotal() {
+        when(client.countUsers("alice")).thenReturn(42L);
+
+        long total = service.countUsers("alice");
+
+        assertThat(total).isEqualTo(42L);
+    }
+
+    @Test
     void shouldTreatNullEnabled_asFalseInResponse() {
         KeycloakUser legacy = new KeycloakUser("legacy", "legacyuser", null, null, null, null, null);
         when(client.listUsers(0, 50, null)).thenReturn(List.of(legacy));

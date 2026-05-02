@@ -21,6 +21,10 @@ public class AdminUserService {
         return users.stream().map(this::toResponse).toList();
     }
 
+    public long countUsers(String search) {
+        return client.countUsers(search);
+    }
+
     public void banUser(String userId) {
         client.setEnabled(userId, false);
     }

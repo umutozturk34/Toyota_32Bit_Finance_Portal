@@ -46,6 +46,21 @@ public class KeycloakAdminClient {
                 .block();
     }
 
+    public long countUsers(String search) {
+        String token = getAdminToken();
+        Long total = webClient.get()
+                .uri(uriBuilder -> {
+                    uriBuilder.path("/admin/realms/{realm}/users/count");
+                    if (search != null && !search.isBlank()) uriBuilder.queryParam("search", search);
+                    return uriBuilder.build(properties.getRealm());
+                })
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .bodyToMono(Long.class)
+                .block();
+        return total != null ? total : 0L;
+    }
+
     public void setEnabled(String userId, boolean enabled) {
         String token = getAdminToken();
         webClient.put()

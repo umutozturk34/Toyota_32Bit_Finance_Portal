@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings as SettingsIcon, Palette, Languages, BarChart3, Bell } from 'lucide-react';
+import { X, Settings as SettingsIcon, Palette, Languages, BarChart3, Bell, Shield } from 'lucide-react';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';
+import TwoFactorPanel from '../auth/TwoFactorPanel';
 
 const THEME_OPTIONS = [
   { value: 'LIGHT', label: 'Açık' },
@@ -148,6 +149,10 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                   onChange={handleChange('reportFrequency')}
                   layoutId="settings-report"
                 />
+              </Section>
+
+              <Section icon={Shield} title="İki Adımlı Doğrulama">
+                <TwoFactorPanel />
               </Section>
 
               <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-[11px] text-fg-muted">

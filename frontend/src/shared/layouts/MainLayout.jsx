@@ -47,7 +47,6 @@ const MainLayout = () => {
   const allNav = [
     ...navItems,
     ...(hasRole('ADMIN') ? [{ to: '/admin/tracked-assets', label: 'Tracked Assets', Icon: Database }] : []),
-    { to: '/2fa', label: '2FA', Icon: Shield },
   ];
 
   const isActive = (path) => location.pathname === path;

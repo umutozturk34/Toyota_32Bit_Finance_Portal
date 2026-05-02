@@ -8,7 +8,6 @@ import MainLayout from './shared/layouts/MainLayout';
 import HomePage from './features/home/HomePage';
 import Login from './features/auth/Login';
 import Register from './features/auth/Register';
-import TwoFactorSetup from './features/auth/TwoFactorSetup';
 import News from './features/news';
 import NewsDetail from './features/news/NewsDetail';
 import MarketDataPage from './features/market/MarketDataPage';
@@ -50,7 +49,6 @@ function App() {
           <Route path="register" element={<PublicOnly><Register /></PublicOnly>} />
 
           <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-            <Route path="2fa" element={<TwoFactorSetup />} />
             <Route path="news" element={<News />} />
             <Route path="news/:id" element={<NewsDetail />} />
             <Route path="market" element={<MarketDataPage />} />

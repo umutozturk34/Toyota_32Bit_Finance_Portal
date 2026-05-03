@@ -26,6 +26,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      secrets:
+        - github_token
     container_name: finance-backend
     restart: unless-stopped
     expose:
@@ -67,8 +69,10 @@ services:
 
   notification-backend:
     build:
-      context: ./backend
-      dockerfile: finance-notification-app/Dockerfile
+      context: ./notification-backend
+      dockerfile: Dockerfile
+      secrets:
+        - github_token
     container_name: finance-notification-backend
     restart: unless-stopped
     expose:
@@ -428,3 +432,7 @@ volumes:
 networks:
   finance-network:
     driver: bridge
+
+secrets:
+  github_token:
+    environment: GITHUB_TOKEN

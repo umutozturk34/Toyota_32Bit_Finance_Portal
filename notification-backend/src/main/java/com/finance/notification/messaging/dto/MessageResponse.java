@@ -1,6 +1,6 @@
-package com.finance.backend.dto;
+package com.finance.notification.messaging.dto;
 
-import com.finance.backend.dto.enums.MessageDirection;
+import com.finance.notification.messaging.model.MessageDirection;
 
 import java.time.LocalDateTime;
 

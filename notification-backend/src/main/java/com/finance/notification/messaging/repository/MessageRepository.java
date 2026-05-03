@@ -1,7 +1,7 @@
-package com.finance.backend.repository;
+package com.finance.notification.messaging.repository;
 
-import com.finance.backend.dto.enums.MessageDirection;
-import com.finance.backend.model.Message;
+import com.finance.notification.messaging.model.Message;
+import com.finance.notification.messaging.model.MessageDirection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

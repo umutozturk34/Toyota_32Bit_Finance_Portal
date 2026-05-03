@@ -1,6 +1,5 @@
-package com.finance.backend.model;
+package com.finance.notification.messaging.model;
 
-import com.finance.backend.dto.enums.MessageDirection;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,4 +1,4 @@
-package com.finance.backend.dto.enums;
+package com.finance.notification.messaging.model;
 
 public enum MessageDirection {
     ADMIN_TO_USER,

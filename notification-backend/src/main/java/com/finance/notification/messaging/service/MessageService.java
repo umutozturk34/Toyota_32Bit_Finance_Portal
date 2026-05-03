@@ -1,12 +1,11 @@
-package com.finance.backend.service;
+package com.finance.notification.messaging.service;
 
-import com.finance.backend.dto.MessageResponse;
-import com.finance.backend.dto.enums.MessageDirection;
 import com.finance.backend.exception.BusinessException;
 import com.finance.backend.exception.ResourceNotFoundException;
-import com.finance.backend.mapper.MessageMapper;
-import com.finance.backend.model.Message;
-import com.finance.backend.repository.MessageRepository;
+import com.finance.notification.messaging.dto.MessageResponse;
+import com.finance.notification.messaging.model.Message;
+import com.finance.notification.messaging.model.MessageDirection;
+import com.finance.notification.messaging.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

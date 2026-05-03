@@ -1,10 +1,10 @@
-package com.finance.backend.controller;
+package com.finance.notification.messaging.controller;
 
-import com.finance.backend.dto.AdminMessageSendRequest;
 import com.finance.backend.dto.ApiResponse;
-import com.finance.backend.dto.MessageResponse;
 import com.finance.backend.dto.response.PagedResponse;
-import com.finance.backend.service.MessageService;
+import com.finance.notification.messaging.dto.AdminMessageSendRequest;
+import com.finance.notification.messaging.dto.MessageResponse;
+import com.finance.notification.messaging.service.MessageService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

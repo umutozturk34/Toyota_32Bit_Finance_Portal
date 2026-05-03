@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.finance</groupId>
 	<artifactId>finance-portal</artifactId>
-	<version>0.14.0-SNAPSHOT</version>
+	<version>0.14.0</version>
 	<name>Finance Portal</name>
 	<description>Finance Portal - Multi Module</description>
 	<packaging>pom</packaging>

@@ -14,7 +14,8 @@ public final class ChangeFromCandlesUpdater {
                                                        BigDecimal currentPrice,
                                                        List<? extends BaseCandle> topTwoDesc,
                                                        int scale) {
-        if (asset.getChangePercent() != null) return false;
+        BigDecimal existing = asset.getChangePercent();
+        if (existing != null && existing.signum() != 0) return false;
         if (currentPrice == null || topTwoDesc.size() < 2) return false;
         BigDecimal previousClose = topTwoDesc.get(1).getClose();
         if (previousClose == null) return false;

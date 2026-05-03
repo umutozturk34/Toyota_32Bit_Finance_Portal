@@ -57,31 +57,47 @@ Türkiye finansal piyasalarına odaklı, açık kaynaklı kişisel finans takip 
 
 ## Yaklaşan Sürümler
 
-### v0.14 — Kullanıcı Modülü
+### v0.14 — Kullanıcı Modülü & Yönetim
 
-**Hedef:** Kullanıcı profili ve kişiselleştirme.
+**Hedef:** Kullanıcı tercihleri, layout customization, admin paneli, identity-adjacent ops.
 
 **Kapsam:**
 
-- Profil bilgileri (görüntüle / düzenle)
-- Kullanıcı tercihleri (tema, dil seçimi başlangıç değerleri)
-- Kayıt akışı (Keycloak federasyonu üzerinden)
-- Şifre sıfırlama
-- Avatar yükleme (S3 storage hazır olunca)
+- **Tercihler** (`user_preferences` Postgres) — tema, dil, timezone, default grafik aralığı, rapor sıklığı, onboarding flag; ThemeContext TanStack Query backed; settings sidebar UI
+- **Overview customization** (`user_layouts` MongoDB) — kullanıcının overview sayfasına çektiği section'lar (BIST endeksleri, top movers, watchlist, news) — hangileri görünür, hangi sırada, kendi config'leriyle
+- **ChartDrawing skeleton** (`chart_drawings` MongoDB) — collection altyapısı (v0.18'de UI implement)
+- **Admin user management** — Keycloak admin REST proxy (`KeycloakAdminClient`) ile list/search/pagination/ban/unban; self-ban guard
+- **2FA setup** — Keycloak account API entegrasyonu, settings sidebar inline panel
+- **Şifre değiştirme** — Keycloak `executeActionsEmail` ile mail bağlantısı; UPDATE_PASSWORD AIA flow; rate limit (`CredentialActionTier` saatte 3 istek)
+- **Onboarding gate** — ilk login modal'ı, `onboarding_completed` flag
+- **Keycloak email event listener** — UPDATE_PASSWORD/REMOVE_TOTP/UPDATE_TOTP otomatik bildirim mailı
+- **Rate limit OCP refactor** — `RateLimitTier` interface + ayrı `@Component` tier'lar (yeni tier ekleme = yeni dosya)
+- Avatar / profil resmi (v0.16 MinIO entegrasyonu sonrası)
 
 ---
 
-### v0.15 — Bildirim Sistemi & Takip Listesi
+### v0.15 — Bildirim Mikroservisi & Takip Listesi
 
-**Hedef:** Kullanıcıya proaktif bilgi akışı.
+**Hedef:** Event-driven bildirim sistemi — fiyat alarmı, takip listesi, in-app + email bildirimler ayrı bir Spring Boot uygulaması olarak.
+
+**Mimari:** Ayrı `finance-notification-app` Maven sibling module, port 8082. Monolit ile **Kafka event-driven** iletişim (REST callback yok). Shared `finance_db` ama ayrı Flyway history table.
 
 **Kapsam:**
 
-- E-posta ve uygulama içi (in-app) bildirim kanalları
-- Fiyat alarmı (eşik üstü / altı; tetiklenince opsiyonel otomatik alış)
-- Takip listesi (watchlist) — varlık üzerinde değişim yüzdesi eşiği
-- Bildirim tercihleri (kategori bazlı toggle)
-- Sidebar bildirim ikonu, okunmamış sayısı
+- **Notification microservice scaffolding** — yeni Spring Boot app, port 8082, Nginx regex routing
+- **Kafka event contract**:
+  - `market.updated` topic (24h retention) — monolit market refresh sonrası publish
+  - `user.preferences.updated` compacted topic — kullanıcı tercihi değişikliği AFTER_COMMIT publish
+- **Domain entities** (notification microservice tarafında):
+  - `Notification`, `NotificationPreference` (channel matrix × type + quiet hours)
+  - `PriceAlert` (threshold, direction, one-shot/recurring) + `AlertEvaluator`
+  - `WatchlistItem` + `WatchlistEvaluator` (delta detection)
+  - `UserPreferenceCache` (Kafka consumer'dan beslenen lokal cache)
+- **Email dispatch** — Spring Mail + Thymeleaf templates (`price-alert.html`, `watchlist-delta.html`, `report-ready.html`)
+- **In-app notifications** — bell icon, unread badge, paged notifications page
+- **SSE live stream** — `/api/v1/notifications/stream` (gerçek zamanlı bildirim push)
+- **Messaging migrate** — user↔admin messaging monolitten notification-app'e taşınır (event-driven dispatcher pattern altına alınır)
+- **Frontend** — `/notifications`, `/price-alerts`, `/watchlist` sayfaları + bell icon
 
 ---
 

@@ -12,14 +12,13 @@ import com.finance.backend.model.TrackedAssetType;
 import com.finance.backend.repository.StockCandleRepository;
 import com.finance.backend.repository.StockRepository;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
+import com.finance.backend.util.ChangeFromCandlesUpdater;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.Objects;
 
 @Log4j2
 @Component
@@ -73,16 +72,12 @@ public class StockEntityWriter implements MarketEntityWriter {
     }
 
     public boolean refreshChangePercentFromCandles(Stock stock) {
-        if (stock.getCurrentPrice() == null) return false;
-        List<StockCandle> latest = stockCandleRepository
+        List<StockCandle> top2 = stockCandleRepository
                 .findTop2ByStockSymbolOrderByCandleDateDesc(stock.getSymbol());
-        if (latest.size() < 2) return false;
-        BigDecimal previousPrice = latest.get(1).getClose();
-        BigDecimal oldPercent = stock.getChangePercent();
-        stock.applyChange(stock.getCurrentPrice(), previousPrice, scale);
-        if (Objects.equals(oldPercent, stock.getChangePercent())) return false;
-        stockRepository.save(stock);
-        return true;
+        boolean changed = ChangeFromCandlesUpdater.applyFromTopTwoDescIfMissing(
+                stock, stock.getCurrentPrice(), top2, scale);
+        if (changed) stockRepository.save(stock);
+        return changed;
     }
 
     public int upsertCandles(String symbol, Stock stock, List<YahooCandleDto> candleDtos) {

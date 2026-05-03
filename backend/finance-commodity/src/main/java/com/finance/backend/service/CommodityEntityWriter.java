@@ -8,6 +8,7 @@ import com.finance.backend.model.CommoditySnapshotInput;
 import com.finance.backend.repository.CommodityCandleRepository;
 import com.finance.backend.repository.CommodityRepository;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
+import com.finance.backend.util.ChangeFromCandlesUpdater;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
@@ -34,6 +35,15 @@ public class CommodityEntityWriter implements MarketEntityWriter {
             commodity.setYahooSymbol(yahooSymbol);
         }
         commodityRepository.save(commodity);
+    }
+
+    public boolean refreshChangePercentFromCandles(Commodity commodity, int scale) {
+        List<CommodityCandle> top2 = commodityCandleRepository
+                .findTop2ByCommodityCodeOrderByCandleDateDesc(commodity.getCommodityCode());
+        boolean changed = ChangeFromCandlesUpdater.applyFromTopTwoDescIfMissing(
+                commodity, commodity.getCurrentPrice(), top2, scale);
+        if (changed) commodityRepository.save(commodity);
+        return changed;
     }
 
     public void upsertCandles(Commodity commodity, List<YahooCandleDto> candleDtos, int scale) {

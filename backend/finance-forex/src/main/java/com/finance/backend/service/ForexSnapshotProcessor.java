@@ -79,7 +79,9 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
             if (hasUsableQuote(result)) {
                 int saved = transactionTemplate.execute(status -> {
                     entityWriter.applyDirect(forex, result.quote(), spreadRate, scale);
-                    return entityWriter.upsertCandles(forex, result.candles());
+                    int upserted = entityWriter.upsertCandles(forex, result.candles());
+                    entityWriter.refreshChangePercentFromCandles(forex, scale);
+                    return upserted;
                 });
                 forexCacheService.putSnapshot(baseSymbol, forex);
                 if (saved > 0 && (!wasEmpty || baseCurrency.equals(baseSymbol))) {
@@ -150,7 +152,9 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
                 int saved = transactionTemplate.execute(status -> {
                     entityWriter.applySynthetic(forex, result.quote(), usdtry, isUsdBase,
                             spreadRate, scale, todayTryCandle);
-                    return entityWriter.upsertCandles(forex, syntheticCandles);
+                    int upserted = entityWriter.upsertCandles(forex, syntheticCandles);
+                    entityWriter.refreshChangePercentFromCandles(forex, scale);
+                    return upserted;
                 });
                 forexCacheService.putSnapshot(forex.getCurrencyCode(), forex);
                 log.debug("Saved {} synthetic candles for {} via {}", saved, forex.getCurrencyCode(), symbol);

@@ -8,6 +8,7 @@ import com.finance.backend.model.ForexCandle;
 import com.finance.backend.repository.ForexCandleRepository;
 import com.finance.backend.repository.ForexRepository;
 import com.finance.backend.util.CandleBatchUpsertTemplate;
+import com.finance.backend.util.ChangeFromCandlesUpdater;
 import com.finance.backend.util.SyntheticPriceCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -45,6 +46,15 @@ public class ForexEntityWriter implements MarketEntityWriter {
                 todayTryCandle.open(), todayTryCandle.high(), todayTryCandle.low(),
                 spreadRate, scale);
         forexRepository.save(forex);
+    }
+
+    public boolean refreshChangePercentFromCandles(Forex forex, int scale) {
+        List<ForexCandle> top2 = forexCandleRepository
+                .findTop2ByCurrencyCodeOrderByCandleDateDesc(forex.getCurrencyCode());
+        boolean changed = ChangeFromCandlesUpdater.applyFromTopTwoDescIfMissing(
+                forex, forex.getCurrentPrice(), top2, scale);
+        if (changed) forexRepository.save(forex);
+        return changed;
     }
 
     public int upsertCandles(Forex forex, List<YahooCandleDto> candleDtos) {

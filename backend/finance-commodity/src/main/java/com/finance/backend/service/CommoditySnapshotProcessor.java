@@ -115,6 +115,7 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
         transactionTemplate.executeWithoutResult(status -> {
             entityWriter.applySnapshot(commodity, snapshot, yahooSymbol, scale);
             entityWriter.upsertCandles(commodity, tryCandles, scale);
+            entityWriter.refreshChangePercentFromCandles(commodity, scale);
         });
         commodityCacheService.putSnapshot(commodityCode, commodity);
         if (derivativeCalculator.hasDerivatives(commodityCode)) {

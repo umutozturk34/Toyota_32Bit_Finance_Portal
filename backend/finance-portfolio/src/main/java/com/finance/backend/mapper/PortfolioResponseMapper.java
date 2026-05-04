@@ -1,6 +1,8 @@
 package com.finance.backend.mapper;
 
+import com.finance.backend.dto.response.AllocationItem;
 import com.finance.backend.dto.response.PortfolioResponse;
+import com.finance.backend.dto.response.PortfolioSummaryResponse;
 import com.finance.backend.dto.response.PositionResponse;
 import com.finance.backend.model.Portfolio;
 import com.finance.backend.model.PortfolioPosition;
@@ -43,5 +45,24 @@ public abstract class PortfolioResponseMapper {
                 BigDecimal.ZERO, pos.entryValue(),
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
                 null, null);
+    }
+
+    public PortfolioSummaryResponse toSummaryResponse(BigDecimal totalValueTry,
+                                                      BigDecimal totalEntryValueTry,
+                                                      BigDecimal totalPnlTry,
+                                                      BigDecimal pnlPercent,
+                                                      BigDecimal dailyPnlTry,
+                                                      BigDecimal dailyPnlPercent) {
+        return new PortfolioSummaryResponse(
+                totalValueTry, totalEntryValueTry, totalPnlTry, pnlPercent,
+                dailyPnlTry, dailyPnlPercent
+        );
+    }
+
+    public AllocationItem toAllocationItem(String label,
+                                           String assetType,
+                                           BigDecimal valueTry,
+                                           BigDecimal percent) {
+        return new AllocationItem(label, assetType, valueTry, percent);
     }
 }

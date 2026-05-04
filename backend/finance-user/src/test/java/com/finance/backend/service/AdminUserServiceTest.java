@@ -5,6 +5,7 @@ import com.finance.backend.dto.AdminUserResponse;
 import com.finance.backend.dto.KeycloakUser;
 import com.finance.backend.exception.ExternalApiException;
 import com.finance.backend.exception.ResourceNotFoundException;
+import com.finance.backend.mapper.KeycloakUserMapperImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,7 +29,7 @@ class AdminUserServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new AdminUserService(client);
+        service = new AdminUserService(client, new KeycloakUserMapperImpl());
     }
 
     @Test

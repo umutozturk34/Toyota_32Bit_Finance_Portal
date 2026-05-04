@@ -4,10 +4,10 @@ import com.finance.backend.client.KeycloakAdminClient;
 import com.finance.backend.dto.AdminUserResponse;
 import com.finance.backend.dto.KeycloakUser;
 import com.finance.backend.exception.BusinessException;
+import com.finance.backend.mapper.KeycloakUserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -15,11 +15,12 @@ import java.util.List;
 public class AdminUserService {
 
     private final KeycloakAdminClient client;
+    private final KeycloakUserMapper mapper;
 
     public List<AdminUserResponse> listUsers(int first, int max, String search) {
         List<KeycloakUser> users = client.listUsers(first, max, search);
         if (users == null) return List.of();
-        return users.stream().map(this::toResponse).toList();
+        return users.stream().map(mapper::toResponse).toList();
     }
 
     public long countUsers(String search) {
@@ -35,17 +36,5 @@ public class AdminUserService {
 
     public void unbanUser(String userId) {
         client.setEnabled(userId, true);
-    }
-
-    private AdminUserResponse toResponse(KeycloakUser ku) {
-        return new AdminUserResponse(
-                ku.id(),
-                ku.username(),
-                ku.email(),
-                ku.firstName(),
-                ku.lastName(),
-                ku.enabled() != null && ku.enabled(),
-                ku.createdTimestamp() != null ? Instant.ofEpochMilli(ku.createdTimestamp()) : null
-        );
     }
 }

@@ -107,7 +107,7 @@ public class PortfolioSummaryService {
                 ? aggregateDailyPnlOverall(portfolioId)
                 : aggregateDailyPnlByAssetType(portfolioId, filterType);
 
-        return new PortfolioSummaryResponse(totalValue, totalEntryValue, totalPnl, pnlPercent,
+        return responseMapper.toSummaryResponse(totalValue, totalEntryValue, totalPnl, pnlPercent,
                 daily.amount(), daily.percent());
     }
 
@@ -167,7 +167,7 @@ public class PortfolioSummaryService {
         BigDecimal denominator = totalValue;
         return buckets.entrySet().stream()
                 .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
-                .map(e -> new AllocationItem(
+                .map(e -> responseMapper.toAllocationItem(
                         e.getKey(),
                         bucketTypes.get(e.getKey()),
                         e.getValue().setScale(MoneyScale.PRICE, RoundingMode.HALF_UP),

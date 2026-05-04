@@ -1,6 +1,7 @@
     package com.finance.backend.config;
     import com.fasterxml.jackson.databind.ObjectMapper;
     import com.finance.backend.filter.RateLimitFilter;
+    import com.finance.backend.filter.RateLimitTier;
     import io.lettuce.core.RedisClient;
     import io.lettuce.core.api.StatefulRedisConnection;
     import io.lettuce.core.codec.ByteArrayCodec;
@@ -78,13 +79,13 @@
             return http.build();
         }
         @Bean
-        public RateLimitFilter rateLimitFilterFactory(ObjectMapper objectMapper, AppProperties appProperties, RedisConnectionFactory redisConnectionFactory) {
+        public RateLimitFilter rateLimitFilterFactory(ObjectMapper objectMapper, AppProperties appProperties, RedisConnectionFactory redisConnectionFactory, List<RateLimitTier> tiers) {
             LettuceConnectionFactory lettuceFactory = (LettuceConnectionFactory) redisConnectionFactory;
             RedisClient redisClient = (RedisClient) lettuceFactory.getNativeClient();
             StatefulRedisConnection<String, byte[]> connection = redisClient.connect(
                     RedisCodec.of(StringCodec.UTF8, ByteArrayCodec.INSTANCE)
             );
-            return new RateLimitFilter(objectMapper, appProperties, connection);
+            return new RateLimitFilter(objectMapper, appProperties, connection, tiers);
         }
         
         @Bean

@@ -38,6 +38,12 @@ services:
       EVDS_API_KEY: ${EVDS_API_KEY}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      MONGO_HOST: mongodb
+      MONGO_PORT: 27017
+      MONGO_ROOT_USER: ${MONGO_ROOT_USER}
+      MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_DATABASE: ${MONGO_DATABASE:-finance_app_db}
+      SPRING_MONGODB_URI: mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASSWORD}@mongodb:27017/${MONGO_DATABASE:-finance_app_db}?authSource=admin
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
       OTEL_SERVICE_NAME: finance-backend
@@ -49,6 +55,8 @@ services:
       - .env
     depends_on:
       db:
+        condition: service_healthy
+      mongodb:
         condition: service_healthy
       otel-collector:
         condition: service_started
@@ -140,6 +148,26 @@ services:
       - finance-network
 
   # Redis Cache
+  mongodb:
+    image: mongo:7
+    container_name: finance-mongodb
+    restart: unless-stopped
+    expose:
+      - "27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-finance_app_db}
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    networks:
+      - finance-network
+
   redis:
     image: redis:7-alpine
     container_name: finance-redis
@@ -344,6 +372,7 @@ volumes:
   openldap_config:
   keycloak_data:
   redis_data:
+  mongodb_data:
   opensearch_data:
   kafka_data:
   sonarqube_data:

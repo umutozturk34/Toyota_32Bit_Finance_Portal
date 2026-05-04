@@ -33,6 +33,16 @@ export const doLogin = (options = {}) => {
 export const doLogout = () => {
   keycloak.logout({ redirectUri: window.location.origin });
 };
+export const doForgotPassword = () => {
+  const url = `${keycloak.authServerUrl}/realms/${keycloak.realm}/login-actions/reset-credentials?client_id=${keycloak.clientId}&redirect_uri=${encodeURIComponent(window.location.origin)}`;
+  window.location.href = url;
+};
+export const doChangePassword = () => {
+  keycloak.login({
+    action: 'UPDATE_PASSWORD',
+    redirectUri: window.location.href,
+  });
+};
 export const getToken = () => {
   return new Promise((resolve) => {
     if (!keycloak.authenticated) {

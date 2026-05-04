@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Wallet, LayoutDashboard, TrendingUp as TrendingUpIcon, ShieldCheck } from 'lucide-react';
-import { Check } from '../../shared/components/AnimatedIcons';
+import { Check, AlertTriangle } from '../../shared/components/AnimatedIcons';
 import PageHeader from '../../shared/components/PageHeader';
 import LoadingState from '../../shared/components/LoadingState';
 import ErrorState from '../../shared/components/ErrorState';
@@ -90,6 +90,9 @@ export default function Portfolio() {
   const createPortfolio = useCreatePortfolio();
   const { processingStep, runAnimation, reset: resetOnboarding } = useProcessingAnimation();
 
+  const handleStartOnboarding = () => setOnboardingPhase('confirm');
+  const handleCancelOnboarding = () => setOnboardingPhase('idle');
+
   const handleCreatePortfolio = async () => {
     setOnboardingPhase('processing');
     try {
@@ -142,6 +145,39 @@ export default function Portfolio() {
             </motion.div>
           ) : onboardingPhase === 'processing' ? (
             <ProcessingSteps steps={ONBOARDING_STEPS} currentStep={processingStep} />
+          ) : onboardingPhase === 'confirm' ? (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="w-full max-w-sm space-y-5"
+            >
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-warning/10">
+                  <AlertTriangle className="h-6 w-6 text-warning" />
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-semibold text-fg">Portföyü oluşturmayı onaylıyor musunuz?</p>
+                  <p className="text-xs text-fg-muted">
+                    <span className="font-medium text-fg">{DEFAULT_PORTFOLIO_NAME}</span> adıyla bir portföy hazırlanacak.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCancelOnboarding}
+                  className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-all cursor-pointer"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  onClick={handleCreatePortfolio}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer"
+                >
+                  <Wallet className="h-4 w-4" />
+                  Onayla
+                </button>
+              </div>
+            </motion.div>
           ) : (
             <>
               <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10">
@@ -154,7 +190,7 @@ export default function Portfolio() {
                 </p>
               </div>
               <button
-                onClick={handleCreatePortfolio}
+                onClick={handleStartOnboarding}
                 className="flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-bright border-none cursor-pointer"
               >
                 <Wallet className="h-4 w-4" />

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
+import { ThemeProvider } from './shared/context/ThemeContext';
 import ToastContainer from './shared/components/Toast';
 import ProtectedRoute from './shared/components/ProtectedRoute';
 import ErrorBoundary from './shared/components/ErrorBoundary';
@@ -8,7 +9,6 @@ import MainLayout from './shared/layouts/MainLayout';
 import HomePage from './features/home/HomePage';
 import Login from './features/auth/Login';
 import Register from './features/auth/Register';
-import TwoFactorSetup from './features/auth/TwoFactorSetup';
 import News from './features/news';
 import NewsDetail from './features/news/NewsDetail';
 import MarketDataPage from './features/market/MarketDataPage';
@@ -25,6 +25,7 @@ import CommodityDetail from './features/commodity/CommodityDetail';
 import BondsPage from './features/bond/BondsPage';
 import Portfolio from './features/portfolio';
 import AdminTrackedAssetsPage from './features/admin/AdminTrackedAssetsPage';
+import AdminUsersPage from './features/admin/AdminUsersPage';
 
 function LandingRedirect() {
   const { isAuthenticated } = useAuth();
@@ -41,6 +42,7 @@ function PublicOnly({ children }) {
 function App() {
   return (
     <AuthProvider>
+      <ThemeProvider>
       <ToastContainer />
       <BrowserRouter>
         <ErrorBoundary>
@@ -50,7 +52,6 @@ function App() {
           <Route path="register" element={<PublicOnly><Register /></PublicOnly>} />
 
           <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-            <Route path="2fa" element={<TwoFactorSetup />} />
             <Route path="news" element={<News />} />
             <Route path="news/:id" element={<NewsDetail />} />
             <Route path="market" element={<MarketDataPage />} />
@@ -66,12 +67,14 @@ function App() {
             <Route path="commodities/:code" element={<CommodityDetail />} />
             <Route path="bonds" element={<BondsPage />} />
             <Route path="admin/tracked-assets" element={<AdminTrackedAssetsPage />} />
+            <Route path="admin/users" element={<AdminUsersPage />} />
             <Route path="portfolio" element={<Portfolio />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
         </ErrorBoundary>
       </BrowserRouter>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

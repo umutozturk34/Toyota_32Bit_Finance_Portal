@@ -23,6 +23,21 @@
     "starttls": "false",
     "auth": "false"
   },
+  "eventsEnabled": true,
+  "eventsExpiration": 2592000,
+  "eventsListeners": ["jboss-logging", "email"],
+  "enabledEventTypes": [
+    "UPDATE_PASSWORD",
+    "UPDATE_PASSWORD_ERROR",
+    "REMOVE_TOTP",
+    "UPDATE_TOTP",
+    "UPDATE_CREDENTIAL",
+    "REMOVE_CREDENTIAL",
+    "SEND_RESET_PASSWORD",
+    "RESET_PASSWORD",
+    "RESET_PASSWORD_ERROR",
+    "LOGIN_ERROR"
+  ],
   "accessTokenLifespan": 3600,
   "refreshTokenMaxReuse": 0,
   "bruteForceProtected": false,
@@ -41,6 +56,15 @@
       "enabled": true,
       "defaultAction": false,
       "priority": 10,
+      "config": {}
+    },
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30,
       "config": {}
     },
     {

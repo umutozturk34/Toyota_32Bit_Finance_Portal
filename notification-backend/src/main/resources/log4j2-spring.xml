@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <JsonTemplateLayout eventTemplateUri="classpath:log-json-template.json"/>
+        </Console>
+        <Kafka name="Kafka" topic="notification-logs">
+            <JsonTemplateLayout eventTemplateUri="classpath:log-json-template.json"/>
+            <Property name="bootstrap.servers">${sys:kafka.bootstrap.servers:-kafka:9092}</Property>
+            <Property name="acks">all</Property>
+            <Property name="retries">5</Property>
+            <Property name="enable.idempotence">true</Property>
+            <Property name="linger.ms">10</Property>
+            <Property name="max.block.ms">5000</Property>
+            <Property name="delivery.timeout.ms">60000</Property>
+        </Kafka>
+        <Failover name="FailoverKafka" primary="Kafka">
+            <Failovers>
+                <AppenderRef ref="Console"/>
+            </Failovers>
+        </Failover>
+    </Appenders>
+    <Loggers>
+        <Logger name="com.finance.notification" level="DEBUG" additivity="false">
+            <AppenderRef ref="FailoverKafka"/>
+        </Logger>
+        <Logger name="com.finance.backend" level="DEBUG" additivity="false">
+            <AppenderRef ref="FailoverKafka"/>
+        </Logger>
+        <Logger name="org.apache.kafka" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="org.springframework" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="org.hibernate" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="org.apache" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>

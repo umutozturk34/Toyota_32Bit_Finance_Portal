@@ -321,7 +321,7 @@ services:
     image: otel/opentelemetry-collector-contrib:latest
     container_name: otel-collector
     volumes:
-      - ./backend/otel-config.yaml:/etc/otel-config.yaml
+      - ./otel-config.yaml:/etc/otel-config.yaml
     command: ["--config=/etc/otel-config.yaml"]
     environment:
       - OPENSEARCH_USERNAME=${OPENSEARCH_USERNAME}

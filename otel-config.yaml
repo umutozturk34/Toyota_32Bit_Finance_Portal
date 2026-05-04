@@ -30,6 +30,7 @@ processors:
       span:
         - 'attributes["http.target"] == "/actuator/health"'
         - 'attributes["url.path"] == "/actuator/health"'
+
   transform/traces:
     error_mode: ignore
     trace_statements:
@@ -57,8 +58,24 @@ processors:
 
   cumulativetodelta:
 
+  routing/traces:
+    from_attribute: service.name
+    attribute_source: resource
+    default_exporters: [opensearch/traces-finance]
+    table:
+      - value: finance-notification
+        exporters: [opensearch/traces-notification]
+
+  routing/metrics:
+    from_attribute: service.name
+    attribute_source: resource
+    default_exporters: [elasticsearch/metrics-finance]
+    table:
+      - value: finance-notification
+        exporters: [elasticsearch/metrics-notification]
+
 exporters:
-  opensearch/traces:
+  opensearch/traces-finance:
     http:
       endpoint: "https://opensearch:9200"
       auth:
@@ -67,11 +84,28 @@ exporters:
         insecure_skip_verify: true
     traces_index: "finance-traces"
 
-  elasticsearch/metrics:
+  opensearch/traces-notification:
+    http:
+      endpoint: "https://opensearch:9200"
+      auth:
+        authenticator: basicauth
+      tls:
+        insecure_skip_verify: true
+    traces_index: "notification-traces"
+
+  elasticsearch/metrics-finance:
     endpoints: ["http://opensearch-proxy:9201"]
     user: "${env:OPENSEARCH_USERNAME}"
     password: "${env:OPENSEARCH_PASSWORD}"
     metrics_index: "finance-metrics"
+    discover:
+      on_start: false
+
+  elasticsearch/metrics-notification:
+    endpoints: ["http://opensearch-proxy:9201"]
+    user: "${env:OPENSEARCH_USERNAME}"
+    password: "${env:OPENSEARCH_PASSWORD}"
+    metrics_index: "notification-metrics"
     discover:
       on_start: false
 
@@ -91,9 +125,9 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [memory_limiter, filter/health, resource, transform/traces, batch]
-      exporters: [opensearch/traces]
+      processors: [memory_limiter, filter/health, resource, transform/traces, batch, routing/traces]
+      exporters: [opensearch/traces-finance, opensearch/traces-notification]
     metrics:
       receivers: [otlp]
-      processors: [memory_limiter, filter/metrics, resource, transform/metrics, cumulativetodelta, batch]
-      exporters: [elasticsearch/metrics]
+      processors: [memory_limiter, filter/metrics, resource, transform/metrics, cumulativetodelta, batch, routing/metrics]
+      exporters: [elasticsearch/metrics-finance, elasticsearch/metrics-notification]

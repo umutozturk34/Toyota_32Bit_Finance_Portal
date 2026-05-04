@@ -1,4 +1,5 @@
 <#macro emailLayout>
+<#assign theme = (user.attributes.themePreference[0])!"DARK">
 <!DOCTYPE html>
 <html>
 <head>
@@ -150,7 +151,44 @@
             color: #6366f1;
             text-decoration: none;
         }
+
+        .email-code-box {
+            display: inline-block;
+            padding: 20px 40px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.08));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+
+        .email-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: 10px;
+            color: #ededf0;
+            text-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
     </style>
+    <#if theme == "LIGHT">
+    <style>
+        body { background-color: #f5f7fb !important; color: #1a1d24 !important; }
+        .email-wrapper { background: linear-gradient(180deg, #f5f7fb 0%, #eef0f5 50%, #f5f7fb 100%) !important; }
+        .email-container { background: #ffffff !important; border-color: #e5e9f0 !important; box-shadow: 0 0 80px rgba(99, 102, 241, 0.05), 0 0 32px rgba(99, 102, 241, 0.04) !important; }
+        .email-header { border-bottom-color: #e5e9f0 !important; background: linear-gradient(180deg, rgba(99, 102, 241, 0.04) 0%, transparent 100%) !important; }
+        .email-logo-text { color: #1a1d24 !important; }
+        .email-header-sub { color: #8b94a3 !important; }
+        .email-body p { color: #5f6671 !important; }
+        .email-body strong { color: #1a1d24 !important; }
+        .email-info-box { background: rgba(99, 102, 241, 0.06) !important; border-color: rgba(99, 102, 241, 0.15) !important; }
+        .email-info-box p { color: #5f6671 !important; }
+        .email-info-box code { color: #1a1d24 !important; background: rgba(99, 102, 241, 0.1) !important; }
+        .email-footer { border-top-color: #e5e9f0 !important; background: rgba(245, 247, 251, 0.6) !important; }
+        .email-footer p { color: #8b94a3 !important; }
+        .email-code-box { background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.05)) !important; border-color: rgba(99, 102, 241, 0.2) !important; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.12) !important; }
+        .email-code { color: #1a1d24 !important; text-shadow: none !important; }
+    </style>
+    </#if>
 </head>
 <body>
     <div class="email-wrapper">

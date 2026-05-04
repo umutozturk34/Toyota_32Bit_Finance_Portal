@@ -7,11 +7,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Newspaper, BarChart3, TrendingUp, Bitcoin,
   DollarSign, Shield,
-  LogOut, Briefcase, Activity, Settings,
+  LogOut, Briefcase, Activity, Settings, Bell,
   ChevronLeft, ChevronRight, Menu, Landmark, Wallet, Database, Gem, Users,
 } from 'lucide-react';
 import TasksPanel from '../../features/admin/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
+import NotificationPanel from '../../features/notifications/NotificationPanel';
+import { useUnreadNotificationCount } from '../hooks/useNotifications';
 import OnboardingGate from '../../features/onboarding/OnboardingGate';
 import KeycloakActionToast from '../../features/auth/KeycloakActionToast';
 
@@ -36,6 +38,8 @@ const MainLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const { data: unreadCount = 0 } = useUnreadNotificationCount();
 
   const navType = useNavigationType();
 
@@ -135,6 +139,26 @@ const MainLayout = () => {
       )}
 
       <div className="border-t border-border-default px-2 py-2 space-y-1 shrink-0">
+        <button
+          onClick={() => setNotificationsOpen(true)}
+          title={collapsed && !isMobile ? 'Bildirimler' : undefined}
+          className={`w-full group relative flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
+            collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
+          }`}
+        >
+          <span className="relative shrink-0">
+            <Bell size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-1 rounded-full bg-accent text-white text-[8px] font-bold flex items-center justify-center font-mono leading-none">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </span>
+          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">Bildirimler</span>}
+          {(!collapsed || isMobile) && unreadCount > 0 && (
+            <span className="ml-auto text-[10px] font-mono text-accent">{unreadCount}</span>
+          )}
+        </button>
         <button
           onClick={() => setSettingsOpen(true)}
           title={collapsed && !isMobile ? 'Ayarlar' : undefined}
@@ -266,6 +290,7 @@ const MainLayout = () => {
         <TasksPanel open={tasksOpen} onClose={() => setTasksOpen(false)} />
       )}
       <SettingsSidebar isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <NotificationPanel isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
       <OnboardingGate />
       <KeycloakActionToast />
     </div>

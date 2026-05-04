@@ -13,12 +13,16 @@ import com.finance.stock.config.StockProperties;
 import com.finance.user.config.KeycloakAdminProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = "com.finance")
+@EnableJpaRepositories(basePackages = "com.finance")
+@EntityScan(basePackages = "com.finance")
 @EnableScheduling
 @EnableAsync
 @EnableJpaAuditing

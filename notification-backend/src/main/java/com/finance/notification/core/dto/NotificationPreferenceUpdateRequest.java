@@ -3,6 +3,7 @@ package com.finance.notification.core.dto;
 import java.time.LocalTime;
 
 public record NotificationPreferenceUpdateRequest(
+        Boolean emailEnabled,
         Boolean emailPriceAlerts,
         Boolean inappPriceAlerts,
         Boolean emailWatchlist,

@@ -81,9 +81,27 @@ public class NotificationDispatcher {
                 log.debug("Email skipped (no address resolved) user={} type={}",
                         request.userSub(), request.type());
             } else {
-                events.publishEvent(new EmailEnqueuedEvent(emailOpt.get(), rendered));
+                String theme = userPreferenceCacheService.resolveTheme(request.userSub());
+                RenderedNotification themed = withTheme(rendered, theme);
+                events.publishEvent(new EmailEnqueuedEvent(emailOpt.get(), themed));
             }
         }
+    }
+
+    private RenderedNotification withTheme(RenderedNotification rendered, String theme) {
+        Map<String, Object> withTheme = java.util.stream.Stream.concat(
+                rendered.emailModel().entrySet().stream(),
+                java.util.stream.Stream.of(Map.<String, Object>entry("theme", theme))
+        ).collect(java.util.stream.Collectors.toUnmodifiableMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (existing, replacement) -> replacement));
+        return new RenderedNotification(
+                rendered.title(),
+                rendered.body(),
+                rendered.emailSubject(),
+                rendered.emailTemplate(),
+                withTheme);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

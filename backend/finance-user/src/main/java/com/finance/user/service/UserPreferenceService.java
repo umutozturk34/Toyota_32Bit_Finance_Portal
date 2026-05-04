@@ -1,5 +1,6 @@
 package com.finance.user.service;
 
+import com.finance.user.client.KeycloakAdminClient;
 import com.finance.user.dto.UserPreferenceResponse;
 import com.finance.user.dto.UserPreferenceUpdateRequest;
 import com.finance.common.event.UserPreferenceEventPort;
@@ -8,6 +9,7 @@ import com.finance.user.mapper.UserPreferenceMapper;
 import com.finance.user.model.UserPreference;
 import com.finance.user.repository.UserPreferenceRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.Optional;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class UserPreferenceService {
@@ -24,6 +27,7 @@ public class UserPreferenceService {
     private final UserPreferenceMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
     private final Optional<UserPreferenceEventPort> kafkaPort;
+    private final Optional<KeycloakAdminClient> keycloakClient;
 
     @Transactional(readOnly = true)
     public UserPreferenceResponse getOrDefault(String userSub) {
@@ -45,6 +49,18 @@ public class UserPreferenceService {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     void onUserPreferencesCommitted(UserPreferencesUpdatedEvent event) {
         kafkaPort.ifPresent(port -> port.publishUserPreferencesUpdated(event));
+        pushThemeToKeycloak(event);
+    }
+
+    private void pushThemeToKeycloak(UserPreferencesUpdatedEvent event) {
+        keycloakClient.ifPresent(client -> {
+            try {
+                client.setUserAttribute(event.userSub(), "themePreference", event.theme());
+            } catch (RuntimeException ex) {
+                log.warn("Failed to push themePreference to Keycloak user={}: {}",
+                        event.userSub(), ex.getMessage());
+            }
+        });
     }
 
     private void applyUpdates(UserPreference entity, UserPreferenceUpdateRequest request) {

@@ -36,6 +36,20 @@ public class UserPreferenceCacheService {
                 .orElse(DEFAULT_ZONE);
     }
 
+    @Transactional(readOnly = true)
+    public String resolveTheme(String userSub) {
+        return repository.findById(userSub)
+                .map(UserPreferenceCache::getTheme)
+                .map(UserPreferenceCacheService::canonicalTheme)
+                .orElse("DARK");
+    }
+
+    private static String canonicalTheme(String value) {
+        if (value == null || value.isBlank()) return "DARK";
+        String upper = value.toUpperCase();
+        return "LIGHT".equals(upper) ? "LIGHT" : "DARK";
+    }
+
     private static ZoneId parseZoneOrDefault(String zoneId) {
         if (zoneId == null || zoneId.isBlank()) {
             return DEFAULT_ZONE;

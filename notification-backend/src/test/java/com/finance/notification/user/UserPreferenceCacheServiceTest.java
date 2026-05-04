@@ -71,6 +71,38 @@ class UserPreferenceCacheServiceTest {
     }
 
     @Test
+    void should_returnLightTheme_when_storedThemeIsLight() {
+        UserPreferenceCache existing = UserPreferenceCache.builder()
+                .userSub(USER_SUB).theme("LIGHT").build();
+        when(repository.findById(USER_SUB)).thenReturn(Optional.of(existing));
+
+        String result = service.resolveTheme(USER_SUB);
+
+        assertThat(result).isEqualTo("LIGHT");
+    }
+
+    @Test
+    void should_returnDarkTheme_when_storedThemeIsDarkOrSystemOrUnknown() {
+        UserPreferenceCache dark = UserPreferenceCache.builder().userSub(USER_SUB).theme("DARK").build();
+        UserPreferenceCache system = UserPreferenceCache.builder().userSub(USER_SUB).theme("SYSTEM").build();
+
+        when(repository.findById(USER_SUB)).thenReturn(Optional.of(dark));
+        assertThat(service.resolveTheme(USER_SUB)).isEqualTo("DARK");
+
+        when(repository.findById(USER_SUB)).thenReturn(Optional.of(system));
+        assertThat(service.resolveTheme(USER_SUB)).isEqualTo("DARK");
+    }
+
+    @Test
+    void should_returnDarkTheme_when_cacheRowMissing() {
+        when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
+
+        String result = service.resolveTheme(USER_SUB);
+
+        assertThat(result).isEqualTo("DARK");
+    }
+
+    @Test
     void should_returnDefaultZone_when_storedTimezoneInvalid() {
         UserPreferenceCache existing = UserPreferenceCache.builder()
                 .userSub(USER_SUB).timezone("Not/Real").build();

@@ -109,12 +109,46 @@ class NotificationDispatcherTest {
         prefs.setEmailSystem(true);
         when(preferenceRepository.findById("u")).thenReturn(Optional.of(prefs));
         when(userPreferenceCacheService.resolveZone("u")).thenReturn(ZoneId.of("UTC"));
+        when(userPreferenceCacheService.resolveTheme("u")).thenReturn("DARK");
         when(userEmailLookup.findEmail("u")).thenReturn(Optional.of("user@x.com"));
 
         dispatcher.dispatch(NotificationRequest.of("u", NotificationType.SYSTEM, Map.of()));
 
         verify(notificationRepository, never()).save(any());
         verify(events).publishEvent(any(NotificationDispatcher.EmailEnqueuedEvent.class));
+    }
+
+    @Test
+    void dispatch_injectsThemeIntoEmailModel() {
+        NotificationPreference prefs = NotificationPreference.defaultsFor("u");
+        prefs.setInappSystem(false);
+        prefs.setEmailSystem(true);
+        when(preferenceRepository.findById("u")).thenReturn(Optional.of(prefs));
+        when(userPreferenceCacheService.resolveZone("u")).thenReturn(ZoneId.of("UTC"));
+        when(userPreferenceCacheService.resolveTheme("u")).thenReturn("LIGHT");
+        when(userEmailLookup.findEmail("u")).thenReturn(Optional.of("user@x.com"));
+
+        dispatcher.dispatch(NotificationRequest.of("u", NotificationType.SYSTEM, Map.of()));
+
+        org.mockito.ArgumentCaptor<NotificationDispatcher.EmailEnqueuedEvent> captor =
+                org.mockito.ArgumentCaptor.forClass(NotificationDispatcher.EmailEnqueuedEvent.class);
+        verify(events).publishEvent(captor.capture());
+        assertThat(captor.getValue().rendered().emailModel()).containsEntry("theme", "LIGHT");
+    }
+
+    @Test
+    void dispatch_skipsEmailWhenMasterSwitchOff() {
+        NotificationPreference prefs = NotificationPreference.defaultsFor("u");
+        prefs.setEmailEnabled(false);
+        prefs.setInappSystem(false);
+        prefs.setEmailSystem(true);
+        when(preferenceRepository.findById("u")).thenReturn(Optional.of(prefs));
+        when(userPreferenceCacheService.resolveZone("u")).thenReturn(ZoneId.of("UTC"));
+
+        dispatcher.dispatch(NotificationRequest.of("u", NotificationType.SYSTEM, Map.of()));
+
+        verify(events, never()).publishEvent(any());
+        verify(userEmailLookup, never()).findEmail(anyString());
     }
 
     @Test

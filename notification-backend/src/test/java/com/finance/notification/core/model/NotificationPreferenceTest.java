@@ -18,6 +18,7 @@ class NotificationPreferenceTest {
         NotificationPreference prefs = NotificationPreference.defaultsFor("user-1");
 
         assertThat(prefs.getUserSub()).isEqualTo("user-1");
+        assertThat(prefs.isEmailEnabled()).isTrue();
         assertThat(prefs.isInappPriceAlerts()).isTrue();
         assertThat(prefs.isEmailPriceAlerts()).isTrue();
         assertThat(prefs.isInappWatchlist()).isTrue();
@@ -28,6 +29,25 @@ class NotificationPreferenceTest {
         assertThat(prefs.isEmailMessages()).isFalse();
         assertThat(prefs.isInappSystem()).isTrue();
         assertThat(prefs.isEmailSystem()).isFalse();
+    }
+
+    @Test
+    void wantsEmail_returnsFalseForAllTypesWhenMasterSwitchOff() {
+        NotificationPreference prefs = NotificationPreference.defaultsFor("user-1");
+        prefs.setEmailEnabled(false);
+
+        for (NotificationType type : NotificationType.values()) {
+            assertThat(prefs.wantsEmail(type)).as("type=%s", type).isFalse();
+        }
+    }
+
+    @Test
+    void wantsInApp_isUnaffectedByMasterEmailSwitch() {
+        NotificationPreference prefs = NotificationPreference.defaultsFor("user-1");
+        prefs.setEmailEnabled(false);
+
+        assertThat(prefs.wantsInApp(NotificationType.PRICE_ALERT_FIRED)).isTrue();
+        assertThat(prefs.wantsInApp(NotificationType.MESSAGE)).isTrue();
     }
 
     @ParameterizedTest

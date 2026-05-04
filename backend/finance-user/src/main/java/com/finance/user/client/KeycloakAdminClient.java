@@ -32,6 +32,9 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Log4j2
 @Component
@@ -91,6 +94,44 @@ public class KeycloakAdminClient {
                 .retrieve()
                 .toBodilessEntity()
                 .block());
+    }
+
+    public void setUserAttribute(String userId, String key, String value) {
+        Map<String, List<String>> existing = fetchAttributes(userId);
+        Map<String, List<String>> merged = Stream.concat(
+                existing.entrySet().stream(),
+                Stream.of(Map.entry(key, List.of(value)))
+        ).collect(Collectors.toUnmodifiableMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (oldValue, newValue) -> newValue));
+        executeWithRetry("setUserAttribute", token -> webClient.put()
+                .uri("/admin/realms/{realm}/users/{id}", properties.getRealm(), userId)
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("attributes", merged))
+                .retrieve()
+                .toBodilessEntity()
+                .block());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, List<String>> fetchAttributes(String userId) {
+        Map<String, Object> user = executeWithRetry("fetchUserForAttributes", token -> webClient.get()
+                .uri("/admin/realms/{realm}/users/{id}", properties.getRealm(), userId)
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block());
+        Object attributes = user == null ? null : user.get("attributes");
+        if (attributes instanceof Map<?, ?> raw) {
+            return raw.entrySet().stream()
+                    .filter(e -> e.getValue() instanceof List<?>)
+                    .collect(Collectors.toUnmodifiableMap(
+                            e -> e.getKey().toString(),
+                            e -> ((List<?>) e.getValue()).stream().map(Object::toString).toList()));
+        }
+        return Map.of();
     }
 
     public void sendActionsEmail(String userId, List<String> actions, String clientId, String redirectUri, long lifespanSeconds) {

@@ -33,6 +33,9 @@ public class NotificationPreference {
     @Column(name = "user_sub", nullable = false, length = 64)
     private String userSub;
 
+    @Column(name = "email_enabled", nullable = false)
+    private boolean emailEnabled;
+
     @Column(name = "email_price_alerts", nullable = false)
     private boolean emailPriceAlerts;
 
@@ -88,23 +91,11 @@ public class NotificationPreference {
     }
 
     public boolean wantsInApp(NotificationType type) {
-        return switch (type) {
-            case PRICE_ALERT_FIRED -> inappPriceAlerts;
-            case WATCHLIST_DELTA -> inappWatchlist;
-            case REPORT_READY -> inappReports;
-            case MESSAGE -> inappMessages;
-            case SYSTEM -> inappSystem;
-        };
+        return type.isInAppWantedBy(this);
     }
 
     public boolean wantsEmail(NotificationType type) {
-        return switch (type) {
-            case PRICE_ALERT_FIRED -> emailPriceAlerts;
-            case WATCHLIST_DELTA -> emailWatchlist;
-            case REPORT_READY -> emailReports;
-            case MESSAGE -> emailMessages;
-            case SYSTEM -> emailSystem;
-        };
+        return emailEnabled && type.isEmailWantedBy(this);
     }
 
     public boolean isInQuietHours(ZoneId userZone) {
@@ -124,6 +115,7 @@ public class NotificationPreference {
     public static NotificationPreference defaultsFor(String userSub) {
         return NotificationPreference.builder()
                 .userSub(userSub)
+                .emailEnabled(true)
                 .emailPriceAlerts(true)
                 .inappPriceAlerts(true)
                 .emailWatchlist(false)

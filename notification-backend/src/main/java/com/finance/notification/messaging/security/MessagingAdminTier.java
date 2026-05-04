@@ -19,7 +19,9 @@ public class MessagingAdminTier implements RateLimitTier {
 
     @Override
     public boolean matches(String path, String method) {
-        return path.startsWith("/api/v1/admin/messages") && "POST".equalsIgnoreCase(method);
+        if (!"POST".equalsIgnoreCase(method)) return false;
+        return path.startsWith("/api/v1/admin/messages")
+                || path.startsWith("/api/v1/admin/notifications");
     }
 
     @Override

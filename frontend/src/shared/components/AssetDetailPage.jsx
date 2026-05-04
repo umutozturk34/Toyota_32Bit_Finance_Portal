@@ -11,8 +11,14 @@ import ErrorState from './ErrorState';
 import MarketAddPositionModal from '../../features/portfolio/MarketAddPositionModal';
 import CompareBar from './CompareBar';
 import LightweightChart from '../../features/chart/LightweightChart';
+import AssetActionsBar from '../../features/watch/AssetActionsBar';
 import { cardVariants } from '../utils/animations';
 import { transformCandles, transformFundCandles } from '../utils/candleTransform';
+
+function extractCurrentPrice(asset) {
+  if (!asset) return null;
+  return asset.priceTry ?? asset.currentPriceTry ?? asset.price ?? asset.currentPrice ?? null;
+}
 
 const TRANSFORM_MAP = {
   FUND: transformFundCandles,
@@ -92,15 +98,24 @@ export default function AssetDetailPage({
           </button>
           {renderHeader(asset)}
         </div>
-        {showBuyButton && buyProps && (
-          <button
-            onClick={() => setBuyOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer border-none bg-success text-white hover:bg-success/90 transition-colors"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            Portföye Ekle
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {asset && (
+            <AssetActionsBar
+              marketType={assetType}
+              assetCode={assetCode}
+              currentPrice={extractCurrentPrice(asset)}
+            />
+          )}
+          {showBuyButton && buyProps && (
+            <button
+              onClick={() => setBuyOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer border-none bg-success text-white hover:bg-success/90 transition-colors"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Portföye Ekle
+            </button>
+          )}
+        </div>
       </motion.div>
 
       {renderMetadata(asset)}

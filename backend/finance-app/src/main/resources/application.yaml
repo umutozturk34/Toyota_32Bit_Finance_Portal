@@ -310,8 +310,8 @@ resilience4j:
         wait-duration-in-open-state: 60s
         permitted-number-of-calls-in-half-open-state: 3
         record-exceptions:
-          - com.finance.backend.exception.ExternalApiException
-          - com.finance.backend.exception.ExternalApiRequestException
+          - com.finance.common.exception.ExternalApiException
+          - com.finance.common.exception.ExternalApiRequestException
       yahoo:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 10
@@ -320,9 +320,9 @@ resilience4j:
         wait-duration-in-open-state: 60s
         permitted-number-of-calls-in-half-open-state: 3
         record-exceptions:
-          - com.finance.backend.exception.ExternalApiException
+          - com.finance.common.exception.ExternalApiException
         ignore-exceptions:
-          - com.finance.backend.exception.SymbolNotFoundException
+          - com.finance.common.exception.SymbolNotFoundException
       coingecko:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 10
@@ -331,7 +331,7 @@ resilience4j:
         wait-duration-in-open-state: 60s
         permitted-number-of-calls-in-half-open-state: 3
         record-exceptions:
-          - com.finance.backend.exception.ExternalApiException
+          - com.finance.common.exception.ExternalApiException
       bond:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 10
@@ -340,9 +340,9 @@ resilience4j:
         wait-duration-in-open-state: 60s
         permitted-number-of-calls-in-half-open-state: 3
         record-exceptions:
-          - com.finance.backend.exception.ExternalApiException
+          - com.finance.common.exception.ExternalApiException
         ignore-exceptions:
-          - com.finance.backend.exception.SymbolNotFoundException
+          - com.finance.common.exception.SymbolNotFoundException
       tcmb:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 10
@@ -351,7 +351,7 @@ resilience4j:
         wait-duration-in-open-state: 60s
         permitted-number-of-calls-in-half-open-state: 3
         record-exceptions:
-          - com.finance.backend.exception.ExternalApiException
+          - com.finance.common.exception.ExternalApiException
       news:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 10
@@ -360,7 +360,7 @@ resilience4j:
         wait-duration-in-open-state: 60s
         permitted-number-of-calls-in-half-open-state: 3
         record-exceptions:
-          - com.finance.backend.exception.ExternalApiException
+          - com.finance.common.exception.ExternalApiException
   ratelimiter:
     instances:
       yahoo:
@@ -388,32 +388,32 @@ resilience4j:
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
         retry-exceptions:
-          - com.finance.backend.exception.ExternalApiException
+          - com.finance.common.exception.ExternalApiException
           - java.net.SocketTimeoutException
           - java.net.ConnectException
           - io.netty.handler.timeout.ReadTimeoutException
         ignore-exceptions:
-          - com.finance.backend.exception.BusinessException
-          - com.finance.backend.exception.ExternalApiRequestException
+          - com.finance.common.exception.BusinessException
+          - com.finance.common.exception.ExternalApiRequestException
       tefas-bulk:
         max-attempts: 3
         wait-duration: 30s
         enable-exponential-backoff: false
         retry-exceptions:
-          - com.finance.backend.exception.ExternalApiException
+          - com.finance.common.exception.ExternalApiException
           - java.net.SocketTimeoutException
           - java.net.ConnectException
           - io.netty.handler.timeout.ReadTimeoutException
         ignore-exceptions:
-          - com.finance.backend.exception.BusinessException
-          - com.finance.backend.exception.ExternalApiRequestException
+          - com.finance.common.exception.BusinessException
+          - com.finance.common.exception.ExternalApiRequestException
       tcmb:
         max-attempts: 3
         wait-duration: 2s
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
         retry-exceptions:
-          - com.finance.backend.exception.ExternalApiException
+          - com.finance.common.exception.ExternalApiException
           - java.net.SocketTimeoutException
           - java.net.ConnectException
           - io.netty.handler.timeout.ReadTimeoutException
@@ -423,7 +423,7 @@ resilience4j:
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
         retry-exceptions:
-          - com.finance.backend.exception.ExternalApiException
+          - com.finance.common.exception.ExternalApiException
           - java.net.SocketTimeoutException
           - java.net.ConnectException
           - io.netty.handler.timeout.ReadTimeoutException
@@ -433,31 +433,31 @@ resilience4j:
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
         retry-exceptions:
-          - com.finance.backend.exception.ExternalApiException
+          - com.finance.common.exception.ExternalApiException
           - java.net.SocketTimeoutException
           - java.net.ConnectException
           - io.netty.handler.timeout.ReadTimeoutException
         ignore-exceptions:
-          - com.finance.backend.exception.SymbolNotFoundException
+          - com.finance.common.exception.SymbolNotFoundException
       bond:
         max-attempts: 3
         wait-duration: 2s
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
         retry-exceptions:
-          - com.finance.backend.exception.ExternalApiException
+          - com.finance.common.exception.ExternalApiException
           - java.net.SocketTimeoutException
           - java.net.ConnectException
           - io.netty.handler.timeout.ReadTimeoutException
         ignore-exceptions:
-          - com.finance.backend.exception.BusinessException
+          - com.finance.common.exception.BusinessException
       news:
         max-attempts: 3
         wait-duration: 2s
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
         retry-exceptions:
-          - com.finance.backend.exception.ExternalApiException
+          - com.finance.common.exception.ExternalApiException
           - java.net.SocketTimeoutException
           - java.net.ConnectException
           - io.netty.handler.timeout.ReadTimeoutException

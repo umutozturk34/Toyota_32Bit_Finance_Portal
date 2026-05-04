@@ -67,7 +67,14 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        '[spring.json.trusted.packages]': com.finance.notification.event.*
+        '[spring.json.trusted.packages]': com.finance.backend.event,com.finance.notification.*
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        '[enable.idempotence]': true
+      retries: 5
     listener:
       ack-mode: MANUAL_IMMEDIATE
 

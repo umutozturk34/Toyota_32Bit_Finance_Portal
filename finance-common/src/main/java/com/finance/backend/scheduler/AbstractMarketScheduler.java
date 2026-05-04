@@ -22,6 +22,7 @@ public abstract class AbstractMarketScheduler {
             runRefresh();
             ports.portfolio().ifPresent(port -> port.onMarketUpdate(marketType()));
             ports.market().ifPresent(port -> port.onMarketDataUpdated(marketType()));
+            ports.events().ifPresent(port -> port.publishMarketUpdated(marketType(), "scheduler"));
         });
     }
 }

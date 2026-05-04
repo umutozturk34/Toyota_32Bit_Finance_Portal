@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Optional;
 
@@ -29,6 +30,7 @@ class UserPreferenceServiceTest {
     private static final String USER_SUB = "kc-user-uuid-123";
 
     @Mock private UserPreferenceRepository repository;
+    @Mock private ApplicationEventPublisher eventPublisher;
 
     private UserPreferenceMapper mapper;
     private UserPreferenceService service;
@@ -36,7 +38,7 @@ class UserPreferenceServiceTest {
     @BeforeEach
     void setUp() {
         mapper = new UserPreferenceMapperImpl();
-        service = new UserPreferenceService(repository, mapper);
+        service = new UserPreferenceService(repository, mapper, eventPublisher, Optional.empty());
     }
 
     @Test

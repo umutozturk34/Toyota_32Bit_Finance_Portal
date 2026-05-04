@@ -2,12 +2,19 @@ package com.finance.backend.service;
 
 import com.finance.backend.dto.UserPreferenceResponse;
 import com.finance.backend.dto.UserPreferenceUpdateRequest;
+import com.finance.backend.event.UserPreferenceEventPort;
+import com.finance.backend.event.UserPreferencesUpdatedEvent;
 import com.finance.backend.mapper.UserPreferenceMapper;
 import com.finance.backend.model.UserPreference;
 import com.finance.backend.repository.UserPreferenceRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -15,6 +22,8 @@ public class UserPreferenceService {
 
     private final UserPreferenceRepository repository;
     private final UserPreferenceMapper mapper;
+    private final ApplicationEventPublisher eventPublisher;
+    private final Optional<UserPreferenceEventPort> kafkaPort;
 
     @Transactional(readOnly = true)
     public UserPreferenceResponse getOrDefault(String userSub) {
@@ -28,7 +37,14 @@ public class UserPreferenceService {
         UserPreference entity = repository.findById(userSub)
                 .orElseGet(() -> UserPreference.defaultsFor(userSub));
         applyUpdates(entity, request);
-        return mapper.toResponse(repository.save(entity));
+        UserPreference saved = repository.save(entity);
+        eventPublisher.publishEvent(mapper.toUpdatedEvent(saved));
+        return mapper.toResponse(saved);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    void onUserPreferencesCommitted(UserPreferencesUpdatedEvent event) {
+        kafkaPort.ifPresent(port -> port.publishUserPreferencesUpdated(event));
     }
 
     private void applyUpdates(UserPreference entity, UserPreferenceUpdateRequest request) {

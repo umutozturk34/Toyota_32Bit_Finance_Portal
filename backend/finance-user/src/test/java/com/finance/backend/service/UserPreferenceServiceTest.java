@@ -4,6 +4,7 @@ import com.finance.backend.dto.UserPreferenceResponse;
 import com.finance.backend.dto.UserPreferenceUpdateRequest;
 import com.finance.backend.dto.enums.ReportFrequency;
 import com.finance.backend.dto.enums.ThemePreference;
+import com.finance.backend.event.UserPreferencesUpdatedEvent;
 import com.finance.backend.mapper.UserPreferenceMapper;
 import com.finance.backend.mapper.UserPreferenceMapperImpl;
 import com.finance.backend.model.UserPreference;
@@ -121,6 +122,27 @@ class UserPreferenceServiceTest {
         assertThat(existing.getDefaultChartRange()).isEqualTo("1Y");
         assertThat(existing.getReportFrequency()).isEqualTo(ReportFrequency.NEVER);
         assertThat(existing.getOnboardingCompleted()).isFalse();
+    }
+
+    @Test
+    void should_publishUpdatedEvent_when_upsertPersists() {
+        UserPreferenceUpdateRequest request = new UserPreferenceUpdateRequest(
+                ThemePreference.LIGHT, "en", null, "1Y", ReportFrequency.WEEKLY, true);
+        when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
+        when(repository.save(any(UserPreference.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.upsert(USER_SUB, request);
+
+        ArgumentCaptor<UserPreferencesUpdatedEvent> captor =
+                ArgumentCaptor.forClass(UserPreferencesUpdatedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        UserPreferencesUpdatedEvent event = captor.getValue();
+        assertThat(event.userSub()).isEqualTo(USER_SUB);
+        assertThat(event.theme()).isEqualTo("LIGHT");
+        assertThat(event.language()).isEqualTo("en");
+        assertThat(event.reportFrequency()).isEqualTo("WEEKLY");
+        assertThat(event.onboardingCompleted()).isTrue();
+        assertThat(event.eventId()).isNotBlank();
     }
 
     @Test

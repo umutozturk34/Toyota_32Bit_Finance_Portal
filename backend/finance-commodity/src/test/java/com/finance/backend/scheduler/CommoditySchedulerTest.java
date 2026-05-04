@@ -31,7 +31,7 @@ class CommoditySchedulerTest {
         portfolioPort = mock(PortfolioSnapshotPort.class);
         marketPort = mock(MarketUpdatePort.class);
         scheduler = new CommodityScheduler(dataService, taskTracker,
-                new SchedulerPorts(Optional.of(portfolioPort), Optional.of(marketPort)));
+                new SchedulerPorts(Optional.of(portfolioPort), Optional.of(marketPort), Optional.empty()));
 
         doAnswer(inv -> {
             Runnable r = inv.getArgument(2);

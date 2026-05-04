@@ -4,6 +4,7 @@ import com.finance.backend.dto.response.AllocationItem;
 import com.finance.backend.dto.response.PortfolioSummaryResponse;
 import com.finance.backend.dto.response.PositionResponse;
 import com.finance.backend.mapper.PortfolioResponseMapper;
+import com.finance.backend.mapper.PortfolioResponseMapperImpl;
 import com.finance.backend.model.AssetType;
 import com.finance.backend.model.PortfolioPosition;
 import com.finance.backend.repository.PortfolioAssetDailySnapshotRepository;
@@ -28,16 +29,17 @@ import static org.mockito.Mockito.when;
 class PortfolioSummaryServiceTest {
 
     @Mock private PortfolioPositionRepository positionRepository;
-    @Mock private PortfolioResponseMapper responseMapper;
     @Mock private PortfolioDailySnapshotRepository dailySnapshotRepository;
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
 
     private CountingAssetPricingPort counting;
+    private PortfolioResponseMapper responseMapper;
     private PortfolioSummaryService service;
 
     @BeforeEach
     void setUp() {
         counting = new CountingAssetPricingPort();
+        responseMapper = new PortfolioResponseMapperImpl();
         service = new PortfolioSummaryService(counting, positionRepository, responseMapper,
                 dailySnapshotRepository, assetSnapshotRepository);
     }
@@ -53,10 +55,6 @@ class PortfolioSummaryServiceTest {
                         stubPosition(AssetType.CRYPTO, "bitcoin", new BigDecimal("1"), new BigDecimal("2400000")),
                         stubPosition(AssetType.STOCK, "THYAO.IS", new BigDecimal("100"), new BigDecimal("40")),
                         stubPosition(AssetType.FUND, "AAK", new BigDecimal("50"), new BigDecimal("100"))));
-        when(responseMapper.toPositionResponse(
-                any(PortfolioPosition.class),
-                any(), any(), any(), any(), any(), any(), any()))
-                .thenReturn(null);
 
         List<PositionResponse> result = service.getPositions(1L);
 

@@ -1,7 +1,7 @@
 package com.finance.notification.messaging.service;
 
-import com.finance.backend.exception.BusinessException;
-import com.finance.backend.exception.ResourceNotFoundException;
+import com.finance.common.exception.BusinessException;
+import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.notification.messaging.dto.MessageResponse;
 import com.finance.notification.messaging.model.Message;
 import com.finance.notification.messaging.model.MessageDirection;

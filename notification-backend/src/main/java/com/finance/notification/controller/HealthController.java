@@ -1,6 +1,6 @@
 package com.finance.notification.controller;
 
-import com.finance.backend.dto.ApiResponse;
+import com.finance.common.dto.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

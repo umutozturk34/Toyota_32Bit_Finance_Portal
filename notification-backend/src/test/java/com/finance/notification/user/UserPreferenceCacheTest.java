@@ -1,6 +1,6 @@
 package com.finance.notification.user;
 
-import com.finance.backend.event.UserPreferencesUpdatedEvent;
+import com.finance.common.event.UserPreferencesUpdatedEvent;
 import org.junit.jupiter.api.Test;
 
 import java.time.OffsetDateTime;

@@ -24,7 +24,7 @@
         <Logger name="com.finance.notification" level="DEBUG" additivity="false">
             <AppenderRef ref="FailoverKafka"/>
         </Logger>
-        <Logger name="com.finance.backend" level="DEBUG" additivity="false">
+        <Logger name="com.finance.common" level="DEBUG" additivity="false">
             <AppenderRef ref="FailoverKafka"/>
         </Logger>
         <Logger name="org.apache.kafka" level="WARN" additivity="false">

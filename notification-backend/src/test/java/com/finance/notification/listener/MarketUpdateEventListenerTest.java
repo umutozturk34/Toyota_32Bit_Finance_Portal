@@ -1,7 +1,7 @@
 package com.finance.notification.listener;
 
-import com.finance.backend.event.MarketUpdatedEvent;
-import com.finance.backend.model.MarketType;
+import com.finance.common.event.MarketUpdatedEvent;
+import com.finance.common.model.MarketType;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
 package com.finance.notification.listener;
 
-import com.finance.backend.event.UserPreferencesUpdatedEvent;
+import com.finance.common.event.UserPreferencesUpdatedEvent;
 import com.finance.notification.user.UserPreferenceCacheService;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.junit.jupiter.api.BeforeEach;

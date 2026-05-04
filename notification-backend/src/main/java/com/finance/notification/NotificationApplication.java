@@ -1,6 +1,6 @@
 package com.finance.notification;
 
-import com.finance.backend.config.AppProperties;
+import com.finance.common.config.AppProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -8,9 +8,9 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication(scanBasePackages = {
         "com.finance.notification",
-        "com.finance.backend.config",
-        "com.finance.backend.exception",
-        "com.finance.backend.filter.tier"
+        "com.finance.common.config",
+        "com.finance.common.exception",
+        "com.finance.common.filter.tier"
 })
 @EnableConfigurationProperties(AppProperties.class)
 @EnableAsync

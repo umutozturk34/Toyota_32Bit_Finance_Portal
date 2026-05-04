@@ -1,6 +1,6 @@
 package com.finance.notification.listener;
 
-import com.finance.backend.event.MarketUpdatedEvent;
+import com.finance.common.event.MarketUpdatedEvent;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;

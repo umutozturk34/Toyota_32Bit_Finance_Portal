@@ -1,7 +1,7 @@
 package com.finance.notification.messaging.controller;
 
-import com.finance.backend.dto.ApiResponse;
-import com.finance.backend.dto.response.PagedResponse;
+import com.finance.common.dto.ApiResponse;
+import com.finance.common.dto.response.PagedResponse;
 import com.finance.notification.messaging.dto.MessageResponse;
 import com.finance.notification.messaging.dto.MessageSendRequest;
 import com.finance.notification.messaging.service.MessageService;

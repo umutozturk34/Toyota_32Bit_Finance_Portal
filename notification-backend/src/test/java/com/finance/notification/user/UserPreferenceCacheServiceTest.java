@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -46,6 +47,38 @@ class UserPreferenceCacheServiceTest {
         assertThat(saved.getUserSub()).isEqualTo(USER_SUB);
         assertThat(saved.getTheme()).isEqualTo("DARK");
         assertThat(saved.getReportFrequency()).isEqualTo("DAILY");
+    }
+
+    @Test
+    void should_returnStoredZone_when_cacheRowHasValidTimezone() {
+        UserPreferenceCache existing = UserPreferenceCache.builder()
+                .userSub(USER_SUB).theme("DARK").language("tr").timezone("Europe/Berlin")
+                .build();
+        when(repository.findById(USER_SUB)).thenReturn(Optional.of(existing));
+
+        ZoneId result = service.resolveZone(USER_SUB);
+
+        assertThat(result).isEqualTo(ZoneId.of("Europe/Berlin"));
+    }
+
+    @Test
+    void should_returnDefaultZone_when_cacheRowMissing() {
+        when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
+
+        ZoneId result = service.resolveZone(USER_SUB);
+
+        assertThat(result).isEqualTo(ZoneId.of("Europe/Istanbul"));
+    }
+
+    @Test
+    void should_returnDefaultZone_when_storedTimezoneInvalid() {
+        UserPreferenceCache existing = UserPreferenceCache.builder()
+                .userSub(USER_SUB).timezone("Not/Real").build();
+        when(repository.findById(USER_SUB)).thenReturn(Optional.of(existing));
+
+        ZoneId result = service.resolveZone(USER_SUB);
+
+        assertThat(result).isEqualTo(ZoneId.of("Europe/Istanbul"));
     }
 
     @Test

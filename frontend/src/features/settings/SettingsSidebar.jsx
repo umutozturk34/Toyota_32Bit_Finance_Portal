@@ -9,6 +9,7 @@ import { useAuth } from '../auth/AuthContext';
 import { userCredentialService } from '../../shared/services/userCredentialService';
 import { toast } from '../../shared/components/Toast';
 import TwoFactorPanel from '../auth/TwoFactorPanel';
+import NotificationPreferencesSection from './NotificationPreferencesSection';
 
 const THEME_OPTIONS = [
   { value: 'DARK', Icon: Moon, label: 'Koyu' },
@@ -184,6 +185,10 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                   onChange={handleChange('reportFrequency')}
                   layoutId="settings-report"
                 />
+              </Section>
+
+              <Section icon={Bell} title="Bildirim Tercihleri">
+                <NotificationPreferencesSection />
               </Section>
 
               <Section icon={Shield} title="İki Adımlı Doğrulama">

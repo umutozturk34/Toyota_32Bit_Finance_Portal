@@ -5,6 +5,7 @@ import com.finance.common.model.MarketType;
 import com.finance.notification.watchlist.dto.WatchlistItemCreateRequest;
 import com.finance.notification.watchlist.dto.WatchlistItemResponse;
 import com.finance.notification.watchlist.mapper.WatchlistItemMapper;
+import com.finance.notification.watchlist.model.Watchlist;
 import com.finance.notification.watchlist.model.WatchlistItem;
 import com.finance.notification.watchlist.repository.WatchlistItemRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,24 +20,46 @@ public class WatchlistService {
 
     private final WatchlistItemRepository repository;
     private final WatchlistItemMapper mapper;
+    private final WatchlistManagementService managementService;
 
     @Transactional
-    public WatchlistItemResponse add(String userSub, WatchlistItemCreateRequest request) {
-        return repository.findByUserSubAndMarketTypeAndAssetCode(userSub, request.marketType(), request.assetCode())
+    public WatchlistItemResponse addToList(Long watchlistId, String userSub,
+                                           WatchlistItemCreateRequest request) {
+        Watchlist parent = managementService.requireOwned(watchlistId, userSub);
+        return repository.findByWatchlistIdAndMarketTypeAndAssetCode(
+                        parent.getId(), request.marketType(), request.assetCode())
                 .map(mapper::toResponse)
-                .orElseGet(() -> mapper.toResponse(repository.save(mapper.toEntity(request, userSub))));
+                .orElseGet(() -> {
+                    WatchlistItem entity = mapper.toEntity(request, userSub);
+                    entity.setWatchlistId(parent.getId());
+                    return mapper.toResponse(repository.save(entity));
+                });
+    }
+
+    @Transactional
+    public WatchlistItemResponse addToDefault(String userSub, WatchlistItemCreateRequest request) {
+        Watchlist defaultList = managementService.ensureDefault(userSub);
+        return addToList(defaultList.getId(), userSub, request);
     }
 
     @Transactional(readOnly = true)
-    public List<WatchlistItemResponse> list(String userSub) {
+    public List<WatchlistItemResponse> listItems(Long watchlistId, String userSub) {
+        managementService.requireOwned(watchlistId, userSub);
+        return repository.findByWatchlistIdOrderByCreatedAtDesc(watchlistId).stream()
+                .map(mapper::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<WatchlistItemResponse> listAllItems(String userSub) {
         return repository.findByUserSubOrderByCreatedAtDesc(userSub).stream()
                 .map(mapper::toResponse)
                 .toList();
     }
 
     @Transactional
-    public void remove(Long id, String userSub) {
-        WatchlistItem item = ownedOr404(id, userSub);
+    public void removeItem(Long itemId, String userSub) {
+        WatchlistItem item = ownedItemOr404(itemId, userSub);
         repository.delete(item);
     }
 
@@ -50,9 +73,9 @@ public class WatchlistService {
         repository.save(item);
     }
 
-    private WatchlistItem ownedOr404(Long id, String userSub) {
-        return repository.findById(id)
+    private WatchlistItem ownedItemOr404(Long itemId, String userSub) {
+        return repository.findById(itemId)
                 .filter(i -> i.belongsTo(userSub))
-                .orElseThrow(() -> new ResourceNotFoundException("Watchlist item not found id=" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Watchlist item not found id=" + itemId));
     }
 }

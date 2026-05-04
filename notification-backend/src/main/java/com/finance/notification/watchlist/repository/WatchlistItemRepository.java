@@ -11,9 +11,13 @@ public interface WatchlistItemRepository extends JpaRepository<WatchlistItem, Lo
 
     List<WatchlistItem> findByUserSubOrderByCreatedAtDesc(String userSub);
 
+    List<WatchlistItem> findByWatchlistIdOrderByCreatedAtDesc(Long watchlistId);
+
     List<WatchlistItem> findByMarketType(MarketType marketType);
 
-    Optional<WatchlistItem> findByUserSubAndMarketTypeAndAssetCode(String userSub,
-                                                                  MarketType marketType,
-                                                                  String assetCode);
+    Optional<WatchlistItem> findByWatchlistIdAndMarketTypeAndAssetCode(Long watchlistId,
+                                                                       MarketType marketType,
+                                                                       String assetCode);
+
+    long countByWatchlistId(Long watchlistId);
 }

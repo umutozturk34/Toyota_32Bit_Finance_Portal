@@ -32,8 +32,8 @@ import java.util.Optional;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "watchlist_items", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_watchlist_user_market_asset",
-                columnNames = {"user_sub", "market_type", "asset_code"})
+        @UniqueConstraint(name = "uq_watchlist_items_list_asset",
+                columnNames = {"watchlist_id", "market_type", "asset_code"})
 })
 public class WatchlistItem {
 
@@ -43,6 +43,9 @@ public class WatchlistItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
     private Long id;
+
+    @Column(name = "watchlist_id", nullable = false)
+    private Long watchlistId;
 
     @Column(name = "user_sub", nullable = false, length = 64)
     private String userSub;

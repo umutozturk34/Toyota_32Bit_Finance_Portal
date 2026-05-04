@@ -13,6 +13,7 @@ public interface WatchlistItemMapper {
     WatchlistItemResponse toResponse(WatchlistItem item);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "watchlistId", ignore = true)
     @Mapping(target = "userSub", source = "userSub")
     @Mapping(target = "lastSeenPrice", ignore = true)
     @Mapping(target = "lastSeenAt", ignore = true)

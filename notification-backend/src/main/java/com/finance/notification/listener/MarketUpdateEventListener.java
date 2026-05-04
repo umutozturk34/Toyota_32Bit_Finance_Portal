@@ -1,6 +1,8 @@
 package com.finance.notification.listener;
 
 import com.finance.common.event.MarketUpdatedEvent;
+import com.finance.notification.alert.service.PriceAlertEvaluator;
+import com.finance.notification.watchlist.service.WatchlistEvaluator;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -13,9 +15,15 @@ import org.springframework.stereotype.Component;
 public class MarketUpdateEventListener {
 
     private final Cache<String, Boolean> processedEventIds;
+    private final PriceAlertEvaluator priceAlertEvaluator;
+    private final WatchlistEvaluator watchlistEvaluator;
 
-    public MarketUpdateEventListener(@Qualifier("processedEventIds") Cache<String, Boolean> processedEventIds) {
+    public MarketUpdateEventListener(@Qualifier("processedEventIds") Cache<String, Boolean> processedEventIds,
+                                     PriceAlertEvaluator priceAlertEvaluator,
+                                     WatchlistEvaluator watchlistEvaluator) {
         this.processedEventIds = processedEventIds;
+        this.priceAlertEvaluator = priceAlertEvaluator;
+        this.watchlistEvaluator = watchlistEvaluator;
     }
 
     @KafkaListener(
@@ -28,8 +36,10 @@ public class MarketUpdateEventListener {
             ack.acknowledge();
             return;
         }
-        log.info("Market updated event received: marketType={} source={} eventId={}",
-                event.marketType(), event.source(), event.eventId());
+        log.info("Market updated event received: marketType={} source={} prices={} eventId={}",
+                event.marketType(), event.source(), event.latestPrices().size(), event.eventId());
+        priceAlertEvaluator.evaluate(event.marketType(), event.latestPrices());
+        watchlistEvaluator.evaluate(event.marketType(), event.latestPrices());
         processedEventIds.put(event.eventId(), Boolean.TRUE);
         ack.acknowledge();
     }

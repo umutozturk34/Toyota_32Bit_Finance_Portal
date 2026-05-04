@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Takip listesi hareketi</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#0b0d12; color:#d8dde6; padding:32px;">
+    <div style="max-width:560px; margin:0 auto; background:#11141b; border:1px solid #1f242e; border-radius:12px; padding:32px;">
+        <h1 style="font-size:18px; margin:0 0 16px; color:#a78bfa;">
+            <span th:text="${assetCode}">BTC</span> hareket etti
+        </h1>
+        <p style="margin:0 0 8px; color:#8b94a3;">
+            Anlık fiyat: <strong style="color:#d8dde6;" th:text="${currentPrice}">102500</strong>
+        </p>
+        <p style="margin:0 0 8px; color:#8b94a3;">
+            % değişim: <strong style="color:#a78bfa;" th:text="${deltaPercent}">5.2</strong>
+        </p>
+        <p style="margin:24px 0 0; color:#5f6671; font-size:12px;">
+            Bu bildirimi takip listenizde tanımlı eşik üstündeki değişimler için aldınız.
+        </p>
+    </div>
+</body>
+</html>

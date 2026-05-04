@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Zap } from 'lucide-react';
-import { useAddWatchlistItem } from '../../shared/hooks/useWatchlist';
+import { useAddWatchlistItem, useAddToFavorites } from '../../shared/hooks/useWatchlist';
 import { toast } from '../../shared/components/Toast';
 
 const MARKET_OPTIONS = [
@@ -16,10 +16,12 @@ const MARKET_OPTIONS = [
 export default function AddWatchlistItemModal({
   isOpen,
   onClose,
+  watchlistId,
   defaultMarketType,
   defaultAssetCode,
 }) {
   const add = useAddWatchlistItem();
+  const addToFavorites = useAddToFavorites();
   const [marketType, setMarketType] = useState(defaultMarketType ?? 'CRYPTO');
   const [assetCode, setAssetCode] = useState(defaultAssetCode ?? '');
   const [note, setNote] = useState('');
@@ -45,13 +47,18 @@ export default function AddWatchlistItemModal({
       }
       numericThreshold = parsed;
     }
+    const payload = {
+      marketType,
+      assetCode: assetCode.trim().toUpperCase(),
+      note: note.trim() || null,
+      deltaThreshold: numericThreshold,
+    };
     try {
-      await add.mutateAsync({
-        marketType,
-        assetCode: assetCode.trim().toUpperCase(),
-        note: note.trim() || null,
-        deltaThreshold: numericThreshold,
-      });
+      if (watchlistId != null) {
+        await add.mutateAsync({ watchlistId, ...payload });
+      } else {
+        await addToFavorites.mutateAsync(payload);
+      }
       toast.success('Takip listesine eklendi');
       onClose();
     } catch (err) {
@@ -156,10 +163,10 @@ export default function AddWatchlistItemModal({
                 </button>
                 <button
                   type="submit"
-                  disabled={add.isPending}
+                  disabled={add.isPending || addToFavorites.isPending}
                   className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright transition-colors border-none cursor-pointer disabled:opacity-50"
                 >
-                  {add.isPending ? 'Ekleniyor…' : 'Ekle'}
+                  {add.isPending || addToFavorites.isPending ? 'Ekleniyor…' : 'Ekle'}
                 </button>
               </footer>
             </form>

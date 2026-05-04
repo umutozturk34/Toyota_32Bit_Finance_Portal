@@ -1,15 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye, AlertCircle, Plus, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown,
-  Loader2, Inbox, Zap,
+  Loader2, Inbox, Star, ListPlus,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import PageHeader from '../../shared/components/PageHeader';
-import { useWatchlist, useRemoveWatchlistItem } from '../../shared/hooks/useWatchlist';
+import {
+  useWatchlists,
+  useWatchlistItems,
+  useDeleteWatchlist,
+  useRemoveWatchlistItem,
+} from '../../shared/hooks/useWatchlist';
 import { usePriceAlerts, useDeletePriceAlert } from '../../shared/hooks/usePriceAlerts';
 import AddPriceAlertModal from './AddPriceAlertModal';
 import AddWatchlistItemModal from './AddWatchlistItemModal';
+import CreateWatchlistModal from './CreateWatchlistModal';
 import { toast } from '../../shared/components/Toast';
 
 const MARKET_LABELS = {
@@ -51,6 +56,53 @@ function MarketBadge({ marketType }) {
   );
 }
 
+function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
+  return (
+    <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
+      {lists.map((list) => {
+        const active = list.id === activeId;
+        return (
+          <button
+            key={list.id}
+            onClick={() => onSelect(list.id)}
+            className={`group relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors shrink-0 cursor-pointer ${
+              active
+                ? 'border-accent/50 bg-accent/10 text-accent'
+                : 'border-border-default bg-bg-elevated text-fg-muted hover:border-border-hover hover:text-fg'
+            }`}
+          >
+            {list.isDefault && <Star className="h-3 w-3 text-warning fill-warning" />}
+            <span>{list.name}</span>
+            <span className={`text-[10px] font-mono ${active ? 'text-accent/60' : 'text-fg-subtle'}`}>
+              {list.itemCount}
+            </span>
+            {!list.isDefault && (
+              <span
+                role="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(list);
+                }}
+                className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-4 h-4 rounded text-fg-muted hover:text-danger cursor-pointer"
+                title="Listeyi sil"
+              >
+                <Trash2 className="h-3 w-3" />
+              </span>
+            )}
+          </button>
+        );
+      })}
+      <button
+        onClick={onCreate}
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border border-dashed border-border-default text-fg-muted hover:border-accent/50 hover:text-accent transition-colors shrink-0 cursor-pointer bg-transparent"
+      >
+        <ListPlus className="h-3.5 w-3.5" />
+        Yeni liste
+      </button>
+    </div>
+  );
+}
+
 function WatchlistRow({ item, onRemove }) {
   return (
     <motion.div
@@ -59,7 +111,7 @@ function WatchlistRow({ item, onRemove }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: 80 }}
       transition={{ duration: 0.18 }}
-      className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-3 items-center px-4 py-3 hover:bg-surface/50 transition-colors group"
+      className="grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center px-4 py-3 hover:bg-surface/50 transition-colors group"
     >
       <MarketBadge marketType={item.marketType} />
       <div className="min-w-0">
@@ -82,7 +134,6 @@ function WatchlistRow({ item, onRemove }) {
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
-      <span />
     </motion.div>
   );
 }
@@ -126,18 +177,32 @@ function AlertRow({ alert, onDelete }) {
 }
 
 export default function WatchPage() {
-  const [watchlistOpen, setWatchlistOpen] = useState(false);
+  const [addItemOpen, setAddItemOpen] = useState(false);
+  const [createListOpen, setCreateListOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
+  const [activeListId, setActiveListId] = useState(null);
 
-  const watchlist = useWatchlist();
+  const lists = useWatchlists();
+  const watchlists = useMemo(() => lists.data ?? [], [lists.data]);
+
+  useEffect(() => {
+    if (activeListId == null && watchlists.length > 0) {
+      const def = watchlists.find((w) => w.isDefault) ?? watchlists[0];
+      setActiveListId(def.id);
+    }
+  }, [activeListId, watchlists]);
+
+  const items = useWatchlistItems(activeListId);
   const alerts = usePriceAlerts({ page: 0, size: 100 });
   const removeWatchlistItem = useRemoveWatchlistItem();
   const deletePriceAlert = useDeletePriceAlert();
+  const deleteWatchlist = useDeleteWatchlist();
 
-  const watchItems = watchlist.data ?? [];
+  const watchItems = items.data ?? [];
   const alertItems = alerts.data?.items ?? [];
+  const activeList = watchlists.find((w) => w.id === activeListId);
 
-  const handleRemoveWatchlist = async (id) => {
+  const handleRemoveWatchlistItem = async (id) => {
     try {
       await removeWatchlistItem.mutateAsync(id);
       toast.success('Listeden çıkarıldı');
@@ -155,44 +220,70 @@ export default function WatchPage() {
     }
   };
 
+  const handleDeleteList = async (list) => {
+    if (list.isDefault) return;
+    if (!window.confirm(`"${list.name}" listesini silmek istediğine emin misin?`)) return;
+    try {
+      await deleteWatchlist.mutateAsync(list.id);
+      toast.success('Liste silindi');
+      if (activeListId === list.id) setActiveListId(null);
+    } catch (err) {
+      toast.error(err?.response?.data?.error?.message ?? 'Silme başarısız');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
         icon={<Eye className="h-5 w-5" />}
         title="Takip"
         onRefresh={() => {
-          watchlist.refetch();
+          lists.refetch();
+          items.refetch();
           alerts.refetch();
         }}
-        loading={watchlist.isFetching || alerts.isFetching}
+        loading={lists.isFetching || items.isFetching || alerts.isFetching}
       />
 
       <section className="rounded-xl border border-border-default bg-bg-elevated overflow-hidden">
-        <header className="flex items-center justify-between px-4 py-3 border-b border-border-default">
-          <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-warning" />
-            <h2 className="text-sm font-bold text-fg tracking-tight">Takip listesi</h2>
-            <span className="text-[10px] font-mono text-fg-subtle px-1.5 py-0.5 rounded-md bg-surface">
-              {watchItems.length}
-            </span>
+        <header className="flex items-center justify-between px-4 py-3 border-b border-border-default gap-3">
+          <div className="flex items-center gap-2 shrink-0">
+            <Star className="h-4 w-4 text-warning" />
+            <h2 className="text-sm font-bold text-fg tracking-tight">Takip listelerim</h2>
           </div>
           <button
-            onClick={() => setWatchlistOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright transition-colors border-none cursor-pointer"
+            onClick={() => setAddItemOpen(true)}
+            disabled={activeListId == null}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright transition-colors border-none cursor-pointer disabled:opacity-50"
           >
             <Plus className="h-3.5 w-3.5" />
             Asset ekle
           </button>
         </header>
-        <div className="grid grid-cols-[auto_1fr_auto_auto_auto] gap-3 px-4 py-2 border-b border-border-default text-[10px] font-mono uppercase tracking-wider text-fg-subtle">
+        <div className="px-4 py-3 border-b border-border-default">
+          {lists.isLoading ? (
+            <div className="flex items-center gap-2 text-xs text-fg-muted">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+              Listeler yükleniyor…
+            </div>
+          ) : (
+            <WatchlistTabs
+              lists={watchlists}
+              activeId={activeListId}
+              onSelect={setActiveListId}
+              onCreate={() => setCreateListOpen(true)}
+              onDelete={handleDeleteList}
+            />
+          )}
+        </div>
+        <div className="grid grid-cols-[auto_1fr_auto_auto] gap-3 px-4 py-2 border-b border-border-default text-[10px] font-mono uppercase tracking-wider text-fg-subtle">
           <span>Pazar</span>
           <span>Asset</span>
           <span className="text-right">Son fiyat</span>
           <span />
-          <span />
         </div>
         <div className="divide-y divide-border-default">
-          {watchlist.isLoading ? (
+          {items.isLoading || activeListId == null ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-fg-muted">
               <Loader2 className="h-4 w-4 animate-spin text-accent" />
               Yükleniyor…
@@ -200,13 +291,13 @@ export default function WatchPage() {
           ) : watchItems.length === 0 ? (
             <EmptyState
               icon={<Inbox className="h-5 w-5 text-fg-subtle" />}
-              title="Henüz takip ettiğin asset yok"
+              title={activeList ? `"${activeList.name}" listesi boş` : 'Liste boş'}
               hint="Bir crypto, stock veya forex ekle, hareketleri buradan izle."
             />
           ) : (
             <AnimatePresence initial={false}>
               {watchItems.map((item) => (
-                <WatchlistRow key={item.id} item={item} onRemove={handleRemoveWatchlist} />
+                <WatchlistRow key={item.id} item={item} onRemove={handleRemoveWatchlistItem} />
               ))}
             </AnimatePresence>
           )}
@@ -261,7 +352,16 @@ export default function WatchPage() {
       </section>
 
       <AddPriceAlertModal isOpen={alertOpen} onClose={() => setAlertOpen(false)} />
-      <AddWatchlistItemModal isOpen={watchlistOpen} onClose={() => setWatchlistOpen(false)} />
+      <AddWatchlistItemModal
+        isOpen={addItemOpen}
+        onClose={() => setAddItemOpen(false)}
+        watchlistId={activeListId}
+      />
+      <CreateWatchlistModal
+        isOpen={createListOpen}
+        onClose={() => setCreateListOpen(false)}
+        onCreated={(list) => setActiveListId(list.id)}
+      />
     </div>
   );
 }

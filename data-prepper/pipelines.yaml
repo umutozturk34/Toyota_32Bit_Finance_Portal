@@ -1,0 +1,49 @@
+log-pipeline:
+  source:
+    kafka:
+      bootstrap_servers:
+        - "kafka:9092"
+      encryption:
+        type: none
+      topics:
+        - name: "finance-logs"
+          group_id: "data-prepper-logs"
+          auto_offset_reset: "earliest"
+          auto_commit: true
+          commit_interval: "PT5S"
+  processor:
+    - parse_json:
+        source: "message"
+  sink:
+    - opensearch:
+        hosts: ["https://opensearch:9200"]
+        username: "${OPENSEARCH_USERNAME}"
+        password: "${OPENSEARCH_PASSWORD}"
+        insecure: true
+        index: "finance-logs"
+        index_type: custom
+
+notification-log-pipeline:
+  source:
+    kafka:
+      bootstrap_servers:
+        - "kafka:9092"
+      encryption:
+        type: none
+      topics:
+        - name: "notification-logs"
+          group_id: "data-prepper-notification-logs"
+          auto_offset_reset: "earliest"
+          auto_commit: true
+          commit_interval: "PT5S"
+  processor:
+    - parse_json:
+        source: "message"
+  sink:
+    - opensearch:
+        hosts: ["https://opensearch:9200"]
+        username: "${OPENSEARCH_USERNAME}"
+        password: "${OPENSEARCH_PASSWORD}"
+        insecure: true
+        index: "notification-logs"
+        index_type: custom

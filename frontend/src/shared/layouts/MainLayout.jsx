@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Newspaper, BarChart3, TrendingUp, Bitcoin,
   DollarSign, Shield,
-  LogOut, Briefcase, Activity, Settings, Bell,
+  LogOut, Briefcase, Activity, Settings, Bell, Eye,
   ChevronLeft, ChevronRight, Menu, Landmark, Wallet, Database, Gem, Users,
 } from 'lucide-react';
 import TasksPanel from '../../features/admin/TasksPanel';
@@ -27,6 +27,7 @@ const navItems = [
   { to: '/commodities', label: 'Emtia', Icon: Gem },
   { to: '/bonds', label: 'Bonds', Icon: Landmark },
   { to: '/portfolio', label: 'Portfolio', Icon: Wallet },
+  { to: '/watch', label: 'Takip', Icon: Eye },
 ];
 
 const MainLayout = () => {

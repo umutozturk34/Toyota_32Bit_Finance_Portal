@@ -24,6 +24,7 @@ import CommoditiesPage from './features/commodity/CommoditiesPage';
 import CommodityDetail from './features/commodity/CommodityDetail';
 import BondsPage from './features/bond/BondsPage';
 import Portfolio from './features/portfolio';
+import WatchPage from './features/watch/WatchPage';
 import AdminTrackedAssetsPage from './features/admin/AdminTrackedAssetsPage';
 import AdminUsersPage from './features/admin/AdminUsersPage';
 
@@ -69,6 +70,7 @@ function App() {
             <Route path="admin/tracked-assets" element={<AdminTrackedAssetsPage />} />
             <Route path="admin/users" element={<AdminUsersPage />} />
             <Route path="portfolio" element={<Portfolio />} />
+            <Route path="watch" element={<WatchPage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

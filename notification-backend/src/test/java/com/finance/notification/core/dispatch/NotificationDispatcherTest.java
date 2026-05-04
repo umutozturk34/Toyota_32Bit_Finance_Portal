@@ -119,7 +119,7 @@ class NotificationDispatcherTest {
     }
 
     @Test
-    void dispatch_injectsThemeIntoEmailModel() {
+    void dispatch_carriesThemeOnEmailEvent() {
         NotificationPreference prefs = NotificationPreference.defaultsFor("u");
         prefs.setInappSystem(false);
         prefs.setEmailSystem(true);
@@ -133,7 +133,8 @@ class NotificationDispatcherTest {
         org.mockito.ArgumentCaptor<NotificationDispatcher.EmailEnqueuedEvent> captor =
                 org.mockito.ArgumentCaptor.forClass(NotificationDispatcher.EmailEnqueuedEvent.class);
         verify(events).publishEvent(captor.capture());
-        assertThat(captor.getValue().rendered().emailModel()).containsEntry("theme", "LIGHT");
+        assertThat(captor.getValue().theme()).isEqualTo("LIGHT");
+        assertThat(captor.getValue().rendered().emailModel()).doesNotContainKey("theme");
     }
 
     @Test
@@ -197,12 +198,12 @@ class NotificationDispatcherTest {
     }
 
     @Test
-    void onEmailEnqueued_invokesMailSender() {
+    void onEmailEnqueued_invokesMailSenderWithTheme() {
         RenderedNotification rendered = new RenderedNotification("t", "b", "subj", "tpl",
                 Map.of("k", "v"));
 
-        dispatcher.onEmailEnqueued(new NotificationDispatcher.EmailEnqueuedEvent("to@x.com", rendered));
+        dispatcher.onEmailEnqueued(new NotificationDispatcher.EmailEnqueuedEvent("to@x.com", "LIGHT", rendered));
 
-        verify(mailSender).send("to@x.com", "subj", "tpl", Map.of("k", "v"));
+        verify(mailSender).send("to@x.com", "subj", "tpl", Map.of("k", "v"), "LIGHT");
     }
 }

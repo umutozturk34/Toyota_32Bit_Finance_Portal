@@ -82,32 +82,15 @@ public class NotificationDispatcher {
                         request.userSub(), request.type());
             } else {
                 String theme = userPreferenceCacheService.resolveTheme(request.userSub());
-                RenderedNotification themed = withTheme(rendered, theme);
-                events.publishEvent(new EmailEnqueuedEvent(emailOpt.get(), themed));
+                events.publishEvent(new EmailEnqueuedEvent(emailOpt.get(), theme, rendered));
             }
         }
-    }
-
-    private RenderedNotification withTheme(RenderedNotification rendered, String theme) {
-        Map<String, Object> withTheme = java.util.stream.Stream.concat(
-                rendered.emailModel().entrySet().stream(),
-                java.util.stream.Stream.of(Map.<String, Object>entry("theme", theme))
-        ).collect(java.util.stream.Collectors.toUnmodifiableMap(
-                Map.Entry::getKey,
-                Map.Entry::getValue,
-                (existing, replacement) -> replacement));
-        return new RenderedNotification(
-                rendered.title(),
-                rendered.body(),
-                rendered.emailSubject(),
-                rendered.emailTemplate(),
-                withTheme);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onEmailEnqueued(EmailEnqueuedEvent event) {
         mailSender.send(event.to(), event.rendered().emailSubject(),
-                event.rendered().emailTemplate(), event.rendered().emailModel());
+                event.rendered().emailTemplate(), event.rendered().emailModel(), event.theme());
     }
 
     private NotificationPreference loadPreferences(String userSub) {
@@ -115,6 +98,6 @@ public class NotificationDispatcher {
                 .orElseGet(() -> NotificationPreference.defaultsFor(userSub));
     }
 
-    public record EmailEnqueuedEvent(String to, RenderedNotification rendered) {
+    public record EmailEnqueuedEvent(String to, String theme, RenderedNotification rendered) {
     }
 }

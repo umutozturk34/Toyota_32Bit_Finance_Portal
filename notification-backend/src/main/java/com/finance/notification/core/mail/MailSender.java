@@ -27,24 +27,25 @@ public class MailSender {
     private String fromAddress;
 
     @Async
-    public void send(String to, String subject, String templateName, Map<String, Object> model) {
+    public void send(String to, String subject, String templateName, Map<String, Object> model, String theme) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
             helper.setFrom(fromAddress);
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(renderHtml(templateName, model), true);
+            helper.setText(renderHtml(templateName, model, theme), true);
             mailSender.send(message);
-            log.info("Email sent template={} to={} subject={}", templateName, to, subject);
+            log.info("Email sent template={} to={} subject={} theme={}", templateName, to, subject, theme);
         } catch (MessagingException ex) {
             log.error("Failed to send email template={} to={}: {}", templateName, to, ex.getMessage(), ex);
         }
     }
 
-    private String renderHtml(String templateName, Map<String, Object> model) {
+    private String renderHtml(String templateName, Map<String, Object> model, String theme) {
         Context ctx = new Context();
         ctx.setVariables(model);
+        ctx.setVariable("theme", theme);
         return templateEngine.process("email/" + templateName, ctx);
     }
 }

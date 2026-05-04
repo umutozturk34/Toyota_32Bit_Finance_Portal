@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Yeni mesaj</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#0b0d12; color:#d8dde6; padding:32px;">
+    <div style="max-width:560px; margin:0 auto; background:#11141b; border:1px solid #1f242e; border-radius:12px; padding:32px;">
+        <h1 style="font-size:18px; margin:0 0 16px; color:#a78bfa;">Yeni mesaj</h1>
+        <p style="margin:0 0 12px; color:#8b94a3;">Finance Portal hesabınıza yeni bir mesaj geldi.</p>
+        <blockquote style="margin:16px 0; padding:16px; background:#161a23; border-left:3px solid #a78bfa; border-radius:6px;">
+            <span th:text="${preview}">mesaj önizlemesi</span>
+        </blockquote>
+        <p style="margin:24px 0 0; color:#5f6671; font-size:12px;">
+            Bu e-postayı otomatik olarak alıyorsunuz. Bildirim tercihlerinizi ayarlardan değiştirebilirsiniz.
+        </p>
+    </div>
+</body>
+</html>

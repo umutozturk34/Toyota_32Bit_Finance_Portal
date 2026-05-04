@@ -1,12 +1,16 @@
 package com.finance.notification.messaging.service;
 
+import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.notification.messaging.dispatch.MessageDispatchEvent;
 import com.finance.notification.messaging.dto.MessageResponse;
 import com.finance.notification.messaging.model.Message;
 import com.finance.notification.messaging.model.MessageDirection;
 import com.finance.notification.messaging.repository.MessageRepository;
+import com.finance.notification.messaging.security.MessageDuplicateGuard;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -20,9 +24,12 @@ public class MessageService {
 
     private final MessageRepository repository;
     private final MessageMapper mapper;
+    private final MessageDuplicateGuard duplicateGuard;
+    private final ApplicationEventPublisher events;
 
     @Transactional
     public MessageResponse sendUserToAdmin(String senderSub, String body) {
+        rejectDuplicate(senderSub, body);
         Message saved = repository.save(Message.builder()
                 .senderSub(senderSub)
                 .recipientSub(null)
@@ -37,13 +44,21 @@ public class MessageService {
         if (recipientSub == null || recipientSub.isBlank()) {
             throw new BusinessException("recipientSub cannot be blank for admin-to-user message");
         }
+        rejectDuplicate(adminSub, body);
         Message saved = repository.save(Message.builder()
                 .senderSub(adminSub)
                 .recipientSub(recipientSub)
                 .body(body)
                 .direction(MessageDirection.ADMIN_TO_USER)
                 .build());
+        events.publishEvent(new MessageDispatchEvent(recipientSub, adminSub, body));
         return mapper.toResponse(saved);
+    }
+
+    private void rejectDuplicate(String senderSub, String body) {
+        if (duplicateGuard.isDuplicate(senderSub, body)) {
+            throw new BadRequestException("Aynı mesajı kısa süre içinde tekrar gönderdin");
+        }
     }
 
     @Transactional(readOnly = true)

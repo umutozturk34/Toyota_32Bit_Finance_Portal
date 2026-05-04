@@ -1,7 +1,9 @@
 package com.finance.notification.messaging.service;
 
+import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.notification.messaging.dispatch.MessageDispatchEvent;
 import com.finance.notification.messaging.dto.MessageResponse;
 import com.finance.notification.messaging.model.Message;
 import com.finance.notification.messaging.model.MessageDirection;
@@ -35,12 +37,14 @@ class MessageServiceTest {
     private static final String ADMIN_SUB = "admin-1";
 
     @Mock private MessageRepository repository;
+    @Mock private com.finance.notification.messaging.security.MessageDuplicateGuard duplicateGuard;
+    @Mock private org.springframework.context.ApplicationEventPublisher events;
 
     private MessageService service;
 
     @BeforeEach
     void setUp() {
-        service = new MessageService(repository, new MessageMapperImpl());
+        service = new MessageService(repository, new MessageMapperImpl(), duplicateGuard, events);
     }
 
     @Test
@@ -176,5 +180,49 @@ class MessageServiceTest {
 
         assertThat(m.getReadAt()).isEqualTo(existingReadAt);
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void should_rejectUserToAdmin_when_duplicateBodyDetected() {
+        when(duplicateGuard.isDuplicate(USER_SUB, "spam")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.sendUserToAdmin(USER_SUB, "spam"))
+                .isInstanceOf(BadRequestException.class);
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void should_publishDispatchEvent_when_adminMessageSaved() {
+        when(duplicateGuard.isDuplicate(ADMIN_SUB, "Hi")).thenReturn(false);
+        when(repository.save(any(Message.class))).thenAnswer(inv -> {
+            Message m = inv.getArgument(0);
+            m.setId(9L);
+            m.setSentAt(LocalDateTime.now());
+            return m;
+        });
+
+        service.sendAdminToUser(ADMIN_SUB, USER_SUB, "Hi");
+
+        ArgumentCaptor<MessageDispatchEvent> captor = ArgumentCaptor.forClass(MessageDispatchEvent.class);
+        verify(events).publishEvent(captor.capture());
+        MessageDispatchEvent event = captor.getValue();
+        assertThat(event.recipientSub()).isEqualTo(USER_SUB);
+        assertThat(event.senderSub()).isEqualTo(ADMIN_SUB);
+        assertThat(event.body()).isEqualTo("Hi");
+    }
+
+    @Test
+    void should_skipDispatchEvent_when_userToAdminSent() {
+        when(repository.save(any(Message.class))).thenAnswer(inv -> {
+            Message m = inv.getArgument(0);
+            m.setId(11L);
+            m.setSentAt(LocalDateTime.now());
+            return m;
+        });
+
+        service.sendUserToAdmin(USER_SUB, "Help");
+
+        verify(events, never()).publishEvent(any());
     }
 }

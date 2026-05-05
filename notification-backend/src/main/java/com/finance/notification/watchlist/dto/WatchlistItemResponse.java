@@ -12,6 +12,8 @@ public record WatchlistItemResponse(
         String assetName,
         String image,
         BigDecimal currentPrice,
+        BigDecimal changeAmount,
+        BigDecimal changePercent,
         String note,
         BigDecimal deltaThreshold,
         BigDecimal lastSeenPrice,

@@ -13,6 +13,8 @@ public record PriceAlertResponse(
         String assetName,
         String image,
         BigDecimal currentPrice,
+        BigDecimal changeAmount,
+        BigDecimal changePercent,
         AlertDirection direction,
         BigDecimal threshold,
         String currency,

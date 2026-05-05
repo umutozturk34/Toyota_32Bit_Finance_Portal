@@ -59,7 +59,7 @@ class WatchlistEvaluatorTest {
     }
 
     private AssetSnapshot snapshot(String code, BigDecimal price) {
-        return new AssetSnapshot(code, code + " name", "https://i.example/" + code + ".png", price);
+        return new AssetSnapshot(code, code + " name", "https://i.example/" + code + ".png", price, null, null);
     }
 
     private Watchlist list(Long id, String name) {

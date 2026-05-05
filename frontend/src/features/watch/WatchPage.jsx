@@ -24,7 +24,7 @@ import AddWatchlistItemModal from './AddWatchlistItemModal';
 import CreateWatchlistModal from './CreateWatchlistModal';
 import { toast } from '../../shared/components/Toast';
 import { extractApiError } from '../../shared/utils/apiError';
-import { formatPriceTRY } from '../../shared/utils/formatters';
+import { formatPriceTRY, formatPercent, getChangeClass, changeColors, changeBg } from '../../shared/utils/formatters';
 
 const DIRECTION_META = {
   ABOVE: { label: 'üstüne', Icon: ArrowUp, tint: 'text-success' },
@@ -148,6 +148,23 @@ function WatchlistRow({ item, onRemove }) {
         <div className="text-sm font-mono font-semibold text-fg tabular-nums">
           {item.currentPrice != null ? formatPriceTRY(item.currentPrice) : '—'}
         </div>
+        {item.changePercent != null && (() => {
+          const cls = getChangeClass(item.changePercent);
+          const isUp = item.changePercent > 0;
+          const isDown = item.changePercent < 0;
+          const ChangeIcon = isUp ? TrendingUp : isDown ? TrendingDown : null;
+          return (
+            <div className={`mt-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold tabular-nums ${changeBg[cls]} ${changeColors[cls]}`}>
+              {ChangeIcon && <ChangeIcon className="h-3 w-3" />}
+              <span>{formatPercent(item.changePercent)}</span>
+              {item.changeAmount != null && (
+                <span className="font-normal opacity-70">
+                  ({isUp ? '+' : ''}{Number(item.changeAmount).toLocaleString('tr-TR', { maximumFractionDigits: 2 })})
+                </span>
+              )}
+            </div>
+          );
+        })()}
       </div>
       <button
         type="button"

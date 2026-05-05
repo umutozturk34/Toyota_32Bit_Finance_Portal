@@ -62,6 +62,7 @@ public abstract class BaseAsset {
     public abstract BigDecimal getPriceTry();
 
     public final AssetSnapshot toSnapshot() {
-        return new AssetSnapshot(getCode(), resolveDisplayName(), getImage(), getPriceTry());
+        return new AssetSnapshot(getCode(), resolveDisplayName(), getImage(), getPriceTry(),
+                getChangeAmount(), getChangePercent());
     }
 }

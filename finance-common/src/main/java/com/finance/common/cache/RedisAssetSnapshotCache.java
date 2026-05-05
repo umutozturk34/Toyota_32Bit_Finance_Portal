@@ -75,8 +75,10 @@ public class RedisAssetSnapshotCache implements AssetSnapshotCache {
             if (price == null && type.fallbackPriceField() != null) {
                 price = numericField(root, type.fallbackPriceField());
             }
+            BigDecimal changeAmount = numericField(root, "changeAmount");
+            BigDecimal changePercent = numericField(root, "changePercent");
             if (code == null) return Optional.empty();
-            return Optional.of(new AssetSnapshot(code, name, image, price));
+            return Optional.of(new AssetSnapshot(code, name, image, price, changeAmount, changePercent));
         } catch (Exception e) {
             log.warn("Asset snapshot parse failed type={}: {}", type, e.getMessage());
             return Optional.empty();

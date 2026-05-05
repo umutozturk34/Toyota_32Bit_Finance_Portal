@@ -6,6 +6,8 @@ public record AssetSnapshot(
         String code,
         String name,
         String image,
-        BigDecimal priceTry
+        BigDecimal priceTry,
+        BigDecimal changeAmount,
+        BigDecimal changePercent
 ) {
 }

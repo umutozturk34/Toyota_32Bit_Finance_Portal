@@ -47,7 +47,7 @@ class PriceAlertEvaluatorTest {
     }
 
     private AssetSnapshot snapshot(String code, BigDecimal price) {
-        return new AssetSnapshot(code, code, "https://i.example/" + code + ".png", price);
+        return new AssetSnapshot(code, code, "https://i.example/" + code + ".png", price, null, null);
     }
 
     @Test

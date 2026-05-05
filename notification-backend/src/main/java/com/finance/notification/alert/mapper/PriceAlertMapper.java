@@ -16,6 +16,8 @@ public interface PriceAlertMapper {
     @Mapping(target = "assetName", ignore = true)
     @Mapping(target = "image", ignore = true)
     @Mapping(target = "currentPrice", ignore = true)
+    @Mapping(target = "changeAmount", ignore = true)
+    @Mapping(target = "changePercent", ignore = true)
     PriceAlertResponse toResponse(PriceAlert alert);
 
     @Mapping(target = "id", source = "alert.id")
@@ -24,6 +26,8 @@ public interface PriceAlertMapper {
     @Mapping(target = "assetName", source = "snapshot.name")
     @Mapping(target = "image", source = "snapshot.image")
     @Mapping(target = "currentPrice", source = "snapshot.priceTry")
+    @Mapping(target = "changeAmount", source = "snapshot.changeAmount")
+    @Mapping(target = "changePercent", source = "snapshot.changePercent")
     @Mapping(target = "direction", source = "alert.direction")
     @Mapping(target = "threshold", source = "alert.threshold")
     @Mapping(target = "currency", source = "alert.currency")

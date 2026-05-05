@@ -17,6 +17,8 @@ public interface WatchlistItemMapper {
     @Mapping(target = "assetName", ignore = true)
     @Mapping(target = "image", ignore = true)
     @Mapping(target = "currentPrice", ignore = true)
+    @Mapping(target = "changeAmount", ignore = true)
+    @Mapping(target = "changePercent", ignore = true)
     WatchlistItemResponse toResponse(WatchlistItem item);
 
     @Mapping(target = "id", source = "item.id")
@@ -25,6 +27,8 @@ public interface WatchlistItemMapper {
     @Mapping(target = "assetName", source = "snapshot.name")
     @Mapping(target = "image", source = "snapshot.image")
     @Mapping(target = "currentPrice", source = "snapshot.priceTry")
+    @Mapping(target = "changeAmount", source = "snapshot.changeAmount")
+    @Mapping(target = "changePercent", source = "snapshot.changePercent")
     @Mapping(target = "note", source = "item.note")
     @Mapping(target = "deltaThreshold", source = "item.deltaThreshold")
     @Mapping(target = "lastSeenPrice", source = "item.lastSeenPrice")

@@ -88,6 +88,17 @@ public class KeycloakAdminClient {
         putFullUser("setEnabled", userId, body);
     }
 
+    @SuppressWarnings("unchecked")
+    public void setUserAttribute(String userId, String key, String value) {
+        Map<String, Object> body = new java.util.HashMap<>(fetchUser(userId));
+        Map<String, List<String>> attributes = body.get("attributes") instanceof Map<?, ?> raw
+                ? new java.util.HashMap<>((Map<String, List<String>>) raw)
+                : new java.util.HashMap<>();
+        attributes.put(key, List.of(value));
+        body.put("attributes", attributes);
+        putFullUser("setUserAttribute", userId, body);
+    }
+
     private void putFullUser(String operation, String userId, Map<String, Object> body) {
         executeWithRetry(operation, token -> webClient.put()
                 .uri("/admin/realms/{realm}/users/{id}", properties.getRealm(), userId)

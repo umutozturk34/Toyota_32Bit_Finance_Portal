@@ -22,11 +22,11 @@ import {
 
 const DEFAULT_PORTFOLIO_NAME = 'Demo Portföy';
 const ONBOARDING_STEPS = [
-  { label: 'Hesap doğrulanıyor...', duration: 350 },
-  { label: 'Portföy oluşturuluyor...', duration: 400 },
-  { label: 'Hazırlanıyor...', duration: 350 },
+  { label: 'Hesap doğrulanıyor...', duration: 600 },
+  { label: 'Portföy oluşturuluyor...', duration: 700 },
+  { label: 'Hazırlanıyor...', duration: 600 },
 ];
-const ONBOARDING_SUCCESS_HOLD_MS = 700;
+const ONBOARDING_SUCCESS_HOLD_MS = 900;
 
 const TABS = [
   { id: 'overview', label: 'Genel Bakış', Icon: LayoutDashboard },

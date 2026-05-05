@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication(scanBasePackages = {
         "com.finance.notification",
+        "com.finance.common.cache",
         "com.finance.common.config",
         "com.finance.common.exception",
         "com.finance.common.filter.tier"

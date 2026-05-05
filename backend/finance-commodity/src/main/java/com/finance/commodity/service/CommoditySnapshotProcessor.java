@@ -5,6 +5,9 @@ import com.finance.common.service.ExchangeRateSnapshot;
 
 import com.finance.common.service.MarketSnapshotProcessor;
 
+import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.common.model.TrackedAssetType;
+
 import com.finance.cache.service.MarketCacheService;
 
 
@@ -46,6 +49,7 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
     private final CommoditySegmentResolver segmentResolver;
     private final CommodityEntityWriter entityWriter;
     private final TransactionTemplate transactionTemplate;
+    private final TrackedAssetQueryService trackedAssetQueryService;
     private final int scale;
     private final ZoneId appZone;
     private final String chartRange;
@@ -62,6 +66,7 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
                                       CommoditySegmentResolver segmentResolver,
                                       CommodityEntityWriter entityWriter,
                                       TransactionTemplate transactionTemplate,
+                                      TrackedAssetQueryService trackedAssetQueryService,
                                       AppProperties appProperties,
                                       CommodityProperties commodityProperties) {
         this.yahooCommodityClient = yahooCommodityClient;
@@ -75,6 +80,7 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
         this.segmentResolver = segmentResolver;
         this.entityWriter = entityWriter;
         this.transactionTemplate = transactionTemplate;
+        this.trackedAssetQueryService = trackedAssetQueryService;
         this.scale = appProperties.getScale();
         this.appZone = ZoneId.of(appProperties.getTimezone());
         this.chartRange = commodityProperties.getChartRange();
@@ -108,6 +114,15 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
                         .yahooSymbol(yahooSymbol)
                         .commoditySegment(segmentResolver.resolve(commodityCode))
                         .build());
+
+        if (commodity.getName() == null || commodity.getName().isBlank()) {
+            String displayName = trackedAssetQueryService
+                    .getEnabledDisplayNameMap(TrackedAssetType.COMMODITY)
+                    .get(commodityCode);
+            if (displayName != null && !displayName.isBlank()) {
+                commodity.setName(displayName);
+            }
+        }
 
         List<YahooCandleDto> tryCandles = SyntheticPriceCalculator.buildSyntheticCandles(
                 result.candles(), usdtryCandleMap, false, scale);

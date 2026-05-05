@@ -20,6 +20,12 @@ import java.util.Map;
 public class PriceAlertHandler implements NotificationHandler {
 
     private static final Locale TR = Locale.forLanguageTag("tr-TR");
+    private static final int FRACTION_DIGITS_LARGE = 2;
+    private static final int FRACTION_DIGITS_SMALL = 6;
+    private static final int CHANGE_PERCENT_SCALE = 6;
+    private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
+    private static final String FALLBACK_ASSET_CODE = "?";
+    private static final String FALLBACK_MARKET_LABEL = "Varlık";
 
     @Override
     public NotificationType type() {
@@ -33,22 +39,31 @@ public class PriceAlertHandler implements NotificationHandler {
                     "PriceAlertHandler expects PriceAlertPayload, got " + request.payload().getClass().getSimpleName());
         }
 
-        String assetCode = p.assetCode() != null ? p.assetCode() : "?";
-        String assetName = p.assetName();
         AlertDirection direction = p.direction() != null ? p.direction() : AlertDirection.ABOVE;
         MarketType marketType = p.marketType();
+        String assetCode = p.assetCode() != null ? p.assetCode() : FALLBACK_ASSET_CODE;
+        String displayName = displayName(p.assetName(), assetCode);
+        String marketLabel = marketType != null ? marketType.displayLabel() : FALLBACK_MARKET_LABEL;
 
-        String marketLabel = marketType != null ? marketType.displayLabel() : "Varlık";
-        String directionLabel = direction.displayLabel();
-        String thresholdFormatted = formatPrice(p.threshold(), direction.isPercentBased());
-        String priceFormatted = formatPrice(p.currentPrice(), false);
-        String changePercent = computeChangePercent(p.currentPrice(), p.threshold(), direction);
+        return new RenderedNotification(
+                String.format("%s alarmı tetiklendi", displayName),
+                buildBody(marketLabel, direction, p.threshold(), p.currentPrice()),
+                "Finance Portal — " + displayName + " " + direction.displayLabel().toLowerCase(),
+                "price-alert",
+                buildModel(p, direction, marketLabel, assetCode, displayName));
+    }
 
-        String displayName = (assetName != null && !assetName.isBlank()) ? assetName : assetCode.toUpperCase();
-        String title = String.format("%s alarmı tetiklendi", displayName);
-        String body = String.format("%s — %s. Eşik %s, anlık %s.",
-                marketLabel, directionLabel, thresholdFormatted, priceFormatted);
+    private static String buildBody(String marketLabel, AlertDirection direction,
+                                    BigDecimal threshold, BigDecimal currentPrice) {
+        return String.format("%s — %s. Eşik %s, anlık %s.",
+                marketLabel,
+                direction.displayLabel(),
+                formatPrice(threshold, direction.isPercentBased()),
+                formatPrice(currentPrice, false));
+    }
 
+    private static Map<String, Object> buildModel(PriceAlertPayload p, AlertDirection direction,
+                                                   String marketLabel, String assetCode, String displayName) {
         Map<String, Object> model = new HashMap<>();
         model.put("assetCode", assetCode);
         model.put("assetCodeUpper", assetCode.toUpperCase());
@@ -56,43 +71,41 @@ public class PriceAlertHandler implements NotificationHandler {
         model.put("image", p.image());
         model.put("marketLabel", marketLabel);
         model.put("direction", direction.name());
-        model.put("directionLabel", directionLabel);
-        model.put("thresholdFormatted", thresholdFormatted);
-        model.put("priceFormatted", priceFormatted);
-        model.put("changePercent", changePercent);
+        model.put("directionLabel", direction.displayLabel());
+        model.put("thresholdFormatted", formatPrice(p.threshold(), direction.isPercentBased()));
+        model.put("priceFormatted", formatPrice(p.currentPrice(), false));
+        model.put("changePercent", computeChangePercent(p.currentPrice(), p.threshold(), direction));
         model.put("isUp", direction.isUpward());
         model.put("isPercent", direction.isPercentBased());
+        return model;
+    }
 
-        return new RenderedNotification(
-                title,
-                body,
-                "Finance Portal — " + displayName + " " + directionLabel.toLowerCase(),
-                "price-alert",
-                model);
+    private static String displayName(String assetName, String assetCode) {
+        if (assetName != null && !assetName.isBlank()) return assetName;
+        return assetCode.toUpperCase();
     }
 
     private static String formatPrice(BigDecimal value, boolean asPercent) {
         if (value == null) return "—";
+        NumberFormat fmt = NumberFormat.getNumberInstance(TR);
         if (asPercent) {
-            NumberFormat pct = NumberFormat.getNumberInstance(TR);
-            pct.setMaximumFractionDigits(2);
-            pct.setMinimumFractionDigits(0);
-            return "%" + pct.format(value);
+            fmt.setMaximumFractionDigits(FRACTION_DIGITS_LARGE);
+            fmt.setMinimumFractionDigits(0);
+            return "%" + fmt.format(value);
         }
-        NumberFormat money = NumberFormat.getNumberInstance(TR);
-        money.setMaximumFractionDigits(value.compareTo(BigDecimal.ONE) < 0 ? 6 : 2);
-        money.setMinimumFractionDigits(2);
-        return "₺" + money.format(value);
+        fmt.setMaximumFractionDigits(value.compareTo(BigDecimal.ONE) < 0 ? FRACTION_DIGITS_SMALL : FRACTION_DIGITS_LARGE);
+        fmt.setMinimumFractionDigits(FRACTION_DIGITS_LARGE);
+        return "₺" + fmt.format(value);
     }
 
     private static String computeChangePercent(BigDecimal current, BigDecimal threshold, AlertDirection direction) {
         if (direction.isPercentBased() || current == null || threshold == null || threshold.signum() == 0) return null;
         BigDecimal pct = current.subtract(threshold)
-                .divide(threshold, 6, RoundingMode.HALF_UP)
-                .multiply(BigDecimal.valueOf(100));
+                .divide(threshold, CHANGE_PERCENT_SCALE, RoundingMode.HALF_UP)
+                .multiply(HUNDRED);
         NumberFormat fmt = NumberFormat.getNumberInstance(TR);
-        fmt.setMaximumFractionDigits(2);
-        fmt.setMinimumFractionDigits(2);
+        fmt.setMaximumFractionDigits(FRACTION_DIGITS_LARGE);
+        fmt.setMinimumFractionDigits(FRACTION_DIGITS_LARGE);
         String prefix = pct.signum() >= 0 ? "+" : "";
         return prefix + fmt.format(pct) + "%";
     }

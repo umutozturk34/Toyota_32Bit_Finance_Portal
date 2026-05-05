@@ -1,11 +1,15 @@
 package com.finance.notification.watchlist.mapper;
 
+import com.finance.common.dto.internal.AssetSnapshot;
+import com.finance.notification.core.dispatch.payload.WatchlistDeltaPayload;
 import com.finance.notification.watchlist.dto.WatchlistItemCreateRequest;
 import com.finance.notification.watchlist.dto.WatchlistItemResponse;
 import com.finance.notification.watchlist.model.WatchlistItem;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
+
+import java.math.BigDecimal;
 
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface WatchlistItemMapper {
@@ -19,4 +23,14 @@ public interface WatchlistItemMapper {
     @Mapping(target = "lastSeenAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     WatchlistItem toEntity(WatchlistItemCreateRequest request, String userSub);
+
+    @Mapping(target = "watchlistItemId", source = "item.id")
+    @Mapping(target = "assetCode", source = "item.assetCode")
+    @Mapping(target = "assetName", source = "snapshot.name")
+    @Mapping(target = "image", source = "snapshot.image")
+    @Mapping(target = "lastSeenPrice", source = "item.lastSeenPrice")
+    @Mapping(target = "currentPrice", source = "currentPrice")
+    @Mapping(target = "deltaPercent", source = "deltaPercent")
+    WatchlistDeltaPayload.DeltaItem toFiredItem(WatchlistItem item, AssetSnapshot snapshot,
+                                                BigDecimal currentPrice, BigDecimal deltaPercent);
 }

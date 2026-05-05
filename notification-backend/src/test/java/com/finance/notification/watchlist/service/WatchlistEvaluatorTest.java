@@ -7,6 +7,8 @@ import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.payload.WatchlistDeltaPayload;
 import com.finance.notification.core.model.NotificationType;
+import com.finance.notification.watchlist.mapper.WatchlistItemMapper;
+import com.finance.notification.watchlist.mapper.WatchlistItemMapperImpl;
 import com.finance.notification.watchlist.model.Watchlist;
 import com.finance.notification.watchlist.model.WatchlistItem;
 import com.finance.notification.watchlist.repository.WatchlistRepository;
@@ -39,11 +41,13 @@ class WatchlistEvaluatorTest {
     @Mock private NotificationDispatcher dispatcher;
     @Mock private AssetSnapshotCache assetSnapshotCache;
 
+    private final WatchlistItemMapper watchlistItemMapper = new WatchlistItemMapperImpl();
     private WatchlistEvaluator evaluator;
 
     @BeforeEach
     void setUp() {
-        evaluator = new WatchlistEvaluator(watchlistService, watchlistRepository, dispatcher, assetSnapshotCache);
+        evaluator = new WatchlistEvaluator(watchlistService, watchlistRepository, dispatcher,
+                assetSnapshotCache, watchlistItemMapper);
         ReflectionTestUtils.setField(evaluator, "globalDeltaThreshold", BigDecimal.valueOf(5));
     }
 

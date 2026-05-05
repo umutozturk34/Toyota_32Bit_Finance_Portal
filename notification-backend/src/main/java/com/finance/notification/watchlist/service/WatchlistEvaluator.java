@@ -6,6 +6,7 @@ import com.finance.common.model.MarketType;
 import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.payload.WatchlistDeltaPayload;
+import com.finance.notification.watchlist.mapper.WatchlistItemMapper;
 import com.finance.notification.watchlist.model.Watchlist;
 import com.finance.notification.watchlist.model.WatchlistItem;
 import com.finance.notification.watchlist.repository.WatchlistRepository;
@@ -32,6 +33,7 @@ public class WatchlistEvaluator {
     private final WatchlistRepository watchlistRepository;
     private final NotificationDispatcher dispatcher;
     private final AssetSnapshotCache assetSnapshotCache;
+    private final WatchlistItemMapper watchlistItemMapper;
 
     @Value("${notification.watchlist.default-delta-percent:5.0}")
     private BigDecimal globalDeltaThreshold;
@@ -44,9 +46,23 @@ public class WatchlistEvaluator {
         if (items.isEmpty()) {
             return 0;
         }
-        Set<String> codes = items.stream().map(WatchlistItem::getAssetCode).collect(Collectors.toUnmodifiableSet());
-        Map<String, AssetSnapshot> snapshots = assetSnapshotCache.findByCodes(marketType, codes);
+        Map<String, AssetSnapshot> snapshots = loadSnapshots(marketType, items);
+        Map<GroupKey, List<WatchlistDeltaPayload.DeltaItem>> firedByGroup = collectFires(items, snapshots);
+        int notifications = dispatchAll(firedByGroup, marketType);
+        log.debug("Watchlist evaluation marketType={} items={} notifications={}",
+                marketType, items.size(), notifications);
+        return notifications;
+    }
 
+    private Map<String, AssetSnapshot> loadSnapshots(MarketType marketType, List<WatchlistItem> items) {
+        Set<String> codes = items.stream()
+                .map(WatchlistItem::getAssetCode)
+                .collect(Collectors.toUnmodifiableSet());
+        return assetSnapshotCache.findByCodes(marketType, codes);
+    }
+
+    private Map<GroupKey, List<WatchlistDeltaPayload.DeltaItem>> collectFires(
+            List<WatchlistItem> items, Map<String, AssetSnapshot> snapshots) {
         Map<GroupKey, List<WatchlistDeltaPayload.DeltaItem>> firedByGroup = new LinkedHashMap<>();
         for (WatchlistItem item : items) {
             AssetSnapshot snapshot = snapshots.get(item.getAssetCode());
@@ -56,19 +72,16 @@ public class WatchlistEvaluator {
                 BigDecimal deltaPct = item.deltaPercent(currentPrice).orElse(BigDecimal.ZERO);
                 GroupKey key = new GroupKey(item.getUserSub(), item.getWatchlistId());
                 firedByGroup.computeIfAbsent(key, k -> new ArrayList<>())
-                        .add(new WatchlistDeltaPayload.DeltaItem(
-                                item.getId(),
-                                item.getAssetCode(),
-                                snapshot.name(),
-                                snapshot.image(),
-                                item.getLastSeenPrice(),
-                                currentPrice,
-                                deltaPct));
+                        .add(watchlistItemMapper.toFiredItem(item, snapshot, currentPrice, deltaPct));
             }
             item.recordObservation(currentPrice);
             watchlistService.persist(item);
         }
+        return firedByGroup;
+    }
 
+    private int dispatchAll(Map<GroupKey, List<WatchlistDeltaPayload.DeltaItem>> firedByGroup, MarketType marketType) {
+        if (firedByGroup.isEmpty()) return 0;
         Map<Long, String> watchlistNames = resolveWatchlistNames(firedByGroup.keySet());
         int notifications = 0;
         for (Map.Entry<GroupKey, List<WatchlistDeltaPayload.DeltaItem>> entry : firedByGroup.entrySet()) {
@@ -81,8 +94,6 @@ public class WatchlistEvaluator {
             dispatcher.dispatch(NotificationRequest.of(key.userSub(), payload));
             notifications++;
         }
-        log.debug("Watchlist evaluation marketType={} items={} notifications={}",
-                marketType, items.size(), notifications);
         return notifications;
     }
 

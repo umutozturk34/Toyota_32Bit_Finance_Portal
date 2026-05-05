@@ -3,11 +3,12 @@ package com.finance.notification.alert.service;
 import com.finance.common.cache.AssetSnapshotCache;
 import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.model.MarketType;
-import com.finance.notification.core.dispatch.payload.PriceAlertPayload;
+import com.finance.notification.alert.mapper.PriceAlertMapper;
 import com.finance.notification.alert.model.AlertDirection;
 import com.finance.notification.alert.model.PriceAlert;
 import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;
+import com.finance.notification.core.dispatch.payload.PriceAlertPayload;
 import com.finance.notification.core.model.NotificationType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,7 @@ class PriceAlertEvaluatorTest {
     @Mock private PriceAlertService alertService;
     @Mock private NotificationDispatcher dispatcher;
     @Mock private AssetSnapshotCache assetSnapshotCache;
+    @Mock private PriceAlertMapper priceAlertMapper;
 
     @InjectMocks
     private PriceAlertEvaluator evaluator;
@@ -60,11 +62,16 @@ class PriceAlertEvaluatorTest {
     }
 
     @Test
-    void evaluate_firesAndPersistsAndDispatchesWhenAboveTriggered() {
+    void evaluate_firesAndDispatchesMappedPayloadWhenAboveTriggered() {
         PriceAlert alert = alertFor("BTC", AlertDirection.ABOVE, BigDecimal.valueOf(100), null);
+        AssetSnapshot snap = snapshot("BTC", BigDecimal.valueOf(105));
+        PriceAlertPayload mapped = new PriceAlertPayload(
+                1L, MarketType.CRYPTO, "BTC", AlertDirection.ABOVE,
+                BigDecimal.valueOf(100), BigDecimal.valueOf(105), "image", "BTC name");
         when(alertService.activeAlerts(MarketType.CRYPTO)).thenReturn(List.of(alert));
         when(assetSnapshotCache.findByCodes(eq(MarketType.CRYPTO), eq(Set.of("BTC"))))
-                .thenReturn(Map.of("BTC", snapshot("BTC", BigDecimal.valueOf(105))));
+                .thenReturn(Map.of("BTC", snap));
+        when(priceAlertMapper.toFiredPayload(alert, snap, MarketType.CRYPTO)).thenReturn(mapped);
 
         int fired = evaluator.evaluate(MarketType.CRYPTO);
 
@@ -75,14 +82,9 @@ class PriceAlertEvaluatorTest {
 
         ArgumentCaptor<NotificationRequest> captor = ArgumentCaptor.forClass(NotificationRequest.class);
         verify(dispatcher).dispatch(captor.capture());
-        NotificationRequest request = captor.getValue();
-        assertThat(request.type()).isEqualTo(NotificationType.PRICE_ALERT_FIRED);
-        assertThat(request.userSub()).isEqualTo("user-1");
-        assertThat(request.payload()).isInstanceOf(PriceAlertPayload.class);
-        PriceAlertPayload payload = (PriceAlertPayload) request.payload();
-        assertThat(payload.assetCode()).isEqualTo("BTC");
-        assertThat(payload.currentPrice()).isEqualByComparingTo(BigDecimal.valueOf(105));
-        assertThat(payload.image()).isEqualTo("https://i.example/BTC.png");
+        assertThat(captor.getValue().type()).isEqualTo(NotificationType.PRICE_ALERT_FIRED);
+        assertThat(captor.getValue().userSub()).isEqualTo("user-1");
+        assertThat(captor.getValue().payload()).isSameAs(mapped);
     }
 
     @Test

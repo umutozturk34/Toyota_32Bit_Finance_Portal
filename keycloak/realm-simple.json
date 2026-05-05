@@ -25,10 +25,7 @@
   },
   "eventsEnabled": true,
   "eventsExpiration": 2592000,
-  "eventsListeners": [
-    "jboss-logging",
-    "email"
-  ],
+  "eventsListeners": ["jboss-logging", "email"],
   "enabledEventTypes": [
     "UPDATE_PASSWORD",
     "UPDATE_PASSWORD_ERROR",
@@ -151,7 +148,27 @@
       }
     ]
   },
-  "users": [],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@finance.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ADMIN",
+        "USER"
+      ],
+      "requiredActions": []
+    }
+  ],
   "components": {
     "org.keycloak.storage.UserStorageProvider": [
       {
@@ -213,7 +230,7 @@
             "cn=admin,dc=finance,dc=com"
           ],
           "bindCredential": [
-            "${LDAP_ADMIN_PASSWORD}"
+            "admin123"
           ],
           "searchScope": [
             "1"
@@ -337,60 +354,10 @@
                   "true"
                 ]
               }
-            },
-            {
-              "name": "admins-group",
-              "providerId": "group-ldap-mapper",
-              "config": {
-                "groups.dn": [
-                  "ou=groups,dc=finance,dc=com"
-                ],
-                "group.name.ldap.attribute": [
-                  "cn"
-                ],
-                "group.object.classes": [
-                  "groupOfNames"
-                ],
-                "preserve.group.inheritance": [
-                  "false"
-                ],
-                "membership.ldap.attribute": [
-                  "member"
-                ],
-                "membership.attribute.type": [
-                  "DN"
-                ],
-                "membership.user.ldap.attribute": [
-                  "uid"
-                ],
-                "mode": [
-                  "READ_ONLY"
-                ],
-                "user.roles.retrieve.strategy": [
-                  "LOAD_GROUPS_BY_MEMBER_ATTRIBUTE"
-                ],
-                "mapped.group.attributes": [],
-                "drop.non.existing.groups.during.sync": [
-                  "false"
-                ],
-                "groups.path": [
-                  "/"
-                ]
-              }
             }
           ]
         }
       }
     ]
-  },
-  "groups": [
-    {
-      "name": "admins",
-      "path": "/admins",
-      "realmRoles": [
-        "ADMIN",
-        "USER"
-      ]
-    }
-  ]
+  }
 }

@@ -119,32 +119,6 @@ services:
     networks:
       - finance-network
 
-  # envsubst ${VAR} placeholders into LDIFs and realm JSON before consumers boot
-  config-bootstrap:
-    image: alpine:3.19
-    container_name: finance-config-bootstrap
-    command:
-      - sh
-      - -c
-      - |
-        apk add --no-cache gettext > /dev/null &&
-        rm -f /processed-ldif/*.ldif /processed-realm/*.json &&
-        for f in /raw-ldif/*.ldif; do
-          envsubst '$${LDAP_ADMIN_PASSWORD} $${LDAP_CONFIG_PASSWORD}' < "$$f" > "/processed-ldif/$$(basename $$f)"
-        done &&
-        envsubst '$${LDAP_ADMIN_PASSWORD} $${LDAP_CONFIG_PASSWORD}' < /raw-realm/realm-simple.json > /processed-realm/realm-finance.json &&
-        echo "LDIF + realm templates rendered"
-    environment:
-      LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD}
-      LDAP_CONFIG_PASSWORD: ${LDAP_CONFIG_PASSWORD}
-    volumes:
-      - ./ldap-init:/raw-ldif:ro
-      - ./keycloak:/raw-realm:ro
-      - ldap_bootstrap:/processed-ldif
-      - keycloak_bootstrap:/processed-realm
-    networks:
-      - finance-network
-
   # OpenLDAP Directory Server
   openldap:
     image: osixia/openldap:1.5.0
@@ -160,11 +134,8 @@ services:
       LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD}
       LDAP_CONFIG_PASSWORD: ${LDAP_CONFIG_PASSWORD}
       LDAP_TLS: "false"
-    depends_on:
-      config-bootstrap:
-        condition: service_completed_successfully
     volumes:
-      - ldap_bootstrap:/container/service/slapd/assets/config/bootstrap/ldif/custom:ro
+      - ./ldap-init:/container/service/slapd/assets/config/bootstrap/ldif/custom
       - openldap_data:/var/lib/ldap
       - openldap_config:/etc/ldap/slapd.d
     networks:
@@ -217,7 +188,7 @@ services:
       - --spi-required-action-VERIFY_EMAIL_CODE-code-symbols=0123456789
     volumes:
       - keycloak_data:/opt/keycloak/data
-      - keycloak_bootstrap:/opt/keycloak/data/import:ro
+      - ./keycloak/realm-simple.json:/opt/keycloak/data/import/realm-finance.json:ro
       - ./keycloak/themes/finance:/opt/keycloak/themes/finance:ro
       - ./keycloak/providers:/opt/keycloak/providers:ro
     depends_on:
@@ -225,8 +196,6 @@ services:
         condition: service_healthy
       openldap:
         condition: service_started
-      config-bootstrap:
-        condition: service_completed_successfully
       mailpit:
         condition: service_started
     networks:
@@ -457,8 +426,6 @@ volumes:
   postgres_data_v2:
   openldap_data:
   openldap_config:
-  ldap_bootstrap:
-  keycloak_bootstrap:
   keycloak_data:
   redis_data:
   mongodb_data:

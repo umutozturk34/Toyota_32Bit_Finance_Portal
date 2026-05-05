@@ -1,6 +1,0 @@
-dn: cn=admins,ou=groups,dc=finance,dc=com
-objectClass: top
-objectClass: groupOfNames
-cn: admins
-description: Realm administrators
-member: uid=admin,ou=users,dc=finance,dc=com

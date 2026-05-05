@@ -9,7 +9,6 @@ import PageHeader from '../../shared/components/PageHeader';
 import AssetBadge from '../../shared/components/AssetBadge';
 import ConfirmDialog from '../../shared/components/ConfirmDialog';
 import useAppStore from '../../shared/stores/useAppStore';
-import { useAssetMeta } from '../../shared/hooks/useAssetMeta';
 import { useAssetDetailPrefetch } from '../../shared/hooks/useAssetDetailPrefetch';
 import {
   useWatchlists,
@@ -23,7 +22,7 @@ import AddWatchlistItemModal from './AddWatchlistItemModal';
 import CreateWatchlistModal from './CreateWatchlistModal';
 import { toast } from '../../shared/components/Toast';
 import { extractApiError } from '../../shared/utils/apiError';
-import { formatPriceTRY, formatPercent, getChangeClass, changeColors, changeBg } from '../../shared/utils/formatters';
+import { formatPriceTRY } from '../../shared/utils/formatters';
 
 const DIRECTION_META = {
   ABOVE: { label: 'üstüne', Icon: ArrowUp, tint: 'text-success' },
@@ -105,8 +104,6 @@ function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
 
 function WatchlistRow({ item, onRemove }) {
   const navigate = useNavigate();
-  const meta = useAssetMeta(item.marketType, item.assetCode);
-  const asset = meta.data;
   const route = assetRoute(item.marketType, item.assetCode);
   const prefetch = useAssetDetailPrefetch();
   const triggerPrefetch = () => prefetch(item.marketType, item.assetCode);
@@ -123,13 +120,13 @@ function WatchlistRow({ item, onRemove }) {
       <AssetBadge
         assetType={item.marketType}
         assetCode={item.assetCode}
-        assetImage={asset?.image}
+        assetImage={item.image}
         size="md"
       />
       <div className="min-w-0">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm font-semibold text-fg truncate group-hover:text-accent transition-colors">
-            {asset?.name || asset?.assetName || item.assetCode}
+            {item.assetName || item.assetCode}
           </span>
           {item.deltaThreshold != null && (
             <span className="text-[10px] font-mono text-accent shrink-0">±{item.deltaThreshold}%</span>
@@ -147,25 +144,8 @@ function WatchlistRow({ item, onRemove }) {
       </div>
       <div className="text-right">
         <div className="text-sm font-mono font-semibold text-fg tabular-nums">
-          {asset?.price != null ? formatPriceTRY(asset.price) : '—'}
+          {item.currentPrice != null ? formatPriceTRY(item.currentPrice) : '—'}
         </div>
-        {asset?.changePercent != null && (() => {
-          const cls = getChangeClass(asset.changePercent);
-          const isUp = asset.changePercent > 0;
-          const isDown = asset.changePercent < 0;
-          const ChangeIcon = isUp ? TrendingUp : isDown ? TrendingDown : null;
-          return (
-            <div className={`mt-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold tabular-nums ${changeBg[cls]} ${changeColors[cls]}`}>
-              {ChangeIcon && <ChangeIcon className="h-3 w-3" />}
-              <span>{formatPercent(asset.changePercent)}</span>
-              {asset?.changeAmount != null && (
-                <span className="font-normal opacity-70">
-                  ({isUp ? '+' : ''}{Number(asset.changeAmount).toLocaleString('tr-TR', { maximumFractionDigits: 2 })})
-                </span>
-              )}
-            </div>
-          );
-        })()}
       </div>
       <button
         type="button"
@@ -188,8 +168,6 @@ function AlertRow({ alert, onDelete, onReactivate }) {
   const dir = DIRECTION_META[alert.direction] ?? DIRECTION_META.ABOVE;
   const { Icon, tint } = dir;
   const isFired = !alert.active && alert.triggeredAt;
-  const meta = useAssetMeta(alert.marketType, alert.assetCode);
-  const asset = meta.data;
   const route = assetRoute(alert.marketType, alert.assetCode);
   const prefetch = useAssetDetailPrefetch();
   const triggerPrefetch = () => prefetch(alert.marketType, alert.assetCode);
@@ -206,12 +184,12 @@ function AlertRow({ alert, onDelete, onReactivate }) {
       <AssetBadge
         assetType={alert.marketType}
         assetCode={alert.assetCode}
-        assetImage={asset?.image}
+        assetImage={alert.image}
         size="md"
       />
       <div className="min-w-0">
         <div className="text-sm font-semibold text-fg truncate group-hover:text-accent transition-colors">
-          {asset?.name || asset?.assetName || alert.assetCode}
+          {alert.assetName || alert.assetCode}
         </div>
         <div className="text-[11px] text-fg-muted font-mono">{alert.assetCode}</div>
       </div>

@@ -75,8 +75,8 @@ services:
         - github_token
     container_name: finance-notification-backend
     restart: unless-stopped
-    expose:
-      - "8082"
+    ports:
+      - "127.0.0.1:8082:8082"
     environment:
       DB_URL: jdbc:postgresql://db:5432/finance_db
       DB_USERNAME: finance_user

@@ -88,6 +88,13 @@ public class KeycloakAdminClient {
         putFullUser("setEnabled", userId, body);
     }
 
+    public void setEmail(String userId, String newEmail) {
+        Map<String, Object> body = new java.util.HashMap<>(fetchUser(userId));
+        body.put("email", newEmail);
+        body.put("emailVerified", false);
+        putFullUser("setEmail", userId, body);
+    }
+
     @SuppressWarnings("unchecked")
     public void setUserAttribute(String userId, String key, String value) {
         Map<String, Object> body = new java.util.HashMap<>(fetchUser(userId));

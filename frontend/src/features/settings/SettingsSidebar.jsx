@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Settings as SettingsIcon, Palette, Languages, BarChart3, Bell, Shield,
-  Sun, Moon, LogOut, KeyRound,
+  Sun, Moon, LogOut, KeyRound, Mail,
 } from 'lucide-react';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';
 import { useAuth } from '../auth/AuthContext';
@@ -86,6 +86,8 @@ export default function SettingsSidebar({ isOpen, onClose }) {
   const updatePreferences = useUpdateUserPreferences();
   const { logout } = useAuth();
   const [passwordSending, setPasswordSending] = useState(false);
+  const [emailDraft, setEmailDraft] = useState('');
+  const [emailSending, setEmailSending] = useState(false);
 
   const handleChange = (field) => (value) => {
     updatePreferences.mutate({ [field]: value });
@@ -106,6 +108,23 @@ export default function SettingsSidebar({ isOpen, onClose }) {
       toast.error('İşlem başarısız', err?.response?.data?.message || 'E-posta gönderilemedi');
     } finally {
       setPasswordSending(false);
+    }
+  };
+
+  const handleChangeEmail = async (event) => {
+    event.preventDefault();
+    const trimmed = emailDraft.trim();
+    if (!trimmed) return;
+    setEmailSending(true);
+    try {
+      await userCredentialService.initiateEmailChange(trimmed);
+      toast.success('Doğrulama kodu gönderildi', `${trimmed} adresine kodu içeren e-posta atıldı`);
+      setEmailDraft('');
+      onClose();
+    } catch (err) {
+      toast.error('İşlem başarısız', err?.response?.data?.message || 'E-posta değiştirilemedi');
+    } finally {
+      setEmailSending(false);
     }
   };
 
@@ -209,6 +228,34 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                 </button>
                 <p className="text-[10px] text-fg-subtle leading-relaxed px-1 mt-1.5">
                   E-posta adresine gelen linke tıklayarak yeni şifre belirleyebilirsin.
+                </p>
+              </Section>
+
+              <Section icon={Mail} title="E-posta">
+                <form onSubmit={handleChangeEmail} className="space-y-2">
+                  <input
+                    type="email"
+                    required
+                    value={emailDraft}
+                    onChange={(e) => setEmailDraft(e.target.value)}
+                    placeholder="yeni@email.com"
+                    disabled={emailSending}
+                    className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-xs text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent disabled:opacity-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={emailSending || !emailDraft.trim()}
+                    className="w-full flex items-center justify-between gap-2 rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-xs font-medium text-fg hover:bg-surface transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Mail className="h-3.5 w-3.5 text-accent" />
+                      Doğrulama kodu iste
+                    </span>
+                    <span className="text-[10px] text-fg-muted">{emailSending ? '…' : 'Kod →'}</span>
+                  </button>
+                </form>
+                <p className="text-[10px] text-fg-subtle leading-relaxed px-1 mt-1.5">
+                  Yeni adresine 6 haneli kod gönderilir; Keycloak doğrulama sayfasında kodu girince e-posta güncellenir.
                 </p>
               </Section>
 

@@ -43,6 +43,12 @@ public class UserCredentialService {
         client.sendActionsEmail(userSub, List.of("UPDATE_PASSWORD"), FRONTEND_CLIENT_ID, redirectUri, EMAIL_LINK_LIFESPAN_SECONDS);
     }
 
+    public void initiateEmailChange(String userSub, String newEmail, String redirectUri) {
+        syncThemeForEmail(userSub);
+        client.setEmail(userSub, newEmail);
+        client.sendActionsEmail(userSub, List.of("VERIFY_EMAIL_CODE"), FRONTEND_CLIENT_ID, redirectUri, EMAIL_LINK_LIFESPAN_SECONDS);
+    }
+
     private void syncThemeForEmail(String userSub) {
         try {
             String theme = preferenceService.getOrDefault(userSub).theme().name();

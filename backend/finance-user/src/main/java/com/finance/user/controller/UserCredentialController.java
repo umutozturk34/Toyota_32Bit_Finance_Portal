@@ -1,6 +1,7 @@
 package com.finance.user.controller;
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.user.dto.EmailChangeInitiateRequest;
 import com.finance.user.dto.PasswordChangeInitiateRequest;
 import com.finance.user.service.UserCredentialService;
 import jakarta.validation.Valid;
@@ -24,5 +25,14 @@ public class UserCredentialController {
             @Valid @RequestBody PasswordChangeInitiateRequest request) {
         service.initiatePasswordChange(jwt.getSubject(), request.redirectUri());
         return ApiResponse.success("Password change link sent to email", null);
+    }
+
+    @PostMapping("/email/initiate-change")
+    public ApiResponse<Void> initiateEmailChange(
+            @AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody EmailChangeInitiateRequest request,
+            @RequestParam(required = false) String redirectUri) {
+        service.initiateEmailChange(jwt.getSubject(), request.newEmail(), redirectUri);
+        return ApiResponse.success("Email verification code sent to new address", null);
     }
 }

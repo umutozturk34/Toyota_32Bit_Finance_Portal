@@ -65,6 +65,11 @@ public class Stock extends BaseAsset {
     }
 
     @Override
+    public BigDecimal getPriceTry() {
+        return currentPrice;
+    }
+
+    @Override
     public void scaleFields(int scale) {
         this.currentPrice = scaleValue(this.currentPrice, scale);
         this.previousClose = scaleValue(this.previousClose, scale);

@@ -155,6 +155,11 @@ public class Forex extends BaseAsset {
     }
 
     @Override
+    public BigDecimal getPriceTry() {
+        return sellingPrice != null ? sellingPrice : currentPrice;
+    }
+
+    @Override
     public String resolveDisplayName() {
         return firstNonBlank(getName(), currencyNameTr, currencyName, currencyCode);
     }

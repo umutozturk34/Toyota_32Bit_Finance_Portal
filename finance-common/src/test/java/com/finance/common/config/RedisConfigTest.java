@@ -50,5 +50,10 @@ class RedisConfigTest {
         @Override
         public void scaleFields(int scale) {
         }
+
+        @Override
+        public java.math.BigDecimal getPriceTry() {
+            return null;
+        }
     }
 }

@@ -3,6 +3,7 @@ import com.finance.common.service.assetpricing.BaseAssetPricingStrategy;
 
 
 import com.finance.common.config.CommissionProperties;
+import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.fund.model.Fund;
 import com.finance.fund.model.FundCandle;
 import com.finance.fund.repository.FundRepository;
@@ -35,6 +36,14 @@ public class FundPricingStrategy extends BaseAssetPricingStrategy {
         return repository.findAll().stream()
                 .filter(f -> f.getPrice() != null)
                 .collect(Collectors.toUnmodifiableMap(Fund::getCode, Fund::getPrice, (a, b) -> a));
+    }
+
+    @Override
+    public Map<String, AssetSnapshot> getAllSnapshots() {
+        return repository.findAll().stream()
+                .filter(f -> f.getPrice() != null)
+                .map(Fund::toSnapshot)
+                .collect(Collectors.toUnmodifiableMap(AssetSnapshot::code, s -> s, (a, b) -> a));
     }
 
     @Override

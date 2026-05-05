@@ -1,5 +1,6 @@
 package com.finance.common.service.assetpricing;
 
+import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.model.MarketType;
 import com.finance.common.service.AssetPricingPort;
 
@@ -19,6 +20,10 @@ public interface AssetPricingStrategy {
     AssetPricingPort.PriceBundle getBundle(String assetCode);
 
     default Map<String, BigDecimal> getAllPricesTry() {
+        return Map.of();
+    }
+
+    default Map<String, AssetSnapshot> getAllSnapshots() {
         return Map.of();
     }
 }

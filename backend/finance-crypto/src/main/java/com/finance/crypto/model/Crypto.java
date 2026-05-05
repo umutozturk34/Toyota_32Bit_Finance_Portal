@@ -70,6 +70,11 @@ public class Crypto extends BaseAsset {
     }
 
     @Override
+    public BigDecimal getPriceTry() {
+        return currentPriceTry;
+    }
+
+    @Override
     public String resolveDisplayName() {
         return firstNonBlank(getName(), symbol, id);
     }

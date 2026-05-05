@@ -1,5 +1,6 @@
 package com.finance.forex.service.assetpricing;
 
+import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.forex.model.Forex;
 import com.finance.forex.model.ForexCandle;
 import com.finance.forex.repository.ForexRepository;
@@ -28,12 +29,16 @@ public class ForexPricingStrategy extends BaseAssetPricingStrategy {
     @Override
     public Map<String, BigDecimal> getAllPricesTry() {
         return repository.findAll().stream()
-                .map(f -> {
-                    BigDecimal p = f.getSellingPrice() != null ? f.getSellingPrice() : f.getCurrentPrice();
-                    return p == null ? null : new java.util.AbstractMap.SimpleEntry<>(f.getCode(), p);
-                })
-                .filter(java.util.Objects::nonNull)
-                .collect(Collectors.toUnmodifiableMap(java.util.Map.Entry::getKey, java.util.Map.Entry::getValue, (a, b) -> a));
+                .filter(f -> f.getPriceTry() != null)
+                .collect(Collectors.toUnmodifiableMap(Forex::getCode, Forex::getPriceTry, (a, b) -> a));
+    }
+
+    @Override
+    public Map<String, AssetSnapshot> getAllSnapshots() {
+        return repository.findAll().stream()
+                .filter(f -> f.getPriceTry() != null)
+                .map(Forex::toSnapshot)
+                .collect(Collectors.toUnmodifiableMap(AssetSnapshot::code, s -> s, (a, b) -> a));
     }
 
     @Override

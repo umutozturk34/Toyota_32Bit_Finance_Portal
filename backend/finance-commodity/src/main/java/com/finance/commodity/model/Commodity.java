@@ -128,6 +128,11 @@ public class Commodity extends BaseAsset {
     }
 
     @Override
+    public BigDecimal getPriceTry() {
+        return getCurrentPrice();
+    }
+
+    @Override
     public String resolveDisplayName() {
         return firstNonBlank(getName(), commodityNameTr, commodityName, commodityCode);
     }

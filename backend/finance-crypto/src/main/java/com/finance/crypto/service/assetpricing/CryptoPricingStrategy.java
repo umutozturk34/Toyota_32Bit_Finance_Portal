@@ -1,6 +1,7 @@
 package com.finance.crypto.service.assetpricing;
 
 import com.finance.common.config.CommissionProperties;
+import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.crypto.model.Crypto;
 import com.finance.crypto.model.CryptoCandle;
 import com.finance.crypto.repository.CryptoRepository;
@@ -34,6 +35,14 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
         return repository.findAll().stream()
                 .filter(c -> c.getCurrentPriceTry() != null)
                 .collect(Collectors.toUnmodifiableMap(Crypto::getCode, Crypto::getCurrentPriceTry, (a, b) -> a));
+    }
+
+    @Override
+    public Map<String, AssetSnapshot> getAllSnapshots() {
+        return repository.findAll().stream()
+                .filter(c -> c.getCurrentPriceTry() != null)
+                .map(Crypto::toSnapshot)
+                .collect(Collectors.toUnmodifiableMap(AssetSnapshot::code, s -> s, (a, b) -> a));
     }
 
     @Override

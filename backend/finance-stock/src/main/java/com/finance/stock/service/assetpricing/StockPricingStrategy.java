@@ -3,6 +3,7 @@ import com.finance.common.service.assetpricing.BaseAssetPricingStrategy;
 
 
 import com.finance.common.config.CommissionProperties;
+import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.model.MarketType;
 import com.finance.stock.model.Stock;
 import com.finance.stock.model.StockCandle;
@@ -35,6 +36,14 @@ public class StockPricingStrategy extends BaseAssetPricingStrategy {
         return repository.findAll().stream()
                 .filter(s -> s.getCurrentPrice() != null)
                 .collect(Collectors.toUnmodifiableMap(Stock::getCode, Stock::getCurrentPrice, (a, b) -> a));
+    }
+
+    @Override
+    public Map<String, AssetSnapshot> getAllSnapshots() {
+        return repository.findAll().stream()
+                .filter(s -> s.getCurrentPrice() != null)
+                .map(Stock::toSnapshot)
+                .collect(Collectors.toUnmodifiableMap(AssetSnapshot::code, s -> s, (a, b) -> a));
     }
 
     @Override

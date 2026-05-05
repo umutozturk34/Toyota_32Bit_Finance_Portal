@@ -112,6 +112,9 @@ class ChangeFromCandlesUpdaterTest {
 
         @Override
         public String getCode() { return "TEST"; }
+
+        @Override
+        public java.math.BigDecimal getPriceTry() { return null; }
     }
 
     private static class TestCandle extends BaseCandle {

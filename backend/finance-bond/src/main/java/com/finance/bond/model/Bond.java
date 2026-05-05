@@ -134,4 +134,9 @@ public class Bond extends BaseAsset {
     public String getCode() {
         return seriesCode;
     }
+
+    @Override
+    public BigDecimal getPriceTry() {
+        return null;
+    }
 }

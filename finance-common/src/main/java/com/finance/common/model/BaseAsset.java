@@ -1,5 +1,6 @@
 package com.finance.common.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.util.PercentChangeCalculator;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
@@ -56,5 +57,11 @@ public abstract class BaseAsset {
 
     public String resolveDisplayName() {
         return firstNonBlank(getName(), getCode());
+    }
+
+    public abstract BigDecimal getPriceTry();
+
+    public final AssetSnapshot toSnapshot() {
+        return new AssetSnapshot(getCode(), resolveDisplayName(), getImage(), getPriceTry());
     }
 }

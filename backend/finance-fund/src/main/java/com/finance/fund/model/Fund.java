@@ -80,4 +80,9 @@ public class Fund extends BaseAsset {
     public String getCode() {
         return fundCode;
     }
+
+    @Override
+    public BigDecimal getPriceTry() {
+        return price;
+    }
 }

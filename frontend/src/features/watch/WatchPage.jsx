@@ -1,8 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
+import {
+  DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates,
+  arrayMove, useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  Eye, AlertCircle, Plus, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown,
+  Eye, AlertCircle, Plus, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown, GripVertical,
   Loader2, Inbox, Star, ListPlus, RotateCcw,
 } from 'lucide-react';
 import PageHeader from '../../shared/components/PageHeader';
@@ -15,7 +23,9 @@ import {
   useWatchlistItems,
   useDeleteWatchlist,
   useRemoveWatchlistItem,
+  useReorderWatchlistItems,
 } from '../../shared/hooks/useWatchlist';
+import SortSelect from '../../shared/components/SortSelect';
 import { usePriceAlerts, useDeletePriceAlert, useReactivatePriceAlert } from '../../shared/hooks/usePriceAlerts';
 import useListParams from '../../shared/hooks/useListParams';
 import Pagination from '../../shared/components/Pagination';
@@ -25,6 +35,14 @@ import CreateWatchlistModal from './CreateWatchlistModal';
 import { toast } from '../../shared/components/Toast';
 import { extractApiError } from '../../shared/utils/apiError';
 import { formatPriceTRY, formatPercent, getChangeClass, changeColors, changeBg } from '../../shared/utils/formatters';
+
+const WATCHLIST_SORT_OPTIONS = [
+  { id: '', label: 'Sıralamam' },
+  { id: 'NAME', label: 'Alfabetik' },
+  { id: 'CURRENT_PRICE', label: 'Fiyat' },
+  { id: 'CHANGE_PERCENT', label: '% Değişim' },
+  { id: 'ADDED_AT', label: 'Eklenme tarihi' },
+];
 
 const DIRECTION_META = {
   ABOVE: { label: 'üstüne', Icon: ArrowUp, tint: 'text-success' },
@@ -105,21 +123,46 @@ function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
   );
 }
 
-function WatchlistRow({ item, onRemove }) {
+function WatchlistRow({ item, onRemove, draggable }) {
   const navigate = useNavigate();
   const route = assetRoute(item.marketType, item.assetCode);
   const prefetch = useAssetDetailPrefetch();
   const triggerPrefetch = () => prefetch(item.marketType, item.assetCode);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+    disabled: !draggable,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
       onClick={route ? () => navigate(route) : undefined}
       onMouseEnter={triggerPrefetch}
       onFocus={triggerPrefetch}
-      className={`group grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center px-4 py-3 transition-colors ${
+      className={`group grid grid-cols-[auto_auto_1fr_auto_auto] gap-3 items-center px-4 py-3 transition-colors ${
         route ? 'cursor-pointer hover:bg-accent/5' : ''
       }`}
     >
+      {draggable ? (
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center justify-center w-6 h-6 text-fg-subtle hover:text-fg cursor-grab active:cursor-grabbing bg-transparent border-none touch-none"
+          title="Sürükleyerek sırala"
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      ) : (
+        <span className="w-6" />
+      )}
       <AssetBadge
         assetType={item.marketType}
         assetCode={item.assetCode}
@@ -277,13 +320,21 @@ export default function WatchPage() {
     }
   }, [activeListId, watchlists, setActiveListId]);
 
-  const items = useWatchlistItems(activeListId);
+  const watchParams = useListParams({ defaultDirection: 'asc', defaultSize: 0, prefix: 'watch' });
+  const sortBy = watchParams.sort || 'CUSTOM';
+  const sortDirection = (watchParams.direction || 'asc').toUpperCase();
+  const items = useWatchlistItems(activeListId, { sort: sortBy, direction: sortDirection });
   const alertParams = useListParams({ defaultSize: 10, prefix: 'alerts' });
   const alerts = usePriceAlerts({ page: alertParams.page, size: alertParams.size });
   const removeWatchlistItem = useRemoveWatchlistItem(activeListId);
+  const reorderWatchlistItems = useReorderWatchlistItems(activeListId);
   const deletePriceAlert = useDeletePriceAlert();
   const reactivatePriceAlert = useReactivatePriceAlert();
   const deleteWatchlist = useDeleteWatchlist();
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const watchItems = items.data ?? [];
   const alertItems = alerts.data?.content ?? alerts.data?.items ?? [];
@@ -382,7 +433,20 @@ export default function WatchPage() {
             />
           )}
         </div>
-        <div className="grid grid-cols-[auto_1fr_auto_auto] gap-3 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
+        <div className="flex items-center justify-end px-4 py-2 border-b border-border-default">
+          <SortSelect
+            value={sortBy === 'CUSTOM' ? '' : sortBy}
+            direction={sortDirection.toLowerCase()}
+            options={WATCHLIST_SORT_OPTIONS}
+            onSortChange={(id) => {
+              watchParams.setSort(id || '');
+            }}
+            onDirectionChange={(d) => watchParams.setDirection(d)}
+            showDefault={false}
+          />
+        </div>
+        <div className="grid grid-cols-[auto_auto_1fr_auto_auto] gap-3 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
+          <span className="w-6" />
           <span className="w-9">&nbsp;</span>
           <span>Varlık</span>
           <span className="text-right">Son fiyat</span>
@@ -401,9 +465,25 @@ export default function WatchPage() {
               hint="Bir crypto, hisse, döviz veya fon ekle, hareketleri buradan izle."
             />
           ) : (
-            watchItems.map((item) => (
-              <WatchlistRow key={item.id} item={item} onRemove={handleRemoveWatchlistItem} />
-            ))
+            <DndContext
+              sensors={dndSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(e) => {
+                const { active, over } = e;
+                if (!over || active.id === over.id || sortBy !== 'CUSTOM') return;
+                const oldIndex = watchItems.findIndex((it) => it.id === active.id);
+                const newIndex = watchItems.findIndex((it) => it.id === over.id);
+                if (oldIndex < 0 || newIndex < 0) return;
+                const reordered = arrayMove(watchItems, oldIndex, newIndex);
+                reorderWatchlistItems.mutate(reordered.map((it) => it.id));
+              }}
+            >
+              <SortableContext items={watchItems.map((it) => it.id)} strategy={verticalListSortingStrategy}>
+                {watchItems.map((item) => (
+                  <WatchlistRow key={item.id} item={item} onRemove={handleRemoveWatchlistItem} draggable={sortBy === 'CUSTOM'} />
+                ))}
+              </SortableContext>
+            </DndContext>
           )}
         </div>
       </section>

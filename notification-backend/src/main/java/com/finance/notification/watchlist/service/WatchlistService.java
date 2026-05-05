@@ -2,6 +2,7 @@ package com.finance.notification.watchlist.service;
 
 import com.finance.common.cache.AssetSnapshotCache;
 import com.finance.common.dto.internal.AssetSnapshot;
+import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
 import com.finance.notification.watchlist.dto.WatchlistItemCreateRequest;
@@ -9,12 +10,16 @@ import com.finance.notification.watchlist.dto.WatchlistItemResponse;
 import com.finance.notification.watchlist.mapper.WatchlistItemMapper;
 import com.finance.notification.watchlist.model.Watchlist;
 import com.finance.notification.watchlist.model.WatchlistItem;
+import com.finance.notification.watchlist.model.WatchlistSortBy;
 import com.finance.notification.watchlist.repository.WatchlistItemRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +28,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class WatchlistService {
+
+    private static final Sort DEFAULT_DB_SORT = Sort.by(Sort.Direction.ASC, "displayOrder");
 
     private final WatchlistItemRepository repository;
     private final WatchlistItemMapper mapper;
@@ -36,11 +43,7 @@ public class WatchlistService {
         return repository.findByWatchlistIdAndMarketTypeAndAssetCode(
                         parent.getId(), request.marketType(), request.assetCode())
                 .map(mapper::toResponse)
-                .orElseGet(() -> {
-                    WatchlistItem entity = mapper.toEntity(request, userSub);
-                    entity.setWatchlistId(parent.getId());
-                    return mapper.toResponse(repository.save(entity));
-                });
+                .orElseGet(() -> createItem(parent, userSub, request));
     }
 
     @Transactional
@@ -50,14 +53,41 @@ public class WatchlistService {
     }
 
     @Transactional(readOnly = true)
-    public List<WatchlistItemResponse> listItems(Long watchlistId, String userSub) {
+    public List<WatchlistItemResponse> listItems(Long watchlistId, String userSub,
+                                                  WatchlistSortBy sortBy, Sort.Direction direction) {
         managementService.requireOwned(watchlistId, userSub);
-        return enrich(repository.findByWatchlistIdOrderByCreatedAtDesc(watchlistId));
+        Sort dbSort = sortBy.isDbSortable()
+                ? Sort.by(sortBy.toDbOrder(direction))
+                : DEFAULT_DB_SORT;
+        List<WatchlistItem> items = repository.findByWatchlistId(watchlistId, dbSort);
+        List<WatchlistItemResponse> enriched = enrich(items);
+        if (!sortBy.isDbSortable()) {
+            return enriched.stream()
+                    .sorted(sortBy.postEnrichComparator(direction))
+                    .toList();
+        }
+        return enriched;
     }
 
     @Transactional(readOnly = true)
     public List<WatchlistItemResponse> listAllItems(String userSub) {
         return enrich(repository.findByUserSubOrderByCreatedAtDesc(userSub));
+    }
+
+    @Transactional
+    public List<WatchlistItemResponse> reorder(Long watchlistId, String userSub, List<Long> itemIds) {
+        managementService.requireOwned(watchlistId, userSub);
+        List<WatchlistItem> existing = repository.findByWatchlistId(watchlistId, DEFAULT_DB_SORT);
+        validateReorder(existing, itemIds, watchlistId);
+        Map<Long, WatchlistItem> itemsById = existing.stream()
+                .collect(Collectors.toUnmodifiableMap(WatchlistItem::getId, item -> item));
+        for (int i = 0; i < itemIds.size(); i++) {
+            itemsById.get(itemIds.get(i)).setDisplayOrder(i + 1);
+        }
+        repository.saveAll(existing);
+        return enrich(existing.stream()
+                .sorted(Comparator.comparing(WatchlistItem::getDisplayOrder))
+                .toList());
     }
 
     @Transactional
@@ -74,6 +104,26 @@ public class WatchlistService {
     @Transactional
     public void persist(WatchlistItem item) {
         repository.save(item);
+    }
+
+    private WatchlistItemResponse createItem(Watchlist parent, String userSub, WatchlistItemCreateRequest request) {
+        WatchlistItem entity = mapper.toEntity(request, userSub);
+        entity.setWatchlistId(parent.getId());
+        entity.setDisplayOrder(repository.findMaxDisplayOrderByWatchlistId(parent.getId()) + 1);
+        return mapper.toResponse(repository.save(entity));
+    }
+
+    private void validateReorder(List<WatchlistItem> existing, List<Long> itemIds, Long watchlistId) {
+        if (itemIds.size() != existing.size()) {
+            throw new BadRequestException(
+                    "Reorder requires every item id; expected " + existing.size() + " got " + itemIds.size());
+        }
+        Set<Long> existingIds = existing.stream()
+                .map(WatchlistItem::getId)
+                .collect(Collectors.toCollection(HashSet::new));
+        if (!new HashSet<>(itemIds).equals(existingIds)) {
+            throw new BadRequestException("Reorder ids must match watchlist " + watchlistId + " exactly");
+        }
     }
 
     private List<WatchlistItemResponse> enrich(List<WatchlistItem> items) {

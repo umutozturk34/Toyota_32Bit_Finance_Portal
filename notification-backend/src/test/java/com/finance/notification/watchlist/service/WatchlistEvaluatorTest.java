@@ -6,7 +6,6 @@ import com.finance.common.model.MarketType;
 import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.payload.WatchlistDeltaPayload;
-import com.finance.notification.core.model.NotificationType;
 import com.finance.notification.watchlist.mapper.WatchlistItemMapper;
 import com.finance.notification.watchlist.mapper.WatchlistItemMapperImpl;
 import com.finance.notification.watchlist.model.Watchlist;

@@ -3,7 +3,7 @@ import { watchlistService } from '../services/watchlistService';
 import { useAuth } from '../../features/auth/AuthContext';
 
 const LISTS_KEY = ['watchlists'];
-const ITEMS_KEY = (id) => ['watchlists', id, 'items'];
+const ITEMS_KEY = (id, params) => ['watchlists', id, 'items', params];
 
 export function useWatchlists() {
   const { isAuthenticated, loading } = useAuth();
@@ -15,13 +15,23 @@ export function useWatchlists() {
   });
 }
 
-export function useWatchlistItems(id) {
+export function useWatchlistItems(id, { sort = 'CUSTOM', direction = 'ASC' } = {}) {
   const { isAuthenticated, loading } = useAuth();
   return useQuery({
-    queryKey: ITEMS_KEY(id),
-    queryFn: () => watchlistService.listItems(id),
+    queryKey: ITEMS_KEY(id, { sort, direction }),
+    queryFn: () => watchlistService.listItems(id, { sort, direction }),
     enabled: isAuthenticated && !loading && id != null,
     staleTime: 30_000,
+  });
+}
+
+export function useReorderWatchlistItems(watchlistId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (itemIds) => watchlistService.reorder(watchlistId, itemIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchlists', watchlistId, 'items'] });
+    },
   });
 }
 
@@ -94,22 +104,25 @@ export function useRemoveWatchlistItem(activeListId) {
     mutationFn: watchlistService.removeItem,
     onMutate: async (itemId) => {
       if (activeListId == null) return {};
-      const key = ITEMS_KEY(activeListId);
-      await queryClient.cancelQueries({ queryKey: key });
-      const prevItems = queryClient.getQueryData(key);
+      const itemsPrefix = ['watchlists', activeListId, 'items'];
+      await queryClient.cancelQueries({ queryKey: itemsPrefix });
+      const matches = queryClient.getQueriesData({ queryKey: itemsPrefix });
+      const snapshots = matches.map(([key, data]) => [key, data]);
+      matches.forEach(([key, data]) => {
+        if (Array.isArray(data)) {
+          queryClient.setQueryData(key, data.filter((it) => it.id !== itemId));
+        }
+      });
       const prevLists = queryClient.getQueryData(LISTS_KEY);
-      queryClient.setQueryData(key, (old) =>
-        Array.isArray(old) ? old.filter((it) => it.id !== itemId) : old
-      );
       queryClient.setQueryData(LISTS_KEY, (old) =>
         Array.isArray(old)
           ? old.map((w) => w.id === activeListId ? { ...w, itemCount: Math.max(0, (w.itemCount ?? 1) - 1) } : w)
           : old
       );
-      return { prevItems, prevLists, key };
+      return { snapshots, prevLists };
     },
     onError: (_e, _id, ctx) => {
-      if (ctx?.key && ctx?.prevItems) queryClient.setQueryData(ctx.key, ctx.prevItems);
+      ctx?.snapshots?.forEach(([key, data]) => queryClient.setQueryData(key, data));
       if (ctx?.prevLists) queryClient.setQueryData(LISTS_KEY, ctx.prevLists);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: LISTS_KEY }),

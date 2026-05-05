@@ -69,6 +69,9 @@ public class WatchlistItem {
     @Column(name = "last_seen_at")
     private LocalDateTime lastSeenAt;
 
+    @Column(name = "display_order", nullable = false)
+    private Integer displayOrder;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

@@ -49,13 +49,13 @@ function assetRoute(marketType, assetCode) {
 
 function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
   return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
+    <div className="flex flex-wrap items-center gap-2">
       {lists.map((list) => {
         const active = list.id === activeId;
         return (
           <div
             key={list.id}
-            className={`group relative inline-flex items-stretch rounded-lg border transition-colors shrink-0 overflow-hidden ${
+            className={`relative inline-flex items-stretch rounded-lg border transition-colors shrink-0 overflow-hidden ${
               active
                 ? 'border-accent/50 bg-accent/10 shadow-accent/20'
                 : 'border-border-default bg-bg-elevated hover:border-accent/40 hover:bg-accent/5'
@@ -64,13 +64,14 @@ function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
             <button
               type="button"
               onClick={() => onSelect(list.id)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-transparent border-none cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-transparent border-none cursor-pointer min-w-0 ${
                 active ? 'text-accent' : 'text-fg-muted hover:text-fg'
               }`}
+              title={list.name}
             >
               {list.isDefault && <Star className="h-3 w-3 text-warning fill-warning shrink-0" />}
-              <span>{list.name}</span>
-              <span className={`text-[10px] font-mono ${active ? 'text-accent/70' : 'text-fg-subtle'}`}>
+              <span className="truncate max-w-[140px]">{list.name}</span>
+              <span className={`text-[10px] font-mono shrink-0 ${active ? 'text-accent/70' : 'text-fg-subtle'}`}>
                 {list.itemCount}
               </span>
             </button>
@@ -81,7 +82,7 @@ function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
                   e.stopPropagation();
                   onDelete(list);
                 }}
-                className={`flex items-center justify-center px-1.5 border-l opacity-0 group-hover:opacity-100 transition-opacity bg-transparent cursor-pointer ${
+                className={`flex items-center justify-center px-1.5 border-l shrink-0 bg-transparent cursor-pointer ${
                   active ? 'border-accent/30 text-accent/70 hover:text-danger' : 'border-border-default text-fg-muted hover:text-danger hover:bg-danger/5'
                 }`}
                 title="Listeyi sil"

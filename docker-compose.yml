@@ -306,9 +306,11 @@ services:
     image: opensearchproject/data-prepper:latest
     container_name: finance-data-prepper
     restart: unless-stopped
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
     volumes:
-      - ./data-prepper/pipelines.yaml:/usr/share/data-prepper/pipelines/pipelines.yaml:ro
+      - ./data-prepper/pipelines.yaml:/tmp/pipelines.template.yaml:ro
       - ./data-prepper/data-prepper-config.yaml:/usr/share/data-prepper/config/data-prepper-config.yaml:ro
+      - ./data-prepper/entrypoint.sh:/entrypoint.sh:ro
     environment:
       - OPENSEARCH_USERNAME=${OPENSEARCH_USERNAME}
       - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}

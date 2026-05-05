@@ -51,15 +51,9 @@ os_api -X PUT "$OS_URL/_index_template/kibana-type-keyword" \
 echo "Kibana index mapping template olusturuldu."
 
 # ─────────────────────────── 2. Idempotency Kontrolü ─────────────────────────
-echo "Mevcut dashboardlar kontrol ediliyor..."
-DASH_CHECK=$(dash_api "$DASH_URL/api/saved_objects/dashboard/otel-exec-dashboard" 2>/dev/null | jq -r '.id // empty' 2>/dev/null || true)
-
-if [ "$DASH_CHECK" = "otel-exec-dashboard" ]; then
-  echo "Dashboardlar zaten yuklu. Kurulum atlaniyor."
-  exit 0
-fi
-
-echo "Dashboardlar bulunamadi. Ilk kurulum baslatiliyor..."
+# Templates, roles and ISM policies are PUT-based, dashboards use overwrite=true,
+# so the whole script is idempotent and re-runs safely on every container start.
+echo "Setup baslatiliyor (idempotent re-run)..."
 
 # Template above ensures correct mapping on new indices
 

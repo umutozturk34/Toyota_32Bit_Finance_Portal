@@ -5,23 +5,36 @@ import com.finance.common.service.assetpricing.BaseAssetPricingStrategy;
 import com.finance.common.config.CommissionProperties;
 import com.finance.fund.model.Fund;
 import com.finance.fund.model.FundCandle;
+import com.finance.fund.repository.FundRepository;
 import com.finance.common.model.MarketType;
 import com.finance.common.service.AssetPricingPort;
 import com.finance.cache.service.MarketCacheService;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class FundPricingStrategy extends BaseAssetPricingStrategy {
 
     private final MarketCacheService<Fund> cacheService;
     private final CommissionProperties commissionProperties;
+    private final FundRepository repository;
 
     public FundPricingStrategy(MarketCacheService<Fund> cacheService,
-                               CommissionProperties commissionProperties) {
+                               CommissionProperties commissionProperties,
+                               FundRepository repository) {
         this.cacheService = cacheService;
         this.commissionProperties = commissionProperties;
+        this.repository = repository;
+    }
+
+    @Override
+    public Map<String, BigDecimal> getAllPricesTry() {
+        return repository.findAll().stream()
+                .filter(f -> f.getPrice() != null)
+                .collect(Collectors.toUnmodifiableMap(Fund::getCode, Fund::getPrice, (a, b) -> a));
     }
 
     @Override

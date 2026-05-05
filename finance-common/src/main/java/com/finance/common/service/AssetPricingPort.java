@@ -43,4 +43,8 @@ public interface AssetPricingPort {
                 key -> getPriceTry(key.type(), key.assetCode()),
                 (a, b) -> a));
     }
+
+    default Map<String, BigDecimal> getAllPricesTry(MarketType type) {
+        return Map.of();
+    }
 }

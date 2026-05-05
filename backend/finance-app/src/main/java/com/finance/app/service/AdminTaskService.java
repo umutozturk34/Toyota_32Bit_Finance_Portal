@@ -6,6 +6,7 @@ import com.finance.common.service.TaskTrackingService;
 import com.finance.news.service.NewsDataService;
 
 import com.finance.common.service.MarketUpdatePort;
+import com.finance.common.event.MarketUpdateEventPort;
 
 import com.finance.bond.service.BondDataService;
 
@@ -41,6 +42,7 @@ public class AdminTaskService {
     private final Executor taskExecutor;
     private final Optional<PortfolioSnapshotPort> portfolioSnapshotPort;
     private final Optional<MarketUpdatePort> marketUpdatePort;
+    private final Optional<MarketUpdateEventPort> marketUpdateEventPort;
 
     public AdminTaskService(List<MarketRefresher> refreshers,
                             TcmbForexService tcmbForexService,
@@ -49,7 +51,8 @@ public class AdminTaskService {
                             TaskTrackingService taskTracker,
                             Executor taskExecutor,
                             Optional<PortfolioSnapshotPort> portfolioSnapshotPort,
-                            Optional<MarketUpdatePort> marketUpdatePort) {
+                            Optional<MarketUpdatePort> marketUpdatePort,
+                            Optional<MarketUpdateEventPort> marketUpdateEventPort) {
         this.refreshers = EnumDispatcher.from(MarketType.class, refreshers, MarketRefresher::getMarketType);
         this.tcmbForexService = tcmbForexService;
         this.bondDataService = bondDataService;
@@ -58,6 +61,7 @@ public class AdminTaskService {
         this.taskExecutor = taskExecutor;
         this.portfolioSnapshotPort = portfolioSnapshotPort;
         this.marketUpdatePort = marketUpdatePort;
+        this.marketUpdateEventPort = marketUpdateEventPort;
     }
 
     public TaskTriggerResponse triggerSnapshot(MarketType type) {
@@ -91,6 +95,17 @@ public class AdminTaskService {
             runForexPreStep(type);
             resolveRefresher(type).refreshAll();
             triggerPortfolioSnapshot(type);
+            publishMarketEvent(type);
+        });
+    }
+
+    private void publishMarketEvent(MarketType type) {
+        marketUpdateEventPort.ifPresent(port -> {
+            try {
+                port.publishMarketUpdated(type, "admin");
+            } catch (Exception e) {
+                log.warn("Market event publish failed for {}: {}", type, e.getMessage());
+            }
         });
     }
 

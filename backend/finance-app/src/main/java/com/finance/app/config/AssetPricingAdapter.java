@@ -30,6 +30,21 @@ public class AssetPricingAdapter implements AssetPricingPort {
     }
 
     @Override
+    public Map<String, BigDecimal> getAllPricesTry(MarketType type) {
+        AssetPricingStrategy strategy = strategies.get(type);
+        if (strategy == null) {
+            log.warn("Unknown asset type: {}", type);
+            return Map.of();
+        }
+        try {
+            return strategy.getAllPricesTry();
+        } catch (Exception e) {
+            log.warn("Failed to get all prices for {} - {}", type, e.getMessage());
+            return Map.of();
+        }
+    }
+
+    @Override
     public BigDecimal getSellPriceTry(MarketType type, String assetCode) {
         return dispatch(type, assetCode, "sell price", null, strategy -> strategy.getSellPriceTry(assetCode));
     }

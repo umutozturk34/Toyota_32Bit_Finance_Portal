@@ -3,6 +3,7 @@ package com.finance.crypto.service.assetpricing;
 import com.finance.common.config.CommissionProperties;
 import com.finance.crypto.model.Crypto;
 import com.finance.crypto.model.CryptoCandle;
+import com.finance.crypto.repository.CryptoRepository;
 import com.finance.common.model.MarketType;
 import com.finance.common.service.AssetPricingPort;
 import com.finance.common.service.assetpricing.BaseAssetPricingStrategy;
@@ -10,17 +11,29 @@ import com.finance.cache.service.MarketCacheService;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
 
     private final MarketCacheService<Crypto> cacheService;
     private final CommissionProperties commissionProperties;
+    private final CryptoRepository repository;
 
     public CryptoPricingStrategy(MarketCacheService<Crypto> cacheService,
-                                 CommissionProperties commissionProperties) {
+                                 CommissionProperties commissionProperties,
+                                 CryptoRepository repository) {
         this.cacheService = cacheService;
         this.commissionProperties = commissionProperties;
+        this.repository = repository;
+    }
+
+    @Override
+    public Map<String, BigDecimal> getAllPricesTry() {
+        return repository.findAll().stream()
+                .filter(c -> c.getCurrentPriceTry() != null)
+                .collect(Collectors.toUnmodifiableMap(Crypto::getCode, Crypto::getCurrentPriceTry, (a, b) -> a));
     }
 
     @Override

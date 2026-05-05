@@ -7,10 +7,14 @@ import com.finance.common.event.MarketUpdateEventPort;
 
 
 import com.finance.common.model.MarketType;
+import com.finance.common.service.AssetPricingPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.util.Map;
 
 @Log4j2
 @Component
@@ -18,16 +22,18 @@ import org.springframework.stereotype.Component;
 public class KafkaMarketEventAdapter implements MarketUpdateEventPort {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final AssetPricingPort assetPricingPort;
 
     @Override
     public void publishMarketUpdated(MarketType marketType, String source) {
-        MarketUpdatedEvent event = MarketUpdatedEvent.of(marketType, source);
+        Map<String, BigDecimal> latestPrices = assetPricingPort.getAllPricesTry(marketType);
+        MarketUpdatedEvent event = MarketUpdatedEvent.of(marketType, source, latestPrices);
         kafkaTemplate.send(KafkaTopics.MARKET_UPDATED, marketType.name(), event)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Failed to publish market.updated for {}: {}", marketType, ex.getMessage());
                     } else {
-                        log.debug("Published market.updated for {}", marketType);
+                        log.debug("Published market.updated for {} with {} prices", marketType, latestPrices.size());
                     }
                 });
     }

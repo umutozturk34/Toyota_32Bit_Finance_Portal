@@ -1,20 +1,17 @@
 package com.finance.cache.service;
-import com.finance.cache.service.MarketCacheService;
-
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.common.exception.ResourceNotFoundException;
-
-import lombok.RequiredArgsConstructor;
+import com.finance.common.model.BaseAsset;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.RedisTemplate;
+
 import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Function;
 
 @Log4j2
-@RequiredArgsConstructor
-public class MarketCacheService<T> {
+public class MarketCacheService<T extends BaseAsset> {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
     private final String snapshotPrefix;
@@ -22,6 +19,22 @@ public class MarketCacheService<T> {
     private final Class<T> snapshotType;
     private final String entityName;
     private final Function<String, Optional<T>> snapshotFinder;
+
+    public MarketCacheService(RedisTemplate<String, Object> redisTemplate,
+                              ObjectMapper objectMapper,
+                              String snapshotPrefix,
+                              Duration ttl,
+                              Class<T> snapshotType,
+                              String entityName,
+                              Function<String, Optional<T>> snapshotFinder) {
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
+        this.snapshotPrefix = snapshotPrefix;
+        this.ttl = ttl;
+        this.snapshotType = snapshotType;
+        this.entityName = entityName;
+        this.snapshotFinder = snapshotFinder;
+    }
 
     public T getSnapshot(String key) {
         String cacheKey = snapshotPrefix + key;
@@ -31,8 +44,9 @@ public class MarketCacheService<T> {
         }
         Optional<T> entity = snapshotFinder.apply(key);
         if (entity.isPresent()) {
-            redisTemplate.opsForValue().set(cacheKey, entity.get(), ttl);
-            return entity.get();
+            T loaded = entity.get();
+            redisTemplate.opsForValue().set(cacheKey, loaded, ttl);
+            return loaded;
         }
         throw new ResourceNotFoundException(entityName + " not found: " + key);
     }

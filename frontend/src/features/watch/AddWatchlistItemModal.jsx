@@ -1,17 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Zap } from 'lucide-react';
-import { useAddWatchlistItem, useAddToFavorites } from '../../shared/hooks/useWatchlist';
+import { Eye, ListChecks, FileText, Percent, Search, Star, ChevronDown, Check } from 'lucide-react';
+import BaseModal from '../../shared/components/BaseModal';
+import SearchSuggestions from '../../shared/components/SearchSuggestions';
+import {
+  useWatchlists,
+  useAddWatchlistItem,
+  useAddToFavorites,
+} from '../../shared/hooks/useWatchlist';
 import { toast } from '../../shared/components/Toast';
-
-const MARKET_OPTIONS = [
-  { value: 'CRYPTO', label: 'Crypto' },
-  { value: 'STOCK', label: 'Stock' },
-  { value: 'FOREX', label: 'Forex' },
-  { value: 'FUND', label: 'Fund' },
-  { value: 'COMMODITY', label: 'Emtia' },
-  { value: 'BOND', label: 'Bond' },
-];
+import { extractApiError } from '../../shared/utils/apiError';
+import { ASSET_TYPE_LABELS } from '../../shared/constants/assetTypes';
 
 export default function AddWatchlistItemModal({
   isOpen,
@@ -20,25 +19,48 @@ export default function AddWatchlistItemModal({
   defaultMarketType,
   defaultAssetCode,
 }) {
+  const lists = useWatchlists();
+  const watchlists = useMemo(() => lists.data ?? [], [lists.data]);
   const add = useAddWatchlistItem();
   const addToFavorites = useAddToFavorites();
-  const [marketType, setMarketType] = useState(defaultMarketType ?? 'CRYPTO');
-  const [assetCode, setAssetCode] = useState(defaultAssetCode ?? '');
+
+  const [selectedListId, setSelectedListId] = useState(null);
+  const [selectedAsset, setSelectedAsset] = useState(null);
   const [note, setNote] = useState('');
   const [deltaThreshold, setDeltaThreshold] = useState('');
+  const [listMenuOpen, setListMenuOpen] = useState(false);
+  const listMenuRef = useRef(null);
 
   useEffect(() => {
-    if (isOpen) {
-      setMarketType(defaultMarketType ?? 'CRYPTO');
-      setAssetCode(defaultAssetCode ?? '');
-      setNote('');
-      setDeltaThreshold('');
+    if (!listMenuOpen) return;
+    const handler = (e) => {
+      if (!listMenuRef.current?.contains(e.target)) setListMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [listMenuOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setNote('');
+    setDeltaThreshold('');
+    if (defaultMarketType && defaultAssetCode) {
+      setSelectedAsset({ type: defaultMarketType, code: defaultAssetCode, name: defaultAssetCode });
+    } else {
+      setSelectedAsset(null);
     }
-  }, [isOpen, defaultMarketType, defaultAssetCode]);
+    if (watchlistId != null) {
+      setSelectedListId(watchlistId);
+    } else {
+      const def = watchlists.find((w) => w.isDefault) ?? watchlists[0];
+      setSelectedListId(def?.id ?? null);
+    }
+  }, [isOpen, defaultMarketType, defaultAssetCode, watchlistId, watchlists]);
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!assetCode.trim()) return toast.error('Asset kodu gerekli');
+    if (!selectedAsset) return toast.error('Bir asset seç');
+    if (selectedListId == null) return toast.error('Bir liste seç');
     let numericThreshold = null;
     if (deltaThreshold !== '') {
       const parsed = Number.parseFloat(deltaThreshold);
@@ -48,131 +70,189 @@ export default function AddWatchlistItemModal({
       numericThreshold = parsed;
     }
     const payload = {
-      marketType,
-      assetCode: assetCode.trim().toUpperCase(),
+      marketType: selectedAsset.type,
+      assetCode: selectedAsset.code,
       note: note.trim() || null,
       deltaThreshold: numericThreshold,
     };
     try {
-      if (watchlistId != null) {
-        await add.mutateAsync({ watchlistId, ...payload });
-      } else {
+      const targetList = watchlists.find((w) => w.id === selectedListId);
+      if (targetList?.isDefault) {
         await addToFavorites.mutateAsync(payload);
+      } else {
+        await add.mutateAsync({ watchlistId: selectedListId, ...payload });
       }
-      toast.success('Takip listesine eklendi');
+      toast.success(`${selectedAsset.code} → ${targetList?.name ?? 'liste'}`);
       onClose();
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message ?? 'Ekleme başarısız');
+      toast.error(extractApiError(err, 'Ekleme başarısız'));
     }
   };
 
+  const pending = add.isPending || addToFavorites.isPending;
+  const subtitle = selectedAsset
+    ? `${selectedAsset.code} (${ASSET_TYPE_LABELS[selectedAsset.type] ?? selectedAsset.type})`
+    : 'Önce asset seç, sonra listeye ekle';
+  const selectedList = watchlists.find((w) => w.id === selectedListId);
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 8 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[80] w-[92vw] max-w-md rounded-2xl border border-border-default bg-bg-deep shadow-2xl"
-          >
-            <header className="flex items-center justify-between px-5 h-14 border-b border-border-default">
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-warning" />
-                <h2 className="text-sm font-bold text-fg tracking-tight font-display">Takip listesine ekle</h2>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </header>
-
-            <form onSubmit={submit} className="p-5 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">Pazar</label>
-                <select
-                  value={marketType}
-                  onChange={(e) => setMarketType(e.target.value)}
-                  disabled={!!defaultMarketType}
-                  className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-sm text-fg outline-none focus:border-accent transition-colors disabled:opacity-60"
-                >
-                  {MARKET_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">Asset kodu</label>
-                <input
-                  type="text"
-                  value={assetCode}
-                  onChange={(e) => setAssetCode(e.target.value)}
-                  disabled={!!defaultAssetCode}
-                  placeholder="örn. BTC, AAPL, USDTRY"
-                  className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-sm font-mono text-fg outline-none focus:border-accent transition-colors disabled:opacity-60"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">Not (opsiyonel)</label>
-                <input
-                  type="text"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  maxLength={255}
-                  placeholder="ETF spot dönemi"
-                  className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-sm text-fg outline-none focus:border-accent transition-colors"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">% değişim eşiği (opsiyonel)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={deltaThreshold}
-                  onChange={(e) => setDeltaThreshold(e.target.value)}
-                  placeholder="varsayılan 5"
-                  className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-sm font-mono text-fg outline-none focus:border-accent transition-colors"
-                />
-                <p className="text-[10px] text-fg-subtle leading-relaxed">
-                  Boş bırakırsan varsayılan global eşik kullanılır. Bu eşiği aşan değişimlerde bildirim atılır.
-                </p>
-              </div>
-
-              <footer className="flex items-center justify-end gap-2 pt-2 border-t border-border-default">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      icon={Eye}
+      title="Listeye ekle"
+      subtitle={subtitle}
+      size="md"
+    >
+      <form onSubmit={submit} noValidate className="space-y-4">
+        {!defaultAssetCode && (
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
+              <Search className="h-3 w-3" />
+              Asset Ara
+            </label>
+            {selectedAsset ? (
+              <div className="flex items-center justify-between gap-2 rounded-lg border border-accent/40 bg-accent/5 px-3 py-2.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  {selectedAsset.image && (
+                    <img src={selectedAsset.image} alt={selectedAsset.code} className="w-6 h-6 rounded shrink-0" />
+                  )}
+                  <span className="text-sm font-mono font-semibold text-fg truncate">{selectedAsset.code}</span>
+                  {selectedAsset.name && (
+                    <span className="text-xs text-fg-muted truncate">· {selectedAsset.name}</span>
+                  )}
+                </div>
                 <button
                   type="button"
-                  onClick={onClose}
-                  className="px-3 py-2 rounded-lg text-xs font-medium text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border border-border-default cursor-pointer"
+                  onClick={() => setSelectedAsset(null)}
+                  className="text-[11px] font-medium text-fg-muted hover:text-fg transition-colors bg-transparent border-none cursor-pointer"
                 >
-                  İptal
+                  Değiştir
                 </button>
-                <button
-                  type="submit"
-                  disabled={add.isPending || addToFavorites.isPending}
-                  className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright transition-colors border-none cursor-pointer disabled:opacity-50"
+              </div>
+            ) : (
+              <SearchSuggestions
+                placeholder="BTC, AAPL, USDTRY..."
+                navigateOnSelect={false}
+                onSelect={(asset) => setSelectedAsset(asset)}
+              />
+            )}
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
+            <ListChecks className="h-3 w-3" />
+            Liste
+          </label>
+          <div ref={listMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setListMenuOpen((o) => !o)}
+              className="w-full flex items-center justify-between gap-2 rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg outline-none hover:border-border-hover focus:ring-1 focus:ring-accent/50 transition-all cursor-pointer"
+            >
+              <span className="flex items-center gap-2 min-w-0">
+                {selectedList?.isDefault && (
+                  <Star className="h-3.5 w-3.5 text-warning fill-warning shrink-0" />
+                )}
+                <span className="truncate">{selectedList?.name ?? 'Liste seç'}</span>
+                {selectedList && (
+                  <span className="text-[11px] font-mono text-fg-subtle shrink-0">
+                    {selectedList.itemCount}
+                  </span>
+                )}
+              </span>
+              <ChevronDown
+                className={`h-4 w-4 text-fg-muted transition-transform shrink-0 ${
+                  listMenuOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+            <AnimatePresence>
+              {listMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                  transition={{ duration: 0.14 }}
+                  style={{ background: 'rgb(20, 20, 28)' }}
+                  className="absolute z-50 left-0 right-0 mt-1.5 rounded-lg border border-border-default shadow-xl overflow-hidden max-h-60 overflow-y-auto"
                 >
-                  {add.isPending || addToFavorites.isPending ? 'Ekleniyor…' : 'Ekle'}
-                </button>
-              </footer>
-            </form>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+                  {watchlists.map((w) => {
+                    const active = w.id === selectedListId;
+                    return (
+                      <button
+                        key={w.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedListId(w.id);
+                          setListMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left transition-colors border-none cursor-pointer ${
+                          active
+                            ? 'bg-accent/15 text-accent'
+                            : 'bg-transparent text-fg hover:bg-accent/8'
+                        }`}
+                      >
+                        {w.isDefault ? (
+                          <Star className="h-3.5 w-3.5 text-warning fill-warning shrink-0" />
+                        ) : (
+                          <span className="w-3.5 h-3.5 shrink-0" />
+                        )}
+                        <span className="flex-1 truncate">{w.name}</span>
+                        <span className="text-[11px] font-mono text-fg-subtle">{w.itemCount}</span>
+                        {active && <Check className="h-3.5 w-3.5 text-accent shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
+            <FileText className="h-3 w-3" />
+            Not <span className="text-fg-subtle font-normal">(opsiyonel)</span>
+          </label>
+          <input
+            type="text"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            maxLength={255}
+            placeholder="ETF spot dönemi"
+            className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
+            <Percent className="h-3 w-3" />
+            % Değişim Eşiği <span className="text-fg-subtle font-normal">(opsiyonel)</span>
+          </label>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            value={deltaThreshold}
+            onChange={(e) => setDeltaThreshold(e.target.value)}
+            placeholder="varsayılan 5"
+            className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+          />
+          <p className="text-[11px] text-fg-subtle leading-relaxed">
+            Boş bırakırsan global %5 eşiği kullanılır.
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          disabled={pending || !selectedAsset || selectedListId == null}
+          className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer disabled:opacity-50"
+        >
+          {pending ? 'Ekleniyor…' : 'Listeye Ekle'}
+        </button>
+      </form>
+    </BaseModal>
   );
 }

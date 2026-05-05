@@ -1,10 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Eye, AlertCircle, Plus, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown,
   Loader2, Inbox, Star, ListPlus,
 } from 'lucide-react';
 import PageHeader from '../../shared/components/PageHeader';
+import AssetBadge from '../../shared/components/AssetBadge';
+import ConfirmDialog from '../../shared/components/ConfirmDialog';
+import useAppStore from '../../shared/stores/useAppStore';
+import { useAssetMeta } from '../../shared/hooks/useAssetMeta';
+import { useAssetDetailPrefetch } from '../../shared/hooks/useAssetDetailPrefetch';
 import {
   useWatchlists,
   useWatchlistItems,
@@ -16,11 +22,8 @@ import AddPriceAlertModal from './AddPriceAlertModal';
 import AddWatchlistItemModal from './AddWatchlistItemModal';
 import CreateWatchlistModal from './CreateWatchlistModal';
 import { toast } from '../../shared/components/Toast';
-
-const MARKET_LABELS = {
-  CRYPTO: 'Crypto', STOCK: 'Stock', FOREX: 'Forex',
-  FUND: 'Fund', COMMODITY: 'Emtia', BOND: 'Bond', NEWS: 'News',
-};
+import { extractApiError } from '../../shared/utils/apiError';
+import { formatPriceTRY, formatPercent, getChangeClass, changeColors, changeBg } from '../../shared/utils/formatters';
 
 const DIRECTION_META = {
   ABOVE: { label: 'üstüne', Icon: ArrowUp, tint: 'text-success' },
@@ -29,31 +32,18 @@ const DIRECTION_META = {
   CHANGE_PCT_DOWN: { label: '% düşüş', Icon: TrendingDown, tint: 'text-danger' },
 };
 
-function formatNumber(value) {
-  if (value == null) return '—';
-  const num = Number(value);
-  if (Number.isNaN(num)) return '—';
-  return num.toLocaleString('tr-TR', { maximumFractionDigits: 4 });
-}
+const ROUTE_BY_TYPE = {
+  CRYPTO: (code) => `/crypto/${code}`,
+  STOCK: (code) => `/stocks/${code}`,
+  FOREX: (code) => `/forex/${code}`,
+  FUND: (code) => `/funds/${code}`,
+  COMMODITY: (code) => `/commodities/${code}`,
+  BOND: () => '/bonds',
+};
 
-function relativeTime(iso) {
-  if (!iso) return '—';
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const min = Math.round(diffMs / 60000);
-  if (min < 1) return 'az önce';
-  if (min < 60) return `${min} dk önce`;
-  const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr} sa önce`;
-  const day = Math.round(hr / 24);
-  return `${day} gün önce`;
-}
-
-function MarketBadge({ marketType }) {
-  return (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide bg-surface text-fg-muted">
-      {MARKET_LABELS[marketType] ?? marketType}
-    </span>
-  );
+function assetRoute(marketType, assetCode) {
+  const builder = ROUTE_BY_TYPE[marketType];
+  return builder ? builder(assetCode) : null;
 }
 
 function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
@@ -62,39 +52,49 @@ function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
       {lists.map((list) => {
         const active = list.id === activeId;
         return (
-          <button
+          <div
             key={list.id}
-            onClick={() => onSelect(list.id)}
-            className={`group relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors shrink-0 cursor-pointer ${
+            className={`group relative inline-flex items-stretch rounded-lg border transition-colors shrink-0 overflow-hidden ${
               active
-                ? 'border-accent/50 bg-accent/10 text-accent'
-                : 'border-border-default bg-bg-elevated text-fg-muted hover:border-border-hover hover:text-fg'
+                ? 'border-accent/50 bg-accent/10 shadow-accent/20'
+                : 'border-border-default bg-bg-elevated hover:border-accent/40 hover:bg-accent/5'
             }`}
           >
-            {list.isDefault && <Star className="h-3 w-3 text-warning fill-warning" />}
-            <span>{list.name}</span>
-            <span className={`text-[10px] font-mono ${active ? 'text-accent/60' : 'text-fg-subtle'}`}>
-              {list.itemCount}
-            </span>
+            <button
+              type="button"
+              onClick={() => onSelect(list.id)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-transparent border-none cursor-pointer ${
+                active ? 'text-accent' : 'text-fg-muted hover:text-fg'
+              }`}
+            >
+              {list.isDefault && <Star className="h-3 w-3 text-warning fill-warning shrink-0" />}
+              <span>{list.name}</span>
+              <span className={`text-[10px] font-mono ${active ? 'text-accent/70' : 'text-fg-subtle'}`}>
+                {list.itemCount}
+              </span>
+            </button>
             {!list.isDefault && (
-              <span
-                role="button"
+              <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(list);
                 }}
-                className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-4 h-4 rounded text-fg-muted hover:text-danger cursor-pointer"
+                className={`flex items-center justify-center px-1.5 border-l opacity-0 group-hover:opacity-100 transition-opacity bg-transparent cursor-pointer ${
+                  active ? 'border-accent/30 text-accent/70 hover:text-danger' : 'border-border-default text-fg-muted hover:text-danger hover:bg-danger/5'
+                }`}
                 title="Listeyi sil"
               >
                 <Trash2 className="h-3 w-3" />
-              </span>
+              </button>
             )}
-          </button>
+          </div>
         );
       })}
       <button
+        type="button"
         onClick={onCreate}
-        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border border-dashed border-border-default text-fg-muted hover:border-accent/50 hover:text-accent transition-colors shrink-0 cursor-pointer bg-transparent"
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border border-dashed border-border-default text-fg-muted hover:border-accent hover:text-accent hover:bg-accent/5 transition-colors shrink-0 cursor-pointer bg-transparent"
       >
         <ListPlus className="h-3.5 w-3.5" />
         Yeni liste
@@ -104,75 +104,142 @@ function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
 }
 
 function WatchlistRow({ item, onRemove }) {
+  const navigate = useNavigate();
+  const meta = useAssetMeta(item.marketType, item.assetCode);
+  const asset = meta.data;
+  const route = assetRoute(item.marketType, item.assetCode);
+  const prefetch = useAssetDetailPrefetch();
+  const triggerPrefetch = () => prefetch(item.marketType, item.assetCode);
+
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: 80 }}
-      transition={{ duration: 0.18 }}
-      className="grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center px-4 py-3 hover:bg-surface/50 transition-colors group"
+    <div
+      onClick={route ? () => navigate(route) : undefined}
+      onMouseEnter={triggerPrefetch}
+      onFocus={triggerPrefetch}
+      className={`group grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center px-4 py-3 transition-colors ${
+        route ? 'cursor-pointer hover:bg-accent/5' : ''
+      }`}
     >
-      <MarketBadge marketType={item.marketType} />
+      <AssetBadge
+        assetType={item.marketType}
+        assetCode={item.assetCode}
+        assetImage={asset?.image}
+        size="md"
+      />
       <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-mono font-semibold text-fg truncate">{item.assetCode}</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm font-semibold text-fg truncate group-hover:text-accent transition-colors">
+            {asset?.name || asset?.assetName || item.assetCode}
+          </span>
           {item.deltaThreshold != null && (
-            <span className="text-[10px] font-mono text-accent">±{item.deltaThreshold}%</span>
+            <span className="text-[10px] font-mono text-accent shrink-0">±{item.deltaThreshold}%</span>
           )}
         </div>
-        {item.note && <p className="text-[11px] text-fg-muted truncate">{item.note}</p>}
+        <div className="flex items-center gap-2 text-[11px] text-fg-muted">
+          <span className="font-mono">{item.assetCode}</span>
+          {item.note && (
+            <>
+              <span className="text-fg-subtle">·</span>
+              <span className="truncate">{item.note}</span>
+            </>
+          )}
+        </div>
       </div>
       <div className="text-right">
-        <div className="text-xs font-mono text-fg">{formatNumber(item.lastSeenPrice)}</div>
-        <div className="text-[10px] text-fg-subtle">{relativeTime(item.lastSeenAt)}</div>
+        <div className="text-sm font-mono font-semibold text-fg tabular-nums">
+          {asset?.price != null ? formatPriceTRY(asset.price) : '—'}
+        </div>
+        {asset?.changePercent != null && (() => {
+          const cls = getChangeClass(asset.changePercent);
+          const isUp = asset.changePercent > 0;
+          const isDown = asset.changePercent < 0;
+          const ChangeIcon = isUp ? TrendingUp : isDown ? TrendingDown : null;
+          return (
+            <div className={`mt-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold tabular-nums ${changeBg[cls]} ${changeColors[cls]}`}>
+              {ChangeIcon && <ChangeIcon className="h-3 w-3" />}
+              <span>{formatPercent(asset.changePercent)}</span>
+              {asset?.changeAmount != null && (
+                <span className="font-normal opacity-70">
+                  ({isUp ? '+' : ''}{Number(asset.changeAmount).toLocaleString('tr-TR', { maximumFractionDigits: 2 })})
+                </span>
+              )}
+            </div>
+          );
+        })()}
       </div>
       <button
-        onClick={() => onRemove(item.id)}
-        className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-danger hover:bg-danger/5 bg-transparent border-none cursor-pointer"
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onRemove(item.id);
+        }}
+        className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:text-danger hover:bg-danger/5 bg-transparent border-none cursor-pointer"
         title="Listeden çıkar"
       >
-        <Trash2 className="h-3.5 w-3.5" />
+        <Trash2 className="h-4 w-4" />
       </button>
-    </motion.div>
+    </div>
   );
 }
 
 function AlertRow({ alert, onDelete }) {
-  const meta = DIRECTION_META[alert.direction] ?? DIRECTION_META.ABOVE;
-  const { Icon, tint } = meta;
+  const navigate = useNavigate();
+  const dir = DIRECTION_META[alert.direction] ?? DIRECTION_META.ABOVE;
+  const { Icon, tint } = dir;
   const isFired = !alert.active && alert.triggeredAt;
+  const meta = useAssetMeta(alert.marketType, alert.assetCode);
+  const asset = meta.data;
+  const route = assetRoute(alert.marketType, alert.assetCode);
+  const prefetch = useAssetDetailPrefetch();
+  const triggerPrefetch = () => prefetch(alert.marketType, alert.assetCode);
+
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: 80 }}
-      transition={{ duration: 0.18 }}
-      className={`grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 items-center px-4 py-3 hover:bg-surface/50 transition-colors group ${
-        isFired ? 'opacity-60' : ''
-      }`}
+    <div
+      onClick={route ? () => navigate(route) : undefined}
+      onMouseEnter={triggerPrefetch}
+      onFocus={triggerPrefetch}
+      className={`group grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 items-center px-4 py-3 transition-colors ${
+        route ? 'cursor-pointer hover:bg-accent/5' : ''
+      } ${isFired ? 'opacity-60' : ''}`}
     >
-      <MarketBadge marketType={alert.marketType} />
-      <span className="text-sm font-mono font-semibold text-fg truncate">{alert.assetCode}</span>
-      <div className={`flex items-center gap-1 text-[11px] font-medium ${tint}`}>
-        <Icon className="h-3 w-3" />
-        <span>{meta.label}</span>
+      <AssetBadge
+        assetType={alert.marketType}
+        assetCode={alert.assetCode}
+        assetImage={asset?.image}
+        size="md"
+      />
+      <div className="min-w-0">
+        <div className="text-sm font-semibold text-fg truncate group-hover:text-accent transition-colors">
+          {asset?.name || asset?.assetName || alert.assetCode}
+        </div>
+        <div className="text-[11px] text-fg-muted font-mono">{alert.assetCode}</div>
       </div>
-      <span className="text-xs font-mono text-fg">{formatNumber(alert.threshold)}</span>
-      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
+      <div className={`flex items-center gap-1 text-[11px] font-medium ${tint}`}>
+        <Icon className="h-3.5 w-3.5" />
+        <span>{dir.label}</span>
+      </div>
+      <span className="text-sm font-mono font-semibold text-fg tabular-nums min-w-[90px] text-right">
+        ₺{Number(alert.threshold).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
+      </span>
+      <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded shrink-0 ${
         isFired ? 'bg-fg-subtle/10 text-fg-subtle' : 'bg-success/10 text-success'
       }`}>
         {isFired ? 'tetiklendi' : 'aktif'}
       </span>
       <button
-        onClick={() => onDelete(alert.id)}
-        className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-danger hover:bg-danger/5 bg-transparent border-none cursor-pointer"
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onDelete(alert.id);
+        }}
+        className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:text-danger hover:bg-danger/5 bg-transparent border-none cursor-pointer"
         title="Sil"
       >
-        <Trash2 className="h-3.5 w-3.5" />
+        <Trash2 className="h-4 w-4" />
       </button>
-    </motion.div>
+    </div>
   );
 }
 
@@ -180,26 +247,30 @@ export default function WatchPage() {
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [createListOpen, setCreateListOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
-  const [activeListId, setActiveListId] = useState(null);
+  const [pendingDeleteList, setPendingDeleteList] = useState(null);
+  const activeListId = useAppStore((s) => s.activeWatchlistId);
+  const setActiveListId = useAppStore((s) => s.setActiveWatchlistId);
 
   const lists = useWatchlists();
   const watchlists = useMemo(() => lists.data ?? [], [lists.data]);
 
   useEffect(() => {
-    if (activeListId == null && watchlists.length > 0) {
+    if (watchlists.length === 0) return;
+    const stillExists = activeListId != null && watchlists.some((w) => w.id === activeListId);
+    if (!stillExists) {
       const def = watchlists.find((w) => w.isDefault) ?? watchlists[0];
       setActiveListId(def.id);
     }
-  }, [activeListId, watchlists]);
+  }, [activeListId, watchlists, setActiveListId]);
 
   const items = useWatchlistItems(activeListId);
   const alerts = usePriceAlerts({ page: 0, size: 100 });
-  const removeWatchlistItem = useRemoveWatchlistItem();
+  const removeWatchlistItem = useRemoveWatchlistItem(activeListId);
   const deletePriceAlert = useDeletePriceAlert();
   const deleteWatchlist = useDeleteWatchlist();
 
   const watchItems = items.data ?? [];
-  const alertItems = alerts.data?.items ?? [];
+  const alertItems = alerts.data?.content ?? alerts.data?.items ?? [];
   const activeList = watchlists.find((w) => w.id === activeListId);
 
   const handleRemoveWatchlistItem = async (id) => {
@@ -207,7 +278,7 @@ export default function WatchPage() {
       await removeWatchlistItem.mutateAsync(id);
       toast.success('Listeden çıkarıldı');
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message ?? 'Silme başarısız');
+      toast.error(extractApiError(err, 'Silme başarısız'));
     }
   };
 
@@ -216,19 +287,25 @@ export default function WatchPage() {
       await deletePriceAlert.mutateAsync(id);
       toast.success('Alarm silindi');
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message ?? 'Silme başarısız');
+      toast.error(extractApiError(err, 'Silme başarısız'));
     }
   };
 
-  const handleDeleteList = async (list) => {
+  const requestDeleteList = (list) => {
     if (list.isDefault) return;
-    if (!window.confirm(`"${list.name}" listesini silmek istediğine emin misin?`)) return;
+    setPendingDeleteList(list);
+  };
+
+  const confirmDeleteList = async () => {
+    const list = pendingDeleteList;
+    if (!list) return;
+    setPendingDeleteList(null);
     try {
       await deleteWatchlist.mutateAsync(list.id);
       toast.success('Liste silindi');
       if (activeListId === list.id) setActiveListId(null);
     } catch (err) {
-      toast.error(err?.response?.data?.error?.message ?? 'Silme başarısız');
+      toast.error(extractApiError(err, 'Silme başarısız'));
     }
   };
 
@@ -245,20 +322,23 @@ export default function WatchPage() {
         loading={lists.isFetching || items.isFetching || alerts.isFetching}
       />
 
-      <section className="rounded-xl border border-border-default bg-bg-elevated overflow-hidden">
+      <section className="rounded-xl border border-border-default bg-bg-elevated card-hover overflow-hidden">
         <header className="flex items-center justify-between px-4 py-3 border-b border-border-default gap-3">
           <div className="flex items-center gap-2 shrink-0">
             <Star className="h-4 w-4 text-warning" />
             <h2 className="text-sm font-bold text-fg tracking-tight">Takip listelerim</h2>
           </div>
-          <button
+          <motion.button
             onClick={() => setAddItemOpen(true)}
             disabled={activeListId == null}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright transition-colors border-none cursor-pointer disabled:opacity-50"
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright shadow-lg shadow-accent/20 transition-colors border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="h-3.5 w-3.5" />
             Asset ekle
-          </button>
+          </motion.button>
         </header>
         <div className="px-4 py-3 border-b border-border-default">
           {lists.isLoading ? (
@@ -272,15 +352,15 @@ export default function WatchPage() {
               activeId={activeListId}
               onSelect={setActiveListId}
               onCreate={() => setCreateListOpen(true)}
-              onDelete={handleDeleteList}
+              onDelete={requestDeleteList}
             />
           )}
         </div>
         <div className="grid grid-cols-[auto_1fr_auto_auto] gap-3 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
-          <span>Pazar</span>
-          <span>Asset</span>
+          <span className="w-9">&nbsp;</span>
+          <span>Varlık</span>
           <span className="text-right">Son fiyat</span>
-          <span />
+          <span className="w-8" />
         </div>
         <div className="divide-y divide-border-default">
           {items.isLoading || activeListId == null ? (
@@ -292,19 +372,17 @@ export default function WatchPage() {
             <EmptyState
               icon={<Inbox className="h-5 w-5 text-fg-subtle" />}
               title={activeList ? `"${activeList.name}" listesi boş` : 'Liste boş'}
-              hint="Bir crypto, stock veya forex ekle, hareketleri buradan izle."
+              hint="Bir crypto, hisse, döviz veya fon ekle, hareketleri buradan izle."
             />
           ) : (
-            <AnimatePresence initial={false}>
-              {watchItems.map((item) => (
-                <WatchlistRow key={item.id} item={item} onRemove={handleRemoveWatchlistItem} />
-              ))}
-            </AnimatePresence>
+            watchItems.map((item) => (
+              <WatchlistRow key={item.id} item={item} onRemove={handleRemoveWatchlistItem} />
+            ))
           )}
         </div>
       </section>
 
-      <section className="rounded-xl border border-border-default bg-bg-elevated overflow-hidden">
+      <section className="rounded-xl border border-border-default bg-bg-elevated card-hover overflow-hidden">
         <header className="flex items-center justify-between px-4 py-3 border-b border-border-default">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-accent" />
@@ -313,21 +391,24 @@ export default function WatchPage() {
               {alertItems.length}
             </span>
           </div>
-          <button
+          <motion.button
             onClick={() => setAlertOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright transition-colors border-none cursor-pointer"
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright shadow-lg shadow-accent/20 transition-colors border-none cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5" />
             Alarm oluştur
-          </button>
+          </motion.button>
         </header>
-        <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
-          <span>Pazar</span>
-          <span>Asset</span>
+        <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
+          <span className="w-9">&nbsp;</span>
+          <span>Varlık</span>
           <span>Yön</span>
-          <span>Eşik</span>
+          <span className="text-right min-w-[90px]">Eşik</span>
           <span>Durum</span>
-          <span />
+          <span className="w-8" />
         </div>
         <div className="divide-y divide-border-default">
           {alerts.isLoading ? (
@@ -342,11 +423,9 @@ export default function WatchPage() {
               hint="Bir asset için ABOVE/BELOW veya yüzde değişim alarmı kur."
             />
           ) : (
-            <AnimatePresence initial={false}>
-              {alertItems.map((alert) => (
-                <AlertRow key={alert.id} alert={alert} onDelete={handleDeleteAlert} />
-              ))}
-            </AnimatePresence>
+            alertItems.map((alert) => (
+              <AlertRow key={alert.id} alert={alert} onDelete={handleDeleteAlert} />
+            ))
           )}
         </div>
       </section>
@@ -362,18 +441,41 @@ export default function WatchPage() {
         onClose={() => setCreateListOpen(false)}
         onCreated={(list) => setActiveListId(list.id)}
       />
+      <ConfirmDialog
+        open={pendingDeleteList != null}
+        title="Listeyi sil?"
+        message={pendingDeleteList ? `"${pendingDeleteList.name}" ve içindeki tüm assetler kalıcı olarak silinecek.` : ''}
+        confirmLabel="Sil"
+        cancelLabel="Vazgeç"
+        variant="danger"
+        loading={deleteWatchlist.isPending}
+        onConfirm={confirmDeleteList}
+        onCancel={() => setPendingDeleteList(null)}
+      />
     </div>
   );
 }
 
 function EmptyState({ icon, title, hint }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 py-14 px-4 text-center">
-      <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-surface mb-1">
-        {icon}
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="flex flex-col items-center justify-center gap-2 py-14 px-4 text-center"
+    >
+      <div className="relative mb-2">
+        <div className="absolute inset-0 rounded-2xl bg-accent/15 blur-xl -z-10" />
+        <motion.div
+          animate={{ y: [0, -3, 0] }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+          className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-accent/15 to-accent-secondary/10 border border-accent/20"
+        >
+          {icon}
+        </motion.div>
       </div>
-      <p className="text-sm font-medium text-fg-muted">{title}</p>
-      <p className="text-[11px] text-fg-subtle max-w-xs">{hint}</p>
-    </div>
+      <p className="text-sm font-semibold text-fg">{title}</p>
+      <p className="text-[11px] text-fg-subtle max-w-xs leading-relaxed">{hint}</p>
+    </motion.div>
   );
 }

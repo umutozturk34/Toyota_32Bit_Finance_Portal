@@ -7,7 +7,6 @@ import com.finance.common.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.model.MarketType;
-import com.finance.common.service.AssetPricingPort;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +18,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,18 +30,16 @@ import static org.mockito.Mockito.when;
 class KafkaMarketEventAdapterTest {
 
     @Mock private KafkaTemplate<String, Object> kafkaTemplate;
-    @Mock private AssetPricingPort assetPricingPort;
 
     private KafkaMarketEventAdapter adapter;
 
     @BeforeEach
     void setUp() {
-        adapter = new KafkaMarketEventAdapter(kafkaTemplate, assetPricingPort);
+        adapter = new KafkaMarketEventAdapter(kafkaTemplate);
         SendResult<String, Object> result = new SendResult<>(null,
                 new RecordMetadata(new TopicPartition("test", 0), 0, 0, 0, 0, 0));
         when(kafkaTemplate.send(anyString(), anyString(), any()))
                 .thenReturn(CompletableFuture.completedFuture(result));
-        when(assetPricingPort.getAllPricesTry(any(MarketType.class))).thenReturn(Map.of());
     }
 
     @Test

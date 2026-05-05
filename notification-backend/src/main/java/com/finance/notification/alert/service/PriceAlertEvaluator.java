@@ -1,5 +1,6 @@
 package com.finance.notification.alert.service;
 
+import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.model.MarketType;
 import com.finance.notification.alert.model.PriceAlert;
 import com.finance.notification.core.dispatch.NotificationDispatcher;
@@ -10,7 +11,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,35 +24,36 @@ public class PriceAlertEvaluator {
     private final NotificationDispatcher dispatcher;
 
     @Transactional
-    public int evaluate(MarketType marketType, Map<String, BigDecimal> latestPrices) {
-        if (latestPrices.isEmpty()) {
+    public int evaluate(MarketType marketType, Map<String, AssetSnapshot> latestSnapshots) {
+        if (latestSnapshots.isEmpty()) {
             return 0;
         }
         List<PriceAlert> alerts = priceAlertService.activeAlerts(marketType);
         int fired = 0;
         for (PriceAlert alert : alerts) {
-            BigDecimal currentPrice = latestPrices.get(alert.getAssetCode());
-            if (currentPrice == null) continue;
-            if (alert.evaluate(currentPrice)) {
+            AssetSnapshot snapshot = latestSnapshots.get(alert.getAssetCode());
+            if (snapshot == null || snapshot.priceTry() == null) continue;
+            if (alert.evaluate(snapshot.priceTry())) {
                 alert.markFired();
                 priceAlertService.persist(alert);
+                Map<String, Object> data = new HashMap<>();
+                data.put("alertId", alert.getId());
+                data.put("marketType", marketType.name());
+                data.put("assetCode", alert.getAssetCode());
+                data.put("direction", alert.getDirection().name());
+                data.put("threshold", alert.getThreshold());
+                data.put("currentPrice", snapshot.priceTry());
+                if (snapshot.image() != null) data.put("image", snapshot.image());
+                if (snapshot.name() != null) data.put("assetName", snapshot.name());
                 dispatcher.dispatch(NotificationRequest.of(
                         alert.getUserSub(),
                         NotificationType.PRICE_ALERT_FIRED,
-                        Map.of(
-                                "alertId", alert.getId(),
-                                "marketType", marketType.name(),
-                                "assetCode", alert.getAssetCode(),
-                                "direction", alert.getDirection().name(),
-                                "threshold", alert.getThreshold(),
-                                "currentPrice", currentPrice
-                        )
-                ));
+                        data));
                 fired++;
             }
         }
-        log.debug("Price alert evaluation marketType={} prices={} fired={}",
-                marketType, latestPrices.size(), fired);
+        log.debug("Price alert evaluation marketType={} snapshots={} fired={}",
+                marketType, latestSnapshots.size(), fired);
         return fired;
     }
 }

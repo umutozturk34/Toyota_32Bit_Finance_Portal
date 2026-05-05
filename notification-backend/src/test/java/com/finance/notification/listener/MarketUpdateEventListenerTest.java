@@ -1,5 +1,6 @@
 package com.finance.notification.listener;
 
+import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.event.MarketUpdatedEvent;
 import com.finance.common.model.MarketType;
 import com.finance.notification.alert.service.PriceAlertEvaluator;
@@ -35,25 +36,27 @@ class MarketUpdateEventListenerTest {
 
     @Test
     void should_evaluateBothEvaluators_when_marketEventReceived() {
-        Map<String, BigDecimal> prices = Map.of("BTC", BigDecimal.valueOf(100));
-        MarketUpdatedEvent event = MarketUpdatedEvent.of(MarketType.CRYPTO, "scheduler", prices);
+        Map<String, AssetSnapshot> snapshots = Map.of(
+                "BTC", new AssetSnapshot("BTC", "Bitcoin", "https://i.example/btc.png", BigDecimal.valueOf(100)));
+        MarketUpdatedEvent event = MarketUpdatedEvent.of(MarketType.CRYPTO, "scheduler", snapshots);
 
         listener.onMarketUpdated(event, ack);
 
-        verify(priceAlertEvaluator).evaluate(MarketType.CRYPTO, prices);
-        verify(watchlistEvaluator).evaluate(MarketType.CRYPTO, prices);
+        verify(priceAlertEvaluator).evaluate(MarketType.CRYPTO, event.latestSnapshots());
+        verify(watchlistEvaluator).evaluate(MarketType.CRYPTO, event.latestPrices());
         verify(ack).acknowledge();
     }
 
     @Test
     void should_skipEvaluators_when_duplicateEventArrives() {
-        MarketUpdatedEvent event = MarketUpdatedEvent.of(MarketType.STOCK, "scheduler",
-                Map.of("AAPL", BigDecimal.valueOf(150)));
+        Map<String, AssetSnapshot> snapshots = Map.of(
+                "AAPL", new AssetSnapshot("AAPL", "Apple", null, BigDecimal.valueOf(150)));
+        MarketUpdatedEvent event = MarketUpdatedEvent.of(MarketType.STOCK, "scheduler", snapshots);
 
         listener.onMarketUpdated(event, ack);
         listener.onMarketUpdated(event, ack);
 
-        verify(priceAlertEvaluator, times(1)).evaluate(MarketType.STOCK, event.latestPrices());
+        verify(priceAlertEvaluator, times(1)).evaluate(MarketType.STOCK, event.latestSnapshots());
         verify(watchlistEvaluator, times(1)).evaluate(MarketType.STOCK, event.latestPrices());
         verify(ack, times(2)).acknowledge();
     }

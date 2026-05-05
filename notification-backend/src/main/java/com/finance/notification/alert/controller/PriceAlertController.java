@@ -57,4 +57,12 @@ public class PriceAlertController {
         service.delete(id, jwt.getSubject());
         return ApiResponse.success("Price alert deleted", null);
     }
+
+    @org.springframework.web.bind.annotation.PostMapping("/{id}/reactivate")
+    public ApiResponse<PriceAlertResponse> reactivate(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id) {
+        return ApiResponse.success("Price alert reactivated",
+                service.reactivate(id, jwt.getSubject()));
+    }
 }

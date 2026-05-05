@@ -38,9 +38,9 @@ public class MarketUpdateEventListener {
             ack.acknowledge();
             return;
         }
-        log.info("Market updated event received: marketType={} source={} prices={} eventId={}",
-                event.marketType(), event.source(), event.latestPrices().size(), event.eventId());
-        priceAlertEvaluator.evaluate(event.marketType(), event.latestPrices());
+        log.info("Market updated event received: marketType={} source={} snapshots={} eventId={}",
+                event.marketType(), event.source(), event.latestSnapshots().size(), event.eventId());
+        priceAlertEvaluator.evaluate(event.marketType(), event.latestSnapshots());
         watchlistEvaluator.evaluate(event.marketType(), event.latestPrices());
         processedEventIds.put(event.eventId(), Boolean.TRUE);
         ack.acknowledge();

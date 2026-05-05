@@ -16,4 +16,9 @@ export const priceAlertService = {
   remove: async (id) => {
     await api.delete(`${PATH}/${id}`);
   },
+
+  reactivate: async (id) => {
+    const response = await api.post(`${PATH}/${id}/reactivate`);
+    return response.data.data;
+  },
 };

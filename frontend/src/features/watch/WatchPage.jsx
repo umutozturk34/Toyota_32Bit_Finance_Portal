@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Eye, AlertCircle, Plus, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown,
-  Loader2, Inbox, Star, ListPlus,
+  Loader2, Inbox, Star, ListPlus, RotateCcw,
 } from 'lucide-react';
 import PageHeader from '../../shared/components/PageHeader';
 import AssetBadge from '../../shared/components/AssetBadge';
@@ -17,7 +17,7 @@ import {
   useDeleteWatchlist,
   useRemoveWatchlistItem,
 } from '../../shared/hooks/useWatchlist';
-import { usePriceAlerts, useDeletePriceAlert } from '../../shared/hooks/usePriceAlerts';
+import { usePriceAlerts, useDeletePriceAlert, useReactivatePriceAlert } from '../../shared/hooks/usePriceAlerts';
 import AddPriceAlertModal from './AddPriceAlertModal';
 import AddWatchlistItemModal from './AddWatchlistItemModal';
 import CreateWatchlistModal from './CreateWatchlistModal';
@@ -183,7 +183,7 @@ function WatchlistRow({ item, onRemove }) {
   );
 }
 
-function AlertRow({ alert, onDelete }) {
+function AlertRow({ alert, onDelete, onReactivate }) {
   const navigate = useNavigate();
   const dir = DIRECTION_META[alert.direction] ?? DIRECTION_META.ABOVE;
   const { Icon, tint } = dir;
@@ -227,18 +227,34 @@ function AlertRow({ alert, onDelete }) {
       }`}>
         {isFired ? 'tetiklendi' : 'aktif'}
       </span>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onDelete(alert.id);
-        }}
-        className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:text-danger hover:bg-danger/5 bg-transparent border-none cursor-pointer"
-        title="Sil"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {isFired && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onReactivate(alert.id);
+            }}
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:text-accent hover:bg-accent/10 bg-transparent border-none cursor-pointer"
+            title="Yeniden aktifleştir"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onDelete(alert.id);
+          }}
+          className="flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:text-danger hover:bg-danger/5 bg-transparent border-none cursor-pointer"
+          title="Sil"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -267,6 +283,7 @@ export default function WatchPage() {
   const alerts = usePriceAlerts({ page: 0, size: 100 });
   const removeWatchlistItem = useRemoveWatchlistItem(activeListId);
   const deletePriceAlert = useDeletePriceAlert();
+  const reactivatePriceAlert = useReactivatePriceAlert();
   const deleteWatchlist = useDeleteWatchlist();
 
   const watchItems = items.data ?? [];
@@ -288,6 +305,15 @@ export default function WatchPage() {
       toast.success('Alarm silindi');
     } catch (err) {
       toast.error(extractApiError(err, 'Silme başarısız'));
+    }
+  };
+
+  const handleReactivateAlert = async (id) => {
+    try {
+      await reactivatePriceAlert.mutateAsync(id);
+      toast.success('Alarm yeniden aktifleştirildi');
+    } catch (err) {
+      toast.error(extractApiError(err, 'Aktifleştirme başarısız'));
     }
   };
 
@@ -424,7 +450,7 @@ export default function WatchPage() {
             />
           ) : (
             alertItems.map((alert) => (
-              <AlertRow key={alert.id} alert={alert} onDelete={handleDeleteAlert} />
+              <AlertRow key={alert.id} alert={alert} onDelete={handleDeleteAlert} onReactivate={handleReactivateAlert} />
             ))
           )}
         </div>

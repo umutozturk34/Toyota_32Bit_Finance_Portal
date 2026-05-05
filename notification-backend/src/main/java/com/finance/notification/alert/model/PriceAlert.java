@@ -93,4 +93,9 @@ public class PriceAlert {
         this.triggeredAt = LocalDateTime.now();
         this.active = false;
     }
+
+    public void reactivate() {
+        this.triggeredAt = null;
+        this.active = true;
+    }
 }

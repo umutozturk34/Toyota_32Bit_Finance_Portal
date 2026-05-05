@@ -1,5 +1,6 @@
 package com.finance.notification.alert.service;
 
+import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.model.MarketType;
 import com.finance.notification.alert.model.AlertDirection;
 import com.finance.notification.alert.model.PriceAlert;
@@ -38,8 +39,12 @@ class PriceAlertEvaluatorTest {
                 .direction(dir).threshold(thr).referencePrice(ref).currency("TRY").active(true).build();
     }
 
+    private AssetSnapshot snapshot(String code, BigDecimal price) {
+        return new AssetSnapshot(code, code, "https://i.example/" + code + ".png", price);
+    }
+
     @Test
-    void evaluate_skipsWhenPricesEmpty() {
+    void evaluate_skipsWhenSnapshotsEmpty() {
         int fired = evaluator.evaluate(MarketType.CRYPTO, Map.of());
 
         assertThat(fired).isEqualTo(0);
@@ -51,7 +56,8 @@ class PriceAlertEvaluatorTest {
         PriceAlert alert = alertFor("BTC", AlertDirection.ABOVE, BigDecimal.valueOf(100), null);
         when(alertService.activeAlerts(MarketType.CRYPTO)).thenReturn(List.of(alert));
 
-        int fired = evaluator.evaluate(MarketType.CRYPTO, Map.of("BTC", BigDecimal.valueOf(105)));
+        int fired = evaluator.evaluate(MarketType.CRYPTO,
+                Map.of("BTC", snapshot("BTC", BigDecimal.valueOf(105))));
 
         assertThat(fired).isEqualTo(1);
         assertThat(alert.getTriggeredAt()).isNotNull();
@@ -65,14 +71,16 @@ class PriceAlertEvaluatorTest {
         assertThat(request.userSub()).isEqualTo("user-1");
         assertThat(request.data()).containsEntry("assetCode", "BTC");
         assertThat(request.data()).containsEntry("currentPrice", BigDecimal.valueOf(105));
+        assertThat(request.data()).containsEntry("image", "https://i.example/BTC.png");
     }
 
     @Test
-    void evaluate_skipsWhenAssetCodeMissingFromPrices() {
+    void evaluate_skipsWhenAssetCodeMissingFromSnapshots() {
         PriceAlert alert = alertFor("BTC", AlertDirection.ABOVE, BigDecimal.valueOf(100), null);
         when(alertService.activeAlerts(MarketType.CRYPTO)).thenReturn(List.of(alert));
 
-        int fired = evaluator.evaluate(MarketType.CRYPTO, Map.of("ETH", BigDecimal.valueOf(200)));
+        int fired = evaluator.evaluate(MarketType.CRYPTO,
+                Map.of("ETH", snapshot("ETH", BigDecimal.valueOf(200))));
 
         assertThat(fired).isEqualTo(0);
         verify(dispatcher, never()).dispatch(any());
@@ -84,7 +92,8 @@ class PriceAlertEvaluatorTest {
         PriceAlert alert = alertFor("BTC", AlertDirection.ABOVE, BigDecimal.valueOf(100), null);
         when(alertService.activeAlerts(MarketType.CRYPTO)).thenReturn(List.of(alert));
 
-        int fired = evaluator.evaluate(MarketType.CRYPTO, Map.of("BTC", BigDecimal.valueOf(99)));
+        int fired = evaluator.evaluate(MarketType.CRYPTO,
+                Map.of("BTC", snapshot("BTC", BigDecimal.valueOf(99))));
 
         assertThat(fired).isEqualTo(0);
         verify(dispatcher, never()).dispatch(any());

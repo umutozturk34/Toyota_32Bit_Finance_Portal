@@ -40,6 +40,13 @@ public class PriceAlertService {
         repository.delete(alert);
     }
 
+    @Transactional
+    public PriceAlertResponse reactivate(Long id, String userSub) {
+        PriceAlert alert = ownedOr404(id, userSub);
+        alert.reactivate();
+        return mapper.toResponse(repository.save(alert));
+    }
+
     @Transactional(readOnly = true)
     public List<PriceAlert> activeAlerts(MarketType marketType) {
         return repository.findByActiveTrueAndMarketType(marketType);

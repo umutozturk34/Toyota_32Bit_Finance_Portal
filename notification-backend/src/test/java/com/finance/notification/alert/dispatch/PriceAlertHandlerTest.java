@@ -34,11 +34,13 @@ class PriceAlertHandlerTest {
 
         RenderedNotification result = handler.render(request);
 
-        assertThat(result.title()).isEqualTo("Fiyat alarmı: BTC");
-        assertThat(result.body()).contains("Üstüne çıkma");
+        assertThat(result.title()).isEqualTo("BTC alarmı tetiklendi");
+        assertThat(result.body()).contains("üstüne çıktı");
         assertThat(result.emailTemplate()).isEqualTo("price-alert");
         assertThat(result.emailSubject()).contains("BTC");
         assertThat(result.emailModel()).containsEntry("assetCode", "BTC");
+        assertThat(result.emailModel()).containsEntry("assetCodeUpper", "BTC");
+        assertThat(result.emailModel()).containsEntry("isUp", true);
     }
 
     @Test
@@ -48,7 +50,7 @@ class PriceAlertHandlerTest {
 
         RenderedNotification result = handler.render(request);
 
-        assertThat(result.title()).isEqualTo("Fiyat alarmı: ?");
-        assertThat(result.body()).contains("?");
+        assertThat(result.title()).isEqualTo("? alarmı tetiklendi");
+        assertThat(result.body()).contains("Kripto");
     }
 }

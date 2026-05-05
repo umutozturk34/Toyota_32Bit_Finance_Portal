@@ -22,6 +22,14 @@ export function useCreatePriceAlert() {
   });
 }
 
+export function useReactivatePriceAlert() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: priceAlertService.reactivate,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['priceAlerts'] }),
+  });
+}
+
 export function useDeletePriceAlert() {
   const queryClient = useQueryClient();
   return useMutation({

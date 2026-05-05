@@ -9,7 +9,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/user/credentials")
@@ -30,9 +33,8 @@ public class UserCredentialController {
     @PostMapping("/email/initiate-change")
     public ApiResponse<Void> initiateEmailChange(
             @AuthenticationPrincipal Jwt jwt,
-            @Valid @RequestBody EmailChangeInitiateRequest request,
-            @RequestParam(required = false) String redirectUri) {
-        service.initiateEmailChange(jwt.getSubject(), request.newEmail(), redirectUri);
+            @Valid @RequestBody EmailChangeInitiateRequest request) {
+        service.initiateEmailChange(jwt.getSubject(), request.newEmail(), request.redirectUri());
         return ApiResponse.success("Email verification code sent to new address", null);
     }
 }

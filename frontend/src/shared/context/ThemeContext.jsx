@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useUserPreferences, useUpdateUserPreferences } from '../hooks/useUserPreferences';
 import { useAuth } from '../../features/auth/AuthContext';
 
@@ -30,10 +30,15 @@ export function ThemeProvider({ children }) {
     const { preferences } = useUserPreferences();
     const updatePreferences = useUpdateUserPreferences();
     const [storedPreference, setStoredPreference] = useState(readStoredPreference);
-    const themePreference = isAuthenticated
-        ? (preferences.theme || storedPreference)
-        : storedPreference;
+    const userOverrode = useRef(false);
 
+    useEffect(() => {
+        if (!userOverrode.current && preferences.theme && preferences.theme !== storedPreference) {
+            setStoredPreference(preferences.theme);
+        }
+    }, [preferences.theme, storedPreference]);
+
+    const themePreference = storedPreference;
     const theme = useMemo(() => resolveTheme(themePreference), [themePreference]);
 
     useEffect(() => {
@@ -47,6 +52,7 @@ export function ThemeProvider({ children }) {
     }, [theme]);
 
     const setThemePreference = (next) => {
+        userOverrode.current = true;
         setStoredPreference(next);
         if (isAuthenticated) {
             updatePreferences.mutate({ theme: next });

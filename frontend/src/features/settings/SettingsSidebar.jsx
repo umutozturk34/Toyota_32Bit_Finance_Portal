@@ -101,7 +101,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
   const handleChangePassword = async () => {
     setPasswordSending(true);
     try {
-      await userCredentialService.initiatePasswordChange(window.location.origin);
+      await userCredentialService.initiatePasswordChange(`${window.location.origin}/`);
       toast.success('E-posta gönderildi', 'Gelen kutunuzdaki linke tıklayarak şifrenizi değiştirin');
       onClose();
     } catch (err) {
@@ -117,7 +117,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
     if (!trimmed) return;
     setEmailSending(true);
     try {
-      await userCredentialService.initiateEmailChange(trimmed);
+      await userCredentialService.initiateEmailChange(trimmed, `${window.location.origin}/`);
       toast.success('Doğrulama kodu gönderildi', `${trimmed} adresine kodu içeren e-posta atıldı`);
       setEmailDraft('');
       onClose();
@@ -144,7 +144,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            transition={{ type: 'spring', stiffness: 280, damping: 30 }}
+            transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
             className="fixed top-0 right-0 z-50 h-full w-full sm:w-[380px] modal-panel border-l border-border-default flex flex-col"
           >
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />

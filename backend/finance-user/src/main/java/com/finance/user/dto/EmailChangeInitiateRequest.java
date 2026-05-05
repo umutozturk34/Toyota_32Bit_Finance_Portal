@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record EmailChangeInitiateRequest(
-        @NotBlank @Email @Size(max = 255) String newEmail
+        @NotBlank @Email @Size(max = 255) String newEmail,
+        @NotBlank @Size(max = 512) String redirectUri
 ) {
 }

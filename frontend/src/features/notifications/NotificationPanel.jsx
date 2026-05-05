@@ -120,7 +120,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 32, stiffness: 280 }}
+            transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
             className="fixed top-0 right-0 bottom-0 z-[60] w-full sm:w-[420px] flex flex-col border-l border-border-default bg-bg-deep"
           >
             <header className="flex items-center justify-between px-5 h-14 border-b border-border-default shrink-0">

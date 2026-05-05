@@ -7,7 +7,7 @@ export const userCredentialService = {
     await api.post(`${PATH}/password/initiate-change`, { redirectUri });
   },
 
-  initiateEmailChange: async (newEmail) => {
-    await api.post(`${PATH}/email/initiate-change`, { newEmail });
+  initiateEmailChange: async (newEmail, redirectUri) => {
+    await api.post(`${PATH}/email/initiate-change`, { newEmail, redirectUri });
   },
 };

@@ -211,10 +211,9 @@ const MainLayout = () => {
       <aside
         className={`hidden lg:flex flex-col fixed top-0 left-0 h-screen ${sidebarW} border-r border-border-default z-20 transition-all duration-200`}
         style={{
-          background: isDark
-            ? 'var(--color-bg-deep)'
-            : 'rgba(242, 246, 251, 0.8)',
-          ...(isDark ? {} : { backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }),
+          background: 'var(--sidebar-bg)',
+          backdropFilter: 'var(--sidebar-blur)',
+          WebkitBackdropFilter: 'var(--sidebar-blur)',
         }}
       >
         <SidebarContent />
@@ -224,10 +223,9 @@ const MainLayout = () => {
       <div
         className="lg:hidden fixed top-0 left-0 right-0 z-40 h-12 flex items-center justify-between px-3 border-b border-border-default"
         style={{
-          background: isDark
-            ? 'var(--color-bg-deep)'
-            : 'rgba(242, 246, 251, 0.8)',
-          ...(isDark ? {} : { backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }),
+          background: 'var(--sidebar-bg)',
+          backdropFilter: 'var(--sidebar-blur)',
+          WebkitBackdropFilter: 'var(--sidebar-blur)',
         }}
       >
         <button
@@ -260,13 +258,12 @@ const MainLayout = () => {
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
               className="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-60 border-r border-border-default"
               style={{
-                background: isDark
-                  ? 'var(--color-bg-deep)'
-                  : 'rgba(242, 246, 251, 0.85)',
-                ...(isDark ? {} : { backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }),
+                background: 'var(--sidebar-bg)',
+                backdropFilter: 'var(--sidebar-blur)',
+                WebkitBackdropFilter: 'var(--sidebar-blur)',
               }}
             >
               <SidebarContent isMobile />

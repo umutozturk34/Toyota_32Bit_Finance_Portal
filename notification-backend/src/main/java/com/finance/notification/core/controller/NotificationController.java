@@ -68,4 +68,10 @@ public class NotificationController {
         service.delete(id, jwt.getSubject());
         return ApiResponse.success("Notification deleted", null);
     }
+
+    @DeleteMapping
+    public ApiResponse<Integer> deleteAll(@AuthenticationPrincipal Jwt jwt) {
+        int removed = service.deleteAll(jwt.getSubject());
+        return ApiResponse.success("All notifications deleted", removed);
+    }
 }

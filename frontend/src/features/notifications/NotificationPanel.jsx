@@ -8,8 +8,10 @@ import {
   useMarkNotificationRead,
   useMarkAllNotificationsRead,
   useDeleteNotification,
+  useDeleteAllNotifications,
 } from '../../shared/hooks/useNotifications';
 import { useState } from 'react';
+import ConfirmDialog from '../../shared/components/ConfirmDialog';
 
 const TYPE_META = {
   PRICE_ALERT_FIRED: { Icon: AlertCircle, label: 'Fiyat alarmı', tint: 'text-accent' },
@@ -95,6 +97,8 @@ export default function NotificationPanel({ isOpen, onClose }) {
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const deleteNotification = useDeleteNotification();
+  const deleteAllNotifications = useDeleteAllNotifications();
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
   const items = data?.content ?? data?.items ?? [];
   const total = data?.totalElements ?? 0;
@@ -167,14 +171,24 @@ export default function NotificationPanel({ isOpen, onClose }) {
                   <span className="relative z-10">Okunmamış</span>
                 </button>
               </div>
-              <button
-                onClick={() => markAllRead.mutate()}
-                disabled={markAllRead.isPending || total === 0}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border border-border-default cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <CheckCheck className="h-3 w-3" />
-                tümünü okundu
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => markAllRead.mutate()}
+                  disabled={markAllRead.isPending || total === 0}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border border-border-default cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <CheckCheck className="h-3 w-3" />
+                  okundu
+                </button>
+                <button
+                  onClick={() => setConfirmClearOpen(true)}
+                  disabled={deleteAllNotifications.isPending || total === 0}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-fg-muted hover:text-danger hover:bg-danger/5 transition-colors bg-transparent border border-border-default hover:border-danger/30 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  tümünü sil
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2" style={{ scrollbarWidth: 'thin' }}>
@@ -214,6 +228,21 @@ export default function NotificationPanel({ isOpen, onClose }) {
           </motion.aside>
         </>
       )}
+      <ConfirmDialog
+        open={confirmClearOpen}
+        title="Tüm bildirimleri sil?"
+        message={`${total} bildirim kalıcı olarak silinecek. Bu işlem geri alınamaz.`}
+        confirmLabel="Tümünü sil"
+        cancelLabel="Vazgeç"
+        variant="danger"
+        loading={deleteAllNotifications.isPending}
+        onConfirm={() => {
+          deleteAllNotifications.mutate(undefined, {
+            onSettled: () => setConfirmClearOpen(false),
+          });
+        }}
+        onCancel={() => setConfirmClearOpen(false)}
+      />
     </AnimatePresence>
   );
 }

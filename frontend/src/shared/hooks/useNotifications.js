@@ -54,3 +54,13 @@ export function useDeleteNotification() {
     },
   });
 }
+
+export function useDeleteAllNotifications() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: notificationService.removeAll,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    },
+  });
+}

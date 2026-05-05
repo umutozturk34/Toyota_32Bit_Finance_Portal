@@ -25,4 +25,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.expiresAt IS NOT NULL AND n.expiresAt < :cutoff")
     int deleteExpired(@Param("cutoff") LocalDateTime cutoff);
+
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.userSub = :userSub")
+    int deleteAllByUserSub(@Param("userSub") String userSub);
 }

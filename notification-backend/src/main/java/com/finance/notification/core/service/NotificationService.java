@@ -53,6 +53,11 @@ public class NotificationService {
         repository.delete(notification);
     }
 
+    @Transactional
+    public int deleteAll(String userSub) {
+        return repository.deleteAllByUserSub(userSub);
+    }
+
     private Notification ownedOr404(Long id, String userSub) {
         return repository.findById(id)
                 .filter(n -> n.belongsTo(userSub))

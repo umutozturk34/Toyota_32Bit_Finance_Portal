@@ -26,4 +26,9 @@ export const notificationService = {
   remove: async (id) => {
     await api.delete(`${PATH}/${id}`);
   },
+
+  removeAll: async () => {
+    const response = await api.delete(PATH);
+    return response.data.data;
+  },
 };

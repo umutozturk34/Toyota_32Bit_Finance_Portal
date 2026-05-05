@@ -15,7 +15,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
@@ -164,25 +163,6 @@ class NotificationDispatcherTest {
         dispatcher.dispatch(NotificationRequest.of("u", NotificationType.SYSTEM, Map.of()));
 
         verify(events, never()).publishEvent(any());
-    }
-
-    @Test
-    void dispatch_skipsEmailDuringQuietHours() {
-        NotificationPreference prefs = NotificationPreference.defaultsFor("u");
-        prefs.setInappSystem(true);
-        prefs.setEmailSystem(true);
-        prefs.setQuietHoursStart(LocalTime.of(0, 0));
-        prefs.setQuietHoursEnd(LocalTime.of(23, 59));
-        when(preferenceRepository.findById("u")).thenReturn(Optional.of(prefs));
-        when(userPreferenceCacheService.resolveZone("u")).thenReturn(ZoneId.of("UTC"));
-        when(notificationRepository.save(any(Notification.class)))
-                .thenAnswer(inv -> inv.getArgument(0));
-
-        dispatcher.dispatch(NotificationRequest.of("u", NotificationType.SYSTEM, Map.of()));
-
-        verify(notificationRepository).save(any());
-        verify(events, never()).publishEvent(any());
-        verify(userEmailLookup, never()).findEmail(anyString());
     }
 
     @Test

@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import java.time.ZoneId;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -60,8 +59,6 @@ public class NotificationDispatcher {
 
         RenderedNotification rendered = handler.render(request);
         NotificationPreference prefs = loadPreferences(request.userSub());
-        ZoneId userZone = userPreferenceCacheService.resolveZone(request.userSub());
-        boolean inQuietHours = prefs.isInQuietHours(userZone);
 
         if (prefs.wantsInApp(request.type())) {
             Notification persisted = notificationRepository.save(Notification.create(
@@ -75,7 +72,7 @@ public class NotificationDispatcher {
                     persisted.getId(), request.userSub(), request.type());
         }
 
-        if (prefs.wantsEmail(request.type()) && !inQuietHours) {
+        if (prefs.wantsEmail(request.type())) {
             Optional<String> emailOpt = userEmailLookup.findEmail(request.userSub());
             if (emailOpt.isEmpty()) {
                 log.debug("Email skipped (no address resolved) user={} type={}",

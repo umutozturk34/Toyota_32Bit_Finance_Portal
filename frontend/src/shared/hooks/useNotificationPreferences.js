@@ -16,8 +16,6 @@ const FALLBACK = Object.freeze({
   inappMessages: true,
   emailSystem: false,
   inappSystem: true,
-  quietHoursStart: null,
-  quietHoursEnd: null,
 });
 
 export function useNotificationPreferences() {

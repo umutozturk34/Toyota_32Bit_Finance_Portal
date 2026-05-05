@@ -12,7 +12,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,8 +61,7 @@ class NotificationPreferenceServiceTest {
     @Test
     void upsert_appliesPartialRequestAndPersists() {
         NotificationPreferenceUpdateRequest request = new NotificationPreferenceUpdateRequest(
-                null, null, null, true, null, null, null, null, null, null, null,
-                LocalTime.of(22, 0), LocalTime.of(8, 0));
+                null, null, null, true, null, null, null, null, null, null, null);
         when(repository.findById("user-1")).thenReturn(Optional.empty());
         when(repository.save(any(NotificationPreference.class))).thenAnswer(inv -> inv.getArgument(0));
         when(mapper.toResponse(any(NotificationPreference.class)))
@@ -84,8 +82,7 @@ class NotificationPreferenceServiceTest {
                 p.isEmailWatchlist(), p.isInappWatchlist(),
                 p.isEmailReports(), p.isInappReports(),
                 p.isEmailMessages(), p.isInappMessages(),
-                p.isEmailSystem(), p.isInappSystem(),
-                p.getQuietHoursStart(), p.getQuietHoursEnd());
+                p.isEmailSystem(), p.isInappSystem());
     }
 
     private static NotificationPreferenceUpdateRequest eqRequest(NotificationPreferenceUpdateRequest expected) {

@@ -1,7 +1,5 @@
 package com.finance.notification.core.dto;
 
-import java.time.LocalTime;
-
 public record NotificationPreferenceUpdateRequest(
         Boolean emailEnabled,
         Boolean emailPriceAlerts,
@@ -13,8 +11,6 @@ public record NotificationPreferenceUpdateRequest(
         Boolean emailMessages,
         Boolean inappMessages,
         Boolean emailSystem,
-        Boolean inappSystem,
-        LocalTime quietHoursStart,
-        LocalTime quietHoursEnd
+        Boolean inappSystem
 ) {
 }

@@ -15,8 +15,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
 
 @Getter
 @Setter
@@ -66,12 +64,6 @@ public class NotificationPreference {
     @Column(name = "inapp_system", nullable = false)
     private boolean inappSystem;
 
-    @Column(name = "quiet_hours_start")
-    private LocalTime quietHoursStart;
-
-    @Column(name = "quiet_hours_end")
-    private LocalTime quietHoursEnd;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -96,20 +88,6 @@ public class NotificationPreference {
 
     public boolean wantsEmail(NotificationType type) {
         return emailEnabled && type.isEmailWantedBy(this);
-    }
-
-    public boolean isInQuietHours(ZoneId userZone) {
-        return isInQuietHours(LocalTime.now(userZone));
-    }
-
-    public boolean isInQuietHours(LocalTime now) {
-        if (quietHoursStart == null || quietHoursEnd == null) {
-            return false;
-        }
-        if (quietHoursStart.isBefore(quietHoursEnd)) {
-            return !now.isBefore(quietHoursStart) && now.isBefore(quietHoursEnd);
-        }
-        return !now.isBefore(quietHoursStart) || now.isBefore(quietHoursEnd);
     }
 
     public static NotificationPreference defaultsFor(String userSub) {

@@ -1,9 +1,7 @@
 package com.finance.forex.service.assetpricing;
 
-import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.forex.model.Forex;
 import com.finance.forex.model.ForexCandle;
-import com.finance.forex.repository.ForexRepository;
 import com.finance.common.model.MarketType;
 import com.finance.common.service.AssetPricingPort;
 import com.finance.common.service.assetpricing.BaseAssetPricingStrategy;
@@ -11,34 +9,14 @@ import com.finance.cache.service.MarketCacheService;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Component
 public class ForexPricingStrategy extends BaseAssetPricingStrategy {
 
     private final MarketCacheService<Forex> cacheService;
-    private final ForexRepository repository;
 
-    public ForexPricingStrategy(MarketCacheService<Forex> cacheService,
-                                ForexRepository repository) {
+    public ForexPricingStrategy(MarketCacheService<Forex> cacheService) {
         this.cacheService = cacheService;
-        this.repository = repository;
-    }
-
-    @Override
-    public Map<String, BigDecimal> getAllPricesTry() {
-        return repository.findAll().stream()
-                .filter(f -> f.getPriceTry() != null)
-                .collect(Collectors.toUnmodifiableMap(Forex::getCode, Forex::getPriceTry, (a, b) -> a));
-    }
-
-    @Override
-    public Map<String, AssetSnapshot> getAllSnapshots() {
-        return repository.findAll().stream()
-                .filter(f -> f.getPriceTry() != null)
-                .map(Forex::toSnapshot)
-                .collect(Collectors.toUnmodifiableMap(AssetSnapshot::code, s -> s, (a, b) -> a));
     }
 
     @Override

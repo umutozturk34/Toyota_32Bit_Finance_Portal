@@ -18,10 +18,6 @@ import com.finance.common.service.MarketSnapshotProcessor;
 
 import com.finance.common.service.AssetPricingPort.AssetMeta;
 import com.finance.cache.service.MarketCacheService;
-import com.finance.crypto.repository.CryptoRepository;
-import com.finance.forex.repository.ForexRepository;
-import com.finance.fund.repository.FundRepository;
-import com.finance.stock.repository.StockRepository;
 import com.finance.crypto.service.assetpricing.CryptoPricingStrategy;
 import com.finance.forex.service.assetpricing.ForexPricingStrategy;
 import com.finance.fund.service.assetpricing.FundPricingStrategy;
@@ -45,10 +41,6 @@ class AssetPricingAdapterTest {
     @Mock private MarketCacheService<Stock> stockCacheService;
     @Mock private MarketCacheService<Forex> forexCacheService;
     @Mock private MarketCacheService<Fund> fundCacheService;
-    @Mock private CryptoRepository cryptoRepository;
-    @Mock private StockRepository stockRepository;
-    @Mock private ForexRepository forexRepository;
-    @Mock private FundRepository fundRepository;
 
     private AssetPricingAdapter adapter;
 
@@ -60,10 +52,10 @@ class AssetPricingAdapterTest {
         commission.setFundRate(new BigDecimal("0.001"));
 
         adapter = new AssetPricingAdapter(List.of(
-            new CryptoPricingStrategy(cryptoCacheService, commission, cryptoRepository),
-            new StockPricingStrategy(stockCacheService, commission, stockRepository),
-            new ForexPricingStrategy(forexCacheService, forexRepository),
-            new FundPricingStrategy(fundCacheService, commission, fundRepository)
+            new CryptoPricingStrategy(cryptoCacheService, commission),
+            new StockPricingStrategy(stockCacheService, commission),
+            new ForexPricingStrategy(forexCacheService),
+            new FundPricingStrategy(fundCacheService, commission)
         ));
     }
 

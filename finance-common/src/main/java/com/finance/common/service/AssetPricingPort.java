@@ -1,6 +1,5 @@
 package com.finance.common.service;
 
-import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.model.MarketType;
 
 import java.math.BigDecimal;
@@ -45,11 +44,4 @@ public interface AssetPricingPort {
                 (a, b) -> a));
     }
 
-    default Map<String, BigDecimal> getAllPricesTry(MarketType type) {
-        return Map.of();
-    }
-
-    default Map<String, AssetSnapshot> getAllSnapshots(MarketType type) {
-        return Map.of();
-    }
 }

@@ -5,7 +5,6 @@ import com.finance.common.service.MarketSnapshotProcessor;
 import com.finance.common.config.CommissionProperties;
 import com.finance.commodity.model.Commodity;
 import com.finance.commodity.model.CommodityCandle;
-import com.finance.commodity.repository.CommodityRepository;
 import com.finance.common.model.MarketType;
 import com.finance.common.service.AssetPricingPort;
 import com.finance.cache.service.MarketCacheService;
@@ -22,7 +21,6 @@ class CommodityPricingStrategyTest {
 
     @SuppressWarnings("unchecked")
     private final MarketCacheService<Commodity> cacheService = mock(MarketCacheService.class);
-    private final CommodityRepository repository = mock(CommodityRepository.class);
     private CommodityPricingStrategy strategy;
 
     @BeforeEach
@@ -30,7 +28,7 @@ class CommodityPricingStrategyTest {
         CommissionProperties commission = new CommissionProperties();
         commission.setCommodityRate(new BigDecimal("0.015"));
 
-        strategy = new CommodityPricingStrategy(cacheService, commission, repository);
+        strategy = new CommodityPricingStrategy(cacheService, commission);
     }
 
     @Test

@@ -1,6 +1,5 @@
 package com.finance.app.config;
 
-import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.model.MarketType;
 import com.finance.common.service.AssetPricingPort;
 import com.finance.common.service.assetpricing.AssetPricingStrategy;
@@ -30,35 +29,6 @@ public class AssetPricingAdapter implements AssetPricingPort {
         return dispatch(type, assetCode, "price", null, strategy -> strategy.getPriceTry(assetCode));
     }
 
-    @Override
-    public Map<String, BigDecimal> getAllPricesTry(MarketType type) {
-        AssetPricingStrategy strategy = strategies.get(type);
-        if (strategy == null) {
-            log.warn("Unknown asset type: {}", type);
-            return Map.of();
-        }
-        try {
-            return strategy.getAllPricesTry();
-        } catch (Exception e) {
-            log.warn("Failed to get all prices for {} - {}", type, e.getMessage());
-            return Map.of();
-        }
-    }
-
-    @Override
-    public Map<String, AssetSnapshot> getAllSnapshots(MarketType type) {
-        AssetPricingStrategy strategy = strategies.get(type);
-        if (strategy == null) {
-            log.warn("Unknown asset type: {}", type);
-            return Map.of();
-        }
-        try {
-            return strategy.getAllSnapshots();
-        } catch (Exception e) {
-            log.warn("Failed to get all snapshots for {} - {}", type, e.getMessage());
-            return Map.of();
-        }
-    }
 
     @Override
     public BigDecimal getSellPriceTry(MarketType type, String assetCode) {

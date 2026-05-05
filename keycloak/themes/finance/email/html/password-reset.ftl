@@ -1,12 +1,12 @@
 <#import "template.ftl" as layout>
-<@layout.emailLayout>
-    <p>Merhaba <strong>${user.firstName!""}</strong>,</p>
-    <p>Şifrenizi sıfırlama talebinde bulundunuz. Aşağıdaki butona tıklayarak yeni bir şifre belirleyebilirsiniz.</p>
-    <p>
+<@layout.emailLayout title="Şifre sıfırlama" subtitle="Yeni şifre belirleme bağlantısı">
+    <p>Merhaba <strong>${user.firstName!''}</strong>,</p>
+    <p>Şifre sıfırlama talebinde bulundun. Aşağıdaki butona tıklayarak yeni şifreni belirleyebilirsin.</p>
+    <div class="cta-wrap">
         <a href="${link}" class="email-cta">Şifremi Sıfırla</a>
-    </p>
-    <div class="email-info-box">
-        <p>Bu bağlantı <strong>${linkExpiration}</strong> dakika içinde geçerliliğini yitirecektir.</p>
     </div>
-    <p>Eğer bu işlemi siz başlatmadıysanız hesabınız güvendedir ve bu e-postayı görmezden gelebilirsiniz.</p>
+    <div class="email-info-box">
+        <p>Bu bağlantı ${linkExpiration} dakika içinde geçerliliğini yitirir.</p>
+    </div>
+    <p>Eğer bu işlemi sen başlatmadıysan hesabın güvende, e-postayı yok sayabilirsin.</p>
 </@layout.emailLayout>

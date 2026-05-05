@@ -1,12 +1,11 @@
 <#import "template.ftl" as layout>
-<@layout.emailLayout>
-    <p>Merhaba <strong>${user.firstName!""}</strong>,</p>
-    <p>Hesabınız için gerçekleştirmeniz gereken bir işlem bulunmaktadır.</p>
-    <p>Lütfen aşağıdaki butona tıklayarak işleminizi tamamlayın.</p>
-    <p>
+<@layout.emailLayout title="Hesap işlemi onayı" subtitle="Tamamlanması gereken bir adım var">
+    <p>Merhaba <strong>${user.firstName!''}</strong>,</p>
+    <p>Hesabın için tamamlamanı bekleyen bir işlem var. Aşağıdaki butona tıklayarak güvenli sayfada işlemi tamamlayabilirsin.</p>
+    <div class="cta-wrap">
         <a href="${link}" class="email-cta">İşlemi Tamamla</a>
-    </p>
+    </div>
     <div class="email-info-box">
-        <p>Bu bağlantı <strong>${linkExpiration}</strong> dakika içinde geçerliliğini yitirecektir.</p>
+        <p>Bu bağlantı ${linkExpiration} dakika içinde geçerliliğini yitirir.</p>
     </div>
 </@layout.emailLayout>

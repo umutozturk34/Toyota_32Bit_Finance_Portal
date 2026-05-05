@@ -1,215 +1,117 @@
-<#macro emailLayout>
+<#macro emailLayout title="" subtitle="">
 <#assign theme = (user.attributes.themePreference[0])!"DARK">
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Finance Portal</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #08080c;
-            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-            color: #ededf0;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+        body { margin:0; padding:0; width:100%; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; background:#0a0b10; color:#e6e9ef; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+        table { border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt; }
+        img { border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic; }
+        a { color:inherit; text-decoration:none; }
+        .num { font-family:'SF Mono','Monaco','Consolas','Courier New',monospace; }
+        @media (max-width:600px) {
+            .container { width:100% !important; padding:0 16px !important; }
+            .hero-title { font-size:18px !important; }
         }
 
-        .email-wrapper {
-            width: 100%;
-            background: linear-gradient(180deg, #08080c 0%, #0e0e14 50%, #08080c 100%);
-            padding: 48px 0;
-        }
+        .wrapper { background:#0a0b10; padding:32px 0; }
+        .brand-row { padding:0 0 18px 4px; }
+        .brand-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#6366f1; vertical-align:middle; margin-right:8px; }
+        .brand-text { font-size:13px; font-weight:600; letter-spacing:0.4px; color:#8a93a3; text-transform:uppercase; vertical-align:middle; }
 
-        .email-container {
-            max-width: 520px;
-            margin: 0 auto;
-            background: rgba(22, 22, 30, 0.9);
-            border: 1px solid rgba(99, 102, 241, 0.12);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 0 80px rgba(99, 102, 241, 0.06), 0 0 32px rgba(99, 102, 241, 0.04);
-        }
+        .card { width:560px; max-width:560px; background:#11141d; border:1px solid #1f2430; border-radius:16px; overflow:hidden; }
+        .accent-strip { height:3px; background:linear-gradient(90deg,#6366f1,#a78bfa); font-size:0; line-height:0; }
+        .hero { padding:28px 32px 8px; }
+        .hero-title { margin:0; font-size:20px; font-weight:700; line-height:1.3; color:#e6e9ef; }
+        .hero-sub { margin:6px 0 0; font-size:12px; color:#8a93a3; }
+        .body-section { padding:18px 32px 26px; font-size:14px; line-height:1.7; color:#c9cfd9; }
+        .body-section p { margin:0 0 14px; }
+        .body-section p:last-child { margin-bottom:0; }
+        .body-section strong { color:#e6e9ef; font-weight:600; }
+        .body-section a { color:#a78bfa; }
 
-        .email-header {
-            padding: 32px 32px 24px;
-            border-bottom: 1px solid rgba(99, 102, 241, 0.1);
-            background: linear-gradient(180deg, rgba(99, 102, 241, 0.04) 0%, transparent 100%);
-        }
+        .cta-wrap { text-align:center; margin:18px 0 8px; }
+        .email-cta { display:inline-block; padding:13px 28px; font-size:14px; font-weight:600; color:#ffffff !important; background:linear-gradient(90deg,#6366f1,#a78bfa); border-radius:10px; text-decoration:none; letter-spacing:0.2px; }
 
-        .email-logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .email-info-box { margin:14px 0; padding:14px 18px; background:#0e111a; border:1px solid #1f2430; border-radius:12px; }
+        .email-info-box p { margin:0; font-size:13px; color:#8a93a3; line-height:1.6; }
+        .email-info-box strong { color:#e6e9ef; }
+        .email-info-box code { font-family:'SF Mono','Monaco','Consolas','Courier New',monospace; font-size:12px; color:#e6e9ef; background:#1c2030; padding:2px 8px; border-radius:6px; }
 
-        .email-logo-icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #6366f1, #a855f7, #14b8a6);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
-        }
+        .code-wrap { text-align:center; margin:18px 0 6px; }
+        .email-code-box { display:inline-block; padding:18px 36px; background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(167,139,250,0.08)); border:1px solid #2c3142; border-radius:14px; }
+        .email-code { font-family:'SF Mono','Monaco','Consolas','Courier New',monospace; font-size:32px; font-weight:700; letter-spacing:8px; color:#e6e9ef; }
 
-        .email-logo-text {
-            font-size: 20px;
-            font-weight: 800;
-            color: #ededf0;
-            letter-spacing: -0.03em;
-        }
-
-        .email-header-sub {
-            font-size: 13px;
-            color: #55555f;
-            margin: 8px 0 0 52px;
-        }
-
-        .email-body {
-            padding: 32px;
-        }
-
-        .email-body p {
-            font-size: 14px;
-            color: #8b8b9a;
-            line-height: 1.75;
-            margin: 0 0 16px 0;
-        }
-
-        .email-body p:last-child {
-            margin-bottom: 0;
-        }
-
-        .email-body strong {
-            color: #ededf0;
-            font-weight: 600;
-        }
-
-        .email-cta {
-            display: inline-block;
-            padding: 14px 32px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-            color: #ffffff !important;
-            background: linear-gradient(135deg, #6366f1, #818cf8);
-            border-radius: 12px;
-            text-decoration: none;
-            margin: 8px 0 16px 0;
-            box-shadow: 0 4px 24px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
-        }
-
-        .email-info-box {
-            padding: 16px 20px;
-            background: rgba(99, 102, 241, 0.06);
-            border: 1px solid rgba(99, 102, 241, 0.1);
-            border-radius: 12px;
-            margin: 16px 0;
-        }
-
-        .email-info-box p {
-            font-size: 13px;
-            color: #8b8b9a;
-            margin: 0;
-        }
-
-        .email-info-box code {
-            font-size: 13px;
-            font-family: 'JetBrains Mono', monospace;
-            color: #ededf0;
-            background: rgba(99, 102, 241, 0.1);
-            padding: 2px 8px;
-            border-radius: 6px;
-        }
-
-        .email-footer {
-            padding: 20px 32px;
-            border-top: 1px solid rgba(99, 102, 241, 0.08);
-            background: rgba(8, 8, 12, 0.3);
-        }
-
-        .email-footer p {
-            font-size: 11px;
-            color: #55555f;
-            margin: 0;
-            line-height: 1.6;
-        }
-
-        .email-footer a {
-            color: #6366f1;
-            text-decoration: none;
-        }
-
-        a {
-            color: #6366f1;
-            text-decoration: none;
-        }
-
-        .email-code-box {
-            display: inline-block;
-            padding: 20px 40px;
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.08));
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15), inset 0 1px 0 rgba(255,255,255,0.05);
-        }
-
-        .email-code {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 36px;
-            font-weight: 700;
-            letter-spacing: 10px;
-            color: #ededf0;
-            text-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
-        }
+        .footer-card { padding:18px 4px 0; }
+        .footer-card p { margin:0 0 6px; font-size:12px; line-height:1.6; color:#5f6671; }
+        .footer-card p:last-child { margin-bottom:0; font-size:11px; }
     </style>
     <#if theme == "LIGHT">
     <style>
-        body { background-color: #f5f7fb !important; color: #1a1d24 !important; }
-        .email-wrapper { background: linear-gradient(180deg, #f5f7fb 0%, #eef0f5 50%, #f5f7fb 100%) !important; }
-        .email-container { background: #ffffff !important; border-color: #e5e9f0 !important; box-shadow: 0 0 80px rgba(99, 102, 241, 0.05), 0 0 32px rgba(99, 102, 241, 0.04) !important; }
-        .email-header { border-bottom-color: #e5e9f0 !important; background: linear-gradient(180deg, rgba(99, 102, 241, 0.04) 0%, transparent 100%) !important; }
-        .email-logo-text { color: #1a1d24 !important; }
-        .email-header-sub { color: #8b94a3 !important; }
-        .email-body p { color: #5f6671 !important; }
-        .email-body strong { color: #1a1d24 !important; }
-        .email-info-box { background: rgba(99, 102, 241, 0.06) !important; border-color: rgba(99, 102, 241, 0.15) !important; }
-        .email-info-box p { color: #5f6671 !important; }
-        .email-info-box code { color: #1a1d24 !important; background: rgba(99, 102, 241, 0.1) !important; }
-        .email-footer { border-top-color: #e5e9f0 !important; background: rgba(245, 247, 251, 0.6) !important; }
-        .email-footer p { color: #8b94a3 !important; }
-        .email-code-box { background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.05)) !important; border-color: rgba(99, 102, 241, 0.2) !important; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.12) !important; }
-        .email-code { color: #1a1d24 !important; text-shadow: none !important; }
+        body { background:#f3f5fa !important; color:#1a1d24 !important; }
+        .wrapper { background:#f3f5fa !important; }
+        .brand-text { color:#5f6671 !important; }
+        .card { background:#ffffff !important; border-color:#e5e9f0 !important; }
+        .hero-title { color:#1a1d24 !important; }
+        .hero-sub { color:#5f6671 !important; }
+        .body-section { color:#3a4150 !important; }
+        .body-section strong { color:#1a1d24 !important; }
+        .body-section a { color:#6366f1 !important; }
+        .email-info-box { background:#f9fafd !important; border-color:#e5e9f0 !important; }
+        .email-info-box p { color:#5f6671 !important; }
+        .email-info-box strong { color:#1a1d24 !important; }
+        .email-info-box code { color:#1a1d24 !important; background:#eef0f5 !important; }
+        .email-code-box { background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(167,139,250,0.05)) !important; border-color:#dde1ec !important; }
+        .email-code { color:#1a1d24 !important; }
+        .footer-card p { color:#8b94a3 !important; }
     </style>
     </#if>
 </head>
 <body>
-    <div class="email-wrapper">
-        <div class="email-container">
-            <div class="email-header">
-                <div class="email-logo">
-                    <div class="email-logo-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-                    </div>
-                    <span class="email-logo-text">Finance Portal</span>
-                </div>
-                <p class="email-header-sub">Secure Authentication</p>
-            </div>
-            <div class="email-body">
-                <#nested>
-            </div>
-            <div class="email-footer">
-                <p>Bu e-posta Finance Portal tarafindan otomatik olarak gonderilmistir. Lutfen yanit vermeyin.</p>
-            </div>
-        </div>
-    </div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" class="wrapper">
+    <tr>
+        <td align="center">
+            <table role="presentation" class="container" width="560" cellspacing="0" cellpadding="0" border="0" style="width:560px;max-width:560px;">
+                <tr>
+                    <td align="left" class="brand-row">
+                        <span class="brand-dot"></span>
+                        <span class="brand-text">Finance Portal</span>
+                    </td>
+                </tr>
+            </table>
+
+            <table role="presentation" class="container card" width="560" cellspacing="0" cellpadding="0" border="0">
+                <tr><td class="accent-strip">&nbsp;</td></tr>
+                <#if title?has_content>
+                <tr>
+                    <td class="hero">
+                        <h1 class="hero-title">${title}</h1>
+                        <#if subtitle?has_content><p class="hero-sub">${subtitle}</p></#if>
+                    </td>
+                </tr>
+                </#if>
+                <tr>
+                    <td class="body-section">
+                        <#nested>
+                    </td>
+                </tr>
+            </table>
+
+            <table role="presentation" class="container" width="560" cellspacing="0" cellpadding="0" border="0" style="width:560px;max-width:560px;">
+                <tr>
+                    <td class="footer-card">
+                        <p>Bu e-posta Finance Portal tarafından otomatik olarak gönderilmiştir.</p>
+                        <p>İçerik tanıdık değilse e-postayı yok sayabilirsin.</p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
 </body>
 </html>
 </#macro>

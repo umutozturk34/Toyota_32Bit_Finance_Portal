@@ -14,7 +14,7 @@ function resolveTheme(preference) {
     return preference === 'LIGHT' ? 'light' : 'dark';
 }
 
-function readGuestPreference() {
+function readStoredPreference() {
     try {
         const stored = localStorage.getItem('finance-theme');
         if (stored === 'light') return 'LIGHT';
@@ -29,8 +29,10 @@ export function ThemeProvider({ children }) {
     const { isAuthenticated } = useAuth();
     const { preferences } = useUserPreferences();
     const updatePreferences = useUpdateUserPreferences();
-    const [guestPreference, setGuestPreference] = useState(readGuestPreference);
-    const themePreference = isAuthenticated ? (preferences.theme || 'DARK') : guestPreference;
+    const [storedPreference, setStoredPreference] = useState(readStoredPreference);
+    const themePreference = isAuthenticated
+        ? (preferences.theme || storedPreference)
+        : storedPreference;
 
     const theme = useMemo(() => resolveTheme(themePreference), [themePreference]);
 
@@ -45,10 +47,9 @@ export function ThemeProvider({ children }) {
     }, [theme]);
 
     const setThemePreference = (next) => {
+        setStoredPreference(next);
         if (isAuthenticated) {
             updatePreferences.mutate({ theme: next });
-        } else {
-            setGuestPreference(next);
         }
     };
 

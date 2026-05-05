@@ -119,6 +119,29 @@ services:
     networks:
       - finance-network
 
+  # LDIF templating: envsubst ${VAR} placeholders before openldap bootstrap
+  ldap-bootstrap:
+    image: alpine:3.19
+    container_name: finance-ldap-bootstrap
+    command:
+      - sh
+      - -c
+      - |
+        apk add --no-cache gettext > /dev/null &&
+        rm -f /processed/*.ldif &&
+        for f in /raw/*.ldif; do
+          envsubst '$${LDAP_ADMIN_PASSWORD} $${LDAP_CONFIG_PASSWORD}' < "$$f" > "/processed/$$(basename $$f)"
+        done &&
+        echo "LDIF templates rendered to /processed"
+    environment:
+      LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD}
+      LDAP_CONFIG_PASSWORD: ${LDAP_CONFIG_PASSWORD}
+    volumes:
+      - ./ldap-init:/raw:ro
+      - ldap_bootstrap:/processed
+    networks:
+      - finance-network
+
   # OpenLDAP Directory Server
   openldap:
     image: osixia/openldap:1.5.0
@@ -134,8 +157,11 @@ services:
       LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD}
       LDAP_CONFIG_PASSWORD: ${LDAP_CONFIG_PASSWORD}
       LDAP_TLS: "false"
+    depends_on:
+      ldap-bootstrap:
+        condition: service_completed_successfully
     volumes:
-      - ./ldap-init:/container/service/slapd/assets/config/bootstrap/ldif/custom
+      - ldap_bootstrap:/container/service/slapd/assets/config/bootstrap/ldif/custom:ro
       - openldap_data:/var/lib/ldap
       - openldap_config:/etc/ldap/slapd.d
     networks:
@@ -426,6 +452,7 @@ volumes:
   postgres_data_v2:
   openldap_data:
   openldap_config:
+  ldap_bootstrap:
   keycloak_data:
   redis_data:
   mongodb_data:

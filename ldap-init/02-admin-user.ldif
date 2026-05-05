@@ -1,0 +1,11 @@
+dn: uid=admin,ou=users,dc=finance,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: admin
+cn: Admin User
+sn: User
+givenName: Admin
+mail: admin@finance.com
+userPassword: ${LDAP_ADMIN_PASSWORD}

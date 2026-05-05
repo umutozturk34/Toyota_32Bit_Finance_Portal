@@ -41,7 +41,7 @@ class UserPreferenceServiceTest {
     @BeforeEach
     void setUp() {
         mapper = new UserPreferenceMapperImpl();
-        service = new UserPreferenceService(repository, mapper, eventPublisher, Optional.empty(), Optional.empty());
+        service = new UserPreferenceService(repository, mapper, eventPublisher, Optional.empty());
     }
 
     @Test

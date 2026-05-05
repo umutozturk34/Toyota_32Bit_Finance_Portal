@@ -32,8 +32,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Log4j2
 @Component
@@ -90,13 +88,6 @@ public class KeycloakAdminClient {
         putFullUser("setEnabled", userId, body);
     }
 
-    public void setUserAttribute(String userId, String key, String value) {
-        Map<String, Object> body = new java.util.HashMap<>(fetchUser(userId));
-        Map<String, List<String>> attributes = mergeAttributes(extractAttributes(body), key, value);
-        body.put("attributes", attributes);
-        putFullUser("setUserAttribute", userId, body);
-    }
-
     private void putFullUser(String operation, String userId, Map<String, Object> body) {
         executeWithRetry(operation, token -> webClient.put()
                 .uri("/admin/realms/{realm}/users/{id}", properties.getRealm(), userId)
@@ -120,28 +111,6 @@ public class KeycloakAdminClient {
             throw new com.finance.common.exception.ResourceNotFoundException("Keycloak user not found: " + userId);
         }
         return user;
-    }
-
-    private Map<String, List<String>> extractAttributes(Map<String, Object> user) {
-        Object attributes = user.get("attributes");
-        if (attributes instanceof Map<?, ?> raw) {
-            return raw.entrySet().stream()
-                    .filter(e -> e.getValue() instanceof List<?>)
-                    .collect(Collectors.toUnmodifiableMap(
-                            e -> e.getKey().toString(),
-                            e -> ((List<?>) e.getValue()).stream().map(Object::toString).toList()));
-        }
-        return Map.of();
-    }
-
-    private Map<String, List<String>> mergeAttributes(Map<String, List<String>> existing, String key, String value) {
-        return Stream.concat(
-                existing.entrySet().stream(),
-                Stream.of(Map.entry(key, List.of(value)))
-        ).collect(Collectors.toUnmodifiableMap(
-                Map.Entry::getKey,
-                Map.Entry::getValue,
-                (oldValue, newValue) -> newValue));
     }
 
     public void sendActionsEmail(String userId, List<String> actions, String clientId, String redirectUri, long lifespanSeconds) {

@@ -1,6 +1,5 @@
 package com.finance.user.service;
 
-import com.finance.user.client.KeycloakAdminClient;
 import com.finance.user.dto.UserPreferenceResponse;
 import com.finance.user.dto.UserPreferenceUpdateRequest;
 import com.finance.common.event.UserPreferenceEventPort;
@@ -27,7 +26,6 @@ public class UserPreferenceService {
     private final UserPreferenceMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
     private final Optional<UserPreferenceEventPort> kafkaPort;
-    private final Optional<KeycloakAdminClient> keycloakClient;
 
     @Transactional(readOnly = true)
     public UserPreferenceResponse getOrDefault(String userSub) {
@@ -49,18 +47,6 @@ public class UserPreferenceService {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     void onUserPreferencesCommitted(UserPreferencesUpdatedEvent event) {
         kafkaPort.ifPresent(port -> port.publishUserPreferencesUpdated(event));
-        pushThemeToKeycloak(event);
-    }
-
-    private void pushThemeToKeycloak(UserPreferencesUpdatedEvent event) {
-        keycloakClient.ifPresent(client -> {
-            try {
-                client.setUserAttribute(event.userSub(), "themePreference", event.theme());
-            } catch (RuntimeException ex) {
-                log.warn("Failed to push themePreference to Keycloak user={}: {}",
-                        event.userSub(), ex.getMessage());
-            }
-        });
     }
 
     private void applyUpdates(UserPreference entity, UserPreferenceUpdateRequest request) {

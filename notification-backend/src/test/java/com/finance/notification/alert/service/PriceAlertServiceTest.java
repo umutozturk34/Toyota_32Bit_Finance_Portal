@@ -29,6 +29,7 @@ class PriceAlertServiceTest {
 
     @Mock private PriceAlertRepository repository;
     @Mock private PriceAlertMapper mapper;
+    @Mock private com.finance.common.cache.AssetSnapshotCache assetSnapshotCache;
 
     @InjectMocks
     private PriceAlertService service;
@@ -88,6 +89,7 @@ class PriceAlertServiceTest {
 
     private PriceAlertResponse stubResponse(PriceAlert a) {
         return new PriceAlertResponse(a.getId(), a.getMarketType(), a.getAssetCode(),
+                null, null, null,
                 a.getDirection(), a.getThreshold(), a.getCurrency(), a.getReferencePrice(),
                 a.isActive(), a.getTriggeredAt(), a.getCreatedAt());
     }

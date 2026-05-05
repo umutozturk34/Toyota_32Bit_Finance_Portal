@@ -1,5 +1,7 @@
 package com.finance.notification.alert.service;
 
+import com.finance.common.cache.AssetSnapshotCache;
+import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
 import com.finance.notification.alert.dto.PriceAlertCreateRequest;
@@ -13,7 +15,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +27,7 @@ public class PriceAlertService {
 
     private final PriceAlertRepository repository;
     private final PriceAlertMapper mapper;
+    private final AssetSnapshotCache assetSnapshotCache;
 
     @Transactional
     public PriceAlertResponse create(String userSub, PriceAlertCreateRequest request) {
@@ -30,8 +37,12 @@ public class PriceAlertService {
 
     @Transactional(readOnly = true)
     public Page<PriceAlertResponse> list(String userSub, int page, int size) {
-        return repository.findByUserSubOrderByCreatedAtDesc(userSub, PageRequest.of(page, size))
-                .map(mapper::toResponse);
+        Page<PriceAlert> alerts = repository.findByUserSubOrderByCreatedAtDesc(userSub, PageRequest.of(page, size));
+        if (alerts.isEmpty()) return alerts.map(mapper::toResponse);
+        Map<MarketType, Map<String, AssetSnapshot>> snapshots = loadSnapshotsByMarket(alerts.getContent());
+        return alerts.map(alert -> mapper.toResponse(alert, snapshots
+                .getOrDefault(alert.getMarketType(), Map.of())
+                .get(alert.getAssetCode())));
     }
 
     @Transactional
@@ -55,6 +66,16 @@ public class PriceAlertService {
     @Transactional
     public void persist(PriceAlert alert) {
         repository.save(alert);
+    }
+
+    private Map<MarketType, Map<String, AssetSnapshot>> loadSnapshotsByMarket(List<PriceAlert> alerts) {
+        Map<MarketType, Set<String>> codesByMarket = alerts.stream()
+                .collect(Collectors.groupingBy(
+                        PriceAlert::getMarketType,
+                        Collectors.mapping(PriceAlert::getAssetCode, Collectors.toUnmodifiableSet())));
+        Map<MarketType, Map<String, AssetSnapshot>> snapshots = new EnumMap<>(MarketType.class);
+        codesByMarket.forEach((mt, codes) -> snapshots.put(mt, assetSnapshotCache.findByCodes(mt, codes)));
+        return snapshots;
     }
 
     private PriceAlert ownedOr404(Long id, String userSub) {

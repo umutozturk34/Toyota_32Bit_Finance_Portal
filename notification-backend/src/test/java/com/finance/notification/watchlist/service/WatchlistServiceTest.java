@@ -30,6 +30,7 @@ class WatchlistServiceTest {
     @Mock private WatchlistItemRepository repository;
     @Mock private WatchlistItemMapper mapper;
     @Mock private WatchlistManagementService managementService;
+    @Mock private com.finance.common.cache.AssetSnapshotCache assetSnapshotCache;
 
     @InjectMocks
     private WatchlistService service;
@@ -122,6 +123,7 @@ class WatchlistServiceTest {
 
     private WatchlistItemResponse stub(WatchlistItem i) {
         return new WatchlistItemResponse(i.getId(), i.getMarketType(), i.getAssetCode(),
+                null, null, null,
                 i.getNote(), i.getDeltaThreshold(), i.getLastSeenPrice(), i.getLastSeenAt(),
                 i.getCreatedAt());
     }

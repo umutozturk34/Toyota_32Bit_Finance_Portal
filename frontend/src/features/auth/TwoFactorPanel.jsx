@@ -16,7 +16,11 @@ export default function TwoFactorPanel() {
                 const response = await axios.get(KEYCLOAK_ACCOUNT_URL, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                const hasTotp = response.data.some((cred) => cred.type === 'otp');
+                const hasTotp = response.data.some((cred) =>
+                    cred.type === 'otp'
+                    && Array.isArray(cred.userCredentialMetadatas)
+                    && cred.userCredentialMetadatas.length > 0
+                );
                 if (!cancelled) setStatus({ loading: false, configured: hasTotp });
             } catch {
                 if (!cancelled) setStatus({ loading: false, configured: false });

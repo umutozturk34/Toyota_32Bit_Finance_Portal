@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { ShoppingCart } from './AnimatedIcons';
 import useSessionState from '../hooks/useSessionState';
+import useChartRange from '../hooks/useChartRange';
 import { unifiedMarketService } from '../services/unifiedMarketService';
 import LoadingState from './LoadingState';
 import ErrorState from './ErrorState';
@@ -44,7 +45,7 @@ export default function AssetDetailPage({
   const navigate = useNavigate();
   const [buyOpen, setBuyOpen] = useState(false);
   const [compareAsset, setCompareAsset] = useState(null);
-  const [timeRange, setTimeRange] = useSessionState(`chart-range-${queryKeyPrefix}-${assetCode}`, '6M');
+  const [timeRange, setTimeRange] = useChartRange(`chart-range-${queryKeyPrefix}-${assetCode}`);
 
   const { data: asset, isLoading, error } = useQuery({
     queryKey: [queryKeyPrefix, assetCode],

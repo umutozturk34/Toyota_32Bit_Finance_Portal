@@ -135,7 +135,7 @@ function WatchlistRow({ item, onRemove, draggable }) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 30 : 'auto',
   };
 
   return (
@@ -145,9 +145,11 @@ function WatchlistRow({ item, onRemove, draggable }) {
       onClick={route ? () => navigate(route) : undefined}
       onMouseEnter={triggerPrefetch}
       onFocus={triggerPrefetch}
-      className={`group grid grid-cols-[auto_auto_1fr_auto_auto] gap-3 items-center px-4 py-3 transition-colors ${
+      className={`relative group grid grid-cols-[auto_auto_1fr_auto_auto] gap-3 items-center px-4 py-3 transition-[background,box-shadow,border-color] ${
         route ? 'cursor-pointer hover:bg-accent/5' : ''
-      }`}
+      } ${isDragging
+        ? 'bg-accent/8 shadow-[0_18px_40px_-18px_rgba(99,102,241,0.55),inset_0_0_0_1px_rgba(99,102,241,0.4)] rounded-lg'
+        : ''}`}
     >
       {draggable ? (
         <button
@@ -155,7 +157,9 @@ function WatchlistRow({ item, onRemove, draggable }) {
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-center w-6 h-6 text-fg-subtle hover:text-fg cursor-grab active:cursor-grabbing bg-transparent border-none touch-none"
+          className={`flex items-center justify-center w-6 h-6 cursor-grab active:cursor-grabbing bg-transparent border-none touch-none transition-colors ${
+            isDragging ? 'text-accent' : 'text-fg-subtle hover:text-fg'
+          }`}
           title="Sürükleyerek sırala"
         >
           <GripVertical className="h-4 w-4" />

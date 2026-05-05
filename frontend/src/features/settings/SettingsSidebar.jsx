@@ -233,29 +233,44 @@ export default function SettingsSidebar({ isOpen, onClose }) {
 
               <Section icon={Mail} title="E-posta">
                 <form onSubmit={handleChangeEmail} className="space-y-2">
-                  <input
-                    type="email"
-                    required
-                    value={emailDraft}
-                    onChange={(e) => setEmailDraft(e.target.value)}
-                    placeholder="yeni@email.com"
-                    disabled={emailSending}
-                    className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-xs text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent disabled:opacity-50"
-                  />
-                  <button
+                  <div className="relative group/input">
+                    <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-fg-subtle group-focus-within/input:text-accent transition-colors">
+                      <Mail className="h-3.5 w-3.5" />
+                    </span>
+                    <input
+                      type="email"
+                      required
+                      value={emailDraft}
+                      onChange={(e) => setEmailDraft(e.target.value)}
+                      placeholder="yeni@email.com"
+                      disabled={emailSending}
+                      className="w-full rounded-lg border border-border-default bg-bg-elevated/80 backdrop-blur-sm pl-9 pr-3 py-2 text-xs text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:bg-bg-elevated focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12),inset_0_1px_0_rgba(255,255,255,0.04)] transition-all disabled:opacity-50"
+                    />
+                  </div>
+                  <motion.button
                     type="submit"
                     disabled={emailSending || !emailDraft.trim()}
-                    className="w-full flex items-center justify-between gap-2 rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-xs font-medium text-fg hover:bg-surface transition-colors cursor-pointer disabled:opacity-50"
+                    whileTap={{ scale: 0.98 }}
+                    className="relative w-full flex items-center justify-between gap-2 rounded-lg overflow-hidden px-3 py-2.5 text-xs font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed group/cta"
                   >
-                    <span className="flex items-center gap-2">
-                      <Mail className="h-3.5 w-3.5 text-accent" />
+                    <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-accent via-accent-bright to-accent transition-opacity group-hover/cta:opacity-90 group-disabled/cta:from-bg-elevated group-disabled/cta:via-bg-elevated group-disabled/cta:to-bg-elevated" />
+                    <span aria-hidden className="absolute inset-0 opacity-0 group-hover/cta:opacity-100 transition-opacity bg-[radial-gradient(120%_120%_at_50%_-20%,rgba(255,255,255,0.18),transparent_60%)]" />
+                    <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-white/20" />
+                    <span className="relative flex items-center gap-2">
+                      <Mail className="h-3.5 w-3.5" />
                       Doğrulama kodu iste
                     </span>
-                    <span className="text-[10px] text-fg-muted">{emailSending ? '…' : 'Kod →'}</span>
-                  </button>
+                    <span className="relative flex items-center gap-1 text-[10px] tracking-wide opacity-90">
+                      {emailSending ? (
+                        <span className="inline-flex items-center gap-1"><span className="h-1 w-1 rounded-full bg-white animate-pulse" />gönderiliyor</span>
+                      ) : (
+                        <span>Kod →</span>
+                      )}
+                    </span>
+                  </motion.button>
                 </form>
-                <p className="text-[10px] text-fg-subtle leading-relaxed px-1 mt-1.5">
-                  Yeni adresine 6 haneli kod gönderilir; Keycloak doğrulama sayfasında kodu girince e-posta güncellenir.
+                <p className="text-[10px] text-fg-subtle leading-relaxed px-1 mt-2">
+                  Yeni adresine <span className="font-mono text-fg-muted">6 haneli kod</span> gönderilir; Keycloak doğrulama sayfasında kodu girince e-posta güncellenir.
                 </p>
               </Section>
 

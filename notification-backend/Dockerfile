@@ -10,7 +10,7 @@ RUN --mount=type=secret,id=github_token,target=/run/secrets/github_token \
     --mount=type=cache,target=/root/.m2/repository \
     mkdir -p /root/.m2 && \
     printf '<settings><servers><server><id>github</id><username>umutozturk34</username><password>%s</password></server></servers></settings>' "$(cat /run/secrets/github_token)" > /root/.m2/settings.xml && \
-    mvn -B package -DskipTests && \
+    mvn -B -U package -DskipTests && \
     rm /root/.m2/settings.xml
 
 FROM eclipse-temurin:21-jre-alpine

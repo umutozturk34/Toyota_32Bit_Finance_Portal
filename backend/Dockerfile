@@ -37,7 +37,7 @@ COPY finance-portfolio/src finance-portfolio/src
 COPY finance-app/src finance-app/src
 
 RUN --mount=type=cache,target=/root/.m2/repository \
-    mvn -B clean package -DskipTests && \
+    mvn -B -U clean package -DskipTests && \
     cp finance-app/target/*.jar /app.jar
 
 FROM eclipse-temurin:21-jre-alpine

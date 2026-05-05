@@ -17,7 +17,7 @@
 
     <properties>
         <java.version>21</java.version>
-        <finance-common.version>0.14.0-SNAPSHOT</finance-common.version>
+        <finance-common.version>0.14.1-SNAPSHOT</finance-common.version>
         <lombok.version>1.18.40</lombok.version>
         <mapstruct.version>1.6.3</mapstruct.version>
     </properties>

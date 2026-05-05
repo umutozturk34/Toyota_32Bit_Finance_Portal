@@ -50,6 +50,12 @@ class NotificationDispatcherTest {
     private MailSender mailSender;
 
     @Mock
+    private NotificationStreamRegistry streamRegistry;
+
+    @Mock
+    private com.finance.notification.core.mapper.NotificationMapper notificationMapper;
+
+    @Mock
     private ApplicationEventPublisher events;
 
     private NotificationDispatcher dispatcher;
@@ -81,6 +87,7 @@ class NotificationDispatcherTest {
         dispatcher = new NotificationDispatcher(
                 notificationRepository, preferenceRepository,
                 userPreferenceCacheService, userEmailLookup, mailSender,
+                streamRegistry, notificationMapper,
                 List.of(systemHandler), events);
     }
 

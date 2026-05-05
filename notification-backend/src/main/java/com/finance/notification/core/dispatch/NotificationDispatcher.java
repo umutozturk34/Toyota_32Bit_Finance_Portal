@@ -1,6 +1,7 @@
 package com.finance.notification.core.dispatch;
 
 import com.finance.notification.core.mail.MailSender;
+import com.finance.notification.core.mapper.NotificationMapper;
 import com.finance.notification.core.model.Notification;
 import com.finance.notification.core.model.NotificationPreference;
 import com.finance.notification.core.model.NotificationType;
@@ -27,6 +28,8 @@ public class NotificationDispatcher {
     private final UserPreferenceCacheService userPreferenceCacheService;
     private final UserEmailLookup userEmailLookup;
     private final MailSender mailSender;
+    private final NotificationStreamRegistry streamRegistry;
+    private final NotificationMapper notificationMapper;
     private final Map<NotificationType, NotificationHandler> handlers;
     private final org.springframework.context.ApplicationEventPublisher events;
 
@@ -35,6 +38,8 @@ public class NotificationDispatcher {
                                   UserPreferenceCacheService userPreferenceCacheService,
                                   UserEmailLookup userEmailLookup,
                                   MailSender mailSender,
+                                  NotificationStreamRegistry streamRegistry,
+                                  NotificationMapper notificationMapper,
                                   List<NotificationHandler> handlerList,
                                   org.springframework.context.ApplicationEventPublisher events) {
         this.notificationRepository = notificationRepository;
@@ -42,6 +47,8 @@ public class NotificationDispatcher {
         this.userPreferenceCacheService = userPreferenceCacheService;
         this.userEmailLookup = userEmailLookup;
         this.mailSender = mailSender;
+        this.streamRegistry = streamRegistry;
+        this.notificationMapper = notificationMapper;
         this.events = events;
         this.handlers = new EnumMap<>(NotificationType.class);
         for (NotificationHandler h : handlerList) {
@@ -70,6 +77,7 @@ public class NotificationDispatcher {
                     request.expiresAt()));
             log.info("In-app notification persisted id={} user={} type={}",
                     persisted.getId(), request.userSub(), request.type());
+            streamRegistry.publish(request.userSub(), notificationMapper.toResponse(persisted));
         }
 
         if (prefs.wantsEmail(request.type())) {

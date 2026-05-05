@@ -21,7 +21,6 @@ export function useUnreadNotificationCount() {
     queryKey: COUNT_KEY,
     queryFn: notificationService.unreadCount,
     enabled: isAuthenticated && !loading,
-    refetchInterval: 60_000,
     staleTime: 30_000,
   });
 }

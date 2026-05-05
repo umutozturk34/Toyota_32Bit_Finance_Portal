@@ -14,6 +14,7 @@ import TasksPanel from '../../features/admin/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
 import NotificationPanel from '../../features/notifications/NotificationPanel';
 import { useUnreadNotificationCount } from '../hooks/useNotifications';
+import useNotificationStream from '../hooks/useNotificationStream';
 import OnboardingGate from '../../features/onboarding/OnboardingGate';
 import KeycloakActionToast from '../../features/auth/KeycloakActionToast';
 
@@ -41,6 +42,7 @@ const MainLayout = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
+  useNotificationStream();
 
   const navType = useNavigationType();
 

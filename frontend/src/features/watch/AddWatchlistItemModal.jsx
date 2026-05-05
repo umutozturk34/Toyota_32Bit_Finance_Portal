@@ -100,7 +100,7 @@ export default function AddWatchlistItemModal({
 
             <form onSubmit={submit} className="p-5 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-mono uppercase tracking-wider text-fg-subtle">Pazar</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">Pazar</label>
                 <select
                   value={marketType}
                   onChange={(e) => setMarketType(e.target.value)}
@@ -114,7 +114,7 @@ export default function AddWatchlistItemModal({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-mono uppercase tracking-wider text-fg-subtle">Asset kodu</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">Asset kodu</label>
                 <input
                   type="text"
                   value={assetCode}
@@ -126,7 +126,7 @@ export default function AddWatchlistItemModal({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-mono uppercase tracking-wider text-fg-subtle">Not (opsiyonel)</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">Not (opsiyonel)</label>
                 <input
                   type="text"
                   value={note}
@@ -138,7 +138,7 @@ export default function AddWatchlistItemModal({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-mono uppercase tracking-wider text-fg-subtle">% değişim eşiği (opsiyonel)</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">% değişim eşiği (opsiyonel)</label>
                 <input
                   type="number"
                   step="0.1"

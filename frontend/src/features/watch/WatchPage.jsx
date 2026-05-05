@@ -50,7 +50,7 @@ function relativeTime(iso) {
 
 function MarketBadge({ marketType }) {
   return (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-mono uppercase tracking-wider bg-surface text-fg-muted">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide bg-surface text-fg-muted">
       {MARKET_LABELS[marketType] ?? marketType}
     </span>
   );
@@ -233,7 +233,7 @@ export default function WatchPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         icon={<Eye className="h-5 w-5" />}
         title="Takip"
@@ -276,7 +276,7 @@ export default function WatchPage() {
             />
           )}
         </div>
-        <div className="grid grid-cols-[auto_1fr_auto_auto] gap-3 px-4 py-2 border-b border-border-default text-[10px] font-mono uppercase tracking-wider text-fg-subtle">
+        <div className="grid grid-cols-[auto_1fr_auto_auto] gap-3 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
           <span>Pazar</span>
           <span>Asset</span>
           <span className="text-right">Son fiyat</span>
@@ -321,7 +321,7 @@ export default function WatchPage() {
             Alarm oluştur
           </button>
         </header>
-        <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 px-4 py-2 border-b border-border-default text-[10px] font-mono uppercase tracking-wider text-fg-subtle">
+        <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
           <span>Pazar</span>
           <span>Asset</span>
           <span>Yön</span>

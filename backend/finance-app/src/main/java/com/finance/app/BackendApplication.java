@@ -17,11 +17,13 @@ import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = "com.finance")
 @EnableJpaRepositories(basePackages = "com.finance")
+@EnableMongoRepositories(basePackages = "com.finance")
 @EntityScan(basePackages = "com.finance")
 @EnableScheduling
 @EnableAsync

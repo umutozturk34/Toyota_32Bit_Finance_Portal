@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @Log4j2
-@Component
+@Component("notificationMailSender")
 @RequiredArgsConstructor
 public class MailSender {
 

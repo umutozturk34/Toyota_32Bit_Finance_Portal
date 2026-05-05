@@ -81,7 +81,7 @@ export default function NotificationPreferencesSection() {
       </div>
 
       <div className="rounded-lg border border-border-default bg-bg-elevated overflow-hidden">
-        <div className="grid grid-cols-[1fr_auto_auto] gap-3 px-3 py-2 border-b border-border-default text-[10px] font-mono uppercase tracking-wider text-fg-subtle">
+        <div className="grid grid-cols-[1fr_auto_auto] gap-3 px-3 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
           <span>Tür</span>
           <span className="w-7 text-center">E-posta</span>
           <span className="w-7 text-center">Uyg.</span>

@@ -1,10 +1,11 @@
 package com.finance.app.event;
+import com.finance.common.event.KafkaTopics;
+
 import com.finance.common.event.MarketUpdatedEvent;
 
 import com.finance.common.service.MarketSnapshotProcessor;
 
 
-import com.finance.app.config.KafkaTopicsConfig;
 import com.finance.common.model.MarketType;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -50,7 +51,7 @@ class KafkaMarketEventAdapterTest {
         ArgumentCaptor<Object> payload = ArgumentCaptor.forClass(Object.class);
         verify(kafkaTemplate).send(topic.capture(), key.capture(), payload.capture());
 
-        assertThat(topic.getValue()).isEqualTo(KafkaTopicsConfig.MARKET_UPDATED_TOPIC);
+        assertThat(topic.getValue()).isEqualTo(KafkaTopics.MARKET_UPDATED);
         assertThat(key.getValue()).isEqualTo("STOCK");
         assertThat(payload.getValue()).isInstanceOf(MarketUpdatedEvent.class);
         MarketUpdatedEvent event = (MarketUpdatedEvent) payload.getValue();

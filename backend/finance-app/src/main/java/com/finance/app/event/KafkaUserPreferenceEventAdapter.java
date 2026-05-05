@@ -1,4 +1,6 @@
 package com.finance.app.event;
+import com.finance.common.event.KafkaTopics;
+
 import com.finance.common.model.*;
 import com.finance.common.model.value.*;
 import com.finance.common.dto.*;
@@ -19,7 +21,6 @@ import com.finance.common.mapper.*;
 import com.finance.common.repository.*;
 import com.finance.common.client.*;
 
-import com.finance.app.config.KafkaTopicsConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -34,7 +35,7 @@ public class KafkaUserPreferenceEventAdapter implements UserPreferenceEventPort 
 
     @Override
     public void publishUserPreferencesUpdated(UserPreferencesUpdatedEvent event) {
-        kafkaTemplate.send(KafkaTopicsConfig.USER_PREFERENCES_UPDATED_TOPIC, event.userSub(), event)
+        kafkaTemplate.send(KafkaTopics.USER_PREFERENCES_UPDATED, event.userSub(), event)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("Failed to publish user.preferences.updated for {}: {}",

@@ -1,4 +1,6 @@
 package com.finance.notification.listener;
+import com.finance.common.event.KafkaTopics;
+
 
 import com.finance.common.event.UserPreferencesUpdatedEvent;
 import com.finance.notification.user.UserPreferenceCacheService;
@@ -23,7 +25,7 @@ public class UserPreferenceEventListener {
     }
 
     @KafkaListener(
-            topics = "user.preferences.updated",
+            topics = KafkaTopics.USER_PREFERENCES_UPDATED,
             groupId = "${spring.kafka.consumer.group-id}-user-prefs"
     )
     public void onUserPreferencesUpdated(UserPreferencesUpdatedEvent event, Acknowledgment ack) {

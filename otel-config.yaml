@@ -58,21 +58,22 @@ processors:
 
   cumulativetodelta:
 
+connectors:
   routing/traces:
-    from_attribute: service.name
-    attribute_source: resource
-    default_exporters: [opensearch/traces-finance]
+    default_pipelines: [traces/finance]
+    error_mode: ignore
     table:
-      - value: finance-notification
-        exporters: [opensearch/traces-notification]
+      - context: resource
+        condition: 'attributes["service.name"] == "finance-notification"'
+        pipelines: [traces/notification]
 
   routing/metrics:
-    from_attribute: service.name
-    attribute_source: resource
-    default_exporters: [elasticsearch/metrics-finance]
+    default_pipelines: [metrics/finance]
+    error_mode: ignore
     table:
-      - value: finance-notification
-        exporters: [elasticsearch/metrics-notification]
+      - context: resource
+        condition: 'attributes["service.name"] == "finance-notification"'
+        pipelines: [metrics/notification]
 
 exporters:
   opensearch/traces-finance:
@@ -125,9 +126,22 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [memory_limiter, filter/health, resource, transform/traces, batch, routing/traces]
-      exporters: [opensearch/traces-finance, opensearch/traces-notification]
+      processors: [memory_limiter, filter/health, resource, transform/traces, batch]
+      exporters: [routing/traces]
+    traces/finance:
+      receivers: [routing/traces]
+      exporters: [opensearch/traces-finance]
+    traces/notification:
+      receivers: [routing/traces]
+      exporters: [opensearch/traces-notification]
+
     metrics:
       receivers: [otlp]
-      processors: [memory_limiter, filter/metrics, resource, transform/metrics, cumulativetodelta, batch, routing/metrics]
-      exporters: [elasticsearch/metrics-finance, elasticsearch/metrics-notification]
+      processors: [memory_limiter, filter/metrics, resource, transform/metrics, cumulativetodelta, batch]
+      exporters: [routing/metrics]
+    metrics/finance:
+      receivers: [routing/metrics]
+      exporters: [elasticsearch/metrics-finance]
+    metrics/notification:
+      receivers: [routing/metrics]
+      exporters: [elasticsearch/metrics-notification]

@@ -59,7 +59,7 @@ export default function CreateWatchlistModal({ isOpen, onClose, onCreated }) {
             </header>
             <form onSubmit={submit} className="p-5 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-mono uppercase tracking-wider text-fg-subtle">Liste adı</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">Liste adı</label>
                 <input
                   type="text"
                   value={name}

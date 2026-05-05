@@ -57,7 +57,7 @@ function NotificationRow({ item, onRead, onDelete }) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-fg-subtle">{label}</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">{label}</span>
             <span className="text-[10px] text-fg-subtle">·</span>
             <span className="text-[10px] text-fg-subtle">{relativeTime(item.createdAt)}</span>
             {isUnread && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-accent animate-pulse-dot" />}

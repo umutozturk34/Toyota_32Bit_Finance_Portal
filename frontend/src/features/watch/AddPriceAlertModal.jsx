@@ -113,7 +113,7 @@ export default function AddPriceAlertModal({
 
             <form onSubmit={submit} className="p-5 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-mono uppercase tracking-wider text-fg-subtle">Pazar</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">Pazar</label>
                 <select
                   value={marketType}
                   onChange={(e) => setMarketType(e.target.value)}
@@ -127,7 +127,7 @@ export default function AddPriceAlertModal({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-mono uppercase tracking-wider text-fg-subtle">Asset kodu</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">Asset kodu</label>
                 <input
                   type="text"
                   value={assetCode}
@@ -139,7 +139,7 @@ export default function AddPriceAlertModal({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-mono uppercase tracking-wider text-fg-subtle">Tetikleme</label>
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">Tetikleme</label>
                 <div className="grid grid-cols-2 gap-1.5">
                   {DIRECTION_OPTIONS.map(({ value, label, Icon }) => {
                     const active = direction === value;
@@ -167,7 +167,7 @@ export default function AddPriceAlertModal({
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-mono uppercase tracking-wider text-fg-subtle">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
                     {isPercent ? 'Eşik (%)' : 'Eşik fiyat'}
                   </label>
                   <input
@@ -182,7 +182,7 @@ export default function AddPriceAlertModal({
                 </div>
                 {requiresReference && (
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-mono uppercase tracking-wider text-fg-subtle">Referans fiyat</label>
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">Referans fiyat</label>
                     <input
                       type="number"
                       step="0.0001"

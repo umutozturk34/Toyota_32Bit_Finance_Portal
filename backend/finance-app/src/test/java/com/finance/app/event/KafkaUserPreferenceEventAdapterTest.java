@@ -1,4 +1,6 @@
 package com.finance.app.event;
+import com.finance.common.event.KafkaTopics;
+
 import com.finance.common.service.MarketSnapshotProcessor;
 
 import com.finance.common.model.*;
@@ -21,7 +23,6 @@ import com.finance.common.mapper.*;
 import com.finance.common.repository.*;
 import com.finance.common.client.*;
 
-import com.finance.app.config.KafkaTopicsConfig;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,7 +75,7 @@ class KafkaUserPreferenceEventAdapterTest {
         ArgumentCaptor<Object> payload = ArgumentCaptor.forClass(Object.class);
         verify(kafkaTemplate).send(topic.capture(), key.capture(), payload.capture());
 
-        assertThat(topic.getValue()).isEqualTo(KafkaTopicsConfig.USER_PREFERENCES_UPDATED_TOPIC);
+        assertThat(topic.getValue()).isEqualTo(KafkaTopics.USER_PREFERENCES_UPDATED);
         assertThat(key.getValue()).isEqualTo("kc-user-123");
         assertThat(payload.getValue()).isSameAs(event);
     }

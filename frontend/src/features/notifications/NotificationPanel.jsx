@@ -104,6 +104,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
   const total = data?.totalElements ?? 0;
 
   return (
+    <>
     <AnimatePresence>
       {isOpen && (
         <>
@@ -228,21 +229,22 @@ export default function NotificationPanel({ isOpen, onClose }) {
           </motion.aside>
         </>
       )}
-      <ConfirmDialog
-        open={confirmClearOpen}
-        title="Tüm bildirimleri sil?"
-        message={`${total} bildirim kalıcı olarak silinecek. Bu işlem geri alınamaz.`}
-        confirmLabel="Tümünü sil"
-        cancelLabel="Vazgeç"
-        variant="danger"
-        loading={deleteAllNotifications.isPending}
-        onConfirm={() => {
-          deleteAllNotifications.mutate(undefined, {
-            onSettled: () => setConfirmClearOpen(false),
-          });
-        }}
-        onCancel={() => setConfirmClearOpen(false)}
-      />
     </AnimatePresence>
+    <ConfirmDialog
+      open={confirmClearOpen}
+      title="Tüm bildirimleri sil?"
+      message={`${total} bildirim kalıcı olarak silinecek. Bu işlem geri alınamaz.`}
+      confirmLabel="Tümünü sil"
+      cancelLabel="Vazgeç"
+      variant="danger"
+      loading={deleteAllNotifications.isPending}
+      onConfirm={() => {
+        deleteAllNotifications.mutate(undefined, {
+          onSettled: () => setConfirmClearOpen(false),
+        });
+      }}
+      onCancel={() => setConfirmClearOpen(false)}
+    />
+    </>
   );
 }

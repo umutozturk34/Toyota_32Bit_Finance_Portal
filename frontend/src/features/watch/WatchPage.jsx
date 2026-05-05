@@ -17,6 +17,8 @@ import {
   useRemoveWatchlistItem,
 } from '../../shared/hooks/useWatchlist';
 import { usePriceAlerts, useDeletePriceAlert, useReactivatePriceAlert } from '../../shared/hooks/usePriceAlerts';
+import useListParams from '../../shared/hooks/useListParams';
+import Pagination from '../../shared/components/Pagination';
 import AddPriceAlertModal from './AddPriceAlertModal';
 import AddWatchlistItemModal from './AddWatchlistItemModal';
 import CreateWatchlistModal from './CreateWatchlistModal';
@@ -258,7 +260,8 @@ export default function WatchPage() {
   }, [activeListId, watchlists, setActiveListId]);
 
   const items = useWatchlistItems(activeListId);
-  const alerts = usePriceAlerts({ page: 0, size: 100 });
+  const alertParams = useListParams({ defaultSize: 10, prefix: 'alerts' });
+  const alerts = usePriceAlerts({ page: alertParams.page, size: alertParams.size });
   const removeWatchlistItem = useRemoveWatchlistItem(activeListId);
   const deletePriceAlert = useDeletePriceAlert();
   const reactivatePriceAlert = useReactivatePriceAlert();
@@ -266,6 +269,7 @@ export default function WatchPage() {
 
   const watchItems = items.data ?? [];
   const alertItems = alerts.data?.content ?? alerts.data?.items ?? [];
+  const alertTotalPages = alerts.data?.totalPages ?? 0;
   const activeList = watchlists.find((w) => w.id === activeListId);
 
   const handleRemoveWatchlistItem = async (id) => {
@@ -432,6 +436,7 @@ export default function WatchPage() {
             ))
           )}
         </div>
+        <Pagination page={alertParams.page} totalPages={alertTotalPages} onPageChange={alertParams.setPage} />
       </section>
 
       <AddPriceAlertModal isOpen={alertOpen} onClose={() => setAlertOpen(false)} />

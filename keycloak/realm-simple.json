@@ -213,7 +213,7 @@
             "cn=admin,dc=finance,dc=com"
           ],
           "bindCredential": [
-            "admin123"
+            "${LDAP_ADMIN_PASSWORD}"
           ],
           "searchScope": [
             "1"

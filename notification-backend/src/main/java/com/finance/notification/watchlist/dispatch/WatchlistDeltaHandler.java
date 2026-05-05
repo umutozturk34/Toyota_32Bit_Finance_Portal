@@ -9,8 +9,11 @@ import com.finance.notification.core.model.NotificationType;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -18,6 +21,7 @@ import java.util.Map;
 public class WatchlistDeltaHandler implements NotificationHandler {
 
     private static final Locale TR = Locale.forLanguageTag("tr-TR");
+    private static final int BODY_PREVIEW_ITEMS = 3;
 
     @Override
     public NotificationType type() {
@@ -32,53 +36,84 @@ public class WatchlistDeltaHandler implements NotificationHandler {
                             + request.payload().getClass().getSimpleName());
         }
 
-        String assetCode = p.assetCode() != null ? p.assetCode() : "?";
-        String displayName = (p.assetName() != null && !p.assetName().isBlank())
-                ? p.assetName() : assetCode.toUpperCase();
         MarketType marketType = p.marketType();
         String marketLabel = marketType != null ? marketType.displayLabel() : "Varlık";
+        String listLabel = (p.watchlistName() != null && !p.watchlistName().isBlank())
+                ? p.watchlistName() : "Takip listeniz";
 
-        String priceFormatted = formatPrice(p.currentPrice());
-        String lastSeenFormatted = formatPrice(p.lastSeenPrice());
-        String deltaFormatted = formatPercent(p.deltaPercent());
+        int count = p.items().size();
+        String title = count == 1
+                ? String.format("%s — %s", listLabel, displayName(p.items().get(0)))
+                : String.format("%s — %d varlıkta hareket", listLabel, count);
 
-        String title = String.format("%s takip listesi hareketi", displayName);
-        String body = String.format("%s — %s anlık %s, önceki %s, değişim %s",
-                marketLabel, displayName, priceFormatted, lastSeenFormatted, deltaFormatted);
+        String body = buildBody(p.items());
+        List<Map<String, Object>> renderedItems = renderItems(p.items());
 
         Map<String, Object> model = new HashMap<>();
-        model.put("assetCode", assetCode);
-        model.put("assetCodeUpper", assetCode.toUpperCase());
-        model.put("assetName", displayName);
-        model.put("image", p.image());
+        model.put("watchlistName", listLabel);
         model.put("marketLabel", marketLabel);
-        model.put("priceFormatted", priceFormatted);
-        model.put("lastSeenFormatted", lastSeenFormatted);
-        model.put("deltaFormatted", deltaFormatted);
-        model.put("isUp", p.deltaPercent() != null && p.deltaPercent().signum() >= 0);
+        model.put("itemCount", count);
+        model.put("items", renderedItems);
 
         return new RenderedNotification(
                 title,
                 body,
-                "Finance Portal — " + displayName + " takip listesi hareketi",
+                "Finance Portal — " + listLabel + " hareketi",
                 "watchlist-delta",
                 model);
+    }
+
+    private static String buildBody(List<WatchlistDeltaPayload.DeltaItem> items) {
+        List<String> parts = new ArrayList<>();
+        for (int i = 0; i < items.size() && i < BODY_PREVIEW_ITEMS; i++) {
+            WatchlistDeltaPayload.DeltaItem item = items.get(i);
+            parts.add(String.format("%s %s", displayName(item), formatPercent(item.deltaPercent())));
+        }
+        if (items.size() > BODY_PREVIEW_ITEMS) {
+            parts.add(String.format("ve %d daha", items.size() - BODY_PREVIEW_ITEMS));
+        }
+        return String.join(" · ", parts);
+    }
+
+    private static List<Map<String, Object>> renderItems(List<WatchlistDeltaPayload.DeltaItem> items) {
+        List<Map<String, Object>> rendered = new ArrayList<>(items.size());
+        for (WatchlistDeltaPayload.DeltaItem item : items) {
+            BigDecimal delta = item.deltaPercent();
+            boolean isUp = delta != null && delta.signum() >= 0;
+            Map<String, Object> row = new HashMap<>();
+            row.put("assetCode", item.assetCode());
+            row.put("assetCodeUpper", item.assetCode() != null ? item.assetCode().toUpperCase() : "");
+            row.put("assetName", displayName(item));
+            row.put("image", item.image());
+            row.put("priceFormatted", formatPrice(item.currentPrice()));
+            row.put("lastSeenFormatted", formatPrice(item.lastSeenPrice()));
+            row.put("deltaFormatted", formatPercent(delta));
+            row.put("isUp", isUp);
+            rendered.add(row);
+        }
+        return rendered;
+    }
+
+    private static String displayName(WatchlistDeltaPayload.DeltaItem item) {
+        if (item.assetName() != null && !item.assetName().isBlank()) return item.assetName();
+        return item.assetCode() != null ? item.assetCode().toUpperCase() : "?";
     }
 
     private static String formatPrice(BigDecimal value) {
         if (value == null) return "—";
         NumberFormat money = NumberFormat.getNumberInstance(TR);
-        money.setMaximumFractionDigits(value.compareTo(BigDecimal.ONE) < 0 ? 6 : 2);
+        money.setMaximumFractionDigits(value.abs().compareTo(BigDecimal.ONE) < 0 ? 6 : 2);
         money.setMinimumFractionDigits(2);
         return "₺" + money.format(value);
     }
 
     private static String formatPercent(BigDecimal value) {
         if (value == null) return "—";
+        BigDecimal scaled = value.setScale(2, RoundingMode.HALF_UP);
         NumberFormat fmt = NumberFormat.getNumberInstance(TR);
         fmt.setMaximumFractionDigits(2);
         fmt.setMinimumFractionDigits(2);
-        String prefix = value.signum() >= 0 ? "+" : "";
-        return prefix + fmt.format(value) + "%";
+        String prefix = scaled.signum() > 0 ? "+" : "";
+        return prefix + fmt.format(scaled) + "%";
     }
 }

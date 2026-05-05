@@ -96,7 +96,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
   const markAllRead = useMarkAllNotificationsRead();
   const deleteNotification = useDeleteNotification();
 
-  const items = data?.items ?? [];
+  const items = data?.content ?? data?.items ?? [];
   const total = data?.totalElements ?? 0;
 
   return (

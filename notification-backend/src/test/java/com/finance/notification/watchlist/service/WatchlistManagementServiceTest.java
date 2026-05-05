@@ -140,7 +140,6 @@ class WatchlistManagementServiceTest {
     void list_includesItemCountForEachWatchlist() {
         Watchlist a = favorites();
         Watchlist b = Watchlist.builder().id(2L).userSub("user-1").name("Crypto").isDefault(false).build();
-        when(repository.findByUserSubAndIsDefaultTrue("user-1")).thenReturn(Optional.of(a));
         when(repository.findByUserSubOrderByIsDefaultDescCreatedAtAsc("user-1"))
                 .thenReturn(List.of(a, b));
         when(itemRepository.countByWatchlistId(1L)).thenReturn(3L);
@@ -151,6 +150,24 @@ class WatchlistManagementServiceTest {
         assertThat(result).hasSize(2);
         assertThat(result.get(0).itemCount()).isEqualTo(3L);
         assertThat(result.get(1).itemCount()).isEqualTo(1L);
+    }
+
+    @Test
+    void list_lazyCreatesDefaultWhenUserHasNoLists() {
+        when(repository.findByUserSubOrderByIsDefaultDescCreatedAtAsc("user-1"))
+                .thenReturn(List.of());
+        when(repository.save(any(Watchlist.class)))
+                .thenAnswer(inv -> {
+                    Watchlist w = inv.getArgument(0);
+                    w.setId(99L);
+                    return w;
+                });
+
+        List<WatchlistResponse> result = service.list("user-1");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).name()).isEqualTo("Favoriler");
+        assertThat(result.get(0).isDefault()).isTrue();
     }
 
     @Test

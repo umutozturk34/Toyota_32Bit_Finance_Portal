@@ -29,10 +29,12 @@ public class WatchlistManagementService {
                 .orElseGet(() -> repository.save(Watchlist.createDefault(userSub)));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<WatchlistResponse> list(String userSub) {
-        ensureDefault(userSub);
         List<Watchlist> watchlists = repository.findByUserSubOrderByIsDefaultDescCreatedAtAsc(userSub);
+        if (watchlists.isEmpty()) {
+            watchlists = List.of(repository.save(Watchlist.createDefault(userSub)));
+        }
         return watchlists.stream()
                 .map(w -> new WatchlistResponse(
                         w.getId(),

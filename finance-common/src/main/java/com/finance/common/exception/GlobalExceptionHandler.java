@@ -1,11 +1,14 @@
 package com.finance.common.exception;
 import com.finance.common.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.stream.Collectors;
@@ -89,6 +92,48 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(error);
     }
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex, HttpServletRequest request) {
+        Map<String, String> violations = ex.getConstraintViolations().stream()
+                .collect(Collectors.toUnmodifiableMap(
+                        v -> v.getPropertyPath().toString(),
+                        v -> v.getMessage() == null ? "" : v.getMessage(),
+                        (a, b) -> a));
+        log.warn("Constraint violation: {}", violations);
+        ErrorResponse error = ErrorResponse.of(
+                "Validation failed",
+                "VALIDATION_ERROR",
+                violations);
+        error.setPath(request.getRequestURI());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        log.warn("Malformed request body: {}", ex.getMostSpecificCause().getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                "Geçersiz istek gövdesi",
+                "MALFORMED_REQUEST",
+                request.getRequestURI());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParameter(MissingServletRequestParameterException ex, HttpServletRequest request) {
+        log.warn("Missing parameter: {}", ex.getParameterName());
+        ErrorResponse error = ErrorResponse.of(
+                "Eksik parametre: " + ex.getParameterName(),
+                "MISSING_PARAMETER",
+                request.getRequestURI());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
+
     @ExceptionHandler(TaskAlreadyRunningException.class)
     public ResponseEntity<ErrorResponse> handleTaskAlreadyRunning(TaskAlreadyRunningException ex, HttpServletRequest request) {
         log.warn("Task already running: {}", ex.getTaskType());

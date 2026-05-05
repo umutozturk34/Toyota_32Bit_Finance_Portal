@@ -1,5 +1,9 @@
 package com.finance.notification.core.dispatch;
 
+import com.finance.common.model.MarketType;
+import com.finance.notification.alert.model.AlertDirection;
+import com.finance.notification.core.dispatch.payload.PriceAlertPayload;
+import com.finance.notification.core.dispatch.payload.SystemPayload;
 import com.finance.notification.core.mail.MailSender;
 import com.finance.notification.core.model.Notification;
 import com.finance.notification.core.model.NotificationPreference;
@@ -15,7 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.time.ZoneId;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,6 +67,15 @@ class NotificationDispatcherTest {
         }
     };
 
+    private static SystemPayload systemPayload() {
+        return new SystemPayload("title", "body", null);
+    }
+
+    private static PriceAlertPayload priceAlertPayload() {
+        return new PriceAlertPayload(1L, MarketType.CRYPTO, "btc", AlertDirection.ABOVE,
+                BigDecimal.ONE, BigDecimal.TEN, null, null);
+    }
+
     @BeforeEach
     void setUp() {
         dispatcher = new NotificationDispatcher(
@@ -73,10 +86,7 @@ class NotificationDispatcherTest {
 
     @Test
     void dispatch_dropsWhenHandlerMissing() {
-        NotificationRequest request = NotificationRequest.of("u",
-                NotificationType.PRICE_ALERT_FIRED, Map.of());
-
-        dispatcher.dispatch(request);
+        dispatcher.dispatch(NotificationRequest.of("u", priceAlertPayload()));
 
         verify(notificationRepository, never()).save(any());
         verify(events, never()).publishEvent(any());
@@ -88,16 +98,15 @@ class NotificationDispatcherTest {
         prefs.setInappSystem(true);
         prefs.setEmailSystem(false);
         when(preferenceRepository.findById("u")).thenReturn(Optional.of(prefs));
-        when(userPreferenceCacheService.resolveZone("u")).thenReturn(ZoneId.of("UTC"));
         when(notificationRepository.save(any(Notification.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        dispatcher.dispatch(NotificationRequest.of("u", NotificationType.SYSTEM, Map.of("a", 1)));
+        dispatcher.dispatch(NotificationRequest.of("u", systemPayload()));
 
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
         verify(notificationRepository).save(captor.capture());
         assertThat(captor.getValue().getTitle()).isEqualTo("Title");
-        assertThat(captor.getValue().getMetadata()).containsEntry("a", 1);
+        assertThat(captor.getValue().getMetadata()).containsEntry("title", "title");
         verify(events, never()).publishEvent(any());
     }
 
@@ -107,11 +116,10 @@ class NotificationDispatcherTest {
         prefs.setInappSystem(false);
         prefs.setEmailSystem(true);
         when(preferenceRepository.findById("u")).thenReturn(Optional.of(prefs));
-        when(userPreferenceCacheService.resolveZone("u")).thenReturn(ZoneId.of("UTC"));
         when(userPreferenceCacheService.resolveTheme("u")).thenReturn("DARK");
         when(userEmailLookup.findEmail("u")).thenReturn(Optional.of("user@x.com"));
 
-        dispatcher.dispatch(NotificationRequest.of("u", NotificationType.SYSTEM, Map.of()));
+        dispatcher.dispatch(NotificationRequest.of("u", systemPayload()));
 
         verify(notificationRepository, never()).save(any());
         verify(events).publishEvent(any(NotificationDispatcher.EmailEnqueuedEvent.class));
@@ -123,14 +131,13 @@ class NotificationDispatcherTest {
         prefs.setInappSystem(false);
         prefs.setEmailSystem(true);
         when(preferenceRepository.findById("u")).thenReturn(Optional.of(prefs));
-        when(userPreferenceCacheService.resolveZone("u")).thenReturn(ZoneId.of("UTC"));
         when(userPreferenceCacheService.resolveTheme("u")).thenReturn("LIGHT");
         when(userEmailLookup.findEmail("u")).thenReturn(Optional.of("user@x.com"));
 
-        dispatcher.dispatch(NotificationRequest.of("u", NotificationType.SYSTEM, Map.of()));
+        dispatcher.dispatch(NotificationRequest.of("u", systemPayload()));
 
-        org.mockito.ArgumentCaptor<NotificationDispatcher.EmailEnqueuedEvent> captor =
-                org.mockito.ArgumentCaptor.forClass(NotificationDispatcher.EmailEnqueuedEvent.class);
+        ArgumentCaptor<NotificationDispatcher.EmailEnqueuedEvent> captor =
+                ArgumentCaptor.forClass(NotificationDispatcher.EmailEnqueuedEvent.class);
         verify(events).publishEvent(captor.capture());
         assertThat(captor.getValue().theme()).isEqualTo("LIGHT");
         assertThat(captor.getValue().rendered().emailModel()).doesNotContainKey("theme");
@@ -143,9 +150,8 @@ class NotificationDispatcherTest {
         prefs.setInappSystem(false);
         prefs.setEmailSystem(true);
         when(preferenceRepository.findById("u")).thenReturn(Optional.of(prefs));
-        when(userPreferenceCacheService.resolveZone("u")).thenReturn(ZoneId.of("UTC"));
 
-        dispatcher.dispatch(NotificationRequest.of("u", NotificationType.SYSTEM, Map.of()));
+        dispatcher.dispatch(NotificationRequest.of("u", systemPayload()));
 
         verify(events, never()).publishEvent(any());
         verify(userEmailLookup, never()).findEmail(anyString());
@@ -157,10 +163,9 @@ class NotificationDispatcherTest {
         prefs.setInappSystem(false);
         prefs.setEmailSystem(true);
         when(preferenceRepository.findById("u")).thenReturn(Optional.of(prefs));
-        when(userPreferenceCacheService.resolveZone("u")).thenReturn(ZoneId.of("UTC"));
         when(userEmailLookup.findEmail("u")).thenReturn(Optional.empty());
 
-        dispatcher.dispatch(NotificationRequest.of("u", NotificationType.SYSTEM, Map.of()));
+        dispatcher.dispatch(NotificationRequest.of("u", systemPayload()));
 
         verify(events, never()).publishEvent(any());
     }
@@ -168,11 +173,10 @@ class NotificationDispatcherTest {
     @Test
     void dispatch_usesDefaultPreferencesWhenAbsent() {
         when(preferenceRepository.findById("u")).thenReturn(Optional.empty());
-        when(userPreferenceCacheService.resolveZone("u")).thenReturn(ZoneId.of("UTC"));
         when(notificationRepository.save(any(Notification.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        dispatcher.dispatch(NotificationRequest.of("u", NotificationType.SYSTEM, Map.of()));
+        dispatcher.dispatch(NotificationRequest.of("u", systemPayload()));
 
         verify(notificationRepository).save(any());
     }

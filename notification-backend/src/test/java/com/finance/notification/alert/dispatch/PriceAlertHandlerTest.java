@@ -1,12 +1,14 @@
 package com.finance.notification.alert.dispatch;
 
+import com.finance.common.model.MarketType;
+import com.finance.notification.alert.model.AlertDirection;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
+import com.finance.notification.core.dispatch.payload.PriceAlertPayload;
 import com.finance.notification.core.model.NotificationType;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,17 +24,12 @@ class PriceAlertHandlerTest {
     }
 
     @Test
-    void render_buildsTitleBodyAndEmailModelFromData() {
-        NotificationRequest request = NotificationRequest.of("u",
-                NotificationType.PRICE_ALERT_FIRED,
-                Map.of(
-                        "assetCode", "BTC",
-                        "direction", "ABOVE",
-                        "threshold", BigDecimal.valueOf(100),
-                        "currentPrice", BigDecimal.valueOf(105)
-                ));
+    void render_buildsTitleBodyAndEmailModelFromPayload() {
+        PriceAlertPayload payload = new PriceAlertPayload(
+                7L, MarketType.CRYPTO, "BTC", AlertDirection.ABOVE,
+                BigDecimal.valueOf(100), BigDecimal.valueOf(105), null, null);
 
-        RenderedNotification result = handler.render(request);
+        RenderedNotification result = handler.render(NotificationRequest.of("u", payload));
 
         assertThat(result.title()).isEqualTo("BTC alarmı tetiklendi");
         assertThat(result.body()).contains("üstüne çıktı");
@@ -44,13 +41,17 @@ class PriceAlertHandlerTest {
     }
 
     @Test
-    void render_fallsBackToSensibleDefaultsWhenDataMissing() {
-        NotificationRequest request = NotificationRequest.of("u",
-                NotificationType.PRICE_ALERT_FIRED, Map.of());
+    void render_usesAssetNameAndImageWhenProvided() {
+        PriceAlertPayload payload = new PriceAlertPayload(
+                7L, MarketType.CRYPTO, "btc", AlertDirection.BELOW,
+                BigDecimal.valueOf(50), BigDecimal.valueOf(40),
+                "https://x/y.png", "Bitcoin");
 
-        RenderedNotification result = handler.render(request);
+        RenderedNotification result = handler.render(NotificationRequest.of("u", payload));
 
-        assertThat(result.title()).isEqualTo("? alarmı tetiklendi");
-        assertThat(result.body()).contains("Kripto");
+        assertThat(result.title()).isEqualTo("Bitcoin alarmı tetiklendi");
+        assertThat(result.emailModel()).containsEntry("assetName", "Bitcoin");
+        assertThat(result.emailModel()).containsEntry("image", "https://x/y.png");
+        assertThat(result.emailModel()).containsEntry("isUp", false);
     }
 }

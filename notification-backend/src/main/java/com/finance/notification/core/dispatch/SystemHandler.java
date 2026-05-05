@@ -1,5 +1,6 @@
 package com.finance.notification.core.dispatch;
 
+import com.finance.notification.core.dispatch.payload.SystemPayload;
 import com.finance.notification.core.model.NotificationType;
 import org.springframework.stereotype.Component;
 
@@ -15,9 +16,13 @@ public class SystemHandler implements NotificationHandler {
 
     @Override
     public RenderedNotification render(NotificationRequest request) {
-        Map<String, Object> data = request.data();
-        String title = stringValue(data, "title", "Sistem duyurusu");
-        String body = stringValue(data, "body", "");
+        if (!(request.payload() instanceof SystemPayload p)) {
+            throw new IllegalArgumentException(
+                    "SystemHandler expects SystemPayload, got " + request.payload().getClass().getSimpleName());
+        }
+
+        String title = p.title() != null ? p.title() : "Sistem duyurusu";
+        String body = p.body() != null ? p.body() : "";
 
         return new RenderedNotification(
                 title,
@@ -25,10 +30,5 @@ public class SystemHandler implements NotificationHandler {
                 "Finance Portal — " + title,
                 "system",
                 Map.of("title", title, "body", body));
-    }
-
-    private static String stringValue(Map<String, Object> data, String key, String fallback) {
-        Object value = data.get(key);
-        return value == null ? fallback : value.toString();
     }
 }

@@ -3,6 +3,7 @@ package com.finance.notification.broadcast.service;
 import com.finance.notification.broadcast.dto.BroadcastRequest;
 import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;
+import com.finance.notification.core.dispatch.payload.SystemPayload;
 import com.finance.notification.core.model.NotificationType;
 import com.finance.notification.user.UserPreferenceCache;
 import com.finance.notification.user.UserPreferenceCacheRepository;
@@ -49,9 +50,11 @@ class BroadcastServiceTest {
                 .containsExactly("u-1", "u-2", "u-3");
         captor.getAllValues().forEach(req -> {
             assertThat(req.type()).isEqualTo(NotificationType.SYSTEM);
-            assertThat(req.data()).containsEntry("title", "Bakım");
-            assertThat(req.data()).containsEntry("body", "Yarın 02:00 bakım var");
-            assertThat(req.data()).containsEntry("issuedBy", "admin-1");
+            assertThat(req.payload()).isInstanceOf(SystemPayload.class);
+            SystemPayload payload = (SystemPayload) req.payload();
+            assertThat(payload.title()).isEqualTo("Bakım");
+            assertThat(payload.body()).isEqualTo("Yarın 02:00 bakım var");
+            assertThat(payload.issuedBy()).isEqualTo("admin-1");
         });
     }
 

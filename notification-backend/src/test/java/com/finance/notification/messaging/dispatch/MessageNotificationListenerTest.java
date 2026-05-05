@@ -2,6 +2,7 @@ package com.finance.notification.messaging.dispatch;
 
 import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;
+import com.finance.notification.core.dispatch.payload.MessagePayload;
 import com.finance.notification.core.model.NotificationType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,7 +41,9 @@ class MessageNotificationListenerTest {
         NotificationRequest request = captor.getValue();
         assertThat(request.userSub()).isEqualTo("user-1");
         assertThat(request.type()).isEqualTo(NotificationType.MESSAGE);
-        assertThat(request.data()).containsEntry("senderSub", "admin");
-        assertThat(request.data()).containsEntry("body", "merhaba");
+        assertThat(request.payload()).isInstanceOf(MessagePayload.class);
+        MessagePayload payload = (MessagePayload) request.payload();
+        assertThat(payload.senderSub()).isEqualTo("admin");
+        assertThat(payload.body()).isEqualTo("merhaba");
     }
 }

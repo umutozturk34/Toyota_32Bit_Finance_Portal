@@ -3,6 +3,7 @@ package com.finance.notification.messaging.dispatch;
 import com.finance.notification.core.dispatch.NotificationHandler;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
+import com.finance.notification.core.dispatch.payload.MessagePayload;
 import com.finance.notification.core.model.NotificationType;
 import org.springframework.stereotype.Component;
 
@@ -20,10 +21,13 @@ public class MessageHandler implements NotificationHandler {
 
     @Override
     public RenderedNotification render(NotificationRequest request) {
-        Map<String, Object> data = request.data();
-        String senderSub = stringValue(data, "senderSub", "anonymous");
-        String body = stringValue(data, "body", "");
-        String preview = preview(body);
+        if (!(request.payload() instanceof MessagePayload p)) {
+            throw new IllegalArgumentException(
+                    "MessageHandler expects MessagePayload, got " + request.payload().getClass().getSimpleName());
+        }
+
+        String senderSub = p.senderSub() != null ? p.senderSub() : "anonymous";
+        String preview = preview(p.body() != null ? p.body() : "");
 
         return new RenderedNotification(
                 "Yeni mesaj",
@@ -38,10 +42,5 @@ public class MessageHandler implements NotificationHandler {
             return body;
         }
         return body.substring(0, PREVIEW_MAX_CHARS) + "…";
-    }
-
-    private static String stringValue(Map<String, Object> data, String key, String fallback) {
-        Object value = data.get(key);
-        return value == null ? fallback : value.toString();
     }
 }

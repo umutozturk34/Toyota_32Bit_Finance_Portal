@@ -5,6 +5,7 @@ import com.finance.notification.alert.model.AlertDirection;
 import com.finance.notification.core.dispatch.NotificationHandler;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
+import com.finance.notification.core.dispatch.payload.PriceAlertPayload;
 import com.finance.notification.core.model.NotificationType;
 import org.springframework.stereotype.Component;
 
@@ -27,20 +28,21 @@ public class PriceAlertHandler implements NotificationHandler {
 
     @Override
     public RenderedNotification render(NotificationRequest request) {
-        Map<String, Object> data = request.data();
-        String assetCode = String.valueOf(data.getOrDefault("assetCode", "?"));
-        String assetName = (String) data.getOrDefault("assetName", null);
-        String image = (String) data.getOrDefault("image", null);
-        AlertDirection direction = parseDirection(data.get("direction"));
-        MarketType marketType = parseMarketType(data.get("marketType"));
-        BigDecimal threshold = toDecimal(data.get("threshold"));
-        BigDecimal currentPrice = toDecimal(data.get("currentPrice"));
+        if (!(request.payload() instanceof PriceAlertPayload p)) {
+            throw new IllegalArgumentException(
+                    "PriceAlertHandler expects PriceAlertPayload, got " + request.payload().getClass().getSimpleName());
+        }
+
+        String assetCode = p.assetCode() != null ? p.assetCode() : "?";
+        String assetName = p.assetName();
+        AlertDirection direction = p.direction() != null ? p.direction() : AlertDirection.ABOVE;
+        MarketType marketType = p.marketType();
 
         String marketLabel = marketType != null ? marketType.displayLabel() : "Varlık";
         String directionLabel = direction.displayLabel();
-        String thresholdFormatted = formatPrice(threshold, direction.isPercentBased());
-        String priceFormatted = formatPrice(currentPrice, false);
-        String changePercent = computeChangePercent(currentPrice, threshold, direction);
+        String thresholdFormatted = formatPrice(p.threshold(), direction.isPercentBased());
+        String priceFormatted = formatPrice(p.currentPrice(), false);
+        String changePercent = computeChangePercent(p.currentPrice(), p.threshold(), direction);
 
         String displayName = (assetName != null && !assetName.isBlank()) ? assetName : assetCode.toUpperCase();
         String title = String.format("%s alarmı tetiklendi", displayName);
@@ -51,7 +53,7 @@ public class PriceAlertHandler implements NotificationHandler {
         model.put("assetCode", assetCode);
         model.put("assetCodeUpper", assetCode.toUpperCase());
         model.put("assetName", displayName);
-        model.put("image", image);
+        model.put("image", p.image());
         model.put("marketLabel", marketLabel);
         model.put("direction", direction.name());
         model.put("directionLabel", directionLabel);
@@ -67,35 +69,6 @@ public class PriceAlertHandler implements NotificationHandler {
                 "Finance Portal — " + displayName + " " + directionLabel.toLowerCase(),
                 "price-alert",
                 model);
-    }
-
-    private static AlertDirection parseDirection(Object value) {
-        if (value == null) return AlertDirection.ABOVE;
-        try {
-            return AlertDirection.valueOf(String.valueOf(value));
-        } catch (IllegalArgumentException e) {
-            return AlertDirection.ABOVE;
-        }
-    }
-
-    private static MarketType parseMarketType(Object value) {
-        if (value == null) return null;
-        try {
-            return MarketType.valueOf(String.valueOf(value));
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
-    }
-
-    private static BigDecimal toDecimal(Object value) {
-        if (value == null) return null;
-        if (value instanceof BigDecimal bd) return bd;
-        if (value instanceof Number n) return BigDecimal.valueOf(n.doubleValue());
-        try {
-            return new BigDecimal(String.valueOf(value));
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 
     private static String formatPrice(BigDecimal value, boolean asPercent) {

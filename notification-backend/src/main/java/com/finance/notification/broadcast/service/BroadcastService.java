@@ -3,7 +3,7 @@ package com.finance.notification.broadcast.service;
 import com.finance.notification.broadcast.dto.BroadcastRequest;
 import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;
-import com.finance.notification.core.model.NotificationType;
+import com.finance.notification.core.dispatch.payload.SystemPayload;
 import com.finance.notification.user.UserPreferenceCache;
 import com.finance.notification.user.UserPreferenceCacheRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
 @Log4j2
 @Service
@@ -25,17 +24,9 @@ public class BroadcastService {
     @Transactional
     public int broadcast(String adminSub, BroadcastRequest request) {
         List<UserPreferenceCache> users = userCacheRepository.findAll();
-        Map<String, Object> payload = Map.of(
-                "title", request.title(),
-                "body", request.body(),
-                "issuedBy", adminSub
-        );
+        SystemPayload payload = new SystemPayload(request.title(), request.body(), adminSub);
         for (UserPreferenceCache user : users) {
-            dispatcher.dispatch(NotificationRequest.of(
-                    user.getUserSub(),
-                    NotificationType.SYSTEM,
-                    payload
-            ));
+            dispatcher.dispatch(NotificationRequest.of(user.getUserSub(), payload));
         }
         log.info("Broadcast sent admin={} title={} recipients={}", adminSub, request.title(), users.size());
         return users.size();

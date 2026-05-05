@@ -66,7 +66,7 @@ public class NotificationDispatcher {
                     request.type(),
                     rendered.title(),
                     rendered.body(),
-                    request.data(),
+                    request.payload().toMetadata(),
                     request.expiresAt()));
             log.info("In-app notification persisted id={} user={} type={}",
                     persisted.getId(), request.userSub(), request.type());

@@ -2,10 +2,9 @@ package com.finance.notification.messaging.dispatch;
 
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
+import com.finance.notification.core.dispatch.payload.MessagePayload;
 import com.finance.notification.core.model.NotificationType;
 import org.junit.jupiter.api.Test;
-
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -22,11 +21,9 @@ class MessageHandlerTest {
 
     @Test
     void render_buildsTitleAndPreviewFromBody() {
-        NotificationRequest request = NotificationRequest.of("u",
-                NotificationType.MESSAGE,
-                Map.of("senderSub", "admin-1", "body", "kısa mesaj"));
+        MessagePayload payload = new MessagePayload("admin-1", "kısa mesaj");
 
-        RenderedNotification result = handler.render(request);
+        RenderedNotification result = handler.render(NotificationRequest.of("u", payload));
 
         assertThat(result.title()).isEqualTo("Yeni mesaj");
         assertThat(result.body()).isEqualTo("kısa mesaj");
@@ -37,12 +34,9 @@ class MessageHandlerTest {
 
     @Test
     void render_truncatesLongBodyForPreview() {
-        String longBody = "a".repeat(200);
-        NotificationRequest request = NotificationRequest.of("u",
-                NotificationType.MESSAGE,
-                Map.of("senderSub", "admin-1", "body", longBody));
+        MessagePayload payload = new MessagePayload("admin-1", "a".repeat(200));
 
-        RenderedNotification result = handler.render(request);
+        RenderedNotification result = handler.render(NotificationRequest.of("u", payload));
 
         assertThat(result.body()).hasSize(121);
         assertThat(result.body()).endsWith("…");
@@ -50,11 +44,9 @@ class MessageHandlerTest {
 
     @Test
     void render_fallsBackWhenSenderSubMissing() {
-        NotificationRequest request = NotificationRequest.of("u",
-                NotificationType.MESSAGE,
-                Map.of("body", "no sender data"));
+        MessagePayload payload = new MessagePayload(null, "no sender data");
 
-        RenderedNotification result = handler.render(request);
+        RenderedNotification result = handler.render(NotificationRequest.of("u", payload));
 
         assertThat(result.emailModel()).containsEntry("senderSub", "anonymous");
     }

@@ -19,7 +19,6 @@ import com.finance.common.mapper.*;
 import com.finance.common.repository.*;
 import com.finance.common.client.*;
 
-import com.finance.user.client.dto.EnabledUpdate;
 import com.finance.user.config.KeycloakAdminProperties;
 import com.finance.user.dto.KeycloakUser;
 import lombok.extern.log4j.Log4j2;
@@ -86,44 +85,45 @@ public class KeycloakAdminClient {
     }
 
     public void setEnabled(String userId, boolean enabled) {
-        executeWithRetry("setEnabled", token -> webClient.put()
-                .uri("/admin/realms/{realm}/users/{id}", properties.getRealm(), userId)
-                .header("Authorization", "Bearer " + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new EnabledUpdate(enabled))
-                .retrieve()
-                .toBodilessEntity()
-                .block());
+        Map<String, Object> body = new java.util.HashMap<>(fetchUser(userId));
+        body.put("enabled", enabled);
+        putFullUser("setEnabled", userId, body);
     }
 
     public void setUserAttribute(String userId, String key, String value) {
-        Map<String, List<String>> existing = fetchAttributes(userId);
-        Map<String, List<String>> merged = Stream.concat(
-                existing.entrySet().stream(),
-                Stream.of(Map.entry(key, List.of(value)))
-        ).collect(Collectors.toUnmodifiableMap(
-                Map.Entry::getKey,
-                Map.Entry::getValue,
-                (oldValue, newValue) -> newValue));
-        executeWithRetry("setUserAttribute", token -> webClient.put()
+        Map<String, Object> body = new java.util.HashMap<>(fetchUser(userId));
+        Map<String, List<String>> attributes = mergeAttributes(extractAttributes(body), key, value);
+        body.put("attributes", attributes);
+        putFullUser("setUserAttribute", userId, body);
+    }
+
+    private void putFullUser(String operation, String userId, Map<String, Object> body) {
+        executeWithRetry(operation, token -> webClient.put()
                 .uri("/admin/realms/{realm}/users/{id}", properties.getRealm(), userId)
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(Map.of("attributes", merged))
+                .bodyValue(body)
                 .retrieve()
                 .toBodilessEntity()
                 .block());
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, List<String>> fetchAttributes(String userId) {
-        Map<String, Object> user = executeWithRetry("fetchUserForAttributes", token -> webClient.get()
+    private Map<String, Object> fetchUser(String userId) {
+        Map<String, Object> user = executeWithRetry("fetchUser", token -> webClient.get()
                 .uri("/admin/realms/{realm}/users/{id}", properties.getRealm(), userId)
                 .header("Authorization", "Bearer " + token)
                 .retrieve()
                 .bodyToMono(Map.class)
                 .block());
-        Object attributes = user == null ? null : user.get("attributes");
+        if (user == null) {
+            throw new com.finance.common.exception.ResourceNotFoundException("Keycloak user not found: " + userId);
+        }
+        return user;
+    }
+
+    private Map<String, List<String>> extractAttributes(Map<String, Object> user) {
+        Object attributes = user.get("attributes");
         if (attributes instanceof Map<?, ?> raw) {
             return raw.entrySet().stream()
                     .filter(e -> e.getValue() instanceof List<?>)
@@ -132,6 +132,16 @@ public class KeycloakAdminClient {
                             e -> ((List<?>) e.getValue()).stream().map(Object::toString).toList()));
         }
         return Map.of();
+    }
+
+    private Map<String, List<String>> mergeAttributes(Map<String, List<String>> existing, String key, String value) {
+        return Stream.concat(
+                existing.entrySet().stream(),
+                Stream.of(Map.entry(key, List.of(value)))
+        ).collect(Collectors.toUnmodifiableMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (oldValue, newValue) -> newValue));
     }
 
     public void sendActionsEmail(String userId, List<String> actions, String clientId, String redirectUri, long lifespanSeconds) {

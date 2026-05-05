@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useUserPreferences, useUpdateUserPreferences } from '../hooks/useUserPreferences';
+import { useAuth } from '../../features/auth/AuthContext';
 
 const ThemeContext = createContext({
     theme: 'dark',
@@ -13,10 +14,23 @@ function resolveTheme(preference) {
     return preference === 'LIGHT' ? 'light' : 'dark';
 }
 
+function readGuestPreference() {
+    try {
+        const stored = localStorage.getItem('finance-theme');
+        if (stored === 'light') return 'LIGHT';
+        if (stored === 'dark') return 'DARK';
+    } catch {
+        /* localStorage unavailable */
+    }
+    return 'DARK';
+}
+
 export function ThemeProvider({ children }) {
+    const { isAuthenticated } = useAuth();
     const { preferences } = useUserPreferences();
     const updatePreferences = useUpdateUserPreferences();
-    const themePreference = preferences.theme || 'DARK';
+    const [guestPreference, setGuestPreference] = useState(readGuestPreference);
+    const themePreference = isAuthenticated ? (preferences.theme || 'DARK') : guestPreference;
 
     const theme = useMemo(() => resolveTheme(themePreference), [themePreference]);
 
@@ -25,11 +39,17 @@ export function ThemeProvider({ children }) {
         try {
             localStorage.setItem('finance-theme', theme);
             document.cookie = 'finance-theme=' + theme + ';path=/;max-age=31536000;SameSite=Lax';
-        } catch {}
+        } catch {
+            /* localStorage unavailable */
+        }
     }, [theme]);
 
     const setThemePreference = (next) => {
-        updatePreferences.mutate({ theme: next });
+        if (isAuthenticated) {
+            updatePreferences.mutate({ theme: next });
+        } else {
+            setGuestPreference(next);
+        }
     };
 
     const toggleTheme = () => {

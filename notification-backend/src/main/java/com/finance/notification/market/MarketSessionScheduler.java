@@ -28,7 +28,7 @@ import java.util.Set;
  * exactly when a transition crosses.
  *
  * <p>Data refresh notifications (which are tied to backend cron timing) stay in
- * {@link MarketSessionTransitionListener}.
+ * {@link MarketDataUpdateListener}.
  */
 @Log4j2
 @Component

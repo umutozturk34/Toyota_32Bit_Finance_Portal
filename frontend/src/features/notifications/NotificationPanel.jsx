@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, BellOff, Inbox, Check, CheckCheck, Trash2, AlertCircle, Zap, FileText,
-  MessageSquare, Bell,
+  MessageSquare, Bell, Megaphone, Search,
 } from 'lucide-react';
 import {
   useNotifications,
@@ -10,8 +10,10 @@ import {
   useDeleteNotification,
   useDeleteAllNotifications,
 } from '../../shared/hooks/useNotifications';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ConfirmDialog from '../../shared/components/ConfirmDialog';
+import BroadcastModal from '../messages/BroadcastModal';
+import { useAuth } from '../auth/AuthContext';
 
 const TYPE_META = {
   PRICE_ALERT_FIRED: { Icon: AlertCircle, label: 'Fiyat alarmı', tint: 'text-accent' },
@@ -92,13 +94,25 @@ function NotificationRow({ item, onRead, onDelete }) {
 }
 
 export default function NotificationPanel({ isOpen, onClose }) {
+  const { hasRole } = useAuth();
   const [unreadOnly, setUnreadOnly] = useState(false);
-  const { data, isLoading } = useNotifications({ unreadOnly, page: 0, size: 50 });
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    const id = setTimeout(() => setSearch(searchInput.trim()), 300);
+    return () => clearTimeout(id);
+  }, [searchInput]);
+
+  const { data, isLoading } = useNotifications({ unreadOnly, page: 0, size: 50, search });
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const deleteNotification = useDeleteNotification();
   const deleteAllNotifications = useDeleteAllNotifications();
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const isAdmin = hasRole('ADMIN');
+  const isFiltering = search.length > 0;
 
   const items = data?.content ?? data?.items ?? [];
   const total = data?.totalElements ?? 0;
@@ -131,13 +145,51 @@ export default function NotificationPanel({ isOpen, onClose }) {
                   {total}
                 </span>
               </div>
-              <button
-                onClick={onClose}
-                className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1.5">
+                {isAdmin && (
+                  <motion.button
+                    onClick={() => setBroadcastOpen(true)}
+                    whileTap={{ scale: 0.94 }}
+                    whileHover={{ y: -1 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold text-white overflow-hidden border-none cursor-pointer shadow-sm shadow-accent/25"
+                    title="Tüm kullanıcılara sistem yayını gönder"
+                  >
+                    <span aria-hidden className="absolute inset-0 bg-gradient-to-br from-accent via-accent-bright to-accent" />
+                    <Megaphone className="relative h-3 w-3" />
+                    <span className="relative">Yayın</span>
+                  </motion.button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </header>
+
+            <div className="px-5 py-2.5 border-b border-border-default shrink-0">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-subtle pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Bildirimlerde ara…"
+                  className="w-full rounded-xl border border-border-default bg-bg-base/60 pl-8 pr-8 py-2 text-[12px] text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)] focus:bg-bg-base transition-all"
+                />
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchInput('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            </div>
 
             <div className="flex items-center justify-between px-5 py-3 border-b border-border-default shrink-0">
               <div className="flex gap-0.5 rounded-lg border border-border-default bg-bg-elevated p-0.5">
@@ -230,6 +282,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
         </>
       )}
     </AnimatePresence>
+    <BroadcastModal open={broadcastOpen} onClose={() => setBroadcastOpen(false)} />
     <ConfirmDialog
       open={confirmClearOpen}
       title="Tüm bildirimleri sil?"

@@ -27,6 +27,14 @@ export const messageService = {
   markRead: async (id) => {
     await api.patch(`${USER_PATH}/${id}/read`);
   },
+
+  registerActive: async (key) => {
+    await api.post(`${USER_PATH}/active`, { key });
+  },
+
+  clearActive: async () => {
+    await api.delete(`${USER_PATH}/active`);
+  },
 };
 
 export const adminMessageService = {
@@ -35,13 +43,36 @@ export const adminMessageService = {
     return response.data.data;
   },
 
-  inbox: async ({ page = 0, size = 20 } = {}) => {
-    const response = await api.get(`${ADMIN_PATH}/inbox`, { params: { page, size } });
+  conversations: async ({ page = 0, size = 20, search } = {}) => {
+    const params = { page, size };
+    if (search) params.search = search;
+    const response = await api.get(`${ADMIN_PATH}/conversations`, { params });
     return response.data.data;
   },
 
-  inboxCount: async () => {
-    const response = await api.get(`${ADMIN_PATH}/inbox-count`);
+  conversation: async (userSub) => {
+    const response = await api.get(`${ADMIN_PATH}/conversations/${encodeURIComponent(userSub)}`);
+    return response.data.data;
+  },
+
+  closeConversation: async (userSub) => {
+    await api.post(`${ADMIN_PATH}/conversations/${encodeURIComponent(userSub)}/close`);
+  },
+
+  reopenConversation: async (userSub) => {
+    await api.post(`${ADMIN_PATH}/conversations/${encodeURIComponent(userSub)}/reopen`);
+  },
+
+  markConversationRead: async (userSub) => {
+    await api.post(`${ADMIN_PATH}/conversations/${encodeURIComponent(userSub)}/mark-read`);
+  },
+
+  deleteConversation: async (userSub) => {
+    await api.delete(`${ADMIN_PATH}/conversations/${encodeURIComponent(userSub)}`);
+  },
+
+  broadcast: async ({ title, body }) => {
+    const response = await api.post('/admin/notifications/broadcast', { title, body });
     return response.data.data;
   },
 };

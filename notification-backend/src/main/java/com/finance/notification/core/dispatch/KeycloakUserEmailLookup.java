@@ -30,7 +30,10 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
     private final String realm;
     private final String adminUser;
     private final String adminPassword;
-    private final Cache<String, String> emailCache;
+    private final Cache<String, KeycloakUserProfile> profileCache = Caffeine.newBuilder()
+            .maximumSize(2000)
+            .expireAfterWrite(Duration.ofMinutes(15))
+            .build();
     private final AtomicReference<TokenSnapshot> tokenSnapshot = new AtomicReference<>();
 
     public KeycloakUserEmailLookup(@Value("${keycloak.base-url}") String baseUrl,
@@ -41,15 +44,15 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
         this.realm = realm;
         this.adminUser = adminUser;
         this.adminPassword = adminPassword;
-        this.emailCache = Caffeine.newBuilder()
-                .maximumSize(2000)
-                .expireAfterWrite(Duration.ofMinutes(15))
-                .build();
     }
 
     @Override
     public Optional<String> findEmail(String userSub) {
-        String cached = emailCache.getIfPresent(userSub);
+        return findProfile(userSub).map(KeycloakUserProfile::email).filter(s -> !s.isBlank());
+    }
+
+    public Optional<KeycloakUserProfile> findProfile(String userSub) {
+        KeycloakUserProfile cached = profileCache.getIfPresent(userSub);
         if (cached != null) return Optional.of(cached);
         try {
             String token = ensureToken();
@@ -60,15 +63,57 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
                     .bodyToMono(Map.class)
                     .block();
             if (user == null) return Optional.empty();
-            Object email = user.get("email");
-            if (email instanceof String s && !s.isBlank()) {
-                emailCache.put(userSub, s);
-                return Optional.of(s);
-            }
+            KeycloakUserProfile profile = new KeycloakUserProfile(
+                    userSub,
+                    asString(user.get("username")),
+                    asString(user.get("email")),
+                    asString(user.get("firstName")),
+                    asString(user.get("lastName")));
+            profileCache.put(userSub, profile);
+            return Optional.of(profile);
         } catch (Exception e) {
-            log.warn("Email lookup failed user={}: {}", userSub, e.getMessage());
+            log.warn("Profile lookup failed user={}: {}", userSub, e.getMessage());
+            return Optional.empty();
         }
-        return Optional.empty();
+    }
+
+    public java.util.List<KeycloakUserProfile> search(String query, int max) {
+        if (query == null || query.isBlank()) return java.util.List.of();
+        try {
+            String token = ensureToken();
+            java.util.List<Map<String, Object>> users = webClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/admin/realms/{realm}/users")
+                            .queryParam("search", query)
+                            .queryParam("max", Math.max(1, Math.min(max, 200)))
+                            .build(realm))
+                    .header("Authorization", "Bearer " + token)
+                    .retrieve()
+                    .bodyToMono(java.util.List.class)
+                    .block();
+            if (users == null) return java.util.List.of();
+            java.util.List<KeycloakUserProfile> result = new java.util.ArrayList<>(users.size());
+            for (Map<String, Object> user : users) {
+                String sub = asString(user.get("id"));
+                if (sub == null) continue;
+                KeycloakUserProfile profile = new KeycloakUserProfile(
+                        sub,
+                        asString(user.get("username")),
+                        asString(user.get("email")),
+                        asString(user.get("firstName")),
+                        asString(user.get("lastName")));
+                profileCache.put(sub, profile);
+                result.add(profile);
+            }
+            return result;
+        } catch (Exception e) {
+            log.warn("Keycloak search failed query={}: {}", query, e.getMessage());
+            return java.util.List.of();
+        }
+    }
+
+    private static String asString(Object value) {
+        return value instanceof String s ? s : null;
     }
 
     private String ensureToken() {

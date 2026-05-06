@@ -16,6 +16,22 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     Page<Notification> findByUserSubAndReadAtIsNullOrderByCreatedAtDesc(String userSub, Pageable pageable);
 
+    @Query("SELECT n FROM Notification n WHERE n.userSub = :userSub " +
+            "AND (LOWER(n.title) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "     OR LOWER(n.body) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY n.createdAt DESC")
+    Page<Notification> searchByUserSub(@Param("userSub") String userSub,
+                                        @Param("search") String search,
+                                        Pageable pageable);
+
+    @Query("SELECT n FROM Notification n WHERE n.userSub = :userSub AND n.readAt IS NULL " +
+            "AND (LOWER(n.title) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "     OR LOWER(n.body) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "ORDER BY n.createdAt DESC")
+    Page<Notification> searchUnreadByUserSub(@Param("userSub") String userSub,
+                                              @Param("search") String search,
+                                              Pageable pageable);
+
     long countByUserSubAndReadAtIsNull(String userSub);
 
     @Modifying

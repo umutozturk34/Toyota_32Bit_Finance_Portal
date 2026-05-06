@@ -70,6 +70,9 @@ public class PriceAlertEvaluator {
         priceAlertService.persist(alert);
         PriceAlertPayload payload = priceAlertMapper.toFiredPayload(alert, snapshot, marketType);
         dispatcher.dispatch(NotificationRequest.of(alert.getUserSub(), payload));
+        log.info("Price alert fired alertId={} userSub={} market={} code={} dir={} threshold={} price={}",
+                alert.getId(), alert.getUserSub(), marketType, alert.getAssetCode(),
+                alert.getDirection(), alert.getThreshold(), snapshot.priceTry());
         return true;
     }
 }

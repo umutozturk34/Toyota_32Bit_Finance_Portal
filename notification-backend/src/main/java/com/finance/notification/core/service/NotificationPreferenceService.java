@@ -6,9 +6,11 @@ import com.finance.notification.core.mapper.NotificationPreferenceMapper;
 import com.finance.notification.core.model.NotificationPreference;
 import com.finance.notification.core.repository.NotificationPreferenceRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class NotificationPreferenceService {
@@ -28,6 +30,8 @@ public class NotificationPreferenceService {
         NotificationPreference preference = repository.findById(userSub)
                 .orElseGet(() -> NotificationPreference.defaultsFor(userSub));
         mapper.apply(request, preference);
-        return mapper.toResponse(repository.save(preference));
+        NotificationPreference saved = repository.save(preference);
+        log.info("Notification preferences upserted userSub={}", userSub);
+        return mapper.toResponse(saved);
     }
 }

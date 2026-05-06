@@ -2,6 +2,7 @@ package com.finance.notification.broadcast.controller;
 
 import com.finance.common.dto.ApiResponse;
 import com.finance.notification.broadcast.dto.BroadcastRequest;
+import com.finance.notification.broadcast.dto.BroadcastResult;
 import com.finance.notification.broadcast.service.BroadcastService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,17 +16,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/admin/notifications")
-@PreAuthorize("hasRole('admin')")
+@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class BroadcastController {
 
     private final BroadcastService service;
 
     @PostMapping("/broadcast")
-    public ApiResponse<Integer> broadcast(
+    public ApiResponse<BroadcastResult> broadcast(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody BroadcastRequest request) {
-        int dispatched = service.broadcast(jwt.getSubject(), request);
-        return ApiResponse.success("Broadcast dispatched", dispatched);
+        BroadcastResult result = service.broadcast(jwt.getSubject(), request);
+        return ApiResponse.success("Broadcast dispatched", result);
     }
 }

@@ -12,7 +12,8 @@ function useTwoFactorStatus() {
     return useQuery({
         queryKey: STATUS_KEY,
         queryFn: userCredentialService.getTwoFactorStatus,
-        staleTime: 30_000,
+        staleTime: 60_000,
+        refetchOnWindowFocus: false,
     });
 }
 

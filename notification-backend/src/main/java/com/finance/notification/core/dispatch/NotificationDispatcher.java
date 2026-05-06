@@ -10,6 +10,7 @@ import com.finance.notification.core.repository.NotificationRepository;
 import com.finance.notification.user.UserPreferenceCacheService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -56,7 +57,7 @@ public class NotificationDispatcher {
         }
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void dispatch(NotificationRequest request) {
         NotificationHandler handler = handlers.get(request.type());
         if (handler == null) {
@@ -68,14 +69,14 @@ public class NotificationDispatcher {
         NotificationPreference prefs = loadPreferences(request.userSub());
 
         if (prefs.wantsInApp(request.type())) {
-            Notification persisted = notificationRepository.save(Notification.create(
+            Notification persisted = notificationRepository.saveAndFlush(Notification.create(
                     request.userSub(),
                     request.type(),
                     rendered.title(),
                     rendered.body(),
                     request.payload().toMetadata(),
                     request.expiresAt()));
-            log.info("In-app notification persisted id={} user={} type={}",
+            log.debug("In-app notification persisted id={} user={} type={}",
                     persisted.getId(), request.userSub(), request.type());
             streamRegistry.publish(request.userSub(), notificationMapper.toResponse(persisted));
         }

@@ -14,6 +14,7 @@ import com.finance.notification.watchlist.model.WatchlistItem;
 import com.finance.notification.watchlist.model.WatchlistSortBy;
 import com.finance.notification.watchlist.repository.WatchlistItemRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class WatchlistService {
@@ -86,6 +88,8 @@ public class WatchlistService {
             itemsById.get(itemIds.get(i)).setDisplayOrder(i + 1);
         }
         repository.saveAll(existing);
+        log.info("Watchlist reordered watchlistId={} userSub={} count={}",
+                watchlistId, userSub, itemIds.size());
         return enrich(existing.stream()
                 .sorted(Comparator.comparing(WatchlistItem::getDisplayOrder))
                 .toList());
@@ -95,6 +99,8 @@ public class WatchlistService {
     public void removeItem(Long itemId, String userSub) {
         WatchlistItem item = ownedItemOr404(itemId, userSub);
         repository.delete(item);
+        log.info("Watchlist item removed itemId={} userSub={} market={} code={}",
+                itemId, userSub, item.getMarketType(), item.getAssetCode());
     }
 
     @Transactional
@@ -103,6 +109,8 @@ public class WatchlistService {
         if (request.note() != null) item.setNote(request.note().isBlank() ? null : request.note());
         if (request.deltaThreshold() != null) item.setDeltaThreshold(request.deltaThreshold());
         WatchlistItem saved = repository.save(item);
+        log.info("Watchlist item updated itemId={} userSub={} deltaThreshold={}",
+                itemId, userSub, saved.getDeltaThreshold());
         return enrich(List.of(saved)).get(0);
     }
 
@@ -120,7 +128,10 @@ public class WatchlistService {
         WatchlistItem entity = mapper.toEntity(request, userSub);
         entity.setWatchlistId(parent.getId());
         entity.setDisplayOrder(repository.findMaxDisplayOrderByWatchlistId(parent.getId()) + 1);
-        return mapper.toResponse(repository.save(entity));
+        WatchlistItem saved = repository.save(entity);
+        log.info("Watchlist item added userSub={} watchlistId={} market={} code={} itemId={}",
+                userSub, parent.getId(), saved.getMarketType(), saved.getAssetCode(), saved.getId());
+        return mapper.toResponse(saved);
     }
 
     private void validateReorder(List<WatchlistItem> existing, List<Long> itemIds, Long watchlistId) {

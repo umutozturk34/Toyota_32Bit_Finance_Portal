@@ -9,11 +9,13 @@ import com.finance.notification.watchlist.model.Watchlist;
 import com.finance.notification.watchlist.repository.WatchlistItemRepository;
 import com.finance.notification.watchlist.repository.WatchlistRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class WatchlistManagementService {
@@ -58,6 +60,8 @@ public class WatchlistManagementService {
             throw new BadRequestException("Bu isimde bir takip listen zaten var");
         }
         Watchlist saved = repository.save(Watchlist.create(userSub, trimmed));
+        log.info("Watchlist created userSub={} watchlistId={} name={}",
+                userSub, saved.getId(), saved.getName());
         return new WatchlistResponse(saved.getId(), saved.getName(), saved.isDefault(), 0L,
                 saved.getCreatedAt(), saved.getUpdatedAt());
     }
@@ -72,6 +76,8 @@ public class WatchlistManagementService {
         }
         watchlist.rename(trimmed);
         Watchlist saved = repository.save(watchlist);
+        log.info("Watchlist renamed userSub={} watchlistId={} name={}",
+                userSub, saved.getId(), saved.getName());
         return new WatchlistResponse(saved.getId(), saved.getName(), saved.isDefault(),
                 itemRepository.countByWatchlistId(saved.getId()),
                 saved.getCreatedAt(), saved.getUpdatedAt());
@@ -84,6 +90,7 @@ public class WatchlistManagementService {
             throw new BadRequestException("Varsayılan takip listesi silinemez");
         }
         repository.delete(watchlist);
+        log.info("Watchlist deleted watchlistId={} userSub={}", id, userSub);
     }
 
     @Transactional(readOnly = true)

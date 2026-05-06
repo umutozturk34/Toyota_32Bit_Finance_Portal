@@ -30,11 +30,22 @@ public class NotificationStreamRegistry {
             })
             .build();
 
+    private final CopyOnWriteArrayList<SseEmitter> adminEmitters = new CopyOnWriteArrayList<>();
+
     public SseEmitter register(String userSub) {
+        return registerInternal(userSub, false);
+    }
+
+    public SseEmitter registerForAdmin(String userSub) {
+        return registerInternal(userSub, true);
+    }
+
+    private SseEmitter registerInternal(String userSub, boolean admin) {
         SseEmitter emitter = new SseEmitter(EMITTER_TIMEOUT_MS);
         CopyOnWriteArrayList<SseEmitter> list = emitters.asMap()
                 .computeIfAbsent(userSub, k -> new CopyOnWriteArrayList<>());
         list.add(emitter);
+        if (admin) adminEmitters.add(emitter);
         emitter.onCompletion(() -> drop(userSub, emitter));
         emitter.onTimeout(() -> drop(userSub, emitter));
         emitter.onError(t -> drop(userSub, emitter));
@@ -55,6 +66,31 @@ public class NotificationStreamRegistry {
         }
     }
 
+    public void publishToUser(String userSub, String eventName, Object payload) {
+        CopyOnWriteArrayList<SseEmitter> list = emitters.getIfPresent(userSub);
+        if (list == null || list.isEmpty()) return;
+        for (SseEmitter emitter : list) {
+            try {
+                emitter.send(SseEmitter.event().name(eventName).data(payload));
+            } catch (IOException | IllegalStateException ex) {
+                log.debug("SSE send failed user={} event={}: {}", userSub, eventName, ex.getMessage());
+                emitter.completeWithError(ex);
+            }
+        }
+    }
+
+    public void publishToAdmins(String eventName, Object payload) {
+        if (adminEmitters.isEmpty()) return;
+        for (SseEmitter emitter : adminEmitters) {
+            try {
+                emitter.send(SseEmitter.event().name(eventName).data(payload));
+            } catch (IOException | IllegalStateException ex) {
+                log.debug("Admin SSE send failed event={}: {}", eventName, ex.getMessage());
+                emitter.completeWithError(ex);
+            }
+        }
+    }
+
     private void sendInit(SseEmitter emitter) {
         try {
             emitter.send(SseEmitter.event().name("connected").data("ok"));
@@ -69,5 +105,6 @@ public class NotificationStreamRegistry {
             list.remove(emitter);
             if (list.isEmpty()) emitters.asMap().remove(userSub, list);
         }
+        adminEmitters.remove(emitter);
     }
 }

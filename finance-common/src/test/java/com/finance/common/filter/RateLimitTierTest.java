@@ -5,6 +5,7 @@ import com.finance.common.filter.tier.AdminReadTier;
 import com.finance.common.filter.tier.AdminTriggerTier;
 import com.finance.common.filter.tier.ApiTier;
 import com.finance.common.filter.tier.CredentialActionTier;
+import com.finance.common.filter.tier.CredentialReadTier;
 import io.github.bucket4j.Bandwidth;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +26,9 @@ class RateLimitTierTest {
         rateLimit.setAdminReadLimit(60);
         rateLimit.setApiLimit(600);
         rateLimit.setCredentialActionLimit(7);
-        tiers = List.of(new AdminTriggerTier(), new AdminReadTier(), new CredentialActionTier(), new ApiTier());
+        rateLimit.setCredentialReadLimit(45);
+        tiers = List.of(new AdminTriggerTier(), new AdminReadTier(),
+                new CredentialReadTier(), new CredentialActionTier(), new ApiTier());
     }
 
     @Test
@@ -57,6 +60,21 @@ class RateLimitTierTest {
     }
 
     @Test
+    void shouldRouteCredentialRead_whenUserCredentialsGet() {
+        RateLimitTier matched = firstMatch("/api/v1/user/credentials/2fa", "GET");
+
+        assertThat(matched.name()).isEqualTo("CREDENTIAL_READ");
+    }
+
+    @Test
+    void shouldRouteCredentialRead_andNotApi_forUserCredentialsGet() {
+        RateLimitTier matched = firstMatch("/api/v1/user/credentials/email/pending", "GET");
+
+        assertThat(matched.name()).isNotEqualTo("API");
+        assertThat(matched.name()).isEqualTo("CREDENTIAL_READ");
+    }
+
+    @Test
     void shouldFallbackToApi_whenNoSpecificMatch() {
         RateLimitTier matched = firstMatch("/api/v1/portfolio", "GET");
 
@@ -80,15 +98,18 @@ class RateLimitTierTest {
         assertCapacity("ADMIN_READ", 60);
         assertCapacity("API", 600);
         assertCapacity("CREDENTIAL_ACTION", 7);
+        assertCapacity("CREDENTIAL_READ", 45);
     }
 
     @Test
     void shouldReflectUpdatedLimits_whenToBandwidthCalledLater() {
         rateLimit.setApiLimit(999);
         rateLimit.setCredentialActionLimit(999);
+        rateLimit.setCredentialReadLimit(123);
 
         assertCapacity("API", 999);
         assertCapacity("CREDENTIAL_ACTION", 999);
+        assertCapacity("CREDENTIAL_READ", 123);
     }
 
     private RateLimitTier firstMatch(String path, String method) {

@@ -105,9 +105,25 @@ export default function useNotificationStream() {
       queryClient.invalidateQueries({
         predicate: (q) => q.queryKey[0] === 'notifications' && q.queryKey[1] !== 'unread-count',
       });
+      if (payload?.type === 'MESSAGE') {
+        queryClient.invalidateQueries({ queryKey: ['messages'] });
+      }
       playChime();
       const title = payload?.title || 'Yeni bildirim';
       toast.info(title, payload?.body ?? undefined);
+    };
+
+    const handleAdminInbox = (event) => {
+      let payload = null;
+      try { payload = JSON.parse(event.data); } catch { /* malformed */ }
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      playChime();
+      const preview = payload?.body ? payload.body.slice(0, 80) : 'Yeni mesaj geldi';
+      toast.info('Yeni kullanıcı mesajı', preview);
+    };
+
+    const handleSilentMessageUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
     };
 
     const connect = async () => {
@@ -122,6 +138,9 @@ export default function useNotificationStream() {
         sourceRef.current = source;
 
         source.addEventListener('notification', handleNotification);
+        source.addEventListener('admin-inbox', handleAdminInbox);
+        source.addEventListener('admin-inbox-silent', handleSilentMessageUpdate);
+        source.addEventListener('notification-silent', handleSilentMessageUpdate);
 
         source.onerror = () => {
           source.close();

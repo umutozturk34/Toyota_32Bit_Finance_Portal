@@ -95,6 +95,8 @@ public class WatchlistEvaluator {
                     marketType,
                     entry.getValue());
             dispatcher.dispatch(NotificationRequest.of(key.userSub(), payload));
+            log.info("Watchlist delta fired userSub={} watchlistId={} market={} items={}",
+                    key.userSub(), key.watchlistId(), marketType, entry.getValue().size());
             notifications++;
         }
         return notifications;

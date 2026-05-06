@@ -2,12 +2,14 @@ package com.finance.notification.user;
 
 import com.finance.common.event.UserPreferencesUpdatedEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DateTimeException;
 import java.time.ZoneId;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class UserPreferenceCacheService {
@@ -26,6 +28,7 @@ public class UserPreferenceCacheService {
                         },
                         () -> repository.save(UserPreferenceCache.fromEvent(event))
                 );
+        log.info("UserPreferenceCache upserted userSub={}", event.userSub());
     }
 
     @Transactional(readOnly = true)
@@ -57,6 +60,7 @@ public class UserPreferenceCacheService {
         try {
             return ZoneId.of(zoneId);
         } catch (DateTimeException ex) {
+            log.warn("Invalid timezone in user preferences zoneId={} fallingBackTo={}", zoneId, DEFAULT_ZONE);
             return DEFAULT_ZONE;
         }
     }

@@ -2,6 +2,7 @@ package com.finance.notification.messaging.security;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -10,6 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.HexFormat;
 
+@Log4j2
 @Component
 public class MessageDuplicateGuard {
 
@@ -22,6 +24,7 @@ public class MessageDuplicateGuard {
         String hash = sha256(body);
         String existing = recentBodyHashByUser.getIfPresent(userSub);
         if (hash.equals(existing)) {
+            log.debug("Skipping duplicate message senderSub={} hash={}", userSub, hash);
             return true;
         }
         recentBodyHashByUser.put(userSub, hash);

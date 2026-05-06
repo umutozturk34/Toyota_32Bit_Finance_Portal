@@ -1,6 +1,7 @@
 package com.finance.notification;
 
 import com.finance.common.config.AppProperties;
+import com.finance.notification.broadcast.service.BroadcastProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -15,7 +16,7 @@ import java.util.TimeZone;
         "com.finance.common.exception",
         "com.finance.common.filter.tier"
 })
-@EnableConfigurationProperties(AppProperties.class)
+@EnableConfigurationProperties({AppProperties.class, BroadcastProperties.class})
 @EnableAsync
 public class NotificationApplication {
 

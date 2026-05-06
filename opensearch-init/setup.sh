@@ -3,7 +3,7 @@ set -e
 
 
 # Finance Portal — OpenSearch Init Script
-# Creates: ISM Policy, Index Templates, Index Patterns, 13 Visualizations, 4 Dashboards
+# Creates: ISM Policy, Index Templates, Index Patterns, 32 Visualizations, 10 Dashboards
 # Idempotent: Skips if dashboards already exist, re-creates if missing
 
 apk add --no-cache curl jq > /dev/null 2>&1
@@ -25,6 +25,15 @@ os_api -X PUT "$OS_URL/_cluster/settings" \
   -H "Content-Type: application/json" -d '{
   "persistent": { "compatibility.override_main_response_version": true }
 }' > /dev/null 2>&1
+
+# Disable multi-tenancy at the security plugin level (runtime config patch).
+# Replaces the need to mount a custom opensearch_dashboards.yml — Dashboards picks
+# up the new value on subsequent requests; saved objects land in the global tenant
+# index, so users see them without a tenant switcher.
+echo "Multi-tenancy disable ediliyor..."
+os_api -X PATCH "$OS_URL/_plugins/_security/api/securityconfig" \
+  -H "Content-Type: application/json" -d '[{"op":"replace","path":"/config/dynamic/kibana/multitenancy_enabled","value":false}]' > /dev/null 2>&1
+echo "Multi-tenancy disable edildi."
 
 echo "OpenSearch Dashboards bekleniyor..."
 until dash_api "$DASH_URL/api/status" 2>/dev/null | grep -q '"state"'; do sleep 5; done
@@ -108,7 +117,7 @@ os_api -X PUT "$OS_URL/_index_template/finance-traces-template" \
         },
         "resource": {
           "properties": {
-            "service.name": { "type": "keyword" }
+            "service.name": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } }
           }
         },
         "attributes": {
@@ -298,7 +307,7 @@ os_api -X PUT "$OS_URL/_index_template/notification-traces-template" \
         },
         "resource": {
           "properties": {
-            "service.name": { "type": "keyword" }
+            "service.name": { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } }
           }
         },
         "attributes": {
@@ -402,11 +411,92 @@ ip_line() {
     '{"type":"index-pattern","id":$id,"attributes":{"title":$title,"timeFieldName":$tf}}'
 }
 
+# ── Helper: index pattern with duration_ms scripted field (trace patterns) ──
+ip_line_traces() {
+  _id="$1"; _title="$2"; _timefield="$3"
+  _fields='[{"name":"duration_ms","type":"number","scripted":true,"script":"if(doc.containsKey('"'"'endTime'"'"')&&doc.containsKey('"'"'startTime'"'"')&&!doc['"'"'endTime'"'"'].empty&&!doc['"'"'startTime'"'"'].empty){return doc['"'"'endTime'"'"'].value.toInstant().toEpochMilli()-doc['"'"'startTime'"'"'].value.toInstant().toEpochMilli();}return 0;","lang":"painless","searchable":true,"aggregatable":true}]'
+  jq -nc --arg id "$_id" --arg title "$_title" --arg tf "$_timefield" --arg fields "$_fields" \
+    '{"type":"index-pattern","id":$id,"attributes":{"title":$title,"timeFieldName":$tf,"fields":$fields}}'
+}
+
 # ── Helper: write one visualization line ──
 viz_line() {
   _id="$1"; _title="$2"; _spec="$3"
   jq -nc --arg id "$_id" --arg title "$_title" --arg spec "$_spec" \
     '{"type":"visualization","id":$id,"attributes":{"title":$title,"visState":( {"title":$title,"type":"vega","params":{"spec":$spec}} | tostring ),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":"{}"}}}'
+}
+
+# ── Helper: Visualize legacy donut pie with filter segments (uses Elastic Charts) ──
+viz_legacy_pie() {
+  _id="$1"; _title="$2"; _index="$3"; _filters_json="$4"
+  jq -nc --arg id "$_id" --arg title "$_title" --arg idx "$_index" --argjson filters "$_filters_json" \
+    '{
+      "type":"visualization","id":$id,
+      "attributes":{
+        "title":$title,
+        "visState":({"title":$title,"type":"pie","params":{"type":"pie","addTooltip":true,"addLegend":true,"legendPosition":"right","isDonut":true,"labels":{"show":true,"values":true,"last_level":true,"truncate":100,"valuesFormat":"percent","percentDecimals":1}},"aggs":[{"id":"1","enabled":true,"type":"count","schema":"metric","params":{}},{"id":"2","enabled":true,"type":"filters","schema":"segment","params":{"filters":$filters}}]} | tostring),
+        "uiStateJSON":"{\"vis\":{\"colors\":{\"Success\":\"#54B399\",\"Error\":\"#E7664C\"}}}",
+        "description":"",
+        "kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":"","language":"kuery"},"filter":[]} | tostring)}
+      },
+      "references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]
+    }'
+}
+
+# ── Helper: Visualize legacy donut by terms aggregation ──
+viz_legacy_pie_terms() {
+  _id="$1"; _title="$2"; _index="$3"; _field="$4"; _size="${5:-10}"
+  jq -nc --arg id "$_id" --arg title "$_title" --arg idx "$_index" --arg field "$_field" --argjson size "$_size" \
+    '{"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"pie","params":{"type":"pie","addTooltip":true,"addLegend":true,"legendPosition":"right","isDonut":true,"labels":{"show":true,"values":true,"last_level":true,"truncate":100,"valuesFormat":"percent","percentDecimals":1}},"aggs":[{"id":"1","enabled":true,"type":"count","schema":"metric","params":{}},{"id":"2","enabled":true,"type":"terms","schema":"segment","params":{"field":$field,"orderBy":"1","order":"desc","size":$size,"otherBucket":false,"missingBucket":false}}]}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":"","language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
+}
+
+# ── Helper: Visualize legacy table by terms with count metric ──
+viz_legacy_table() {
+  _id="$1"; _title="$2"; _index="$3"; _field="$4"; _size="${5:-10}"
+  jq -nc --arg id "$_id" --arg title "$_title" --arg idx "$_index" --arg field "$_field" --argjson size "$_size" \
+    '{"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"table","params":{"perPage":($size|if .>20 then 20 else . end),"showPartialRows":false,"showMetricsAtAllLevels":false,"showTotal":true,"totalFunc":"sum","percentageCol":""},"aggs":[{"id":"1","enabled":true,"type":"count","schema":"metric","params":{}},{"id":"2","enabled":true,"type":"terms","schema":"bucket","params":{"field":$field,"orderBy":"1","order":"desc","size":$size,"otherBucket":false,"missingBucket":false}}]}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":"","language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
+}
+
+# ── Helper: Visualize legacy line — count metric over time ──
+viz_legacy_line_count_time() {
+  _id="$1"; _title="$2"; _index="$3"; _time_field="$4"; _label="${5:-Count}"; _query="${6:-}"
+  jq -nc --arg id "$_id" --arg title "$_title" --arg idx "$_index" --arg tf "$_time_field" --arg label "$_label" --arg q "$_query" \
+    '{"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"line","params":{"type":"line","grid":{"categoryLines":false},"categoryAxes":[{"id":"CategoryAxis-1","type":"category","position":"bottom","show":true,"scale":{"type":"linear"},"labels":{"show":true,"filter":true,"truncate":100},"title":{}}],"valueAxes":[{"id":"ValueAxis-1","name":"LeftAxis-1","type":"value","position":"left","show":true,"scale":{"type":"linear","mode":"normal"},"labels":{"show":true,"rotate":0,"filter":false,"truncate":100},"title":{"text":$label}}],"seriesParams":[{"show":true,"type":"line","mode":"normal","data":{"label":$label,"id":"1"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"interpolate":"linear","showCircles":true}],"addTooltip":true,"addLegend":true,"legendPosition":"right","times":[],"addTimeMarker":false,"thresholdLine":{"show":false}},"aggs":[{"id":"1","enabled":true,"type":"count","schema":"metric","params":{"customLabel":$label}},{"id":"2","enabled":true,"type":"date_histogram","schema":"segment","params":{"field":$tf,"useNormalizedOpenSearchInterval":true,"interval":"auto","drop_partials":false,"min_doc_count":1}}]}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":$q,"language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
+}
+
+# ── Helper: Visualize legacy line — avg(field) over time, optional terms split ──
+viz_legacy_line_avg_time() {
+  _id="$1"; _title="$2"; _index="$3"; _time_field="$4"; _metric_field="$5"; _label="${6:-Avg}"; _split_field="${7:-}"; _split_size="${8:-5}"; _query="${9:-}"
+  jq -nc --arg id "$_id" --arg title "$_title" --arg idx "$_index" --arg tf "$_time_field" --arg mf "$_metric_field" --arg label "$_label" --arg sf "$_split_field" --argjson ss "$_split_size" --arg q "$_query" \
+    '(if $sf=="" then [] else [{"id":"3","enabled":true,"type":"terms","schema":"group","params":{"field":$sf,"orderBy":"1","order":"desc","size":$ss,"otherBucket":false,"missingBucket":false}}] end) as $extra | {"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"line","params":{"type":"line","grid":{"categoryLines":false},"categoryAxes":[{"id":"CategoryAxis-1","type":"category","position":"bottom","show":true,"scale":{"type":"linear"},"labels":{"show":true,"filter":true,"truncate":100},"title":{}}],"valueAxes":[{"id":"ValueAxis-1","name":"LeftAxis-1","type":"value","position":"left","show":true,"scale":{"type":"linear","mode":"normal"},"labels":{"show":true,"rotate":0,"filter":false,"truncate":100},"title":{"text":$label}}],"seriesParams":[{"show":true,"type":"line","mode":"normal","data":{"label":$label,"id":"1"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"interpolate":"linear","showCircles":true}],"addTooltip":true,"addLegend":true,"legendPosition":"right","times":[],"addTimeMarker":false,"thresholdLine":{"show":false}},"aggs":([{"id":"1","enabled":true,"type":"avg","schema":"metric","params":{"field":$mf,"customLabel":$label}},{"id":"2","enabled":true,"type":"date_histogram","schema":"segment","params":{"field":$tf,"useNormalizedOpenSearchInterval":true,"interval":"auto","drop_partials":false,"min_doc_count":1}}]+$extra)}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":$q,"language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
+}
+
+# ── Helper: Visualize legacy line — percentiles over time ──
+viz_legacy_line_percentiles_time() {
+  _id="$1"; _title="$2"; _index="$3"; _time_field="$4"; _metric_field="$5"
+  jq -nc --arg id "$_id" --arg title "$_title" --arg idx "$_index" --arg tf "$_time_field" --arg mf "$_metric_field" \
+    '{"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"line","params":{"type":"line","grid":{"categoryLines":false},"categoryAxes":[{"id":"CategoryAxis-1","type":"category","position":"bottom","show":true,"scale":{"type":"linear"},"labels":{"show":true,"filter":true,"truncate":100},"title":{}}],"valueAxes":[{"id":"ValueAxis-1","name":"LeftAxis-1","type":"value","position":"left","show":true,"scale":{"type":"linear","mode":"normal"},"labels":{"show":true,"rotate":0,"filter":false,"truncate":100},"title":{"text":"Latency (ms)"}}],"seriesParams":[{"show":true,"type":"line","mode":"normal","data":{"label":"P50","id":"1.50"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"interpolate":"linear","showCircles":true},{"show":true,"type":"line","mode":"normal","data":{"label":"P95","id":"1.95"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"interpolate":"linear","showCircles":true},{"show":true,"type":"line","mode":"normal","data":{"label":"P99","id":"1.99"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"interpolate":"linear","showCircles":true}],"addTooltip":true,"addLegend":true,"legendPosition":"right","times":[],"addTimeMarker":false,"thresholdLine":{"show":false}},"aggs":[{"id":"1","enabled":true,"type":"percentiles","schema":"metric","params":{"field":$mf,"percents":[50,95,99]}},{"id":"2","enabled":true,"type":"date_histogram","schema":"segment","params":{"field":$tf,"useNormalizedOpenSearchInterval":true,"interval":"auto","drop_partials":false,"min_doc_count":1}}]}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":"","language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
+}
+
+# ── Helper: Visualize legacy area — count or avg metric over time, optional terms split ──
+viz_legacy_area_time() {
+  _id="$1"; _title="$2"; _index="$3"; _time_field="$4"; _metric_type="$5"; _metric_field="$6"; _label="${7:-Value}"; _split_field="${8:-}"; _split_size="${9:-5}"; _query="${10:-}"
+  jq -nc --arg id "$_id" --arg title "$_title" --arg idx "$_index" --arg tf "$_time_field" --arg mt "$_metric_type" --arg mf "$_metric_field" --arg label "$_label" --arg sf "$_split_field" --argjson ss "$_split_size" --arg q "$_query" \
+    '(if $mt=="count" then {"id":"1","enabled":true,"type":"count","schema":"metric","params":{"customLabel":$label}} else {"id":"1","enabled":true,"type":$mt,"schema":"metric","params":{"field":$mf,"customLabel":$label}} end) as $metric | (if $sf=="" then [] else [{"id":"3","enabled":true,"type":"terms","schema":"group","params":{"field":$sf,"orderBy":"1","order":"desc","size":$ss,"otherBucket":false,"missingBucket":false}}] end) as $extra | {"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"area","params":{"type":"area","grid":{"categoryLines":false},"categoryAxes":[{"id":"CategoryAxis-1","type":"category","position":"bottom","show":true,"scale":{"type":"linear"},"labels":{"show":true,"filter":true,"truncate":100},"title":{}}],"valueAxes":[{"id":"ValueAxis-1","name":"LeftAxis-1","type":"value","position":"left","show":true,"scale":{"type":"linear","mode":"normal"},"labels":{"show":true,"rotate":0,"filter":false,"truncate":100},"title":{"text":$label}}],"seriesParams":[{"show":true,"type":"area","mode":"stacked","data":{"label":$label,"id":"1"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"interpolate":"linear","showCircles":true}],"addTooltip":true,"addLegend":true,"legendPosition":"right","times":[],"addTimeMarker":false,"thresholdLine":{"show":false}},"aggs":([$metric,{"id":"2","enabled":true,"type":"date_histogram","schema":"segment","params":{"field":$tf,"useNormalizedOpenSearchInterval":true,"interval":"auto","drop_partials":false,"min_doc_count":1}}]+$extra)}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":$q,"language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
+}
+
+# ── Helper: Visualize legacy horizontal bar — terms bucket on Y, metric on X ──
+viz_legacy_horizontal_bar() {
+  _id="$1"; _title="$2"; _index="$3"; _bucket_field="$4"; _metric_type="${5:-count}"; _metric_field="${6:-}"; _size="${7:-10}"; _label="${8:-Count}"
+  jq -nc --arg id "$_id" --arg title "$_title" --arg idx "$_index" --arg bf "$_bucket_field" --arg mt "$_metric_type" --arg mf "$_metric_field" --argjson size "$_size" --arg label "$_label" \
+    '(if $mt=="count" then {"id":"1","enabled":true,"type":"count","schema":"metric","params":{"customLabel":$label}} else {"id":"1","enabled":true,"type":$mt,"schema":"metric","params":{"field":$mf,"customLabel":$label}} end) as $metric | {"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"horizontal_bar","params":{"type":"histogram","grid":{"categoryLines":false},"categoryAxes":[{"id":"CategoryAxis-1","type":"category","position":"left","show":true,"scale":{"type":"linear"},"labels":{"show":true,"filter":true,"truncate":200,"rotate":0},"title":{}}],"valueAxes":[{"id":"ValueAxis-1","name":"BottomAxis-1","type":"value","position":"bottom","show":true,"scale":{"type":"linear","mode":"normal"},"labels":{"show":true,"rotate":0,"filter":false,"truncate":100},"title":{"text":$label}}],"seriesParams":[{"show":true,"type":"histogram","mode":"normal","data":{"label":$label,"id":"1"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"showCircles":true}],"addTooltip":true,"addLegend":true,"legendPosition":"right","times":[],"addTimeMarker":false,"thresholdLine":{"show":false}},"aggs":[$metric,{"id":"2","enabled":true,"type":"terms","schema":"segment","params":{"field":$bf,"orderBy":"1","order":"desc","size":$size,"otherBucket":false,"missingBucket":false}}]}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":"","language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
+}
+
+# ── Helper: Visualize legacy horizontal bar from range agg (latency bands) ──
+viz_legacy_horizontal_bar_range() {
+  _id="$1"; _title="$2"; _index="$3"; _field="$4"; _ranges_json="$5"; _label="${6:-Count}"
+  jq -nc --arg id "$_id" --arg title "$_title" --arg idx "$_index" --arg field "$_field" --argjson ranges "$_ranges_json" --arg label "$_label" \
+    '{"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"horizontal_bar","params":{"type":"histogram","grid":{"categoryLines":false},"categoryAxes":[{"id":"CategoryAxis-1","type":"category","position":"left","show":true,"scale":{"type":"linear"},"labels":{"show":true,"filter":true,"truncate":200,"rotate":0},"title":{}}],"valueAxes":[{"id":"ValueAxis-1","name":"BottomAxis-1","type":"value","position":"bottom","show":true,"scale":{"type":"linear","mode":"normal"},"labels":{"show":true,"rotate":0,"filter":false,"truncate":100},"title":{"text":$label}}],"seriesParams":[{"show":true,"type":"histogram","mode":"normal","data":{"label":$label,"id":"1"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"showCircles":true}],"addTooltip":true,"addLegend":true,"legendPosition":"right","times":[],"addTimeMarker":false,"thresholdLine":{"show":false}},"aggs":[{"id":"1","enabled":true,"type":"count","schema":"metric","params":{"customLabel":$label}},{"id":"2","enabled":true,"type":"range","schema":"segment","params":{"field":$field,"ranges":$ranges}}]}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":"","language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
 }
 
 # ── Helper: write one dashboard line ──
@@ -423,76 +513,80 @@ dash_line() {
 
 {
   # ─── INDEX PATTERNS ───
-  ip_line "finance-traces"       "finance-traces*"       "endTime"
-  ip_line "finance-logs"         "finance-logs*"         "@timestamp"
-  ip_line "finance-metrics"      "finance-metrics*"      "@timestamp"
-  ip_line "notification-traces"  "notification-traces*"  "endTime"
-  ip_line "notification-logs"    "notification-logs*"    "@timestamp"
-  ip_line "notification-metrics" "notification-metrics*" "@timestamp"
+  ip_line_traces "finance-traces"      "finance-traces*"       "endTime"
+  ip_line        "finance-logs"        "finance-logs*"         "@timestamp"
+  ip_line        "finance-metrics"     "finance-metrics*"      "@timestamp"
+  ip_line_traces "notification-traces" "notification-traces*"  "endTime"
+  ip_line        "notification-logs"   "notification-logs*"    "@timestamp"
+  ip_line        "notification-metrics" "notification-metrics*" "@timestamp"
 
   # ─── EXECUTIVE DASHBOARD CHARTS ───
 
-  # 1.1 Success Rate Gauge
-  viz_line "viz-exec-sr" "Executive - Success Rate" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Success Rate","data":{"url":{"%context%":true,"index":"finance-traces*","body":{"size":0,"aggs":{"total":{"value_count":{"field":"traceId"}},"errors":{"filter":{"term":{"status.code.keyword":"Error"}}}}}},"format":{"property":"aggregations"}},"transform":[{"calculate":"datum.total.value > 0 ? ((datum.total.value - datum.errors.doc_count) / datum.total.value) * 100 : 100","as":"success_pct"},{"calculate":"datum.total.value > 0 ? (datum.errors.doc_count / datum.total.value) * 100 : 0","as":"error_pct"},{"fold":["success_pct","error_pct"]}],"mark":{"type":"arc","innerRadius":60,"outerRadius":90,"cornerRadius":4},"encoding":{"theta":{"field":"value","type":"quantitative","stack":true},"color":{"field":"key","type":"nominal","scale":{"domain":["success_pct","error_pct"],"range":["#54B399","#E7664C"]},"legend":{"title":"Status"}}}}'
+  # 1.1 Success Rate Donut (Visualize legacy / Elastic Charts — sample for quality test)
+  viz_legacy_pie "viz-exec-sr" "Executive - Success Rate" "finance-traces" \
+    '[{"input":{"query":"NOT status.code.keyword:Error","language":"kuery"},"label":"Success"},{"input":{"query":"status.code.keyword:Error","language":"kuery"},"label":"Error"}]'
 
   # 1.2 Throughput RPM
-  viz_line "viz-exec-rpm" "Executive - Throughput (RPM)" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Throughput (RPM)","data":{"url":{"%context%":true,"index":"finance-traces*","body":{"size":0,"aggs":{"rpm":{"date_histogram":{"field":"endTime","fixed_interval":"1m"}}}}},"format":{"property":"aggregations.rpm.buckets"}},"mark":{"type":"bar","cornerRadiusTopLeft":3,"cornerRadiusTopRight":3,"color":{"gradient":"linear","stops":[{"offset":0,"color":"#1B6B93"},{"offset":1,"color":"#54B399"}]}},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"doc_count","type":"quantitative","axis":{"title":"Requests / Minute"}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"doc_count","type":"quantitative","title":"RPM"}]}}'
+  viz_legacy_line_count_time "viz-exec-rpm" "Executive - Throughput (RPM)" \
+    "finance-traces" "endTime" "RPM"
 
-  # 1.3 Service Uptime Timeline
-  viz_line "viz-exec-uptime" "Executive - Service Uptime" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Service Uptime Timeline","data":{"url":{"%context%":true,"index":"finance-traces*","body":{"size":0,"aggs":{"timeline":{"date_histogram":{"field":"endTime","fixed_interval":"5m"},"aggs":{"errors":{"filter":{"term":{"status.code.keyword":"Error"}}}}}}}},"format":{"property":"aggregations.timeline.buckets"}},"transform":[{"calculate":"datum.errors.doc_count > 0 ? '\''Degraded'\'' : '\''Healthy'\''","as":"status"}],"mark":{"type":"rect","height":30,"cornerRadius":3},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"color":{"field":"status","type":"nominal","scale":{"domain":["Healthy","Degraded"],"range":["#54B399","#E7664C"]},"legend":{"title":"Status"}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"status","type":"nominal","title":"Status"},{"field":"doc_count","type":"quantitative","title":"Requests"}]}}'
+  # 1.3 Service Uptime Timeline (span volume split by service name)
+  viz_legacy_area_time "viz-exec-uptime" "Finance Backend - Service Uptime" \
+    "finance-traces" "endTime" "count" "" "Spans" "resource.service.name.keyword" 5 ""
 
   # ─── APM DASHBOARD CHARTS ───
 
-  # 2.1 Latency Percentiles (uses script to compute duration from startTime/endTime)
-  viz_line "viz-apm-lat" "APM - Latency Percentiles" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Latency Percentiles (ms)","data":{"url":{"%context%":true,"index":"finance-traces*","body":{"size":0,"aggs":{"over_time":{"date_histogram":{"field":"endTime","fixed_interval":"1m","min_doc_count":1},"aggs":{"pcts":{"percentiles":{"script":{"source":"doc['\''endTime'\''].value.toInstant().toEpochMilli() - doc['\''startTime'\''].value.toInstant().toEpochMilli()","lang":"painless"},"percents":[50,95,99]}}}}}}},"format":{"property":"aggregations.over_time.buckets"}},"transform":[{"calculate":"datum.pcts.values['\''50.0'\''] != null && isFinite(datum.pcts.values['\''50.0'\'']) ? datum.pcts.values['\''50.0'\''] : 0","as":"P50"},{"calculate":"datum.pcts.values['\''95.0'\''] != null && isFinite(datum.pcts.values['\''95.0'\'']) ? datum.pcts.values['\''95.0'\''] : 0","as":"P95"},{"calculate":"datum.pcts.values['\''99.0'\''] != null && isFinite(datum.pcts.values['\''99.0'\'']) ? datum.pcts.values['\''99.0'\''] : 0","as":"P99"}],"layer":[{"mark":{"type":"line","strokeWidth":2,"point":{"size":30},"color":"#54B399"},"encoding":{"y":{"field":"P50","type":"quantitative"},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"P50","type":"quantitative","title":"P50 ms","format":".1f"}]}},{"mark":{"type":"line","strokeWidth":2,"point":{"size":30},"color":"#D6BF57"},"encoding":{"y":{"field":"P95","type":"quantitative"},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"P95","type":"quantitative","title":"P95 ms","format":".1f"}]}},{"mark":{"type":"line","strokeWidth":2,"point":{"size":30},"color":"#E7664C"},"encoding":{"y":{"field":"P99","type":"quantitative"},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"P99","type":"quantitative","title":"P99 ms","format":".1f"}]}}],"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"type":"quantitative","axis":{"title":"Latency (ms)"}}}}'
+  # 2.1 Latency Percentiles (uses duration_ms scripted field)
+  viz_legacy_line_percentiles_time "viz-apm-lat" "APM - Latency Percentiles" \
+    "finance-traces" "endTime" "duration_ms"
 
-  # 2.2 Latency Heatmap (computes duration client-side from startTime/endTime)
-  viz_line "viz-apm-hm" "APM - Latency Heatmap" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Latency Distribution","data":{"url":{"%context%":true,"index":"finance-traces*","body":{"size":0,"aggs":{"lat_ranges":{"range":{"script":{"source":"doc['\''endTime'\''].value.toInstant().toEpochMilli() - doc['\''startTime'\''].value.toInstant().toEpochMilli()","lang":"painless"},"ranges":[{"key":"0-10 ms","to":10},{"key":"10-50 ms","from":10,"to":50},{"key":"50-100 ms","from":50,"to":100},{"key":"100-300 ms","from":100,"to":300},{"key":"300-1000 ms","from":300,"to":1000},{"key":"1s+","from":1000}]}}}}},"format":{"property":"aggregations.lat_ranges.buckets"}},"transform":[{"filter":"datum.doc_count > 0"},{"calculate":"datum.key","as":"latency_band"},{"calculate":"datum.doc_count","as":"count"}],"mark":{"type":"bar","cornerRadiusEnd":4},"encoding":{"x":{"field":"count","type":"quantitative","axis":{"title":"Count","tickCount":5},"scale":{"zero":true}},"y":{"field":"latency_band","type":"ordinal","sort":["1s+","300-1000 ms","100-300 ms","50-100 ms","10-50 ms","0-10 ms"],"axis":{"title":"Latency"}},"color":{"field":"latency_band","type":"ordinal","sort":["1s+","300-1000 ms","100-300 ms","50-100 ms","10-50 ms","0-10 ms"],"scale":{"domain":["1s+","300-1000 ms","100-300 ms","50-100 ms","10-50 ms","0-10 ms"],"range":["#8B0000","#CC3232","#DB7B2B","#E7B416","#7BC043","#2DC937"]},"legend":{"title":"Latency"}},"tooltip":[{"field":"latency_band","type":"ordinal","title":"Latency"},{"field":"count","type":"quantitative","title":"Count"}]}}'
+  # 2.2 Latency Heatmap — horizontal bar over latency range buckets
+  viz_legacy_horizontal_bar_range "viz-apm-hm" "APM - Latency Heatmap" \
+    "finance-traces" "duration_ms" \
+    '[{"from":0,"to":10},{"from":10,"to":50},{"from":50,"to":100},{"from":100,"to":300},{"from":300,"to":1000},{"from":1000}]' \
+    "Count"
 
-  # 2.3 Dependency Analysis (uses http.route and scripted avg duration)
-  viz_line "viz-apm-dep" "APM - Dependency Analysis" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Avg Latency by Route","data":{"url":{"%context%":true,"index":"finance-traces*","body":{"size":0,"aggs":{"filtered":{"filter":{"exists":{"field":"attributes.http.route"}},"aggs":{"targets":{"terms":{"field":"attributes.http.route.keyword","size":20},"aggs":{"avg_lat":{"avg":{"script":{"source":"doc['\''endTime'\''].value.toInstant().toEpochMilli() - doc['\''startTime'\''].value.toInstant().toEpochMilli()","lang":"painless"}}}}}}}}}},"format":{"property":"aggregations.filtered.targets.buckets"}},"transform":[{"calculate":"datum.avg_lat.value != null && isFinite(datum.avg_lat.value) ? datum.avg_lat.value : 0","as":"avg_ms"}],"mark":{"type":"bar","cornerRadiusEnd":4},"encoding":{"y":{"field":"key","type":"nominal","axis":{"title":"HTTP Route"},"sort":"-x"},"x":{"field":"avg_ms","type":"quantitative","axis":{"title":"Avg Latency (ms)"}},"color":{"field":"avg_ms","type":"quantitative","scale":{"scheme":"redyellowgreen","reverse":true},"legend":{"title":"ms"}},"tooltip":[{"field":"key","type":"nominal","title":"Route"},{"field":"avg_ms","type":"quantitative","title":"Avg ms","format":".1f"}]}}'
+  # 2.3 Dependency Analysis — top span operations by avg latency
+  # name.keyword is populated on every span (HTTP, Kafka, scheduler, JPA);
+  # attributes.http.route.keyword exists on only ~0.01% of docs so it produced an empty chart.
+  viz_legacy_horizontal_bar "viz-apm-dep" "APM - Dependency Analysis" \
+    "finance-traces" "name.keyword" "avg" "duration_ms" 20 "Avg ms"
 
   # ─── RELIABILITY DASHBOARD CHARTS ───
 
-  # 3.1 Log Severity Distribution
-  viz_line "viz-rel-logdist" "Reliability - Log Distribution" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Log Severity Distribution","data":{"url":{"%context%":true,"index":"finance-logs*","body":{"size":0,"aggs":{"severity":{"terms":{"field":"severity.keyword","size":10}}}}},"format":{"property":"aggregations.severity.buckets"}},"mark":{"type":"arc","innerRadius":50,"outerRadius":90,"cornerRadius":4},"encoding":{"theta":{"field":"doc_count","type":"quantitative"},"color":{"field":"key","type":"nominal","scale":{"domain":["INFO","WARN","ERROR","DEBUG","TRACE"],"range":["#54B399","#D6BF57","#E7664C","#6092C0","#888"]},"legend":{"title":"Severity"}},"tooltip":[{"field":"key","type":"nominal","title":"Severity"},{"field":"doc_count","type":"quantitative","title":"Count"}]}}'
+  # 3.1 Log Severity Distribution — donut by severity terms
+  viz_legacy_pie_terms "viz-rel-logdist" "Reliability - Log Distribution" \
+    "finance-logs" "severity.keyword" 10
 
-  # 3.2 Log Volume Over Time (by severity)
-  viz_line "viz-rel-errhm" "Reliability - Error Heatmap" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Log Volume Over Time","data":{"url":{"%context%":true,"index":"finance-logs*","body":{"size":0,"aggs":{"over_time":{"date_histogram":{"field":"@timestamp","fixed_interval":"1h","min_doc_count":1},"aggs":{"by_sev":{"terms":{"field":"severity.keyword","size":10}}}}}}},"format":{"property":"aggregations.over_time.buckets"}},"transform":[{"flatten":["by_sev.buckets"],"as":["sev_bucket"]},{"calculate":"datum.sev_bucket.key","as":"severity"},{"calculate":"datum.sev_bucket.doc_count","as":"count"}],"mark":{"type":"bar","cornerRadiusTopLeft":3,"cornerRadiusTopRight":3},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time"}},"y":{"field":"count","type":"quantitative","stack":true,"axis":{"title":"Log Count"}},"color":{"field":"severity","type":"nominal","scale":{"domain":["INFO","WARN","ERROR","DEBUG","TRACE"],"range":["#54B399","#D6BF57","#E7664C","#6092C0","#888"]},"legend":{"title":"Severity"}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"severity","type":"nominal","title":"Severity"},{"field":"count","type":"quantitative","title":"Count"}]}}'
+  # 3.2 Log Volume Over Time — stacked area split by severity
+  viz_legacy_area_time "viz-rel-errhm" "Reliability - Error Heatmap" \
+    "finance-logs" "@timestamp" "count" "" "Log Count" "severity.keyword" 5 ""
 
-  # 3.3 Top Log Messages
-  viz_line "viz-rel-toperr" "Reliability - Top Log Messages" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Top 10 Log Messages","data":{"url":{"%context%":true,"index":"finance-logs*","body":{"size":0,"aggs":{"top_msgs":{"terms":{"field":"body.keyword","size":10}}}}},"format":{"property":"aggregations.top_msgs.buckets"}},"mark":{"type":"bar","cornerRadiusEnd":4,"color":"#6092C0"},"encoding":{"y":{"field":"key","type":"nominal","axis":{"title":"Log Message","labelLimit":200},"sort":"-x"},"x":{"field":"doc_count","type":"quantitative","axis":{"title":"Occurrences"}},"tooltip":[{"field":"key","type":"nominal","title":"Message"},{"field":"doc_count","type":"quantitative","title":"Count"}]}}'
+  # 3.3 Top Log Messages — horizontal bar by body
+  viz_legacy_horizontal_bar "viz-rel-toperr" "Reliability - Top Log Messages" \
+    "finance-logs" "body.keyword" "count" "" 10 "Occurrences"
   # ─── METRICS DASHBOARD CHARTS ───
 
-  # 4.1 CPU Usage Trend
-  viz_line "viz-met-cpu" "Metrics - CPU Usage" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"CPU Usage (%)","data":{"url":{"%context%":true,"index":"finance-metrics*","body":{"size":0,"aggs":{"filtered":{"filter":{"exists":{"field":"jvm.cpu.recent_utilization"}},"aggs":{"over_time":{"date_histogram":{"field":"@timestamp","fixed_interval":"1m"},"aggs":{"avg_cpu":{"avg":{"field":"jvm.cpu.recent_utilization"}}}}}}}}},"format":{"property":"aggregations.filtered.over_time.buckets"}},"transform":[{"calculate":"datum.avg_cpu.value != null && isFinite(datum.avg_cpu.value) ? datum.avg_cpu.value * 100 : 0","as":"cpu_pct"}],"mark":{"type":"area","line":true,"color":{"gradient":"linear","stops":[{"offset":0,"color":"rgba(84,179,153,0.3)"},{"offset":1,"color":"#54B399"}]}},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"cpu_pct","type":"quantitative","axis":{"title":"CPU %"},"scale":{"zero":true}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"cpu_pct","type":"quantitative","title":"CPU %","format":".1f"}]}}'
+  # 4.1 CPU Usage Trend — area, avg(jvm.cpu.recent_utilization). Value is 0-1 ratio.
+  viz_legacy_area_time "viz-met-cpu" "Metrics - CPU Usage" \
+    "finance-metrics" "@timestamp" "avg" "jvm.cpu.recent_utilization" "CPU (0-1)" "" 5 ""
 
-  # 4.2 Memory Usage
-  viz_line "viz-met-mem" "Metrics - Memory Usage" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"JVM Heap Memory (MB)","data":{"url":{"%context%":true,"index":"finance-metrics*","body":{"size":0,"aggs":{"filtered":{"filter":{"bool":{"must":[{"exists":{"field":"jvm.memory.used"}},{"term":{"jvm.memory.type":"heap"}}]}},"aggs":{"over_time":{"date_histogram":{"field":"@timestamp","fixed_interval":"1m"},"aggs":{"total_mem":{"sum":{"field":"jvm.memory.used"}}}}}}}}},"format":{"property":"aggregations.filtered.over_time.buckets"}},"transform":[{"calculate":"datum.total_mem.value != null && isFinite(datum.total_mem.value) ? datum.total_mem.value / 1048576 : 0","as":"mem_mb"}],"mark":{"type":"area","line":true,"color":{"gradient":"linear","stops":[{"offset":0,"color":"rgba(96,146,192,0.3)"},{"offset":1,"color":"#6092C0"}]}},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"mem_mb","type":"quantitative","axis":{"title":"Heap Memory (MB)"}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"mem_mb","type":"quantitative","title":"MB","format":".0f"}]}}'
+  # 4.2 Memory Usage — area, sum(jvm.memory.used) for heap (bytes)
+  viz_legacy_area_time "viz-met-mem" "Metrics - Memory Usage" \
+    "finance-metrics" "@timestamp" "sum" "jvm.memory.used" "Heap Bytes" "" 5 "jvm.memory.type:heap"
 
-  # 4.3 HTTP Requests
-  viz_line "viz-met-reqcount" "Metrics - Request Count" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"HTTP Requests per Minute","data":{"url":{"%context%":true,"index":"finance-metrics*","body":{"size":0,"aggs":{"filtered":{"filter":{"exists":{"field":"http.server.request.duration.counts"}},"aggs":{"over_time":{"date_histogram":{"field":"@timestamp","fixed_interval":"1m"}}}}}}},"format":{"property":"aggregations.filtered.over_time.buckets"}},"mark":{"type":"bar","cornerRadiusTopLeft":3,"cornerRadiusTopRight":3,"color":"#D6BF57"},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"doc_count","type":"quantitative","axis":{"title":"Request Count"}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"doc_count","type":"quantitative","title":"Requests"}]}}'
+  # 4.3 HTTP Requests — line, count over time, filtered for request counter docs
+  viz_legacy_line_count_time "viz-met-reqcount" "Metrics - Request Count" \
+    "finance-metrics" "@timestamp" "Requests" "http.server.request.duration.counts:*"
 
-  # 4.4 Error Rate Trend
-  viz_line "viz-met-errrate" "Metrics - Error Rate Trend" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"Error Rate Trend","data":{"url":{"%context%":true,"index":"finance-traces*","body":{"size":0,"aggs":{"over_time":{"date_histogram":{"field":"endTime","fixed_interval":"5m"},"aggs":{"total":{"value_count":{"field":"traceId"}},"errors":{"filter":{"term":{"status.code.keyword":"Error"}}}}}}}},"format":{"property":"aggregations.over_time.buckets"}},"transform":[{"calculate":"datum.total.value > 0 ? (datum.errors.doc_count / datum.total.value) * 100 : 0","as":"error_pct"}],"mark":{"type":"area","line":{"color":"#E7664C"},"color":{"gradient":"linear","stops":[{"offset":0,"color":"rgba(231,102,76,0.1)"},{"offset":1,"color":"rgba(231,102,76,0.4)"}]}},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"error_pct","type":"quantitative","axis":{"title":"Error Rate %"}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"error_pct","type":"quantitative","title":"Error %","format":".2f"}]}}'
+  # 4.4 Error Rate Trend — line of error count on traces (filter:Error)
+  viz_legacy_line_count_time "viz-met-errrate" "Metrics - Error Rate Trend" \
+    "finance-traces" "endTime" "Errors" "status.code.keyword:Error"
 
   # ─── DASHBOARDS ───
-  dash_line "otel-exec-dashboard" "1. Executive Health Dashboard" "viz-exec-sr" "viz-exec-rpm" "viz-exec-uptime"
-  dash_line "otel-apm-dashboard"  "2. APM & Performance Dashboard" "viz-apm-lat" "viz-apm-hm" "viz-apm-dep"
-  dash_line "otel-rel-dashboard"  "3. Reliability & Logs Dashboard" "viz-rel-logdist" "viz-rel-errhm" "viz-rel-toperr"
+  dash_line "otel-exec-dashboard" "1. Finance Backend - Executive Health" "viz-exec-sr" "viz-exec-rpm" "viz-exec-uptime"
+  dash_line "otel-apm-dashboard"  "2. Finance Backend - APM & Performance" "viz-apm-lat" "viz-apm-hm" "viz-apm-dep"
+  dash_line "otel-rel-dashboard"  "3. Finance Backend - Reliability & Logs" "viz-rel-logdist" "viz-rel-errhm" "viz-rel-toperr"
 
   # 4th dashboard with 4 panels
   _panels4='[{"gridData":{"x":0,"y":0,"w":24,"h":15,"i":"1"},"panelIndex":"1","embeddableConfig":{},"version":"2.19.1","panelRefName":"panel_0"},{"gridData":{"x":24,"y":0,"w":24,"h":15,"i":"2"},"panelIndex":"2","embeddableConfig":{},"version":"2.19.1","panelRefName":"panel_1"},{"gridData":{"x":0,"y":15,"w":24,"h":15,"i":"3"},"panelIndex":"3","embeddableConfig":{},"version":"2.19.1","panelRefName":"panel_2"},{"gridData":{"x":24,"y":15,"w":24,"h":15,"i":"4"},"panelIndex":"4","embeddableConfig":{},"version":"2.19.1","panelRefName":"panel_3"}]'
@@ -502,20 +596,100 @@ dash_line() {
 
   # ─── INTEGRATION & DB DASHBOARD CHARTS ───
 
-  # 5.1 DB Connection Pool Health (usage & pending over time)
-  viz_line "viz-integ-dbpool" "Integration - DB Connection Pool" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"DB Connection Pool Health","data":{"url":{"%context%":true,"index":"finance-metrics*","body":{"size":0,"aggs":{"over_time":{"date_histogram":{"field":"@timestamp","fixed_interval":"1m","min_doc_count":1},"aggs":{"avg_usage":{"avg":{"field":"db.client.connections.usage"}},"avg_pending":{"avg":{"field":"db.client.connections.pending_requests"}},"avg_max":{"avg":{"field":"db.client.connections.max"}}}}}}},"format":{"property":"aggregations.over_time.buckets"}},"transform":[{"calculate":"datum.key","as":"time"},{"calculate":"datum.avg_usage.value != null && isFinite(datum.avg_usage.value) ? datum.avg_usage.value : 0","as":"Active"},{"calculate":"datum.avg_pending.value != null && isFinite(datum.avg_pending.value) ? datum.avg_pending.value : 0","as":"Pending"},{"calculate":"datum.avg_max.value != null && isFinite(datum.avg_max.value) ? datum.avg_max.value : 0","as":"Max"},{"fold":["Active","Pending","Max"]}],"mark":{"type":"line","strokeWidth":2,"point":{"size":30}},"encoding":{"x":{"field":"time","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"value","type":"quantitative","axis":{"title":"Connections"}},"color":{"field":"key","type":"nominal","scale":{"domain":["Active","Pending","Max"],"range":["#6092C0","#E7664C","#54B399"]},"legend":{"title":"Metric"}},"tooltip":[{"field":"time","type":"temporal","title":"Time"},{"field":"key","type":"nominal","title":"Metric"},{"field":"value","type":"quantitative","title":"Count","format":".0f"}]}}'
+  # 5.1 DB Connection Pool Health — three avg metrics (active/pending/max) on shared time axis
+  jq -nc --arg id "viz-integ-dbpool" --arg title "Integration - DB Connection Pool" --arg idx "finance-metrics" \
+    '{"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"line","params":{"type":"line","grid":{"categoryLines":false},"categoryAxes":[{"id":"CategoryAxis-1","type":"category","position":"bottom","show":true,"scale":{"type":"linear"},"labels":{"show":true,"filter":true,"truncate":100},"title":{}}],"valueAxes":[{"id":"ValueAxis-1","name":"LeftAxis-1","type":"value","position":"left","show":true,"scale":{"type":"linear","mode":"normal"},"labels":{"show":true,"rotate":0,"filter":false,"truncate":100},"title":{"text":"Connections"}}],"seriesParams":[{"show":true,"type":"line","mode":"normal","data":{"label":"Active","id":"1"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"interpolate":"linear","showCircles":true},{"show":true,"type":"line","mode":"normal","data":{"label":"Pending","id":"3"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"interpolate":"linear","showCircles":true},{"show":true,"type":"line","mode":"normal","data":{"label":"Max","id":"4"},"valueAxis":"ValueAxis-1","drawLinesBetweenPoints":true,"lineWidth":2,"interpolate":"linear","showCircles":true}],"addTooltip":true,"addLegend":true,"legendPosition":"right","times":[],"addTimeMarker":false,"thresholdLine":{"show":false}},"aggs":[{"id":"1","enabled":true,"type":"avg","schema":"metric","params":{"field":"db.client.connections.usage","customLabel":"Active"}},{"id":"3","enabled":true,"type":"avg","schema":"metric","params":{"field":"db.client.connections.pending_requests","customLabel":"Pending"}},{"id":"4","enabled":true,"type":"avg","schema":"metric","params":{"field":"db.client.connections.max","customLabel":"Max"}},{"id":"2","enabled":true,"type":"date_histogram","schema":"segment","params":{"field":"@timestamp","useNormalizedOpenSearchInterval":true,"interval":"auto","drop_partials":false,"min_doc_count":1}}]}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":"","language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
 
-  # 5.2 JVM Thread State Distribution
-  viz_line "viz-integ-threads" "Integration - Thread States" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"JVM Thread State Distribution","data":{"url":{"%context%":true,"index":"finance-metrics*","body":{"size":0,"aggs":{"filtered":{"filter":{"exists":{"field":"jvm.thread.state"}},"aggs":{"states":{"terms":{"field":"jvm.thread.state","size":10},"aggs":{"total_threads":{"sum":{"field":"jvm.thread.count"}}}}}}}}},"format":{"property":"aggregations.filtered.states.buckets"}},"transform":[{"calculate":"datum.total_threads.value != null && isFinite(datum.total_threads.value) ? datum.total_threads.value : 0","as":"threads"}],"mark":{"type":"bar","cornerRadiusTopLeft":4,"cornerRadiusTopRight":4},"encoding":{"x":{"field":"key","type":"nominal","axis":{"title":"Thread State"}},"y":{"field":"threads","type":"quantitative","axis":{"title":"Thread Count"}},"color":{"field":"key","type":"nominal","scale":{"domain":["runnable","waiting","timed_waiting","blocked","new","terminated"],"range":["#54B399","#6092C0","#D6BF57","#E7664C","#888","#D32F2F"]},"legend":{"title":"State"}},"tooltip":[{"field":"key","type":"nominal","title":"State"},{"field":"threads","type":"quantitative","title":"Threads"}]}}'
+  # 5.2 JVM Thread State Distribution — donut by jvm.thread.state, sum(jvm.thread.count)
+  jq -nc --arg id "viz-integ-threads" --arg title "Integration - Thread States" --arg idx "finance-metrics" \
+    '{"type":"visualization","id":$id,"attributes":{"title":$title,"visState":({"title":$title,"type":"pie","params":{"type":"pie","addTooltip":true,"addLegend":true,"legendPosition":"right","isDonut":true,"labels":{"show":true,"values":true,"last_level":true,"truncate":100,"valuesFormat":"percent","percentDecimals":1}},"aggs":[{"id":"1","enabled":true,"type":"sum","schema":"metric","params":{"field":"jvm.thread.count","customLabel":"Threads"}},{"id":"2","enabled":true,"type":"terms","schema":"segment","params":{"field":"jvm.thread.state","orderBy":"1","order":"desc","size":10,"otherBucket":false,"missingBucket":false}}]}|tostring),"uiStateJSON":"{}","description":"","kibanaSavedObjectMeta":{"searchSourceJSON":({"index":$idx,"query":{"query":"","language":"kuery"},"filter":[]}|tostring)}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":$idx}]}'
 
-  # 5.3 HTTP Server Request Duration Over Time
-  viz_line "viz-integ-httplat" "Integration - HTTP Latency Trend" \
-    '{"$schema":"https://vega.github.io/schema/vega-lite/v5.json"'"$DC"',"title":"HTTP Server Request Latency","data":{"url":{"%context%":true,"index":"finance-metrics*","body":{"size":0,"aggs":{"filtered":{"filter":{"exists":{"field":"http.server.request.duration.values"}},"aggs":{"over_time":{"date_histogram":{"field":"@timestamp","fixed_interval":"1m","min_doc_count":1},"aggs":{"avg_lat":{"avg":{"field":"http.server.request.duration.values"}}}}}}}}},"format":{"property":"aggregations.filtered.over_time.buckets"}},"transform":[{"calculate":"datum.avg_lat.value != null && isFinite(datum.avg_lat.value) ? datum.avg_lat.value * 1000 : 0","as":"latency_ms"}],"mark":{"type":"area","line":{"color":"#D6BF57"},"color":{"gradient":"linear","stops":[{"offset":0,"color":"rgba(214,191,87,0.15)"},{"offset":1,"color":"rgba(214,191,87,0.5)"}]}},"encoding":{"x":{"field":"key","type":"temporal","axis":{"title":"Time","format":"%H:%M"}},"y":{"field":"latency_ms","type":"quantitative","axis":{"title":"Avg Latency (ms)"}},"tooltip":[{"field":"key","type":"temporal","title":"Time"},{"field":"latency_ms","type":"quantitative","title":"Latency ms","format":".1f"}]}}'
+  # 5.3 HTTP Server Request Duration Over Time — area avg(http.server.request.duration.values), label seconds
+  viz_legacy_area_time "viz-integ-httplat" "Integration - HTTP Latency Trend" \
+    "finance-metrics" "@timestamp" "avg" "http.server.request.duration.values" "Avg seconds" "" 5 ""
 
   # 5th dashboard with 3 panels
   dash_line "otel-integ-dashboard" "5. Integration & DB Health" "viz-integ-dbpool" "viz-integ-threads" "viz-integ-httplat"
+
+  # ─── Notification Dashboards ─────────────────────────
+
+  # N1.1 Notification Success Rate Donut (Visualize legacy / Elastic Charts — sample for quality test)
+  viz_legacy_pie "viz-notif-exec-sr" "Notification Executive - Success Rate" "notification-traces" \
+    '[{"input":{"query":"NOT status.code.keyword:Error","language":"kuery"},"label":"Success"},{"input":{"query":"status.code.keyword:Error","language":"kuery"},"label":"Error"}]'
+
+  # N1.2 Notification Throughput RPM
+  viz_legacy_line_count_time "viz-notif-exec-rpm" "Notification Executive - Throughput (RPM)" \
+    "notification-traces" "endTime" "RPM"
+
+  # N1.3 Notification Service Uptime Timeline (span volume split by service name)
+  viz_legacy_area_time "viz-notif-exec-uptime" "Finance Notification - Service Uptime" \
+    "notification-traces" "endTime" "count" "" "Spans" "resource.service.name.keyword" 5 ""
+
+  # N2.1 Notification Latency Percentiles (uses duration_ms scripted field)
+  viz_legacy_line_percentiles_time "viz-notif-apm-lat" "Notification APM - Latency Percentiles" \
+    "notification-traces" "endTime" "duration_ms"
+
+  # N2.2 Notification Latency Heatmap — horizontal bar over latency range buckets
+  viz_legacy_horizontal_bar_range "viz-notif-apm-hm" "Notification APM - Latency Heatmap" \
+    "notification-traces" "duration_ms" \
+    '[{"from":0,"to":10},{"from":10,"to":50},{"from":50,"to":100},{"from":100,"to":300},{"from":300,"to":1000},{"from":1000}]' \
+    "Count"
+
+  # N2.3 Notification Dependency Analysis — top span operations by avg latency
+  viz_legacy_horizontal_bar "viz-notif-apm-dep" "Notification APM - Dependency Analysis" \
+    "notification-traces" "name.keyword" "avg" "duration_ms" 20 "Avg ms"
+
+  # N3.1 Notification Log Severity Distribution — donut by severity terms
+  viz_legacy_pie_terms "viz-notif-rel-logdist" "Notification Reliability - Log Distribution" \
+    "notification-logs" "severity.keyword" 10
+
+  # N3.2 Notification Log Volume Over Time — stacked area split by severity
+  viz_legacy_area_time "viz-notif-rel-errhm" "Notification Reliability - Error Heatmap" \
+    "notification-logs" "@timestamp" "count" "" "Log Count" "severity.keyword" 5 ""
+
+  # N3.3 Notification Top Log Messages — horizontal bar by body
+  viz_legacy_horizontal_bar "viz-notif-rel-toperr" "Notification Reliability - Top Log Messages" \
+    "notification-logs" "body.keyword" "count" "" 10 "Occurrences"
+
+  # N4.1 Notification CPU — area, avg(jvm.cpu.recent_utilization). Value is 0-1 ratio.
+  viz_legacy_area_time "viz-notif-met-cpu" "Notification Metrics - CPU Usage" \
+    "notification-metrics" "@timestamp" "avg" "jvm.cpu.recent_utilization" "CPU (0-1)" "" 5 ""
+
+  # N4.2 Notification Memory — area, sum(jvm.memory.used) for heap (bytes)
+  viz_legacy_area_time "viz-notif-met-mem" "Notification Metrics - Memory Usage" \
+    "notification-metrics" "@timestamp" "sum" "jvm.memory.used" "Heap Bytes" "" 5 "jvm.memory.type:heap"
+
+  # N4.3 Notification Request Count — line, count over time, filtered for request counter docs
+  viz_legacy_line_count_time "viz-notif-met-reqcount" "Notification Metrics - Request Count" \
+    "notification-metrics" "@timestamp" "Requests" "http.server.request.duration.counts:*"
+
+  # N4.4 Notification Error Rate Trend — line of error count on traces (filter:Error)
+  viz_legacy_line_count_time "viz-notif-met-errrate" "Notification Metrics - Error Rate Trend" \
+    "notification-traces" "endTime" "Errors" "status.code.keyword:Error"
+
+  # N5.1 Notification Domain - by Logger (PriceAlertEvaluator/WatchlistEvaluator/NotificationDispatcher)
+  viz_legacy_horizontal_bar "viz-notif-domain-types" "Notification Domain - By Logger" \
+    "notification-logs" "logger" "count" "" 15 "Events"
+
+  # N5.2 Notification Domain - Top Events from Logs
+  viz_legacy_horizontal_bar "viz-notif-domain-events" "Notification Domain - Top Events" \
+    "notification-logs" "body.keyword" "count" "" 15 "Occurrences"
+
+  # N5.3 Notification Domain - Severity Over Time — stacked area split by severity
+  viz_legacy_area_time "viz-notif-domain-sev" "Notification Domain - Severity Over Time" \
+    "notification-logs" "@timestamp" "count" "" "Log Count" "severity.keyword" 5 ""
+
+  # ─── Notification Dashboards (mirror finance dashboards) ───
+  dash_line "notif-exec-dashboard"   "1. Notification Executive Health"   "viz-notif-exec-sr"      "viz-notif-exec-rpm"   "viz-notif-exec-uptime"
+  dash_line "notif-apm-dashboard"    "2. Notification APM & Performance"  "viz-notif-apm-lat"      "viz-notif-apm-hm"     "viz-notif-apm-dep"
+  dash_line "notif-rel-dashboard"    "3. Notification Reliability & Logs" "viz-notif-rel-logdist"  "viz-notif-rel-errhm"  "viz-notif-rel-toperr"
+
+  # Notification 4-panel metrics dashboard (mirrors otel-met-dashboard layout)
+  jq -nc --arg id "notif-met-dashboard" --arg title "4. Notification Metrics & System" --arg panels "$_panels4" \
+    --arg v1 "viz-notif-met-cpu" --arg v2 "viz-notif-met-mem" --arg v3 "viz-notif-met-reqcount" --arg v4 "viz-notif-met-errrate" \
+    '{"type":"dashboard","id":$id,"attributes":{"title":$title,"hits":0,"description":"","panelsJSON":$panels,"optionsJSON":"{\"useMargins\":true,\"hidePanelTitles\":false}","timeRestore":true,"timeFrom":"now-24h","timeTo":"now","kibanaSavedObjectMeta":{"searchSourceJSON":"{}"}},"references":[{"name":"panel_0","type":"visualization","id":$v1},{"name":"panel_1","type":"visualization","id":$v2},{"name":"panel_2","type":"visualization","id":$v3},{"name":"panel_3","type":"visualization","id":$v4}]}'
+
+  dash_line "notif-domain-dashboard" "5. Notification Domain Insights"    "viz-notif-domain-types" "viz-notif-domain-events" "viz-notif-domain-sev"
 
 } > "$NDJSON"
 
@@ -548,10 +722,19 @@ if [ "$SUCCESS" = "true" ]; then
       *)                                  _tf="@timestamp" ;;
     esac
 
-    # Build fields JSON from _field_caps
+    # Trace patterns retain a duration_ms scripted field so APM viz can
+    # use it as a metric without re-declaring the painless script everywhere.
+    case "$pat_id" in
+      finance-traces|notification-traces)
+        _scripted='[{"name":"duration_ms","type":"number","scripted":true,"script":"if(doc.containsKey('"'"'endTime'"'"')&&doc.containsKey('"'"'startTime'"'"')&&!doc['"'"'endTime'"'"'].empty&&!doc['"'"'startTime'"'"'].empty){return doc['"'"'endTime'"'"'].value.toInstant().toEpochMilli()-doc['"'"'startTime'"'"'].value.toInstant().toEpochMilli();}return 0;","lang":"painless","searchable":true,"aggregatable":true}]'
+        ;;
+      *) _scripted='[]' ;;
+    esac
+
+    # Build fields JSON from _field_caps and merge with scripted fields
     FIELDS_JSON=$(os_api -s "$OS_URL/${pat_id}*/_field_caps?fields=*" \
       -H 'Content-Type: application/json' 2>/dev/null \
-    | jq -c '[
+    | jq -c --argjson scripted "$_scripted" '[
         .fields | to_entries[] |
         .key as $name | .value | to_entries[0] |
         .value as $info |
@@ -568,7 +751,7 @@ if [ "$SUCCESS" = "true" ]; then
           aggregatable: ($info.aggregatable // false),
           readFromDocValues: ($info.aggregatable // false)
         }
-      ]')
+      ] + $scripted')
 
     # Use jq to build payload — handles JSON escaping correctly
     PAYLOAD=$(jq -nc \
@@ -581,13 +764,21 @@ if [ "$SUCCESS" = "true" ]; then
       -H "Content-Type: application/json" \
       -d "$PAYLOAD" > /dev/null 2>&1 && echo "  $pat_id: OK" || echo "  $pat_id: HATA"
   done
-  echo "Kurulum tamamlandi! 5 Dashboard ve 16 Grafik basariyla olusturuldu."
+  echo "Kurulum tamamlandi! 10 Dashboard ve 32 Grafik basariyla olusturuldu."
   echo ""
+  echo "   Finance Dashboards:"
   echo "   1. Executive Health Dashboard     - Genel saglik durumu"
   echo "   2. APM & Performance Dashboard    - Performans analizi"
   echo "   3. Reliability & Logs Dashboard   - Hata analizi"
   echo "   4. Metrics & System Resources     - Sistem kaynaklari"
   echo "   5. Integration & DB Health        - DB pool, thread, HTTP latency"
+  echo ""
+  echo "   Notification Dashboards:"
+  echo "   1. Notification Executive Health  - Genel saglik durumu"
+  echo "   2. Notification APM & Performance - Performans analizi"
+  echo "   3. Notification Reliability & Logs- Hata analizi"
+  echo "   4. Notification Metrics & System  - Sistem kaynaklari"
+  echo "   5. Notification Domain Insights   - Logger, top events, severity"
   echo ""
   echo "   http://opensearch-dashboards:5601/app/dashboards"
 else

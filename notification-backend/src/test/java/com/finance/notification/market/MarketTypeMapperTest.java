@@ -23,9 +23,9 @@ class MarketTypeMapperTest {
     }
 
     @Test
-    void should_returnEmpty_when_cryptoIsPassed() {
+    void should_mapCrypto_when_marketTypeIsCrypto() {
         Optional<SessionMarket> mapped = MarketTypeMapper.fromMarketType(MarketType.CRYPTO);
 
-        assertThat(mapped).isEmpty();
+        assertThat(mapped).contains(SessionMarket.CRYPTO);
     }
 }

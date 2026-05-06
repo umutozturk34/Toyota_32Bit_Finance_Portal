@@ -4,6 +4,7 @@ import com.finance.common.event.KafkaTopics;
 import com.finance.common.event.MarketUpdatedEvent;
 import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;
+import com.finance.notification.core.dispatch.payload.MarketClosedPayload;
 import com.finance.notification.core.dispatch.payload.MarketDataUpdatedPayload;
 import com.finance.notification.core.dispatch.payload.MarketOpenedPayload;
 import com.finance.notification.core.model.NotificationPreference;
@@ -73,14 +74,25 @@ public class MarketSessionTransitionListener {
                                     List<NotificationPreference> subscribers) {
         Optional<MarketSession> previous = tracker.previous(market);
         boolean openedNow = previous.map(prev -> prev == MarketSession.CLOSED && current == MarketSession.OPEN)
-                .orElse(current == MarketSession.OPEN);
+                .orElse(false);
+        boolean closedNow = previous.map(prev -> prev == MarketSession.OPEN && current == MarketSession.CLOSED)
+                .orElse(false);
         tracker.update(market, current);
-        if (!openedNow) return;
-        log.info("Market session opened market={}; dispatching MARKET_OPENED", market);
-        for (NotificationPreference pref : subscribers) {
-            if (!isMarketSelected(pref, market)) continue;
-            MarketOpenedPayload payload = new MarketOpenedPayload(market.name(), market.displayLabel());
-            dispatcher.dispatch(NotificationRequest.of(pref.getUserSub(), payload));
+        if (openedNow) {
+            log.info("Market session opened market={}; dispatching MARKET_OPENED", market);
+            for (NotificationPreference pref : subscribers) {
+                if (!isMarketSelected(pref, market)) continue;
+                MarketOpenedPayload payload = new MarketOpenedPayload(market.name(), market.displayLabel());
+                dispatcher.dispatch(NotificationRequest.of(pref.getUserSub(), payload));
+            }
+        }
+        if (closedNow) {
+            log.info("Market session closed market={}; dispatching MARKET_CLOSED", market);
+            for (NotificationPreference pref : subscribers) {
+                if (!isMarketSelected(pref, market)) continue;
+                MarketClosedPayload payload = new MarketClosedPayload(market.name(), market.displayLabel());
+                dispatcher.dispatch(NotificationRequest.of(pref.getUserSub(), payload));
+            }
         }
     }
 

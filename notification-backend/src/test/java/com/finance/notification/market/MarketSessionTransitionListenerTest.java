@@ -82,6 +82,7 @@ class MarketSessionTransitionListenerTest {
     @Test
     void should_skipUser_when_marketNotInSelection() {
         MarketSessionTracker tracker = new MarketSessionTracker();
+        tracker.update(SessionMarket.STOCK, MarketSession.CLOSED);
         when(resolver.resolve(SessionMarket.STOCK, FIXED_NOW)).thenReturn(Optional.of(MarketSession.OPEN));
         when(preferences.findAll()).thenReturn(List.of(
                 subscriberWithMarkets("user-1", "FUND,COMMODITY"),
@@ -97,6 +98,19 @@ class MarketSessionTransitionListenerTest {
     }
 
     @Test
+    void should_skipMarketOpened_when_trackerEmptyOnFirstObservation() {
+        MarketSessionTracker tracker = new MarketSessionTracker();
+        when(resolver.resolve(SessionMarket.CRYPTO, FIXED_NOW)).thenReturn(Optional.of(MarketSession.OPEN));
+        when(preferences.findAll()).thenReturn(List.of(subscriberWithMarkets("user-1", "CRYPTO")));
+
+        listener(tracker).onMarketUpdated(MarketUpdatedEvent.of(MarketType.CRYPTO, "scheduled-crypto-morning"), ack);
+
+        ArgumentCaptor<NotificationRequest> captor = ArgumentCaptor.forClass(NotificationRequest.class);
+        verify(dispatcher, times(1)).dispatch(captor.capture());
+        assertThat(captor.getValue().payload().type().name()).isEqualTo("MARKET_DATA_UPDATED");
+    }
+
+    @Test
     void should_acknowledgeEvenWhenDispatcherThrows() {
         MarketSessionTracker tracker = new MarketSessionTracker();
         when(resolver.resolve(SessionMarket.STOCK, FIXED_NOW)).thenReturn(Optional.of(MarketSession.OPEN));
@@ -109,13 +123,17 @@ class MarketSessionTransitionListenerTest {
     }
 
     @Test
-    void should_skipEntirely_when_marketTypeUnmapped() {
+    void should_dispatchDataUpdatedForCryptoButNeverOpened_when_marketIs24x7() {
         MarketSessionTracker tracker = new MarketSessionTracker();
+        tracker.update(SessionMarket.CRYPTO, MarketSession.OPEN);
+        when(resolver.resolve(SessionMarket.CRYPTO, FIXED_NOW)).thenReturn(Optional.of(MarketSession.OPEN));
+        when(preferences.findAll()).thenReturn(List.of(subscriberWithMarkets("user-1", "CRYPTO")));
 
         listener(tracker).onMarketUpdated(MarketUpdatedEvent.of(MarketType.CRYPTO, "scheduler"), ack);
 
-        verify(dispatcher, never()).dispatch(any());
-        verify(preferences, never()).findAll();
+        ArgumentCaptor<NotificationRequest> captor = ArgumentCaptor.forClass(NotificationRequest.class);
+        verify(dispatcher, times(1)).dispatch(captor.capture());
+        assertThat(captor.getValue().payload().type().name()).isEqualTo("MARKET_DATA_UPDATED");
         verify(ack).acknowledge();
     }
 }

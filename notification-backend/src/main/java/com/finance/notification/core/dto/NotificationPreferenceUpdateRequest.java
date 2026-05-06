@@ -14,6 +14,8 @@ public record NotificationPreferenceUpdateRequest(
         Boolean inappSystem,
         Boolean emailMarketOpened,
         Boolean inappMarketOpened,
+        Boolean emailMarketClosed,
+        Boolean inappMarketClosed,
         Boolean emailMarketDataUpdated,
         Boolean inappMarketDataUpdated,
         String marketSessionMarkets

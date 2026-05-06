@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Mail, MessageSquare, Bell, AlertCircle, Zap, FileText, Smartphone, Sunrise, RefreshCw } from 'lucide-react';
+import { Mail, MessageSquare, Bell, AlertCircle, Zap, FileText, Smartphone, Sunrise, Sunset, RefreshCw } from 'lucide-react';
 import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
@@ -12,6 +12,7 @@ const TYPE_ROWS = [
   { id: 'messages', Icon: MessageSquare, label: 'Mesajlar', hint: 'Sistem mesajları' },
   { id: 'system', Icon: Bell, label: 'Sistem', hint: 'Bakım, güvenlik vb.' },
   { id: 'marketOpened', Icon: Sunrise, label: 'Piyasa açıldı', hint: 'Açılış fiyatları yüklendiğinde' },
+  { id: 'marketClosed', Icon: Sunset, label: 'Piyasa kapandı', hint: 'Kapanış fiyatları yüklendiğinde' },
   { id: 'marketDataUpdated', Icon: RefreshCw, label: 'Veri güncellendi', hint: 'Cron her tetiklendiğinde' },
 ];
 
@@ -22,6 +23,7 @@ const MARKET_CHIPS = [
   { id: 'COMMODITY', label: 'Emtia' },
   { id: 'BOND', label: 'Tahvil' },
   { id: 'NEWS', label: 'Haber' },
+  { id: 'CRYPTO', label: 'Kripto' },
 ];
 
 function parseMarkets(csv) {

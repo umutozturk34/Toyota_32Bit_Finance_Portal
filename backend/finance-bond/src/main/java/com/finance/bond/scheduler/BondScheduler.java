@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BondScheduler {
 
-    private static final String SCHEDULED_SOURCE = "scheduler";
+    private static final String DAILY_TASK_TYPE = "scheduled-bond-daily";
 
     private final BondDataService bondDataService;
     private final TaskTrackingService taskTracker;
@@ -23,11 +23,11 @@ public class BondScheduler {
 
     @Scheduled(cron = "${app.scheduler.bond.daily-cron}", zone = "${app.timezone}")
     public void runDailyBondUpdate() {
-        taskTracker.runTracked("scheduled-bond-update",
+        taskTracker.runTracked(DAILY_TASK_TYPE,
                 "Scheduled daily bond update (snapshot + rate history)",
                 () -> {
                     bondDataService.updateBonds();
-                    marketEvents.ifAvailable(port -> port.publishMarketUpdated(MarketType.BOND, SCHEDULED_SOURCE));
+                    marketEvents.ifAvailable(port -> port.publishMarketUpdated(MarketType.BOND, DAILY_TASK_TYPE));
                 });
     }
 }

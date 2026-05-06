@@ -70,6 +70,12 @@ public class NotificationPreference {
     @Column(name = "inapp_market_opened", nullable = false)
     private boolean inappMarketOpened;
 
+    @Column(name = "email_market_closed", nullable = false)
+    private boolean emailMarketClosed;
+
+    @Column(name = "inapp_market_closed", nullable = false)
+    private boolean inappMarketClosed;
+
     @Column(name = "email_market_data_updated", nullable = false)
     private boolean emailMarketDataUpdated;
 
@@ -121,6 +127,8 @@ public class NotificationPreference {
                 .inappSystem(true)
                 .emailMarketOpened(false)
                 .inappMarketOpened(true)
+                .emailMarketClosed(false)
+                .inappMarketClosed(true)
                 .emailMarketDataUpdated(false)
                 .inappMarketDataUpdated(false)
                 .marketSessionMarkets("STOCK,FOREX,FUND,COMMODITY,BOND,NEWS")

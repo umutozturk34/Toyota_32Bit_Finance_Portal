@@ -9,6 +9,7 @@ public enum NotificationType {
     MESSAGE(NotificationPreference::isEmailMessages, NotificationPreference::isInappMessages),
     SYSTEM(NotificationPreference::isEmailSystem, NotificationPreference::isInappSystem),
     MARKET_OPENED(NotificationPreference::isEmailMarketOpened, NotificationPreference::isInappMarketOpened),
+    MARKET_CLOSED(NotificationPreference::isEmailMarketClosed, NotificationPreference::isInappMarketClosed),
     MARKET_DATA_UPDATED(NotificationPreference::isEmailMarketDataUpdated, NotificationPreference::isInappMarketDataUpdated);
 
     private final Predicate<NotificationPreference> emailAccessor;

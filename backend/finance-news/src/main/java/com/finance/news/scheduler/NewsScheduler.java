@@ -15,33 +15,29 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class NewsScheduler {
 
-    private static final String MORNING_SOURCE = "scheduler-morning";
-    private static final String AFTERNOON_SOURCE = "scheduler-afternoon";
-    private static final String EVENING_SOURCE = "scheduler-evening";
-
     private final NewsDataService newsDataService;
     private final TaskTrackingService taskTracker;
     private final ObjectProvider<MarketUpdateEventPort> marketEvents;
 
     @Scheduled(cron = "${app.scheduler.news.morning-cron}", zone = "${app.timezone}")
     public void runMorningNewsUpdate() {
-        executeUpdate("scheduled-news-morning", "Scheduled morning news update (08:00)", MORNING_SOURCE);
+        executeUpdate("scheduled-news-morning", "Scheduled morning news update (08:00)");
     }
 
     @Scheduled(cron = "${app.scheduler.news.afternoon-cron}", zone = "${app.timezone}")
     public void runAfternoonNewsUpdate() {
-        executeUpdate("scheduled-news-afternoon", "Scheduled afternoon news update (14:30)", AFTERNOON_SOURCE);
+        executeUpdate("scheduled-news-afternoon", "Scheduled afternoon news update (14:30)");
     }
 
     @Scheduled(cron = "${app.scheduler.news.evening-cron}", zone = "${app.timezone}")
     public void runEveningNewsUpdate() {
-        executeUpdate("scheduled-news-evening", "Scheduled evening news update (21:30)", EVENING_SOURCE);
+        executeUpdate("scheduled-news-evening", "Scheduled evening news update (21:30)");
     }
 
-    private void executeUpdate(String taskType, String description, String source) {
+    private void executeUpdate(String taskType, String description) {
         taskTracker.runTracked(taskType, description, () -> {
             newsDataService.updateNews();
-            marketEvents.ifAvailable(port -> port.publishMarketUpdated(MarketType.NEWS, source));
+            marketEvents.ifAvailable(port -> port.publishMarketUpdated(MarketType.NEWS, taskType));
         });
     }
 }

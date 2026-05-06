@@ -35,16 +35,6 @@ export const adminMessageService = {
     return response.data.data;
   },
 
-  inbox: async ({ page = 0, size = 20 } = {}) => {
-    const response = await api.get(`${ADMIN_PATH}/inbox`, { params: { page, size } });
-    return response.data.data;
-  },
-
-  inboxCount: async () => {
-    const response = await api.get(`${ADMIN_PATH}/inbox-count`);
-    return response.data.data;
-  },
-
   conversations: async ({ page = 0, size = 20 } = {}) => {
     const response = await api.get(`${ADMIN_PATH}/conversations`, { params: { page, size } });
     return response.data.data;

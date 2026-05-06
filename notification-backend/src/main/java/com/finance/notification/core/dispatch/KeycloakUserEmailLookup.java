@@ -30,7 +30,6 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
     private final String realm;
     private final String adminUser;
     private final String adminPassword;
-    private final Cache<String, String> emailCache;
     private final Cache<String, KeycloakUserProfile> profileCache = Caffeine.newBuilder()
             .maximumSize(2000)
             .expireAfterWrite(Duration.ofMinutes(15))
@@ -45,10 +44,6 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
         this.realm = realm;
         this.adminUser = adminUser;
         this.adminPassword = adminPassword;
-        this.emailCache = Caffeine.newBuilder()
-                .maximumSize(2000)
-                .expireAfterWrite(Duration.ofMinutes(15))
-                .build();
     }
 
     @Override
@@ -75,9 +70,6 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
                     asString(user.get("firstName")),
                     asString(user.get("lastName")));
             profileCache.put(userSub, profile);
-            if (profile.email() != null && !profile.email().isBlank()) {
-                emailCache.put(userSub, profile.email());
-            }
             return Optional.of(profile);
         } catch (Exception e) {
             log.warn("Profile lookup failed user={}: {}", userSub, e.getMessage());

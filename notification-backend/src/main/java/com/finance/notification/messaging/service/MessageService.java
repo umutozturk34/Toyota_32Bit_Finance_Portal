@@ -19,7 +19,6 @@ import com.finance.notification.messaging.repository.MessageRepository;
 import com.finance.notification.messaging.security.MessageCooldownGuard;
 import com.finance.notification.messaging.security.MessageDuplicateGuard;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,7 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Log4j2
 @Service
 @RequiredArgsConstructor
 public class MessageService {
@@ -71,8 +69,6 @@ public class MessageService {
                 .direction(MessageDirection.ADMIN_TO_USER)
                 .build());
         events.publishEvent(new MessageDispatchEvent(recipientSub, adminSub, body));
-        log.info("Published MessageDispatchEvent recipient={} adminSub={} messageId={}",
-                recipientSub, adminSub, saved.getId());
         return mapper.toResponse(saved);
     }
 

@@ -69,22 +69,16 @@ public class NotificationDispatcher {
         NotificationPreference prefs = loadPreferences(request.userSub());
 
         if (prefs.wantsInApp(request.type())) {
-            try {
-                Notification persisted = notificationRepository.saveAndFlush(Notification.create(
-                        request.userSub(),
-                        request.type(),
-                        rendered.title(),
-                        rendered.body(),
-                        request.payload().toMetadata(),
-                        request.expiresAt()));
-                log.info("In-app notification persisted id={} user={} type={}",
-                        persisted.getId(), request.userSub(), request.type());
-                streamRegistry.publish(request.userSub(), notificationMapper.toResponse(persisted));
-            } catch (Exception ex) {
-                log.error("Failed to persist in-app notification user={} type={} cause={}",
-                        request.userSub(), request.type(), ex.getMessage(), ex);
-                throw ex;
-            }
+            Notification persisted = notificationRepository.saveAndFlush(Notification.create(
+                    request.userSub(),
+                    request.type(),
+                    rendered.title(),
+                    rendered.body(),
+                    request.payload().toMetadata(),
+                    request.expiresAt()));
+            log.debug("In-app notification persisted id={} user={} type={}",
+                    persisted.getId(), request.userSub(), request.type());
+            streamRegistry.publish(request.userSub(), notificationMapper.toResponse(persisted));
         }
 
         if (prefs.wantsEmail(request.type())) {

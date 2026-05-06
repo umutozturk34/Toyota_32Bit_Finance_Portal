@@ -14,7 +14,7 @@ import { extractApiError } from '../../../shared/utils/apiError';
 import { relTime, shortSub } from '../util';
 import MessageBubble from './MessageBubble';
 import Composer from './Composer';
-import ConfirmModal from './ConfirmModal';
+import ConfirmDialog from '../../../shared/components/ConfirmDialog';
 
 export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
   const { data: thread, isLoading } = useAdminConversation(userSub);
@@ -170,22 +170,23 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
         hint={thread?.closed ? 'Sohbet kapalı — yeni mesaj göndermek için önce yeniden aç.' : null}
       />
 
-      <ConfirmModal
+      <ConfirmDialog
         open={confirmAction === 'close'}
+        variant="warning"
         title="Sohbeti kapat?"
-        body="Kullanıcı bu sohbete yeni mesaj gönderemez. Mevcut mesajlar kalır, geçmişi okumaya devam edebilir."
+        message="Kullanıcı bu sohbete yeni mesaj gönderemez. Mevcut mesajlar kalır, geçmişi okumaya devam edebilir."
         confirmLabel="Kapat"
-        pending={closeMutation.isPending}
+        loading={closeMutation.isPending}
         onCancel={() => setConfirmAction(null)}
         onConfirm={() => runMutation(closeMutation, 'Sohbet kapatıldı', `${shortSub(userSub)} artık yeni mesaj atamaz`)}
       />
-      <ConfirmModal
+      <ConfirmDialog
         open={confirmAction === 'delete'}
-        danger
+        variant="danger"
         title="Sohbeti sil?"
-        body="Bu sohbetin tüm mesajları geri alınamaz şekilde silinir."
+        message="Bu sohbetin tüm mesajları geri alınamaz şekilde silinir."
         confirmLabel="Sil"
-        pending={deleteMutation.isPending}
+        loading={deleteMutation.isPending}
         onCancel={() => setConfirmAction(null)}
         onConfirm={() => runMutation(deleteMutation, 'Sohbet silindi', `${shortSub(userSub)} sohbeti tamamen kaldırıldı`, onAfterDelete)}
       />

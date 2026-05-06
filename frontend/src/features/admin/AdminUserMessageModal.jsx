@@ -4,8 +4,7 @@ import { MessageCircle, Send, Loader2, X } from 'lucide-react';
 import { useSendAdminMessage } from '../../shared/hooks/useMessages';
 import { toast } from '../../shared/components/Toast';
 import { extractApiError } from '../../shared/utils/apiError';
-
-const MAX_BODY = 2000;
+import { MAX_BODY } from '../messages/util';
 
 export default function AdminUserMessageModal({ open, user, onClose }) {
   const [body, setBody] = useState('');

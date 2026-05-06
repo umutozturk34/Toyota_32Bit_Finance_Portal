@@ -3,10 +3,12 @@ package com.finance.notification.messaging.service;
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.notification.messaging.dispatch.AdminInboxEvent;
 import com.finance.notification.messaging.dispatch.MessageDispatchEvent;
 import com.finance.notification.messaging.dto.MessageResponse;
 import com.finance.notification.messaging.model.Message;
 import com.finance.notification.messaging.model.MessageDirection;
+import com.finance.notification.messaging.repository.ClosedConversationRepository;
 import com.finance.notification.messaging.repository.MessageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,14 +39,17 @@ class MessageServiceTest {
     private static final String ADMIN_SUB = "admin-1";
 
     @Mock private MessageRepository repository;
+    @Mock private ClosedConversationRepository closedRepository;
     @Mock private com.finance.notification.messaging.security.MessageDuplicateGuard duplicateGuard;
+    @Mock private com.finance.notification.messaging.security.MessageCooldownGuard cooldownGuard;
     @Mock private org.springframework.context.ApplicationEventPublisher events;
 
     private MessageService service;
 
     @BeforeEach
     void setUp() {
-        service = new MessageService(repository, new MessageMapperImpl(), duplicateGuard, events);
+        service = new MessageService(repository, closedRepository, new MessageMapperImpl(),
+                duplicateGuard, cooldownGuard, events);
     }
 
     @Test
@@ -213,7 +218,7 @@ class MessageServiceTest {
     }
 
     @Test
-    void should_skipDispatchEvent_when_userToAdminSent() {
+    void should_publishAdminInboxEvent_when_userToAdminSent() {
         when(repository.save(any(Message.class))).thenAnswer(inv -> {
             Message m = inv.getArgument(0);
             m.setId(11L);
@@ -223,6 +228,8 @@ class MessageServiceTest {
 
         service.sendUserToAdmin(USER_SUB, "Help");
 
-        verify(events, never()).publishEvent(any());
+        ArgumentCaptor<AdminInboxEvent> captor = ArgumentCaptor.forClass(AdminInboxEvent.class);
+        verify(events).publishEvent(captor.capture());
+        assertThat(captor.getValue().message().senderSub()).isEqualTo(USER_SUB);
     }
 }

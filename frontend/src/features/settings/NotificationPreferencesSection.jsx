@@ -173,6 +173,24 @@ export default function NotificationPreferencesSection() {
   );
 }
 
+function ChipsCornerBrackets() {
+  const c = 'absolute w-2 h-2 border-fg-subtle/30 pointer-events-none';
+  return (
+    <>
+      <span aria-hidden className={`${c} top-1.5 left-1.5 border-l border-t`} />
+      <span aria-hidden className={`${c} top-1.5 right-1.5 border-r border-t`} />
+      <span aria-hidden className={`${c} bottom-1.5 left-1.5 border-l border-b`} />
+      <span aria-hidden className={`${c} bottom-1.5 right-1.5 border-r border-b`} />
+    </>
+  );
+}
+
+const CHIPS_CONTAINER_VARIANTS = { show: { transition: { staggerChildren: 0.04 } } };
+const CHIP_VARIANTS = {
+  hidden: { opacity: 0, scale: 0.92, y: 2 },
+  show: { opacity: 1, scale: 1, y: 0 },
+};
+
 function MarketSelectionChips({ selected, onToggle }) {
   const flip = (id) => {
     const next = new Set(selected);
@@ -181,34 +199,59 @@ function MarketSelectionChips({ selected, onToggle }) {
     onToggle(next);
   };
   return (
-    <div className="rounded-xl border border-border-default bg-bg-elevated px-4 py-3.5">
-      <div className="flex items-center justify-between gap-3 mb-2.5">
-        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">
-          Piyasa açıldı / veri güncellendi — hangi piyasalar
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="relative rounded-xl border border-border-default bg-gradient-to-b from-bg-elevated/95 to-bg-base/30 px-4 py-3.5 overflow-hidden"
+    >
+      <ChipsCornerBrackets />
+
+      <div className="relative flex items-center justify-between mb-3">
+        <h3 className="font-mono text-[10px] tracking-[0.2em] uppercase text-fg-muted flex items-center gap-2">
+          <span className="text-accent">▸</span>
+          Hangi piyasalar
         </h3>
+        <span className="font-mono text-[9px] tracking-[0.2em] text-fg-subtle uppercase tabular-nums">
+          {String(selected.size).padStart(2, '0')}/{String(MARKET_CHIPS.length).padStart(2, '0')} aktif
+        </span>
       </div>
-      <div className="flex flex-wrap gap-1.5">
+
+      <motion.div
+        variants={CHIPS_CONTAINER_VARIANTS}
+        initial="hidden"
+        animate="show"
+        className="relative flex flex-wrap gap-1.5"
+      >
         {MARKET_CHIPS.map(({ id, label }) => {
           const active = selected.has(id);
           return (
-            <button
+            <motion.button
               key={id}
+              variants={CHIP_VARIANTS}
+              transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+              whileTap={{ scale: 0.94 }}
               type="button"
               onClick={() => flip(id)}
-              className={`px-2.5 py-1 rounded-full border text-[11px] font-mono uppercase tracking-wide cursor-pointer transition-colors ${
-                active
-                  ? 'border-accent/60 bg-accent/15 text-accent'
-                  : 'border-border-default bg-transparent text-fg-muted hover:border-accent/30 hover:text-accent'
-              }`}
+              aria-pressed={active}
+              className={`relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md font-mono text-[11px] tracking-[0.12em] uppercase cursor-pointer transition-colors duration-150
+                ${active
+                  ? 'border-2 border-double border-accent bg-accent/12 text-accent shadow-[inset_0_0_10px_-3px_var(--color-accent)]'
+                  : 'border border-dashed border-border-default bg-transparent text-fg-muted hover:border-accent/40 hover:text-accent'}
+              `}
             >
+              <span aria-hidden className={`text-[8px] ${active ? 'text-accent' : 'text-fg-subtle'}`}>
+                {active ? '◉' : '○'}
+              </span>
               {label}
-            </button>
+            </motion.button>
           );
         })}
-      </div>
-      <p className="text-[10px] text-fg-subtle leading-relaxed mt-2">
-        İşaretli olmayan piyasalar için açılış / veri güncelleme bildirimi atlanır.
+      </motion.div>
+
+      <p className="relative font-mono text-[9px] tracking-[0.18em] text-fg-subtle uppercase mt-3 leading-relaxed">
+        // işaretsiz piyasalar açılış / veri bildirimi atlamaz
       </p>
-    </div>
+    </motion.div>
   );
 }

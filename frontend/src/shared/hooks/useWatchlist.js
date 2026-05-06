@@ -5,33 +5,62 @@ import { useAuth } from '../../features/auth/AuthContext';
 const LISTS_KEY = ['watchlists'];
 const ITEMS_KEY = (id, params) => ['watchlists', id, 'items', params];
 
-export function useWatchlists() {
+export function useWatchlists({ enabled = true } = {}) {
   const { isAuthenticated, loading } = useAuth();
   return useQuery({
     queryKey: LISTS_KEY,
     queryFn: watchlistService.list,
-    enabled: isAuthenticated && !loading,
+    enabled: enabled && isAuthenticated && !loading,
     staleTime: 60_000,
   });
 }
 
-export function useWatchlistItems(id, { sort = 'CUSTOM', direction = 'ASC' } = {}) {
+export function useWatchlistItems(id, { sort = 'CUSTOM', direction = 'ASC', enabled = true } = {}) {
   const { isAuthenticated, loading } = useAuth();
   return useQuery({
     queryKey: ITEMS_KEY(id, { sort, direction }),
     queryFn: () => watchlistService.listItems(id, { sort, direction }),
-    enabled: isAuthenticated && !loading && id != null,
+    enabled: enabled && isAuthenticated && !loading && id != null,
     staleTime: 30_000,
   });
 }
 
 export function useReorderWatchlistItems(watchlistId) {
   const queryClient = useQueryClient();
+  const itemsPrefix = ['watchlists', watchlistId, 'items'];
+  const isCustomCache = (key) => {
+    const params = key[3];
+    return !params || !params.sort || params.sort === 'CUSTOM';
+  };
   return useMutation({
     mutationFn: (itemIds) => watchlistService.reorder(watchlistId, itemIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['watchlists', watchlistId, 'items'] });
+    onMutate: async (itemIds) => {
+      if (watchlistId == null) return {};
+      await queryClient.cancelQueries({ queryKey: itemsPrefix });
+      const matches = queryClient.getQueriesData({ queryKey: itemsPrefix });
+      const snapshots = matches
+        .filter(([key]) => isCustomCache(key))
+        .map(([key, data]) => [key, data]);
+      matches.forEach(([key, data]) => {
+        if (!isCustomCache(key)) return;
+        if (!Array.isArray(data)) return;
+        const lookup = new Map(data.map((it) => [it.id, it]));
+        const reordered = itemIds.map((id) => lookup.get(id)).filter(Boolean);
+        if (reordered.length === data.length) {
+          queryClient.setQueryData(key, reordered);
+        }
+      });
+      return { snapshots };
     },
+    onError: (_err, _vars, ctx) => {
+      ctx?.snapshots?.forEach(([key, data]) => queryClient.setQueryData(key, data));
+    },
+    onSettled: () => queryClient.invalidateQueries({
+      predicate: (q) =>
+        q.queryKey[0] === 'watchlists' &&
+        q.queryKey[1] === watchlistId &&
+        q.queryKey[2] === 'items',
+    }),
   });
 }
 
@@ -93,6 +122,19 @@ export function useAddToFavorites() {
   return useMutation({
     mutationFn: watchlistService.addToFavorites,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: LISTS_KEY });
+    },
+  });
+}
+
+export function useUpdateWatchlistItem(watchlistId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ itemId, payload }) => watchlistService.updateItem(itemId, payload),
+    onSuccess: () => {
+      if (watchlistId != null) {
+        queryClient.invalidateQueries({ queryKey: ['watchlists', watchlistId, 'items'] });
+      }
       queryClient.invalidateQueries({ queryKey: LISTS_KEY });
     },
   });

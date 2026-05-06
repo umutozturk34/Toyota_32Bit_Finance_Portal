@@ -21,4 +21,9 @@ export const priceAlertService = {
     const response = await api.post(`${PATH}/${id}/reactivate`);
     return response.data.data;
   },
+
+  update: async (id, payload) => {
+    const response = await api.put(`${PATH}/${id}`, payload);
+    return response.data.data;
+  },
 };

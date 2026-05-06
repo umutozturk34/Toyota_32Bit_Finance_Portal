@@ -38,6 +38,6 @@ export default function useListParams({ defaultDirection = 'desc', defaultSize =
   return {
     search, sort, direction, page, size: defaultSize, filter,
     setSearch: handleSearch, setSort: handleSort, setDirection: handleDirection,
-    setPage: handlePage, setFilter: handleFilter, params,
+    setPage: handlePage, setFilter: handleFilter, update, params,
   };
 }

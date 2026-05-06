@@ -41,6 +41,11 @@ export const watchlistService = {
     await api.delete(`${PATH}/items/${itemId}`);
   },
 
+  updateItem: async (itemId, payload) => {
+    const response = await api.put(`${PATH}/items/${itemId}`, payload);
+    return response.data.data;
+  },
+
   addToFavorites: async (payload) => {
     const response = await api.post(`${PATH}/favorites/items`, payload);
     return response.data.data;

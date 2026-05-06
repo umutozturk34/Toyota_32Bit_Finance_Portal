@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, BellOff, Inbox, Check, CheckCheck, Trash2, AlertCircle, Zap, FileText,
-  MessageSquare, Bell,
+  MessageSquare, Bell, Megaphone,
 } from 'lucide-react';
 import {
   useNotifications,
@@ -12,6 +12,8 @@ import {
 } from '../../shared/hooks/useNotifications';
 import { useState } from 'react';
 import ConfirmDialog from '../../shared/components/ConfirmDialog';
+import BroadcastModal from '../messages/BroadcastModal';
+import { useAuth } from '../auth/AuthContext';
 
 const TYPE_META = {
   PRICE_ALERT_FIRED: { Icon: AlertCircle, label: 'Fiyat alarmı', tint: 'text-accent' },
@@ -92,6 +94,7 @@ function NotificationRow({ item, onRead, onDelete }) {
 }
 
 export default function NotificationPanel({ isOpen, onClose }) {
+  const { hasRole } = useAuth();
   const [unreadOnly, setUnreadOnly] = useState(false);
   const { data, isLoading } = useNotifications({ unreadOnly, page: 0, size: 50 });
   const markRead = useMarkNotificationRead();
@@ -99,6 +102,8 @@ export default function NotificationPanel({ isOpen, onClose }) {
   const deleteNotification = useDeleteNotification();
   const deleteAllNotifications = useDeleteAllNotifications();
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const isAdmin = hasRole('ADMIN');
 
   const items = data?.content ?? data?.items ?? [];
   const total = data?.totalElements ?? 0;
@@ -131,12 +136,28 @@ export default function NotificationPanel({ isOpen, onClose }) {
                   {total}
                 </span>
               </div>
-              <button
-                onClick={onClose}
-                className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1.5">
+                {isAdmin && (
+                  <motion.button
+                    onClick={() => setBroadcastOpen(true)}
+                    whileTap={{ scale: 0.94 }}
+                    whileHover={{ y: -1 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold text-white overflow-hidden border-none cursor-pointer shadow-sm shadow-accent/25"
+                    title="Tüm kullanıcılara sistem yayını gönder"
+                  >
+                    <span aria-hidden className="absolute inset-0 bg-gradient-to-br from-accent via-accent-bright to-accent" />
+                    <Megaphone className="relative h-3 w-3" />
+                    <span className="relative">Yayın</span>
+                  </motion.button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </header>
 
             <div className="flex items-center justify-between px-5 py-3 border-b border-border-default shrink-0">
@@ -230,6 +251,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
         </>
       )}
     </AnimatePresence>
+    <BroadcastModal open={broadcastOpen} onClose={() => setBroadcastOpen(false)} />
     <ConfirmDialog
       open={confirmClearOpen}
       title="Tüm bildirimleri sil?"

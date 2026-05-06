@@ -28,7 +28,6 @@ import WatchPage from './features/watch/WatchPage';
 import AdminTrackedAssetsPage from './features/admin/AdminTrackedAssetsPage';
 import AdminUsersPage from './features/admin/AdminUsersPage';
 import MessagesPage from './features/messages/MessagesPage';
-import AdminMessagesPage from './features/messages/AdminMessagesPage';
 
 function LandingRedirect() {
   const { isAuthenticated } = useAuth();
@@ -71,7 +70,6 @@ function App() {
             <Route path="bonds" element={<BondsPage />} />
             <Route path="admin/tracked-assets" element={<AdminTrackedAssetsPage />} />
             <Route path="admin/users" element={<AdminUsersPage />} />
-            <Route path="admin/messages" element={<AdminMessagesPage />} />
             <Route path="portfolio" element={<Portfolio />} />
             <Route path="watch" element={<WatchPage />} />
             <Route path="messages" element={<MessagesPage />} />

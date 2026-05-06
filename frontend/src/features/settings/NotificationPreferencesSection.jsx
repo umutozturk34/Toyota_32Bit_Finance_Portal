@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Mail, MessageSquare, Bell, AlertCircle, Zap, FileText, Smartphone } from 'lucide-react';
+import { Mail, MessageSquare, Bell, AlertCircle, Zap, FileText, Smartphone, Sunrise, RefreshCw } from 'lucide-react';
 import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
@@ -11,7 +11,27 @@ const TYPE_ROWS = [
   { id: 'reports', Icon: FileText, label: 'Raporlar', hint: 'PDF rapor hazır olduğunda' },
   { id: 'messages', Icon: MessageSquare, label: 'Mesajlar', hint: 'Sistem mesajları' },
   { id: 'system', Icon: Bell, label: 'Sistem', hint: 'Bakım, güvenlik vb.' },
+  { id: 'marketOpened', Icon: Sunrise, label: 'Piyasa açıldı', hint: 'Açılış fiyatları yüklendiğinde' },
+  { id: 'marketDataUpdated', Icon: RefreshCw, label: 'Veri güncellendi', hint: 'Cron her tetiklendiğinde' },
 ];
+
+const MARKET_CHIPS = [
+  { id: 'STOCK', label: 'Hisse' },
+  { id: 'FOREX', label: 'Döviz' },
+  { id: 'FUND', label: 'Fon' },
+  { id: 'COMMODITY', label: 'Emtia' },
+  { id: 'BOND', label: 'Tahvil' },
+  { id: 'NEWS', label: 'Haber' },
+];
+
+function parseMarkets(csv) {
+  if (!csv) return new Set();
+  return new Set(csv.split(',').map((s) => s.trim()).filter(Boolean));
+}
+
+function serializeMarkets(set) {
+  return MARKET_CHIPS.filter((m) => set.has(m.id)).map((m) => m.id).join(',');
+}
 
 function ToggleSwitch({ on, onChange, srLabel, size = 'md' }) {
   const sizes = {
@@ -144,6 +164,51 @@ export default function NotificationPreferencesSection() {
           </p>
         </div>
       </div>
+
+      <MarketSelectionChips
+        selected={parseMarkets(preferences.marketSessionMarkets)}
+        onToggle={(next) => setField('marketSessionMarkets', serializeMarkets(next))}
+      />
+    </div>
+  );
+}
+
+function MarketSelectionChips({ selected, onToggle }) {
+  const flip = (id) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onToggle(next);
+  };
+  return (
+    <div className="rounded-xl border border-border-default bg-bg-elevated px-4 py-3.5">
+      <div className="flex items-center justify-between gap-3 mb-2.5">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">
+          Piyasa açıldı / veri güncellendi — hangi piyasalar
+        </h3>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {MARKET_CHIPS.map(({ id, label }) => {
+          const active = selected.has(id);
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => flip(id)}
+              className={`px-2.5 py-1 rounded-full border text-[11px] font-mono uppercase tracking-wide cursor-pointer transition-colors ${
+                active
+                  ? 'border-accent/60 bg-accent/15 text-accent'
+                  : 'border-border-default bg-transparent text-fg-muted hover:border-accent/30 hover:text-accent'
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[10px] text-fg-subtle leading-relaxed mt-2">
+        İşaretli olmayan piyasalar için açılış / veri güncelleme bildirimi atlanır.
+      </p>
     </div>
   );
 }

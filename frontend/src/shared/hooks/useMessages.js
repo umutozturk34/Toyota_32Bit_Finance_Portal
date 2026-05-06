@@ -83,3 +83,48 @@ export function useSendAdminMessage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages'] }),
   });
 }
+
+const ADMIN_CONVERSATIONS_KEY = (params) => ['messages', 'admin-conversations', params];
+const ADMIN_CONVERSATION_KEY = (userSub) => ['messages', 'admin-conversation', userSub];
+
+export function useAdminConversations({ page = 0, size = 20 } = {}) {
+  const { isAuthenticated, loading } = useAuth();
+  return useQuery({
+    queryKey: ADMIN_CONVERSATIONS_KEY({ page, size }),
+    queryFn: () => adminMessageService.conversations({ page, size }),
+    enabled: isAuthenticated && !loading,
+    staleTime: 30_000,
+  });
+}
+
+export function useAdminConversation(userSub) {
+  const { isAuthenticated, loading } = useAuth();
+  return useQuery({
+    queryKey: ADMIN_CONVERSATION_KEY(userSub),
+    queryFn: () => adminMessageService.conversation(userSub),
+    enabled: isAuthenticated && !loading && !!userSub,
+    staleTime: 15_000,
+  });
+}
+
+export function useCloseConversation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: adminMessageService.closeConversation,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages'] }),
+  });
+}
+
+export function useDeleteConversation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: adminMessageService.deleteConversation,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages'] }),
+  });
+}
+
+export function useBroadcast() {
+  return useMutation({
+    mutationFn: adminMessageService.broadcast,
+  });
+}

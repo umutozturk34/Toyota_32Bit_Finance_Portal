@@ -63,6 +63,7 @@ const MainLayout = () => {
       ? [
           { to: '/admin/tracked-assets', label: 'Tracked Assets', Icon: Database },
           { to: '/admin/users', label: 'Users', Icon: Users },
+          { to: '/admin/messages', label: 'Sohbetler', Icon: MessageCircle },
         ]
       : []),
   ];

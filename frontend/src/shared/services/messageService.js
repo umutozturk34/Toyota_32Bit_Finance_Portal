@@ -44,4 +44,27 @@ export const adminMessageService = {
     const response = await api.get(`${ADMIN_PATH}/inbox-count`);
     return response.data.data;
   },
+
+  conversations: async ({ page = 0, size = 20 } = {}) => {
+    const response = await api.get(`${ADMIN_PATH}/conversations`, { params: { page, size } });
+    return response.data.data;
+  },
+
+  conversation: async (userSub) => {
+    const response = await api.get(`${ADMIN_PATH}/conversations/${encodeURIComponent(userSub)}`);
+    return response.data.data;
+  },
+
+  closeConversation: async (userSub) => {
+    await api.post(`${ADMIN_PATH}/conversations/${encodeURIComponent(userSub)}/close`);
+  },
+
+  deleteConversation: async (userSub) => {
+    await api.delete(`${ADMIN_PATH}/conversations/${encodeURIComponent(userSub)}`);
+  },
+
+  broadcast: async ({ title, body }) => {
+    const response = await api.post('/admin/notifications/broadcast', { title, body });
+    return response.data.data;
+  },
 };

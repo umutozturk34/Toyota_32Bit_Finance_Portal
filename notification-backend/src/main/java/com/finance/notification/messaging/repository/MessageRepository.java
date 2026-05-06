@@ -5,7 +5,12 @@ import com.finance.notification.messaging.model.MessageDirection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
@@ -19,4 +24,54 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     long countByRecipientSubAndReadAtIsNull(String recipientSub);
 
     long countByDirection(MessageDirection direction);
+
+    @Query("SELECT m FROM Message m WHERE " +
+            "(m.senderSub = :userSub AND m.direction = com.finance.notification.messaging.model.MessageDirection.USER_TO_ADMIN) OR " +
+            "(m.recipientSub = :userSub AND m.direction = com.finance.notification.messaging.model.MessageDirection.ADMIN_TO_USER) " +
+            "ORDER BY m.sentAt ASC")
+    List<Message> findConversation(@Param("userSub") String userSub);
+
+    @Modifying
+    @Query("DELETE FROM Message m WHERE " +
+            "(m.senderSub = :userSub AND m.direction = com.finance.notification.messaging.model.MessageDirection.USER_TO_ADMIN) OR " +
+            "(m.recipientSub = :userSub AND m.direction = com.finance.notification.messaging.model.MessageDirection.ADMIN_TO_USER)")
+    int deleteConversation(@Param("userSub") String userSub);
+
+    @Query(value = """
+            SELECT
+                latest.user_sub                                AS userSub,
+                latest.body                                    AS lastBody,
+                latest.sent_at                                 AS lastSentAt,
+                EXISTS (
+                    SELECT 1 FROM closed_conversations c
+                    WHERE c.user_sub = latest.user_sub
+                )                                              AS closed
+            FROM (
+                SELECT DISTINCT ON (user_sub)
+                    CASE WHEN direction = 'USER_TO_ADMIN'
+                         THEN sender_sub ELSE recipient_sub END AS user_sub,
+                    body,
+                    sent_at
+                FROM messages
+                ORDER BY user_sub, sent_at DESC
+            ) latest
+            ORDER BY latest.sent_at DESC
+            """,
+            countQuery = """
+            SELECT COUNT(*) FROM (
+                SELECT DISTINCT
+                    CASE WHEN direction = 'USER_TO_ADMIN'
+                         THEN sender_sub ELSE recipient_sub END AS user_sub
+                FROM messages
+            ) distinct_users
+            """,
+            nativeQuery = true)
+    Page<ConversationSummaryProjection> findConversationSummaries(Pageable pageable);
+
+    interface ConversationSummaryProjection {
+        String getUserSub();
+        String getLastBody();
+        java.time.LocalDateTime getLastSentAt();
+        Boolean getClosed();
+    }
 }

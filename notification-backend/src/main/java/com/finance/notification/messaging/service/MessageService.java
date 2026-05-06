@@ -4,9 +4,13 @@ import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.notification.messaging.dispatch.MessageDispatchEvent;
+import com.finance.notification.messaging.dto.ConversationSummary;
+import com.finance.notification.messaging.dto.ConversationThread;
 import com.finance.notification.messaging.dto.MessageResponse;
+import com.finance.notification.messaging.model.ClosedConversation;
 import com.finance.notification.messaging.model.Message;
 import com.finance.notification.messaging.model.MessageDirection;
+import com.finance.notification.messaging.repository.ClosedConversationRepository;
 import com.finance.notification.messaging.repository.MessageRepository;
 import com.finance.notification.messaging.security.MessageCooldownGuard;
 import com.finance.notification.messaging.security.MessageDuplicateGuard;
@@ -18,12 +22,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class MessageService {
 
     private final MessageRepository repository;
+    private final ClosedConversationRepository closedRepository;
     private final MessageMapper mapper;
     private final MessageDuplicateGuard duplicateGuard;
     private final MessageCooldownGuard cooldownGuard;
@@ -31,6 +37,7 @@ public class MessageService {
 
     @Transactional
     public MessageResponse sendUserToAdmin(String senderSub, String body) {
+        rejectIfClosed(senderSub);
         rejectIfCoolingDown(senderSub);
         rejectDuplicate(senderSub, body);
         Message saved = repository.save(Message.builder()
@@ -101,6 +108,16 @@ public class MessageService {
         return repository.countByDirection(MessageDirection.USER_TO_ADMIN);
     }
 
+    @Transactional(readOnly = true)
+    public Page<ConversationSummary> listConversations(int page, int size) {
+        return repository.findConversationSummaries(PageRequest.of(page, size))
+                .map(p -> new ConversationSummary(
+                        p.getUserSub(),
+                        p.getLastBody(),
+                        p.getLastSentAt(),
+                        Boolean.TRUE.equals(p.getClosed())));
+    }
+
     @Transactional
     public void markRead(Long messageId, String userSub) {
         Message message = repository.findById(messageId)
@@ -111,6 +128,42 @@ public class MessageService {
         if (message.getReadAt() == null) {
             message.setReadAt(LocalDateTime.now());
             repository.save(message);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public ConversationThread getConversation(String userSub) {
+        List<MessageResponse> messages = repository.findConversation(userSub).stream()
+                .map(mapper::toResponse)
+                .toList();
+        ClosedConversation closed = closedRepository.findById(userSub).orElse(null);
+        return new ConversationThread(
+                userSub,
+                closed != null,
+                closed != null ? closed.getClosedAt() : null,
+                messages);
+    }
+
+    @Transactional
+    public void closeConversation(String userSub, String adminSub) {
+        if (closedRepository.existsById(userSub)) {
+            return;
+        }
+        closedRepository.save(ClosedConversation.builder()
+                .userSub(userSub)
+                .closedBySub(adminSub)
+                .build());
+    }
+
+    @Transactional
+    public void deleteConversation(String userSub) {
+        repository.deleteConversation(userSub);
+        closedRepository.deleteById(userSub);
+    }
+
+    private void rejectIfClosed(String userSub) {
+        if (closedRepository.existsById(userSub)) {
+            throw new BadRequestException("Bu sohbet kapatıldı, yeni mesaj gönderemezsin");
         }
     }
 }

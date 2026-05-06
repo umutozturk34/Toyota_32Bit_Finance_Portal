@@ -78,12 +78,19 @@ export default function AdminConversationList({ activeUser, onSelect }) {
                       {c.username && (
                         <p className="mt-0.5 text-[10px] font-mono text-fg-subtle truncate">{shortSub(c.userSub)}</p>
                       )}
-                      <p className="mt-0.5 text-[11px] text-fg-muted truncate leading-snug">{c.lastBody}</p>
-                      {c.closed && (
-                        <span className="mt-1.5 inline-flex items-center gap-0.5 text-[9px] font-mono uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-warning/15 text-warning font-bold border border-warning/20">
-                          <Lock className="h-2 w-2" /> kapalı
-                        </span>
-                      )}
+                      <p className={`mt-0.5 text-[11px] truncate leading-snug ${c.unreadCount > 0 ? 'text-fg font-semibold' : 'text-fg-muted'}`}>{c.lastBody}</p>
+                      <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                        {c.unreadCount > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full bg-accent text-white text-[10px] font-bold font-mono leading-none shadow-sm shadow-accent/40">
+                            {c.unreadCount > 99 ? '99+' : c.unreadCount}
+                          </span>
+                        )}
+                        {c.closed && (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-mono uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-warning/15 text-warning font-bold border border-warning/20">
+                            <Lock className="h-2 w-2" /> kapalı
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </button>
                 </motion.li>

@@ -6,6 +6,7 @@ import {
 import {
   useAdminConversation, useSendAdminMessage,
   useCloseConversation, useReopenConversation, useDeleteConversation,
+  useMarkAdminConversationRead,
 } from '../../../shared/hooks/useMessages';
 import { containerVariants } from '../../../shared/utils/animations';
 import { toast } from '../../../shared/components/Toast';
@@ -21,6 +22,7 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
   const closeMutation = useCloseConversation();
   const reopenMutation = useReopenConversation();
   const deleteMutation = useDeleteConversation();
+  const markReadMutation = useMarkAdminConversationRead();
   const [body, setBody] = useState('');
   const [confirmAction, setConfirmAction] = useState(null);
   const scrollRef = useRef(null);
@@ -28,6 +30,10 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [thread?.messages?.length]);
+
+  useEffect(() => {
+    if (userSub) markReadMutation.mutate(userSub);
+  }, [userSub]);
 
   const handleSend = async (e) => {
     e.preventDefault();

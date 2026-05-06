@@ -3,6 +3,8 @@ package com.finance.notification.messaging.service;
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.notification.core.dispatch.KeycloakUserEmailLookup;
+import com.finance.notification.core.dispatch.KeycloakUserProfile;
 import com.finance.notification.messaging.dispatch.AdminInboxEvent;
 import com.finance.notification.messaging.dispatch.ConversationLifecycleEvent;
 import com.finance.notification.messaging.dispatch.MessageDispatchEvent;
@@ -38,6 +40,7 @@ public class MessageService {
     private final MessageDuplicateGuard duplicateGuard;
     private final MessageCooldownGuard cooldownGuard;
     private final ApplicationEventPublisher events;
+    private final KeycloakUserEmailLookup userDirectory;
 
     @Transactional
     public MessageResponse sendUserToAdmin(String senderSub, String body) {
@@ -119,11 +122,17 @@ public class MessageService {
     @Transactional(readOnly = true)
     public Page<ConversationSummary> listConversations(int page, int size) {
         return repository.findConversationSummaries(PageRequest.of(page, size))
-                .map(p -> new ConversationSummary(
-                        p.getUserSub(),
-                        p.getLastBody(),
-                        p.getLastSentAt(),
-                        Boolean.TRUE.equals(p.getClosed())));
+                .map(p -> {
+                    KeycloakUserProfile profile = userDirectory.findProfile(p.getUserSub()).orElse(null);
+                    return new ConversationSummary(
+                            p.getUserSub(),
+                            profile != null ? profile.username() : null,
+                            profile != null ? profile.email() : null,
+                            p.getLastBody(),
+                            p.getLastSentAt(),
+                            Boolean.TRUE.equals(p.getClosed()),
+                            p.getUnreadCount() != null ? p.getUnreadCount() : 0L);
+                });
     }
 
     @Transactional
@@ -145,11 +154,19 @@ public class MessageService {
                 .map(mapper::toResponse)
                 .toList();
         ClosedConversation closed = closedRepository.findById(userSub).orElse(null);
+        KeycloakUserProfile profile = userDirectory.findProfile(userSub).orElse(null);
         return new ConversationThread(
                 userSub,
+                profile != null ? profile.username() : null,
+                profile != null ? profile.email() : null,
                 closed != null,
                 closed != null ? closed.getClosedAt() : null,
                 messages);
+    }
+
+    @Transactional
+    public int markAdminInboxRead(String userSub) {
+        return repository.markAdminInboxRead(userSub, LocalDateTime.now());
     }
 
     @Transactional

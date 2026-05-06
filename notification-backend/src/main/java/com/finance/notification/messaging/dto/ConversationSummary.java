@@ -4,8 +4,11 @@ import java.time.LocalDateTime;
 
 public record ConversationSummary(
         String userSub,
+        String username,
+        String email,
         String lastBody,
         LocalDateTime lastSentAt,
-        boolean closed
+        boolean closed,
+        long unreadCount
 ) {
 }

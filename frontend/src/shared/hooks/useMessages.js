@@ -128,6 +128,14 @@ export function useReopenConversation() {
   });
 }
 
+export function useMarkAdminConversationRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: adminMessageService.markConversationRead,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages'] }),
+  });
+}
+
 export function useDeleteConversation() {
   const queryClient = useQueryClient();
   return useMutation({

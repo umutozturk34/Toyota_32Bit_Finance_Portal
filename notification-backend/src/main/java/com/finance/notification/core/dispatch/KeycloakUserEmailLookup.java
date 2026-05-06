@@ -31,6 +31,10 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
     private final String adminUser;
     private final String adminPassword;
     private final Cache<String, String> emailCache;
+    private final Cache<String, KeycloakUserProfile> profileCache = Caffeine.newBuilder()
+            .maximumSize(2000)
+            .expireAfterWrite(Duration.ofMinutes(15))
+            .build();
     private final AtomicReference<TokenSnapshot> tokenSnapshot = new AtomicReference<>();
 
     public KeycloakUserEmailLookup(@Value("${keycloak.base-url}") String baseUrl,
@@ -49,7 +53,11 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
 
     @Override
     public Optional<String> findEmail(String userSub) {
-        String cached = emailCache.getIfPresent(userSub);
+        return findProfile(userSub).map(KeycloakUserProfile::email).filter(s -> !s.isBlank());
+    }
+
+    public Optional<KeycloakUserProfile> findProfile(String userSub) {
+        KeycloakUserProfile cached = profileCache.getIfPresent(userSub);
         if (cached != null) return Optional.of(cached);
         try {
             String token = ensureToken();
@@ -60,15 +68,25 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
                     .bodyToMono(Map.class)
                     .block();
             if (user == null) return Optional.empty();
-            Object email = user.get("email");
-            if (email instanceof String s && !s.isBlank()) {
-                emailCache.put(userSub, s);
-                return Optional.of(s);
+            KeycloakUserProfile profile = new KeycloakUserProfile(
+                    userSub,
+                    asString(user.get("username")),
+                    asString(user.get("email")),
+                    asString(user.get("firstName")),
+                    asString(user.get("lastName")));
+            profileCache.put(userSub, profile);
+            if (profile.email() != null && !profile.email().isBlank()) {
+                emailCache.put(userSub, profile.email());
             }
+            return Optional.of(profile);
         } catch (Exception e) {
-            log.warn("Email lookup failed user={}: {}", userSub, e.getMessage());
+            log.warn("Profile lookup failed user={}: {}", userSub, e.getMessage());
+            return Optional.empty();
         }
-        return Optional.empty();
+    }
+
+    private static String asString(Object value) {
+        return value instanceof String s ? s : null;
     }
 
     private String ensureToken() {

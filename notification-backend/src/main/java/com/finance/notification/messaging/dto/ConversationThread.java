@@ -5,6 +5,8 @@ import java.util.List;
 
 public record ConversationThread(
         String userSub,
+        String username,
+        String email,
         boolean closed,
         LocalDateTime closedAt,
         List<MessageResponse> messages

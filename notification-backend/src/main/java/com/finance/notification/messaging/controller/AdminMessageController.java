@@ -63,6 +63,12 @@ public class AdminMessageController {
         return ApiResponse.success("Conversation thread retrieved", service.getConversation(userSub));
     }
 
+    @PostMapping("/conversations/{userSub}/mark-read")
+    public ApiResponse<Integer> markRead(@PathVariable String userSub) {
+        int affected = service.markAdminInboxRead(userSub);
+        return ApiResponse.success("Conversation marked as read", affected);
+    }
+
     @PostMapping("/conversations/{userSub}/close")
     public ApiResponse<Void> closeConversation(
             @AuthenticationPrincipal Jwt jwt,

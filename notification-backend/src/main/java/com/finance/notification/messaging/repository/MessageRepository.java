@@ -45,7 +45,13 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
                 EXISTS (
                     SELECT 1 FROM closed_conversations c
                     WHERE c.user_sub = latest.user_sub
-                )                                              AS closed
+                )                                              AS closed,
+                COALESCE((
+                    SELECT COUNT(*) FROM messages u
+                    WHERE u.direction = 'USER_TO_ADMIN'
+                      AND u.sender_sub = latest.user_sub
+                      AND u.read_at IS NULL
+                ), 0)                                          AS unreadCount
             FROM (
                 SELECT DISTINCT ON (user_sub)
                     CASE WHEN direction = 'USER_TO_ADMIN'
@@ -68,10 +74,18 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             nativeQuery = true)
     Page<ConversationSummaryProjection> findConversationSummaries(Pageable pageable);
 
+    @Modifying
+    @Query("UPDATE Message m SET m.readAt = :readAt " +
+            "WHERE m.senderSub = :userSub " +
+            "AND m.direction = com.finance.notification.messaging.model.MessageDirection.USER_TO_ADMIN " +
+            "AND m.readAt IS NULL")
+    int markAdminInboxRead(@Param("userSub") String userSub, @Param("readAt") java.time.LocalDateTime readAt);
+
     interface ConversationSummaryProjection {
         String getUserSub();
         String getLastBody();
         java.time.LocalDateTime getLastSentAt();
         Boolean getClosed();
+        Long getUnreadCount();
     }
 }

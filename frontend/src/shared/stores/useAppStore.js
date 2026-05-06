@@ -6,6 +6,7 @@ const useAppStore = create(
     (set, get) => ({
       sidebarCollapsed: false,
       cooldowns: JSON.parse(sessionStorage.getItem('cooldowns') || '{}'),
+      activeWatchlistId: null,
 
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
 
@@ -16,11 +17,14 @@ const useAppStore = create(
           return { cooldowns: next };
         }),
       getCooldownEnd: (route) => get().cooldowns[route] ?? 0,
+
+      setActiveWatchlistId: (id) => set({ activeWatchlistId: id }),
     }),
     {
       name: 'finance-app-store',
       partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
+        activeWatchlistId: state.activeWatchlistId,
       }),
     }
   )

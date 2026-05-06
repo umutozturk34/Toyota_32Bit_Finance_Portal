@@ -1,0 +1,12 @@
+target/
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+
+.idea/
+.vscode/
+.classpath
+.project
+.settings/
+
+.DS_Store
+Thumbs.db

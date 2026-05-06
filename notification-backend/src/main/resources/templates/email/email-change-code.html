@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr"
+      th:replace="~{email/_layout :: layout(eyebrow='E-POSTA DEĞİŞİKLİĞİ', title='E-posta adresini doğrula', subtitle=${newEmail + ' adresine geçmek için onay kodunu kullan'}, content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p th:style="'margin:0 0 14px;color:' + ${cFg} + ';font-size:14px;'">
+        Hesabına bağlı yeni e-posta adresine geçişi onaylamak için aşağıdaki tek kullanımlık kodu Finance Portal ayarlar ekranındaki onay alanına gir.
+    </p>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:18px;">
+        <tr>
+            <td th:style="'background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:14px;padding:22px 16px;text-align:center;'">
+                <p th:style="'margin:0 0 10px;font-size:10px;font-weight:700;letter-spacing:2px;color:' + ${cMuted} + ';text-transform:uppercase;'">tek kullanımlık kod</p>
+                <span class="num" th:style="'display:inline-block;font-size:34px;font-weight:600;letter-spacing:9px;line-height:1;padding-left:9px;color:' + ${cFg} + ';'" th:text="${code}">000000</span>
+            </td>
+        </tr>
+    </table>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:18px;">
+        <tr>
+            <td th:style="'padding:14px 18px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;'">
+                <p th:style="'margin:0 0 6px;font-size:12.5px;color:' + ${cMuted} + ';line-height:1.65;'">
+                    <strong th:style="'color:' + ${cFg} + ';'">Geçerlilik</strong> &nbsp;
+                    Kod <span class="num" th:style="'background:' + ${cInfoCode} + ';color:' + ${cFg} + ';padding:2px 8px;border-radius:5px;font-size:12px;'" th:text="${minutesLeft}">10</span> dakika sonra geçersizleşir.
+                </p>
+                <p th:style="'margin:0;font-size:12.5px;color:' + ${cMuted} + ';line-height:1.65;'">
+                    <strong th:style="'color:' + ${cFg} + ';'">Yeni adres</strong> &nbsp;
+                    <span class="num" th:style="'color:' + ${cFg} + ';'" th:text="${newEmail}">yeni@adres.com</span>
+                </p>
+            </td>
+        </tr>
+    </table>
+
+    <p th:style="'margin:18px 0 0;font-size:13px;line-height:1.7;color:' + ${cMuted} + ';'">
+        Bu işlemi <strong th:style="'color:' + ${cFg} + ';'">sen başlatmadıysan</strong> kodu girme — hesabın güvende, mevcut e-posta adresin değişmez. Şüpheli aktivite görüyorsan şifreni hemen sıfırla.
+    </p>
+</th:block>
+</body>
+</html>

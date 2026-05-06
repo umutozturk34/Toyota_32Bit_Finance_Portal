@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr"
+      th:replace="~{email/_layout :: layout(eyebrow='YENİ MESAJ', title='Sana yeni bir mesaj geldi', subtitle='Finance Portal hesabına bağlı bir bildirim', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p th:style="'margin:0 0 14px;color:' + ${cFg} + ';font-size:14px;'">
+        Aşağıdaki mesaj sana iletildi:
+    </p>
+    <blockquote th:style="'margin:14px 0 0;padding:16px 18px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-left:3px solid ' + ${cAccent2} + ';border-radius:10px;line-height:1.7;color:' + ${cFg} + ';font-size:14px;'">
+        <span th:text="${preview}">Mesaj önizlemesi</span>
+    </blockquote>
+    <p th:style="'margin:18px 0 0;font-size:13px;color:' + ${cMuted} + ';'">
+        Tüm mesajları görmek için <a href="http://localhost/notifications" th:style="'color:' + ${cAccent2} + ';'">Bildirimler</a> sayfasını açabilirsin.
+    </p>
+</th:block>
+</body>
+</html>

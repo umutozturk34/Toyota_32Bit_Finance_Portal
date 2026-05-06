@@ -272,13 +272,15 @@ button {
 
 :root {
   color-scheme: dark;
+  --sidebar-bg: var(--color-bg-deep);
+  --sidebar-blur: none;
 }
 
 [data-theme="light"] {
   color-scheme: light;
   --color-bg-deep: #F0F4FA;
   --color-bg-base: #F2F6FB;
-  --color-bg-elevated: rgba(255, 255, 255, 0.4);
+  --color-bg-elevated: rgba(255, 255, 255, 0.72);
   --color-surface: #E8EDF5;
   --color-surface-hover: #DCE3EE;
   --color-fg: #0F172A;
@@ -294,6 +296,8 @@ button {
   --color-success: #16a34a;
   --color-danger: #dc2626;
   --color-warning: #d97706;
+  --sidebar-bg: rgba(242, 246, 251, 0.8);
+  --sidebar-blur: blur(20px);
 }
 
 [data-theme="light"] body {

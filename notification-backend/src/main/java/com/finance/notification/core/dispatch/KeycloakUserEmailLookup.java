@@ -1,0 +1,105 @@
+package com.finance.notification.core.dispatch;
+
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Primary;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+
+@Log4j2
+@Component
+@Primary
+public class KeycloakUserEmailLookup implements UserEmailLookup {
+
+    private static final String TOKEN_PATH = "/realms/master/protocol/openid-connect/token";
+    private static final String TOKEN_CLIENT_ID = "admin-cli";
+
+    private final WebClient webClient;
+    private final String realm;
+    private final String adminUser;
+    private final String adminPassword;
+    private final Cache<String, String> emailCache;
+    private final AtomicReference<TokenSnapshot> tokenSnapshot = new AtomicReference<>();
+
+    public KeycloakUserEmailLookup(@Value("${keycloak.base-url}") String baseUrl,
+                                   @Value("${keycloak.realm}") String realm,
+                                   @Value("${keycloak.admin-user}") String adminUser,
+                                   @Value("${keycloak.admin-password}") String adminPassword) {
+        this.webClient = WebClient.builder().baseUrl(baseUrl).build();
+        this.realm = realm;
+        this.adminUser = adminUser;
+        this.adminPassword = adminPassword;
+        this.emailCache = Caffeine.newBuilder()
+                .maximumSize(2000)
+                .expireAfterWrite(Duration.ofMinutes(15))
+                .build();
+    }
+
+    @Override
+    public Optional<String> findEmail(String userSub) {
+        String cached = emailCache.getIfPresent(userSub);
+        if (cached != null) return Optional.of(cached);
+        try {
+            String token = ensureToken();
+            Map<String, Object> user = webClient.get()
+                    .uri("/admin/realms/{realm}/users/{id}", realm, userSub)
+                    .header("Authorization", "Bearer " + token)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+            if (user == null) return Optional.empty();
+            Object email = user.get("email");
+            if (email instanceof String s && !s.isBlank()) {
+                emailCache.put(userSub, s);
+                return Optional.of(s);
+            }
+        } catch (Exception e) {
+            log.warn("Email lookup failed user={}: {}", userSub, e.getMessage());
+        }
+        return Optional.empty();
+    }
+
+    private String ensureToken() {
+        TokenSnapshot current = tokenSnapshot.get();
+        if (current != null && current.isValid()) return current.token();
+
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("grant_type", "password");
+        form.add("client_id", TOKEN_CLIENT_ID);
+        form.add("username", adminUser);
+        form.add("password", adminPassword);
+
+        Map<String, Object> response = webClient.post()
+                .uri(TOKEN_PATH)
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(BodyInserters.fromFormData(form))
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block();
+        if (response == null || !(response.get("access_token") instanceof String token)) {
+            throw new IllegalStateException("Keycloak token response missing access_token");
+        }
+        long expiresIn = response.get("expires_in") instanceof Number n ? n.longValue() : 60L;
+        TokenSnapshot fresh = new TokenSnapshot(token, Instant.now().plusSeconds(expiresIn - 30));
+        tokenSnapshot.set(fresh);
+        return token;
+    }
+
+    private record TokenSnapshot(String token, Instant expiresAt) {
+        boolean isValid() {
+            return Instant.now().isBefore(expiresAt);
+        }
+    }
+}

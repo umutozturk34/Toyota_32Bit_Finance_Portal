@@ -1,0 +1,99 @@
+package com.finance.notification.watchlist.service;
+
+import com.finance.common.exception.BadRequestException;
+import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.notification.watchlist.dto.WatchlistCreateRequest;
+import com.finance.notification.watchlist.dto.WatchlistRenameRequest;
+import com.finance.notification.watchlist.dto.WatchlistResponse;
+import com.finance.notification.watchlist.model.Watchlist;
+import com.finance.notification.watchlist.repository.WatchlistItemRepository;
+import com.finance.notification.watchlist.repository.WatchlistRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class WatchlistManagementService {
+
+    private static final int MAX_WATCHLISTS_PER_USER = 20;
+
+    private final WatchlistRepository repository;
+    private final WatchlistItemRepository itemRepository;
+
+    @Transactional
+    public Watchlist ensureDefault(String userSub) {
+        return repository.findByUserSubAndIsDefaultTrue(userSub)
+                .orElseGet(() -> repository.save(Watchlist.createDefault(userSub)));
+    }
+
+    @Transactional
+    public List<WatchlistResponse> list(String userSub) {
+        List<Watchlist> watchlists = repository.findByUserSubOrderByIsDefaultDescCreatedAtAsc(userSub);
+        if (watchlists.isEmpty()) {
+            watchlists = List.of(repository.save(Watchlist.createDefault(userSub)));
+        }
+        return watchlists.stream()
+                .map(w -> new WatchlistResponse(
+                        w.getId(),
+                        w.getName(),
+                        w.isDefault(),
+                        itemRepository.countByWatchlistId(w.getId()),
+                        w.getCreatedAt(),
+                        w.getUpdatedAt()))
+                .toList();
+    }
+
+    @Transactional
+    public WatchlistResponse create(String userSub, WatchlistCreateRequest request) {
+        long existing = repository.countByUserSub(userSub);
+        if (existing >= MAX_WATCHLISTS_PER_USER) {
+            throw new BadRequestException(
+                    "En fazla " + MAX_WATCHLISTS_PER_USER + " takip listesi oluşturabilirsin");
+        }
+        String trimmed = request.name().trim();
+        if (repository.existsByUserSubAndName(userSub, trimmed)) {
+            throw new BadRequestException("Bu isimde bir takip listen zaten var");
+        }
+        Watchlist saved = repository.save(Watchlist.create(userSub, trimmed));
+        return new WatchlistResponse(saved.getId(), saved.getName(), saved.isDefault(), 0L,
+                saved.getCreatedAt(), saved.getUpdatedAt());
+    }
+
+    @Transactional
+    public WatchlistResponse rename(Long id, String userSub, WatchlistRenameRequest request) {
+        Watchlist watchlist = ownedOr404(id, userSub);
+        String trimmed = request.name().trim();
+        if (!watchlist.getName().equals(trimmed)
+                && repository.existsByUserSubAndName(userSub, trimmed)) {
+            throw new BadRequestException("Bu isimde bir takip listen zaten var");
+        }
+        watchlist.rename(trimmed);
+        Watchlist saved = repository.save(watchlist);
+        return new WatchlistResponse(saved.getId(), saved.getName(), saved.isDefault(),
+                itemRepository.countByWatchlistId(saved.getId()),
+                saved.getCreatedAt(), saved.getUpdatedAt());
+    }
+
+    @Transactional
+    public void delete(Long id, String userSub) {
+        Watchlist watchlist = ownedOr404(id, userSub);
+        if (watchlist.isDefault()) {
+            throw new BadRequestException("Varsayılan takip listesi silinemez");
+        }
+        repository.delete(watchlist);
+    }
+
+    @Transactional(readOnly = true)
+    public Watchlist requireOwned(Long id, String userSub) {
+        return ownedOr404(id, userSub);
+    }
+
+    private Watchlist ownedOr404(Long id, String userSub) {
+        return repository.findById(id)
+                .filter(w -> w.belongsTo(userSub))
+                .orElseThrow(() -> new ResourceNotFoundException("Watchlist not found id=" + id));
+    }
+}

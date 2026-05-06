@@ -26,11 +26,14 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      secrets:
+        - github_token
     container_name: finance-backend
     restart: unless-stopped
     expose:
       - "8080"
     environment:
+      TZ: Europe/Istanbul
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/finance_db
       SPRING_DATASOURCE_USERNAME: finance_user
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
@@ -62,6 +65,59 @@ services:
         condition: service_started
       kafka:
         condition: service_healthy
+    networks:
+      - finance-network
+
+  notification-backend:
+    build:
+      context: ./notification-backend
+      dockerfile: Dockerfile
+      secrets:
+        - github_token
+    container_name: finance-notification-backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8082:8082"
+    environment:
+      TZ: Europe/Istanbul
+      DB_URL: jdbc:postgresql://db:5432/finance_db
+      DB_USERNAME: finance_user
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_CONSUMER_GROUP: notification-service
+      JWK_SET_URI: http://keycloak:8080/realms/finance-realm/protocol/openid-connect/certs
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_REALM: finance-realm
+      KEYCLOAK_ADMIN_USER: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      SPRING_MAIL_HOST: mailpit
+      SPRING_MAIL_PORT: 1025
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "false"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "false"
+      NOTIFICATION_FROM_ADDRESS: ${NOTIFICATION_FROM_ADDRESS:-noreply@finance.local}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_SERVICE_NAME: finance-notification
+      OTEL_LOGS_EXPORTER: none
+      OTEL_METRICS_EXPORTER: otlp
+      OTEL_TRACES_EXPORTER: otlp
+      SERVER_PORT: 8082
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      mailpit:
+        condition: service_started
     networks:
       - finance-network
 
@@ -112,6 +168,7 @@ services:
     ports:
       - "127.0.0.1:8180:8080"
     environment:
+      TZ: Europe/Istanbul
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD}
@@ -130,6 +187,8 @@ services:
     command:
       - start-dev
       - --import-realm
+      - --spi-theme-cache-themes=false
+      - --spi-theme-cache-templates=false
       - --spi-required-action-VERIFY_EMAIL_CODE-code-length=6
       - --spi-required-action-VERIFY_EMAIL_CODE-code-symbols=0123456789
     volumes:
@@ -252,9 +311,11 @@ services:
     image: opensearchproject/data-prepper:latest
     container_name: finance-data-prepper
     restart: unless-stopped
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
     volumes:
-      - ./data-prepper/pipelines.yaml:/usr/share/data-prepper/pipelines/pipelines.yaml:ro
+      - ./data-prepper/pipelines.yaml:/tmp/pipelines.template.yaml:ro
       - ./data-prepper/data-prepper-config.yaml:/usr/share/data-prepper/config/data-prepper-config.yaml:ro
+      - ./data-prepper/entrypoint.sh:/entrypoint.sh:ro
     environment:
       - OPENSEARCH_USERNAME=${OPENSEARCH_USERNAME}
       - OPENSEARCH_PASSWORD=${OPENSEARCH_PASSWORD}
@@ -271,7 +332,7 @@ services:
     image: otel/opentelemetry-collector-contrib:latest
     container_name: otel-collector
     volumes:
-      - ./backend/otel-config.yaml:/etc/otel-config.yaml
+      - ./otel-config.yaml:/etc/otel-config.yaml
     command: ["--config=/etc/otel-config.yaml"]
     environment:
       - OPENSEARCH_USERNAME=${OPENSEARCH_USERNAME}
@@ -382,3 +443,7 @@ volumes:
 networks:
   finance-network:
     driver: bridge
+
+secrets:
+  github_token:
+    environment: GITHUB_TOKEN

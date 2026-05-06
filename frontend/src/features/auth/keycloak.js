@@ -76,6 +76,9 @@ export const hasRole = (role) => {
 export const isAuthenticated = () => {
   return keycloak.authenticated;
 };
+export const forceRefreshToken = () => {
+  return keycloak.updateToken(-1).then(() => keycloak.token).catch(() => null);
+};
 keycloak.onTokenExpired = () => {
   keycloak.updateToken(30).catch(() => {
     doLogin();

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import useSessionState from '../../shared/hooks/useSessionState';
+import useChartRange from '../../shared/hooks/useChartRange';
 import { motion } from 'framer-motion';
 import ReactECharts from 'echarts-for-react';
 import { TrendingUp, Loader2 } from '../../shared/components/AnimatedIcons';
@@ -185,7 +186,7 @@ function buildEChartsOption(data, color, palette) {
 
 export default function PerformanceChart({ portfolioId }) {
   const { isDark } = useTheme();
-  const [range, setRange] = useSessionState('portfolio-perf-range', '6M');
+  const [range, setRange] = useChartRange('portfolio-perf-range');
   const [activeType, setActiveType] = useSessionState('portfolio-perf-type', null);
 
   const { data: perfData = [], isLoading: loading } = usePortfolioPerformance(portfolioId, range, activeType);

@@ -6,7 +6,7 @@
         </Console>
         <Kafka name="Kafka" topic="finance-logs">
             <JsonTemplateLayout eventTemplateUri="classpath:log-json-template.json"/>
-            <Property name="bootstrap.servers">${sys:kafka.bootstrap.servers:-kafka:9092}</Property>
+            <Property name="bootstrap.servers">${env:KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}</Property>
             <Property name="acks">all</Property>
             <Property name="retries">5</Property>
             <Property name="enable.idempotence">true</Property>
@@ -21,11 +21,8 @@
         </Failover>
     </Appenders>
     <Loggers>
-        <Logger name="com.finance.backend" level="DEBUG" additivity="false">
+        <Logger name="com.finance" level="DEBUG" additivity="false">
             <AppenderRef ref="FailoverKafka"/>
-        </Logger>
-        <Logger name="org.apache.kafka" level="WARN" additivity="false">
-            <AppenderRef ref="Console"/>
         </Logger>
         <Logger name="org.springframework" level="WARN" additivity="false">
             <AppenderRef ref="Console"/>

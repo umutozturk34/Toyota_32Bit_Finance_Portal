@@ -1,14 +1,17 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   X, Settings as SettingsIcon, Palette, Languages, BarChart3, Bell, Shield,
-  Sun, Moon, LogOut, KeyRound,
+  Sun, Moon, LogOut, KeyRound, Mail,
 } from 'lucide-react';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';
+import { useTheme } from '../../shared/context/ThemeContext';
 import { useAuth } from '../auth/AuthContext';
 import { userCredentialService } from '../../shared/services/userCredentialService';
 import { toast } from '../../shared/components/Toast';
 import TwoFactorPanel from '../auth/TwoFactorPanel';
+import NotificationPreferencesSection from './NotificationPreferencesSection';
+import EmailChangeSection from './EmailChangeSection';
 
 const THEME_OPTIONS = [
   { value: 'DARK', Icon: Moon, label: 'Koyu' },
@@ -83,10 +86,15 @@ function Section({ icon: Icon, title, children }) {
 export default function SettingsSidebar({ isOpen, onClose }) {
   const { preferences } = useUserPreferences();
   const updatePreferences = useUpdateUserPreferences();
+  const { themePreference, setThemePreference } = useTheme();
   const { logout } = useAuth();
   const [passwordSending, setPasswordSending] = useState(false);
 
   const handleChange = (field) => (value) => {
+    if (field === 'theme') {
+      setThemePreference(value);
+      return;
+    }
     updatePreferences.mutate({ [field]: value });
   };
 
@@ -98,7 +106,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
   const handleChangePassword = async () => {
     setPasswordSending(true);
     try {
-      await userCredentialService.initiatePasswordChange(window.location.origin);
+      await userCredentialService.initiatePasswordChange(`${window.location.origin}/`);
       toast.success('E-posta gönderildi', 'Gelen kutunuzdaki linke tıklayarak şifrenizi değiştirin');
       onClose();
     } catch (err) {
@@ -124,7 +132,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            transition={{ type: 'spring', stiffness: 280, damping: 30 }}
+            transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
             className="fixed top-0 right-0 z-50 h-full w-full sm:w-[380px] modal-panel border-l border-border-default flex flex-col"
           >
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
@@ -152,7 +160,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                 <Section icon={Palette} title="Tema">
                   <SegmentedControl
                     options={THEME_OPTIONS}
-                    value={preferences.theme}
+                    value={themePreference}
                     onChange={handleChange('theme')}
                     layoutId="settings-theme"
                   />
@@ -186,6 +194,10 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                 />
               </Section>
 
+              <Section icon={Bell} title="Bildirim Tercihleri">
+                <NotificationPreferencesSection />
+              </Section>
+
               <Section icon={Shield} title="İki Adımlı Doğrulama">
                 <TwoFactorPanel />
               </Section>
@@ -205,6 +217,10 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                 <p className="text-[10px] text-fg-subtle leading-relaxed px-1 mt-1.5">
                   E-posta adresine gelen linke tıklayarak yeni şifre belirleyebilirsin.
                 </p>
+              </Section>
+
+              <Section icon={Mail} title="E-posta">
+                <EmailChangeSection />
               </Section>
 
               <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-[11px] text-fg-muted">

@@ -1,0 +1,147 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  batch:
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+    timeout: 5s
+
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: 400
+    spike_limit_mib: 100
+
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: production
+        action: upsert
+      - key: service.namespace
+        value: finance-portal
+        action: upsert
+
+  filter/health:
+    error_mode: ignore
+    traces:
+      span:
+        - 'attributes["http.target"] == "/actuator/health"'
+        - 'attributes["url.path"] == "/actuator/health"'
+
+  transform/traces:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - set(status.code, 2) where status.code == 0 and attributes["http.status_code"] >= 500
+
+  transform/metrics:
+    error_mode: ignore
+    metric_statements:
+      - context: datapoint
+        statements:
+          - set(attributes["service.name"], resource.attributes["service.name"]) where resource.attributes["service.name"] != nil
+      - context: scope
+        statements:
+          - set(attributes["elastic.mapping.mode"], "ecs")
+
+  filter/metrics:
+    error_mode: ignore
+    metrics:
+      metric:
+        - 'name == "process.runtime.jvm.classes.loaded"'
+        - 'name == "process.runtime.jvm.classes.unloaded"'
+        - 'name == "process.runtime.jvm.classes.current_loaded"'
+
+  cumulativetodelta:
+
+connectors:
+  routing/traces:
+    default_pipelines: [traces/finance]
+    error_mode: ignore
+    table:
+      - context: resource
+        condition: 'attributes["service.name"] == "finance-notification"'
+        pipelines: [traces/notification]
+
+  routing/metrics:
+    default_pipelines: [metrics/finance]
+    error_mode: ignore
+    table:
+      - context: resource
+        condition: 'attributes["service.name"] == "finance-notification"'
+        pipelines: [metrics/notification]
+
+exporters:
+  opensearch/traces-finance:
+    http:
+      endpoint: "https://opensearch:9200"
+      auth:
+        authenticator: basicauth
+      tls:
+        insecure_skip_verify: true
+    traces_index: "finance-traces"
+
+  opensearch/traces-notification:
+    http:
+      endpoint: "https://opensearch:9200"
+      auth:
+        authenticator: basicauth
+      tls:
+        insecure_skip_verify: true
+    traces_index: "notification-traces"
+
+  elasticsearch/metrics-finance:
+    endpoints: ["http://opensearch-proxy:9201"]
+    user: "${env:OPENSEARCH_USERNAME}"
+    password: "${env:OPENSEARCH_PASSWORD}"
+    metrics_index: "finance-metrics"
+    discover:
+      on_start: false
+
+  elasticsearch/metrics-notification:
+    endpoints: ["http://opensearch-proxy:9201"]
+    user: "${env:OPENSEARCH_USERNAME}"
+    password: "${env:OPENSEARCH_PASSWORD}"
+    metrics_index: "notification-metrics"
+    discover:
+      on_start: false
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  basicauth:
+    client_auth:
+      username: ${env:OPENSEARCH_USERNAME}
+      password: ${env:OPENSEARCH_PASSWORD}
+
+service:
+  extensions: [health_check, basicauth]
+  telemetry:
+    logs:
+      level: info
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, filter/health, resource, transform/traces, batch]
+      exporters: [routing/traces]
+    traces/finance:
+      receivers: [routing/traces]
+      exporters: [opensearch/traces-finance]
+    traces/notification:
+      receivers: [routing/traces]
+      exporters: [opensearch/traces-notification]
+
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, filter/metrics, resource, transform/metrics, cumulativetodelta, batch]
+      exporters: [routing/metrics]
+    metrics/finance:
+      receivers: [routing/metrics]
+      exporters: [elasticsearch/metrics-finance]
+    metrics/notification:
+      receivers: [routing/metrics]
+      exporters: [elasticsearch/metrics-notification]

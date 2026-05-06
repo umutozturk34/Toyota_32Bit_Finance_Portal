@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr"
+      th:replace="~{email/_layout :: layout(eyebrow='SİSTEM DUYURUSU', title=${title}, subtitle='Yönetici tarafından gönderildi', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <p th:style="'margin:0 0 14px;color:' + ${cFg} + ';font-size:14px;'">
+        Finance Portal hesabına bir sistem duyurusu iletildi.
+    </p>
+    <div th:style="'margin:14px 0 0;padding:18px 22px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;line-height:1.7;white-space:pre-wrap;color:' + ${cFg} + ';font-size:14px;'"
+         th:text="${body}">Mesaj içeriği buraya gelir.</div>
+</th:block>
+</body>
+</html>

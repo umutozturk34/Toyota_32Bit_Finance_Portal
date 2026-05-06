@@ -51,15 +51,9 @@ os_api -X PUT "$OS_URL/_index_template/kibana-type-keyword" \
 echo "Kibana index mapping template olusturuldu."
 
 # ─────────────────────────── 2. Idempotency Kontrolü ─────────────────────────
-echo "Mevcut dashboardlar kontrol ediliyor..."
-DASH_CHECK=$(dash_api "$DASH_URL/api/saved_objects/dashboard/otel-exec-dashboard" 2>/dev/null | jq -r '.id // empty' 2>/dev/null || true)
-
-if [ "$DASH_CHECK" = "otel-exec-dashboard" ]; then
-  echo "Dashboardlar zaten yuklu. Kurulum atlaniyor."
-  exit 0
-fi
-
-echo "Dashboardlar bulunamadi. Ilk kurulum baslatiliyor..."
+# Templates, roles and ISM policies are PUT-based, dashboards use overwrite=true,
+# so the whole script is idempotent and re-runs safely on every container start.
+echo "Setup baslatiliyor (idempotent re-run)..."
 
 # Template above ensures correct mapping on new indices
 
@@ -71,7 +65,7 @@ os_api -X PUT "$OS_URL/_plugins/_ism/policies/finance-lifecycle" \
     "description": "Finance Portal telemetry lifecycle — hot 7d, delete 30d",
     "default_state": "hot",
     "ism_template": [
-      { "index_patterns": ["finance-traces*", "finance-logs*", "finance-metrics*"], "priority": 100 }
+      { "index_patterns": ["finance-traces*", "finance-logs*", "finance-metrics*", "notification-traces*", "notification-logs*", "notification-metrics*"], "priority": 100 }
     ],
     "states": [
       {
@@ -277,13 +271,117 @@ os_api -X PUT "$OS_URL/_index_template/finance-metrics-template" \
   }
 }' > /dev/null 2>&1
 
-echo "Indeks sablonlari olusturuldu."
+echo "Finance indeks sablonlari olusturuldu."
+
+# ─────────────────── 4a. Notification index templates (mirror finance) ──────
+echo "Notification indeks sablonlari olusturuluyor..."
+
+os_api -X PUT "$OS_URL/_index_template/notification-traces-template" \
+  -H "Content-Type: application/json" -d '{
+  "index_patterns": ["notification-traces*"],
+  "template": {
+    "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
+    "mappings": {
+      "properties": {
+        "traceId":        { "type": "keyword" },
+        "spanId":         { "type": "keyword" },
+        "parentSpanId":   { "type": "keyword" },
+        "name":           { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+        "kind":           { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+        "startTime":      { "type": "date" },
+        "endTime":        { "type": "date" },
+        "status": {
+          "properties": {
+            "code":       { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+            "message":    { "type": "text" }
+          }
+        },
+        "resource": {
+          "properties": {
+            "service.name": { "type": "keyword" }
+          }
+        },
+        "attributes": {
+          "properties": {
+            "http.route":                   { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+            "http.request.method":          { "type": "keyword" },
+            "http.response.status_code":    { "type": "integer" },
+            "url.path":                     { "type": "text", "fields": { "keyword": { "type": "keyword" } } }
+          }
+        }
+      }
+    }
+  }
+}' > /dev/null 2>&1
+
+os_api -X PUT "$OS_URL/_index_template/notification-logs-template" \
+  -H "Content-Type: application/json" -d '{
+  "index_patterns": ["notification-logs*"],
+  "template": {
+    "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
+    "mappings": {
+      "properties": {
+        "@timestamp":      { "type": "date" },
+        "severity":        { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+        "body":            { "type": "text", "fields": { "keyword": { "type": "keyword", "ignore_above": 256 } } },
+        "serviceName":     { "type": "keyword" },
+        "logger":          { "type": "keyword" },
+        "thread":          { "type": "keyword" },
+        "exception":       { "type": "text" }
+      }
+    }
+  }
+}' > /dev/null 2>&1
+
+os_api -X PUT "$OS_URL/_index_template/notification-metrics-template" \
+  -H "Content-Type: application/json" -d '{
+  "index_patterns": ["notification-metrics*"],
+  "template": {
+    "settings": { "number_of_shards": 1, "number_of_replicas": 0 },
+    "mappings": {
+      "properties": {
+        "@timestamp":                         { "type": "date" },
+        "service": {
+          "properties": {
+            "name":                           { "type": "keyword" },
+            "namespace":                      { "type": "keyword" },
+            "environment":                    { "type": "keyword" }
+          }
+        },
+        "jvm": {
+          "properties": {
+            "cpu": {
+              "properties": {
+                "count":                      { "type": "integer" },
+                "recent_utilization":         { "type": "float" }
+              }
+            },
+            "memory": {
+              "properties": {
+                "used":                       { "type": "long" },
+                "type":                       { "type": "keyword" }
+              }
+            },
+            "thread": {
+              "properties": {
+                "count":                      { "type": "long" },
+                "state":                      { "type": "keyword" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}' > /dev/null 2>&1
+
+echo "Notification indeks sablonlari olusturuldu."
 
 # ─────────────────────────── 4b. Indeksler + Index Patterns ──────────────────
 echo "Indeksler olusturuluyor..."
 
 # Create empty indices (mappings applied from templates)
-for idx in finance-traces finance-logs finance-metrics; do
+for idx in finance-traces finance-logs finance-metrics notification-traces notification-logs notification-metrics; do
   os_api -X PUT "$OS_URL/$idx" -H "Content-Type: application/json" -d '{}' > /dev/null 2>&1 || true
 done
 
@@ -325,9 +423,12 @@ dash_line() {
 
 {
   # ─── INDEX PATTERNS ───
-  ip_line "finance-traces"  "finance-traces*"  "endTime"
-  ip_line "finance-logs"    "finance-logs*"    "@timestamp"
-  ip_line "finance-metrics" "finance-metrics*" "@timestamp"
+  ip_line "finance-traces"       "finance-traces*"       "endTime"
+  ip_line "finance-logs"         "finance-logs*"         "@timestamp"
+  ip_line "finance-metrics"      "finance-metrics*"      "@timestamp"
+  ip_line "notification-traces"  "notification-traces*"  "endTime"
+  ip_line "notification-logs"    "notification-logs*"    "@timestamp"
+  ip_line "notification-metrics" "notification-metrics*" "@timestamp"
 
   # ─── EXECUTIVE DASHBOARD CHARTS ───
 
@@ -441,10 +542,10 @@ SUCCESS=$(printf '%s' "$IMPORT_RESULT" | jq -r '.success // false' 2>/dev/null |
 if [ "$SUCCESS" = "true" ]; then
   # Refresh field lists — index templates give us the mapping even without docs
   echo "Index pattern field listleri guncelleniyor..."
-  for pat_id in finance-traces finance-logs finance-metrics; do
+  for pat_id in finance-traces finance-logs finance-metrics notification-traces notification-logs notification-metrics; do
     case "$pat_id" in
-      finance-traces) _tf="endTime" ;;
-      *)              _tf="@timestamp" ;;
+      finance-traces|notification-traces) _tf="endTime" ;;
+      *)                                  _tf="@timestamp" ;;
     esac
 
     # Build fields JSON from _field_caps

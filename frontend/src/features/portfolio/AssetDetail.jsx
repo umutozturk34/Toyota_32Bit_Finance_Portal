@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import useSessionState from '../../shared/hooks/useSessionState';
+import useChartRange from '../../shared/hooks/useChartRange';
 import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, Plus } from 'lucide-react';
 import { TrendingUp, TrendingDown, Loader2 } from '../../shared/components/AnimatedIcons';
 import ReactECharts from 'echarts-for-react';
@@ -124,7 +124,7 @@ function buildAssetChartOption(data, isDark) {
 
 export default function AssetDetail({ portfolioId, asset, onBack }) {
   const { isDark } = useTheme();
-  const [range, setRange] = useSessionState(`portfolio-asset-range-${asset.assetCode}`, '6M');
+  const [range, setRange] = useChartRange(`portfolio-asset-range-${asset.assetCode}`);
   const [addLotOpen, setAddLotOpen] = useState(false);
 
   const { data: series = [], isLoading: loading } = useAssetSeries(

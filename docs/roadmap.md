@@ -91,13 +91,13 @@ Türkiye finansal piyasalarına odaklı, açık kaynaklı kişisel finans takip 
 - **Domain entities** (notification microservice tarafında):
   - `Notification`, `NotificationPreference` (channel matrix × type + quiet hours)
   - `PriceAlert` (threshold, direction, one-shot/recurring) + `AlertEvaluator`
-  - `WatchlistItem` + `WatchlistEvaluator` (delta detection)
+  - `Watchlist` (named, multiple per user, default "Favoriler" auto-created, max 20) + `WatchlistItem` + `WatchlistEvaluator` (delta detection)
   - `UserPreferenceCache` (Kafka consumer'dan beslenen lokal cache)
 - **Email dispatch** — Spring Mail + Thymeleaf templates (`price-alert.html`, `watchlist-delta.html`, `report-ready.html`)
 - **In-app notifications** — bell icon, unread badge, paged notifications page
 - **SSE live stream** — `/api/v1/notifications/stream` (gerçek zamanlı bildirim push)
 - **Messaging migrate** — user↔admin messaging monolitten notification-app'e taşınır (event-driven dispatcher pattern altına alınır)
-- **Frontend** — `/notifications`, `/price-alerts`, `/watchlist` sayfaları + bell icon
+- **Frontend** — birleştirilmiş `/watch` sayfası (watchlist + price-alerts), watchlist için multi-list UI (sekme veya dropdown ile aktif liste seçimi, "Yeni liste" butonu, "Favorilere ekle" tek-tık aksiyonu), bell icon, asset detail sayfalarında reusable `AssetActionsBar` (Takip toggle + Fiyat alarmı butonu)
 
 ---
 

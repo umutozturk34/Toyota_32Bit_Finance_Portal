@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.finance</groupId>
 	<artifactId>finance-portal</artifactId>
-	<version>0.14.0-SNAPSHOT</version>
+	<version>0.14.0</version>
 	<name>Finance Portal</name>
 	<description>Finance Portal - Multi Module</description>
 	<packaging>pom</packaging>
@@ -20,10 +20,18 @@
 		<mapstruct.version>1.6.3</mapstruct.version>
 		<jacoco.version>0.8.13</jacoco.version>
 		<byte-buddy.version>1.17.8</byte-buddy.version>
+		<finance-common.version>0.14.1-SNAPSHOT</finance-common.version>
 	</properties>
 
+	<repositories>
+		<repository>
+			<id>github</id>
+			<name>GitHub Packages</name>
+			<url>https://maven.pkg.github.com/umutozturk34/finance_portal</url>
+		</repository>
+	</repositories>
+
 	<modules>
-		<module>finance-common</module>
 		<module>finance-cache</module>
 		<module>finance-crypto</module>
 		<module>finance-stock</module>
@@ -59,7 +67,7 @@
 			<dependency>
 				<groupId>com.finance</groupId>
 				<artifactId>finance-common</artifactId>
-				<version>${project.version}</version>
+				<version>${finance-common.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.finance</groupId>

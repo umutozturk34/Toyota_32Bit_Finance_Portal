@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr"
+      th:fragment="layout(eyebrow, title, subtitle, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="color-scheme" content="dark light">
+    <meta name="supported-color-schemes" content="dark light">
+    <title th:text="${title} ?: 'Finance Portal'">Finance Portal</title>
+    <style>
+        body { margin:0; padding:0; width:100%; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; background:#070912; color:#dde3ee; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; }
+        table { border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt; }
+        img { border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic; display:block; }
+        a { color:inherit; text-decoration:none; }
+        @media (max-width:620px) {
+            .container { width:100% !important; padding-left:18px !important; padding-right:18px !important; }
+            .hero-title { font-size:22px !important; }
+            .hero-pad { padding-left:24px !important; padding-right:24px !important; }
+            .body-pad { padding-left:24px !important; padding-right:24px !important; }
+        }
+        .num { font-family:'SFMono-Regular','Menlo','Consolas',monospace; }
+    </style>
+</head>
+<body th:with="dark=${theme != 'LIGHT'},
+               cBg=${dark ? '#070912' : '#f4f5f9'},
+               cCard=${dark ? '#0d111c' : '#ffffff'},
+               cBorder=${dark ? '#1a2030' : '#e7e9f1'},
+               cFg=${dark ? '#f0f2f7' : '#0d111e'},
+               cMuted=${dark ? '#8b93a8' : '#5c6479'},
+               cSubtle=${dark ? '#5c6577' : '#7c83a0'},
+               cInfoBg=${dark ? '#0a0d16' : '#f7f8fc'},
+               cInfoCode=${dark ? '#13182a' : '#e7e9f1'},
+               cAccent='#6366f1',
+               cAccentMid='#8b5cf6',
+               cAccent2='#a78bfa'"
+      th:style="'margin:0;padding:0;background:' + ${cBg} + ';color:' + ${cFg} + ';font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;'">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" th:style="'background:' + ${cBg} + ';padding:40px 0 56px;'">
+    <tr>
+        <td align="center">
+
+            <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;">
+                <tr>
+                    <td style="padding:0 0 22px 0;">
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td style="width:42px;height:42px;vertical-align:middle;">
+                                    <span style="display:inline-block;width:42px;height:42px;line-height:42px;text-align:center;font-size:22px;font-weight:800;color:#ffffff;background:#6366f1;background-image:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%);border-radius:11px;box-shadow:0 6px 18px -4px rgba(99,102,241,0.45);">↗</span>
+                                </td>
+                                <td style="padding-left:14px;vertical-align:middle;">
+                                    <span th:style="'display:block;font-size:15px;font-weight:700;letter-spacing:-0.2px;line-height:1.1;color:' + ${cFg} + ';'">Finance Portal</span>
+                                    <span th:style="'display:block;font-size:10px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;margin-top:4px;color:' + ${cMuted} + ';'" th:text="${eyebrow} ?: 'Notification'">Notification</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0"
+                   th:style="'width:600px;max-width:600px;background:' + ${cCard} + ';border:1px solid ' + ${cBorder} + ';border-radius:18px;overflow:hidden;'">
+                <tr>
+                    <td style="height:2px;line-height:2px;font-size:0;background:#6366f1;background-image:linear-gradient(90deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%);">&nbsp;</td>
+                </tr>
+                <tr>
+                    <td class="hero-pad" style="padding:36px 40px 12px;">
+                        <p th:if="${eyebrow}" th:style="'font-size:10px;font-weight:700;letter-spacing:2.4px;color:' + ${cAccent2} + ';text-transform:uppercase;margin:0 0 14px;padding:0;'" th:text="${eyebrow}">EYEBROW</p>
+                        <h1 th:if="${title}" class="hero-title" th:style="'margin:0;font-size:24px;font-weight:700;line-height:1.3;color:' + ${cFg} + ';letter-spacing:-0.4px;'" th:text="${title}">Title</h1>
+                        <p th:if="${subtitle}" th:style="'margin:8px 0 0;font-size:13px;line-height:1.5;font-weight:400;color:' + ${cMuted} + ';'" th:text="${subtitle}">Subtitle</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="body-pad" th:style="'padding:18px 40px 8px;font-size:14px;line-height:1.75;color:' + ${cMuted} + ';'">
+                        <th:block th:replace="${content}"></th:block>
+                    </td>
+                </tr>
+                <tr><td><div th:style="'height:1px;background:' + ${cBorder} + ';margin:0 40px;line-height:1px;font-size:0;'">&nbsp;</div></td></tr>
+                <tr>
+                    <td style="padding:18px 40px 22px;">
+                        <span th:style="'font-size:10.5px;font-weight:600;letter-spacing:1.4px;color:' + ${cSubtle} + ';text-transform:uppercase;'">
+                            <strong th:style="'color:' + ${cMuted} + ';font-weight:700;'">SENT</strong>
+                            &nbsp; <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}">05.05.2026</span>
+                            &nbsp;·&nbsp; <span th:text="${#dates.format(#dates.createNow(), 'HH:mm')}">23:00</span> TRT
+                        </span>
+                    </td>
+                </tr>
+            </table>
+
+            <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;">
+                <tr>
+                    <td style="padding:22px 4px 0;">
+                        <p th:style="'margin:0 0 6px;font-size:11.5px;line-height:1.6;color:' + ${cSubtle} + ';'">Bu e-posta Finance Portal hesabına bağlı tercihler nedeniyle otomatik olarak gönderilmiştir.</p>
+                        <p th:style="'margin:0;font-size:10.5px;color:' + ${cSubtle} + ';'">E-posta tercihlerini <a href="http://localhost/settings" th:style="'color:' + ${cAccent2} + ';'">Ayarlar</a> sekmesinden yönetebilirsin.</p>
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    </tr>
+</table>
+</body>
+</html>

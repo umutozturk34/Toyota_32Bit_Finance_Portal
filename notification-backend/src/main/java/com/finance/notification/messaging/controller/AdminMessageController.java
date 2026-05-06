@@ -72,14 +72,18 @@ public class AdminMessageController {
     }
 
     @PostMapping("/conversations/{userSub}/reopen")
-    public ApiResponse<Void> reopenConversation(@PathVariable String userSub) {
-        service.reopenConversation(userSub);
+    public ApiResponse<Void> reopenConversation(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String userSub) {
+        service.reopenConversation(userSub, jwt.getSubject());
         return ApiResponse.success("Conversation reopened", null);
     }
 
     @DeleteMapping("/conversations/{userSub}")
-    public ApiResponse<Void> deleteConversation(@PathVariable String userSub) {
-        service.deleteConversation(userSub);
+    public ApiResponse<Void> deleteConversation(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable String userSub) {
+        service.deleteConversation(userSub, jwt.getSubject());
         return ApiResponse.success("Conversation deleted", null);
     }
 }

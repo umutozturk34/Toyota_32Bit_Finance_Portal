@@ -18,6 +18,8 @@ public class MessageNotificationListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onMessageDispatch(MessageDispatchEvent event) {
+        log.info("MessageNotificationListener received recipient={} sender={}",
+                event.recipientSub(), event.senderSub());
         if (event.recipientSub() == null) {
             log.debug("Skipping notification dispatch for broadcast message sender={}", event.senderSub());
             return;

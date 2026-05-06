@@ -4,6 +4,7 @@ import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.notification.messaging.dispatch.AdminInboxEvent;
+import com.finance.notification.messaging.dispatch.ConversationLifecycleEvent;
 import com.finance.notification.messaging.dispatch.MessageDispatchEvent;
 import com.finance.notification.messaging.dto.ConversationSummary;
 import com.finance.notification.messaging.dto.ConversationThread;
@@ -16,6 +17,7 @@ import com.finance.notification.messaging.repository.MessageRepository;
 import com.finance.notification.messaging.security.MessageCooldownGuard;
 import com.finance.notification.messaging.security.MessageDuplicateGuard;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class MessageService {
@@ -65,6 +68,8 @@ public class MessageService {
                 .direction(MessageDirection.ADMIN_TO_USER)
                 .build());
         events.publishEvent(new MessageDispatchEvent(recipientSub, adminSub, body));
+        log.info("Published MessageDispatchEvent recipient={} adminSub={} messageId={}",
+                recipientSub, adminSub, saved.getId());
         return mapper.toResponse(saved);
     }
 
@@ -156,18 +161,24 @@ public class MessageService {
                 .userSub(userSub)
                 .closedBySub(adminSub)
                 .build());
+        events.publishEvent(new ConversationLifecycleEvent(
+                userSub, adminSub, ConversationLifecycleEvent.Action.CLOSED));
     }
 
     @Transactional
-    public void deleteConversation(String userSub) {
+    public void deleteConversation(String userSub, String adminSub) {
         repository.deleteConversation(userSub);
         closedRepository.deleteById(userSub);
+        events.publishEvent(new ConversationLifecycleEvent(
+                userSub, adminSub, ConversationLifecycleEvent.Action.DELETED));
     }
 
     @Transactional
-    public void reopenConversation(String userSub) {
+    public void reopenConversation(String userSub, String adminSub) {
         if (closedRepository.existsById(userSub)) {
             closedRepository.deleteById(userSub);
+            events.publishEvent(new ConversationLifecycleEvent(
+                    userSub, adminSub, ConversationLifecycleEvent.Action.REOPENED));
         }
     }
 

@@ -46,8 +46,8 @@ class PreciousMetalDerivativeCalculatorTest {
         props.setScale(4);
         CommodityProperties commodityProps = new CommodityProperties();
         commodityProps.setDerivatives(List.of(
-                new DerivativeRule("GC=F", "XAUTRYG", new BigDecimal("31.1035")),
-                new DerivativeRule("SI=F", "XAGTRYG", new BigDecimal("31.1035"))
+                new DerivativeRule("GC=F", "XAUTRYG", new BigDecimal("31.1035"), "Altın (Gram)", "Gram Altın"),
+                new DerivativeRule("SI=F", "XAGTRYG", new BigDecimal("31.1035"), "Gümüş (Gram)", "Gram Gümüş")
         ));
 
         derivativeStore = new HashMap<>();

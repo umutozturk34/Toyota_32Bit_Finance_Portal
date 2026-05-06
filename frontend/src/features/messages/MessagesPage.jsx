@@ -4,6 +4,7 @@ import { MessageCircle, Send, Loader2, Inbox, Sparkles } from 'lucide-react';
 import { useUserInbox, useUserSent, useSendMessage, useMarkMessageRead } from '../../shared/hooks/useMessages';
 import { toast } from '../../shared/components/Toast';
 import { extractApiError } from '../../shared/utils/apiError';
+import { containerVariants, cardVariants } from '../../shared/utils/animations';
 
 const MAX_BODY = 2000;
 const RELATIVE = new Intl.RelativeTimeFormat('tr-TR', { numeric: 'auto' });
@@ -117,35 +118,45 @@ export default function MessagesPage() {
               </div>
             </div>
           ) : (
-            messages.map((m) => {
-              const fromAdmin = m.direction === 'ADMIN_TO_USER';
-              return (
-                <motion.div
-                  key={m.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className={`flex ${fromAdmin ? 'justify-start' : 'justify-end'}`}
-                >
-                  <div className={`max-w-[78%] relative rounded-2xl px-4 py-2.5 text-sm leading-relaxed border ${
-                    fromAdmin
-                      ? 'bg-surface border-border-default text-fg'
-                      : 'bg-gradient-to-br from-accent/15 to-accent/5 border-accent/30 text-fg shadow-sm shadow-accent/10'
-                  }`}>
-                    {fromAdmin && (
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="flex items-center justify-center w-4 h-4 rounded-full bg-accent/20">
-                          <span className="w-1 h-1 rounded-full bg-accent" />
-                        </span>
-                        <span className="text-[10px] font-mono uppercase tracking-wider text-accent font-bold">Yönetim</span>
-                      </div>
-                    )}
-                    <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                    <div className="mt-1.5 text-[10px] font-mono text-fg-subtle">{relTime(m.sentAt)}</div>
-                  </div>
-                </motion.div>
-              );
-            })
+            <motion.div
+              variants={containerVariants(0.03)}
+              initial="hidden"
+              animate="show"
+              className="space-y-3"
+            >
+              {messages.map((m) => {
+                const fromAdmin = m.direction === 'ADMIN_TO_USER';
+                return (
+                  <motion.div
+                    key={m.id}
+                    variants={cardVariants}
+                    className={`flex ${fromAdmin ? 'justify-start' : 'justify-end'}`}
+                  >
+                    <motion.div
+                      whileHover={{ y: -1 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      className={`max-w-[78%] relative rounded-2xl px-4 py-3 text-sm leading-relaxed border card-hover transition-all ${
+                        fromAdmin
+                          ? 'bg-bg-base/60 border-border-default text-fg hover:border-border-hover'
+                          : 'bg-gradient-to-br from-accent/15 to-accent/5 border-accent/30 text-fg shadow-md shadow-accent/15 hover:shadow-accent/25 hover:border-accent/50'
+                      }`}
+                    >
+                      {fromAdmin && (
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="relative flex items-center justify-center w-4 h-4 rounded-full bg-accent/20">
+                            <span aria-hidden className="absolute inset-0 rounded-full bg-accent/30 animate-ping" />
+                            <span className="relative w-1.5 h-1.5 rounded-full bg-accent" />
+                          </span>
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-accent font-bold">Yönetim</span>
+                        </div>
+                      )}
+                      <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                      <div className="mt-2 text-[10px] font-mono text-fg-subtle">{relTime(m.sentAt)}</div>
+                    </motion.div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
           )}
         </div>
 

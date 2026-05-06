@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MessageCircle, Send, Loader2, Inbox, Lock, Unlock, Trash2, Megaphone,
-  ChevronLeft, ChevronRight, X, AlertTriangle, ShieldOff, Users,
+  ChevronLeft, ChevronRight, X, AlertTriangle, ShieldOff, Users, MessagesSquare,
 } from 'lucide-react';
+import { containerVariants, cardVariants } from '../../shared/utils/animations';
 import {
   useAdminConversations, useAdminConversation,
   useSendAdminMessage, useCloseConversation, useReopenConversation,
@@ -99,19 +100,20 @@ function BroadcastModal({ open, onClose }) {
             initial={{ opacity: 0, scale: 0.94, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 12 }}
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-            className="relative w-full max-w-md rounded-2xl border border-border-default modal-panel p-5 overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+            className="relative w-full max-w-md rounded-3xl border border-border-default modal-panel p-6 overflow-hidden card-hover">
+            <span aria-hidden className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
             <button type="button" onClick={onClose}
-              className="absolute top-3 right-3 flex items-center justify-center w-7 h-7 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer">
-              <X className="h-3.5 w-3.5" />
+              className="absolute top-3.5 right-3.5 flex items-center justify-center w-8 h-8 rounded-xl text-fg-muted hover:text-fg hover:bg-surface transition-all bg-transparent border-none cursor-pointer">
+              <X className="h-4 w-4" />
             </button>
             <div className="flex items-center gap-3 mb-5">
-              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10">
+              <div className="relative flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-br from-accent/25 to-accent/5 border border-accent/20 shrink-0">
+                <span aria-hidden className="absolute inset-0 rounded-2xl bg-accent/10 blur-md -z-10" />
                 <Megaphone className="h-4 w-4 text-accent" />
               </div>
               <div>
                 <h2 className="text-sm font-bold text-fg">Yayın gönder</h2>
-                <p className="text-xs font-mono text-fg-muted mt-0.5">Tüm kullanıcılara sistem bildirimi</p>
+                <p className="text-[11px] font-mono text-fg-muted mt-0.5 uppercase tracking-wide">Tüm kullanıcılara sistem bildirimi</p>
               </div>
             </div>
             <div className="space-y-3">
@@ -171,50 +173,71 @@ function ConversationList({ activeUser, onSelect, onBroadcast }) {
           <Megaphone className="relative h-3 w-3" /> <span className="relative">Yayın</span>
         </motion.button>
       </header>
-      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+      <div className="flex-1 overflow-y-auto px-3 py-3" style={{ scrollbarWidth: 'thin' }}>
         {isLoading ? (
           <div className="flex items-center justify-center py-10 text-fg-muted">
             <Loader2 className="h-4 w-4 animate-spin text-accent" />
           </div>
         ) : items.length === 0 ? (
-          <div className="px-4 py-12 text-center text-xs text-fg-subtle">Henüz sohbet yok</div>
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-center px-4">
+            <span className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-accent/15 to-accent/5 border border-accent/15">
+              <MessagesSquare className="h-5 w-5 text-fg-subtle" />
+            </span>
+            <p className="text-xs font-semibold text-fg-muted">Henüz sohbet yok</p>
+            <p className="text-[11px] text-fg-subtle leading-relaxed max-w-[200px]">Kullanıcı bir mesaj gönderdiğinde burada görünecek.</p>
+          </div>
         ) : (
-          <ul className="divide-y divide-border-default">
+          <motion.ul
+            variants={containerVariants(0.04)}
+            initial="hidden"
+            animate="show"
+            className="space-y-2"
+          >
             {items.map((c) => {
               const active = activeUser === c.userSub;
               return (
-                <li key={c.userSub}>
+                <motion.li
+                  key={c.userSub}
+                  variants={cardVariants}
+                  whileHover={{ y: -1 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                >
                   <button onClick={() => onSelect(c.userSub)} type="button"
-                    className={`group relative w-full text-left px-3.5 py-3 transition-all flex items-start gap-3 cursor-pointer border-none ${
-                      active ? 'bg-gradient-to-r from-accent/15 to-accent/5' : 'bg-transparent hover:bg-surface/60'}`}>
-                    {active && (
-                      <span aria-hidden className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-7 rounded-r-full bg-gradient-to-b from-accent to-accent-bright" />
-                    )}
-                    <span className={`relative flex items-center justify-center w-10 h-10 rounded-2xl text-[12px] font-mono font-bold shrink-0 uppercase border transition-all ${
+                    className={`group relative w-full text-left p-3.5 rounded-2xl border transition-all flex items-start gap-3 cursor-pointer overflow-hidden ${
                       active
-                        ? 'bg-gradient-to-br from-accent/40 to-accent/10 border-accent/40 text-accent shadow-sm shadow-accent/20'
-                        : 'bg-gradient-to-br from-accent/20 to-accent/5 border-accent/15 text-accent group-hover:border-accent/30'}`}>
-                      {c.userSub.slice(0, 2)}
-                    </span>
+                        ? 'bg-gradient-to-br from-accent/15 to-accent/[0.03] border-accent/40 shadow-md shadow-accent/15'
+                        : 'bg-bg-base/40 border-border-default hover:border-border-hover hover:bg-surface/40'}`}>
+                    {active && (
+                      <span aria-hidden className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
+                    )}
+                    <div className="relative shrink-0">
+                      {active && <span aria-hidden className="absolute inset-0 rounded-2xl bg-accent/20 blur-md -z-10" />}
+                      <span className={`relative flex items-center justify-center w-11 h-11 rounded-2xl text-[12px] font-mono font-bold uppercase border transition-all ${
+                        active
+                          ? 'bg-gradient-to-br from-accent/40 to-accent/10 border-accent/50 text-accent shadow-sm shadow-accent/30'
+                          : 'bg-gradient-to-br from-accent/20 to-accent/5 border-accent/15 text-accent group-hover:border-accent/30 group-hover:from-accent/25'}`}>
+                        {c.userSub.slice(0, 2)}
+                      </span>
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[12.5px] font-bold truncate ${active ? 'text-accent' : 'text-fg'}`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className={`text-[13px] font-bold truncate ${active ? 'text-accent' : 'text-fg group-hover:text-fg'}`}>
                           {shortSub(c.userSub)}
                         </span>
-                        {c.closed && (
-                          <span className="flex items-center gap-0.5 text-[9px] font-mono uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-warning/15 text-warning shrink-0 font-bold">
-                            <Lock className="h-2 w-2" /> kapalı
-                          </span>
-                        )}
+                        <span className="text-[10px] font-mono text-fg-subtle shrink-0">{relTime(c.lastSentAt)}</span>
                       </div>
-                      <p className="mt-0.5 text-[11px] text-fg-muted truncate leading-snug">{c.lastBody}</p>
-                      <p className="mt-1 text-[10px] font-mono text-fg-subtle">{relTime(c.lastSentAt)}</p>
+                      <p className="mt-1 text-[11px] text-fg-muted truncate leading-snug">{c.lastBody}</p>
+                      {c.closed && (
+                        <span className="mt-1.5 inline-flex items-center gap-0.5 text-[9px] font-mono uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-warning/15 text-warning font-bold border border-warning/20">
+                          <Lock className="h-2 w-2" /> kapalı
+                        </span>
+                      )}
                     </div>
                   </button>
-                </li>
+                </motion.li>
               );
             })}
-          </ul>
+          </motion.ul>
         )}
       </div>
       {totalPages > 1 && (
@@ -361,26 +384,41 @@ function ThreadPane({ userSub, onBack, onAfterDelete }) {
         ) : (thread?.messages ?? []).length === 0 ? (
           <div className="text-center py-10 text-xs text-fg-subtle">Bu sohbette henüz mesaj yok.</div>
         ) : (
-          (thread.messages).map((m) => {
-            const fromAdmin = m.direction === 'ADMIN_TO_USER';
-            return (
-              <motion.div key={m.id}
-                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-                className={`flex ${fromAdmin ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[78%] relative rounded-2xl px-4 py-2.5 text-sm leading-relaxed border ${
-                  fromAdmin
-                    ? 'bg-gradient-to-br from-accent/15 to-accent/5 border-accent/30 text-fg shadow-sm shadow-accent/10'
-                    : 'bg-surface border-border-default text-fg'}`}>
-                  {!fromAdmin && (
-                    <div className="text-[10px] font-mono uppercase tracking-wider text-fg-muted mb-1.5">Kullanıcı</div>
-                  )}
-                  <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                  <div className="mt-1.5 text-[10px] font-mono text-fg-subtle">{relTime(m.sentAt)}</div>
-                </div>
-              </motion.div>
-            );
-          })
+          <motion.div
+            variants={containerVariants(0.03)}
+            initial="hidden"
+            animate="show"
+            className="space-y-3"
+          >
+            {(thread.messages).map((m) => {
+              const fromAdmin = m.direction === 'ADMIN_TO_USER';
+              return (
+                <motion.div
+                  key={m.id}
+                  variants={cardVariants}
+                  className={`flex ${fromAdmin ? 'justify-end' : 'justify-start'}`}>
+                  <motion.div
+                    whileHover={{ y: -1 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    className={`max-w-[78%] relative rounded-2xl px-4 py-3 text-sm leading-relaxed border card-hover transition-all ${
+                      fromAdmin
+                        ? 'bg-gradient-to-br from-accent/15 to-accent/5 border-accent/30 text-fg shadow-md shadow-accent/15 hover:shadow-accent/25 hover:border-accent/50'
+                        : 'bg-bg-base/60 border-border-default text-fg hover:border-border-hover'}`}>
+                    {!fromAdmin && (
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <span className="flex items-center justify-center w-4 h-4 rounded-full bg-fg-muted/15">
+                          <span className="w-1.5 h-1.5 rounded-full bg-fg-muted" />
+                        </span>
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-fg-muted font-bold">Kullanıcı</span>
+                      </div>
+                    )}
+                    <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                    <div className="mt-2 text-[10px] font-mono text-fg-subtle">{relTime(m.sentAt)}</div>
+                  </motion.div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
         )}
       </div>
 

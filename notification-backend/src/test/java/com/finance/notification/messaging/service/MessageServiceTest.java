@@ -44,13 +44,14 @@ class MessageServiceTest {
     @Mock private com.finance.notification.messaging.security.MessageCooldownGuard cooldownGuard;
     @Mock private org.springframework.context.ApplicationEventPublisher events;
     @Mock private com.finance.notification.core.dispatch.KeycloakUserEmailLookup userDirectory;
+    @Mock private com.finance.notification.messaging.presence.ActiveConversationRegistry presence;
 
     private MessageService service;
 
     @BeforeEach
     void setUp() {
         service = new MessageService(repository, closedRepository, new MessageMapperImpl(),
-                duplicateGuard, cooldownGuard, events, userDirectory);
+                duplicateGuard, cooldownGuard, events, userDirectory, presence);
     }
 
     @Test
@@ -232,5 +233,41 @@ class MessageServiceTest {
         ArgumentCaptor<AdminInboxEvent> captor = ArgumentCaptor.forClass(AdminInboxEvent.class);
         verify(events).publishEvent(captor.capture());
         assertThat(captor.getValue().message().senderSub()).isEqualTo(USER_SUB);
+    }
+
+    @Test
+    void should_skipAdminInboxEventAndStampReadAt_when_anyAdminViewingUserThread() {
+        when(presence.isAnyoneActiveOn("user:" + USER_SUB)).thenReturn(true);
+        when(repository.save(any(Message.class))).thenAnswer(inv -> {
+            Message m = inv.getArgument(0);
+            m.setId(12L);
+            m.setSentAt(LocalDateTime.now());
+            return m;
+        });
+
+        service.sendUserToAdmin(USER_SUB, "Hi while admin viewing");
+
+        ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getReadAt()).isNotNull();
+        verify(events, never()).publishEvent(any(AdminInboxEvent.class));
+    }
+
+    @Test
+    void should_skipMessageDispatchEventAndStampReadAt_when_userViewingAdminThread() {
+        when(presence.getActiveKey(USER_SUB)).thenReturn(Optional.of("admin"));
+        when(repository.save(any(Message.class))).thenAnswer(inv -> {
+            Message m = inv.getArgument(0);
+            m.setId(13L);
+            m.setSentAt(LocalDateTime.now());
+            return m;
+        });
+
+        service.sendAdminToUser(ADMIN_SUB, USER_SUB, "Hi while user viewing");
+
+        ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getReadAt()).isNotNull();
+        verify(events, never()).publishEvent(any(MessageDispatchEvent.class));
     }
 }

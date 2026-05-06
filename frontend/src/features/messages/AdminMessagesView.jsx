@@ -2,9 +2,12 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import AdminConversationList from './components/AdminConversationList';
 import AdminThreadPane from './components/AdminThreadPane';
+import { useActiveConversation } from '../../shared/hooks/useActiveConversation';
 
 export default function AdminMessagesView() {
   const [activeUser, setActiveUser] = useState(null);
+
+  useActiveConversation(activeUser ? `user:${activeUser}` : null);
 
   return (
     <motion.div

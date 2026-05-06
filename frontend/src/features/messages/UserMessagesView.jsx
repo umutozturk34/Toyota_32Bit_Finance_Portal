@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, Loader2, Inbox, Sparkles } from 'lucide-react';
 import { useUserInbox, useUserSent, useSendMessage, useMarkMessageRead } from '../../shared/hooks/useMessages';
+import { useActiveConversation } from '../../shared/hooks/useActiveConversation';
 import { containerVariants } from '../../shared/utils/animations';
 import { toast } from '../../shared/components/Toast';
 import { extractApiError } from '../../shared/utils/apiError';
@@ -15,6 +16,8 @@ export default function UserMessagesView() {
   const markRead = useMarkMessageRead();
   const [body, setBody] = useState('');
   const scrollRef = useRef(null);
+
+  useActiveConversation('admin');
 
   const messages = useMemo(() => {
     const all = [...(inbox.data?.content ?? []), ...(sent.data?.content ?? [])];

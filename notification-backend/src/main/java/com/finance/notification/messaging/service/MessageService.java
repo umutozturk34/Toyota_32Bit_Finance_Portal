@@ -14,6 +14,7 @@ import com.finance.notification.messaging.dto.MessageResponse;
 import com.finance.notification.messaging.model.ClosedConversation;
 import com.finance.notification.messaging.model.Message;
 import com.finance.notification.messaging.model.MessageDirection;
+import com.finance.notification.messaging.presence.ActiveConversationRegistry;
 import com.finance.notification.messaging.repository.ClosedConversationRepository;
 import com.finance.notification.messaging.repository.MessageRepository;
 import com.finance.notification.messaging.security.MessageCooldownGuard;
@@ -34,6 +35,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MessageService {
 
+    private static final String ADMIN_THREAD_KEY = "admin";
+    private static final String USER_THREAD_KEY_PREFIX = "user:";
+
     private final MessageRepository repository;
     private final ClosedConversationRepository closedRepository;
     private final MessageMapper mapper;
@@ -41,21 +45,27 @@ public class MessageService {
     private final MessageCooldownGuard cooldownGuard;
     private final ApplicationEventPublisher events;
     private final KeycloakUserEmailLookup userDirectory;
+    private final ActiveConversationRegistry presence;
 
     @Transactional
     public MessageResponse sendUserToAdmin(String senderSub, String body) {
         rejectIfClosed(senderSub);
         rejectIfCoolingDown(senderSub);
         rejectDuplicate(senderSub, body);
+        boolean adminViewing = presence.isAnyoneActiveOn(USER_THREAD_KEY_PREFIX + senderSub);
         Message saved = repository.save(Message.builder()
                 .senderSub(senderSub)
                 .recipientSub(null)
                 .body(body)
                 .direction(MessageDirection.USER_TO_ADMIN)
+                .readAt(adminViewing ? LocalDateTime.now() : null)
                 .build());
         MessageResponse response = mapper.toResponse(saved);
-        events.publishEvent(new AdminInboxEvent(response));
-        log.info("User-to-admin message sent senderSub={} messageId={}", senderSub, saved.getId());
+        if (!adminViewing) {
+            events.publishEvent(new AdminInboxEvent(response));
+        }
+        log.info("User-to-admin message sent senderSub={} messageId={} adminViewing={}",
+                senderSub, saved.getId(), adminViewing);
         return response;
     }
 
@@ -65,15 +75,21 @@ public class MessageService {
             throw new BusinessException("recipientSub cannot be blank for admin-to-user message");
         }
         rejectDuplicate(adminSub, body);
+        boolean userViewing = presence.getActiveKey(recipientSub)
+                .map(ADMIN_THREAD_KEY::equals)
+                .orElse(false);
         Message saved = repository.save(Message.builder()
                 .senderSub(adminSub)
                 .recipientSub(recipientSub)
                 .body(body)
                 .direction(MessageDirection.ADMIN_TO_USER)
+                .readAt(userViewing ? LocalDateTime.now() : null)
                 .build());
-        events.publishEvent(new MessageDispatchEvent(recipientSub, adminSub, body));
-        log.info("Admin-to-user message sent adminSub={} recipientSub={} messageId={}",
-                adminSub, recipientSub, saved.getId());
+        if (!userViewing) {
+            events.publishEvent(new MessageDispatchEvent(recipientSub, adminSub, body));
+        }
+        log.info("Admin-to-user message sent adminSub={} recipientSub={} messageId={} userViewing={}",
+                adminSub, recipientSub, saved.getId(), userViewing);
         return mapper.toResponse(saved);
     }
 

@@ -27,6 +27,14 @@ export const messageService = {
   markRead: async (id) => {
     await api.patch(`${USER_PATH}/${id}/read`);
   },
+
+  registerActive: async (key) => {
+    await api.post(`${USER_PATH}/active`, { key });
+  },
+
+  clearActive: async () => {
+    await api.delete(`${USER_PATH}/active`);
+  },
 };
 
 export const adminMessageService = {

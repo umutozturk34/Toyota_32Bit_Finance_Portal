@@ -8,6 +8,7 @@ import com.finance.notification.messaging.dto.MessageResponse;
 import com.finance.notification.messaging.model.Message;
 import com.finance.notification.messaging.model.MessageDirection;
 import com.finance.notification.messaging.repository.MessageRepository;
+import com.finance.notification.messaging.security.MessageCooldownGuard;
 import com.finance.notification.messaging.security.MessageDuplicateGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -25,10 +26,12 @@ public class MessageService {
     private final MessageRepository repository;
     private final MessageMapper mapper;
     private final MessageDuplicateGuard duplicateGuard;
+    private final MessageCooldownGuard cooldownGuard;
     private final ApplicationEventPublisher events;
 
     @Transactional
     public MessageResponse sendUserToAdmin(String senderSub, String body) {
+        rejectIfCoolingDown(senderSub);
         rejectDuplicate(senderSub, body);
         Message saved = repository.save(Message.builder()
                 .senderSub(senderSub)
@@ -58,6 +61,12 @@ public class MessageService {
     private void rejectDuplicate(String senderSub, String body) {
         if (duplicateGuard.isDuplicate(senderSub, body)) {
             throw new BadRequestException("Aynı mesajı kısa süre içinde tekrar gönderdin");
+        }
+    }
+
+    private void rejectIfCoolingDown(String senderSub) {
+        if (cooldownGuard.isCoolingDown(senderSub)) {
+            throw new BadRequestException("Çok sık mesaj gönderiyorsun, lütfen birkaç saniye bekle");
         }
     }
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, Loader2, Inbox, Sparkles } from 'lucide-react';
-import { useUserInbox, useUserSent, useSendMessage, useMarkMessageRead } from '../../shared/hooks/useMessages';
+import { useUserInbox, useUserSent, useSendMessage } from '../../shared/hooks/useMessages';
 import { useActiveConversation } from '../../shared/hooks/useActiveConversation';
 import { containerVariants } from '../../shared/utils/animations';
 import { toast } from '../../shared/components/Toast';
@@ -13,7 +13,6 @@ export default function UserMessagesView() {
   const inbox = useUserInbox({ page: 0, size: 100 });
   const sent = useUserSent({ page: 0, size: 100 });
   const sendMutation = useSendMessage();
-  const markRead = useMarkMessageRead();
   const [body, setBody] = useState('');
   const scrollRef = useRef(null);
 
@@ -27,12 +26,6 @@ export default function UserMessagesView() {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages.length]);
-
-  useEffect(() => {
-    (inbox.data?.content ?? []).forEach((m) => {
-      if (!m.readAt) markRead.mutate(m.id);
-    });
-  }, [inbox.data]);
 
   const handleSend = async (e) => {
     e.preventDefault();

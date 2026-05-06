@@ -27,10 +27,12 @@ public class MessagingAdminReadTier implements RateLimitTier {
     @Override
     public Bandwidth toBandwidth(AppProperties.RateLimit rl) {
         return Bandwidth.builder()
-                .capacity(Long.MAX_VALUE)
-                .refillGreedy(Long.MAX_VALUE, Duration.ofSeconds(1))
+                .capacity(EFFECTIVELY_UNLIMITED_PER_MINUTE)
+                .refillGreedy(EFFECTIVELY_UNLIMITED_PER_MINUTE, Duration.ofMinutes(1))
                 .build();
     }
+
+    private static final long EFFECTIVELY_UNLIMITED_PER_MINUTE = 1_000_000L;
 
     @Override
     public String errorCode() {

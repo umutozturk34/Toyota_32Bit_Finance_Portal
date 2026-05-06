@@ -2,7 +2,7 @@ package com.finance.notification.messaging.controller;
 
 import com.finance.common.dto.ApiResponse;
 import com.finance.notification.messaging.dto.MessagePresenceRequest;
-import com.finance.notification.messaging.presence.ActiveConversationRegistry;
+import com.finance.notification.messaging.presence.MessagePresenceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,19 +20,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MessagePresenceController {
 
-    private final ActiveConversationRegistry registry;
+    private final MessagePresenceService service;
 
     @PostMapping
     public ApiResponse<Void> register(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody MessagePresenceRequest request) {
-        registry.register(jwt.getSubject(), request.key());
+        service.register(jwt.getSubject(), request.key());
         return ApiResponse.success("Active conversation registered", null);
     }
 
     @DeleteMapping
     public ApiResponse<Void> unregister(@AuthenticationPrincipal Jwt jwt) {
-        registry.unregister(jwt.getSubject());
+        service.unregister(jwt.getSubject());
         return ApiResponse.success("Active conversation cleared", null);
     }
 }

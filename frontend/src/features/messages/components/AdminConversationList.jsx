@@ -120,7 +120,10 @@ export default function AdminConversationList({ activeUser, onSelect }) {
                         <span className="text-[10px] font-mono text-fg-subtle shrink-0">{relTime(c.lastSentAt)}</span>
                       </div>
                       {c.username && (
-                        <p className="mt-0.5 text-[10px] font-mono text-fg-subtle truncate">{c.email || shortSub(c.userSub)}</p>
+                        <div className="mt-0.5 space-y-0.5">
+                          {c.email && <p className="text-[10px] font-mono text-fg-muted truncate">{c.email}</p>}
+                          <p className="text-[10px] font-mono text-fg-subtle truncate" title={c.userSub}>{shortSub(c.userSub)}</p>
+                        </div>
                       )}
                       <p className={`mt-0.5 text-[11px] truncate leading-snug ${c.unreadCount > 0 ? 'text-fg font-semibold' : 'text-fg-muted'}`}>{c.lastBody}</p>
                       <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">

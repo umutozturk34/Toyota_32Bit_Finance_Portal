@@ -6,7 +6,6 @@ import {
 import {
   useAdminConversation, useSendAdminMessage,
   useCloseConversation, useReopenConversation, useDeleteConversation,
-  useMarkAdminConversationRead,
 } from '../../../shared/hooks/useMessages';
 import { containerVariants } from '../../../shared/utils/animations';
 import { toast } from '../../../shared/components/Toast';
@@ -22,7 +21,6 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
   const closeMutation = useCloseConversation();
   const reopenMutation = useReopenConversation();
   const deleteMutation = useDeleteConversation();
-  const markReadMutation = useMarkAdminConversationRead();
   const [body, setBody] = useState('');
   const [confirmAction, setConfirmAction] = useState(null);
   const scrollRef = useRef(null);
@@ -30,10 +28,6 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [thread?.messages?.length]);
-
-  useEffect(() => {
-    if (userSub) markReadMutation.mutate(userSub);
-  }, [userSub]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -96,10 +90,11 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
           </div>
           <div className="min-w-0">
             <div className="text-sm font-bold text-fg truncate" title={userSub}>{username || shortSub(userSub)}</div>
-            {email ? (
-              <div className="text-[10px] font-mono text-fg-muted truncate" title={email}>{email}</div>
-            ) : username ? (
-              <div className="text-[10px] font-mono text-fg-subtle truncate" title={userSub}>{shortSub(userSub)}</div>
+            {username ? (
+              <div className="space-y-0.5">
+                {email && <div className="text-[10px] font-mono text-fg-muted truncate" title={email}>{email}</div>}
+                <div className="text-[10px] font-mono text-fg-subtle truncate" title={userSub}>{shortSub(userSub)}</div>
+              </div>
             ) : thread?.closed ? (
               <div className="flex items-center gap-1 text-[10px] font-mono text-warning">
                 <ShieldOff className="h-2.5 w-2.5" />

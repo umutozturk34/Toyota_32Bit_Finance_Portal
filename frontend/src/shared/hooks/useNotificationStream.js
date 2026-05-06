@@ -122,6 +122,10 @@ export default function useNotificationStream() {
       toast.info('Yeni kullanıcı mesajı', preview);
     };
 
+    const handleSilentMessageUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+    };
+
     const connect = async () => {
       if (cancelled) return;
       try {
@@ -135,6 +139,8 @@ export default function useNotificationStream() {
 
         source.addEventListener('notification', handleNotification);
         source.addEventListener('admin-inbox', handleAdminInbox);
+        source.addEventListener('admin-inbox-silent', handleSilentMessageUpdate);
+        source.addEventListener('notification-silent', handleSilentMessageUpdate);
 
         source.onerror = () => {
           source.close();

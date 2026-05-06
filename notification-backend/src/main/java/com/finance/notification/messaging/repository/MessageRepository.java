@@ -92,6 +92,13 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             "AND m.readAt IS NULL")
     int markAdminInboxRead(@Param("userSub") String userSub, @Param("readAt") java.time.LocalDateTime readAt);
 
+    @Modifying
+    @Query("UPDATE Message m SET m.readAt = :readAt " +
+            "WHERE m.recipientSub = :userSub " +
+            "AND m.direction = com.finance.notification.messaging.model.MessageDirection.ADMIN_TO_USER " +
+            "AND m.readAt IS NULL")
+    int markUserInboxRead(@Param("userSub") String userSub, @Param("readAt") java.time.LocalDateTime readAt);
+
     interface ConversationSummaryProjection {
         String getUserSub();
         String getLastBody();

@@ -61,9 +61,7 @@ public class MessageService {
                 .readAt(adminViewing ? LocalDateTime.now() : null)
                 .build());
         MessageResponse response = mapper.toResponse(saved);
-        if (!adminViewing) {
-            events.publishEvent(new AdminInboxEvent(response));
-        }
+        events.publishEvent(new AdminInboxEvent(response));
         log.info("User-to-admin message sent senderSub={} messageId={} adminViewing={}",
                 senderSub, saved.getId(), adminViewing);
         return response;
@@ -85,9 +83,7 @@ public class MessageService {
                 .direction(MessageDirection.ADMIN_TO_USER)
                 .readAt(userViewing ? LocalDateTime.now() : null)
                 .build());
-        if (!userViewing) {
-            events.publishEvent(new MessageDispatchEvent(recipientSub, adminSub, body));
-        }
+        events.publishEvent(new MessageDispatchEvent(recipientSub, adminSub, body));
         log.info("Admin-to-user message sent adminSub={} recipientSub={} messageId={} userViewing={}",
                 adminSub, recipientSub, saved.getId(), userViewing);
         return mapper.toResponse(saved);

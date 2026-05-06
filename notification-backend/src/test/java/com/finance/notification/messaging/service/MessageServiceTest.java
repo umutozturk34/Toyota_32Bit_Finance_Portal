@@ -236,7 +236,7 @@ class MessageServiceTest {
     }
 
     @Test
-    void should_skipAdminInboxEventAndStampReadAt_when_anyAdminViewingUserThread() {
+    void should_stampReadAtAndStillPublishEvent_when_anyAdminViewingUserThread() {
         when(presence.isAnyoneActiveOn("user:" + USER_SUB)).thenReturn(true);
         when(repository.save(any(Message.class))).thenAnswer(inv -> {
             Message m = inv.getArgument(0);
@@ -250,11 +250,11 @@ class MessageServiceTest {
         ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
         verify(repository).save(captor.capture());
         assertThat(captor.getValue().getReadAt()).isNotNull();
-        verify(events, never()).publishEvent(any(AdminInboxEvent.class));
+        verify(events).publishEvent(any(AdminInboxEvent.class));
     }
 
     @Test
-    void should_skipMessageDispatchEventAndStampReadAt_when_userViewingAdminThread() {
+    void should_stampReadAtAndStillPublishEvent_when_userViewingAdminThread() {
         when(presence.getActiveKey(USER_SUB)).thenReturn(Optional.of("admin"));
         when(repository.save(any(Message.class))).thenAnswer(inv -> {
             Message m = inv.getArgument(0);
@@ -268,6 +268,6 @@ class MessageServiceTest {
         ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
         verify(repository).save(captor.capture());
         assertThat(captor.getValue().getReadAt()).isNotNull();
-        verify(events, never()).publishEvent(any(MessageDispatchEvent.class));
+        verify(events).publishEvent(any(MessageDispatchEvent.class));
     }
 }

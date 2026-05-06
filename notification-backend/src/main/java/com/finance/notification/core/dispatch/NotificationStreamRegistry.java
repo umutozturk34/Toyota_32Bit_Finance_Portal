@@ -66,6 +66,19 @@ public class NotificationStreamRegistry {
         }
     }
 
+    public void publishToUser(String userSub, String eventName, Object payload) {
+        CopyOnWriteArrayList<SseEmitter> list = emitters.getIfPresent(userSub);
+        if (list == null || list.isEmpty()) return;
+        for (SseEmitter emitter : list) {
+            try {
+                emitter.send(SseEmitter.event().name(eventName).data(payload));
+            } catch (IOException | IllegalStateException ex) {
+                log.debug("SSE send failed user={} event={}: {}", userSub, eventName, ex.getMessage());
+                emitter.completeWithError(ex);
+            }
+        }
+    }
+
     public void publishToAdmins(String eventName, Object payload) {
         if (adminEmitters.isEmpty()) return;
         for (SseEmitter emitter : adminEmitters) {

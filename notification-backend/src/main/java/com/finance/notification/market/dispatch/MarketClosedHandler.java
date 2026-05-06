@@ -1,6 +1,5 @@
 package com.finance.notification.market.dispatch;
 
-import com.finance.common.exception.BusinessException;
 import com.finance.notification.core.dispatch.NotificationHandler;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
@@ -23,7 +22,7 @@ public class MarketClosedHandler implements NotificationHandler {
     @Override
     public RenderedNotification render(NotificationRequest request) {
         if (!(request.payload() instanceof MarketClosedPayload p)) {
-            throw new BusinessException(
+            throw new IllegalArgumentException(
                     "MarketClosedHandler expects MarketClosedPayload, got "
                             + request.payload().getClass().getSimpleName());
         }

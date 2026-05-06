@@ -1,6 +1,5 @@
 package com.finance.notification.market.dispatch;
 
-import com.finance.common.exception.BusinessException;
 import com.finance.notification.core.dispatch.NotificationHandler;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
@@ -23,7 +22,7 @@ public class MarketDataUpdatedHandler implements NotificationHandler {
     @Override
     public RenderedNotification render(NotificationRequest request) {
         if (!(request.payload() instanceof MarketDataUpdatedPayload p)) {
-            throw new BusinessException(
+            throw new IllegalArgumentException(
                     "MarketDataUpdatedHandler expects MarketDataUpdatedPayload, got "
                             + request.payload().getClass().getSimpleName());
         }

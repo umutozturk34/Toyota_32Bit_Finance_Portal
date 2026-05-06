@@ -123,14 +123,15 @@ notification:
         close: '23:59'
         trading-days: [SUNDAY, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]
         zone: Europe/Istanbul
+      # 24/7 markets — open=close sentinel triggers always-open bypass in resolver
       NEWS:
         open: '00:00'
-        close: '23:59'
+        close: '00:00'
         trading-days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
         zone: Europe/Istanbul
       CRYPTO:
         open: '00:00'
-        close: '23:59'
+        close: '00:00'
         trading-days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
         zone: Europe/Istanbul
 

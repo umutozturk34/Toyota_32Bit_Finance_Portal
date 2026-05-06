@@ -17,7 +17,7 @@
     </table>
     <div class="info-box">
         <div class="info-card">
-            <p><strong>Geçerlilik</strong> &nbsp; Kod <span class="num">${linkExpiration}</span> dakika sonra geçersizleşir. Yeni kod istemen gerekirse e-posta değiştirme akışını yeniden başlat.</p>
+            <p><strong>Geçerlilik</strong> &nbsp; Kod kısa süre içinde geçersizleşir. Yeni kod istemen gerekirse e-posta değiştirme akışını yeniden başlat.</p>
         </div>
     </div>
     <p style="margin-top:18px;">İşlemi sen başlatmadıysan bu e-postayı yok sayabilirsin — kod geçersiz olduğu sürece hesabın etkilenmez.</p>

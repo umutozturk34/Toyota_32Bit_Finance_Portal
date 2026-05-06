@@ -17,25 +17,56 @@ function resolveTheme(preference) {
 function readStoredPreference() {
     try {
         const stored = localStorage.getItem('finance-theme');
-        if (stored === 'light') return 'LIGHT';
-        if (stored === 'dark') return 'DARK';
+        if (stored === 'light') return { value: 'LIGHT', exists: true };
+        if (stored === 'dark') return { value: 'DARK', exists: true };
     } catch {
         /* localStorage unavailable */
     }
-    return 'DARK';
+    return { value: 'DARK', exists: false };
+}
+
+function BootSplash() {
+    return (
+        <div
+            aria-hidden="true"
+            style={{
+                position: 'fixed',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'var(--color-bg-base)',
+                zIndex: 9999,
+            }}
+        >
+            <div
+                style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: '50%',
+                    border: '2px solid rgba(99,102,241,0.18)',
+                    borderTopColor: 'var(--color-accent)',
+                    animation: 'theme-boot-spin 0.9s linear infinite',
+                }}
+            />
+            <style>{`@keyframes theme-boot-spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+    );
 }
 
 export function ThemeProvider({ children }) {
-    const { isAuthenticated } = useAuth();
-    const { preferences } = useUserPreferences();
+    const { isAuthenticated, loading: authLoading } = useAuth();
+    const { preferences, isLoading: prefsLoading, isFetched: prefsFetched } = useUserPreferences();
     const updatePreferences = useUpdateUserPreferences();
-    const [storedPreference, setStoredPreference] = useState(readStoredPreference);
-    const userOverrode = useRef(false);
+    const [{ value: initialPref, exists: initialFromLocal }] = useState(readStoredPreference);
+    const [storedPreference, setStoredPreference] = useState(initialPref);
+    const localOverrideRef = useRef(initialFromLocal);
 
     useEffect(() => {
-        if (!userOverrode.current && preferences.theme && preferences.theme !== storedPreference) {
-            setStoredPreference(preferences.theme);
-        }
+        if (localOverrideRef.current) return;
+        if (!preferences.theme) return;
+        if (preferences.theme === storedPreference) return;
+        setStoredPreference(preferences.theme);
     }, [preferences.theme, storedPreference]);
 
     const themePreference = storedPreference;
@@ -52,7 +83,7 @@ export function ThemeProvider({ children }) {
     }, [theme]);
 
     const setThemePreference = (next) => {
-        userOverrode.current = true;
+        localOverrideRef.current = true;
         setStoredPreference(next);
         if (isAuthenticated) {
             updatePreferences.mutate({ theme: next });
@@ -64,9 +95,11 @@ export function ThemeProvider({ children }) {
         setThemePreference(next);
     };
 
+    const blocking = authLoading || (isAuthenticated && !prefsFetched && prefsLoading);
+
     return (
         <ThemeContext.Provider value={{ theme, themePreference, setThemePreference, toggleTheme, isDark: theme === 'dark' }}>
-            {children}
+            {blocking ? <BootSplash /> : children}
         </ThemeContext.Provider>
     );
 }

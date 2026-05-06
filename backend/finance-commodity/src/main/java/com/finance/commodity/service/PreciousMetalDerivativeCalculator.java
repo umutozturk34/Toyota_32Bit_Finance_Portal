@@ -80,7 +80,7 @@ public class PreciousMetalDerivativeCalculator {
         BigDecimal previous = previousFromOnsUsd(source.getPreviousPriceUsd(), usdTryForPrevious, rule.getDivisor());
         CommoditySnapshotInput snapshot = new CommoditySnapshotInput(
                 current, previous, null, null, open, high, low, source.getVolume());
-        persistDerivative(rule.getDerivativeCode(), snapshot);
+        persistDerivative(rule, snapshot);
     }
 
     private void refreshCandlesFromRule(DerivativeRule rule) {
@@ -153,13 +153,20 @@ public class PreciousMetalDerivativeCalculator {
         return divide(onsTry, divisor);
     }
 
-    private void persistDerivative(String code, CommoditySnapshotInput snapshot) {
+    private void persistDerivative(DerivativeRule rule, CommoditySnapshotInput snapshot) {
         if (snapshot.tryPrice() == null) return;
+        String code = rule.getDerivativeCode();
         Commodity derivative = commodityRepository.findById(code)
                 .orElseGet(() -> Commodity.builder()
                         .commodityCode(code)
                         .commoditySegment(segmentResolver.resolve(code))
                         .build());
+        if (rule.getName() != null && (derivative.getName() == null || derivative.getName().isBlank())) {
+            derivative.setName(rule.getName());
+        }
+        if (rule.getNameTr() != null && (derivative.getCommodityNameTr() == null || derivative.getCommodityNameTr().isBlank())) {
+            derivative.setCommodityNameTr(rule.getNameTr());
+        }
         derivative.applyPriceSnapshot(snapshot, scale);
         commodityRepository.save(derivative);
         commodityCacheService.putSnapshot(code, derivative);

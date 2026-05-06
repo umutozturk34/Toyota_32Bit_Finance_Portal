@@ -7,7 +7,20 @@ export const userCredentialService = {
     await api.post(`${PATH}/password/initiate-change`, { redirectUri });
   },
 
-  initiateEmailChange: async (newEmail, redirectUri) => {
-    await api.post(`${PATH}/email/initiate-change`, { newEmail, redirectUri });
+  initiateEmailChange: async (newEmail) => {
+    await api.post(`${PATH}/email/initiate-change`, { newEmail });
+  },
+
+  confirmEmailChange: async (code) => {
+    await api.post(`${PATH}/email/confirm-change`, { code });
+  },
+
+  cancelEmailChange: async () => {
+    await api.delete(`${PATH}/email/pending`);
+  },
+
+  getPendingEmailChange: async () => {
+    const response = await api.get(`${PATH}/email/pending`);
+    return response.data.data;
   },
 };

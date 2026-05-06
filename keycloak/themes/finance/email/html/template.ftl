@@ -1,5 +1,11 @@
 <#macro emailLayout title="" eyebrow="" subtitle="">
-<#assign theme = (user.attributes.themePreference[0])!"DARK">
+<#assign themePref = "DARK">
+<#attempt>
+    <#assign themePref = user.attributes['themePreference']>
+<#recover>
+    <#assign themePref = "DARK">
+</#attempt>
+<#assign theme = themePref>
 <!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -25,20 +31,22 @@
 
         .wrapper { background:#070912; padding:40px 0 56px; }
 
-        .ticker-row { padding:0 0 18px 2px; }
-        .ticker-cell { font-family:'SFMono-Regular','Menlo','Consolas',monospace; font-size:10px; letter-spacing:1.6px; color:#5c6577; text-transform:uppercase; }
-        .ticker-mark { display:inline-block; width:6px; height:6px; background:#6366f1; vertical-align:middle; margin:0 8px 1px 0; border-radius:1px; }
-        .ticker-divider { color:#3a4254; padding:0 8px; }
+        .brand-row { padding:0 0 22px 0; }
+        .brand-table { border-spacing:0; }
+        .brand-logo { width:42px; height:42px; vertical-align:middle; }
+        .brand-mark { display:inline-block; width:42px; height:42px; line-height:42px; text-align:center; font-size:22px; font-weight:800; color:#ffffff; background:#6366f1; background-image:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%); border-radius:11px; box-shadow:0 6px 18px -4px rgba(99,102,241,0.45); }
+        .brand-text { padding-left:14px; vertical-align:middle; }
+        .brand-name { display:block; font-size:15px; font-weight:700; color:#f0f2f7; letter-spacing:-0.2px; line-height:1.1; }
+        .brand-tag { display:block; font-size:10px; font-weight:600; letter-spacing:1.6px; color:#8b8fa3; text-transform:uppercase; margin-top:4px; }
 
         .card { width:600px; max-width:600px; background:#0d111c; border:1px solid #1a2030; border-radius:18px; overflow:hidden; }
         .accent-strip { height:2px; background:#6366f1; mso-line-height-rule:exactly; line-height:2px; font-size:0; }
-        .accent-strip-grad { background:linear-gradient(90deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%); }
 
         .hero { padding:36px 40px 12px; }
         .hero-pad { padding:36px 40px 12px; }
-        .eyebrow { font-family:'SFMono-Regular','Menlo','Consolas',monospace; font-size:10px; font-weight:600; letter-spacing:2.4px; color:#8b8fa3; text-transform:uppercase; margin:0 0 14px; padding:0; }
-        .hero-title { margin:0; font-family:Georgia,'Times New Roman',serif; font-size:26px; font-weight:600; line-height:1.25; color:#f0f2f7; letter-spacing:-0.4px; }
-        .hero-sub { margin:8px 0 0; font-size:13px; font-style:italic; color:#8b93a8; line-height:1.5; }
+        .eyebrow { font-size:10px; font-weight:700; letter-spacing:2.4px; color:#a78bfa; text-transform:uppercase; margin:0 0 14px; padding:0; }
+        .hero-title { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; font-size:24px; font-weight:700; line-height:1.3; color:#f0f2f7; letter-spacing:-0.4px; }
+        .hero-sub { margin:8px 0 0; font-size:13px; color:#8b93a8; line-height:1.5; font-weight:400; }
 
         .body-section { padding:18px 40px 8px; font-size:14px; line-height:1.75; color:#bdc4d2; }
         .body-pad { padding:18px 40px 8px; }
@@ -61,13 +69,13 @@
         .info-card .num { font-family:'SFMono-Regular','Menlo','Consolas',monospace; color:#dde3ee; background:#13182a; padding:2px 8px; border-radius:5px; font-size:12px; }
 
         .code-block { padding:22px 40px 8px; }
-        .code-frame { background:#0a0d16; border:1px solid #2c3148; border-radius:14px; padding:22px 16px; text-align:center; position:relative; }
-        .code-eyebrow { font-family:'SFMono-Regular','Menlo','Consolas',monospace; font-size:10px; font-weight:600; letter-spacing:2px; color:#6c7488; text-transform:uppercase; margin:0 0 10px; }
+        .code-frame { background:#0a0d16; border:1px solid #2c3148; border-radius:14px; padding:22px 16px; text-align:center; }
+        .code-eyebrow { font-size:10px; font-weight:700; letter-spacing:2px; color:#8b8fa3; text-transform:uppercase; margin:0 0 10px; }
         .email-code { display:inline-block; font-family:'SFMono-Regular','Menlo','Consolas',monospace; font-size:34px; font-weight:600; letter-spacing:9px; color:#f0f2f7; line-height:1; padding-left:9px; }
 
         .meta-row { padding:18px 40px 22px; }
-        .meta-row .item { font-family:'SFMono-Regular','Menlo','Consolas',monospace; font-size:10.5px; letter-spacing:1.2px; color:#5c6577; text-transform:uppercase; }
-        .meta-row .item strong { color:#9aa1b3; font-weight:600; }
+        .meta-row .item { font-size:10.5px; font-weight:600; letter-spacing:1.4px; color:#5c6577; text-transform:uppercase; }
+        .meta-row .item strong { color:#9aa1b3; font-weight:700; }
 
         .footer-card { padding:22px 4px 0; }
         .footer-card p { margin:0 0 6px; font-size:11.5px; line-height:1.6; color:#54596a; }
@@ -78,8 +86,8 @@
     <style>
         body { background:#f4f5f9 !important; color:#171a26 !important; }
         .wrapper { background:#f4f5f9 !important; }
-        .ticker-cell { color:#7c83a0 !important; }
-        .ticker-divider { color:#cdd1de !important; }
+        .brand-name { color:#0d111e !important; }
+        .brand-tag { color:#5c6479 !important; }
         .card { background:#ffffff !important; border-color:#e7e9f1 !important; box-shadow:0 4px 24px -8px rgba(20,22,40,0.08) !important; }
         .hero-title { color:#0d111e !important; }
         .hero-sub { color:#5c6479 !important; }
@@ -108,14 +116,24 @@
         <td align="center">
             <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;">
                 <tr>
-                    <td align="left" class="ticker-row">
-                        <span class="ticker-mark"></span><span class="ticker-cell"><strong style="color:#9aa1b3;font-weight:700;letter-spacing:1.6px;">FINANCE</strong> <span class="ticker-divider">·</span> PORTAL <span class="ticker-divider">·</span> ${.now?string("dd.MM.yyyy")}</span>
+                    <td class="brand-row">
+                        <table role="presentation" class="brand-table" cellspacing="0" cellpadding="0" border="0">
+                            <tr>
+                                <td class="brand-logo" style="width:42px;height:42px;vertical-align:middle;">
+                                    <span class="brand-mark">↗</span>
+                                </td>
+                                <td class="brand-text">
+                                    <span class="brand-name">Finance Portal</span>
+                                    <span class="brand-tag">Secure Auth Mail</span>
+                                </td>
+                            </tr>
+                        </table>
                     </td>
                 </tr>
             </table>
 
             <table role="presentation" class="container card" width="600" cellspacing="0" cellpadding="0" border="0">
-                <tr><td class="accent-strip accent-strip-grad" style="height:2px;line-height:2px;font-size:0;background:#6366f1;background-image:linear-gradient(90deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%);">&nbsp;</td></tr>
+                <tr><td class="accent-strip" style="height:2px;line-height:2px;font-size:0;background:#6366f1;background-image:linear-gradient(90deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%);">&nbsp;</td></tr>
                 <tr>
                     <td class="hero hero-pad">
                         <#if eyebrow?has_content><p class="eyebrow">${eyebrow}</p></#if>
@@ -131,9 +149,7 @@
                 <tr><td><div class="divider">&nbsp;</div></td></tr>
                 <tr>
                     <td class="meta-row">
-                        <span class="item"><strong>REF</strong> &nbsp; ${(user.id!"-")?substring(0, 8)}</span>
-                        <span class="ticker-divider">&nbsp;·&nbsp;</span>
-                        <span class="item"><strong>SENT</strong> &nbsp; ${.now?string("HH:mm")} TRT</span>
+                        <span class="item"><strong>SENT</strong> &nbsp; ${.now?string("dd.MM.yyyy")} &nbsp;·&nbsp; ${.now?string("HH:mm")} TRT</span>
                     </td>
                 </tr>
             </table>

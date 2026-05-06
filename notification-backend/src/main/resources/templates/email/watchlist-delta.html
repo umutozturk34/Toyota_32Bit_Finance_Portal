@@ -1,156 +1,51 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="'Finance Portal — ' + ${watchlistName}">Finance Portal — Takip Listesi</title>
-    <style>
-        body { margin:0; padding:0; width:100%; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; }
-        table { border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt; }
-        img { border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic; }
-        a { color:inherit; text-decoration:none; }
-        .num { font-family: 'SF Mono','Monaco','Consolas','Courier New',monospace; }
-        @media (max-width:600px) {
-            .container { width:100% !important; padding:0 16px !important; }
-            .hero-title { font-size:18px !important; }
-        }
-    </style>
-</head>
-<body th:with="dark=${theme != 'LIGHT'},
-               cBg=${dark ? '#0a0b10' : '#f3f5fa'},
-               cCard=${dark ? '#11141d' : '#ffffff'},
-               cBorder=${dark ? '#1f2430' : '#e5e9f0'},
-               cFg=${dark ? '#e6e9ef' : '#1a1d24'},
-               cMuted=${dark ? '#8a93a3' : '#5f6671'},
-               cSubtle=${dark ? '#5f6671' : '#8b94a3'},
-               cAccent='#6366f1',
-               cAccent2='#a78bfa',
-               cSuccess=${dark ? '#34d399' : '#059669'},
-               cDanger=${dark ? '#f87171' : '#dc2626'},
-               cRowBg=${dark ? '#0e111a' : '#f9fafd'}"
-      th:style="'margin:0;padding:0;background:' + ${cBg} + ';color:' + ${cFg} + ';font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;'">
+<html xmlns:th="http://www.thymeleaf.org" lang="tr"
+      th:replace="~{email/_layout :: layout(eyebrow='TAKİP LİSTESİ', title=${watchlistName + ' listende hareket var'}, subtitle=${marketLabel + ' · ' + itemCount + ' varlık eşiği aştı'}, content=~{::content})}">
+<body>
+<th:block th:fragment="content"
+          th:with="cSuccess=${dark ? '#34d399' : '#059669'},
+                   cDanger=${dark ? '#f87171' : '#dc2626'}">
+    <p th:style="'margin:0 0 16px;color:' + ${cFg} + ';font-size:14px;'">
+        Aşağıdaki varlıklar tanımlı eşiğin üstünde hareket etti.
+    </p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <th:block th:each="item, iter : ${items}">
+            <tr>
+                <td th:style="'padding:14px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;'">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                        <tr>
+                            <td th:if="${item.image != null}" width="54" style="padding:0 14px 0 0;vertical-align:middle;">
+                                <img th:src="${item.image}" alt="" width="40" height="40"
+                                     th:style="'display:block;width:40px;height:40px;border-radius:50%;border:1px solid ' + ${cBorder} + ';background:' + ${cBg} + ';'"/>
+                            </td>
+                            <td style="vertical-align:middle;">
+                                <p th:style="'margin:0;font-size:14px;font-weight:600;color:' + ${cFg} + ';'" th:text="${item.assetName}">Bitcoin</p>
+                                <p class="num" th:style="'margin:2px 0 0;font-size:11px;color:' + ${cMuted} + ';'" th:text="${item.assetCodeUpper}">BTC</p>
+                            </td>
+                            <td align="right" style="vertical-align:middle;">
+                                <p class="num" th:style="'margin:0;font-size:14px;font-weight:700;color:' + ${cFg} + ';'" th:text="${item.priceFormatted}">₺3.674.497,00</p>
+                                <p class="num" th:style="'margin:3px 0 0;font-size:12px;font-weight:600;color:' + (${item.isUp} ? ${cSuccess} : ${cDanger}) + ';'">
+                                    <span th:text="${item.isUp ? '▲' : '▼'}">▲</span>
+                                    <span th:text="${item.deltaFormatted}">+5,20%</span>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr th:if="${!iter.last}"><td style="height:10px;line-height:0;font-size:0;">&nbsp;</td></tr>
+        </th:block>
+    </table>
 
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" th:style="'background:' + ${cBg} + ';padding:32px 0;'">
-    <tr>
-        <td align="center">
-
-            <!-- Brand wordmark -->
-            <table role="presentation" class="container" width="560" cellspacing="0" cellpadding="0" border="0" style="width:560px;max-width:560px;">
-                <tr>
-                    <td align="left" style="padding:0 0 18px 4px;">
-                        <span th:style="'display:inline-block;width:8px;height:8px;border-radius:50%;background:' + ${cAccent} + ';vertical-align:middle;margin-right:8px;'"></span>
-                        <span th:style="'font-size:13px;font-weight:600;letter-spacing:0.4px;color:' + ${cMuted} + ';text-transform:uppercase;vertical-align:middle;'">Finance Portal</span>
-                    </td>
-                </tr>
-            </table>
-
-            <!-- Card -->
-            <table role="presentation" class="container" width="560" cellspacing="0" cellpadding="0" border="0"
-                   th:style="'width:560px;max-width:560px;background:' + ${cCard} + ';border:1px solid ' + ${cBorder} + ';border-radius:16px;overflow:hidden;'">
-
-                <!-- Accent strip -->
-                <tr>
-                    <td th:style="'height:3px;background:linear-gradient(90deg,' + ${cAccent} + ',' + ${cAccent2} + ');font-size:0;line-height:0;'">&nbsp;</td>
-                </tr>
-
-                <!-- Hero -->
-                <tr>
-                    <td style="padding:28px 32px 18px;">
-                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                            <tr>
-                                <td>
-                                    <span th:style="'display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:0.4px;text-transform:uppercase;background:' + (${dark} ? '#1c2030' : '#eef0f5') + ';color:' + ${cMuted} + ';'"
-                                          th:text="${marketLabel}">Kripto</span>
-                                </td>
-                                <td align="right">
-                                    <span th:style="'display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:0.4px;background:' + (${dark} ? '#1c2030' : '#eef0f5') + ';color:' + ${cMuted} + ';'"
-                                          th:text="${itemCount} + ' varlık'">2 varlık</span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="2" style="padding:18px 0 0;">
-                                    <h1 class="hero-title" th:style="'margin:0;font-size:20px;font-weight:700;line-height:1.2;color:' + ${cFg} + ';'"
-                                        th:text="${watchlistName} + ' takip listesinde hareket'">Watchlist hareketi</h1>
-                                    <p th:style="'margin:6px 0 0;font-size:12px;color:' + ${cMuted} + ';'">
-                                        Eşik üstündeki değişimler aşağıda listelendi.
-                                    </p>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-
-                <!-- Item rows -->
-                <tr>
-                    <td style="padding:0 32px 8px;">
-                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                            <th:block th:each="item, iter : ${items}">
-                                <tr>
-                                    <td th:style="'padding:14px;background:' + ${cRowBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;'">
-                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                                            <tr>
-                                                <td th:if="${item.image != null}" width="54" style="padding:0 14px 0 0;vertical-align:middle;">
-                                                    <img th:src="${item.image}" alt="" width="40" height="40"
-                                                         th:style="'display:block;width:40px;height:40px;border-radius:50%;border:1px solid ' + ${cBorder} + ';background:' + ${cBg} + ';'"/>
-                                                </td>
-                                                <td style="vertical-align:middle;">
-                                                    <p th:style="'margin:0;font-size:14px;font-weight:600;color:' + ${cFg} + ';'"
-                                                       th:text="${item.assetName}">Bitcoin</p>
-                                                    <p class="num" th:style="'margin:2px 0 0;font-size:11px;color:' + ${cMuted} + ';'"
-                                                       th:text="${item.assetCodeUpper}">BTC</p>
-                                                </td>
-                                                <td align="right" style="vertical-align:middle;">
-                                                    <p class="num" th:style="'margin:0;font-size:14px;font-weight:700;color:' + ${cFg} + ';'"
-                                                       th:text="${item.priceFormatted}">₺3.674.497,00</p>
-                                                    <p class="num" th:style="'margin:3px 0 0;font-size:12px;font-weight:600;color:' + (${item.isUp} ? ${cSuccess} : ${cDanger}) + ';'">
-                                                        <span th:text="${item.isUp ? '▲' : '▼'}">▲</span>
-                                                        <span th:text="${item.deltaFormatted}">+5,20%</span>
-                                                    </p>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr th:if="${!iter.last}"><td style="height:10px;line-height:0;font-size:0;">&nbsp;</td></tr>
-                            </th:block>
-                        </table>
-                    </td>
-                </tr>
-
-                <!-- CTA -->
-                <tr>
-                    <td style="padding:18px 32px 28px;" align="center">
-                        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
-                            <tr>
-                                <td th:style="'background:linear-gradient(90deg,' + ${cAccent} + ',' + ${cAccent2} + ');border-radius:10px;'">
-                                    <a href="http://localhost/watch"
-                                       style="display:inline-block;padding:13px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;">
-                                        Takip listemi aç →
-                                    </a>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-
-            <!-- Footer -->
-            <table role="presentation" class="container" width="560" cellspacing="0" cellpadding="0" border="0" style="width:560px;max-width:560px;">
-                <tr>
-                    <td style="padding:18px 4px 0;">
-                        <p th:style="'margin:0 0 6px;font-size:12px;line-height:1.6;color:' + ${cSubtle} + ';'">
-                            Bu bildirimi takip listenizde tanımlı eşik üstündeki değişimler için aldınız.
-                        </p>
-                        <p th:style="'margin:0;font-size:11px;color:' + ${cSubtle} + ';'">
-                            E-posta tercihlerini <a href="http://localhost/settings"
-                            th:style="'color:' + ${cAccent} + ';'">Ayarlar</a> sekmesinden değiştirebilirsiniz.
-                        </p>
-                    </td>
-                </tr>
-            </table>
-
-        </td>
-    </tr>
-</table>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:22px;">
+        <tr>
+            <td th:style="'background:' + ${cAccent} + ';background-image:linear-gradient(135deg,' + ${cAccent} + ' 0%,' + ${cAccentMid} + ' 50%,' + ${cAccent2} + ' 100%);border-radius:10px;box-shadow:0 6px 22px -4px rgba(99,102,241,0.45);'">
+                <a href="http://localhost/watch" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;line-height:1;">
+                    Takip listemi aç &nbsp;→
+                </a>
+            </td>
+        </tr>
+    </table>
+</th:block>
 </body>
 </html>

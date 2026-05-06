@@ -48,8 +48,8 @@ public class CommodityProperties {
     ));
 
     private List<DerivativeRule> derivatives = new ArrayList<>(List.of(
-            new DerivativeRule("XAUTRY", "XAUTRYG", new BigDecimal("31.1035")),
-            new DerivativeRule("XAGTRY", "XAGTRYG", new BigDecimal("31.1035"))
+            new DerivativeRule("XAUTRY", "XAUTRYG", new BigDecimal("31.1035"), "Altın (Gram)", "Gram Altın"),
+            new DerivativeRule("XAGTRY", "XAGTRYG", new BigDecimal("31.1035"), "Gümüş (Gram)", "Gram Gümüş")
     ));
 
     @Getter
@@ -60,5 +60,7 @@ public class CommodityProperties {
         private String sourceCode;
         private String derivativeCode;
         private BigDecimal divisor;
+        private String name;
+        private String nameTr;
     }
 }

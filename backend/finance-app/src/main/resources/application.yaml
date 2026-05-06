@@ -162,9 +162,13 @@ app:
       - source-code: "XAUTRY"
         derivative-code: "XAUTRYG"
         divisor: 31.1035
+        name: "Altın (Gram)"
+        name-tr: "Gram Altın"
       - source-code: "XAGTRY"
         derivative-code: "XAGTRYG"
         divisor: 31.1035
+        name: "Gümüş (Gram)"
+        name-tr: "Gram Gümüş"
 
   news:
     max-articles-per-source: 50

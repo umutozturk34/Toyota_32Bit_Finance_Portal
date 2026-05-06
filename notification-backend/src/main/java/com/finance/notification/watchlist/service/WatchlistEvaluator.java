@@ -73,9 +73,12 @@ public class WatchlistEvaluator {
                 GroupKey key = new GroupKey(item.getUserSub(), item.getWatchlistId());
                 firedByGroup.computeIfAbsent(key, k -> new ArrayList<>())
                         .add(watchlistItemMapper.toFiredItem(item, snapshot, currentPrice, deltaPct));
+                item.recordObservation(currentPrice);
+                watchlistService.persist(item);
+            } else if (item.getLastSeenPrice() == null) {
+                item.recordObservation(currentPrice);
+                watchlistService.persist(item);
             }
-            item.recordObservation(currentPrice);
-            watchlistService.persist(item);
         }
         return firedByGroup;
     }

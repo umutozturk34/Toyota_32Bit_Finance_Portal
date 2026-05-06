@@ -1,26 +1,17 @@
 package com.finance.notification.alert.dto;
 
-import com.finance.common.model.MarketType;
 import com.finance.notification.alert.model.AlertDirection;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
-public record PriceAlertCreateRequest(
-        @NotNull(message = "Piyasa tipi zorunlu") MarketType marketType,
-        @NotBlank(message = "Varlık kodu zorunlu") @Size(max = 32, message = "Varlık kodu en fazla 32 karakter olabilir") String assetCode,
-        @NotNull(message = "Yön zorunlu") AlertDirection direction,
-        @NotNull(message = "Eşik zorunlu")
-        @DecimalMin(value = "0", inclusive = false, message = "Eşik 0'dan büyük olmalı")
+public record PriceAlertUpdateRequest(
+        AlertDirection direction,
+        @DecimalMin(value = "0", inclusive = false, message = "Eşik 0'dan büyük bir sayı olmalı")
         @DecimalMax(value = "999999999999.9999", message = "Eşik çok büyük")
-        BigDecimal threshold,
-        @Size(max = 8) String currency,
-        BigDecimal referencePrice
+        BigDecimal threshold
 ) {
     private static final BigDecimal MIN_GRANULARITY = new BigDecimal("0.0001");
     private static final BigDecimal MAX_PCT = new BigDecimal("999.9999");

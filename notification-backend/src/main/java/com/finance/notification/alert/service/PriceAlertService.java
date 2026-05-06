@@ -6,6 +6,7 @@ import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
 import com.finance.notification.alert.dto.PriceAlertCreateRequest;
 import com.finance.notification.alert.dto.PriceAlertResponse;
+import com.finance.notification.alert.dto.PriceAlertUpdateRequest;
 import com.finance.notification.alert.mapper.PriceAlertMapper;
 import com.finance.notification.alert.model.PriceAlert;
 import com.finance.notification.alert.repository.PriceAlertRepository;
@@ -55,6 +56,14 @@ public class PriceAlertService {
     public PriceAlertResponse reactivate(Long id, String userSub) {
         PriceAlert alert = ownedOr404(id, userSub);
         alert.reactivate();
+        return mapper.toResponse(repository.save(alert));
+    }
+
+    @Transactional
+    public PriceAlertResponse update(Long id, String userSub, PriceAlertUpdateRequest request) {
+        PriceAlert alert = ownedOr404(id, userSub);
+        if (request.direction() != null) alert.setDirection(request.direction());
+        if (request.threshold() != null) alert.setThreshold(request.threshold());
         return mapper.toResponse(repository.save(alert));
     }
 

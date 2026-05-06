@@ -4,6 +4,7 @@ import com.finance.common.dto.ApiResponse;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.notification.alert.dto.PriceAlertCreateRequest;
 import com.finance.notification.alert.dto.PriceAlertResponse;
+import com.finance.notification.alert.dto.PriceAlertUpdateRequest;
 import com.finance.notification.alert.service.PriceAlertService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -64,5 +66,14 @@ public class PriceAlertController {
             @PathVariable Long id) {
         return ApiResponse.success("Price alert reactivated",
                 service.reactivate(id, jwt.getSubject()));
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<PriceAlertResponse> update(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long id,
+            @Valid @RequestBody PriceAlertUpdateRequest request) {
+        return ApiResponse.success("Price alert updated",
+                service.update(id, jwt.getSubject(), request));
     }
 }

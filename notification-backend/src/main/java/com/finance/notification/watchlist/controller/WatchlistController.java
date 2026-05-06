@@ -105,6 +105,15 @@ public class WatchlistController {
         return ApiResponse.success("Watchlist item removed", null);
     }
 
+    @PutMapping("/items/{itemId}")
+    public ApiResponse<WatchlistItemResponse> updateItem(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long itemId,
+            @Valid @RequestBody com.finance.notification.watchlist.dto.WatchlistItemUpdateRequest request) {
+        return ApiResponse.success("Watchlist item updated",
+                watchlistService.updateItem(itemId, jwt.getSubject(), request));
+    }
+
     @PostMapping("/favorites/items")
     public ApiResponse<WatchlistItemResponse> addToDefault(
             @AuthenticationPrincipal Jwt jwt,

@@ -60,7 +60,7 @@ public class WatchlistItem {
     @Column(name = "note", length = 255)
     private String note;
 
-    @Column(name = "delta_threshold", precision = 5, scale = 2)
+    @Column(name = "delta_threshold", precision = 7, scale = 4)
     private BigDecimal deltaThreshold;
 
     @Column(name = "last_seen_price", precision = 19, scale = 4)
@@ -97,7 +97,8 @@ public class WatchlistItem {
     public boolean exceedsThreshold(BigDecimal currentPrice, BigDecimal globalDefault) {
         BigDecimal effective = deltaThreshold != null ? deltaThreshold : globalDefault;
         return deltaPercent(currentPrice)
-                .map(pct -> pct.abs().compareTo(effective) >= 0)
+                .map(BigDecimal::abs)
+                .map(delta -> effective.signum() == 0 ? delta.signum() > 0 : delta.compareTo(effective) >= 0)
                 .orElse(false);
     }
 

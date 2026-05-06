@@ -7,6 +7,7 @@ import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
 import com.finance.notification.watchlist.dto.WatchlistItemCreateRequest;
 import com.finance.notification.watchlist.dto.WatchlistItemResponse;
+import com.finance.notification.watchlist.dto.WatchlistItemUpdateRequest;
 import com.finance.notification.watchlist.mapper.WatchlistItemMapper;
 import com.finance.notification.watchlist.model.Watchlist;
 import com.finance.notification.watchlist.model.WatchlistItem;
@@ -94,6 +95,15 @@ public class WatchlistService {
     public void removeItem(Long itemId, String userSub) {
         WatchlistItem item = ownedItemOr404(itemId, userSub);
         repository.delete(item);
+    }
+
+    @Transactional
+    public WatchlistItemResponse updateItem(Long itemId, String userSub, WatchlistItemUpdateRequest request) {
+        WatchlistItem item = ownedItemOr404(itemId, userSub);
+        if (request.note() != null) item.setNote(request.note().isBlank() ? null : request.note());
+        if (request.deltaThreshold() != null) item.setDeltaThreshold(request.deltaThreshold());
+        WatchlistItem saved = repository.save(item);
+        return enrich(List.of(saved)).get(0);
     }
 
     @Transactional(readOnly = true)

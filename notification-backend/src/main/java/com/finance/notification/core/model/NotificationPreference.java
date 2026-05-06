@@ -64,6 +64,21 @@ public class NotificationPreference {
     @Column(name = "inapp_system", nullable = false)
     private boolean inappSystem;
 
+    @Column(name = "email_market_opened", nullable = false)
+    private boolean emailMarketOpened;
+
+    @Column(name = "inapp_market_opened", nullable = false)
+    private boolean inappMarketOpened;
+
+    @Column(name = "email_market_data_updated", nullable = false)
+    private boolean emailMarketDataUpdated;
+
+    @Column(name = "inapp_market_data_updated", nullable = false)
+    private boolean inappMarketDataUpdated;
+
+    @Column(name = "market_session_markets", nullable = false, length = 96)
+    private String marketSessionMarkets;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -104,6 +119,11 @@ public class NotificationPreference {
                 .inappMessages(true)
                 .emailSystem(false)
                 .inappSystem(true)
+                .emailMarketOpened(false)
+                .inappMarketOpened(true)
+                .emailMarketDataUpdated(false)
+                .inappMarketDataUpdated(false)
+                .marketSessionMarkets("STOCK,FOREX,FUND,COMMODITY,BOND,NEWS")
                 .build();
     }
 }

@@ -11,6 +11,11 @@ public record NotificationPreferenceResponse(
         boolean emailMessages,
         boolean inappMessages,
         boolean emailSystem,
-        boolean inappSystem
+        boolean inappSystem,
+        boolean emailMarketOpened,
+        boolean inappMarketOpened,
+        boolean emailMarketDataUpdated,
+        boolean inappMarketDataUpdated,
+        String marketSessionMarkets
 ) {
 }

@@ -123,6 +123,11 @@ notification:
         close: '23:59'
         trading-days: [SUNDAY, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]
         zone: Europe/Istanbul
+      NEWS:
+        open: '00:00'
+        close: '23:59'
+        trading-days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+        zone: Europe/Istanbul
 
 keycloak:
   base-url: ${KEYCLOAK_BASE_URL:http://keycloak:8080}

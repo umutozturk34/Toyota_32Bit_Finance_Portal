@@ -5,7 +5,9 @@ public enum MarketType {
     CRYPTO("Kripto", "crypto", "id", "currentPriceTry", null),
     FOREX("Döviz", "forex", "currencyCode", "sellingPrice", "currentPrice"),
     FUND("Fon", "fund", "fundCode", "price", null),
-    COMMODITY("Emtia", "commodity", "commodityCode", "currentPrice", null);
+    COMMODITY("Emtia", "commodity", "commodityCode", "currentPrice", null),
+    BOND("Tahvil", "bond", "code", "currentPrice", null),
+    NEWS("Haber", "news", "id", null, null);
 
     private final String displayLabel;
     private final String redisLabel;

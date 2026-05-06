@@ -16,7 +16,8 @@ public enum SessionMarket {
     FOREX("Döviz"),
     FUND("Fon"),
     COMMODITY("Emtia"),
-    BOND("Tahvil");
+    BOND("Tahvil"),
+    NEWS("Haberler");
 
     private final String displayLabel;
 

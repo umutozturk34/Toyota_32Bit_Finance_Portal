@@ -23,4 +23,14 @@ export const userCredentialService = {
     const response = await api.get(`${PATH}/email/pending`);
     return response.data.data;
   },
+
+  getTwoFactorStatus: async () => {
+    const response = await api.get(`${PATH}/2fa`);
+    return response.data.data;
+  },
+
+  disableTwoFactor: async () => {
+    const response = await api.delete(`${PATH}/2fa`);
+    return response.data.data;
+  },
 };

@@ -1,51 +1,62 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Shield, Settings as SettingsIcon, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
-import keycloak, { getToken } from './keycloak';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Shield, ShieldOff, RefreshCw, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import keycloak from './keycloak';
+import { userCredentialService } from '../../shared/services/userCredentialService';
+import { toast } from '../../shared/components/Toast';
+import ConfirmDialog from '../../shared/components/ConfirmDialog';
 
-const KEYCLOAK_ACCOUNT_URL = 'http://localhost:8180/realms/finance-realm/account/credentials';
+const STATUS_KEY = ['twoFactor', 'status'];
+
+function useTwoFactorStatus() {
+    return useQuery({
+        queryKey: STATUS_KEY,
+        queryFn: userCredentialService.getTwoFactorStatus,
+        staleTime: 30_000,
+    });
+}
+
+function useDisableTwoFactor() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: userCredentialService.disableTwoFactor,
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: STATUS_KEY }),
+    });
+}
 
 export default function TwoFactorPanel() {
-    const [status, setStatus] = useState({ loading: true, configured: false });
-
-    useEffect(() => {
-        let cancelled = false;
-        (async () => {
-            try {
-                const token = await getToken();
-                const response = await axios.get(KEYCLOAK_ACCOUNT_URL, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                const hasTotp = response.data.some((cred) =>
-                    cred.type === 'otp'
-                    && Array.isArray(cred.userCredentialMetadatas)
-                    && cred.userCredentialMetadatas.length > 0
-                );
-                if (!cancelled) setStatus({ loading: false, configured: hasTotp });
-            } catch {
-                if (!cancelled) setStatus({ loading: false, configured: false });
-            }
-        })();
-        return () => { cancelled = true; };
-    }, []);
+    const { data: status, isLoading } = useTwoFactorStatus();
+    const disable = useDisableTwoFactor();
+    const [confirmOpen, setConfirmOpen] = useState(false);
 
     const handleSetup = () => {
+        toast.info('Yönlendiriliyor', 'Authenticator kurulum sayfasına götürüleceksin');
         keycloak.login({
             action: 'CONFIGURE_TOTP',
             redirectUri: window.location.href,
         });
     };
 
-    if (status.loading) {
+    const handleDisable = async () => {
+        try {
+            await disable.mutateAsync();
+            toast.success('2FA devre dışı', 'İki adımlı doğrulama hesabından kaldırıldı');
+            setConfirmOpen(false);
+        } catch (err) {
+            toast.error('İşlem başarısız', err?.response?.data?.message || 'Tekrar dene');
+        }
+    };
+
+    if (isLoading) {
         return (
             <div className="flex items-center gap-2 rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-xs text-fg-muted">
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
-                Durum kontrol ediliyor...
+                Durum kontrol ediliyor…
             </div>
         );
     }
 
-    const enabled = status.configured;
+    const enabled = !!status?.configured;
 
     return (
         <div className="space-y-2.5">
@@ -61,20 +72,55 @@ export default function TwoFactorPanel() {
             </div>
             <p className="text-[11px] text-fg-muted leading-relaxed px-1">
                 {enabled
-                    ? 'Hesabın iki adımlı doğrulama ile korunuyor.'
+                    ? 'Hesabın iki adımlı doğrulama ile korunuyor. Güvenliği yeniden kurmak veya devre dışı bırakmak için aşağıdaki seçenekleri kullan.'
                     : 'Google/Microsoft Authenticator ile hesabını ek güvenlik katmanıyla koru.'}
             </p>
-            <button
-                onClick={handleSetup}
-                className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer"
-            >
-                {enabled
-                    ? <><SettingsIcon className="h-3.5 w-3.5" /> 2FA'yı Yönet</>
-                    : <><Shield className="h-3.5 w-3.5" /> 2FA'yı Kur</>}
-            </button>
+
+            {enabled ? (
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleSetup}
+                        className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated hover:bg-surface text-fg py-2.5 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                        <RefreshCw className="h-3.5 w-3.5 text-accent" />
+                        Yeniden kur
+                    </button>
+                    <button
+                        onClick={() => setConfirmOpen(true)}
+                        disabled={disable.isPending}
+                        className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-danger/30 bg-danger/5 hover:bg-danger/10 text-danger py-2.5 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                        <ShieldOff className="h-3.5 w-3.5" />
+                        Devre dışı bırak
+                    </button>
+                </div>
+            ) : (
+                <button
+                    onClick={handleSetup}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer"
+                >
+                    <Shield className="h-3.5 w-3.5" />
+                    2FA'yı Kur
+                </button>
+            )}
+
             <p className="text-[10px] text-fg-subtle leading-relaxed px-1">
-                Doğrulama kurulum sayfasına yönlendirileceksin.
+                {enabled
+                    ? 'Devre dışı bırakırsan tek faktörlü oturum açma aktif olur, hesap güvenliği düşer.'
+                    : 'Doğrulama kurulum sayfasına yönlendirileceksin.'}
             </p>
+
+            <ConfirmDialog
+                open={confirmOpen}
+                title="2FA devre dışı bırakılsın mı?"
+                message="Hesabın artık tek faktörlü oturum açma ile korunacak. Bu işlem geri alınabilir — istediğin zaman tekrar kurabilirsin."
+                confirmLabel="Devre dışı bırak"
+                cancelLabel="Vazgeç"
+                variant="danger"
+                loading={disable.isPending}
+                onConfirm={handleDisable}
+                onCancel={() => setConfirmOpen(false)}
+            />
         </div>
     );
 }

@@ -6,6 +6,7 @@ import com.finance.user.dto.EmailChangeInitiateRequest;
 import com.finance.user.dto.EmailChangePendingResponse;
 import com.finance.user.dto.PasswordChangeInitiateRequest;
 import com.finance.user.service.EmailChangeService;
+import com.finance.user.service.TwoFactorService;
 import com.finance.user.service.UserCredentialService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class UserCredentialController {
 
     private final UserCredentialService credentialService;
     private final EmailChangeService emailChangeService;
+    private final TwoFactorService twoFactorService;
 
     @PostMapping("/password/initiate-change")
     public ApiResponse<Void> initiatePasswordChange(
@@ -64,5 +66,16 @@ public class UserCredentialController {
     public ApiResponse<Void> cancelEmailChange(@AuthenticationPrincipal Jwt jwt) {
         emailChangeService.cancel(jwt.getSubject());
         return ApiResponse.success("E-posta değişikliği iptal edildi", null);
+    }
+
+    @GetMapping("/2fa")
+    public ApiResponse<TwoFactorService.TwoFactorStatus> getTwoFactorStatus(@AuthenticationPrincipal Jwt jwt) {
+        return ApiResponse.success("2FA durumu", twoFactorService.status(jwt.getSubject()));
+    }
+
+    @DeleteMapping("/2fa")
+    public ApiResponse<Integer> disableTwoFactor(@AuthenticationPrincipal Jwt jwt) {
+        int removed = twoFactorService.disable(jwt.getSubject());
+        return ApiResponse.success("2FA devre dışı bırakıldı", removed);
     }
 }

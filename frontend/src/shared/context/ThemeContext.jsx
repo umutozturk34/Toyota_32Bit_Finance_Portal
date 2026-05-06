@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useUserPreferences, useUpdateUserPreferences } from '../hooks/useUserPreferences';
 import { useAuth } from '../../features/auth/AuthContext';
 
@@ -17,12 +17,12 @@ function resolveTheme(preference) {
 function readStoredPreference() {
     try {
         const stored = localStorage.getItem('finance-theme');
-        if (stored === 'light') return { value: 'LIGHT', exists: true };
-        if (stored === 'dark') return { value: 'DARK', exists: true };
+        if (stored === 'light') return 'LIGHT';
+        if (stored === 'dark') return 'DARK';
     } catch {
         /* localStorage unavailable */
     }
-    return { value: 'DARK', exists: false };
+    return 'DARK';
 }
 
 function BootSplash() {
@@ -58,16 +58,15 @@ export function ThemeProvider({ children }) {
     const { isAuthenticated, loading: authLoading } = useAuth();
     const { preferences, isLoading: prefsLoading, isFetched: prefsFetched } = useUserPreferences();
     const updatePreferences = useUpdateUserPreferences();
-    const [{ value: initialPref, exists: initialFromLocal }] = useState(readStoredPreference);
-    const [storedPreference, setStoredPreference] = useState(initialPref);
-    const localOverrideRef = useRef(initialFromLocal);
+    const [storedPreference, setStoredPreference] = useState(readStoredPreference);
 
     useEffect(() => {
-        if (localOverrideRef.current) return;
+        if (!isAuthenticated) return;
+        if (!prefsFetched) return;
         if (!preferences.theme) return;
         if (preferences.theme === storedPreference) return;
         setStoredPreference(preferences.theme);
-    }, [preferences.theme, storedPreference]);
+    }, [isAuthenticated, prefsFetched, preferences.theme, storedPreference]);
 
     const themePreference = storedPreference;
     const theme = useMemo(() => resolveTheme(themePreference), [themePreference]);
@@ -83,10 +82,12 @@ export function ThemeProvider({ children }) {
     }, [theme]);
 
     const setThemePreference = (next) => {
-        localOverrideRef.current = true;
+        const previous = storedPreference;
         setStoredPreference(next);
         if (isAuthenticated) {
-            updatePreferences.mutate({ theme: next });
+            updatePreferences.mutate({ theme: next }, {
+                onError: () => setStoredPreference(previous),
+            });
         }
     };
 

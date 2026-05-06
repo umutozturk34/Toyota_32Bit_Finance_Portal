@@ -117,6 +117,29 @@ public class KeycloakAdminClient {
         return user;
     }
 
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> listCredentials(String userId) {
+        List<Map<String, Object>> creds = executeWithRetry("listCredentials", token -> webClient.get()
+                .uri("/admin/realms/{realm}/users/{id}/credentials", properties.getRealm(), userId)
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .bodyToFlux(Map.class)
+                .map(m -> (Map<String, Object>) m)
+                .collectList()
+                .block());
+        return creds == null ? List.of() : creds;
+    }
+
+    public void deleteCredential(String userId, String credentialId) {
+        executeWithRetry("deleteCredential", token -> webClient.delete()
+                .uri("/admin/realms/{realm}/users/{id}/credentials/{credId}",
+                        properties.getRealm(), userId, credentialId)
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .toBodilessEntity()
+                .block());
+    }
+
     public void sendActionsEmail(String userId, List<String> actions, String clientId, String redirectUri, long lifespanSeconds) {
         executeWithRetry("sendActionsEmail", token -> webClient.put()
                 .uri(uriBuilder -> uriBuilder

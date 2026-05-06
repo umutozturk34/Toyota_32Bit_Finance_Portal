@@ -101,6 +101,27 @@ class DefaultMarketSessionResolverTest {
     }
 
     @Test
+    void should_returnOpenAlways_when_scheduleHasOpenEqualToCloseSentinel() {
+        MarketHoursProperties.MarketSchedule alwaysOpen = new MarketHoursProperties.MarketSchedule(
+                LocalTime.MIDNIGHT, LocalTime.MIDNIGHT,
+                Set.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY,
+                        DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY),
+                IST);
+        Map<SessionMarket, MarketHoursProperties.MarketSchedule> map = new EnumMap<>(SessionMarket.class);
+        map.put(SessionMarket.CRYPTO, alwaysOpen);
+        DefaultMarketSessionResolver resolver = new DefaultMarketSessionResolver(new MarketHoursProperties(map));
+
+        Instant problemMinute = ZonedDateTime.of(2026, 5, 5, 23, 59, 30, 0, IST).toInstant();
+        Instant midnight = ZonedDateTime.of(2026, 5, 5, 0, 0, 0, 0, IST).toInstant();
+        Instant midDay = ZonedDateTime.of(2026, 5, 5, 12, 0, 0, 0, IST).toInstant();
+
+        assertThat(resolver.resolve(SessionMarket.CRYPTO, problemMinute)).contains(MarketSession.OPEN);
+        assertThat(resolver.resolve(SessionMarket.CRYPTO, midnight)).contains(MarketSession.OPEN);
+        assertThat(resolver.resolve(SessionMarket.CRYPTO, midDay)).contains(MarketSession.OPEN);
+        assertThat(resolver.nextTransition(SessionMarket.CRYPTO, midDay)).isEmpty();
+    }
+
+    @Test
     void should_skipWeekend_when_findingNextTransition() {
         DefaultMarketSessionResolver resolver = resolverWith(stockHours());
         Instant fridayEvening = ZonedDateTime.of(2026, 5, 8, 19, 0, 0, 0, IST).toInstant();

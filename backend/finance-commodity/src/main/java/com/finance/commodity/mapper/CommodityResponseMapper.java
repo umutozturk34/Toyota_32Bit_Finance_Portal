@@ -1,5 +1,4 @@
 package com.finance.commodity.mapper;
-import com.finance.common.model.MarketType;
 
 import com.finance.common.mapper.MarketMetadataBuilder;
 

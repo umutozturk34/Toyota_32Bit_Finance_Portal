@@ -29,7 +29,7 @@ const CHART_RANGE_OPTIONS = [
   { value: '6M', label: '6A' },
   { value: '1Y', label: '1Y' },
   { value: '5Y', label: '5Y' },
-  { value: 'ALL', label: 'TÜM' },
+  { value: 'ALL', label: 'Maks' },
 ];
 
 const REPORT_OPTIONS = [

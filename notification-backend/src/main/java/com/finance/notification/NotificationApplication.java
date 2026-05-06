@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.time.Clock;
 import java.util.TimeZone;
@@ -21,6 +22,7 @@ import java.util.TimeZone;
 })
 @EnableConfigurationProperties({AppProperties.class, BroadcastProperties.class, MarketHoursProperties.class})
 @EnableAsync
+@EnableScheduling
 public class NotificationApplication {
 
     public static void main(String[] args) {

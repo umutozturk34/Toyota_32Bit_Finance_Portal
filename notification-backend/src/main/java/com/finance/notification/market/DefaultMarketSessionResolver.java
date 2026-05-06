@@ -36,6 +36,7 @@ public class DefaultMarketSessionResolver implements MarketSessionResolver {
     private MarketSession evaluate(MarketHoursProperties.MarketSchedule schedule, Instant at) {
         ZonedDateTime now = at.atZone(schedule.zone());
         if (!schedule.tradingDays().contains(now.getDayOfWeek())) return MarketSession.CLOSED;
+        if (schedule.open().equals(schedule.close())) return MarketSession.OPEN;
         LocalTime current = now.toLocalTime();
         boolean afterOpen = !current.isBefore(schedule.open());
         boolean beforeClose = current.isBefore(schedule.close());
@@ -43,6 +44,7 @@ public class DefaultMarketSessionResolver implements MarketSessionResolver {
     }
 
     private Instant findNextBoundary(MarketHoursProperties.MarketSchedule schedule, Instant at) {
+        if (schedule.open().equals(schedule.close())) return null;
         ZonedDateTime cursor = at.atZone(schedule.zone());
         for (int day = 0; day <= LOOKAHEAD_DAYS; day++) {
             LocalDate date = cursor.toLocalDate().plusDays(day);

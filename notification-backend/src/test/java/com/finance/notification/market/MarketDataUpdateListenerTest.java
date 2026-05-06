@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -74,12 +75,15 @@ class MarketDataUpdateListenerTest {
     }
 
     @Test
-    void should_acknowledgeEvenWhenDispatcherThrows() {
+    void should_propagateExceptionWithoutAcking_when_transientFailureOccurs() {
         when(preferences.findAll()).thenThrow(new RuntimeException("DB down"));
 
-        listener().onMarketUpdated(MarketUpdatedEvent.of(MarketType.STOCK, "scheduler"), ack);
+        assertThatThrownBy(() ->
+                listener().onMarketUpdated(MarketUpdatedEvent.of(MarketType.STOCK, "scheduler"), ack))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("DB down");
 
-        verify(ack).acknowledge();
+        verify(ack, never()).acknowledge();
         verify(dispatcher, never()).dispatch(any());
     }
 

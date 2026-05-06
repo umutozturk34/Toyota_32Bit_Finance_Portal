@@ -57,7 +57,7 @@ Türkiye finansal piyasalarına odaklı, açık kaynaklı kişisel finans takip 
 
 ## Yaklaşan Sürümler
 
-### v0.14 — Kullanıcı Modülü & Yönetim
+### v0.14 — Kullanıcı Modülü & Yönetim ✓ landed
 
 **Hedef:** Kullanıcı tercihleri, layout customization, admin paneli, identity-adjacent ops.
 
@@ -76,28 +76,33 @@ Türkiye finansal piyasalarına odaklı, açık kaynaklı kişisel finans takip 
 
 ---
 
-### v0.15 — Bildirim Mikroservisi & Takip Listesi
+### v0.15 — Bildirim Mikroservisi & Takip Listesi ✓ landed
 
 **Hedef:** Event-driven bildirim sistemi — fiyat alarmı, takip listesi, in-app + email bildirimler ayrı bir Spring Boot uygulaması olarak.
 
 **Mimari:** Ayrı `finance-notification-app` Maven sibling module, port 8082. Monolit ile **Kafka event-driven** iletişim (REST callback yok). Shared `finance_db` ama ayrı Flyway history table.
 
-**Kapsam:**
+**Track durumu:**
+
+- ✓ **Track A** — notification microservice scaffolding, Kafka contracts, domain entities, email + in-app dispatch, SSE stream, watchlist, price alerts, reports skeleton, messaging migration
+- ✓ **Track B** — market session bildirimleri: minute-tick `MarketSessionScheduler` open/closed transition'lar için (24/7 sentinel ile crypto/news bypass), Kafka `MarketDataUpdateListener` data-updated için (eventId Caffeine idempotency + `auto-offset-reset: latest` ile redelivery güvenli), source-aware başlık (sabah/öğlen/akşam/günlük), per-market opt-in chip selector, terminal-HUD `MarketStatusBadge` her asset detail sayfasında
+
+**Kapsam (tamamlanan):**
 
 - **Notification microservice scaffolding** — yeni Spring Boot app, port 8082, Nginx regex routing
 - **Kafka event contract**:
-  - `market.updated` topic (24h retention) — monolit market refresh sonrası publish
+  - `market.updated` topic — monolit market refresh sonrası publish; consumer'lar `notification-service-market` (alert/watchlist evaluator) + `notification-data-updated` (data-updated bildirim)
   - `user.preferences.updated` compacted topic — kullanıcı tercihi değişikliği AFTER_COMMIT publish
 - **Domain entities** (notification microservice tarafında):
-  - `Notification`, `NotificationPreference` (channel matrix × type + quiet hours)
+  - `Notification`, `NotificationPreference` (channel matrix × type + master email switch + per-market opt-in CSV)
   - `PriceAlert` (threshold, direction, one-shot/recurring) + `AlertEvaluator`
   - `Watchlist` (named, multiple per user, default "Favoriler" auto-created, max 20) + `WatchlistItem` + `WatchlistEvaluator` (delta detection)
   - `UserPreferenceCache` (Kafka consumer'dan beslenen lokal cache)
-- **Email dispatch** — Spring Mail + Thymeleaf templates (`price-alert.html`, `watchlist-delta.html`, `report-ready.html`)
+- **Email dispatch** — Spring Mail + Thymeleaf templates (`price-alert.html`, `watchlist-delta.html`, `report-ready.html`, `market-opened.html`, `market-closed.html`, `market-data-updated.html`)
 - **In-app notifications** — bell icon, unread badge, paged notifications page
 - **SSE live stream** — `/api/v1/notifications/stream` (gerçek zamanlı bildirim push)
-- **Messaging migrate** — user↔admin messaging monolitten notification-app'e taşınır (event-driven dispatcher pattern altına alınır)
-- **Frontend** — birleştirilmiş `/watch` sayfası (watchlist + price-alerts), watchlist için multi-list UI (sekme veya dropdown ile aktif liste seçimi, "Yeni liste" butonu, "Favorilere ekle" tek-tık aksiyonu), bell icon, asset detail sayfalarında reusable `AssetActionsBar` (Takip toggle + Fiyat alarmı butonu)
+- **Messaging migrate** — user↔admin messaging monolitten notification-app'e taşındı; active-conversation skip + bulk mark-read; closed conversations + admin destructive ops + paged thread view + broadcast
+- **Frontend** — `/messages` (user) ve `/admin/messages` (admin) sayfaları, watchlist + price-alerts UI, settings → 8 satırlı bildirim türleri matrisi (master e-posta + per-type email/inapp + per-market chip selector), `MarketStatusBadge` + `MarketSelectionChips` terminal-HUD bileşenler
 
 ---
 

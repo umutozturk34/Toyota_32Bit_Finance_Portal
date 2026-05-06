@@ -1,5 +1,6 @@
 package com.finance.notification.core.model;
 
+import com.finance.notification.market.SessionMarket;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -15,6 +16,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -25,6 +29,15 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "notification_preferences")
 public class NotificationPreference {
+
+    private static final String MARKETS_DELIMITER = ",";
+
+    /**
+     * 24/7 markets that are excluded from the default opt-in set so their
+     * data-refresh notifications stay opt-in until the user explicitly
+     * enables them through the chip selector.
+     */
+    private static final EnumSet<SessionMarket> DEFAULT_OPT_OUT_MARKETS = EnumSet.of(SessionMarket.CRYPTO);
 
     @Id
     @EqualsAndHashCode.Include
@@ -111,6 +124,20 @@ public class NotificationPreference {
         return emailEnabled && type.isEmailWantedBy(this);
     }
 
+    public boolean subscribesToMarket(SessionMarket market) {
+        if (marketSessionMarkets == null || marketSessionMarkets.isBlank()) return false;
+        Set<String> selected = Set.copyOf(Arrays.asList(marketSessionMarkets.split(MARKETS_DELIMITER)));
+        return selected.contains(market.name());
+    }
+
+    private static String defaultMarketSessionMarkets() {
+        return Arrays.stream(SessionMarket.values())
+                .filter(m -> !DEFAULT_OPT_OUT_MARKETS.contains(m))
+                .map(SessionMarket::name)
+                .reduce((a, b) -> a + MARKETS_DELIMITER + b)
+                .orElse("");
+    }
+
     public static NotificationPreference defaultsFor(String userSub) {
         return NotificationPreference.builder()
                 .userSub(userSub)
@@ -131,7 +158,7 @@ public class NotificationPreference {
                 .inappMarketClosed(true)
                 .emailMarketDataUpdated(false)
                 .inappMarketDataUpdated(false)
-                .marketSessionMarkets("STOCK,FOREX,FUND,COMMODITY,BOND,NEWS")
+                .marketSessionMarkets(defaultMarketSessionMarkets())
                 .build();
     }
 }

@@ -14,22 +14,9 @@ import org.springframework.stereotype.Component;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
-/**
- * Drives {@code MARKET_OPENED} / {@code MARKET_CLOSED} dispatch independent of the
- * Kafka {@code market.updated} cadence. Backend cron events fire 15 minutes to
- * several hours after the actual session boundary, so this minute-tick scheduler
- * compares the resolved session against the tracker each minute and dispatches
- * exactly when a transition crosses.
- *
- * <p>Data refresh notifications (which are tied to backend cron timing) stay in
- * {@link MarketDataUpdateListener}.
- */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -67,15 +54,8 @@ public class MarketSessionScheduler {
         log.info("Market session transition market={} new={} subscribers={}",
                 market, current, subscribers.size());
         for (NotificationPreference pref : subscribers) {
-            if (!isMarketSelected(pref, market)) continue;
+            if (!pref.subscribesToMarket(market)) continue;
             dispatcher.dispatch(NotificationRequest.of(pref.getUserSub(), payload));
         }
-    }
-
-    private boolean isMarketSelected(NotificationPreference pref, SessionMarket market) {
-        String selection = pref.getMarketSessionMarkets();
-        if (selection == null || selection.isBlank()) return false;
-        Set<String> selected = new HashSet<>(Arrays.asList(selection.split(",")));
-        return selected.contains(market.name());
     }
 }

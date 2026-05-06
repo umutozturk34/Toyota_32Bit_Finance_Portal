@@ -7,12 +7,32 @@ import com.finance.notification.core.dispatch.payload.MarketDataUpdatedPayload;
 import com.finance.notification.core.model.NotificationType;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 @Component
 public class MarketDataUpdatedHandler implements NotificationHandler {
 
     private static final String EMAIL_TEMPLATE = "market-data-updated";
+
+    /**
+     * Ordered keyword → slot table. Order matters because the matcher returns
+     * the first hit; an unordered {@link Map} would risk classifying
+     * "afternoon-noon-fallback" sources non-deterministically.
+     */
+    private static final List<Map.Entry<String, String>> SLOT_KEYWORDS = List.of(
+            Map.entry("morning", "sabah"),
+            Map.entry("sabah", "sabah"),
+            Map.entry("afternoon", "öğlen"),
+            Map.entry("midday", "öğlen"),
+            Map.entry("noon", "öğlen"),
+            Map.entry("öğle", "öğlen"),
+            Map.entry("ogle", "öğlen"),
+            Map.entry("evening", "akşam"),
+            Map.entry("aksam", "akşam"),
+            Map.entry("akşam", "akşam"),
+            Map.entry("daily", "günlük"),
+            Map.entry("full", "günlük"));
 
     @Override
     public NotificationType type() {
@@ -46,11 +66,9 @@ public class MarketDataUpdatedHandler implements NotificationHandler {
     static String slotFor(String source) {
         if (source == null) return null;
         String lower = source.toLowerCase();
-        if (lower.contains("morning") || lower.contains("sabah")) return "sabah";
-        if (lower.contains("afternoon") || lower.contains("midday") || lower.contains("noon")
-                || lower.contains("öğle") || lower.contains("ogle")) return "öğlen";
-        if (lower.contains("evening") || lower.contains("aksam") || lower.contains("akşam")) return "akşam";
-        if (lower.contains("daily") || lower.contains("full")) return "günlük";
+        for (Map.Entry<String, String> entry : SLOT_KEYWORDS) {
+            if (lower.contains(entry.getKey())) return entry.getValue();
+        }
         return null;
     }
 

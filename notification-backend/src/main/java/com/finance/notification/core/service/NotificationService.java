@@ -6,6 +6,7 @@ import com.finance.notification.core.mapper.NotificationMapper;
 import com.finance.notification.core.model.Notification;
 import com.finance.notification.core.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
@@ -46,24 +48,32 @@ public class NotificationService {
     @Transactional
     public NotificationResponse markRead(Long id, String userSub) {
         Notification notification = ownedOr404(id, userSub);
+        if (!notification.isUnread()) {
+            log.debug("Notification markRead no-op id={} userSub={}", id, userSub);
+        }
         notification.markRead();
         return mapper.toResponse(repository.save(notification));
     }
 
     @Transactional
     public int markAllRead(String userSub) {
-        return repository.markAllRead(userSub, LocalDateTime.now());
+        int updated = repository.markAllRead(userSub, LocalDateTime.now());
+        log.info("Notifications markAllRead userSub={} updated={}", userSub, updated);
+        return updated;
     }
 
     @Transactional
     public void delete(Long id, String userSub) {
         Notification notification = ownedOr404(id, userSub);
         repository.delete(notification);
+        log.info("Notification deleted id={} userSub={}", id, userSub);
     }
 
     @Transactional
     public int deleteAll(String userSub) {
-        return repository.deleteAllByUserSub(userSub);
+        int removed = repository.deleteAllByUserSub(userSub);
+        log.info("Notifications deleteAll userSub={} removed={}", userSub, removed);
+        return removed;
     }
 
     private Notification ownedOr404(Long id, String userSub) {

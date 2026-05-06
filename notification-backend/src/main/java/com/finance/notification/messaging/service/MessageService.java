@@ -19,6 +19,7 @@ import com.finance.notification.messaging.repository.MessageRepository;
 import com.finance.notification.messaging.security.MessageCooldownGuard;
 import com.finance.notification.messaging.security.MessageDuplicateGuard;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class MessageService {
@@ -53,6 +55,7 @@ public class MessageService {
                 .build());
         MessageResponse response = mapper.toResponse(saved);
         events.publishEvent(new AdminInboxEvent(response));
+        log.info("User-to-admin message sent senderSub={} messageId={}", senderSub, saved.getId());
         return response;
     }
 
@@ -69,6 +72,8 @@ public class MessageService {
                 .direction(MessageDirection.ADMIN_TO_USER)
                 .build());
         events.publishEvent(new MessageDispatchEvent(recipientSub, adminSub, body));
+        log.info("Admin-to-user message sent adminSub={} recipientSub={} messageId={}",
+                adminSub, recipientSub, saved.getId());
         return mapper.toResponse(saved);
     }
 
@@ -148,6 +153,8 @@ public class MessageService {
         if (message.getReadAt() == null) {
             message.setReadAt(LocalDateTime.now());
             repository.save(message);
+        } else {
+            log.debug("markRead no-op messageId={} userSub={}", messageId, userSub);
         }
     }
 
@@ -175,6 +182,7 @@ public class MessageService {
     @Transactional
     public void closeConversation(String userSub, String adminSub) {
         if (closedRepository.existsById(userSub)) {
+            log.debug("closeConversation no-op userSub={} alreadyClosed=true", userSub);
             return;
         }
         closedRepository.save(ClosedConversation.builder()
@@ -183,6 +191,7 @@ public class MessageService {
                 .build());
         events.publishEvent(new ConversationLifecycleEvent(
                 userSub, adminSub, ConversationLifecycleEvent.Action.CLOSED));
+        log.info("Conversation closed userSub={} by admin={}", userSub, adminSub);
     }
 
     @Transactional
@@ -191,6 +200,7 @@ public class MessageService {
         closedRepository.deleteById(userSub);
         events.publishEvent(new ConversationLifecycleEvent(
                 userSub, adminSub, ConversationLifecycleEvent.Action.DELETED));
+        log.info("Conversation deleted userSub={} by admin={}", userSub, adminSub);
     }
 
     @Transactional
@@ -199,6 +209,9 @@ public class MessageService {
             closedRepository.deleteById(userSub);
             events.publishEvent(new ConversationLifecycleEvent(
                     userSub, adminSub, ConversationLifecycleEvent.Action.REOPENED));
+            log.info("Conversation reopened userSub={} by admin={}", userSub, adminSub);
+        } else {
+            log.debug("reopenConversation no-op userSub={} notClosed=true", userSub);
         }
     }
 

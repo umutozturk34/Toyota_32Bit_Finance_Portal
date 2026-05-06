@@ -11,6 +11,7 @@ import com.finance.notification.alert.mapper.PriceAlertMapper;
 import com.finance.notification.alert.model.PriceAlert;
 import com.finance.notification.alert.repository.PriceAlertRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class PriceAlertService {
@@ -33,7 +35,11 @@ public class PriceAlertService {
     @Transactional
     public PriceAlertResponse create(String userSub, PriceAlertCreateRequest request) {
         PriceAlert entity = mapper.toEntity(request, userSub);
-        return mapper.toResponse(repository.save(entity));
+        PriceAlert saved = repository.save(entity);
+        log.info("Price alert created userSub={} alertId={} market={} code={} dir={} threshold={}",
+                userSub, saved.getId(), saved.getMarketType(), saved.getAssetCode(),
+                saved.getDirection(), saved.getThreshold());
+        return mapper.toResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -50,13 +56,16 @@ public class PriceAlertService {
     public void delete(Long id, String userSub) {
         PriceAlert alert = ownedOr404(id, userSub);
         repository.delete(alert);
+        log.info("Price alert deleted alertId={} userSub={}", id, userSub);
     }
 
     @Transactional
     public PriceAlertResponse reactivate(Long id, String userSub) {
         PriceAlert alert = ownedOr404(id, userSub);
         alert.reactivate();
-        return mapper.toResponse(repository.save(alert));
+        PriceAlert saved = repository.save(alert);
+        log.info("Price alert reactivated alertId={} userSub={}", id, userSub);
+        return mapper.toResponse(saved);
     }
 
     @Transactional
@@ -64,7 +73,10 @@ public class PriceAlertService {
         PriceAlert alert = ownedOr404(id, userSub);
         if (request.direction() != null) alert.setDirection(request.direction());
         if (request.threshold() != null) alert.setThreshold(request.threshold());
-        return mapper.toResponse(repository.save(alert));
+        PriceAlert saved = repository.save(alert);
+        log.info("Price alert updated alertId={} userSub={} dir={} threshold={}",
+                id, userSub, saved.getDirection(), saved.getThreshold());
+        return mapper.toResponse(saved);
     }
 
     @Transactional(readOnly = true)

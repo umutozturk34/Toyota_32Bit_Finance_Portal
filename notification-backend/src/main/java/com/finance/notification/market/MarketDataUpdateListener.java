@@ -7,15 +7,15 @@ import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.payload.MarketDataUpdatedPayload;
 import com.finance.notification.core.model.NotificationPreference;
 import com.finance.notification.core.repository.NotificationPreferenceRepository;
-import lombok.RequiredArgsConstructor;
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -25,16 +25,29 @@ import java.util.Set;
  * refresh. Open / close transitions live on a separate minute-tick scheduler
  * ({@link MarketSessionScheduler}) so they fire at the actual boundary instead
  * of the next data-refresh cron.
+ *
+ * <p>Idempotency: per-eventId Caffeine cache prevents duplicate fan-out when
+ * Kafka redelivers (consumer-group offset reset, replay, retry, etc.). Without
+ * this, a single restart with offset-reset earliest would email every persisted
+ * event.
  */
 @Log4j2
 @Component
-@RequiredArgsConstructor
 public class MarketDataUpdateListener {
 
     private static final String GROUP_ID = "notification-data-updated";
 
     private final NotificationDispatcher dispatcher;
     private final NotificationPreferenceRepository preferences;
+    private final Cache<String, Boolean> processedEventIds;
+
+    public MarketDataUpdateListener(NotificationDispatcher dispatcher,
+                                    NotificationPreferenceRepository preferences,
+                                    @Qualifier("dataUpdatedProcessedEventIds") Cache<String, Boolean> processedEventIds) {
+        this.dispatcher = dispatcher;
+        this.preferences = preferences;
+        this.processedEventIds = processedEventIds;
+    }
 
     @KafkaListener(
             topics = KafkaTopics.MARKET_UPDATED,
@@ -52,9 +65,15 @@ public class MarketDataUpdateListener {
     }
 
     private void handleSafely(MarketUpdatedEvent event) {
+        if (processedEventIds.getIfPresent(event.eventId()) != null) {
+            log.debug("Duplicate market-updated event {} marketType={}, skip dispatch",
+                    event.eventId(), event.marketType());
+            return;
+        }
         Optional<SessionMarket> mapped = MarketTypeMapper.fromMarketType(event.marketType());
         if (mapped.isEmpty()) {
             log.debug("Skipping data-updated dispatch — no SessionMarket for {}", event.marketType());
+            processedEventIds.put(event.eventId(), Boolean.TRUE);
             return;
         }
         SessionMarket market = mapped.get();
@@ -64,6 +83,7 @@ public class MarketDataUpdateListener {
                     market.name(), market.displayLabel(), event.source());
             dispatcher.dispatch(NotificationRequest.of(pref.getUserSub(), payload));
         }
+        processedEventIds.put(event.eventId(), Boolean.TRUE);
     }
 
     private boolean isMarketSelected(NotificationPreference pref, SessionMarket market) {

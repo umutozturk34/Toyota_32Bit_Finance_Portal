@@ -6,6 +6,8 @@ import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.model.NotificationPreference;
 import com.finance.notification.core.repository.NotificationPreferenceRepository;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -13,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.support.Acknowledgment;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,7 +33,11 @@ class MarketDataUpdateListenerTest {
     @Mock private Acknowledgment ack;
 
     private MarketDataUpdateListener listener() {
-        return new MarketDataUpdateListener(dispatcher, preferences);
+        Cache<String, Boolean> cache = Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofHours(1))
+                .maximumSize(1_000)
+                .build();
+        return new MarketDataUpdateListener(dispatcher, preferences, cache);
     }
 
     private NotificationPreference subscriberWithMarkets(String userSub, String markets) {
@@ -74,5 +81,18 @@ class MarketDataUpdateListenerTest {
 
         verify(ack).acknowledge();
         verify(dispatcher, never()).dispatch(any());
+    }
+
+    @Test
+    void should_dispatchOnce_when_sameEventIdRedeliveredTwice() {
+        when(preferences.findAll()).thenReturn(List.of(subscriberWithMarkets("user-1", "STOCK")));
+        MarketUpdatedEvent event = MarketUpdatedEvent.of(MarketType.STOCK, "scheduled-stock-morning");
+        MarketDataUpdateListener subject = listener();
+
+        subject.onMarketUpdated(event, ack);
+        subject.onMarketUpdated(event, ack);
+
+        verify(dispatcher, times(1)).dispatch(any());
+        verify(ack, times(2)).acknowledge();
     }
 }

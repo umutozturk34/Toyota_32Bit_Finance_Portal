@@ -71,6 +71,12 @@ public class AdminMessageController {
         return ApiResponse.success("Conversation closed", null);
     }
 
+    @PostMapping("/conversations/{userSub}/reopen")
+    public ApiResponse<Void> reopenConversation(@PathVariable String userSub) {
+        service.reopenConversation(userSub);
+        return ApiResponse.success("Conversation reopened", null);
+    }
+
     @DeleteMapping("/conversations/{userSub}")
     public ApiResponse<Void> deleteConversation(@PathVariable String userSub) {
         service.deleteConversation(userSub);

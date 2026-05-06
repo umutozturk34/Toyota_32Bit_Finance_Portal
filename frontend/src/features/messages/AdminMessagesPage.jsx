@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MessageCircle, Send, Loader2, Inbox, Lock, Trash2, Megaphone,
+  MessageCircle, Send, Loader2, Inbox, Lock, Unlock, Trash2, Megaphone,
   ChevronLeft, ChevronRight, X, AlertTriangle, ShieldOff,
 } from 'lucide-react';
 import {
   useAdminConversations, useAdminConversation,
-  useSendAdminMessage, useCloseConversation, useDeleteConversation, useBroadcast,
+  useSendAdminMessage, useCloseConversation, useReopenConversation,
+  useDeleteConversation, useBroadcast,
 } from '../../shared/hooks/useMessages';
 import { toast } from '../../shared/components/Toast';
 import { extractApiError } from '../../shared/utils/apiError';
@@ -223,6 +224,7 @@ function ThreadPane({ userSub, onBack, onAfterDelete }) {
   const { data: thread, isLoading } = useAdminConversation(userSub);
   const sendMutation = useSendAdminMessage();
   const closeMutation = useCloseConversation();
+  const reopenMutation = useReopenConversation();
   const deleteMutation = useDeleteConversation();
   const [body, setBody] = useState('');
   const [confirmAction, setConfirmAction] = useState(null);
@@ -253,6 +255,15 @@ function ThreadPane({ userSub, onBack, onAfterDelete }) {
       setConfirmAction(null);
     } catch (err) {
       toast.error(extractApiError(err, 'Kapatma başarısız'));
+    }
+  };
+
+  const handleReopen = async () => {
+    try {
+      await reopenMutation.mutateAsync(userSub);
+      toast.success('Sohbet yeniden açıldı', `${shortSub(userSub)} mesajlaşmaya devam edebilir`);
+    } catch (err) {
+      toast.error(extractApiError(err, 'Yeniden açma başarısız'));
     }
   };
 
@@ -295,10 +306,17 @@ function ThreadPane({ userSub, onBack, onAfterDelete }) {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setConfirmAction('close')} disabled={thread?.closed} title="Sohbeti kapat"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-fg-muted hover:text-warning hover:bg-warning/10 transition-colors bg-transparent border-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed">
-            <Lock className="h-3 w-3" /> Kapat
-          </button>
+          {thread?.closed ? (
+            <button onClick={handleReopen} disabled={reopenMutation.isPending} title="Sohbeti yeniden aç"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-fg-muted hover:text-success hover:bg-success/10 transition-colors bg-transparent border-none cursor-pointer disabled:opacity-50">
+              <Unlock className="h-3 w-3" /> Yeniden aç
+            </button>
+          ) : (
+            <button onClick={() => setConfirmAction('close')} title="Sohbeti kapat"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-fg-muted hover:text-warning hover:bg-warning/10 transition-colors bg-transparent border-none cursor-pointer">
+              <Lock className="h-3 w-3" /> Kapat
+            </button>
+          )}
           <button onClick={() => setConfirmAction('delete')} title="Sohbeti sil"
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-fg-muted hover:text-danger hover:bg-danger/10 transition-colors bg-transparent border-none cursor-pointer">
             <Trash2 className="h-3 w-3" /> Sil

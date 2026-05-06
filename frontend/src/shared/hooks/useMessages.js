@@ -14,7 +14,8 @@ export function useUserInbox({ page = 0, size = 20 } = {}) {
     queryKey: USER_INBOX_KEY({ page, size }),
     queryFn: () => messageService.inbox({ page, size }),
     enabled: isAuthenticated && !loading,
-    staleTime: 30_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
   });
 }
 
@@ -24,7 +25,8 @@ export function useUserSent({ page = 0, size = 20 } = {}) {
     queryKey: USER_SENT_KEY({ page, size }),
     queryFn: () => messageService.sent({ page, size }),
     enabled: isAuthenticated && !loading,
-    staleTime: 30_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
   });
 }
 
@@ -34,8 +36,8 @@ export function useUnreadMessageCount() {
     queryKey: USER_UNREAD_KEY,
     queryFn: messageService.unreadCount,
     enabled: isAuthenticated && !loading,
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
   });
 }
 
@@ -61,7 +63,8 @@ export function useAdminInbox({ page = 0, size = 20 } = {}) {
     queryKey: ADMIN_INBOX_KEY({ page, size }),
     queryFn: () => adminMessageService.inbox({ page, size }),
     enabled: isAuthenticated && !loading,
-    staleTime: 30_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
   });
 }
 
@@ -71,8 +74,8 @@ export function useAdminInboxCount() {
     queryKey: ADMIN_INBOX_COUNT_KEY,
     queryFn: adminMessageService.inboxCount,
     enabled: isAuthenticated && !loading,
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
   });
 }
 
@@ -93,7 +96,8 @@ export function useAdminConversations({ page = 0, size = 20 } = {}) {
     queryKey: ADMIN_CONVERSATIONS_KEY({ page, size }),
     queryFn: () => adminMessageService.conversations({ page, size }),
     enabled: isAuthenticated && !loading,
-    staleTime: 30_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
   });
 }
 
@@ -103,7 +107,8 @@ export function useAdminConversation(userSub) {
     queryKey: ADMIN_CONVERSATION_KEY(userSub),
     queryFn: () => adminMessageService.conversation(userSub),
     enabled: isAuthenticated && !loading && !!userSub,
-    staleTime: 15_000,
+    staleTime: 5_000,
+    refetchInterval: 15_000,
   });
 }
 
@@ -111,6 +116,14 @@ export function useCloseConversation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: adminMessageService.closeConversation,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages'] }),
+  });
+}
+
+export function useReopenConversation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: adminMessageService.reopenConversation,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages'] }),
   });
 }

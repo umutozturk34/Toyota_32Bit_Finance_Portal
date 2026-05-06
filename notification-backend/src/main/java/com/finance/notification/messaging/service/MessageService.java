@@ -3,6 +3,7 @@ package com.finance.notification.messaging.service;
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.notification.messaging.dispatch.AdminInboxEvent;
 import com.finance.notification.messaging.dispatch.MessageDispatchEvent;
 import com.finance.notification.messaging.dto.ConversationSummary;
 import com.finance.notification.messaging.dto.ConversationThread;
@@ -46,7 +47,9 @@ public class MessageService {
                 .body(body)
                 .direction(MessageDirection.USER_TO_ADMIN)
                 .build());
-        return mapper.toResponse(saved);
+        MessageResponse response = mapper.toResponse(saved);
+        events.publishEvent(new AdminInboxEvent(response));
+        return response;
     }
 
     @Transactional
@@ -159,6 +162,13 @@ public class MessageService {
     public void deleteConversation(String userSub) {
         repository.deleteConversation(userSub);
         closedRepository.deleteById(userSub);
+    }
+
+    @Transactional
+    public void reopenConversation(String userSub) {
+        if (closedRepository.existsById(userSub)) {
+            closedRepository.deleteById(userSub);
+        }
     }
 
     private void rejectIfClosed(String userSub) {

@@ -59,6 +59,10 @@ export const adminMessageService = {
     await api.post(`${ADMIN_PATH}/conversations/${encodeURIComponent(userSub)}/close`);
   },
 
+  reopenConversation: async (userSub) => {
+    await api.post(`${ADMIN_PATH}/conversations/${encodeURIComponent(userSub)}/reopen`);
+  },
+
   deleteConversation: async (userSub) => {
     await api.delete(`${ADMIN_PATH}/conversations/${encodeURIComponent(userSub)}`);
   },

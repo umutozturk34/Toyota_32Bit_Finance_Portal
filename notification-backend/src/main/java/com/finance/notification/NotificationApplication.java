@@ -6,6 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.scheduling.annotation.EnableAsync;
 
+import java.util.TimeZone;
+
 @SpringBootApplication(scanBasePackages = {
         "com.finance.notification",
         "com.finance.common.cache",
@@ -18,6 +20,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 public class NotificationApplication {
 
     public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/Istanbul"));
         SpringApplication.run(NotificationApplication.class, args);
     }
 }

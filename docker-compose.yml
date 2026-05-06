@@ -33,6 +33,7 @@ services:
     expose:
       - "8080"
     environment:
+      TZ: Europe/Istanbul
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/finance_db
       SPRING_DATASOURCE_USERNAME: finance_user
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
@@ -78,6 +79,7 @@ services:
     ports:
       - "127.0.0.1:8082:8082"
     environment:
+      TZ: Europe/Istanbul
       DB_URL: jdbc:postgresql://db:5432/finance_db
       DB_USERNAME: finance_user
       DB_PASSWORD: ${DB_PASSWORD}
@@ -166,6 +168,7 @@ services:
     ports:
       - "127.0.0.1:8180:8080"
     environment:
+      TZ: Europe/Istanbul
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       LDAP_ADMIN_PASSWORD: ${LDAP_ADMIN_PASSWORD}
@@ -184,6 +187,8 @@ services:
     command:
       - start-dev
       - --import-realm
+      - --spi-theme-cache-themes=false
+      - --spi-theme-cache-templates=false
       - --spi-required-action-VERIFY_EMAIL_CODE-code-length=6
       - --spi-required-action-VERIFY_EMAIL_CODE-code-symbols=0123456789
     volumes:

@@ -1,4 +1,5 @@
 <#macro emailLayout title="" eyebrow="" subtitle="">
+<#setting time_zone="Europe/Istanbul">
 <#assign themePref = "DARK">
 <#attempt>
     <#assign themePref = user.attributes['themePreference']>
@@ -95,6 +96,7 @@
         .body-section { color:#3d4458 !important; }
         .body-section strong { color:#0d111e !important; }
         .body-section a { color:#5b5ef0 !important; }
+        .body-section a.email-cta { color:#ffffff !important; }
         .divider { background:#e7e9f1 !important; }
         .info-card { background:#f7f8fc !important; border-color:#e7e9f1 !important; }
         .info-card p { color:#5c6479 !important; }

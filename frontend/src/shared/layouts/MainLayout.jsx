@@ -9,7 +9,9 @@ import {
   DollarSign, Shield,
   LogOut, Briefcase, Activity, Settings, Bell, Eye,
   ChevronLeft, ChevronRight, Menu, Landmark, Wallet, Database, Gem, Users,
+  MessageCircle,
 } from 'lucide-react';
+import { useUnreadMessageCount } from '../hooks/useMessages';
 import TasksPanel from '../../features/admin/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
 import NotificationPanel from '../../features/notifications/NotificationPanel';
@@ -29,6 +31,7 @@ const navItems = [
   { to: '/bonds', label: 'Bonds', Icon: Landmark },
   { to: '/portfolio', label: 'Portfolio', Icon: Wallet },
   { to: '/watch', label: 'Takip', Icon: Eye },
+  { to: '/messages', label: 'Mesajlar', Icon: MessageCircle, badgeKey: 'messages' },
 ];
 
 const MainLayout = () => {
@@ -42,6 +45,7 @@ const MainLayout = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
+  const { data: unreadMessageCount = 0 } = useUnreadMessageCount();
   useNotificationStream();
 
   const navType = useNavigationType();
@@ -94,36 +98,49 @@ const MainLayout = () => {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5" style={{ scrollbarWidth: 'thin' }}>
-        {allNav.map(({ to, label, Icon }) => (
-          <Link
-            key={to}
-            to={to}
-            title={collapsed && !isMobile ? label : undefined}
-            className={`group relative flex items-center gap-2.5 rounded-lg no-underline transition-all duration-150 ${
-              collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-            } ${
-              isActive(to)
-                ? 'bg-accent/10 text-fg'
-                : 'text-fg-muted hover:text-fg hover:bg-surface'
-            }`}
-          >
-            <Icon
-              size={16}
-              strokeWidth={1.6}
-              className={`shrink-0 transition-colors duration-150 ${isActive(to) ? 'text-accent' : 'group-hover:text-fg-muted'}`}
-            />
-            {(!collapsed || isMobile) && (
-              <span className="text-[13px] font-medium">{label}</span>
-            )}
-            {isActive(to) && (
-              <motion.span
-                layoutId="sidebar-indicator"
-                className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-gradient-accent ${collapsed && !isMobile ? 'h-5' : 'h-6'}`}
-                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-              />
-            )}
-          </Link>
-        ))}
+        {allNav.map(({ to, label, Icon, badgeKey }) => {
+          const badge = badgeKey === 'messages' ? unreadMessageCount : 0;
+          return (
+            <Link
+              key={to}
+              to={to}
+              title={collapsed && !isMobile ? label : undefined}
+              className={`group relative flex items-center gap-2.5 rounded-lg no-underline transition-all duration-150 ${
+                collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
+              } ${
+                isActive(to)
+                  ? 'bg-accent/10 text-fg'
+                  : 'text-fg-muted hover:text-fg hover:bg-surface'
+              }`}
+            >
+              <span className="relative shrink-0">
+                <Icon
+                  size={16}
+                  strokeWidth={1.6}
+                  className={`transition-colors duration-150 ${isActive(to) ? 'text-accent' : 'group-hover:text-fg-muted'}`}
+                />
+                {badge > 0 && collapsed && !isMobile && (
+                  <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-1 rounded-full bg-accent text-white text-[8px] font-bold flex items-center justify-center font-mono leading-none">
+                    {badge > 9 ? '9+' : badge}
+                  </span>
+                )}
+              </span>
+              {(!collapsed || isMobile) && (
+                <span className="text-[13px] font-medium">{label}</span>
+              )}
+              {(!collapsed || isMobile) && badge > 0 && (
+                <span className="ml-auto text-[10px] font-mono text-accent">{badge > 99 ? '99+' : badge}</span>
+              )}
+              {isActive(to) && (
+                <motion.span
+                  layoutId="sidebar-indicator"
+                  className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-gradient-accent ${collapsed && !isMobile ? 'h-5' : 'h-6'}`}
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                />
+              )}
+            </Link>
+          );
+        })}
       </nav>
 
       {hasRole('ADMIN') && (

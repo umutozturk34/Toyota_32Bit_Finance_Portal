@@ -7,6 +7,7 @@ import LoadingState from './LoadingState';
 import ErrorState from './ErrorState';
 import EmptyState from './EmptyState';
 import PageHeader from './PageHeader';
+import MarketStatusBadge from './MarketStatusBadge';
 import SearchInput from './SearchInput';
 import SortSelect from './SortSelect';
 import Pagination from './Pagination';
@@ -91,7 +92,12 @@ export default function MarketListPage({
     <div className="space-y-6 py-6">
       <PageHeader
         icon={icon}
-        title={title}
+        title={
+          <span className="inline-flex items-center gap-3 flex-wrap">
+            {title}
+            {marketType && <MarketStatusBadge market={marketType.toUpperCase()} compact />}
+          </span>
+        }
         onRefresh={refetch}
         loading={isLoading}
         isAdmin={isAdmin}

@@ -13,6 +13,7 @@ import MarketAddPositionModal from '../../features/portfolio/MarketAddPositionMo
 import CompareBar from './CompareBar';
 import LightweightChart from '../../features/chart/LightweightChart';
 import AssetActionsBar from '../../features/watch/AssetActionsBar';
+import MarketStatusBadge from './MarketStatusBadge';
 import { cardVariants } from '../utils/animations';
 import { transformCandles, transformFundCandles } from '../utils/candleTransform';
 
@@ -98,6 +99,7 @@ export default function AssetDetailPage({
             <ArrowLeft className="h-4 w-4" />
           </button>
           {renderHeader(asset)}
+          <MarketStatusBadge market={(assetType || '').toUpperCase()} />
         </div>
         <div className="flex items-center gap-2">
           {asset && (

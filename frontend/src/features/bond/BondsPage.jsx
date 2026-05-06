@@ -22,6 +22,7 @@ import LoadingState from '../../shared/components/LoadingState';
 import ErrorState from '../../shared/components/ErrorState';
 import EmptyState from '../../shared/components/EmptyState';
 import PageHeader from '../../shared/components/PageHeader';
+import MarketStatusBadge from '../../shared/components/MarketStatusBadge';
 import SearchInput from '../../shared/components/SearchInput';
 import SortSelect from '../../shared/components/SortSelect';
 import Pagination from '../../shared/components/Pagination';
@@ -283,7 +284,12 @@ export default function BondsPage() {
         <div className="space-y-6 py-6">
             <PageHeader
                 icon={<Landmark className="h-5 w-5" />}
-                title="Tahvil & Bono"
+                title={
+                    <span className="inline-flex items-center gap-3 flex-wrap">
+                        Tahvil & Bono
+                        <MarketStatusBadge market="BOND" compact />
+                    </span>
+                }
                 onRefresh={refetch}
                 loading={loading}
                 isAdmin={isAdmin}

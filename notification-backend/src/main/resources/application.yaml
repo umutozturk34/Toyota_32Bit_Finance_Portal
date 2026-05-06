@@ -94,6 +94,45 @@ springdoc:
 
 notification:
   from-address: ${NOTIFICATION_FROM_ADDRESS:noreply@finance.local}
+  market-hours:
+    # Schedule must stay in sync with main backend cron entries (MarketScheduler).
+    # Holidays are intentionally out of scope for v0.15 — sessions go by weekday only.
+    markets:
+      STOCK:
+        open: '10:00'
+        close: '18:00'
+        trading-days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]
+        zone: Europe/Istanbul
+      FOREX:
+        open: '09:00'
+        close: '17:00'
+        trading-days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]
+        zone: Europe/Istanbul
+      FUND:
+        open: '09:30'
+        close: '13:30'
+        trading-days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]
+        zone: Europe/Istanbul
+      BOND:
+        open: '09:30'
+        close: '17:30'
+        trading-days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]
+        zone: Europe/Istanbul
+      COMMODITY:
+        open: '01:00'
+        close: '23:59'
+        trading-days: [SUNDAY, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]
+        zone: Europe/Istanbul
+      NEWS:
+        open: '00:00'
+        close: '23:59'
+        trading-days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+        zone: Europe/Istanbul
+      CRYPTO:
+        open: '00:00'
+        close: '23:59'
+        trading-days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+        zone: Europe/Istanbul
 
 keycloak:
   base-url: ${KEYCLOAK_BASE_URL:http://keycloak:8080}

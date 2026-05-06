@@ -91,9 +91,14 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
           <div className="min-w-0">
             <div className="text-sm font-bold text-fg truncate" title={userSub}>{username || shortSub(userSub)}</div>
             {username ? (
-              <div className="space-y-0.5">
-                {email && <div className="text-[10px] font-mono text-fg-muted truncate" title={email}>{email}</div>}
-                <div className="text-[10px] font-mono text-fg-subtle truncate" title={userSub}>{shortSub(userSub)}</div>
+              <div
+                className="text-[10px] font-mono truncate"
+                title={email ? `${email} · ${userSub}` : userSub}
+              >
+                {email && <span className="text-fg-muted">{email}</span>}
+                {email && <span aria-hidden className="text-fg-subtle/50 mx-1">·</span>}
+                <span className="text-accent uppercase tracking-[0.14em]">id</span>
+                <span className="text-fg-subtle ml-1">{shortSub(userSub)}</span>
               </div>
             ) : thread?.closed ? (
               <div className="flex items-center gap-1 text-[10px] font-mono text-warning">

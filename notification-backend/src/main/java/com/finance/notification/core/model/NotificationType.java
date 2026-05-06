@@ -7,7 +7,10 @@ public enum NotificationType {
     WATCHLIST_DELTA(NotificationPreference::isEmailWatchlist, NotificationPreference::isInappWatchlist),
     REPORT_READY(NotificationPreference::isEmailReports, NotificationPreference::isInappReports),
     MESSAGE(NotificationPreference::isEmailMessages, NotificationPreference::isInappMessages),
-    SYSTEM(NotificationPreference::isEmailSystem, NotificationPreference::isInappSystem);
+    SYSTEM(NotificationPreference::isEmailSystem, NotificationPreference::isInappSystem),
+    MARKET_OPENED(NotificationPreference::isEmailMarketOpened, NotificationPreference::isInappMarketOpened),
+    MARKET_CLOSED(NotificationPreference::isEmailMarketClosed, NotificationPreference::isInappMarketClosed),
+    MARKET_DATA_UPDATED(NotificationPreference::isEmailMarketDataUpdated, NotificationPreference::isInappMarketDataUpdated);
 
     private final Predicate<NotificationPreference> emailAccessor;
     private final Predicate<NotificationPreference> inappAccessor;

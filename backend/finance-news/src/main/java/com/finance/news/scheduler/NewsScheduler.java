@@ -1,9 +1,12 @@
 package com.finance.news.scheduler;
 
-import com.finance.news.service.NewsDataService;
+import com.finance.common.event.MarketUpdateEventPort;
+import com.finance.common.model.MarketType;
 import com.finance.common.service.TaskTrackingService;
+import com.finance.news.service.NewsDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +17,7 @@ public class NewsScheduler {
 
     private final NewsDataService newsDataService;
     private final TaskTrackingService taskTracker;
+    private final ObjectProvider<MarketUpdateEventPort> marketEvents;
 
     @Scheduled(cron = "${app.scheduler.news.morning-cron}", zone = "${app.timezone}")
     public void runMorningNewsUpdate() {
@@ -31,6 +35,9 @@ public class NewsScheduler {
     }
 
     private void executeUpdate(String taskType, String description) {
-        taskTracker.runTracked(taskType, description, newsDataService::updateNews);
+        taskTracker.runTracked(taskType, description, () -> {
+            newsDataService.updateNews();
+            marketEvents.ifAvailable(port -> port.publishMarketUpdated(MarketType.NEWS, taskType));
+        });
     }
 }

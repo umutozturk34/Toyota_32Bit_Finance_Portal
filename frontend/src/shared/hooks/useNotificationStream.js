@@ -52,6 +52,7 @@ export default function useNotificationStream() {
         source.addEventListener('notification', (event) => {
           let payload = null;
           try { payload = JSON.parse(event.data); } catch { /* malformed event */ }
+          queryClient.setQueryData(['notifications', 'unread-count'], (old) => (Number(old) || 0) + 1);
           queryClient.invalidateQueries({ queryKey: ['notifications'] });
           playChime();
           if (payload?.title) {

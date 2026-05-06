@@ -4,13 +4,14 @@ import { useAuth } from '../../features/auth/AuthContext';
 
 const PENDING_KEY = ['emailChange', 'pending'];
 
-export function usePendingEmailChange() {
+export function usePendingEmailChange({ enabled = true } = {}) {
   const { isAuthenticated, loading } = useAuth();
   return useQuery({
     queryKey: PENDING_KEY,
     queryFn: userCredentialService.getPendingEmailChange,
-    enabled: isAuthenticated && !loading,
-    staleTime: 30_000,
+    enabled: enabled && isAuthenticated && !loading,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 }
 

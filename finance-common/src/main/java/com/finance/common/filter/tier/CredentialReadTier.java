@@ -1,0 +1,42 @@
+package com.finance.common.filter.tier;
+
+import com.finance.common.config.AppProperties;
+import com.finance.common.filter.RateLimitTier;
+import io.github.bucket4j.Bandwidth;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+
+import java.time.Duration;
+
+@Component
+@Order(29)
+public class CredentialReadTier implements RateLimitTier {
+
+    @Override
+    public String name() {
+        return "CREDENTIAL_READ";
+    }
+
+    @Override
+    public boolean matches(String path, String method) {
+        return path.startsWith("/api/v1/user/credentials") && "GET".equalsIgnoreCase(method);
+    }
+
+    @Override
+    public Bandwidth toBandwidth(AppProperties.RateLimit rl) {
+        return Bandwidth.builder()
+                .capacity(rl.getCredentialReadLimit())
+                .refillGreedy(rl.getCredentialReadLimit(), Duration.ofMinutes(1))
+                .build();
+    }
+
+    @Override
+    public String errorCode() {
+        return "RATE_LIMIT_CREDENTIAL_READ_EXCEEDED";
+    }
+
+    @Override
+    public String errorMessage() {
+        return "Kimlik okuma sınırına ulaştın. Lütfen kısa bir süre sonra tekrar dene.";
+    }
+}

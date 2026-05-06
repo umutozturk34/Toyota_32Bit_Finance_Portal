@@ -8,6 +8,19 @@
                    cChange=${isUp ? cSuccess : cDanger},
                    cChangeBg=${isUp ? (dark ? '#0e2d24' : '#d1fae5') : (dark ? '#3a0f12' : '#fee2e2')}">
 
+    <table th:if="${image != null}" role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 18px;">
+        <tr>
+            <td width="56" style="padding:0;vertical-align:middle;">
+                <img th:src="${image}" alt="" width="48" height="48"
+                     th:style="'display:block;width:48px;height:48px;border-radius:14px;border:1px solid ' + ${cBorder} + ';background:' + ${cInfoBg} + ';'" />
+            </td>
+            <td style="padding:0 0 0 14px;vertical-align:middle;">
+                <p th:style="'margin:0;font-size:13px;font-weight:600;color:' + ${cFg} + ';line-height:1.3;'" th:text="${assetName}">Bitcoin</p>
+                <p class="num" th:style="'margin:2px 0 0;font-size:11px;font-weight:600;letter-spacing:0.4px;color:' + ${cMuted} + ';'" th:text="${assetCodeUpper + ' · ' + marketLabel}">BTC · Kripto</p>
+            </td>
+        </tr>
+    </table>
+
     <p th:style="'margin:0 0 6px;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:' + ${cSubtle} + ';'">Anlık Fiyat</p>
     <p class="num" th:style="'margin:0;font-size:30px;font-weight:700;letter-spacing:-0.4px;line-height:1.1;color:' + ${cFg} + ';'"
        th:text="${priceFormatted}">₺3.674.497,00</p>

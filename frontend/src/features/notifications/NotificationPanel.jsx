@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, BellOff, Inbox, Check, CheckCheck, Trash2, AlertCircle, Zap, FileText,
-  MessageSquare, Bell, Megaphone,
+  MessageSquare, Bell, Megaphone, Search,
 } from 'lucide-react';
 import {
   useNotifications,
@@ -10,7 +10,7 @@ import {
   useDeleteNotification,
   useDeleteAllNotifications,
 } from '../../shared/hooks/useNotifications';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ConfirmDialog from '../../shared/components/ConfirmDialog';
 import BroadcastModal from '../messages/BroadcastModal';
 import { useAuth } from '../auth/AuthContext';
@@ -96,7 +96,15 @@ function NotificationRow({ item, onRead, onDelete }) {
 export default function NotificationPanel({ isOpen, onClose }) {
   const { hasRole } = useAuth();
   const [unreadOnly, setUnreadOnly] = useState(false);
-  const { data, isLoading } = useNotifications({ unreadOnly, page: 0, size: 50 });
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    const id = setTimeout(() => setSearch(searchInput.trim()), 300);
+    return () => clearTimeout(id);
+  }, [searchInput]);
+
+  const { data, isLoading } = useNotifications({ unreadOnly, page: 0, size: 50, search });
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const deleteNotification = useDeleteNotification();
@@ -104,6 +112,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const isAdmin = hasRole('ADMIN');
+  const isFiltering = search.length > 0;
 
   const items = data?.content ?? data?.items ?? [];
   const total = data?.totalElements ?? 0;
@@ -159,6 +168,28 @@ export default function NotificationPanel({ isOpen, onClose }) {
                 </button>
               </div>
             </header>
+
+            <div className="px-5 py-2.5 border-b border-border-default shrink-0">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-subtle pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Bildirimlerde ara…"
+                  className="w-full rounded-xl border border-border-default bg-bg-base/60 pl-8 pr-8 py-2 text-[12px] text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)] focus:bg-bg-base transition-all"
+                />
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchInput('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            </div>
 
             <div className="flex items-center justify-between px-5 py-3 border-b border-border-default shrink-0">
               <div className="flex gap-0.5 rounded-lg border border-border-default bg-bg-elevated p-0.5">

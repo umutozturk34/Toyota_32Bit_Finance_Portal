@@ -65,11 +65,11 @@ export function useSendAdminMessage() {
 const ADMIN_CONVERSATIONS_KEY = (params) => ['messages', 'admin-conversations', params];
 const ADMIN_CONVERSATION_KEY = (userSub) => ['messages', 'admin-conversation', userSub];
 
-export function useAdminConversations({ page = 0, size = 20 } = {}) {
+export function useAdminConversations({ page = 0, size = 20, search = '' } = {}) {
   const { isAuthenticated, loading } = useAuth();
   return useQuery({
-    queryKey: ADMIN_CONVERSATIONS_KEY({ page, size }),
-    queryFn: () => adminMessageService.conversations({ page, size }),
+    queryKey: ADMIN_CONVERSATIONS_KEY({ page, size, search }),
+    queryFn: () => adminMessageService.conversations({ page, size, search }),
     enabled: isAuthenticated && !loading,
     staleTime: 15_000,
     refetchInterval: 30_000,

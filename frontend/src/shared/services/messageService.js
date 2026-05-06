@@ -35,8 +35,10 @@ export const adminMessageService = {
     return response.data.data;
   },
 
-  conversations: async ({ page = 0, size = 20 } = {}) => {
-    const response = await api.get(`${ADMIN_PATH}/conversations`, { params: { page, size } });
+  conversations: async ({ page = 0, size = 20, search } = {}) => {
+    const params = { page, size };
+    if (search) params.search = search;
+    const response = await api.get(`${ADMIN_PATH}/conversations`, { params });
     return response.data.data;
   },
 

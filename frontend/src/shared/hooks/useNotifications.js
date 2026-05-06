@@ -5,11 +5,11 @@ import { useAuth } from '../../features/auth/AuthContext';
 const LIST_KEY = (params) => ['notifications', params];
 const COUNT_KEY = ['notifications', 'unread-count'];
 
-export function useNotifications({ unreadOnly = false, page = 0, size = 20 } = {}) {
+export function useNotifications({ unreadOnly = false, page = 0, size = 20, search = '' } = {}) {
   const { isAuthenticated, loading } = useAuth();
   return useQuery({
-    queryKey: LIST_KEY({ unreadOnly, page, size }),
-    queryFn: () => notificationService.list({ unreadOnly, page, size }),
+    queryKey: LIST_KEY({ unreadOnly, page, size, search }),
+    queryFn: () => notificationService.list({ unreadOnly, page, size, search }),
     enabled: isAuthenticated && !loading,
     staleTime: 30_000,
   });

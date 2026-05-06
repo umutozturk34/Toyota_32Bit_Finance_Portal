@@ -59,7 +59,7 @@ class NotificationServiceTest {
         when(repository.findByUserSubOrderByCreatedAtDesc("user-1", pageable)).thenReturn(page);
         when(mapper.toResponse(owned)).thenReturn(stubResponse());
 
-        Page<NotificationResponse> result = service.list("user-1", 0, 20, false);
+        Page<NotificationResponse> result = service.list("user-1", 0, 20, false, null);
 
         assertThat(result.getContent()).hasSize(1);
         verify(repository, never()).findByUserSubAndReadAtIsNullOrderByCreatedAtDesc(anyString(), any());
@@ -72,7 +72,7 @@ class NotificationServiceTest {
         when(repository.findByUserSubAndReadAtIsNullOrderByCreatedAtDesc("user-1", pageable)).thenReturn(page);
         when(mapper.toResponse(owned)).thenReturn(stubResponse());
 
-        Page<NotificationResponse> result = service.list("user-1", 0, 20, true);
+        Page<NotificationResponse> result = service.list("user-1", 0, 20, true, null);
 
         assertThat(result.getContent()).hasSize(1);
         verify(repository, never()).findByUserSubOrderByCreatedAtDesc(anyString(), any());

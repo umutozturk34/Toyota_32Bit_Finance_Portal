@@ -77,6 +77,41 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
         }
     }
 
+    public java.util.List<KeycloakUserProfile> search(String query, int max) {
+        if (query == null || query.isBlank()) return java.util.List.of();
+        try {
+            String token = ensureToken();
+            java.util.List<Map<String, Object>> users = webClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/admin/realms/{realm}/users")
+                            .queryParam("search", query)
+                            .queryParam("max", Math.max(1, Math.min(max, 200)))
+                            .build(realm))
+                    .header("Authorization", "Bearer " + token)
+                    .retrieve()
+                    .bodyToMono(java.util.List.class)
+                    .block();
+            if (users == null) return java.util.List.of();
+            java.util.List<KeycloakUserProfile> result = new java.util.ArrayList<>(users.size());
+            for (Map<String, Object> user : users) {
+                String sub = asString(user.get("id"));
+                if (sub == null) continue;
+                KeycloakUserProfile profile = new KeycloakUserProfile(
+                        sub,
+                        asString(user.get("username")),
+                        asString(user.get("email")),
+                        asString(user.get("firstName")),
+                        asString(user.get("lastName")));
+                profileCache.put(sub, profile);
+                result.add(profile);
+            }
+            return result;
+        } catch (Exception e) {
+            log.warn("Keycloak search failed query={}: {}", query, e.getMessage());
+            return java.util.List.of();
+        }
+    }
+
     private static String asString(Object value) {
         return value instanceof String s ? s : null;
     }

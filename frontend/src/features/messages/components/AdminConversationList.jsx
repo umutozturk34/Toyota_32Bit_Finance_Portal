@@ -1,25 +1,63 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Loader2, MessagesSquare, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, Loader2, MessagesSquare, Lock, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { useAdminConversations } from '../../../shared/hooks/useMessages';
 import { containerVariants, cardVariants } from '../../../shared/utils/animations';
 import { PAGE_SIZE, relTime, shortSub } from '../util';
 
 export default function AdminConversationList({ activeUser, onSelect }) {
   const [page, setPage] = useState(0);
-  const { data, isLoading } = useAdminConversations({ page, size: PAGE_SIZE });
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    const id = setTimeout(() => setSearch(searchInput.trim()), 300);
+    return () => clearTimeout(id);
+  }, [searchInput]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [search]);
+
+  const { data, isLoading } = useAdminConversations({ page, size: PAGE_SIZE, search });
   const items = data?.content ?? [];
   const totalPages = data?.totalPages ?? 0;
+  const isFiltering = search.length > 0;
 
   return (
     <aside className="flex flex-col h-full border-r border-border-default bg-bg-elevated min-h-0">
-      <header className="flex items-center gap-2.5 px-4 py-3.5 border-b border-border-default shrink-0">
-        <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-accent/25 to-accent/5 border border-accent/20 shrink-0">
-          <Users className="h-3.5 w-3.5 text-accent" />
+      <header className="flex flex-col gap-2.5 px-4 py-3.5 border-b border-border-default shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-accent/25 to-accent/5 border border-accent/20 shrink-0">
+            <Users className="h-3.5 w-3.5 text-accent" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-sm font-bold text-fg leading-tight">Sohbetler</h2>
+            {data && (
+              <p className="text-[10px] font-mono text-fg-muted mt-0.5">
+                {isFiltering ? `${data.totalElements} eşleşen` : `${data.totalElements} kullanıcı`}
+              </p>
+            )}
+          </div>
         </div>
-        <div className="min-w-0">
-          <h2 className="text-sm font-bold text-fg leading-tight">Sohbetler</h2>
-          {data && <p className="text-[10px] font-mono text-fg-muted mt-0.5">{data.totalElements} kullanıcı</p>}
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-subtle pointer-events-none" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Kullanıcı veya mesaj ara…"
+            className="w-full rounded-xl border border-border-default bg-bg-base/60 pl-8 pr-8 py-2 text-[12px] text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)] focus:bg-bg-base transition-all"
+          />
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => setSearchInput('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-5 h-5 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
         </div>
       </header>
       <div className="flex-1 overflow-y-auto px-3 py-3" style={{ scrollbarWidth: 'thin' }}>
@@ -30,10 +68,16 @@ export default function AdminConversationList({ activeUser, onSelect }) {
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16 text-center px-4">
             <span className="flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-accent/15 to-accent/5 border border-accent/15">
-              <MessagesSquare className="h-5 w-5 text-fg-subtle" />
+              {isFiltering ? <Search className="h-5 w-5 text-fg-subtle" /> : <MessagesSquare className="h-5 w-5 text-fg-subtle" />}
             </span>
-            <p className="text-xs font-semibold text-fg-muted">Henüz sohbet yok</p>
-            <p className="text-[11px] text-fg-subtle leading-relaxed max-w-[200px]">Kullanıcı bir mesaj gönderdiğinde burada görünecek.</p>
+            <p className="text-xs font-semibold text-fg-muted">
+              {isFiltering ? 'Eşleşen sohbet yok' : 'Henüz sohbet yok'}
+            </p>
+            <p className="text-[11px] text-fg-subtle leading-relaxed max-w-[200px]">
+              {isFiltering
+                ? `"${search}" araması için sonuç bulunamadı.`
+                : 'Kullanıcı bir mesaj gönderdiğinde burada görünecek.'}
+            </p>
           </div>
         ) : (
           <motion.ul variants={containerVariants(0.04)} initial="hidden" animate="show" className="space-y-2">
@@ -76,7 +120,7 @@ export default function AdminConversationList({ activeUser, onSelect }) {
                         <span className="text-[10px] font-mono text-fg-subtle shrink-0">{relTime(c.lastSentAt)}</span>
                       </div>
                       {c.username && (
-                        <p className="mt-0.5 text-[10px] font-mono text-fg-subtle truncate">{shortSub(c.userSub)}</p>
+                        <p className="mt-0.5 text-[10px] font-mono text-fg-subtle truncate">{c.email || shortSub(c.userSub)}</p>
                       )}
                       <p className={`mt-0.5 text-[11px] truncate leading-snug ${c.unreadCount > 0 ? 'text-fg font-semibold' : 'text-fg-muted'}`}>{c.lastBody}</p>
                       <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">

@@ -3,8 +3,10 @@ import api from './api';
 const PATH = '/notifications';
 
 export const notificationService = {
-  list: async ({ unreadOnly = false, page = 0, size = 20 } = {}) => {
-    const response = await api.get(PATH, { params: { unreadOnly, page, size } });
+  list: async ({ unreadOnly = false, page = 0, size = 20, search } = {}) => {
+    const params = { unreadOnly, page, size };
+    if (search) params.search = search;
+    const response = await api.get(PATH, { params });
     return response.data.data;
   },
 

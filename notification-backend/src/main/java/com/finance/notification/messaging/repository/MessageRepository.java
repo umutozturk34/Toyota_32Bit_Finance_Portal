@@ -61,6 +61,8 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
                 FROM messages
                 ORDER BY user_sub, sent_at DESC
             ) latest
+            WHERE (CAST(:bodyTerm AS text) IS NULL OR latest.body ILIKE CONCAT('%', CAST(:bodyTerm AS text), '%')
+                   OR (:hasSubFilter = TRUE AND latest.user_sub = ANY(CAST(:subFilter AS text[]))))
             ORDER BY latest.sent_at DESC
             """,
             countQuery = """
@@ -68,11 +70,20 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
                 SELECT DISTINCT
                     CASE WHEN direction = 'USER_TO_ADMIN'
                          THEN sender_sub ELSE recipient_sub END AS user_sub
-                FROM messages
+                FROM messages m_inner
+                WHERE (CAST(:bodyTerm AS text) IS NULL
+                       OR m_inner.body ILIKE CONCAT('%', CAST(:bodyTerm AS text), '%')
+                       OR (:hasSubFilter = TRUE
+                           AND (CASE WHEN direction = 'USER_TO_ADMIN' THEN sender_sub ELSE recipient_sub END)
+                               = ANY(CAST(:subFilter AS text[]))))
             ) distinct_users
             """,
             nativeQuery = true)
-    Page<ConversationSummaryProjection> findConversationSummaries(Pageable pageable);
+    Page<ConversationSummaryProjection> findConversationSummaries(
+            @Param("bodyTerm") String bodyTerm,
+            @Param("subFilter") String[] subFilter,
+            @Param("hasSubFilter") boolean hasSubFilter,
+            Pageable pageable);
 
     @Modifying
     @Query("UPDATE Message m SET m.readAt = :readAt " +

@@ -116,8 +116,15 @@ public class MessageService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ConversationSummary> listConversations(int page, int size) {
-        return repository.findConversationSummaries(PageRequest.of(page, size))
+    public Page<ConversationSummary> listConversations(int page, int size, String search) {
+        String bodyTerm = (search != null && !search.isBlank()) ? search.trim() : null;
+        String[] subFilter = bodyTerm != null
+                ? userDirectory.search(bodyTerm, 100).stream()
+                        .map(KeycloakUserProfile::sub)
+                        .toArray(String[]::new)
+                : new String[0];
+        boolean hasSubFilter = subFilter.length > 0;
+        return repository.findConversationSummaries(bodyTerm, subFilter, hasSubFilter, PageRequest.of(page, size))
                 .map(p -> {
                     KeycloakUserProfile profile = userDirectory.findProfile(p.getUserSub()).orElse(null);
                     return new ConversationSummary(

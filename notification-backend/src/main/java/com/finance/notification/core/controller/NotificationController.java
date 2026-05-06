@@ -35,8 +35,9 @@ public class NotificationController {
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(defaultValue = "false") boolean unreadOnly,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
-        Page<NotificationResponse> result = service.list(jwt.getSubject(), page, size, unreadOnly);
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) String search) {
+        Page<NotificationResponse> result = service.list(jwt.getSubject(), page, size, unreadOnly, search);
         return ApiResponse.success("Notifications retrieved",
                 PagedResponse.of(result.getContent(), page, size, result.getTotalElements()));
     }

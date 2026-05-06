@@ -52,8 +52,9 @@ public class AdminMessageController {
     @GetMapping("/conversations")
     public ApiResponse<PagedResponse<ConversationSummary>> listConversations(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
-        Page<ConversationSummary> result = service.listConversations(page, size);
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
+            @RequestParam(required = false) String search) {
+        Page<ConversationSummary> result = service.listConversations(page, size, search);
         return ApiResponse.success("Conversations retrieved",
                 PagedResponse.of(result.getContent(), page, size, result.getTotalElements()));
     }

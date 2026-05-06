@@ -22,11 +22,19 @@ public class NotificationService {
     private final NotificationMapper mapper;
 
     @Transactional(readOnly = true)
-    public Page<NotificationResponse> list(String userSub, int page, int size, boolean unreadOnly) {
+    public Page<NotificationResponse> list(String userSub, int page, int size, boolean unreadOnly, String search) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Notification> result = unreadOnly
-                ? repository.findByUserSubAndReadAtIsNullOrderByCreatedAtDesc(userSub, pageable)
-                : repository.findByUserSubOrderByCreatedAtDesc(userSub, pageable);
+        boolean hasSearch = search != null && !search.isBlank();
+        Page<Notification> result;
+        if (hasSearch && unreadOnly) {
+            result = repository.searchUnreadByUserSub(userSub, search.trim(), pageable);
+        } else if (hasSearch) {
+            result = repository.searchByUserSub(userSub, search.trim(), pageable);
+        } else if (unreadOnly) {
+            result = repository.findByUserSubAndReadAtIsNullOrderByCreatedAtDesc(userSub, pageable);
+        } else {
+            result = repository.findByUserSubOrderByCreatedAtDesc(userSub, pageable);
+        }
         return result.map(mapper::toResponse);
     }
 

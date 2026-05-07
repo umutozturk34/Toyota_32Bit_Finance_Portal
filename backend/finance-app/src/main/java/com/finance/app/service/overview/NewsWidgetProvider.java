@@ -49,13 +49,16 @@ public class NewsWidgetProvider implements OverviewWidgetProvider {
         }
         Map<Long, NewsArticleResponse> dedupedByPublishedDesc = new LinkedHashMap<>();
         for (String category : categories) {
-            PagedResponse<NewsArticleResponse> page = newsQueryService.search(category, null, SORT_FIELD, SORT_DIRECTION, 0, count);
-            for (NewsArticleResponse article : page.content()) {
-                dedupedByPublishedDesc.putIfAbsent(article.id(), article);
+            try {
+                PagedResponse<NewsArticleResponse> page = newsQueryService.search(category, null, SORT_FIELD, SORT_DIRECTION, 0, count);
+                for (NewsArticleResponse article : page.content()) {
+                    dedupedByPublishedDesc.putIfAbsent(article.id(), article);
+                }
+            } catch (RuntimeException ex) {
+                log.warn("NewsWidget skip category {} reason={}", category, ex.getMessage());
             }
         }
         List<NewsArticleResponse> ordered = new ArrayList<>(dedupedByPublishedDesc.values());
-        ordered.sort((a, b) -> b.publishedAt().compareTo(a.publishedAt()));
         if (ordered.size() > count) return ordered.subList(0, count);
         return ordered;
     }

@@ -92,7 +92,7 @@ class NewsWidgetProviderTest {
         LocalDateTime t1 = LocalDateTime.now().minusMinutes(10);
         LocalDateTime t2 = LocalDateTime.now();
         when(newsQueryService.search(eq("MAKRO"), isNull(), anyString(), anyString(), eq(0), eq(4)))
-                .thenReturn(pageOf(article(1L, "MAKRO", t1), article(2L, "MAKRO", t2)));
+                .thenReturn(pageOf(article(2L, "MAKRO", t2), article(1L, "MAKRO", t1)));
         when(newsQueryService.search(eq("HISSE"), isNull(), anyString(), anyString(), eq(0), eq(4)))
                 .thenReturn(pageOf(article(2L, "HISSE", t2), article(3L, "HISSE", t1)));
 
@@ -101,6 +101,32 @@ class NewsWidgetProviderTest {
         assertThat(data.items()).hasSize(3);
         assertThat(data.items()).extracting(NewsData.NewsRow::id).containsExactly(2L, 1L, 3L);
         verify(newsQueryService, times(2)).search(any(), any(), anyString(), anyString(), anyInt(), anyInt());
+    }
+
+    @Test
+    void should_respectUserCategoryOrder_when_categoriesProvided() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+        when(newsQueryService.search(eq("HISSE"), isNull(), anyString(), anyString(), eq(0), eq(2)))
+                .thenReturn(pageOf(article(10L, "HISSE", now)));
+        when(newsQueryService.search(eq("MAKRO"), isNull(), anyString(), anyString(), eq(0), eq(2)))
+                .thenReturn(pageOf(article(20L, "MAKRO", now.plusMinutes(60))));
+
+        NewsData data = provider.fetch("user-1", sectionFor("{\"categories\":[\"HISSE\",\"MAKRO\"],\"count\":2}"));
+
+        assertThat(data.items()).extracting(NewsData.NewsRow::id).containsExactly(10L, 20L);
+    }
+
+    @Test
+    void should_skipFailingCategory_when_searchThrowsRuntimeException() throws Exception {
+        when(newsQueryService.search(eq("BAD"), isNull(), anyString(), anyString(), eq(0), eq(3)))
+                .thenThrow(new RuntimeException("invalid category"));
+        when(newsQueryService.search(eq("MAKRO"), isNull(), anyString(), anyString(), eq(0), eq(3)))
+                .thenReturn(pageOf(article(1L, "MAKRO", LocalDateTime.now())));
+
+        NewsData data = provider.fetch("user-1", sectionFor("{\"categories\":[\"BAD\",\"MAKRO\"],\"count\":3}"));
+
+        assertThat(data.items()).hasSize(1);
+        assertThat(data.items()).extracting(NewsData.NewsRow::id).containsExactly(1L);
     }
 
     @Test

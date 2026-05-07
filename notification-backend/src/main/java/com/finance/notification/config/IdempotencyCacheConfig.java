@@ -10,26 +10,22 @@ import java.time.Duration;
 @Configuration
 public class IdempotencyCacheConfig {
 
+    private static final Duration EVENT_DEDUP_TTL = Duration.ofHours(24);
+    private static final long MAX_DEDUP_ENTRIES = 50_000;
+
     @Bean("processedEventIds")
     public Cache<String, Boolean> processedEventIds() {
         return Caffeine.newBuilder()
-                .expireAfterWrite(Duration.ofHours(1))
-                .maximumSize(50_000)
+                .expireAfterWrite(EVENT_DEDUP_TTL)
+                .maximumSize(MAX_DEDUP_ENTRIES)
                 .build();
     }
 
-    /**
-     * Independent cache for {@code MarketDataUpdateListener}: shares the topic
-     * with {@code MarketUpdateEventListener} (alert/watchlist) but each runs in
-     * its own consumer group with independent processing semantics, so a single
-     * shared cache would let whichever listener arrived first silence the
-     * other. Keeping caches separate guarantees both pipelines fire.
-     */
     @Bean("dataUpdatedProcessedEventIds")
     public Cache<String, Boolean> dataUpdatedProcessedEventIds() {
         return Caffeine.newBuilder()
-                .expireAfterWrite(Duration.ofHours(1))
-                .maximumSize(50_000)
+                .expireAfterWrite(EVENT_DEDUP_TTL)
+                .maximumSize(MAX_DEDUP_ENTRIES)
                 .build();
     }
 }

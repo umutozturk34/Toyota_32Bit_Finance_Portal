@@ -145,6 +145,6 @@ class WatchlistEvaluatorTest {
 
         assertThat(notified).isEqualTo(0);
         verify(dispatcher, never()).dispatch(any());
-        verify(watchlistService).persist(btc);
+        verify(watchlistService, never()).persist(any());
     }
 }

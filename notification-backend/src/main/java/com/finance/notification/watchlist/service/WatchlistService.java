@@ -128,9 +128,13 @@ public class WatchlistService {
         WatchlistItem entity = mapper.toEntity(request, userSub);
         entity.setWatchlistId(parent.getId());
         entity.setDisplayOrder(repository.findMaxDisplayOrderByWatchlistId(parent.getId()) + 1);
+        assetSnapshotCache.findByCode(entity.getMarketType(), entity.getAssetCode())
+                .map(AssetSnapshot::priceTry)
+                .ifPresent(entity::recordObservation);
         WatchlistItem saved = repository.save(entity);
-        log.info("Watchlist item added userSub={} watchlistId={} market={} code={} itemId={}",
-                userSub, parent.getId(), saved.getMarketType(), saved.getAssetCode(), saved.getId());
+        log.info("Watchlist item added userSub={} watchlistId={} market={} code={} itemId={} baseline={}",
+                userSub, parent.getId(), saved.getMarketType(), saved.getAssetCode(),
+                saved.getId(), saved.getLastSeenPrice());
         return mapper.toResponse(saved);
     }
 

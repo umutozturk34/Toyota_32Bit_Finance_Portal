@@ -11,11 +11,9 @@ import com.finance.common.dto.ApiResponse;
 import com.finance.common.dto.response.GroupCount;
 import com.finance.common.dto.response.MarketAssetResponse;
 import com.finance.common.dto.response.MarketAvailabilityResponse;
-import com.finance.common.dto.response.MarketOverviewResponse;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.common.model.CandlePeriod;
 import com.finance.common.model.MarketType;
-import com.finance.app.service.MarketOverviewService;
 import com.finance.app.service.UnifiedMarketService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -32,7 +30,6 @@ public class UnifiedMarketController {
 
     private final AppProperties appProperties;
     private final UnifiedMarketService unifiedMarketService;
-    private final MarketOverviewService marketOverviewService;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -62,18 +59,6 @@ public class UnifiedMarketController {
 
         return ApiResponse.successOrEmpty("Market assets retrieved successfully", "No data found",
                 unifiedMarketService.search(types, code, segment, subType, search, sort, direction, filter, page, resolvedSize));
-    }
-
-    @GetMapping("/overview")
-    @PreAuthorize("isAuthenticated()")
-    public ApiResponse<MarketOverviewResponse> getMarketOverview(
-            @Parameter(description = "Max items per category")
-            @RequestParam(required = false) Integer limit) {
-        AppProperties.Market market = appProperties.getPagination().getMarket();
-        int resolvedLimit = MarketRequestHelper.clamp(limit, market.getDefaultOverviewLimit(), market.getMaxOverviewLimit());
-
-        return ApiResponse.success("Market overview retrieved successfully",
-                marketOverviewService.getOverview(resolvedLimit));
     }
 
     @GetMapping("/history")

@@ -15,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +59,24 @@ class WatchlistServiceTest {
         service.addToList(7L, "user-1", req);
 
         verify(repository, never()).save(any(WatchlistItem.class));
+    }
+
+    @Test
+    void addToList_updatesExistingWhenNewThresholdProvided() {
+        WatchlistItemCreateRequest req = new WatchlistItemCreateRequest(
+                MarketType.CRYPTO, "BTC", null, new BigDecimal("2.5"));
+        WatchlistItem existing = ownedItem();
+        when(managementService.requireOwned(7L, "user-1")).thenReturn(parentList(7L, "user-1"));
+        when(repository.findByWatchlistIdAndMarketTypeAndAssetCode(7L, MarketType.CRYPTO, "BTC"))
+                .thenReturn(Optional.of(existing));
+        when(repository.save(any(WatchlistItem.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(mapper.toResponse(any(WatchlistItem.class))).thenAnswer(inv -> stub(inv.getArgument(0)));
+
+        service.addToList(7L, "user-1", req);
+
+        ArgumentCaptor<WatchlistItem> captor = ArgumentCaptor.forClass(WatchlistItem.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getDeltaThreshold()).isEqualByComparingTo("2.5");
     }
 
     @Test

@@ -24,6 +24,7 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -45,7 +46,7 @@ public class WatchlistService {
         Watchlist parent = managementService.requireOwned(watchlistId, userSub);
         return repository.findByWatchlistIdAndMarketTypeAndAssetCode(
                         parent.getId(), request.marketType(), request.assetCode())
-                .map(mapper::toResponse)
+                .map(existing -> updateExisting(existing, request))
                 .orElseGet(() -> createItem(parent, userSub, request));
     }
 
@@ -122,6 +123,28 @@ public class WatchlistService {
     @Transactional
     public void persist(WatchlistItem item) {
         repository.save(item);
+    }
+
+    private WatchlistItemResponse updateExisting(WatchlistItem existing, WatchlistItemCreateRequest request) {
+        boolean changed = false;
+        if (request.deltaThreshold() != null
+                && !Objects.equals(request.deltaThreshold(), existing.getDeltaThreshold())) {
+            existing.setDeltaThreshold(request.deltaThreshold());
+            changed = true;
+        }
+        if (request.note() != null) {
+            String normalized = request.note().isBlank() ? null : request.note();
+            if (!Objects.equals(normalized, existing.getNote())) {
+                existing.setNote(normalized);
+                changed = true;
+            }
+        }
+        if (!changed) return mapper.toResponse(existing);
+        WatchlistItem saved = repository.save(existing);
+        log.info("Watchlist item upserted itemId={} userSub={} market={} code={} deltaThreshold={}",
+                saved.getId(), saved.getUserSub(), saved.getMarketType(),
+                saved.getAssetCode(), saved.getDeltaThreshold());
+        return mapper.toResponse(saved);
     }
 
     private WatchlistItemResponse createItem(Watchlist parent, String userSub, WatchlistItemCreateRequest request) {

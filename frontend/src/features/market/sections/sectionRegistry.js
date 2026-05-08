@@ -10,7 +10,7 @@ export const SECTION_DEFINITIONS = Object.freeze({
     description: 'Sabitlediğin varlıkların anlık fiyat panosu',
     Icon: Layers,
     Component: AssetCardsSection,
-    slot: 'strip',
+    defaultSize: { w: 8, h: 3, minW: 3, minH: 2 },
     configurable: true,
     multiInstance: true,
   },
@@ -19,27 +19,27 @@ export const SECTION_DEFINITIONS = Object.freeze({
     description: 'Seçtiğin piyasanın günlük hareketleri',
     Icon: TrendingUp,
     Component: MoversSection,
-    slot: 'main',
+    defaultSize: { w: 4, h: 6, minW: 3, minH: 4 },
     configurable: false,
-    multiInstance: false,
+    multiInstance: true,
   },
   WATCHLIST: {
     label: 'Takip Listesi',
-    description: 'Listelerinden birini panelde göster',
+    description: 'Maks 5 takip varlığı gösterir',
     Icon: Bookmark,
     Component: WatchlistSection,
-    slot: 'main',
+    defaultSize: { w: 4, h: 6, minW: 3, minH: 4 },
     configurable: true,
-    multiInstance: false,
+    multiInstance: true,
   },
   NEWS: {
     label: 'Haberler',
     description: 'Kategori bazlı son haberler',
     Icon: Newspaper,
     Component: NewsSection,
-    slot: 'news',
+    defaultSize: { w: 4, h: 14, minW: 3, minH: 6 },
     configurable: true,
-    multiInstance: false,
+    multiInstance: true,
   },
 });
 
@@ -48,8 +48,7 @@ export function definitionFor(kind) {
 }
 
 export function newSectionId(kind) {
-  if (kind === 'ASSET_CARDS') {
-    return `asset-cards-${Math.random().toString(36).slice(2, 8)}`;
-  }
-  return kind.toLowerCase();
+  const slug = kind.toLowerCase().replace(/_/g, '-');
+  return `${slug}-${Math.random().toString(36).slice(2, 8)}`;
 }
+

@@ -56,6 +56,7 @@ class PortfolioPerformanceServiceTest {
     @Mock private PortfolioDailySnapshotRepository dailySnapshotRepository;
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     @Mock private PortfolioPositionRepository positionRepository;
+    @Mock private TrackedAssetRepository trackedAssetRepository;
     @Mock private PortfolioSnapshotMapper snapshotMapper;
 
     private PortfolioPerformanceService service;
@@ -63,7 +64,8 @@ class PortfolioPerformanceServiceTest {
     @BeforeEach
     void setUp() {
         service = new PortfolioPerformanceService(
-                dailySnapshotRepository, assetSnapshotRepository, positionRepository, snapshotMapper);
+                dailySnapshotRepository, assetSnapshotRepository, positionRepository,
+                trackedAssetRepository, snapshotMapper);
     }
 
     @Test
@@ -166,8 +168,11 @@ class PortfolioPerformanceServiceTest {
                 new BigDecimal("2500000"), new BigDecimal("100000"));
         AssetSeriesPoint expected = new AssetSeriesPoint(LocalDateTime.now(),
                 new BigDecimal("2500000"), new BigDecimal("2500000"), new BigDecimal("100000"), null, null);
-        when(assetSnapshotRepository.findByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtBetweenOrderByCreatedAtAsc(
-                eq(PORTFOLIO_ID), eq(AssetType.CRYPTO), eq("bitcoin"), any(), any()))
+        TrackedAsset tracked = TrackedAsset.builder().id(42L).assetType(TrackedAssetType.CRYPTO).assetCode("bitcoin").build();
+        when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType.CRYPTO, "bitcoin"))
+                .thenReturn(java.util.Optional.of(tracked));
+        when(assetSnapshotRepository.findByPortfolioIdAndTrackedAssetIdAndCreatedAtBetweenOrderByCreatedAtAsc(
+                eq(PORTFOLIO_ID), eq(42L), any(), any()))
                 .thenReturn(List.of(snap));
         when(snapshotMapper.toAssetSeriesPoints(List.of(snap))).thenReturn(List.of(expected));
 

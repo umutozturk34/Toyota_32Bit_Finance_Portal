@@ -145,7 +145,7 @@ public class PortfolioBackfillService {
                 BigDecimal totalQty = sumField(entry.getValue(), PortfolioPosition::getQuantity);
                 BigDecimal totalCost = sumField(entry.getValue(), PortfolioPosition::entryValue);
                 batch.add(calculator.buildAggregatedAssetSnapshot(
-                        portfolioId, first.getAssetType(), first.getAssetCode(),
+                        portfolioId, first.getAssetType(), first.getAssetCode(), first.getTrackedAsset(),
                         ts, totalQty, totalCost, price));
             }
             assetSnapshotRepository.saveAll(batch);
@@ -188,9 +188,10 @@ public class PortfolioBackfillService {
         for (PortfolioPosition pos : positions) {
             AssetKey key = pos.toAssetKey();
             if (result.containsKey(key)) continue;
+            if (pos.getTrackedAsset() == null) continue;
             assetSnapshotRepository
-                    .findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
-                            portfolioId, pos.getAssetType(), pos.getAssetCode(), cutoff)
+                    .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
+                            portfolioId, pos.getTrackedAsset().getId(), cutoff)
                     .ifPresent(p -> result.put(key, p));
         }
         return result;
@@ -248,7 +249,7 @@ public class PortfolioBackfillService {
             BigDecimal totalCost = sumField(entry.getValue(), PortfolioPosition::entryValue);
             PortfolioAssetDailySnapshot prior = priorAssetByKey.get(entry.getKey());
             PortfolioAssetDailySnapshot snapshot = calculator.buildAggregatedAssetSnapshotWithPrior(
-                    portfolioId, first.getAssetType(), first.getAssetCode(),
+                    portfolioId, first.getAssetType(), first.getAssetCode(), first.getTrackedAsset(),
                     ts, totalQty, totalCost, price, prior);
             batch.add(snapshot);
             priorAssetByKey.put(entry.getKey(), snapshot);

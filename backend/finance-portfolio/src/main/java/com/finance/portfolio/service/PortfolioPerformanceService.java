@@ -17,6 +17,9 @@ import com.finance.portfolio.model.MoneyScale;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
+import com.finance.common.model.TrackedAsset;
+import com.finance.common.model.TrackedAssetType;
+import com.finance.common.repository.TrackedAssetRepository;
 import com.finance.common.util.EnumParser;
 import com.finance.common.util.PercentChangeCalculator;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +47,7 @@ public class PortfolioPerformanceService {
     private final PortfolioDailySnapshotRepository dailySnapshotRepository;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     private final PortfolioPositionRepository positionRepository;
+    private final TrackedAssetRepository trackedAssetRepository;
     private final PortfolioSnapshotMapper snapshotMapper;
 
     @Transactional(readOnly = true)
@@ -63,9 +67,14 @@ public class PortfolioPerformanceService {
         LocalDateTime end = LocalDateTime.now();
         LocalDateTime start = CandlePeriod.fromCode(range).toStartDateTime(end);
         AssetType type = EnumParser.parseOrBadRequest(AssetType.class, assetType, "asset type");
+        TrackedAssetType trackedType = TrackedAssetType.valueOf(type.name());
+        TrackedAsset tracked = trackedAssetRepository
+                .findByAssetTypeAndAssetCodeIgnoreCase(trackedType, trackedType.normalizeCode(assetCode))
+                .orElse(null);
+        if (tracked == null) return List.of();
         List<PortfolioAssetDailySnapshot> snapshots = assetSnapshotRepository
-                .findByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtBetweenOrderByCreatedAtAsc(
-                        portfolioId, type, assetCode, start, end);
+                .findByPortfolioIdAndTrackedAssetIdAndCreatedAtBetweenOrderByCreatedAtAsc(
+                        portfolioId, tracked.getId(), start, end);
         return snapshotMapper.toAssetSeriesPoints(snapshots);
     }
 

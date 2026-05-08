@@ -111,7 +111,7 @@ class PortfolioBackfillServiceTest {
                 .thenReturn(Map.of(from, new BigDecimal("45"), yesterday, new BigDecimal("50")));
         lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
         lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
-        when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any()))
+        when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
         when(calculator.buildAggregateSnapshotAtWithPriors(any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
 
@@ -158,7 +158,7 @@ class PortfolioBackfillServiceTest {
                 .thenReturn(Map.of(cutoff, new BigDecimal("2500000")));
         lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
         lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
-        when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any()))
+        when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
         when(calculator.buildAggregateSnapshotAtWithPriors(any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
 
@@ -184,7 +184,7 @@ class PortfolioBackfillServiceTest {
                 .thenReturn(Map.of(priceDay, new BigDecimal("44")));
         lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
         lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
-        when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any()))
+        when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
         when(calculator.buildAggregateSnapshotAtWithPriors(any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
 
@@ -192,7 +192,7 @@ class PortfolioBackfillServiceTest {
 
         ArgumentCaptor<BigDecimal> priceCaptor = ArgumentCaptor.forClass(BigDecimal.class);
         verify(calculator, times(2)).buildAggregatedAssetSnapshotWithPrior(
-                any(), any(), any(), any(), any(), any(), priceCaptor.capture(), any());
+                any(), any(), any(), any(), any(), any(), any(), priceCaptor.capture(), any());
         assertThat(priceCaptor.getAllValues()).containsExactly(new BigDecimal("40"), new BigDecimal("44"));
     }
 
@@ -209,7 +209,7 @@ class PortfolioBackfillServiceTest {
                 .thenReturn(Map.of(from, new BigDecimal("70")));
         lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
         lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
-        when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any()))
+        when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
         when(calculator.buildAggregateSnapshotAtWithPriors(any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
 
@@ -218,7 +218,7 @@ class PortfolioBackfillServiceTest {
         ArgumentCaptor<BigDecimal> qtyCaptor = ArgumentCaptor.forClass(BigDecimal.class);
         ArgumentCaptor<BigDecimal> costCaptor = ArgumentCaptor.forClass(BigDecimal.class);
         verify(calculator).buildAggregatedAssetSnapshotWithPrior(any(), eq(AssetType.STOCK), eq("THYAO.IS"),
-                any(), qtyCaptor.capture(), costCaptor.capture(), eq(new BigDecimal("40")), any());
+                any(), any(), qtyCaptor.capture(), costCaptor.capture(), eq(new BigDecimal("40")), any());
         assertThat(qtyCaptor.getValue()).isEqualByComparingTo(new BigDecimal("150"));
         assertThat(costCaptor.getValue()).isEqualByComparingTo(new BigDecimal("7000.0000"));
     }
@@ -234,7 +234,7 @@ class PortfolioBackfillServiceTest {
         lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today)).thenReturn(false);
         when(assetPricingPort.getPricesTry(any()))
                 .thenReturn(Map.of(new AssetPricingPort.AssetKey(MarketType.STOCK, "THYAO.IS"), new BigDecimal("55")));
-        when(calculator.buildAggregatedAssetSnapshot(any(), any(), any(), any(), any(), any(), any()))
+        when(calculator.buildAggregatedAssetSnapshot(any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
         when(calculator.buildAggregateSnapshotAt(any(), any(), any(), any())).thenReturn(mockDailySnapshot());
 

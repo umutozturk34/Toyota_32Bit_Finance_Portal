@@ -33,9 +33,6 @@ public interface PortfolioPositionRepository extends JpaRepository<PortfolioPosi
 
     List<PortfolioPosition> findByPortfolioId(Long portfolioId);
 
-    Optional<PortfolioPosition> findByPortfolioIdAndAssetTypeAndAssetCode(
-            Long portfolioId, AssetType assetType, String assetCode);
-
     List<PortfolioPosition> findByPortfolioIdAndQuantityGreaterThan(
             Long portfolioId, BigDecimal minQuantity);
 

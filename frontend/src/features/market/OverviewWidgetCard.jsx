@@ -1,112 +1,106 @@
-import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, EyeOff, X, Sliders } from 'lucide-react';
-import WidgetSettingsPopover from './WidgetSettingsPopover';
+import { memo, useMemo } from 'react';
+import { X, Sliders, GripVertical } from 'lucide-react';
 import { definitionFor } from './sections/sectionRegistry';
 
-function ActionDot({ Icon, label, onClick, tone = 'default' }) {
+/** @param {{Icon: any, label: string, onClick: (e: any) => void, tone?: string, active?: boolean}} props */
+function ActionDot({ Icon, label, onClick, tone = 'default', active = false }) {
   const tones = {
-    default: 'border-border-default text-fg-muted hover:text-fg hover:border-fg-subtle',
-    danger: 'border-danger/40 text-danger/80 hover:text-danger hover:border-danger',
-    accent: 'border-accent/40 text-accent/80 hover:text-accent hover:border-accent',
+    default: 'border-border-default text-fg-muted hover:text-fg hover:border-fg-subtle hover:bg-surface',
+    danger: 'border-danger/40 text-danger/80 hover:text-danger hover:border-danger hover:bg-danger/10',
+    accent: active
+      ? 'border-accent bg-accent/15 text-accent shadow-[inset_0_0_8px_-2px_var(--color-accent)]'
+      : 'border-accent/50 text-accent hover:text-accent-bright hover:border-accent-bright hover:bg-accent/10',
   };
   return (
     <button
       type="button"
       onClick={onClick}
+      onPointerDown={(e) => e.stopPropagation()}
       title={label}
       aria-label={label}
-      className={`flex items-center justify-center w-6 h-6 rounded-md border bg-bg-elevated/95 backdrop-blur-sm transition-colors cursor-pointer ${tones[tone]}`}
+      className={`widget-no-drag flex items-center justify-center w-7 h-7 rounded-lg border bg-bg-deep/85 backdrop-blur-md transition-colors duration-150 cursor-pointer shadow-lg shadow-black/40 ${tones[tone]}`}
     >
-      <Icon className="h-3 w-3" />
+      <Icon className="h-3.5 w-3.5" />
     </button>
   );
 }
 
+const EMPTY_STYLE = Object.freeze({});
+
 /**
  * @typedef {Object} OverviewWidgetCardProps
- * @property {{sectionId: string, kind: string, visible: boolean, order: number, config?: Object}} section
+ * @property {{sectionId: string, kind: string, config?: Object}} section
  * @property {Object|null} widgetData
  * @property {boolean} editMode
- * @property {(id: string) => void} onHide
- * @property {(id: string) => void} onRemove
+ * @property {boolean} [draggable]
+ * @property {boolean} [deleting]
+ * @property {boolean} [popoverActive]
+ * @property {(id: string, anchorEl: HTMLElement) => void} [onOpenSettings]
+ * @property {(id: string) => void} onDelete
  * @property {(id: string, config: Object) => void} onConfigChange
  */
 
 /** @param {OverviewWidgetCardProps} props */
-export default function OverviewWidgetCard({ section, widgetData, editMode, onHide, onRemove, onConfigChange }) {
-  const [settingsOpen, setSettingsOpen] = useState(false);
+function OverviewWidgetCard({
+  section, widgetData, editMode, draggable = true,
+  deleting = false, popoverActive = false, onOpenSettings,
+  onDelete, onConfigChange,
+}) {
   const def = definitionFor(section.kind);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: section.sectionId,
-    disabled: !editMode,
-  });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0 : 1,
-  };
+  const Component = def?.Component;
+  const dragActive = editMode && draggable && !deleting;
+  const editStyle = useMemo(() => {
+    if (!editMode) return EMPTY_STYLE;
+    if (deleting) return { outline: '1.5px solid rgba(248,113,113,0.7)', outlineOffset: '2px' };
+    if (popoverActive) return { outline: '1.5px solid rgba(99,102,241,0.8)', outlineOffset: '2px' };
+    return { outline: '1.5px dashed rgba(99,102,241,0.5)', outlineOffset: '2px' };
+  }, [editMode, deleting, popoverActive]);
   if (!def) return null;
-  const Component = def.Component;
 
   return (
-    <motion.div
-      ref={setNodeRef}
-      style={style}
-      layout
-      className="relative"
+    <div
+      style={editStyle}
+      className={`relative h-full transition-opacity duration-200 ease-out ${deleting ? 'pointer-events-none opacity-0' : 'opacity-100'} ${editMode ? 'is-edit' : ''}`}
     >
-      <div
-        className={`relative rounded-xl transition-colors duration-150 ${
-          editMode
-            ? 'ring-1 ring-dashed ring-accent/50 bg-accent/3 shadow-[inset_0_0_24px_-12px_var(--color-accent)]/40'
-            : ''
-        }`}
-      >
-        {editMode && (
-          <>
-            <div className="absolute top-1.5 left-1.5 z-10 flex items-center gap-1 pointer-events-auto">
-              <button
-                type="button"
-                {...attributes}
-                {...listeners}
-                aria-label={`${def.label} sürükle`}
-                className="flex items-center justify-center w-6 h-6 rounded-md border border-accent/40 bg-bg-elevated/95 backdrop-blur-sm text-accent cursor-grab active:cursor-grabbing hover:border-accent transition-colors"
-              >
-                <GripVertical className="h-3 w-3" />
-              </button>
-              <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-accent/90 px-1.5 py-0.5 rounded bg-bg-elevated/95 backdrop-blur-sm border border-accent/30">
-                {def.label}
-              </span>
-            </div>
-            <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-1 pointer-events-auto">
-              {def.configurable && (
-                <div className="relative">
-                  <ActionDot Icon={Sliders} label="Ayarlar" tone="accent" onClick={() => setSettingsOpen((o) => !o)} />
-                  <AnimatePresence>
-                    {settingsOpen && (
-                      <WidgetSettingsPopover
-                        sectionId={section.sectionId}
-                        kind={section.kind}
-                        config={section.config}
-                        onChange={(next) => onConfigChange(section.sectionId, next)}
-                        onClose={() => setSettingsOpen(false)}
-                      />
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
-              <ActionDot Icon={EyeOff} label="Gizle" onClick={() => onHide(section.sectionId)} />
-              <ActionDot Icon={X} label="Kaldır" tone="danger" onClick={() => onRemove(section.sectionId)} />
-            </div>
-          </>
-        )}
-        <div className={editMode ? 'pointer-events-none select-none [&_*]:pointer-events-none' : ''}>
-          <Component data={widgetData} {...(section.config || {})} />
+      <div className="relative h-full">
+        <div className="h-full">
+          {def.configurable
+            ? <Component
+                data={widgetData}
+                {...(section.config || {})}
+                editMode={editMode}
+                config={section.config || {}}
+                onConfigChange={(next) => onConfigChange?.(section.sectionId, next)}
+              />
+            : <Component data={widgetData} {...(section.config || {})} />}
+        </div>
+        <div
+          className={`absolute inset-0 z-30 cursor-grab active:cursor-grabbing transition-opacity duration-150 ${editMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          aria-hidden="true"
+        />
+        <div
+          className={`absolute top-2.5 left-2.5 z-40 flex items-center justify-center w-7 h-7 rounded-lg border bg-bg-deep/85 shadow-lg pointer-events-none border-accent/55 text-accent transition-[opacity,transform] duration-150 ease-out ${dragActive ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}
+          aria-hidden="true"
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </div>
+        <div
+          className={`absolute top-2.5 right-2.5 z-40 flex items-center gap-1.5 transition-[opacity,transform] duration-150 ease-out ${editMode ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-90 pointer-events-none'}`}
+        >
+          {def.configurable && (
+            <ActionDot
+              Icon={Sliders}
+              label="Ayarlar"
+              tone="accent"
+              active={popoverActive}
+              onClick={(e) => onOpenSettings?.(section.sectionId, e.currentTarget)}
+            />
+          )}
+          <ActionDot Icon={X} label="Sil" tone="danger" onClick={() => onDelete?.(section.sectionId)} />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
+
+export default memo(OverviewWidgetCard);

@@ -1,6 +1,6 @@
 package com.finance.notification.watchlist.repository;
 
-import com.finance.common.model.MarketType;
+import com.finance.common.model.TrackedAssetType;
 import com.finance.notification.watchlist.model.WatchlistItem;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,11 +15,9 @@ public interface WatchlistItemRepository extends JpaRepository<WatchlistItem, Lo
 
     List<WatchlistItem> findByWatchlistId(Long watchlistId, Sort sort);
 
-    List<WatchlistItem> findByMarketType(MarketType marketType);
+    List<WatchlistItem> findByTrackedAsset_AssetType(TrackedAssetType assetType);
 
-    Optional<WatchlistItem> findByWatchlistIdAndMarketTypeAndAssetCode(Long watchlistId,
-                                                                       MarketType marketType,
-                                                                       String assetCode);
+    Optional<WatchlistItem> findByWatchlistIdAndTrackedAsset_Id(Long watchlistId, Long trackedAssetId);
 
     long countByWatchlistId(Long watchlistId);
 

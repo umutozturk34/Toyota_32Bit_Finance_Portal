@@ -99,7 +99,8 @@ public class PriceAlertService {
 
     @Transactional(readOnly = true)
     public List<PriceAlert> activeAlerts(MarketType marketType) {
-        return repository.findByActiveTrueAndMarketType(marketType);
+        return repository.findByActiveTrueAndTrackedAsset_AssetType(
+                TrackedAssetType.valueOf(marketType.name()));
     }
 
     @Transactional

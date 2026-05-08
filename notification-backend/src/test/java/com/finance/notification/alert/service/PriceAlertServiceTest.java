@@ -87,7 +87,7 @@ class PriceAlertServiceTest {
 
     @Test
     void activeAlerts_delegatesToRepository() {
-        when(repository.findByActiveTrueAndMarketType(MarketType.CRYPTO))
+        when(repository.findByActiveTrueAndTrackedAsset_AssetType(TrackedAssetType.CRYPTO))
                 .thenReturn(java.util.List.of(ownedAlert()));
 
         var result = service.activeAlerts(MarketType.CRYPTO);

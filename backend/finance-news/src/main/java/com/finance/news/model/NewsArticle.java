@@ -24,6 +24,8 @@ import com.finance.news.util.NewsCategoryResolver;
 import jakarta.persistence.*;
 import lombok.*;
 
+import com.finance.news.model.NewsSource;
+
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
@@ -62,6 +64,11 @@ public class NewsArticle {
 
     @Column(name = "source_url", length = 1024)
     private String sourceUrl;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_id")
+    @JsonIgnore
+    private NewsSource source;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "category", length = 30, nullable = false)

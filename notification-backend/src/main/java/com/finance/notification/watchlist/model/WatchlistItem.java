@@ -36,8 +36,8 @@ import java.util.Optional;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "watchlist_items", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_watchlist_items_list_asset",
-                columnNames = {"watchlist_id", "market_type", "asset_code"})
+        @UniqueConstraint(name = "uq_watchlist_items_list_tracked_asset",
+                columnNames = {"watchlist_id", "tracked_asset_id"})
 })
 public class WatchlistItem {
 

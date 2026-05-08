@@ -49,10 +49,10 @@ public class WatchlistService {
     public WatchlistItemResponse addToList(Long watchlistId, String userSub,
                                            WatchlistItemCreateRequest request) {
         Watchlist parent = managementService.requireOwned(watchlistId, userSub);
-        return repository.findByWatchlistIdAndMarketTypeAndAssetCode(
-                        parent.getId(), request.marketType(), request.assetCode())
+        TrackedAsset trackedAsset = requireTrackedAsset(request.marketType(), request.assetCode());
+        return repository.findByWatchlistIdAndTrackedAsset_Id(parent.getId(), trackedAsset.getId())
                 .map(existing -> updateExisting(existing, request))
-                .orElseGet(() -> createItem(parent, userSub, request));
+                .orElseGet(() -> createItem(parent, userSub, request, trackedAsset));
     }
 
     @Transactional
@@ -122,7 +122,8 @@ public class WatchlistService {
 
     @Transactional(readOnly = true)
     public List<WatchlistItem> itemsForMarket(MarketType marketType) {
-        return repository.findByMarketType(marketType);
+        return repository.findByTrackedAsset_AssetType(
+                TrackedAssetType.valueOf(marketType.name()));
     }
 
     @Transactional
@@ -152,8 +153,9 @@ public class WatchlistService {
         return mapper.toResponse(saved);
     }
 
-    private WatchlistItemResponse createItem(Watchlist parent, String userSub, WatchlistItemCreateRequest request) {
-        TrackedAsset trackedAsset = requireTrackedAsset(request.marketType(), request.assetCode());
+    private WatchlistItemResponse createItem(Watchlist parent, String userSub,
+                                              WatchlistItemCreateRequest request,
+                                              TrackedAsset trackedAsset) {
         WatchlistItem entity = mapper.toEntity(request, userSub);
         entity.setTrackedAsset(trackedAsset);
         entity.setAssetCode(trackedAsset.getAssetCode());

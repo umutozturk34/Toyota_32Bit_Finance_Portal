@@ -75,6 +75,7 @@ public class NewsSourceProcessingService {
                     continue;
                 }
                 NewsArticle entity = articleMapper.toEntity(dto, now);
+                entity.setSource(source);
                 NewsArticle saved = transactionTemplate.execute(status -> articleRepository.save(entity));
                 newsCacheService.cacheArticle(saved);
                 savedCount++;

@@ -47,20 +47,32 @@ public class NewsWidgetProvider implements OverviewWidgetProvider {
         if (categories.isEmpty()) {
             return newsQueryService.search(null, null, SORT_FIELD, SORT_DIRECTION, 0, count).content();
         }
-        Map<Long, NewsArticleResponse> dedupedByPublishedDesc = new LinkedHashMap<>();
+        Map<String, List<NewsArticleResponse>> perCategory = new LinkedHashMap<>();
         for (String category : categories) {
             try {
                 PagedResponse<NewsArticleResponse> page = newsQueryService.search(category, null, SORT_FIELD, SORT_DIRECTION, 0, count);
-                for (NewsArticleResponse article : page.content()) {
-                    dedupedByPublishedDesc.putIfAbsent(article.id(), article);
-                }
+                perCategory.put(category, new ArrayList<>(page.content()));
             } catch (RuntimeException ex) {
                 log.warn("NewsWidget skip category {} reason={}", category, ex.getMessage());
+                perCategory.put(category, List.of());
             }
         }
-        List<NewsArticleResponse> ordered = new ArrayList<>(dedupedByPublishedDesc.values());
-        if (ordered.size() > count) return ordered.subList(0, count);
-        return ordered;
+        LinkedHashMap<Long, NewsArticleResponse> deduped = new LinkedHashMap<>();
+        int round = 0;
+        while (deduped.size() < count) {
+            boolean addedThisRound = false;
+            for (List<NewsArticleResponse> articles : perCategory.values()) {
+                if (round >= articles.size()) continue;
+                NewsArticleResponse article = articles.get(round);
+                if (deduped.putIfAbsent(article.id(), article) == null) {
+                    addedThisRound = true;
+                    if (deduped.size() >= count) break;
+                }
+            }
+            if (!addedThisRound) break;
+            round++;
+        }
+        return new ArrayList<>(deduped.values());
     }
 
     private int readCount(WidgetSection section) {

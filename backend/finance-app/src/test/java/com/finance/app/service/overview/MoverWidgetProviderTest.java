@@ -71,8 +71,8 @@ class MoverWidgetProviderTest {
     void should_fallBackToProvider_when_redisEmpty() throws Exception {
         when(topMoversCache.getGainers(MarketType.STOCK)).thenReturn(List.of());
         when(topMoversCache.getLosers(MarketType.STOCK)).thenReturn(List.of());
-        when(stockProvider.getTopMovers(5, true)).thenReturn(List.of(stub("AKBNK.IS")));
-        when(stockProvider.getTopMovers(5, false)).thenReturn(List.of(stub("KRDMD.IS")));
+        when(stockProvider.getTopMovers(10, true)).thenReturn(List.of(stub("AKBNK.IS")));
+        when(stockProvider.getTopMovers(10, false)).thenReturn(List.of(stub("KRDMD.IS")));
 
         MoverData data = provider.fetch("user-1", sectionFor("{\"market\":\"STOCK\"}"));
 
@@ -111,11 +111,12 @@ class MoverWidgetProviderTest {
     @Test
     void should_useDefaultLimit_when_configLimitMissingOrZero() throws Exception {
         when(topMoversCache.getGainers(MarketType.STOCK))
-                .thenReturn(List.of(stub("A"), stub("B"), stub("C"), stub("D"), stub("E"), stub("F"), stub("G")));
+                .thenReturn(List.of(stub("A"), stub("B"), stub("C"), stub("D"), stub("E"),
+                        stub("F"), stub("G"), stub("H"), stub("I"), stub("J"), stub("K"), stub("L")));
         when(topMoversCache.getLosers(MarketType.STOCK)).thenReturn(List.of());
 
         MoverData data = provider.fetch("user-1", sectionFor("{\"market\":\"STOCK\",\"limit\":0}"));
 
-        assertThat(data.gainers()).hasSize(5);
+        assertThat(data.gainers()).hasSize(10);
     }
 }

@@ -21,7 +21,7 @@ public class MarketOverviewController {
     private final MarketOverviewService marketOverviewService;
 
     @GetMapping
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<RenderedWidget>> getOverview(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponse.success("Overview retrieved", marketOverviewService.render(jwt.getSubject()));
     }

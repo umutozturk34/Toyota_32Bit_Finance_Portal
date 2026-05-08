@@ -12,9 +12,9 @@ import java.util.List;
 @Component
 public class OverviewDefaults {
 
-    public static final int MAX_CONFIG_LIMIT = 20;
+    public static final int MAX_CONFIG_LIMIT = 200;
     public static final int MAX_ASSET_CARDS = 12;
-    public static final int MAX_NEWS_COUNT = 12;
+    public static final int MAX_NEWS_COUNT = 50;
 
     private static final List<AssetCardsWidgetProvider.AssetReference> DEFAULT_ASSETS = List.of(
             new AssetCardsWidgetProvider.AssetReference(MarketType.STOCK, "XU100.IS"),
@@ -25,9 +25,9 @@ public class OverviewDefaults {
             new AssetCardsWidgetProvider.AssetReference(MarketType.COMMODITY, "XAUTRYG")
     );
 
-    private static final int DEFAULT_MOVER_LIMIT = 5;
-    private static final int DEFAULT_NEWS_COUNT = 6;
-    private static final int DEFAULT_WATCHLIST_LIMIT = 8;
+    private static final int DEFAULT_MOVER_LIMIT = 10;
+    private static final int DEFAULT_NEWS_COUNT = 10;
+    private static final int DEFAULT_WATCHLIST_LIMIT = 200;
 
     public List<AssetCardsWidgetProvider.AssetReference> defaultAssetReferences() {
         return DEFAULT_ASSETS;
@@ -48,13 +48,12 @@ public class OverviewDefaults {
     public List<WidgetSection> defaultSections() {
         return List.of(
                 new WidgetSection("asset-cards-default", WidgetKind.ASSET_CARDS, 0, JsonNodeFactory.instance.objectNode()),
-                new WidgetSection("movers-stock", WidgetKind.MOVERS, 1, marketConfig(MarketType.STOCK)),
-                new WidgetSection("movers-crypto", WidgetKind.MOVERS, 2, marketConfig(MarketType.CRYPTO)),
-                new WidgetSection("movers-forex", WidgetKind.MOVERS, 3, marketConfig(MarketType.FOREX)),
-                new WidgetSection("movers-fund", WidgetKind.MOVERS, 4, marketConfig(MarketType.FUND)),
-                new WidgetSection("movers-commodity", WidgetKind.MOVERS, 5, marketConfig(MarketType.COMMODITY)),
-                new WidgetSection("watchlist-default", WidgetKind.WATCHLIST, 6, JsonNodeFactory.instance.objectNode()),
-                new WidgetSection("news", WidgetKind.NEWS, 7, JsonNodeFactory.instance.objectNode()));
+                new WidgetSection("news-default", WidgetKind.NEWS, 1, JsonNodeFactory.instance.objectNode()),
+                new WidgetSection("movers-stock", WidgetKind.MOVERS, 2, marketConfig(MarketType.STOCK)),
+                new WidgetSection("movers-crypto", WidgetKind.MOVERS, 3, marketConfig(MarketType.CRYPTO)),
+                new WidgetSection("movers-forex", WidgetKind.MOVERS, 4, marketConfig(MarketType.FOREX)),
+                new WidgetSection("movers-fund", WidgetKind.MOVERS, 5, marketConfig(MarketType.FUND)),
+                new WidgetSection("movers-commodity", WidgetKind.MOVERS, 6, marketConfig(MarketType.COMMODITY)));
     }
 
     private static ObjectNode marketConfig(MarketType market) {

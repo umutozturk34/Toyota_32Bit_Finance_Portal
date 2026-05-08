@@ -1,6 +1,7 @@
 package com.finance.user.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.user.dto.UserLayoutResponse;
 import com.finance.user.mapper.UserLayoutMapper;
 import com.finance.user.model.UserLayout;
@@ -9,12 +10,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class UserLayoutService {
 
     private final UserLayoutRepository repository;
     private final UserLayoutMapper mapper;
+    private final ObjectMapper objectMapper;
+    private final List<OverviewSaveSanitizer> sanitizers;
 
     @Transactional(readOnly = true)
     public UserLayoutResponse getOrEmpty(String userSub) {
@@ -24,10 +30,16 @@ public class UserLayoutService {
     }
 
     @Transactional
-    public UserLayoutResponse saveOverview(String userSub, JsonNode overview) {
+    public UserLayoutResponse saveOverview(String userSub, Map<String, Object> overview) {
+        Map<String, Object> cleaned = overview;
+        for (OverviewSaveSanitizer sanitizer : sanitizers) {
+            cleaned = sanitizer.sanitize(cleaned);
+        }
         UserLayout layout = repository.findById(userSub)
                 .orElseGet(() -> UserLayout.emptyFor(userSub));
-        layout.setOverview(overview);
-        return mapper.toResponse(repository.save(layout));
+        JsonNode tree = objectMapper.valueToTree(cleaned);
+        layout.setOverview(tree);
+        layout.setUpdatedAt(java.time.Instant.now());
+        return mapper.toResponse(repository.saveAndFlush(layout));
     }
 }

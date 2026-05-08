@@ -1,6 +1,7 @@
 package com.finance.app.service.overview;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.finance.app.dto.response.overview.WidgetKind;
 import com.finance.app.dto.response.overview.WidgetSection;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,6 +24,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class OverviewLayoutReader {
 
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Map<String, String> LEGACY_ID_MAP = Map.of("bist-indices", "asset-cards-default");
     private static final Map<String, WidgetKind> LEGACY_KIND_BY_PREFIX = Map.of(
             "asset-cards", WidgetKind.ASSET_CARDS,
@@ -35,28 +38,51 @@ public class OverviewLayoutReader {
 
     public List<WidgetSection> readVisibleSections(String userSub) {
         UserLayoutResponse response = userLayoutService.getOrEmpty(userSub);
-        JsonNode overview = response != null ? response.overview() : null;
+        Map<String, Object> raw = response != null ? response.overview() : null;
+        JsonNode overview = raw != null && !raw.isEmpty() ? OBJECT_MAPPER.valueToTree(raw) : null;
         ParseResult parsed = parse(overview);
         if (parsed.allIds().isEmpty()) return defaults.defaultSections();
-        return mergeWithDefaults(parsed);
+        return parsed.visible();
     }
 
     private ParseResult parse(JsonNode overview) {
         Set<String> allIds = new HashSet<>();
         Set<WidgetKind> allKinds = new HashSet<>();
-        List<WidgetSection> visible = new ArrayList<>();
-        if (overview == null) return new ParseResult(visible, allIds, allKinds);
+        LinkedHashMap<String, WidgetSection> dedup = new LinkedHashMap<>();
+        int assetCardCount = 0;
+        if (overview == null) return new ParseResult(List.of(), allIds, allKinds);
         JsonNode sectionsNode = overview.get("sections");
-        if (sectionsNode == null || !sectionsNode.isArray()) return new ParseResult(visible, allIds, allKinds);
+        if (sectionsNode == null || !sectionsNode.isArray()) return new ParseResult(List.of(), allIds, allKinds);
         for (JsonNode entry : sectionsNode) {
             WidgetSection section = parseEntry(entry);
             if (section == null) continue;
             allIds.add(section.sectionId());
             allKinds.add(section.kind());
-            if (entry.path("visible").asBoolean(true)) visible.add(section);
+            if (!entry.path("visible").asBoolean(true)) continue;
+            if (section.kind() == WidgetKind.ASSET_CARDS) {
+                if (assetCardCount >= 4) continue;
+                assetCardCount++;
+            }
+            dedup.putIfAbsent(dedupKey(section), section);
         }
+        List<WidgetSection> visible = new ArrayList<>(dedup.values());
         visible.sort(Comparator.comparingInt(WidgetSection::order));
         return new ParseResult(visible, allIds, allKinds);
+    }
+
+    private static String dedupKey(WidgetSection s) {
+        if (s.kind() == WidgetKind.ASSET_CARDS) {
+            return "ASSET_CARDS:" + s.sectionId();
+        }
+        if (s.kind() == WidgetKind.WATCHLIST) {
+            JsonNode wlId = s.config().get("watchlistId");
+            return "WATCHLIST:" + (wlId != null && wlId.isNumber() ? wlId.asLong() : "default");
+        }
+        if (s.kind() == WidgetKind.MOVERS) {
+            JsonNode market = s.config().get("market");
+            return "MOVERS:" + (market != null && !market.isNull() ? market.asText() : "any");
+        }
+        return s.kind().name();
     }
 
     private WidgetSection parseEntry(JsonNode entry) {

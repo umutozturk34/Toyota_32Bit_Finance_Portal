@@ -1,25 +1,25 @@
 package com.finance.market.fund.service;
-import com.finance.common.service.TrackedAssetCommandService;
+import com.finance.market.core.service.TrackedAssetCommandService;
 
-import com.finance.common.service.MarketEntityWriter;
+import com.finance.market.core.service.MarketEntityWriter;
 
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 
 
 import com.finance.common.config.AppProperties;
 import com.finance.market.fund.config.FundProperties;
 import com.finance.market.fund.dto.external.TefasFundDto;
-import com.finance.common.dto.internal.TrackedAssetUpsertCommand;
+import com.finance.market.core.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.market.fund.mapper.FundMapper;
 import com.finance.market.fund.model.Fund;
 import com.finance.market.fund.model.FundCandle;
 import com.finance.market.fund.model.FundType;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
-import com.finance.common.service.AssetRegistryService;
+import com.finance.market.core.service.AssetRegistryService;
 import com.finance.market.fund.repository.FundCandleRepository;
 import com.finance.market.fund.repository.FundRepository;
-import com.finance.common.util.CandleBatchUpsertTemplate;
+import com.finance.market.core.util.CandleBatchUpsertTemplate;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 

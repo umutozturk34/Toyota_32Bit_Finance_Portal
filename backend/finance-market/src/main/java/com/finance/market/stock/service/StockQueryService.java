@@ -1,12 +1,12 @@
 package com.finance.market.stock.service;
-import com.finance.common.service.MarketHistoryProvider;
+import com.finance.market.core.service.MarketHistoryProvider;
 
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 
 
-import com.finance.common.dto.response.CandleResponse;
+import com.finance.market.core.dto.response.CandleResponse;
 import com.finance.market.stock.mapper.StockResponseMapper;
 import com.finance.common.model.CandlePeriod;
 import com.finance.common.model.MarketType;

@@ -1,13 +1,13 @@
 package com.finance.market.stock.service;
-import com.finance.common.service.MarketEntityWriter;
+import com.finance.market.core.service.MarketEntityWriter;
 
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.config.AppProperties;
-import com.finance.common.dto.external.YahooCandleDto;
+import com.finance.market.core.dto.external.YahooCandleDto;
 import com.finance.market.stock.dto.external.YahooStockQuoteDto;
 import com.finance.common.exception.BusinessException;
 import com.finance.market.stock.mapper.StockMapper;
@@ -16,11 +16,11 @@ import com.finance.market.stock.model.StockCandle;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.StockSegment;
 import com.finance.common.model.TrackedAssetType;
-import com.finance.common.service.AssetRegistryService;
+import com.finance.market.core.service.AssetRegistryService;
 import com.finance.market.stock.repository.StockCandleRepository;
 import com.finance.market.stock.repository.StockRepository;
-import com.finance.common.util.CandleBatchUpsertTemplate;
-import com.finance.common.util.ChangeFromCandlesUpdater;
+import com.finance.market.core.util.CandleBatchUpsertTemplate;
+import com.finance.market.core.util.ChangeFromCandlesUpdater;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 

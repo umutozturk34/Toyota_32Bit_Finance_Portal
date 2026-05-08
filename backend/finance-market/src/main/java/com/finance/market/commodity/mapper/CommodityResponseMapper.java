@@ -1,11 +1,11 @@
 package com.finance.market.commodity.mapper;
 
-import com.finance.common.mapper.MarketMetadataBuilder;
+import com.finance.market.core.mapper.MarketMetadataBuilder;
 
 
-import com.finance.common.dto.response.CandleResponse;
+import com.finance.market.core.dto.response.CandleResponse;
 import com.finance.common.dto.response.CommodityMetadata;
-import com.finance.common.dto.response.MarketAssetResponse;
+import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.commodity.model.Commodity;
 import com.finance.market.commodity.model.CommodityCandle;
 import org.mapstruct.Mapper;

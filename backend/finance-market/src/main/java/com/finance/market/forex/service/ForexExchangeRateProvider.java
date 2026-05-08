@@ -1,12 +1,12 @@
 package com.finance.market.forex.service;
-import com.finance.common.service.ExchangeRateProvider;
+import com.finance.market.core.service.ExchangeRateProvider;
 
-import com.finance.common.service.ExchangeRateSnapshot;
+import com.finance.market.core.service.ExchangeRateSnapshot;
 
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 
 
-import com.finance.common.dto.external.YahooCandleDto;
+import com.finance.market.core.dto.external.YahooCandleDto;
 import com.finance.market.forex.model.Forex;
 import com.finance.market.forex.repository.ForexCandleRepository;
 import org.springframework.stereotype.Component;

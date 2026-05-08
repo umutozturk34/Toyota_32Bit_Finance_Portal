@@ -1,5 +1,4 @@
 package com.finance.news.controller;
-import com.finance.common.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.config.AppProperties;

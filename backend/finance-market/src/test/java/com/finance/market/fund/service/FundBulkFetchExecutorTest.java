@@ -1,12 +1,12 @@
 package com.finance.market.fund.service;
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.market.fund.client.TefasClient;
 import com.finance.market.fund.dto.external.TefasFundDto;
 import com.finance.market.fund.model.Fund;
 import com.finance.market.fund.model.FundType;
-import com.finance.common.util.WindowedFetchPlanner;
+import com.finance.market.core.util.WindowedFetchPlanner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;

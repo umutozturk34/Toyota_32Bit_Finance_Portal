@@ -3,7 +3,7 @@ package com.finance.app.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.market.bond.model.Bond;
 import com.finance.market.bond.repository.BondRepository;
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.commodity.model.Commodity;
 import com.finance.market.commodity.repository.CommodityRepository;
 import com.finance.common.config.AppProperties;

@@ -2,7 +2,7 @@ package com.finance.portfolio.model;
 import com.finance.common.model.MarketType;
 
 
-import com.finance.common.config.CommissionProperties;
+import com.finance.market.core.config.CommissionProperties;
 
 import java.math.BigDecimal;
 

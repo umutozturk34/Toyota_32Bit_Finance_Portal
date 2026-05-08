@@ -1,5 +1,5 @@
 package com.finance.market.commodity.service;
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 
 
 import com.finance.market.commodity.mapper.CommodityResponseMapper;

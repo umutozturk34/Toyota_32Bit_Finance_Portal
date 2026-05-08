@@ -1,6 +1,6 @@
 package com.finance.app.dto.response.overview;
 
-import com.finance.common.dto.response.MarketAssetResponse;
+import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.common.model.MarketType;
 
 import java.util.List;

@@ -1,12 +1,12 @@
 package com.finance.market.fund.mapper;
 import com.finance.common.model.MarketType;
 
-import com.finance.common.mapper.MarketMetadataBuilder;
+import com.finance.market.core.mapper.MarketMetadataBuilder;
 
 
 import com.finance.market.fund.dto.response.FundCandleResponse;
 import com.finance.common.dto.response.FundMetadata;
-import com.finance.common.dto.response.MarketAssetResponse;
+import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.fund.model.Fund;
 import com.finance.market.fund.model.FundCandle;
 import org.mapstruct.Mapper;

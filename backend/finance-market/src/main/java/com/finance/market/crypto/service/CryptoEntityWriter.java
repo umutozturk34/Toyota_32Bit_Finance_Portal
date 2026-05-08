@@ -1,9 +1,9 @@
 package com.finance.market.crypto.service;
-import com.finance.common.service.MarketEntityWriter;
+import com.finance.market.core.service.MarketEntityWriter;
 
 
 import com.finance.common.model.MarketType;
-import com.finance.common.service.AssetRegistryService;
+import com.finance.market.core.service.AssetRegistryService;
 import com.finance.market.crypto.dto.external.CoinGeckoCandleDto;
 import com.finance.market.crypto.dto.external.CoinGeckoSnapshotDto;
 import com.finance.market.crypto.mapper.CryptoMapper;
@@ -11,7 +11,7 @@ import com.finance.market.crypto.model.Crypto;
 import com.finance.market.crypto.model.CryptoCandle;
 import com.finance.market.crypto.repository.CryptoCandleRepository;
 import com.finance.market.crypto.repository.CryptoRepository;
-import com.finance.common.util.CandleBatchUpsertTemplate;
+import com.finance.market.core.util.CandleBatchUpsertTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;

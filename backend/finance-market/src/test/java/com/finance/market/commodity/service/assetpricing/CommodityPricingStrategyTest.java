@@ -1,13 +1,13 @@
 package com.finance.market.commodity.service.assetpricing;
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
-import com.finance.common.config.CommissionProperties;
+import com.finance.market.core.config.CommissionProperties;
 import com.finance.market.commodity.model.Commodity;
 import com.finance.market.commodity.model.CommodityCandle;
 import com.finance.common.model.MarketType;
 import com.finance.common.service.AssetPricingPort;
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

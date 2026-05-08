@@ -1,12 +1,14 @@
 package com.finance.market.crypto.service.assetpricing;
 
-import com.finance.common.config.CommissionProperties;
+import com.finance.market.core.model.BaseAsset;
+
+import com.finance.market.core.config.CommissionProperties;
 import com.finance.market.crypto.model.Crypto;
 import com.finance.market.crypto.model.CryptoCandle;
 import com.finance.common.model.MarketType;
 import com.finance.common.service.AssetPricingPort;
-import com.finance.common.service.assetpricing.BaseAssetPricingStrategy;
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.service.assetpricing.BaseAssetPricingStrategy;
+import com.finance.market.core.cache.MarketCacheService;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;

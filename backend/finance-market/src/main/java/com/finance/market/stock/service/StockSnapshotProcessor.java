@@ -1,20 +1,20 @@
 package com.finance.market.stock.service;
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.market.stock.client.YahooStockClient;
 import com.finance.common.config.AppProperties;
 import com.finance.market.stock.config.StockProperties;
 import com.finance.market.stock.dto.external.YahooStockQuoteDto;
-import com.finance.common.dto.internal.YahooChartFullResult;
+import com.finance.market.core.dto.internal.YahooChartFullResult;
 import com.finance.market.stock.model.Stock;
 import com.finance.market.stock.repository.StockCandleRepository;
-import com.finance.common.util.ApiAssetValidator;
+import com.finance.market.core.util.ApiAssetValidator;
 import com.finance.common.util.CodeNormalizer;
-import com.finance.common.util.TrackedRefreshRunner;
-import com.finance.common.util.YahooRangePolicy;
+import com.finance.market.core.util.TrackedRefreshRunner;
+import com.finance.market.core.util.YahooRangePolicy;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;

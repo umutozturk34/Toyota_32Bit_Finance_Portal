@@ -1,7 +1,7 @@
 package com.finance.market.commodity.mapper;
 
-import com.finance.common.dto.external.YahooCandleDto;
-import com.finance.common.dto.external.YahooQuoteDto;
+import com.finance.market.core.dto.external.YahooCandleDto;
+import com.finance.market.core.dto.external.YahooQuoteDto;
 import com.finance.market.commodity.model.Commodity;
 import com.finance.market.commodity.model.CommodityCandle;
 import com.finance.market.commodity.model.CommoditySnapshotInput;

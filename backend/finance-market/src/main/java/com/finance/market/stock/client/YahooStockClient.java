@@ -1,12 +1,12 @@
 package com.finance.market.stock.client;
-import com.finance.common.client.AbstractYahooClient;
+import com.finance.market.core.client.AbstractYahooClient;
 
 
 import com.finance.common.config.AppProperties;
 import com.finance.market.stock.dto.external.YahooStockQuoteDto;
-import com.finance.common.dto.internal.YahooChartFullResult;
-import com.finance.common.dto.internal.YahooChartResponse.Result;
-import com.finance.common.mapper.YahooClientMapper;
+import com.finance.market.core.dto.internal.YahooChartFullResult;
+import com.finance.market.core.dto.internal.YahooChartResponse.Result;
+import com.finance.market.core.mapper.YahooClientMapper;
 import com.finance.market.stock.mapper.YahooStockQuoteMapper;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;

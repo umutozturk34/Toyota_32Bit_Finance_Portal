@@ -1,15 +1,15 @@
 package com.finance.app.service;
-import com.finance.common.service.MarketUpdatePort;
+import com.finance.market.core.service.MarketUpdatePort;
 
-import com.finance.common.service.TrackedAssetCommandService;
+import com.finance.market.core.service.TrackedAssetCommandService;
 
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 
 
-import com.finance.common.dto.request.BulkTrackedAssetOrderUpdateRequest;
-import com.finance.common.dto.request.UpsertTrackedAssetRequest;
-import com.finance.common.dto.response.TrackedAssetResponse;
-import com.finance.common.mapper.TrackedAssetMapper;
+import com.finance.market.core.dto.request.BulkTrackedAssetOrderUpdateRequest;
+import com.finance.market.core.dto.request.UpsertTrackedAssetRequest;
+import com.finance.market.core.dto.response.TrackedAssetResponse;
+import com.finance.market.core.mapper.TrackedAssetMapper;
 import com.finance.common.model.TrackedAssetType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

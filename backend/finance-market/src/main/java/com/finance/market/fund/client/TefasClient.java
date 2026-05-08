@@ -1,5 +1,5 @@
 package com.finance.market.fund.client;
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,7 +10,7 @@ import com.finance.market.fund.dto.internal.TefasFundQueryRequest;
 import com.finance.market.fund.dto.internal.TefasResponse;
 import com.finance.common.exception.ExternalApiException;
 import com.finance.common.exception.ExternalApiRequestException;
-import com.finance.common.filter.TefasSessionManager;
+import com.finance.market.core.filter.TefasSessionManager;
 import com.finance.market.fund.mapper.TefasClientMapper;
 import com.finance.market.fund.model.FundType;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;

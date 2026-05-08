@@ -1,17 +1,17 @@
 package com.finance.market.forex.service;
-import com.finance.common.service.MarketEntityWriter;
+import com.finance.market.core.service.MarketEntityWriter;
 
 
-import com.finance.common.dto.external.YahooCandleDto;
-import com.finance.common.dto.external.YahooQuoteDto;
+import com.finance.market.core.dto.external.YahooCandleDto;
+import com.finance.market.core.dto.external.YahooQuoteDto;
 import com.finance.market.forex.mapper.ForexMapper;
 import com.finance.market.forex.model.Forex;
 import com.finance.market.forex.model.ForexCandle;
 import com.finance.market.forex.repository.ForexCandleRepository;
 import com.finance.market.forex.repository.ForexRepository;
-import com.finance.common.util.CandleBatchUpsertTemplate;
-import com.finance.common.util.ChangeFromCandlesUpdater;
-import com.finance.common.util.SyntheticPriceCalculator;
+import com.finance.market.core.util.CandleBatchUpsertTemplate;
+import com.finance.market.core.util.ChangeFromCandlesUpdater;
+import com.finance.market.core.util.SyntheticPriceCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;

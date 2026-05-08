@@ -1,12 +1,12 @@
 package com.finance.app.controller;
 
 import com.finance.common.dto.ApiResponse;
-import com.finance.common.dto.request.BulkTrackedAssetOrderUpdateRequest;
-import com.finance.common.dto.request.UpsertTrackedAssetRequest;
-import com.finance.common.dto.response.TrackedAssetResponse;
+import com.finance.market.core.dto.request.BulkTrackedAssetOrderUpdateRequest;
+import com.finance.market.core.dto.request.UpsertTrackedAssetRequest;
+import com.finance.market.core.dto.response.TrackedAssetResponse;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.app.service.TrackedAssetAdminService;
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;

@@ -1,22 +1,22 @@
 package com.finance.market.commodity.service;
 import com.finance.market.commodity.model.Commodity;
 
-import com.finance.common.service.ExchangeRateProvider;
+import com.finance.market.core.service.ExchangeRateProvider;
 
-import com.finance.common.service.ExchangeRateSnapshot;
+import com.finance.market.core.service.ExchangeRateSnapshot;
 
-import com.finance.common.service.MarketRefresher;
+import com.finance.market.core.service.MarketRefresher;
 
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 
 
 import com.finance.market.commodity.config.CommodityProperties;
-import com.finance.common.dto.external.YahooCandleDto;
+import com.finance.market.core.dto.external.YahooCandleDto;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.common.util.BatchLogHelper;
 import com.finance.common.util.BatchUpdateRunner;
-import com.finance.common.util.MarketBatchRunner;
+import com.finance.market.core.util.MarketBatchRunner;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 

@@ -2,7 +2,7 @@ package com.finance.app.config;
 
 import com.finance.common.model.MarketType;
 import com.finance.common.service.AssetPricingPort;
-import com.finance.common.service.assetpricing.AssetPricingStrategy;
+import com.finance.market.core.service.assetpricing.AssetPricingStrategy;
 import com.finance.common.util.EnumDispatcher;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;

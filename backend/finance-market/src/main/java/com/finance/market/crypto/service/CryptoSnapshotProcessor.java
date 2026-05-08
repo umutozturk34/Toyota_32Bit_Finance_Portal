@@ -1,9 +1,9 @@
 package com.finance.market.crypto.service;
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 
 
 import com.finance.market.crypto.client.CoinGeckoClient;
@@ -11,12 +11,12 @@ import com.finance.market.crypto.config.CryptoProperties;
 import com.finance.market.crypto.dto.external.CoinGeckoSnapshotDto;
 import com.finance.market.crypto.model.Crypto;
 import com.finance.common.model.TrackedAssetType;
-import com.finance.common.util.ApiAssetValidator;
+import com.finance.market.core.util.ApiAssetValidator;
 import com.finance.common.util.BatchLogHelper;
 import com.finance.common.util.BatchUpdateRunner;
 import com.finance.common.util.CodeNormalizer;
-import com.finance.common.util.MarketBatchRunner;
-import com.finance.common.util.TrackedRefreshRunner;
+import com.finance.market.core.util.MarketBatchRunner;
+import com.finance.market.core.util.TrackedRefreshRunner;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;

@@ -1,5 +1,5 @@
 package com.finance.market.fund.service;
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 
 
 import com.finance.common.config.AppProperties;

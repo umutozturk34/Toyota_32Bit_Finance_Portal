@@ -1,10 +1,10 @@
 package com.finance.market.commodity.scheduler;
-import com.finance.common.scheduler.SchedulerPorts;
+import com.finance.market.core.scheduler.SchedulerPorts;
 
 
 import com.finance.common.model.MarketType;
 import com.finance.market.commodity.service.CommodityDataService;
-import com.finance.common.service.MarketUpdatePort;
+import com.finance.market.core.service.MarketUpdatePort;
 import com.finance.common.service.PortfolioSnapshotPort;
 import com.finance.common.service.TaskTrackingService;
 import org.junit.jupiter.api.BeforeEach;

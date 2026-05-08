@@ -3,10 +3,10 @@ import com.finance.common.model.MarketType;
 
 import com.finance.portfolio.model.AssetType;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
-import com.finance.common.config.CommissionProperties;
+import com.finance.market.core.config.CommissionProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;

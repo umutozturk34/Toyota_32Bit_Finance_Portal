@@ -1,10 +1,10 @@
 package com.finance.market.forex.service;
 import com.finance.market.forex.model.Forex;
 
-import com.finance.common.service.MarketHistoryProvider;
+import com.finance.market.core.service.MarketHistoryProvider;
 
 
-import com.finance.common.dto.response.CandleResponse;
+import com.finance.market.core.dto.response.CandleResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.market.forex.mapper.ForexResponseMapper;
 import com.finance.common.model.CandlePeriod;

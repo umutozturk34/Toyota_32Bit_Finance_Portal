@@ -1,11 +1,11 @@
 package com.finance.market.stock.service;
 import com.finance.market.stock.model.Stock;
 
-import com.finance.common.service.MarketRefresher;
+import com.finance.market.core.service.MarketRefresher;
 
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.market.stock.config.StockProperties;
@@ -14,7 +14,7 @@ import com.finance.common.model.TrackedAssetType;
 import com.finance.common.util.BatchLogHelper;
 import com.finance.common.util.BatchUpdateRunner;
 import com.finance.common.util.CodeNormalizer;
-import com.finance.common.util.MarketBatchRunner;
+import com.finance.market.core.util.MarketBatchRunner;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 

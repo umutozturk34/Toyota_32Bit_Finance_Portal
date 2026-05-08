@@ -1,18 +1,18 @@
 package com.finance.market.commodity.service;
-import com.finance.common.service.MarketEntityWriter;
+import com.finance.market.core.service.MarketEntityWriter;
 
 
-import com.finance.common.dto.external.YahooCandleDto;
+import com.finance.market.core.dto.external.YahooCandleDto;
 import com.finance.common.model.MarketType;
-import com.finance.common.service.AssetRegistryService;
+import com.finance.market.core.service.AssetRegistryService;
 import com.finance.market.commodity.mapper.CommodityMapper;
 import com.finance.market.commodity.model.Commodity;
 import com.finance.market.commodity.model.CommodityCandle;
 import com.finance.market.commodity.model.CommoditySnapshotInput;
 import com.finance.market.commodity.repository.CommodityCandleRepository;
 import com.finance.market.commodity.repository.CommodityRepository;
-import com.finance.common.util.CandleBatchUpsertTemplate;
-import com.finance.common.util.ChangeFromCandlesUpdater;
+import com.finance.market.core.util.CandleBatchUpsertTemplate;
+import com.finance.market.core.util.ChangeFromCandlesUpdater;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;

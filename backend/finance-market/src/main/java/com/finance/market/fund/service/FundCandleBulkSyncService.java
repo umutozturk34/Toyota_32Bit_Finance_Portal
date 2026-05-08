@@ -1,7 +1,7 @@
 package com.finance.market.fund.service;
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.config.AppProperties;
@@ -13,7 +13,7 @@ import com.finance.common.model.TrackedAssetType;
 import com.finance.market.fund.repository.FundCandleRepository;
 import com.finance.market.fund.repository.FundRepository;
 import com.finance.market.fund.util.TefasHelper;
-import com.finance.common.util.WindowedFetchPlanner;
+import com.finance.market.core.util.WindowedFetchPlanner;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 

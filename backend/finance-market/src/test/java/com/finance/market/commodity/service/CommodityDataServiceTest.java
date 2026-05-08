@@ -1,7 +1,7 @@
 package com.finance.market.commodity.service;
 import com.finance.market.commodity.service.CommodityDataService;
 
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 
 
 import com.finance.common.exception.BusinessException;

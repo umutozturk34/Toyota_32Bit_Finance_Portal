@@ -1,5 +1,6 @@
 package com.finance.common.model;
 
+import com.finance.common.model.MarketType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

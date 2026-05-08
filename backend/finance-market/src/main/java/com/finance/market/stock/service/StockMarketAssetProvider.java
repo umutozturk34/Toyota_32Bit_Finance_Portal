@@ -1,17 +1,17 @@
 package com.finance.market.stock.service;
-import com.finance.common.service.MarketAssetProvider.MarketAssetFilters;
+import com.finance.market.core.service.MarketAssetProvider.MarketAssetFilters;
 
-import com.finance.common.service.BaseTrackedMarketAssetProvider;
+import com.finance.market.core.service.BaseTrackedMarketAssetProvider;
 
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.dto.response.GroupCount;
-import com.finance.common.dto.response.MarketAssetResponse;
+import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.stock.mapper.StockResponseMapper;
 import com.finance.common.model.MarketType;
 import com.finance.market.stock.model.Stock;

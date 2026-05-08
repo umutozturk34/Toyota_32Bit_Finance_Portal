@@ -5,7 +5,7 @@ import com.finance.common.service.TaskTrackingService;
 
 import com.finance.news.service.NewsDataService;
 
-import com.finance.common.service.MarketUpdatePort;
+import com.finance.market.core.service.MarketUpdatePort;
 import com.finance.common.event.MarketUpdateEventPort;
 
 import com.finance.market.bond.service.BondDataService;
@@ -16,10 +16,10 @@ import com.finance.common.service.PortfolioSnapshotPort;
 
 import com.finance.portfolio.model.Portfolio;
 
-import com.finance.common.service.MarketRefresher;
+import com.finance.market.core.service.MarketRefresher;
 
 
-import com.finance.common.dto.response.TaskTriggerResponse;
+import com.finance.market.core.dto.response.TaskTriggerResponse;
 import com.finance.common.model.MarketType;
 import com.finance.common.util.EnumDispatcher;
 import lombok.extern.log4j.Log4j2;

@@ -3,7 +3,7 @@ package com.finance;
 import com.finance.app.config.OverviewProperties;
 import com.finance.market.bond.config.BondProperties;
 import com.finance.common.config.AppProperties;
-import com.finance.common.config.CommissionProperties;
+import com.finance.market.core.config.CommissionProperties;
 import com.finance.market.commodity.config.CommodityProperties;
 import com.finance.market.crypto.config.CryptoProperties;
 import com.finance.market.forex.config.ForexProperties;

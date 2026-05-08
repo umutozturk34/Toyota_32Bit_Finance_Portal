@@ -1,7 +1,7 @@
 package com.finance.market.fund.scheduler;
-import com.finance.common.scheduler.AbstractMarketScheduler;
+import com.finance.market.core.scheduler.AbstractMarketScheduler;
 
-import com.finance.common.scheduler.SchedulerPorts;
+import com.finance.market.core.scheduler.SchedulerPorts;
 
 
 import com.finance.common.model.MarketType;

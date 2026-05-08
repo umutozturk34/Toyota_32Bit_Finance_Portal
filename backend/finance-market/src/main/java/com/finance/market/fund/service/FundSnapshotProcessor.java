@@ -1,9 +1,9 @@
 package com.finance.market.fund.service;
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.market.fund.client.TefasClient;
@@ -13,10 +13,10 @@ import com.finance.market.fund.dto.external.TefasFundDto;
 import com.finance.market.fund.model.Fund;
 import com.finance.market.fund.model.FundType;
 import com.finance.common.model.TrackedAssetType;
-import com.finance.common.util.ApiAssetValidator;
+import com.finance.market.core.util.ApiAssetValidator;
 import com.finance.common.util.CodeNormalizer;
 import com.finance.market.fund.util.TefasHelper;
-import com.finance.common.util.TrackedRefreshRunner;
+import com.finance.market.core.util.TrackedRefreshRunner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;

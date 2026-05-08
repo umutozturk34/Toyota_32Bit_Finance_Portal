@@ -1,12 +1,12 @@
 package com.finance.market.crypto.mapper;
 import com.finance.common.model.MarketType;
 
-import com.finance.common.mapper.MarketMetadataBuilder;
+import com.finance.market.core.mapper.MarketMetadataBuilder;
 
 
-import com.finance.common.dto.response.CandleResponse;
+import com.finance.market.core.dto.response.CandleResponse;
 import com.finance.common.dto.response.CryptoMetadata;
-import com.finance.common.dto.response.MarketAssetResponse;
+import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.crypto.model.Crypto;
 import com.finance.market.crypto.model.CryptoCandle;
 import org.mapstruct.Mapper;

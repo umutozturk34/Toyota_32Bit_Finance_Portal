@@ -1,8 +1,8 @@
 package com.finance.market.stock.mapper;
-import com.finance.common.mapper.BaseMarketMapper;
+import com.finance.market.core.mapper.BaseMarketMapper;
 
 
-import com.finance.common.dto.external.YahooCandleDto;
+import com.finance.market.core.dto.external.YahooCandleDto;
 import com.finance.market.stock.dto.external.YahooStockQuoteDto;
 import com.finance.common.model.StockSegment;
 import com.finance.market.stock.model.Stock;

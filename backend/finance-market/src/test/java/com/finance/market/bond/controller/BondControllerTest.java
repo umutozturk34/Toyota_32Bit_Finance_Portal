@@ -1,5 +1,5 @@
 package com.finance.market.bond.controller;
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.market.bond.dto.response.BondResponse;

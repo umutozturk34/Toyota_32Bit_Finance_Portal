@@ -15,7 +15,7 @@ import com.finance.portfolio.dto.response.LotLimitsResponse;
 
 import com.finance.portfolio.dto.response.AllocationItem;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.portfolio.config.PortfolioProperties;

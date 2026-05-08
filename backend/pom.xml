@@ -32,7 +32,6 @@
 	</repositories>
 
 	<modules>
-		<module>finance-cache</module>
 		<module>finance-market</module>
 		<module>finance-news</module>
 		<module>finance-user</module>
@@ -63,11 +62,6 @@
 				<groupId>com.finance</groupId>
 				<artifactId>finance-common</artifactId>
 				<version>${finance-common.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.finance</groupId>
-				<artifactId>finance-cache</artifactId>
-				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.finance</groupId>

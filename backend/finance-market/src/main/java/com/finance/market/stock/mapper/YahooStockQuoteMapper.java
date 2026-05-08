@@ -1,10 +1,10 @@
 package com.finance.market.stock.mapper;
 
 import com.finance.market.stock.dto.external.YahooStockQuoteDto;
-import com.finance.common.dto.internal.YahooChartResponse.Meta;
-import com.finance.common.dto.internal.YahooChartResponse.Quote;
-import com.finance.common.dto.internal.YahooChartResponse.Result;
-import com.finance.common.util.YahooMetaHelpers;
+import com.finance.market.core.dto.internal.YahooChartResponse.Meta;
+import com.finance.market.core.dto.internal.YahooChartResponse.Quote;
+import com.finance.market.core.dto.internal.YahooChartResponse.Result;
+import com.finance.market.core.util.YahooMetaHelpers;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;

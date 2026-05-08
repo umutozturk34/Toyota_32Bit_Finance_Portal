@@ -1,10 +1,10 @@
 package com.finance.portfolio.service;
-import com.finance.common.service.HistoricalPricingPort;
+import com.finance.market.core.service.HistoricalPricingPort;
 
 import com.finance.common.service.AssetPricingPort;
 import com.finance.portfolio.config.PortfolioProperties;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.portfolio.model.AssetType;

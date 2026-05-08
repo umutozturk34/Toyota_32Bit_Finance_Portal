@@ -1,7 +1,6 @@
 package com.finance.news.service;
 import com.finance.news.service.NewsDataService;
 
-import com.finance.common.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.exception.BusinessException;

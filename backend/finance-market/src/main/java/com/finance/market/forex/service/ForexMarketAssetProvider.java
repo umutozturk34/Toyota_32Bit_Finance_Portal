@@ -1,14 +1,14 @@
 package com.finance.market.forex.service;
-import com.finance.common.service.MarketAssetProvider.MarketAssetFilters;
+import com.finance.market.core.service.MarketAssetProvider.MarketAssetFilters;
 
-import com.finance.common.service.MarketAssetProvider;
+import com.finance.market.core.service.MarketAssetProvider;
 
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
-import com.finance.common.dto.response.MarketAssetResponse;
+import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.forex.mapper.ForexResponseMapper;
 import com.finance.market.forex.model.Forex;
 import com.finance.common.model.MarketType;
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 
-import static com.finance.common.service.MarketProviderHelper.buildSort;
+import static com.finance.market.core.service.MarketProviderHelper.buildSort;
 
 @Log4j2
 @Service

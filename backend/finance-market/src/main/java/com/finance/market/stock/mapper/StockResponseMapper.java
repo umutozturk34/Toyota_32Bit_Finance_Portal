@@ -1,11 +1,11 @@
 package com.finance.market.stock.mapper;
 import com.finance.common.model.MarketType;
 
-import com.finance.common.mapper.MarketMetadataBuilder;
+import com.finance.market.core.mapper.MarketMetadataBuilder;
 
 
-import com.finance.common.dto.response.CandleResponse;
-import com.finance.common.dto.response.MarketAssetResponse;
+import com.finance.market.core.dto.response.CandleResponse;
+import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.common.dto.response.StockMetadata;
 import com.finance.market.stock.model.Stock;
 import com.finance.market.stock.model.StockCandle;

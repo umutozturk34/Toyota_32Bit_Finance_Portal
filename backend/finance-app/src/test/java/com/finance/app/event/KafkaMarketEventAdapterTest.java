@@ -3,7 +3,7 @@ import com.finance.common.event.KafkaTopics;
 
 import com.finance.common.event.MarketUpdatedEvent;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.model.MarketType;

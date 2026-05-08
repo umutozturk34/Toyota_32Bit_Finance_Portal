@@ -1,5 +1,5 @@
 package com.finance.app.config;
-import com.finance.common.config.CommissionProperties;
+import com.finance.market.core.config.CommissionProperties;
 
 import com.finance.market.stock.model.Stock;
 
@@ -13,11 +13,11 @@ import com.finance.common.model.MarketType;
 
 import com.finance.common.service.AssetPricingPort;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.service.AssetPricingPort.AssetMeta;
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.crypto.service.assetpricing.CryptoPricingStrategy;
 import com.finance.market.forex.service.assetpricing.ForexPricingStrategy;
 import com.finance.market.fund.service.assetpricing.FundPricingStrategy;

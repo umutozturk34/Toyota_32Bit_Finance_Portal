@@ -1,23 +1,23 @@
 package com.finance.market.forex.service;
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.market.forex.client.YahooForexClient;
 import com.finance.common.config.AppProperties;
 import com.finance.market.forex.config.ForexProperties;
-import com.finance.common.dto.external.YahooCandleDto;
-import com.finance.common.dto.external.YahooQuoteDto;
-import com.finance.common.dto.internal.YahooChartFullResult;
+import com.finance.market.core.dto.external.YahooCandleDto;
+import com.finance.market.core.dto.external.YahooQuoteDto;
+import com.finance.market.core.dto.internal.YahooChartFullResult;
 import com.finance.common.exception.ExternalApiException;
 import com.finance.market.forex.mapper.ForexMapper;
 import com.finance.market.forex.model.Forex;
 import com.finance.market.forex.repository.ForexCandleRepository;
 import com.finance.market.forex.repository.ForexRepository;
-import com.finance.common.util.SyntheticPriceCalculator;
-import com.finance.common.util.YahooRangePolicy;
-import com.finance.common.util.YahooSymbolSuffix;
+import com.finance.market.core.util.SyntheticPriceCalculator;
+import com.finance.market.core.util.YahooRangePolicy;
+import com.finance.market.core.util.YahooSymbolSuffix;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;

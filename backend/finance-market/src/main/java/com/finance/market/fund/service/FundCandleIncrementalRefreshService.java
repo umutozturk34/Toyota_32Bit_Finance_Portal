@@ -1,7 +1,7 @@
 package com.finance.market.fund.service;
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.market.fund.client.TefasClient;
@@ -15,7 +15,7 @@ import com.finance.market.fund.repository.FundCandleRepository;
 import com.finance.market.fund.repository.FundRepository;
 import com.finance.common.util.CodeNormalizer;
 import com.finance.market.fund.util.TefasHelper;
-import com.finance.common.util.WindowedFetchPlanner;
+import com.finance.market.core.util.WindowedFetchPlanner;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;

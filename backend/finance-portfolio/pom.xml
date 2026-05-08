@@ -17,7 +17,7 @@
                 </dependency>
                 <dependency>
                         <groupId>com.finance</groupId>
-                        <artifactId>finance-cache</artifactId>
+                        <artifactId>finance-market</artifactId>
                 </dependency>
         </dependencies>
 

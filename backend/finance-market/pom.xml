@@ -17,10 +17,6 @@
 			<artifactId>finance-common</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.finance</groupId>
-			<artifactId>finance-cache</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>com.fasterxml.jackson.dataformat</groupId>
 			<artifactId>jackson-dataformat-xml</artifactId>
 		</dependency>

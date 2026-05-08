@@ -1,12 +1,12 @@
 package com.finance.market.fund.config;
 import com.finance.common.config.AppProperties;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
-import com.finance.common.filter.RateLimiterFilter;
-import com.finance.common.filter.TefasSessionFilter;
-import com.finance.common.filter.TefasSessionManager;
+import com.finance.market.core.filter.RateLimiterFilter;
+import com.finance.market.core.filter.TefasSessionFilter;
+import com.finance.market.core.filter.TefasSessionManager;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

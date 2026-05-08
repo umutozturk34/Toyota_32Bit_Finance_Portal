@@ -1,12 +1,12 @@
 package com.finance.market.crypto.service;
-import com.finance.common.service.BaseTrackedMarketAssetProvider;
+import com.finance.market.core.service.BaseTrackedMarketAssetProvider;
 
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 
-import com.finance.cache.service.MarketCacheService;
+import com.finance.market.core.cache.MarketCacheService;
 
 
-import com.finance.common.dto.response.MarketAssetResponse;
+import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.crypto.mapper.CryptoResponseMapper;
 import com.finance.market.crypto.model.Crypto;
 import com.finance.market.crypto.model.CryptoCandle;

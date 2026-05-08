@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.app.dto.response.overview.MoverData;
 import com.finance.app.dto.response.overview.WidgetKind;
 import com.finance.app.dto.response.overview.WidgetSection;
-import com.finance.cache.service.TopMoversRedisService;
-import com.finance.common.dto.response.MarketAssetResponse;
+import com.finance.market.core.cache.TopMoversRedisService;
+import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.common.model.MarketType;
-import com.finance.common.service.MarketAssetProvider;
+import com.finance.market.core.service.MarketAssetProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -1,6 +1,8 @@
 package com.finance.notification.market;
 
-import com.finance.notification.market.session.*;
+import com.finance.notification.market.session.MarketSession;
+import com.finance.notification.market.session.MarketSessionTracker;
+import com.finance.notification.market.session.SessionMarket;
 
 import com.finance.notification.config.NotificationCacheProperties;
 import org.junit.jupiter.api.Test;

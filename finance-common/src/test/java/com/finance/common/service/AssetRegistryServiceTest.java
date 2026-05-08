@@ -1,5 +1,7 @@
 package com.finance.common.service;
 
+import com.finance.market.core.service.AssetRegistryService;
+
 import com.finance.common.model.Asset;
 import com.finance.common.model.MarketType;
 import com.finance.common.repository.AssetRepository;

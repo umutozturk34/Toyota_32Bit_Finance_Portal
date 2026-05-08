@@ -1,6 +1,6 @@
 package com.finance.notification.market;
 
-import com.finance.notification.market.session.*;
+import com.finance.notification.market.session.SessionMarket;
 
 import com.finance.common.model.MarketType;
 import org.junit.jupiter.api.Test;

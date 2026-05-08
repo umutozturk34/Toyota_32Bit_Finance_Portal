@@ -1,6 +1,6 @@
 package com.finance.news.service.article;
 
-import com.finance.news.service.article.*;
+import com.finance.news.service.article.NewsCacheService;
 
 import com.finance.news.config.NewsProperties;
 import com.finance.news.model.NewsArticle;

@@ -11,98 +11,12 @@ import { formatPriceTRY } from '../../../shared/utils/formatters';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';
 import { useAddPosition, usePortfolioLimits, useUpdatePosition } from '../hooks/usePortfolioData';
 
-const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX', 'COMMODITY'];
-const ONE_HOUR_MS = 60 * 60 * 1000;
-const SUCCESS_HOLD_MS = 1100;
-const PROCESSING_STEPS = [
-  { label: 'İşlem doğrulanıyor...', duration: 400 },
-  { label: 'Piyasa verisi kontrol ediliyor...', duration: 400 },
-  { label: 'Portföy güncelleniyor...', duration: 400 },
-];
-
-function todayInputValue() {
-  const now = new Date();
-  const offset = now.getTimezoneOffset();
-  return new Date(now.getTime() - offset * 60_000).toISOString().slice(0, 10);
-}
-
-function isoToDateInput(iso) {
-  if (!iso) return todayInputValue();
-  return new Date(iso).toISOString().slice(0, 10);
-}
-
-function dateInputToIso(value) {
-  if (!value) return null;
-  return new Date(`${value}T12:00:00`).toISOString();
-}
-
-function buildInitialState(mode, asset, position) {
-  if (mode === 'edit' && position) {
-    return {
-      entryDate: isoToDateInput(position.entryDate),
-      entryPrice: String(position.entryPrice ?? ''),
-      quantity: String(position.quantity ?? ''),
-    };
-  }
-  return {
-    entryDate: todayInputValue(),
-    entryPrice: asset?.currentPrice ? String(asset.currentPrice) : '',
-    quantity: '',
-  };
-}
-
-function resolveTarget(mode, asset, position) {
-  if (mode === 'edit' && position) {
-    return {
-      assetType: position.assetType,
-      assetCode: position.assetCode,
-      assetName: position.assetName,
-      assetImage: position.assetImage,
-    };
-  }
-  return {
-    assetType: asset?.type,
-    assetCode: asset?.code,
-    assetName: asset?.name,
-    assetImage: asset?.image,
-  };
-}
-
-function toYearMonth(isoDate) {
-  return isoDate ? isoDate.slice(0, 7) : new Date().toISOString().slice(0, 7);
-}
-
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-
-function collectIsoDateEntries(node, out) {
-  if (!node || typeof node !== 'object') return;
-  for (const [key, value] of Object.entries(node)) {
-    if (ISO_DATE.test(key) && (typeof value === 'number' || typeof value === 'string')) {
-      out.set(key, Number(value));
-    } else if (typeof value === 'object') {
-      collectIsoDateEntries(value, out);
-    }
-  }
-}
-
-function buildPriceIndex(response) {
-  const index = new Map();
-  collectIsoDateEntries(response, index);
-  return index;
-}
-
-const compactCurrencyFormatter = new Intl.NumberFormat('tr-TR', {
-  notation: 'compact',
-  style: 'currency',
-  currency: 'TRY',
-  maximumFractionDigits: 2,
-});
-
-function formatTotalCost(cost) {
-  if (cost == null) return 'N/A';
-  if (Math.abs(cost) >= 1_000_000_000) return compactCurrencyFormatter.format(cost);
-  return formatPriceTRY(cost);
-}
+import {
+  FRACTIONAL_TYPES, ONE_HOUR_MS, SUCCESS_HOLD_MS, PROCESSING_STEPS,
+  todayInputValue, isoToDateInput, dateInputToIso, buildInitialState,
+  resolveTarget, toYearMonth, buildPriceIndex, formatTotalCost,
+  preventDecimal, describeAction,
+} from '../lib/positionFormHelpers';
 
 export default function PositionFormModal({ mode, portfolioId, asset, position, onClose, onComplete }) {
   const target = resolveTarget(mode, asset, position);
@@ -380,15 +294,6 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
       </motion.div>
     </div>
   );
-}
-
-function preventDecimal(e) {
-  if (e.key === '.' || e.key === ',' || e.key === 'e' || e.key === 'E') e.preventDefault();
-}
-
-function describeAction(isEdit, form, displayCode, isFractional) {
-  const qty = Number(form.quantity).toLocaleString('tr-TR', { maximumFractionDigits: isFractional ? 6 : 0 });
-  return `${qty} ${isFractional ? '' : 'adet'} ${displayCode}`.trim();
 }
 
 function ConfirmPanel({ isEdit, displayCode, form, isFractional, totalCost, onCancel, onConfirm }) {

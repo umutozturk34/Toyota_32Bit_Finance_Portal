@@ -1,0 +1,23 @@
+server:
+  port: ${SERVER_PORT:8082}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+    oauth2-redirect-url: ${SWAGGER_OAUTH2_REDIRECT:http://localhost:8082/swagger-ui/oauth2-redirect.html}
+    oauth:
+      client-id: finance-frontend
+      use-pkce-with-authorization-code-grant: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized

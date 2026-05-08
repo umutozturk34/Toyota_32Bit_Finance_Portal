@@ -1,0 +1,34 @@
+app:
+  scheduler:
+    crypto:
+      morning-cron: "0 0 9 * * *"
+      afternoon-cron: "0 0 15 * * *"
+      evening-cron: "0 0 21 * * *"
+    stock:
+      morning-cron: "0 15 10 * * MON-FRI"
+      afternoon-cron: "0 15 14 * * MON-FRI"
+      evening-cron: "0 15 19 * * MON-FRI"
+    forex:
+      morning-cron: "0 30 10 * * *"
+      afternoon-cron: "0 0 16 * * *"
+      evening-cron: "0 0 22 * * *"
+    news:
+      morning-cron: "0 0 8 * * *"
+      afternoon-cron: "0 30 14 * * *"
+      evening-cron: "0 30 21 * * *"
+    fund:
+      daily-cron: "0 30 11 * * *"
+    commodity:
+      morning-cron: "0 45 10 * * *"
+      afternoon-cron: "0 30 16 * * *"
+      evening-cron: "0 30 22 * * *"
+    bond:
+      daily-cron: "0 0 20 * * *"
+    portfolio:
+      snapshot-cron: "0 0 23 * * *"
+
+  task:
+    max-history: 50
+
+  tracked-asset:
+    code-cache-ttl-seconds: 45

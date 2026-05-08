@@ -1,0 +1,22 @@
+app:
+  news:
+    max-articles-per-source: 50
+    cache-ttl-hours: 24
+    default-category-limit: 20
+    category-limits:
+      "[CRYPTO]": 20
+      "[BORSA_ISTANBUL]": 30
+      "[BORSA_SIRKETLERI]": 20
+      "[TAHVIL_BONO]": 20
+      "[PARITE]": 20
+      "[EMTIA]": 20
+      "[GENEL_FINANS]": 60
+    mapping:
+      rich-html-min-length: 150
+      short-description-threshold: 80
+
+  commission:
+    stock-rate: 0.002
+    crypto-rate: 0.0015
+    fund-rate: 0.001
+    commodity-rate: 0.015

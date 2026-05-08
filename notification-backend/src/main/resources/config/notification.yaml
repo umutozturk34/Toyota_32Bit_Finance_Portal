@@ -1,0 +1,25 @@
+notification:
+  kafka:
+    consumer:
+      retry-interval-ms: 2000
+      retry-max-attempts: 3
+  cache:
+    dedup-max-entries: 50000
+    presence-max-entries: 50000
+    session-tracker-max-markets: 64
+  stream:
+    emitter-timeout-ms: 0
+  dispatch:
+    formatting:
+      fraction-digits-large: 2
+      fraction-digits-small: 6
+      change-percent-scale: 6
+    watchlist-delta:
+      body-preview-items: 3
+    message:
+      preview-max-chars: 120
+  market-session:
+    lookahead-days: 14
+    status-read-capacity-per-minute: 240
+  watchlist:
+    max-per-user: 20

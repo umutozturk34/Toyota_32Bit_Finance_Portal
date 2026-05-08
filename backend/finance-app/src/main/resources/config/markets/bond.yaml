@@ -1,0 +1,10 @@
+app:
+  bond:
+    batch-size: 10
+    max-days-per-request: 1000
+    datagroup-code: bie_pydibs
+    rate-threshold: 0.5
+    auction-threshold: 14
+    cpi-fixed-threshold: 5
+    face-value: 100
+    days-in-year: 365

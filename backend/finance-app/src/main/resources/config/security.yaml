@@ -1,0 +1,61 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWK_SET_URI:http://keycloak:8080/realms/finance-realm/protocol/openid-connect/certs}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        '[enable.idempotence]': true
+      retries: 5
+
+keycloak:
+  admin:
+    base-url: ${KEYCLOAK_URL:http://keycloak:8080}
+    realm: ${KEYCLOAK_REALM:finance-realm}
+    admin-user: ${KEYCLOAK_ADMIN_USER:admin}
+    admin-password: ${KEYCLOAK_ADMIN_PASSWORD:}
+
+app:
+  user-security:
+    email-change:
+      max-attempts: 5
+      code-length: 6
+      code-ttl: 5m
+    password-reset:
+      link-lifespan-seconds: 300
+    keycloak:
+      frontend-client-id: finance-frontend
+      theme-attribute: themePreference
+  security:
+    cors:
+      allowed-origin-patterns:
+        - http://localhost
+        - http://localhost:*
+        - http://127.0.0.1
+        - http://127.0.0.1:*
+      allowed-methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+        - PATCH
+      allowed-headers:
+        - Authorization
+        - Content-Type
+        - Cache-Control
+        - X-Requested-With
+      exposed-headers:
+        - Authorization
+      allow-credentials: true
+      max-age-seconds: 3600
+  rate-limit:
+    admin-trigger-limit: 20
+    admin-read-limit: 20
+    api-limit: 60

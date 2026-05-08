@@ -1,0 +1,13 @@
+spring:
+  mail:
+    host: ${SPRING_MAIL_HOST:mailpit}
+    port: ${SPRING_MAIL_PORT:1025}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:false}
+
+notification:
+  from-address: ${NOTIFICATION_FROM_ADDRESS:noreply@finance.local}

@@ -1,0 +1,21 @@
+app:
+  commodity:
+    chart-range: max
+    chart-interval: 1d
+    batch-min-sample: 5
+    yahoo-symbol-overrides:
+      XAUTRY: "GC=F"
+      XAGTRY: "SI=F"
+      XPTTRY: "PL=F"
+      XPDTRY: "PA=F"
+    derivatives:
+      - source-code: "XAUTRY"
+        derivative-code: "XAUTRYG"
+        divisor: 31.1035
+        name: "Altın (Gram)"
+        name-tr: "Gram Altın"
+      - source-code: "XAGTRY"
+        derivative-code: "XAGTRYG"
+        divisor: 31.1035
+        name: "Gümüş (Gram)"
+        name-tr: "Gram Gümüş"

@@ -7,8 +7,9 @@ import ErrorState from '../../shared/components/ErrorState';
 import SearchSuggestions from '../../shared/components/SearchSuggestions';
 import { useUserLayout, useUpdateOverviewLayout, DEFAULT_OVERVIEW_LAYOUT } from '../../shared/hooks/useUserLayout';
 import { useMarketOverview } from '../../shared/hooks/useMarketOverview';
+import { useWidgetDefinitions } from '../../shared/hooks/useWidgetDefinitions';
 import { useWatchlists } from '../../shared/hooks/useWatchlist';
-import { newSectionId, definitionFor } from './sections/sectionRegistry';
+import { newSectionId } from './sections/sectionRegistry';
 import OverviewLayout from './OverviewLayout';
 import OverviewWidgetCanvas from './OverviewWidgetCanvas';
 import WidgetTray from './WidgetTray';
@@ -25,6 +26,7 @@ export default function MarketDataPage() {
   const [galleryOpen, setGalleryOpen] = useState(true);
   const { isLoading: layoutLoading, overview: layout } = useUserLayout();
   const { isLoading: dataLoading, error, refetch, isFetching, widgets } = useMarketOverview();
+  const { byKind: widgetDefsByKind } = useWidgetDefinitions();
   const { data: watchlists = [] } = useWatchlists({ enabled: editMode });
   const updateLayout = useUpdateOverviewLayout();
 
@@ -88,8 +90,8 @@ export default function MarketDataPage() {
   }, []);
 
   const insertSection = useCallback((kind, config, x, y, opts = {}) => {
-    const def = definitionFor(kind);
-    const size = def?.defaultSize ?? { w: 4, h: 6 };
+    const def = widgetDefsByKind.get(kind);
+    const size = def ? { w: def.defaults.w, h: def.defaults.h } : { w: 4, h: 6 };
     const finalConfig = { ...config };
     const newId = newSectionId(kind);
     const newEntry = { sectionId: newId, kind, w: size.w, h: size.h, config: finalConfig };
@@ -112,7 +114,7 @@ export default function MarketDataPage() {
       ];
     });
     return newId;
-  }, []);
+  }, [widgetDefsByKind]);
 
   const handleTrayClick = useCallback((tile, anchorEl) => {
     const newId = insertSection(tile.kind, tile.config, 0, 0, { placeAtTop: true });

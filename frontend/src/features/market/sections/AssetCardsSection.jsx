@@ -89,7 +89,7 @@ export default function AssetCardsSection({ data, editMode = false, config = {},
   const items = data?.items ?? [];
 
   const visibleItems = useMemo(() => {
-    if (!Array.isArray(config?.assetCodes) || config.assetCodes.length === 0) return items;
+    if (!Array.isArray(config?.assetCodes)) return items;
     return config.assetCodes.map((c) => {
       const found = items.find((it) => it.type === c.type && it.code === c.code);
       return found || { ...c, _pending: true };
@@ -119,11 +119,12 @@ export default function AssetCardsSection({ data, editMode = false, config = {},
   }, [config, items, onConfigChange]);
 
   if (visibleItems.length === 0) {
+    if (!editMode) return null;
     return (
       <div className="h-full rounded-2xl border border-dashed border-border-default bg-bg-elevated/40 flex flex-col items-center justify-center px-4 py-6 text-center">
         <Layers className="h-5 w-5 text-fg-subtle mb-2" />
         <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-muted">Boş panel</p>
-        <p className="text-[10px] text-fg-subtle mt-1">Düzenleme modunda <strong className="text-accent">Ayarlar</strong> ile asset ekle</p>
+        <p className="text-[10px] text-fg-subtle mt-1"><strong className="text-accent">Ayarlar</strong> ile asset ekle</p>
       </div>
     );
   }

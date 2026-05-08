@@ -1,9 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, TrendingUp, Bookmark, Newspaper, Check, Plus, ChevronRight } from 'lucide-react';
-
-export const MAX_WIDGETS = 12;
-export const MAX_ASSET_CARDS = 4;
+import { useWidgetDefinitions } from '../../shared/hooks/useWidgetDefinitions';
 
 /**
  * @typedef {Object} TrayTileSpec
@@ -17,39 +15,39 @@ export const MAX_ASSET_CARDS = 4;
  * @property {number} h
  */
 
-const SINGLETON_TILES = [
-  { id: 'tile-movers-stock', kind: 'MOVERS', label: 'Hisse · Yük/Düş', config: { market: 'STOCK' }, accent: '#10b981', Icon: TrendingUp, w: 4, h: 6 },
-  { id: 'tile-movers-crypto', kind: 'MOVERS', label: 'Kripto · Yük/Düş', config: { market: 'CRYPTO' }, accent: '#f59e0b', Icon: TrendingUp, w: 4, h: 6 },
-  { id: 'tile-movers-forex', kind: 'MOVERS', label: 'Döviz · Yük/Düş', config: { market: 'FOREX' }, accent: '#3b82f6', Icon: TrendingUp, w: 4, h: 6 },
-  { id: 'tile-movers-fund', kind: 'MOVERS', label: 'Fon · Yük/Düş', config: { market: 'FUND' }, accent: '#8b5cf6', Icon: TrendingUp, w: 4, h: 6 },
-  { id: 'tile-movers-commodity', kind: 'MOVERS', label: 'Emtia · Yük/Düş', config: { market: 'COMMODITY' }, accent: '#f97316', Icon: TrendingUp, w: 4, h: 6 },
-  { id: 'tile-news', kind: 'NEWS', label: 'Haberler', config: {}, accent: '#06b6d4', Icon: Newspaper, w: 4, h: 14 },
+const SINGLETON_TILE_BASES = [
+  { id: 'tile-movers-stock', kind: 'MOVERS', label: 'Hisse · Yük/Düş', config: { market: 'STOCK' }, accent: '#10b981', Icon: TrendingUp },
+  { id: 'tile-movers-crypto', kind: 'MOVERS', label: 'Kripto · Yük/Düş', config: { market: 'CRYPTO' }, accent: '#f59e0b', Icon: TrendingUp },
+  { id: 'tile-movers-forex', kind: 'MOVERS', label: 'Döviz · Yük/Düş', config: { market: 'FOREX' }, accent: '#3b82f6', Icon: TrendingUp },
+  { id: 'tile-movers-fund', kind: 'MOVERS', label: 'Fon · Yük/Düş', config: { market: 'FUND' }, accent: '#8b5cf6', Icon: TrendingUp },
+  { id: 'tile-movers-commodity', kind: 'MOVERS', label: 'Emtia · Yük/Düş', config: { market: 'COMMODITY' }, accent: '#f97316', Icon: TrendingUp },
+  { id: 'tile-news', kind: 'NEWS', label: 'Haberler', config: {}, accent: '#06b6d4', Icon: Newspaper },
 ];
 
-const ASSET_CARDS_TILE = {
+const ASSET_CARDS_TILE_BASE = {
   id: 'tile-asset-cards',
   kind: 'ASSET_CARDS',
   label: 'Yeni Asset Kartı',
   config: {},
   accent: '#6366f1',
   Icon: Layers,
-  w: 8,
-  h: 3,
 };
 
-/** @param {Array<{id: number, name: string}>} watchlists */
-function buildWatchlistTiles(watchlists) {
+function withSize(base, byKind) {
+  const def = byKind.get(base.kind);
+  return def ? { ...base, w: def.defaults.w, h: def.defaults.h } : { ...base, w: 4, h: 6 };
+}
+
+function buildWatchlistTiles(watchlists, byKind) {
   if (!Array.isArray(watchlists) || watchlists.length === 0) return [];
-  return watchlists.map((wl) => ({
+  return watchlists.map((wl) => withSize({
     id: `tile-watchlist-${wl.id}`,
     kind: 'WATCHLIST',
     label: wl.name || `Takip ${wl.id}`,
     config: { watchlistId: wl.id },
     accent: '#ec4899',
     Icon: Bookmark,
-    w: 4,
-    h: 6,
-  }));
+  }, byKind));
 }
 
 function singletonUsed(sections, tile) {
@@ -71,6 +69,9 @@ function singletonUsed(sections, tile) {
 export default function WidgetTray({ sections, watchlists = [], onAdd, onDragStart, onDragEnd }) {
   const [openTab, setOpenTab] = useState(null);
   const containerRef = useRef(null);
+  const { byKind, limits } = useWidgetDefinitions();
+  const maxWidgets = limits.maxWidgetsPerLayout;
+  const maxAssetCards = limits.maxAssetCardWidgetsPerLayout;
 
   useEffect(() => {
     const click = (e) => {
@@ -80,17 +81,20 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
     return () => document.removeEventListener('mousedown', click);
   }, []);
 
-  const atCap = sections.length >= MAX_WIDGETS;
+  const atCap = sections.length >= maxWidgets;
   const assetCardCount = sections.filter((s) => s.kind === 'ASSET_CARDS').length;
-  const assetCardsFull = assetCardCount >= MAX_ASSET_CARDS;
+  const assetCardsFull = assetCardCount >= maxAssetCards;
 
-  const widgetItems = SINGLETON_TILES.map((tile) => {
+  const singletonTiles = useMemo(() => SINGLETON_TILE_BASES.map((b) => withSize(b, byKind)), [byKind]);
+  const assetCardsTile = useMemo(() => withSize(ASSET_CARDS_TILE_BASE, byKind), [byKind]);
+
+  const widgetItems = singletonTiles.map((tile) => {
     const used = singletonUsed(sections, tile);
     return { tile, used, locked: !used && atCap };
   });
   const widgetUsedCount = widgetItems.filter((x) => x.used).length;
 
-  const watchlistItems = buildWatchlistTiles(watchlists).map((tile) => {
+  const watchlistItems = buildWatchlistTiles(watchlists, byKind).map((tile) => {
     const used = singletonUsed(sections, tile);
     return { tile, used, locked: !used && atCap };
   });
@@ -106,15 +110,15 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
           accent="#6366f1"
           Icon={Layers}
           label="Widget Galerisi"
-          count={`${widgetUsedCount}/${SINGLETON_TILES.length}`}
+          count={`${widgetUsedCount}/${singletonTiles.length}`}
           onClick={() => toggle('widget')}
         />
         <Tab
           active={openTab === 'asset'}
-          accent={ASSET_CARDS_TILE.accent}
+          accent={assetCardsTile.accent}
           Icon={Plus}
           label="Asset Kartı"
-          count={`${assetCardCount}/${MAX_ASSET_CARDS}`}
+          count={`${assetCardCount}/${maxAssetCards}`}
           onClick={() => toggle('asset')}
         />
         <Tab
@@ -131,19 +135,19 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
       <AnimatePresence>
         {openTab === 'widget' && (
           <Dropdown key="d-widget" rowIndex={0}>
-            <DropdownHint text={atCap ? `${MAX_WIDGETS}/${MAX_WIDGETS} doldu — silmeden ekleyemezsin` : 'Sürükle veya tıkla'} tone={atCap ? 'danger' : 'muted'} />
+            <DropdownHint text={atCap ? `${maxWidgets}/${maxWidgets} doldu — silmeden ekleyemezsin` : 'Sürükle veya tıkla'} tone={atCap ? 'danger' : 'muted'} />
             <DropdownList>
               {widgetItems.map(({ tile, used, locked }) => (
-                <DropdownTile key={tile.id} tile={tile} used={used} locked={locked} onAdd={(t, el) => { onAdd(t, el); setOpenTab(null); }} onDragStart={onDragStart} onDragEnd={onDragEnd} />
+                <DropdownTile key={tile.id} tile={tile} used={used} locked={locked} maxWidgets={maxWidgets} onAdd={(t, el) => { onAdd(t, el); setOpenTab(null); }} onDragStart={onDragStart} onDragEnd={onDragEnd} />
               ))}
             </DropdownList>
           </Dropdown>
         )}
         {openTab === 'asset' && (
           <Dropdown key="d-asset" rowIndex={1}>
-            <DropdownHint text={`${assetCardCount} / ${MAX_ASSET_CARDS} eklendi`} tone={assetCardsFull ? 'danger' : 'muted'} />
+            <DropdownHint text={`${assetCardCount} / ${maxAssetCards} eklendi`} tone={assetCardsFull ? 'danger' : 'muted'} />
             <DropdownList>
-              <AssetCardAddRow locked={assetCardsFull || atCap} assetCardCount={assetCardCount} onAdd={(t, el) => { onAdd(t, el); setOpenTab(null); }} onDragStart={onDragStart} onDragEnd={onDragEnd} />
+              <AssetCardAddRow tile={assetCardsTile} maxAssetCards={maxAssetCards} locked={assetCardsFull || atCap} assetCardCount={assetCardCount} onAdd={(t, el) => { onAdd(t, el); setOpenTab(null); }} onDragStart={onDragStart} onDragEnd={onDragEnd} />
             </DropdownList>
           </Dropdown>
         )}
@@ -152,7 +156,7 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
             <DropdownHint text={`${watchlistUsedCount} / ${watchlistItems.length} eklendi`} tone="muted" />
             <DropdownList>
               {watchlistItems.map(({ tile, used, locked }) => (
-                <DropdownTile key={tile.id} tile={tile} used={used} locked={locked} onAdd={(t, el) => { onAdd(t, el); setOpenTab(null); }} onDragStart={onDragStart} onDragEnd={onDragEnd} />
+                <DropdownTile key={tile.id} tile={tile} used={used} locked={locked} maxWidgets={maxWidgets} onAdd={(t, el) => { onAdd(t, el); setOpenTab(null); }} onDragStart={onDragStart} onDragEnd={onDragEnd} />
               ))}
             </DropdownList>
           </Dropdown>
@@ -223,8 +227,7 @@ function DropdownList({ children }) {
   return <div className="flex flex-col gap-1">{children}</div>;
 }
 
-/** @param {{tile: TrayTileSpec, used: boolean, locked: boolean, onAdd: (t: TrayTileSpec, el: HTMLElement) => void, onDragStart: (t: TrayTileSpec) => void, onDragEnd: () => void}} props */
-function DropdownTile({ tile, used, locked, onAdd, onDragStart, onDragEnd }) {
+function DropdownTile({ tile, used, locked, maxWidgets, onAdd, onDragStart, onDragEnd }) {
   const Icon = tile.Icon;
   const disabled = used || locked;
   const handleDragStart = (e) => {
@@ -234,7 +237,7 @@ function DropdownTile({ tile, used, locked, onAdd, onDragStart, onDragEnd }) {
     onDragStart(tile);
   };
   const handleClick = (e) => { if (!disabled) onAdd(tile, e.currentTarget); };
-  const titleText = used ? 'Zaten eklenmiş' : locked ? `Limit ${MAX_WIDGETS} widget` : tile.label;
+  const titleText = used ? 'Zaten eklenmiş' : locked ? `Limit ${maxWidgets} widget` : tile.label;
   return (
     <div
       draggable={!disabled}
@@ -261,17 +264,16 @@ function DropdownTile({ tile, used, locked, onAdd, onDragStart, onDragEnd }) {
   );
 }
 
-/** @param {{locked: boolean, assetCardCount: number, onAdd: (t: TrayTileSpec, el: HTMLElement) => void, onDragStart: (t: TrayTileSpec) => void, onDragEnd: () => void}} props */
-function AssetCardAddRow({ locked, assetCardCount, onAdd, onDragStart, onDragEnd }) {
-  const accent = ASSET_CARDS_TILE.accent;
+function AssetCardAddRow({ tile, maxAssetCards, locked, assetCardCount, onAdd, onDragStart, onDragEnd }) {
+  const accent = tile.accent;
   const nextLabel = `Asset Kartları ${assetCardCount + 1}`;
   const handleDragStart = (e) => {
     if (locked) { e.preventDefault(); return; }
-    e.dataTransfer.setData('application/x-widget-kind', ASSET_CARDS_TILE.kind);
+    e.dataTransfer.setData('application/x-widget-kind', tile.kind);
     e.dataTransfer.effectAllowed = 'copy';
-    onDragStart(ASSET_CARDS_TILE);
+    onDragStart(tile);
   };
-  const handleClick = (e) => { if (!locked) onAdd(ASSET_CARDS_TILE, e.currentTarget); };
+  const handleClick = (e) => { if (!locked) onAdd(tile, e.currentTarget); };
   return (
     <div
       draggable={!locked}
@@ -282,7 +284,7 @@ function AssetCardAddRow({ locked, assetCardCount, onAdd, onDragStart, onDragEnd
         locked ? 'cursor-not-allowed opacity-30' : 'cursor-grab active:cursor-grabbing hover:bg-bg-elevated/60'
       }`}
       style={{ borderColor: locked ? 'var(--color-border-default)' : `${accent}66` }}
-      title={locked ? `Maks ${MAX_ASSET_CARDS} kart paneli` : `Yeni panel ekle: ${nextLabel}`}
+      title={locked ? `Maks ${maxAssetCards} kart paneli` : `Yeni panel ekle: ${nextLabel}`}
     >
       <span
         className="flex items-center justify-center w-6 h-6 rounded shrink-0"

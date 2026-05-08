@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import GridLayout, { useContainerWidth, verticalCompactor } from 'react-grid-layout';
+import GridLayout, { useContainerWidth } from 'react-grid-layout';
 import OverviewWidgetCard from './OverviewWidgetCard';
-import { definitionFor } from './sections/sectionRegistry';
+import { useWidgetDefinitions } from '../../shared/hooks/useWidgetDefinitions';
 import 'react-grid-layout/css/styles.css';
 
 function WidgetSkeleton() {
@@ -57,6 +57,7 @@ export default function OverviewWidgetCanvas({
   const { containerRef, width } = useContainerWidth();
   const dropDataRef = useRef(null);
   const [mountedCount, setMountedCount] = useState(0);
+  const { byKind } = useWidgetDefinitions();
 
   useEffect(() => {
     if (mountedCount >= sections.length) return;
@@ -67,30 +68,33 @@ export default function OverviewWidgetCanvas({
   const widgetDataMap = useMemo(() => buildWidgetDataMap(widgets), [widgets]);
 
   const layout = useMemo(() => sections.map((s) => {
-    const def = definitionFor(s.kind)?.defaultSize ?? { w: 4, h: 6, minW: 3, minH: 3 };
+    const def = byKind.get(s.kind);
+    if (!def) return null;
     const base = {
       i: s.sectionId,
       x: typeof s.x === 'number' ? s.x : 0,
       y: typeof s.y === 'number' ? s.y : 0,
-      w: typeof s.w === 'number' ? s.w : def.w,
-      h: typeof s.h === 'number' ? s.h : def.h,
-      minW: def.minW ?? 3,
-      minH: def.minH ?? 3,
+      w: typeof s.w === 'number' ? s.w : def.defaults.w,
+      h: typeof s.h === 'number' ? s.h : def.defaults.h,
+      minW: def.min.w,
+      minH: def.min.h,
+      maxW: def.max.w,
+      maxH: def.max.h,
     };
     if (s.kind === 'NEWS') {
       const count = newsItemCount(widgets, s.sectionId);
       return adjustNewsHeight(base, count);
     }
     return base;
-  }), [sections, widgets]);
+  }).filter(Boolean), [sections, widgets, byKind]);
 
   const deferredEditMode = useDeferredValue(editMode);
   const dragConfig = useMemo(
-    () => ({ enabled: deferredEditMode, cancel: '.widget-no-drag', preventCollision: false }),
+    () => ({ enabled: deferredEditMode, cancel: '.widget-no-drag', preventCollision: true }),
     [deferredEditMode],
   );
   const resizeConfig = useMemo(
-    () => ({ enabled: deferredEditMode, handles: ['se'], preventCollision: false }),
+    () => ({ enabled: deferredEditMode, handles: ['se'], preventCollision: true }),
     [deferredEditMode],
   );
   const dropConfig = useMemo(
@@ -144,7 +148,7 @@ export default function OverviewWidgetCanvas({
           resizeConfig={resizeConfig}
           dropConfig={dropConfig}
           droppingItem={droppingItem}
-          compactor={verticalCompactor}
+          compactor={null}
           onDragStop={persistChange}
           onResizeStop={persistChange}
           onDrop={handleDrop}

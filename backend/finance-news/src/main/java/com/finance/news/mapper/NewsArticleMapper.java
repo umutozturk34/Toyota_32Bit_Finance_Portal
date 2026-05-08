@@ -19,6 +19,7 @@ import com.finance.common.mapper.*;
 import com.finance.common.repository.*;
 import com.finance.common.client.*;
 
+import com.finance.news.config.NewsProperties;
 import com.finance.news.dto.external.NewsArticleDto;
 import com.finance.news.dto.internal.RssArticleData;
 import com.finance.news.model.NewsArticle;
@@ -27,13 +28,15 @@ import com.finance.news.util.NewsCategoryResolver;
 import com.finance.news.util.NewsTextUtils;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
 
 @Mapper(componentModel = "spring")
 public abstract class NewsArticleMapper {
 
-    private static final int SHORT_DESCRIPTION_THRESHOLD = 80;
+    @Autowired
+    protected NewsProperties newsProperties;
 
     public NewsArticleDto toDto(RssArticleData data, String sourceName, String sourceUrl, String defaultCategory) {
         String resolverDescription = buildResolverDescription(data.description(), data.content());
@@ -72,7 +75,7 @@ public abstract class NewsArticleMapper {
     }
 
     private String buildResolverDescription(String description, String content) {
-        if (description != null && description.length() >= SHORT_DESCRIPTION_THRESHOLD) {
+        if (description != null && description.length() >= newsProperties.getMapping().getShortDescriptionThreshold()) {
             return description;
         }
 

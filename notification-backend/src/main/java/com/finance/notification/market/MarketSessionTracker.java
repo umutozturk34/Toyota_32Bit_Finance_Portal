@@ -1,5 +1,6 @@
 package com.finance.notification.market;
 
+import com.finance.notification.config.NotificationCacheProperties;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.log4j.Log4j2;
@@ -13,12 +14,15 @@ import java.util.Optional;
 public class MarketSessionTracker {
 
     private static final Duration STATE_TTL = Duration.ofHours(24);
-    private static final int MAX_TRACKED_MARKETS = 64;
 
-    private final Cache<SessionMarket, MarketSession> previous = Caffeine.newBuilder()
-            .expireAfterWrite(STATE_TTL)
-            .maximumSize(MAX_TRACKED_MARKETS)
-            .build();
+    private final Cache<SessionMarket, MarketSession> previous;
+
+    public MarketSessionTracker(NotificationCacheProperties cacheProperties) {
+        this.previous = Caffeine.newBuilder()
+                .expireAfterWrite(STATE_TTL)
+                .maximumSize(cacheProperties.sessionTrackerMaxMarkets())
+                .build();
+    }
 
     public Optional<MarketSession> previous(SessionMarket market) {
         return Optional.ofNullable(previous.getIfPresent(market));

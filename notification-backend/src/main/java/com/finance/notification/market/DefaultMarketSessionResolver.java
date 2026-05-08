@@ -1,5 +1,6 @@
 package com.finance.notification.market;
 
+import com.finance.notification.config.MarketSessionProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -14,9 +15,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class DefaultMarketSessionResolver implements MarketSessionResolver {
 
-    private static final int LOOKAHEAD_DAYS = 14;
-
     private final MarketHoursProperties properties;
+    private final MarketSessionProperties sessionProperties;
 
     @Override
     public Optional<MarketSession> resolve(SessionMarket market, Instant at) {
@@ -46,7 +46,7 @@ public class DefaultMarketSessionResolver implements MarketSessionResolver {
     private Instant findNextBoundary(MarketHoursProperties.MarketSchedule schedule, Instant at) {
         if (schedule.open().equals(schedule.close())) return null;
         ZonedDateTime cursor = at.atZone(schedule.zone());
-        for (int day = 0; day <= LOOKAHEAD_DAYS; day++) {
+        for (int day = 0; day <= sessionProperties.lookaheadDays(); day++) {
             LocalDate date = cursor.toLocalDate().plusDays(day);
             if (!schedule.tradingDays().contains(date.getDayOfWeek())) continue;
             ZonedDateTime open = LocalDateTime.of(date, schedule.open()).atZone(schedule.zone());
@@ -54,6 +54,6 @@ public class DefaultMarketSessionResolver implements MarketSessionResolver {
             if (open.toInstant().isAfter(at)) return open.toInstant();
             if (close.toInstant().isAfter(at)) return close.toInstant();
         }
-        return cursor.plusDays(LOOKAHEAD_DAYS).toInstant();
+        return cursor.plusDays(sessionProperties.lookaheadDays()).toInstant();
     }
 }

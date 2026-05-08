@@ -39,6 +39,7 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
     private final TransactionTemplate transactionTemplate;
     private final ZoneId appZone;
     private final int eodCutoverHour;
+    private final int holidayLookbackDays;
 
     public FundSnapshotProcessor(TefasClient tefasClient,
                                  FundEntityWriter entityWriter,
@@ -54,9 +55,8 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
         this.transactionTemplate = transactionTemplate;
         this.appZone = ZoneId.of(appProperties.getTimezone());
         this.eodCutoverHour = fundProperties.getTefasEodCutoverHour();
+        this.holidayLookbackDays = fundProperties.getHolidayLookbackDays();
     }
-
-    private static final int HOLIDAY_LOOKBACK_DAYS = 5;
 
     public void refreshAll() {
         long start = System.currentTimeMillis();
@@ -68,11 +68,11 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
         int byfSaved = -1;
         int yatSaved = -1;
 
-        for (int attempt = 0; attempt <= HOLIDAY_LOOKBACK_DAYS; attempt++) {
+        for (int attempt = 0; attempt <= holidayLookbackDays; attempt++) {
             byfSaved = bulkUpdateAndAutoTrackBYF(cursor);
             yatSaved = bulkUpdateForTrackedYAT(cursor, trackedCodes);
             if (byfSaved > 0 || yatSaved > 0) break;
-            if (attempt == HOLIDAY_LOOKBACK_DAYS) break;
+            if (attempt == holidayLookbackDays) break;
             log.info("No fund data for {}, walking back one day (TEFAS likely closed for holiday)", cursor);
             cursor = cursor.minusDays(1);
         }

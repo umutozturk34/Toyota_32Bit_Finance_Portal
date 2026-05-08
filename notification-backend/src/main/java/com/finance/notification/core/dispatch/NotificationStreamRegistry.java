@@ -1,9 +1,11 @@
 package com.finance.notification.core.dispatch;
 
+import com.finance.notification.config.NotificationStreamProperties;
 import com.finance.notification.core.dto.NotificationResponse;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -14,9 +16,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @Log4j2
 @Component
+@RequiredArgsConstructor
 public class NotificationStreamRegistry {
 
-    private static final long EMITTER_TIMEOUT_MS = 0L;
+    private final NotificationStreamProperties streamProperties;
 
     private final Cache<String, CopyOnWriteArrayList<SseEmitter>> emitters = Caffeine.newBuilder()
             .expireAfterAccess(Duration.ofMinutes(30))
@@ -41,7 +44,7 @@ public class NotificationStreamRegistry {
     }
 
     private SseEmitter registerInternal(String userSub, boolean admin) {
-        SseEmitter emitter = new SseEmitter(EMITTER_TIMEOUT_MS);
+        SseEmitter emitter = new SseEmitter(streamProperties.emitterTimeoutMs());
         CopyOnWriteArrayList<SseEmitter> list = emitters.asMap()
                 .computeIfAbsent(userSub, k -> new CopyOnWriteArrayList<>());
         list.add(emitter);

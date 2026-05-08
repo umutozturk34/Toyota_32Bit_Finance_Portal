@@ -9,6 +9,7 @@ import com.finance.common.model.MarketType;
 import com.finance.portfolio.model.Portfolio;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
 import com.finance.portfolio.model.PortfolioDailySnapshot;
+import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.portfolio.model.PortfolioPosition;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
@@ -41,7 +42,7 @@ class SnapshotCalculationServiceTest {
     @BeforeEach
     void setUp() {
         service = new SnapshotCalculationService(pricingPort, positionRepository,
-                dailySnapshotRepository, assetSnapshotRepository);
+                dailySnapshotRepository, assetSnapshotRepository, new PortfolioProperties());
     }
 
     @Test
@@ -116,7 +117,7 @@ class SnapshotCalculationServiceTest {
         counting.seedPrice("FUND", "AAK", new BigDecimal("110.0000"));
 
         SnapshotCalculationService countedService = new SnapshotCalculationService(counting, positionRepository,
-                dailySnapshotRepository, assetSnapshotRepository);
+                dailySnapshotRepository, assetSnapshotRepository, new PortfolioProperties());
 
         Portfolio portfolio = Portfolio.builder().id(1L).build();
         when(positionRepository.findByPortfolioId(1L))

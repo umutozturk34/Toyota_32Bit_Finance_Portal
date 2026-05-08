@@ -1,6 +1,7 @@
 package com.finance.news.mapper;
 
 import com.finance.common.config.AppProperties;
+import com.finance.news.config.NewsProperties;
 import com.finance.news.dto.internal.RssArticleData;
 import com.rometools.rome.feed.synd.SyndContent;
 import com.rometools.rome.feed.synd.SyndEnclosure;
@@ -20,12 +21,12 @@ import java.util.List;
 @Log4j2
 public class RssClientMapper {
 
-    private static final int RICH_HTML_MIN_LENGTH = 150;
-
     private final ZoneId zone;
+    private final int richHtmlMinLength;
 
-    public RssClientMapper(AppProperties appProperties) {
+    public RssClientMapper(AppProperties appProperties, NewsProperties newsProperties) {
         this.zone = ZoneId.of(appProperties.getTimezone());
+        this.richHtmlMinLength = newsProperties.getMapping().getRichHtmlMinLength();
     }
 
     public List<RssArticleData> toArticleDataList(SyndFeed feed) {
@@ -82,7 +83,7 @@ public class RssClientMapper {
     }
 
     private boolean isRichHtml(String text) {
-        return text != null && text.contains("<") && text.length() > RICH_HTML_MIN_LENGTH;
+        return text != null && text.contains("<") && text.length() > richHtmlMinLength;
     }
 
     private String extractContent(SyndEntry entry) {

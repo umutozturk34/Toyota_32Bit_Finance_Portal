@@ -20,6 +20,7 @@ import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import com.finance.common.service.AssetPricingPort.AssetKey;
 import com.finance.common.util.PercentChangeCalculator;
+import com.finance.portfolio.config.PortfolioProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -40,13 +41,13 @@ import java.util.function.Function;
 @RequiredArgsConstructor
 public class SnapshotCalculationService {
 
-    private static final int DAILY_LOOKBACK_HOURS = 24;
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
     private final AssetPricingPort pricingPort;
     private final PortfolioPositionRepository positionRepository;
     private final PortfolioDailySnapshotRepository dailySnapshotRepository;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
+    private final PortfolioProperties portfolioProperties;
 
     public PortfolioAssetDailySnapshot buildAssetSnapshot(Long portfolioId, PortfolioPosition pos,
                                                               LocalDateTime batchTimestamp) {
@@ -218,7 +219,7 @@ public class SnapshotCalculationService {
 
     private Optional<PortfolioAssetDailySnapshot> findClosestPriorAssetSnapshot(
             Long portfolioId, AssetType assetType, String assetCode, LocalDateTime batchTimestamp) {
-        LocalDateTime target = batchTimestamp.minusHours(DAILY_LOOKBACK_HOURS);
+        LocalDateTime target = batchTimestamp.minusHours(portfolioProperties.getSnapshot().getDailyLookbackHours());
         Optional<PortfolioAssetDailySnapshot> older = assetSnapshotRepository
                 .findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
                         portfolioId, assetType, assetCode, target);

@@ -12,6 +12,7 @@ import com.finance.news.config.NewsProperties;
 import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.stock.config.StockProperties;
 import com.finance.user.config.KeycloakAdminProperties;
+import com.finance.user.config.UserSecurityProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -37,7 +38,8 @@ import java.util.TimeZone;
         NewsProperties.class,
         OverviewProperties.class,
         PortfolioProperties.class,
-        StockProperties.class
+        StockProperties.class,
+        UserSecurityProperties.class
 })
 public class BackendApplication {
     public static void main(String[] args) {

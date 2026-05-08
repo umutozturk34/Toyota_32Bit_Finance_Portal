@@ -143,6 +143,7 @@ app:
     min-candles-for-incremental: 30
     window-sizes: 28
     auto-track-sort-order: 9999
+    holiday-lookback-days: 5
 
   commodity:
     chart-range: max
@@ -177,6 +178,9 @@ app:
       "[PARITE]": 20
       "[EMTIA]": 20
       "[GENEL_FINANS]": 60
+    mapping:
+      rich-html-min-length: 150
+      short-description-threshold: 80
 
   commission:
     stock-rate: 0.002
@@ -240,12 +244,28 @@ app:
       max-price-try: 1000000000
       min-quantity: 0.00000001
       max-quantity: 1000000000
+    snapshot:
+      daily-lookback-hours: 24
+    backfill:
+      price-lookback-days: 7
+      lock-stripes: 32
 
   task:
     max-history: 50
 
   tracked-asset:
     code-cache-ttl-seconds: 45
+
+  user-security:
+    email-change:
+      max-attempts: 5
+      code-length: 6
+      code-ttl: 5m
+    password-reset:
+      link-lifespan-seconds: 300
+    keycloak:
+      frontend-client-id: finance-frontend
+      theme-attribute: themePreference
 
   overview:
     limits:

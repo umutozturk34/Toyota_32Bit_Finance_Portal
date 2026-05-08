@@ -2,6 +2,7 @@ package com.finance.portfolio.service;
 import com.finance.common.service.HistoricalPricingPort;
 
 import com.finance.common.service.AssetPricingPort;
+import com.finance.portfolio.config.PortfolioProperties;
 
 import com.finance.common.service.MarketSnapshotProcessor;
 
@@ -67,7 +68,7 @@ class PortfolioBackfillServiceTest {
                 portfolioRepository, positionRepository,
                 dailySnapshotRepository, assetSnapshotRepository,
                 historicalPricingPort, assetPricingPort, calculator, new PortfolioBackfillTracker(),
-                transactionManager);
+                transactionManager, new PortfolioProperties());
     }
 
     @Test

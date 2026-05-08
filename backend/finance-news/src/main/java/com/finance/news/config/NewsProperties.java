@@ -35,4 +35,12 @@ public class NewsProperties {
     private int cacheTtlHours = 24;
     private int defaultCategoryLimit = 20;
     private Map<String, Integer> categoryLimits = new HashMap<>();
+    private Mapping mapping = new Mapping();
+
+    @Getter
+    @Setter
+    public static class Mapping {
+        private int richHtmlMinLength = 150;
+        private int shortDescriptionThreshold = 80;
+    }
 }

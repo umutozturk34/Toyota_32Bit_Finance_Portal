@@ -2,6 +2,12 @@ package com.finance.notification;
 
 import com.finance.common.config.AppProperties;
 import com.finance.notification.broadcast.service.BroadcastProperties;
+import com.finance.notification.config.MarketSessionProperties;
+import com.finance.notification.config.NotificationCacheProperties;
+import com.finance.notification.config.NotificationDispatchProperties;
+import com.finance.notification.config.NotificationKafkaProperties;
+import com.finance.notification.config.NotificationStreamProperties;
+import com.finance.notification.config.WatchlistManagementProperties;
 import com.finance.notification.market.MarketHoursProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -20,7 +26,17 @@ import java.util.TimeZone;
         "com.finance.common.exception",
         "com.finance.common.filter.tier"
 })
-@EnableConfigurationProperties({AppProperties.class, BroadcastProperties.class, MarketHoursProperties.class})
+@EnableConfigurationProperties({
+        AppProperties.class,
+        BroadcastProperties.class,
+        MarketHoursProperties.class,
+        MarketSessionProperties.class,
+        NotificationCacheProperties.class,
+        NotificationDispatchProperties.class,
+        NotificationKafkaProperties.class,
+        NotificationStreamProperties.class,
+        WatchlistManagementProperties.class
+})
 @EnableAsync
 @EnableScheduling
 public class NotificationApplication {

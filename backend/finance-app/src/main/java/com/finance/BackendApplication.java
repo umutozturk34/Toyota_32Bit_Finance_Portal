@@ -1,5 +1,6 @@
 package com.finance;
 
+import com.finance.app.config.OverviewProperties;
 import com.finance.bond.config.BondProperties;
 import com.finance.common.config.AppProperties;
 import com.finance.common.config.CommissionProperties;
@@ -34,6 +35,7 @@ import java.util.TimeZone;
         FundProperties.class,
         KeycloakAdminProperties.class,
         NewsProperties.class,
+        OverviewProperties.class,
         PortfolioProperties.class,
         StockProperties.class
 })

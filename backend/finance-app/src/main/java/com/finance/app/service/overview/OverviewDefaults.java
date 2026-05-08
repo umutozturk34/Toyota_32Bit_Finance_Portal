@@ -2,63 +2,73 @@ package com.finance.app.service.overview;
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.finance.app.dto.response.overview.WidgetKind;
+import com.finance.app.config.OverviewProperties;
 import com.finance.app.dto.response.overview.WidgetSection;
-import com.finance.common.model.MarketType;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class OverviewDefaults {
 
-    public static final int MAX_CONFIG_LIMIT = 200;
-    public static final int MAX_ASSET_CARDS = 12;
-    public static final int MAX_NEWS_COUNT = 50;
-
-    private static final List<AssetCardsWidgetProvider.AssetReference> DEFAULT_ASSETS = List.of(
-            new AssetCardsWidgetProvider.AssetReference(MarketType.STOCK, "XU100.IS"),
-            new AssetCardsWidgetProvider.AssetReference(MarketType.STOCK, "XU030.IS"),
-            new AssetCardsWidgetProvider.AssetReference(MarketType.FOREX, "USDTRY"),
-            new AssetCardsWidgetProvider.AssetReference(MarketType.FOREX, "EURTRY"),
-            new AssetCardsWidgetProvider.AssetReference(MarketType.CRYPTO, "BTC"),
-            new AssetCardsWidgetProvider.AssetReference(MarketType.COMMODITY, "XAUTRYG")
-    );
-
-    private static final int DEFAULT_MOVER_LIMIT = 10;
-    private static final int DEFAULT_NEWS_COUNT = 10;
-    private static final int DEFAULT_WATCHLIST_LIMIT = 200;
+    private final OverviewProperties properties;
 
     public List<AssetCardsWidgetProvider.AssetReference> defaultAssetReferences() {
-        return DEFAULT_ASSETS;
+        List<OverviewProperties.AssetReferenceConfig> configured = properties.defaults().assetReferences();
+        List<AssetCardsWidgetProvider.AssetReference> refs = new ArrayList<>(configured.size());
+        for (OverviewProperties.AssetReferenceConfig c : configured) {
+            refs.add(new AssetCardsWidgetProvider.AssetReference(c.type(), c.code()));
+        }
+        return refs;
     }
 
     public int defaultMoverLimit() {
-        return DEFAULT_MOVER_LIMIT;
+        return properties.defaults().moverLimit();
     }
 
     public int defaultNewsCount() {
-        return DEFAULT_NEWS_COUNT;
+        return properties.defaults().newsCount();
     }
 
     public int defaultWatchlistLimit() {
-        return DEFAULT_WATCHLIST_LIMIT;
+        return properties.defaults().watchlistLimit();
+    }
+
+    public int maxConfigLimit() {
+        return properties.limits().maxConfigLimit();
+    }
+
+    public int maxAssetCardItems() {
+        return properties.settingsFor(com.finance.app.dto.response.overview.WidgetKind.ASSET_CARDS)
+                .maxItems();
+    }
+
+    public int maxNewsItems() {
+        return properties.settingsFor(com.finance.app.dto.response.overview.WidgetKind.NEWS)
+                .maxItems();
+    }
+
+    public int maxAssetCardWidgetsPerLayout() {
+        return properties.limits().maxAssetCardWidgetsPerLayout();
     }
 
     public List<WidgetSection> defaultSections() {
-        return List.of(
-                new WidgetSection("asset-cards-default", WidgetKind.ASSET_CARDS, 0, JsonNodeFactory.instance.objectNode()),
-                new WidgetSection("news-default", WidgetKind.NEWS, 1, JsonNodeFactory.instance.objectNode()),
-                new WidgetSection("movers-stock", WidgetKind.MOVERS, 2, marketConfig(MarketType.STOCK)),
-                new WidgetSection("movers-crypto", WidgetKind.MOVERS, 3, marketConfig(MarketType.CRYPTO)),
-                new WidgetSection("movers-forex", WidgetKind.MOVERS, 4, marketConfig(MarketType.FOREX)),
-                new WidgetSection("movers-fund", WidgetKind.MOVERS, 5, marketConfig(MarketType.FUND)),
-                new WidgetSection("movers-commodity", WidgetKind.MOVERS, 6, marketConfig(MarketType.COMMODITY)));
+        List<OverviewProperties.DefaultSectionConfig> configured = properties.defaults().sections();
+        List<WidgetSection> sections = new ArrayList<>(configured.size());
+        for (OverviewProperties.DefaultSectionConfig c : configured) {
+            sections.add(new WidgetSection(c.sectionId(), c.kind(), c.order(), buildConfigNode(c)));
+        }
+        return sections;
     }
 
-    private static ObjectNode marketConfig(MarketType market) {
+    private ObjectNode buildConfigNode(OverviewProperties.DefaultSectionConfig c) {
         ObjectNode node = JsonNodeFactory.instance.objectNode();
-        node.put("market", market.name());
+        if (c.marketType() != null) {
+            node.put("market", c.marketType().name());
+        }
         return node;
     }
 }

@@ -60,7 +60,7 @@ public class MoverWidgetProvider implements OverviewWidgetProvider {
     private int readLimit(WidgetSection section) {
         JsonNode node = section.config().get("limit");
         if (node == null || !node.isInt() || node.asInt() <= 0) return defaults.defaultMoverLimit();
-        return Math.min(node.asInt(), OverviewDefaults.MAX_CONFIG_LIMIT);
+        return Math.min(node.asInt(), defaults.maxConfigLimit());
     }
 
     private List<MarketAssetResponse> resolveGainers(MarketType market, int limit) {

@@ -21,8 +21,6 @@ import java.util.Optional;
 @Component
 public class AssetCardsWidgetProvider implements OverviewWidgetProvider {
 
-    private static final int MAX_ITEMS = OverviewDefaults.MAX_ASSET_CARDS;
-
     private final Map<MarketType, MarketAssetProvider> providersByType;
     private final OverviewDefaults defaults;
 
@@ -40,9 +38,10 @@ public class AssetCardsWidgetProvider implements OverviewWidgetProvider {
     public AssetCardsData fetch(String userSub, WidgetSection section) {
         List<AssetReference> requested = readReferences(section);
         if (requested == null) requested = defaults.defaultAssetReferences();
-        List<MarketAssetResponse> resolved = new ArrayList<>(Math.min(requested.size(), MAX_ITEMS));
+        int maxItems = defaults.maxAssetCardItems();
+        List<MarketAssetResponse> resolved = new ArrayList<>(Math.min(requested.size(), maxItems));
         for (AssetReference ref : requested) {
-            if (resolved.size() >= MAX_ITEMS) break;
+            if (resolved.size() >= maxItems) break;
             resolveOne(ref).ifPresent(resolved::add);
         }
         return new AssetCardsData(resolved);

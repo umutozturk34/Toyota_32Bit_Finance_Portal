@@ -247,6 +247,50 @@ app:
   tracked-asset:
     code-cache-ttl-seconds: 45
 
+  overview:
+    limits:
+      max-widgets-per-layout: 12
+      max-asset-card-widgets-per-layout: 4
+      max-config-limit: 200
+    defaults:
+      mover-limit: 10
+      news-count: 10
+      watchlist-limit: 200
+      asset-references:
+        - { type: STOCK, code: XU100.IS }
+        - { type: STOCK, code: XU030.IS }
+        - { type: FOREX, code: USDTRY }
+        - { type: FOREX, code: EURTRY }
+        - { type: CRYPTO, code: BTC }
+        - { type: COMMODITY, code: XAUTRYG }
+      sections:
+        - { section-id: asset-cards-default, kind: ASSET_CARDS, order: 0 }
+        - { section-id: news-default,        kind: NEWS,        order: 1 }
+        - { section-id: movers-stock,        kind: MOVERS,      order: 2, market-type: STOCK }
+        - { section-id: movers-crypto,       kind: MOVERS,      order: 3, market-type: CRYPTO }
+        - { section-id: movers-forex,        kind: MOVERS,      order: 4, market-type: FOREX }
+        - { section-id: movers-fund,         kind: MOVERS,      order: 5, market-type: FUND }
+        - { section-id: movers-commodity,    kind: MOVERS,      order: 6, market-type: COMMODITY }
+    widgets:
+      ASSET_CARDS:
+        defaults: { w: 8, h: 3 }
+        min:      { w: 3, h: 2 }
+        max:      { w: 12, h: 6 }
+        max-items: 12
+      MOVERS:
+        defaults: { w: 4, h: 6 }
+        min:      { w: 3, h: 4 }
+        max:      { w: 6, h: 12 }
+      WATCHLIST:
+        defaults: { w: 4, h: 6 }
+        min:      { w: 3, h: 4 }
+        max:      { w: 6, h: 12 }
+      NEWS:
+        defaults: { w: 4, h: 14 }
+        min:      { w: 3, h: 6 }
+        max:      { w: 8, h: 24 }
+        max-items: 12
+
   security:
     cors:
       allowed-origin-patterns:

@@ -50,6 +50,7 @@ public class OverviewLayoutReader {
         Set<WidgetKind> allKinds = new HashSet<>();
         LinkedHashMap<String, WidgetSection> dedup = new LinkedHashMap<>();
         int assetCardCount = 0;
+        int maxAssetCards = defaults.maxAssetCardWidgetsPerLayout();
         if (overview == null) return new ParseResult(List.of(), allIds, allKinds);
         JsonNode sectionsNode = overview.get("sections");
         if (sectionsNode == null || !sectionsNode.isArray()) return new ParseResult(List.of(), allIds, allKinds);
@@ -60,7 +61,7 @@ public class OverviewLayoutReader {
             allKinds.add(section.kind());
             if (!entry.path("visible").asBoolean(true)) continue;
             if (section.kind() == WidgetKind.ASSET_CARDS) {
-                if (assetCardCount >= 4) continue;
+                if (assetCardCount >= maxAssetCards) continue;
                 assetCardCount++;
             }
             dedup.putIfAbsent(dedupKey(section), section);

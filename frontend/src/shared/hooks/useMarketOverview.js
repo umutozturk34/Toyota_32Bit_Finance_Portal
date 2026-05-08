@@ -4,6 +4,7 @@ import { useAuth } from '../../features/auth/AuthContext';
 
 const OVERVIEW_KEY = ['marketOverview'];
 const STALE_MS = 30_000;
+const EMPTY_WIDGETS = Object.freeze([]);
 
 export function useMarketOverview() {
   const { isAuthenticated, loading } = useAuth();
@@ -14,7 +15,7 @@ export function useMarketOverview() {
     retry: false,
     enabled: isAuthenticated && !loading,
   });
-  const widgets = query.data ?? [];
+  const widgets = query.data ?? EMPTY_WIDGETS;
   return { ...query, widgets };
 }
 

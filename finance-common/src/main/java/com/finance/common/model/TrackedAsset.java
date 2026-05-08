@@ -34,6 +34,10 @@ public class TrackedAsset {
     @Column(name = "asset_code", nullable = false, length = 100)
     private String assetCode;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "asset_id")
+    private Asset asset;
+
     @Column(name = "display_name", length = 255)
     private String displayName;
 

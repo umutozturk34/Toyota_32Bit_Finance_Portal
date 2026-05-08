@@ -5,6 +5,7 @@ import com.finance.common.dto.request.TrackedAssetOrderItemRequest;
 import com.finance.common.dto.response.TrackedAssetResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.mapper.TrackedAssetMapper;
+import com.finance.common.model.Asset;
 import com.finance.common.model.StockSegment;
 import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
@@ -25,10 +26,13 @@ public class TrackedAssetCommandService {
     private final TrackedAssetRepository trackedAssetRepository;
     private final TrackedAssetMapper trackedAssetMapper;
     private final TrackedAssetCodeCache codeCache;
+    private final AssetRegistryService assetRegistry;
 
     public TrackedAssetResponse upsert(TrackedAssetUpsertCommand command) {
         TrackedAssetType type = command.getAssetType();
         String normalizedCode = type.normalizeCode(command.getAssetCode());
+
+        Asset asset = assetRegistry.upsert(type.marketType(), normalizedCode, command.getDisplayName());
 
         TrackedAsset entity = trackedAssetRepository
                 .findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
@@ -37,6 +41,7 @@ public class TrackedAssetCommandService {
                         .assetCode(normalizedCode)
                         .build());
 
+        entity.setAsset(asset);
         entity.setDisplayName(resolveDisplayName(command.getDisplayName(), entity.getDisplayName()));
         entity.setBinanceSymbol(type.resolveBinanceSymbol(command.getBinanceSymbol()));
         entity.setEnabled(command.getEnabled() == null || command.getEnabled());

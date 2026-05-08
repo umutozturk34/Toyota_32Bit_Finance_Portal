@@ -1,12 +1,12 @@
 package com.finance.app.config;
-import com.finance.forex.config.ForexProperties;
+import com.finance.market.forex.config.ForexProperties;
 
 
 import com.finance.common.config.AppProperties;
 
 
 import com.finance.common.dto.response.CandleResponse;
-import com.finance.fund.dto.response.FundCandleResponse;
+import com.finance.market.fund.dto.response.FundCandleResponse;
 import com.finance.common.model.MarketType;
 import com.finance.common.service.HistoricalPricingPort;
 import com.finance.common.service.MarketHistoryProvider;

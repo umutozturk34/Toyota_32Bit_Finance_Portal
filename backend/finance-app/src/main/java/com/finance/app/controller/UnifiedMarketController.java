@@ -1,7 +1,7 @@
 package com.finance.app.controller;
-import com.finance.stock.model.Stock;
+import com.finance.market.stock.model.Stock;
 
-import com.finance.fund.model.Fund;
+import com.finance.market.fund.model.Fund;
 
 import com.finance.common.service.MarketSnapshotProcessor;
 

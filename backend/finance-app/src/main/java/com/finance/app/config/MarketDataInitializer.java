@@ -1,45 +1,45 @@
 package com.finance.app.config;
-import com.finance.forex.service.TcmbForexService;
+import com.finance.market.forex.service.TcmbForexService;
 
 import com.finance.common.service.TaskTrackingService;
 
-import com.finance.stock.repository.StockRepository;
+import com.finance.market.stock.repository.StockRepository;
 
-import com.finance.stock.service.StockDataService;
+import com.finance.market.stock.service.StockDataService;
 
-import com.finance.stock.repository.StockCandleRepository;
+import com.finance.market.stock.repository.StockCandleRepository;
 
 import com.finance.news.service.NewsDataService;
 
 import com.finance.news.repository.NewsArticleRepository;
 
-import com.finance.fund.repository.FundRepository;
+import com.finance.market.fund.repository.FundRepository;
 
-import com.finance.fund.service.FundDataService;
+import com.finance.market.fund.service.FundDataService;
 
-import com.finance.fund.repository.FundCandleRepository;
+import com.finance.market.fund.repository.FundCandleRepository;
 
-import com.finance.forex.repository.ForexRepository;
+import com.finance.market.forex.repository.ForexRepository;
 
-import com.finance.forex.service.ForexDataService;
+import com.finance.market.forex.service.ForexDataService;
 
-import com.finance.forex.repository.ForexCandleRepository;
+import com.finance.market.forex.repository.ForexCandleRepository;
 
-import com.finance.crypto.repository.CryptoRepository;
+import com.finance.market.crypto.repository.CryptoRepository;
 
-import com.finance.crypto.service.CryptoDataService;
+import com.finance.market.crypto.service.CryptoDataService;
 
-import com.finance.crypto.repository.CryptoCandleRepository;
+import com.finance.market.crypto.repository.CryptoCandleRepository;
 
-import com.finance.commodity.repository.CommodityRepository;
+import com.finance.market.commodity.repository.CommodityRepository;
 
-import com.finance.commodity.service.CommodityDataService;
+import com.finance.market.commodity.service.CommodityDataService;
 
-import com.finance.commodity.repository.CommodityCandleRepository;
+import com.finance.market.commodity.repository.CommodityCandleRepository;
 
-import com.finance.bond.repository.BondRepository;
+import com.finance.market.bond.repository.BondRepository;
 
-import com.finance.bond.service.BondDataService;
+import com.finance.market.bond.service.BondDataService;
 
 import com.finance.common.service.MarketSnapshotProcessor;
 

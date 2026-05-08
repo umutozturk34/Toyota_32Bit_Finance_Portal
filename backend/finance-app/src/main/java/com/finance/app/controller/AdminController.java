@@ -1,5 +1,5 @@
 package com.finance.app.controller;
-import com.finance.bond.model.Bond;
+import com.finance.market.bond.model.Bond;
 
 import com.finance.common.service.MarketSnapshotProcessor;
 

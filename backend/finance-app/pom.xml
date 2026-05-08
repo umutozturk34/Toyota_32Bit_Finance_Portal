@@ -21,31 +21,11 @@
 		</dependency>
 		<dependency>
 			<groupId>com.finance</groupId>
-			<artifactId>finance-crypto</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.finance</groupId>
-			<artifactId>finance-stock</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.finance</groupId>
-			<artifactId>finance-forex</artifactId>
+			<artifactId>finance-market</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.finance</groupId>
 			<artifactId>finance-user</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.finance</groupId>
-			<artifactId>finance-fund</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.finance</groupId>
-			<artifactId>finance-bond</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.finance</groupId>
-			<artifactId>finance-commodity</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.finance</groupId>

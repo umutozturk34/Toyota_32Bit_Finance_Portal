@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bitcoin, BarChart2, Activity, Clock } from 'lucide-react';
 import { TrendingUp, ArrowUpRight, ArrowDownRight } from '../../shared/components/AnimatedIcons';
 import { cryptoService } from './cryptoService';
-import { adminService } from '../admin/adminService';
+import { adminService } from '../admin/services/adminService';
 import { formatPriceUSD, formatPriceTRY, formatCompactNumber } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/MarketListPage';
 import AssetCard from '../../shared/components/AssetCard';

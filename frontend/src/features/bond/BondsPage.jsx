@@ -15,7 +15,7 @@ import {
     BarChart3,
 } from 'lucide-react';
 import { bondService } from './bondService';
-import { adminService } from '../admin/adminService';
+import { adminService } from '../admin/services/adminService';
 import { useAuth } from '../auth/AuthContext';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
 import LoadingState from '../../shared/components/LoadingState';

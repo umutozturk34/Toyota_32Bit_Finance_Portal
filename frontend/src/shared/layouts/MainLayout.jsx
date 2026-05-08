@@ -12,13 +12,13 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { useUnreadMessageCount } from '../hooks/useMessages';
-import TasksPanel from '../../features/admin/TasksPanel';
+import TasksPanel from '../../features/admin/components/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
 import NotificationPanel from '../../features/notifications/NotificationPanel';
 import { useUnreadNotificationCount } from '../hooks/useNotifications';
 import useNotificationStream from '../hooks/useNotificationStream';
 import OnboardingGate from '../../features/onboarding/OnboardingGate';
-import KeycloakActionToast from '../../features/auth/KeycloakActionToast';
+import KeycloakActionToast from '../../features/auth/components/KeycloakActionToast';
 
 const navItems = [
   { to: '/market', label: 'Market', Icon: BarChart3 },

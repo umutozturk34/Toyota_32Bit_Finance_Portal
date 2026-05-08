@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LineChart, Activity, Clock, Users as UsersIcon, Wallet } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../shared/components/AnimatedIcons';
 import { fundService } from './fundService';
-import { adminService } from '../admin/adminService';
+import { adminService } from '../admin/services/adminService';
 import { formatPriceTRY, formatCompactTRY, formatVolume } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/MarketListPage';
 import AssetCard from '../../shared/components/AssetCard';

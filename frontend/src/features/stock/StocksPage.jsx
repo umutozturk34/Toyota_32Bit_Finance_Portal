@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { BarChart2, ChevronUp, ChevronDown, Activity, Clock } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../shared/components/AnimatedIcons';
 import { stockService } from './stockService';
-import { adminService } from '../admin/adminService';
+import { adminService } from '../admin/services/adminService';
 import { getChangeClass, changeColors, changeBg, formatPrice, formatVolume, formatPercentAbs } from '../../shared/utils/formatters';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
 import MarketListPage from '../../shared/components/MarketListPage';

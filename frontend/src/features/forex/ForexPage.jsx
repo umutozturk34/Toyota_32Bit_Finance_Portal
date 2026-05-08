@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart2, Activity, Clock, Coins } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/AnimatedIcons';
 import { forexService } from './forexService';
-import { adminService } from '../admin/adminService';
+import { adminService } from '../admin/services/adminService';
 import { getForexFlag, getBaseCurrency } from '../../shared/constants/forex';
 import { useAuth } from '../auth/AuthContext';
 import { changeColors, changeBg, formatPrice, formatChange, formatPercent } from '../../shared/utils/formatters';

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Gem, ChevronUp, ChevronDown, Clock } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../shared/components/AnimatedIcons';
 import { commodityService } from './commodityService';
-import { adminService } from '../admin/adminService';
+import { adminService } from '../admin/services/adminService';
 import { formatPrice } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/MarketListPage';
 import AssetCard from '../../shared/components/AssetCard';

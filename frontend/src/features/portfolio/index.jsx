@@ -8,17 +8,17 @@ import LoadingState from '../../shared/components/LoadingState';
 import ErrorState from '../../shared/components/ErrorState';
 import ProcessingSteps from '../../shared/components/ProcessingSteps';
 import useProcessingAnimation from '../../shared/hooks/useProcessingAnimation';
-import SummaryCards from './SummaryCards';
-import PositionsTable from './PositionsTable';
-import AllocationChart from './AllocationChart';
-import PerformanceChart from './PerformanceChart';
-import PositionFormModal from './PositionFormModal';
-import PositionDeleteDialog from './PositionDeleteDialog';
-import AssetDetail from './AssetDetail';
+import SummaryCards from './components/SummaryCards';
+import PositionsTable from './components/PositionsTable';
+import AllocationChart from './components/AllocationChart';
+import PerformanceChart from './components/PerformanceChart';
+import PositionFormModal from './components/PositionFormModal';
+import PositionDeleteDialog from './components/PositionDeleteDialog';
+import AssetDetail from './components/AssetDetail';
 import {
   usePortfolioList, usePortfolioView, usePortfolioPositions,
   useCreatePortfolio, useInvalidatePortfolio,
-} from './usePortfolioData';
+} from './hooks/usePortfolioData';
 
 const DEFAULT_PORTFOLIO_NAME = 'Demo Portföy';
 const ONBOARDING_STEPS = [

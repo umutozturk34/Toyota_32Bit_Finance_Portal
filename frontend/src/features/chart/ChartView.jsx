@@ -6,7 +6,7 @@ import {
   LineChart, ArrowLeft, BarChart2, Loader2,
   AlertTriangle, TrendingUp, RefreshCw, Activity
 } from 'lucide-react';
-import LightweightChart from './LightweightChart';
+import LightweightChart from './components/LightweightChart';
 import CompareBar from '../../shared/components/CompareBar';
 import { getCryptoHistory, stockService, forexService, fundService, trackedAssetService } from '../../shared/services/marketService';
 import { formatBistSymbol } from '../../shared/constants/stocks';

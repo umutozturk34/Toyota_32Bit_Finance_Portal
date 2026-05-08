@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Newspaper, ChevronRight } from 'lucide-react';
-import { getFallbackImage } from '../../news/newsConfig';
+import { getFallbackImage } from '../../news/lib/newsConfig';
 
 function formatDate(iso) {
   if (!iso) return '';

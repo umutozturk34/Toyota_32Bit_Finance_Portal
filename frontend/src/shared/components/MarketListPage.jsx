@@ -11,7 +11,7 @@ import MarketStatusBadge from './MarketStatusBadge';
 import SearchInput from './SearchInput';
 import SortSelect from './SortSelect';
 import Pagination from './Pagination';
-import MarketAddPositionModal from '../../features/portfolio/MarketAddPositionModal';
+import MarketAddPositionModal from '../../features/portfolio/components/MarketAddPositionModal';
 import FilterTabs from './FilterTabs';
 import { toast } from './Toast';
 import useMarketListData from '../hooks/useMarketListData';

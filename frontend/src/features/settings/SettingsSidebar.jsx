@@ -9,7 +9,7 @@ import { useTheme } from '../../shared/context/ThemeContext';
 import { useAuth } from '../auth/AuthContext';
 import { userCredentialService } from '../../shared/services/userCredentialService';
 import { toast } from '../../shared/components/Toast';
-import TwoFactorPanel from '../auth/TwoFactorPanel';
+import TwoFactorPanel from '../auth/components/TwoFactorPanel';
 import NotificationPreferencesSection from './NotificationPreferencesSection';
 import EmailChangeSection from './EmailChangeSection';
 

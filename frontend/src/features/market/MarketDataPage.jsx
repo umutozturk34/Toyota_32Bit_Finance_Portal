@@ -10,10 +10,10 @@ import { useMarketOverview } from '../../shared/hooks/useMarketOverview';
 import { useWidgetDefinitions } from '../../shared/hooks/useWidgetDefinitions';
 import { useWatchlists } from '../../shared/hooks/useWatchlist';
 import { newSectionId } from './sections/sectionRegistry';
-import OverviewLayout from './OverviewLayout';
-import OverviewWidgetCanvas from './OverviewWidgetCanvas';
-import WidgetTray from './WidgetTray';
-import WidgetSettingsPopover from './WidgetSettingsPopover';
+import OverviewLayout from './components/OverviewLayout';
+import OverviewWidgetCanvas from './components/OverviewWidgetCanvas';
+import WidgetTray from './components/WidgetTray';
+import WidgetSettingsPopover from './components/WidgetSettingsPopover';
 
 const REMOVAL_ANIMATION_MS = 200;
 

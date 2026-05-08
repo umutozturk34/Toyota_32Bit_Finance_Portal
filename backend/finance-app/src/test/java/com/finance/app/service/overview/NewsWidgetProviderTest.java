@@ -34,7 +34,7 @@ class NewsWidgetProviderTest {
     @BeforeEach
     void setUp() {
         newsQueryService = mock(NewsQueryService.class);
-        provider = new NewsWidgetProvider(newsQueryService, new OverviewDefaults());
+        provider = new NewsWidgetProvider(newsQueryService, new OverviewDefaults(OverviewPropertiesFixture.standard()));
     }
 
     private NewsArticleResponse article(Long id, String category, LocalDateTime publishedAt) {
@@ -57,13 +57,13 @@ class NewsWidgetProviderTest {
 
     @Test
     void should_useDefaultCount_when_configMissingCount() throws Exception {
-        when(newsQueryService.search(isNull(), isNull(), anyString(), anyString(), eq(0), eq(6)))
+        when(newsQueryService.search(isNull(), isNull(), anyString(), anyString(), eq(0), eq(10)))
                 .thenReturn(pageOf(article(1L, "MAKRO", LocalDateTime.now())));
 
         NewsData data = provider.fetch("user-1", sectionFor("{}"));
 
         assertThat(data.items()).hasSize(1);
-        verify(newsQueryService).search(isNull(), isNull(), anyString(), anyString(), eq(0), eq(6));
+        verify(newsQueryService).search(isNull(), isNull(), anyString(), anyString(), eq(0), eq(10));
     }
 
     @Test
@@ -131,11 +131,11 @@ class NewsWidgetProviderTest {
 
     @Test
     void should_querySingleAllCategories_when_categoriesEmpty() throws Exception {
-        when(newsQueryService.search(isNull(), isNull(), anyString(), anyString(), eq(0), eq(6)))
+        when(newsQueryService.search(isNull(), isNull(), anyString(), anyString(), eq(0), eq(10)))
                 .thenReturn(pageOf());
 
         provider.fetch("user-1", sectionFor("{\"categories\":[]}"));
 
-        verify(newsQueryService, times(1)).search(isNull(), isNull(), anyString(), anyString(), eq(0), eq(6));
+        verify(newsQueryService, times(1)).search(isNull(), isNull(), anyString(), anyString(), eq(0), eq(10));
     }
 }

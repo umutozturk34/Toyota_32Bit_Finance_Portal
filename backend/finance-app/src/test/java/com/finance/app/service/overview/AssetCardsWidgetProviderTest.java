@@ -36,7 +36,7 @@ class AssetCardsWidgetProviderTest {
         when(stockProvider.getType()).thenReturn(MarketType.STOCK);
         cryptoProvider = mock(MarketAssetProvider.class);
         when(cryptoProvider.getType()).thenReturn(MarketType.CRYPTO);
-        defaults = new OverviewDefaults();
+        defaults = new OverviewDefaults(OverviewPropertiesFixture.standard());
         provider = new AssetCardsWidgetProvider(List.of(stockProvider, cryptoProvider), defaults);
     }
 

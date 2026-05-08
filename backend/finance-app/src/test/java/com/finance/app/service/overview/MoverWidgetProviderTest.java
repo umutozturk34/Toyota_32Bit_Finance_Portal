@@ -35,7 +35,7 @@ class MoverWidgetProviderTest {
         topMoversCache = mock(TopMoversRedisService.class);
         stockProvider = mock(MarketAssetProvider.class);
         when(stockProvider.getType()).thenReturn(MarketType.STOCK);
-        provider = new MoverWidgetProvider(List.of(stockProvider), topMoversCache, new OverviewDefaults());
+        provider = new MoverWidgetProvider(List.of(stockProvider), topMoversCache, new OverviewDefaults(OverviewPropertiesFixture.standard()));
     }
 
     private MarketAssetResponse stub(String code) {

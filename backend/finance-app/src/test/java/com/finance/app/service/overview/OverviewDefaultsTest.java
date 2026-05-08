@@ -11,16 +11,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class OverviewDefaultsTest {
 
-    private final OverviewDefaults defaults = new OverviewDefaults();
+    private final OverviewDefaults defaults = new OverviewDefaults(OverviewPropertiesFixture.standard());
 
     @Test
-    void should_provideEightSections_when_callingDefaultSections() {
+    void should_provideSevenSections_when_callingDefaultSections() {
         List<WidgetSection> sections = defaults.defaultSections();
 
-        assertThat(sections).hasSize(8);
+        assertThat(sections).hasSize(7);
         assertThat(sections).extracting(WidgetSection::sectionId)
-                .containsExactly("asset-cards-default", "movers-stock", "movers-crypto", "movers-forex",
-                        "movers-fund", "movers-commodity", "watchlist-default", "news");
+                .containsExactly("asset-cards-default", "news-default", "movers-stock", "movers-crypto",
+                        "movers-forex", "movers-fund", "movers-commodity");
     }
 
     @Test

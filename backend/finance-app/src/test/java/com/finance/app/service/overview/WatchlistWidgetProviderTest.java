@@ -40,7 +40,7 @@ class WatchlistWidgetProviderTest {
         watchlistRepository = mock(OverviewWatchlistRepository.class);
         itemRepository = mock(OverviewWatchlistItemRepository.class);
         assetSnapshotCache = mock(AssetSnapshotCache.class);
-        provider = new WatchlistWidgetProvider(watchlistRepository, itemRepository, assetSnapshotCache, new OverviewDefaults());
+        provider = new WatchlistWidgetProvider(watchlistRepository, itemRepository, assetSnapshotCache, new OverviewDefaults(OverviewPropertiesFixture.standard()));
     }
 
     private OverviewWatchlist watchlist(Long id, String userSub, String name, boolean def) {

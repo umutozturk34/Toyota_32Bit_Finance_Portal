@@ -27,7 +27,7 @@ class OverviewLayoutReaderTest {
     @BeforeEach
     void setUp() {
         userLayoutService = mock(UserLayoutService.class);
-        reader = new OverviewLayoutReader(userLayoutService, new OverviewDefaults());
+        reader = new OverviewLayoutReader(userLayoutService, new OverviewDefaults(OverviewPropertiesFixture.standard()));
     }
 
     private UserLayoutResponse response(JsonNode overview) {
@@ -42,7 +42,7 @@ class OverviewLayoutReaderTest {
         List<WidgetSection> sections = reader.readVisibleSections("user-1");
 
         assertThat(sections).isNotEmpty();
-        assertThat(sections).extracting(WidgetSection::sectionId).contains("asset-cards-default", "movers-stock", "news");
+        assertThat(sections).extracting(WidgetSection::sectionId).contains("asset-cards-default", "movers-stock", "news-default");
     }
 
     @Test
@@ -52,7 +52,7 @@ class OverviewLayoutReaderTest {
         List<WidgetSection> sections = reader.readVisibleSections("user-1");
 
         assertThat(sections).isNotEmpty();
-        assertThat(sections.size()).isEqualTo(8);
+        assertThat(sections.size()).isEqualTo(7);
     }
 
     @Test
@@ -128,7 +128,7 @@ class OverviewLayoutReaderTest {
     }
 
     @Test
-    void should_injectMissingDefaultKinds_when_userLayoutPartial() throws Exception {
+    void should_returnOnlyExplicitSections_when_userLayoutPartial() throws Exception {
         JsonNode overview = objectMapper.readTree("""
                 {"sections":[
                   {"sectionId":"movers-stock","kind":"MOVERS","visible":true,"order":0,"config":{"market":"STOCK"}}
@@ -137,7 +137,6 @@ class OverviewLayoutReaderTest {
 
         List<WidgetSection> sections = reader.readVisibleSections("user-1");
 
-        assertThat(sections).extracting(WidgetSection::sectionId)
-                .contains("movers-stock", "asset-cards-default", "news", "watchlist-default");
+        assertThat(sections).extracting(WidgetSection::sectionId).containsExactly("movers-stock");
     }
 }

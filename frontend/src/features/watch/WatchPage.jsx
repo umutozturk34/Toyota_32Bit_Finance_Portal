@@ -188,10 +188,10 @@ function WatchlistRow({ item, onRemove, onEdit, draggable }) {
       onClick={route ? () => navigate(route) : undefined}
       onMouseEnter={triggerPrefetch}
       onFocus={triggerPrefetch}
-      className={`relative group grid grid-cols-[auto_auto_1fr_auto_auto] gap-3 items-center px-4 py-3 transition-colors duration-150 ${
+      className={`relative group grid grid-cols-[auto_auto_1fr_auto_auto] gap-3 items-center px-4 py-3 border-b border-border-default last:border-b-0 transition-colors duration-150 ${
         route ? 'cursor-pointer hover:bg-accent/5' : ''
       } ${isDragging
-        ? 'bg-accent/8 shadow-[0_18px_40px_-18px_rgba(99,102,241,0.55),inset_0_0_0_1px_rgba(99,102,241,0.4)] rounded-lg'
+        ? 'bg-accent/8 shadow-[0_18px_40px_-18px_rgba(99,102,241,0.55),inset_0_0_0_1px_rgba(99,102,241,0.4)] rounded-lg border-b-transparent'
         : ''}`}
     >
       {draggable ? (
@@ -216,18 +216,18 @@ function WatchlistRow({ item, onRemove, onEdit, draggable }) {
         assetImage={item.image}
         size="md"
       />
-      <div className="min-w-0">
+      <div className="flex flex-col justify-center min-w-0 leading-tight">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm font-semibold text-fg truncate group-hover:text-accent transition-colors">
+          <span className="text-sm font-semibold text-fg truncate group-hover:text-accent transition-colors leading-tight">
             {item.assetName || item.assetCode}
           </span>
           {item.deltaThreshold != null && (
-            <span className="text-[10px] font-mono text-accent shrink-0">
+            <span className="text-[10px] font-mono text-accent shrink-0 leading-none">
               ±{Number(item.deltaThreshold).toLocaleString('tr-TR', { maximumFractionDigits: 4 })}%
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 text-[11px] text-fg-muted">
+        <div className="flex items-center gap-2 text-[11px] text-fg-muted mt-0.5 leading-none">
           <span className="font-mono">{item.assetCode}</span>
           {item.note && (
             <>
@@ -237,8 +237,8 @@ function WatchlistRow({ item, onRemove, onEdit, draggable }) {
           )}
         </div>
       </div>
-      <div className="text-right">
-        <div className="text-sm font-mono font-semibold text-fg tabular-nums">
+      <div className="flex flex-col items-end justify-center leading-tight">
+        <div className="text-sm font-mono font-semibold text-fg tabular-nums leading-none">
           {item.currentPrice != null ? formatPriceTRY(item.currentPrice) : '—'}
         </div>
         {item.changePercent != null && (() => {
@@ -247,7 +247,7 @@ function WatchlistRow({ item, onRemove, onEdit, draggable }) {
           const isDown = item.changePercent < 0;
           const ChangeIcon = isUp ? TrendingUp : isDown ? TrendingDown : null;
           return (
-            <div className={`mt-0.5 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold tabular-nums ${changeBg[cls]} ${changeColors[cls]}`}>
+            <div className={`mt-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-mono font-semibold tabular-nums leading-none ${changeBg[cls]} ${changeColors[cls]}`}>
               {ChangeIcon && <ChangeIcon className="h-3 w-3" />}
               <span>{formatPercent(item.changePercent)}</span>
               {item.changeAmount != null && (
@@ -259,7 +259,7 @@ function WatchlistRow({ item, onRemove, onEdit, draggable }) {
           );
         })()}
       </div>
-      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-0.5 min-w-[64px] justify-end opacity-0 group-hover:opacity-100 transition-opacity">
         <button
           type="button"
           onClick={(e) => {
@@ -552,7 +552,7 @@ export default function WatchPage() {
           <span className="text-right">Son fiyat</span>
           <span className="w-8" />
         </div>
-        <div className="divide-y divide-border-default">
+        <div className="flex flex-col">
           {items.isLoading || activeListId == null ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-fg-muted">
               <Loader2 className="h-4 w-4 animate-spin text-accent" />

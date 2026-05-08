@@ -64,8 +64,8 @@ Türkiye finansal piyasalarına odaklı, açık kaynaklı kişisel finans takip 
 **Kapsam:**
 
 - **Tercihler** (`user_preferences` Postgres) — tema, dil, timezone, default grafik aralığı, rapor sıklığı, onboarding flag; ThemeContext TanStack Query backed; settings sidebar UI
-- **Overview customization** (`user_layouts` MongoDB) — kullanıcının overview sayfasına çektiği section'lar (BIST endeksleri, top movers, watchlist, news) — hangileri görünür, hangi sırada, kendi config'leriyle
-- **ChartDrawing skeleton** (`chart_drawings` MongoDB) — collection altyapısı (v0.18'de UI implement)
+- **Overview customization** (`user_layouts` Postgres JSONB, V64) — kullanıcının overview sayfasına çektiği section'lar (BIST endeksleri, per-market top movers, watchlist, news) — hangileri görünür, hangi sırada, hangi pozisyonda (`react-grid-layout` 12-col grid; sürükle-bırak + boyutlandır), her kart kendi config'iyle (news kategori chip filter + round-robin priority dağılımı, watchlist picker, asset card pin-list); save-side `OverviewWidgetDedupSanitizer` (max 12 widget, max 4 asset card); asset card sparkline (echarts lazy + deterministic seed); single anchored settings popover lifted to `MarketDataPage`
+- **Chart drawings** (`chart_drawings` Postgres JSONB, V65 — Task B follow-up) — trend çizgileri, fibonacci, yatay seviyeler asset bazlı kalıcı kayıt
 - **Admin user management** — Keycloak admin REST proxy (`KeycloakAdminClient`) ile list/search/pagination/ban/unban; self-ban guard
 - **2FA setup** — Keycloak account API entegrasyonu, settings sidebar inline panel
 - **Şifre değiştirme** — Keycloak `executeActionsEmail` ile mail bağlantısı; UPDATE_PASSWORD AIA flow; rate limit (`CredentialActionTier` saatte 3 istek)

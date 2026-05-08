@@ -1,0 +1,85 @@
+package com.finance.app.service.overview;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.finance.app.dto.response.overview.AssetCardsData;
+import com.finance.app.dto.response.overview.WidgetKind;
+import com.finance.app.dto.response.overview.WidgetSection;
+import com.finance.common.dto.response.MarketAssetResponse;
+import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.common.model.MarketType;
+import com.finance.common.service.MarketAssetProvider;
+import com.finance.common.util.EnumDispatcher;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+@Log4j2
+@Component
+public class AssetCardsWidgetProvider implements OverviewWidgetProvider {
+
+    private static final int MAX_ITEMS = OverviewDefaults.MAX_ASSET_CARDS;
+
+    private final Map<MarketType, MarketAssetProvider> providersByType;
+    private final OverviewDefaults defaults;
+
+    public AssetCardsWidgetProvider(List<MarketAssetProvider> providers, OverviewDefaults defaults) {
+        this.providersByType = EnumDispatcher.from(MarketType.class, providers, MarketAssetProvider::getType);
+        this.defaults = defaults;
+    }
+
+    @Override
+    public WidgetKind kind() {
+        return WidgetKind.ASSET_CARDS;
+    }
+
+    @Override
+    public AssetCardsData fetch(String userSub, WidgetSection section) {
+        List<AssetReference> requested = readReferences(section);
+        if (requested == null) requested = defaults.defaultAssetReferences();
+        List<MarketAssetResponse> resolved = new ArrayList<>(Math.min(requested.size(), MAX_ITEMS));
+        for (AssetReference ref : requested) {
+            if (resolved.size() >= MAX_ITEMS) break;
+            resolveOne(ref).ifPresent(resolved::add);
+        }
+        return new AssetCardsData(resolved);
+    }
+
+    private Optional<MarketAssetResponse> resolveOne(AssetReference ref) {
+        MarketAssetProvider provider = providersByType.get(ref.type());
+        if (provider == null) {
+            log.debug("AssetCardsWidget skip — no provider for type={}", ref.type());
+            return Optional.empty();
+        }
+        try {
+            return Optional.ofNullable(provider.getByCode(ref.code()));
+        } catch (ResourceNotFoundException ex) {
+            log.debug("AssetCardsWidget skip — code={} not found in {}", ref.code(), ref.type());
+            return Optional.empty();
+        }
+    }
+
+    private List<AssetReference> readReferences(WidgetSection section) {
+        JsonNode node = section.config().get("assetCodes");
+        if (node == null) return null;
+        if (!node.isArray()) return List.of();
+        List<AssetReference> refs = new ArrayList<>(node.size());
+        for (JsonNode entry : node) {
+            String type = entry.path("type").asText(null);
+            String code = entry.path("code").asText(null);
+            if (type == null || code == null || type.isBlank() || code.isBlank()) continue;
+            try {
+                refs.add(new AssetReference(MarketType.valueOf(type), code));
+            } catch (IllegalArgumentException ex) {
+                log.debug("AssetCardsWidget skip — invalid market type={}", type);
+            }
+        }
+        return refs;
+    }
+
+    public record AssetReference(MarketType type, String code) {
+    }
+}

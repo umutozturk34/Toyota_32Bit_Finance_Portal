@@ -22,7 +22,7 @@
   --spacing: 0.25rem;
   --font-sans: 'Nunito Sans', system-ui, -apple-system, sans-serif;
   --font-display: 'Nunito Sans', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-mono: 'Nunito Sans', system-ui, -apple-system, sans-serif;
   --animate-spin: spin 1s linear infinite;
   --animate-float-slow: float-slow 6s ease-in-out infinite;
   --animate-float-mid: float-mid 4.5s ease-in-out infinite;
@@ -70,6 +70,75 @@
   100% { background-position: 200% 0; }
 }
 
+@keyframes skeleton-shimmer-kf {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.skeleton-shimmer {
+  animation: skeleton-shimmer-kf 1.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes widget-fade-in-kf {
+  0% { opacity: 0; transform: scale(0.985); filter: blur(2px); }
+  60% { filter: blur(0); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+.widget-fade-in {
+  animation: widget-fade-in-kf 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform, filter;
+}
+
+@keyframes asset-chart-fade-kf {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 0.42; transform: translateY(0); }
+}
+.asset-chart-fade {
+  opacity: 0;
+  animation: asset-chart-fade-kf 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: opacity, transform;
+}
+
+/* RGL resize handle visible & styled in edit mode */
+.react-resizable-handle {
+  background-image: none !important;
+  width: 18px !important;
+  height: 18px !important;
+  bottom: 2px !important;
+  right: 2px !important;
+  padding: 0 !important;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: auto;
+}
+.react-grid-item:hover .react-resizable-handle,
+.react-grid-item.react-grid-placeholder + .react-resizable-handle,
+.react-grid-item.resizing .react-resizable-handle {
+  opacity: 1;
+}
+.react-resizable-handle::before {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid var(--color-accent);
+  border-bottom: 2px solid var(--color-accent);
+  border-bottom-right-radius: 4px;
+  opacity: 0.85;
+}
+.react-resizable-handle::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--color-accent);
+  border-bottom: 2px solid var(--color-accent);
+}
+
 @keyframes gradient-shift {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -81,6 +150,7 @@ html {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scrollbar-gutter: stable;
 }
 
 body {

@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, ListChecks, FileText, Percent, Search, Star, ChevronDown, Check } from 'lucide-react';
+import { Eye, ListChecks, FileText, Percent, Search, Star, ChevronDown, Check, Info } from 'lucide-react';
 import BaseModal from '../../shared/components/BaseModal';
 import SearchSuggestions from '../../shared/components/SearchSuggestions';
 import {
   useWatchlists,
+  useWatchlistItems,
   useAddWatchlistItem,
   useAddToFavorites,
 } from '../../shared/hooks/useWatchlist';
@@ -31,6 +32,14 @@ export default function AddWatchlistItemModal({
   const [listMenuOpen, setListMenuOpen] = useState(false);
   const listMenuRef = useRef(null);
 
+  const targetItems = useWatchlistItems(selectedListId, { enabled: isOpen && selectedListId != null });
+  const existingEntry = useMemo(() => {
+    if (!selectedAsset || !targetItems.data) return null;
+    return targetItems.data.find(
+      (it) => it.marketType === selectedAsset.type && it.assetCode === selectedAsset.code,
+    ) ?? null;
+  }, [targetItems.data, selectedAsset]);
+
   useEffect(() => {
     if (!listMenuOpen) return;
     const handler = (e) => {
@@ -42,8 +51,6 @@ export default function AddWatchlistItemModal({
 
   useEffect(() => {
     if (!isOpen) return;
-    setNote('');
-    setDeltaThreshold('');
     if (defaultMarketType && defaultAssetCode) {
       setSelectedAsset({ type: defaultMarketType, code: defaultAssetCode, name: defaultAssetCode });
     } else {
@@ -56,6 +63,19 @@ export default function AddWatchlistItemModal({
       setSelectedListId(def?.id ?? null);
     }
   }, [isOpen, defaultMarketType, defaultAssetCode, watchlistId, watchlists]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (existingEntry) {
+      setNote(existingEntry.note ?? '');
+      setDeltaThreshold(
+        existingEntry.deltaThreshold != null ? String(existingEntry.deltaThreshold) : '',
+      );
+    } else {
+      setNote('');
+      setDeltaThreshold('');
+    }
+  }, [isOpen, existingEntry]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -82,7 +102,8 @@ export default function AddWatchlistItemModal({
       } else {
         await add.mutateAsync({ watchlistId: selectedListId, ...payload });
       }
-      toast.success(`${selectedAsset.code} → ${targetList?.name ?? 'liste'}`);
+      const verb = existingEntry ? 'güncellendi' : 'eklendi';
+      toast.success(`${selectedAsset.code} → ${targetList?.name ?? 'liste'} ${verb}`);
       onClose();
     } catch (err) {
       toast.error(extractApiError(err, 'Ekleme başarısız'));
@@ -94,13 +115,14 @@ export default function AddWatchlistItemModal({
     ? `${selectedAsset.code} (${ASSET_TYPE_LABELS[selectedAsset.type] ?? selectedAsset.type})`
     : 'Önce asset seç, sonra listeye ekle';
   const selectedList = watchlists.find((w) => w.id === selectedListId);
+  const isUpdate = existingEntry != null;
 
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       icon={Eye}
-      title="Listeye ekle"
+      title={isUpdate ? 'Liste girişini güncelle' : 'Listeye ekle'}
       subtitle={subtitle}
       size="md"
     >
@@ -245,12 +267,22 @@ export default function AddWatchlistItemModal({
           </p>
         </div>
 
+        {isUpdate && (
+          <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/8 px-3 py-2.5 text-[11px] text-warning leading-relaxed">
+            <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+            <span>
+              <strong>{selectedAsset?.code}</strong> bu listede zaten var.
+              Kaydet butonuyla mevcut not ve eşik değerleri üstüne yazılır.
+            </span>
+          </div>
+        )}
+
         <button
           type="submit"
           disabled={pending || !selectedAsset || selectedListId == null}
           className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer disabled:opacity-50"
         >
-          {pending ? 'Ekleniyor…' : 'Listeye Ekle'}
+          {pending ? (isUpdate ? 'Güncelleniyor…' : 'Ekleniyor…') : isUpdate ? 'Güncelle' : 'Listeye Ekle'}
         </button>
       </form>
     </BaseModal>

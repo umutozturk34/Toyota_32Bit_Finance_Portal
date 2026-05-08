@@ -66,7 +66,16 @@ public class WatchlistEvaluator {
         Map<GroupKey, List<WatchlistDeltaPayload.DeltaItem>> firedByGroup = new LinkedHashMap<>();
         for (WatchlistItem item : items) {
             AssetSnapshot snapshot = snapshots.get(item.getAssetCode());
-            if (snapshot == null || snapshot.priceTry() == null) continue;
+            if (snapshot == null) {
+                log.warn("Skip watchlist item id={} code={} reason=no_snapshot",
+                        item.getId(), item.getAssetCode());
+                continue;
+            }
+            if (snapshot.priceTry() == null) {
+                log.warn("Skip watchlist item id={} code={} reason=null_priceTry",
+                        item.getId(), item.getAssetCode());
+                continue;
+            }
             BigDecimal currentPrice = snapshot.priceTry();
             if (item.exceedsThreshold(currentPrice, globalDeltaThreshold)) {
                 BigDecimal deltaPct = item.deltaPercent(currentPrice).orElse(BigDecimal.ZERO);

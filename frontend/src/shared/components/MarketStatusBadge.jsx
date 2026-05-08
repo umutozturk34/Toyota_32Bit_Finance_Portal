@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Clock } from 'lucide-react';
 import { useMarketSession } from '../hooks/useMarketStatus';
 
 const TRANSITION_FORMATTER = new Intl.RelativeTimeFormat('tr-TR', { numeric: 'auto' });
@@ -17,44 +18,21 @@ function relativeTransition(iso) {
   return TRANSITION_FORMATTER.format(Math.round(delta / MINUTE_MS), 'minute');
 }
 
-function formatCountdown(iso) {
-  if (!iso) return '--:--';
-  const delta = Math.max(0, new Date(iso).getTime() - Date.now());
-  const totalMinutes = Math.floor(delta / MINUTE_MS);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${String(hours).padStart(2, '0')}h${String(minutes).padStart(2, '0')}`;
-}
-
-function CornerBrackets() {
-  const c = 'absolute w-1.5 h-1.5 border-fg-subtle/30 pointer-events-none';
-  return (
-    <>
-      <span aria-hidden className={`${c} top-0.5 left-0.5 border-l border-t`} />
-      <span aria-hidden className={`${c} top-0.5 right-0.5 border-r border-t`} />
-      <span aria-hidden className={`${c} bottom-0.5 left-0.5 border-l border-b`} />
-      <span aria-hidden className={`${c} bottom-0.5 right-0.5 border-r border-b`} />
-    </>
-  );
-}
-
 function StatusDot({ isOpen }) {
   if (isOpen) {
     return (
-      <span className="relative inline-flex w-2 h-2 shrink-0" aria-hidden>
-        <span className="absolute inset-0 rounded-full bg-current opacity-40 animate-ping" />
-        <span className="relative inline-block w-2 h-2 rounded-full bg-current shadow-[0_0_8px_currentColor]" />
+      <span className="relative inline-flex w-1.5 h-1.5 shrink-0" aria-hidden>
+        <span className="absolute inset-0 rounded-full bg-success opacity-50 animate-ping" />
+        <span className="relative inline-block w-1.5 h-1.5 rounded-full bg-success shadow-[0_0_6px_rgba(74,222,128,0.6)]" />
       </span>
     );
   }
-  return (
-    <span aria-hidden className="inline-block w-2 h-2 rounded-full border border-current opacity-50 shrink-0" />
-  );
+  return <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full bg-fg-subtle/40 shrink-0" />;
 }
 
 /**
- * Terminal-inspired HUD pill: pulsing live dot, segmented monospace structure
- * with ASCII corner brackets and divider, hover-expanded session detail.
+ * Compact session pill — themed to match the cards (rounded, subtle gradient,
+ * accent-tinted border on OPEN). Hover reveals a card-style detail panel.
  *
  * @param {{ market: string, compact?: boolean }} props
  */
@@ -63,57 +41,56 @@ export default function MarketStatusBadge({ market, compact = false }) {
   if (!entry) return null;
   const isOpen = entry.session === 'OPEN';
   const transitionLabel = relativeTransition(entry.nextTransitionAt);
-  const countdown = formatCountdown(entry.nextTransitionAt);
-  const tone = isOpen ? 'text-success' : 'text-warning';
   const action = isOpen ? 'kapanır' : 'açılır';
-  const sheen = isOpen
-    ? 'shadow-[inset_0_0_0_1px_rgba(74,222,128,0.10),0_0_18px_-6px_rgba(74,222,128,0.45)]'
-    : 'shadow-[inset_0_0_0_1px_rgba(245,158,11,0.06)]';
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -3 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
       className="group relative inline-flex"
     >
       <div
-        className={`relative inline-flex items-center gap-2 px-2.5 py-1 rounded-md border border-border-default bg-gradient-to-b from-bg-elevated to-bg-base/70 font-mono text-[10px] uppercase tracking-[0.1em] ${sheen}`}
+        className={`relative inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border bg-bg-elevated/90 backdrop-blur-sm transition-colors ${
+          isOpen
+            ? 'border-success/40 shadow-[0_0_14px_-6px_rgba(74,222,128,0.55)]'
+            : 'border-border-default'
+        }`}
       >
-        <CornerBrackets />
-        <span className={`relative flex items-center gap-1.5 font-bold ${tone}`}>
-          <StatusDot isOpen={isOpen} />
-          {isOpen ? 'OPEN' : 'CLOSED'}
+        <StatusDot isOpen={isOpen} />
+        <span className={`font-display text-[11px] font-bold tracking-tight leading-none ${isOpen ? 'text-success' : 'text-fg-muted'}`}>
+          {isOpen ? 'Açık' : 'Kapalı'}
         </span>
-        {!compact && entry.nextTransitionAt && (
+        {!compact && transitionLabel && (
           <>
-            <span aria-hidden className="relative text-fg-subtle/60 select-none">│</span>
-            <span className="relative inline-flex items-baseline gap-1">
-              <span className="text-[8px] tracking-[0.2em] text-fg-subtle">T—</span>
-              <span className="tabular-nums font-semibold text-fg">{countdown}</span>
+            <span aria-hidden className="text-fg-subtle/40 leading-none">·</span>
+            <span className="font-mono text-[10px] tabular-nums text-fg-subtle leading-none">
+              {transitionLabel.replace(/^./, (c) => c.toUpperCase())}
             </span>
           </>
         )}
       </div>
 
       <div
-        className="absolute left-0 top-full mt-2 z-50 min-w-[13rem] rounded-md border border-border-default bg-bg-elevated/95 backdrop-blur-md p-3 shadow-2xl
+        className="absolute left-0 top-full mt-1.5 z-50 min-w-[12rem] rounded-lg border border-border-default bg-bg-elevated/95 backdrop-blur-md p-2.5 shadow-xl shadow-black/20
                    opacity-0 -translate-y-1 pointer-events-none
                    transition-[opacity,transform] duration-200 ease-out
                    group-hover:opacity-100 group-hover:translate-y-0"
       >
-        <div className="flex items-center justify-between text-[9px] tracking-[0.2em] text-fg-subtle uppercase mb-1.5 font-mono">
-          <span className="text-accent">▸ {market}</span>
-          <span>// session</span>
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="font-display text-[11px] font-bold text-fg">{market}</span>
+          <span className="font-mono text-[9px] tracking-[0.16em] uppercase text-fg-subtle">SESSION</span>
         </div>
-        <div className={`text-[13px] font-bold font-mono mb-1 flex items-center gap-1.5 ${tone}`}>
+        <div className={`flex items-center gap-1.5 mb-1.5 ${isOpen ? 'text-success' : 'text-fg-muted'}`}>
           <StatusDot isOpen={isOpen} />
-          {isOpen ? 'AKTİF SEANS' : 'SEANS DIŞI'}
+          <span className="font-display text-[12px] font-semibold leading-none">
+            {isOpen ? 'Aktif seans' : 'Seans dışı'}
+          </span>
         </div>
         {transitionLabel && (
-          <div className="text-[11px] text-fg-muted font-mono leading-relaxed">
-            <span className="text-fg-subtle">↪ {action}</span>{' '}
-            <span className="text-fg">{transitionLabel}</span>
+          <div className="flex items-center gap-1.5 text-[10px] text-fg-muted">
+            <Clock className="h-3 w-3 text-fg-subtle" />
+            <span><span className="text-fg-subtle">{action}</span> <span className="text-fg font-semibold">{transitionLabel}</span></span>
           </div>
         )}
       </div>

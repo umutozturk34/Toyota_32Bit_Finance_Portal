@@ -26,7 +26,7 @@ const TIME_RANGES = [
     { id: '6M', label: '6A', months: 6 },
     { id: '1Y', label: '1Y', months: 12 },
     { id: '5Y', label: '5Y', months: 60 },
-    { id: 'MAX', label: 'Maks', months: 0 },
+    { id: 'ALL', label: 'Maks', months: 0 },
 ];
 
 const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = null, compareSymbol = null, timeRange = '1Y', onTimeRangeChange }) => {

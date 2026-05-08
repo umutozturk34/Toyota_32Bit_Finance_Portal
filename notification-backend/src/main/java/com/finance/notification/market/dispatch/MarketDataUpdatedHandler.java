@@ -5,11 +5,13 @@ import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
 import com.finance.notification.core.dispatch.payload.MarketDataUpdatedPayload;
 import com.finance.notification.core.model.NotificationType;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 
+@Log4j2
 @Component
 public class MarketDataUpdatedHandler implements NotificationHandler {
 
@@ -69,6 +71,7 @@ public class MarketDataUpdatedHandler implements NotificationHandler {
         for (Map.Entry<String, String> entry : SLOT_KEYWORDS) {
             if (lower.contains(entry.getKey())) return entry.getValue();
         }
+        log.warn("MarketDataUpdatedHandler unknown source token={} — falling back to generic title", source);
         return null;
     }
 

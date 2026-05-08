@@ -12,51 +12,7 @@ import { getCryptoHistory, stockService, forexService, fundService, trackedAsset
 import { formatBistSymbol } from '../../shared/constants/stocks';
 import { getForexPairs } from '../../shared/constants/forex';
 
-
-const ASSET_ICONS = {
-  BIST: <BarChart2 className="w-4 h-4" />,
-  CRYPTO: <Activity className="w-4 h-4" />,
-  FOREX: <RefreshCw className="w-4 h-4" />,
-  FUND: <LineChart className="w-4 h-4" />,
-};
-const ASSET_LABELS = {
-  BIST: 'BIST',
-  CRYPTO: 'Kripto',
-  FOREX: 'Döviz',
-  FUND: 'Fon',
-};
-const ROUTE_TO_ASSET_TYPE = {
-  bist: 'BIST',
-  crypto: 'CRYPTO',
-  forex: 'FOREX',
-  fund: 'FUND',
-};
-const ASSET_TYPE_TO_ROUTE = {
-  BIST: 'bist',
-  CRYPTO: 'crypto',
-  FOREX: 'forex',
-  FUND: 'fund',
-};
-const ensureBistSuffix = (code) => (code.endsWith('.IS') ? code : `${code}.IS`);
-const HISTORY_FETCHERS = {
-  CRYPTO: (code, range) => getCryptoHistory(code, range),
-  STOCK: (code, range) => stockService.getHistory(ensureBistSuffix(code), range),
-  BIST: (code, range) => stockService.getHistory(ensureBistSuffix(code), range),
-  US: (code, range) => stockService.getHistory(ensureBistSuffix(code), range),
-  FOREX: (code, range) => forexService.getHistory(code, range),
-  FUND: (code, range) => fundService.getHistory(code, range),
-};
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
-  },
-};
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
-};
+import { ASSET_ICONS, ASSET_LABELS, ROUTE_TO_ASSET_TYPE, ASSET_TYPE_TO_ROUTE, HISTORY_FETCHERS, containerVariants, itemVariants } from './lib/chartViewConstants.jsx';
 const ChartView = () => {
   const { coinId, assetType: routeAssetType, symbol: routeSymbol } = useParams();
   const navigate = useNavigate();

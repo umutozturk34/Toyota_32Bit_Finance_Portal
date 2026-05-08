@@ -14,7 +14,7 @@ import {
     ChevronUp,
     BarChart3,
 } from 'lucide-react';
-import { bondService } from './bondService';
+import { bondService } from './services/bondService';
 import { adminService } from '../admin/services/adminService';
 import { useAuth } from '../auth/AuthContext';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
@@ -30,7 +30,7 @@ import { toast } from '../../shared/components/feedback/Toast';
 import FilterTabs from '../../shared/components/form/FilterTabs';
 import useListParams from '../../shared/hooks/useListParams';
 import { useTheme } from '../../shared/context/ThemeContext';
-import { BOND_TYPE_LABELS, BOND_TYPE_COLORS, CHART_LINE_COLORS } from './bondConstants';
+import { BOND_TYPE_LABELS, BOND_TYPE_COLORS, CHART_LINE_COLORS } from './lib/bondConstants';
 
 const SORT_OPTIONS = [
     { id: 'simpleYield', label: 'Basit Getiri' },

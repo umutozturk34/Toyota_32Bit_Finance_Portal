@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
-import { forexService } from './forexService';
+import { forexService } from './services/forexService';
 import { getForexFlag, getBaseCurrency } from '../../shared/constants/forex';
 import { getChangeClass, changeColors, formatPrice, formatChange, formatPercent } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';

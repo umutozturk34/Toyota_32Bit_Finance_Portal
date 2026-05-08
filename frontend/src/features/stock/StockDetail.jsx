@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { ChevronUp, ChevronDown } from 'lucide-react';
-import { stockService } from './stockService';
+import { stockService } from './services/stockService';
 import { getChangeClass, changeColors, formatPrice, formatVolume, formatPercentAbs } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';

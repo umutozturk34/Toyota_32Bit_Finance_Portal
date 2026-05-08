@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Gem, ChevronUp, ChevronDown, Clock } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
-import { commodityService } from './commodityService';
+import { commodityService } from './services/commodityService';
 import { adminService } from '../admin/services/adminService';
 import { formatPrice } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/market/MarketListPage';

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Activity, Clock, Users as UsersIcon, Wallet } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
-import { fundService } from './fundService';
+import { fundService } from './services/fundService';
 import { adminService } from '../admin/services/adminService';
 import { formatPriceTRY, formatCompactTRY, formatVolume } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/market/MarketListPage';

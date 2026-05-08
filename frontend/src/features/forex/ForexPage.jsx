@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { BarChart2, Activity, Clock, Coins } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
-import { forexService } from './forexService';
+import { forexService } from './services/forexService';
 import { adminService } from '../admin/services/adminService';
 import { getForexFlag, getBaseCurrency } from '../../shared/constants/forex';
 import { useAuth } from '../auth/AuthContext';

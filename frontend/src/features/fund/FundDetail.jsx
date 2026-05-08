@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { LineChart, Users as UsersIcon, Activity } from 'lucide-react';
-import { fundService } from './fundService';
+import { fundService } from './services/fundService';
 import { formatPriceTRY, formatVolume, formatCompactTRY } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';

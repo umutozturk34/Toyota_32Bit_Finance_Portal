@@ -14,7 +14,9 @@ import com.finance.fund.mapper.FundMapper;
 import com.finance.fund.model.Fund;
 import com.finance.fund.model.FundCandle;
 import com.finance.fund.model.FundType;
+import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
+import com.finance.common.service.AssetRegistryService;
 import com.finance.fund.repository.FundCandleRepository;
 import com.finance.fund.repository.FundRepository;
 import com.finance.common.util.CandleBatchUpsertTemplate;
@@ -35,6 +37,7 @@ public class FundEntityWriter implements MarketEntityWriter {
     private final FundMapper fundMapper;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final TrackedAssetCommandService trackedAssetCommandService;
+    private final AssetRegistryService assetRegistry;
     private final int autoTrackSortOrder;
     private final int scale;
 
@@ -43,6 +46,7 @@ public class FundEntityWriter implements MarketEntityWriter {
                             FundMapper fundMapper,
                             TrackedAssetQueryService trackedAssetQueryService,
                             TrackedAssetCommandService trackedAssetCommandService,
+                            AssetRegistryService assetRegistry,
                             AppProperties appProperties,
                             FundProperties fundProperties) {
         this.fundRepository = fundRepository;
@@ -50,6 +54,7 @@ public class FundEntityWriter implements MarketEntityWriter {
         this.fundMapper = fundMapper;
         this.trackedAssetQueryService = trackedAssetQueryService;
         this.trackedAssetCommandService = trackedAssetCommandService;
+        this.assetRegistry = assetRegistry;
         this.autoTrackSortOrder = fundProperties.getAutoTrackSortOrder();
         this.scale = appProperties.getScale();
     }
@@ -64,6 +69,7 @@ public class FundEntityWriter implements MarketEntityWriter {
         } else {
             toPersist = fundMapper.toEntity(dto, fundType, now);
         }
+        toPersist.setAsset(assetRegistry.upsert(MarketType.FUND, dto.fundCode(), toPersist.getName()));
         fundRepository.save(toPersist);
         log.debug("Saved snapshot: {} ({}) - {}", dto.fundCode(), fundType, dto.price());
         return toPersist;

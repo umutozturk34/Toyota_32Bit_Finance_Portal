@@ -13,8 +13,10 @@ import com.finance.common.exception.BusinessException;
 import com.finance.stock.mapper.StockMapper;
 import com.finance.stock.model.Stock;
 import com.finance.stock.model.StockCandle;
+import com.finance.common.model.MarketType;
 import com.finance.common.model.StockSegment;
 import com.finance.common.model.TrackedAssetType;
+import com.finance.common.service.AssetRegistryService;
 import com.finance.stock.repository.StockCandleRepository;
 import com.finance.stock.repository.StockRepository;
 import com.finance.common.util.CandleBatchUpsertTemplate;
@@ -34,17 +36,20 @@ public class StockEntityWriter implements MarketEntityWriter {
     private final StockCandleRepository stockCandleRepository;
     private final StockMapper stockMapper;
     private final TrackedAssetQueryService trackedAssetQueryService;
+    private final AssetRegistryService assetRegistry;
     private final int scale;
 
     public StockEntityWriter(StockRepository stockRepository,
                              StockCandleRepository stockCandleRepository,
                              StockMapper stockMapper,
                              TrackedAssetQueryService trackedAssetQueryService,
+                             AssetRegistryService assetRegistry,
                              AppProperties appProperties) {
         this.stockRepository = stockRepository;
         this.stockCandleRepository = stockCandleRepository;
         this.stockMapper = stockMapper;
         this.trackedAssetQueryService = trackedAssetQueryService;
+        this.assetRegistry = assetRegistry;
         this.scale = appProperties.getScale();
     }
 
@@ -69,6 +74,7 @@ public class StockEntityWriter implements MarketEntityWriter {
             toPersist = stockMapper.toEntity(dto, now);
         }
         toPersist.setStockSegment(resolveStockSegment(symbol));
+        toPersist.setAsset(assetRegistry.upsert(MarketType.STOCK, symbol, toPersist.getName()));
         stockRepository.save(toPersist);
         return toPersist;
     }

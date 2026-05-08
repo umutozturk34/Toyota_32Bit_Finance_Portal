@@ -1,8 +1,12 @@
 package com.finance.common.model;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.util.PercentChangeCalculator;
 import jakarta.persistence.Column;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MappedSuperclass;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -43,6 +47,11 @@ public abstract class BaseAsset {
     private BigDecimal changeAmount;
     @Column(name = "change_percent", precision = 19, scale = 4)
     private BigDecimal changePercent;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "asset_id")
+    private Asset asset;
 
     public final void applyChange(BigDecimal current, BigDecimal previous, int scale) {
         PercentChangeCalculator.Result result = PercentChangeCalculator.compute(current, previous, scale);

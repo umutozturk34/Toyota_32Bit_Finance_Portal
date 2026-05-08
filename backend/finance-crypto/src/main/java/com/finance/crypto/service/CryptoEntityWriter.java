@@ -2,6 +2,8 @@ package com.finance.crypto.service;
 import com.finance.common.service.MarketEntityWriter;
 
 
+import com.finance.common.model.MarketType;
+import com.finance.common.service.AssetRegistryService;
 import com.finance.crypto.dto.external.CoinGeckoCandleDto;
 import com.finance.crypto.dto.external.CoinGeckoSnapshotDto;
 import com.finance.crypto.mapper.CryptoMapper;
@@ -26,6 +28,7 @@ public class CryptoEntityWriter implements MarketEntityWriter {
     private final CryptoRepository cryptoRepository;
     private final CryptoCandleRepository cryptoCandleRepository;
     private final CryptoMapper cryptoMapper;
+    private final AssetRegistryService assetRegistry;
 
     public Crypto saveSnapshot(CoinGeckoSnapshotDto usdDto, BigDecimal tryPrice) {
         LocalDateTime now = LocalDateTime.now();
@@ -37,6 +40,7 @@ public class CryptoEntityWriter implements MarketEntityWriter {
         } else {
             toPersist = cryptoMapper.toEntity(usdDto, tryPrice, now);
         }
+        toPersist.setAsset(assetRegistry.upsert(MarketType.CRYPTO, toPersist.getId(), toPersist.getName()));
         cryptoRepository.save(toPersist);
         return toPersist;
     }

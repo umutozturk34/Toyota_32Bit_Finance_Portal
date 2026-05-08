@@ -3,6 +3,8 @@ import com.finance.common.service.MarketEntityWriter;
 
 
 import com.finance.common.dto.external.YahooCandleDto;
+import com.finance.common.model.MarketType;
+import com.finance.common.service.AssetRegistryService;
 import com.finance.commodity.mapper.CommodityMapper;
 import com.finance.commodity.model.Commodity;
 import com.finance.commodity.model.CommodityCandle;
@@ -29,6 +31,7 @@ public class CommodityEntityWriter implements MarketEntityWriter {
     private final CommodityRepository commodityRepository;
     private final CommodityCandleRepository commodityCandleRepository;
     private final CommodityMapper commodityMapper;
+    private final AssetRegistryService assetRegistry;
 
     public void applySnapshot(Commodity commodity, CommoditySnapshotInput snapshot,
                               String yahooSymbol, int scale) {
@@ -36,6 +39,7 @@ public class CommodityEntityWriter implements MarketEntityWriter {
         if (commodity.getYahooSymbol() == null) {
             commodity.setYahooSymbol(yahooSymbol);
         }
+        commodity.setAsset(assetRegistry.upsert(MarketType.COMMODITY, commodity.getCommodityCode(), commodity.resolveDisplayName()));
         commodityRepository.save(commodity);
     }
 
@@ -51,6 +55,7 @@ public class CommodityEntityWriter implements MarketEntityWriter {
     public void upsertCandles(Commodity commodity, List<YahooCandleDto> candleDtos, int scale) {
         if (commodity.getCommodityCode() == null || commodity.getCommodityCode().isBlank()) return;
         if (commodityRepository.findById(commodity.getCommodityCode()).isEmpty()) {
+            commodity.setAsset(assetRegistry.upsert(MarketType.COMMODITY, commodity.getCommodityCode(), commodity.resolveDisplayName()));
             commodityRepository.save(commodity);
         }
         List<YahooCandleDto> uniqueDtos = candleDtos.stream()

@@ -7,6 +7,8 @@ import com.finance.common.service.MarketSnapshotProcessor;
 import com.finance.bond.config.BondProperties;
 import com.finance.bond.dto.external.BondSnapshotDto;
 import com.finance.common.exception.BusinessException;
+import com.finance.common.model.MarketType;
+import com.finance.common.service.AssetRegistryService;
 import com.finance.bond.mapper.BondMapper;
 import com.finance.bond.model.Bond;
 import com.finance.bond.model.BondRateHistory;
@@ -35,6 +37,7 @@ public class BondRateHistoryService {
     private final MarketCacheService<Bond> bondCacheService;
     private final TransactionTemplate transactionTemplate;
     private final BondRateFetcher rateFetcher;
+    private final AssetRegistryService assetRegistry;
     private final BigDecimal auctionThreshold;
     private final BigDecimal cpiFixedThreshold;
     private final BigDecimal faceValue;
@@ -46,6 +49,7 @@ public class BondRateHistoryService {
                                   MarketCacheService<Bond> bondCacheService,
                                   TransactionTemplate transactionTemplate,
                                   BondRateFetcher rateFetcher,
+                                  AssetRegistryService assetRegistry,
                                   BondProperties bondProperties) {
         this.bondMapper = bondMapper;
         this.bondRepository = bondRepository;
@@ -53,6 +57,7 @@ public class BondRateHistoryService {
         this.bondCacheService = bondCacheService;
         this.transactionTemplate = transactionTemplate;
         this.rateFetcher = rateFetcher;
+        this.assetRegistry = assetRegistry;
         this.auctionThreshold = bondProperties.getAuctionThreshold();
         this.cpiFixedThreshold = bondProperties.getCpiFixedThreshold();
         this.faceValue = bondProperties.getFaceValue();
@@ -82,6 +87,7 @@ public class BondRateHistoryService {
         }
         bond.resolveNextCouponDate();
         BondSerieFilterUtil.sanitizeCouponRate(bond, dto);
+        bond.setAsset(assetRegistry.upsert(MarketType.BOND, dto.seriesCode(), bond.getName()));
         return transactionTemplate.execute(status -> bondRepository.save(bond));
     }
 

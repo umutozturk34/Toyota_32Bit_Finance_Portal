@@ -41,14 +41,17 @@ public class TcmbForexService {
     private final ForexMapper forexMapper;
     private final ForexRepository forexRepository;
     private final MarketCacheService<Forex> forexCacheService;
+    private final AssetRegistryService assetRegistry;
     public TcmbForexService(TcmbForexClient tcmbForexClient,
                             ForexMapper forexMapper,
                             ForexRepository forexRepository,
-                            MarketCacheService<Forex> forexCacheService) {
+                            MarketCacheService<Forex> forexCacheService,
+                            AssetRegistryService assetRegistry) {
         this.tcmbForexClient = tcmbForexClient;
         this.forexMapper = forexMapper;
         this.forexRepository = forexRepository;
         this.forexCacheService = forexCacheService;
+        this.assetRegistry = assetRegistry;
     }
     @Transactional
     public List<Forex> fetchAndSaveTcmbRates() {
@@ -64,12 +67,15 @@ public class TcmbForexService {
         for (TcmbRateDto dto : rates) {
             String pairCode = forexMapper.toCurrencyPairCode(dto.currencyCode());
             Forex existing = existingMap.get(pairCode);
+            Forex toPersist;
             if (existing != null) {
                 forexMapper.updateEntity(existing, dto);
-                toSave.add(existing);
+                toPersist = existing;
             } else {
-                toSave.add(forexMapper.toEntity(dto));
+                toPersist = forexMapper.toEntity(dto);
             }
+            toPersist.setAsset(assetRegistry.upsert(MarketType.FOREX, pairCode, toPersist.getCurrencyName()));
+            toSave.add(toPersist);
         }
         List<Forex> saved = forexRepository.saveAll(toSave);
         for (Forex forex : saved) {

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpNarrowWide, ArrowDownWideNarrow, SlidersHorizontal } from 'lucide-react';
-import { Check } from './AnimatedIcons';
+import { Check } from '../feedback/AnimatedIcons';
 
 export default function SortSelect({ value, direction, options, onSortChange, onDirectionChange, showDefault = true, align = 'left', hideDirection = false }) {
   const [open, setOpen] = useState(false);

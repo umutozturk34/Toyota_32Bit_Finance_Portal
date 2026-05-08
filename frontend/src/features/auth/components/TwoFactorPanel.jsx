@@ -3,8 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Shield, ShieldOff, RefreshCw, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 import keycloak from '../lib/keycloak';
 import { userCredentialService } from '../../../shared/services/userCredentialService';
-import { toast } from '../../../shared/components/Toast';
-import ConfirmDialog from '../../../shared/components/ConfirmDialog';
+import { toast } from '../../../shared/components/feedback/Toast';
+import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 
 const STATUS_KEY = ['twoFactor', 'status'];
 

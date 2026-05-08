@@ -4,7 +4,7 @@ import { MessageCircle, Loader2, Inbox, Sparkles } from 'lucide-react';
 import { useUserInbox, useUserSent, useSendMessage } from '../../../shared/hooks/useMessages';
 import { useActiveConversation } from '../../../shared/hooks/useActiveConversation';
 import { containerVariants } from '../../../shared/utils/animations';
-import { toast } from '../../../shared/components/Toast';
+import { toast } from '../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../shared/utils/apiError';
 import MessageBubble from '../components/MessageBubble';
 import Composer from '../components/Composer';

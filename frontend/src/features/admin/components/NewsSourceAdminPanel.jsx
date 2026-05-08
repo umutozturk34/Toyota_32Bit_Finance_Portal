@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Power, Trash2, Plus, Rss } from 'lucide-react';
-import { RefreshCw } from '../../../shared/components/AnimatedIcons';
+import { RefreshCw } from '../../../shared/components/feedback/AnimatedIcons';
 import { adminService } from '../services/adminService';
-import { toast } from '../../../shared/components/Toast';
-import ConfirmDialog from '../../../shared/components/ConfirmDialog';
+import { toast } from '../../../shared/components/feedback/Toast';
+import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 
 const NEWS_CATEGORIES = [
     { value: '', label: 'Otomatik (keyword)' },

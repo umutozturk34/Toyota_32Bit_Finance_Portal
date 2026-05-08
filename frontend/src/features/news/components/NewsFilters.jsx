@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Newspaper } from 'lucide-react';
 import { newsService } from '../services/newsService';
 import { CATEGORY_CONFIG } from '../lib/newsConfig.jsx';
-import FilterTabs from '../../../shared/components/FilterTabs';
+import FilterTabs from '../../../shared/components/form/FilterTabs';
 
 export default function NewsFilters({ activeTab, onTabChange }) {
     const { data: categoryCounts = [] } = useQuery({

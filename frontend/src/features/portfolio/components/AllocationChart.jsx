@@ -3,7 +3,7 @@ import useSessionState from '../../../shared/hooks/useSessionState';
 import { motion } from 'framer-motion';
 import { PieChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-import { Loader2 } from '../../../shared/components/AnimatedIcons';
+import { Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
 import { useTheme } from '../../../shared/context/ThemeContext';
 import { formatPriceTRY, formatCompactTRY } from '../../../shared/utils/formatters';
 import { usePortfolioAllocation } from '../hooks/usePortfolioData';

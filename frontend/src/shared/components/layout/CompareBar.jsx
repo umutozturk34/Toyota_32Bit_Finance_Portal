@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
-import SearchSuggestions from './SearchSuggestions';
-import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../constants/assetTypes';
+import SearchSuggestions from '../form/SearchSuggestions';
+import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../../constants/assetTypes';
 
 export default function CompareBar({ compareAsset, onSelect, onClear, excludeCodes = [] }) {
   if (compareAsset) {

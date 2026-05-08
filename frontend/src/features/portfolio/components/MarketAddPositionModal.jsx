@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { X, Wallet } from 'lucide-react';
-import { Loader2 } from '../../../shared/components/AnimatedIcons';
+import { Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
 import PositionFormModal from './PositionFormModal';
 import { usePortfolioList } from '../hooks/usePortfolioData';
 

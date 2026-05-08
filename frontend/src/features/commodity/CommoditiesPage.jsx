@@ -1,14 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Gem, ChevronUp, ChevronDown, Clock } from 'lucide-react';
-import { TrendingUp, TrendingDown } from '../../shared/components/AnimatedIcons';
+import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
 import { commodityService } from './commodityService';
 import { adminService } from '../admin/services/adminService';
 import { formatPrice } from '../../shared/utils/formatters';
-import MarketListPage from '../../shared/components/MarketListPage';
-import AssetCard from '../../shared/components/AssetCard';
-import AssetBuyButton from '../../shared/components/AssetBuyButton';
-import ChangePercentBadge from '../../shared/components/ChangePercentBadge';
+import MarketListPage from '../../shared/components/market/MarketListPage';
+import AssetCard from '../../shared/components/asset/AssetCard';
+import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
+import ChangePercentBadge from '../../shared/components/asset/ChangePercentBadge';
 import useListParams from '../../shared/hooks/useListParams';
 
 const SORT_OPTIONS = [

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ListPlus, Tag } from 'lucide-react';
-import BaseModal from '../../../../shared/components/BaseModal';
+import BaseModal from '../../../../shared/components/modal/BaseModal';
 import { useCreateWatchlist } from '../../../../shared/hooks/useWatchlist';
-import { toast } from '../../../../shared/components/Toast';
+import { toast } from '../../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../../shared/utils/apiError';
 
 export default function CreateWatchlistModal({ isOpen, onClose, onCreated }) {

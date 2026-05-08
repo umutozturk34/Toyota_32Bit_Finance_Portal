@@ -9,7 +9,7 @@ import {
 } from '../../../shared/hooks/useWatchlist';
 import AddPriceAlertModal from '../components/modals/AddPriceAlertModal';
 import AddWatchlistItemModal from '../components/modals/AddWatchlistItemModal';
-import { toast } from '../../../shared/components/Toast';
+import { toast } from '../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../shared/utils/apiError';
 
 export default function AssetActionsBar({ marketType, assetCode, currentPrice }) {

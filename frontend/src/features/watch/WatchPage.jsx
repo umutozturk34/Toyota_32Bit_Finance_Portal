@@ -13,9 +13,9 @@ import {
   Eye, AlertCircle, Plus, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown, GripVertical,
   Loader2, Inbox, Star, ListPlus, RotateCcw, Pencil,
 } from 'lucide-react';
-import PageHeader from '../../shared/components/PageHeader';
-import AssetBadge from '../../shared/components/AssetBadge';
-import ConfirmDialog from '../../shared/components/ConfirmDialog';
+import PageHeader from '../../shared/components/layout/PageHeader';
+import AssetBadge from '../../shared/components/asset/AssetBadge';
+import ConfirmDialog from '../../shared/components/modal/ConfirmDialog';
 import useAppStore from '../../shared/stores/useAppStore';
 import { useAssetDetailPrefetch } from '../../shared/hooks/useAssetDetailPrefetch';
 import {
@@ -25,16 +25,16 @@ import {
   useRemoveWatchlistItem,
   useReorderWatchlistItems,
 } from '../../shared/hooks/useWatchlist';
-import SortSelect from '../../shared/components/SortSelect';
+import SortSelect from '../../shared/components/form/SortSelect';
 import { usePriceAlerts, useDeletePriceAlert, useReactivatePriceAlert } from '../../shared/hooks/usePriceAlerts';
 import useListParams from '../../shared/hooks/useListParams';
-import Pagination from '../../shared/components/Pagination';
+import Pagination from '../../shared/components/form/Pagination';
 import AddPriceAlertModal from './components/modals/AddPriceAlertModal';
 import AddWatchlistItemModal from './components/modals/AddWatchlistItemModal';
 import CreateWatchlistModal from './components/modals/CreateWatchlistModal';
 import EditWatchlistItemModal from './components/modals/EditWatchlistItemModal';
 import EditPriceAlertModal from './components/modals/EditPriceAlertModal';
-import { toast } from '../../shared/components/Toast';
+import { toast } from '../../shared/components/feedback/Toast';
 import { extractApiError } from '../../shared/utils/apiError';
 import { formatPriceTRY, formatPercent, getChangeClass, changeColors, changeBg } from '../../shared/utils/formatters';
 

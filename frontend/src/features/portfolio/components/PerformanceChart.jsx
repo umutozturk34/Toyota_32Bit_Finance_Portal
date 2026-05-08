@@ -3,13 +3,13 @@ import useSessionState from '../../../shared/hooks/useSessionState';
 import useChartRange from '../../../shared/hooks/useChartRange';
 import { motion } from 'framer-motion';
 import ReactECharts from 'echarts-for-react';
-import { TrendingUp, Loader2 } from '../../../shared/components/AnimatedIcons';
+import { TrendingUp, Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
 import { usePortfolioPerformance, useBackfillStatus } from '../hooks/usePortfolioData';
 import { formatPriceTRY } from '../../../shared/utils/formatters';
 import { cardVariants } from '../../../shared/utils/animations';
 import { useTheme } from '../../../shared/context/ThemeContext';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
-import RangeSelector from '../../../shared/components/RangeSelector';
+import RangeSelector from '../../../shared/components/form/RangeSelector';
 import {
   ASSET_TYPE_FILTERS as ASSET_TYPES,
   ASSET_TYPE_COLORS,

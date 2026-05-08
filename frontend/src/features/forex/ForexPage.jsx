@@ -1,14 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { BarChart2, Activity, Clock, Coins } from 'lucide-react';
-import { ArrowUpRight, ArrowDownRight } from '../../shared/components/AnimatedIcons';
+import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { forexService } from './forexService';
 import { adminService } from '../admin/services/adminService';
 import { getForexFlag, getBaseCurrency } from '../../shared/constants/forex';
 import { useAuth } from '../auth/AuthContext';
 import { changeColors, changeBg, formatPrice, formatChange, formatPercent } from '../../shared/utils/formatters';
-import MarketListPage from '../../shared/components/MarketListPage';
-import AssetCard from '../../shared/components/AssetCard';
-import AssetBuyButton from '../../shared/components/AssetBuyButton';
+import MarketListPage from '../../shared/components/market/MarketListPage';
+import AssetCard from '../../shared/components/asset/AssetCard';
+import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
 import useListParams from '../../shared/hooks/useListParams';
 
 const SORT_OPTIONS = [

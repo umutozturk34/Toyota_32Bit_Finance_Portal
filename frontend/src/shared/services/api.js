@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getToken } from '../../features/auth/lib/keycloak';
-import { toast } from '../components/Toast';
+import { toast } from '../components/feedback/Toast';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
   headers: {

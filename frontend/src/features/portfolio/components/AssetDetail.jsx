@@ -2,14 +2,14 @@ import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import useChartRange from '../../../shared/hooks/useChartRange';
 import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, Plus } from 'lucide-react';
-import { TrendingUp, TrendingDown, Loader2 } from '../../../shared/components/AnimatedIcons';
+import { TrendingUp, TrendingDown, Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/ThemeContext';
 import { useAssetSeries } from '../hooks/usePortfolioData';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
 import { cardVariants } from '../../../shared/utils/animations';
 import { ASSET_TYPE_LABELS } from '../../../shared/constants/assetTypes';
-import RangeSelector from '../../../shared/components/RangeSelector';
+import RangeSelector from '../../../shared/components/form/RangeSelector';
 import PositionFormModal from './PositionFormModal';
 
 const formatEntryDate = (v) => v ? new Date(v).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';

@@ -9,7 +9,7 @@ import {
   arrayMove, SortableContext, useSortable, verticalListSortingStrategy, sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import SearchSuggestions from '../../../shared/components/SearchSuggestions';
+import SearchSuggestions from '../../../shared/components/form/SearchSuggestions';
 import { useWatchlists } from '../../../shared/hooks/useWatchlist';
 
 const NEWS_CATEGORIES = [

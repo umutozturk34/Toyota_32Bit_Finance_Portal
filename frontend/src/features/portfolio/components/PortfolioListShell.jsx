@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
 import { containerVariants } from '../../../shared/utils/animations';
-import EmptyState from '../../../shared/components/EmptyState';
-import SearchInput from '../../../shared/components/SearchInput';
-import SortSelect from '../../../shared/components/SortSelect';
-import FilterTabs from '../../../shared/components/FilterTabs';
-import Pagination from '../../../shared/components/Pagination';
+import EmptyState from '../../../shared/components/feedback/EmptyState';
+import SearchInput from '../../../shared/components/form/SearchInput';
+import SortSelect from '../../../shared/components/form/SortSelect';
+import FilterTabs from '../../../shared/components/form/FilterTabs';
+import Pagination from '../../../shared/components/form/Pagination';
 import { ASSET_TYPE_FILTERS } from '../../../shared/constants/assetTypes';
 
 export default function PortfolioListShell({

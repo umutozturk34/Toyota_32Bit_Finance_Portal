@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import { AlertTriangle } from './AnimatedIcons';
+import { AlertTriangle } from '../feedback/AnimatedIcons';
 
 export default function ConfirmDialog({
   open,

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Trash2, ShieldCheck } from 'lucide-react';
-import { AlertTriangle, Check, AlertCircle } from '../../../shared/components/AnimatedIcons';
-import ProcessingSteps from '../../../shared/components/ProcessingSteps';
+import { AlertTriangle, Check, AlertCircle } from '../../../shared/components/feedback/AnimatedIcons';
+import ProcessingSteps from '../../../shared/components/feedback/ProcessingSteps';
 import useProcessingAnimation from '../../../shared/hooks/useProcessingAnimation';
 import { formatPriceTRY } from '../../../shared/utils/formatters';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';

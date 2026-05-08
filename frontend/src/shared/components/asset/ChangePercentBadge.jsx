@@ -1,4 +1,4 @@
-import { changeColors, changeBg, getChangeClass, formatPercentAbs } from '../utils/formatters';
+import { changeColors, changeBg, getChangeClass, formatPercentAbs } from '../../utils/formatters';
 
 export default function ChangePercentBadge({
   value,

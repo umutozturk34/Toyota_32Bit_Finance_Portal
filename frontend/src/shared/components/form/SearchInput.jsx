@@ -2,11 +2,11 @@ import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Search, X } from 'lucide-react';
-import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../constants/assetTypes';
-import { formatPriceTRY, getChangeClass, changeColors } from '../utils/formatters';
-import { assetCodeLabel } from '../utils/assetCode';
-import { BOND_TYPE_LABELS } from '../../features/bond/bondConstants';
-import useSearchSuggestions from '../hooks/useSearchSuggestions';
+import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../../constants/assetTypes';
+import { formatPriceTRY, getChangeClass, changeColors } from '../../utils/formatters';
+import { assetCodeLabel } from '../../utils/assetCode';
+import { BOND_TYPE_LABELS } from '../../../features/bond/bondConstants';
+import useSearchSuggestions from '../../hooks/useSearchSuggestions';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
 

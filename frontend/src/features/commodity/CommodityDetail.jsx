@@ -4,7 +4,7 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import { commodityService } from './commodityService';
 import { getChangeClass, changeColors, formatPrice, formatPercentAbs } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
-import AssetDetailPage from '../../shared/components/AssetDetailPage';
+import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 
 const fmt = (price) => formatPrice(price, { locale: 'tr-TR' });
 

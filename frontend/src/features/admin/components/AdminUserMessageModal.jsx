@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, Send, Loader2, X } from 'lucide-react';
 import { useSendAdminMessage } from '../../../shared/hooks/useMessages';
-import { toast } from '../../../shared/components/Toast';
+import { toast } from '../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../shared/utils/apiError';
 import { MAX_BODY } from '../../messages/util';
 

@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
 import { ThemeProvider } from './shared/context/ThemeContext';
-import ToastContainer from './shared/components/Toast';
-import ProtectedRoute from './shared/components/ProtectedRoute';
-import ErrorBoundary from './shared/components/ErrorBoundary';
-import NotFound from './shared/components/NotFound';
+import ToastContainer from './shared/components/feedback/Toast';
+import ProtectedRoute from './shared/components/auth/ProtectedRoute';
+import ErrorBoundary from './shared/components/feedback/ErrorBoundary';
+import NotFound from './shared/components/feedback/NotFound';
 import MainLayout from './shared/layouts/MainLayout';
 import HomePage from './features/home/HomePage';
 import Login from './features/auth/components/Login';

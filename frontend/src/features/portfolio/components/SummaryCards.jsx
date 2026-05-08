@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { Wallet, BarChart3 } from 'lucide-react';
-import { TrendingUp, TrendingDown } from '../../../shared/components/AnimatedIcons';
+import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/AnimatedIcons';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
 import { containerVariants, cardVariants } from '../../../shared/utils/animations';
 import { usePortfolioSummary } from '../hooks/usePortfolioData';

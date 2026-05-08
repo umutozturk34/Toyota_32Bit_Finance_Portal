@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { toast } from '../../../shared/components/Toast';
+import { toast } from '../../../shared/components/feedback/Toast';
 
 const ACTION_LABELS = {
   UPDATE_PASSWORD: 'Şifre',

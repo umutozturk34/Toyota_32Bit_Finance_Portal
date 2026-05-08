@@ -7,7 +7,7 @@ import {
   AlertTriangle, TrendingUp, RefreshCw, Activity
 } from 'lucide-react';
 import LightweightChart from './components/LightweightChart';
-import CompareBar from '../../shared/components/CompareBar';
+import CompareBar from '../../shared/components/layout/CompareBar';
 import { getCryptoHistory, stockService, forexService, fundService, trackedAssetService } from '../../shared/services/marketService';
 import { formatBistSymbol } from '../../shared/constants/stocks';
 import { getForexPairs } from '../../shared/constants/forex';

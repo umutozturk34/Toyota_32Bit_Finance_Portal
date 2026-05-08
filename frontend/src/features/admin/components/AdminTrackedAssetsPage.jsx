@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Database, Plus, Bitcoin, TrendingUp, Briefcase, Newspaper, Gem } from 'lucide-react';
-import PageHeader from '../../../shared/components/PageHeader';
-import ErrorState from '../../../shared/components/ErrorState';
+import PageHeader from '../../../shared/components/layout/PageHeader';
+import ErrorState from '../../../shared/components/feedback/ErrorState';
 import { useAuth } from '../../auth/AuthContext';
 import { adminService } from '../services/adminService';
-import { toast } from '../../../shared/components/Toast';
+import { toast } from '../../../shared/components/feedback/Toast';
 import TrackedAssetAdminPanel from './TrackedAssetAdminPanel';
 import NewsSourceAdminPanel from './NewsSourceAdminPanel';
 

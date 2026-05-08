@@ -1,4 +1,4 @@
-import { ShoppingCart } from './AnimatedIcons';
+import { ShoppingCart } from '../feedback/AnimatedIcons';
 
 export default function AssetBuyButton({ onClick, title = 'Portföye Ekle' }) {
   return (

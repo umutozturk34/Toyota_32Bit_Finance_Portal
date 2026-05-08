@@ -11,7 +11,7 @@ import {
   useDeleteAllNotifications,
 } from '../../shared/hooks/useNotifications';
 import { useEffect, useState } from 'react';
-import ConfirmDialog from '../../shared/components/ConfirmDialog';
+import ConfirmDialog from '../../shared/components/modal/ConfirmDialog';
 import BroadcastModal from '../messages/BroadcastModal';
 import { useAuth } from '../auth/AuthContext';
 

@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, Reorder, useDragControls } from 'framer-motion';
 import { GripVertical, Power, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
-import { RefreshCw } from '../../../shared/components/AnimatedIcons';
+import { RefreshCw } from '../../../shared/components/feedback/AnimatedIcons';
 import { adminService, trackedAssetService } from '../services/adminService';
-import { toast } from '../../../shared/components/Toast';
-import SearchInput from '../../../shared/components/SearchInput';
-import ConfirmDialog from '../../../shared/components/ConfirmDialog';
+import { toast } from '../../../shared/components/feedback/Toast';
+import SearchInput from '../../../shared/components/form/SearchInput';
+import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 
 function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onToggle, onDelete, highlighted }) {
     const dragControls = useDragControls();

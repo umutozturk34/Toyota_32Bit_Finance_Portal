@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
-import { RefreshCw } from '../../shared/components/AnimatedIcons';
-import LoadingState from '../../shared/components/LoadingState';
-import ErrorState from '../../shared/components/ErrorState';
-import SearchSuggestions from '../../shared/components/SearchSuggestions';
+import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
+import LoadingState from '../../shared/components/feedback/LoadingState';
+import ErrorState from '../../shared/components/feedback/ErrorState';
+import SearchSuggestions from '../../shared/components/form/SearchSuggestions';
 import { useUserLayout, useUpdateOverviewLayout, DEFAULT_OVERVIEW_LAYOUT } from '../../shared/hooks/useUserLayout';
 import { useMarketOverview } from '../../shared/hooks/useMarketOverview';
 import { useWidgetDefinitions } from '../../shared/hooks/useWidgetDefinitions';

@@ -1,20 +1,20 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../features/auth/AuthContext';
-import { getChangeClass } from '../utils/formatters';
-import { containerVariants } from '../utils/animations';
-import LoadingState from './LoadingState';
-import ErrorState from './ErrorState';
-import EmptyState from './EmptyState';
-import PageHeader from './PageHeader';
-import MarketStatusBadge from './MarketStatusBadge';
-import SearchInput from './SearchInput';
-import SortSelect from './SortSelect';
-import Pagination from './Pagination';
-import MarketAddPositionModal from '../../features/portfolio/components/MarketAddPositionModal';
-import FilterTabs from './FilterTabs';
-import { toast } from './Toast';
-import useMarketListData from '../hooks/useMarketListData';
+import { useAuth } from '../../../features/auth/AuthContext';
+import { getChangeClass } from '../../utils/formatters';
+import { containerVariants } from '../../utils/animations';
+import LoadingState from '../feedback/LoadingState';
+import ErrorState from '../feedback/ErrorState';
+import EmptyState from '../feedback/EmptyState';
+import PageHeader from '../layout/PageHeader';
+import MarketStatusBadge from '../layout/MarketStatusBadge';
+import SearchInput from '../form/SearchInput';
+import SortSelect from '../form/SortSelect';
+import Pagination from '../form/Pagination';
+import MarketAddPositionModal from '../../../features/portfolio/components/MarketAddPositionModal';
+import FilterTabs from '../form/FilterTabs';
+import { toast } from '../feedback/Toast';
+import useMarketListData from '../../hooks/useMarketListData';
 
 export default function MarketListPage({
   title,

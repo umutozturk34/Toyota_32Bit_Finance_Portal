@@ -1,7 +1,7 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layers, X } from 'lucide-react';
-import { ArrowUpRight, ArrowDownRight } from '../../../shared/components/AnimatedIcons';
+import { ArrowUpRight, ArrowDownRight } from '../../../shared/components/feedback/AnimatedIcons';
 import { formatPriceTRY, getChangeClass, changeColors, changeBg, formatPercentAbs } from '../../../shared/utils/formatters';
 import AssetCardChart from './AssetCardChart';
 

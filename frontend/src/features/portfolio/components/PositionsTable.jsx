@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { ChevronRight, Package, Pencil, Trash2 } from 'lucide-react';
-import { Loader2 } from '../../../shared/components/AnimatedIcons';
+import { Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
 import { cardVariants } from '../../../shared/utils/animations';
 import { ASSET_TYPE_LABELS, ASSET_TYPE_STYLES } from '../../../shared/constants/assetTypes';

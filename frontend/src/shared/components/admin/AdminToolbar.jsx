@@ -1,5 +1,5 @@
 import { Download, LineChart, Wrench } from 'lucide-react';
-import { Loader2 } from './AnimatedIcons';
+import { Loader2 } from '../feedback/AnimatedIcons';
 
 export default function AdminToolbar({ actions, updating, disabled = false }) {
     const defaultIcons = {

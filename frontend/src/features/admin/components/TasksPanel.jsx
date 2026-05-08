@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { adminService } from '../services/adminService';
 import { getToken } from '../../auth/lib/keycloak';
-import { toast } from '../../../shared/components/Toast';
+import { toast } from '../../../shared/components/feedback/Toast';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
 
 const EMPTY_STATUS = { running: [], history: [], runningCount: 0 };

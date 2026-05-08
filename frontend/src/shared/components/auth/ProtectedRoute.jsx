@@ -1,8 +1,8 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../features/auth/AuthContext';
+import { useAuth } from '../../../features/auth/AuthContext';
 import { ShieldOff } from 'lucide-react';
-import { Loader2 } from './AnimatedIcons';
+import { Loader2 } from '../feedback/AnimatedIcons';
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { isAuthenticated, hasRole, loading } = useAuth();
   if (loading) {

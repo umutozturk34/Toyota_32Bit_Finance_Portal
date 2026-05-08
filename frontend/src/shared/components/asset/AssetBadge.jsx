@@ -1,4 +1,4 @@
-import { ASSET_TYPE_STYLES } from '../constants/assetTypes';
+import { ASSET_TYPE_STYLES } from '../../constants/assetTypes';
 
 export default function AssetBadge({ assetType, assetCode, assetImage, size = 'md' }) {
   const dims = size === 'sm' ? 'w-7 h-7 text-xs' : 'w-9 h-9 text-sm';

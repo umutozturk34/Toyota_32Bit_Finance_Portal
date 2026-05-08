@@ -4,7 +4,7 @@ import { LineChart, Users as UsersIcon, Activity } from 'lucide-react';
 import { fundService } from './fundService';
 import { formatPriceTRY, formatVolume, formatCompactTRY } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
-import AssetDetailPage from '../../shared/components/AssetDetailPage';
+import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 
 function FundHeader({ asset }) {
   return (

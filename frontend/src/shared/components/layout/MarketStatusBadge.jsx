@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
-import { useMarketSession } from '../hooks/useMarketStatus';
+import { useMarketSession } from '../../hooks/useMarketStatus';
 
 const TRANSITION_FORMATTER = new Intl.RelativeTimeFormat('tr-TR', { numeric: 'auto' });
 const MINUTE_MS = 60_000;

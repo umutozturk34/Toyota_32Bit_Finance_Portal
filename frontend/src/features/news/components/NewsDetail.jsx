@@ -5,8 +5,8 @@ import { ArrowLeft, Calendar, ExternalLink, Building2 } from 'lucide-react';
 import { newsService } from '../services/newsService';
 import { formatDateTimeFull } from '../../../shared/utils/formatters';
 import { CategoryBadge, getFallbackImage } from '../lib/newsConfig.jsx';
-import LoadingState from '../../../shared/components/LoadingState';
-import ErrorState from '../../../shared/components/ErrorState';
+import LoadingState from '../../../shared/components/feedback/LoadingState';
+import ErrorState from '../../../shared/components/feedback/ErrorState';
 
 export default function NewsDetail() {
     const { id } = useParams();

@@ -8,7 +8,7 @@ import {
   useCancelEmailChange,
 } from '../../shared/hooks/useEmailChange';
 import { useAuth } from '../auth/AuthContext';
-import { toast } from '../../shared/components/Toast';
+import { toast } from '../../shared/components/feedback/Toast';
 
 function CurrentEmailRow({ email }) {
   return (

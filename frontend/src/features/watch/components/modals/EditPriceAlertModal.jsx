@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Pencil, Save, ArrowUp, ArrowDown, TrendingUp, TrendingDown } from 'lucide-react';
 import { useUpdatePriceAlert } from '../../../../shared/hooks/usePriceAlerts';
-import { toast } from '../../../../shared/components/Toast';
+import { toast } from '../../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../../shared/utils/apiError';
 
 const DIRECTION_OPTIONS = [

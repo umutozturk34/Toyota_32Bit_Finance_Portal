@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { cardVariants } from '../../../shared/utils/animations';
 import { relTime } from '../util';
 

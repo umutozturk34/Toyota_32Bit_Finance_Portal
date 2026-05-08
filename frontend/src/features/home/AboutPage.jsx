@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Code, Database, Server, Key, Container } from 'lucide-react';
 import { useTheme } from '../../shared/context/ThemeContext';
 const techStack = [

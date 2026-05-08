@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import AdminConversationList from '../components/AdminConversationList';
 import AdminThreadPane from '../components/AdminThreadPane';
 import { useActiveConversation } from '../../../shared/hooks/useActiveConversation';

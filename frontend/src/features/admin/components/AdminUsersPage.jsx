@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { Users, Search, Ban, ShieldCheck, Loader2, AlertCircle, Mail, ChevronLeft, ChevronRight, User, MessageCircle } from 'lucide-react';
 import PageHeader from '../../../shared/components/layout/PageHeader';
 import ErrorState from '../../../shared/components/feedback/ErrorState';

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { CARD_POSITIONS } from '../lib/homePageConstants';
 
 function HeroGraphic({ isDark, cards }) {

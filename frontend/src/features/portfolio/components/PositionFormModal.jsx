@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { X, Calendar, Hash, Tag, Wallet, ShieldCheck } from 'lucide-react';
 import { Check, AlertCircle, AlertTriangle } from '../../../shared/components/feedback/AnimatedIcons';
 import DatePickerPopover from '../../../shared/components/form/DatePickerPopover';

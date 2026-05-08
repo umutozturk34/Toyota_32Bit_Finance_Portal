@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { Users, Loader2, MessagesSquare, Lock, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { useAdminConversations } from '../../../shared/hooks/useMessages';
 import { containerVariants, cardVariants } from '../../../shared/utils/animations';

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Megaphone, X, Loader2 } from 'lucide-react';
 import { useBroadcast } from '../../shared/hooks/useMessages';
 import { toast } from '../../shared/components/feedback/Toast';

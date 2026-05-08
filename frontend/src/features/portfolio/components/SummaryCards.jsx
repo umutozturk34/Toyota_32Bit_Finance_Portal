@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { Wallet, BarChart3 } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/AnimatedIcons';

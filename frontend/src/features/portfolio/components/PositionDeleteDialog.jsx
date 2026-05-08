@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { X, Trash2, ShieldCheck } from 'lucide-react';
 import { AlertTriangle, Check, AlertCircle } from '../../../shared/components/feedback/AnimatedIcons';
 import ProcessingSteps from '../../../shared/components/feedback/ProcessingSteps';

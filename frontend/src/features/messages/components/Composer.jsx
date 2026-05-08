@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Send, Loader2, ShieldOff } from 'lucide-react';
 import { MAX_BODY } from '../util';
 

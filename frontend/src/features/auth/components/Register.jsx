@@ -2,7 +2,6 @@ import React from 'react';
 import { useAuth } from '../AuthContext';
 import { useTheme } from '../../../shared/context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Shield, Target, Lock, UserPlus } from 'lucide-react';
 const featureItems = [
   { icon: Shield, title: 'Secure Authentication', desc: 'Enterprise-grade Keycloak security' },

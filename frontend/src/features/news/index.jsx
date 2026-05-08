@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Newspaper, Clock, SearchX, Tag } from 'lucide-react';
 import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
 import { newsService } from './services/newsService';

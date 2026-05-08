@@ -1,5 +1,4 @@
 import { useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { forexService } from './forexService';
 import { getForexFlag, getBaseCurrency } from '../../shared/constants/forex';

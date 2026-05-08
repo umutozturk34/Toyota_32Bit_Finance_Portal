@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import useSessionState from "../../shared/hooks/useSessionState";
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import ReactECharts from 'echarts-for-react';
 import {
     Landmark,

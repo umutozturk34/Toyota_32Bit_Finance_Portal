@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { RefreshCw, Loader2, Check } from './AnimatedIcons';
 
 export default function ProcessingSteps({ steps, currentStep }) {

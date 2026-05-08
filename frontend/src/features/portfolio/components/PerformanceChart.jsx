@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import useChartRange from '../../../shared/hooks/useChartRange';
-import { motion } from 'framer-motion';
 import ReactECharts from 'echarts-for-react';
 import { TrendingUp, Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
 import { usePortfolioPerformance, useBackfillStatus } from '../hooks/usePortfolioData';

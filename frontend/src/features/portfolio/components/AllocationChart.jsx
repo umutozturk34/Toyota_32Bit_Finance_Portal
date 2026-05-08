@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import useSessionState from '../../../shared/hooks/useSessionState';
-import { motion } from 'framer-motion';
 import { PieChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { Loader2 } from '../../../shared/components/feedback/AnimatedIcons';

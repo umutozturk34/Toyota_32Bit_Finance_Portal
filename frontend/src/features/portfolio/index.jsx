@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Wallet, LayoutDashboard, TrendingUp as TrendingUpIcon, ShieldCheck } from 'lucide-react';
 import { Check, AlertTriangle } from '../../shared/components/feedback/AnimatedIcons';
 import PageHeader from '../../shared/components/layout/PageHeader';

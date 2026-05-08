@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 import { MessageCircle, Loader2, Inbox, Sparkles } from 'lucide-react';
 import { useUserInbox, useUserSent, useSendMessage } from '../../../shared/hooks/useMessages';
 import { useActiveConversation } from '../../../shared/hooks/useActiveConversation';

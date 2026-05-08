@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { X, Pencil, Save } from 'lucide-react';
 import { useUpdateWatchlistItem } from '../../../../shared/hooks/useWatchlist';
 import { toast } from '../../../../shared/components/feedback/Toast';

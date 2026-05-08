@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import { useMarketSession } from '../../hooks/useMarketStatus';
 

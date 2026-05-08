@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import {
   LineChart, ArrowLeft, BarChart2, Loader2,
   AlertTriangle, TrendingUp, RefreshCw, Activity
 } from 'lucide-react';
 import LightweightChart from './components/LightweightChart';
 import CompareBar from '../../shared/components/layout/CompareBar';
-import { getCryptoHistory, stockService, forexService, fundService, trackedAssetService } from '../../shared/services/marketService';
+import { fundService, trackedAssetService } from '../../shared/services/marketService';
 import { formatBistSymbol } from '../../shared/constants/stocks';
 import { getForexPairs } from '../../shared/constants/forex';
 

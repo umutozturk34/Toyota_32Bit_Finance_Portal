@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import { RefreshCw } from '../feedback/AnimatedIcons';
 import AdminToolbar from '../admin/AdminToolbar';

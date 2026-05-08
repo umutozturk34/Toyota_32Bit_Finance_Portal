@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { containerVariants } from '../../../shared/utils/animations';
 import EmptyState from '../../../shared/components/feedback/EmptyState';
 import SearchInput from '../../../shared/components/form/SearchInput';

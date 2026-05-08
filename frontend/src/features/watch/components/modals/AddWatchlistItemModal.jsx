@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Eye, ListChecks, FileText, Percent, Search, Star, ChevronDown, Check, Info } from 'lucide-react';
 import BaseModal from '../../../../shared/components/modal/BaseModal';
 import SearchSuggestions from '../../../../shared/components/form/SearchSuggestions';

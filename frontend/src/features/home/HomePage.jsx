@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../../shared/context/ThemeContext';
 import { useAuth } from '../auth/AuthContext';
-import { motion } from 'framer-motion';
 import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
-import { formatPriceTRY, formatPercent } from '../../shared/utils/formatters';
 import {
   Shield, BarChart3, Briefcase, UserPlus, LogIn,
   TrendingUp, Zap, LineChart, ArrowRight,

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { ChevronRight, Package, Pencil, Trash2 } from 'lucide-react';
 import { Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';

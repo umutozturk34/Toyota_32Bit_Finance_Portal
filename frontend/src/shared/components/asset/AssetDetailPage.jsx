@@ -1,10 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { ShoppingCart } from '../feedback/AnimatedIcons';
-import useSessionState from '../../hooks/useSessionState';
 import useChartRange from '../../hooks/useChartRange';
 import { unifiedMarketService } from '../../services/unifiedMarketService';
 import LoadingState from '../feedback/LoadingState';
@@ -14,7 +12,6 @@ import CompareBar from '../layout/CompareBar';
 import LightweightChart from '../../../features/chart/components/LightweightChart';
 import AssetActionsBar from '../../../features/watch/components/AssetActionsBar';
 import MarketStatusBadge from '../layout/MarketStatusBadge';
-import { cardVariants } from '../../utils/animations';
 import { transformCandles, transformFundCandles } from '../../utils/candleTransform';
 
 function extractCurrentPrice(asset) {

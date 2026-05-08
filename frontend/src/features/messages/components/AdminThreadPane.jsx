@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 import {
   MessageCircle, Loader2, Lock, Unlock, Trash2, ChevronLeft, ShieldOff,
 } from 'lucide-react';

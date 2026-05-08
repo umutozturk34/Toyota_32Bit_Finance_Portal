@@ -1,5 +1,4 @@
 import { useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { commodityService } from './commodityService';
 import { getChangeClass, changeColors, formatPrice, formatPercentAbs } from '../../shared/utils/formatters';

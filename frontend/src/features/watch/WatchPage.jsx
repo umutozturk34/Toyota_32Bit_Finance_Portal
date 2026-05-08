@@ -7,8 +7,7 @@ import {
   arrayMove, useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { motion } from 'framer-motion';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   Eye, AlertCircle, Plus, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown, GripVertical,
   Loader2, Inbox, Star, ListPlus, RotateCcw, Pencil,
@@ -17,7 +16,6 @@ import PageHeader from '../../shared/components/layout/PageHeader';
 import AssetBadge from '../../shared/components/asset/AssetBadge';
 import ConfirmDialog from '../../shared/components/modal/ConfirmDialog';
 import useAppStore from '../../shared/stores/useAppStore';
-import { useAssetDetailPrefetch } from '../../shared/hooks/useAssetDetailPrefetch';
 import {
   useWatchlists,
   useWatchlistItems,

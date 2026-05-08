@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { AlertCircle, Eye, Star, Loader2 } from 'lucide-react';
 import {
   useAddToFavorites,

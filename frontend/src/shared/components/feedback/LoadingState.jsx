@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Loader2 } from './AnimatedIcons';
 
 export default function LoadingState({ message = 'Veriler yükleniyor…' }) {

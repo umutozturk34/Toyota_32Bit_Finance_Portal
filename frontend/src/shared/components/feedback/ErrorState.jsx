@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { AlertTriangle, RefreshCw } from './AnimatedIcons';
 
 export default function ErrorState({ message, onRetry }) {

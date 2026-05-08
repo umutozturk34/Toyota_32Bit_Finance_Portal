@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Mail, ShieldCheck, X as Cancel } from 'lucide-react';
 import {
   usePendingEmailChange,

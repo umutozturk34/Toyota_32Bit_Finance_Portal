@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { cardVariants } from '../../utils/animations';
 
 export default function AssetCard({ onClick, size = 'lg', children, className = '' }) {

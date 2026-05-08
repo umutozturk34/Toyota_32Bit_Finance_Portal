@@ -5,6 +5,8 @@ spring:
     import:
       - classpath:config/database.yaml
       - classpath:config/security.yaml
+      - classpath:config/app.yaml
+      - classpath:config/kafka.yaml
       - classpath:config/cache.yaml
       - classpath:config/external-apis.yaml
       - classpath:config/markets/crypto.yaml

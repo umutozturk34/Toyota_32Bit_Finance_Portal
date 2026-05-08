@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { X, Pencil, Save } from 'lucide-react';
-import { useUpdateWatchlistItem } from '../../../../shared/hooks/useWatchlist';
-import { toast } from '../../../../shared/components/feedback/Toast';
-import { extractApiError } from '../../../../shared/utils/apiError';
+import { useUpdateWatchlistItem } from '../../../shared/hooks/useWatchlist';
+import { toast } from '../../../shared/components/feedback/Toast';
+import { extractApiError } from '../../../shared/utils/apiError';
 
 export default function EditWatchlistItemModal({ open, onClose, item, watchlistId }) {
   const [note, setNote] = useState('');

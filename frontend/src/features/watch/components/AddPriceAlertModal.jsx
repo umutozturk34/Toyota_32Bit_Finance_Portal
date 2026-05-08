@@ -3,12 +3,12 @@ import {
   AlertCircle, ArrowUp, ArrowDown, TrendingUp, TrendingDown,
   Hash, Target, Anchor, Search, Activity,
 } from 'lucide-react';
-import BaseModal from '../../../../shared/components/modal/BaseModal';
-import SearchSuggestions from '../../../../shared/components/form/SearchSuggestions';
-import { useCreatePriceAlert } from '../../../../shared/hooks/usePriceAlerts';
-import { toast } from '../../../../shared/components/feedback/Toast';
-import { extractApiError } from '../../../../shared/utils/apiError';
-import { ASSET_TYPE_LABELS } from '../../../../shared/constants/assetTypes';
+import BaseModal from '../../../shared/components/modal/BaseModal';
+import SearchSuggestions from '../../../shared/components/form/SearchSuggestions';
+import { useCreatePriceAlert } from '../../../shared/hooks/usePriceAlerts';
+import { toast } from '../../../shared/components/feedback/Toast';
+import { extractApiError } from '../../../shared/utils/apiError';
+import { ASSET_TYPE_LABELS } from '../../../shared/constants/assetTypes';
 
 const DIRECTION_OPTIONS = [
   { value: 'ABOVE', label: 'Üstüne çıkarsa', short: 'Üstüne', Icon: ArrowUp, tone: 'success', hint: 'Eşik fiyatın üstüne çıktığında bildir' },

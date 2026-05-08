@@ -6,8 +6,8 @@ import {
   useWatchlistItems,
   useRemoveWatchlistItem,
 } from '../../../shared/hooks/useWatchlist';
-import AddPriceAlertModal from '../components/modals/AddPriceAlertModal';
-import AddWatchlistItemModal from '../components/modals/AddWatchlistItemModal';
+import AddPriceAlertModal from '../components/AddPriceAlertModal';
+import AddWatchlistItemModal from '../components/AddWatchlistItemModal';
 import { toast } from '../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../shared/utils/apiError';
 

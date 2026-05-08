@@ -1,17 +1,17 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Eye, ListChecks, FileText, Percent, Search, Star, ChevronDown, Check, Info } from 'lucide-react';
-import BaseModal from '../../../../shared/components/modal/BaseModal';
-import SearchSuggestions from '../../../../shared/components/form/SearchSuggestions';
+import BaseModal from '../../../shared/components/modal/BaseModal';
+import SearchSuggestions from '../../../shared/components/form/SearchSuggestions';
 import {
   useWatchlists,
   useWatchlistItems,
   useAddWatchlistItem,
   useAddToFavorites,
-} from '../../../../shared/hooks/useWatchlist';
-import { toast } from '../../../../shared/components/feedback/Toast';
-import { extractApiError } from '../../../../shared/utils/apiError';
-import { ASSET_TYPE_LABELS } from '../../../../shared/constants/assetTypes';
+} from '../../../shared/hooks/useWatchlist';
+import { toast } from '../../../shared/components/feedback/Toast';
+import { extractApiError } from '../../../shared/utils/apiError';
+import { ASSET_TYPE_LABELS } from '../../../shared/constants/assetTypes';
 
 export default function AddWatchlistItemModal({
   isOpen,

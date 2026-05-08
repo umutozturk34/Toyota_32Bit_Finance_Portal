@@ -1,4 +1,4 @@
-package com.finance.notification.listener;
+package com.finance.notification.user;
 import com.finance.common.event.KafkaTopics;
 
 

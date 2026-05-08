@@ -6,7 +6,7 @@ import com.finance.app.dto.response.overview.WidgetKind;
 import com.finance.app.dto.response.overview.WidgetSection;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.news.dto.response.NewsArticleResponse;
-import com.finance.news.service.NewsQueryService;
+import com.finance.news.service.article.NewsQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;

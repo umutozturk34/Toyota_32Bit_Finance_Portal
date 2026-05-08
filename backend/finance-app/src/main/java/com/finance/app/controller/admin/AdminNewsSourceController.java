@@ -1,10 +1,10 @@
-package com.finance.app.controller;
+package com.finance.app.controller.admin;
 
 import com.finance.common.dto.ApiResponse;
 import com.finance.news.dto.request.UpsertNewsSourceRequest;
 import com.finance.news.dto.response.NewsSourceResponse;
-import com.finance.news.service.NewsSourceAdminService;
-import com.finance.news.service.NewsSourceService;
+import com.finance.news.service.source.NewsSourceAdminService;
+import com.finance.news.service.source.NewsSourceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;

@@ -1,5 +1,7 @@
 package com.finance.notification.core.dispatch;
 
+import com.finance.notification.core.dispatch.email.UserEmailLookup;
+
 import com.finance.notification.core.mail.MailSender;
 import com.finance.notification.core.mapper.NotificationMapper;
 import com.finance.notification.core.model.Notification;

@@ -1,5 +1,7 @@
 package com.finance.notification.market;
 
+import com.finance.notification.market.session.*;
+
 import com.finance.common.event.KafkaTopics;
 import com.finance.common.event.MarketUpdatedEvent;
 import com.finance.notification.core.dispatch.NotificationDispatcher;

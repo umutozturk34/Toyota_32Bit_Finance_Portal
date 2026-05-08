@@ -9,7 +9,7 @@ import com.finance.market.stock.service.StockDataService;
 
 import com.finance.market.stock.repository.StockCandleRepository;
 
-import com.finance.news.service.NewsDataService;
+import com.finance.news.service.article.NewsDataService;
 
 import com.finance.news.repository.NewsArticleRepository;
 

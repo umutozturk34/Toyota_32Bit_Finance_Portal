@@ -1,4 +1,4 @@
-package com.finance.notification.core.dispatch;
+package com.finance.notification.core.dispatch.email;
 
 public record KeycloakUserProfile(
         String sub,

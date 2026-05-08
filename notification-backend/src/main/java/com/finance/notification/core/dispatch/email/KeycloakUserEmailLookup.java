@@ -1,4 +1,4 @@
-package com.finance.notification.core.dispatch;
+package com.finance.notification.core.dispatch.email;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;

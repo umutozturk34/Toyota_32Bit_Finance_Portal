@@ -1,5 +1,7 @@
 package com.finance.news.service;
 
+import com.finance.news.service.article.*;
+
 
 import com.finance.news.dto.response.NewsArticleResponse;
 import com.finance.common.dto.response.PagedResponse;

@@ -1,5 +1,7 @@
 package com.finance.notification.market;
 
+import com.finance.notification.market.session.*;
+
 import java.time.Instant;
 
 public record MarketStatusResponse(

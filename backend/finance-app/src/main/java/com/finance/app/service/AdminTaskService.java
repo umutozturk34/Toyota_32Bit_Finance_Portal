@@ -3,7 +3,7 @@ import com.finance.market.forex.service.TcmbForexService;
 
 import com.finance.common.service.TaskTrackingService;
 
-import com.finance.news.service.NewsDataService;
+import com.finance.news.service.article.NewsDataService;
 
 import com.finance.market.core.service.MarketUpdatePort;
 import com.finance.common.event.MarketUpdateEventPort;

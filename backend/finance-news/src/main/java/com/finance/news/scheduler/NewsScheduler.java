@@ -3,7 +3,7 @@ package com.finance.news.scheduler;
 import com.finance.common.event.MarketUpdateEventPort;
 import com.finance.common.model.MarketType;
 import com.finance.common.service.TaskTrackingService;
-import com.finance.news.service.NewsDataService;
+import com.finance.news.service.article.NewsDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.ObjectProvider;

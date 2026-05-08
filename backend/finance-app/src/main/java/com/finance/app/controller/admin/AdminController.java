@@ -1,4 +1,4 @@
-package com.finance.app.controller;
+package com.finance.app.controller.admin;
 import com.finance.market.bond.model.Bond;
 
 import com.finance.market.core.service.MarketSnapshotProcessor;

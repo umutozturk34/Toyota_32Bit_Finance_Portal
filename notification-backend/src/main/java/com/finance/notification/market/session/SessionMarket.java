@@ -1,4 +1,4 @@
-package com.finance.notification.market;
+package com.finance.notification.market.session;
 
 public enum SessionMarket {
     STOCK("Hisse"),

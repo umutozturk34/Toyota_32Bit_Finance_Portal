@@ -7,7 +7,7 @@ import com.finance.app.dto.response.overview.WidgetKind;
 import com.finance.app.dto.response.overview.WidgetSection;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.news.dto.response.NewsArticleResponse;
-import com.finance.news.service.NewsQueryService;
+import com.finance.news.service.article.NewsQueryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

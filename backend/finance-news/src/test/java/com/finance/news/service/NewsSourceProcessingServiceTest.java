@@ -1,5 +1,9 @@
 package com.finance.news.service;
 
+import com.finance.news.service.source.*;
+
+import com.finance.news.service.article.*;
+
 import com.finance.news.client.RssClient;
 import com.finance.news.config.NewsProperties;
 import com.finance.news.dto.external.NewsArticleDto;

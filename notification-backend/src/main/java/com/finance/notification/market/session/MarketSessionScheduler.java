@@ -1,4 +1,4 @@
-package com.finance.notification.market;
+package com.finance.notification.market.session;
 
 import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;

@@ -1,4 +1,4 @@
-package com.finance.notification.core.dispatch;
+package com.finance.notification.core.dispatch.email;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Configuration;

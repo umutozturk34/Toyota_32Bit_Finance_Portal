@@ -1,4 +1,6 @@
-package com.finance.news.service;
+package com.finance.news.service.source;
+
+import com.finance.news.service.source.*;
 import com.finance.common.model.*;
 import com.finance.common.model.value.*;
 import com.finance.common.dto.*;

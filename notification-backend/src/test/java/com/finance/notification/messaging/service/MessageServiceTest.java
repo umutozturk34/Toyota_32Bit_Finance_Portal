@@ -43,7 +43,7 @@ class MessageServiceTest {
     @Mock private com.finance.notification.messaging.security.MessageDuplicateGuard duplicateGuard;
     @Mock private com.finance.notification.messaging.security.MessageCooldownGuard cooldownGuard;
     @Mock private org.springframework.context.ApplicationEventPublisher events;
-    @Mock private com.finance.notification.core.dispatch.KeycloakUserEmailLookup userDirectory;
+    @Mock private com.finance.notification.core.dispatch.email.KeycloakUserEmailLookup userDirectory;
     @Mock private com.finance.notification.messaging.presence.ActiveConversationRegistry presence;
 
     private MessageService service;

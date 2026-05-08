@@ -1,4 +1,6 @@
-package com.finance.news.service;
+package com.finance.news.service.article;
+
+import com.finance.news.service.article.*;
 
 
 import com.finance.common.dto.response.GroupCount;

@@ -1,4 +1,6 @@
-package com.finance.notification.market;
+package com.finance.notification.market.session;
+
+import com.finance.notification.market.MarketHoursProperties;
 
 import com.finance.notification.config.MarketSessionProperties;
 import lombok.RequiredArgsConstructor;

@@ -24,6 +24,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.finance.news.config.NewsProperties;
 import com.finance.news.model.NewsArticle;
 import com.finance.news.model.NewsCategory;
+import com.finance.news.model.NewsSource;
 import com.finance.news.repository.NewsArticleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,7 +68,7 @@ class NewsCacheServiceTest {
                 .id(id)
                 .title(title)
                 .link("https://example.com/" + id)
-                .sourceName("Test")
+                .source(NewsSource.builder().id(1L).name("Test").url("https://example.com").build())
                 .category(NewsCategory.CRYPTO)
                 .publishedAt(LocalDateTime.now())
                 .fetchedAt(LocalDateTime.now())

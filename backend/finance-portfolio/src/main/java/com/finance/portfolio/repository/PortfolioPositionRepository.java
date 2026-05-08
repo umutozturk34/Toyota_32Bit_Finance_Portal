@@ -19,6 +19,7 @@ import com.finance.common.mapper.*;
 import com.finance.common.repository.*;
 import com.finance.common.client.*;
 
+import com.finance.common.model.TrackedAssetType;
 import com.finance.portfolio.model.AssetType;
 import java.math.BigDecimal;
 import com.finance.portfolio.model.PortfolioPosition;
@@ -36,6 +37,6 @@ public interface PortfolioPositionRepository extends JpaRepository<PortfolioPosi
     List<PortfolioPosition> findByPortfolioIdAndQuantityGreaterThan(
             Long portfolioId, BigDecimal minQuantity);
 
-    List<PortfolioPosition> findByPortfolioIdAndAssetTypeAndQuantityGreaterThan(
-            Long portfolioId, AssetType assetType, BigDecimal minQuantity);
+    List<PortfolioPosition> findByPortfolioIdAndTrackedAsset_AssetTypeAndQuantityGreaterThan(
+            Long portfolioId, TrackedAssetType assetType, BigDecimal minQuantity);
 }

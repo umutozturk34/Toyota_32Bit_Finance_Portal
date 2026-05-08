@@ -37,17 +37,24 @@ public class PortfolioPosition {
     @Column(name = "portfolio_id", insertable = false, updatable = false)
     private Long portfolioId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "asset_type", nullable = false, length = 50)
+    @Transient
     private AssetType assetType;
 
-    @Column(name = "asset_code", nullable = false, length = 100)
+    @Transient
     private String assetCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tracked_asset_id")
+    @JoinColumn(name = "tracked_asset_id", nullable = false)
     @Setter
     private TrackedAsset trackedAsset;
+
+    @PostLoad
+    void syncTransientsFromTrackedAsset() {
+        if (trackedAsset != null) {
+            this.assetType = AssetType.valueOf(trackedAsset.getAssetType().name());
+            this.assetCode = trackedAsset.getAssetCode();
+        }
+    }
 
     @Column(name = "quantity", nullable = false, precision = 19, scale = 8)
     private BigDecimal quantity;

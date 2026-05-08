@@ -40,7 +40,7 @@ import java.time.temporal.ChronoUnit;
         indexes = {
                 @Index(name = "idx_news_category", columnList = "category"),
                 @Index(name = "idx_news_published_at", columnList = "published_at"),
-                @Index(name = "idx_news_source", columnList = "source_name")
+                @Index(name = "idx_news_articles_source", columnList = "source_id")
         }
 )
 public class NewsArticle {
@@ -59,16 +59,20 @@ public class NewsArticle {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "source_name", length = 100, nullable = false)
-    private String sourceName;
-
-    @Column(name = "source_url", length = 1024)
-    private String sourceUrl;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "source_id")
+    @JoinColumn(name = "source_id", nullable = false)
     @JsonIgnore
     private NewsSource source;
+
+    @JsonIgnore
+    public String getSourceName() {
+        return source != null ? source.getName() : null;
+    }
+
+    @JsonIgnore
+    public String getSourceUrl() {
+        return source != null ? source.getUrl() : null;
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(name = "category", length = 30, nullable = false)

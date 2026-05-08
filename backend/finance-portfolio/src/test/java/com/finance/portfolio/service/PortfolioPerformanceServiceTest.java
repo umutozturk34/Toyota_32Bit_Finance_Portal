@@ -146,8 +146,8 @@ class PortfolioPerformanceServiceTest {
                 new BigDecimal("6000"), new BigDecimal("4000"), new BigDecimal("2000"));
         PortfolioAssetDailySnapshot stockB = assetSnapWithCost(t, AssetType.STOCK, "ASELS.IS",
                 new BigDecimal("3000"), new BigDecimal("2000"), new BigDecimal("1000"));
-        when(assetSnapshotRepository.findByPortfolioIdAndAssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
-                eq(PORTFOLIO_ID), eq(AssetType.STOCK), any(), any()))
+        when(assetSnapshotRepository.findByPortfolioIdAndTrackedAsset_AssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
+                eq(PORTFOLIO_ID), eq(TrackedAssetType.STOCK), any(), any()))
                 .thenReturn(List.of(stockA, stockB));
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
 

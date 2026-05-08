@@ -126,8 +126,8 @@ public class PortfolioPerformanceService {
     private List<PerformancePoint> getAssetTypePerformance(Long portfolioId, AssetType assetType,
                                                             LocalDateTime start, LocalDateTime end) {
         List<PortfolioAssetDailySnapshot> snapshots = assetSnapshotRepository
-                .findByPortfolioIdAndAssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
-                        portfolioId, assetType, start, end);
+                .findByPortfolioIdAndTrackedAsset_AssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
+                        portfolioId, TrackedAssetType.valueOf(assetType.name()), start, end);
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId).stream()
                 .filter(p -> p.getAssetType() == assetType)
                 .toList();

@@ -14,6 +14,7 @@ import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.model.Portfolio;
 
 import com.finance.common.model.MarketType;
+import com.finance.common.model.TrackedAssetType;
 
 import com.finance.portfolio.model.AssetType;
 
@@ -54,8 +55,8 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
                 portfolios,
                 portfolio -> transactionTemplate.executeWithoutResult(status -> {
                     boolean hasPositions = !positionRepository
-                            .findByPortfolioIdAndAssetTypeAndQuantityGreaterThan(
-                                    portfolio.getId(), type, BigDecimal.ZERO)
+                            .findByPortfolioIdAndTrackedAsset_AssetTypeAndQuantityGreaterThan(
+                                    portfolio.getId(), TrackedAssetType.valueOf(type.name()), BigDecimal.ZERO)
                             .isEmpty();
                     if (hasPositions) {
                         insertAssetSnapshots(portfolio, type, batchTimestamp);
@@ -94,7 +95,8 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
                                        LocalDateTime batchTimestamp) {
         Long pid = portfolio.getId();
         List<PortfolioPosition> positions = positionRepository
-                .findByPortfolioIdAndAssetTypeAndQuantityGreaterThan(pid, assetType, BigDecimal.ZERO);
+                .findByPortfolioIdAndTrackedAsset_AssetTypeAndQuantityGreaterThan(
+                        pid, TrackedAssetType.valueOf(assetType.name()), BigDecimal.ZERO);
 
         for (PortfolioPosition pos : positions) {
             assetSnapshotRepository.save(calculator.buildAssetSnapshot(pid, pos, batchTimestamp));

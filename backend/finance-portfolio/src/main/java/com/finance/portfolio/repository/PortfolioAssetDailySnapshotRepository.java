@@ -19,6 +19,7 @@ import com.finance.common.mapper.*;
 import com.finance.common.repository.*;
 import com.finance.common.client.*;
 
+import com.finance.common.model.TrackedAssetType;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -63,8 +64,8 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
     List<PortfolioAssetDailySnapshot> findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(
             Long portfolioId, LocalDateTime start, LocalDateTime end);
 
-    List<PortfolioAssetDailySnapshot> findByPortfolioIdAndAssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
-            Long portfolioId, AssetType assetType, LocalDateTime start, LocalDateTime end);
+    List<PortfolioAssetDailySnapshot> findByPortfolioIdAndTrackedAsset_AssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
+            Long portfolioId, TrackedAssetType assetType, LocalDateTime start, LocalDateTime end);
 
     List<PortfolioAssetDailySnapshot> findByPortfolioIdAndTrackedAssetIdAndCreatedAtBetweenOrderByCreatedAtAsc(
             Long portfolioId, Long trackedAssetId,

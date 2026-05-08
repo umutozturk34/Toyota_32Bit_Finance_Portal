@@ -53,6 +53,12 @@ public enum TrackedAssetType {
         public String normalizeCode(String raw) {
             return ensureNonBlank(raw).toUpperCase(Locale.ROOT);
         }
+    },
+    FOREX(MarketType.FOREX) {
+        @Override
+        public String normalizeCode(String raw) {
+            return ensureNonBlank(raw).toUpperCase(Locale.ROOT);
+        }
     };
 
     private final MarketType marketType;

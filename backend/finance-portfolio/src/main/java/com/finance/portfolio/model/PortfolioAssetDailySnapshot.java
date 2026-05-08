@@ -21,6 +21,7 @@ import com.finance.common.mapper.*;
 import com.finance.common.repository.*;
 import com.finance.common.client.*;
 
+import com.finance.common.model.TrackedAsset;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -57,6 +58,10 @@ public class PortfolioAssetDailySnapshot {
 
     @Column(name = "asset_code", nullable = false, length = 100)
     private String assetCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tracked_asset_id")
+    private TrackedAsset trackedAsset;
 
     @Column(name = "snapshot_date", nullable = false)
     private LocalDate snapshotDate;

@@ -4,6 +4,7 @@ import com.finance.portfolio.model.Portfolio;
 import com.finance.portfolio.model.AssetType;
 
 
+import com.finance.common.model.TrackedAsset;
 import com.finance.common.service.AssetPricingPort;
 import jakarta.persistence.*;
 import lombok.*;
@@ -42,6 +43,11 @@ public class PortfolioPosition {
 
     @Column(name = "asset_code", nullable = false, length = 100)
     private String assetCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tracked_asset_id")
+    @Setter
+    private TrackedAsset trackedAsset;
 
     @Column(name = "quantity", nullable = false, precision = 19, scale = 8)
     private BigDecimal quantity;

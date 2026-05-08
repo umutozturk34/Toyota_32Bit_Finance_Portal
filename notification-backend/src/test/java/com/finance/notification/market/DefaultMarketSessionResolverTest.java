@@ -1,5 +1,6 @@
 package com.finance.notification.market;
 
+import com.finance.notification.config.MarketSessionProperties;
 import org.junit.jupiter.api.Test;
 
 import java.time.DayOfWeek;
@@ -23,7 +24,9 @@ class DefaultMarketSessionResolverTest {
     private DefaultMarketSessionResolver resolverWith(MarketHoursProperties.MarketSchedule stockSchedule) {
         Map<SessionMarket, MarketHoursProperties.MarketSchedule> map = new EnumMap<>(SessionMarket.class);
         map.put(SessionMarket.STOCK, stockSchedule);
-        return new DefaultMarketSessionResolver(new MarketHoursProperties(map));
+        return new DefaultMarketSessionResolver(
+                new MarketHoursProperties(map),
+                new MarketSessionProperties(14, 240L));
     }
 
     private MarketHoursProperties.MarketSchedule stockHours() {
@@ -109,7 +112,9 @@ class DefaultMarketSessionResolverTest {
                 IST);
         Map<SessionMarket, MarketHoursProperties.MarketSchedule> map = new EnumMap<>(SessionMarket.class);
         map.put(SessionMarket.CRYPTO, alwaysOpen);
-        DefaultMarketSessionResolver resolver = new DefaultMarketSessionResolver(new MarketHoursProperties(map));
+        DefaultMarketSessionResolver resolver = new DefaultMarketSessionResolver(
+                new MarketHoursProperties(map),
+                new MarketSessionProperties(14, 240L));
 
         Instant problemMinute = ZonedDateTime.of(2026, 5, 5, 23, 59, 30, 0, IST).toInstant();
         Instant midnight = ZonedDateTime.of(2026, 5, 5, 0, 0, 0, 0, IST).toInstant();

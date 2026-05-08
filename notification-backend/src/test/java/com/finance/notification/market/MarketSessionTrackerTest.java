@@ -1,5 +1,6 @@
 package com.finance.notification.market;
 
+import com.finance.notification.config.NotificationCacheProperties;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
@@ -10,7 +11,7 @@ class MarketSessionTrackerTest {
 
     @Test
     void should_returnEmpty_when_noPreviousState() {
-        MarketSessionTracker tracker = new MarketSessionTracker();
+        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 50_000L, 64L));
 
         Optional<MarketSession> previous = tracker.previous(SessionMarket.STOCK);
 
@@ -19,7 +20,7 @@ class MarketSessionTrackerTest {
 
     @Test
     void should_returnLatestSession_when_updated() {
-        MarketSessionTracker tracker = new MarketSessionTracker();
+        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 50_000L, 64L));
 
         tracker.update(SessionMarket.STOCK, MarketSession.OPEN);
         tracker.update(SessionMarket.STOCK, MarketSession.CLOSED);
@@ -29,7 +30,7 @@ class MarketSessionTrackerTest {
 
     @Test
     void should_isolateMarkets_when_updateOneDoesNotAffectOther() {
-        MarketSessionTracker tracker = new MarketSessionTracker();
+        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 50_000L, 64L));
 
         tracker.update(SessionMarket.STOCK, MarketSession.OPEN);
 

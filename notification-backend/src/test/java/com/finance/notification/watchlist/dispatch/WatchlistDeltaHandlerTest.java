@@ -1,6 +1,7 @@
 package com.finance.notification.watchlist.dispatch;
 
 import com.finance.common.model.MarketType;
+import com.finance.notification.config.NotificationDispatchProperties;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
 import com.finance.notification.core.dispatch.payload.WatchlistDeltaPayload;
@@ -14,7 +15,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class WatchlistDeltaHandlerTest {
 
-    private final WatchlistDeltaHandler handler = new WatchlistDeltaHandler();
+    private static final NotificationDispatchProperties DISPATCH = new NotificationDispatchProperties(
+            new NotificationDispatchProperties.Formatting(2, 6, 6),
+            new NotificationDispatchProperties.WatchlistDelta(3),
+            new NotificationDispatchProperties.Message(120));
+
+    private final WatchlistDeltaHandler handler = new WatchlistDeltaHandler(DISPATCH);
 
     private static WatchlistDeltaPayload.DeltaItem item(String code, String name, String image,
                                                          BigDecimal current, BigDecimal delta) {

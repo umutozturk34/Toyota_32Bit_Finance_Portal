@@ -2,6 +2,9 @@ package com.finance.notification.watchlist.service;
 
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
+import com.finance.common.model.TrackedAsset;
+import com.finance.common.model.TrackedAssetType;
+import com.finance.common.repository.TrackedAssetRepository;
 import com.finance.notification.watchlist.dto.WatchlistItemCreateRequest;
 import com.finance.notification.watchlist.dto.WatchlistItemResponse;
 import com.finance.notification.watchlist.mapper.WatchlistItemMapper;
@@ -32,9 +35,20 @@ class WatchlistServiceTest {
     @Mock private WatchlistItemMapper mapper;
     @Mock private WatchlistManagementService managementService;
     @Mock private com.finance.common.cache.AssetSnapshotCache assetSnapshotCache;
+    @Mock private TrackedAssetRepository trackedAssetRepository;
 
     @InjectMocks
     private WatchlistService service;
+
+    private TrackedAsset stubTrackedAsset(MarketType marketType, String code) {
+        TrackedAssetType trackedType = TrackedAssetType.valueOf(marketType.name());
+        String normalized = trackedType.normalizeCode(code);
+        TrackedAsset asset = TrackedAsset.builder()
+                .id(99L).assetType(trackedType).assetCode(normalized).build();
+        when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(trackedType, normalized))
+                .thenReturn(Optional.of(asset));
+        return asset;
+    }
 
     private Watchlist parentList(Long id, String userSub) {
         return Watchlist.builder().id(id).userSub(userSub).name("Favoriler").isDefault(true).build();
@@ -84,6 +98,7 @@ class WatchlistServiceTest {
         WatchlistItemCreateRequest req = new WatchlistItemCreateRequest(
                 MarketType.CRYPTO, "BTC", "note", null);
         WatchlistItem entity = ownedItem();
+        stubTrackedAsset(MarketType.CRYPTO, "BTC");
         when(managementService.requireOwned(7L, "user-1")).thenReturn(parentList(7L, "user-1"));
         when(repository.findByWatchlistIdAndMarketTypeAndAssetCode(7L, MarketType.CRYPTO, "BTC"))
                 .thenReturn(Optional.empty());
@@ -103,6 +118,7 @@ class WatchlistServiceTest {
         WatchlistItemCreateRequest req = new WatchlistItemCreateRequest(
                 MarketType.STOCK, "AAPL", null, null);
         Watchlist favorites = parentList(99L, "user-1");
+        stubTrackedAsset(MarketType.STOCK, "AAPL");
         when(managementService.ensureDefault("user-1")).thenReturn(favorites);
         when(managementService.requireOwned(99L, "user-1")).thenReturn(favorites);
         when(repository.findByWatchlistIdAndMarketTypeAndAssetCode(99L, MarketType.STOCK, "AAPL"))

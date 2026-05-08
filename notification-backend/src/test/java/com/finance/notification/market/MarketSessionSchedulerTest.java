@@ -1,5 +1,7 @@
 package com.finance.notification.market;
 
+import com.finance.notification.config.NotificationCacheProperties;
+
 import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.model.NotificationPreference;
@@ -54,7 +56,7 @@ class MarketSessionSchedulerTest {
 
     @Test
     void should_dispatchMarketOpened_when_stockTransitionsFromClosedToOpen() {
-        MarketSessionTracker tracker = new MarketSessionTracker();
+        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 50_000L, 64L));
         for (SessionMarket m : SessionMarket.values()) {
             tracker.update(m, MarketSession.CLOSED);
         }
@@ -70,7 +72,7 @@ class MarketSessionSchedulerTest {
 
     @Test
     void should_dispatchMarketClosed_when_stockTransitionsFromOpenToClosed() {
-        MarketSessionTracker tracker = new MarketSessionTracker();
+        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 50_000L, 64L));
         for (SessionMarket m : SessionMarket.values()) {
             tracker.update(m, MarketSession.OPEN);
         }
@@ -89,7 +91,7 @@ class MarketSessionSchedulerTest {
 
     @Test
     void should_skipFirstObservation_when_trackerEmptyForMarket() {
-        MarketSessionTracker tracker = new MarketSessionTracker();
+        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 50_000L, 64L));
         when(resolver.resolve(any(), any())).thenReturn(Optional.of(MarketSession.OPEN));
 
         scheduler(tracker).scanTransitions();
@@ -99,7 +101,7 @@ class MarketSessionSchedulerTest {
 
     @Test
     void should_skipUser_when_marketSelectionIsBlank() {
-        MarketSessionTracker tracker = new MarketSessionTracker();
+        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 50_000L, 64L));
         for (SessionMarket m : SessionMarket.values()) {
             tracker.update(m, MarketSession.CLOSED);
         }
@@ -115,7 +117,7 @@ class MarketSessionSchedulerTest {
 
     @Test
     void should_loadPreferencesOnce_when_multipleMarketsTransitionInSameTick() {
-        MarketSessionTracker tracker = new MarketSessionTracker();
+        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 50_000L, 64L));
         for (SessionMarket m : SessionMarket.values()) {
             tracker.update(m, MarketSession.CLOSED);
         }

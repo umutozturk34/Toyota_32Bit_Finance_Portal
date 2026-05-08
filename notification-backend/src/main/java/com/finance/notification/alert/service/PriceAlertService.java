@@ -2,8 +2,12 @@ package com.finance.notification.alert.service;
 
 import com.finance.common.cache.AssetSnapshotCache;
 import com.finance.common.dto.internal.AssetSnapshot;
+import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
+import com.finance.common.model.TrackedAsset;
+import com.finance.common.model.TrackedAssetType;
+import com.finance.common.repository.TrackedAssetRepository;
 import com.finance.notification.alert.dto.PriceAlertCreateRequest;
 import com.finance.notification.alert.dto.PriceAlertResponse;
 import com.finance.notification.alert.dto.PriceAlertUpdateRequest;
@@ -31,15 +35,29 @@ public class PriceAlertService {
     private final PriceAlertRepository repository;
     private final PriceAlertMapper mapper;
     private final AssetSnapshotCache assetSnapshotCache;
+    private final TrackedAssetRepository trackedAssetRepository;
 
     @Transactional
     public PriceAlertResponse create(String userSub, PriceAlertCreateRequest request) {
+        TrackedAsset trackedAsset = requireTrackedAsset(request.marketType(), request.assetCode());
         PriceAlert entity = mapper.toEntity(request, userSub);
+        entity.setTrackedAsset(trackedAsset);
+        entity.setAssetCode(trackedAsset.getAssetCode());
         PriceAlert saved = repository.save(entity);
         log.info("Price alert created userSub={} alertId={} market={} code={} dir={} threshold={}",
                 userSub, saved.getId(), saved.getMarketType(), saved.getAssetCode(),
                 saved.getDirection(), saved.getThreshold());
         return mapper.toResponse(saved);
+    }
+
+    private TrackedAsset requireTrackedAsset(MarketType marketType, String rawCode) {
+        TrackedAssetType trackedType = TrackedAssetType.valueOf(marketType.name());
+        String normalizedCode = trackedType.normalizeCode(rawCode);
+        return trackedAssetRepository
+                .findByAssetTypeAndAssetCodeIgnoreCase(trackedType, normalizedCode)
+                .orElseThrow(() -> new BusinessException(
+                        "Bu varlık takip listesinde yok, alarm oluşturulamaz: "
+                                + marketType + " / " + normalizedCode));
     }
 
     @Transactional(readOnly = true)

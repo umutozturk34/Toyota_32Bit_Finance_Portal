@@ -2,6 +2,7 @@ package com.finance.notification.watchlist.service;
 
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.notification.config.WatchlistManagementProperties;
 import com.finance.notification.watchlist.dto.WatchlistCreateRequest;
 import com.finance.notification.watchlist.dto.WatchlistRenameRequest;
 import com.finance.notification.watchlist.dto.WatchlistResponse;
@@ -30,6 +31,7 @@ class WatchlistManagementServiceTest {
 
     @Mock private WatchlistRepository repository;
     @Mock private WatchlistItemRepository itemRepository;
+    @Mock private WatchlistManagementProperties properties;
 
     @InjectMocks
     private WatchlistManagementService service;
@@ -62,6 +64,7 @@ class WatchlistManagementServiceTest {
 
     @Test
     void create_persistsNewListWithItemCountZero() {
+        when(properties.maxPerUser()).thenReturn(20);
         when(repository.countByUserSub("user-1")).thenReturn(1L);
         when(repository.existsByUserSubAndName("user-1", "Crypto")).thenReturn(false);
         when(repository.save(any(Watchlist.class))).thenAnswer(inv -> {
@@ -79,6 +82,7 @@ class WatchlistManagementServiceTest {
 
     @Test
     void create_rejectsDuplicateName() {
+        when(properties.maxPerUser()).thenReturn(20);
         when(repository.countByUserSub("user-1")).thenReturn(1L);
         when(repository.existsByUserSubAndName("user-1", "Favoriler")).thenReturn(true);
 
@@ -88,6 +92,7 @@ class WatchlistManagementServiceTest {
 
     @Test
     void create_rejectsWhenLimitReached() {
+        when(properties.maxPerUser()).thenReturn(20);
         when(repository.countByUserSub("user-1")).thenReturn(20L);
 
         assertThatThrownBy(() -> service.create("user-1", new WatchlistCreateRequest("Yeni")))
@@ -172,6 +177,7 @@ class WatchlistManagementServiceTest {
 
     @Test
     void create_trimsLeadingTrailingWhitespace() {
+        when(properties.maxPerUser()).thenReturn(20);
         when(repository.countByUserSub("user-1")).thenReturn(1L);
         when(repository.existsByUserSubAndName("user-1", "Crypto")).thenReturn(false);
         when(repository.save(any(Watchlist.class))).thenAnswer(inv -> inv.getArgument(0));

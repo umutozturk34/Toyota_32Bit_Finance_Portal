@@ -1,6 +1,7 @@
 package com.finance.user.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.finance.common.exception.ResourceNotFoundException;
@@ -18,6 +19,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,7 +44,7 @@ class UserChartDrawingServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new UserChartDrawingService(repository, trackedAssetRepository);
+        service = new UserChartDrawingService(repository, trackedAssetRepository, new ObjectMapper());
     }
 
     @Test
@@ -88,8 +91,7 @@ class UserChartDrawingServiceTest {
     @Test
     void upsert_createsNewRow_whenNoExistingDrawing() {
         TrackedAsset tracked = trackedAsset(11L);
-        ArrayNode drawings = JsonNodeFactory.instance.arrayNode();
-        drawings.addObject().put("type", "fibonacci");
+        List<Map<String, Object>> drawings = List.of(Map.of("type", "fibonacci"));
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 11L)).thenReturn(Optional.empty());
@@ -102,8 +104,8 @@ class UserChartDrawingServiceTest {
         UserChartDrawing saved = captor.getValue();
         assertThat(saved.getUserSub()).isEqualTo(USER);
         assertThat(saved.getTrackedAsset()).isSameAs(tracked);
-        assertThat(saved.getDrawings()).isSameAs(drawings);
-        assertThat(response.drawings()).isSameAs(drawings);
+        assertThat(saved.getDrawings().get(0).get("type").asText()).isEqualTo("fibonacci");
+        assertThat(response.drawings().get(0).get("type").asText()).isEqualTo("fibonacci");
     }
 
     @Test
@@ -112,8 +114,7 @@ class UserChartDrawingServiceTest {
         UserChartDrawing existing = UserChartDrawing.builder()
                 .userSub(USER).trackedAsset(tracked)
                 .drawings(JsonNodeFactory.instance.arrayNode()).build();
-        ArrayNode newDrawings = JsonNodeFactory.instance.arrayNode();
-        newDrawings.addObject().put("type", "rectangle");
+        List<Map<String, Object>> newDrawings = List.of(Map.of("type", "rectangle"));
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 11L)).thenReturn(Optional.of(existing));
@@ -121,8 +122,8 @@ class UserChartDrawingServiceTest {
 
         UserChartDrawingResponse response = service.upsert(USER, TYPE, CODE, newDrawings);
 
-        assertThat(existing.getDrawings()).isSameAs(newDrawings);
-        assertThat(response.drawings()).isSameAs(newDrawings);
+        assertThat(existing.getDrawings().get(0).get("type").asText()).isEqualTo("rectangle");
+        assertThat(response.drawings().get(0).get("type").asText()).isEqualTo("rectangle");
     }
 
     @Test
@@ -144,7 +145,7 @@ class UserChartDrawingServiceTest {
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.upsert(USER, TYPE, CODE, JsonNodeFactory.instance.arrayNode()))
+        assertThatThrownBy(() -> service.upsert(USER, TYPE, CODE, List.of()))
                 .isInstanceOf(ResourceNotFoundException.class);
         verify(repository, never()).save(any());
     }

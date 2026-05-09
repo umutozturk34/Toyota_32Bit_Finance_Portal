@@ -14,6 +14,8 @@ export default function useDrawings(assetType, assetCode) {
   const enabled = !!assetType && !!assetCode;
   const { data, isSuccess } = useUserChartDrawings(assetType, assetCode);
   const updateMutation = useUpdateUserChartDrawings(assetType, assetCode);
+  const mutateRef = useRef(updateMutation.mutate);
+  mutateRef.current = updateMutation.mutate;
 
   const [drawings, setDrawings] = useState([]);
   const [activeTool, setActiveTool] = useState(null);
@@ -21,22 +23,21 @@ export default function useDrawings(assetType, assetCode) {
   const saveTimerRef = useRef(null);
 
   useEffect(() => {
-    if (!enabled || !isSuccess) return;
+    if (!enabled || !isSuccess || hydratedRef.current) return;
     setDrawings(rehydrate(data?.drawings));
     hydratedRef.current = true;
-    return undefined;
   }, [enabled, isSuccess, data]);
 
   useEffect(() => {
     if (!enabled || !hydratedRef.current) return undefined;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
-      updateMutation.mutate(drawings);
+      mutateRef.current(drawings);
     }, SAVE_DEBOUNCE_MS);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [enabled, drawings, updateMutation]);
+  }, [enabled, drawings]);
 
   const addDrawing = useCallback((drawing) => {
     setDrawings((prev) => [...prev, { ...drawing, id: genId() }]);

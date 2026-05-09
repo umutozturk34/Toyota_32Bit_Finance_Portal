@@ -11,7 +11,7 @@ export function useUserChartDrawings(type, code) {
     queryFn: () => userChartDrawingService.get(type, code),
     enabled: isAuthenticated && !loading && !!type && !!code,
     staleTime: Infinity,
-    retry: 1,
+    retry: 0,
   });
 }
 

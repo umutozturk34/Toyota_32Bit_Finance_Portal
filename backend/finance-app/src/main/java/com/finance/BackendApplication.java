@@ -11,6 +11,7 @@ import com.finance.market.fund.config.FundProperties;
 import com.finance.news.config.NewsProperties;
 import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.market.stock.config.StockProperties;
+import com.finance.user.config.ChartDefaultsProperties;
 import com.finance.user.config.KeycloakAdminProperties;
 import com.finance.user.config.UserSecurityProperties;
 import org.springframework.boot.SpringApplication;
@@ -29,6 +30,7 @@ import java.util.TimeZone;
 @EnableConfigurationProperties({
         AppProperties.class,
         BondProperties.class,
+        ChartDefaultsProperties.class,
         CommissionProperties.class,
         CommodityProperties.class,
         CryptoProperties.class,

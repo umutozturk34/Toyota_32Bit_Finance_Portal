@@ -1,12 +1,14 @@
 package com.finance.user.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.common.repository.TrackedAssetRepository;
+import com.finance.user.config.ChartDefaultsProperties;
 import com.finance.user.dto.UserChartPreferenceResponse;
 import com.finance.user.model.UserChartPreference;
 import com.finance.user.repository.UserChartPreferenceRepository;
@@ -18,6 +20,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,11 +45,16 @@ class UserChartPreferenceServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new UserChartPreferenceService(repository, trackedAssetRepository);
+        ChartDefaultsProperties defaults = new ChartDefaultsProperties(
+                new ChartDefaultsProperties.Defaults(
+                        List.of(new ChartDefaultsProperties.IndicatorDefault("SMA", 20, "#c084fc", false)),
+                        "candle", false, "off", 22, "🚀"),
+                new ChartDefaultsProperties.FundDefaults("line", false, false));
+        service = new UserChartPreferenceService(repository, trackedAssetRepository, new ObjectMapper(), defaults);
     }
 
     @Test
-    void getOrDefault_returnsEmptyConfig_whenNoRowExists() {
+    void getOrDefault_returnsConfiguredDefaults_whenNoRowExists() {
         TrackedAsset tracked = trackedAsset(42L);
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
@@ -53,8 +62,13 @@ class UserChartPreferenceServiceTest {
 
         UserChartPreferenceResponse response = service.getOrDefault(USER, TYPE, CODE);
 
-        assertThat(response.config()).isEqualTo(JsonNodeFactory.instance.objectNode());
-        assertThat(response.updatedAt()).isNotNull();
+        JsonNode config = response.config();
+        assertThat(config.get("chartType").asText()).isEqualTo("candle");
+        assertThat(config.get("showVolume").asBoolean()).isFalse();
+        assertThat(config.get("magnetMode").asText()).isEqualTo("off");
+        assertThat(config.get("iconSize").asInt()).isEqualTo(22);
+        assertThat(config.get("indicators")).hasSize(1);
+        assertThat(config.get("indicators").get(0).get("type").asText()).isEqualTo("SMA");
     }
 
     @Test
@@ -88,8 +102,7 @@ class UserChartPreferenceServiceTest {
     @Test
     void upsert_createsNewRow_whenNoExistingPreference() {
         TrackedAsset tracked = trackedAsset(42L);
-        ObjectNode config = JsonNodeFactory.instance.objectNode();
-        config.put("rsi", true);
+        Map<String, Object> config = Map.of("rsi", true);
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 42L)).thenReturn(Optional.empty());
@@ -102,8 +115,8 @@ class UserChartPreferenceServiceTest {
         UserChartPreference saved = captor.getValue();
         assertThat(saved.getUserSub()).isEqualTo(USER);
         assertThat(saved.getTrackedAsset()).isSameAs(tracked);
-        assertThat(saved.getConfig()).isSameAs(config);
-        assertThat(response.config()).isSameAs(config);
+        assertThat(saved.getConfig().get("rsi").asBoolean()).isTrue();
+        assertThat(response.config().get("rsi").asBoolean()).isTrue();
     }
 
     @Test
@@ -112,8 +125,7 @@ class UserChartPreferenceServiceTest {
         UserChartPreference existing = UserChartPreference.builder()
                 .userSub(USER).trackedAsset(tracked)
                 .config(JsonNodeFactory.instance.objectNode()).build();
-        ObjectNode newConfig = JsonNodeFactory.instance.objectNode();
-        newConfig.put("macd", true);
+        Map<String, Object> newConfig = Map.of("macd", true);
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 42L)).thenReturn(Optional.of(existing));
@@ -121,8 +133,8 @@ class UserChartPreferenceServiceTest {
 
         UserChartPreferenceResponse response = service.upsert(USER, TYPE, CODE, newConfig);
 
-        assertThat(existing.getConfig()).isSameAs(newConfig);
-        assertThat(response.config()).isSameAs(newConfig);
+        assertThat(existing.getConfig().get("macd").asBoolean()).isTrue();
+        assertThat(response.config().get("macd").asBoolean()).isTrue();
     }
 
     @Test
@@ -144,7 +156,7 @@ class UserChartPreferenceServiceTest {
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.upsert(USER, TYPE, CODE, JsonNodeFactory.instance.objectNode()))
+        assertThatThrownBy(() -> service.upsert(USER, TYPE, CODE, Map.of()))
                 .isInstanceOf(ResourceNotFoundException.class);
         verify(repository, never()).save(any());
     }

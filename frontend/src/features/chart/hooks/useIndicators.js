@@ -13,13 +13,8 @@ const TYPE_DEFAULTS = {
   MACD: { period: 12, color: '#06b6d4' },
 };
 
-const FALLBACK_INDICATORS = [
-  { id: genId(), type: 'SMA', period: 20, color: '#c084fc', visible: false },
-  { id: genId(), type: 'EMA', period: 50, color: '#fb923c', visible: false },
-];
-
 function rehydrate(remote) {
-  if (!Array.isArray(remote)) return null;
+  if (!Array.isArray(remote)) return [];
   return remote.map((ind) => ({
     id: ind.id || genId(),
     type: ind.type,
@@ -33,29 +28,32 @@ export default function useIndicators(assetType, assetCode) {
   const enabled = !!assetType && !!assetCode;
   const { data, isSuccess } = useUserChartPreferences(assetType, assetCode);
   const updateMutation = useUpdateUserChartPreferences(assetType, assetCode);
+  const mutateRef = useRef(updateMutation.mutate);
+  mutateRef.current = updateMutation.mutate;
 
-  const [indicators, setIndicators] = useState(FALLBACK_INDICATORS);
+  const [indicators, setIndicators] = useState([]);
+  const [config, setConfig] = useState(null);
   const hydratedRef = useRef(false);
   const saveTimerRef = useRef(null);
 
   useEffect(() => {
-    if (!enabled || !isSuccess) return;
-    const remote = rehydrate(data?.config?.indicators);
-    setIndicators(remote && remote.length > 0 ? remote : FALLBACK_INDICATORS);
+    if (!enabled || !isSuccess || hydratedRef.current) return;
+    setIndicators(rehydrate(data?.config?.indicators));
+    setConfig(data?.config ?? null);
     hydratedRef.current = true;
-    return undefined;
   }, [enabled, isSuccess, data]);
 
   useEffect(() => {
     if (!enabled || !hydratedRef.current) return undefined;
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    const next = { ...(config || {}), indicators };
     saveTimerRef.current = setTimeout(() => {
-      updateMutation.mutate({ indicators });
+      mutateRef.current(next);
     }, SAVE_DEBOUNCE_MS);
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
-  }, [enabled, indicators, updateMutation]);
+  }, [enabled, indicators, config]);
 
   const addIndicator = useCallback((type, period, color) => {
     const d = TYPE_DEFAULTS[type] || {};

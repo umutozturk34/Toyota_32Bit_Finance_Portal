@@ -1,7 +1,16 @@
 import api from './api';
 
-const PREF_PATH = (type, code) => `/user/chart-preferences/${type}/${encodeURIComponent(code)}`;
-const DRAW_PATH = (type, code) => `/user/chart-drawings/${type}/${encodeURIComponent(code)}`;
+function backendType(type) {
+  return type === 'BIST' ? 'STOCK' : type;
+}
+
+function backendCode(type, code) {
+  if (type === 'BIST' && code && !code.endsWith('.IS')) return `${code}.IS`;
+  return code;
+}
+
+const PREF_PATH = (type, code) => `/user/chart-preferences/${backendType(type)}/${encodeURIComponent(backendCode(type, code))}`;
+const DRAW_PATH = (type, code) => `/user/chart-drawings/${backendType(type)}/${encodeURIComponent(backendCode(type, code))}`;
 
 export const userChartPreferenceService = {
   get: async (type, code) => {

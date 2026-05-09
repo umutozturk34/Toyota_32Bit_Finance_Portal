@@ -6,8 +6,6 @@ import {
   useUpdateUserChartPreferences,
 } from '../../../shared/hooks/useUserChartPreferences';
 
-const SAVE_DEBOUNCE_MS = 600;
-
 export default function useChartConfig(assetType, assetCode) {
   const enabled = !!assetType && !!assetCode;
   const queryClient = useQueryClient();
@@ -15,21 +13,18 @@ export default function useChartConfig(assetType, assetCode) {
   const updateMutation = useUpdateUserChartPreferences(assetType, assetCode);
   const mutateRef = useRef(updateMutation.mutate);
   mutateRef.current = updateMutation.mutate;
-  const saveTimerRef = useRef(null);
 
   const setField = useCallback((key, value) => {
     if (!enabled) return;
     const queryKey = PREF_KEY(assetType, assetCode);
+    let nextConfig;
     queryClient.setQueryData(queryKey, (old) => {
       const oldConfig = old?.config ?? {};
       const next = typeof value === 'function' ? value(oldConfig[key]) : value;
-      return { ...(old ?? {}), config: { ...oldConfig, [key]: next } };
+      nextConfig = { ...oldConfig, [key]: next };
+      return { ...(old ?? {}), config: nextConfig };
     });
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      const latest = queryClient.getQueryData(queryKey)?.config;
-      if (latest) mutateRef.current(latest);
-    }, SAVE_DEBOUNCE_MS);
+    if (nextConfig) mutateRef.current(nextConfig);
   }, [enabled, queryClient, assetType, assetCode]);
 
   return {

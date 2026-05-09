@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useUserChartDrawings, useUpdateUserChartDrawings } from '../../../shared/hooks/useUserChartDrawings';
 
-const SAVE_DEBOUNCE_MS = 600;
-
 const genId = () => `d-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
 function rehydrate(remote) {
@@ -20,7 +18,6 @@ export default function useDrawings(assetType, assetCode) {
   const [drawings, setDrawings] = useState([]);
   const [activeTool, setActiveTool] = useState(null);
   const hydratedRef = useRef(false);
-  const saveTimerRef = useRef(null);
 
   useEffect(() => {
     if (!enabled || !isSuccess || hydratedRef.current) return;
@@ -29,14 +26,8 @@ export default function useDrawings(assetType, assetCode) {
   }, [enabled, isSuccess, data]);
 
   useEffect(() => {
-    if (!enabled || !hydratedRef.current) return undefined;
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      mutateRef.current(drawings);
-    }, SAVE_DEBOUNCE_MS);
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    };
+    if (!enabled || !hydratedRef.current) return;
+    mutateRef.current(drawings);
   }, [enabled, drawings]);
 
   const addDrawing = useCallback((drawing) => {

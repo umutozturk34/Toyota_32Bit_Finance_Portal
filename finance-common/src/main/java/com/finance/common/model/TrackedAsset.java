@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
                 @UniqueConstraint(name = "uc_tracked_assets_type_code", columnNames = {"asset_type", "asset_code"})
         },
         indexes = {
-                @Index(name = "idx_tracked_assets_type_enabled", columnList = "asset_type,enabled")
+                @Index(name = "idx_tracked_assets_type_sort", columnList = "asset_type,sort_order")
         }
 )
 public class TrackedAsset {
@@ -43,9 +43,6 @@ public class TrackedAsset {
 
     @Column(name = "binance_symbol", length = 100)
     private String binanceSymbol;
-
-    @Column(name = "enabled", nullable = false)
-    private boolean enabled;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "stock_segment", length = 30)

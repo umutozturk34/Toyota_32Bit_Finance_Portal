@@ -31,17 +31,23 @@ public interface AssetPricingPort {
     }
 
     default Map<AssetKey, PriceBundle> getBundles(Collection<AssetKey> keys) {
-        return keys.stream().collect(Collectors.toUnmodifiableMap(
-                key -> key,
-                key -> getBundle(key.type(), key.assetCode()),
-                (a, b) -> a));
+        return keys.stream()
+                .map(key -> Map.entry(key, java.util.Optional.ofNullable(getBundle(key.type(), key.assetCode()))))
+                .filter(e -> e.getValue().isPresent())
+                .collect(Collectors.toUnmodifiableMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().get(),
+                        (a, b) -> a));
     }
 
     default Map<AssetKey, BigDecimal> getPricesTry(Collection<AssetKey> keys) {
-        return keys.stream().collect(Collectors.toUnmodifiableMap(
-                key -> key,
-                key -> getPriceTry(key.type(), key.assetCode()),
-                (a, b) -> a));
+        return keys.stream()
+                .map(key -> Map.entry(key, java.util.Optional.ofNullable(getPriceTry(key.type(), key.assetCode()))))
+                .filter(e -> e.getValue().isPresent())
+                .collect(Collectors.toUnmodifiableMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().get(),
+                        (a, b) -> a));
     }
 
 }

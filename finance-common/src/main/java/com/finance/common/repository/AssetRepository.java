@@ -1,6 +1,6 @@
 package com.finance.common.repository;
 
-import com.finance.market.core.model.Asset;
+import com.finance.common.model.Asset;
 import com.finance.common.model.MarketType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

@@ -51,9 +51,6 @@ public class Asset {
     @Column(name = "asset_code", nullable = false, length = 100)
     private String assetCode;
 
-    @Column(name = "display_name", length = 255)
-    private String displayName;
-
     @Column(name = "active", nullable = false)
     private boolean active;
 
@@ -70,11 +67,10 @@ public class Asset {
         if (updatedAt == null) updatedAt = now;
     }
 
-    public static Asset create(MarketType marketType, String assetCode, String displayName) {
+    public static Asset create(MarketType marketType, String assetCode) {
         return Asset.builder()
                 .marketType(marketType)
                 .assetCode(assetCode)
-                .displayName(displayName)
                 .active(true)
                 .build();
     }

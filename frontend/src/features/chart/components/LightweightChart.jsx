@@ -54,8 +54,8 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
     const hasPortfolioSizeData = useMemo(() =>
         isFund && data?.candles?.some(c => c.portfolioSize != null && Number(c.portfolioSize) > 0), [data, isFund]);
 
-    const { indicators, addIndicator, removeIndicator, updateIndicator, toggleIndicator } = useIndicators();
-    const { drawings, activeTool, addDrawing, removeDrawing, undoDrawing, clearDrawings, selectTool, cancelTool } = useDrawings();
+    const { indicators, addIndicator, removeIndicator, updateIndicator, toggleIndicator } = useIndicators(assetType, symbol);
+    const { drawings, activeTool, addDrawing, removeDrawing, undoDrawing, clearDrawings, selectTool, cancelTool } = useDrawings(assetType, symbol);
     const { fibTools, activeFibTool, addFibTool, removeFibTool, clearFibTools, selectFibTool, cancelFibTool } = useFibonacci();
 
     const filteredIndicators = useMemo(() => {

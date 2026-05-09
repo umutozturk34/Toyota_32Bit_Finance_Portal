@@ -1,5 +1,6 @@
 package com.finance.user.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +25,9 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class UserChartDrawingService {
+
+    private static final TypeReference<List<Map<String, Object>>> DRAWING_LIST_TYPE =
+            new TypeReference<>() {};
 
     private final UserChartDrawingRepository repository;
     private final TrackedAssetRepository trackedAssetRepository;
@@ -32,8 +37,8 @@ public class UserChartDrawingService {
     public UserChartDrawingResponse getOrDefault(String userSub, TrackedAssetType type, String code) {
         TrackedAsset tracked = resolveTracked(type, code);
         return repository.findByUserSubAndTrackedAsset_Id(userSub, tracked.getId())
-                .map(d -> new UserChartDrawingResponse(d.getDrawings(), d.getUpdatedAt()))
-                .orElseGet(() -> new UserChartDrawingResponse(JsonNodeFactory.instance.arrayNode(), Instant.now()));
+                .map(d -> new UserChartDrawingResponse(toList(d.getDrawings()), d.getUpdatedAt()))
+                .orElseGet(() -> new UserChartDrawingResponse(new ArrayList<>(), Instant.now()));
     }
 
     @Transactional
@@ -48,7 +53,12 @@ public class UserChartDrawingService {
         entity.setDrawings(node);
         UserChartDrawing saved = repository.save(entity);
         log.debug("Saved chart drawings userSub={} trackedAssetId={}", userSub, tracked.getId());
-        return new UserChartDrawingResponse(saved.getDrawings(), saved.getUpdatedAt());
+        return new UserChartDrawingResponse(toList(saved.getDrawings()), saved.getUpdatedAt());
+    }
+
+    private List<Map<String, Object>> toList(JsonNode node) {
+        if (node == null || node.isNull()) return new ArrayList<>();
+        return objectMapper.convertValue(node, DRAWING_LIST_TYPE);
     }
 
     private TrackedAsset resolveTracked(TrackedAssetType type, String code) {

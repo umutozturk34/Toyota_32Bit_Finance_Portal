@@ -1,5 +1,6 @@
 package com.finance.user.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -25,6 +26,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserChartPreferenceService {
 
+    private static final TypeReference<Map<String, Object>> CONFIG_MAP_TYPE =
+            new TypeReference<>() {};
+
     private final UserChartPreferenceRepository repository;
     private final TrackedAssetRepository trackedAssetRepository;
     private final ObjectMapper objectMapper;
@@ -34,7 +38,7 @@ public class UserChartPreferenceService {
     public UserChartPreferenceResponse getOrDefault(String userSub, TrackedAssetType type, String code) {
         TrackedAsset tracked = resolveTracked(type, code);
         return repository.findByUserSubAndTrackedAsset_Id(userSub, tracked.getId())
-                .map(p -> new UserChartPreferenceResponse(p.getConfig(), p.getUpdatedAt()))
+                .map(p -> new UserChartPreferenceResponse(toMap(p.getConfig()), p.getUpdatedAt()))
                 .orElseGet(() -> new UserChartPreferenceResponse(buildDefaults(type), Instant.now()));
     }
 
@@ -50,10 +54,15 @@ public class UserChartPreferenceService {
         entity.setConfig(node);
         UserChartPreference saved = repository.save(entity);
         log.debug("Saved chart preferences userSub={} trackedAssetId={}", userSub, tracked.getId());
-        return new UserChartPreferenceResponse(saved.getConfig(), saved.getUpdatedAt());
+        return new UserChartPreferenceResponse(toMap(saved.getConfig()), saved.getUpdatedAt());
     }
 
-    private JsonNode buildDefaults(TrackedAssetType type) {
+    private Map<String, Object> toMap(JsonNode node) {
+        if (node == null || node.isNull()) return new LinkedHashMap<>();
+        return objectMapper.convertValue(node, CONFIG_MAP_TYPE);
+    }
+
+    private Map<String, Object> buildDefaults(TrackedAssetType type) {
         boolean isFund = type == TrackedAssetType.FUND;
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("indicators", chartDefaults.defaults().indicators());
@@ -66,7 +75,7 @@ public class UserChartPreferenceService {
             map.put("showInvestorCount", chartDefaults.fund().showInvestorCount());
             map.put("showPortfolioSize", chartDefaults.fund().showPortfolioSize());
         }
-        return objectMapper.valueToTree(map);
+        return map;
     }
 
     private TrackedAsset resolveTracked(TrackedAssetType type, String code) {

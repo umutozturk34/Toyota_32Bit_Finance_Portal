@@ -1,6 +1,5 @@
 package com.finance.user.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -62,30 +61,29 @@ class UserChartPreferenceServiceTest {
 
         UserChartPreferenceResponse response = service.getOrDefault(USER, TYPE, CODE);
 
-        JsonNode config = response.config();
-        assertThat(config.get("chartType").asText()).isEqualTo("candle");
-        assertThat(config.get("showVolume").asBoolean()).isFalse();
-        assertThat(config.get("magnetMode").asText()).isEqualTo("off");
-        assertThat(config.get("iconSize").asInt()).isEqualTo(22);
-        assertThat(config.get("indicators")).hasSize(1);
-        assertThat(config.get("indicators").get(0).get("type").asText()).isEqualTo("SMA");
+        Map<String, Object> config = response.config();
+        assertThat(config).containsEntry("chartType", "candle")
+                .containsEntry("showVolume", false)
+                .containsEntry("magnetMode", "off")
+                .containsEntry("iconSize", 22);
+        assertThat(config.get("indicators")).asList().hasSize(1);
     }
 
     @Test
     void getOrDefault_returnsStoredConfig_whenRowExists() {
         TrackedAsset tracked = trackedAsset(42L);
-        ObjectNode config = JsonNodeFactory.instance.objectNode();
-        config.put("indicators", "SMA");
+        ObjectNode storedNode = JsonNodeFactory.instance.objectNode();
+        storedNode.put("indicators", "SMA");
         Instant updated = Instant.parse("2026-05-09T10:00:00Z");
         UserChartPreference entity = UserChartPreference.builder()
-                .userSub(USER).trackedAsset(tracked).config(config).updatedAt(updated).build();
+                .userSub(USER).trackedAsset(tracked).config(storedNode).updatedAt(updated).build();
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 42L)).thenReturn(Optional.of(entity));
 
         UserChartPreferenceResponse response = service.getOrDefault(USER, TYPE, CODE);
 
-        assertThat(response.config()).isSameAs(config);
+        assertThat(response.config()).containsEntry("indicators", "SMA");
         assertThat(response.updatedAt()).isEqualTo(updated);
     }
 
@@ -116,7 +114,7 @@ class UserChartPreferenceServiceTest {
         assertThat(saved.getUserSub()).isEqualTo(USER);
         assertThat(saved.getTrackedAsset()).isSameAs(tracked);
         assertThat(saved.getConfig().get("rsi").asBoolean()).isTrue();
-        assertThat(response.config().get("rsi").asBoolean()).isTrue();
+        assertThat(response.config()).containsEntry("rsi", true);
     }
 
     @Test
@@ -134,7 +132,7 @@ class UserChartPreferenceServiceTest {
         UserChartPreferenceResponse response = service.upsert(USER, TYPE, CODE, newConfig);
 
         assertThat(existing.getConfig().get("macd").asBoolean()).isTrue();
-        assertThat(response.config().get("macd").asBoolean()).isTrue();
+        assertThat(response.config()).containsEntry("macd", true);
     }
 
     @Test
@@ -147,8 +145,8 @@ class UserChartPreferenceServiceTest {
 
         UserChartPreferenceResponse response = service.upsert(USER, TYPE, CODE, null);
 
-        JsonNode storedConfig = response.config();
-        assertThat(storedConfig).isEqualTo(JsonNodeFactory.instance.objectNode());
+        Map<String, Object> storedConfig = response.config();
+        assertThat(storedConfig).isEmpty();
     }
 
     @Test

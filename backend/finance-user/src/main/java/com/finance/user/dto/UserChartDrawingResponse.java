@@ -1,7 +1,7 @@
 package com.finance.user.dto;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 
-public record UserChartDrawingResponse(JsonNode drawings, Instant updatedAt) {}
+public record UserChartDrawingResponse(List<Map<String, Object>> drawings, Instant updatedAt) {}

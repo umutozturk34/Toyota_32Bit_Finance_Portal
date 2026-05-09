@@ -1,6 +1,5 @@
 package com.finance.user.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -56,25 +55,26 @@ class UserChartDrawingServiceTest {
 
         UserChartDrawingResponse response = service.getOrDefault(USER, TYPE, CODE);
 
-        assertThat(response.drawings()).isEqualTo(JsonNodeFactory.instance.arrayNode());
+        assertThat(response.drawings()).isEmpty();
         assertThat(response.updatedAt()).isNotNull();
     }
 
     @Test
     void getOrDefault_returnsStoredDrawings_whenRowExists() {
         TrackedAsset tracked = trackedAsset(11L);
-        ArrayNode drawings = JsonNodeFactory.instance.arrayNode();
-        drawings.addObject().put("type", "trendline");
+        ArrayNode storedNode = JsonNodeFactory.instance.arrayNode();
+        storedNode.addObject().put("type", "trendline");
         Instant updated = Instant.parse("2026-05-09T11:00:00Z");
         UserChartDrawing entity = UserChartDrawing.builder()
-                .userSub(USER).trackedAsset(tracked).drawings(drawings).updatedAt(updated).build();
+                .userSub(USER).trackedAsset(tracked).drawings(storedNode).updatedAt(updated).build();
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 11L)).thenReturn(Optional.of(entity));
 
         UserChartDrawingResponse response = service.getOrDefault(USER, TYPE, CODE);
 
-        assertThat(response.drawings()).isSameAs(drawings);
+        assertThat(response.drawings()).hasSize(1);
+        assertThat(response.drawings().get(0)).containsEntry("type", "trendline");
         assertThat(response.updatedAt()).isEqualTo(updated);
     }
 
@@ -105,7 +105,7 @@ class UserChartDrawingServiceTest {
         assertThat(saved.getUserSub()).isEqualTo(USER);
         assertThat(saved.getTrackedAsset()).isSameAs(tracked);
         assertThat(saved.getDrawings().get(0).get("type").asText()).isEqualTo("fibonacci");
-        assertThat(response.drawings().get(0).get("type").asText()).isEqualTo("fibonacci");
+        assertThat(response.drawings().get(0)).containsEntry("type", "fibonacci");
     }
 
     @Test
@@ -123,7 +123,7 @@ class UserChartDrawingServiceTest {
         UserChartDrawingResponse response = service.upsert(USER, TYPE, CODE, newDrawings);
 
         assertThat(existing.getDrawings().get(0).get("type").asText()).isEqualTo("rectangle");
-        assertThat(response.drawings().get(0).get("type").asText()).isEqualTo("rectangle");
+        assertThat(response.drawings().get(0)).containsEntry("type", "rectangle");
     }
 
     @Test
@@ -136,8 +136,8 @@ class UserChartDrawingServiceTest {
 
         UserChartDrawingResponse response = service.upsert(USER, TYPE, CODE, null);
 
-        JsonNode storedDrawings = response.drawings();
-        assertThat(storedDrawings).isEqualTo(JsonNodeFactory.instance.arrayNode());
+        List<Map<String, Object>> storedDrawings = response.drawings();
+        assertThat(storedDrawings).isEmpty();
     }
 
     @Test

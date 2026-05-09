@@ -1,5 +1,6 @@
 package com.finance.notification.core.dispatch;
 
+import com.finance.common.security.UserStatusPort;
 import com.finance.notification.core.dispatch.email.UserEmailLookup;
 
 import com.finance.notification.core.mail.MailSender;
@@ -33,6 +34,7 @@ public class NotificationDispatcher {
     private final MailSender mailSender;
     private final NotificationStreamRegistry streamRegistry;
     private final NotificationMapper notificationMapper;
+    private final UserStatusPort userStatus;
     private final Map<NotificationType, NotificationHandler> handlers;
     private final org.springframework.context.ApplicationEventPublisher events;
 
@@ -43,6 +45,7 @@ public class NotificationDispatcher {
                                   MailSender mailSender,
                                   NotificationStreamRegistry streamRegistry,
                                   NotificationMapper notificationMapper,
+                                  UserStatusPort userStatus,
                                   List<NotificationHandler> handlerList,
                                   org.springframework.context.ApplicationEventPublisher events) {
         this.notificationRepository = notificationRepository;
@@ -52,6 +55,7 @@ public class NotificationDispatcher {
         this.mailSender = mailSender;
         this.streamRegistry = streamRegistry;
         this.notificationMapper = notificationMapper;
+        this.userStatus = userStatus;
         this.events = events;
         this.handlers = new EnumMap<>(NotificationType.class);
         for (NotificationHandler h : handlerList) {
@@ -64,6 +68,11 @@ public class NotificationDispatcher {
         NotificationHandler handler = handlers.get(request.type());
         if (handler == null) {
             log.warn("No handler registered for type={}; dropping dispatch for user={}", request.type(), request.userSub());
+            return;
+        }
+
+        if (!userStatus.isActive(request.userSub())) {
+            log.debug("Notification suppressed (user inactive) user={} type={}", request.userSub(), request.type());
             return;
         }
 

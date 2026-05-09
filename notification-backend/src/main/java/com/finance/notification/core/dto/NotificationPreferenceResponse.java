@@ -18,6 +18,10 @@ public record NotificationPreferenceResponse(
         boolean inappMarketClosed,
         boolean emailMarketDataUpdated,
         boolean inappMarketDataUpdated,
+        boolean emailNewsPublished,
+        boolean inappNewsPublished,
+        boolean emailPortfolioUpdated,
+        boolean inappPortfolioUpdated,
         String marketSessionMarkets
 ) {
 }

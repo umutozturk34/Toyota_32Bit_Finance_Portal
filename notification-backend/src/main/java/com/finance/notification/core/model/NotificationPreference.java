@@ -95,6 +95,18 @@ public class NotificationPreference {
     @Column(name = "inapp_market_data_updated", nullable = false)
     private boolean inappMarketDataUpdated;
 
+    @Column(name = "email_news_published", nullable = false)
+    private boolean emailNewsPublished;
+
+    @Column(name = "inapp_news_published", nullable = false)
+    private boolean inappNewsPublished;
+
+    @Column(name = "email_portfolio_updated", nullable = false)
+    private boolean emailPortfolioUpdated;
+
+    @Column(name = "inapp_portfolio_updated", nullable = false)
+    private boolean inappPortfolioUpdated;
+
     @Column(name = "market_session_markets", nullable = false, length = 96)
     private String marketSessionMarkets;
 
@@ -158,6 +170,10 @@ public class NotificationPreference {
                 .inappMarketClosed(true)
                 .emailMarketDataUpdated(false)
                 .inappMarketDataUpdated(false)
+                .emailNewsPublished(false)
+                .inappNewsPublished(true)
+                .emailPortfolioUpdated(false)
+                .inappPortfolioUpdated(true)
                 .marketSessionMarkets(defaultMarketSessionMarkets())
                 .build();
     }

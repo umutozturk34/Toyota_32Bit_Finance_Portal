@@ -6,7 +6,8 @@ import java.util.Map;
 
 public sealed interface NotificationPayload
         permits PriceAlertPayload, WatchlistDeltaPayload, MessagePayload, SystemPayload,
-                MarketOpenedPayload, MarketClosedPayload, MarketDataUpdatedPayload {
+                MarketOpenedPayload, MarketClosedPayload, MarketDataUpdatedPayload,
+                NewsPublishedPayload, PortfolioUpdatedPayload {
 
     NotificationType type();
 

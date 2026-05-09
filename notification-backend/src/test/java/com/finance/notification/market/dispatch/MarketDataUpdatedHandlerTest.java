@@ -3,13 +3,28 @@ package com.finance.notification.market.dispatch;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
 import com.finance.notification.core.dispatch.payload.MarketDataUpdatedPayload;
+import com.finance.notification.core.dispatch.slot.SlotProperties;
+import com.finance.notification.core.dispatch.slot.SlotResolver;
 import org.junit.jupiter.api.Test;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class MarketDataUpdatedHandlerTest {
 
-    private final MarketDataUpdatedHandler handler = new MarketDataUpdatedHandler();
+    private static SlotResolver newResolver() {
+        Map<String, List<String>> keywords = new LinkedHashMap<>();
+        keywords.put("sabah", List.of("morning", "sabah"));
+        keywords.put("öğlen", List.of("afternoon", "midday", "noon", "öğle", "ogle"));
+        keywords.put("akşam", List.of("evening", "aksam", "akşam"));
+        keywords.put("günlük", List.of("daily", "full"));
+        return new SlotResolver(new SlotProperties(keywords));
+    }
+
+    private final MarketDataUpdatedHandler handler = new MarketDataUpdatedHandler(newResolver());
 
     private NotificationRequest requestWithSource(String source) {
         return NotificationRequest.of("user-1", new MarketDataUpdatedPayload("STOCK", "Hisse", source));

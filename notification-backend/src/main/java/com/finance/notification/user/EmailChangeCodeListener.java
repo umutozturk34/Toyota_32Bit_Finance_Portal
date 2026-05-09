@@ -2,6 +2,7 @@ package com.finance.notification.user;
 
 import com.finance.common.event.EmailChangeCodeRequestedEvent;
 import com.finance.common.event.KafkaTopics;
+import com.finance.common.security.UserStatusPort;
 import com.finance.notification.core.mail.MailSender;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.extern.log4j.Log4j2;
@@ -21,11 +22,14 @@ public class EmailChangeCodeListener {
 
     private final MailSender mailSender;
     private final Cache<String, Boolean> processedEventIds;
+    private final UserStatusPort userStatus;
 
     public EmailChangeCodeListener(MailSender mailSender,
-                                   @Qualifier("processedEventIds") Cache<String, Boolean> processedEventIds) {
+                                   @Qualifier("processedEventIds") Cache<String, Boolean> processedEventIds,
+                                   UserStatusPort userStatus) {
         this.mailSender = mailSender;
         this.processedEventIds = processedEventIds;
+        this.userStatus = userStatus;
     }
 
     @KafkaListener(
@@ -35,6 +39,12 @@ public class EmailChangeCodeListener {
     public void onEmailChangeCode(EmailChangeCodeRequestedEvent event, Acknowledgment ack) {
         if (processedEventIds.getIfPresent(event.eventId()) != null) {
             log.debug("Duplicate email change event {} for {}, skip", event.eventId(), event.userSub());
+            ack.acknowledge();
+            return;
+        }
+        if (!userStatus.isActive(event.userSub())) {
+            log.info("Email change code suppressed (user inactive) user={}", event.userSub());
+            processedEventIds.put(event.eventId(), Boolean.TRUE);
             ack.acknowledge();
             return;
         }

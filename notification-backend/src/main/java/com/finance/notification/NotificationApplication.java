@@ -9,6 +9,7 @@ import com.finance.notification.config.NotificationDispatchProperties;
 import com.finance.notification.config.NotificationKafkaProperties;
 import com.finance.notification.config.NotificationStreamProperties;
 import com.finance.notification.config.WatchlistManagementProperties;
+import com.finance.notification.core.dispatch.slot.SlotProperties;
 import com.finance.notification.market.MarketHoursProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -27,7 +28,8 @@ import java.util.TimeZone;
         "com.finance.common.cache",
         "com.finance.common.config",
         "com.finance.common.exception",
-        "com.finance.common.filter.tier"
+        "com.finance.common.filter",
+        "com.finance.common.security"
 })
 @EntityScan(basePackages = {
         "com.finance.notification",
@@ -47,6 +49,7 @@ import java.util.TimeZone;
         NotificationDispatchProperties.class,
         NotificationKafkaProperties.class,
         NotificationStreamProperties.class,
+        SlotProperties.class,
         WatchlistManagementProperties.class
 })
 @EnableAsync

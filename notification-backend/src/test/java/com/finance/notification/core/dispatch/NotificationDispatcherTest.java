@@ -58,6 +58,9 @@ class NotificationDispatcherTest {
     private com.finance.notification.core.mapper.NotificationMapper notificationMapper;
 
     @Mock
+    private com.finance.common.security.UserStatusPort userStatus;
+
+    @Mock
     private ApplicationEventPublisher events;
 
     private NotificationDispatcher dispatcher;
@@ -89,15 +92,16 @@ class NotificationDispatcherTest {
         dispatcher = new NotificationDispatcher(
                 notificationRepository, preferenceRepository,
                 userPreferenceCacheService, userEmailLookup, mailSender,
-                streamRegistry, notificationMapper,
+                streamRegistry, notificationMapper, userStatus,
                 List.of(systemHandler), events);
+        org.mockito.Mockito.lenient().when(userStatus.isActive(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
     }
 
     @Test
     void dispatch_dropsWhenHandlerMissing() {
         dispatcher.dispatch(NotificationRequest.of("u", priceAlertPayload()));
 
-        verify(notificationRepository, never()).save(any());
+        verify(notificationRepository, never()).saveAndFlush(any());
         verify(events, never()).publishEvent(any());
     }
 
@@ -107,13 +111,13 @@ class NotificationDispatcherTest {
         prefs.setInappSystem(true);
         prefs.setEmailSystem(false);
         when(preferenceRepository.findById("u")).thenReturn(Optional.of(prefs));
-        when(notificationRepository.save(any(Notification.class)))
+        when(notificationRepository.saveAndFlush(any(Notification.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         dispatcher.dispatch(NotificationRequest.of("u", systemPayload()));
 
         ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
-        verify(notificationRepository).save(captor.capture());
+        verify(notificationRepository).saveAndFlush(captor.capture());
         assertThat(captor.getValue().getTitle()).isEqualTo("Title");
         assertThat(captor.getValue().getMetadata()).containsEntry("title", "title");
         verify(events, never()).publishEvent(any());
@@ -130,7 +134,7 @@ class NotificationDispatcherTest {
 
         dispatcher.dispatch(NotificationRequest.of("u", systemPayload()));
 
-        verify(notificationRepository, never()).save(any());
+        verify(notificationRepository, never()).saveAndFlush(any());
         verify(events).publishEvent(any(NotificationDispatcher.EmailEnqueuedEvent.class));
     }
 
@@ -182,12 +186,12 @@ class NotificationDispatcherTest {
     @Test
     void dispatch_usesDefaultPreferencesWhenAbsent() {
         when(preferenceRepository.findById("u")).thenReturn(Optional.empty());
-        when(notificationRepository.save(any(Notification.class)))
+        when(notificationRepository.saveAndFlush(any(Notification.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         dispatcher.dispatch(NotificationRequest.of("u", systemPayload()));
 
-        verify(notificationRepository).save(any());
+        verify(notificationRepository).saveAndFlush(any());
     }
 
     @Test

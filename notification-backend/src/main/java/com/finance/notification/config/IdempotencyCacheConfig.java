@@ -31,4 +31,20 @@ public class IdempotencyCacheConfig {
                 .maximumSize(properties.dedupMaxEntries())
                 .build();
     }
+
+    @Bean("newsPublishedProcessedEventIds")
+    public Cache<String, Boolean> newsPublishedProcessedEventIds() {
+        return Caffeine.newBuilder()
+                .expireAfterWrite(EVENT_DEDUP_TTL)
+                .maximumSize(properties.dedupMaxEntries())
+                .build();
+    }
+
+    @Bean("portfolioUpdatedProcessedEventIds")
+    public Cache<String, Boolean> portfolioUpdatedProcessedEventIds() {
+        return Caffeine.newBuilder()
+                .expireAfterWrite(EVENT_DEDUP_TTL)
+                .maximumSize(properties.dedupMaxEntries())
+                .build();
+    }
 }

@@ -10,3 +10,7 @@ keycloak:
   realm: ${KEYCLOAK_REALM:finance-realm}
   admin-user: ${KEYCLOAK_ADMIN_USER:admin}
   admin-password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+  user-status:
+    cache-ttl-seconds: 15
+    cache-max-size: 2000
+    admin-role: ADMIN

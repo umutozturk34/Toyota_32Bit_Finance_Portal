@@ -3,6 +3,7 @@ package com.finance.notification.messaging.service;
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.common.security.UserStatusPort;
 import com.finance.notification.core.dispatch.email.KeycloakUserEmailLookup;
 import com.finance.notification.core.dispatch.email.KeycloakUserProfile;
 import com.finance.notification.messaging.dispatch.AdminInboxEvent;
@@ -48,6 +49,7 @@ public class MessageService {
     private final ApplicationEventPublisher events;
     private final KeycloakUserEmailLookup userDirectory;
     private final ActiveConversationRegistry presence;
+    private final UserStatusPort userStatus;
 
     @Transactional
     public MessageResponse sendUserToAdmin(String senderSub, String body) {
@@ -75,6 +77,13 @@ public class MessageService {
         if (recipientSub == null || recipientSub.isBlank()) {
             throw new BusinessException("recipientSub cannot be blank for admin-to-user message");
         }
+        if (adminSub.equals(recipientSub)) {
+            throw new BusinessException("Cannot message yourself");
+        }
+        if (!userStatus.isActive(recipientSub)) {
+            throw new BusinessException("Cannot send message to a disabled user");
+        }
+        rejectIfCoolingDown(adminSub);
         rejectDuplicate(adminSub, body);
         boolean userViewing = presence.getActiveKey(recipientSub)
                 .map(ADMIN_THREAD_KEY::equals)

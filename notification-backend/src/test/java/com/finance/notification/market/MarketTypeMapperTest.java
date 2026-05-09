@@ -19,9 +19,8 @@ class MarketTypeMapperTest {
     }
 
     @Test
-    void should_mapBondAndNews_when_recentlyAddedTypesPassed() {
+    void should_mapBond_when_marketTypeIsBond() {
         assertThat(MarketTypeMapper.fromMarketType(MarketType.BOND)).contains(SessionMarket.BOND);
-        assertThat(MarketTypeMapper.fromMarketType(MarketType.NEWS)).contains(SessionMarket.NEWS);
     }
 
     @Test

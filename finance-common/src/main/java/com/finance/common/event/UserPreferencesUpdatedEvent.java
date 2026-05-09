@@ -12,5 +12,15 @@ public record UserPreferencesUpdatedEvent(
         String defaultChartRange,
         String reportFrequency,
         Boolean onboardingCompleted
-) {
+) implements DomainEvent {
+
+    @Override
+    public String topic() {
+        return KafkaTopics.USER_PREFERENCES_UPDATED;
+    }
+
+    @Override
+    public String partitionKey() {
+        return userSub;
+    }
 }

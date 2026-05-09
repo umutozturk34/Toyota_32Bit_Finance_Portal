@@ -1,9 +1,10 @@
 package com.finance.market.bond.scheduler;
 
 import com.finance.market.bond.service.BondDataService;
-import com.finance.common.event.MarketUpdateEventPort;
+import com.finance.shared.event.EventPublisherPort;
+import com.finance.common.event.MarketUpdatedEvent;
 import com.finance.common.model.MarketType;
-import com.finance.common.service.TaskTrackingService;
+import com.finance.shared.service.TaskTrackingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.ObjectProvider;
@@ -19,7 +20,7 @@ public class BondScheduler {
 
     private final BondDataService bondDataService;
     private final TaskTrackingService taskTracker;
-    private final ObjectProvider<MarketUpdateEventPort> marketEvents;
+    private final ObjectProvider<EventPublisherPort> events;
 
     @Scheduled(cron = "${app.scheduler.bond.daily-cron}", zone = "${app.timezone}")
     public void runDailyBondUpdate() {
@@ -27,7 +28,7 @@ public class BondScheduler {
                 "Scheduled daily bond update (snapshot + rate history)",
                 () -> {
                     bondDataService.updateBonds();
-                    marketEvents.ifAvailable(port -> port.publishMarketUpdated(MarketType.BOND, DAILY_TASK_TYPE));
+                    events.ifAvailable(port -> port.publish(MarketUpdatedEvent.of(MarketType.BOND, DAILY_TASK_TYPE)));
                 });
     }
 }

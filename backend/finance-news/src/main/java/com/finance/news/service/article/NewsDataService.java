@@ -9,8 +9,8 @@ import com.finance.news.service.article.NewsDataService;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ExternalApiException;
 import com.finance.news.model.NewsSource;
-import com.finance.common.util.BatchLogHelper;
-import com.finance.common.util.BatchUpdateRunner;
+import com.finance.shared.util.BatchLogHelper;
+import com.finance.shared.util.BatchUpdateRunner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -26,7 +26,7 @@ public class NewsDataService {
     private final NewsSourceProcessingService newsSourceProcessingService;
     private final NewsSourceService newsSourceService;
 
-    public void updateNews() {
+    public int updateNews() {
         List<NewsSource> sources = newsSourceService.getEnabledSources();
         log.info("Starting news update from {} sources", sources.size());
 
@@ -74,5 +74,7 @@ public class NewsDataService {
                 result,
                 "new articles",
                 totalSaved[0]);
+
+        return totalSaved[0];
     }
 }

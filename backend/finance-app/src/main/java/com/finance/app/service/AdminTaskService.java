@@ -1,27 +1,28 @@
 package com.finance.app.service;
 import com.finance.market.forex.service.TcmbForexService;
 
-import com.finance.common.service.TaskTrackingService;
+import com.finance.shared.service.TaskTrackingService;
 
 import com.finance.news.service.article.NewsDataService;
 
 import com.finance.market.core.service.MarketUpdatePort;
-import com.finance.common.event.MarketUpdateEventPort;
+import com.finance.shared.event.EventPublisherPort;
+import com.finance.common.event.MarketUpdatedEvent;
 
 import com.finance.market.bond.service.BondDataService;
 
 import com.finance.market.bond.model.Bond;
 
-import com.finance.common.service.PortfolioSnapshotPort;
+import com.finance.shared.service.PortfolioSnapshotPort;
 
 import com.finance.portfolio.model.Portfolio;
 
 import com.finance.market.core.service.MarketRefresher;
 
 
-import com.finance.common.dto.response.TaskTriggerResponse;
+import com.finance.shared.dto.response.TaskTriggerResponse;
 import com.finance.common.model.MarketType;
-import com.finance.common.util.EnumDispatcher;
+import com.finance.shared.util.EnumDispatcher;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -42,7 +43,7 @@ public class AdminTaskService {
     private final Executor taskExecutor;
     private final Optional<PortfolioSnapshotPort> portfolioSnapshotPort;
     private final Optional<MarketUpdatePort> marketUpdatePort;
-    private final Optional<MarketUpdateEventPort> marketUpdateEventPort;
+    private final Optional<EventPublisherPort> eventPublisher;
 
     public AdminTaskService(List<MarketRefresher> refreshers,
                             TcmbForexService tcmbForexService,
@@ -52,7 +53,7 @@ public class AdminTaskService {
                             Executor taskExecutor,
                             Optional<PortfolioSnapshotPort> portfolioSnapshotPort,
                             Optional<MarketUpdatePort> marketUpdatePort,
-                            Optional<MarketUpdateEventPort> marketUpdateEventPort) {
+                            Optional<EventPublisherPort> eventPublisher) {
         this.refreshers = EnumDispatcher.from(MarketType.class, refreshers, MarketRefresher::getMarketType);
         this.tcmbForexService = tcmbForexService;
         this.bondDataService = bondDataService;
@@ -61,7 +62,7 @@ public class AdminTaskService {
         this.taskExecutor = taskExecutor;
         this.portfolioSnapshotPort = portfolioSnapshotPort;
         this.marketUpdatePort = marketUpdatePort;
-        this.marketUpdateEventPort = marketUpdateEventPort;
+        this.eventPublisher = eventPublisher;
     }
 
     public TaskTriggerResponse triggerSnapshot(MarketType type) {
@@ -100,9 +101,9 @@ public class AdminTaskService {
     }
 
     private void publishMarketEvent(MarketType type) {
-        marketUpdateEventPort.ifPresent(port -> {
+        eventPublisher.ifPresent(port -> {
             try {
-                port.publishMarketUpdated(type, "admin");
+                port.publish(MarketUpdatedEvent.of(type, "admin"));
             } catch (Exception e) {
                 log.warn("Market event publish failed for {}: {}", type, e.getMessage());
             }

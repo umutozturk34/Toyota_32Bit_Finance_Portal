@@ -6,8 +6,7 @@ public enum MarketType {
     FOREX("Döviz", "forex", "currencyCode", "sellingPrice", "currentPrice"),
     FUND("Fon", "fund", "fundCode", "price", null),
     COMMODITY("Emtia", "commodity", "commodityCode", "currentPrice", null),
-    BOND("Tahvil", "bond", "code", "currentPrice", null),
-    NEWS("Haber", "news", "id", null, null);
+    BOND("Tahvil", "bond", "code", "currentPrice", null);
 
     private final String displayLabel;
     private final String redisLabel;

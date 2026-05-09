@@ -1,5 +1,9 @@
 package com.finance.portfolio.service;
-import com.finance.common.service.PortfolioSnapshotPort;
+import com.finance.shared.event.EventPublisherPort;
+import com.finance.common.event.PortfolioUpdatedEvent;
+import com.finance.shared.service.PortfolioSnapshotPort;
+import com.finance.portfolio.model.PortfolioDailySnapshot;
+import org.springframework.beans.factory.ObjectProvider;
 
 import com.finance.portfolio.repository.PortfolioRepository;
 
@@ -26,8 +30,8 @@ import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import com.finance.portfolio.repository.PortfolioRepository;
-import com.finance.common.util.BatchLogHelper;
-import com.finance.common.util.BatchUpdateRunner;
+import com.finance.shared.util.BatchLogHelper;
+import com.finance.shared.util.BatchUpdateRunner;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -49,6 +53,7 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     private final PortfolioDailySnapshotRepository dailySnapshotRepository;
     private final TransactionTemplate transactionTemplate;
+    private final ObjectProvider<EventPublisherPort> events;
 
     @Override
     public void onMarketUpdate(MarketType marketType) {
@@ -82,12 +87,24 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
                 portfolios,
-                portfolio -> transactionTemplate.executeWithoutResult(status -> {
-                    if (dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(portfolio.getId(), today)) {
-                        return;
+                portfolio -> {
+                    PortfolioDailySnapshot saved = transactionTemplate.execute(status -> {
+                        if (dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(portfolio.getId(), today)) {
+                            return null;
+                        }
+                        return generateFullSnapshot(portfolio);
+                    });
+                    if (saved != null) {
+                        events.ifAvailable(port -> port.publish(PortfolioUpdatedEvent.of(
+                                portfolio.getUserSub(),
+                                portfolio.getId(),
+                                saved.getId(),
+                                saved.getTotalValueTry(),
+                                saved.getDailyPnlTry(),
+                                saved.getPnlPercent()
+                        )));
                     }
-                    generateFullSnapshot(portfolio);
-                }),
+                },
                 p -> String.valueOf(p.getId()),
                 "daily-snapshot",
                 1, null, null, null
@@ -108,11 +125,11 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
         }
     }
 
-    private void insertAggregateSnapshot(Portfolio portfolio, LocalDateTime batchTimestamp) {
-        dailySnapshotRepository.save(calculator.buildAggregateSnapshot(portfolio, batchTimestamp));
+    private PortfolioDailySnapshot insertAggregateSnapshot(Portfolio portfolio, LocalDateTime batchTimestamp) {
+        return dailySnapshotRepository.save(calculator.buildAggregateSnapshot(portfolio, batchTimestamp));
     }
 
-    private void generateFullSnapshot(Portfolio portfolio) {
+    private PortfolioDailySnapshot generateFullSnapshot(Portfolio portfolio) {
         Long pid = portfolio.getId();
         LocalDateTime batchTimestamp = LocalDateTime.now();
         List<PortfolioPosition> positions = positionRepository
@@ -122,6 +139,6 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
             assetSnapshotRepository.save(calculator.buildAssetSnapshot(pid, pos, batchTimestamp));
         }
 
-        insertAggregateSnapshot(portfolio, batchTimestamp);
+        return insertAggregateSnapshot(portfolio, batchTimestamp);
     }
 }

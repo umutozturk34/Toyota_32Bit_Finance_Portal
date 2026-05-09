@@ -1,14 +1,16 @@
 package com.finance.news.scheduler;
 
-import com.finance.common.event.MarketUpdateEventPort;
-import com.finance.common.model.MarketType;
-import com.finance.common.service.TaskTrackingService;
+import com.finance.shared.event.EventPublisherPort;
+import com.finance.common.event.NewsPublishedEvent;
+import com.finance.shared.service.TaskTrackingService;
 import com.finance.news.service.article.NewsDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Log4j2
 @Component
@@ -17,7 +19,7 @@ public class NewsScheduler {
 
     private final NewsDataService newsDataService;
     private final TaskTrackingService taskTracker;
-    private final ObjectProvider<MarketUpdateEventPort> marketEvents;
+    private final ObjectProvider<EventPublisherPort> events;
 
     @Scheduled(cron = "${app.scheduler.news.morning-cron}", zone = "${app.timezone}")
     public void runMorningNewsUpdate() {
@@ -36,8 +38,11 @@ public class NewsScheduler {
 
     private void executeUpdate(String taskType, String description) {
         taskTracker.runTracked(taskType, description, () -> {
-            newsDataService.updateNews();
-            marketEvents.ifAvailable(port -> port.publishMarketUpdated(MarketType.NEWS, taskType));
+            int saved = newsDataService.updateNews();
+            if (saved > 0) {
+                events.ifAvailable(port ->
+                        port.publish(NewsPublishedEvent.of(saved, List.of(), List.of(), taskType)));
+            }
         });
     }
 }

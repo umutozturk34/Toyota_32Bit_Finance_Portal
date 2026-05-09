@@ -10,7 +10,8 @@ public record MarketUpdatedEvent(
         MarketType marketType,
         OffsetDateTime occurredAt,
         String source
-) {
+) implements DomainEvent {
+
     public static MarketUpdatedEvent of(MarketType marketType, String source) {
         return new MarketUpdatedEvent(
                 UUID.randomUUID().toString(),
@@ -18,5 +19,15 @@ public record MarketUpdatedEvent(
                 OffsetDateTime.now(),
                 source
         );
+    }
+
+    @Override
+    public String topic() {
+        return KafkaTopics.MARKET_UPDATED;
+    }
+
+    @Override
+    public String partitionKey() {
+        return marketType.name();
     }
 }

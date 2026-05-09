@@ -2,7 +2,7 @@ package com.finance.user.service;
 
 import com.finance.user.dto.UserPreferenceResponse;
 import com.finance.user.dto.UserPreferenceUpdateRequest;
-import com.finance.common.event.UserPreferenceEventPort;
+import com.finance.shared.event.EventPublisherPort;
 import com.finance.common.event.UserPreferencesUpdatedEvent;
 import com.finance.user.mapper.UserPreferenceMapper;
 import com.finance.user.model.UserPreference;
@@ -25,7 +25,7 @@ public class UserPreferenceService {
     private final UserPreferenceRepository repository;
     private final UserPreferenceMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
-    private final Optional<UserPreferenceEventPort> kafkaPort;
+    private final Optional<EventPublisherPort> kafkaPort;
 
     @Transactional(readOnly = true)
     public UserPreferenceResponse getOrDefault(String userSub) {
@@ -46,7 +46,7 @@ public class UserPreferenceService {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     void onUserPreferencesCommitted(UserPreferencesUpdatedEvent event) {
-        kafkaPort.ifPresent(port -> port.publishUserPreferencesUpdated(event));
+        kafkaPort.ifPresent(port -> port.publish(event));
     }
 
     private void applyUpdates(UserPreference entity, UserPreferenceUpdateRequest request) {

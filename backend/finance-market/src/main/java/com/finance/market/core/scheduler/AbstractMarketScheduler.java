@@ -1,7 +1,8 @@
 package com.finance.market.core.scheduler;
 
+import com.finance.common.event.MarketUpdatedEvent;
 import com.finance.common.model.MarketType;
-import com.finance.common.service.TaskTrackingService;
+import com.finance.shared.service.TaskTrackingService;
 
 public abstract class AbstractMarketScheduler {
 
@@ -22,7 +23,7 @@ public abstract class AbstractMarketScheduler {
             runRefresh();
             ports.portfolio().ifPresent(port -> port.onMarketUpdate(marketType()));
             ports.market().ifPresent(port -> port.onMarketDataUpdated(marketType()));
-            ports.events().ifPresent(port -> port.publishMarketUpdated(marketType(), taskType));
+            ports.events().ifPresent(port -> port.publish(MarketUpdatedEvent.of(marketType(), taskType)));
         });
     }
 }

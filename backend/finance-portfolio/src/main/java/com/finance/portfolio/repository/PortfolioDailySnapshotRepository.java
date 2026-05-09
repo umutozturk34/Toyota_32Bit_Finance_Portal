@@ -1,6 +1,4 @@
 package com.finance.portfolio.repository;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.finance.portfolio.model.PortfolioDailySnapshot;
 import org.springframework.data.jpa.repository.JpaRepository;

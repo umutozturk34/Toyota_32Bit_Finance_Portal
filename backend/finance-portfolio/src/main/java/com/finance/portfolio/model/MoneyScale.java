@@ -1,6 +1,4 @@
 package com.finance.portfolio.model;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 public final class MoneyScale {
 

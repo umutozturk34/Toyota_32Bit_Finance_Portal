@@ -2,8 +2,6 @@ package com.finance.portfolio.model;
 import com.finance.portfolio.model.AssetType;
 
 import com.finance.common.model.TrackedAsset;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.finance.common.model.TrackedAsset;
 import jakarta.persistence.*;

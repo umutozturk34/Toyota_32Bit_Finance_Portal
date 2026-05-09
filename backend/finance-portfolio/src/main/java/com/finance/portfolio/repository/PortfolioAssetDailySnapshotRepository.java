@@ -1,7 +1,5 @@
 package com.finance.portfolio.repository;
 import com.finance.common.model.TrackedAssetType;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.finance.common.model.TrackedAssetType;
 import com.finance.portfolio.model.AssetType;
@@ -47,6 +45,22 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
 
     List<PortfolioAssetDailySnapshot> findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(
             Long portfolioId, LocalDateTime start, LocalDateTime end);
+
+    @Query("""
+            SELECT new com.finance.portfolio.dto.internal.PortfolioAggregateRow(
+                s.createdAt,
+                SUM(s.marketValueTry),
+                SUM(s.totalCostTry),
+                SUM(s.pnlTry))
+            FROM PortfolioAssetDailySnapshot s
+            WHERE s.portfolioId = :pid AND s.createdAt BETWEEN :start AND :end
+            GROUP BY s.createdAt
+            ORDER BY s.createdAt ASC
+            """)
+    List<com.finance.portfolio.dto.internal.PortfolioAggregateRow> findAggregateByPortfolio(
+            @Param("pid") Long portfolioId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
 
     List<PortfolioAssetDailySnapshot> findByPortfolioIdAndTrackedAsset_AssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
             Long portfolioId, TrackedAssetType assetType, LocalDateTime start, LocalDateTime end);

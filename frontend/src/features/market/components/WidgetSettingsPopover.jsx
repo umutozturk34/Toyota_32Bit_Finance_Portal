@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { X, Search, Layers, Newspaper, Bookmark, GripVertical, Check } from 'lucide-react';
 import {

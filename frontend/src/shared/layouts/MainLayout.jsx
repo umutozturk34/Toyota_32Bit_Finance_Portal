@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Outlet, Link, useLocation, useNavigationType } from 'react-router-dom';
 import { useAuth } from '../../features/auth/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -235,7 +236,7 @@ const MainLayout = () => {
       >
         <SidebarContent />
       </aside>
-      <div className={`hidden lg:block shrink-0 ${sidebarW} transition-all duration-200`} />
+      <div className="hidden lg:block shrink-0 w-16" />
 
       <div
         className="lg:hidden fixed top-0 left-0 right-0 z-40 h-12 flex items-center justify-between px-3 border-b border-border-default"

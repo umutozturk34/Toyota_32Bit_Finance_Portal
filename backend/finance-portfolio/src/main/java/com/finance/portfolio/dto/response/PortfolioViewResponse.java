@@ -7,8 +7,6 @@ import com.finance.common.dto.response.PagedResponse;
 
 import com.finance.portfolio.dto.response.AllocationItem;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 import com.finance.common.dto.response.PagedResponse;
 
 import java.util.List;

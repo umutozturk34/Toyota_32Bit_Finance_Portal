@@ -1,6 +1,4 @@
 package com.finance.portfolio.dto.request;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

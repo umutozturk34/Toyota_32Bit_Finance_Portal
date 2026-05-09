@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import GridLayout, { useContainerWidth } from 'react-grid-layout';
+import GridLayout, { useContainerWidth, verticalCompactor } from 'react-grid-layout';
 import OverviewWidgetCard from './OverviewWidgetCard';
 import { useWidgetDefinitions } from '../../../shared/hooks/useWidgetDefinitions';
 import 'react-grid-layout/css/styles.css';
@@ -57,7 +57,7 @@ export default function OverviewWidgetCanvas({
   const { containerRef, width } = useContainerWidth();
   const dropDataRef = useRef(null);
   const [mountedCount, setMountedCount] = useState(0);
-  const { byKind } = useWidgetDefinitions();
+  const { byKind, limits } = useWidgetDefinitions();
 
   useEffect(() => {
     if (mountedCount >= sections.length) return;
@@ -144,11 +144,12 @@ export default function OverviewWidgetCanvas({
           layout={layout}
           width={width}
           gridConfig={GRID_CONFIG}
+          maxRows={limits?.maxLayoutRows || undefined}
           dragConfig={dragConfig}
           resizeConfig={resizeConfig}
           dropConfig={dropConfig}
           droppingItem={droppingItem}
-          compactor={null}
+          compactor={verticalCompactor}
           onDragStop={persistChange}
           onResizeStop={persistChange}
           onDrop={handleDrop}

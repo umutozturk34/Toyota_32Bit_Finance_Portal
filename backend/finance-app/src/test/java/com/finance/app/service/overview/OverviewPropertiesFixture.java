@@ -13,7 +13,7 @@ final class OverviewPropertiesFixture {
 
     static OverviewProperties standard() {
         return new OverviewProperties(
-                new OverviewProperties.Limits(12, 4, 200),
+                new OverviewProperties.Limits(12, 4, 200, 60),
                 new OverviewProperties.Defaults(
                         10, 10, 200,
                         List.of(

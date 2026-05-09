@@ -5,8 +5,6 @@ import com.finance.portfolio.model.AssetType;
 
 import com.finance.market.core.service.MarketSnapshotProcessor;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

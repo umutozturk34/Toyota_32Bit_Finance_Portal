@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { Layers, TrendingUp, Bookmark, Newspaper, Check, Plus, ChevronRight } from 'lucide-react';
 import { useWidgetDefinitions } from '../../../shared/hooks/useWidgetDefinitions';
@@ -206,10 +207,10 @@ function Dropdown({ rowIndex, children }) {
   const top = rowIndex * (tabHeight + gap);
   return (
     <motion.div
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -8 }}
-      transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.12, ease: 'easeOut' }}
       style={{ top }}
       className="absolute left-full ml-2 z-50 min-w-[280px] max-w-[420px] rounded-xl border border-accent/30 bg-bg-deep/95 backdrop-blur-md shadow-2xl shadow-black/40 p-2 space-y-2"
     >

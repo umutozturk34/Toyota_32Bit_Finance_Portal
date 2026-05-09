@@ -47,10 +47,13 @@ public class OverviewWidgetSizeSanitizer implements OverviewSaveSanitizer {
         OverviewProperties.WidgetSettings settings = properties.settingsFor(kind);
         Object w = mutable.get("w");
         Object h = mutable.get("h");
-        if (w instanceof Number wn) mutable.put("w", settings.clampW(wn.intValue()));
-        else mutable.put("w", settings.defaults().w());
-        if (h instanceof Number hn) mutable.put("h", settings.clampH(hn.intValue()));
-        else mutable.put("h", settings.defaults().h());
+        int clampedW = w instanceof Number wn ? settings.clampW(wn.intValue()) : settings.defaults().w();
+        int clampedH = h instanceof Number hn ? settings.clampH(hn.intValue()) : settings.defaults().h();
+        mutable.put("w", clampedW);
+        mutable.put("h", clampedH);
+        Object y = mutable.get("y");
+        int maxY = Math.max(0, properties.limits().maxLayoutRows() - clampedH);
+        if (y instanceof Number yn) mutable.put("y", Math.max(0, Math.min(maxY, yn.intValue())));
         return mutable;
     }
 

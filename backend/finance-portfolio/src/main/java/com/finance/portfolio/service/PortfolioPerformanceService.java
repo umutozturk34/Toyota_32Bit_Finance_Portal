@@ -2,6 +2,7 @@ package com.finance.portfolio.service;
 import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
+import com.finance.portfolio.dto.internal.PortfolioAggregateRow;
 import com.finance.portfolio.dto.response.AssetSeriesPoint;
 import com.finance.portfolio.dto.response.PerformanceAssetDetail;
 import com.finance.portfolio.dto.response.PerformanceEvent;
@@ -11,11 +12,9 @@ import com.finance.portfolio.model.AssetType;
 import com.finance.common.model.CandlePeriod;
 import com.finance.portfolio.model.PerformanceEventType;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
-import com.finance.portfolio.model.PortfolioDailySnapshot;
 import com.finance.portfolio.model.PortfolioPosition;
 import com.finance.portfolio.model.MoneyScale;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
-import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
@@ -44,7 +43,6 @@ import java.util.stream.Collectors;
 public class PortfolioPerformanceService {
 
 
-    private final PortfolioDailySnapshotRepository dailySnapshotRepository;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     private final PortfolioPositionRepository positionRepository;
     private final TrackedAssetRepository trackedAssetRepository;
@@ -80,8 +78,8 @@ public class PortfolioPerformanceService {
 
     private List<PerformancePoint> getAggregatePerformance(Long portfolioId,
                                                             LocalDateTime start, LocalDateTime end) {
-        List<PortfolioDailySnapshot> snapshots = dailySnapshotRepository
-                .findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(portfolioId, start, end);
+        List<PortfolioAggregateRow> aggregates = assetSnapshotRepository
+                .findAggregateByPortfolio(portfolioId, start, end);
         List<PortfolioAssetDailySnapshot> assetSnapshots = assetSnapshotRepository
                 .findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(portfolioId, start, end);
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
@@ -94,16 +92,16 @@ public class PortfolioPerformanceService {
         Map<String, BigDecimal> prevTypeValues = null;
         LocalDateTime prevTime = start;
 
-        for (PortfolioDailySnapshot snap : snapshots) {
-            List<PortfolioAssetDailySnapshot> assets = assetsByTimestamp.getOrDefault(snap.getCreatedAt(), List.of());
+        for (PortfolioAggregateRow agg : aggregates) {
+            List<PortfolioAssetDailySnapshot> assets = assetsByTimestamp.getOrDefault(agg.createdAt(), List.of());
             Map<String, BigDecimal> currTypeValues = new LinkedHashMap<>();
             List<PerformanceAssetDetail> details = aggregateByType(assets, currTypeValues);
-            List<PerformanceEvent> events = buildEvents(positions, prevTime, snap.getCreatedAt(),
+            List<PerformanceEvent> events = buildEvents(positions, prevTime, agg.createdAt(),
                     prevTypeValues, currTypeValues, true);
-            result.add(new PerformancePoint(snap.getCreatedAt(), snap.getTotalValueTry(),
-                    snap.getTotalPnlTry(), snap.getPnlPercent(), details, events));
+            result.add(new PerformancePoint(agg.createdAt(), agg.totalValueTry(),
+                    agg.totalPnlTry(), agg.pnlPercent(), details, events));
             prevTypeValues = currTypeValues;
-            prevTime = snap.getCreatedAt();
+            prevTime = agg.createdAt();
         }
         return result;
     }

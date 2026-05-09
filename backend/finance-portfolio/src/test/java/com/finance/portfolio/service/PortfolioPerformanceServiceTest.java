@@ -3,10 +3,9 @@ import com.finance.market.core.service.MarketSnapshotProcessor;
 
 import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 import com.finance.common.repository.TrackedAssetRepository;
 
+import com.finance.portfolio.dto.internal.PortfolioAggregateRow;
 import com.finance.portfolio.dto.response.AssetSeriesPoint;
 import com.finance.portfolio.dto.response.PerformanceEvent;
 import com.finance.portfolio.dto.response.PerformancePoint;
@@ -14,10 +13,8 @@ import com.finance.portfolio.mapper.PortfolioSnapshotMapper;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.PerformanceEventType;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
-import com.finance.portfolio.model.PortfolioDailySnapshot;
 import com.finance.portfolio.model.PortfolioPosition;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
-import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +36,6 @@ class PortfolioPerformanceServiceTest {
 
     private static final Long PORTFOLIO_ID = 1L;
 
-    @Mock private PortfolioDailySnapshotRepository dailySnapshotRepository;
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     @Mock private PortfolioPositionRepository positionRepository;
     @Mock private TrackedAssetRepository trackedAssetRepository;
@@ -50,21 +46,21 @@ class PortfolioPerformanceServiceTest {
     @BeforeEach
     void setUp() {
         service = new PortfolioPerformanceService(
-                dailySnapshotRepository, assetSnapshotRepository, positionRepository,
+                assetSnapshotRepository, positionRepository,
                 trackedAssetRepository, snapshotMapper);
     }
 
     @Test
     void shouldReturnAggregatePerformancePointsWithDetails_whenNoAssetTypeFilter() {
         LocalDateTime t = LocalDateTime.of(2026, 4, 10, 23, 0);
-        PortfolioDailySnapshot daily = dailySnapshot(t,
-                new BigDecimal("3000"), new BigDecimal("100"), new BigDecimal("3.5000"));
+        PortfolioAggregateRow agg = aggregate(t,
+                new BigDecimal("3000"), new BigDecimal("2900"), new BigDecimal("100"));
         PortfolioAssetDailySnapshot stockSnap = assetSnap(t, AssetType.STOCK, "THYAO.IS",
                 new BigDecimal("2000"), new BigDecimal("80"));
         PortfolioAssetDailySnapshot cryptoSnap = assetSnap(t, AssetType.CRYPTO, "bitcoin",
                 new BigDecimal("1000"), new BigDecimal("20"));
-        when(dailySnapshotRepository.findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(eq(PORTFOLIO_ID), any(), any()))
-                .thenReturn(List.of(daily));
+        when(assetSnapshotRepository.findAggregateByPortfolio(eq(PORTFOLIO_ID), any(), any()))
+                .thenReturn(List.of(agg));
         when(assetSnapshotRepository.findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(eq(PORTFOLIO_ID), any(), any()))
                 .thenReturn(List.of(stockSnap, cryptoSnap));
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
@@ -81,12 +77,12 @@ class PortfolioPerformanceServiceTest {
     @Test
     void shouldEmitPositionAddedEvents_whenLotsAddedInWindow() {
         LocalDateTime now = LocalDateTime.now();
-        PortfolioDailySnapshot daily = dailySnapshot(now,
-                new BigDecimal("4000"), new BigDecimal("0"), BigDecimal.ZERO);
+        PortfolioAggregateRow agg = aggregate(now,
+                new BigDecimal("4000"), new BigDecimal("4000"), BigDecimal.ZERO);
         PortfolioPosition newLot = lot(AssetType.STOCK, "THYAO.IS",
                 new BigDecimal("100"), new BigDecimal("40"), now.minusDays(1));
-        when(dailySnapshotRepository.findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(eq(PORTFOLIO_ID), any(), any()))
-                .thenReturn(List.of(daily));
+        when(assetSnapshotRepository.findAggregateByPortfolio(eq(PORTFOLIO_ID), any(), any()))
+                .thenReturn(List.of(agg));
         when(assetSnapshotRepository.findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(eq(PORTFOLIO_ID), any(), any()))
                 .thenReturn(List.of());
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(newLot));
@@ -103,16 +99,16 @@ class PortfolioPerformanceServiceTest {
     void shouldEmitMarketUpAndDownEvents_whenAssetValuesChangeBetweenSnapshots() {
         LocalDateTime t1 = LocalDateTime.of(2026, 4, 10, 23, 0);
         LocalDateTime t2 = t1.plusDays(1);
-        PortfolioDailySnapshot d1 = dailySnapshot(t1,
-                new BigDecimal("100"), new BigDecimal("0"), BigDecimal.ZERO);
-        PortfolioDailySnapshot d2 = dailySnapshot(t2,
-                new BigDecimal("120"), new BigDecimal("20"), new BigDecimal("20.0000"));
+        PortfolioAggregateRow a1 = aggregate(t1,
+                new BigDecimal("100"), new BigDecimal("100"), BigDecimal.ZERO);
+        PortfolioAggregateRow a2 = aggregate(t2,
+                new BigDecimal("120"), new BigDecimal("100"), new BigDecimal("20"));
         PortfolioAssetDailySnapshot snap1 = assetSnap(t1, AssetType.STOCK, "THYAO.IS",
                 new BigDecimal("100"), BigDecimal.ZERO);
         PortfolioAssetDailySnapshot snap2 = assetSnap(t2, AssetType.STOCK, "THYAO.IS",
                 new BigDecimal("120"), new BigDecimal("20"));
-        when(dailySnapshotRepository.findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(eq(PORTFOLIO_ID), any(), any()))
-                .thenReturn(List.of(d1, d2));
+        when(assetSnapshotRepository.findAggregateByPortfolio(eq(PORTFOLIO_ID), any(), any()))
+                .thenReturn(List.of(a1, a2));
         when(assetSnapshotRepository.findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(eq(PORTFOLIO_ID), any(), any()))
                 .thenReturn(List.of(snap1, snap2));
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
@@ -167,17 +163,9 @@ class PortfolioPerformanceServiceTest {
         assertThat(result).containsExactly(expected);
     }
 
-    private PortfolioDailySnapshot dailySnapshot(LocalDateTime ts, BigDecimal totalValue,
-                                                 BigDecimal totalPnl, BigDecimal pnlPercent) {
-        return PortfolioDailySnapshot.builder()
-                .portfolioId(PORTFOLIO_ID)
-                .snapshotDate(ts.toLocalDate())
-                .createdAt(ts)
-                .totalValueTry(totalValue)
-                .totalCostTry(totalValue.subtract(totalPnl))
-                .totalPnlTry(totalPnl)
-                .pnlPercent(pnlPercent)
-                .build();
+    private PortfolioAggregateRow aggregate(LocalDateTime ts, BigDecimal totalValue,
+                                            BigDecimal totalCost, BigDecimal totalPnl) {
+        return new PortfolioAggregateRow(ts, totalValue, totalCost, totalPnl);
     }
 
     private PortfolioAssetDailySnapshot assetSnap(LocalDateTime ts, AssetType type, String code,

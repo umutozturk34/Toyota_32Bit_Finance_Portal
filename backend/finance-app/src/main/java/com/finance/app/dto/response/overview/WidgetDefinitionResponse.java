@@ -20,6 +20,7 @@ public record WidgetDefinitionResponse(
     public record Limits(
             int maxWidgetsPerLayout,
             int maxAssetCardWidgetsPerLayout,
-            int maxConfigLimit
+            int maxConfigLimit,
+            int maxLayoutRows
     ) {}
 }

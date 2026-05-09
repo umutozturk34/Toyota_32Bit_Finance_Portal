@@ -1,8 +1,6 @@
 package com.finance.portfolio.service;
 import com.finance.market.core.service.MarketSnapshotProcessor;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.finance.portfolio.dto.response.AllocationItem;
 import com.finance.portfolio.dto.response.PortfolioSummaryResponse;
@@ -12,7 +10,6 @@ import com.finance.portfolio.mapper.PortfolioResponseMapperImpl;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.PortfolioPosition;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
-import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import com.finance.portfolio.service.support.CountingAssetPricingPort;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +30,6 @@ import static org.mockito.Mockito.when;
 class PortfolioSummaryServiceTest {
 
     @Mock private PortfolioPositionRepository positionRepository;
-    @Mock private PortfolioDailySnapshotRepository dailySnapshotRepository;
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
 
     private CountingAssetPricingPort counting;
@@ -45,7 +41,7 @@ class PortfolioSummaryServiceTest {
         counting = new CountingAssetPricingPort();
         responseMapper = new PortfolioResponseMapperImpl();
         service = new PortfolioSummaryService(counting, positionRepository, responseMapper,
-                dailySnapshotRepository, assetSnapshotRepository);
+                assetSnapshotRepository);
     }
 
     @Test

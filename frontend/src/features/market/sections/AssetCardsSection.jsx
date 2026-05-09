@@ -1,5 +1,6 @@
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Layers, X } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../../shared/components/feedback/AnimatedIcons';
 import { formatPriceTRY, getChangeClass, changeColors, changeBg, formatPercentAbs } from '../../../shared/utils/formatters';
@@ -11,8 +12,8 @@ function shortLabel(asset) {
   return (asset.code || '').replace('.IS', '');
 }
 
-/** @param {{asset: Object, index?: number, removing?: boolean, onClick: (a: Object) => void, editMode: boolean, onRemove?: (a: Object) => void}} props */
-function AssetCardImpl({ asset, index = 0, removing = false, onClick, editMode, onRemove }) {
+/** @param {{asset: Object, index?: number, onClick: (a: Object) => void, editMode: boolean, onRemove?: (a: Object) => void}} props */
+function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
   const handleClick = () => onClick?.(asset);
   const handleRemoveClick = () => onRemove?.(asset);
   const hasChange = asset.changePercent != null;
@@ -22,7 +23,7 @@ function AssetCardImpl({ asset, index = 0, removing = false, onClick, editMode, 
   const isPending = asset._pending === true || asset.price == null;
   const seedKey = `${asset.type}-${asset.code}`;
   return (
-    <div className={`group/card relative h-full transition-[opacity,transform] duration-200 ease-out ${removing ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100'}`}>
+    <div className="group/card relative h-full">
       <button
         type="button"
         onClick={editMode ? undefined : handleClick}
@@ -96,26 +97,15 @@ export default function AssetCardsSection({ data, editMode = false, config = {},
     });
   }, [items, config?.assetCodes]);
 
-  const [removingKeys, setRemovingKeys] = useState(() => new Set());
-
   const goToAsset = useCallback((asset) => navigate(`${TYPE_ROUTES[asset.type] ?? '/market'}/${asset.code}`), [navigate]);
 
   const handleRemove = useCallback((asset) => {
-    const key = `${asset.type}-${asset.code}`;
-    setRemovingKeys((prev) => new Set(prev).add(key));
-    setTimeout(() => {
-      const explicit = Array.isArray(config?.assetCodes) && config.assetCodes.length > 0;
-      const baseCodes = explicit
-        ? config.assetCodes
-        : items.map((it) => ({ type: it.type, code: it.code }));
-      const next = baseCodes.filter((c) => !(c.type === asset.type && c.code === asset.code));
-      onConfigChange?.({ ...config, assetCodes: next });
-      setRemovingKeys((prev) => {
-        const n = new Set(prev);
-        n.delete(key);
-        return n;
-      });
-    }, 200);
+    const explicit = Array.isArray(config?.assetCodes) && config.assetCodes.length > 0;
+    const baseCodes = explicit
+      ? config.assetCodes
+      : items.map((it) => ({ type: it.type, code: it.code }));
+    const next = baseCodes.filter((c) => !(c.type === asset.type && c.code === asset.code));
+    onConfigChange?.({ ...config, assetCodes: next });
   }, [config, items, onConfigChange]);
 
   if (visibleItems.length === 0) {
@@ -137,20 +127,30 @@ export default function AssetCardsSection({ data, editMode = false, config = {},
         gridAutoRows: '1fr',
       }}
     >
-      {visibleItems.map((asset, i) => {
-        const key = `${asset.type}-${asset.code}`;
-        return (
-          <AssetCard
-            key={key}
-            asset={asset}
-            index={i}
-            removing={removingKeys.has(key)}
-            onClick={goToAsset}
-            editMode={editMode}
-            onRemove={editMode ? handleRemove : undefined}
-          />
-        );
-      })}
+      <AnimatePresence mode="popLayout" initial={false}>
+        {visibleItems.map((asset, i) => {
+          const key = `${asset.type}-${asset.code}`;
+          return (
+            <motion.div
+              key={key}
+              layout
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.92 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="h-full"
+            >
+              <AssetCard
+                asset={asset}
+                index={i}
+                onClick={goToAsset}
+                editMode={editMode}
+                onRemove={editMode ? handleRemove : undefined}
+              />
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
     </div>
   );
 }

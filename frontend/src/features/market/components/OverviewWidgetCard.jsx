@@ -59,7 +59,7 @@ function OverviewWidgetCard({
 
   return (
     <div
-      style={editStyle}
+      style={deleting ? { ...editStyle, willChange: 'opacity', transform: 'translateZ(0)' } : editStyle}
       className={`relative h-full transition-opacity duration-200 ease-out ${deleting ? 'pointer-events-none opacity-0' : 'opacity-100'} ${editMode ? 'is-edit' : ''}`}
     >
       <div className="relative h-full">

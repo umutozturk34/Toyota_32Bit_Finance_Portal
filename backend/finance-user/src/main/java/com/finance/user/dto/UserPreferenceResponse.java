@@ -1,6 +1,4 @@
 package com.finance.user.dto;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.finance.user.dto.enums.ReportFrequency;
 import com.finance.user.dto.enums.ThemePreference;

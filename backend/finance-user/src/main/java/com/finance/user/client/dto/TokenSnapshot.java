@@ -1,6 +1,4 @@
 package com.finance.user.client.dto;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import java.time.Instant;
 

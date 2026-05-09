@@ -1,7 +1,5 @@
 package com.finance.portfolio.repository;
 import com.finance.common.model.TrackedAssetType;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.finance.common.model.TrackedAssetType;
 import com.finance.portfolio.model.AssetType;

@@ -1,6 +1,4 @@
 package com.finance.user.client;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.finance.user.config.KeycloakAdminProperties;
 import org.springframework.context.annotation.Bean;

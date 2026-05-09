@@ -4,6 +4,7 @@ app:
       max-widgets-per-layout: 12
       max-asset-card-widgets-per-layout: 4
       max-config-limit: 200
+      max-layout-rows: 60
     defaults:
       mover-limit: 10
       news-count: 10

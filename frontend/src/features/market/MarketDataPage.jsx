@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { Activity, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
 import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
@@ -305,10 +306,10 @@ export default function MarketDataPage() {
       {editMode && galleryOpen && (
         <motion.div
           key="gallery-sidebar"
-          initial={{ opacity: 0, x: -12 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -12 }}
-          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
         >
           <WidgetTray sections={sections} watchlists={watchlists} onAdd={handleTrayClick} onDragStart={handleTrayDragStart} onDragEnd={handleTrayDragEnd} />
         </motion.div>

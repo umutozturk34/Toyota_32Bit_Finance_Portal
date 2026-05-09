@@ -1,8 +1,6 @@
 package com.finance.portfolio.config;
 import com.finance.market.core.service.MarketSnapshotProcessor;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import lombok.Getter;
 import lombok.Setter;

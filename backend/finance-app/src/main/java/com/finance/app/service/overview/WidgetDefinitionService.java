@@ -33,7 +33,8 @@ public class WidgetDefinitionService {
         Limits limits = new Limits(
                 properties.limits().maxWidgetsPerLayout(),
                 properties.limits().maxAssetCardWidgetsPerLayout(),
-                properties.limits().maxConfigLimit()
+                properties.limits().maxConfigLimit(),
+                properties.limits().maxLayoutRows()
         );
         return new WidgetDefinitionResponse(defs, limits);
     }

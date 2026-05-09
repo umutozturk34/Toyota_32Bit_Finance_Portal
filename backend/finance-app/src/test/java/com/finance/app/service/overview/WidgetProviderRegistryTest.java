@@ -39,8 +39,11 @@ class WidgetProviderRegistryTest {
 
         WidgetProviderRegistry registry = new WidgetProviderRegistry(List.of(movers, news));
 
-        assertThat(registry.providerFor(WidgetKind.MOVERS)).contains(movers);
-        assertThat(registry.providerFor(WidgetKind.NEWS)).contains(news);
+        Optional<OverviewWidgetProvider> moversFor = registry.providerFor(WidgetKind.MOVERS);
+        Optional<OverviewWidgetProvider> newsFor = registry.providerFor(WidgetKind.NEWS);
+
+        assertThat(moversFor).contains(movers);
+        assertThat(newsFor).contains(news);
     }
 
     @Test
@@ -68,7 +71,9 @@ class WidgetProviderRegistryTest {
         WidgetProviderRegistry registry = new WidgetProviderRegistry(List.of());
 
         for (WidgetKind kind : WidgetKind.values()) {
-            assertThat(registry.providerFor(kind)).isEmpty();
+            Optional<OverviewWidgetProvider> resolved = registry.providerFor(kind);
+
+            assertThat(resolved).isEmpty();
         }
     }
 }

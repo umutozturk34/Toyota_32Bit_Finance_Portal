@@ -52,7 +52,9 @@ class NewsWidgetProviderTest {
 
     @Test
     void should_reportNewsKind_when_kindQueried() {
-        assertThat(provider.kind()).isEqualTo(WidgetKind.NEWS);
+        WidgetKind kind = provider.kind();
+
+        assertThat(kind).isEqualTo(WidgetKind.NEWS);
     }
 
     @Test

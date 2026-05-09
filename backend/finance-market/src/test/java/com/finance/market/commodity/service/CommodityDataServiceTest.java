@@ -35,7 +35,9 @@ class CommodityDataServiceTest {
 
     @Test
     void getAssetTypeReturnsCommodity() {
-        assertThat(service.getAssetType()).isEqualTo(TrackedAssetType.COMMODITY);
+        TrackedAssetType type = service.getAssetType();
+
+        assertThat(type).isEqualTo(TrackedAssetType.COMMODITY);
     }
 
     @Test

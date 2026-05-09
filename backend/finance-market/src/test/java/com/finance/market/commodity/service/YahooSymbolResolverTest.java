@@ -37,17 +37,23 @@ class YahooSymbolResolverTest {
             "XPDTRY,PA=F"
     })
     void resolveReturnsYahooSymbolForDomainCode(String domain, String yahoo) {
-        assertThat(resolver.resolve(domain)).isEqualTo(yahoo);
+        String resolved = resolver.resolve(domain);
+
+        assertThat(resolved).isEqualTo(yahoo);
     }
 
     @Test
     void resolveReturnsInputWhenAlreadyYahooFutures() {
-        assertThat(resolver.resolve("GC=F")).isEqualTo("GC=F");
+        String resolved = resolver.resolve("GC=F");
+
+        assertThat(resolved).isEqualTo("GC=F");
     }
 
     @Test
     void resolveReturnsNullForUnknownCode() {
-        assertThat(resolver.resolve("UNKNOWN")).isNull();
+        String resolved = resolver.resolve("UNKNOWN");
+
+        assertThat(resolved).isNull();
     }
 
     @ParameterizedTest
@@ -58,7 +64,9 @@ class YahooSymbolResolverTest {
             "PA=F,XPDTRY"
     })
     void resolveByYahooSymbolReturnsDomainCode(String yahoo, String domain) {
-        assertThat(resolver.resolveByYahooSymbol(yahoo)).contains(domain);
+        Optional<String> resolved = resolver.resolveByYahooSymbol(yahoo);
+
+        assertThat(resolved).contains(domain);
     }
 
     @ParameterizedTest
@@ -67,18 +75,24 @@ class YahooSymbolResolverTest {
             "  GC=F  ,XAUTRY"
     })
     void resolveByYahooSymbolNormalizesInput(String input, String domain) {
-        assertThat(resolver.resolveByYahooSymbol(input)).contains(domain);
+        Optional<String> resolved = resolver.resolveByYahooSymbol(input);
+
+        assertThat(resolved).contains(domain);
     }
 
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {"  ", "XAUTRY", "UNKNOWN=F"})
     void resolveByYahooSymbolReturnsEmptyForNonYahooInputs(String input) {
-        assertThat(resolver.resolveByYahooSymbol(input)).isEqualTo(Optional.empty());
+        Optional<String> resolved = resolver.resolveByYahooSymbol(input);
+
+        assertThat(resolved).isEqualTo(Optional.empty());
     }
 
     @Test
     void normalizeUppercasesAndTrims() {
-        assertThat(resolver.normalize("  xautry  ")).isEqualTo("XAUTRY");
+        String normalized = resolver.normalize("  xautry  ");
+
+        assertThat(normalized).isEqualTo("XAUTRY");
     }
 }

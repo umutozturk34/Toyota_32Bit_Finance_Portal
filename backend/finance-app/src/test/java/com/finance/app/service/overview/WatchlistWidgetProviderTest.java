@@ -58,7 +58,9 @@ class WatchlistWidgetProviderTest {
 
     @Test
     void should_reportWatchlistKind_when_kindQueried() {
-        assertThat(provider.kind()).isEqualTo(WidgetKind.WATCHLIST);
+        WidgetKind kind = provider.kind();
+
+        assertThat(kind).isEqualTo(WidgetKind.WATCHLIST);
     }
 
     @Test

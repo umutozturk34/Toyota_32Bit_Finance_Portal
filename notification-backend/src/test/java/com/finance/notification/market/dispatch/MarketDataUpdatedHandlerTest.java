@@ -25,10 +25,11 @@ class MarketDataUpdatedHandlerTest {
 
     @Test
     void should_renderOglenTitle_when_sourceContainsAfternoonOrMidday() {
-        assertThat(handler.render(requestWithSource("scheduled-stock-afternoon")).title())
-                .isEqualTo("Hisse · Öğlen güncellemesi");
-        assertThat(handler.render(requestWithSource("scheduled-news-midday")).title())
-                .isEqualTo("Hisse · Öğlen güncellemesi");
+        RenderedNotification afternoon = handler.render(requestWithSource("scheduled-stock-afternoon"));
+        RenderedNotification midday = handler.render(requestWithSource("scheduled-news-midday"));
+
+        assertThat(afternoon.title()).isEqualTo("Hisse · Öğlen güncellemesi");
+        assertThat(midday.title()).isEqualTo("Hisse · Öğlen güncellemesi");
     }
 
     @Test
@@ -40,17 +41,19 @@ class MarketDataUpdatedHandlerTest {
 
     @Test
     void should_renderGunlukTitle_when_sourceContainsDailyOrFull() {
-        assertThat(handler.render(requestWithSource("scheduled-bond-daily")).title())
-                .isEqualTo("Hisse · Günlük güncellemesi");
-        assertThat(handler.render(requestWithSource("scheduled-fund-full")).title())
-                .isEqualTo("Hisse · Günlük güncellemesi");
+        RenderedNotification daily = handler.render(requestWithSource("scheduled-bond-daily"));
+        RenderedNotification full = handler.render(requestWithSource("scheduled-fund-full"));
+
+        assertThat(daily.title()).isEqualTo("Hisse · Günlük güncellemesi");
+        assertThat(full.title()).isEqualTo("Hisse · Günlük güncellemesi");
     }
 
     @Test
     void should_renderGenericTitle_when_sourceUnknownOrNull() {
-        assertThat(handler.render(requestWithSource("admin")).title())
-                .isEqualTo("Hisse verileri güncellendi");
-        assertThat(handler.render(requestWithSource(null)).title())
-                .isEqualTo("Hisse verileri güncellendi");
+        RenderedNotification adminSource = handler.render(requestWithSource("admin"));
+        RenderedNotification nullSource = handler.render(requestWithSource(null));
+
+        assertThat(adminSource.title()).isEqualTo("Hisse verileri güncellendi");
+        assertThat(nullSource.title()).isEqualTo("Hisse verileri güncellendi");
     }
 }

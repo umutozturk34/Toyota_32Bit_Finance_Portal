@@ -49,7 +49,9 @@ class MoverWidgetProviderTest {
 
     @Test
     void should_reportMoversKind_when_kindQueried() {
-        assertThat(provider.kind()).isEqualTo(WidgetKind.MOVERS);
+        WidgetKind kind = provider.kind();
+
+        assertThat(kind).isEqualTo(WidgetKind.MOVERS);
     }
 
     @Test

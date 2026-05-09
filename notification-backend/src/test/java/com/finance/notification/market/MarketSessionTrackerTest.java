@@ -29,7 +29,9 @@ class MarketSessionTrackerTest {
         tracker.update(SessionMarket.STOCK, MarketSession.OPEN);
         tracker.update(SessionMarket.STOCK, MarketSession.CLOSED);
 
-        assertThat(tracker.previous(SessionMarket.STOCK)).contains(MarketSession.CLOSED);
+        Optional<MarketSession> previous = tracker.previous(SessionMarket.STOCK);
+
+        assertThat(previous).contains(MarketSession.CLOSED);
     }
 
     @Test
@@ -38,7 +40,10 @@ class MarketSessionTrackerTest {
 
         tracker.update(SessionMarket.STOCK, MarketSession.OPEN);
 
-        assertThat(tracker.previous(SessionMarket.STOCK)).contains(MarketSession.OPEN);
-        assertThat(tracker.previous(SessionMarket.FUND)).isEmpty();
+        Optional<MarketSession> stockPrev = tracker.previous(SessionMarket.STOCK);
+        Optional<MarketSession> fundPrev = tracker.previous(SessionMarket.FUND);
+
+        assertThat(stockPrev).contains(MarketSession.OPEN);
+        assertThat(fundPrev).isEmpty();
     }
 }

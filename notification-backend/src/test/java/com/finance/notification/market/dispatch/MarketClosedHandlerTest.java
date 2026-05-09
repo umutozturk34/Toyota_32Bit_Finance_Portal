@@ -16,7 +16,9 @@ class MarketClosedHandlerTest {
 
     @Test
     void should_returnMarketClosedType_when_typeQueried() {
-        assertThat(handler.type()).isEqualTo(NotificationType.MARKET_CLOSED);
+        NotificationType type = handler.type();
+
+        assertThat(type).isEqualTo(NotificationType.MARKET_CLOSED);
     }
 
     @Test

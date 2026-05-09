@@ -144,12 +144,27 @@ class NewsSourceAdminServiceTest {
     }
 
     @Test
-    void deleteRemovesSource() {
+    void deletePurgesArticlesBeforeRemovingSource() {
         NewsSource existing = entity(1L, "BBC");
         when(sourceService.findOrThrow(1L)).thenReturn(existing);
+        when(articleRepository.deleteBySourceId(1L)).thenReturn(7);
 
         service.delete(1L);
 
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(articleRepository, repository);
+        inOrder.verify(articleRepository).deleteBySourceId(1L);
+        inOrder.verify(repository).delete(existing);
+    }
+
+    @Test
+    void deleteAllowsZeroArticles() {
+        NewsSource existing = entity(2L, "Reuters");
+        when(sourceService.findOrThrow(2L)).thenReturn(existing);
+        when(articleRepository.deleteBySourceId(2L)).thenReturn(0);
+
+        service.delete(2L);
+
+        verify(articleRepository).deleteBySourceId(2L);
         verify(repository).delete(existing);
     }
 

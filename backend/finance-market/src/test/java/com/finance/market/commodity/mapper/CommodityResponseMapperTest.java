@@ -64,7 +64,9 @@ class CommodityResponseMapperTest {
 
     @Test
     void toMarketAssetResponseReturnsNullForNullInput() {
-        assertThat(mapper.toMarketAssetResponse(null)).isNull();
+        MarketAssetResponse response = mapper.toMarketAssetResponse(null);
+
+        assertThat(response).isNull();
     }
 
     private Commodity buildCommodity(String code) {

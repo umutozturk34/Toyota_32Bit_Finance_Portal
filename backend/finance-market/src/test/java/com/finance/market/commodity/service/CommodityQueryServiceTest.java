@@ -37,7 +37,9 @@ class CommodityQueryServiceTest {
 
     @Test
     void getMarketTypeReturnsCommodity() {
-        assertThat(service.getMarketType()).isEqualTo(MarketType.COMMODITY);
+        MarketType type = service.getMarketType();
+
+        assertThat(type).isEqualTo(MarketType.COMMODITY);
     }
 
     @Test

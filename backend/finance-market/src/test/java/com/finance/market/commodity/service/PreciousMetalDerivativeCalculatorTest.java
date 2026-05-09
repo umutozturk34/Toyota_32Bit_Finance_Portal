@@ -64,15 +64,22 @@ class PreciousMetalDerivativeCalculatorTest {
 
     @Test
     void hasDerivativesReturnsTrueForGoldAndSilver() {
-        assertThat(calculator.hasDerivatives("GC=F")).isTrue();
-        assertThat(calculator.hasDerivatives("SI=F")).isTrue();
+        boolean gold = calculator.hasDerivatives("GC=F");
+        boolean silver = calculator.hasDerivatives("SI=F");
+
+        assertThat(gold).isTrue();
+        assertThat(silver).isTrue();
     }
 
     @Test
     void hasDerivativesReturnsFalseForOtherCommodities() {
-        assertThat(calculator.hasDerivatives("PLATINUM")).isFalse();
-        assertThat(calculator.hasDerivatives("BRENT")).isFalse();
-        assertThat(calculator.hasDerivatives("WHEAT")).isFalse();
+        boolean platinum = calculator.hasDerivatives("PLATINUM");
+        boolean brent = calculator.hasDerivatives("BRENT");
+        boolean wheat = calculator.hasDerivatives("WHEAT");
+
+        assertThat(platinum).isFalse();
+        assertThat(brent).isFalse();
+        assertThat(wheat).isFalse();
     }
 
     @Test

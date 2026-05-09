@@ -46,7 +46,9 @@ class AssetCardsWidgetProviderTest {
 
     @Test
     void should_reportAssetCardsKind_when_kindQueried() {
-        assertThat(provider.kind()).isEqualTo(WidgetKind.ASSET_CARDS);
+        WidgetKind kind = provider.kind();
+
+        assertThat(kind).isEqualTo(WidgetKind.ASSET_CARDS);
     }
 
     @Test

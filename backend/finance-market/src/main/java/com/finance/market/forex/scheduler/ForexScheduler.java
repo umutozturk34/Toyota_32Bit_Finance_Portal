@@ -6,7 +6,7 @@ import com.finance.market.core.scheduler.SchedulerPorts;
 
 import com.finance.common.model.MarketType;
 import com.finance.market.forex.service.ForexDataService;
-import com.finance.common.service.TaskTrackingService;
+import com.finance.shared.service.TaskTrackingService;
 import com.finance.market.forex.service.TcmbForexService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;

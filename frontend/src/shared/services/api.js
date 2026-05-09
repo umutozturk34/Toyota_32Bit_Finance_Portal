@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getToken } from '../../features/auth/lib/keycloak';
 import { toast } from '../components/feedback/Toast';
+import { TIMINGS } from '../config/uiConfig';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
   headers: {
@@ -8,6 +9,7 @@ const api = axios.create({
   },
 });
 let _lastRateLimitAlert = 0;
+
 api.interceptors.request.use(
   async (config) => {
     try {
@@ -25,11 +27,12 @@ api.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 429) {
       const now = Date.now();
-      if (now - _lastRateLimitAlert > 30000) {
+      if (now - _lastRateLimitAlert > TIMINGS.RATE_LIMIT_THROTTLE_MS) {
         _lastRateLimitAlert = now;
         const message = error.response?.data?.message
           || 'Çok fazla istek gönderdin. Lütfen biraz bekle.';
-        const retryAfter = error.response?.headers?.['x-rate-limit-retry-after-seconds'];
+        const retryAfter = error.response?.headers?.['x-rate-limit-retry-after-seconds']
+          || error.response?.headers?.['retry-after'];
         toast.rateLimit(message, retryAfter);
       }
       return Promise.reject(error);

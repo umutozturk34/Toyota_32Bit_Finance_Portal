@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { CheckCircle, Info, X, ShieldAlert } from 'lucide-react';
 import { AlertTriangle, AlertCircle } from './AnimatedIcons';
+import { TIMINGS, LIMITS } from '../../config/uiConfig';
 
 const ICONS = {
   success: CheckCircle,
@@ -30,7 +31,7 @@ toast.success = (title, message) => toast('success', title, message);
 toast.error = (title, message) => toast('error', title, message);
 toast.warning = (title, message) => toast('warning', title, message);
 toast.info = (title, message) => toast('info', title, message);
-toast.rateLimit = (message, retryAfter) => toast('rateLimit', 'İstek limiti aşıldı', message, { retryAfter });
+toast.rateLimit = (message, retryAfter) => toast('rateLimit', 'İstek limiti aşıldı', message, { retryAfter, dedupeKey: 'rateLimit' });
 
 export default function ToastContainer() {
   const [items, setItems] = useState([]);
@@ -38,8 +39,18 @@ export default function ToastContainer() {
 
   useEffect(() => {
     _fireToast = (data) => {
-      const id = ++idRef.current;
-      setItems((prev) => [...prev.slice(-4), { ...data, id }]);
+      setItems((prev) => {
+        if (data.dedupeKey) {
+          const idx = prev.findIndex((t) => t.dedupeKey === data.dedupeKey);
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = { ...prev[idx], ...data, id: prev[idx].id };
+            return next;
+          }
+        }
+        const id = ++idRef.current;
+        return [...prev.slice(-4), { ...data, id }];
+      });
     };
     return () => { _fireToast = null; };
   }, []);
@@ -66,12 +77,13 @@ function ToastItem({ item, onDismiss }) {
   const Icon = ICONS[type] || Info;
 
   useEffect(() => {
+    const rawSec = retryAfter ? Number(retryAfter) : LIMITS.RATE_LIMIT_THROTTLE_DEFAULT;
     const duration = type === 'rateLimit'
-      ? Math.max((countdown || 8) * 1000, 5000)
-      : type === 'error' ? 6000 : 4000;
+      ? Math.min(Math.max(rawSec * 1000, TIMINGS.TOAST_RATE_LIMIT_MIN_MS), TIMINGS.TOAST_RATE_LIMIT_MAX_MS)
+      : type === 'error' ? TIMINGS.TOAST_ERROR_DURATION_MS : TIMINGS.TOAST_DEFAULT_DURATION_MS;
     const timer = setTimeout(() => onDismiss(id), duration);
     return () => clearTimeout(timer);
-  }, [id, type, countdown, onDismiss]);
+  }, [id, type, retryAfter, onDismiss]);
 
   useEffect(() => {
     if (countdown <= 0) return;

@@ -1,6 +1,6 @@
 package com.finance.market.core.service;
 
-import com.finance.common.dto.response.GroupCount;
+import com.finance.shared.dto.response.GroupCount;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.common.model.MarketType;
 

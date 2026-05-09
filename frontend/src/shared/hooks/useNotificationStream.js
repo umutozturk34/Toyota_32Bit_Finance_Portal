@@ -8,59 +8,44 @@ import { toast } from '../components/feedback/Toast';
 const STREAM_URL = '/api/v1/notifications/stream';
 const RECONNECT_DELAY_MS = 4_000;
 
-let sharedAudioContext = null;
-let unlocked = false;
+let sharedCtx = null;
+let listenersAttached = false;
 
-function getAudioContext() {
-  if (!sharedAudioContext) {
-    try {
-      const Ctor = window.AudioContext || window.webkitAudioContext;
-      if (Ctor) sharedAudioContext = new Ctor();
-    } catch {
-      return null;
-    }
+function audioCtx() {
+  if (!sharedCtx) {
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (Ctor) sharedCtx = new Ctor();
   }
-  return sharedAudioContext;
+  return sharedCtx;
 }
 
-function unlockAudioOnce() {
-  if (unlocked) return;
-  const handler = () => {
-    const ctx = getAudioContext();
-    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
-    unlocked = true;
-    window.removeEventListener('pointerdown', handler);
-    window.removeEventListener('keydown', handler);
-  };
-  window.addEventListener('pointerdown', handler, { once: true });
-  window.addEventListener('keydown', handler, { once: true });
+function attachUnlockListeners() {
+  if (listenersAttached) return;
+  listenersAttached = true;
+  const resume = () => audioCtx()?.resume?.();
+  window.addEventListener('pointerdown', resume);
+  window.addEventListener('keydown', resume);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) resume();
+  });
 }
 
 function playChime() {
-  const ctx = getAudioContext();
+  const ctx = audioCtx();
   if (!ctx) return;
-  const fire = () => {
-    try {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.5);
-    } catch {
-      /* play failed */
-    }
-  };
-  if (ctx.state === 'suspended') {
-    ctx.resume().then(fire).catch(() => {});
-  } else {
-    fire();
-  }
+  if (ctx.state === 'suspended') ctx.resume();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sine';
+  osc.frequency.value = 880;
+  const t = ctx.currentTime;
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+  osc.start(t);
+  osc.stop(t + 0.5);
 }
 
 export default function useNotificationStream() {
@@ -71,7 +56,7 @@ export default function useNotificationStream() {
 
   useEffect(() => {
     if (!isAuthenticated || loading) return undefined;
-    unlockAudioOnce();
+    attachUnlockListeners();
     let cancelled = false;
 
     const handleNotification = (event) => {

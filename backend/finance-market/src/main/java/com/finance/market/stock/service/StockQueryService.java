@@ -8,7 +8,7 @@ import com.finance.market.core.cache.MarketCacheService;
 
 import com.finance.market.core.dto.response.CandleResponse;
 import com.finance.market.stock.mapper.StockResponseMapper;
-import com.finance.common.model.CandlePeriod;
+import com.finance.shared.model.CandlePeriod;
 import com.finance.common.model.MarketType;
 import com.finance.market.stock.model.Stock;
 import com.finance.market.stock.model.StockCandle;

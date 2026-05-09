@@ -7,7 +7,7 @@ import com.finance.market.core.service.MarketHistoryProvider;
 import com.finance.market.core.dto.response.CandleResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.market.forex.mapper.ForexResponseMapper;
-import com.finance.common.model.CandlePeriod;
+import com.finance.shared.model.CandlePeriod;
 import com.finance.market.forex.model.ForexCandle;
 import com.finance.common.model.MarketType;
 import com.finance.market.forex.repository.ForexCandleRepository;

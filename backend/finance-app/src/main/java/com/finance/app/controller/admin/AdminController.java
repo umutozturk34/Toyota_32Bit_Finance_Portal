@@ -5,11 +5,11 @@ import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.dto.ApiResponse;
-import com.finance.common.dto.response.TaskTriggerResponse;
+import com.finance.shared.dto.response.TaskTriggerResponse;
 import com.finance.common.model.MarketType;
 import com.finance.app.service.AdminTaskService;
-import com.finance.common.service.TaskTrackingService;
-import com.finance.common.util.EnumParser;
+import com.finance.shared.service.TaskTrackingService;
+import com.finance.shared.util.EnumParser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

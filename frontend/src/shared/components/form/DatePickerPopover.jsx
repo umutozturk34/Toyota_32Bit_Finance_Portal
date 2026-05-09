@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -34,18 +34,20 @@ export default function DatePickerPopover({
   const ref = useRef(null);
 
   const selected = useMemo(() => fromIso(value), [value]);
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const min = useMemo(() => fromIso(minDate), [minDate]);
   const max = useMemo(() => fromIso(maxDate), [maxDate]);
   const initial = selected || today;
   const [cursor, setCursor] = useState({ year: initial.getFullYear(), month: initial.getMonth() });
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
     if (selected) setCursor({ year: selected.getFullYear(), month: selected.getMonth() });
   }, [value]);
 
   useEffect(() => {
-    if (typeof onMonthChange === 'function') onMonthChange(cursor.year, cursor.month);
+    if (typeof onMonthChange !== 'function') return;
+    startTransition(() => onMonthChange(cursor.year, cursor.month));
   }, [cursor.year, cursor.month]);
 
   useEffect(() => {
@@ -137,7 +139,7 @@ export default function DatePickerPopover({
                   {WEEKDAYS.map((d) => (
                     <span key={d} className="text-center text-[10px] text-fg-subtle font-medium py-1">{d}</span>
                   ))}
-                  {grid.map((date) => {
+                  {grid.map((date, idx) => {
                     const inMonth = date.getMonth() === cursor.month;
                     const disabled = outOfRange(date);
                     const isSelected = sameDay(date, selected);
@@ -153,7 +155,7 @@ export default function DatePickerPopover({
                     else cls += 'text-fg bg-transparent hover:bg-surface';
 
                     return (
-                      <button type="button" key={iso} onClick={() => !disabled && pick(date)} disabled={disabled} className={cls}>
+                      <button type="button" key={idx} onClick={() => !disabled && pick(date)} disabled={disabled} className={cls}>
                         {date.getDate()}
                         {hasData && (
                           <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-success'}`} />

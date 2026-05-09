@@ -1,5 +1,7 @@
 package com.finance.user.service;
 
+import com.finance.common.exception.BusinessException;
+import com.finance.common.security.UserStatusPort;
 import com.finance.user.client.KeycloakAdminClient;
 import com.finance.user.config.UserSecurityProperties;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +18,12 @@ public class UserCredentialService {
     private final KeycloakAdminClient client;
     private final UserPreferenceService preferenceService;
     private final UserSecurityProperties securityProperties;
+    private final UserStatusPort userStatus;
 
     public void initiatePasswordChange(String userSub, String redirectUri) {
+        if (!userStatus.isActive(userSub)) {
+            throw new BusinessException("Cannot send password reset to a disabled account");
+        }
         syncThemeForEmail(userSub);
         client.sendActionsEmail(
                 userSub,

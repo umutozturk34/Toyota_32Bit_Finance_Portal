@@ -13,16 +13,16 @@ import com.finance.market.core.service.MarketHistoryProvider;
 
 import com.finance.market.core.service.MarketSnapshotProcessor;
 
-import com.finance.common.dto.response.GroupCount;
+import com.finance.shared.dto.response.GroupCount;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.core.dto.response.MarketAvailabilityResponse;
 import com.finance.common.dto.response.PagedResponse;
-import com.finance.common.dto.response.StockMetadata;
-import com.finance.common.model.CandlePeriod;
+import com.finance.shared.dto.response.StockMetadata;
+import com.finance.shared.model.CandlePeriod;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.StockSegment;
-import com.finance.common.util.EnumDispatcher;
+import com.finance.shared.util.EnumDispatcher;
 
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;

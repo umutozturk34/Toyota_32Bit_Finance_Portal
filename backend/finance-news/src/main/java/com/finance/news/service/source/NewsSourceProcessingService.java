@@ -13,7 +13,7 @@ import com.finance.news.mapper.NewsArticleMapper;
 import com.finance.news.model.NewsArticle;
 import com.finance.news.model.NewsSource;
 import com.finance.news.repository.NewsArticleRepository;
-import com.finance.common.util.BatchFailureGuard;
+import com.finance.shared.util.BatchFailureGuard;
 import com.finance.news.util.NewsDuplicateChecker;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;

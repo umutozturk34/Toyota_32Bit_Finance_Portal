@@ -31,4 +31,22 @@ public class KafkaTopicsConfig {
                 ))
                 .build();
     }
+
+    @Bean
+    public NewTopic newsPublishedTopic() {
+        return TopicBuilder.name(KafkaTopics.NEWS_PUBLISHED)
+                .partitions(1)
+                .replicas(1)
+                .config("retention.ms", String.valueOf(24 * 60 * 60 * 1000L))
+                .build();
+    }
+
+    @Bean
+    public NewTopic portfolioUpdatedTopic() {
+        return TopicBuilder.name(KafkaTopics.PORTFOLIO_UPDATED)
+                .partitions(3)
+                .replicas(1)
+                .config("retention.ms", String.valueOf(24 * 60 * 60 * 1000L))
+                .build();
+    }
 }

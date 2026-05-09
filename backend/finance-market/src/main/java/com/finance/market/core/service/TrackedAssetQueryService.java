@@ -6,7 +6,7 @@ import com.finance.market.core.mapper.TrackedAssetMapper;
 import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.common.repository.TrackedAssetRepository;
-import com.finance.common.util.LikeSearchSpec;
+import com.finance.shared.util.LikeSearchSpec;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;

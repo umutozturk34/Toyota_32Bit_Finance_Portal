@@ -1,7 +1,7 @@
 package com.finance.user.service;
 
 import com.finance.common.event.EmailChangeCodeRequestedEvent;
-import com.finance.common.event.EmailChangeEventPort;
+import com.finance.shared.event.EventPublisherPort;
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.user.client.KeycloakAdminClient;
@@ -27,7 +27,7 @@ public class EmailChangeService {
     private final EmailChangeRequestRepository repository;
     private final KeycloakAdminClient keycloakClient;
     private final UserPreferenceService preferenceService;
-    private final EmailChangeEventPort eventPort;
+    private final EventPublisherPort eventPublisher;
     private final UserSecurityProperties securityProperties;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final SecureRandom random = new SecureRandom();
@@ -57,7 +57,7 @@ public class EmailChangeService {
 
         String theme = preferenceService.getOrDefault(userSub).theme().name();
 
-        eventPort.publishEmailChangeCode(new EmailChangeCodeRequestedEvent(
+        eventPublisher.publish(new EmailChangeCodeRequestedEvent(
                 UUID.randomUUID().toString(),
                 userSub,
                 oldEmail,

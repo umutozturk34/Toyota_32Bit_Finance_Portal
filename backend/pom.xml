@@ -32,6 +32,7 @@
 	</repositories>
 
 	<modules>
+		<module>finance-monolith-shared</module>
 		<module>finance-market</module>
 		<module>finance-news</module>
 		<module>finance-user</module>
@@ -62,6 +63,11 @@
 				<groupId>com.finance</groupId>
 				<artifactId>finance-common</artifactId>
 				<version>${finance-common.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.finance</groupId>
+				<artifactId>finance-monolith-shared</artifactId>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.finance</groupId>

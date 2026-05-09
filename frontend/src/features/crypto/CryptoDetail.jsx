@@ -1,11 +1,9 @@
 import { useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Activity, BarChart2 } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { cryptoService } from './services/cryptoService';
 import { getChangeClass, changeColors, formatPriceUSD, formatPriceTRY, formatCompactNumber, formatPercentAbs } from '../../shared/utils/formatters';
-import { cardVariants } from '../../shared/utils/animations';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
+import MetadataTiles from '../../shared/components/asset/MetadataTiles';
 
 function CryptoHeader({ asset }) {
   const meta = asset.metadata || {};
@@ -29,42 +27,24 @@ function CryptoHeader({ asset }) {
 function CryptoMetadata({ asset }) {
   const meta = asset.metadata || {};
   const cls = getChangeClass(asset.changePercent);
-
   return (
-    <>
-      <motion.div variants={cardVariants} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-          <p className="text-xs text-fg-muted mb-1">Fiyat (USD)</p>
-          <p className="text-lg font-mono font-bold text-fg">{formatPriceUSD(meta.currentPriceUsd)}</p>
-        </div>
-        <div className="rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-          <p className="text-xs text-fg-muted mb-1">Fiyat (TRY)</p>
-          <p className="text-lg font-mono font-bold text-fg">{formatPriceTRY(asset.price)}</p>
-        </div>
-        <div className="rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-          <p className="text-xs text-fg-muted mb-1">24s Değişim</p>
-          <div className={`flex items-center gap-1 text-lg font-mono font-bold ${changeColors[cls]}`}>
-            {asset.changePercent > 0 ? <ArrowUpRight className="h-4 w-4" /> : asset.changePercent < 0 ? <ArrowDownRight className="h-4 w-4" /> : null}
+    <MetadataTiles tiles={[
+      { label: 'Fiyat (USD)', value: formatPriceUSD(meta.currentPriceUsd) },
+      { label: 'Fiyat (TRY)', value: formatPriceTRY(asset.price) },
+      {
+        label: '24s Değişim',
+        color: changeColors[cls],
+        value: (
+          <span className="flex items-center gap-0.5">
+            {asset.changePercent > 0 ? <ArrowUpRight className="h-3 w-3" /> : asset.changePercent < 0 ? <ArrowDownRight className="h-3 w-3" /> : null}
             {formatPercentAbs(asset.changePercent)}
-          </div>
-        </div>
-        <div className="rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-          <p className="text-xs text-fg-muted mb-1">Piyasa Değeri</p>
-          <p className="text-lg font-mono font-bold text-fg">${formatCompactNumber(meta.marketCap)}</p>
-        </div>
-      </motion.div>
-
-      <motion.div variants={cardVariants} initial="hidden" animate="show" className="grid grid-cols-2 gap-4">
-        <div className="flex items-center justify-between rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-          <span className="flex items-center gap-2 text-xs text-fg-muted"><ArrowDownRight className="h-3.5 w-3.5" />24s Değişim (USD)</span>
-          <span className="text-sm font-mono font-semibold text-fg">{formatPriceUSD(asset.changeAmount)}</span>
-        </div>
-        <div className="flex items-center justify-between rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-          <span className="flex items-center gap-2 text-xs text-fg-muted"><BarChart2 className="h-3.5 w-3.5" />Hacim (24s)</span>
-          <span className="text-sm font-mono font-semibold text-fg">{formatCompactNumber(meta.totalVolume)}</span>
-        </div>
-      </motion.div>
-    </>
+          </span>
+        ),
+      },
+      { label: '24s Δ (USD)', value: formatPriceUSD(asset.changeAmount), color: changeColors[cls] },
+      { label: 'Piyasa Değeri', value: `$${formatCompactNumber(meta.marketCap)}` },
+      { label: 'Hacim (24s)', value: formatCompactNumber(meta.totalVolume) },
+    ]} />
   );
 }
 

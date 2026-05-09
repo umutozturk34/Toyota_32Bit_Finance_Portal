@@ -1,5 +1,6 @@
 package com.finance.notification.messaging.dispatch;
 
+import com.finance.common.security.UserStatusPort;
 import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.NotificationStreamRegistry;
@@ -21,9 +22,15 @@ public class ConversationLifecycleEventListener {
 
     private final NotificationDispatcher dispatcher;
     private final NotificationStreamRegistry streamRegistry;
+    private final UserStatusPort userStatus;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onLifecycleChanged(ConversationLifecycleEvent event) {
+        if (!userStatus.isActive(event.userSub())) {
+            log.debug("Lifecycle notification suppressed (user inactive) user={} action={}",
+                    event.userSub(), event.action());
+            return;
+        }
         SystemPayload payload = switch (event.action()) {
             case CLOSED -> new SystemPayload(
                     "Sohbet kapatıldı",

@@ -1,6 +1,6 @@
 package com.finance.portfolio.dto.internal;
 
-import com.finance.common.util.PercentChangeCalculator;
+import com.finance.shared.util.PercentChangeCalculator;
 import com.finance.portfolio.model.MoneyScale;
 
 import java.math.BigDecimal;

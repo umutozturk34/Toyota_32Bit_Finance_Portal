@@ -10,4 +10,5 @@ spring:
       - classpath:config/mail.yaml
       - classpath:config/notification.yaml
       - classpath:config/market-hours.yaml
+      - classpath:config/slot.yaml
       - classpath:config/api.yaml

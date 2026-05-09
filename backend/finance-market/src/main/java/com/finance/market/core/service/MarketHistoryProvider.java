@@ -1,6 +1,6 @@
 package com.finance.market.core.service;
 
-import com.finance.common.model.CandlePeriod;
+import com.finance.shared.model.CandlePeriod;
 import com.finance.common.model.MarketType;
 
 import java.time.LocalDate;

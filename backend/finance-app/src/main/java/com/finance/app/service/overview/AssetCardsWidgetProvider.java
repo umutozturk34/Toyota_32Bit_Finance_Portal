@@ -8,7 +8,7 @@ import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.service.MarketAssetProvider;
-import com.finance.common.util.EnumDispatcher;
+import com.finance.shared.util.EnumDispatcher;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 

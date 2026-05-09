@@ -2,7 +2,7 @@ package com.finance.app.controller;
 
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
-import com.finance.common.util.EnumParser;
+import com.finance.shared.util.EnumParser;
 
 import java.util.Arrays;
 import java.util.List;

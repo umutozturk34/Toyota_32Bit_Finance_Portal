@@ -21,6 +21,7 @@ class ConversationLifecycleEventListenerTest {
 
     @Mock private NotificationDispatcher dispatcher;
     @Mock private NotificationStreamRegistry streamRegistry;
+    @Mock private com.finance.common.security.UserStatusPort userStatus;
 
     private ConversationLifecycleEventListener listener;
     private AutoCloseable mocks;
@@ -28,7 +29,8 @@ class ConversationLifecycleEventListenerTest {
     @BeforeEach
     void setUp() {
         mocks = MockitoAnnotations.openMocks(this);
-        listener = new ConversationLifecycleEventListener(dispatcher, streamRegistry);
+        listener = new ConversationLifecycleEventListener(dispatcher, streamRegistry, userStatus);
+        org.mockito.Mockito.lenient().when(userStatus.isActive(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
     }
 
     @ParameterizedTest

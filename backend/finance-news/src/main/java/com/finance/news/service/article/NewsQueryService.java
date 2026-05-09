@@ -4,13 +4,13 @@ import com.finance.news.service.article.NewsCacheService;
 import com.finance.news.service.article.NewsQueryService;
 
 
-import com.finance.common.dto.response.GroupCount;
+import com.finance.shared.dto.response.GroupCount;
 import com.finance.news.dto.response.NewsArticleDetailResponse;
 import com.finance.news.dto.response.NewsArticleResponse;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.common.exception.ResourceNotFoundException;
-import com.finance.common.util.EnumParser;
-import com.finance.common.util.LikeSearchSpec;
+import com.finance.shared.util.EnumParser;
+import com.finance.shared.util.LikeSearchSpec;
 import com.finance.news.mapper.NewsResponseMapper;
 import com.finance.news.model.NewsArticle;
 import com.finance.news.model.NewsCategory;

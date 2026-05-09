@@ -9,7 +9,7 @@ import com.finance.market.core.cache.MarketCacheService;
 import com.finance.common.exception.BusinessException;
 import com.finance.market.commodity.model.Commodity;
 import com.finance.common.model.TrackedAssetType;
-import com.finance.common.util.CodeNormalizer;
+import com.finance.shared.util.CodeNormalizer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;

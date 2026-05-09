@@ -1,8 +1,8 @@
 package com.finance.market.core.scheduler;
 
-import com.finance.common.event.MarketUpdateEventPort;
+import com.finance.shared.event.EventPublisherPort;
 import com.finance.market.core.service.MarketUpdatePort;
-import com.finance.common.service.PortfolioSnapshotPort;
+import com.finance.shared.service.PortfolioSnapshotPort;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -11,6 +11,6 @@ import java.util.Optional;
 public record SchedulerPorts(
         Optional<PortfolioSnapshotPort> portfolio,
         Optional<MarketUpdatePort> market,
-        Optional<MarketUpdateEventPort> events
+        Optional<EventPublisherPort> events
 ) {
 }

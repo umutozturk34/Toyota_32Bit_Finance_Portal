@@ -6,7 +6,7 @@ import com.finance.market.core.service.TrackedAssetQueryService;
 
 import com.finance.market.core.dto.response.CandleResponse;
 import com.finance.market.commodity.mapper.CommodityResponseMapper;
-import com.finance.common.model.CandlePeriod;
+import com.finance.shared.model.CandlePeriod;
 import com.finance.market.commodity.model.CommodityCandle;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;

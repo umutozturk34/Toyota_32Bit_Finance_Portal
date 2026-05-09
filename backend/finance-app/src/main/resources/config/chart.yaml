@@ -1,0 +1,19 @@
+app:
+  chart:
+    defaults:
+      indicators:
+        - { type: SMA, period: 20, color: "#c084fc", visible: false }
+        - { type: EMA, period: 50, color: "#fb923c", visible: false }
+      chart-type: candle
+      show-volume: false
+      magnet-mode: off
+      icon-size: 22
+      selected-icon: "🚀"
+    fund:
+      chart-type: line
+      show-investor-count: false
+      show-portfolio-size: false
+    limits:
+      max-drawings-per-asset: 50
+      max-indicators-per-asset: 8
+      max-fib-tools-per-asset: 12

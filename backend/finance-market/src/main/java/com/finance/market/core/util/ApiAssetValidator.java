@@ -1,6 +1,6 @@
 package com.finance.market.core.util;
 
-import com.finance.common.util.CodeNormalizer;
+import com.finance.shared.util.CodeNormalizer;
 import org.apache.logging.log4j.Logger;
 
 import java.util.function.Function;

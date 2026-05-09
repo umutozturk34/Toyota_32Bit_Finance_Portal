@@ -35,11 +35,12 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
   const { processingStep, runAnimation, reset: resetProcessing } = useProcessingAnimation();
   const { data: limits } = usePortfolioLimits();
 
-  const { data: viewAvailability, isPending: viewLoading } = useQuery({
+  const { data: viewAvailability, isFetching: viewLoading, isPending: viewInitialLoading } = useQuery({
     queryKey: ['marketAvailability', target.assetType, target.assetCode, viewMonth],
     queryFn: () => unifiedMarketService.getMonthlyAvailability(target.assetType, target.assetCode, viewMonth),
     enabled: Boolean(target.assetType && target.assetCode && viewMonth),
     staleTime: ONE_HOUR_MS,
+    placeholderData: (prev) => prev,
   });
 
   const entryLoading = viewLoading;
@@ -150,10 +151,10 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
         onClick={dismissable ? onClose : undefined}
       />
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.97 }}
+        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
         className="relative w-full max-w-sm rounded-2xl border border-border-default modal-panel p-6 overflow-visible"
       >
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
@@ -213,7 +214,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
                 minDate={limits?.minEntryDate}
                 maxDate={limits?.maxEntryDate || todayInputValue()}
                 highlightedDates={highlightedDates}
-                loading={viewLoading}
+                loading={viewInitialLoading}
               />
               <DataAvailabilityHint
                 dataAvailable={dataAvailable}
@@ -396,7 +397,9 @@ function SuccessPanel({ title, subtitle }) {
 }
 
 function DataAvailabilityHint({ dataAvailable, suggestedPrice, onApply, applied, loading }) {
-  if (loading) return null;
+  if (loading) {
+    return <div className="h-[30px] rounded-md border border-border-default/40 bg-surface/20 animate-pulse" />;
+  }
   if (dataAvailable) {
     return (
       <div className="flex items-center justify-between gap-2 text-[11px] text-success bg-success/5 rounded-md px-2.5 py-1.5 border border-success/20">

@@ -17,6 +17,20 @@
           }
         } catch (_) { /* localStorage unavailable */ }
       })();
+      window.__SCROLL_RESTORE_KEY__ = 'scroll-pos:' + location.pathname;
+      window.addEventListener('DOMContentLoaded', function () {
+        try {
+          var raw = sessionStorage.getItem(window.__SCROLL_RESTORE_KEY__);
+          if (!raw) return;
+          var pos = JSON.parse(raw);
+          if (!pos || typeof pos.y !== 'number' || pos.y <= 0) return;
+          if (typeof pos.h === 'number' && pos.h > 0) {
+            document.body.style.minHeight = pos.h + 'px';
+          }
+          window.scrollTo(0, pos.y);
+          window.__SCROLL_RESTORE_TARGET__ = pos.y;
+        } catch (_) { /* ignore */ }
+      });
     </script>
   </head>
   <body>

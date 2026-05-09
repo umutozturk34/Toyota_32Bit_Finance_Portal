@@ -1,5 +1,5 @@
 package com.finance.portfolio.service;
-import com.finance.common.service.AssetPricingPort;
+import com.finance.shared.service.AssetPricingPort;
 
 import com.finance.market.core.service.MarketSnapshotProcessor;
 

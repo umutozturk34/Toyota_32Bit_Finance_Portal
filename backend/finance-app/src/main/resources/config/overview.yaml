@@ -26,20 +26,20 @@ app:
         - { section-id: movers-commodity,    kind: MOVERS,      order: 6, market-type: COMMODITY }
     widgets:
       ASSET_CARDS:
-        defaults: { w: 8, h: 3 }
+        defaults: { w: 12, h: 3 }
         min:      { w: 3, h: 2 }
         max:      { w: 12, h: 6 }
         max-items: 12
       MOVERS:
-        defaults: { w: 4, h: 6 }
-        min:      { w: 3, h: 4 }
-        max:      { w: 6, h: 12 }
+        defaults: { w: 4, h: 4 }
+        min:      { w: 3, h: 3 }
+        max:      { w: 12, h: 12 }
       WATCHLIST:
-        defaults: { w: 4, h: 6 }
-        min:      { w: 3, h: 4 }
-        max:      { w: 6, h: 12 }
+        defaults: { w: 4, h: 5 }
+        min:      { w: 3, h: 3 }
+        max:      { w: 12, h: 12 }
       NEWS:
-        defaults: { w: 4, h: 14 }
+        defaults: { w: 4, h: 12 }
         min:      { w: 3, h: 6 }
-        max:      { w: 8, h: 24 }
+        max:      { w: 12, h: 24 }
         max-items: 12

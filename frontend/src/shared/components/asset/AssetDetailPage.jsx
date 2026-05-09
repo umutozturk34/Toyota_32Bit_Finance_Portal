@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { ShoppingCart } from '../feedback/AnimatedIcons';
 import useChartRange from '../../hooks/useChartRange';
+import useScrollRestoration from '../../hooks/useScrollRestoration';
 import { unifiedMarketService } from '../../services/unifiedMarketService';
 import LoadingState from '../feedback/LoadingState';
 import ErrorState from '../feedback/ErrorState';
@@ -51,6 +52,8 @@ export default function AssetDetailPage({
     queryFn: () => fetchAsset(assetCode),
   });
 
+  useScrollRestoration();
+
   const { data: historyRaw } = useQuery({
     queryKey: [`${queryKeyPrefix}History`, assetCode, timeRange],
     queryFn: () => fetchHistory(assetCode, timeRange),
@@ -91,7 +94,7 @@ export default function AssetDetailPage({
       >
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(backRoute || -1)}
             className="flex items-center justify-center w-9 h-9 rounded-xl border border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:bg-surface hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" />

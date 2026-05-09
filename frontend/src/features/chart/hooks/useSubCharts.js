@@ -5,12 +5,20 @@ import { getChartOptions } from '../lib/chartOptions';
 
 const createSubChart = (container, isDark, height) => {
     const opts = getChartOptions(isDark);
-    return createChart(container, {
+    const chart = createChart(container, {
         ...opts,
         width: container.clientWidth,
         height,
         timeScale: { ...opts.timeScale, visible: false },
     });
+    const observer = new ResizeObserver(() => {
+        try {
+            chart.applyOptions({ width: container.clientWidth });
+        } catch { /* chart already removed */ }
+    });
+    observer.observe(container);
+    chart.__resizeObserver = observer;
+    return chart;
 };
 
 const syncTimeScales = (mainChart, subChart) => {
@@ -28,12 +36,17 @@ const syncTimeScales = (mainChart, subChart) => {
 
 const cleanupChart = (chartRef) => {
     if (chartRef.current) {
+        if (chartRef.current.__resizeObserver) {
+            try { chartRef.current.__resizeObserver.disconnect(); } catch { /* ignore */ }
+        }
         chartRef.current.remove();
         chartRef.current = null;
     }
 };
 
-const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, rsiIndicator, hasMACD, macdIndicator, showVolume, data, showInvestorCount, showPortfolioSize }) => {
+const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, rsiIndicator, hasMACD, macdIndicator, showVolume, data, showInvestorCount, showPortfolioSize, isFullscreen = false }) => {
+    const indicatorHeight = isFullscreen ? 110 : 150;
+    const histogramHeight = isFullscreen ? 95 : 120;
     const rsiChartRef = useRef(null);
     const rsiContainerRef = useRef(null);
     const rsiSeriesRef = useRef(null);
@@ -52,7 +65,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
             return;
         }
         cleanupChart(rsiChartRef);
-        const rsiChart = createSubChart(rsiContainerRef.current, isDark, 150);
+        const rsiChart = createSubChart(rsiContainerRef.current, isDark, indicatorHeight);
         rsiChartRef.current = rsiChart;
         const period = rsiIndicator?.period || 14;
         const rsiData = calculateRSI(candleDataRef.current, period);
@@ -70,7 +83,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         });
         syncTimeScales(chartRef.current, rsiChart);
         return () => cleanupChart(rsiChartRef);
-    }, [hasRSI, rsiIndicator, data]);
+    }, [hasRSI, rsiIndicator, data, isFullscreen]);
 
     useEffect(() => {
         if (rsiChartRef.current) rsiChartRef.current.applyOptions(getChartOptions(isDark));
@@ -82,7 +95,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
             return;
         }
         cleanupChart(macdChartRef);
-        const macdChart = createSubChart(macdContainerRef.current, isDark, 150);
+        const macdChart = createSubChart(macdContainerRef.current, isDark, indicatorHeight);
         macdChartRef.current = macdChart;
         const { macd, signal, histogram } = calculateMACD(candleDataRef.current);
         const histSeries = macdChart.addSeries(HistogramSeries, {
@@ -112,7 +125,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         });
         syncTimeScales(chartRef.current, macdChart);
         return () => cleanupChart(macdChartRef);
-    }, [hasMACD, macdIndicator, data]);
+    }, [hasMACD, macdIndicator, data, isFullscreen]);
 
     useEffect(() => {
         if (macdChartRef.current) macdChartRef.current.applyOptions(getChartOptions(isDark));
@@ -123,13 +136,13 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
             cleanupChart(volumeChartRef);
             return;
         }
-        const volChart = createSubChart(volumeContainerRef.current, isDark, 120);
+        const volChart = createSubChart(volumeContainerRef.current, isDark, histogramHeight);
         volumeChartRef.current = volChart;
         const volSeries = volChart.addSeries(HistogramSeries, { color: '#26a69a', priceFormat: { type: 'volume' } });
         volSeries.setData(volumeDataRef.current);
         syncTimeScales(chartRef.current, volChart);
         return () => cleanupChart(volumeChartRef);
-    }, [showVolume, data]);
+    }, [showVolume, data, isFullscreen]);
 
     useEffect(() => {
         if (volumeChartRef.current) volumeChartRef.current.applyOptions(getChartOptions(isDark));
@@ -141,7 +154,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
             return;
         }
         cleanupChart(investorCountChartRef);
-        const chart = createSubChart(investorCountContainerRef.current, isDark, 120);
+        const chart = createSubChart(investorCountContainerRef.current, isDark, histogramHeight);
         investorCountChartRef.current = chart;
         const icData = data.candles
             .filter(c => c.investorCount != null)
@@ -156,7 +169,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         }
         syncTimeScales(chartRef.current, chart);
         return () => cleanupChart(investorCountChartRef);
-    }, [showInvestorCount, data]);
+    }, [showInvestorCount, data, isFullscreen]);
 
     useEffect(() => {
         if (investorCountChartRef.current) investorCountChartRef.current.applyOptions(getChartOptions(isDark));
@@ -168,7 +181,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
             return;
         }
         cleanupChart(portfolioSizeChartRef);
-        const chart = createSubChart(portfolioSizeContainerRef.current, isDark, 120);
+        const chart = createSubChart(portfolioSizeContainerRef.current, isDark, histogramHeight);
         portfolioSizeChartRef.current = chart;
         const psData = data.candles
             .filter(c => c.portfolioSize != null)
@@ -183,7 +196,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         }
         syncTimeScales(chartRef.current, chart);
         return () => cleanupChart(portfolioSizeChartRef);
-    }, [showPortfolioSize, data]);
+    }, [showPortfolioSize, data, isFullscreen]);
 
     useEffect(() => {
         if (portfolioSizeChartRef.current) portfolioSizeChartRef.current.applyOptions(getChartOptions(isDark));

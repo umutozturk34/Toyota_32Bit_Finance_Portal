@@ -6,7 +6,7 @@ import com.finance.market.core.scheduler.SchedulerPorts;
 
 import com.finance.common.model.MarketType;
 import com.finance.market.crypto.service.CryptoDataService;
-import com.finance.common.service.TaskTrackingService;
+import com.finance.shared.service.TaskTrackingService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;

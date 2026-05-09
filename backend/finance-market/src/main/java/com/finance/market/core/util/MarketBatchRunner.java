@@ -1,6 +1,6 @@
 package com.finance.market.core.util;
 
-import com.finance.common.util.BatchUpdateRunner;
+import com.finance.shared.util.BatchUpdateRunner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import org.apache.logging.log4j.Logger;
 

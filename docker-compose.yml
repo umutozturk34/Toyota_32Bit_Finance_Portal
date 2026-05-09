@@ -24,8 +24,8 @@ services:
   # Spring Boot Backend
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
       secrets:
         - github_token
     container_name: finance-backend
@@ -62,8 +62,8 @@ services:
 
   notification-backend:
     build:
-      context: ./notification-backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: notification-backend/Dockerfile
       secrets:
         - github_token
     container_name: finance-notification-backend

@@ -6,6 +6,7 @@ import com.finance.user.dto.AdminUserResponse;
 import com.finance.user.dto.KeycloakUser;
 import com.finance.common.exception.ExternalApiException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.common.repository.UserStatusRepository;
 import com.finance.user.mapper.KeycloakUserMapperImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,12 +26,13 @@ import static org.mockito.Mockito.when;
 class AdminUserServiceTest {
 
     @Mock private KeycloakAdminClient client;
+    @Mock private UserStatusRepository userStatusRepository;
 
     private AdminUserService service;
 
     @BeforeEach
     void setUp() {
-        service = new AdminUserService(client, new KeycloakUserMapperImpl());
+        service = new AdminUserService(client, new KeycloakUserMapperImpl(), userStatusRepository);
     }
 
     @Test

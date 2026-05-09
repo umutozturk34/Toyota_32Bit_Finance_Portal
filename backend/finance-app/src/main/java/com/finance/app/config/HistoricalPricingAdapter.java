@@ -10,7 +10,7 @@ import com.finance.market.fund.dto.response.FundCandleResponse;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.service.HistoricalPricingPort;
 import com.finance.market.core.service.MarketHistoryProvider;
-import com.finance.common.util.EnumDispatcher;
+import com.finance.shared.util.EnumDispatcher;
 import com.finance.market.core.util.SyntheticPriceCalculator;
 import com.finance.portfolio.config.PortfolioProperties;
 import lombok.extern.log4j.Log4j2;

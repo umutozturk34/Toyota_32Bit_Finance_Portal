@@ -21,6 +21,10 @@
 			<artifactId>finance-common</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>com.finance</groupId>
+			<artifactId>finance-monolith-shared</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>com.rometools</groupId>
 			<artifactId>rome</artifactId>
 			<version>2.1.0</version>

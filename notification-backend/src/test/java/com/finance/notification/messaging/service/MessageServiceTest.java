@@ -46,13 +46,15 @@ class MessageServiceTest {
     @Mock private org.springframework.context.ApplicationEventPublisher events;
     @Mock private com.finance.notification.core.dispatch.email.KeycloakUserEmailLookup userDirectory;
     @Mock private com.finance.notification.messaging.presence.ActiveConversationRegistry presence;
+    @Mock private com.finance.common.security.UserStatusPort userStatus;
 
     private MessageService service;
 
     @BeforeEach
     void setUp() {
         service = new MessageService(repository, closedRepository, new MessageMapperImpl(),
-                duplicateGuard, cooldownGuard, backlogGuard, events, userDirectory, presence);
+                duplicateGuard, cooldownGuard, backlogGuard, events, userDirectory, presence, userStatus);
+        org.mockito.Mockito.lenient().when(userStatus.isActive(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
     }
 
     @Test

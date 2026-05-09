@@ -11,7 +11,7 @@ import com.finance.portfolio.model.AssetType;
 
 import com.finance.common.model.TrackedAsset;
 
-import com.finance.common.service.AssetPricingPort;
+import com.finance.shared.service.AssetPricingPort;
 
 import com.finance.market.core.service.MarketSnapshotProcessor;
 
@@ -25,8 +25,8 @@ import com.finance.portfolio.model.PortfolioPosition;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
-import com.finance.common.service.AssetPricingPort.AssetKey;
-import com.finance.common.util.PercentChangeCalculator;
+import com.finance.shared.service.AssetPricingPort.AssetKey;
+import com.finance.shared.util.PercentChangeCalculator;
 import com.finance.portfolio.config.PortfolioProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

@@ -22,6 +22,10 @@
                 </dependency>
                 <dependency>
                         <groupId>com.finance</groupId>
+                        <artifactId>finance-monolith-shared</artifactId>
+                </dependency>
+                <dependency>
+                        <groupId>com.finance</groupId>
                         <artifactId>finance-market</artifactId>
                 </dependency>
         </dependencies>

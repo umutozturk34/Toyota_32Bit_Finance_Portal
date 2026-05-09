@@ -1,8 +1,10 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useEffect, useCallback, useState } from 'react';
 import {
     BarChart2, X, LineChart, Activity, PenTool, Triangle, Calendar,
 } from 'lucide-react';
 import { useTheme } from '../../../shared/context/ThemeContext';
+import useAppStore from '../../../shared/stores/useAppStore';
+import useChartConfig from '../hooks/useChartConfig';
 import useIndicators from '../hooks/useIndicators';
 import useDrawings from '../hooks/useDrawings';
 import useFibonacci from '../hooks/useFibonacci';
@@ -33,30 +35,60 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
     const { isDark } = useTheme();
     const renderDrawingsRef = useRef(null);
     const textDoneRef = useRef(false);
-    const [activeTab, setActiveTab] = useState('indicators');
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [showVolume, setShowVolume] = useState(false);
-    const [chartType, setChartType] = useState(assetType === 'FUND' ? 'line' : 'candle');
-    const [magnetMode, setMagnetMode] = useState('off');
-    const [selectedIcon, setSelectedIcon] = useState('\u{1F680}');
-    const [iconSize, setIconSize] = useState(22);
+    const wrapperRef = useRef(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    useEffect(() => {
+        const onChange = () => setIsFullscreen(document.fullscreenElement === wrapperRef.current);
+        document.addEventListener('fullscreenchange', onChange);
+        return () => document.removeEventListener('fullscreenchange', onChange);
+    }, []);
+
+    const toggleFullscreen = useCallback(() => {
+        if (document.fullscreenElement) {
+            document.exitFullscreen?.();
+        } else {
+            wrapperRef.current?.requestFullscreen?.();
+        }
+    }, []);
+
     const isFund = assetType === 'FUND';
     const isCrypto = assetType === 'CRYPTO';
     const isForex = assetType === 'FOREX';
     const showVolumeToggle = !isFund && !isForex;
     const showFibTab = !isFund;
     const allowCandle = !isFund;
-    const [showInvestorCount, setShowInvestorCount] = useState(false);
-    const [showPortfolioSize, setShowPortfolioSize] = useState(false);
+
+    const sidebarOpen = useAppStore((s) => s.chartSidebarOpen);
+    const setSidebarOpen = useAppStore((s) => s.setChartSidebarOpen);
+    const activeTab = useAppStore((s) => s.chartActiveTab);
+    const setActiveTab = useAppStore((s) => s.setChartActiveTab);
+
+    const { config, setField } = useChartConfig(assetType, symbol, timeRange, !compareSymbol);
+    const showVolume = config?.showVolume ?? false;
+    const chartType = config?.chartType ?? (isFund ? 'line' : 'candle');
+    const magnetMode = config?.magnetMode ?? 'off';
+    const selectedIcon = config?.selectedIcon ?? '\u{1F680}';
+    const iconSize = config?.iconSize ?? 22;
+    const showInvestorCount = config?.showInvestorCount ?? false;
+    const showPortfolioSize = config?.showPortfolioSize ?? false;
+
+    const setShowVolume = useCallback((v) => setField('showVolume', typeof v === 'function' ? v(showVolume) : v), [setField, showVolume]);
+    const setChartType = useCallback((v) => setField('chartType', v), [setField]);
+    const setMagnetMode = useCallback((v) => setField('magnetMode', v), [setField]);
+    const setSelectedIcon = useCallback((v) => setField('selectedIcon', v), [setField]);
+    const setIconSize = useCallback((v) => setField('iconSize', typeof v === 'function' ? v(iconSize) : v), [setField, iconSize]);
+    const setShowInvestorCount = useCallback((v) => setField('showInvestorCount', typeof v === 'function' ? v(showInvestorCount) : v), [setField, showInvestorCount]);
+    const setShowPortfolioSize = useCallback((v) => setField('showPortfolioSize', typeof v === 'function' ? v(showPortfolioSize) : v), [setField, showPortfolioSize]);
 
     const hasInvestorCountData = useMemo(() =>
         isFund && data?.candles?.some(c => c.investorCount != null && Number(c.investorCount) > 0), [data, isFund]);
     const hasPortfolioSizeData = useMemo(() =>
         isFund && data?.candles?.some(c => c.portfolioSize != null && Number(c.portfolioSize) > 0), [data, isFund]);
 
-    const { indicators, addIndicator, removeIndicator, updateIndicator, toggleIndicator } = useIndicators();
-    const { drawings, activeTool, addDrawing, removeDrawing, undoDrawing, clearDrawings, selectTool, cancelTool } = useDrawings();
-    const { fibTools, activeFibTool, addFibTool, removeFibTool, clearFibTools, selectFibTool, cancelFibTool } = useFibonacci();
+    const { indicators, addIndicator, removeIndicator, updateIndicator, toggleIndicator } = useIndicators(assetType, symbol, timeRange, !compareSymbol);
+    const { drawings, activeTool, addDrawing, removeDrawing, undoDrawing, clearDrawings, selectTool, cancelTool } = useDrawings(assetType, symbol, timeRange, !compareSymbol);
+    const { fibTools, activeFibTool, addFibTool, removeFibTool, clearFibTools, selectFibTool, cancelFibTool } = useFibonacci(assetType, symbol, timeRange, !compareSymbol);
 
     const filteredIndicators = useMemo(() => {
         if (isFund) return indicators.filter(i => i.type === 'SMA' || i.type === 'EMA');
@@ -70,7 +102,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
 
     const { chartRef, chartContainerRef, candleSeriesRef, candleDataRef, volumeDataRef, trend, crosshairData } = useChartCore({
         data: data, symbol, chartType: allowCandle ? chartType : 'line', isDark, indicators: filteredIndicators, renderDrawingsRef, assetType,
-        compareData: compareData, compareSymbol,
+        compareData: compareData, compareSymbol, timeRange,
     });
 
     const { rsiContainerRef, macdContainerRef, volumeContainerRef, investorCountContainerRef, portfolioSizeContainerRef } = useSubCharts({
@@ -78,6 +110,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
         hasRSI, rsiIndicator, hasMACD, macdIndicator, showVolume: showVolumeToggle && showVolume, data: data,
         showInvestorCount: isFund && showInvestorCount,
         showPortfolioSize: isFund && showPortfolioSize,
+        isFullscreen,
     });
 
     const {
@@ -101,35 +134,38 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
 
     if (!data?.candles?.length) {
         return (
-            <div className="flex flex-col items-center justify-center h-80 rounded-xl border" style={{ background: isDark ? '#050506' : '#f8fafc', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
-                <LineChart className="w-12 h-12 mb-3" style={{ color: isDark ? 'rgba(255,255,255,0.2)' : '#94a3b8' }} />
+            <div className="flex flex-col items-center justify-center h-80 rounded-xl border border-border-default bg-bg-elevated card-elevated">
+                <LineChart className="w-12 h-12 mb-3 text-fg-subtle" />
                 <p className="text-fg-muted text-sm">Waiting for chart data...</p>
             </div>
         );
     }
 
     return (
-        <div className="flex rounded-xl border overflow-hidden" style={{ minHeight: 560, background: isDark ? '#020203' : '#f8fafc', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
+        <div ref={wrapperRef} className={`relative flex rounded-xl border border-border-default bg-bg-elevated card-elevated overflow-hidden ${isFullscreen ? 'h-screen rounded-none' : ''}`} style={isFullscreen ? {} : { minHeight: 560 }}>
             {sidebarOpen && (
-                <div className="w-56 shrink-0 border-r flex flex-col" style={{ background: isDark ? '#0a0a0c' : '#eef1f6', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
-                    <div className="flex border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
-                        {TABS.filter(t => showFibTab || t.id !== 'fibonacci').map(({ id, label, Icon }) => (
-                            <button
-                                key={id}
-                                onClick={() => setActiveTab(id)}
-                                className="flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold uppercase tracking-wider border-none cursor-pointer transition-all duration-150"
-                                style={{
-                                    background: activeTab === id ? (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)') : 'transparent',
-                                    color: activeTab === id ? 'var(--color-fg)' : 'var(--color-fg-muted)',
-                                    borderBottom: activeTab === id ? '2px solid #5E6AD2' : '2px solid transparent',
-                                }}
-                            >
-                                <Icon className="w-3.5 h-3.5" style={{ color: activeTab === id ? '#5E6AD2' : undefined }} />
-                                {label}
-                            </button>
-                        ))}
+                <div className="w-60 shrink-0 border-r border-border-default flex flex-col bg-surface/40 backdrop-blur-md relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-indigo-400/40 via-fuchsia-400/20 to-transparent" />
+                    <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-400/20 to-transparent" />
+                    <div className="flex border-b border-border-default">
+                        {TABS.filter(t => showFibTab || t.id !== 'fibonacci').map(({ id, label, Icon }) => {
+                            const isActive = activeTab === id;
+                            return (
+                                <button
+                                    key={id}
+                                    onClick={() => setActiveTab(id)}
+                                    className={`relative flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-semibold uppercase tracking-[0.12em] border-none cursor-pointer transition-all duration-200 bg-transparent hover:bg-surface/60 ${isActive ? 'text-fg' : 'text-fg-muted hover:text-fg'}`}
+                                >
+                                    <Icon className={`w-4 h-4 transition-all ${isActive ? 'text-indigo-400 drop-shadow-[0_0_6px_rgba(99,102,241,0.5)]' : ''}`} />
+                                    {label}
+                                    {isActive && (
+                                        <span className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-gradient-to-r from-indigo-400 via-fuchsia-400 to-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
-                    <div className="flex-1 overflow-y-auto p-2.5" style={{ scrollbarWidth: 'thin' }}>
+                    <div className="flex-1 overflow-y-auto p-3 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border-default [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-border-hover" style={{ scrollbarWidth: 'thin' }}>
                         {activeTab === 'indicators' && (
                             <IndicatorPanel
                                 indicators={indicators}
@@ -166,16 +202,13 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                             />
                         )}
                     </div>
-                    <div className="border-t p-2.5 space-y-1.5" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
+                    {(showVolumeToggle || isFund) && (
+                    <div className="border-t border-border-default px-3 pt-2.5 pb-3 space-y-1.5">
+                        <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-fg-subtle pb-1">Görünüm</p>
                         {showVolumeToggle && (
                             <button
                                 onClick={() => setShowVolume(!showVolume)}
-                                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 cursor-pointer"
-                                style={{
-                                    background: showVolume ? 'rgba(38,166,154,0.1)' : 'transparent',
-                                    borderColor: showVolume ? 'rgba(38,166,154,0.3)' : (isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'),
-                                    color: showVolume ? '#26a69a' : 'var(--color-fg-muted)',
-                                }}
+                                className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 cursor-pointer ${showVolume ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.15)]' : 'border-border-default bg-transparent text-fg-muted hover:text-fg hover:border-border-hover'}`}
                             >
                                 <BarChart2 className="w-3.5 h-3.5" />
                                 Volume
@@ -186,14 +219,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                                 <button
                                     onClick={() => hasInvestorCountData && setShowInvestorCount(!showInvestorCount)}
                                     disabled={!hasInvestorCountData}
-                                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150"
-                                    style={{
-                                        background: showInvestorCount ? 'rgba(99,102,241,0.1)' : 'transparent',
-                                        borderColor: showInvestorCount ? 'rgba(99,102,241,0.3)' : (isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'),
-                                        color: !hasInvestorCountData ? 'var(--color-fg-subtle)' : showInvestorCount ? '#6366f1' : 'var(--color-fg-muted)',
-                                        opacity: hasInvestorCountData ? 1 : 0.45,
-                                        cursor: hasInvestorCountData ? 'pointer' : 'not-allowed',
-                                    }}
+                                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${!hasInvestorCountData ? 'opacity-45 cursor-not-allowed border-border-default text-fg-subtle' : showInvestorCount ? 'cursor-pointer border-indigo-400/40 bg-indigo-400/10 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.15)]' : 'cursor-pointer border-border-default text-fg-muted hover:text-fg hover:border-border-hover'}`}
                                     title={hasInvestorCountData ? 'Kişi Sayısı' : 'Bu fon için kişi sayısı verisi yok'}
                                 >
                                     <Activity className="w-3.5 h-3.5" />
@@ -202,14 +228,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                                 <button
                                     onClick={() => hasPortfolioSizeData && setShowPortfolioSize(!showPortfolioSize)}
                                     disabled={!hasPortfolioSizeData}
-                                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150"
-                                    style={{
-                                        background: showPortfolioSize ? 'rgba(16,185,129,0.1)' : 'transparent',
-                                        borderColor: showPortfolioSize ? 'rgba(16,185,129,0.3)' : (isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'),
-                                        color: !hasPortfolioSizeData ? 'var(--color-fg-subtle)' : showPortfolioSize ? '#10b981' : 'var(--color-fg-muted)',
-                                        opacity: hasPortfolioSizeData ? 1 : 0.45,
-                                        cursor: hasPortfolioSizeData ? 'pointer' : 'not-allowed',
-                                    }}
+                                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${!hasPortfolioSizeData ? 'opacity-45 cursor-not-allowed border-border-default text-fg-subtle' : showPortfolioSize ? 'cursor-pointer border-emerald-500/40 bg-emerald-500/10 text-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.15)]' : 'cursor-pointer border-border-default text-fg-muted hover:text-fg hover:border-border-hover'}`}
                                     title={hasPortfolioSizeData ? 'Portföy Büyüklüğü' : 'Bu fon için portföy verisi yok'}
                                 >
                                     <BarChart2 className="w-3.5 h-3.5" />
@@ -218,6 +237,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                             </>
                         )}
                     </div>
+                    )}
                 </div>
             )}
             <div className="flex-1 flex flex-col min-w-0">
@@ -240,37 +260,30 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                     cancelAllDrawing={cancelAllDrawing}
                     allowCandle={allowCandle}
                     compareSymbol={compareSymbol}
+                    isFullscreen={isFullscreen}
+                    onToggleFullscreen={toggleFullscreen}
                 />
-                <div className="flex items-center gap-1 px-3 py-1.5 border-b" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0', background: isDark ? 'rgba(10,10,14,0.5)' : 'rgba(238,241,246,0.5)' }}>
-                    <Calendar className="w-3 h-3 mr-1" style={{ color: isDark ? '#55555f' : '#94a3b8' }} />
-                    {TIME_RANGES.map(({ id, label }) => (
-                        <button
-                            key={id}
-                            onClick={() => onTimeRangeChange?.(id)}
-                            className="px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide border-none cursor-pointer transition-all duration-150"
-                            style={{
-                                background: timeRange === id
-                                    ? (isDark ? 'rgba(99,102,241,0.15)' : 'rgba(0,82,255,0.1)')
-                                    : 'transparent',
-                                color: timeRange === id
-                                    ? (isDark ? '#818cf8' : '#0052FF')
-                                    : (isDark ? '#8b8b9a' : '#64748B'),
-                                boxShadow: timeRange === id
-                                    ? (isDark ? '0 0 12px rgba(99,102,241,0.15)' : '0 0 12px rgba(0,82,255,0.1)')
-                                    : 'none',
-                            }}
-                        >
-                            {label}
-                        </button>
-                    ))}
+                <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border-default bg-surface/40">
+                    <Calendar className="w-3 h-3 mr-1 text-fg-subtle" />
+                    {TIME_RANGES.map(({ id, label }) => {
+                        const isActive = timeRange === id;
+                        return (
+                            <button
+                                key={id}
+                                onClick={() => onTimeRangeChange?.(id)}
+                                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide border-none cursor-pointer transition-all duration-200 ${isActive ? 'bg-indigo-400/15 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.18)]' : 'bg-transparent text-fg-muted hover:text-fg hover:bg-surface'}`}
+                            >
+                                {label}
+                            </button>
+                        );
+                    })}
                 </div>
-                <div className="relative flex-1">
-                    <div ref={chartContainerRef} className="w-full" style={{ height: 500 }} />
+                <div className={`relative flex-1 ${isFullscreen ? 'min-h-0' : 'min-h-[400px]'}`}>
+                    <div ref={chartContainerRef} className="w-full h-full" />
                     <canvas
                         ref={canvasOverlayRef}
-                        className="absolute inset-0 w-full"
+                        className="absolute inset-0 w-full h-full"
                         style={{
-                            height: 500,
                             cursor: isAnyToolActive ? 'crosshair' : 'default',
                             zIndex: isAnyToolActive ? 10 : 1,
                             pointerEvents: isAnyToolActive ? 'auto' : 'none',
@@ -282,8 +295,8 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                     />
                     <canvas
                         ref={freehandCanvasRef}
-                        className="absolute inset-0 w-full pointer-events-none"
-                        style={{ height: 500, zIndex: 11 }}
+                        className="absolute inset-0 w-full h-full pointer-events-none"
+                        style={{ zIndex: 11 }}
                     />
                     {textEditState && (
                         <input
@@ -335,8 +348,8 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                     )}
                 </div>
                 {hasRSI && (
-                    <div className="border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
-                        <div className="flex items-center justify-between px-3 py-1.5" style={{ background: isDark ? '#0a0a0c' : '#eef1f6' }}>
+                    <div className="border-t border-border-default flex-shrink-0">
+                        <div className="flex items-center justify-between px-3 py-1.5 bg-surface/40">
                             <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
                                 <Activity className="w-3.5 h-3.5" style={{ color: rsiIndicator?.color || '#e91e63' }} />
                                 RSI {rsiIndicator?.period || 14}
@@ -352,8 +365,8 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                     </div>
                 )}
                 {hasMACD && (
-                    <div className="border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
-                        <div className="flex items-center justify-between px-3 py-1.5" style={{ background: isDark ? '#0a0a0c' : '#eef1f6' }}>
+                    <div className="border-t border-border-default flex-shrink-0">
+                        <div className="flex items-center justify-between px-3 py-1.5 bg-surface/40">
                             <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
                                 <Activity className="w-3.5 h-3.5" style={{ color: macdIndicator?.color || '#06b6d4' }} />
                                 MACD (12, 26, 9)
@@ -369,10 +382,10 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                     </div>
                 )}
                 {showVolume && (
-                    <div className="border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
-                        <div className="flex items-center justify-between px-3 py-1.5" style={{ background: isDark ? '#0a0a0c' : '#eef1f6' }}>
+                    <div className="border-t border-border-default flex-shrink-0">
+                        <div className="flex items-center justify-between px-3 py-1.5 bg-surface/40">
                             <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
-                                <BarChart2 className="w-3.5 h-3.5 text-[#26a69a]" />
+                                <BarChart2 className="w-3.5 h-3.5 text-emerald-400" />
                                 Volume
                             </span>
                             <button
@@ -386,10 +399,10 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                     </div>
                 )}
                 {isFund && showInvestorCount && (
-                    <div className="border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
-                        <div className="flex items-center justify-between px-3 py-1.5" style={{ background: isDark ? '#0a0a0c' : '#eef1f6' }}>
+                    <div className="border-t border-border-default flex-shrink-0">
+                        <div className="flex items-center justify-between px-3 py-1.5 bg-surface/40">
                             <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
-                                <Activity className="w-3.5 h-3.5" style={{ color: '#6366f1' }} />
+                                <Activity className="w-3.5 h-3.5 text-indigo-400" />
                                 Kişi Sayısı
                             </span>
                             <button
@@ -403,10 +416,10 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                     </div>
                 )}
                 {isFund && showPortfolioSize && (
-                    <div className="border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
-                        <div className="flex items-center justify-between px-3 py-1.5" style={{ background: isDark ? '#0a0a0c' : '#eef1f6' }}>
+                    <div className="border-t border-border-default flex-shrink-0">
+                        <div className="flex items-center justify-between px-3 py-1.5 bg-surface/40">
                             <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
-                                <BarChart2 className="w-3.5 h-3.5" style={{ color: '#10b981' }} />
+                                <BarChart2 className="w-3.5 h-3.5 text-emerald-500" />
                                 Portföy Büyüklüğü
                             </span>
                             <button

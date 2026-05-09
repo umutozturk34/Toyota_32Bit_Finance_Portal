@@ -18,6 +18,10 @@ public record NotificationPreferenceUpdateRequest(
         Boolean inappMarketClosed,
         Boolean emailMarketDataUpdated,
         Boolean inappMarketDataUpdated,
+        Boolean emailNewsPublished,
+        Boolean inappNewsPublished,
+        Boolean emailPortfolioUpdated,
+        Boolean inappPortfolioUpdated,
         String marketSessionMarkets
 ) {
 }

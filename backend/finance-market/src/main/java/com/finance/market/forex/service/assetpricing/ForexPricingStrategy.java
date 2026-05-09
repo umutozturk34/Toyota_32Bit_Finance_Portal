@@ -5,7 +5,7 @@ import com.finance.market.core.model.BaseAsset;
 import com.finance.market.forex.model.Forex;
 import com.finance.market.forex.model.ForexCandle;
 import com.finance.common.model.MarketType;
-import com.finance.common.service.AssetPricingPort;
+import com.finance.shared.service.AssetPricingPort;
 import com.finance.market.core.service.assetpricing.BaseAssetPricingStrategy;
 import com.finance.market.core.cache.MarketCacheService;
 import org.springframework.stereotype.Component;

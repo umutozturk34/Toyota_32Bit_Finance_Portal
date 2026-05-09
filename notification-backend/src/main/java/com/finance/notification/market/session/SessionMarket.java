@@ -6,7 +6,6 @@ public enum SessionMarket {
     FUND("Fon"),
     COMMODITY("Emtia"),
     BOND("Tahvil"),
-    NEWS("Haberler"),
     CRYPTO("Kripto");
 
     private final String displayLabel;

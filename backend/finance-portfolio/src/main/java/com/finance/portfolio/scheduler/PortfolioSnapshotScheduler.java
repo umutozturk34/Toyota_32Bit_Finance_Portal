@@ -1,7 +1,7 @@
 package com.finance.portfolio.scheduler;
 
 import com.finance.portfolio.service.PortfolioSnapshotService;
-import com.finance.common.service.TaskTrackingService;
+import com.finance.shared.service.TaskTrackingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;

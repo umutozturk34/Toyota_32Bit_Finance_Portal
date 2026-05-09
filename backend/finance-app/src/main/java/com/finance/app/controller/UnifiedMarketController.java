@@ -8,11 +8,11 @@ import com.finance.market.core.service.MarketSnapshotProcessor;
 
 import com.finance.common.config.AppProperties;
 import com.finance.common.dto.ApiResponse;
-import com.finance.common.dto.response.GroupCount;
+import com.finance.shared.dto.response.GroupCount;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.core.dto.response.MarketAvailabilityResponse;
 import com.finance.common.dto.response.PagedResponse;
-import com.finance.common.model.CandlePeriod;
+import com.finance.shared.model.CandlePeriod;
 import com.finance.common.model.MarketType;
 import com.finance.app.service.UnifiedMarketService;
 import io.swagger.v3.oas.annotations.Parameter;

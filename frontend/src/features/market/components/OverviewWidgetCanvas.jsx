@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import GridLayout, { useContainerWidth, verticalCompactor } from 'react-grid-layout';
+import { motion } from 'framer-motion';
+import GridLayout, { useContainerWidth } from 'react-grid-layout';
 import OverviewWidgetCard from './OverviewWidgetCard';
 import { useWidgetDefinitions } from '../../../shared/hooks/useWidgetDefinitions';
 import 'react-grid-layout/css/styles.css';
@@ -132,6 +133,8 @@ export default function OverviewWidgetCanvas({
     }
   };
 
+  const isMobile = width > 0 && width < 768;
+
   return (
     <div
       ref={containerRef}
@@ -139,7 +142,40 @@ export default function OverviewWidgetCanvas({
       onDragOver={handleDragOver}
       style={{ minHeight: width > 0 ? undefined : 600 }}
     >
-      {width > 0 && (
+      {isMobile && (
+        <div className="flex flex-col gap-4 pb-8">
+          <div className="flex items-center gap-2 px-1 pt-1 pb-2">
+            <span aria-hidden className="h-px w-6 bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
+            <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">Genel Bakış</span>
+            <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-accent/30 via-border-default/40 to-transparent" />
+          </div>
+          {sections.map((section, i) => (
+            <motion.div
+              key={section.sectionId}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: Math.min(i * 0.05, 0.5), ease: [0.16, 1, 0.3, 1] }}
+              className="relative rounded-2xl overflow-hidden"
+            >
+              <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-indigo-400/40 via-fuchsia-400/15 to-transparent" />
+              {i < mountedCount ? (
+                <OverviewWidgetCard
+                  section={section}
+                  widgetData={widgetDataMap.get(section.sectionId) ?? null}
+                  editMode={false}
+                  draggable={false}
+                  deleting={deletingIds?.has(section.sectionId) ?? false}
+                  popoverActive={activePopoverSectionId === section.sectionId}
+                  onOpenSettings={onOpenSettings}
+                  onDelete={onDelete}
+                  onConfigChange={onConfigChange}
+                />
+              ) : <WidgetSkeleton />}
+            </motion.div>
+          ))}
+        </div>
+      )}
+      {!isMobile && width > 0 && (
         <GridLayout
           layout={layout}
           width={width}
@@ -149,7 +185,7 @@ export default function OverviewWidgetCanvas({
           resizeConfig={resizeConfig}
           dropConfig={dropConfig}
           droppingItem={droppingItem}
-          compactor={verticalCompactor}
+          compactor={null}
           onDragStop={persistChange}
           onResizeStop={persistChange}
           onDrop={handleDrop}

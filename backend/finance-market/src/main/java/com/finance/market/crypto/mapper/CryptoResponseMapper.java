@@ -5,7 +5,7 @@ import com.finance.market.core.mapper.MarketMetadataBuilder;
 
 
 import com.finance.market.core.dto.response.CandleResponse;
-import com.finance.common.dto.response.CryptoMetadata;
+import com.finance.shared.dto.response.CryptoMetadata;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.crypto.model.Crypto;
 import com.finance.market.crypto.model.CryptoCandle;

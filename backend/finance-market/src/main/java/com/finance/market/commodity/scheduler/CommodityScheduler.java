@@ -6,7 +6,7 @@ import com.finance.market.core.scheduler.SchedulerPorts;
 
 import com.finance.common.model.MarketType;
 import com.finance.market.commodity.service.CommodityDataService;
-import com.finance.common.service.TaskTrackingService;
+import com.finance.shared.service.TaskTrackingService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 

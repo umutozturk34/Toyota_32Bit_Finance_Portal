@@ -7,7 +7,7 @@ import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.commodity.model.Commodity;
 import com.finance.market.commodity.repository.CommodityRepository;
 import com.finance.common.config.AppProperties;
-import com.finance.common.util.RedisKeys;
+import com.finance.shared.util.RedisKeys;
 import com.finance.market.crypto.model.Crypto;
 import com.finance.market.crypto.repository.CryptoRepository;
 import com.finance.market.forex.model.Forex;

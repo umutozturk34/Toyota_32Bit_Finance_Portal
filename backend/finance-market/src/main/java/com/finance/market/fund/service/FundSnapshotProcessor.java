@@ -14,7 +14,7 @@ import com.finance.market.fund.model.Fund;
 import com.finance.market.fund.model.FundType;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.util.ApiAssetValidator;
-import com.finance.common.util.CodeNormalizer;
+import com.finance.shared.util.CodeNormalizer;
 import com.finance.market.fund.util.TefasHelper;
 import com.finance.market.core.util.TrackedRefreshRunner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;

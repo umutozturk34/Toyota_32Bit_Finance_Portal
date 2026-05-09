@@ -1,26 +1,40 @@
-import { useState, useCallback } from 'react';
-export default function useFibonacci() {
-    const [fibTools, setFibTools] = useState([]);
+import { useCallback, useMemo, useState } from 'react';
+import useChartConfig from './useChartConfig';
+
+const genId = () => `f-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+export default function useFibonacci(assetType, assetCode, range, persistEnabled = true) {
+    const { config, setField } = useChartConfig(assetType, assetCode, range, persistEnabled);
+    const fibTools = useMemo(
+        () => (Array.isArray(config?.fibTools) ? config.fibTools : []),
+        [config?.fibTools],
+    );
     const [activeFibTool, setActiveFibTool] = useState(null);
+
     const addFibTool = useCallback((tool) => {
-        setFibTools(prev => [
-            ...prev,
-            { ...tool, id: `f-${Date.now()}-${Math.random().toString(36).slice(2, 6)}` },
+        setField('fibTools', (prev) => [
+            ...(Array.isArray(prev) ? prev : []),
+            { ...tool, id: genId() },
         ]);
-    }, []);
+    }, [setField]);
+
     const removeFibTool = useCallback((id) => {
-        setFibTools(prev => prev.filter(f => f.id !== id));
-    }, []);
+        setField('fibTools', (prev) => (Array.isArray(prev) ? prev : []).filter((f) => f.id !== id));
+    }, [setField]);
+
     const clearFibTools = useCallback(() => {
-        setFibTools([]);
+        setField('fibTools', []);
         setActiveFibTool(null);
-    }, []);
+    }, [setField]);
+
     const selectFibTool = useCallback((type) => {
-        setActiveFibTool(prev => (prev === type ? null : type));
+        setActiveFibTool((prev) => (prev === type ? null : type));
     }, []);
+
     const cancelFibTool = useCallback(() => {
         setActiveFibTool(null);
     }, []);
+
     return {
         fibTools,
         activeFibTool,

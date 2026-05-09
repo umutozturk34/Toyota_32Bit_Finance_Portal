@@ -3,7 +3,7 @@ package com.finance.market.core.service;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.core.model.BaseAsset;
 import com.finance.common.model.TrackedAssetType;
-import com.finance.common.util.LikeSearchSpec;
+import com.finance.shared.util.LikeSearchSpec;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;

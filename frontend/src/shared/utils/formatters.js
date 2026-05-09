@@ -49,6 +49,15 @@ export const formatCompactTRY = (price) => {
     return formatPriceTRY(price);
 };
 
+export const formatPriceCompactTRY = (price) => {
+    if (price === null || price === undefined) return 'N/A';
+    const num = Number(price);
+    if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B ₺`;
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M ₺`;
+    if (num >= 10_000) return `${(num / 1_000).toFixed(1)}K ₺`;
+    return formatPriceTRY(num);
+};
+
 export const formatCompactNumber = (number, currency = 'USD') => {
     if (number === null || number === undefined) return 'N/A';
     return new Intl.NumberFormat('en-US', {

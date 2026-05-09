@@ -312,7 +312,7 @@ export default function WatchPage() {
           <span className="w-9">&nbsp;</span>
           <span>Varlık</span>
           <span className="text-right">Son fiyat</span>
-          <span className="w-8" />
+          <span className="min-w-[64px]" />
         </div>
         <div className="flex flex-col">
           {items.isLoading || activeListId == null ? (
@@ -381,8 +381,8 @@ export default function WatchPage() {
           <span>Varlık</span>
           <span>Yön</span>
           <span className="text-right min-w-[90px]">Eşik</span>
-          <span>Durum</span>
-          <span className="w-8" />
+          <span className="min-w-[80px]">Durum</span>
+          <span className="min-w-[110px]" />
         </div>
         <div className="divide-y divide-border-default">
           {alerts.isLoading ? (

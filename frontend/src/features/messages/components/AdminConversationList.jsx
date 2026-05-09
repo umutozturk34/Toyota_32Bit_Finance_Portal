@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Users, Loader2, MessagesSquare, Lock, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { useAdminConversations } from '../../../shared/hooks/useMessages';
 import { containerVariants, cardVariants } from '../../../shared/utils/animations';
-import { PAGE_SIZE, relTime, shortSub } from '../util';
+import { PAGE_SIZE, relTime } from '../util';
 
 export default function AdminConversationList({ activeUser, onSelect }) {
   const [page, setPage] = useState(0);
@@ -115,20 +115,22 @@ export default function AdminConversationList({ activeUser, onSelect }) {
                           className={`text-[13px] font-bold truncate ${active ? 'text-accent' : 'text-fg'}`}
                           title={c.userSub}
                         >
-                          {c.username || shortSub(c.userSub)}
+                          {c.username || c.userSub}
                         </span>
                         <span className="text-[10px] font-mono text-fg-subtle shrink-0">{relTime(c.lastSentAt)}</span>
                       </div>
                       {c.username && (
-                        <p
-                          className="mt-0.5 text-[10px] font-mono truncate"
-                          title={c.email ? `${c.email} · ${c.userSub}` : c.userSub}
-                        >
-                          {c.email && <span className="text-fg-muted">{c.email}</span>}
-                          {c.email && <span aria-hidden className="text-fg-subtle/50 mx-1">·</span>}
-                          <span className="text-accent uppercase tracking-[0.14em]">id</span>
-                          <span className="text-fg-subtle ml-1">{shortSub(c.userSub)}</span>
-                        </p>
+                        <>
+                          {c.email && (
+                            <p className="mt-0.5 text-[10px] font-mono text-fg-muted truncate" title={c.email}>
+                              {c.email}
+                            </p>
+                          )}
+                          <p className="mt-0.5 text-[9px] font-mono flex items-center gap-1 min-w-0" title={c.userSub}>
+                            <span className="text-accent uppercase tracking-[0.14em] shrink-0">id</span>
+                            <span className="text-fg-subtle truncate">{c.userSub}</span>
+                          </p>
+                        </>
                       )}
                       <p className={`mt-0.5 text-[11px] truncate leading-snug ${c.unreadCount > 0 ? 'text-fg font-semibold' : 'text-fg-muted'}`}>{c.lastBody}</p>
                       <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">

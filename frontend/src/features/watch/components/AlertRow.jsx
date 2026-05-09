@@ -41,12 +41,12 @@ export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
       <span className="text-sm font-mono font-semibold text-fg tabular-nums min-w-[90px] text-right">
         ₺{Number(alert.threshold).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
       </span>
-      <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded shrink-0 ${
+      <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded shrink-0 min-w-[80px] text-center ${
         isFired ? 'bg-fg-subtle/10 text-fg-subtle' : 'bg-success/10 text-success'
       }`}>
         {isFired ? 'tetiklendi' : 'aktif'}
       </span>
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 min-w-[110px] justify-end opacity-0 group-hover:opacity-100 transition-opacity">
         {isFired && (
           <button
             type="button"

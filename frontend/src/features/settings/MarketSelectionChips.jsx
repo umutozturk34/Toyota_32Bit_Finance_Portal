@@ -6,7 +6,6 @@ export const MARKET_CHIPS = [
   { id: 'FUND', label: 'Fon' },
   { id: 'COMMODITY', label: 'Emtia' },
   { id: 'BOND', label: 'Tahvil' },
-  { id: 'NEWS', label: 'Haber' },
   { id: 'CRYPTO', label: 'Kripto' },
 ];
 

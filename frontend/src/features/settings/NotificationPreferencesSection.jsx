@@ -1,4 +1,4 @@
-import { Mail, MessageSquare, Bell, AlertCircle, Zap, FileText, Smartphone, Sunrise, Sunset, RefreshCw } from 'lucide-react';
+import { Mail, MessageSquare, Bell, AlertCircle, Zap, FileText, Smartphone, Sunrise, Sunset, RefreshCw, Newspaper, Briefcase } from 'lucide-react';
 import { motion } from 'framer-motion';
 import {
   useNotificationPreferences,
@@ -15,6 +15,8 @@ const TYPE_ROWS = [
   { id: 'marketOpened', Icon: Sunrise, label: 'Piyasa açıldı', hint: 'Açılış fiyatları yüklendiğinde' },
   { id: 'marketClosed', Icon: Sunset, label: 'Piyasa kapandı', hint: 'Kapanış fiyatları yüklendiğinde' },
   { id: 'marketDataUpdated', Icon: RefreshCw, label: 'Veri güncellendi', hint: 'Cron her tetiklendiğinde' },
+  { id: 'newsPublished', Icon: Newspaper, label: 'Yeni haberler', hint: 'Akışa yeni başlık eklendiğinde' },
+  { id: 'portfolioUpdated', Icon: Briefcase, label: 'Portföy güncellendi', hint: 'Günlük snapshot alındığında (23:00)' },
 ];
 
 function parseMarkets(csv) {

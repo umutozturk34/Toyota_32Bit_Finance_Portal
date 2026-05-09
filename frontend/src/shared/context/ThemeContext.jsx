@@ -26,16 +26,22 @@ function readStoredPreference() {
 }
 
 function BootSplash() {
+    const stored = (() => {
+        try { return localStorage.getItem('finance-theme') === 'light' ? 'light' : 'dark'; }
+        catch { return 'dark'; }
+    })();
+    const bg = stored === 'light' ? '#F2F6FB' : '#0e0e14';
     return (
         <div
             aria-hidden="true"
+            data-theme={stored}
             style={{
                 position: 'fixed',
                 inset: 0,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'var(--color-bg-base)',
+                background: bg,
                 zIndex: 9999,
             }}
         >
@@ -54,39 +60,47 @@ function BootSplash() {
     );
 }
 
+function persistTheme(theme) {
+    try {
+        localStorage.setItem('finance-theme', theme);
+        document.cookie = 'finance-theme=' + theme + ';path=/;max-age=31536000;SameSite=Lax';
+    } catch {
+        /* storage unavailable */
+    }
+}
+
 export function ThemeProvider({ children }) {
     const { isAuthenticated, loading: authLoading } = useAuth();
-    const { preferences, isLoading: prefsLoading, isFetched: prefsFetched } = useUserPreferences();
+    const { preferences, hasResolvedPreferences, isFetched: prefsFetched } = useUserPreferences();
     const updatePreferences = useUpdateUserPreferences();
-    const [storedPreference, setStoredPreference] = useState(readStoredPreference);
+    const [storedPreference, setStoredPreferenceState] = useState(readStoredPreference);
 
     useEffect(() => {
         if (!isAuthenticated) return;
-        if (!prefsFetched) return;
+        if (!hasResolvedPreferences) return;
         if (!preferences.theme) return;
         if (preferences.theme === storedPreference) return;
-        setStoredPreference(preferences.theme);
-    }, [isAuthenticated, prefsFetched, preferences.theme, storedPreference]);
+        setStoredPreferenceState(preferences.theme);
+        persistTheme(resolveTheme(preferences.theme));
+    }, [isAuthenticated, hasResolvedPreferences, preferences.theme, storedPreference]);
 
     const themePreference = storedPreference;
     const theme = useMemo(() => resolveTheme(themePreference), [themePreference]);
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
-        try {
-            localStorage.setItem('finance-theme', theme);
-            document.cookie = 'finance-theme=' + theme + ';path=/;max-age=31536000;SameSite=Lax';
-        } catch {
-            /* localStorage unavailable */
-        }
     }, [theme]);
 
     const setThemePreference = (next) => {
         const previous = storedPreference;
-        setStoredPreference(next);
+        setStoredPreferenceState(next);
+        persistTheme(resolveTheme(next));
         if (isAuthenticated) {
             updatePreferences.mutate({ theme: next }, {
-                onError: () => setStoredPreference(previous),
+                onError: () => {
+                    setStoredPreferenceState(previous);
+                    persistTheme(resolveTheme(previous));
+                },
             });
         }
     };
@@ -96,7 +110,7 @@ export function ThemeProvider({ children }) {
         setThemePreference(next);
     };
 
-    const blocking = authLoading || (isAuthenticated && !prefsFetched && prefsLoading);
+    const blocking = authLoading || (isAuthenticated && !prefsFetched);
 
     return (
         <ThemeContext.Provider value={{ theme, themePreference, setThemePreference, toggleTheme, isDark: theme === 'dark' }}>

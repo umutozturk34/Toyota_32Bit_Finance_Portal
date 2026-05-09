@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Outlet, Link, useLocation, useNavigationType } from 'react-router-dom';
 import { useAuth } from '../../features/auth/AuthContext';
@@ -50,13 +50,16 @@ const MainLayout = () => {
   useNotificationStream();
 
   const navType = useNavigationType();
+  const lastPathRef = useRef(location.pathname);
 
   useEffect(() => {
     setMobileOpen(false);
+    if (lastPathRef.current === location.pathname) return;
+    lastPathRef.current = location.pathname;
     if (navType !== 'POP') {
       window.scrollTo(0, 0);
     }
-  }, [location.pathname]);
+  }, [location.pathname, navType]);
 
   const allNav = [
     ...navItems,

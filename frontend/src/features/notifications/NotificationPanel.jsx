@@ -2,7 +2,7 @@ import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
 import {
   X, BellOff, Inbox, Check, CheckCheck, Trash2, AlertCircle, Zap, FileText,
-  MessageSquare, Bell, Megaphone, Search,
+  MessageSquare, Bell, Megaphone, Search, Newspaper, Briefcase, Sunrise, Sunset, RefreshCw,
 } from 'lucide-react';
 import {
   useNotifications,
@@ -22,6 +22,11 @@ const TYPE_META = {
   REPORT_READY: { Icon: FileText, label: 'Rapor', tint: 'text-success' },
   MESSAGE: { Icon: MessageSquare, label: 'Mesaj', tint: 'text-accent-secondary' },
   SYSTEM: { Icon: Bell, label: 'Sistem', tint: 'text-fg-muted' },
+  MARKET_OPENED: { Icon: Sunrise, label: 'Piyasa açıldı', tint: 'text-success' },
+  MARKET_CLOSED: { Icon: Sunset, label: 'Piyasa kapandı', tint: 'text-fg-muted' },
+  MARKET_DATA_UPDATED: { Icon: RefreshCw, label: 'Veri güncellendi', tint: 'text-accent' },
+  NEWS_PUBLISHED: { Icon: Newspaper, label: 'Yeni haberler', tint: 'text-accent-secondary' },
+  PORTFOLIO_UPDATED: { Icon: Briefcase, label: 'Portföy güncellendi', tint: 'text-success' },
 };
 
 function relativeTime(iso) {

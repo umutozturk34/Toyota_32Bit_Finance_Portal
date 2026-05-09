@@ -26,6 +26,7 @@ export function useUserPreferences() {
   return {
     ...query,
     preferences: query.data ?? FALLBACK,
+    hasResolvedPreferences: query.isSuccess,
   };
 }
 

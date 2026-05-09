@@ -3,7 +3,7 @@ import com.finance.market.core.service.HistoricalPricingPort;
 
 import com.finance.portfolio.model.AssetType;
 
-import com.finance.common.service.AssetPricingPort;
+import com.finance.shared.service.AssetPricingPort;
 
 import com.finance.market.core.service.MarketSnapshotProcessor;
 
@@ -17,7 +17,7 @@ import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import com.finance.portfolio.repository.PortfolioRepository;
-import com.finance.common.service.AssetPricingPort.AssetKey;
+import com.finance.shared.service.AssetPricingPort.AssetKey;
 import com.finance.portfolio.config.PortfolioProperties;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;

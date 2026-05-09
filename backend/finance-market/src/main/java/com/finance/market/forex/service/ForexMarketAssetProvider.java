@@ -11,7 +11,7 @@ import com.finance.market.forex.mapper.ForexResponseMapper;
 import com.finance.market.forex.model.Forex;
 import com.finance.common.model.MarketType;
 import com.finance.market.forex.repository.ForexRepository;
-import com.finance.common.util.LikeSearchSpec;
+import com.finance.shared.util.LikeSearchSpec;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.PageRequest;

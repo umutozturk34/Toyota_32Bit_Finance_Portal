@@ -5,7 +5,7 @@ import com.finance.portfolio.model.AssetType;
 
 
 import com.finance.common.model.TrackedAsset;
-import com.finance.common.service.AssetPricingPort;
+import com.finance.shared.service.AssetPricingPort;
 import jakarta.persistence.*;
 import lombok.*;
 

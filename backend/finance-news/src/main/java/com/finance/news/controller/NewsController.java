@@ -3,7 +3,7 @@ package com.finance.news.controller;
 
 import com.finance.common.config.AppProperties;
 import com.finance.common.dto.ApiResponse;
-import com.finance.common.dto.response.GroupCount;
+import com.finance.shared.dto.response.GroupCount;
 import com.finance.news.dto.response.NewsArticleDetailResponse;
 import com.finance.news.dto.response.NewsArticleResponse;
 import com.finance.common.dto.response.PagedResponse;

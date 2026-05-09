@@ -1,7 +1,7 @@
 package com.finance.app.config;
 import com.finance.market.forex.service.TcmbForexService;
 
-import com.finance.common.service.TaskTrackingService;
+import com.finance.shared.service.TaskTrackingService;
 
 import com.finance.market.stock.repository.StockRepository;
 
@@ -46,7 +46,7 @@ import com.finance.market.core.service.MarketSnapshotProcessor;
 
 import com.finance.common.model.MarketType;
 import com.finance.market.core.scheduler.SchedulerPorts;
-import com.finance.common.service.TaskTrackingService.TaskInfo;
+import com.finance.shared.service.TaskTrackingService.TaskInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.CommandLineRunner;

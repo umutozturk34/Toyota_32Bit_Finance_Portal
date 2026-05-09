@@ -1,7 +1,7 @@
 package com.finance.portfolio.service.support;
 
 import com.finance.common.model.MarketType;
-import com.finance.common.service.AssetPricingPort;
+import com.finance.shared.service.AssetPricingPort;
 
 import java.math.BigDecimal;
 import java.util.Collection;

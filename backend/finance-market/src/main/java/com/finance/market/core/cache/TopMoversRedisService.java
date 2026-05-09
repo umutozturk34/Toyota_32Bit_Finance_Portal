@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.common.model.MarketType;
-import com.finance.common.util.RedisKeys;
+import com.finance.shared.util.RedisKeys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.StringRedisTemplate;

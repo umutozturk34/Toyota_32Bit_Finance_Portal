@@ -8,7 +8,7 @@ import com.finance.market.core.config.CommissionProperties;
 import com.finance.common.model.MarketType;
 import com.finance.market.stock.model.Stock;
 import com.finance.market.stock.model.StockCandle;
-import com.finance.common.service.AssetPricingPort;
+import com.finance.shared.service.AssetPricingPort;
 import com.finance.market.core.cache.MarketCacheService;
 import org.springframework.stereotype.Component;
 

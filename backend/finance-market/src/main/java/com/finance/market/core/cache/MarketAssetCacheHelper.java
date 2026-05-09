@@ -4,7 +4,7 @@ import com.finance.market.core.cache.MarketAssetCacheHelper;
 
 
 import com.finance.market.core.model.BaseAsset;
-import com.finance.common.util.CodeNormalizer;
+import com.finance.shared.util.CodeNormalizer;
 import org.apache.logging.log4j.Logger;
 
 public final class MarketAssetCacheHelper {

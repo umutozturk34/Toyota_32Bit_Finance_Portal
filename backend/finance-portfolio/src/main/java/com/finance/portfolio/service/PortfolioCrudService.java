@@ -19,7 +19,7 @@ import com.finance.portfolio.model.Portfolio;
 import com.finance.portfolio.model.PortfolioPosition;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import com.finance.portfolio.repository.PortfolioRepository;
-import com.finance.common.util.EnumParser;
+import com.finance.shared.util.EnumParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.ApplicationEventPublisher;

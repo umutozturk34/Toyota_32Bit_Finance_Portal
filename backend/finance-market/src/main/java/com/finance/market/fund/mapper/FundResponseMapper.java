@@ -5,7 +5,7 @@ import com.finance.market.core.mapper.MarketMetadataBuilder;
 
 
 import com.finance.market.fund.dto.response.FundCandleResponse;
-import com.finance.common.dto.response.FundMetadata;
+import com.finance.shared.dto.response.FundMetadata;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.fund.model.Fund;
 import com.finance.market.fund.model.FundCandle;

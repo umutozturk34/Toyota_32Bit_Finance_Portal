@@ -13,7 +13,7 @@ import com.finance.market.fund.model.Fund;
 import com.finance.market.fund.model.FundType;
 import com.finance.market.fund.repository.FundCandleRepository;
 import com.finance.market.fund.repository.FundRepository;
-import com.finance.common.util.CodeNormalizer;
+import com.finance.shared.util.CodeNormalizer;
 import com.finance.market.fund.util.TefasHelper;
 import com.finance.market.core.util.WindowedFetchPlanner;
 import lombok.extern.log4j.Log4j2;

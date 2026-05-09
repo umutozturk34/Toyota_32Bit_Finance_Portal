@@ -10,7 +10,7 @@ import com.finance.market.bond.dto.internal.EvdsBondDataResponse;
 import com.finance.market.bond.dto.internal.EvdsBondSerieResponse;
 import com.finance.common.exception.BusinessException;
 import com.finance.market.bond.mapper.EvdsBondClientMapper;
-import com.finance.common.util.BatchUpdateRunner;
+import com.finance.shared.util.BatchUpdateRunner;
 import com.finance.market.bond.util.BondSerieFilterUtil;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;

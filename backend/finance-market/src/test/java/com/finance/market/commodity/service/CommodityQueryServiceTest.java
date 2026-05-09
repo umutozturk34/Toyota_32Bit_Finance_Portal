@@ -3,7 +3,7 @@ import com.finance.market.core.service.TrackedAssetQueryService;
 
 
 import com.finance.market.commodity.mapper.CommodityResponseMapper;
-import com.finance.common.model.CandlePeriod;
+import com.finance.shared.model.CandlePeriod;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.market.commodity.repository.CommodityCandleRepository;

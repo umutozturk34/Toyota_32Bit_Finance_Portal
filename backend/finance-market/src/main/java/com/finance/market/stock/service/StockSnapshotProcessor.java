@@ -12,7 +12,7 @@ import com.finance.market.core.dto.internal.YahooChartFullResult;
 import com.finance.market.stock.model.Stock;
 import com.finance.market.stock.repository.StockCandleRepository;
 import com.finance.market.core.util.ApiAssetValidator;
-import com.finance.common.util.CodeNormalizer;
+import com.finance.shared.util.CodeNormalizer;
 import com.finance.market.core.util.TrackedRefreshRunner;
 import com.finance.market.core.util.YahooRangePolicy;
 import lombok.extern.log4j.Log4j2;

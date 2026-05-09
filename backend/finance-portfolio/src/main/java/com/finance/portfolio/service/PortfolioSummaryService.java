@@ -1,5 +1,5 @@
 package com.finance.portfolio.service;
-import com.finance.common.service.AssetPricingPort;
+import com.finance.shared.service.AssetPricingPort;
 
 import com.finance.market.core.service.MarketSnapshotProcessor;
 
@@ -15,11 +15,11 @@ import com.finance.portfolio.model.PortfolioPosition;
 import com.finance.portfolio.model.MoneyScale;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
-import com.finance.common.service.AssetPricingPort.AssetKey;
-import com.finance.common.service.AssetPricingPort.AssetMeta;
-import com.finance.common.service.AssetPricingPort.PriceBundle;
-import com.finance.common.util.EnumParser;
-import com.finance.common.util.PercentChangeCalculator;
+import com.finance.shared.service.AssetPricingPort.AssetKey;
+import com.finance.shared.service.AssetPricingPort.AssetMeta;
+import com.finance.shared.service.AssetPricingPort.PriceBundle;
+import com.finance.shared.util.EnumParser;
+import com.finance.shared.util.PercentChangeCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;

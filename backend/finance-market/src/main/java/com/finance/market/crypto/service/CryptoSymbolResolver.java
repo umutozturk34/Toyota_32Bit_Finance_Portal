@@ -2,7 +2,7 @@ package com.finance.market.crypto.service;
 import com.finance.market.core.service.TrackedAssetQueryService;
 
 
-import com.finance.common.util.CodeNormalizer;
+import com.finance.shared.util.CodeNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

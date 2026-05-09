@@ -1,7 +1,7 @@
 package com.finance.market.commodity.service;
 
 import com.finance.market.commodity.config.CommodityProperties;
-import com.finance.common.util.CodeNormalizer;
+import com.finance.shared.util.CodeNormalizer;
 import com.finance.market.core.util.YahooSymbolSuffix;
 import org.springframework.stereotype.Component;
 

@@ -6,7 +6,7 @@ import com.finance.market.core.mapper.MarketMetadataBuilder;
 
 import com.finance.market.core.dto.response.CandleResponse;
 import com.finance.market.core.dto.response.MarketAssetResponse;
-import com.finance.common.dto.response.StockMetadata;
+import com.finance.shared.dto.response.StockMetadata;
 import com.finance.market.stock.model.Stock;
 import com.finance.market.stock.model.StockCandle;
 import org.mapstruct.Mapper;

@@ -5,7 +5,7 @@ import com.finance.news.service.article.NewsCacheService;
 import com.finance.news.config.NewsProperties;
 import com.finance.news.model.NewsArticle;
 import com.finance.news.repository.NewsArticleRepository;
-import com.finance.common.util.RedisKeys;
+import com.finance.shared.util.RedisKeys;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;
 import com.fasterxml.jackson.databind.ObjectMapper;

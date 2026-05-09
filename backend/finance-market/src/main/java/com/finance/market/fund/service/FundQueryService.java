@@ -8,7 +8,7 @@ import com.finance.market.core.cache.MarketCacheService;
 
 import com.finance.market.fund.dto.response.FundCandleResponse;
 import com.finance.market.fund.mapper.FundResponseMapper;
-import com.finance.common.model.CandlePeriod;
+import com.finance.shared.model.CandlePeriod;
 import com.finance.market.fund.model.Fund;
 import com.finance.market.fund.model.FundCandle;
 import com.finance.common.model.MarketType;

@@ -1,6 +1,6 @@
 package com.finance.market.core.dto.response;
 
-import com.finance.common.dto.response.MarketAssetMetadata;
+import com.finance.shared.dto.response.MarketAssetMetadata;
 import com.finance.common.model.MarketType;
 
 import java.math.BigDecimal;

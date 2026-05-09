@@ -10,7 +10,7 @@ import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
-import com.finance.common.dto.response.GroupCount;
+import com.finance.shared.dto.response.GroupCount;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.fund.mapper.FundResponseMapper;
 import com.finance.market.fund.model.Fund;

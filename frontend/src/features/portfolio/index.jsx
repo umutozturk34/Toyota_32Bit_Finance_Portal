@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Wallet, LayoutDashboard, TrendingUp as TrendingUpIcon, ShieldCheck } from 'lucide-react';
 import { Check, AlertTriangle } from '../../shared/components/feedback/AnimatedIcons';
@@ -123,81 +123,108 @@ export default function Portfolio() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center justify-center gap-5 rounded-xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-12 min-h-[320px]"
         >
-          {onboardingPhase === 'success' ? (
-            <motion.div
-              initial={{ scale: 0.85, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="flex flex-col items-center gap-3"
-            >
+          <AnimatePresence mode="wait">
+            {onboardingPhase === 'success' && (
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className="flex items-center justify-center w-16 h-16 rounded-full bg-success/15"
+                key="success"
+                initial={{ scale: 0.92, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.92, opacity: 0 }}
+                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                className="flex flex-col items-center gap-3"
               >
-                <Check className="h-8 w-8 text-success" strokeWidth={2.5} />
-              </motion.div>
-              <p className="text-base font-semibold text-fg">Portföyünüz hazır</p>
-              <div className="flex items-center gap-1.5 text-[11px] text-success/70">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                Pozisyon eklemeye başlayabilirsiniz
-              </div>
-            </motion.div>
-          ) : onboardingPhase === 'processing' ? (
-            <ProcessingSteps steps={ONBOARDING_STEPS} currentStep={processingStep} />
-          ) : onboardingPhase === 'confirm' ? (
-            <motion.div
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="w-full max-w-sm space-y-5"
-            >
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-warning/10">
-                  <AlertTriangle className="h-6 w-6 text-warning" />
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className="flex items-center justify-center w-16 h-16 rounded-full bg-success/15"
+                >
+                  <Check className="h-8 w-8 text-success" strokeWidth={2.5} />
+                </motion.div>
+                <p className="text-base font-semibold text-fg">Portföyünüz hazır</p>
+                <div className="flex items-center gap-1.5 text-[11px] text-success/70">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Pozisyon eklemeye başlayabilirsiniz
                 </div>
-                <div className="text-center space-y-1">
-                  <p className="text-sm font-semibold text-fg">Portföyü oluşturmayı onaylıyor musunuz?</p>
-                  <p className="text-xs text-fg-muted">
-                    <span className="font-medium text-fg">{DEFAULT_PORTFOLIO_NAME}</span> adıyla bir portföy hazırlanacak.
+              </motion.div>
+            )}
+            {onboardingPhase === 'processing' && (
+              <motion.div
+                key="processing"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="w-full"
+              >
+                <ProcessingSteps steps={ONBOARDING_STEPS} currentStep={processingStep} />
+              </motion.div>
+            )}
+            {onboardingPhase === 'confirm' && (
+              <motion.div
+                key="confirm"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                className="w-full max-w-sm space-y-5"
+              >
+                <div className="flex flex-col items-center gap-3">
+                  <div className="flex items-center justify-center w-12 h-12 rounded-full bg-warning/10">
+                    <AlertTriangle className="h-6 w-6 text-warning" />
+                  </div>
+                  <div className="text-center space-y-1">
+                    <p className="text-sm font-semibold text-fg">Portföyü oluşturmayı onaylıyor musunuz?</p>
+                    <p className="text-xs text-fg-muted">
+                      <span className="font-medium text-fg">{DEFAULT_PORTFOLIO_NAME}</span> adıyla bir portföy hazırlanacak.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCancelOnboarding}
+                    className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-all cursor-pointer"
+                  >
+                    Vazgeç
+                  </button>
+                  <button
+                    onClick={handleCreatePortfolio}
+                    className="flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer"
+                  >
+                    <Wallet className="h-4 w-4" />
+                    Onayla
+                  </button>
+                </div>
+              </motion.div>
+            )}
+            {onboardingPhase === 'idle' && (
+              <motion.div
+                key="idle"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                className="flex flex-col items-center gap-5"
+              >
+                <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10">
+                  <Wallet className="w-8 h-8 text-accent" />
+                </div>
+                <div className="text-center space-y-2">
+                  <h2 className="text-xl font-semibold text-fg">Portföyünüzü Oluşturun</h2>
+                  <p className="text-sm text-fg-muted max-w-md">
+                    Geçmiş tarihli pozisyonlar tanımlayarak hipotetik portföy performansınızı izleyin.
                   </p>
                 </div>
-              </div>
-              <div className="flex gap-2">
                 <button
-                  onClick={handleCancelOnboarding}
-                  className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-all cursor-pointer"
-                >
-                  Vazgeç
-                </button>
-                <button
-                  onClick={handleCreatePortfolio}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer"
+                  onClick={handleStartOnboarding}
+                  className="flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-bright border-none cursor-pointer"
                 >
                   <Wallet className="h-4 w-4" />
-                  Onayla
+                  Portföyü Başlat
                 </button>
-              </div>
-            </motion.div>
-          ) : (
-            <>
-              <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10">
-                <Wallet className="w-8 h-8 text-accent" />
-              </div>
-              <div className="text-center space-y-2">
-                <h2 className="text-xl font-semibold text-fg">Portföyünüzü Oluşturun</h2>
-                <p className="text-sm text-fg-muted max-w-md">
-                  Geçmiş tarihli pozisyonlar tanımlayarak hipotetik portföy performansınızı izleyin.
-                </p>
-              </div>
-              <button
-                onClick={handleStartOnboarding}
-                className="flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-bright border-none cursor-pointer"
-              >
-                <Wallet className="h-4 w-4" />
-                Portföyü Başlat
-              </button>
-            </>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </div>
     );

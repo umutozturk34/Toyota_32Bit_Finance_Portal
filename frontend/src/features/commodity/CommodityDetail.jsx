@@ -1,10 +1,9 @@
 import { useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { commodityService } from './services/commodityService';
 import { getChangeClass, changeColors, formatPrice, formatPercentAbs } from '../../shared/utils/formatters';
-import { cardVariants } from '../../shared/utils/animations';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
+import MetadataTiles from '../../shared/components/asset/MetadataTiles';
 
 const fmt = (price) => formatPrice(price, { locale: 'tr-TR' });
 
@@ -29,66 +28,27 @@ function CommodityMetadata({ asset }) {
   const meta = asset.metadata || {};
   const cls = getChangeClass(asset.changePercent);
   const usd = meta.currentPriceUsd;
-
   return (
-    <>
-      <motion.div variants={cardVariants} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-          <p className="text-xs text-fg-muted mb-1">Fiyat (TRY)</p>
-          <p className="text-lg font-mono font-bold text-fg">₺{fmt(asset.price)}</p>
-        </div>
-        <div className="rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-          <p className="text-xs text-fg-muted mb-1">Fiyat (USD)</p>
-          <p className="text-lg font-mono font-bold text-fg">{usd != null ? `$${fmt(usd)}` : '—'}</p>
-        </div>
-        <div className="rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-          <p className="text-xs text-fg-muted mb-1">24s Değişim</p>
-          <div className={`flex items-center gap-1 text-lg font-mono font-bold ${changeColors[cls]}`}>
-            {asset.changePercent > 0 ? <ChevronUp className="h-4 w-4" /> : asset.changePercent < 0 ? <ChevronDown className="h-4 w-4" /> : null}
+    <MetadataTiles tiles={[
+      { label: 'Fiyat (TRY)', value: `₺${fmt(asset.price)}` },
+      { label: 'Fiyat (USD)', value: usd != null ? `$${fmt(usd)}` : '—' },
+      {
+        label: '24s Δ',
+        color: changeColors[cls],
+        value: (
+          <span className="flex items-center gap-0.5">
+            {asset.changePercent > 0 ? <ChevronUp className="h-3 w-3" /> : asset.changePercent < 0 ? <ChevronDown className="h-3 w-3" /> : null}
             {formatPercentAbs(asset.changePercent)}
-          </div>
-        </div>
-        <div className="rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-          <p className="text-xs text-fg-muted mb-1">Değişim (TL)</p>
-          <p className={`text-lg font-mono font-bold ${changeColors[cls]}`}>₺{fmt(asset.changeAmount)}</p>
-        </div>
-      </motion.div>
-
-      {(meta.openPrice != null || meta.dayHigh != null || meta.dayLow != null || meta.sellingPrice != null) && (
-        <motion.div variants={cardVariants} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {meta.sellingPrice != null && (
-            <div className="flex items-center justify-between rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-              <span className="text-xs text-fg-muted">Alım Fiyatı</span>
-              <span className="text-sm font-mono font-semibold text-fg">₺{fmt(meta.sellingPrice)}</span>
-            </div>
-          )}
-          {meta.openPrice != null && (
-            <div className="flex items-center justify-between rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-              <span className="text-xs text-fg-muted">Açılış</span>
-              <span className="text-sm font-mono font-semibold text-fg">₺{fmt(meta.openPrice)}</span>
-            </div>
-          )}
-          {meta.dayHigh != null && (
-            <div className="flex items-center justify-between rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-              <span className="flex items-center gap-1 text-xs text-fg-muted"><ChevronUp className="h-3 w-3 text-success" />En Yüksek</span>
-              <span className="text-sm font-mono font-semibold text-fg">₺{fmt(meta.dayHigh)}</span>
-            </div>
-          )}
-          {meta.dayLow != null && (
-            <div className="flex items-center justify-between rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-              <span className="flex items-center gap-1 text-xs text-fg-muted"><ChevronDown className="h-3 w-3 text-danger" />En Düşük</span>
-              <span className="text-sm font-mono font-semibold text-fg">₺{fmt(meta.dayLow)}</span>
-            </div>
-          )}
-          {meta.volume != null && meta.volume > 0 && (
-            <div className="flex items-center justify-between rounded-xl border border-border-default bg-bg-elevated p-4 card-hover transition-all duration-200 hover:border-border-hover">
-              <span className="text-xs text-fg-muted">Hacim</span>
-              <span className="text-sm font-mono font-semibold text-fg">{meta.volume.toLocaleString('tr-TR')}</span>
-            </div>
-          )}
-        </motion.div>
-      )}
-    </>
+          </span>
+        ),
+      },
+      { label: 'Δ (TL)', value: `₺${fmt(asset.changeAmount)}`, color: changeColors[cls] },
+      meta.sellingPrice != null && { label: 'Alım', value: `₺${fmt(meta.sellingPrice)}` },
+      meta.openPrice != null && { label: 'Açılış', value: `₺${fmt(meta.openPrice)}` },
+      meta.dayHigh != null && { label: 'En Yüksek', value: `₺${fmt(meta.dayHigh)}`, color: 'text-success' },
+      meta.dayLow != null && { label: 'En Düşük', value: `₺${fmt(meta.dayLow)}`, color: 'text-danger' },
+      meta.volume != null && meta.volume > 0 && { label: 'Hacim', value: meta.volume.toLocaleString('tr-TR') },
+    ]} />
   );
 }
 

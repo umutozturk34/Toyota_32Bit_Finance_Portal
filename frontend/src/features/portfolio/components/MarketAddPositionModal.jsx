@@ -10,16 +10,7 @@ export default function MarketAddPositionModal({ assetType, assetCode, assetName
   const { data: portfolios, isLoading } = usePortfolioList();
   const portfolioId = portfolios?.[0]?.id ?? null;
 
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="absolute inset-0 modal-overlay backdrop-blur-sm" onClick={onClose} />
-        <div className="relative flex items-center justify-center w-12 h-12 rounded-full bg-bg-elevated border border-border-default">
-          <Loader2 className="h-5 w-5 animate-spin text-accent" />
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return null;
 
   if (!portfolioId) {
     return (

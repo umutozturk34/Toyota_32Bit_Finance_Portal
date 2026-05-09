@@ -8,6 +8,7 @@ import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.common.repository.TrackedAssetRepository;
 import com.finance.user.dto.UserChartDrawingResponse;
+import com.finance.user.mapper.UserChartDrawingMapper;
 import com.finance.user.model.UserChartDrawing;
 import com.finance.user.repository.UserChartDrawingRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,12 +39,13 @@ class UserChartDrawingServiceTest {
 
     @Mock private UserChartDrawingRepository repository;
     @Mock private TrackedAssetRepository trackedAssetRepository;
+    @Mock private UserChartDrawingMapper mapper;
 
     private UserChartDrawingService service;
 
     @BeforeEach
     void setUp() {
-        service = new UserChartDrawingService(repository, trackedAssetRepository, new ObjectMapper());
+        service = new UserChartDrawingService(repository, trackedAssetRepository, new ObjectMapper(), mapper);
     }
 
     @Test
@@ -67,15 +69,15 @@ class UserChartDrawingServiceTest {
         Instant updated = Instant.parse("2026-05-09T11:00:00Z");
         UserChartDrawing entity = UserChartDrawing.builder()
                 .userSub(USER).trackedAsset(tracked).drawings(storedNode).updatedAt(updated).build();
+        UserChartDrawingResponse mapped = new UserChartDrawingResponse(List.of(Map.of("type", "trendline")), updated);
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 11L)).thenReturn(Optional.of(entity));
+        when(mapper.toResponse(entity)).thenReturn(mapped);
 
         UserChartDrawingResponse response = service.getOrDefault(USER, TYPE, CODE);
 
-        assertThat(response.drawings()).hasSize(1);
-        assertThat(response.drawings().get(0)).containsEntry("type", "trendline");
-        assertThat(response.updatedAt()).isEqualTo(updated);
+        assertThat(response).isSameAs(mapped);
     }
 
     @Test
@@ -92,10 +94,12 @@ class UserChartDrawingServiceTest {
     void upsert_createsNewRow_whenNoExistingDrawing() {
         TrackedAsset tracked = trackedAsset(11L);
         List<Map<String, Object>> drawings = List.of(Map.of("type", "fibonacci"));
+        UserChartDrawingResponse mapped = new UserChartDrawingResponse(drawings, Instant.now());
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 11L)).thenReturn(Optional.empty());
         when(repository.save(any(UserChartDrawing.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(mapper.toResponse(any(UserChartDrawing.class))).thenReturn(mapped);
 
         UserChartDrawingResponse response = service.upsert(USER, TYPE, CODE, drawings);
 
@@ -105,7 +109,7 @@ class UserChartDrawingServiceTest {
         assertThat(saved.getUserSub()).isEqualTo(USER);
         assertThat(saved.getTrackedAsset()).isSameAs(tracked);
         assertThat(saved.getDrawings().get(0).get("type").asText()).isEqualTo("fibonacci");
-        assertThat(response.drawings().get(0)).containsEntry("type", "fibonacci");
+        assertThat(response).isSameAs(mapped);
     }
 
     @Test
@@ -115,29 +119,35 @@ class UserChartDrawingServiceTest {
                 .userSub(USER).trackedAsset(tracked)
                 .drawings(JsonNodeFactory.instance.arrayNode()).build();
         List<Map<String, Object>> newDrawings = List.of(Map.of("type", "rectangle"));
+        UserChartDrawingResponse mapped = new UserChartDrawingResponse(newDrawings, Instant.now());
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 11L)).thenReturn(Optional.of(existing));
         when(repository.save(existing)).thenReturn(existing);
+        when(mapper.toResponse(existing)).thenReturn(mapped);
 
         UserChartDrawingResponse response = service.upsert(USER, TYPE, CODE, newDrawings);
 
         assertThat(existing.getDrawings().get(0).get("type").asText()).isEqualTo("rectangle");
-        assertThat(response.drawings().get(0)).containsEntry("type", "rectangle");
+        assertThat(response).isSameAs(mapped);
     }
 
     @Test
     void upsert_fallsBackToEmptyArray_whenDrawingsIsNull() {
         TrackedAsset tracked = trackedAsset(11L);
+        UserChartDrawingResponse mapped = new UserChartDrawingResponse(List.of(), Instant.now());
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 11L)).thenReturn(Optional.empty());
         when(repository.save(any(UserChartDrawing.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(mapper.toResponse(any(UserChartDrawing.class))).thenReturn(mapped);
 
         UserChartDrawingResponse response = service.upsert(USER, TYPE, CODE, null);
 
-        List<Map<String, Object>> storedDrawings = response.drawings();
-        assertThat(storedDrawings).isEmpty();
+        ArgumentCaptor<UserChartDrawing> captor = ArgumentCaptor.forClass(UserChartDrawing.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getDrawings().isEmpty()).isTrue();
+        assertThat(response).isSameAs(mapped);
     }
 
     @Test

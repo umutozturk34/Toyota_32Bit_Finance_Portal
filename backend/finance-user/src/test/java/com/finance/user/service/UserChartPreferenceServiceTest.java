@@ -9,6 +9,7 @@ import com.finance.common.model.TrackedAssetType;
 import com.finance.common.repository.TrackedAssetRepository;
 import com.finance.user.config.ChartDefaultsProperties;
 import com.finance.user.dto.UserChartPreferenceResponse;
+import com.finance.user.mapper.UserChartPreferenceMapper;
 import com.finance.user.model.UserChartPreference;
 import com.finance.user.repository.UserChartPreferenceRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +40,7 @@ class UserChartPreferenceServiceTest {
 
     @Mock private UserChartPreferenceRepository repository;
     @Mock private TrackedAssetRepository trackedAssetRepository;
+    @Mock private UserChartPreferenceMapper mapper;
 
     private UserChartPreferenceService service;
 
@@ -48,8 +50,9 @@ class UserChartPreferenceServiceTest {
                 new ChartDefaultsProperties.Defaults(
                         List.of(new ChartDefaultsProperties.IndicatorDefault("SMA", 20, "#c084fc", false)),
                         "candle", false, "off", 22, "🚀"),
-                new ChartDefaultsProperties.FundDefaults("line", false, false));
-        service = new UserChartPreferenceService(repository, trackedAssetRepository, new ObjectMapper(), defaults);
+                new ChartDefaultsProperties.FundDefaults("line", false, false),
+                new ChartDefaultsProperties.Limits(50, 8, 12));
+        service = new UserChartPreferenceService(repository, trackedAssetRepository, new ObjectMapper(), defaults, mapper);
     }
 
     @Test
@@ -77,14 +80,15 @@ class UserChartPreferenceServiceTest {
         Instant updated = Instant.parse("2026-05-09T10:00:00Z");
         UserChartPreference entity = UserChartPreference.builder()
                 .userSub(USER).trackedAsset(tracked).config(storedNode).updatedAt(updated).build();
+        UserChartPreferenceResponse mapped = new UserChartPreferenceResponse(Map.of("indicators", "SMA"), updated);
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 42L)).thenReturn(Optional.of(entity));
+        when(mapper.toResponse(entity)).thenReturn(mapped);
 
         UserChartPreferenceResponse response = service.getOrDefault(USER, TYPE, CODE);
 
-        assertThat(response.config()).containsEntry("indicators", "SMA");
-        assertThat(response.updatedAt()).isEqualTo(updated);
+        assertThat(response).isSameAs(mapped);
     }
 
     @Test
@@ -101,10 +105,12 @@ class UserChartPreferenceServiceTest {
     void upsert_createsNewRow_whenNoExistingPreference() {
         TrackedAsset tracked = trackedAsset(42L);
         Map<String, Object> config = Map.of("rsi", true);
+        UserChartPreferenceResponse mapped = new UserChartPreferenceResponse(config, Instant.now());
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 42L)).thenReturn(Optional.empty());
         when(repository.save(any(UserChartPreference.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(mapper.toResponse(any(UserChartPreference.class))).thenReturn(mapped);
 
         UserChartPreferenceResponse response = service.upsert(USER, TYPE, CODE, config);
 
@@ -114,7 +120,7 @@ class UserChartPreferenceServiceTest {
         assertThat(saved.getUserSub()).isEqualTo(USER);
         assertThat(saved.getTrackedAsset()).isSameAs(tracked);
         assertThat(saved.getConfig().get("rsi").asBoolean()).isTrue();
-        assertThat(response.config()).containsEntry("rsi", true);
+        assertThat(response).isSameAs(mapped);
     }
 
     @Test
@@ -124,29 +130,35 @@ class UserChartPreferenceServiceTest {
                 .userSub(USER).trackedAsset(tracked)
                 .config(JsonNodeFactory.instance.objectNode()).build();
         Map<String, Object> newConfig = Map.of("macd", true);
+        UserChartPreferenceResponse mapped = new UserChartPreferenceResponse(newConfig, Instant.now());
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 42L)).thenReturn(Optional.of(existing));
         when(repository.save(existing)).thenReturn(existing);
+        when(mapper.toResponse(existing)).thenReturn(mapped);
 
         UserChartPreferenceResponse response = service.upsert(USER, TYPE, CODE, newConfig);
 
         assertThat(existing.getConfig().get("macd").asBoolean()).isTrue();
-        assertThat(response.config()).containsEntry("macd", true);
+        assertThat(response).isSameAs(mapped);
     }
 
     @Test
     void upsert_fallsBackToEmptyObject_whenConfigIsNull() {
         TrackedAsset tracked = trackedAsset(42L);
+        UserChartPreferenceResponse mapped = new UserChartPreferenceResponse(Map.of(), Instant.now());
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 42L)).thenReturn(Optional.empty());
         when(repository.save(any(UserChartPreference.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(mapper.toResponse(any(UserChartPreference.class))).thenReturn(mapped);
 
         UserChartPreferenceResponse response = service.upsert(USER, TYPE, CODE, null);
 
-        Map<String, Object> storedConfig = response.config();
-        assertThat(storedConfig).isEmpty();
+        ArgumentCaptor<UserChartPreference> captor = ArgumentCaptor.forClass(UserChartPreference.class);
+        verify(repository).save(captor.capture());
+        assertThat(captor.getValue().getConfig().isEmpty()).isTrue();
+        assertThat(response).isSameAs(mapped);
     }
 
     @Test

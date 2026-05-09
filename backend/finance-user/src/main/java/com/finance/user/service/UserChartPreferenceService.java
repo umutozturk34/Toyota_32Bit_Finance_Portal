@@ -1,6 +1,5 @@
 package com.finance.user.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -10,6 +9,7 @@ import com.finance.common.model.TrackedAssetType;
 import com.finance.common.repository.TrackedAssetRepository;
 import com.finance.user.config.ChartDefaultsProperties;
 import com.finance.user.dto.UserChartPreferenceResponse;
+import com.finance.user.mapper.UserChartPreferenceMapper;
 import com.finance.user.model.UserChartPreference;
 import com.finance.user.repository.UserChartPreferenceRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,19 +27,17 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserChartPreferenceService {
 
-    private static final TypeReference<Map<String, Object>> CONFIG_MAP_TYPE =
-            new TypeReference<>() {};
-
     private final UserChartPreferenceRepository repository;
     private final TrackedAssetRepository trackedAssetRepository;
     private final ObjectMapper objectMapper;
     private final ChartDefaultsProperties chartDefaults;
+    private final UserChartPreferenceMapper mapper;
 
     @Transactional(readOnly = true)
     public UserChartPreferenceResponse getOrDefault(String userSub, TrackedAssetType type, String code) {
         TrackedAsset tracked = resolveTracked(type, code);
         return repository.findByUserSubAndTrackedAsset_Id(userSub, tracked.getId())
-                .map(p -> new UserChartPreferenceResponse(toMap(p.getConfig()), p.getUpdatedAt()))
+                .map(mapper::toResponse)
                 .orElseGet(() -> new UserChartPreferenceResponse(buildDefaults(type), Instant.now()));
     }
 
@@ -55,12 +53,7 @@ public class UserChartPreferenceService {
         entity.setConfig(node);
         UserChartPreference saved = repository.save(entity);
         log.debug("Saved chart preferences userSub={} trackedAssetId={}", userSub, tracked.getId());
-        return new UserChartPreferenceResponse(toMap(saved.getConfig()), saved.getUpdatedAt());
-    }
-
-    private Map<String, Object> toMap(JsonNode node) {
-        if (node == null || node.isNull()) return new LinkedHashMap<>();
-        return objectMapper.convertValue(node, CONFIG_MAP_TYPE);
+        return mapper.toResponse(saved);
     }
 
     private Map<String, Object> buildDefaults(TrackedAssetType type) {

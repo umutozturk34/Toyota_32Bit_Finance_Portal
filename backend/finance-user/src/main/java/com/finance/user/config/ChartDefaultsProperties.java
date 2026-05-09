@@ -7,7 +7,8 @@ import java.util.List;
 @ConfigurationProperties("app.chart")
 public record ChartDefaultsProperties(
         Defaults defaults,
-        FundDefaults fund
+        FundDefaults fund,
+        Limits limits
 ) {
 
     public record Defaults(
@@ -30,5 +31,11 @@ public record ChartDefaultsProperties(
             int period,
             String color,
             boolean visible
+    ) {}
+
+    public record Limits(
+            int maxDrawingsPerAsset,
+            int maxIndicatorsPerAsset,
+            int maxFibToolsPerAsset
     ) {}
 }

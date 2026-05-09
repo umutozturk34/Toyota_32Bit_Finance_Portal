@@ -13,3 +13,7 @@ app:
       chart-type: line
       show-investor-count: false
       show-portfolio-size: false
+    limits:
+      max-drawings-per-asset: 50
+      max-indicators-per-asset: 8
+      max-fib-tools-per-asset: 12

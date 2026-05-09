@@ -1,5 +1,6 @@
 package com.finance.notification.messaging.security;
 
+import com.finance.notification.config.MessagingProperties;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.log4j.Log4j2;
@@ -15,10 +16,14 @@ import java.util.HexFormat;
 @Component
 public class MessageDuplicateGuard {
 
-    private final Cache<String, String> recentBodyHashByUser = Caffeine.newBuilder()
-            .expireAfterWrite(Duration.ofSeconds(60))
-            .maximumSize(50_000)
-            .build();
+    private final Cache<String, String> recentBodyHashByUser;
+
+    public MessageDuplicateGuard(MessagingProperties properties) {
+        this.recentBodyHashByUser = Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofSeconds(properties.duplicateWindowSeconds()))
+                .maximumSize(50_000)
+                .build();
+    }
 
     public boolean isDuplicate(String userSub, String body) {
         String hash = sha256(body);

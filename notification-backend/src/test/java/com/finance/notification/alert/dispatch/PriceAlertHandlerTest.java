@@ -2,6 +2,7 @@ package com.finance.notification.alert.dispatch;
 
 import com.finance.common.model.MarketType;
 import com.finance.notification.alert.model.AlertDirection;
+import com.finance.notification.config.NotificationDispatchProperties;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
 import com.finance.notification.core.dispatch.payload.PriceAlertPayload;
@@ -14,7 +15,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class PriceAlertHandlerTest {
 
-    private final PriceAlertHandler handler = new PriceAlertHandler();
+    private static final NotificationDispatchProperties DISPATCH = new NotificationDispatchProperties(
+            new NotificationDispatchProperties.Formatting(2, 6, 6),
+            new NotificationDispatchProperties.WatchlistDelta(3),
+            new NotificationDispatchProperties.Message(120));
+
+    private final PriceAlertHandler handler = new PriceAlertHandler(DISPATCH);
 
     @Test
     void type_returnsPriceAlertFired() {

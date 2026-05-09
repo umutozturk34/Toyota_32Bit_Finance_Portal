@@ -1,5 +1,4 @@
 package com.finance.news.controller;
-import com.finance.common.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.config.AppProperties;
@@ -8,7 +7,7 @@ import com.finance.common.dto.response.GroupCount;
 import com.finance.news.dto.response.NewsArticleDetailResponse;
 import com.finance.news.dto.response.NewsArticleResponse;
 import com.finance.common.dto.response.PagedResponse;
-import com.finance.news.service.NewsQueryService;
+import com.finance.news.service.article.NewsQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;

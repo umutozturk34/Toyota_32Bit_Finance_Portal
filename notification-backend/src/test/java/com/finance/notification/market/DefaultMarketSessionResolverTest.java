@@ -1,5 +1,10 @@
 package com.finance.notification.market;
 
+import com.finance.notification.market.session.DefaultMarketSessionResolver;
+import com.finance.notification.market.session.MarketSession;
+import com.finance.notification.market.session.SessionMarket;
+
+import com.finance.notification.config.MarketSessionProperties;
 import org.junit.jupiter.api.Test;
 
 import java.time.DayOfWeek;
@@ -23,7 +28,9 @@ class DefaultMarketSessionResolverTest {
     private DefaultMarketSessionResolver resolverWith(MarketHoursProperties.MarketSchedule stockSchedule) {
         Map<SessionMarket, MarketHoursProperties.MarketSchedule> map = new EnumMap<>(SessionMarket.class);
         map.put(SessionMarket.STOCK, stockSchedule);
-        return new DefaultMarketSessionResolver(new MarketHoursProperties(map));
+        return new DefaultMarketSessionResolver(
+                new MarketHoursProperties(map),
+                new MarketSessionProperties(14, 240L));
     }
 
     private MarketHoursProperties.MarketSchedule stockHours() {
@@ -109,16 +116,23 @@ class DefaultMarketSessionResolverTest {
                 IST);
         Map<SessionMarket, MarketHoursProperties.MarketSchedule> map = new EnumMap<>(SessionMarket.class);
         map.put(SessionMarket.CRYPTO, alwaysOpen);
-        DefaultMarketSessionResolver resolver = new DefaultMarketSessionResolver(new MarketHoursProperties(map));
+        DefaultMarketSessionResolver resolver = new DefaultMarketSessionResolver(
+                new MarketHoursProperties(map),
+                new MarketSessionProperties(14, 240L));
 
         Instant problemMinute = ZonedDateTime.of(2026, 5, 5, 23, 59, 30, 0, IST).toInstant();
         Instant midnight = ZonedDateTime.of(2026, 5, 5, 0, 0, 0, 0, IST).toInstant();
         Instant midDay = ZonedDateTime.of(2026, 5, 5, 12, 0, 0, 0, IST).toInstant();
 
-        assertThat(resolver.resolve(SessionMarket.CRYPTO, problemMinute)).contains(MarketSession.OPEN);
-        assertThat(resolver.resolve(SessionMarket.CRYPTO, midnight)).contains(MarketSession.OPEN);
-        assertThat(resolver.resolve(SessionMarket.CRYPTO, midDay)).contains(MarketSession.OPEN);
-        assertThat(resolver.nextTransition(SessionMarket.CRYPTO, midDay)).isEmpty();
+        Optional<MarketSession> atProblemMinute = resolver.resolve(SessionMarket.CRYPTO, problemMinute);
+        Optional<MarketSession> atMidnight = resolver.resolve(SessionMarket.CRYPTO, midnight);
+        Optional<MarketSession> atMidDay = resolver.resolve(SessionMarket.CRYPTO, midDay);
+        Optional<Instant> nextAtMidDay = resolver.nextTransition(SessionMarket.CRYPTO, midDay);
+
+        assertThat(atProblemMinute).contains(MarketSession.OPEN);
+        assertThat(atMidnight).contains(MarketSession.OPEN);
+        assertThat(atMidDay).contains(MarketSession.OPEN);
+        assertThat(nextAtMidDay).isEmpty();
     }
 
     @Test

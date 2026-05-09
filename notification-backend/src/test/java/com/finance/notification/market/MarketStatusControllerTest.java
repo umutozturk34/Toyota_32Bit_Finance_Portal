@@ -1,5 +1,9 @@
 package com.finance.notification.market;
 
+import com.finance.notification.market.session.MarketSession;
+import com.finance.notification.market.session.MarketSessionResolver;
+import com.finance.notification.market.session.SessionMarket;
+
 import com.finance.common.dto.ApiResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

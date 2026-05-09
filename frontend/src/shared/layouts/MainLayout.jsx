@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Outlet, Link, useLocation, useNavigationType } from 'react-router-dom';
 import { useAuth } from '../../features/auth/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import useAppStore from '../stores/useAppStore';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import {
   Newspaper, BarChart3, TrendingUp, Bitcoin,
   DollarSign, Shield,
@@ -12,13 +13,13 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { useUnreadMessageCount } from '../hooks/useMessages';
-import TasksPanel from '../../features/admin/TasksPanel';
+import TasksPanel from '../../features/admin/components/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
 import NotificationPanel from '../../features/notifications/NotificationPanel';
 import { useUnreadNotificationCount } from '../hooks/useNotifications';
 import useNotificationStream from '../hooks/useNotificationStream';
 import OnboardingGate from '../../features/onboarding/OnboardingGate';
-import KeycloakActionToast from '../../features/auth/KeycloakActionToast';
+import KeycloakActionToast from '../../features/auth/components/KeycloakActionToast';
 
 const navItems = [
   { to: '/market', label: 'Market', Icon: BarChart3 },
@@ -235,7 +236,7 @@ const MainLayout = () => {
       >
         <SidebarContent />
       </aside>
-      <div className={`hidden lg:block shrink-0 ${sidebarW} transition-all duration-200`} />
+      <div className="hidden lg:block shrink-0 w-16" />
 
       <div
         className="lg:hidden fixed top-0 left-0 right-0 z-40 h-12 flex items-center justify-between px-3 border-b border-border-default"

@@ -38,4 +38,9 @@ public record PriceAlertCreateRequest(
         if (!pct) return true;
         return threshold.compareTo(MAX_PCT) <= 0;
     }
+
+    @AssertTrue(message = "Tahvil/bono için fiyat alarmı oluşturulamaz")
+    public boolean isMarketTypeAlertable() {
+        return marketType != MarketType.BOND;
+    }
 }

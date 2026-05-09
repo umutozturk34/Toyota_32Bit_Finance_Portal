@@ -1,5 +1,5 @@
 package com.finance.app.service;
-import com.finance.common.service.TrackedAssetDataService;
+import com.finance.market.core.service.TrackedAssetDataService;
 
 
 import com.finance.common.model.TrackedAssetType;

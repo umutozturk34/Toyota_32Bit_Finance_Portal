@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { useAuth } from '../../features/auth/AuthContext';
-import { getToken } from '../../features/auth/keycloak';
-import { toast } from '../components/Toast';
+import { getToken } from '../../features/auth/lib/keycloak';
+import { toast } from '../components/feedback/Toast';
 
 const STREAM_URL = '/api/v1/notifications/stream';
 const RECONNECT_DELAY_MS = 4_000;

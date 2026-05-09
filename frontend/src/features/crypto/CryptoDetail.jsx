@@ -1,11 +1,11 @@
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Activity, BarChart2 } from 'lucide-react';
-import { ArrowUpRight, ArrowDownRight } from '../../shared/components/AnimatedIcons';
-import { cryptoService } from './cryptoService';
-import { getChangeClass, changeColors, changeBg, formatPriceUSD, formatPriceTRY, formatCompactNumber, formatPercentAbs } from '../../shared/utils/formatters';
+import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
+import { cryptoService } from './services/cryptoService';
+import { getChangeClass, changeColors, formatPriceUSD, formatPriceTRY, formatCompactNumber, formatPercentAbs } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
-import AssetDetailPage from '../../shared/components/AssetDetailPage';
+import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 
 function CryptoHeader({ asset }) {
   const meta = asset.metadata || {};

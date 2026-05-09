@@ -1,10 +1,10 @@
 package com.finance.app.controller;
 
 import com.finance.common.dto.ApiResponse;
-import com.finance.common.dto.response.TrackedAssetResponse;
+import com.finance.market.core.dto.response.TrackedAssetResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.TrackedAssetType;
-import com.finance.common.service.TrackedAssetQueryService;
+import com.finance.market.core.service.TrackedAssetQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,7 +32,7 @@ public class TrackedAssetController {
     ) {
         List<TrackedAssetType> types = MarketRequestHelper.parseTrackedTypes(type);
         List<TrackedAssetResponse> data = trackedAssetQueryService.searchTrackedAssets(
-                types, false, search, sort, direction);
+                types, search, sort, direction);
         return ApiResponse.successOrEmpty("Tracked assets retrieved successfully", "No tracked assets found", data);
     }
 

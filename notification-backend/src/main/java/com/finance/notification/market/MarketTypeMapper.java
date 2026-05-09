@@ -1,5 +1,7 @@
 package com.finance.notification.market;
 
+import com.finance.notification.market.session.SessionMarket;
+
 import com.finance.common.model.MarketType;
 
 import java.util.EnumMap;

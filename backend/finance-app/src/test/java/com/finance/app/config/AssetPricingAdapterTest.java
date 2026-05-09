@@ -1,27 +1,27 @@
 package com.finance.app.config;
-import com.finance.common.config.CommissionProperties;
+import com.finance.market.core.config.CommissionProperties;
 
-import com.finance.stock.model.Stock;
+import com.finance.market.stock.model.Stock;
 
-import com.finance.fund.model.Fund;
+import com.finance.market.fund.model.Fund;
 
-import com.finance.forex.model.Forex;
+import com.finance.market.forex.model.Forex;
 
-import com.finance.crypto.model.Crypto;
+import com.finance.market.crypto.model.Crypto;
 
 import com.finance.common.model.MarketType;
 
 import com.finance.common.service.AssetPricingPort;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.service.AssetPricingPort.AssetMeta;
-import com.finance.cache.service.MarketCacheService;
-import com.finance.crypto.service.assetpricing.CryptoPricingStrategy;
-import com.finance.forex.service.assetpricing.ForexPricingStrategy;
-import com.finance.fund.service.assetpricing.FundPricingStrategy;
-import com.finance.stock.service.assetpricing.StockPricingStrategy;
+import com.finance.market.core.cache.MarketCacheService;
+import com.finance.market.crypto.service.assetpricing.CryptoPricingStrategy;
+import com.finance.market.forex.service.assetpricing.ForexPricingStrategy;
+import com.finance.market.fund.service.assetpricing.FundPricingStrategy;
+import com.finance.market.stock.service.assetpricing.StockPricingStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

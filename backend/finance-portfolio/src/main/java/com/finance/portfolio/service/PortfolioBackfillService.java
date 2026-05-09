@@ -1,11 +1,11 @@
 package com.finance.portfolio.service;
-import com.finance.common.service.HistoricalPricingPort;
+import com.finance.market.core.service.HistoricalPricingPort;
 
 import com.finance.portfolio.model.AssetType;
 
 import com.finance.common.service.AssetPricingPort;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.model.MarketType;
@@ -18,6 +18,7 @@ import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import com.finance.portfolio.repository.PortfolioRepository;
 import com.finance.common.service.AssetPricingPort.AssetKey;
+import com.finance.portfolio.config.PortfolioProperties;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -42,9 +43,7 @@ import java.util.Set;
 @Service
 public class PortfolioBackfillService {
 
-    private static final int PRICE_LOOKBACK_DAYS = 7;
     private static final LocalTime SNAPSHOT_TIME = LocalTime.of(23, 0);
-    private static final int LOCK_STRIPES = 32;
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioPositionRepository positionRepository;
@@ -56,6 +55,8 @@ public class PortfolioBackfillService {
     private final PortfolioBackfillTracker tracker;
     private final TransactionTemplate transactionTemplate;
     private final Object[] portfolioLocks;
+    private final int priceLookbackDays;
+    private final int lockStripes;
 
     public PortfolioBackfillService(PortfolioRepository portfolioRepository,
                                      PortfolioPositionRepository positionRepository,
@@ -65,7 +66,8 @@ public class PortfolioBackfillService {
                                      AssetPricingPort assetPricingPort,
                                      SnapshotCalculationService calculator,
                                      PortfolioBackfillTracker tracker,
-                                     PlatformTransactionManager transactionManager) {
+                                     PlatformTransactionManager transactionManager,
+                                     PortfolioProperties portfolioProperties) {
         this.portfolioRepository = portfolioRepository;
         this.positionRepository = positionRepository;
         this.dailySnapshotRepository = dailySnapshotRepository;
@@ -76,12 +78,14 @@ public class PortfolioBackfillService {
         this.tracker = tracker;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
         this.transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-        this.portfolioLocks = new Object[LOCK_STRIPES];
-        for (int i = 0; i < LOCK_STRIPES; i++) portfolioLocks[i] = new Object();
+        this.priceLookbackDays = portfolioProperties.getBackfill().getPriceLookbackDays();
+        this.lockStripes = portfolioProperties.getBackfill().getLockStripes();
+        this.portfolioLocks = new Object[lockStripes];
+        for (int i = 0; i < lockStripes; i++) portfolioLocks[i] = new Object();
     }
 
     private Object lockFor(Long portfolioId) {
-        return portfolioLocks[Math.floorMod(portfolioId.hashCode(), LOCK_STRIPES)];
+        return portfolioLocks[Math.floorMod(portfolioId.hashCode(), lockStripes)];
     }
 
     public record LotChangedEvent(Long portfolioId, com.finance.portfolio.model.AssetType assetType,
@@ -141,7 +145,7 @@ public class PortfolioBackfillService {
                 BigDecimal totalQty = sumField(entry.getValue(), PortfolioPosition::getQuantity);
                 BigDecimal totalCost = sumField(entry.getValue(), PortfolioPosition::entryValue);
                 batch.add(calculator.buildAggregatedAssetSnapshot(
-                        portfolioId, first.getAssetType(), first.getAssetCode(),
+                        portfolioId, first.getAssetType(), first.getAssetCode(), first.getTrackedAsset(),
                         ts, totalQty, totalCost, price));
             }
             assetSnapshotRepository.saveAll(batch);
@@ -184,9 +188,10 @@ public class PortfolioBackfillService {
         for (PortfolioPosition pos : positions) {
             AssetKey key = pos.toAssetKey();
             if (result.containsKey(key)) continue;
+            if (pos.getTrackedAsset() == null) continue;
             assetSnapshotRepository
-                    .findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
-                            portfolioId, pos.getAssetType(), pos.getAssetCode(), cutoff)
+                    .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
+                            portfolioId, pos.getTrackedAsset().getId(), cutoff)
                     .ifPresent(p -> result.put(key, p));
         }
         return result;
@@ -244,7 +249,7 @@ public class PortfolioBackfillService {
             BigDecimal totalCost = sumField(entry.getValue(), PortfolioPosition::entryValue);
             PortfolioAssetDailySnapshot prior = priorAssetByKey.get(entry.getKey());
             PortfolioAssetDailySnapshot snapshot = calculator.buildAggregatedAssetSnapshotWithPrior(
-                    portfolioId, first.getAssetType(), first.getAssetCode(),
+                    portfolioId, first.getAssetType(), first.getAssetCode(), first.getTrackedAsset(),
                     ts, totalQty, totalCost, price, prior);
             batch.add(snapshot);
             priorAssetByKey.put(entry.getKey(), snapshot);
@@ -274,7 +279,7 @@ public class PortfolioBackfillService {
                 .toList();
     }
 
-    private static Map<AssetKey, BigDecimal> pricesForDay(List<PortfolioPosition> positions, LocalDate day,
+    private Map<AssetKey, BigDecimal> pricesForDay(List<PortfolioPosition> positions, LocalDate day,
                                                             Map<AssetKey, Map<LocalDate, BigDecimal>> seriesByKey) {
         Map<AssetKey, BigDecimal> result = new HashMap<>();
         for (PortfolioPosition pos : positions) {
@@ -288,10 +293,10 @@ public class PortfolioBackfillService {
         return result;
     }
 
-    private static BigDecimal nearestPriceOnOrBefore(Map<LocalDate, BigDecimal> series, LocalDate day) {
+    private BigDecimal nearestPriceOnOrBefore(Map<LocalDate, BigDecimal> series, LocalDate day) {
         if (series == null || series.isEmpty()) return null;
         LocalDate cursor = day;
-        for (int i = 0; i <= PRICE_LOOKBACK_DAYS; i += 1) {
+        for (int i = 0; i <= priceLookbackDays; i += 1) {
             BigDecimal price = series.get(cursor);
             if (price != null) return price;
             cursor = cursor.minusDays(1);

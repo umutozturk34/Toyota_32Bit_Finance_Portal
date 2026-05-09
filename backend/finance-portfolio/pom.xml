@@ -11,13 +11,18 @@
         <name>Finance Portfolio</name>
 
         <dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-configuration-processor</artifactId>
+			<optional>true</optional>
+		</dependency>
                 <dependency>
                         <groupId>com.finance</groupId>
                         <artifactId>finance-common</artifactId>
                 </dependency>
                 <dependency>
                         <groupId>com.finance</groupId>
-                        <artifactId>finance-cache</artifactId>
+                        <artifactId>finance-market</artifactId>
                 </dependency>
         </dependencies>
 

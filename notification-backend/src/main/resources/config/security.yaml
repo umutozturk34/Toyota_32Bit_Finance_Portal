@@ -1,0 +1,12 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWK_SET_URI:http://keycloak:8080/realms/finance-realm/protocol/openid-connect/certs}
+
+keycloak:
+  base-url: ${KEYCLOAK_BASE_URL:http://keycloak:8080}
+  realm: ${KEYCLOAK_REALM:finance-realm}
+  admin-user: ${KEYCLOAK_ADMIN_USER:admin}
+  admin-password: ${KEYCLOAK_ADMIN_PASSWORD:admin}

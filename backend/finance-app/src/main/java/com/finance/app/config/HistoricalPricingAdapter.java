@@ -1,17 +1,17 @@
 package com.finance.app.config;
-import com.finance.forex.config.ForexProperties;
+import com.finance.market.forex.config.ForexProperties;
 
 
 import com.finance.common.config.AppProperties;
 
 
-import com.finance.common.dto.response.CandleResponse;
-import com.finance.fund.dto.response.FundCandleResponse;
+import com.finance.market.core.dto.response.CandleResponse;
+import com.finance.market.fund.dto.response.FundCandleResponse;
 import com.finance.common.model.MarketType;
-import com.finance.common.service.HistoricalPricingPort;
-import com.finance.common.service.MarketHistoryProvider;
+import com.finance.market.core.service.HistoricalPricingPort;
+import com.finance.market.core.service.MarketHistoryProvider;
 import com.finance.common.util.EnumDispatcher;
-import com.finance.common.util.SyntheticPriceCalculator;
+import com.finance.market.core.util.SyntheticPriceCalculator;
 import com.finance.portfolio.config.PortfolioProperties;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;

@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Activity, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
-import { RefreshCw } from '../../shared/components/AnimatedIcons';
-import LoadingState from '../../shared/components/LoadingState';
-import ErrorState from '../../shared/components/ErrorState';
-import SearchSuggestions from '../../shared/components/SearchSuggestions';
+import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
+import LoadingState from '../../shared/components/feedback/LoadingState';
+import ErrorState from '../../shared/components/feedback/ErrorState';
+import SearchSuggestions from '../../shared/components/form/SearchSuggestions';
 import { useUserLayout, useUpdateOverviewLayout, DEFAULT_OVERVIEW_LAYOUT } from '../../shared/hooks/useUserLayout';
 import { useMarketOverview } from '../../shared/hooks/useMarketOverview';
+import { useWidgetDefinitions } from '../../shared/hooks/useWidgetDefinitions';
 import { useWatchlists } from '../../shared/hooks/useWatchlist';
-import { newSectionId, definitionFor } from './sections/sectionRegistry';
-import OverviewLayout from './OverviewLayout';
-import OverviewWidgetCanvas from './OverviewWidgetCanvas';
-import WidgetTray from './WidgetTray';
-import WidgetSettingsPopover from './WidgetSettingsPopover';
+import { newSectionId } from './sections/sectionRegistry';
+import OverviewLayout from './components/OverviewLayout';
+import OverviewWidgetCanvas from './components/OverviewWidgetCanvas';
+import WidgetTray from './components/WidgetTray';
+import WidgetSettingsPopover from './components/WidgetSettingsPopover';
 
 const REMOVAL_ANIMATION_MS = 200;
 
@@ -25,6 +27,7 @@ export default function MarketDataPage() {
   const [galleryOpen, setGalleryOpen] = useState(true);
   const { isLoading: layoutLoading, overview: layout } = useUserLayout();
   const { isLoading: dataLoading, error, refetch, isFetching, widgets } = useMarketOverview();
+  const { byKind: widgetDefsByKind } = useWidgetDefinitions();
   const { data: watchlists = [] } = useWatchlists({ enabled: editMode });
   const updateLayout = useUpdateOverviewLayout();
 
@@ -88,8 +91,8 @@ export default function MarketDataPage() {
   }, []);
 
   const insertSection = useCallback((kind, config, x, y, opts = {}) => {
-    const def = definitionFor(kind);
-    const size = def?.defaultSize ?? { w: 4, h: 6 };
+    const def = widgetDefsByKind.get(kind);
+    const size = def ? { w: def.defaults.w, h: def.defaults.h } : { w: 4, h: 6 };
     const finalConfig = { ...config };
     const newId = newSectionId(kind);
     const newEntry = { sectionId: newId, kind, w: size.w, h: size.h, config: finalConfig };
@@ -112,7 +115,7 @@ export default function MarketDataPage() {
       ];
     });
     return newId;
-  }, []);
+  }, [widgetDefsByKind]);
 
   const handleTrayClick = useCallback((tile, anchorEl) => {
     const newId = insertSection(tile.kind, tile.config, 0, 0, { placeAtTop: true });
@@ -303,10 +306,10 @@ export default function MarketDataPage() {
       {editMode && galleryOpen && (
         <motion.div
           key="gallery-sidebar"
-          initial={{ opacity: 0, x: -12 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -12 }}
-          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: 'easeOut' }}
         >
           <WidgetTray sections={sections} watchlists={watchlists} onAdd={handleTrayClick} onDragStart={handleTrayDragStart} onDragEnd={handleTrayDragEnd} />
         </motion.div>

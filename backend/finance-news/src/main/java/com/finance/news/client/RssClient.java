@@ -1,5 +1,4 @@
 package com.finance.news.client;
-import com.finance.common.service.MarketSnapshotProcessor;
 
 
 import com.finance.news.dto.internal.RssArticleData;

@@ -2,6 +2,7 @@ package com.finance.notification.messaging.controller;
 
 import com.finance.common.dto.ApiResponse;
 import com.finance.common.dto.response.PagedResponse;
+import com.finance.notification.messaging.dto.ConversationStatusResponse;
 import com.finance.notification.messaging.dto.MessageResponse;
 import com.finance.notification.messaging.dto.MessageSendRequest;
 import com.finance.notification.messaging.service.MessageService;
@@ -57,6 +58,12 @@ public class MessageController {
     public ApiResponse<Long> unreadCount(@AuthenticationPrincipal Jwt jwt) {
         return ApiResponse.success("Unread count retrieved",
                 service.getUserUnreadCount(jwt.getSubject()));
+    }
+
+    @GetMapping("/status")
+    public ApiResponse<ConversationStatusResponse> status(@AuthenticationPrincipal Jwt jwt) {
+        return ApiResponse.success("Conversation status retrieved",
+                new ConversationStatusResponse(service.isConversationClosed(jwt.getSubject())));
     }
 
     @PatchMapping("/{id}/read")

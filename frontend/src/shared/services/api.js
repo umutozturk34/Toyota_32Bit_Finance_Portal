@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { getToken } from '../../features/auth/keycloak';
-import { toast } from '../components/Toast';
+import { getToken } from '../../features/auth/lib/keycloak';
+import { toast } from '../components/feedback/Toast';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
   headers: {
@@ -37,7 +37,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       if (!window.location.pathname.includes('/login')) {
         try {
-          const { doLogin } = await import('../../features/auth/keycloak');
+          const { doLogin } = await import('../../features/auth/lib/keycloak');
           doLogin();
         } catch {}
       }

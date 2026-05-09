@@ -1,29 +1,13 @@
 package com.finance.news.service;
-import com.finance.common.model.*;
-import com.finance.common.model.value.*;
-import com.finance.common.dto.*;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.internal.*;
-import com.finance.common.dto.request.*;
-import com.finance.common.dto.response.*;
-import com.finance.common.exception.*;
-import com.finance.common.util.*;
-import com.finance.common.service.*;
-import com.finance.common.service.assetpricing.*;
-import com.finance.common.config.*;
-import com.finance.common.filter.*;
-import com.finance.common.filter.tier.*;
-import com.finance.common.scheduler.*;
-import com.finance.common.event.*;
-import com.finance.common.mapper.*;
-import com.finance.common.repository.*;
-import com.finance.common.client.*;
+
+import com.finance.news.service.article.NewsCacheService;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.finance.news.config.NewsProperties;
 import com.finance.news.model.NewsArticle;
 import com.finance.news.model.NewsCategory;
+import com.finance.news.model.NewsSource;
 import com.finance.news.repository.NewsArticleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,7 +51,7 @@ class NewsCacheServiceTest {
                 .id(id)
                 .title(title)
                 .link("https://example.com/" + id)
-                .sourceName("Test")
+                .source(NewsSource.builder().id(1L).name("Test").url("https://example.com").build())
                 .category(NewsCategory.CRYPTO)
                 .publishedAt(LocalDateTime.now())
                 .fetchedAt(LocalDateTime.now())

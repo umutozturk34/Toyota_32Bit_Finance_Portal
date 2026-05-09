@@ -1,11 +1,11 @@
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, ArrowDownRight } from '../../shared/components/AnimatedIcons';
-import { forexService } from './forexService';
+import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
+import { forexService } from './services/forexService';
 import { getForexFlag, getBaseCurrency } from '../../shared/constants/forex';
 import { getChangeClass, changeColors, formatPrice, formatChange, formatPercent } from '../../shared/utils/formatters';
 import { cardVariants } from '../../shared/utils/animations';
-import AssetDetailPage from '../../shared/components/AssetDetailPage';
+import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 
 const fmt = (price) => formatPrice(price, { locale: 'tr-TR', minDecimals: 4, maxDecimals: 4 });
 

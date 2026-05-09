@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import useSessionState from "../../shared/hooks/useSessionState";
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import ReactECharts from 'echarts-for-react';
 import {
     Landmark,
@@ -14,23 +15,23 @@ import {
     ChevronUp,
     BarChart3,
 } from 'lucide-react';
-import { bondService } from './bondService';
-import { adminService } from '../admin/adminService';
+import { bondService } from './services/bondService';
+import { adminService } from '../admin/services/adminService';
 import { useAuth } from '../auth/AuthContext';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
-import LoadingState from '../../shared/components/LoadingState';
-import ErrorState from '../../shared/components/ErrorState';
-import EmptyState from '../../shared/components/EmptyState';
-import PageHeader from '../../shared/components/PageHeader';
-import MarketStatusBadge from '../../shared/components/MarketStatusBadge';
-import SearchInput from '../../shared/components/SearchInput';
-import SortSelect from '../../shared/components/SortSelect';
-import Pagination from '../../shared/components/Pagination';
-import { toast } from '../../shared/components/Toast';
-import FilterTabs from '../../shared/components/FilterTabs';
+import LoadingState from '../../shared/components/feedback/LoadingState';
+import ErrorState from '../../shared/components/feedback/ErrorState';
+import EmptyState from '../../shared/components/feedback/EmptyState';
+import PageHeader from '../../shared/components/layout/PageHeader';
+import MarketStatusBadge from '../../shared/components/layout/MarketStatusBadge';
+import SearchInput from '../../shared/components/form/SearchInput';
+import SortSelect from '../../shared/components/form/SortSelect';
+import Pagination from '../../shared/components/form/Pagination';
+import { toast } from '../../shared/components/feedback/Toast';
+import FilterTabs from '../../shared/components/form/FilterTabs';
 import useListParams from '../../shared/hooks/useListParams';
 import { useTheme } from '../../shared/context/ThemeContext';
-import { BOND_TYPE_LABELS, BOND_TYPE_COLORS, CHART_LINE_COLORS } from './bondConstants';
+import { BOND_TYPE_LABELS, BOND_TYPE_COLORS, CHART_LINE_COLORS } from './lib/bondConstants';
 
 const SORT_OPTIONS = [
     { id: 'simpleYield', label: 'Basit Getiri' },

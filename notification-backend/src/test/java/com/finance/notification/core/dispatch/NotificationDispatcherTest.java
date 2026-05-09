@@ -1,5 +1,7 @@
 package com.finance.notification.core.dispatch;
 
+import com.finance.notification.core.dispatch.email.UserEmailLookup;
+
 import com.finance.common.model.MarketType;
 import com.finance.notification.alert.model.AlertDirection;
 import com.finance.notification.core.dispatch.payload.PriceAlertPayload;

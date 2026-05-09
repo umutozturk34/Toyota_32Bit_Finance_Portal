@@ -1,6 +1,9 @@
 package com.finance.app.service.overview;
 
+import com.finance.app.config.OverviewProperties;
 import com.finance.user.service.OverviewSaveSanitizer;
+import lombok.RequiredArgsConstructor;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -9,16 +12,19 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@Order(10)
+@RequiredArgsConstructor
 public class OverviewWidgetDedupSanitizer implements OverviewSaveSanitizer {
 
-    public static final int MAX_WIDGETS = 12;
-    public static final int MAX_ASSET_CARDS = 4;
+    private final OverviewProperties properties;
 
     @Override
     public Map<String, Object> sanitize(Map<String, Object> overview) {
         if (overview == null) return Map.of();
         Object sectionsObj = overview.get("sections");
         if (!(sectionsObj instanceof List<?> sections)) return overview;
+        int maxWidgets = properties.limits().maxWidgetsPerLayout();
+        int maxAssetCards = properties.limits().maxAssetCardWidgetsPerLayout();
         LinkedHashMap<String, Object> dedup = new LinkedHashMap<>();
         int assetCardCount = 0;
         for (Object o : sections) {
@@ -27,12 +33,12 @@ public class OverviewWidgetDedupSanitizer implements OverviewSaveSanitizer {
             if (visibleFlag instanceof Boolean v && !v) continue;
             Object kind = entry.get("kind");
             if ("ASSET_CARDS".equals(kind)) {
-                if (assetCardCount >= MAX_ASSET_CARDS) continue;
+                if (assetCardCount >= maxAssetCards) continue;
                 assetCardCount++;
             }
             String key = dedupKey(entry);
             dedup.putIfAbsent(key, entry);
-            if (dedup.size() >= MAX_WIDGETS) break;
+            if (dedup.size() >= maxWidgets) break;
         }
         Map<String, Object> result = new LinkedHashMap<>(overview);
         result.put("sections", new ArrayList<>(dedup.values()));

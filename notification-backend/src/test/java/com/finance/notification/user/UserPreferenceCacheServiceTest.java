@@ -87,10 +87,14 @@ class UserPreferenceCacheServiceTest {
         UserPreferenceCache system = UserPreferenceCache.builder().userSub(USER_SUB).theme("SYSTEM").build();
 
         when(repository.findById(USER_SUB)).thenReturn(Optional.of(dark));
-        assertThat(service.resolveTheme(USER_SUB)).isEqualTo("DARK");
+        String darkTheme = service.resolveTheme(USER_SUB);
+
+        assertThat(darkTheme).isEqualTo("DARK");
 
         when(repository.findById(USER_SUB)).thenReturn(Optional.of(system));
-        assertThat(service.resolveTheme(USER_SUB)).isEqualTo("DARK");
+        String systemTheme = service.resolveTheme(USER_SUB);
+
+        assertThat(systemTheme).isEqualTo("DARK");
     }
 
     @Test

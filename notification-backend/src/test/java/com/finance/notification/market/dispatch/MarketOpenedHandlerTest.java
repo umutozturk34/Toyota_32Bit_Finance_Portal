@@ -16,7 +16,9 @@ class MarketOpenedHandlerTest {
 
     @Test
     void should_returnMarketOpenedType_when_typeQueried() {
-        assertThat(handler.type()).isEqualTo(NotificationType.MARKET_OPENED);
+        NotificationType type = handler.type();
+
+        assertThat(type).isEqualTo(NotificationType.MARKET_OPENED);
     }
 
     @Test

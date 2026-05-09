@@ -1,5 +1,5 @@
 package com.finance.portfolio.service;
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.portfolio.config.PortfolioProperties;
@@ -10,6 +10,9 @@ import com.finance.portfolio.dto.response.PortfolioResponse;
 import com.finance.portfolio.dto.response.PositionResponse;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.common.model.TrackedAsset;
+import com.finance.common.model.TrackedAssetType;
+import com.finance.common.repository.TrackedAssetRepository;
 import com.finance.portfolio.mapper.PortfolioResponseMapper;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.Portfolio;
@@ -35,6 +38,7 @@ public class PortfolioCrudService {
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioPositionRepository positionRepository;
+    private final TrackedAssetRepository trackedAssetRepository;
     private final PortfolioResponseMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
     private final PortfolioProperties portfolioProperties;
@@ -62,14 +66,16 @@ public class PortfolioCrudService {
         validateLot(request);
         AssetType assetType = EnumParser.parseOrBadRequest(AssetType.class,
                 request.assetType().toUpperCase(), "asset type");
+        TrackedAsset trackedAsset = requireTrackedAsset(assetType, request.assetCode());
         PortfolioPosition position = PortfolioPosition.builder()
                 .portfolio(portfolio)
                 .assetType(assetType)
-                .assetCode(request.assetCode())
+                .assetCode(trackedAsset.getAssetCode())
                 .quantity(request.quantity())
                 .entryDate(request.entryDate())
                 .entryPrice(request.entryPrice())
                 .build();
+        position.setTrackedAsset(trackedAsset);
         PortfolioPosition saved = positionRepository.save(position);
 
         publishLotChange(portfolioId, saved, saved.getEntryDate(), true);
@@ -142,5 +148,15 @@ public class PortfolioCrudService {
         if (a == null) return b;
         if (b == null) return a;
         return a.isBefore(b) ? a : b;
+    }
+
+    private TrackedAsset requireTrackedAsset(AssetType assetType, String rawCode) {
+        TrackedAssetType trackedType = TrackedAssetType.valueOf(assetType.name());
+        String normalizedCode = trackedType.normalizeCode(rawCode);
+        return trackedAssetRepository
+                .findByAssetTypeAndAssetCodeIgnoreCase(trackedType, normalizedCode)
+                .orElseThrow(() -> new BusinessException(
+                        "Pozisyon eklemek için bu varlık önce takip listesine alınmalı: "
+                                + assetType + " / " + normalizedCode));
     }
 }

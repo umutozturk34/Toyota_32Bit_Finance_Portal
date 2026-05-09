@@ -1,5 +1,6 @@
 package com.finance.notification.messaging.dispatch;
 
+import com.finance.notification.config.NotificationDispatchProperties;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
 import com.finance.notification.core.dispatch.payload.MessagePayload;
@@ -10,7 +11,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class MessageHandlerTest {
 
-    private final MessageHandler handler = new MessageHandler();
+    private static final NotificationDispatchProperties DISPATCH = new NotificationDispatchProperties(
+            new NotificationDispatchProperties.Formatting(2, 6, 6),
+            new NotificationDispatchProperties.WatchlistDelta(3),
+            new NotificationDispatchProperties.Message(120));
+
+    private final MessageHandler handler = new MessageHandler(DISPATCH);
 
     @Test
     void type_returnsMessage() {

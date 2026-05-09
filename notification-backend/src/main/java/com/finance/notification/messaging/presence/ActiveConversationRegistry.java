@@ -1,5 +1,6 @@
 package com.finance.notification.messaging.presence;
 
+import com.finance.notification.config.NotificationCacheProperties;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.log4j.Log4j2;
@@ -26,12 +27,15 @@ import java.util.Optional;
 public class ActiveConversationRegistry {
 
     private static final Duration PRESENCE_TTL = Duration.ofSeconds(60);
-    private static final long MAX_ENTRIES = 50_000L;
 
-    private final Cache<String, String> activeKeys = Caffeine.newBuilder()
-            .expireAfterAccess(PRESENCE_TTL)
-            .maximumSize(MAX_ENTRIES)
-            .build();
+    private final Cache<String, String> activeKeys;
+
+    public ActiveConversationRegistry(NotificationCacheProperties cacheProperties) {
+        this.activeKeys = Caffeine.newBuilder()
+                .expireAfterAccess(PRESENCE_TTL)
+                .maximumSize(cacheProperties.presenceMaxEntries())
+                .build();
+    }
 
     public void register(String userSub, String key) {
         activeKeys.put(userSub, key);

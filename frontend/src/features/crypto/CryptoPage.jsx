@@ -1,13 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { Bitcoin, BarChart2, Activity, Clock } from 'lucide-react';
-import { TrendingUp, ArrowUpRight, ArrowDownRight } from '../../shared/components/AnimatedIcons';
-import { cryptoService } from './cryptoService';
-import { adminService } from '../admin/adminService';
+import { TrendingUp, ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
+import { cryptoService } from './services/cryptoService';
+import { adminService } from '../admin/services/adminService';
 import { formatPriceUSD, formatPriceTRY, formatCompactNumber } from '../../shared/utils/formatters';
-import MarketListPage from '../../shared/components/MarketListPage';
-import AssetCard from '../../shared/components/AssetCard';
-import AssetBuyButton from '../../shared/components/AssetBuyButton';
-import ChangePercentBadge from '../../shared/components/ChangePercentBadge';
+import MarketListPage from '../../shared/components/market/MarketListPage';
+import AssetCard from '../../shared/components/asset/AssetCard';
+import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
+import ChangePercentBadge from '../../shared/components/asset/ChangePercentBadge';
 import useListParams from '../../shared/hooks/useListParams';
 
 const SORT_OPTIONS = [

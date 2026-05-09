@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.app.dto.response.overview.AssetCardsData;
 import com.finance.app.dto.response.overview.WidgetKind;
 import com.finance.app.dto.response.overview.WidgetSection;
-import com.finance.common.dto.response.MarketAssetResponse;
+import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
-import com.finance.common.service.MarketAssetProvider;
+import com.finance.market.core.service.MarketAssetProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +36,7 @@ class AssetCardsWidgetProviderTest {
         when(stockProvider.getType()).thenReturn(MarketType.STOCK);
         cryptoProvider = mock(MarketAssetProvider.class);
         when(cryptoProvider.getType()).thenReturn(MarketType.CRYPTO);
-        defaults = new OverviewDefaults();
+        defaults = new OverviewDefaults(OverviewPropertiesFixture.standard());
         provider = new AssetCardsWidgetProvider(List.of(stockProvider, cryptoProvider), defaults);
     }
 
@@ -46,7 +46,9 @@ class AssetCardsWidgetProviderTest {
 
     @Test
     void should_reportAssetCardsKind_when_kindQueried() {
-        assertThat(provider.kind()).isEqualTo(WidgetKind.ASSET_CARDS);
+        WidgetKind kind = provider.kind();
+
+        assertThat(kind).isEqualTo(WidgetKind.ASSET_CARDS);
     }
 
     @Test

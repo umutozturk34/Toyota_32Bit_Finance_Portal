@@ -1,5 +1,8 @@
 package com.finance.news.service;
-import com.finance.common.service.MarketSnapshotProcessor;
+
+import com.finance.news.service.source.NewsSourceAdminService;
+import com.finance.news.service.source.NewsSourceRefreshService;
+import com.finance.news.service.source.NewsSourceService;
 
 
 import com.finance.news.dto.request.UpsertNewsSourceRequest;
@@ -8,6 +11,7 @@ import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.news.mapper.NewsSourceMapper;
 import com.finance.news.model.NewsSource;
+import com.finance.news.repository.NewsArticleRepository;
 import com.finance.news.repository.NewsSourceRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +32,7 @@ import static org.mockito.Mockito.when;
 class NewsSourceAdminServiceTest {
 
     private NewsSourceRepository repository;
+    private NewsArticleRepository articleRepository;
     private NewsSourceMapper mapper;
     private NewsSourceService sourceService;
     private NewsSourceRefreshService refreshService;
@@ -37,10 +42,11 @@ class NewsSourceAdminServiceTest {
     @BeforeEach
     void setUp() {
         repository = mock(NewsSourceRepository.class);
+        articleRepository = mock(NewsArticleRepository.class);
         mapper = mock(NewsSourceMapper.class);
         sourceService = mock(NewsSourceService.class);
         refreshService = mock(NewsSourceRefreshService.class);
-        service = new NewsSourceAdminService(repository, mapper, sourceService, refreshService);
+        service = new NewsSourceAdminService(repository, articleRepository, mapper, sourceService, refreshService);
         tsmMock = mockStatic(TransactionSynchronizationManager.class);
     }
 
@@ -138,12 +144,27 @@ class NewsSourceAdminServiceTest {
     }
 
     @Test
-    void deleteRemovesSource() {
+    void deletePurgesArticlesBeforeRemovingSource() {
         NewsSource existing = entity(1L, "BBC");
         when(sourceService.findOrThrow(1L)).thenReturn(existing);
+        when(articleRepository.deleteBySourceId(1L)).thenReturn(7);
 
         service.delete(1L);
 
+        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(articleRepository, repository);
+        inOrder.verify(articleRepository).deleteBySourceId(1L);
+        inOrder.verify(repository).delete(existing);
+    }
+
+    @Test
+    void deleteAllowsZeroArticles() {
+        NewsSource existing = entity(2L, "Reuters");
+        when(sourceService.findOrThrow(2L)).thenReturn(existing);
+        when(articleRepository.deleteBySourceId(2L)).thenReturn(0);
+
+        service.delete(2L);
+
+        verify(articleRepository).deleteBySourceId(2L);
         verify(repository).delete(existing);
     }
 

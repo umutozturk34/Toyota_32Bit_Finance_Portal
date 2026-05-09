@@ -26,4 +26,9 @@ public record WatchlistItemCreateRequest(
         if (deltaThreshold.signum() == 0) return true;
         return deltaThreshold.compareTo(MIN_NON_ZERO) >= 0;
     }
+
+    @AssertTrue(message = "Tahvil/bono takip listesine eklenemez")
+    public boolean isMarketTypeWatchable() {
+        return marketType != MarketType.BOND;
+    }
 }

@@ -1,6 +1,6 @@
 import { useAuth } from '../auth/AuthContext';
-import UserMessagesView from './UserMessagesView';
-import AdminMessagesView from './AdminMessagesView';
+import UserMessagesView from './views/UserMessagesView';
+import AdminMessagesView from './views/AdminMessagesView';
 
 export default function MessagesPage() {
   const { hasRole } = useAuth();

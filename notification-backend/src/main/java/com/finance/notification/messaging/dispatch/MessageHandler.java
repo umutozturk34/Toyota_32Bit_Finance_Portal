@@ -1,18 +1,21 @@
 package com.finance.notification.messaging.dispatch;
 
+import com.finance.notification.config.NotificationDispatchProperties;
 import com.finance.notification.core.dispatch.NotificationHandler;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
 import com.finance.notification.core.dispatch.payload.MessagePayload;
 import com.finance.notification.core.model.NotificationType;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
 public class MessageHandler implements NotificationHandler {
 
-    private static final int PREVIEW_MAX_CHARS = 120;
+    private final NotificationDispatchProperties properties;
 
     @Override
     public NotificationType type() {
@@ -37,10 +40,11 @@ public class MessageHandler implements NotificationHandler {
                 Map.of("senderSub", senderSub, "preview", preview));
     }
 
-    private static String preview(String body) {
-        if (body.length() <= PREVIEW_MAX_CHARS) {
+    private String preview(String body) {
+        int max = properties.message().previewMaxChars();
+        if (body.length() <= max) {
             return body;
         }
-        return body.substring(0, PREVIEW_MAX_CHARS) + "…";
+        return body.substring(0, max) + "…";
     }
 }

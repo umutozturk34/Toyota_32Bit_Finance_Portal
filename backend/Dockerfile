@@ -6,14 +6,8 @@ FROM maven:3.9-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
 COPY pom.xml .
-COPY finance-cache/pom.xml finance-cache/pom.xml
-COPY finance-crypto/pom.xml finance-crypto/pom.xml
-COPY finance-stock/pom.xml finance-stock/pom.xml
-COPY finance-forex/pom.xml finance-forex/pom.xml
+COPY finance-market/pom.xml finance-market/pom.xml
 COPY finance-user/pom.xml finance-user/pom.xml
-COPY finance-fund/pom.xml finance-fund/pom.xml
-COPY finance-bond/pom.xml finance-bond/pom.xml
-COPY finance-commodity/pom.xml finance-commodity/pom.xml
 COPY finance-news/pom.xml finance-news/pom.xml
 COPY finance-portfolio/pom.xml finance-portfolio/pom.xml
 COPY finance-app/pom.xml finance-app/pom.xml
@@ -24,14 +18,8 @@ RUN --mount=type=secret,id=github_token,target=/run/secrets/github_token \
     printf '<settings><servers><server><id>github</id><username>umutozturk34</username><password>%s</password></server></servers></settings>' "$(cat /run/secrets/github_token)" > /root/.m2/settings.xml && \
     mvn -B dependency:go-offline
 
-COPY finance-cache/src finance-cache/src
-COPY finance-crypto/src finance-crypto/src
-COPY finance-stock/src finance-stock/src
-COPY finance-forex/src finance-forex/src
+COPY finance-market/src finance-market/src
 COPY finance-user/src finance-user/src
-COPY finance-fund/src finance-fund/src
-COPY finance-bond/src finance-bond/src
-COPY finance-commodity/src finance-commodity/src
 COPY finance-news/src finance-news/src
 COPY finance-portfolio/src finance-portfolio/src
 COPY finance-app/src finance-app/src

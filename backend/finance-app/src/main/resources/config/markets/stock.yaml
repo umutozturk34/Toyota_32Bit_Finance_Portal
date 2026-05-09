@@ -1,0 +1,5 @@
+app:
+  stock:
+    chart-range: max
+    chart-interval: 1d
+    batch-min-sample: 10

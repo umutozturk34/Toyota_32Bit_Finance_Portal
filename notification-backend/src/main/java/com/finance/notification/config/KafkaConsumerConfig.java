@@ -1,5 +1,6 @@
 package com.finance.notification.config;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,10 +11,10 @@ import org.springframework.util.backoff.FixedBackOff;
 
 @Log4j2
 @Configuration
+@RequiredArgsConstructor
 public class KafkaConsumerConfig {
 
-    private static final long RETRY_INTERVAL_MS = 2000L;
-    private static final long RETRY_MAX_ATTEMPTS = 3L;
+    private final NotificationKafkaProperties properties;
 
     @Bean
     public DefaultErrorHandler kafkaErrorHandler(KafkaTemplate<String, Object> kafkaTemplate) {
@@ -24,6 +25,7 @@ public class KafkaConsumerConfig {
                     return new org.apache.kafka.common.TopicPartition(
                             record.topic() + ".dlq", record.partition());
                 });
-        return new DefaultErrorHandler(recoverer, new FixedBackOff(RETRY_INTERVAL_MS, RETRY_MAX_ATTEMPTS));
+        return new DefaultErrorHandler(recoverer,
+                new FixedBackOff(properties.consumer().retryIntervalMs(), properties.consumer().retryMaxAttempts()));
     }
 }

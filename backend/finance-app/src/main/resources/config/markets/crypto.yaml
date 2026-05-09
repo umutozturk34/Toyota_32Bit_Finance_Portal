@@ -1,0 +1,9 @@
+app:
+  crypto:
+    history-days: 365
+    min-candles-for-healthy: 350
+    batch-min-sample: 5
+    binance-page-size: 1000
+    binance-interval: 1d
+    vs-usd: usd
+    vs-try: try

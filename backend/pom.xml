@@ -32,13 +32,7 @@
 	</repositories>
 
 	<modules>
-		<module>finance-cache</module>
-		<module>finance-crypto</module>
-		<module>finance-stock</module>
-		<module>finance-forex</module>
-		<module>finance-fund</module>
-		<module>finance-bond</module>
-		<module>finance-commodity</module>
+		<module>finance-market</module>
 		<module>finance-news</module>
 		<module>finance-user</module>
 		<module>finance-portfolio</module>
@@ -71,42 +65,12 @@
 			</dependency>
 			<dependency>
 				<groupId>com.finance</groupId>
-				<artifactId>finance-cache</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.finance</groupId>
-				<artifactId>finance-crypto</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.finance</groupId>
-				<artifactId>finance-stock</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.finance</groupId>
-				<artifactId>finance-forex</artifactId>
+				<artifactId>finance-market</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.finance</groupId>
 				<artifactId>finance-user</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.finance</groupId>
-				<artifactId>finance-fund</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.finance</groupId>
-				<artifactId>finance-bond</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.finance</groupId>
-				<artifactId>finance-commodity</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>

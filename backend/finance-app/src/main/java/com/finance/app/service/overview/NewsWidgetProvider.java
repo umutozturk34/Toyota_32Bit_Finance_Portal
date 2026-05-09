@@ -6,7 +6,7 @@ import com.finance.app.dto.response.overview.WidgetKind;
 import com.finance.app.dto.response.overview.WidgetSection;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.news.dto.response.NewsArticleResponse;
-import com.finance.news.service.NewsQueryService;
+import com.finance.news.service.article.NewsQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
@@ -23,7 +23,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class NewsWidgetProvider implements OverviewWidgetProvider {
 
-    private static final int MAX_COUNT = 12;
     private static final String SORT_FIELD = "publishedAt";
     private static final String SORT_DIRECTION = "desc";
 
@@ -78,7 +77,7 @@ public class NewsWidgetProvider implements OverviewWidgetProvider {
     private int readCount(WidgetSection section) {
         JsonNode node = section.config().get("count");
         if (node == null || !node.isInt() || node.asInt() <= 0) return defaults.defaultNewsCount();
-        return Math.min(node.asInt(), MAX_COUNT);
+        return Math.min(node.asInt(), defaults.maxNewsItems());
     }
 
     private List<String> readCategories(WidgetSection section) {

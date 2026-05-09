@@ -1,22 +1,22 @@
 package com.finance.app.service;
-import com.finance.forex.service.TcmbForexService;
+import com.finance.market.forex.service.TcmbForexService;
 
 import com.finance.common.service.TaskTrackingService;
 
-import com.finance.news.service.NewsDataService;
+import com.finance.news.service.article.NewsDataService;
 
-import com.finance.common.service.MarketUpdatePort;
+import com.finance.market.core.service.MarketUpdatePort;
 import com.finance.common.event.MarketUpdateEventPort;
 
-import com.finance.bond.service.BondDataService;
+import com.finance.market.bond.service.BondDataService;
 
-import com.finance.bond.model.Bond;
+import com.finance.market.bond.model.Bond;
 
 import com.finance.common.service.PortfolioSnapshotPort;
 
 import com.finance.portfolio.model.Portfolio;
 
-import com.finance.common.service.MarketRefresher;
+import com.finance.market.core.service.MarketRefresher;
 
 
 import com.finance.common.dto.response.TaskTriggerResponse;

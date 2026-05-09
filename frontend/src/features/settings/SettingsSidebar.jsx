@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import {
   X, Settings as SettingsIcon, Palette, Languages, BarChart3, Bell, Shield,
   Sun, Moon, LogOut, KeyRound, Mail,
@@ -8,8 +9,8 @@ import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks
 import { useTheme } from '../../shared/context/ThemeContext';
 import { useAuth } from '../auth/AuthContext';
 import { userCredentialService } from '../../shared/services/userCredentialService';
-import { toast } from '../../shared/components/Toast';
-import TwoFactorPanel from '../auth/TwoFactorPanel';
+import { toast } from '../../shared/components/feedback/Toast';
+import TwoFactorPanel from '../auth/components/TwoFactorPanel';
 import NotificationPreferencesSection from './NotificationPreferencesSection';
 import EmailChangeSection from './EmailChangeSection';
 

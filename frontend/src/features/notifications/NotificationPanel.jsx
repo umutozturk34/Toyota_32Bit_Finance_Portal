@@ -1,4 +1,5 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   X, BellOff, Inbox, Check, CheckCheck, Trash2, AlertCircle, Zap, FileText,
   MessageSquare, Bell, Megaphone, Search,
@@ -11,7 +12,7 @@ import {
   useDeleteAllNotifications,
 } from '../../shared/hooks/useNotifications';
 import { useEffect, useState } from 'react';
-import ConfirmDialog from '../../shared/components/ConfirmDialog';
+import ConfirmDialog from '../../shared/components/modal/ConfirmDialog';
 import BroadcastModal from '../messages/BroadcastModal';
 import { useAuth } from '../auth/AuthContext';
 

@@ -1,0 +1,7 @@
+app:
+  forex:
+    spread-rate: 0.01
+    chart-range: max
+    chart-interval: 1d
+    batch-min-sample: 5
+    base-currency: USDTRY

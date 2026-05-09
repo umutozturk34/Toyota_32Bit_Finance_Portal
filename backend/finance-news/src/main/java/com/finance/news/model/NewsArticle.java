@@ -1,28 +1,11 @@
 package com.finance.news.model;
-import com.finance.common.model.*;
-import com.finance.common.model.value.*;
-import com.finance.common.dto.*;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.internal.*;
-import com.finance.common.dto.request.*;
-import com.finance.common.dto.response.*;
-import com.finance.common.exception.*;
-import com.finance.common.util.*;
-import com.finance.common.service.*;
-import com.finance.common.service.assetpricing.*;
-import com.finance.common.config.*;
-import com.finance.common.filter.*;
-import com.finance.common.filter.tier.*;
-import com.finance.common.scheduler.*;
-import com.finance.common.event.*;
-import com.finance.common.mapper.*;
-import com.finance.common.repository.*;
-import com.finance.common.client.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.finance.news.util.NewsCategoryResolver;
 import jakarta.persistence.*;
 import lombok.*;
+
+import com.finance.news.model.NewsSource;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -38,7 +21,8 @@ import java.time.temporal.ChronoUnit;
         indexes = {
                 @Index(name = "idx_news_category", columnList = "category"),
                 @Index(name = "idx_news_published_at", columnList = "published_at"),
-                @Index(name = "idx_news_source", columnList = "source_name")
+                @Index(name = "idx_news_articles_source", columnList = "source_id"),
+                @Index(name = "idx_news_articles_category_published", columnList = "category, published_at DESC")
         }
 )
 public class NewsArticle {
@@ -57,11 +41,20 @@ public class NewsArticle {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "source_name", length = 100, nullable = false)
-    private String sourceName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_id", nullable = false)
+    @JsonIgnore
+    private NewsSource source;
 
-    @Column(name = "source_url", length = 1024)
-    private String sourceUrl;
+    @JsonIgnore
+    public String getSourceName() {
+        return source != null ? source.getName() : null;
+    }
+
+    @JsonIgnore
+    public String getSourceUrl() {
+        return source != null ? source.getUrl() : null;
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(name = "category", length = 30, nullable = false)

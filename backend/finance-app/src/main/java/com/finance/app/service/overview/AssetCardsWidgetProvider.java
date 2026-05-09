@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.finance.app.dto.response.overview.AssetCardsData;
 import com.finance.app.dto.response.overview.WidgetKind;
 import com.finance.app.dto.response.overview.WidgetSection;
-import com.finance.common.dto.response.MarketAssetResponse;
+import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
-import com.finance.common.service.MarketAssetProvider;
+import com.finance.market.core.service.MarketAssetProvider;
 import com.finance.common.util.EnumDispatcher;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
@@ -20,8 +20,6 @@ import java.util.Optional;
 @Log4j2
 @Component
 public class AssetCardsWidgetProvider implements OverviewWidgetProvider {
-
-    private static final int MAX_ITEMS = OverviewDefaults.MAX_ASSET_CARDS;
 
     private final Map<MarketType, MarketAssetProvider> providersByType;
     private final OverviewDefaults defaults;
@@ -40,9 +38,10 @@ public class AssetCardsWidgetProvider implements OverviewWidgetProvider {
     public AssetCardsData fetch(String userSub, WidgetSection section) {
         List<AssetReference> requested = readReferences(section);
         if (requested == null) requested = defaults.defaultAssetReferences();
-        List<MarketAssetResponse> resolved = new ArrayList<>(Math.min(requested.size(), MAX_ITEMS));
+        int maxItems = defaults.maxAssetCardItems();
+        List<MarketAssetResponse> resolved = new ArrayList<>(Math.min(requested.size(), maxItems));
         for (AssetReference ref : requested) {
-            if (resolved.size() >= MAX_ITEMS) break;
+            if (resolved.size() >= maxItems) break;
             resolveOne(ref).ifPresent(resolved::add);
         }
         return new AssetCardsData(resolved);

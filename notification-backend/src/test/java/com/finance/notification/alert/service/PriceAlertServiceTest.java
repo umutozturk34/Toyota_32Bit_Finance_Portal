@@ -2,6 +2,9 @@ package com.finance.notification.alert.service;
 
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
+import com.finance.common.model.TrackedAsset;
+import com.finance.common.model.TrackedAssetType;
+import com.finance.common.repository.TrackedAssetRepository;
 import com.finance.notification.alert.dto.PriceAlertCreateRequest;
 import com.finance.notification.alert.dto.PriceAlertResponse;
 import com.finance.notification.alert.mapper.PriceAlertMapper;
@@ -30,6 +33,7 @@ class PriceAlertServiceTest {
     @Mock private PriceAlertRepository repository;
     @Mock private PriceAlertMapper mapper;
     @Mock private com.finance.common.cache.AssetSnapshotCache assetSnapshotCache;
+    @Mock private TrackedAssetRepository trackedAssetRepository;
 
     @InjectMocks
     private PriceAlertService service;
@@ -47,6 +51,10 @@ class PriceAlertServiceTest {
                 MarketType.CRYPTO, "BTC", AlertDirection.ABOVE,
                 BigDecimal.valueOf(100), "TRY", null);
         PriceAlert entity = ownedAlert();
+        TrackedAsset tracked = TrackedAsset.builder()
+                .id(7L).assetType(TrackedAssetType.CRYPTO).assetCode("btc").build();
+        when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType.CRYPTO, "btc"))
+                .thenReturn(Optional.of(tracked));
         when(mapper.toEntity(req, "user-1")).thenReturn(entity);
         when(repository.save(entity)).thenReturn(entity);
         when(mapper.toResponse(entity)).thenReturn(stubResponse(entity));
@@ -79,7 +87,7 @@ class PriceAlertServiceTest {
 
     @Test
     void activeAlerts_delegatesToRepository() {
-        when(repository.findByActiveTrueAndMarketType(MarketType.CRYPTO))
+        when(repository.findByActiveTrueAndTrackedAsset_AssetType(TrackedAssetType.CRYPTO))
                 .thenReturn(java.util.List.of(ownedAlert()));
 
         var result = service.activeAlerts(MarketType.CRYPTO);

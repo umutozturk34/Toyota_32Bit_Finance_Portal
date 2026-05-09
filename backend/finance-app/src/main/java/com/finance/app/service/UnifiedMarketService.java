@@ -1,21 +1,21 @@
 package com.finance.app.service;
-import com.finance.cache.service.TopMoversRedisService;
+import com.finance.market.core.cache.TopMoversRedisService;
 
-import com.finance.common.service.MarketUpdatePort;
+import com.finance.market.core.service.MarketUpdatePort;
 
-import com.finance.common.service.HistoricalPricingPort;
+import com.finance.market.core.service.HistoricalPricingPort;
 
-import com.finance.common.service.MarketAssetProvider.MarketAssetFilters;
+import com.finance.market.core.service.MarketAssetProvider.MarketAssetFilters;
 
-import com.finance.common.service.MarketAssetProvider;
+import com.finance.market.core.service.MarketAssetProvider;
 
-import com.finance.common.service.MarketHistoryProvider;
+import com.finance.market.core.service.MarketHistoryProvider;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 import com.finance.common.dto.response.GroupCount;
-import com.finance.common.dto.response.MarketAssetResponse;
-import com.finance.common.dto.response.MarketAvailabilityResponse;
+import com.finance.market.core.dto.response.MarketAssetResponse;
+import com.finance.market.core.dto.response.MarketAvailabilityResponse;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.common.dto.response.StockMetadata;
 import com.finance.common.model.CandlePeriod;

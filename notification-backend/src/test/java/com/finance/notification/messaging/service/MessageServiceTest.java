@@ -42,8 +42,9 @@ class MessageServiceTest {
     @Mock private ClosedConversationRepository closedRepository;
     @Mock private com.finance.notification.messaging.security.MessageDuplicateGuard duplicateGuard;
     @Mock private com.finance.notification.messaging.security.MessageCooldownGuard cooldownGuard;
+    @Mock private com.finance.notification.messaging.security.MessageBacklogGuard backlogGuard;
     @Mock private org.springframework.context.ApplicationEventPublisher events;
-    @Mock private com.finance.notification.core.dispatch.KeycloakUserEmailLookup userDirectory;
+    @Mock private com.finance.notification.core.dispatch.email.KeycloakUserEmailLookup userDirectory;
     @Mock private com.finance.notification.messaging.presence.ActiveConversationRegistry presence;
 
     private MessageService service;
@@ -51,7 +52,7 @@ class MessageServiceTest {
     @BeforeEach
     void setUp() {
         service = new MessageService(repository, closedRepository, new MessageMapperImpl(),
-                duplicateGuard, cooldownGuard, events, userDirectory, presence);
+                duplicateGuard, cooldownGuard, backlogGuard, events, userDirectory, presence);
     }
 
     @Test
@@ -92,6 +93,16 @@ class MessageServiceTest {
         assertThat(saved.getRecipientSub()).isEqualTo(USER_SUB);
         assertThat(saved.getDirection()).isEqualTo(MessageDirection.ADMIN_TO_USER);
         assertThat(response.body()).isEqualTo("Account flagged");
+    }
+
+    @Test
+    void should_rejectUserToAdmin_when_unansweredBacklogReached() {
+        when(backlogGuard.wouldExceedBacklog(USER_SUB)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.sendUserToAdmin(USER_SUB, "third one"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Admin cevap vermeden");
+        verify(repository, never()).save(any());
     }
 
     @Test

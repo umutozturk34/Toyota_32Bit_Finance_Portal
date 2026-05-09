@@ -1,5 +1,7 @@
 package com.finance.news.service;
-import com.finance.common.service.MarketSnapshotProcessor;
+
+import com.finance.news.service.article.NewsCacheService;
+import com.finance.news.service.article.NewsQueryService;
 
 
 import com.finance.news.dto.response.NewsArticleResponse;
@@ -7,6 +9,7 @@ import com.finance.common.dto.response.PagedResponse;
 import com.finance.news.mapper.NewsResponseMapper;
 import com.finance.news.model.NewsArticle;
 import com.finance.news.model.NewsCategory;
+import com.finance.news.model.NewsSource;
 import com.finance.news.repository.NewsArticleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,7 +51,7 @@ class NewsQueryServiceTest {
                 .id(1L)
                 .title(title)
                 .link("https://example.com/" + title.hashCode())
-                .sourceName("Test")
+                .source(NewsSource.builder().id(1L).name("Test").url("https://example.com").build())
                 .category(category)
                 .publishedAt(LocalDateTime.now())
                 .fetchedAt(LocalDateTime.now())

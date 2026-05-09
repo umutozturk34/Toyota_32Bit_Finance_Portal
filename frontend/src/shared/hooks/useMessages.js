@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminMessageService, messageService } from '../services/messageService';
 import { useAuth } from '../../features/auth/AuthContext';
+import { CONVERSATION_STATUS_STALE_MS } from '../../features/messages/util';
 
 const USER_INBOX_KEY = (params) => ['messages', 'inbox', params];
 const USER_SENT_KEY = (params) => ['messages', 'sent', params];
 const USER_UNREAD_KEY = ['messages', 'unread-count'];
+const USER_STATUS_KEY = ['messages', 'status'];
 export function useUserInbox({ page = 0, size = 20 } = {}) {
   const { isAuthenticated, loading } = useAuth();
   return useQuery({
@@ -35,6 +37,16 @@ export function useUnreadMessageCount() {
     enabled: isAuthenticated && !loading,
     refetchInterval: 30_000,
     staleTime: 15_000,
+  });
+}
+
+export function useUserConversationStatus() {
+  const { isAuthenticated, loading } = useAuth();
+  return useQuery({
+    queryKey: USER_STATUS_KEY,
+    queryFn: messageService.status,
+    enabled: isAuthenticated && !loading,
+    staleTime: CONVERSATION_STATUS_STALE_MS,
   });
 }
 

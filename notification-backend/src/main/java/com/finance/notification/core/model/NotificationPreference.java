@@ -1,6 +1,6 @@
 package com.finance.notification.core.model;
 
-import com.finance.notification.market.SessionMarket;
+import com.finance.notification.market.session.SessionMarket;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

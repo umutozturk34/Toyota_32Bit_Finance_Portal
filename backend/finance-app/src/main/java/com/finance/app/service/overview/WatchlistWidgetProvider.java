@@ -78,7 +78,7 @@ public class WatchlistWidgetProvider implements OverviewWidgetProvider {
     private int readLimit(WidgetSection section) {
         JsonNode node = section.config().get("limit");
         if (node == null || !node.isInt() || node.asInt() <= 0) return defaults.defaultWatchlistLimit();
-        return Math.min(node.asInt(), OverviewDefaults.MAX_CONFIG_LIMIT);
+        return Math.min(node.asInt(), defaults.maxConfigLimit());
     }
 
     private List<WatchlistData.WatchlistRow> enrich(List<OverviewWatchlistItem> items) {

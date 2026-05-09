@@ -8,12 +8,12 @@ import {
   useCloseConversation, useReopenConversation, useDeleteConversation,
 } from '../../../shared/hooks/useMessages';
 import { containerVariants } from '../../../shared/utils/animations';
-import { toast } from '../../../shared/components/Toast';
+import { toast } from '../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../shared/utils/apiError';
 import { relTime, shortSub } from '../util';
 import MessageBubble from './MessageBubble';
 import Composer from './Composer';
-import ConfirmDialog from '../../../shared/components/ConfirmDialog';
+import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 
 export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
   const { data: thread, isLoading } = useAdminConversation(userSub);

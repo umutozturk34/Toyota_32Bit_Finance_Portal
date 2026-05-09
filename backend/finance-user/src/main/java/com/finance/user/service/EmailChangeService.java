@@ -5,6 +5,7 @@ import com.finance.common.event.EmailChangeEventPort;
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.user.client.KeycloakAdminClient;
+import com.finance.user.config.UserSecurityProperties;
 import com.finance.user.model.EmailChangeRequest;
 import com.finance.user.repository.EmailChangeRequestRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
-import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,14 +24,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EmailChangeService {
 
-    private static final Duration CODE_TTL = Duration.ofMinutes(5);
-    private static final int MAX_ATTEMPTS = 5;
-    private static final int CODE_LENGTH = 6;
-
     private final EmailChangeRequestRepository repository;
     private final KeycloakAdminClient keycloakClient;
     private final UserPreferenceService preferenceService;
     private final EmailChangeEventPort eventPort;
+    private final UserSecurityProperties securityProperties;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final SecureRandom random = new SecureRandom();
 
@@ -47,7 +44,7 @@ public class EmailChangeService {
 
         String code = generateCode();
         String hash = passwordEncoder.encode(code);
-        OffsetDateTime expiresAt = OffsetDateTime.now().plus(CODE_TTL);
+        OffsetDateTime expiresAt = OffsetDateTime.now().plus(securityProperties.emailChange().codeTtl());
 
         EmailChangeRequest request = repository.findById(userSub).orElseGet(EmailChangeRequest::new);
         boolean targetChanged = !newEmail.equalsIgnoreCase(request.getNewEmail());
@@ -82,14 +79,14 @@ public class EmailChangeService {
             repository.delete(request);
             throw new BadRequestException("Kodun süresi doldu, akışı baştan başlat");
         }
-        if (request.getAttempts() >= MAX_ATTEMPTS) {
+        if (request.getAttempts() >= securityProperties.emailChange().maxAttempts()) {
             repository.delete(request);
             throw new BadRequestException("Çok fazla hatalı deneme, akışı baştan başlat");
         }
         if (!passwordEncoder.matches(code, request.getCodeHash())) {
             request.setAttempts(request.getAttempts() + 1);
             repository.save(request);
-            int remaining = MAX_ATTEMPTS - request.getAttempts();
+            int remaining = securityProperties.emailChange().maxAttempts() - request.getAttempts();
             throw new BadRequestException("Geçersiz kod (" + remaining + " hak kaldı)");
         }
 
@@ -108,8 +105,8 @@ public class EmailChangeService {
     }
 
     private String generateCode() {
-        StringBuilder sb = new StringBuilder(CODE_LENGTH);
-        for (int i = 0; i < CODE_LENGTH; i++) sb.append(random.nextInt(10));
+        StringBuilder sb = new StringBuilder(securityProperties.emailChange().codeLength());
+        for (int i = 0; i < securityProperties.emailChange().codeLength(); i++) sb.append(random.nextInt(10));
         return sb.toString();
     }
 

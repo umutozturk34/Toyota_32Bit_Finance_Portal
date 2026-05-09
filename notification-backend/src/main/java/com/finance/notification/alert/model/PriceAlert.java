@@ -1,13 +1,20 @@
 package com.finance.notification.alert.model;
 
 import com.finance.common.model.MarketType;
+import com.finance.common.model.TrackedAsset;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.Transient;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -28,7 +35,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "price_alerts")
+@Table(name = "price_alerts",
+        indexes = {
+                @Index(name = "idx_price_alerts_user_created", columnList = "user_sub, created_at DESC"),
+                @Index(name = "idx_price_alerts_active_tracked", columnList = "tracked_asset_id")
+        })
 public class PriceAlert {
 
     @Id
@@ -39,12 +50,23 @@ public class PriceAlert {
     @Column(name = "user_sub", nullable = false, length = 64)
     private String userSub;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "market_type", nullable = false, length = 16)
+    @Transient
     private MarketType marketType;
 
-    @Column(name = "asset_code", nullable = false, length = 32)
+    @Transient
     private String assetCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tracked_asset_id", nullable = false)
+    private TrackedAsset trackedAsset;
+
+    @PostLoad
+    void syncTransientsFromTrackedAsset() {
+        if (trackedAsset != null) {
+            this.marketType = trackedAsset.getAssetType().marketType();
+            this.assetCode = trackedAsset.getAssetCode();
+        }
+    }
 
     @Enumerated(EnumType.STRING)
     @Column(name = "direction", nullable = false, length = 20)

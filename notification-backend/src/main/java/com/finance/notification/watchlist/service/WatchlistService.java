@@ -3,8 +3,12 @@ package com.finance.notification.watchlist.service;
 import com.finance.common.cache.AssetSnapshotCache;
 import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.exception.BadRequestException;
+import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
+import com.finance.common.model.TrackedAsset;
+import com.finance.common.model.TrackedAssetType;
+import com.finance.common.repository.TrackedAssetRepository;
 import com.finance.notification.watchlist.dto.WatchlistItemCreateRequest;
 import com.finance.notification.watchlist.dto.WatchlistItemResponse;
 import com.finance.notification.watchlist.dto.WatchlistItemUpdateRequest;
@@ -39,15 +43,16 @@ public class WatchlistService {
     private final WatchlistItemMapper mapper;
     private final WatchlistManagementService managementService;
     private final AssetSnapshotCache assetSnapshotCache;
+    private final TrackedAssetRepository trackedAssetRepository;
 
     @Transactional
     public WatchlistItemResponse addToList(Long watchlistId, String userSub,
                                            WatchlistItemCreateRequest request) {
         Watchlist parent = managementService.requireOwned(watchlistId, userSub);
-        return repository.findByWatchlistIdAndMarketTypeAndAssetCode(
-                        parent.getId(), request.marketType(), request.assetCode())
+        TrackedAsset trackedAsset = requireTrackedAsset(request.marketType(), request.assetCode());
+        return repository.findByWatchlistIdAndTrackedAsset_Id(parent.getId(), trackedAsset.getId())
                 .map(existing -> updateExisting(existing, request))
-                .orElseGet(() -> createItem(parent, userSub, request));
+                .orElseGet(() -> createItem(parent, userSub, request, trackedAsset));
     }
 
     @Transactional
@@ -117,7 +122,8 @@ public class WatchlistService {
 
     @Transactional(readOnly = true)
     public List<WatchlistItem> itemsForMarket(MarketType marketType) {
-        return repository.findByMarketType(marketType);
+        return repository.findByTrackedAsset_AssetType(
+                TrackedAssetType.valueOf(marketType.name()));
     }
 
     @Transactional
@@ -147,8 +153,12 @@ public class WatchlistService {
         return mapper.toResponse(saved);
     }
 
-    private WatchlistItemResponse createItem(Watchlist parent, String userSub, WatchlistItemCreateRequest request) {
+    private WatchlistItemResponse createItem(Watchlist parent, String userSub,
+                                              WatchlistItemCreateRequest request,
+                                              TrackedAsset trackedAsset) {
         WatchlistItem entity = mapper.toEntity(request, userSub);
+        entity.setTrackedAsset(trackedAsset);
+        entity.setAssetCode(trackedAsset.getAssetCode());
         entity.setWatchlistId(parent.getId());
         entity.setDisplayOrder(repository.findMaxDisplayOrderByWatchlistId(parent.getId()) + 1);
         assetSnapshotCache.findByCode(entity.getMarketType(), entity.getAssetCode())
@@ -159,6 +169,16 @@ public class WatchlistService {
                 userSub, parent.getId(), saved.getMarketType(), saved.getAssetCode(),
                 saved.getId(), saved.getLastSeenPrice());
         return mapper.toResponse(saved);
+    }
+
+    private TrackedAsset requireTrackedAsset(MarketType marketType, String rawCode) {
+        TrackedAssetType trackedType = TrackedAssetType.valueOf(marketType.name());
+        String normalizedCode = trackedType.normalizeCode(rawCode);
+        return trackedAssetRepository
+                .findByAssetTypeAndAssetCodeIgnoreCase(trackedType, normalizedCode)
+                .orElseThrow(() -> new BusinessException(
+                        "Bu varlık takip listesinde yok, eklenemez: "
+                                + marketType + " / " + normalizedCode));
     }
 
     private void validateReorder(List<WatchlistItem> existing, List<Long> itemIds, Long watchlistId) {

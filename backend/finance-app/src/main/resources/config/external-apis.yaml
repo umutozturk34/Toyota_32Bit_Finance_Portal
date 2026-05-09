@@ -1,0 +1,28 @@
+app:
+  tefas-api-path: /api/funds/fonGnlBlgSiraliGetir
+  tefas-base-url: https://www.tefas.gov.tr
+  tefas-session-path: /tr
+
+  api:
+    coingecko:
+      base-url: https://api.coingecko.com/api/v3
+      user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      api-key-header: x-cg-demo-api-key
+      markets-path: /coins/markets
+    bond:
+      base-url: https://evds3.tcmb.gov.tr/igmevdsms-dis
+      user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      api-key-header: key
+      serie-list-path: /serieList/type=json&code=
+      series-path: /series=
+    yahoo:
+      base-url: https://query1.finance.yahoo.com/v8/finance/chart/
+      user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      chart-path: ""
+    binance:
+      base-url: https://api.binance.com
+      klines-path: /api/v3/klines
+
+  tcmb:
+    base-url: ${TCMB_BASE_URL:https://www.tcmb.gov.tr}
+    xml-path: /kurlar/today.xml

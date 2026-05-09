@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -26,9 +27,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "watchlists", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_watchlists_user_name", columnNames = {"user_sub", "name"})
-})
+@Table(name = "watchlists",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_watchlists_user_name", columnNames = {"user_sub", "name"})
+        },
+        indexes = {
+                @Index(name = "idx_watchlists_user_default_created",
+                        columnList = "user_sub, is_default DESC, created_at ASC")
+        })
 public class Watchlist {
 
     public static final String DEFAULT_NAME = "Favoriler";

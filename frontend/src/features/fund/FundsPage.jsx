@@ -1,14 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Activity, Clock, Users as UsersIcon, Wallet } from 'lucide-react';
-import { TrendingUp, TrendingDown } from '../../shared/components/AnimatedIcons';
-import { fundService } from './fundService';
-import { adminService } from '../admin/adminService';
+import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
+import { fundService } from './services/fundService';
+import { adminService } from '../admin/services/adminService';
 import { formatPriceTRY, formatCompactTRY, formatVolume } from '../../shared/utils/formatters';
-import MarketListPage from '../../shared/components/MarketListPage';
-import AssetCard from '../../shared/components/AssetCard';
-import AssetBuyButton from '../../shared/components/AssetBuyButton';
-import ChangePercentBadge from '../../shared/components/ChangePercentBadge';
+import MarketListPage from '../../shared/components/market/MarketListPage';
+import AssetCard from '../../shared/components/asset/AssetCard';
+import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
+import ChangePercentBadge from '../../shared/components/asset/ChangePercentBadge';
 import useListParams from '../../shared/hooks/useListParams';
 
 const FUND_TYPE_LABELS = {

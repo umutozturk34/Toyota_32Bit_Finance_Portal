@@ -40,7 +40,7 @@ class WatchlistWidgetProviderTest {
         watchlistRepository = mock(OverviewWatchlistRepository.class);
         itemRepository = mock(OverviewWatchlistItemRepository.class);
         assetSnapshotCache = mock(AssetSnapshotCache.class);
-        provider = new WatchlistWidgetProvider(watchlistRepository, itemRepository, assetSnapshotCache, new OverviewDefaults());
+        provider = new WatchlistWidgetProvider(watchlistRepository, itemRepository, assetSnapshotCache, new OverviewDefaults(OverviewPropertiesFixture.standard()));
     }
 
     private OverviewWatchlist watchlist(Long id, String userSub, String name, boolean def) {
@@ -48,7 +48,7 @@ class WatchlistWidgetProviderTest {
     }
 
     private OverviewWatchlistItem item(Long id, Long listId, MarketType type, String code, int order) {
-        return new OverviewWatchlistItem(id, listId, "user-1", type, code, order);
+        return new OverviewWatchlistItem(id, listId, "user-1", type, code, null, order);
     }
 
     private WidgetSection sectionFor(String configJson) throws Exception {
@@ -58,7 +58,9 @@ class WatchlistWidgetProviderTest {
 
     @Test
     void should_reportWatchlistKind_when_kindQueried() {
-        assertThat(provider.kind()).isEqualTo(WidgetKind.WATCHLIST);
+        WidgetKind kind = provider.kind();
+
+        assertThat(kind).isEqualTo(WidgetKind.WATCHLIST);
     }
 
     @Test

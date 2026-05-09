@@ -1,5 +1,9 @@
 package com.finance.news.service;
 
+import com.finance.news.service.source.NewsSourceProcessingService;
+
+import com.finance.news.service.article.NewsCacheService;
+
 import com.finance.news.client.RssClient;
 import com.finance.news.config.NewsProperties;
 import com.finance.news.dto.external.NewsArticleDto;
@@ -66,7 +70,8 @@ class NewsSourceProcessingServiceTest {
     }
 
     private NewsArticle articleEntity(Long id, String title) {
-        return NewsArticle.builder().id(id).title(title).link("https://bbc.co.uk/" + title).sourceName("BBC")
+        return NewsArticle.builder().id(id).title(title).link("https://bbc.co.uk/" + title)
+                .source(NewsSource.builder().id(1L).name("BBC").url("https://bbc.co.uk/rss").build())
                 .category(NewsCategory.CRYPTO).publishedAt(LocalDateTime.now()).fetchedAt(LocalDateTime.now()).build();
     }
 

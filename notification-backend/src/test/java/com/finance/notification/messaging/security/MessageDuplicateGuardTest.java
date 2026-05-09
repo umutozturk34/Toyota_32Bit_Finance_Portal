@@ -1,5 +1,6 @@
 package com.finance.notification.messaging.security;
 
+import com.finance.notification.config.MessagingProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -11,7 +12,7 @@ class MessageDuplicateGuardTest {
 
     @BeforeEach
     void setUp() {
-        guard = new MessageDuplicateGuard();
+        guard = new MessageDuplicateGuard(new MessagingProperties(2, 5, 60));
     }
 
     @Test

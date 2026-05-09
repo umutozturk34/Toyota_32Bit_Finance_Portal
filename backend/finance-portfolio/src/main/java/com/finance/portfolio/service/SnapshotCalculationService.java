@@ -9,17 +9,25 @@ import com.finance.portfolio.model.Portfolio;
 
 import com.finance.portfolio.model.AssetType;
 
+import com.finance.common.model.TrackedAsset;
+
 import com.finance.common.service.AssetPricingPort;
 
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
-import com.finance.portfolio.model.*;
+import com.finance.portfolio.model.AssetType;
+import com.finance.portfolio.model.MoneyScale;
+import com.finance.portfolio.model.Portfolio;
+import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
+import com.finance.portfolio.model.PortfolioDailySnapshot;
+import com.finance.portfolio.model.PortfolioPosition;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import com.finance.common.service.AssetPricingPort.AssetKey;
 import com.finance.common.util.PercentChangeCalculator;
+import com.finance.portfolio.config.PortfolioProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -40,45 +48,50 @@ import java.util.function.Function;
 @RequiredArgsConstructor
 public class SnapshotCalculationService {
 
-    private static final int DAILY_LOOKBACK_HOURS = 24;
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
     private final AssetPricingPort pricingPort;
     private final PortfolioPositionRepository positionRepository;
     private final PortfolioDailySnapshotRepository dailySnapshotRepository;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
+    private final PortfolioProperties portfolioProperties;
 
     public PortfolioAssetDailySnapshot buildAssetSnapshot(Long portfolioId, PortfolioPosition pos,
                                                               LocalDateTime batchTimestamp) {
         BigDecimal price = pricingPort.getPriceTry(pos.getAssetType().marketType(), pos.getAssetCode());
-        Optional<PortfolioAssetDailySnapshot> prior = findClosestPriorAssetSnapshot(
-                portfolioId, pos.getAssetType(), pos.getAssetCode(), batchTimestamp);
-        return assembleAssetSnapshot(portfolioId, pos.getAssetType(), pos.getAssetCode(),
+        TrackedAsset tracked = pos.getTrackedAsset();
+        Optional<PortfolioAssetDailySnapshot> prior = tracked != null
+                ? findClosestPriorAssetSnapshot(portfolioId, tracked.getId(), batchTimestamp)
+                : Optional.empty();
+        return assembleAssetSnapshot(portfolioId, pos.getAssetType(), pos.getAssetCode(), tracked,
                 batchTimestamp, pos.getQuantity(), pos.entryValue(), price, prior);
     }
 
     public PortfolioAssetDailySnapshot buildAggregatedAssetSnapshot(Long portfolioId,
                                                                       AssetType assetType,
                                                                       String assetCode,
+                                                                      TrackedAsset trackedAsset,
                                                                       LocalDateTime batchTimestamp,
                                                                       BigDecimal totalQuantity,
                                                                       BigDecimal totalCost,
                                                                       BigDecimal unitPriceTry) {
-        Optional<PortfolioAssetDailySnapshot> prior = findClosestPriorAssetSnapshot(
-                portfolioId, assetType, assetCode, batchTimestamp);
-        return assembleAssetSnapshot(portfolioId, assetType, assetCode, batchTimestamp,
+        Optional<PortfolioAssetDailySnapshot> prior = trackedAsset != null
+                ? findClosestPriorAssetSnapshot(portfolioId, trackedAsset.getId(), batchTimestamp)
+                : Optional.empty();
+        return assembleAssetSnapshot(portfolioId, assetType, assetCode, trackedAsset, batchTimestamp,
                 totalQuantity, totalCost, unitPriceTry, prior);
     }
 
     public PortfolioAssetDailySnapshot buildAggregatedAssetSnapshotWithPrior(Long portfolioId,
                                                                                 AssetType assetType,
                                                                                 String assetCode,
+                                                                                TrackedAsset trackedAsset,
                                                                                 LocalDateTime batchTimestamp,
                                                                                 BigDecimal totalQuantity,
                                                                                 BigDecimal totalCost,
                                                                                 BigDecimal unitPriceTry,
                                                                                 PortfolioAssetDailySnapshot prior) {
-        return assembleAssetSnapshot(portfolioId, assetType, assetCode, batchTimestamp,
+        return assembleAssetSnapshot(portfolioId, assetType, assetCode, trackedAsset, batchTimestamp,
                 totalQuantity, totalCost, unitPriceTry, Optional.ofNullable(prior));
     }
 
@@ -87,7 +100,7 @@ public class SnapshotCalculationService {
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(pid);
         List<AssetKey> keys = positions.stream().map(PortfolioPosition::toAssetKey).toList();
         Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(keys);
-        Map<AssetKey, PortfolioAssetDailySnapshot> priors = fetchClosestPriorAssetSnapshots(pid, keys, batchTimestamp);
+        Map<AssetKey, PortfolioAssetDailySnapshot> priors = fetchClosestPriorAssetSnapshots(pid, positions, batchTimestamp);
         return assembleAggregateSnapshot(portfolio, batchTimestamp, positions, prices, priors);
     }
 
@@ -95,9 +108,7 @@ public class SnapshotCalculationService {
                                                             List<PortfolioPosition> positions,
                                                             Map<AssetKey, BigDecimal> prices) {
         Map<AssetKey, PortfolioAssetDailySnapshot> priors = fetchClosestPriorAssetSnapshots(
-                portfolio.getId(),
-                positions.stream().map(PortfolioPosition::toAssetKey).toList(),
-                batchTimestamp);
+                portfolio.getId(), positions, batchTimestamp);
         return assembleAggregateSnapshot(portfolio, batchTimestamp, positions, prices, priors);
     }
 
@@ -110,7 +121,8 @@ public class SnapshotCalculationService {
     }
 
     private PortfolioAssetDailySnapshot assembleAssetSnapshot(Long portfolioId, AssetType assetType,
-                                                                String assetCode, LocalDateTime batchTimestamp,
+                                                                String assetCode, TrackedAsset trackedAsset,
+                                                                LocalDateTime batchTimestamp,
                                                                 BigDecimal totalQuantity, BigDecimal totalCost,
                                                                 BigDecimal unitPriceTry,
                                                                 Optional<PortfolioAssetDailySnapshot> priorOpt) {
@@ -125,6 +137,7 @@ public class SnapshotCalculationService {
                 .portfolioId(portfolioId)
                 .assetType(assetType)
                 .assetCode(assetCode)
+                .trackedAsset(trackedAsset)
                 .snapshotDate(batchTimestamp.toLocalDate())
                 .createdAt(batchTimestamp)
                 .quantity(qty)
@@ -217,24 +230,26 @@ public class SnapshotCalculationService {
     }
 
     private Optional<PortfolioAssetDailySnapshot> findClosestPriorAssetSnapshot(
-            Long portfolioId, AssetType assetType, String assetCode, LocalDateTime batchTimestamp) {
-        LocalDateTime target = batchTimestamp.minusHours(DAILY_LOOKBACK_HOURS);
+            Long portfolioId, Long trackedAssetId, LocalDateTime batchTimestamp) {
+        LocalDateTime target = batchTimestamp.minusHours(portfolioProperties.getSnapshot().getDailyLookbackHours());
         Optional<PortfolioAssetDailySnapshot> older = assetSnapshotRepository
-                .findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
-                        portfolioId, assetType, assetCode, target);
+                .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
+                        portfolioId, trackedAssetId, target);
         Optional<PortfolioAssetDailySnapshot> newer = assetSnapshotRepository
-                .findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtGreaterThanOrderByCreatedAtAsc(
-                        portfolioId, assetType, assetCode, target);
+                .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
+                        portfolioId, trackedAssetId, target);
         return pickClosest(older, newer, target, PortfolioAssetDailySnapshot::getCreatedAt);
     }
 
     private Map<AssetKey, PortfolioAssetDailySnapshot> fetchClosestPriorAssetSnapshots(
-            Long portfolioId, List<AssetKey> keys, LocalDateTime batchTimestamp) {
+            Long portfolioId, List<PortfolioPosition> positions, LocalDateTime batchTimestamp) {
         Map<AssetKey, PortfolioAssetDailySnapshot> result = new HashMap<>();
-        for (AssetKey key : keys) {
+        for (PortfolioPosition pos : positions) {
+            AssetKey key = pos.toAssetKey();
             if (result.containsKey(key)) continue;
-            AssetType assetType = AssetType.valueOf(key.type().name());
-            findClosestPriorAssetSnapshot(portfolioId, assetType, key.assetCode(), batchTimestamp)
+            TrackedAsset tracked = pos.getTrackedAsset();
+            if (tracked == null) continue;
+            findClosestPriorAssetSnapshot(portfolioId, tracked.getId(), batchTimestamp)
                     .ifPresent(p -> result.put(key, p));
         }
         return result;

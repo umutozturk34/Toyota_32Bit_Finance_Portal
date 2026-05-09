@@ -31,7 +31,9 @@ class TaskTrackingServiceTest {
     void startTaskRegistersAsRunning() {
         TaskInfo info = service.startTask("CRYPTO_SNAPSHOT", "Fetching crypto data");
 
-        assertThat(service.isRunning("CRYPTO_SNAPSHOT")).isTrue();
+        boolean running = service.isRunning("CRYPTO_SNAPSHOT");
+
+        assertThat(running).isTrue();
         assertThat(info.type()).isEqualTo("CRYPTO_SNAPSHOT");
         assertThat(info.status()).isEqualTo("RUNNING");
         assertThat(info.message()).isEqualTo("Fetching crypto data");
@@ -55,8 +57,9 @@ class TaskTrackingServiceTest {
         TaskInfo started = service.startTask("FOREX_SNAPSHOT", "Updating forex");
 
         service.completeTask("FOREX_SNAPSHOT", started);
+        boolean running = service.isRunning("FOREX_SNAPSHOT");
 
-        assertThat(service.isRunning("FOREX_SNAPSHOT")).isFalse();
+        assertThat(running).isFalse();
         TaskStatusResponse status = service.getTypedStatus();
         assertThat(status.running()).isEmpty();
         assertThat(status.history()).hasSize(1);
@@ -70,8 +73,9 @@ class TaskTrackingServiceTest {
         TaskInfo started = service.startTask("BOND_SNAPSHOT", "Fetching bonds");
 
         service.failTask("BOND_SNAPSHOT", started, "API timeout");
+        boolean running = service.isRunning("BOND_SNAPSHOT");
 
-        assertThat(service.isRunning("BOND_SNAPSHOT")).isFalse();
+        assertThat(running).isFalse();
         TaskStatusResponse status = service.getTypedStatus();
         assertThat(status.history()).hasSize(1);
         assertThat(status.history().get(0).status()).isEqualTo("FAILED");
@@ -80,7 +84,9 @@ class TaskTrackingServiceTest {
 
     @Test
     void isRunningReturnsFalseForUnknownTask() {
-        assertThat(service.isRunning("NON_EXISTENT")).isFalse();
+        boolean running = service.isRunning("NON_EXISTENT");
+
+        assertThat(running).isFalse();
     }
 
     @Test
@@ -124,8 +130,9 @@ class TaskTrackingServiceTest {
         service.completeTask("REUSABLE", started);
 
         TaskInfo restarted = service.startTask("REUSABLE", "Second run");
+        boolean running = service.isRunning("REUSABLE");
 
-        assertThat(service.isRunning("REUSABLE")).isTrue();
+        assertThat(running).isTrue();
         assertThat(restarted.message()).isEqualTo("Second run");
     }
 

@@ -1,7 +1,10 @@
 package com.finance.portfolio.service;
-import com.finance.common.service.MarketSnapshotProcessor;
+import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
+import com.finance.common.model.TrackedAsset;
+import com.finance.common.model.TrackedAssetType;
+import com.finance.common.repository.TrackedAssetRepository;
 import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.portfolio.dto.request.PortfolioCreateRequest;
 import com.finance.portfolio.dto.request.PositionRequest;
@@ -42,6 +45,7 @@ class PortfolioCrudServiceTest {
 
     @Mock private PortfolioRepository portfolioRepository;
     @Mock private PortfolioPositionRepository positionRepository;
+    @Mock private TrackedAssetRepository trackedAssetRepository;
     @Mock private PortfolioResponseMapper mapper;
     @Mock private ApplicationEventPublisher eventPublisher;
 
@@ -50,7 +54,15 @@ class PortfolioCrudServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PortfolioCrudService(portfolioRepository, positionRepository, mapper, eventPublisher, portfolioProperties);
+        service = new PortfolioCrudService(portfolioRepository, positionRepository, trackedAssetRepository,
+                mapper, eventPublisher, portfolioProperties);
+    }
+
+    private TrackedAsset stubTrackedAsset(TrackedAssetType type, String code) {
+        TrackedAsset asset = TrackedAsset.builder().id(1L).assetType(type).assetCode(code).build();
+        when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(type, code))
+                .thenReturn(Optional.of(asset));
+        return asset;
     }
 
     @Test
@@ -101,6 +113,7 @@ class PortfolioCrudServiceTest {
                 "stock", "THYAO.IS", new BigDecimal("100"), entryDate, new BigDecimal("40"));
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
         when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
+        stubTrackedAsset(TrackedAssetType.STOCK, "THYAO.IS");
 
         service.addPosition(PORTFOLIO_ID, USER_SUB, request);
 

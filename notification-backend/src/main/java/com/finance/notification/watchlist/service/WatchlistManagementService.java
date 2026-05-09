@@ -2,6 +2,7 @@ package com.finance.notification.watchlist.service;
 
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.notification.config.WatchlistManagementProperties;
 import com.finance.notification.watchlist.dto.WatchlistCreateRequest;
 import com.finance.notification.watchlist.dto.WatchlistRenameRequest;
 import com.finance.notification.watchlist.dto.WatchlistResponse;
@@ -20,10 +21,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class WatchlistManagementService {
 
-    private static final int MAX_WATCHLISTS_PER_USER = 20;
-
     private final WatchlistRepository repository;
     private final WatchlistItemRepository itemRepository;
+    private final WatchlistManagementProperties properties;
 
     @Transactional
     public Watchlist ensureDefault(String userSub) {
@@ -51,9 +51,9 @@ public class WatchlistManagementService {
     @Transactional
     public WatchlistResponse create(String userSub, WatchlistCreateRequest request) {
         long existing = repository.countByUserSub(userSub);
-        if (existing >= MAX_WATCHLISTS_PER_USER) {
+        if (existing >= properties.maxPerUser()) {
             throw new BadRequestException(
-                    "En fazla " + MAX_WATCHLISTS_PER_USER + " takip listesi oluşturabilirsin");
+                    "En fazla " + properties.maxPerUser() + " takip listesi oluşturabilirsin");
         }
         String trimmed = request.name().trim();
         if (repository.existsByUserSubAndName(userSub, trimmed)) {

@@ -24,6 +24,11 @@ export const messageService = {
     return response.data.data;
   },
 
+  status: async () => {
+    const response = await api.get(`${USER_PATH}/status`);
+    return response.data.data;
+  },
+
   markRead: async (id) => {
     await api.patch(`${USER_PATH}/${id}/read`);
   },

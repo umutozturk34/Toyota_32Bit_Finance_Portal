@@ -1,16 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
 import { ThemeProvider } from './shared/context/ThemeContext';
-import ToastContainer from './shared/components/Toast';
-import ProtectedRoute from './shared/components/ProtectedRoute';
-import ErrorBoundary from './shared/components/ErrorBoundary';
-import NotFound from './shared/components/NotFound';
+import ToastContainer from './shared/components/feedback/Toast';
+import ProtectedRoute from './shared/components/auth/ProtectedRoute';
+import ErrorBoundary from './shared/components/feedback/ErrorBoundary';
+import NotFound from './shared/components/feedback/NotFound';
 import MainLayout from './shared/layouts/MainLayout';
 import HomePage from './features/home/HomePage';
-import Login from './features/auth/Login';
-import Register from './features/auth/Register';
+import Login from './features/auth/components/Login';
+import Register from './features/auth/components/Register';
 import News from './features/news';
-import NewsDetail from './features/news/NewsDetail';
+import NewsDetail from './features/news/components/NewsDetail';
 import MarketDataPage from './features/market/MarketDataPage';
 import StocksPage from './features/stock/StocksPage';
 import StockDetail from './features/stock/StockDetail';
@@ -25,8 +25,8 @@ import CommodityDetail from './features/commodity/CommodityDetail';
 import BondsPage from './features/bond/BondsPage';
 import Portfolio from './features/portfolio';
 import WatchPage from './features/watch/WatchPage';
-import AdminTrackedAssetsPage from './features/admin/AdminTrackedAssetsPage';
-import AdminUsersPage from './features/admin/AdminUsersPage';
+import AdminTrackedAssetsPage from './features/admin/components/AdminTrackedAssetsPage';
+import AdminUsersPage from './features/admin/components/AdminUsersPage';
 import MessagesPage from './features/messages/MessagesPage';
 
 function LandingRedirect() {

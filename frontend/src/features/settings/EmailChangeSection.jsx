@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Mail, ShieldCheck, X as Cancel } from 'lucide-react';
 import {
   usePendingEmailChange,
@@ -8,7 +9,7 @@ import {
   useCancelEmailChange,
 } from '../../shared/hooks/useEmailChange';
 import { useAuth } from '../auth/AuthContext';
-import { toast } from '../../shared/components/Toast';
+import { toast } from '../../shared/components/feedback/Toast';
 
 function CurrentEmailRow({ email }) {
   return (

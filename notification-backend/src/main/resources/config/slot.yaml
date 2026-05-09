@@ -1,0 +1,18 @@
+notification:
+    keywords:
+      sabah:
+        - morning
+        - sabah
+      öğlen:
+        - afternoon
+        - midday
+        - noon
+        - öğle
+        - ogle
+      akşam:
+        - evening
+        - aksam
+        - akşam
+      günlük:
+        - daily
+        - full

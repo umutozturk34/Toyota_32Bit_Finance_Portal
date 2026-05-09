@@ -2,7 +2,7 @@ import React from 'react';
 import {
     BarChart2, ChevronUp, ChevronDown, Diamond,
     LineChart, Layers, Crosshair,
-    MousePointer2Off, Magnet,
+    MousePointer2Off, Magnet, Maximize2, Minimize2,
 } from 'lucide-react';
 
 const ChartToolbar = ({
@@ -15,9 +15,11 @@ const ChartToolbar = ({
     cancelAllDrawing,
     allowCandle = true,
     compareSymbol = null,
+    isFullscreen = false,
+    onToggleFullscreen = () => {},
 }) => (
     <>
-        <div className="flex items-center gap-3 px-3 py-2 border-b" style={{ background: isDark ? '#0a0a0c' : '#eef1f6', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
+        <div className="flex items-center gap-3 px-3 py-2 border-b border-border-default bg-surface/40">
             <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-1.5 rounded-md border-none cursor-pointer text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent"
@@ -131,6 +133,13 @@ const ChartToolbar = ({
                         Exit Draw
                     </button>
                 )}
+                <button
+                    onClick={onToggleFullscreen}
+                    className="p-1.5 rounded-md border-none cursor-pointer text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent"
+                    title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                >
+                    {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </button>
             </div>
         </div>
         {isAnyToolActive && (

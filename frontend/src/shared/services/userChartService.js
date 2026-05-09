@@ -9,29 +9,26 @@ function backendCode(type, code) {
   return code;
 }
 
-const PREF_PATH = (type, code) => `/user/chart-preferences/${backendType(type)}/${encodeURIComponent(backendCode(type, code))}`;
-const DRAW_PATH = (type, code) => `/user/chart-drawings/${backendType(type)}/${encodeURIComponent(backendCode(type, code))}`;
+const BUNDLE_PATH = (type, code) => `/user/chart-data/${backendType(type)}/${encodeURIComponent(backendCode(type, code))}`;
 
-export const userChartPreferenceService = {
-  get: async (type, code) => {
-    const response = await api.get(PREF_PATH(type, code));
+export const userChartDataService = {
+  get: async (type, code, range) => {
+    const params = range ? { range } : {};
+    const response = await api.get(BUNDLE_PATH(type, code), { params });
     return response.data.data;
   },
+};
 
+export const userChartPreferenceService = {
   save: async ({ type, code, config }) => {
-    const response = await api.put(PREF_PATH(type, code), { config });
+    const response = await api.put(`${BUNDLE_PATH(type, code)}/preferences`, { config });
     return response.data.data;
   },
 };
 
 export const userChartDrawingService = {
-  get: async (type, code) => {
-    const response = await api.get(DRAW_PATH(type, code));
-    return response.data.data;
-  },
-
   save: async ({ type, code, drawings }) => {
-    const response = await api.put(DRAW_PATH(type, code), { drawings });
+    const response = await api.put(`${BUNDLE_PATH(type, code)}/drawings`, { drawings });
     return response.data.data;
   },
 };

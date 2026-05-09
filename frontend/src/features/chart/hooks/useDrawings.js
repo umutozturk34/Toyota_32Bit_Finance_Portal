@@ -8,30 +8,46 @@ function rehydrate(remote) {
   return remote.map((d) => ({ ...d, id: d.id || genId() }));
 }
 
-export default function useDrawings(assetType, assetCode) {
+export default function useDrawings(assetType, assetCode, range, persistEnabled = true) {
   const enabled = !!assetType && !!assetCode;
-  const { data, isSuccess } = useUserChartDrawings(assetType, assetCode);
-  const updateMutation = useUpdateUserChartDrawings(assetType, assetCode);
+  const { data, isSuccess } = useUserChartDrawings(assetType, assetCode, range, persistEnabled);
+  const updateMutation = useUpdateUserChartDrawings(assetType, assetCode, range);
   const mutateRef = useRef(updateMutation.mutate);
   mutateRef.current = updateMutation.mutate;
+  const rangeRef = useRef(range);
+  rangeRef.current = range;
+  const persistRef = useRef(persistEnabled);
+  persistRef.current = persistEnabled;
 
   const [drawings, setDrawings] = useState([]);
   const [activeTool, setActiveTool] = useState(null);
   const hydratedRef = useRef(false);
+  const hydratedKeyRef = useRef(null);
 
   useEffect(() => {
-    if (!enabled || !isSuccess || hydratedRef.current) return;
+    setDrawings([]);
+    setActiveTool(null);
+    hydratedRef.current = false;
+    hydratedKeyRef.current = null;
+  }, [persistEnabled]);
+
+  useEffect(() => {
+    if (!enabled || !isSuccess || !persistEnabled) return;
+    const key = `${assetType}:${assetCode}:${range || 'all'}`;
+    if (hydratedKeyRef.current === key) return;
     setDrawings(rehydrate(data?.drawings));
     hydratedRef.current = true;
-  }, [enabled, isSuccess, data]);
+    hydratedKeyRef.current = key;
+  }, [enabled, isSuccess, data, assetType, assetCode, range, persistEnabled]);
 
   useEffect(() => {
     if (!enabled || !hydratedRef.current) return;
+    if (!persistRef.current) return;
     mutateRef.current(drawings);
   }, [enabled, drawings]);
 
   const addDrawing = useCallback((drawing) => {
-    setDrawings((prev) => [...prev, { ...drawing, id: genId() }]);
+    setDrawings((prev) => [...prev, { ...drawing, id: genId(), range: rangeRef.current }]);
   }, []);
 
   const removeDrawing = useCallback((id) => {

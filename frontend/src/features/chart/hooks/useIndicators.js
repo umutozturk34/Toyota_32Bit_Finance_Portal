@@ -22,8 +22,8 @@ function rehydrate(remote) {
   }));
 }
 
-export default function useIndicators(assetType, assetCode) {
-  const { config, setField } = useChartConfig(assetType, assetCode);
+export default function useIndicators(assetType, assetCode, range, persistEnabled = true) {
+  const { config, setField } = useChartConfig(assetType, assetCode, range, persistEnabled);
   const indicators = useMemo(() => rehydrate(config?.indicators), [config?.indicators]);
 
   const addIndicator = useCallback((type, period, color) => {

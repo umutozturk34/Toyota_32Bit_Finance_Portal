@@ -1,37 +1,40 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { userChartDrawingService } from '../services/userChartService';
-import { useAuth } from '../../features/auth/AuthContext';
+import { CHART_DATA_KEY, useUserChartData } from './useUserChartData';
 
-const DRAW_KEY = (type, code) => ['userChartDrawings', type, code];
-
-export function useUserChartDrawings(type, code) {
-  const { isAuthenticated, loading } = useAuth();
-  return useQuery({
-    queryKey: DRAW_KEY(type, code),
-    queryFn: () => userChartDrawingService.get(type, code),
-    enabled: isAuthenticated && !loading && !!type && !!code,
-    staleTime: Infinity,
-    retry: 0,
-  });
+export function useUserChartDrawings(type, code, range, enabled = true) {
+  const bundle = useUserChartData(type, code, range, enabled);
+  return {
+    ...bundle,
+    data: bundle.data?.drawings,
+  };
 }
 
-export function useUpdateUserChartDrawings(type, code) {
+export function useUpdateUserChartDrawings(type, code, range) {
   const queryClient = useQueryClient();
+  const queryKey = CHART_DATA_KEY(type, code, range);
   return useMutation({
     mutationFn: (drawings) => userChartDrawingService.save({ type, code, drawings }),
     onMutate: async (drawings) => {
-      await queryClient.cancelQueries({ queryKey: DRAW_KEY(type, code) });
-      const previous = queryClient.getQueryData(DRAW_KEY(type, code));
-      queryClient.setQueryData(DRAW_KEY(type, code), { drawings, updatedAt: new Date().toISOString() });
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData(queryKey);
+      queryClient.setQueryData(queryKey, (old) => ({
+        ...(old ?? {}),
+        drawings: { drawings, updatedAt: new Date().toISOString() },
+      }));
       return { previous };
     },
     onError: (_err, _vars, context) => {
       if (context?.previous !== undefined) {
-        queryClient.setQueryData(DRAW_KEY(type, code), context.previous);
+        queryClient.setQueryData(queryKey, context.previous);
       }
     },
-    onSuccess: (data) => {
-      if (data) queryClient.setQueryData(DRAW_KEY(type, code), data);
+    onSuccess: (saved) => {
+      if (!saved) return;
+      queryClient.setQueryData(queryKey, (old) => ({
+        ...(old ?? {}),
+        drawings: saved,
+      }));
     },
   });
 }

@@ -1,37 +1,40 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { userChartPreferenceService } from '../services/userChartService';
-import { useAuth } from '../../features/auth/AuthContext';
+import { CHART_DATA_KEY, useUserChartData } from './useUserChartData';
 
-export const PREF_KEY = (type, code) => ['userChartPreferences', type, code];
-
-export function useUserChartPreferences(type, code) {
-  const { isAuthenticated, loading } = useAuth();
-  return useQuery({
-    queryKey: PREF_KEY(type, code),
-    queryFn: () => userChartPreferenceService.get(type, code),
-    enabled: isAuthenticated && !loading && !!type && !!code,
-    staleTime: Infinity,
-    retry: 0,
-  });
+export function useUserChartPreferences(type, code, range, enabled = true) {
+  const bundle = useUserChartData(type, code, range, enabled);
+  return {
+    ...bundle,
+    data: bundle.data?.preferences,
+  };
 }
 
-export function useUpdateUserChartPreferences(type, code) {
+export function useUpdateUserChartPreferences(type, code, range) {
   const queryClient = useQueryClient();
+  const queryKey = CHART_DATA_KEY(type, code, range);
   return useMutation({
     mutationFn: (config) => userChartPreferenceService.save({ type, code, config }),
     onMutate: async (config) => {
-      await queryClient.cancelQueries({ queryKey: PREF_KEY(type, code) });
-      const previous = queryClient.getQueryData(PREF_KEY(type, code));
-      queryClient.setQueryData(PREF_KEY(type, code), { config, updatedAt: new Date().toISOString() });
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData(queryKey);
+      queryClient.setQueryData(queryKey, (old) => ({
+        ...(old ?? {}),
+        preferences: { config, updatedAt: new Date().toISOString() },
+      }));
       return { previous };
     },
     onError: (_err, _vars, context) => {
       if (context?.previous !== undefined) {
-        queryClient.setQueryData(PREF_KEY(type, code), context.previous);
+        queryClient.setQueryData(queryKey, context.previous);
       }
     },
-    onSuccess: (data) => {
-      if (data) queryClient.setQueryData(PREF_KEY(type, code), data);
+    onSuccess: (saved) => {
+      if (!saved) return;
+      queryClient.setQueryData(queryKey, (old) => ({
+        ...(old ?? {}),
+        preferences: saved,
+      }));
     },
   });
 }

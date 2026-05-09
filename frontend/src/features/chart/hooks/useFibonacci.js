@@ -3,8 +3,8 @@ import useChartConfig from './useChartConfig';
 
 const genId = () => `f-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
-export default function useFibonacci(assetType, assetCode) {
-    const { config, setField } = useChartConfig(assetType, assetCode);
+export default function useFibonacci(assetType, assetCode, range, persistEnabled = true) {
+    const { config, setField } = useChartConfig(assetType, assetCode, range, persistEnabled);
     const fibTools = useMemo(
         () => (Array.isArray(config?.fibTools) ? config.fibTools : []),
         [config?.fibTools],

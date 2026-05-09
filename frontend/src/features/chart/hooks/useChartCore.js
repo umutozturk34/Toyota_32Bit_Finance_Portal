@@ -2,9 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import { calculateSMA, calculateEMA } from '../lib/indicators';
 import { getChartOptions } from '../lib/chartOptions';
-import { readViewport, writeViewport } from '../lib/viewportStorage';
-
-const VIEWPORT_SAVE_THROTTLE_MS = 250;
+import useAppStore from '../../../shared/stores/useAppStore';
+import { TIMINGS } from '../../../shared/config/uiConfig';
 
 const toEpochSec = (chartTime) => {
     if (chartTime == null) return null;
@@ -57,7 +56,7 @@ const analyzeTrend = (d) => {
     return { direction: 'neutral', change: pct };
 };
 
-const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawingsRef, assetType, compareData, compareSymbol }) => {
+const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawingsRef, assetType, compareData, compareSymbol, timeRange }) => {
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
     const candleSeriesRef = useRef(null);
@@ -80,7 +79,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         const chart = createChart(chartContainerRef.current, {
             ...getChartOptions(isDark),
             width: chartContainerRef.current.clientWidth,
-            height: 500,
+            height: chartContainerRef.current.clientHeight || 500,
         });
         chartRef.current = chart;
         const candleData = data.candles.map(c => {
@@ -141,7 +140,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 value: c.volume,
                 color: c.close >= c.open ? 'rgba(38, 166, 154, 0.7)' : 'rgba(239, 83, 80, 0.7)',
             }));
-        const storedRange = readViewport(assetType, symbol);
+        const storedRange = useAppStore.getState().getChartViewport(assetType, symbol, timeRange);
         if (storedRange) {
             try {
                 chart.timeScale().setVisibleRange({ from: storedRange.from, to: storedRange.to });
@@ -208,9 +207,9 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                     if (!range) return;
                     const from = toEpochSec(range.from);
                     const to = toEpochSec(range.to);
-                    if (from && to) writeViewport(assetType, symbol, { from, to });
+                    if (from && to) useAppStore.getState().setChartViewport(assetType, symbol, timeRange, { from, to });
                 } catch { /* chart already removed */ }
-            }, VIEWPORT_SAVE_THROTTLE_MS);
+            }, TIMINGS.CHART_VIEWPORT_THROTTLE_MS);
         };
         chart.timeScale().subscribeVisibleTimeRangeChange(handleUpdate);
         chart.timeScale().subscribeVisibleTimeRangeChange(handleRangePersist);
@@ -218,13 +217,19 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         chart.subscribeCrosshairMove(handleCrosshairMove);
         const handleResize = () => {
             if (chartContainerRef.current && chart) {
-                chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+                chart.applyOptions({
+                    width: chartContainerRef.current.clientWidth,
+                    height: chartContainerRef.current.clientHeight || 500,
+                });
                 if (renderDrawingsRef.current) renderDrawingsRef.current();
             }
         };
+        const resizeObserver = new ResizeObserver(handleResize);
+        resizeObserver.observe(chartContainerRef.current);
         window.addEventListener('resize', handleResize);
         return () => {
             window.removeEventListener('resize', handleResize);
+            resizeObserver.disconnect();
             if (viewportSaveTimer) clearTimeout(viewportSaveTimer);
             try {
                 chart.timeScale().unsubscribeVisibleTimeRangeChange(handleUpdate);
@@ -234,7 +239,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             } catch { }
             if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
         };
-    }, [data, symbol, chartType]);
+    }, [data, symbol, chartType, timeRange]);
 
     useEffect(() => {
         if (chartRef.current) {
@@ -286,32 +291,71 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         const candleData = candleDataRef.current;
         if (!candleData.length) return;
 
+        const keyOf = (t) => {
+            if (!t) return '';
+            if (typeof t === 'object') return `${t.year}-${t.month}-${t.day}`;
+            return String(t);
+        };
+
+        const mainPoints = candleData.map(c => ({ time: c.time, value: Number(c.close), key: keyOf(c.time), epoch: toEpochSec(c.time) }));
+        const comparePointsRaw = compareData.candles.map(c => {
+            const t = toChartTime(c.candleDate || c.date);
+            return { time: t, value: Number(c.close ?? c.price ?? 0), key: keyOf(t), epoch: toEpochSec(t) };
+        });
+        const compareByKey = new Map(comparePointsRaw.map(p => [p.key, p]));
+        const commonPoints = mainPoints.filter(p => compareByKey.has(p.key));
+
+        const MIN_SANE_BASELINE = 0.01;
+
+        if (commonPoints.length === 0) {
+            if (mainSeries) try { mainSeries.applyOptions({ visible: true }); } catch {}
+            return;
+        }
+
         if (mainSeries) {
             try { mainSeries.applyOptions({ visible: false }); } catch {}
         }
 
-        const toPercent = (points, baseValue) => {
-            if (!baseValue || baseValue === 0) return points;
-            return points.map(p => ({
-                time: p.time,
-                value: ((p.value - baseValue) / baseValue) * 100,
-            }));
-        };
-
-        const mainPoints = candleData.map(c => ({ time: c.time, value: c.close }));
-        const mainBase = mainPoints[0]?.value || 1;
-
-        const comparePoints = compareData.candles.map(c => ({
-            time: toChartTime(c.candleDate || c.date),
-            value: Number(c.close ?? c.price ?? 0),
-        }));
-        const compareBase = comparePoints[0]?.value || 1;
-
-        const mainPercentData = toPercent(mainPoints, mainBase);
-        const comparePercentData = toPercent(comparePoints, compareBase);
-
         const fmtPercent = (p) => (p >= 0 ? '+' : '') + p.toFixed(2) + '%';
         const percentFormat = { type: 'custom', minMove: 0.01, formatter: fmtPercent };
+
+        const findBaselinePoint = (fromEpoch) => {
+            const fromIdx = fromEpoch
+                ? commonPoints.findIndex(p => p.epoch && p.epoch >= fromEpoch)
+                : 0;
+            const startIdx = fromIdx >= 0 ? fromIdx : 0;
+            for (let i = startIdx; i < commonPoints.length; i += 1) {
+                const main = commonPoints[i];
+                const compare = compareByKey.get(main.key);
+                if (main.value >= MIN_SANE_BASELINE && compare && compare.value >= MIN_SANE_BASELINE) {
+                    return { mainBase: main.value, compareBase: compare.value, startEpoch: main.epoch };
+                }
+            }
+            return null;
+        };
+
+        const computePercent = (fromEpoch) => {
+            const baseline = findBaselinePoint(fromEpoch);
+            if (!baseline) return null;
+            const { mainBase, compareBase, startEpoch } = baseline;
+            const inRange = (p) => !startEpoch || !p.epoch || p.epoch >= startEpoch;
+            return {
+                main: mainPoints
+                    .filter(inRange)
+                    .map(p => ({ time: p.time, value: ((p.value - mainBase) / mainBase) * 100 })),
+                compare: comparePointsRaw
+                    .filter(inRange)
+                    .map(p => ({ time: p.time, value: ((p.value - compareBase) / compareBase) * 100 })),
+            };
+        };
+
+        const initial = computePercent();
+        if (!initial) {
+            if (mainSeries) try { mainSeries.applyOptions({ visible: true }); } catch {}
+            return;
+        }
+        const mainPercentData = initial.main;
+        const comparePercentData = initial.compare;
 
         const mainPercentSeries = chart.addSeries(LineSeries, {
             color: '#5E6AD2',
@@ -373,7 +417,23 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
 
         chart.timeScale().fitContent();
 
+        let lastBaselineEpoch = null;
+        const handleVisibleRangeChange = (range) => {
+            if (!range) return;
+            const fromEpoch = toEpochSec(range.from);
+            if (!fromEpoch || fromEpoch === lastBaselineEpoch) return;
+            const next = computePercent(fromEpoch);
+            if (!next) return;
+            lastBaselineEpoch = fromEpoch;
+            try {
+                mainPercentSeries.setData(next.main);
+                compareSeries.setData(next.compare);
+            } catch { /* series removed */ }
+        };
+        chart.timeScale().subscribeVisibleTimeRangeChange(handleVisibleRangeChange);
+
         return () => {
+            try { chart.timeScale().unsubscribeVisibleTimeRangeChange(handleVisibleRangeChange); } catch {}
             if (compareSeriesRef.current && chartRef.current) {
                 try { chartRef.current.removeSeries(compareSeriesRef.current); } catch {}
                 compareSeriesRef.current = null;

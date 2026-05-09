@@ -1,34 +1,34 @@
 import { useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  PREF_KEY,
-  useUserChartPreferences,
-  useUpdateUserChartPreferences,
-} from '../../../shared/hooks/useUserChartPreferences';
+import { useUserChartPreferences, useUpdateUserChartPreferences } from '../../../shared/hooks/useUserChartPreferences';
+import { CHART_DATA_KEY } from '../../../shared/hooks/useUserChartData';
 
-export default function useChartConfig(assetType, assetCode) {
-  const enabled = !!assetType && !!assetCode;
+export default function useChartConfig(assetType, assetCode, range, persistEnabled = true) {
+  const enabled = !!assetType && !!assetCode && persistEnabled;
   const queryClient = useQueryClient();
-  const { data, isSuccess } = useUserChartPreferences(assetType, assetCode);
-  const updateMutation = useUpdateUserChartPreferences(assetType, assetCode);
+  const { data, isSuccess } = useUserChartPreferences(assetType, assetCode, range, persistEnabled);
+  const updateMutation = useUpdateUserChartPreferences(assetType, assetCode, range);
   const mutateRef = useRef(updateMutation.mutate);
   mutateRef.current = updateMutation.mutate;
 
   const setField = useCallback((key, value) => {
     if (!enabled) return;
-    const queryKey = PREF_KEY(assetType, assetCode);
+    const queryKey = CHART_DATA_KEY(assetType, assetCode, range);
     let nextConfig;
     queryClient.setQueryData(queryKey, (old) => {
-      const oldConfig = old?.config ?? {};
+      const oldConfig = old?.preferences?.config ?? {};
       const next = typeof value === 'function' ? value(oldConfig[key]) : value;
       nextConfig = { ...oldConfig, [key]: next };
-      return { ...(old ?? {}), config: nextConfig };
+      return {
+        ...(old ?? {}),
+        preferences: { ...(old?.preferences ?? {}), config: nextConfig },
+      };
     });
     if (nextConfig) mutateRef.current(nextConfig);
-  }, [enabled, queryClient, assetType, assetCode]);
+  }, [enabled, queryClient, assetType, assetCode, range]);
 
   return {
-    config: data?.config ?? {},
+    config: persistEnabled ? (data?.config ?? {}) : {},
     setField,
     hydrated: isSuccess,
   };

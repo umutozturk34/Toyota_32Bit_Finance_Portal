@@ -1,6 +1,4 @@
 package com.finance.news.model;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.finance.news.util.NewsCategoryResolver;
@@ -23,7 +21,8 @@ import java.time.temporal.ChronoUnit;
         indexes = {
                 @Index(name = "idx_news_category", columnList = "category"),
                 @Index(name = "idx_news_published_at", columnList = "published_at"),
-                @Index(name = "idx_news_articles_source", columnList = "source_id")
+                @Index(name = "idx_news_articles_source", columnList = "source_id"),
+                @Index(name = "idx_news_articles_category_published", columnList = "category, published_at DESC")
         }
 )
 public class NewsArticle {

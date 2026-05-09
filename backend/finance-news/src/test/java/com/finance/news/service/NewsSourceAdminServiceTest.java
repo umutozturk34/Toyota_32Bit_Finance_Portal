@@ -11,6 +11,7 @@ import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.news.mapper.NewsSourceMapper;
 import com.finance.news.model.NewsSource;
+import com.finance.news.repository.NewsArticleRepository;
 import com.finance.news.repository.NewsSourceRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.when;
 class NewsSourceAdminServiceTest {
 
     private NewsSourceRepository repository;
+    private NewsArticleRepository articleRepository;
     private NewsSourceMapper mapper;
     private NewsSourceService sourceService;
     private NewsSourceRefreshService refreshService;
@@ -40,10 +42,11 @@ class NewsSourceAdminServiceTest {
     @BeforeEach
     void setUp() {
         repository = mock(NewsSourceRepository.class);
+        articleRepository = mock(NewsArticleRepository.class);
         mapper = mock(NewsSourceMapper.class);
         sourceService = mock(NewsSourceService.class);
         refreshService = mock(NewsSourceRefreshService.class);
-        service = new NewsSourceAdminService(repository, mapper, sourceService, refreshService);
+        service = new NewsSourceAdminService(repository, articleRepository, mapper, sourceService, refreshService);
         tsmMock = mockStatic(TransactionSynchronizationManager.class);
     }
 

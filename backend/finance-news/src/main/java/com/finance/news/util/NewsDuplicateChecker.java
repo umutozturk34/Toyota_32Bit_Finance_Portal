@@ -1,6 +1,4 @@
 package com.finance.news.util;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.finance.news.dto.internal.RssArticleData;
 import com.finance.news.repository.NewsArticleRepository;

@@ -1,7 +1,5 @@
 package com.finance.news.util;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.finance.news.model.NewsCategory;
 import lombok.extern.log4j.Log4j2;

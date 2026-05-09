@@ -1,6 +1,4 @@
 package com.finance.news.util;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.finance.news.model.NewsCategory;
 import org.junit.jupiter.api.Test;

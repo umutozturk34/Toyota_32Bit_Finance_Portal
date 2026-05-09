@@ -1,8 +1,6 @@
 package com.finance.news.config;
 import com.finance.common.config.AppProperties;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 import com.finance.common.config.AppProperties;
 
 import lombok.RequiredArgsConstructor;

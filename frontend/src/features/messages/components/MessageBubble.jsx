@@ -1,4 +1,5 @@
 import { cardVariants } from '../../../shared/utils/animations';
+import { motion } from 'framer-motion';
 import { relTime } from '../util';
 
 export default function MessageBubble({ message, leftSide, label }) {

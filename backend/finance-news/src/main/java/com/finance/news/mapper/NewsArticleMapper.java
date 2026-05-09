@@ -1,6 +1,4 @@
 package com.finance.news.mapper;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.finance.news.config.NewsProperties;
 import com.finance.news.dto.external.NewsArticleDto;

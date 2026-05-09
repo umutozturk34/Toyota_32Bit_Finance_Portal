@@ -1,19 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { MessageCircle, Loader2, Inbox, Sparkles } from 'lucide-react';
-import { useUserInbox, useUserSent, useSendMessage } from '../../../shared/hooks/useMessages';
+import { motion } from 'framer-motion';
+import { MessageCircle, Loader2, Inbox, Sparkles, Lock } from 'lucide-react';
+import { useUserInbox, useUserSent, useSendMessage, useUserConversationStatus } from '../../../shared/hooks/useMessages';
 import { useActiveConversation } from '../../../shared/hooks/useActiveConversation';
 import { containerVariants } from '../../../shared/utils/animations';
 import { toast } from '../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../shared/utils/apiError';
 import MessageBubble from '../components/MessageBubble';
 import Composer from '../components/Composer';
+import { CONVERSATION_CLOSED_BANNER, CONVERSATION_CLOSED_HINT } from '../util';
 
 export default function UserMessagesView() {
   const inbox = useUserInbox({ page: 0, size: 100 });
   const sent = useUserSent({ page: 0, size: 100 });
+  const status = useUserConversationStatus();
   const sendMutation = useSendMessage();
   const [body, setBody] = useState('');
   const scrollRef = useRef(null);
+  const closed = status.data?.closed === true;
 
   useActiveConversation('admin');
 
@@ -67,6 +71,13 @@ export default function UserMessagesView() {
           </div>
         </header>
 
+        {closed && (
+          <div className="flex items-center gap-2 px-5 py-2.5 border-b border-warning/40 bg-warning/10 text-warning shrink-0">
+            <Lock className="h-3.5 w-3.5 shrink-0" />
+            <span className="text-[12px] font-semibold tracking-tight">{CONVERSATION_CLOSED_BANNER}</span>
+          </div>
+        )}
+
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3" style={{ scrollbarWidth: 'thin' }}>
           {isLoading ? (
             <div className="h-full flex items-center justify-center gap-2 text-sm text-fg-muted">
@@ -108,9 +119,10 @@ export default function UserMessagesView() {
           value={body}
           onChange={setBody}
           onSubmit={handleSend}
-          disabled={!body.trim() || sendMutation.isPending}
+          disabled={closed || !body.trim() || sendMutation.isPending}
           placeholder="Mesajını yaz…"
           pending={sendMutation.isPending}
+          hint={closed ? CONVERSATION_CLOSED_HINT : undefined}
         />
       </section>
     </motion.div>

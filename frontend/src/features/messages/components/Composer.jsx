@@ -1,4 +1,5 @@
 import { Send, Loader2, ShieldOff } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { MAX_BODY } from '../util';
 
 export default function Composer({ value, onChange, onSubmit, disabled, placeholder, pending, hint }) {

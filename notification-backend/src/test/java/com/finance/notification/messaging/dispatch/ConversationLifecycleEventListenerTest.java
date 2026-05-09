@@ -2,6 +2,7 @@ package com.finance.notification.messaging.dispatch;
 
 import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;
+import com.finance.notification.core.dispatch.NotificationStreamRegistry;
 import com.finance.notification.core.dispatch.payload.SystemPayload;
 import com.finance.notification.core.model.NotificationType;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,6 +20,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 class ConversationLifecycleEventListenerTest {
 
     @Mock private NotificationDispatcher dispatcher;
+    @Mock private NotificationStreamRegistry streamRegistry;
 
     private ConversationLifecycleEventListener listener;
     private AutoCloseable mocks;
@@ -26,7 +28,7 @@ class ConversationLifecycleEventListenerTest {
     @BeforeEach
     void setUp() {
         mocks = MockitoAnnotations.openMocks(this);
-        listener = new ConversationLifecycleEventListener(dispatcher);
+        listener = new ConversationLifecycleEventListener(dispatcher, streamRegistry);
     }
 
     @ParameterizedTest
@@ -49,11 +51,18 @@ class ConversationLifecycleEventListenerTest {
         assertThat(payload.title()).isEqualTo(expectedTitle);
         assertThat(payload.body()).isNotBlank();
         assertThat(payload.issuedBy()).isEqualTo("admin-1");
+        verify(streamRegistry).publishToUser(
+                org.mockito.ArgumentMatchers.eq("user-7"),
+                org.mockito.ArgumentMatchers.eq("notification-silent"),
+                org.mockito.ArgumentMatchers.argThat(p -> p instanceof java.util.Map<?, ?> m
+                        && action.name().equals(m.get("action"))
+                        && "CONVERSATION_LIFECYCLE".equals(m.get("type"))));
     }
 
     @Test
-    void should_neverInteractWithDispatcher_when_listenerIsConstructedButNotInvoked() {
+    void should_neverInteractWithCollaborators_when_listenerIsConstructedButNotInvoked() {
         verifyNoInteractions(dispatcher);
+        verifyNoInteractions(streamRegistry);
     }
 
     @org.junit.jupiter.api.AfterEach

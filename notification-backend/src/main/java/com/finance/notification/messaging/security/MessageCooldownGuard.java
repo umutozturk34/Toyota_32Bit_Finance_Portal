@@ -1,5 +1,6 @@
 package com.finance.notification.messaging.security;
 
+import com.finance.notification.config.MessagingProperties;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.log4j.Log4j2;
@@ -12,18 +13,22 @@ import java.time.Instant;
 @Component
 public class MessageCooldownGuard {
 
-    private static final Duration COOLDOWN = Duration.ofSeconds(5);
+    private final Duration cooldown;
+    private final Cache<String, Instant> lastSentBySender;
 
-    private final Cache<String, Instant> lastSentBySender = Caffeine.newBuilder()
-            .expireAfterWrite(COOLDOWN.multipliedBy(2))
-            .maximumSize(50_000)
-            .build();
+    public MessageCooldownGuard(MessagingProperties properties) {
+        this.cooldown = Duration.ofSeconds(properties.cooldownSeconds());
+        this.lastSentBySender = Caffeine.newBuilder()
+                .expireAfterWrite(cooldown.multipliedBy(2))
+                .maximumSize(50_000)
+                .build();
+    }
 
     public boolean isCoolingDown(String senderSub) {
         Instant now = Instant.now();
         Instant lastSent = lastSentBySender.getIfPresent(senderSub);
-        if (lastSent != null && now.isBefore(lastSent.plus(COOLDOWN))) {
-            log.debug("Cooldown active senderSub={} wait={}", senderSub, Duration.between(now, lastSent.plus(COOLDOWN)));
+        if (lastSent != null && now.isBefore(lastSent.plus(cooldown))) {
+            log.debug("Cooldown active senderSub={} wait={}", senderSub, Duration.between(now, lastSent.plus(cooldown)));
             return true;
         }
         lastSentBySender.put(senderSub, now);

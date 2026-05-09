@@ -23,3 +23,7 @@ notification:
     status-read-capacity-per-minute: 240
   watchlist:
     max-per-user: 20
+  messaging:
+    backlog-max-unanswered: 2
+    cooldown-seconds: 5
+    duplicate-window-seconds: 60

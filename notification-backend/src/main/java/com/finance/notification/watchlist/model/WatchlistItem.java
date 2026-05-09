@@ -8,6 +8,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Index;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PostLoad;
@@ -37,10 +38,15 @@ import java.util.Optional;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "watchlist_items", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_watchlist_items_list_tracked_asset",
-                columnNames = {"watchlist_id", "tracked_asset_id"})
-})
+@Table(name = "watchlist_items",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uq_watchlist_items_list_tracked_asset",
+                        columnNames = {"watchlist_id", "tracked_asset_id"})
+        },
+        indexes = {
+                @Index(name = "idx_watchlist_items_user_created", columnList = "user_sub, created_at DESC"),
+                @Index(name = "idx_watchlist_items_watchlist_order", columnList = "watchlist_id, display_order")
+        })
 public class WatchlistItem {
 
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);

@@ -4,6 +4,7 @@ import com.finance.common.config.AppProperties;
 import com.finance.notification.broadcast.service.BroadcastProperties;
 import com.finance.notification.config.MarketSessionProperties;
 import com.finance.notification.config.NotificationCacheProperties;
+import com.finance.notification.config.MessagingProperties;
 import com.finance.notification.config.NotificationDispatchProperties;
 import com.finance.notification.config.NotificationKafkaProperties;
 import com.finance.notification.config.NotificationStreamProperties;
@@ -11,8 +12,10 @@ import com.finance.notification.config.WatchlistManagementProperties;
 import com.finance.notification.market.MarketHoursProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -26,11 +29,20 @@ import java.util.TimeZone;
         "com.finance.common.exception",
         "com.finance.common.filter.tier"
 })
+@EntityScan(basePackages = {
+        "com.finance.notification",
+        "com.finance.common.model"
+})
+@EnableJpaRepositories(basePackages = {
+        "com.finance.notification",
+        "com.finance.common.repository"
+})
 @EnableConfigurationProperties({
         AppProperties.class,
         BroadcastProperties.class,
         MarketHoursProperties.class,
         MarketSessionProperties.class,
+        MessagingProperties.class,
         NotificationCacheProperties.class,
         NotificationDispatchProperties.class,
         NotificationKafkaProperties.class,

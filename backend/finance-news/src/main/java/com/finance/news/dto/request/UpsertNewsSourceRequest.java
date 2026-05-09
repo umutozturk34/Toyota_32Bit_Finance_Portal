@@ -1,7 +1,5 @@
 package com.finance.news.dto.request;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

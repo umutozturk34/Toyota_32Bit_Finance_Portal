@@ -1,7 +1,5 @@
 package com.finance.news.util;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import java.util.HashSet;
 import java.util.List;

@@ -17,6 +17,7 @@ import com.finance.notification.messaging.model.MessageDirection;
 import com.finance.notification.messaging.presence.ActiveConversationRegistry;
 import com.finance.notification.messaging.repository.ClosedConversationRepository;
 import com.finance.notification.messaging.repository.MessageRepository;
+import com.finance.notification.messaging.security.MessageBacklogGuard;
 import com.finance.notification.messaging.security.MessageCooldownGuard;
 import com.finance.notification.messaging.security.MessageDuplicateGuard;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,7 @@ public class MessageService {
     private final MessageMapper mapper;
     private final MessageDuplicateGuard duplicateGuard;
     private final MessageCooldownGuard cooldownGuard;
+    private final MessageBacklogGuard backlogGuard;
     private final ApplicationEventPublisher events;
     private final KeycloakUserEmailLookup userDirectory;
     private final ActiveConversationRegistry presence;
@@ -50,6 +52,7 @@ public class MessageService {
     @Transactional
     public MessageResponse sendUserToAdmin(String senderSub, String body) {
         rejectIfClosed(senderSub);
+        rejectIfBacklogFull(senderSub);
         rejectIfCoolingDown(senderSub);
         rejectDuplicate(senderSub, body);
         boolean adminViewing = presence.isAnyoneActiveOn(USER_THREAD_KEY_PREFIX + senderSub);
@@ -101,6 +104,13 @@ public class MessageService {
         }
     }
 
+    private void rejectIfBacklogFull(String senderSub) {
+        if (backlogGuard.wouldExceedBacklog(senderSub)) {
+            throw new BadRequestException("Admin cevap vermeden en fazla "
+                    + backlogGuard.maxUnanswered() + " mesaj gönderebilirsin");
+        }
+    }
+
     @Transactional(readOnly = true)
     public Page<MessageResponse> getUserInbox(String userSub, int page, int size) {
         return repository
@@ -125,6 +135,11 @@ public class MessageService {
     @Transactional(readOnly = true)
     public long getUserUnreadCount(String userSub) {
         return repository.countByRecipientSubAndReadAtIsNull(userSub);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isConversationClosed(String userSub) {
+        return closedRepository.existsById(userSub);
     }
 
     @Transactional(readOnly = true)

@@ -7,6 +7,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,7 +35,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "price_alerts")
+@Table(name = "price_alerts",
+        indexes = {
+                @Index(name = "idx_price_alerts_user_created", columnList = "user_sub, created_at DESC"),
+                @Index(name = "idx_price_alerts_active_tracked", columnList = "tracked_asset_id")
+        })
 public class PriceAlert {
 
     @Id

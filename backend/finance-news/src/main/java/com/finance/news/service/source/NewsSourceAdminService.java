@@ -9,6 +9,7 @@ import com.finance.news.dto.response.NewsSourceResponse;
 import com.finance.common.exception.BadRequestException;
 import com.finance.news.mapper.NewsSourceMapper;
 import com.finance.news.model.NewsSource;
+import com.finance.news.repository.NewsArticleRepository;
 import com.finance.news.repository.NewsSourceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -24,6 +25,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public class NewsSourceAdminService {
 
     private final NewsSourceRepository newsSourceRepository;
+    private final NewsArticleRepository newsArticleRepository;
     private final NewsSourceMapper newsSourceMapper;
     private final NewsSourceService newsSourceService;
     private final NewsSourceRefreshService newsSourceRefreshService;
@@ -62,6 +64,8 @@ public class NewsSourceAdminService {
     @Transactional
     public void delete(Long id) {
         NewsSource entity = newsSourceService.findOrThrow(id);
+        int purged = newsArticleRepository.deleteBySourceId(entity.getId());
+        log.info("Purged {} articles before deleting news source id={} name={}", purged, entity.getId(), entity.getName());
         newsSourceRepository.delete(entity);
     }
 

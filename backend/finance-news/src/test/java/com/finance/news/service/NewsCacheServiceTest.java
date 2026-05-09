@@ -1,8 +1,6 @@
 package com.finance.news.service;
 
 import com.finance.news.service.article.NewsCacheService;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

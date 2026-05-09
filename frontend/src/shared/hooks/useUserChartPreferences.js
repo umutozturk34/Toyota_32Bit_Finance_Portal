@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userChartPreferenceService } from '../services/userChartService';
 import { useAuth } from '../../features/auth/AuthContext';
 
-const PREF_KEY = (type, code) => ['userChartPreferences', type, code];
+export const PREF_KEY = (type, code) => ['userChartPreferences', type, code];
 
 export function useUserChartPreferences(type, code) {
   const { isAuthenticated, loading } = useAuth();

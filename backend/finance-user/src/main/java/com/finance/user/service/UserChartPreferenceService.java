@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Log4j2
@@ -66,6 +67,7 @@ public class UserChartPreferenceService {
         boolean isFund = type == TrackedAssetType.FUND;
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("indicators", chartDefaults.defaults().indicators());
+        map.put("fibTools", List.of());
         map.put("chartType", isFund ? chartDefaults.fund().chartType() : chartDefaults.defaults().chartType());
         map.put("showVolume", chartDefaults.defaults().showVolume());
         map.put("magnetMode", chartDefaults.defaults().magnetMode());

@@ -1,8 +1,10 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useEffect, useCallback } from 'react';
 import {
     BarChart2, X, LineChart, Activity, PenTool, Triangle, Calendar,
 } from 'lucide-react';
 import { useTheme } from '../../../shared/context/ThemeContext';
+import useAppStore from '../../../shared/stores/useAppStore';
+import useChartConfig from '../hooks/useChartConfig';
 import useIndicators from '../hooks/useIndicators';
 import useDrawings from '../hooks/useDrawings';
 import useFibonacci from '../hooks/useFibonacci';
@@ -33,21 +35,35 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
     const { isDark } = useTheme();
     const renderDrawingsRef = useRef(null);
     const textDoneRef = useRef(false);
-    const [activeTab, setActiveTab] = useState('indicators');
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [showVolume, setShowVolume] = useState(false);
-    const [chartType, setChartType] = useState(assetType === 'FUND' ? 'line' : 'candle');
-    const [magnetMode, setMagnetMode] = useState('off');
-    const [selectedIcon, setSelectedIcon] = useState('\u{1F680}');
-    const [iconSize, setIconSize] = useState(22);
+
     const isFund = assetType === 'FUND';
     const isCrypto = assetType === 'CRYPTO';
     const isForex = assetType === 'FOREX';
     const showVolumeToggle = !isFund && !isForex;
     const showFibTab = !isFund;
     const allowCandle = !isFund;
-    const [showInvestorCount, setShowInvestorCount] = useState(false);
-    const [showPortfolioSize, setShowPortfolioSize] = useState(false);
+
+    const sidebarOpen = useAppStore((s) => s.chartSidebarOpen);
+    const setSidebarOpen = useAppStore((s) => s.setChartSidebarOpen);
+    const activeTab = useAppStore((s) => s.chartActiveTab);
+    const setActiveTab = useAppStore((s) => s.setChartActiveTab);
+
+    const { config, setField } = useChartConfig(assetType, symbol);
+    const showVolume = config?.showVolume ?? false;
+    const chartType = config?.chartType ?? (isFund ? 'line' : 'candle');
+    const magnetMode = config?.magnetMode ?? 'off';
+    const selectedIcon = config?.selectedIcon ?? '\u{1F680}';
+    const iconSize = config?.iconSize ?? 22;
+    const showInvestorCount = config?.showInvestorCount ?? false;
+    const showPortfolioSize = config?.showPortfolioSize ?? false;
+
+    const setShowVolume = useCallback((v) => setField('showVolume', typeof v === 'function' ? v(showVolume) : v), [setField, showVolume]);
+    const setChartType = useCallback((v) => setField('chartType', v), [setField]);
+    const setMagnetMode = useCallback((v) => setField('magnetMode', v), [setField]);
+    const setSelectedIcon = useCallback((v) => setField('selectedIcon', v), [setField]);
+    const setIconSize = useCallback((v) => setField('iconSize', typeof v === 'function' ? v(iconSize) : v), [setField, iconSize]);
+    const setShowInvestorCount = useCallback((v) => setField('showInvestorCount', typeof v === 'function' ? v(showInvestorCount) : v), [setField, showInvestorCount]);
+    const setShowPortfolioSize = useCallback((v) => setField('showPortfolioSize', typeof v === 'function' ? v(showPortfolioSize) : v), [setField, showPortfolioSize]);
 
     const hasInvestorCountData = useMemo(() =>
         isFund && data?.candles?.some(c => c.investorCount != null && Number(c.investorCount) > 0), [data, isFund]);
@@ -56,7 +72,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
 
     const { indicators, addIndicator, removeIndicator, updateIndicator, toggleIndicator } = useIndicators(assetType, symbol);
     const { drawings, activeTool, addDrawing, removeDrawing, undoDrawing, clearDrawings, selectTool, cancelTool } = useDrawings(assetType, symbol);
-    const { fibTools, activeFibTool, addFibTool, removeFibTool, clearFibTools, selectFibTool, cancelFibTool } = useFibonacci();
+    const { fibTools, activeFibTool, addFibTool, removeFibTool, clearFibTools, selectFibTool, cancelFibTool } = useFibonacci(assetType, symbol);
 
     const filteredIndicators = useMemo(() => {
         if (isFund) return indicators.filter(i => i.type === 'SMA' || i.type === 'EMA');

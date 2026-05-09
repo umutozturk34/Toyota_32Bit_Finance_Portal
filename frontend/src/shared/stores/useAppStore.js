@@ -7,6 +7,8 @@ const useAppStore = create(
       sidebarCollapsed: false,
       cooldowns: JSON.parse(sessionStorage.getItem('cooldowns') || '{}'),
       activeWatchlistId: null,
+      chartSidebarOpen: false,
+      chartActiveTab: 'indicators',
 
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
 
@@ -19,12 +21,17 @@ const useAppStore = create(
       getCooldownEnd: (route) => get().cooldowns[route] ?? 0,
 
       setActiveWatchlistId: (id) => set({ activeWatchlistId: id }),
+
+      setChartSidebarOpen: (open) => set({ chartSidebarOpen: !!open }),
+      setChartActiveTab: (tab) => set({ chartActiveTab: tab }),
     }),
     {
       name: 'finance-app-store',
       partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
         activeWatchlistId: state.activeWatchlistId,
+        chartSidebarOpen: state.chartSidebarOpen,
+        chartActiveTab: state.chartActiveTab,
       }),
     }
   )

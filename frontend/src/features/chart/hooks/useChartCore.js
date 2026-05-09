@@ -2,6 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import { calculateSMA, calculateEMA } from '../lib/indicators';
 import { getChartOptions } from '../lib/chartOptions';
+import { readViewport, writeViewport } from '../lib/viewportStorage';
+
+const VIEWPORT_SAVE_THROTTLE_MS = 250;
+
+const toEpochSec = (chartTime) => {
+    if (chartTime == null) return null;
+    if (typeof chartTime === 'number') return Math.floor(chartTime);
+    if (typeof chartTime === 'object' && chartTime.year) {
+        return Math.floor(Date.UTC(chartTime.year, chartTime.month - 1, chartTime.day) / 1000);
+    }
+    return null;
+};
 
 const dimColor = (color, alpha = 0.4) => {
     if (!color) return color;
@@ -129,7 +141,16 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 value: c.volume,
                 color: c.close >= c.open ? 'rgba(38, 166, 154, 0.7)' : 'rgba(239, 83, 80, 0.7)',
             }));
-        chart.timeScale().fitContent();
+        const storedRange = readViewport(assetType, symbol);
+        if (storedRange) {
+            try {
+                chart.timeScale().setVisibleRange({ from: storedRange.from, to: storedRange.to });
+            } catch {
+                chart.timeScale().fitContent();
+            }
+        } else {
+            chart.timeScale().fitContent();
+        }
         requestAnimationFrame(() => window.scrollTo(0, scrollY));
         setTrend(analyzeTrend(candleData));
         const handleCrosshairMove = (param) => {
@@ -178,7 +199,21 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             }
         };
         const handleUpdate = () => { if (renderDrawingsRef.current) renderDrawingsRef.current(); };
+        let viewportSaveTimer = null;
+        const handleRangePersist = () => {
+            if (viewportSaveTimer) clearTimeout(viewportSaveTimer);
+            viewportSaveTimer = setTimeout(() => {
+                try {
+                    const range = chart.timeScale().getVisibleRange();
+                    if (!range) return;
+                    const from = toEpochSec(range.from);
+                    const to = toEpochSec(range.to);
+                    if (from && to) writeViewport(assetType, symbol, { from, to });
+                } catch { /* chart already removed */ }
+            }, VIEWPORT_SAVE_THROTTLE_MS);
+        };
         chart.timeScale().subscribeVisibleTimeRangeChange(handleUpdate);
+        chart.timeScale().subscribeVisibleTimeRangeChange(handleRangePersist);
         chart.timeScale().subscribeVisibleLogicalRangeChange(handleUpdate);
         chart.subscribeCrosshairMove(handleCrosshairMove);
         const handleResize = () => {
@@ -190,8 +225,10 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         window.addEventListener('resize', handleResize);
         return () => {
             window.removeEventListener('resize', handleResize);
+            if (viewportSaveTimer) clearTimeout(viewportSaveTimer);
             try {
                 chart.timeScale().unsubscribeVisibleTimeRangeChange(handleUpdate);
+                chart.timeScale().unsubscribeVisibleTimeRangeChange(handleRangePersist);
                 chart.timeScale().unsubscribeVisibleLogicalRangeChange(handleUpdate);
                 chart.unsubscribeCrosshairMove(handleCrosshairMove);
             } catch { }

@@ -2,8 +2,6 @@ package com.finance.market.stock.model;
 
 import com.finance.market.core.model.BaseAsset;
 import com.finance.common.model.StockSegment;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;

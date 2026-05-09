@@ -47,7 +47,7 @@ public class CryptoQueryService implements MarketHistoryProvider {
     }
 
     private List<CandleResponse> loadCandles(String id, LocalDateTime from, LocalDateTime to) {
-        String normalizedCode = trackedAssetQueryService.resolveEnabledCodeOrThrow(TrackedAssetType.CRYPTO, id);
+        String normalizedCode = trackedAssetQueryService.resolveCodeOrThrow(TrackedAssetType.CRYPTO, id);
         List<CryptoCandle> candles = cryptoCandleRepository
                 .findByCryptoIdAndCandleDateBetweenOrderByCandleDateAsc(normalizedCode, from, to);
         return cryptoResponseMapper.toCryptoCandleResponses(candles);

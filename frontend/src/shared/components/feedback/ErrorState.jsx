@@ -1,5 +1,6 @@
 import { AlertTriangle, RefreshCw } from './AnimatedIcons';
 
+import { motion } from 'framer-motion';
 export default function ErrorState({ message, onRetry }) {
     return (
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5">

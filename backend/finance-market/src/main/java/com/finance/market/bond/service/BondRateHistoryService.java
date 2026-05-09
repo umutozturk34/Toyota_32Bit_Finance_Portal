@@ -87,7 +87,7 @@ public class BondRateHistoryService {
         }
         bond.resolveNextCouponDate();
         BondSerieFilterUtil.sanitizeCouponRate(bond, dto);
-        bond.setAsset(assetRegistry.upsert(MarketType.BOND, dto.seriesCode(), bond.getName()));
+        bond.setAsset(assetRegistry.upsert(MarketType.BOND, dto.seriesCode()));
         return transactionTemplate.execute(status -> bondRepository.save(bond));
     }
 

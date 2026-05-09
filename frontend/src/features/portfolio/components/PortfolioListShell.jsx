@@ -1,4 +1,5 @@
 import { containerVariants } from '../../../shared/utils/animations';
+import { motion } from 'framer-motion';
 import EmptyState from '../../../shared/components/feedback/EmptyState';
 import SearchInput from '../../../shared/components/form/SearchInput';
 import SortSelect from '../../../shared/components/form/SortSelect';

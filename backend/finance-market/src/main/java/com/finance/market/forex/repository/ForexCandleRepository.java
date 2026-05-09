@@ -1,6 +1,4 @@
 package com.finance.market.forex.repository;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 import com.finance.market.forex.model.ForexCandle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Reorder, useDragControls } from 'framer-motion';
-import { GripVertical, Power, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { GripVertical, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { RefreshCw } from '../../../shared/components/feedback/AnimatedIcons';
 import { adminService, trackedAssetService } from '../services/adminService';
 import { toast } from '../../../shared/components/feedback/Toast';
 import SearchInput from '../../../shared/components/form/SearchInput';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 
-function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onToggle, onDelete, highlighted }) {
+function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onDelete, highlighted }) {
     const dragControls = useDragControls();
 
     return (
@@ -42,9 +43,6 @@ function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onToggle,
                 <div className="flex items-center gap-2">
                     <p className="truncate text-sm font-medium text-fg">{item.assetCode}</p>
                     <span className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px] text-fg-muted">#{index + 1}</span>
-                    <span className={`rounded px-2 py-0.5 text-[10px] font-semibold ${item.enabled ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'}`}>
-                        {item.enabled ? 'ENABLED' : 'DISABLED'}
-                    </span>
                 </div>
                 <p className="truncate text-xs text-fg-muted">{item.displayName || item.assetCode}</p>
                 {type === 'CRYPTO' && item.binanceSymbol && <p className="truncate text-xs text-fg-muted">Binance: {item.binanceSymbol}</p>}
@@ -77,17 +75,6 @@ function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onToggle,
                 >
                     <GripVertical className="h-3.5 w-3.5" />
                 </motion.span>
-                <button
-                    onClick={() => onToggle(item)}
-                    title={item.enabled ? 'Devre dışı bırak' : 'Etkinleştir'}
-                    className={`flex h-7 w-7 items-center justify-center rounded-md border transition-colors ${
-                        item.enabled
-                            ? 'border-success/30 bg-success/5 text-success hover:bg-success/10'
-                            : 'border-border-default bg-bg-base text-fg-subtle hover:bg-surface'
-                    }`}
-                >
-                    <Power className="h-3.5 w-3.5" />
-                </button>
                 <button
                     onClick={() => onDelete(item)}
                     title="Sil"
@@ -140,16 +127,6 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
             (item.displayName && item.displayName.toLowerCase().includes(q))
         );
     }, [items, search]);
-
-    const handleToggle = async (item) => {
-        try {
-            await adminService.setTrackedAssetEnabled(type, item.assetCode, !item.enabled);
-            invalidate();
-            onChanged?.();
-        } catch (err) {
-            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
-        }
-    };
 
     const handleDeleteClick = (item) => {
         setDeleteTarget(item);
@@ -305,7 +282,6 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
                                     type={type}
                                     onMoveUp={(code) => moveItemByStep(code, -1)}
                                     onMoveDown={(code) => moveItemByStep(code, 1)}
-                                    onToggle={handleToggle}
                                     onDelete={handleDeleteClick}
                                     highlighted={highlightedCode === item.assetCode}
                                 />

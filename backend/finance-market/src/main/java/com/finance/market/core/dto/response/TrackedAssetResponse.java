@@ -12,7 +12,6 @@ public class TrackedAssetResponse {
     String assetCode;
     String displayName;
     String binanceSymbol;
-    boolean enabled;
     StockSegment stockSegment;
     boolean indexAsset;
     boolean compareOnly;

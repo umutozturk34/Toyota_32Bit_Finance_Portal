@@ -16,10 +16,9 @@ public class AssetRegistryService {
     private final AssetRepository repository;
 
     @Transactional
-    public Asset upsert(MarketType marketType, String assetCode, String displayName) {
+    public Asset upsert(MarketType marketType, String assetCode) {
         return repository.findByMarketTypeAndAssetCodeIgnoreCase(marketType, assetCode)
-                .map(existing -> updateDisplayName(existing, displayName))
-                .orElseGet(() -> repository.save(Asset.create(marketType, assetCode, displayName)));
+                .orElseGet(() -> repository.save(Asset.create(marketType, assetCode)));
     }
 
     @Transactional(readOnly = true)
@@ -27,12 +26,5 @@ public class AssetRegistryService {
         return repository.findByMarketTypeAndAssetCodeIgnoreCase(marketType, assetCode)
                 .orElseThrow(() -> new IllegalStateException(
                         "Asset not registered marketType=" + marketType + " code=" + assetCode));
-    }
-
-    private Asset updateDisplayName(Asset existing, String displayName) {
-        if (displayName != null && !displayName.equals(existing.getDisplayName())) {
-            existing.setDisplayName(displayName);
-        }
-        return existing;
     }
 }

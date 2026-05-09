@@ -3,8 +3,6 @@ import com.finance.common.event.KafkaTopics;
 
 import com.finance.market.core.service.MarketSnapshotProcessor;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 import com.finance.common.event.KafkaTopics;
 import com.finance.common.event.UserPreferencesUpdatedEvent;
 

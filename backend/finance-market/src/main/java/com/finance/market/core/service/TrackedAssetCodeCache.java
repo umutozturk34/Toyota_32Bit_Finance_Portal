@@ -35,7 +35,7 @@ public class TrackedAssetCodeCache {
 
     private List<String> loadFromRepository(TrackedAssetType type) {
         return repository
-                .findByAssetTypeAndEnabledTrueOrderBySortOrderAscAssetCodeAsc(type)
+                .findByAssetTypeOrderBySortOrderAscAssetCodeAsc(type)
                 .stream()
                 .map(TrackedAsset::getAssetCode)
                 .toList();

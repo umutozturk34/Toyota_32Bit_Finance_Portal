@@ -1,6 +1,4 @@
 package com.finance.market.fund.mapper;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.finance.market.fund.dto.external.TefasFundDto;
 import com.finance.market.fund.model.Fund;

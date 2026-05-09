@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';

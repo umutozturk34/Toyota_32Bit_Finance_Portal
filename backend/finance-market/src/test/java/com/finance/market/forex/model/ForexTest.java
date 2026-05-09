@@ -3,8 +3,6 @@ import com.finance.market.forex.model.Forex;
 
 import com.finance.market.core.service.MarketSnapshotProcessor;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import org.junit.jupiter.api.Test;
 

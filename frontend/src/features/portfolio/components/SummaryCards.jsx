@@ -1,4 +1,5 @@
 import useSessionState from '../../../shared/hooks/useSessionState';
+import { motion } from 'framer-motion';
 import { Wallet, BarChart3 } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/AnimatedIcons';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';

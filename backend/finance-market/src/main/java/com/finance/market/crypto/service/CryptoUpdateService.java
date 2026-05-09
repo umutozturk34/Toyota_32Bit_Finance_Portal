@@ -102,7 +102,7 @@ public class CryptoUpdateService implements MarketRefresher {
     }
 
     private void refreshAllCandles() {
-        List<String> trackedCoins = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.CRYPTO);
+        List<String> trackedCoins = trackedAssetQueryService.getCodes(TrackedAssetType.CRYPTO);
         log.info("Starting crypto candle update for {} coins", trackedCoins.size());
         BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 trackedCoins,

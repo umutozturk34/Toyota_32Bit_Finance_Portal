@@ -1,4 +1,5 @@
 import { Code, Database, Server, Key, Container } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useTheme } from '../../shared/context/ThemeContext';
 const techStack = [
   { icon: Code, label: 'Frontend', value: 'React 19 + Vite' },

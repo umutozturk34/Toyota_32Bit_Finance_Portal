@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 
 export const RANGE_OPTIONS = [
   { id: '1M', label: '1A', months: 1 },

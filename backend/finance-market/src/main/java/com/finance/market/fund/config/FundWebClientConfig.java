@@ -4,7 +4,7 @@ import com.finance.common.config.AppProperties;
 import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
-import com.finance.market.core.filter.RateLimiterFilter;
+import com.finance.common.filter.RateLimiterFilter;
 import com.finance.market.core.filter.TefasSessionFilter;
 import com.finance.market.core.filter.TefasSessionManager;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;

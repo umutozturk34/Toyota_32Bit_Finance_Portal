@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import useChartRange from '../../../shared/hooks/useChartRange';
 import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, Plus } from 'lucide-react';
 import { TrendingUp, TrendingDown, Loader2 } from '../../../shared/components/feedback/AnimatedIcons';

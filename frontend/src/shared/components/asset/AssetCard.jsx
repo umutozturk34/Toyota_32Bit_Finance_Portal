@@ -1,5 +1,6 @@
 import { cardVariants } from '../../utils/animations';
 
+import { motion } from 'framer-motion';
 export default function AssetCard({ onClick, size = 'lg', children, className = '' }) {
   const padding = size === 'sm' ? 'p-4' : 'p-5';
   const rounded = size === 'sm' ? 'rounded-xl' : 'rounded-2xl';

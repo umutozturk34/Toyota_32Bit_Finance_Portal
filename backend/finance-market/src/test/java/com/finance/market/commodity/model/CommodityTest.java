@@ -1,8 +1,6 @@
 package com.finance.market.commodity.model;
 import com.finance.market.commodity.model.Commodity;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import org.junit.jupiter.api.Test;
 

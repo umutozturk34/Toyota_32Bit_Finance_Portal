@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, ChevronRight } from 'lucide-react';
 import { formatDateTimeShort } from '../../../shared/utils/formatters';

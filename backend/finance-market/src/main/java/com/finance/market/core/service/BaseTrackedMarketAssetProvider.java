@@ -70,8 +70,8 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
     @Override
     public List<MarketAssetResponse> search(String searchTerm, MarketAssetFilters filters,
                                             String sortBy, String direction, int page, int size) {
-        Set<String> enabledCodes = enabledCodes();
-        Specification<T> spec = applyCustomFilters(buildSearchSpec(searchTerm, enabledCodes), filters);
+        Set<String> trackedCodes = new HashSet<>(trackedAssetQueryService.getCodes(trackedAssetType()));
+        Specification<T> spec = applyCustomFilters(buildSearchSpec(searchTerm, trackedCodes), filters);
         List<T> entities = repository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, sortFields()))).getContent();
         return withDisplayNames(mapToResponses(entities));
     }
@@ -109,7 +109,7 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
     }
 
     private Set<String> enabledCodes() {
-        return new HashSet<>(trackedAssetQueryService.getEnabledCodes(trackedAssetType()));
+        return new HashSet<>(trackedAssetQueryService.getCodes(trackedAssetType()));
     }
 
     private Specification<T> buildSearchSpec(String searchTerm, Set<String> enabledCodes) {
@@ -135,6 +135,6 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
     }
 
     private List<MarketAssetResponse> withDisplayNames(List<MarketAssetResponse> responses) {
-        return applyDisplayNames(responses, trackedAssetQueryService.getEnabledDisplayNameMap(trackedAssetType()));
+        return applyDisplayNames(responses, trackedAssetQueryService.getDisplayNameMap(trackedAssetType()));
     }
 }

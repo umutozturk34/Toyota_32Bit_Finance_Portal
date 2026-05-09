@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, ExternalLink, Building2 } from 'lucide-react';
 import { newsService } from '../services/newsService';

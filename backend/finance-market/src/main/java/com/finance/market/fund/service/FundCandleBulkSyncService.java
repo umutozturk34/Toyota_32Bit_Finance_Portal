@@ -88,7 +88,7 @@ public class FundCandleBulkSyncService {
         return switch (fundType) {
             case BYF -> fundRepository.findByFundType(FundType.BYF);
             case YAT -> fundRepository.findAllById(
-                            trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND))
+                            trackedAssetQueryService.getCodes(TrackedAssetType.FUND))
                     .stream()
                     .filter(f -> f.getFundType() != FundType.BYF)
                     .toList();

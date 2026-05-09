@@ -44,7 +44,7 @@ public class StockUpdateService implements MarketRefresher {
 
     @Override
     public void refreshAll() {
-        List<String> bistStocks = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.STOCK);
+        List<String> bistStocks = trackedAssetQueryService.getCodes(TrackedAssetType.STOCK);
         if (bistStocks.isEmpty()) {
             log.warn("No BIST stocks configured");
             return;

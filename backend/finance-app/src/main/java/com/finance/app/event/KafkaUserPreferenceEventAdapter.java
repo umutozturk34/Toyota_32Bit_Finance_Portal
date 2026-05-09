@@ -1,8 +1,6 @@
 package com.finance.app.event;
 import com.finance.common.event.KafkaTopics;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 import com.finance.common.event.KafkaTopics;
 import com.finance.common.event.UserPreferenceEventPort;
 import com.finance.common.event.UserPreferencesUpdatedEvent;

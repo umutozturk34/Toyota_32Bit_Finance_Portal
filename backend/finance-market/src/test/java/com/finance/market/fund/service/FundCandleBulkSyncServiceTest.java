@@ -49,7 +49,7 @@ class FundCandleBulkSyncServiceTest {
 
     @Test
     void should_skipBulkFetch_when_noTrackedFundsForType() {
-        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND))
+        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND))
                 .thenReturn(List.of());
         when(fundRepository.findAllById(List.of())).thenReturn(List.of());
         when(fundRepository.findByFundType(FundType.BYF)).thenReturn(List.of());
@@ -63,7 +63,7 @@ class FundCandleBulkSyncServiceTest {
     void should_collectByfFundsFromRepository_when_typeIsBYF() {
         Fund byf = fundWith("BLH", FundType.BYF);
         when(fundRepository.findByFundType(FundType.BYF)).thenReturn(List.of(byf));
-        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND))
+        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND))
                 .thenReturn(List.of());
         when(fundRepository.findAllById(List.of())).thenReturn(List.of());
 
@@ -81,7 +81,7 @@ class FundCandleBulkSyncServiceTest {
         Fund yatFund = fundWith("TI2", FundType.YAT);
         Fund byfFund = fundWith("BLH", FundType.BYF);
         when(fundRepository.findByFundType(FundType.BYF)).thenReturn(List.of(byfFund));
-        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND))
+        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND))
                 .thenReturn(List.of("TI2", "BLH"));
         when(fundRepository.findAllById(List.of("TI2", "BLH")))
                 .thenReturn(List.of(yatFund, byfFund));
@@ -99,7 +99,7 @@ class FundCandleBulkSyncServiceTest {
     void should_skipFetch_when_allFundsUpToDate() {
         Fund byf = fundWith("BLH", FundType.BYF);
         when(fundRepository.findByFundType(FundType.BYF)).thenReturn(List.of(byf));
-        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND))
+        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND))
                 .thenReturn(List.of());
         when(fundRepository.findAllById(List.of())).thenReturn(List.of());
         LocalDateTime fiveYearsAgo = LocalDateTime.now().minusYears(5);

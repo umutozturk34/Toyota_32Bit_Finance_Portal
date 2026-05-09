@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Wallet, LayoutDashboard, TrendingUp as TrendingUpIcon, ShieldCheck } from 'lucide-react';
 import { Check, AlertTriangle } from '../../shared/components/feedback/AnimatedIcons';

@@ -1,4 +1,5 @@
 import { ChevronRight, Package, Pencil, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
 import { cardVariants } from '../../../shared/utils/animations';

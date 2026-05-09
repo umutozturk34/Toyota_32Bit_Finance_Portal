@@ -39,7 +39,7 @@ public class CommodityEntityWriter implements MarketEntityWriter {
         if (commodity.getYahooSymbol() == null) {
             commodity.setYahooSymbol(yahooSymbol);
         }
-        commodity.setAsset(assetRegistry.upsert(MarketType.COMMODITY, commodity.getCommodityCode(), commodity.resolveDisplayName()));
+        commodity.setAsset(assetRegistry.upsert(MarketType.COMMODITY, commodity.getCommodityCode()));
         commodityRepository.save(commodity);
     }
 
@@ -55,7 +55,7 @@ public class CommodityEntityWriter implements MarketEntityWriter {
     public void upsertCandles(Commodity commodity, List<YahooCandleDto> candleDtos, int scale) {
         if (commodity.getCommodityCode() == null || commodity.getCommodityCode().isBlank()) return;
         if (commodityRepository.findById(commodity.getCommodityCode()).isEmpty()) {
-            commodity.setAsset(assetRegistry.upsert(MarketType.COMMODITY, commodity.getCommodityCode(), commodity.resolveDisplayName()));
+            commodity.setAsset(assetRegistry.upsert(MarketType.COMMODITY, commodity.getCommodityCode()));
             commodityRepository.save(commodity);
         }
         List<YahooCandleDto> uniqueDtos = candleDtos.stream()

@@ -1,8 +1,6 @@
 package com.finance.market.crypto.model;
 
 import com.finance.market.core.model.BaseAsset;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;

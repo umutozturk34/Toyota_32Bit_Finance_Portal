@@ -52,15 +52,15 @@ class StockEntityWriterTest {
         YahooStockQuoteDto dto = stockQuote("Türk Hava Yolları", new BigDecimal("250.00"));
         Stock entity = Stock.builder().symbol("THYAO.IS").build();
         entity.setName("Türk Hava Yolları");
-        Asset asset = Asset.create(MarketType.STOCK, "THYAO.IS", "Türk Hava Yolları");
+        Asset asset = Asset.create(MarketType.STOCK, "THYAO.IS");
         when(stockRepository.findById("THYAO.IS")).thenReturn(Optional.empty());
         when(stockMapper.toEntity(eq(dto), any())).thenReturn(entity);
-        when(assetRegistry.upsert(MarketType.STOCK, "THYAO.IS", "Türk Hava Yolları")).thenReturn(asset);
+        when(assetRegistry.upsert(MarketType.STOCK, "THYAO.IS")).thenReturn(asset);
 
         Stock result = writer.saveSnapshot(dto, "THYAO.IS");
 
         assertThat(result.getAsset()).isSameAs(asset);
-        verify(assetRegistry, times(1)).upsert(MarketType.STOCK, "THYAO.IS", "Türk Hava Yolları");
+        verify(assetRegistry, times(1)).upsert(MarketType.STOCK, "THYAO.IS");
         verify(stockRepository).save(entity);
     }
 
@@ -69,9 +69,9 @@ class StockEntityWriterTest {
         YahooStockQuoteDto dto = stockQuote("Akbank", new BigDecimal("80.00"));
         Stock existing = Stock.builder().symbol("AKBNK.IS").build();
         existing.setName("Akbank");
-        Asset asset = Asset.create(MarketType.STOCK, "AKBNK.IS", "Akbank");
+        Asset asset = Asset.create(MarketType.STOCK, "AKBNK.IS");
         when(stockRepository.findById("AKBNK.IS")).thenReturn(Optional.of(existing));
-        when(assetRegistry.upsert(MarketType.STOCK, "AKBNK.IS", "Akbank")).thenReturn(asset);
+        when(assetRegistry.upsert(MarketType.STOCK, "AKBNK.IS")).thenReturn(asset);
 
         Stock result = writer.saveSnapshot(dto, "AKBNK.IS");
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { CheckCircle, Info, X, ShieldAlert } from 'lucide-react';
 import { AlertTriangle, AlertCircle } from './AnimatedIcons';

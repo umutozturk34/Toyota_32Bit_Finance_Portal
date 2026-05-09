@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { BarChart2, ChevronUp, ChevronDown, Activity, Clock } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';

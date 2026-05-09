@@ -1,6 +1,4 @@
 package com.finance.market.fund.repository;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.finance.market.fund.model.FundCandle;
 import org.springframework.data.jpa.repository.JpaRepository;

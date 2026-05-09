@@ -74,7 +74,7 @@ public class StockEntityWriter implements MarketEntityWriter {
             toPersist = stockMapper.toEntity(dto, now);
         }
         toPersist.setStockSegment(resolveStockSegment(symbol));
-        toPersist.setAsset(assetRegistry.upsert(MarketType.STOCK, symbol, toPersist.getName()));
+        toPersist.setAsset(assetRegistry.upsert(MarketType.STOCK, symbol));
         stockRepository.save(toPersist);
         return toPersist;
     }

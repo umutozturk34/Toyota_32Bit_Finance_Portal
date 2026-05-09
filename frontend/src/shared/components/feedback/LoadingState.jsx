@@ -1,5 +1,6 @@
 import { Loader2 } from './AnimatedIcons';
 
+import { motion } from 'framer-motion';
 export default function LoadingState({ message = 'Veriler yükleniyor…' }) {
     return (
         <div className="flex min-h-[60vh] items-center justify-center">

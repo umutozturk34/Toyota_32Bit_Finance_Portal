@@ -1,6 +1,4 @@
 package com.finance.market.stock.repository;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 import com.finance.market.stock.model.Stock;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;

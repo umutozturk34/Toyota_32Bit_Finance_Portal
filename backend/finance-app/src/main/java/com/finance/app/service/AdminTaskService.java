@@ -19,7 +19,7 @@ import com.finance.portfolio.model.Portfolio;
 import com.finance.market.core.service.MarketRefresher;
 
 
-import com.finance.market.core.dto.response.TaskTriggerResponse;
+import com.finance.common.dto.response.TaskTriggerResponse;
 import com.finance.common.model.MarketType;
 import com.finance.common.util.EnumDispatcher;
 import lombok.extern.log4j.Log4j2;

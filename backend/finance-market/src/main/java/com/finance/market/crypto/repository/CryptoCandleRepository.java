@@ -1,6 +1,4 @@
 package com.finance.market.crypto.repository;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 import com.finance.market.crypto.model.CryptoCandle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

@@ -1,4 +1,5 @@
 import { Mail, MessageSquare, Bell, AlertCircle, Zap, FileText, Smartphone, Sunrise, Sunset, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
 import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,

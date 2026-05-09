@@ -1,8 +1,6 @@
 package com.finance.market.fund.model;
 
 import com.finance.market.core.model.BaseAsset;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -17,7 +15,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = false)
 @Entity
-@Table(name = "funds")
+@Table(name = "funds", indexes = @Index(name = "idx_funds_fund_type", columnList = "fund_type"))
 public class Fund extends BaseAsset {
 
     @Id

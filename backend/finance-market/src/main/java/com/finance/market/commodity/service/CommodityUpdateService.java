@@ -55,7 +55,7 @@ public class CommodityUpdateService implements MarketRefresher {
 
     @Override
     public void refreshAll() {
-        List<String> enabledCodes = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.COMMODITY);
+        List<String> enabledCodes = trackedAssetQueryService.getCodes(TrackedAssetType.COMMODITY);
         List<String> fetchableCodes = enabledCodes.stream()
                 .filter(code -> yahooSymbolResolver.resolve(code) != null)
                 .toList();

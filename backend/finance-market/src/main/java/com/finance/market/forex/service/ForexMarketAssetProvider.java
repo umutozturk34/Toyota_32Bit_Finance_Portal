@@ -1,11 +1,9 @@
 package com.finance.market.forex.service;
-import com.finance.market.core.service.MarketAssetProvider.MarketAssetFilters;
 
 import com.finance.market.core.service.MarketAssetProvider;
 
 import com.finance.market.core.cache.MarketCacheService;
 
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.market.core.dto.response.MarketAssetResponse;

@@ -1,4 +1,5 @@
 import { Clock } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useMarketSession } from '../../hooks/useMarketStatus';
 
 const TRANSITION_FORMATTER = new Intl.RelativeTimeFormat('tr-TR', { numeric: 'auto' });

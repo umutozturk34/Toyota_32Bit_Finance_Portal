@@ -3,8 +3,6 @@ package com.finance.market.stock.model;
 import com.finance.market.core.model.BaseCandle;
 import com.finance.market.stock.model.Stock;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

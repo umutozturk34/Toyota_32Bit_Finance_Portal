@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { motion } from 'framer-motion';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { PieChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';

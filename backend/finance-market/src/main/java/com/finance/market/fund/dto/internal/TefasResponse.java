@@ -1,6 +1,4 @@
 package com.finance.market.fund.dto.internal;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

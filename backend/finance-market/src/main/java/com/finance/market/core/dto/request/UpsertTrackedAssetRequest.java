@@ -25,7 +25,6 @@ public class UpsertTrackedAssetRequest {
 
     private String binanceSymbol;
 
-    private Boolean enabled = true;
 
     private StockSegment stockSegment;
 

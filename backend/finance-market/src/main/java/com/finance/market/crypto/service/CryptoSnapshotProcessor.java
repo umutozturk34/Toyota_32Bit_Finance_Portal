@@ -56,7 +56,7 @@ public class CryptoSnapshotProcessor implements MarketSnapshotProcessor {
     }
 
     public void refreshAll() {
-        List<String> trackedCoins = trackedAssetQueryService.getEnabledCodes(TrackedAssetType.CRYPTO);
+        List<String> trackedCoins = trackedAssetQueryService.getCodes(TrackedAssetType.CRYPTO);
         log.info("Starting crypto snapshot update for {} coins", trackedCoins.size());
         List<CoinGeckoSnapshotDto> usdMarkets = coinGeckoClient.fetchMarkets(vsUsd, trackedCoins);
         List<CoinGeckoSnapshotDto> tryMarkets = coinGeckoClient.fetchMarkets(vsTry, trackedCoins);

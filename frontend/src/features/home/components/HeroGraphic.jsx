@@ -1,5 +1,6 @@
 import { CARD_POSITIONS } from '../lib/homePageConstants';
 
+import { motion } from 'framer-motion';
 function HeroGraphic({ isDark, cards }) {
   const accentColor = isDark ? 'rgba(99,102,241,' : 'rgba(0,82,255,';
   return (

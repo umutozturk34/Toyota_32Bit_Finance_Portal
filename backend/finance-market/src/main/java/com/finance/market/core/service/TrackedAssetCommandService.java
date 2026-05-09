@@ -34,7 +34,7 @@ public class TrackedAssetCommandService {
         TrackedAssetType type = command.getAssetType();
         String normalizedCode = type.normalizeCode(command.getAssetCode());
 
-        Asset asset = assetRegistry.upsert(type.marketType(), normalizedCode, command.getDisplayName());
+        Asset asset = assetRegistry.upsert(type.marketType(), normalizedCode);
 
         TrackedAsset entity = trackedAssetRepository
                 .findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
@@ -46,7 +46,6 @@ public class TrackedAssetCommandService {
         entity.setAsset(asset);
         entity.setDisplayName(resolveDisplayName(command.getDisplayName(), entity.getDisplayName()));
         entity.setBinanceSymbol(type.resolveBinanceSymbol(command.getBinanceSymbol()));
-        entity.setEnabled(command.getEnabled() == null || command.getEnabled());
         entity.setSortOrder(command.getSortOrder() == null ? 0 : command.getSortOrder());
         StockSegment resolvedSegment = type.resolveSegment(command.getStockSegment(), entity.getStockSegment());
         entity.setStockSegment(resolvedSegment);
@@ -58,12 +57,19 @@ public class TrackedAssetCommandService {
         return trackedAssetMapper.toResponse(saved);
     }
 
-    public void setEnabled(TrackedAssetType type, String assetCode, boolean enabled) {
+    public void autoTrack(TrackedAssetType type, String assetCode, String defaultDisplayName, int sortOrder) {
         String normalizedCode = type.normalizeCode(assetCode);
-        TrackedAsset entity = trackedAssetRepository
-                .findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
-                .orElseThrow(() -> new ResourceNotFoundException("Tracked asset not found: " + type + " / " + normalizedCode));
-        entity.setEnabled(enabled);
+        if (trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode).isPresent()) {
+            return;
+        }
+        Asset asset = assetRegistry.upsert(type.marketType(), normalizedCode);
+        TrackedAsset entity = TrackedAsset.builder()
+                .assetType(type)
+                .assetCode(normalizedCode)
+                .asset(asset)
+                .displayName(defaultDisplayName)
+                .sortOrder(sortOrder)
+                .build();
         trackedAssetRepository.save(entity);
         codeCache.invalidate(type);
     }

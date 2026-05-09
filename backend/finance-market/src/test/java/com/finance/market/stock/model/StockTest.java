@@ -1,8 +1,6 @@
 package com.finance.market.stock.model;
 import com.finance.market.stock.model.Stock;
 
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import org.junit.jupiter.api.Test;
 

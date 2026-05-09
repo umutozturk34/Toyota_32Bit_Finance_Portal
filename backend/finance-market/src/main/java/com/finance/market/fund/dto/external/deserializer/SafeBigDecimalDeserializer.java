@@ -1,6 +1,4 @@
 package com.finance.market.fund.dto.external.deserializer;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;

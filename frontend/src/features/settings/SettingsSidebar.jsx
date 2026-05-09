@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import {
   X, Settings as SettingsIcon, Palette, Languages, BarChart3, Bell, Shield,

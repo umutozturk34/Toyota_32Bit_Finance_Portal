@@ -117,7 +117,7 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
 
         if (commodity.getName() == null || commodity.getName().isBlank()) {
             String displayName = trackedAssetQueryService
-                    .getEnabledDisplayNameMap(TrackedAssetType.COMMODITY)
+                    .getDisplayNameMap(TrackedAssetType.COMMODITY)
                     .get(commodityCode);
             if (displayName != null && !displayName.isBlank()) {
                 commodity.setName(displayName);

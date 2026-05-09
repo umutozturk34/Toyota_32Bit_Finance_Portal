@@ -64,7 +64,7 @@ class CommodityMarketAssetProviderTest {
                 new BigDecimal("160000.5000"), null, null, null, null);
         when(commodityCacheService.getSnapshot("GC=F")).thenReturn(commodity);
         when(commodityResponseMapper.toMarketAssetResponses(anyList())).thenReturn(List.of(expected));
-        when(trackedAssetQueryService.getEnabledDisplayNameMap(TrackedAssetType.COMMODITY))
+        when(trackedAssetQueryService.getDisplayNameMap(TrackedAssetType.COMMODITY))
                 .thenReturn(java.util.Map.of());
 
         MarketAssetResponse response = provider.getByCode("GC=F");

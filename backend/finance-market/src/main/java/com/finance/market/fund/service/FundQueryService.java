@@ -51,7 +51,7 @@ public class FundQueryService implements MarketHistoryProvider {
     }
 
     private List<FundCandleResponse> loadCandles(String fundCode, LocalDateTime from, LocalDateTime to) {
-        String normalizedCode = trackedAssetQueryService.resolveEnabledCodeOrThrow(TrackedAssetType.FUND, fundCode);
+        String normalizedCode = trackedAssetQueryService.resolveCodeOrThrow(TrackedAssetType.FUND, fundCode);
         List<FundCandle> candles = fundCandleRepository
                 .findByFundCodeAndCandleDateBetweenOrderByCandleDateAsc(normalizedCode, from, to);
         return fundResponseMapper.toFundCandleResponses(candles);

@@ -1,4 +1,5 @@
 import { AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Sparkles, BarChart3, Wallet, Bell, Shield, ArrowRight } from 'lucide-react';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';
 

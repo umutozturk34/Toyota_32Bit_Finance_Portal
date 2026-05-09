@@ -1,5 +1,6 @@
 import { RefreshCw, Loader2, Check } from './AnimatedIcons';
 
+import { motion } from 'framer-motion';
 export default function ProcessingSteps({ steps, currentStep }) {
   return (
     <div className="flex flex-col items-center justify-center gap-5 py-8">

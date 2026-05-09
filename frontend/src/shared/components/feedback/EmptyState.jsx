@@ -1,5 +1,6 @@
 import { Inbox } from 'lucide-react';
 
+import { motion } from 'framer-motion';
 export default function EmptyState({ icon, message, hint }) {
     return (
         <motion.div

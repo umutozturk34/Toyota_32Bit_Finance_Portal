@@ -1,4 +1,5 @@
 import { AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   X, BellOff, Inbox, Check, CheckCheck, Trash2, AlertCircle, Zap, FileText,
   MessageSquare, Bell, Megaphone, Search,

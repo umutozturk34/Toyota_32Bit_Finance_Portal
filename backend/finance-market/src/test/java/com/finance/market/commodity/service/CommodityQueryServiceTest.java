@@ -42,7 +42,7 @@ class CommodityQueryServiceTest {
 
     @Test
     void getHistoryAllQueriesRepositoryFromEpoch() {
-        when(trackedAssetQueryService.resolveEnabledCodeOrThrow(TrackedAssetType.COMMODITY, "GC=F"))
+        when(trackedAssetQueryService.resolveCodeOrThrow(TrackedAssetType.COMMODITY, "GC=F"))
                 .thenReturn("GC=F");
         when(candleRepository.findByCommodityCodeAndCandleDateBetweenOrderByCandleDateAsc(
                 eq("GC=F"), any(), any())).thenReturn(List.of());
@@ -56,7 +56,7 @@ class CommodityQueryServiceTest {
 
     @Test
     void getHistoryWithPeriodQueriesRepository() {
-        when(trackedAssetQueryService.resolveEnabledCodeOrThrow(TrackedAssetType.COMMODITY, "GC=F"))
+        when(trackedAssetQueryService.resolveCodeOrThrow(TrackedAssetType.COMMODITY, "GC=F"))
                 .thenReturn("GC=F");
         when(candleRepository.findByCommodityCodeAndCandleDateBetweenOrderByCandleDateAsc(
                 eq("GC=F"), any(), any())).thenReturn(List.of());

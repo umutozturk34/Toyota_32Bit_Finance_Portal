@@ -2,7 +2,7 @@ package com.finance.market.crypto.config;
 import com.finance.common.config.AppProperties;
 
 
-import com.finance.market.core.filter.RateLimiterFilter;
+import com.finance.common.filter.RateLimiterFilter;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

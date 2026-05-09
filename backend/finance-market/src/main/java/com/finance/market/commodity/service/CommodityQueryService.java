@@ -45,7 +45,7 @@ public class CommodityQueryService implements MarketHistoryProvider {
     }
 
     private List<CandleResponse> loadCandles(String code, LocalDateTime from, LocalDateTime to) {
-        String normalizedCode = trackedAssetQueryService.resolveEnabledCodeOrThrow(
+        String normalizedCode = trackedAssetQueryService.resolveCodeOrThrow(
                 TrackedAssetType.COMMODITY, code);
         List<CommodityCandle> candles = commodityCandleRepository
                 .findByCommodityCodeAndCandleDateBetweenOrderByCandleDateAsc(normalizedCode, from, to);

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { motion } from 'framer-motion';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import useChartRange from '../../../shared/hooks/useChartRange';
 import ReactECharts from 'echarts-for-react';

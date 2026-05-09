@@ -1,6 +1,4 @@
 package com.finance.market.stock.config;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import lombok.Getter;
 import lombok.Setter;

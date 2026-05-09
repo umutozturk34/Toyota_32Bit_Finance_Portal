@@ -59,13 +59,6 @@ export const adminService = {
     return response.data;
   },
 
-  setTrackedAssetEnabled: async (type, code, enabled) => {
-    const response = await api.patch(`/admin/tracked-assets/${type}/${encodeURIComponent(code)}/enabled`, null, {
-      params: { enabled },
-    });
-    return response.data;
-  },
-
   deleteTrackedAsset: async (type, code) => {
     const response = await api.delete(`/admin/tracked-assets/${type}/${encodeURIComponent(code)}`);
     return response.data;

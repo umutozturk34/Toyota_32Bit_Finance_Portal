@@ -4,8 +4,6 @@ import com.finance.market.core.service.AssetRegistryService;
 import com.finance.market.core.cache.MarketCacheService;
 
 import com.finance.common.model.MarketType;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 import com.finance.market.forex.client.TcmbForexClient;
 import com.finance.market.forex.dto.external.TcmbRateDto;
 import com.finance.market.forex.mapper.ForexMapper;
@@ -60,7 +58,7 @@ public class TcmbForexService {
             } else {
                 toPersist = forexMapper.toEntity(dto);
             }
-            toPersist.setAsset(assetRegistry.upsert(MarketType.FOREX, pairCode, toPersist.getCurrencyName()));
+            toPersist.setAsset(assetRegistry.upsert(MarketType.FOREX, pairCode));
             toSave.add(toPersist);
         }
         List<Forex> saved = forexRepository.saveAll(toSave);

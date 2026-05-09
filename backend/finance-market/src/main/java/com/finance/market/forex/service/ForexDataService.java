@@ -1,6 +1,4 @@
 package com.finance.market.forex.service;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 
 export default function FilterTabs({ items, activeId, onSelect, allLabel = 'Tümü', allCount, showAll = true, layoutId = 'filter-tab' }) {
   const allItems = showAll

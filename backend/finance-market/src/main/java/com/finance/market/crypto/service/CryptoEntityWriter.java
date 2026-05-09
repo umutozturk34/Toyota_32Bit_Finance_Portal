@@ -40,7 +40,7 @@ public class CryptoEntityWriter implements MarketEntityWriter {
         } else {
             toPersist = cryptoMapper.toEntity(usdDto, tryPrice, now);
         }
-        toPersist.setAsset(assetRegistry.upsert(MarketType.CRYPTO, toPersist.getId(), toPersist.getName()));
+        toPersist.setAsset(assetRegistry.upsert(MarketType.CRYPTO, toPersist.getId()));
         cryptoRepository.save(toPersist);
         return toPersist;
     }

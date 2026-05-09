@@ -1,6 +1,4 @@
 package com.finance.market.fund.model;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 public enum FundType {
     BYF {

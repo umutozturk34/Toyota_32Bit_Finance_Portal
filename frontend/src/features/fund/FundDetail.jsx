@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { LineChart, Users as UsersIcon, Activity } from 'lucide-react';
 import { fundService } from './services/fundService';
 import { formatPriceTRY, formatVolume, formatCompactTRY } from '../../shared/utils/formatters';

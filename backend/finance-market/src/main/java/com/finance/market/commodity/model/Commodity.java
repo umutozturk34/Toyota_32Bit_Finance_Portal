@@ -1,8 +1,6 @@
 package com.finance.market.commodity.model;
 
 import com.finance.market.core.model.BaseAsset;
-import com.finance.common.dto.external.*;
-import com.finance.common.dto.request.*;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;

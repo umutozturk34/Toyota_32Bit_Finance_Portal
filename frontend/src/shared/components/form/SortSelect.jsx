@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowUpNarrowWide, ArrowDownWideNarrow, SlidersHorizontal } from 'lucide-react';
 import { Check } from '../feedback/AnimatedIcons';

@@ -12,7 +12,6 @@ public class TrackedAssetUpsertCommand {
     String assetCode;
     String displayName;
     String binanceSymbol;
-    Boolean enabled;
     StockSegment stockSegment;
     Boolean indexAsset;
     Boolean compareOnly;

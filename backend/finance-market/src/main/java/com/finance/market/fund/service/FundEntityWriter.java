@@ -69,7 +69,7 @@ public class FundEntityWriter implements MarketEntityWriter {
         } else {
             toPersist = fundMapper.toEntity(dto, fundType, now);
         }
-        toPersist.setAsset(assetRegistry.upsert(MarketType.FUND, dto.fundCode(), toPersist.getName()));
+        toPersist.setAsset(assetRegistry.upsert(MarketType.FUND, dto.fundCode()));
         fundRepository.save(toPersist);
         log.debug("Saved snapshot: {} ({}) - {}", dto.fundCode(), fundType, dto.price());
         return toPersist;
@@ -116,16 +116,6 @@ public class FundEntityWriter implements MarketEntityWriter {
     }
 
     public void ensureByfTracked(String fundCode, String tefasName) {
-        if (trackedAssetQueryService.getTrackedAsset(TrackedAssetType.FUND, fundCode).isPresent()) {
-            return;
-        }
-        trackedAssetCommandService.upsert(TrackedAssetUpsertCommand.builder()
-                .assetType(TrackedAssetType.FUND)
-                .assetCode(fundCode)
-                .displayName(tefasName)
-                .enabled(true)
-                .sortOrder(autoTrackSortOrder)
-                .build());
-        log.info("Auto-added BYF fund to tracked assets: {}", fundCode);
+        trackedAssetCommandService.autoTrack(TrackedAssetType.FUND, fundCode, tefasName, autoTrackSortOrder);
     }
 }

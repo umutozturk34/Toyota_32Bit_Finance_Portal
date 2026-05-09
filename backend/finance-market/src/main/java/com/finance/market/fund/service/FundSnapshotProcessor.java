@@ -64,7 +64,7 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
         log.info("Starting bulk fund snapshot update for {}", cursor);
 
         Set<String> trackedCodes = Set.copyOf(
-                trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND));
+                trackedAssetQueryService.getCodes(TrackedAssetType.FUND));
         int byfSaved = -1;
         int yatSaved = -1;
 

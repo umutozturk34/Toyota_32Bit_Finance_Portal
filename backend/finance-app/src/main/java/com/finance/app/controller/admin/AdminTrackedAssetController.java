@@ -38,12 +38,11 @@ public class AdminTrackedAssetController {
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "sortOrder") String sort,
-            @RequestParam(defaultValue = "asc") String direction,
-            @RequestParam(defaultValue = "false") boolean includeDisabled
+            @RequestParam(defaultValue = "asc") String direction
     ) {
         List<TrackedAssetType> types = MarketRequestHelper.parseTrackedTypes(type);
         List<TrackedAssetResponse> data = trackedAssetQueryService.searchTrackedAssets(
-                types, includeDisabled, search, sort, direction);
+                types, search, sort, direction);
         return ApiResponse.success("Tracked assets retrieved successfully", data);
     }
 
@@ -53,16 +52,6 @@ public class AdminTrackedAssetController {
     ) {
         TrackedAssetResponse data = trackedAssetAdminService.upsert(request);
         return ApiResponse.success("Tracked asset saved successfully", data);
-    }
-
-    @PatchMapping("/{type}/{code}/enabled")
-    public ApiResponse<Void> setEnabled(
-            @PathVariable TrackedAssetType type,
-            @PathVariable String code,
-            @RequestParam boolean enabled
-    ) {
-        trackedAssetAdminService.setEnabled(type, code, enabled);
-        return ApiResponse.success("Tracked asset status updated", null);
     }
 
     @PatchMapping("/order")

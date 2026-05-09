@@ -51,7 +51,7 @@ public class StockQueryService implements MarketHistoryProvider {
     }
 
     private List<CandleResponse> loadCandles(String symbol, LocalDateTime from, LocalDateTime to) {
-        String normalizedCode = trackedAssetQueryService.resolveEnabledCodeOrThrow(TrackedAssetType.STOCK, symbol);
+        String normalizedCode = trackedAssetQueryService.resolveCodeOrThrow(TrackedAssetType.STOCK, symbol);
         List<StockCandle> candles = stockCandleRepository
                 .findByStockSymbolAndCandleDateBetweenOrderByCandleDateAsc(normalizedCode, from, to);
         return stockResponseMapper.toStockCandleResponses(candles);

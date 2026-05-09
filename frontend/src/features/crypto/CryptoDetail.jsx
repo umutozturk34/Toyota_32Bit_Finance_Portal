@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Activity, BarChart2 } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { cryptoService } from './services/cryptoService';

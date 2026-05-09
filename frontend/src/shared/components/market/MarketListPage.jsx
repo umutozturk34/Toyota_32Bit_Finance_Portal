@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../features/auth/AuthContext';
 import { getChangeClass } from '../../utils/formatters';

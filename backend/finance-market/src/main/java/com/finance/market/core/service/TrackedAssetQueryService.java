@@ -30,37 +30,28 @@ public class TrackedAssetQueryService {
     private final TrackedAssetMapper trackedAssetMapper;
     private final TrackedAssetCodeCache codeCache;
 
-    public List<TrackedAssetResponse> getTrackedAssets(TrackedAssetType type, boolean includeDisabled) {
-        List<TrackedAsset> assets = includeDisabled
-                ? trackedAssetRepository.findByAssetTypeOrderBySortOrderAscAssetCodeAsc(type)
-                : trackedAssetRepository.findByAssetTypeAndEnabledTrueOrderBySortOrderAscAssetCodeAsc(type);
-        return assets.stream()
+    public List<TrackedAssetResponse> getTrackedAssets(TrackedAssetType type) {
+        return trackedAssetRepository.findByAssetTypeOrderBySortOrderAscAssetCodeAsc(type).stream()
                 .map(trackedAssetMapper::toResponse)
                 .toList();
     }
 
     public List<TrackedAssetResponse> searchTrackedAssets(List<TrackedAssetType> types,
-                                                           boolean includeDisabled,
                                                            String search,
                                                            String sortBy,
                                                            String direction) {
         if (types == null || types.isEmpty()) {
             return List.of();
         }
-        Specification<TrackedAsset> spec = buildSearchSpecification(types, includeDisabled, search);
+        Specification<TrackedAsset> spec = buildSearchSpecification(types, search);
         Sort sort = buildSort(sortBy, direction);
         return trackedAssetRepository.findAll(spec, sort).stream()
                 .map(trackedAssetMapper::toResponse)
                 .toList();
     }
 
-    private Specification<TrackedAsset> buildSearchSpecification(List<TrackedAssetType> types,
-                                                                  boolean includeDisabled,
-                                                                  String search) {
+    private Specification<TrackedAsset> buildSearchSpecification(List<TrackedAssetType> types, String search) {
         Specification<TrackedAsset> spec = (root, query, cb) -> root.get("assetType").in(types);
-        if (!includeDisabled) {
-            spec = spec.and((root, query, cb) -> cb.isTrue(root.get("enabled")));
-        }
         if (search != null && !search.isBlank()) {
             spec = spec.and((root, query, cb) ->
                     LikeSearchSpec.byFieldsContains(root, cb, search, "assetCode", "displayName"));
@@ -93,27 +84,21 @@ public class TrackedAssetQueryService {
                 .map(trackedAssetMapper::toResponse);
     }
 
-    public void ensureEnabledOrThrow(TrackedAssetType type, String assetCode) {
-        resolveEnabledCodeOrThrow(type, assetCode);
-    }
-
-    public String resolveEnabledCodeOrThrow(TrackedAssetType type, String assetCode) {
+    public String resolveCodeOrThrow(TrackedAssetType type, String assetCode) {
         String normalizedCode = type.normalizeCode(assetCode);
-        boolean enabled = trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
-                .map(TrackedAsset::isEnabled)
-                .orElse(false);
-        if (!enabled) {
-            throw new ResourceNotFoundException("Tracked asset not found or disabled: " + type + " / " + normalizedCode);
+        boolean exists = trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode).isPresent();
+        if (!exists) {
+            throw new ResourceNotFoundException("Tracked asset not found: " + type + " / " + normalizedCode);
         }
         return normalizedCode;
     }
 
-    public List<String> getEnabledCodes(TrackedAssetType type) {
+    public List<String> getCodes(TrackedAssetType type) {
         return codeCache.get(type);
     }
 
-    public Map<String, String> getEnabledDisplayNameMap(TrackedAssetType type) {
-        return trackedAssetRepository.findByAssetTypeAndEnabledTrueOrderBySortOrderAscAssetCodeAsc(type)
+    public Map<String, String> getDisplayNameMap(TrackedAssetType type) {
+        return trackedAssetRepository.findByAssetTypeOrderBySortOrderAscAssetCodeAsc(type)
                 .stream()
                 .filter(asset -> asset.getDisplayName() != null && !asset.getDisplayName().isBlank())
                 .collect(Collectors.toMap(

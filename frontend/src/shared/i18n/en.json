@@ -1,4 +1,25 @@
 {
+  "nav": {
+    "market": "Market",
+    "news": "News",
+    "stocks": "Stocks",
+    "crypto": "Crypto",
+    "forex": "Forex",
+    "funds": "Funds",
+    "commodities": "Commodities",
+    "bonds": "Bonds",
+    "portfolio": "Portfolio",
+    "watch": "Watch",
+    "messages": "Messages",
+    "adminTrackedAssets": "Tracked Assets",
+    "adminUsers": "Users",
+    "tasks": "Tasks",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "logout": "Log out",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar"
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",
@@ -67,5 +88,74 @@
     "email": "Email",
     "timezoneSuffix": "timezone (fixed)",
     "logout": "Log out"
+  },
+  "notificationPreferences": {
+    "emailMaster": {
+      "title": "Email master switch",
+      "hint": "When off, email selections below are ignored.",
+      "toggleAria": "Toggle email notifications"
+    },
+    "types": {
+      "title": "Notification types",
+      "priceAlerts": { "label": "Price alert", "hint": "When threshold is breached" },
+      "watchlist": { "label": "Watchlist", "hint": "On strong movement" },
+      "reports": { "label": "Reports", "hint": "When PDF report is ready" },
+      "messages": { "label": "Messages", "hint": "System messages" },
+      "system": { "label": "System", "hint": "Maintenance, security, etc." },
+      "marketOpened": { "label": "Market opened", "hint": "When opening prices loaded" },
+      "marketClosed": { "label": "Market closed", "hint": "When closing prices loaded" },
+      "marketDataUpdated": { "label": "Data updated", "hint": "Each time cron triggers" },
+      "newsPublished": { "label": "New articles", "hint": "When new headlines are added" },
+      "portfolioUpdated": { "label": "Portfolio updated", "hint": "When daily snapshot is taken (23:00)" }
+    },
+    "channels": {
+      "email": "Email",
+      "inapp": "In-app"
+    },
+    "channelTitle": {
+      "emailMasterOff": "Email master switch is off",
+      "emailOn": "Email on",
+      "emailOff": "Email off",
+      "inappOn": "In-app on",
+      "inappOff": "In-app off"
+    },
+    "footer": "In-app notifications always run. Email requires the master switch to be on."
+  },
+  "marketChips": {
+    "title": "Which markets",
+    "activeSuffix": "active",
+    "BOND": "Bond",
+    "footer": "// unmarked markets do not skip opening / data notifications"
+  },
+  "emailChange": {
+    "currentLabel": "Current",
+    "placeholder": "new@email.com",
+    "sendCode": "Send code to current address",
+    "sending": "sending…",
+    "codeArrow": "Code →",
+    "sendHintBefore": "A 6-digit code is sent to",
+    "sendHintAfter": "; once you enter it below the new address becomes active.",
+    "awaitingConfirmation": "Awaiting Confirmation",
+    "expiresPrefix": "Valid until",
+    "expiresSuffix": "",
+    "cancel": "Cancel",
+    "verifying": "Verifying…",
+    "confirm": "Confirm",
+    "toast": {
+      "sameAddress": "Same address",
+      "sameAddressDesc": "New email cannot match the current address",
+      "codeSent": "Code sent",
+      "codeSentDesc": "A 6-digit confirmation code was sent to {{email}}",
+      "initiateError": "Action failed",
+      "codeNotSent": "Code could not be sent",
+      "updated": "Email updated",
+      "updatedDesc": "{{email}} is now active",
+      "invalidCode": "Invalid code",
+      "codeNotVerified": "Code could not be verified",
+      "cancelled": "Cancelled",
+      "cancelledDesc": "Email change has been cancelled",
+      "cancelError": "Cancel failed",
+      "tryAgain": "Try again"
+    }
   }
 }

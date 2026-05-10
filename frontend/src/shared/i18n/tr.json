@@ -1,4 +1,25 @@
 {
+  "nav": {
+    "market": "Piyasa",
+    "news": "Haberler",
+    "stocks": "Hisseler",
+    "crypto": "Kripto",
+    "forex": "Döviz",
+    "funds": "Fonlar",
+    "commodities": "Emtia",
+    "bonds": "Tahvil",
+    "portfolio": "Portföy",
+    "watch": "Takip",
+    "messages": "Mesajlar",
+    "adminTrackedAssets": "Takip Edilen Varlıklar",
+    "adminUsers": "Kullanıcılar",
+    "tasks": "Görevler",
+    "notifications": "Bildirimler",
+    "settings": "Ayarlar",
+    "logout": "Çıkış",
+    "expandSidebar": "Yan menüyü aç",
+    "collapseSidebar": "Yan menüyü daralt"
+  },
   "common": {
     "save": "Kaydet",
     "cancel": "Vazgeç",
@@ -67,5 +88,74 @@
     "email": "E-posta",
     "timezoneSuffix": "saat dilimi (sabit)",
     "logout": "Çıkış Yap"
+  },
+  "notificationPreferences": {
+    "emailMaster": {
+      "title": "E-posta ana anahtarı",
+      "hint": "Kapalıyken altındaki e-posta seçimleri görmezden gelinir.",
+      "toggleAria": "E-posta bildirimlerini aç/kapat"
+    },
+    "types": {
+      "title": "Bildirim türleri",
+      "priceAlerts": { "label": "Fiyat alarmı", "hint": "Eşik kırıldığında" },
+      "watchlist": { "label": "Takip listesi", "hint": "Sert hareket olduğunda" },
+      "reports": { "label": "Raporlar", "hint": "PDF rapor hazır olduğunda" },
+      "messages": { "label": "Mesajlar", "hint": "Sistem mesajları" },
+      "system": { "label": "Sistem", "hint": "Bakım, güvenlik vb." },
+      "marketOpened": { "label": "Piyasa açıldı", "hint": "Açılış fiyatları yüklendiğinde" },
+      "marketClosed": { "label": "Piyasa kapandı", "hint": "Kapanış fiyatları yüklendiğinde" },
+      "marketDataUpdated": { "label": "Veri güncellendi", "hint": "Cron her tetiklendiğinde" },
+      "newsPublished": { "label": "Yeni haberler", "hint": "Akışa yeni başlık eklendiğinde" },
+      "portfolioUpdated": { "label": "Portföy güncellendi", "hint": "Günlük snapshot alındığında (23:00)" }
+    },
+    "channels": {
+      "email": "E-posta",
+      "inapp": "Uygulama içi"
+    },
+    "channelTitle": {
+      "emailMasterOff": "Ana e-posta anahtarı kapalı",
+      "emailOn": "E-posta açık",
+      "emailOff": "E-posta kapalı",
+      "inappOn": "Uygulama içi açık",
+      "inappOff": "Uygulama içi kapalı"
+    },
+    "footer": "Uygulama içi bildirim her zaman çalışır. E-posta için ana anahtar açık olmalı."
+  },
+  "marketChips": {
+    "title": "Hangi piyasalar",
+    "activeSuffix": "aktif",
+    "BOND": "Tahvil",
+    "footer": "// işaretsiz piyasalar açılış / veri bildirimi atlamaz"
+  },
+  "emailChange": {
+    "currentLabel": "Mevcut",
+    "placeholder": "yeni@email.com",
+    "sendCode": "Mevcut adrese kod gönder",
+    "sending": "gönderiliyor…",
+    "codeArrow": "Kod →",
+    "sendHintBefore": "6 haneli kod",
+    "sendHintAfter": "adresine gönderilir; aşağıda kodu girince yeni adres aktive olur.",
+    "awaitingConfirmation": "Onay Bekleniyor",
+    "expiresPrefix": "Geçerlilik",
+    "expiresSuffix": "'a kadar",
+    "cancel": "Vazgeç",
+    "verifying": "Doğrulanıyor…",
+    "confirm": "Onayla",
+    "toast": {
+      "sameAddress": "Aynı adres",
+      "sameAddressDesc": "Yeni e-posta mevcut adresle aynı olamaz",
+      "codeSent": "Kod gönderildi",
+      "codeSentDesc": "{{email}} adresine 6 haneli onay kodu atıldı",
+      "initiateError": "İşlem başarısız",
+      "codeNotSent": "Kod gönderilemedi",
+      "updated": "E-posta güncellendi",
+      "updatedDesc": "{{email}} adresi artık aktif",
+      "invalidCode": "Geçersiz kod",
+      "codeNotVerified": "Kod doğrulanamadı",
+      "cancelled": "Vazgeçildi",
+      "cancelledDesc": "E-posta değişikliği iptal edildi",
+      "cancelError": "İptal başarısız",
+      "tryAgain": "Tekrar dene"
+    }
   }
 }

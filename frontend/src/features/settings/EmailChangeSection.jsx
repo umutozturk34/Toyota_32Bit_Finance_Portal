@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { Mail, ShieldCheck, X as Cancel } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   usePendingEmailChange,
   useInitiateEmailChange,
@@ -12,16 +13,18 @@ import { useAuth } from '../auth/AuthContext';
 import { toast } from '../../shared/components/feedback/Toast';
 
 function CurrentEmailRow({ email }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2 rounded-lg border border-border-default bg-bg-elevated/60 px-3 py-2.5">
       <Mail className="h-3.5 w-3.5 text-accent shrink-0" />
-      <span className="text-[11px] uppercase tracking-wider text-fg-subtle font-semibold">Mevcut</span>
+      <span className="text-[11px] uppercase tracking-wider text-fg-subtle font-semibold">{t('emailChange.currentLabel')}</span>
       <span className="text-xs font-mono text-fg truncate">{email || '—'}</span>
     </div>
   );
 }
 
 function InitiateForm({ currentEmail, onInitiated }) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState('');
   const initiate = useInitiateEmailChange();
 
@@ -30,16 +33,16 @@ function InitiateForm({ currentEmail, onInitiated }) {
     const trimmed = draft.trim();
     if (!trimmed || initiate.isPending) return;
     if (trimmed.toLowerCase() === (currentEmail || '').toLowerCase()) {
-      toast.error('Aynı adres', 'Yeni e-posta mevcut adresle aynı olamaz');
+      toast.error(t('emailChange.toast.sameAddress'), t('emailChange.toast.sameAddressDesc'));
       return;
     }
     try {
       await initiate.mutateAsync(trimmed);
-      toast.success('Kod gönderildi', `${currentEmail} adresine 6 haneli onay kodu atıldı`);
+      toast.success(t('emailChange.toast.codeSent'), t('emailChange.toast.codeSentDesc', { email: currentEmail }));
       setDraft('');
       onInitiated?.();
     } catch (err) {
-      toast.error('İşlem başarısız', err?.response?.data?.message || 'Kod gönderilemedi');
+      toast.error(t('emailChange.toast.initiateError'), err?.response?.data?.message || t('emailChange.toast.codeNotSent'));
     }
   };
 
@@ -54,7 +57,7 @@ function InitiateForm({ currentEmail, onInitiated }) {
           required
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="yeni@email.com"
+          placeholder={t('emailChange.placeholder')}
           disabled={initiate.isPending}
           className="w-full rounded-lg border border-border-default bg-bg-elevated/80 backdrop-blur-sm pl-9 pr-3 py-2 text-xs text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:bg-bg-elevated focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12),inset_0_1px_0_rgba(255,255,255,0.04)] transition-all disabled:opacity-50"
         />
@@ -70,20 +73,21 @@ function InitiateForm({ currentEmail, onInitiated }) {
         <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-white/20" />
         <span className="relative flex items-center gap-2">
           <ShieldCheck className="h-3.5 w-3.5" />
-          Mevcut adrese kod gönder
+          {t('emailChange.sendCode')}
         </span>
         <span className="relative flex items-center gap-1 text-[10px] tracking-wide opacity-90">
-          {initiate.isPending ? 'gönderiliyor…' : 'Kod →'}
+          {initiate.isPending ? t('emailChange.sending') : t('emailChange.codeArrow')}
         </span>
       </motion.button>
       <p className="text-[10px] text-fg-subtle leading-relaxed px-1 mt-1.5">
-        6 haneli kod <span className="font-mono text-fg-muted">{currentEmail}</span> adresine gönderilir; aşağıda kodu girince yeni adres aktive olur.
+        {t('emailChange.sendHintBefore')} <span className="font-mono text-fg-muted">{currentEmail}</span> {t('emailChange.sendHintAfter')}
       </p>
     </form>
   );
 }
 
 function ConfirmForm({ pending, onCleared, onConfirmed }) {
+  const { t, i18n } = useTranslation();
   const [code, setCode] = useState('');
   const confirm = useConfirmEmailChange();
   const cancel = useCancelEmailChange();
@@ -94,26 +98,27 @@ function ConfirmForm({ pending, onCleared, onConfirmed }) {
     try {
       await confirm.mutateAsync(code);
       await onConfirmed?.();
-      toast.success('E-posta güncellendi', `${pending.newEmail} adresi artık aktif`);
+      toast.success(t('emailChange.toast.updated'), t('emailChange.toast.updatedDesc', { email: pending.newEmail }));
       setCode('');
       onCleared?.();
     } catch (err) {
-      toast.error('Geçersiz kod', err?.response?.data?.message || 'Kod doğrulanamadı');
+      toast.error(t('emailChange.toast.invalidCode'), err?.response?.data?.message || t('emailChange.toast.codeNotVerified'));
     }
   };
 
   const handleCancel = async () => {
     try {
       await cancel.mutateAsync();
-      toast.success('Vazgeçildi', 'E-posta değişikliği iptal edildi');
+      toast.success(t('emailChange.toast.cancelled'), t('emailChange.toast.cancelledDesc'));
       onCleared?.();
     } catch (err) {
-      toast.error('İptal başarısız', err?.response?.data?.message || 'Tekrar dene');
+      toast.error(t('emailChange.toast.cancelError'), err?.response?.data?.message || t('emailChange.toast.tryAgain'));
     }
   };
 
+  const localeTag = i18n.language === 'en' ? 'en-US' : 'tr-TR';
   const expiresAtFormatted = pending.expiresAt
-    ? new Date(pending.expiresAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+    ? new Date(pending.expiresAt).toLocaleTimeString(localeTag, { hour: '2-digit', minute: '2-digit' })
     : null;
 
   return (
@@ -121,12 +126,12 @@ function ConfirmForm({ pending, onCleared, onConfirmed }) {
       <div className="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 space-y-1">
         <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-accent">
           <ShieldCheck className="h-3 w-3" />
-          <span>Onay Bekleniyor</span>
+          <span>{t('emailChange.awaitingConfirmation')}</span>
         </div>
         <p className="text-xs font-mono text-fg break-all">{pending.newEmail}</p>
         {expiresAtFormatted && (
           <p className="text-[10px] text-fg-subtle">
-            Geçerlilik <span className="font-mono text-fg-muted">{expiresAtFormatted}</span>'a kadar
+            {t('emailChange.expiresPrefix')} <span className="font-mono text-fg-muted">{expiresAtFormatted}</span>{t('emailChange.expiresSuffix')}
           </p>
         )}
       </div>
@@ -151,7 +156,7 @@ function ConfirmForm({ pending, onCleared, onConfirmed }) {
             className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-xs font-medium text-fg-muted hover:text-danger hover:border-danger/40 hover:bg-danger/5 transition-colors cursor-pointer disabled:opacity-40"
           >
             <Cancel className="h-3 w-3" />
-            Vazgeç
+            {t('emailChange.cancel')}
           </button>
           <motion.button
             type="submit"
@@ -163,7 +168,7 @@ function ConfirmForm({ pending, onCleared, onConfirmed }) {
             <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-white/20" />
             <span className="relative flex items-center gap-1.5">
               <ShieldCheck className="h-3 w-3" />
-              {confirm.isPending ? 'Doğrulanıyor…' : 'Onayla'}
+              {confirm.isPending ? t('emailChange.verifying') : t('emailChange.confirm')}
             </span>
           </motion.button>
         </div>

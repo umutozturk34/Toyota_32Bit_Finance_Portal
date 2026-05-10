@@ -1,5 +1,6 @@
 import { Mail, MessageSquare, Bell, AlertCircle, Zap, FileText, Smartphone, Sunrise, Sunset, RefreshCw, Newspaper, Briefcase } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
@@ -7,16 +8,16 @@ import {
 import MarketSelectionChips, { MARKET_CHIPS } from './MarketSelectionChips';
 
 const TYPE_ROWS = [
-  { id: 'priceAlerts', Icon: AlertCircle, label: 'Fiyat alarmı', hint: 'Eşik kırıldığında' },
-  { id: 'watchlist', Icon: Zap, label: 'Takip listesi', hint: 'Sert hareket olduğunda' },
-  { id: 'reports', Icon: FileText, label: 'Raporlar', hint: 'PDF rapor hazır olduğunda' },
-  { id: 'messages', Icon: MessageSquare, label: 'Mesajlar', hint: 'Sistem mesajları' },
-  { id: 'system', Icon: Bell, label: 'Sistem', hint: 'Bakım, güvenlik vb.' },
-  { id: 'marketOpened', Icon: Sunrise, label: 'Piyasa açıldı', hint: 'Açılış fiyatları yüklendiğinde' },
-  { id: 'marketClosed', Icon: Sunset, label: 'Piyasa kapandı', hint: 'Kapanış fiyatları yüklendiğinde' },
-  { id: 'marketDataUpdated', Icon: RefreshCw, label: 'Veri güncellendi', hint: 'Cron her tetiklendiğinde' },
-  { id: 'newsPublished', Icon: Newspaper, label: 'Yeni haberler', hint: 'Akışa yeni başlık eklendiğinde' },
-  { id: 'portfolioUpdated', Icon: Briefcase, label: 'Portföy güncellendi', hint: 'Günlük snapshot alındığında (23:00)' },
+  { id: 'priceAlerts', Icon: AlertCircle },
+  { id: 'watchlist', Icon: Zap },
+  { id: 'reports', Icon: FileText },
+  { id: 'messages', Icon: MessageSquare },
+  { id: 'system', Icon: Bell },
+  { id: 'marketOpened', Icon: Sunrise },
+  { id: 'marketClosed', Icon: Sunset },
+  { id: 'marketDataUpdated', Icon: RefreshCw },
+  { id: 'newsPublished', Icon: Newspaper },
+  { id: 'portfolioUpdated', Icon: Briefcase },
 ];
 
 function parseMarkets(csv) {
@@ -80,6 +81,7 @@ function fieldName(typeId, channel) {
 }
 
 export default function NotificationPreferencesSection() {
+  const { t } = useTranslation();
   const { preferences } = useNotificationPreferences();
   const update = useUpdateNotificationPreferences();
 
@@ -94,32 +96,32 @@ export default function NotificationPreferencesSection() {
               <Mail className="h-4 w-4 text-accent" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-fg leading-tight">E-posta ana anahtarı</h3>
+              <h3 className="text-sm font-semibold text-fg leading-tight">{t('notificationPreferences.emailMaster.title')}</h3>
               <p className="text-[11px] text-fg-muted mt-0.5 leading-relaxed">
-                Kapalıyken altındaki e-posta seçimleri görmezden gelinir.
+                {t('notificationPreferences.emailMaster.hint')}
               </p>
             </div>
           </div>
           <ToggleSwitch
             on={preferences.emailEnabled}
             onChange={(v) => setField('emailEnabled', v)}
-            srLabel="E-posta bildirimlerini aç/kapat"
+            srLabel={t('notificationPreferences.emailMaster.toggleAria')}
           />
         </div>
       </div>
 
       <div className="rounded-xl border border-border-default bg-bg-elevated overflow-hidden">
         <div className="grid grid-cols-[1fr_2rem_2rem] gap-4 px-4 py-2.5 border-b border-border-default items-center">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">Bildirim türleri</h3>
-          <div className="flex items-center justify-center" title="E-posta">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">{t('notificationPreferences.types.title')}</h3>
+          <div className="flex items-center justify-center" title={t('notificationPreferences.channels.email')}>
             <Mail className="h-3.5 w-3.5 text-fg-subtle" />
           </div>
-          <div className="flex items-center justify-center" title="Uygulama içi">
+          <div className="flex items-center justify-center" title={t('notificationPreferences.channels.inapp')}>
             <Smartphone className="h-3.5 w-3.5 text-fg-subtle" />
           </div>
         </div>
         <div className="divide-y divide-border-default">
-          {TYPE_ROWS.map(({ id, Icon, label, hint }) => {
+          {TYPE_ROWS.map(({ id, Icon }) => {
             const emailField = fieldName(id, 'email');
             const inappField = fieldName(id, 'inapp');
             const emailActive = !!preferences[emailField];
@@ -132,21 +134,21 @@ export default function NotificationPreferencesSection() {
                     <Icon className="h-3.5 w-3.5 text-fg-muted group-hover:text-accent transition-colors" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xs font-semibold text-fg">{label}</div>
-                    <div className="text-[10px] text-fg-subtle truncate">{hint}</div>
+                    <div className="text-xs font-semibold text-fg">{t(`notificationPreferences.types.${id}.label`)}</div>
+                    <div className="text-[10px] text-fg-subtle truncate">{t(`notificationPreferences.types.${id}.hint`)}</div>
                   </div>
                 </div>
                 <ChannelDot
                   active={emailActive && !masterOff}
                   disabled={masterOff}
                   Icon={Mail}
-                  title={masterOff ? 'Ana e-posta anahtarı kapalı' : emailActive ? 'E-posta açık' : 'E-posta kapalı'}
+                  title={masterOff ? t('notificationPreferences.channelTitle.emailMasterOff') : emailActive ? t('notificationPreferences.channelTitle.emailOn') : t('notificationPreferences.channelTitle.emailOff')}
                   onClick={() => setField(emailField, !emailActive)}
                 />
                 <ChannelDot
                   active={inappActive}
                   Icon={Smartphone}
-                  title={inappActive ? 'Uygulama içi açık' : 'Uygulama içi kapalı'}
+                  title={inappActive ? t('notificationPreferences.channelTitle.inappOn') : t('notificationPreferences.channelTitle.inappOff')}
                   onClick={() => setField(inappField, !inappActive)}
                 />
               </div>
@@ -155,7 +157,7 @@ export default function NotificationPreferencesSection() {
         </div>
         <div className="px-4 py-2.5 border-t border-border-default bg-bg-base/40">
           <p className="text-[10px] text-fg-subtle leading-relaxed">
-            Uygulama içi bildirim her zaman çalışır. E-posta için ana anahtar açık olmalı.
+            {t('notificationPreferences.footer')}
           </p>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Outlet, Link, useLocation, useNavigationType } from 'react-router-dom';
 import { useAuth } from '../../features/auth/AuthContext';
@@ -22,20 +23,21 @@ import OnboardingGate from '../../features/onboarding/OnboardingGate';
 import KeycloakActionToast from '../../features/auth/components/KeycloakActionToast';
 
 const navItems = [
-  { to: '/market', label: 'Market', Icon: BarChart3 },
-  { to: '/news', label: 'News', Icon: Newspaper },
-  { to: '/stocks', label: 'Stocks', Icon: TrendingUp },
-  { to: '/crypto', label: 'Crypto', Icon: Bitcoin },
-  { to: '/forex', label: 'Forex', Icon: DollarSign },
-  { to: '/funds', label: 'Funds', Icon: Briefcase },
-  { to: '/commodities', label: 'Emtia', Icon: Gem },
-  { to: '/bonds', label: 'Bonds', Icon: Landmark },
-  { to: '/portfolio', label: 'Portfolio', Icon: Wallet },
-  { to: '/watch', label: 'Takip', Icon: Eye },
-  { to: '/messages', label: 'Mesajlar', Icon: MessageCircle, badgeKey: 'messages' },
+  { to: '/market', labelKey: 'nav.market', Icon: BarChart3 },
+  { to: '/news', labelKey: 'nav.news', Icon: Newspaper },
+  { to: '/stocks', labelKey: 'nav.stocks', Icon: TrendingUp },
+  { to: '/crypto', labelKey: 'nav.crypto', Icon: Bitcoin },
+  { to: '/forex', labelKey: 'nav.forex', Icon: DollarSign },
+  { to: '/funds', labelKey: 'nav.funds', Icon: Briefcase },
+  { to: '/commodities', labelKey: 'nav.commodities', Icon: Gem },
+  { to: '/bonds', labelKey: 'nav.bonds', Icon: Landmark },
+  { to: '/portfolio', labelKey: 'nav.portfolio', Icon: Wallet },
+  { to: '/watch', labelKey: 'nav.watch', Icon: Eye },
+  { to: '/messages', labelKey: 'nav.messages', Icon: MessageCircle, badgeKey: 'messages' },
 ];
 
 const MainLayout = () => {
+  const { t } = useTranslation();
   const { user, logout, hasRole } = useAuth();
   const { isDark } = useTheme();
   const location = useLocation();
@@ -65,8 +67,8 @@ const MainLayout = () => {
     ...navItems,
     ...(hasRole('ADMIN')
       ? [
-          { to: '/admin/tracked-assets', label: 'Tracked Assets', Icon: Database },
-          { to: '/admin/users', label: 'Users', Icon: Users },
+          { to: '/admin/tracked-assets', labelKey: 'nav.adminTrackedAssets', Icon: Database },
+          { to: '/admin/users', labelKey: 'nav.adminUsers', Icon: Users },
         ]
       : []),
   ];
@@ -94,7 +96,7 @@ const MainLayout = () => {
           <button
             onClick={toggleSidebar}
             className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
           >
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
@@ -102,8 +104,9 @@ const MainLayout = () => {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5" style={{ scrollbarWidth: 'thin' }}>
-        {allNav.map(({ to, label, Icon, badgeKey }) => {
+        {allNav.map(({ to, labelKey, Icon, badgeKey }) => {
           const badge = badgeKey === 'messages' ? unreadMessageCount : 0;
+          const label = t(labelKey);
           return (
             <Link
               key={to}
@@ -151,13 +154,13 @@ const MainLayout = () => {
         <div className="px-2 py-1.5 border-t border-border-default">
           <button
             onClick={() => setTasksOpen(true)}
-            title={collapsed && !isMobile ? 'Tasks' : undefined}
+            title={collapsed && !isMobile ? t('nav.tasks') : undefined}
             className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
               collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
             }`}
           >
             <Activity size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
-            {(!collapsed || isMobile) && <span className="text-[13px] font-medium">Tasks</span>}
+            {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.tasks')}</span>}
           </button>
         </div>
       )}
@@ -165,7 +168,7 @@ const MainLayout = () => {
       <div className="border-t border-border-default px-2 py-2 space-y-1 shrink-0">
         <button
           onClick={() => setNotificationsOpen(true)}
-          title={collapsed && !isMobile ? 'Bildirimler' : undefined}
+          title={collapsed && !isMobile ? t('nav.notifications') : undefined}
           className={`w-full group relative flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
             collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
           }`}
@@ -178,20 +181,20 @@ const MainLayout = () => {
               </span>
             )}
           </span>
-          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">Bildirimler</span>}
+          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.notifications')}</span>}
           {(!collapsed || isMobile) && unreadCount > 0 && (
             <span className="ml-auto text-[10px] font-mono text-accent">{unreadCount}</span>
           )}
         </button>
         <button
           onClick={() => setSettingsOpen(true)}
-          title={collapsed && !isMobile ? 'Ayarlar' : undefined}
+          title={collapsed && !isMobile ? t('nav.settings') : undefined}
           className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
             collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
           }`}
         >
           <Settings size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
-          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">Ayarlar</span>}
+          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.settings')}</span>}
         </button>
         {(!collapsed || isMobile) && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border-default">
@@ -208,13 +211,13 @@ const MainLayout = () => {
         )}
         <button
           onClick={logout}
-          title={collapsed && !isMobile ? 'Logout' : undefined}
+          title={collapsed && !isMobile ? t('nav.logout') : undefined}
           className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
             collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
           }`}
         >
           <LogOut size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-danger transition-colors" />
-          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">Logout</span>}
+          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.logout')}</span>}
         </button>
       </div>
     </div>

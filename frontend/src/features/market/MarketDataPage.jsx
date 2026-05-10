@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { Activity, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
@@ -19,6 +20,7 @@ import WidgetSettingsPopover from './components/WidgetSettingsPopover';
 const REMOVAL_ANIMATION_MS = 200;
 
 export default function MarketDataPage() {
+  const { t } = useTranslation();
   const [editMode, setEditMode] = useState(false);
   const [pendingTile, setPendingTile] = useState(null);
   const [localSections, setLocalSections] = useState(null);
@@ -140,8 +142,8 @@ export default function MarketDataPage() {
 
   const toggleGallery = useCallback(() => setGalleryOpen((o) => !o), []);
 
-  if (layoutLoading || dataLoading) return <LoadingState message="Piyasa özeti yükleniyor..." />;
-  if (error) return <ErrorState message="Piyasa verileri yüklenemedi" onRetry={refetch} />;
+  if (layoutLoading || dataLoading) return <LoadingState message={t('marketOverview.loading')} />;
+  if (error) return <ErrorState message={t('marketOverview.error')} onRetry={refetch} />;
 
   const popoverSection = popoverState ? sections.find((s) => s.sectionId === popoverState.sectionId) : null;
 
@@ -152,7 +154,7 @@ export default function MarketDataPage() {
           <Activity className="h-4 w-4" />
         </span>
         <div className="min-w-0">
-          <h1 className="font-display text-xl font-bold tracking-tight text-fg leading-none">Piyasa Özeti</h1>
+          <h1 className="font-display text-xl font-bold tracking-tight text-fg leading-none">{t('marketOverview.title')}</h1>
           <div className="relative flex items-center gap-2 mt-1 min-h-[18px] min-w-[180px]">
             <AnimatePresence mode="wait" initial={false}>
               {editMode
@@ -165,7 +167,7 @@ export default function MarketDataPage() {
                     transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
                     className={`font-display text-[12px] font-semibold tracking-tight ${isDirty ? 'text-accent' : 'text-fg-muted'}`}
                   >
-                    {isDirty ? 'Kaydedilmemiş değişiklikler' : 'Düzenleme modu'}
+                    {isDirty ? t('marketOverview.unsavedChanges') : t('marketOverview.editMode')}
                   </motion.span>
                 )
                 : (
@@ -177,7 +179,7 @@ export default function MarketDataPage() {
                     transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
                     className="flex items-center gap-2"
                   >
-                    <span className="font-display text-[12px] font-semibold tracking-tight text-fg-muted">Canlı piyasa verileri</span>
+                    <span className="font-display text-[12px] font-semibold tracking-tight text-fg-muted">{t('marketOverview.liveData')}</span>
                     <span className="inline-flex items-center gap-1 rounded-md bg-danger/12 border border-danger/40 px-1.5 py-0.5">
                       <span className="relative flex w-1.5 h-1.5">
                         <span className="absolute inset-0 rounded-full bg-danger opacity-60 animate-ping" />
@@ -195,7 +197,7 @@ export default function MarketDataPage() {
         {updateLayout.isPending && (
           <span className="flex items-center gap-1 font-mono text-[10px] tracking-wider uppercase text-accent/80">
             <Loader2 className="h-3 w-3 animate-spin" />
-            Kaydediliyor
+            {t('marketOverview.saving')}
           </span>
         )}
         <button
@@ -205,7 +207,7 @@ export default function MarketDataPage() {
               ? 'border-accent bg-accent text-white hover:bg-accent-bright shadow-lg shadow-accent/30'
               : 'border-accent/40 bg-accent/8 text-accent hover:border-accent hover:bg-accent/15'
           }`}
-          title={editMode ? (isDirty ? 'Düzenleme modunu kapat (kaydedilmemiş değişiklikler kaybolur)' : 'Düzenleme modunu kapat') : 'Düzenleme modunu aç'}
+          title={editMode ? (isDirty ? t('marketOverview.editToggleDirty') : t('marketOverview.editToggleClean')) : t('marketOverview.editToggleOff')}
           aria-pressed={editMode}
         >
           <span className="relative inline-flex items-center justify-center w-3.5 h-3.5">
@@ -224,7 +226,7 @@ export default function MarketDataPage() {
               </motion.span>
             </AnimatePresence>
           </span>
-          Düzenle
+          {t('marketOverview.edit')}
         </button>
         <button
           onClick={refetch}
@@ -233,18 +235,18 @@ export default function MarketDataPage() {
           tabIndex={editMode ? -1 : 0}
         >
           <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
-          Yenile
+          {t('marketOverview.refresh')}
         </button>
         <span className={`w-px h-5 bg-border-default/60 mx-0.5 shrink-0 ${editMode ? '' : 'invisible'}`} aria-hidden="true" />
         <button
           onClick={resetToDefaults}
           className={`flex items-center gap-1 rounded-lg border border-border-default bg-bg-elevated px-2 py-1.5 text-[11px] font-display font-semibold tracking-tight text-fg-muted hover:text-fg hover:border-border-hover transition-opacity duration-150 cursor-pointer shrink-0 ${editMode ? 'opacity-100' : 'opacity-0 pointer-events-none invisible'}`}
-          title="Varsayılan layout'a dön"
+          title={t('marketOverview.resetTitle')}
           aria-hidden={!editMode}
           tabIndex={editMode ? 0 : -1}
         >
           <LayoutGrid className="h-3 w-3" />
-          Varsayılan
+          {t('marketOverview.reset')}
         </button>
         <button
           onClick={revertChanges}
@@ -256,12 +258,12 @@ export default function MarketDataPage() {
                 : 'border-border-default bg-bg-elevated text-fg-subtle cursor-not-allowed opacity-50')
               : 'border-border-default bg-bg-elevated text-fg-subtle opacity-0 pointer-events-none invisible'
           }`}
-          title="Bu oturumdaki tüm değişiklikleri geri al"
+          title={t('marketOverview.revertTitle')}
           aria-hidden={!editMode}
           tabIndex={editMode ? 0 : -1}
         >
           <RotateCcw className="h-3 w-3" />
-          Geri al
+          {t('marketOverview.revert')}
         </button>
         <button
           onClick={saveAndExit}
@@ -277,7 +279,7 @@ export default function MarketDataPage() {
           tabIndex={editMode ? 0 : -1}
         >
           <Save className="h-3 w-3" />
-          Kaydet
+          {t('marketOverview.save')}
         </button>
         <button
           onClick={toggleGallery}
@@ -288,16 +290,16 @@ export default function MarketDataPage() {
                 : 'border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:border-border-hover opacity-100')
               : 'border-border-default bg-bg-elevated text-fg-muted opacity-0 pointer-events-none invisible'
           }`}
-          title={galleryOpen ? 'Widget galerisini gizle' : 'Widget galerisini göster'}
+          title={galleryOpen ? t('marketOverview.galleryHide') : t('marketOverview.galleryShow')}
           aria-pressed={galleryOpen}
           aria-hidden={!editMode}
           tabIndex={editMode ? 0 : -1}
         >
           {galleryOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          Galeri
+          {t('marketOverview.gallery')}
         </button>
       </div>
-      <div className="w-full max-w-md"><SearchSuggestions variant="hero" placeholder="Hisse, kripto, döviz, fon ara..." /></div>
+      <div className="w-full max-w-md"><SearchSuggestions variant="hero" placeholder={t('marketOverview.searchPlaceholder')} /></div>
     </div>
   );
 
@@ -320,9 +322,9 @@ export default function MarketDataPage() {
   const grid = sections.length === 0
     ? (
       <div className="rounded-xl border-2 border-dashed border-accent/30 bg-bg-elevated/40 px-6 py-16 text-center">
-        <p className="font-display text-base font-bold text-fg mb-1">Boş tuval</p>
+        <p className="font-display text-base font-bold text-fg mb-1">{t('marketOverview.emptyCanvas')}</p>
         <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-fg-muted mb-5">
-          {editMode ? 'Yukardaki galeriden widget sürükle' : 'Düzenle ile widget ekle'}
+          {editMode ? t('marketOverview.emptyDragHint') : t('marketOverview.emptyEditHint')}
         </p>
         {!editMode && (
           <button
@@ -330,7 +332,7 @@ export default function MarketDataPage() {
             className="inline-flex items-center gap-2 rounded-lg border-2 border-accent bg-accent text-white px-4 py-2 text-xs font-mono font-bold tracking-[0.14em] uppercase hover:bg-accent-bright transition-all cursor-pointer shadow-lg shadow-accent/30"
           >
             <LayoutGrid className="h-3.5 w-3.5" />
-            Düzene Geç
+            {t('marketOverview.startEdit')}
           </button>
         )}
       </div>

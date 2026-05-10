@@ -2,17 +2,18 @@ import {
     Bitcoin, Landmark, Building2, FileText, Coins,
     BarChart2, Newspaper,
 } from 'lucide-react';
+import i18n from '../../../shared/i18n/config';
 
 export const CATEGORY_CONFIG = {
     ALL: {
-        label: 'Tümü',
+        labelKey: 'news.categories.ALL',
         icon: Newspaper,
         color: 'text-accent',
         bg: 'bg-accent/10',
         border: 'border-accent/20',
     },
     CRYPTO: {
-        label: 'Kripto',
+        labelKey: 'news.categories.CRYPTO',
         icon: Bitcoin,
         color: 'text-violet-400',
         bg: 'bg-violet-500/10',
@@ -20,7 +21,7 @@ export const CATEGORY_CONFIG = {
         fallbacks: ['/news/crypto_1.jpg', '/news/crypto_2.jpg', '/news/crypto_3.jpg'],
     },
     BORSA_ISTANBUL: {
-        label: 'Borsa İstanbul',
+        labelKey: 'news.categories.BORSA_ISTANBUL',
         icon: Landmark,
         color: 'text-amber-400',
         bg: 'bg-amber-500/10',
@@ -28,7 +29,7 @@ export const CATEGORY_CONFIG = {
         fallbacks: ['/news/borsa_istanbul_1.jpg', '/news/borsa_istanbul_2.jpg', '/news/borsa_istanbul_3.jpg'],
     },
     BORSA_SIRKETLERI: {
-        label: 'Borsa Şirketleri',
+        labelKey: 'news.categories.BORSA_SIRKETLERI',
         icon: Building2,
         color: 'text-emerald-400',
         bg: 'bg-emerald-500/10',
@@ -36,7 +37,7 @@ export const CATEGORY_CONFIG = {
         fallbacks: ['/news/borsa_sirketleri_1.jpg', '/news/borsa_sirketleri_2.jpg', '/news/borsa_sirketleri_3.jpg'],
     },
     TAHVIL_BONO: {
-        label: 'Tahvil & Bono',
+        labelKey: 'news.categories.TAHVIL_BONO',
         icon: FileText,
         color: 'text-cyan-400',
         bg: 'bg-cyan-500/10',
@@ -44,7 +45,7 @@ export const CATEGORY_CONFIG = {
         fallbacks: ['/news/tahvil_1.jpg', '/news/tahvil_2.jpg', '/news/tahvil_3.jpg'],
     },
     PARITE: {
-        label: 'Döviz & Parite',
+        labelKey: 'news.categories.PARITE',
         icon: Coins,
         color: 'text-blue-400',
         bg: 'bg-blue-500/10',
@@ -52,7 +53,7 @@ export const CATEGORY_CONFIG = {
         fallbacks: ['/news/parite_1.jpg', '/news/parite_2.jpg', '/news/parite_3.jpg'],
     },
     EMTIA: {
-        label: 'Emtia',
+        labelKey: 'news.categories.EMTIA',
         icon: BarChart2,
         color: 'text-orange-400',
         bg: 'bg-orange-500/10',
@@ -60,7 +61,7 @@ export const CATEGORY_CONFIG = {
         fallbacks: ['/news/emtia_1.jpg', '/news/emtia_2.jpg', '/news/emtia_3.jpg'],
     },
     GENEL_FINANS: {
-        label: 'Genel Finans',
+        labelKey: 'news.categories.GENEL_FINANS',
         icon: Newspaper,
         color: 'text-fg-muted',
         bg: 'bg-surface',
@@ -95,7 +96,7 @@ export function CategoryBadge({ category }) {
     return (
         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider border ${cfg.bg} ${cfg.color} ${cfg.border}`}>
             <Icon size={10} strokeWidth={2} />
-            {cfg.label}
+            {i18n.t(cfg.labelKey)}
         </span>
     );
 }

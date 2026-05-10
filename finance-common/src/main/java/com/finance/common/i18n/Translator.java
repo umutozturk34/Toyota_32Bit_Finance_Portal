@@ -20,4 +20,9 @@ public class Translator {
     public String translate(String key, Locale locale, Object... args) {
         return messageSource.getMessage(key, args, locale);
     }
+
+    public String translateOrSelf(String keyOrText, Object... args) {
+        if (keyOrText == null) return null;
+        return messageSource.getMessage(keyOrText, args, keyOrText, LocaleContextHolder.getLocale());
+    }
 }

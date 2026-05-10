@@ -1,7 +1,9 @@
 package com.finance.common.exception;
 import com.finance.common.dto.ErrorResponse;
+import com.finance.common.i18n.Translator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +17,18 @@ import java.util.stream.Collectors;
 import java.util.Map;
 @Log4j2
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final Translator translator;
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex, HttpServletRequest request) {
         log.warn("Business exception: {} - {}", ex.getErrorCode(), ex.getMessage());
-        ErrorResponse error = ErrorResponse.of(ex.getMessage(), ex.getErrorCode(), request.getRequestURI());
+        ErrorResponse error = ErrorResponse.of(
+                translator.translateOrSelf(ex.getMessage(), ex.getMessageArgs()),
+                ex.getErrorCode(),
+                request.getRequestURI());
         return ResponseEntity
                 .status(HttpStatus.UNPROCESSABLE_CONTENT)
                 .body(error);
@@ -28,7 +37,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex, HttpServletRequest request) {
         log.warn("Resource not found: {}", ex.getMessage());
         ErrorResponse error = ErrorResponse.of(
-            ex.getMessage(),
+            translator.translateOrSelf(ex.getMessage(), ex.getMessageArgs()),
             "RESOURCE_NOT_FOUND",
             request.getRequestURI()
         );
@@ -40,7 +49,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException ex, HttpServletRequest request) {
         log.warn("Bad request: {}", ex.getMessage());
         ErrorResponse error = ErrorResponse.of(
-            ex.getMessage(),
+            translator.translateOrSelf(ex.getMessage(), ex.getMessageArgs()),
             "BAD_REQUEST",
             request.getRequestURI()
         );
@@ -52,7 +61,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex, HttpServletRequest request) {
         log.error("Illegal state: {}", ex.getMessage());
         ErrorResponse error = ErrorResponse.of(
-            "Operation not allowed: " + ex.getMessage(), 
+            translator.translate("error.illegalState", translator.translateOrSelf(ex.getMessage())),
             "ILLEGAL_STATE",
             request.getRequestURI()
         );
@@ -64,7 +73,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, HttpServletRequest request) {
         log.error("Illegal argument: {}", ex.getMessage());
         ErrorResponse error = ErrorResponse.of(
-            "Invalid argument: " + ex.getMessage(), 
+            translator.translate("error.illegalArgument", translator.translateOrSelf(ex.getMessage())),
             "INVALID_ARGUMENT",
             request.getRequestURI()
         );
@@ -83,7 +92,7 @@ public class GlobalExceptionHandler {
                         (a, b) -> a));
         log.warn("Validation failed: {}", errors);
         ErrorResponse error = ErrorResponse.of(
-            "Validation failed", 
+            translator.translate("error.validation"),
             "VALIDATION_ERROR",
             errors
         );
@@ -101,7 +110,7 @@ public class GlobalExceptionHandler {
                         (a, b) -> a));
         log.warn("Constraint violation: {}", violations);
         ErrorResponse error = ErrorResponse.of(
-                "Validation failed",
+                translator.translate("error.validation"),
                 "VALIDATION_ERROR",
                 violations);
         error.setPath(request.getRequestURI());
@@ -114,7 +123,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNotReadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
         log.warn("Malformed request body: {}", ex.getMostSpecificCause().getMessage());
         ErrorResponse error = ErrorResponse.of(
-                "Geçersiz istek gövdesi",
+                translator.translate("error.malformedRequest"),
                 "MALFORMED_REQUEST",
                 request.getRequestURI());
         return ResponseEntity
@@ -126,7 +135,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleMissingParameter(MissingServletRequestParameterException ex, HttpServletRequest request) {
         log.warn("Missing parameter: {}", ex.getParameterName());
         ErrorResponse error = ErrorResponse.of(
-                "Eksik parametre: " + ex.getParameterName(),
+                translator.translate("error.missingParameter", ex.getParameterName()),
                 "MISSING_PARAMETER",
                 request.getRequestURI());
         return ResponseEntity
@@ -138,7 +147,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleTaskAlreadyRunning(TaskAlreadyRunningException ex, HttpServletRequest request) {
         log.warn("Task already running: {}", ex.getTaskType());
         ErrorResponse error = ErrorResponse.of(
-                ex.getMessage(),
+                translator.translateOrSelf(ex.getMessage()),
                 "TASK_ALREADY_RUNNING",
                 request.getRequestURI()
         );
@@ -151,7 +160,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleExternalApiException(ExternalApiException ex, HttpServletRequest request) {
         log.error("External API error [{}]: {}", ex.getServiceName(), ex.getMessage());
         ErrorResponse error = ErrorResponse.of(
-                "External service unavailable: " + ex.getServiceName(),
+                translator.translate("error.externalApi", ex.getServiceName()),
                 "EXTERNAL_API_ERROR",
                 request.getRequestURI()
         );
@@ -159,12 +168,12 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(error);
     }
-    
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex, HttpServletRequest request) {
         log.error("Runtime exception: {}", ex.getMessage(), ex);
         ErrorResponse error = ErrorResponse.of(
-            "An unexpected error occurred",
+            translator.translate("error.runtime"),
             "INTERNAL_ERROR",
             request.getRequestURI()
         );
@@ -176,7 +185,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
         log.error("Unexpected exception: {}", ex.getMessage(), ex);
         ErrorResponse error = ErrorResponse.of(
-            "An unexpected error occurred. Please contact support.",
+            translator.translate("error.unknown"),
             "UNKNOWN_ERROR",
             request.getRequestURI()
         );

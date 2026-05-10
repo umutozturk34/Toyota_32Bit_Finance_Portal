@@ -36,10 +36,10 @@ public class EmailChangeService {
     public void initiate(String userSub, String newEmail) {
         String oldEmail = keycloakClient.getEmail(userSub);
         if (oldEmail == null) {
-            throw new ResourceNotFoundException("Mevcut e-posta adresi bulunamadı");
+            throw new ResourceNotFoundException("error.email.currentNotFound");
         }
         if (newEmail.equalsIgnoreCase(oldEmail)) {
-            throw new BadRequestException("Yeni e-posta mevcut adresle aynı");
+            throw new BadRequestException("error.email.sameAddress");
         }
 
         String code = generateCode();
@@ -73,21 +73,21 @@ public class EmailChangeService {
     @Transactional
     public void confirm(String userSub, String code) {
         EmailChangeRequest request = repository.findById(userSub)
-                .orElseThrow(() -> new BadRequestException("Aktif e-posta değişikliği yok, akışı baştan başlat"));
+                .orElseThrow(() -> new BadRequestException("error.email.noActiveChange"));
 
         if (request.getExpiresAt().isBefore(OffsetDateTime.now())) {
             repository.delete(request);
-            throw new BadRequestException("Kodun süresi doldu, akışı baştan başlat");
+            throw new BadRequestException("error.email.codeExpired");
         }
         if (request.getAttempts() >= securityProperties.emailChange().maxAttempts()) {
             repository.delete(request);
-            throw new BadRequestException("Çok fazla hatalı deneme, akışı baştan başlat");
+            throw new BadRequestException("error.email.tooManyAttempts");
         }
         if (!passwordEncoder.matches(code, request.getCodeHash())) {
             request.setAttempts(request.getAttempts() + 1);
             repository.save(request);
             int remaining = securityProperties.emailChange().maxAttempts() - request.getAttempts();
-            throw new BadRequestException("Geçersiz kod (" + remaining + " hak kaldı)");
+            throw new BadRequestException("error.email.invalidCode", remaining);
         }
 
         keycloakClient.setEmail(userSub, request.getNewEmail());

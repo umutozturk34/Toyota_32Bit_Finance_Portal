@@ -52,12 +52,11 @@ public class WatchlistManagementService {
     public WatchlistResponse create(String userSub, WatchlistCreateRequest request) {
         long existing = repository.countByUserSub(userSub);
         if (existing >= properties.maxPerUser()) {
-            throw new BadRequestException(
-                    "En fazla " + properties.maxPerUser() + " takip listesi oluşturabilirsin");
+            throw new BadRequestException("error.watchlist.maxReached", properties.maxPerUser());
         }
         String trimmed = request.name().trim();
         if (repository.existsByUserSubAndName(userSub, trimmed)) {
-            throw new BadRequestException("Bu isimde bir takip listen zaten var");
+            throw new BadRequestException("error.watchlist.duplicateName");
         }
         Watchlist saved = repository.save(Watchlist.create(userSub, trimmed));
         log.info("Watchlist created userSub={} watchlistId={} name={}",
@@ -72,7 +71,7 @@ public class WatchlistManagementService {
         String trimmed = request.name().trim();
         if (!watchlist.getName().equals(trimmed)
                 && repository.existsByUserSubAndName(userSub, trimmed)) {
-            throw new BadRequestException("Bu isimde bir takip listen zaten var");
+            throw new BadRequestException("error.watchlist.duplicateName");
         }
         watchlist.rename(trimmed);
         Watchlist saved = repository.save(watchlist);
@@ -87,7 +86,7 @@ public class WatchlistManagementService {
     public void delete(Long id, String userSub) {
         Watchlist watchlist = ownedOr404(id, userSub);
         if (watchlist.isDefault()) {
-            throw new BadRequestException("Varsayılan takip listesi silinemez");
+            throw new BadRequestException("error.watchlist.defaultLocked");
         }
         repository.delete(watchlist);
         log.info("Watchlist deleted watchlistId={} userSub={}", id, userSub);

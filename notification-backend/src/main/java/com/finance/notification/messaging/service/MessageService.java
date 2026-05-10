@@ -103,20 +103,19 @@ public class MessageService {
 
     private void rejectDuplicate(String senderSub, String body) {
         if (duplicateGuard.isDuplicate(senderSub, body)) {
-            throw new BadRequestException("Aynı mesajı kısa süre içinde tekrar gönderdin");
+            throw new BadRequestException("error.message.duplicate");
         }
     }
 
     private void rejectIfCoolingDown(String senderSub) {
         if (cooldownGuard.isCoolingDown(senderSub)) {
-            throw new BadRequestException("Çok sık mesaj gönderiyorsun, lütfen birkaç saniye bekle");
+            throw new BadRequestException("error.message.tooFrequent");
         }
     }
 
     private void rejectIfBacklogFull(String senderSub) {
         if (backlogGuard.wouldExceedBacklog(senderSub)) {
-            throw new BadRequestException("Admin cevap vermeden en fazla "
-                    + backlogGuard.maxUnanswered() + " mesaj gönderebilirsin");
+            throw new BadRequestException("error.message.unanswered", backlogGuard.maxUnanswered());
         }
     }
 
@@ -253,7 +252,7 @@ public class MessageService {
 
     private void rejectIfClosed(String userSub) {
         if (closedRepository.existsById(userSub)) {
-            throw new BadRequestException("Bu sohbet kapatıldı, yeni mesaj gönderemezsin");
+            throw new BadRequestException("error.message.closed");
         }
     }
 }

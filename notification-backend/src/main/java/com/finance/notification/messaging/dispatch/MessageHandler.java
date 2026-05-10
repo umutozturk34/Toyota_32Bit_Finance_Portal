@@ -1,5 +1,6 @@
 package com.finance.notification.messaging.dispatch;
 
+import com.finance.common.i18n.Translator;
 import com.finance.notification.config.NotificationDispatchProperties;
 import com.finance.notification.core.dispatch.NotificationHandler;
 import com.finance.notification.core.dispatch.NotificationRequest;
@@ -16,6 +17,7 @@ import java.util.Map;
 public class MessageHandler implements NotificationHandler {
 
     private final NotificationDispatchProperties properties;
+    private final Translator translator;
 
     @Override
     public NotificationType type() {
@@ -31,11 +33,12 @@ public class MessageHandler implements NotificationHandler {
 
         String senderSub = p.senderSub() != null ? p.senderSub() : "anonymous";
         String preview = preview(p.body() != null ? p.body() : "");
+        String title = translator.translate("notif.message.title");
 
         return new RenderedNotification(
-                "Yeni mesaj",
+                title,
                 preview,
-                "Finance Portal — yeni mesaj",
+                translator.translate("notif.email.subject", title),
                 "message",
                 Map.of("senderSub", senderSub, "preview", preview));
     }

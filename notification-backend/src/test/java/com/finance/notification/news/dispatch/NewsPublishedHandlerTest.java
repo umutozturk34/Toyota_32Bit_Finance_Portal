@@ -1,10 +1,14 @@
 package com.finance.notification.news.dispatch;
 
+import com.finance.common.i18n.Translator;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
 import com.finance.notification.core.dispatch.payload.NewsPublishedPayload;
 import com.finance.notification.core.dispatch.slot.SlotProperties;
 import com.finance.notification.core.dispatch.slot.SlotResolver;
+import com.finance.notification.testsupport.HandlerTestSupport;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
@@ -17,13 +21,24 @@ class NewsPublishedHandlerTest {
 
     private static SlotResolver newResolver() {
         Map<String, List<String>> keywords = new LinkedHashMap<>();
-        keywords.put("sabah", List.of("morning", "sabah"));
-        keywords.put("öğlen", List.of("afternoon", "midday", "noon"));
-        keywords.put("akşam", List.of("evening", "aksam", "akşam"));
+        keywords.put("morning", List.of("morning", "sabah"));
+        keywords.put("noon", List.of("afternoon", "midday", "noon"));
+        keywords.put("evening", List.of("evening", "aksam", "akşam"));
         return new SlotResolver(new SlotProperties(keywords));
     }
 
-    private final NewsPublishedHandler handler = new NewsPublishedHandler(newResolver());
+    private NewsPublishedHandler handler;
+
+    @BeforeEach
+    void setUp() {
+        Translator translator = HandlerTestSupport.turkishTranslator();
+        handler = new NewsPublishedHandler(newResolver(), translator);
+    }
+
+    @AfterEach
+    void tearDown() {
+        HandlerTestSupport.resetLocale();
+    }
 
     private NotificationRequest requestWithSource(int count, String source) {
         return NotificationRequest.of("user-1",

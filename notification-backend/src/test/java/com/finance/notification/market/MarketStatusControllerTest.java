@@ -28,9 +28,10 @@ class MarketStatusControllerTest {
     private static final Clock FIXED_CLOCK = Clock.fixed(FIXED_NOW, ZoneId.of("UTC"));
 
     @Mock private MarketSessionResolver resolver;
+    @Mock private com.finance.common.i18n.Translator translator;
 
     private MarketStatusController controller() {
-        return new MarketStatusController(resolver, FIXED_CLOCK);
+        return new MarketStatusController(resolver, FIXED_CLOCK, translator);
     }
 
     @Test

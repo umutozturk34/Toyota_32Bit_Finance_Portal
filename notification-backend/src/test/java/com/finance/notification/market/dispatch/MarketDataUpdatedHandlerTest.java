@@ -1,10 +1,14 @@
 package com.finance.notification.market.dispatch;
 
+import com.finance.common.i18n.Translator;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
 import com.finance.notification.core.dispatch.payload.MarketDataUpdatedPayload;
 import com.finance.notification.core.dispatch.slot.SlotProperties;
 import com.finance.notification.core.dispatch.slot.SlotResolver;
+import com.finance.notification.testsupport.HandlerTestSupport;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
@@ -17,14 +21,25 @@ class MarketDataUpdatedHandlerTest {
 
     private static SlotResolver newResolver() {
         Map<String, List<String>> keywords = new LinkedHashMap<>();
-        keywords.put("sabah", List.of("morning", "sabah"));
-        keywords.put("öğlen", List.of("afternoon", "midday", "noon", "öğle", "ogle"));
-        keywords.put("akşam", List.of("evening", "aksam", "akşam"));
-        keywords.put("günlük", List.of("daily", "full"));
+        keywords.put("morning", List.of("morning", "sabah"));
+        keywords.put("noon", List.of("afternoon", "midday", "noon", "öğle", "ogle", "öğlen", "oglen"));
+        keywords.put("evening", List.of("evening", "aksam", "akşam"));
+        keywords.put("daily", List.of("daily", "full"));
         return new SlotResolver(new SlotProperties(keywords));
     }
 
-    private final MarketDataUpdatedHandler handler = new MarketDataUpdatedHandler(newResolver());
+    private MarketDataUpdatedHandler handler;
+
+    @BeforeEach
+    void setUp() {
+        Translator translator = HandlerTestSupport.turkishTranslator();
+        handler = new MarketDataUpdatedHandler(newResolver(), translator);
+    }
+
+    @AfterEach
+    void tearDown() {
+        HandlerTestSupport.resetLocale();
+    }
 
     private NotificationRequest requestWithSource(String source) {
         return NotificationRequest.of("user-1", new MarketDataUpdatedPayload("STOCK", "Hisse", source));
@@ -35,7 +50,7 @@ class MarketDataUpdatedHandlerTest {
         RenderedNotification rendered = handler.render(requestWithSource("scheduled-stock-morning"));
 
         assertThat(rendered.title()).isEqualTo("Hisse · Sabah güncellemesi");
-        assertThat(rendered.body()).contains("sabah güncellemesi");
+        assertThat(rendered.body()).contains("Sabah güncellemesi");
     }
 
     @Test

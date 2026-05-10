@@ -1,5 +1,6 @@
 package com.finance.notification.alert.dispatch;
 
+import com.finance.common.i18n.Translator;
 import com.finance.common.model.MarketType;
 import com.finance.notification.alert.model.AlertDirection;
 import com.finance.notification.config.NotificationDispatchProperties;
@@ -7,6 +8,9 @@ import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
 import com.finance.notification.core.dispatch.payload.PriceAlertPayload;
 import com.finance.notification.core.model.NotificationType;
+import com.finance.notification.testsupport.HandlerTestSupport;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -20,7 +24,18 @@ class PriceAlertHandlerTest {
             new NotificationDispatchProperties.WatchlistDelta(3),
             new NotificationDispatchProperties.Message(120));
 
-    private final PriceAlertHandler handler = new PriceAlertHandler(DISPATCH);
+    private PriceAlertHandler handler;
+
+    @BeforeEach
+    void setUp() {
+        Translator translator = HandlerTestSupport.turkishTranslator();
+        handler = new PriceAlertHandler(DISPATCH, translator);
+    }
+
+    @AfterEach
+    void tearDown() {
+        HandlerTestSupport.resetLocale();
+    }
 
     @Test
     void type_returnsPriceAlertFired() {

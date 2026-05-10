@@ -1,5 +1,6 @@
 package com.finance.notification.alert.dispatch;
 
+import com.finance.common.i18n.Translator;
 import com.finance.common.model.MarketType;
 import com.finance.notification.alert.model.AlertDirection;
 import com.finance.notification.config.NotificationDispatchProperties;
@@ -28,6 +29,7 @@ public class PriceAlertHandler implements NotificationHandler {
     private static final String FALLBACK_MARKET_LABEL = "Varlık";
 
     private final NotificationDispatchProperties properties;
+    private final Translator translator;
 
     @Override
     public NotificationType type() {
@@ -47,17 +49,18 @@ public class PriceAlertHandler implements NotificationHandler {
         String displayName = displayName(p.assetName(), assetCode);
         String marketLabel = marketType != null ? marketType.displayLabel() : FALLBACK_MARKET_LABEL;
 
+        String title = translator.translate("notif.priceAlert.title", displayName);
         return new RenderedNotification(
-                String.format("%s alarmı tetiklendi", displayName),
+                title,
                 buildBody(marketLabel, direction, p.threshold(), p.currentPrice()),
-                "Finance Portal — " + displayName + " " + direction.displayLabel().toLowerCase(),
+                translator.translate("notif.email.subject", title),
                 "price-alert",
                 buildModel(p, direction, marketLabel, assetCode, displayName));
     }
 
     private String buildBody(String marketLabel, AlertDirection direction,
                                     BigDecimal threshold, BigDecimal currentPrice) {
-        return String.format("%s — %s. Eşik %s, anlık %s.",
+        return translator.translate("notif.priceAlert.body",
                 marketLabel,
                 direction.displayLabel(),
                 formatPrice(threshold, direction.isPercentBased()),

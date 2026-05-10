@@ -1,5 +1,6 @@
 package com.finance.notification.market.dispatch;
 
+import com.finance.common.i18n.Translator;
 import com.finance.notification.core.dispatch.NotificationHandler;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
@@ -19,6 +20,7 @@ public class MarketDataUpdatedHandler implements NotificationHandler {
     private static final String EMAIL_TEMPLATE = "market-data-updated";
 
     private final SlotResolver slotResolver;
+    private final Translator translator;
 
     @Override
     public NotificationType type() {
@@ -35,15 +37,16 @@ public class MarketDataUpdatedHandler implements NotificationHandler {
         String label = p.displayLabel() != null ? p.displayLabel() : p.market();
         Optional<String> slot = slotResolver.slotFor(p.source());
         String title = slot
-                .map(s -> label + " · " + slotResolver.capitalize(s) + " güncellemesi")
-                .orElseGet(() -> label + " verileri güncellendi");
+                .map(s -> translator.translate("notif.marketDataUpdated.titleWithSlot", label, translator.translate("notif.slot." + s)))
+                .orElseGet(() -> translator.translate("notif.marketDataUpdated.title", label));
         String body = slot
-                .map(s -> label + " piyasası " + s + " güncellemesi yayımlandı, son fiyatlar yenilendi.")
-                .orElseGet(() -> label + " piyasası için fiyat verileri yenilendi.");
+                .map(s -> translator.translate("notif.marketDataUpdated.bodyWithSlot", label, translator.translate("notif.slot." + s)))
+                .orElseGet(() -> translator.translate("notif.marketDataUpdated.body", label));
+        String emailSubject = translator.translate("notif.email.subject", title);
         return new RenderedNotification(
                 title,
                 body,
-                "Finance Portal — " + title,
+                emailSubject,
                 EMAIL_TEMPLATE,
                 Map.of("title", title, "body", body, "market", p.market(),
                         "displayLabel", label, "slot", slot.orElse("")));

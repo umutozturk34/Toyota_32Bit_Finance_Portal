@@ -1,5 +1,6 @@
 package com.finance.notification.news.dispatch;
 
+import com.finance.common.i18n.Translator;
 import com.finance.notification.core.dispatch.NotificationHandler;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
@@ -19,6 +20,7 @@ public class NewsPublishedHandler implements NotificationHandler {
     private static final String EMAIL_TEMPLATE = "news-published";
 
     private final SlotResolver slotResolver;
+    private final Translator translator;
 
     @Override
     public NotificationType type() {
@@ -34,19 +36,25 @@ public class NewsPublishedHandler implements NotificationHandler {
         }
         int count = Math.max(p.articleCount(), 0);
         Optional<String> slot = slotResolver.slotFor(p.source());
-        String title = slot
-                .map(s -> slotResolver.capitalize(s) + " haberleri"
-                        + (count > 0 ? " · " + count + " yeni başlık" : ""))
-                .orElseGet(() -> count > 0
-                        ? count + " yeni haber yayımlandı"
-                        : "Yeni haberler yayımlandı");
+        String title;
+        if (slot.isPresent()) {
+            String slotName = translator.translate("notif.slot." + slot.get());
+            title = count > 0
+                    ? translator.translate("notif.newsPublished.titleSlotWithCount", slotName, count)
+                    : translator.translate("notif.newsPublished.titleSlot", slotName);
+        } else {
+            title = count > 0
+                    ? translator.translate("notif.newsPublished.titleWithCount", count)
+                    : translator.translate("notif.newsPublished.title");
+        }
         String body = count > 0
-                ? "Finans gündeminden " + count + " yeni başlık akışınıza eklendi."
-                : "Finans gündeminden yeni başlıklar akışınıza eklendi.";
+                ? translator.translate("notif.newsPublished.bodyWithCount", count)
+                : translator.translate("notif.newsPublished.body");
+        String emailSubject = translator.translate("notif.email.subject", title);
         return new RenderedNotification(
                 title,
                 body,
-                "Finance Portal — " + title,
+                emailSubject,
                 EMAIL_TEMPLATE,
                 Map.of("title", title, "body", body,
                         "articleCount", count,

@@ -1,6 +1,7 @@
 package com.finance.notification.messaging.controller;
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.notification.messaging.dto.MessagePresenceRequest;
 import com.finance.notification.messaging.presence.MessagePresenceService;
 import jakarta.validation.Valid;
@@ -21,18 +22,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class MessagePresenceController {
 
     private final MessagePresenceService service;
+    private final Translator translator;
 
     @PostMapping
     public ApiResponse<Void> register(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody MessagePresenceRequest request) {
         service.register(jwt.getSubject(), request.key());
-        return ApiResponse.success("Active conversation registered", null);
+        return ApiResponse.success(translator.translate("api.messagePresence.registered"), null);
     }
 
     @DeleteMapping
     public ApiResponse<Void> unregister(@AuthenticationPrincipal Jwt jwt) {
         service.unregister(jwt.getSubject());
-        return ApiResponse.success("Active conversation cleared", null);
+        return ApiResponse.success(translator.translate("api.messagePresence.cleared"), null);
     }
 }

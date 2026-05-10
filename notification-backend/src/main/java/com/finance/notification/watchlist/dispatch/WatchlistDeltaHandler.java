@@ -1,5 +1,6 @@
 package com.finance.notification.watchlist.dispatch;
 
+import com.finance.common.i18n.Translator;
 import com.finance.common.model.MarketType;
 import com.finance.notification.config.NotificationDispatchProperties;
 import com.finance.notification.core.dispatch.NotificationHandler;
@@ -24,11 +25,10 @@ import java.util.Map;
 public class WatchlistDeltaHandler implements NotificationHandler {
 
     private static final Locale TR = Locale.forLanguageTag("tr-TR");
-    private static final String FALLBACK_LIST_LABEL = "Takip listeniz";
-    private static final String FALLBACK_MARKET_LABEL = "Varlık";
     private static final String FALLBACK_ASSET_CODE = "?";
 
     private final NotificationDispatchProperties properties;
+    private final Translator translator;
 
     @Override
     public NotificationType type() {
@@ -43,15 +43,16 @@ public class WatchlistDeltaHandler implements NotificationHandler {
                             + request.payload().getClass().getSimpleName());
         }
 
-        String marketLabel = p.marketType() != null ? p.marketType().displayLabel() : FALLBACK_MARKET_LABEL;
+        String marketLabel = p.marketType() != null ? p.marketType().displayLabel() : translator.translate("notif.fallback.assetLabel");
         String listLabel = (p.watchlistName() != null && !p.watchlistName().isBlank())
-                ? p.watchlistName() : FALLBACK_LIST_LABEL;
+                ? p.watchlistName() : translator.translate("notif.watchlistDelta.fallbackListLabel");
         int count = p.items().size();
+        String title = buildTitle(listLabel, p.items(), count);
 
         return new RenderedNotification(
-                buildTitle(listLabel, p.items(), count),
+                title,
                 buildBody(p.items()),
-                "Finance Portal — " + listLabel + " hareketi",
+                translator.translate("notif.watchlistDelta.emailSubject", listLabel),
                 "watchlist-delta",
                 Map.of(
                         "watchlistName", listLabel,
@@ -62,9 +63,9 @@ public class WatchlistDeltaHandler implements NotificationHandler {
 
     private String buildTitle(String listLabel, List<WatchlistDeltaPayload.DeltaItem> items, int count) {
         if (count == 1) {
-            return String.format("%s — %s", listLabel, displayName(items.get(0)));
+            return translator.translate("notif.watchlistDelta.titleSingle", listLabel, displayName(items.get(0)));
         }
-        return String.format("%s — %d varlıkta hareket", listLabel, count);
+        return translator.translate("notif.watchlistDelta.titleMultiple", listLabel, count);
     }
 
     private String buildBody(List<WatchlistDeltaPayload.DeltaItem> items) {
@@ -75,7 +76,7 @@ public class WatchlistDeltaHandler implements NotificationHandler {
             parts.add(String.format("%s %s", displayName(item), formatPercent(item.deltaPercent())));
         }
         if (items.size() > properties.watchlistDelta().bodyPreviewItems()) {
-            parts.add(String.format("ve %d daha", items.size() - properties.watchlistDelta().bodyPreviewItems()));
+            parts.add(translator.translate("notif.watchlistDelta.andMore", items.size() - properties.watchlistDelta().bodyPreviewItems()));
         }
         return String.join(" · ", parts);
     }

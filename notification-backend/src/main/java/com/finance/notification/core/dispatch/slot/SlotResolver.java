@@ -29,9 +29,4 @@ public class SlotResolver {
         log.warn("Unknown slot source token={} — handlers will fall back to generic title", source);
         return Optional.empty();
     }
-
-    public String capitalize(String slot) {
-        if (slot == null || slot.isEmpty()) return slot;
-        return Character.toUpperCase(slot.charAt(0)) + slot.substring(1);
-    }
 }

@@ -1,10 +1,14 @@
 package com.finance.notification.market.dispatch;
 
+import com.finance.common.i18n.Translator;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
 import com.finance.notification.core.dispatch.payload.MarketClosedPayload;
 import com.finance.notification.core.dispatch.payload.MarketOpenedPayload;
 import com.finance.notification.core.model.NotificationType;
+import com.finance.notification.testsupport.HandlerTestSupport;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,7 +16,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MarketOpenedHandlerTest {
 
-    private final MarketOpenedHandler handler = new MarketOpenedHandler();
+    private MarketOpenedHandler handler;
+
+    @BeforeEach
+    void setUp() {
+        Translator translator = HandlerTestSupport.turkishTranslator();
+        handler = new MarketOpenedHandler(translator);
+    }
+
+    @AfterEach
+    void tearDown() {
+        HandlerTestSupport.resetLocale();
+    }
 
     @Test
     void should_returnMarketOpenedType_when_typeQueried() {

@@ -1,4 +1,34 @@
 {
+  "about": {
+    "heading": {
+      "prefix": "About",
+      "subtitle": "A comprehensive financial management system with real-time market data, enterprise-grade security, and advanced charting."
+    },
+    "overview": {
+      "title": "Project Overview",
+      "body": "Toyota Finance Portal is a comprehensive financial management system designed for Toyota dealerships and financial services. This application provides secure authentication, real-time market data, and portfolio management capabilities."
+    },
+    "stack": {
+      "title": "Technology Stack"
+    },
+    "tech": {
+      "frontend": "Frontend",
+      "backend": "Backend",
+      "database": "Database",
+      "authentication": "Authentication",
+      "deployment": "Deployment"
+    },
+    "version": {
+      "title": "Version",
+      "current": "Current Version:",
+      "status": "(In Development)"
+    }
+  },
+  "protectedRoute": {
+    "unauthorized": "Unauthorized",
+    "unauthorizedBody": "You don't have permission to access this page.",
+    "requiredRole": "Required role:"
+  },
   "nav": {
     "market": "Market",
     "news": "News",
@@ -18,7 +48,8 @@
     "settings": "Settings",
     "logout": "Log out",
     "expandSidebar": "Expand sidebar",
-    "collapseSidebar": "Collapse sidebar"
+    "collapseSidebar": "Collapse sidebar",
+    "adminBadge": "Admin"
   },
   "common": {
     "localeTag": "en-US",
@@ -67,6 +98,150 @@
     "fundGroup": {
       "BYF": "Exchange-Traded Funds",
       "YAT": "Mutual Funds"
+    }
+  },
+  "chart": {
+    "tabs": {
+      "indicators": "Indicators",
+      "drawings": "Draw",
+      "fibonacci": "Fibonacci"
+    },
+    "range": {
+      "1M": "1M",
+      "3M": "3M",
+      "6M": "6M",
+      "1Y": "1Y",
+      "5Y": "5Y",
+      "ALL": "Max"
+    },
+    "historicalAnalysis": "Historical Analysis",
+    "detailDescription": "{{type}} - {{symbol}} detail chart and technical analysis",
+    "detailMode": "Detail Mode",
+    "detailLockMessage": "This page is locked to <span class=\"font-semibold\">{{type}}</span> / <span class=\"font-semibold\">{{symbol}}</span>.",
+    "assetTypeLabel": "Asset Type",
+    "symbolLabel": "Symbol",
+    "customSymbolPlaceholder": "Custom symbol...",
+    "go": "Go",
+    "loading": "Loading historical data...",
+    "waitingForData": "Waiting for chart data...",
+    "retry": "Retry",
+    "selectSymbol": "Select a symbol to view chart data",
+    "aboutIndicators": {
+      "title": "About Technical Indicators",
+      "sma": {
+        "title": "SMA 20 (Simple Moving Average)",
+        "desc": "20-day average price. Short-term trend indicator. Price above SMA20 suggests uptrend."
+      },
+      "ema": {
+        "title": "EMA 50 (Exponential Moving Average)",
+        "desc": "50-day weighted average. Reacts faster to recent price changes than SMA."
+      },
+      "tools": {
+        "title": "Drawing Tools",
+        "desc": "Use trend lines, Fibonacci retracements, and freehand drawings for custom analysis."
+      }
+    },
+    "indicators": {
+      "period": "Period",
+      "color": "Color",
+      "add": "Add",
+      "cancel": "Cancel",
+      "addIndicator": "Add Indicator",
+      "hide": "Hide",
+      "show": "Show",
+      "edit": "Edit",
+      "remove": "Remove"
+    },
+    "drawingPanel": {
+      "tools": {
+        "trendline": "Trend",
+        "horizontal": "Horizontal",
+        "vertical": "Vertical",
+        "freehand": "Freehand",
+        "text": "Text",
+        "emoji": "Emoji"
+      },
+      "emojis": {
+        "rocket": "Rocket",
+        "trendUp": "Trend Up",
+        "trendDown": "Trend Down",
+        "money": "Money",
+        "alert": "Alert",
+        "fire": "Fire",
+        "diamond": "Diamond",
+        "target": "Target",
+        "star": "Star",
+        "bull": "Bull",
+        "bear": "Bear",
+        "green": "Green",
+        "red": "Red",
+        "chartUp": "Chart Up",
+        "bank": "Bank"
+      },
+      "selectIcon": "Select Icon",
+      "size": "Size",
+      "drawingsCount": "Drawings ({{count}})",
+      "undo": "Undo",
+      "clearAll": "Clear All",
+      "instructions": {
+        "trendline": "Click 2 points",
+        "horizontal": "Click 1 point",
+        "vertical": "Click 1 point",
+        "freehand": "Drag to draw",
+        "text": "Click to place",
+        "emoji": "Click to place",
+        "twoPoint": "Click 2 points"
+      }
+    },
+    "fibonacci": {
+      "tools": {
+        "retracement": "Retracement",
+        "extension": "Extension"
+      },
+      "instructions": {
+        "threePoint": "Click 3 points",
+        "twoPoint": "Click 2 points"
+      },
+      "cancel": "Cancel",
+      "active": "Active ({{count}})",
+      "clear": "Clear"
+    },
+    "textInputPlaceholder": "Type here...",
+    "volume": "Volume",
+    "toolbar": {
+      "hidePanel": "Hide panel",
+      "showPanel": "Show panel",
+      "lineChart": "Line chart",
+      "candleChart": "Candlestick chart",
+      "line": "Line",
+      "candle": "Candle",
+      "magnetLabel": "Magnet",
+      "magnet": {
+        "off": "Off",
+        "weak": "Weak (High/Low)",
+        "strong": "Strong (OHLC)"
+      },
+      "vs": "vs",
+      "trend": {
+        "up": "Uptrend",
+        "down": "Downtrend",
+        "neutral": "Sideways"
+      },
+      "drawingsCount": "{{count}} drawing",
+      "drawingsCount_other": "{{count}} drawings",
+      "exitDrawingMode": "Exit drawing mode",
+      "exitDraw": "Exit Draw",
+      "fullscreen": "Fullscreen",
+      "exitFullscreen": "Exit fullscreen",
+      "active": "Active",
+      "cancel": "Cancel",
+      "activeInstruction": {
+        "freehand": "— Click & drag to draw",
+        "click": "— Click to place",
+        "threePoint": "— Click 3 points",
+        "twoPoint": "— Click 2 points",
+        "dragDraw": "— Click & drag"
+      }
     }
   },
   "sectionRegistry": {
@@ -302,7 +477,8 @@
     "emptyBody": "When a user sends a message it will appear here.",
     "emptyMatchTitle": "No matching conversations",
     "emptyMatchBody": "No results for \"{{query}}\".",
-    "closedTag": "closed"
+    "closedTag": "closed",
+    "idLabel": "id"
   },
   "adminThread": {
     "pickConversation": "Pick a conversation",
@@ -697,6 +873,19 @@
       "priceTry": "Price (TRY)",
       "priceUsd": "Price (USD)",
       "buy": "Bid"
+    }
+  },
+  "commodity": {
+    "name": {
+      "bz_f": "Brent Crude Oil",
+      "hg_f": "Copper",
+      "xagtry": "Silver (Ounce)",
+      "xagtryg": "Silver (Gram)",
+      "xautry": "Gold (Ounce)",
+      "xautryg": "Gold (Gram)",
+      "xpdtry": "Palladium (Ounce)",
+      "xpttry": "Platinum (Ounce)",
+      "zw_f": "Wheat"
     }
   },
   "marketOverview": {
@@ -1254,6 +1443,8 @@
     "cooldown": "Cooldown",
     "noSearchResults": "No news matches the search.",
     "emptyCategory": "No news in this category yet.",
+    "readMore": "Read more",
+    "empty": "No news",
     "refreshHint": "News is refreshed periodically.",
     "categories": {
       "ALL": "All",

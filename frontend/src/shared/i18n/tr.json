@@ -1,4 +1,34 @@
 {
+  "about": {
+    "heading": {
+      "prefix": "Hakkında",
+      "subtitle": "Gerçek zamanlı piyasa verileri, kurumsal düzeyde güvenlik ve gelişmiş grafik özellikleri sunan kapsamlı bir finansal yönetim sistemi."
+    },
+    "overview": {
+      "title": "Proje Özeti",
+      "body": "Toyota Finance Portal, Toyota bayileri ve finans hizmetleri için tasarlanmış kapsamlı bir finansal yönetim sistemidir. Bu uygulama güvenli kimlik doğrulama, gerçek zamanlı piyasa verileri ve portföy yönetimi yetenekleri sağlar."
+    },
+    "stack": {
+      "title": "Teknoloji Yığını"
+    },
+    "tech": {
+      "frontend": "Frontend",
+      "backend": "Backend",
+      "database": "Veritabanı",
+      "authentication": "Kimlik Doğrulama",
+      "deployment": "Dağıtım"
+    },
+    "version": {
+      "title": "Sürüm",
+      "current": "Güncel Sürüm:",
+      "status": "(Geliştirme Aşamasında)"
+    }
+  },
+  "protectedRoute": {
+    "unauthorized": "Yetkisiz",
+    "unauthorizedBody": "Bu sayfaya erişim yetkin yok.",
+    "requiredRole": "Gerekli rol:"
+  },
   "nav": {
     "market": "Piyasa",
     "news": "Haberler",
@@ -18,7 +48,8 @@
     "settings": "Ayarlar",
     "logout": "Çıkış",
     "expandSidebar": "Yan menüyü aç",
-    "collapseSidebar": "Yan menüyü daralt"
+    "collapseSidebar": "Yan menüyü daralt",
+    "adminBadge": "Admin"
   },
   "common": {
     "localeTag": "tr-TR",
@@ -67,6 +98,150 @@
     "fundGroup": {
       "BYF": "Borsa Yatırım Fonları",
       "YAT": "Yatırım Fonları"
+    }
+  },
+  "chart": {
+    "tabs": {
+      "indicators": "Göstergeler",
+      "drawings": "Çizim",
+      "fibonacci": "Fibonacci"
+    },
+    "range": {
+      "1M": "1A",
+      "3M": "3A",
+      "6M": "6A",
+      "1Y": "1Y",
+      "5Y": "5Y",
+      "ALL": "Maks"
+    },
+    "historicalAnalysis": "Geçmiş Analizi",
+    "detailDescription": "{{type}} - {{symbol}} detay grafiği ve teknik analiz",
+    "detailMode": "Detay Modu",
+    "detailLockMessage": "Bu sayfa <span class=\"font-semibold\">{{type}}</span> / <span class=\"font-semibold\">{{symbol}}</span> için kilitli.",
+    "assetTypeLabel": "Varlık Tipi",
+    "symbolLabel": "Sembol",
+    "customSymbolPlaceholder": "Özel sembol...",
+    "go": "Git",
+    "loading": "Geçmiş veriler yükleniyor...",
+    "waitingForData": "Grafik verisi bekleniyor...",
+    "retry": "Tekrar Dene",
+    "selectSymbol": "Grafik verisi için bir sembol seçin",
+    "aboutIndicators": {
+      "title": "Teknik Göstergeler Hakkında",
+      "sma": {
+        "title": "SMA 20 (Basit Hareketli Ortalama)",
+        "desc": "20 günlük ortalama fiyat. Kısa vadeli trend göstergesi. SMA20 üzerindeki fiyat yükseliş trendine işaret eder."
+      },
+      "ema": {
+        "title": "EMA 50 (Üstel Hareketli Ortalama)",
+        "desc": "50 günlük ağırlıklı ortalama. SMA'ya kıyasla son fiyat değişimlerine daha hızlı tepki verir."
+      },
+      "tools": {
+        "title": "Çizim Araçları",
+        "desc": "Özel analiz için trend çizgileri, Fibonacci geri çekilmeleri ve serbest çizimleri kullanın."
+      }
+    },
+    "indicators": {
+      "period": "Periyot",
+      "color": "Renk",
+      "add": "Ekle",
+      "cancel": "İptal",
+      "addIndicator": "Gösterge Ekle",
+      "hide": "Gizle",
+      "show": "Göster",
+      "edit": "Düzenle",
+      "remove": "Kaldır"
+    },
+    "drawingPanel": {
+      "tools": {
+        "trendline": "Trend",
+        "horizontal": "Yatay",
+        "vertical": "Dikey",
+        "freehand": "Serbest",
+        "text": "Metin",
+        "emoji": "Emoji"
+      },
+      "emojis": {
+        "rocket": "Roket",
+        "trendUp": "Yükseliş",
+        "trendDown": "Düşüş",
+        "money": "Para",
+        "alert": "Uyarı",
+        "fire": "Ateş",
+        "diamond": "Elmas",
+        "target": "Hedef",
+        "star": "Yıldız",
+        "bull": "Boğa",
+        "bear": "Ayı",
+        "green": "Yeşil",
+        "red": "Kırmızı",
+        "chartUp": "Grafik Yukarı",
+        "bank": "Banka"
+      },
+      "selectIcon": "İkon Seç",
+      "size": "Boyut",
+      "drawingsCount": "Çizimler ({{count}})",
+      "undo": "Geri Al",
+      "clearAll": "Tümünü Temizle",
+      "instructions": {
+        "trendline": "2 nokta tıklayın",
+        "horizontal": "1 nokta tıklayın",
+        "vertical": "1 nokta tıklayın",
+        "freehand": "Çizmek için sürükleyin",
+        "text": "Yerleştirmek için tıklayın",
+        "emoji": "Yerleştirmek için tıklayın",
+        "twoPoint": "2 nokta tıklayın"
+      }
+    },
+    "fibonacci": {
+      "tools": {
+        "retracement": "Geri Çekilme",
+        "extension": "Uzantı"
+      },
+      "instructions": {
+        "threePoint": "3 nokta tıklayın",
+        "twoPoint": "2 nokta tıklayın"
+      },
+      "cancel": "İptal",
+      "active": "Aktif ({{count}})",
+      "clear": "Temizle"
+    },
+    "textInputPlaceholder": "Buraya yazın...",
+    "volume": "Hacim",
+    "toolbar": {
+      "hidePanel": "Paneli gizle",
+      "showPanel": "Paneli göster",
+      "lineChart": "Çizgi grafik",
+      "candleChart": "Mum grafiği",
+      "line": "Çizgi",
+      "candle": "Mum",
+      "magnetLabel": "Mıknatıs",
+      "magnet": {
+        "off": "Kapalı",
+        "weak": "Zayıf (Yüksek/Düşük)",
+        "strong": "Güçlü (OHLC)"
+      },
+      "vs": "vs",
+      "trend": {
+        "up": "Yükseliş",
+        "down": "Düşüş",
+        "neutral": "Yatay"
+      },
+      "drawingsCount": "{{count}} çizim",
+      "drawingsCount_other": "{{count}} çizim",
+      "exitDrawingMode": "Çizim modundan çık",
+      "exitDraw": "Çizimi Kapat",
+      "fullscreen": "Tam ekran",
+      "exitFullscreen": "Tam ekrandan çık",
+      "active": "Aktif",
+      "cancel": "İptal",
+      "activeInstruction": {
+        "freehand": "— Çizmek için tıklayıp sürükle",
+        "click": "— Yerleştirmek için tıkla",
+        "threePoint": "— 3 nokta tıkla",
+        "twoPoint": "— 2 nokta tıkla",
+        "dragDraw": "— Tıkla ve sürükle"
+      }
     }
   },
   "sectionRegistry": {
@@ -302,7 +477,8 @@
     "emptyBody": "Kullanıcı bir mesaj gönderdiğinde burada görünecek.",
     "emptyMatchTitle": "Eşleşen sohbet yok",
     "emptyMatchBody": "\"{{query}}\" araması için sonuç bulunamadı.",
-    "closedTag": "kapalı"
+    "closedTag": "kapalı",
+    "idLabel": "id"
   },
   "adminThread": {
     "pickConversation": "Bir sohbet seç",
@@ -697,6 +873,19 @@
       "priceTry": "Fiyat (TRY)",
       "priceUsd": "Fiyat (USD)",
       "buy": "Alım"
+    }
+  },
+  "commodity": {
+    "name": {
+      "bz_f": "Brent Petrol",
+      "hg_f": "Bakır",
+      "xagtry": "Gümüş (Ons)",
+      "xagtryg": "Gram Gümüş",
+      "xautry": "Altın (Ons)",
+      "xautryg": "Gram Altın",
+      "xpdtry": "Paladyum (Ons)",
+      "xpttry": "Platin (Ons)",
+      "zw_f": "Buğday"
     }
   },
   "marketOverview": {
@@ -1254,6 +1443,8 @@
     "cooldown": "Bekleme",
     "noSearchResults": "Aramayla eşleşen haber bulunamadı.",
     "emptyCategory": "Bu kategoride henüz haber bulunmuyor.",
+    "readMore": "Devamını Oku",
+    "empty": "Haber yok",
     "refreshHint": "Haberler periyodik olarak güncellenir.",
     "categories": {
       "ALL": "Tümü",

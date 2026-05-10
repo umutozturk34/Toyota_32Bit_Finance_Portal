@@ -52,18 +52,25 @@ export const formatPriceTRY = (price) => {
 
 export const formatCompactTRY = (price) => {
     if (price === null || price === undefined) return 'N/A';
-    if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(1)}M ₺`;
-    if (price >= 100_000) return `${(price / 1_000).toFixed(0)}K ₺`;
-    return formatPriceTRY(price);
+    if (price < 100_000) return formatPriceTRY(price);
+    return new Intl.NumberFormat(currentLocaleTag(), {
+        notation: 'compact',
+        style: 'currency',
+        currency: 'TRY',
+        maximumFractionDigits: 1,
+    }).format(price);
 };
 
 export const formatPriceCompactTRY = (price) => {
     if (price === null || price === undefined) return 'N/A';
     const num = Number(price);
-    if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B ₺`;
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M ₺`;
-    if (num >= 10_000) return `${(num / 1_000).toFixed(1)}K ₺`;
-    return formatPriceTRY(num);
+    if (num < 10_000) return formatPriceTRY(num);
+    return new Intl.NumberFormat(currentLocaleTag(), {
+        notation: 'compact',
+        style: 'currency',
+        currency: 'TRY',
+        maximumFractionDigits: 2,
+    }).format(num);
 };
 
 export const formatCompactNumber = (number, currency = 'USD') => {

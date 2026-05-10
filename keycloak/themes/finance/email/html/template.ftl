@@ -1,12 +1,6 @@
 <#macro emailLayout title="" eyebrow="" subtitle="">
 <#setting time_zone="Europe/Istanbul">
-<#assign themePref = "DARK">
-<#attempt>
-    <#assign themePref = user.attributes['themePreference']>
-<#recover>
-    <#assign themePref = "DARK">
-</#attempt>
-<#assign theme = themePref>
+<#assign theme = (user.attributes['themePreference'])!"DARK">
 <!DOCTYPE html>
 <html lang="${locale.currentLanguageTag!'en'}">
 <head>
@@ -126,7 +120,7 @@
                                 </td>
                                 <td class="brand-text">
                                     <span class="brand-name">Finance Portal</span>
-                                    <span class="brand-tag">Secure Auth Mail</span>
+                                    <span class="brand-tag">${msg("email.brandTag")}</span>
                                 </td>
                             </tr>
                         </table>

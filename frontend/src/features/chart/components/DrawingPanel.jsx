@@ -1,33 +1,34 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     TrendingUp, Minus, ArrowDownUp, Pencil,
     Type, Trash2, X, Star,
 } from 'lucide-react';
 import { useTheme } from '../../../shared/context/ThemeContext';
 const DRAWING_TOOLS = [
-    { id: 'TREND_LINE', label: 'Trend', Icon: TrendingUp, color: '#5E6AD2' },
-    { id: 'HORIZONTAL_LINE', label: 'H-Line', Icon: Minus, color: '#f59e0b' },
-    { id: 'VERTICAL_LINE', label: 'V-Line', Icon: ArrowDownUp, color: '#06b6d4' },
-    { id: 'FREEHAND', label: 'Free', Icon: Pencil, color: '#10b981' },
-    { id: 'TEXT', label: 'Text', Icon: Type, color: '#8b5cf6' },
-    { id: 'ICON', label: 'Emoji', Icon: Star, color: '#f97316' },
+    { id: 'TREND_LINE', labelKey: 'chart.drawingPanel.tools.trendline', Icon: TrendingUp, color: '#5E6AD2' },
+    { id: 'HORIZONTAL_LINE', labelKey: 'chart.drawingPanel.tools.horizontal', Icon: Minus, color: '#f59e0b' },
+    { id: 'VERTICAL_LINE', labelKey: 'chart.drawingPanel.tools.vertical', Icon: ArrowDownUp, color: '#06b6d4' },
+    { id: 'FREEHAND', labelKey: 'chart.drawingPanel.tools.freehand', Icon: Pencil, color: '#10b981' },
+    { id: 'TEXT', labelKey: 'chart.drawingPanel.tools.text', Icon: Type, color: '#8b5cf6' },
+    { id: 'ICON', labelKey: 'chart.drawingPanel.tools.emoji', Icon: Star, color: '#f97316' },
 ];
 const ICON_OPTIONS = [
-    { id: '🚀', emoji: '🚀', label: 'Rocket' },
-    { id: '📈', emoji: '📈', label: 'Trend Up' },
-    { id: '📉', emoji: '📉', label: 'Trend Down' },
-    { id: '💰', emoji: '💰', label: 'Money' },
-    { id: '⚠️', emoji: '⚠️', label: 'Alert' },
-    { id: '🔥', emoji: '🔥', label: 'Fire' },
-    { id: '💎', emoji: '💎', label: 'Diamond' },
-    { id: '🎯', emoji: '🎯', label: 'Target' },
-    { id: '⭐', emoji: '⭐', label: 'Star' },
-    { id: '🐂', emoji: '🐂', label: 'Bull' },
-    { id: '🐻', emoji: '🐻', label: 'Bear' },
-    { id: '🟢', emoji: '🟢', label: 'Green' },
-    { id: '🔴', emoji: '🔴', label: 'Red' },
-    { id: '📊', emoji: '📊', label: 'Chart' },
-    { id: '🏦', emoji: '🏦', label: 'Bank' },
+    { id: '🚀', emoji: '🚀', labelKey: 'chart.drawingPanel.emojis.rocket' },
+    { id: '📈', emoji: '📈', labelKey: 'chart.drawingPanel.emojis.trendUp' },
+    { id: '📉', emoji: '📉', labelKey: 'chart.drawingPanel.emojis.trendDown' },
+    { id: '💰', emoji: '💰', labelKey: 'chart.drawingPanel.emojis.money' },
+    { id: '⚠️', emoji: '⚠️', labelKey: 'chart.drawingPanel.emojis.alert' },
+    { id: '🔥', emoji: '🔥', labelKey: 'chart.drawingPanel.emojis.fire' },
+    { id: '💎', emoji: '💎', labelKey: 'chart.drawingPanel.emojis.diamond' },
+    { id: '🎯', emoji: '🎯', labelKey: 'chart.drawingPanel.emojis.target' },
+    { id: '⭐', emoji: '⭐', labelKey: 'chart.drawingPanel.emojis.star' },
+    { id: '🐂', emoji: '🐂', labelKey: 'chart.drawingPanel.emojis.bull' },
+    { id: '🐻', emoji: '🐻', labelKey: 'chart.drawingPanel.emojis.bear' },
+    { id: '🟢', emoji: '🟢', labelKey: 'chart.drawingPanel.emojis.green' },
+    { id: '🔴', emoji: '🔴', labelKey: 'chart.drawingPanel.emojis.red' },
+    { id: '📊', emoji: '📊', labelKey: 'chart.drawingPanel.emojis.chartUp' },
+    { id: '🏦', emoji: '🏦', labelKey: 'chart.drawingPanel.emojis.bank' },
 ];
 const DrawingPanel = ({
     activeTool,
@@ -42,12 +43,13 @@ const DrawingPanel = ({
     iconSize,
     setIconSize,
 }) => {
+    const { t } = useTranslation();
     const { isDark } = useTheme();
     return (
         <div className="space-y-2">
             { }
             <div className="grid grid-cols-3 gap-1">
-                {DRAWING_TOOLS.map(({ id, label, Icon, color }) => {
+                {DRAWING_TOOLS.map(({ id, labelKey, Icon, color }) => {
                     const isActive = activeTool === id;
                     return (
                         <button
@@ -68,7 +70,7 @@ const DrawingPanel = ({
                                     filter: isActive ? `drop-shadow(0 0 4px ${color}60)` : 'none',
                                 }}
                             />
-                            {label}
+                            {t(labelKey)}
                         </button>
                     );
                 })}
@@ -77,9 +79,9 @@ const DrawingPanel = ({
             {activeTool === 'ICON' && (
                 <div className="p-2 rounded-lg border space-y-2" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
                     <div>
-                        <label className="block text-[10px] text-fg-muted uppercase tracking-wider font-medium mb-1.5">Select Icon</label>
+                        <label className="block text-[10px] text-fg-muted uppercase tracking-wider font-medium mb-1.5">{t('chart.drawingPanel.selectIcon')}</label>
                         <div className="grid grid-cols-5 gap-1">
-                            {ICON_OPTIONS.map(({ id, emoji, label }) => (
+                            {ICON_OPTIONS.map(({ id, emoji, labelKey }) => (
                                 <button
                                     key={id}
                                     onClick={() => setSelectedIcon(id)}
@@ -89,7 +91,7 @@ const DrawingPanel = ({
                                         borderColor: selectedIcon === id ? 'rgba(94,106,210,0.4)' : (isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'),
                                         boxShadow: selectedIcon === id ? '0 0 8px rgba(94,106,210,0.3)' : 'none',
                                     }}
-                                    title={label}
+                                    title={t(labelKey)}
                                 >
                                     <span className="text-base transition-all duration-150 group-hover:scale-125" style={{ filter: selectedIcon === id ? 'drop-shadow(0 0 4px rgba(94,106,210,0.5))' : 'none' }}>
                                         {emoji}
@@ -100,7 +102,7 @@ const DrawingPanel = ({
                     </div>
                     <div>
                         <label className="block text-[10px] text-fg-muted uppercase tracking-wider font-medium mb-1">
-                            Size: <span className="text-fg">{iconSize}px</span>
+                            {t('chart.drawingPanel.size')}: <span className="text-fg">{iconSize}px</span>
                         </label>
                         <input
                             type="range"
@@ -119,12 +121,12 @@ const DrawingPanel = ({
             {activeTool && (
                 <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-[rgba(94,106,210,0.08)] border border-[rgba(94,106,210,0.15)]">
                     <span className="text-[11px] text-[#6872D9]">
-                        {activeTool === 'FREEHAND' ? 'Click & drag to draw' :
-                            activeTool === 'TEXT' ? 'Click to type on chart' :
-                                activeTool === 'ICON' ? 'Click to place icon' :
-                                    activeTool === 'HORIZONTAL_LINE' ? 'Click to place line' :
-                                        activeTool === 'VERTICAL_LINE' ? 'Click to place line' :
-                                            'Click two points'}
+                        {activeTool === 'FREEHAND' ? t('chart.drawingPanel.instructions.freehand') :
+                            activeTool === 'TEXT' ? t('chart.drawingPanel.instructions.text') :
+                                activeTool === 'ICON' ? t('chart.drawingPanel.instructions.emoji') :
+                                    activeTool === 'HORIZONTAL_LINE' ? t('chart.drawingPanel.instructions.horizontal') :
+                                        activeTool === 'VERTICAL_LINE' ? t('chart.drawingPanel.instructions.vertical') :
+                                            t('chart.drawingPanel.instructions.twoPoint')}
                     </span>
                     <button
                         onClick={cancelTool}
@@ -139,25 +141,25 @@ const DrawingPanel = ({
                 <div className="space-y-0.5 pt-1 border-t border-border-default">
                     <div className="flex items-center justify-between px-1 mb-1">
                         <span className="text-[10px] text-fg-muted uppercase tracking-wider font-medium">
-                            Drawings ({drawings.length})
+                            {t('chart.drawingPanel.drawingsCount', { count: drawings.length })}
                         </span>
                         <div className="flex gap-1">
                             <button
                                 onClick={undoDrawing}
                                 className="text-[10px] text-fg-muted hover:text-fg bg-transparent border-none cursor-pointer px-1.5 py-0.5 rounded hover:bg-surface transition-colors"
                             >
-                                Undo
+                                {t('chart.drawingPanel.undo')}
                             </button>
                             <button
                                 onClick={clearDrawings}
                                 className="text-[10px] text-[#ef4444] hover:text-[#f87171] bg-transparent border-none cursor-pointer px-1.5 py-0.5 rounded hover:bg-[rgba(239,68,68,0.1)] transition-colors"
                             >
-                                Clear All
+                                {t('chart.drawingPanel.clearAll')}
                             </button>
                         </div>
                     </div>
                     {drawings.slice(-6).reverse().map(d => {
-                        const tool = DRAWING_TOOLS.find(t => t.id === d.type);
+                        const tool = DRAWING_TOOLS.find(toolDef => toolDef.id === d.type);
                         const ToolIcon = tool?.Icon || TrendingUp;
                         return (
                             <div
@@ -168,7 +170,7 @@ const DrawingPanel = ({
                                 <span className="text-[11px] text-fg-muted flex-1 truncate">
                                     {d.type === 'TEXT' ? `"${d.content}"` :
                                         d.type === 'ICON' ? d.iconId :
-                                            tool?.label || d.type}
+                                            (tool?.labelKey ? t(tool.labelKey) : d.type)}
                                 </span>
                                 <button
                                     onClick={() => removeDrawing(d.id)}

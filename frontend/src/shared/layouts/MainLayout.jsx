@@ -204,7 +204,7 @@ const MainLayout = () => {
             <span className="text-[12px] font-medium text-fg truncate">{user?.username}</span>
             {hasRole('ADMIN') && (
               <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-accent/10 text-accent tracking-wide shrink-0">
-                admin
+                {t('nav.adminBadge')}
               </span>
             )}
           </div>
@@ -304,8 +304,8 @@ const MainLayout = () => {
         </main>
         <footer className="border-t border-border-default">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-            <p className="text-xs text-fg-subtle">&copy; 2026 Finance Portal</p>
-            <p className="text-xs text-fg-subtle font-mono">v0.10.0</p>
+            <p className="text-xs text-fg-subtle">{t('home.footer')}</p>
+            <p className="text-xs text-fg-subtle font-mono">v0.18.0</p>
           </div>
         </footer>
       </div>

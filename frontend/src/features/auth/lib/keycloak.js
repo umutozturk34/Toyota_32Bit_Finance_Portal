@@ -25,18 +25,26 @@ export const initKeycloak = (onAuthenticatedCallback) => {
     })
     .catch(() => {});
 };
+async function gotoWithLocale(loginOptions) {
+  const locale = currentLocale();
+  loginOptions.locale = locale;
+  const url = await keycloak.createLoginUrl(loginOptions);
+  const sep = url.includes('?') ? '&' : '?';
+  window.location.href = `${url}${sep}kc_locale=${encodeURIComponent(locale)}`;
+}
 export const doLogin = (options = {}) => {
-  const loginOptions = { locale: currentLocale() };
+  const loginOptions = {};
   if (options.redirectUri) {
     loginOptions.redirectUri = options.redirectUri;
   }
   if (options.action === 'register') {
     loginOptions.action = 'register';
   }
-  keycloak.login(loginOptions);
+  gotoWithLocale(loginOptions);
 };
 export const doLogout = () => {
-  keycloak.logout({ redirectUri: window.location.origin });
+  const locale = encodeURIComponent(currentLocale());
+  keycloak.logout({ redirectUri: `${window.location.origin}?kc_locale=${locale}` });
 };
 export const doForgotPassword = () => {
   const locale = encodeURIComponent(currentLocale());
@@ -44,9 +52,8 @@ export const doForgotPassword = () => {
   window.location.href = url;
 };
 export const doChangePassword = () => {
-  keycloak.login({
+  gotoWithLocale({
     action: 'UPDATE_PASSWORD',
-    locale: currentLocale(),
     redirectUri: window.location.href,
   });
 };

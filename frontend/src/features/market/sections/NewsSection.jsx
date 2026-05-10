@@ -1,11 +1,13 @@
 import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Newspaper, ChevronRight } from 'lucide-react';
 import { getFallbackImage } from '../../news/lib/newsConfig';
+import { currentLocaleTag } from '../../../shared/utils/formatters';
 
 function formatDate(iso) {
   if (!iso) return '';
-  return new Date(iso).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+  return new Date(iso).toLocaleDateString(currentLocaleTag(), { day: 'numeric', month: 'short' });
 }
 
 function NewsRow({ article, onClick }) {
@@ -46,6 +48,7 @@ function NewsRow({ article, onClick }) {
 /** @param {NewsSectionProps} props */
 function NewsSectionImpl({ data }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const items = data?.items ?? [];
   const categoriesUsed = data?.categoriesUsed ?? [];
 
@@ -59,7 +62,7 @@ function NewsSectionImpl({ data }) {
         <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-accent-secondary/15">
           <Newspaper className="h-3.5 w-3.5 text-accent-secondary" />
         </span>
-        <span className="font-display text-[13px] font-bold text-fg">Haberler</span>
+        <span className="font-display text-[13px] font-bold text-fg">{t('nav.news')}</span>
         {categoriesUsed.length > 0 && (
           <span className="font-mono text-[9px] tracking-[0.14em] uppercase text-fg-subtle">· {categoriesUsed.join(', ')}</span>
         )}
@@ -67,7 +70,7 @@ function NewsSectionImpl({ data }) {
       </button>
       <div className="p-2 flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
         {items.length === 0
-          ? <p className="text-[11px] text-fg-subtle py-5 text-center">Haber yok</p>
+          ? <p className="text-[11px] text-fg-subtle py-5 text-center">{t('news.empty')}</p>
           : <div className="space-y-0.5">
               {items.map((a) => <NewsRow key={a.id} article={a} onClick={() => navigate(`/news/${a.id}`)} />)}
             </div>

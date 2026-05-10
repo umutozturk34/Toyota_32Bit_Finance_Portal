@@ -131,7 +131,7 @@ export default function AdminConversationList({ activeUser, onSelect }) {
                             </p>
                           )}
                           <p className="mt-0.5 text-[9px] font-mono flex items-center gap-1 min-w-0" title={c.userSub}>
-                            <span className="text-accent uppercase tracking-[0.14em] shrink-0">id</span>
+                            <span className="text-accent uppercase tracking-[0.14em] shrink-0">{t('adminConversations.idLabel')}</span>
                             <span className="text-fg-subtle truncate">{c.userSub}</span>
                           </p>
                         </>

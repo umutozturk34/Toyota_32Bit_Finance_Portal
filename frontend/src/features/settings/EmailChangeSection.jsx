@@ -11,6 +11,7 @@ import {
 } from '../../shared/hooks/useEmailChange';
 import { useAuth } from '../auth/AuthContext';
 import { toast } from '../../shared/components/feedback/Toast';
+import { currentLocaleTag } from '../../shared/utils/formatters';
 
 function CurrentEmailRow({ email }) {
   const { t } = useTranslation();
@@ -87,7 +88,7 @@ function InitiateForm({ currentEmail, onInitiated }) {
 }
 
 function ConfirmForm({ pending, onCleared, onConfirmed }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [code, setCode] = useState('');
   const confirm = useConfirmEmailChange();
   const cancel = useCancelEmailChange();
@@ -116,9 +117,8 @@ function ConfirmForm({ pending, onCleared, onConfirmed }) {
     }
   };
 
-  const localeTag = i18n.language === 'en' ? 'en-US' : 'tr-TR';
   const expiresAtFormatted = pending.expiresAt
-    ? new Date(pending.expiresAt).toLocaleTimeString(localeTag, { hour: '2-digit', minute: '2-digit' })
+    ? new Date(pending.expiresAt).toLocaleTimeString(currentLocaleTag(), { hour: '2-digit', minute: '2-digit' })
     : null;
 
   return (

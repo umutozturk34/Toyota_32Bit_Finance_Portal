@@ -3,14 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { commodityService } from './services/commodityService';
 import { getChangeClass, changeColors, formatPrice, formatPercentAbs } from '../../shared/utils/formatters';
+import { commodityName } from '../../shared/utils/commodityName';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
 
 const fmt = (price) => formatPrice(price);
 
 function CommodityHeader({ asset }) {
+  const { t } = useTranslation();
   const meta = asset.metadata || {};
-  const display = asset.name || asset.code;
+  const display = commodityName(t, asset.code, asset.name);
   const subtitle = [asset.code, meta.unit].filter(Boolean).join(' · ');
   return (
     <>
@@ -57,6 +59,7 @@ function CommodityMetadata({ asset }) {
 
 export default function CommodityDetail() {
   const { code } = useParams();
+  const { t } = useTranslation();
 
   return (
     <AssetDetailPage
@@ -74,7 +77,7 @@ export default function CommodityDetail() {
       getBuyProps={(asset) => ({
         assetType: 'COMMODITY',
         assetCode: asset.code || code,
-        assetName: asset.name || asset.code || code,
+        assetName: commodityName(t, asset.code, asset.name) || code,
         currentPrice: asset.price,
       })}
     />

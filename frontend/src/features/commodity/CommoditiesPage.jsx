@@ -6,6 +6,7 @@ import { TrendingUp, TrendingDown } from '../../shared/components/feedback/Anima
 import { commodityService } from './services/commodityService';
 import { adminService } from '../admin/services/adminService';
 import { formatPrice } from '../../shared/utils/formatters';
+import { commodityName } from '../../shared/utils/commodityName';
 import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
 import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
@@ -39,6 +40,7 @@ function CommoditiesPage() {
     const renderCard = (commodity, { setBuyTarget }) => {
         const meta = commodity.metadata || {};
         const usd = meta.currentPriceUsd;
+        const displayName = commodityName(t, commodity.code, commodity.name);
         return (
             <AssetCard
                 key={commodity.code}
@@ -47,7 +49,7 @@ function CommoditiesPage() {
             >
                 <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-sm font-semibold text-fg">{commodity.name || commodity.code}</h3>
+                        <h3 className="truncate text-sm font-semibold text-fg">{displayName}</h3>
                         <span className="block truncate text-xs text-fg-muted">{commodity.code}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -57,7 +59,7 @@ function CommoditiesPage() {
                             </span>
                         )}
                         <AssetBuyButton
-                            onClick={() => setBuyTarget({ assetCode: commodity.code, assetName: commodity.name || commodity.code, price: commodity.price })}
+                            onClick={() => setBuyTarget({ assetCode: commodity.code, assetName: displayName, price: commodity.price })}
                         />
                     </div>
                 </div>

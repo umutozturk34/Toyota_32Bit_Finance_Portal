@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import ConfirmDialog from '../../shared/components/modal/ConfirmDialog';
 import BroadcastModal from '../messages/BroadcastModal';
 import { useAuth } from '../auth/AuthContext';
+import { currentLocaleTag } from '../../shared/utils/formatters';
 
 const TYPE_META = {
   PRICE_ALERT_FIRED: { Icon: AlertCircle, labelKey: 'notificationPanel.types.PRICE_ALERT_FIRED', tint: 'text-accent' },
@@ -31,7 +32,7 @@ const TYPE_META = {
 };
 
 function useRelativeTime() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   return (iso) => {
     if (!iso) return '';
     const diffMs = Date.now() - new Date(iso).getTime();
@@ -43,7 +44,7 @@ function useRelativeTime() {
     if (hr < 24) return t('notificationPanel.hoursAgo', { count: hr });
     const day = Math.round(hr / 24);
     if (day < 7) return t('notificationPanel.daysAgo', { count: day });
-    return new Date(iso).toLocaleDateString(i18n.language === 'tr' ? 'tr-TR' : 'en-US');
+    return new Date(iso).toLocaleDateString(currentLocaleTag());
   };
 }
 

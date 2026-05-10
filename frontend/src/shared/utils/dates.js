@@ -1,9 +1,7 @@
-import i18n from '../i18n/config';
+import { currentLocaleTag } from './formatters';
 
 function relativeFormatter() {
-  const lang = i18n.language || i18n.options.fallbackLng || 'en';
-  const tag = lang === 'tr' ? 'tr-TR' : 'en-US';
-  return new Intl.RelativeTimeFormat(tag, { numeric: 'auto' });
+  return new Intl.RelativeTimeFormat(currentLocaleTag(), { numeric: 'auto' });
 }
 
 export function relativeTime(iso) {

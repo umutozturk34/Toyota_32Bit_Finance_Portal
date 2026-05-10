@@ -116,7 +116,7 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
                   const typeColor = ASSET_TYPE_COLORS[asset.type] || '#8b5cf6';
                   const typeLabel = asset.type
                     ? t(`assets.labels.${asset.type}`, { defaultValue: asset.type })
-                    : (asset.bondType ? t(`bond.types.${asset.bondType}`, { defaultValue: asset.bondType }) : '');
+                    : (asset.bondType ? t(`market.bond.types.${asset.bondType}`, { defaultValue: asset.bondType }) : '');
                   const cls = getChangeClass(asset.changePercent);
                   return (
                     <button

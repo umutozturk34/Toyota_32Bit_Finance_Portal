@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Calendar, ChevronRight } from 'lucide-react';
 import { formatDateTimeShort } from '../../../shared/utils/formatters';
 import { getFallbackImage, CategoryBadge } from '../lib/newsConfig.jsx';
@@ -12,6 +13,7 @@ const cardVariants = {
 
 export default function FeaturedCard({ article, index }) {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const imgSrc = article.imageUrl || getFallbackImage(article.category, article.id ?? index);
     const [imgLoaded, setImgLoaded] = useState(false);
 
@@ -52,7 +54,7 @@ export default function FeaturedCard({ article, index }) {
                         </span>
                         <span className="ml-auto text-accent text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-1">
                             <ChevronRight size={11} strokeWidth={2} />
-                            Devamini Oku
+                            {t('news.readMore')}
                         </span>
                     </div>
                 </div>

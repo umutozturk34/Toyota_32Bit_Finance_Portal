@@ -36,10 +36,37 @@
     "close": "Kapat",
     "retry": "Tekrar dene",
     "back": "Geri",
-    "addToPortfolio": "Portföye Ekle"
+    "addToPortfolio": "Portföye Ekle",
+    "sortDefault": "Varsayılan"
   },
   "compareBar": {
     "placeholder": "Karşılaştır..."
+  },
+  "pageHeader": {
+    "refresh": "Yenile",
+    "cooldown": "Bekleme: {{time}}"
+  },
+  "marketStatus": {
+    "open": "Açık",
+    "closed": "Kapalı",
+    "session": "Seans",
+    "activeSession": "Aktif seans",
+    "outsideSession": "Seans dışı",
+    "willOpen": "açılır",
+    "willClose": "kapanır"
+  },
+  "login": {
+    "welcome": "Hesabınıza giriş yapın",
+    "required": "Giriş Gerekli",
+    "intro": "Finance Portal'a erişmek için giriş yapın.",
+    "cta": "Keycloak ile Giriş Yap",
+    "poweredBy": "Powered by Keycloak & Spring Security",
+    "features": {
+      "secureAuth": "Güvenli Kimlik Doğrulama",
+      "rbac": "Rol Tabanlı Erişim Kontrolü",
+      "twoFactor": "İki Faktörlü Doğrulama (2FA)",
+      "sso": "Tek Oturum Açma (SSO)"
+    }
   },
   "userMessages": {
     "title": "Mesajlar",

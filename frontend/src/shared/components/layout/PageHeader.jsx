@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { Clock } from 'lucide-react';
@@ -18,6 +19,7 @@ export default function PageHeader({
     updating = {},
     children,
 }) {
+    const { t } = useTranslation();
     const { pathname } = useLocation();
     const setCooldown = useAppStore((s) => s.setCooldown);
     const cooldownEnd = useAppStore((s) => s.getCooldownEnd(pathname));
@@ -66,13 +68,13 @@ export default function PageHeader({
                 <button
                     onClick={handleRefresh}
                     disabled={loading || isCoolingDown}
-                    title={isCoolingDown ? `Cooldown: ${formatRemaining(remaining)}` : 'Yenile'}
+                    title={isCoolingDown ? t('pageHeader.cooldown', { time: formatRemaining(remaining) }) : t('pageHeader.refresh')}
                     className="flex items-center gap-2 rounded-lg border border-border-default bg-bg-elevated px-4 py-2 text-sm text-fg-muted transition-all duration-200 hover:bg-surface hover:text-fg hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
                 >
                     {loading ? (
                         <>
                             <RefreshCw className="h-4 w-4 animate-spin" />
-                            Yükleniyor
+                            {t('common.loading')}
                         </>
                     ) : isCoolingDown ? (
                         <>
@@ -82,7 +84,7 @@ export default function PageHeader({
                     ) : (
                         <>
                             <RefreshCw className="h-4 w-4" />
-                            Yenile
+                            {t('pageHeader.refresh')}
                         </>
                     )}
                 </button>

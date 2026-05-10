@@ -1,8 +1,9 @@
 import { Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useMarketSession } from '../../hooks/useMarketStatus';
+import { currentLocaleTag } from '../../utils/formatters';
 
-const TRANSITION_FORMATTER = new Intl.RelativeTimeFormat('tr-TR', { numeric: 'auto' });
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
@@ -11,11 +12,12 @@ function relativeTransition(iso) {
   if (!iso) return null;
   const target = new Date(iso).getTime();
   if (Number.isNaN(target)) return null;
+  const formatter = new Intl.RelativeTimeFormat(currentLocaleTag(), { numeric: 'auto' });
   const delta = target - Date.now();
   const abs = Math.abs(delta);
-  if (abs >= DAY_MS) return TRANSITION_FORMATTER.format(Math.round(delta / DAY_MS), 'day');
-  if (abs >= HOUR_MS) return TRANSITION_FORMATTER.format(Math.round(delta / HOUR_MS), 'hour');
-  return TRANSITION_FORMATTER.format(Math.round(delta / MINUTE_MS), 'minute');
+  if (abs >= DAY_MS) return formatter.format(Math.round(delta / DAY_MS), 'day');
+  if (abs >= HOUR_MS) return formatter.format(Math.round(delta / HOUR_MS), 'hour');
+  return formatter.format(Math.round(delta / MINUTE_MS), 'minute');
 }
 
 function StatusDot({ isOpen }) {
@@ -37,11 +39,12 @@ function StatusDot({ isOpen }) {
  * @param {{ market: string, compact?: boolean }} props
  */
 export default function MarketStatusBadge({ market, compact = false }) {
+  const { t } = useTranslation();
   const { entry } = useMarketSession(market);
   if (!entry) return null;
   const isOpen = entry.session === 'OPEN';
   const transitionLabel = relativeTransition(entry.nextTransitionAt);
-  const action = isOpen ? 'kapanır' : 'açılır';
+  const action = isOpen ? t('marketStatus.willClose') : t('marketStatus.willOpen');
 
   return (
     <motion.div
@@ -59,7 +62,7 @@ export default function MarketStatusBadge({ market, compact = false }) {
       >
         <StatusDot isOpen={isOpen} />
         <span className={`font-display text-[11px] font-bold tracking-tight leading-none ${isOpen ? 'text-success' : 'text-fg-muted'}`}>
-          {isOpen ? 'Açık' : 'Kapalı'}
+          {isOpen ? t('marketStatus.open') : t('marketStatus.closed')}
         </span>
         {!compact && transitionLabel && (
           <>
@@ -79,12 +82,12 @@ export default function MarketStatusBadge({ market, compact = false }) {
       >
         <div className="flex items-center justify-between mb-1.5">
           <span className="font-display text-[11px] font-bold text-fg">{market}</span>
-          <span className="font-mono text-[9px] tracking-[0.16em] uppercase text-fg-subtle">SESSION</span>
+          <span className="font-mono text-[9px] tracking-[0.16em] uppercase text-fg-subtle">{t('marketStatus.session')}</span>
         </div>
         <div className={`flex items-center gap-1.5 mb-1.5 ${isOpen ? 'text-success' : 'text-fg-muted'}`}>
           <StatusDot isOpen={isOpen} />
           <span className="font-display text-[12px] font-semibold leading-none">
-            {isOpen ? 'Aktif seans' : 'Seans dışı'}
+            {isOpen ? t('marketStatus.activeSession') : t('marketStatus.outsideSession')}
           </span>
         </div>
         {transitionLabel && (

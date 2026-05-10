@@ -36,10 +36,37 @@
     "close": "Close",
     "retry": "Retry",
     "back": "Back",
-    "addToPortfolio": "Add to portfolio"
+    "addToPortfolio": "Add to portfolio",
+    "sortDefault": "Default"
   },
   "compareBar": {
     "placeholder": "Compare..."
+  },
+  "pageHeader": {
+    "refresh": "Refresh",
+    "cooldown": "Cooldown: {{time}}"
+  },
+  "marketStatus": {
+    "open": "Open",
+    "closed": "Closed",
+    "session": "Session",
+    "activeSession": "Active session",
+    "outsideSession": "Outside session",
+    "willOpen": "opens in",
+    "willClose": "closes in"
+  },
+  "login": {
+    "welcome": "Sign in to your account",
+    "required": "Sign-in required",
+    "intro": "Sign in to access Finance Portal.",
+    "cta": "Sign in with Keycloak",
+    "poweredBy": "Powered by Keycloak & Spring Security",
+    "features": {
+      "secureAuth": "Secure Authentication",
+      "rbac": "Role-Based Access Control",
+      "twoFactor": "Two-Factor Authentication (2FA)",
+      "sso": "Single Sign-On (SSO)"
+    }
   },
   "userMessages": {
     "title": "Messages",

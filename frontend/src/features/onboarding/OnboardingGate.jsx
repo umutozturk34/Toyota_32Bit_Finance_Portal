@@ -1,18 +1,25 @@
 import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Sparkles, BarChart3, Wallet, Bell, Shield, ArrowRight } from 'lucide-react';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';
 
-const HIGHLIGHTS = [
-  { Icon: BarChart3, title: 'Çoklu Piyasa', body: 'Hisse, kripto, emtia, fon, döviz, tahvil tek noktada' },
-  { Icon: Wallet, title: 'Hipotetik Portföy', body: 'Geçmiş tarihli pozisyonlarla ne olurdu senaryoları' },
-  { Icon: Bell, title: 'Akıllı Bildirimler', body: 'Fiyat alarmları ve takip listesi (yakında)' },
-  { Icon: Shield, title: 'Güvenli Erişim', body: 'Keycloak, JWT, opsiyonel iki adımlı doğrulama' },
+const HIGHLIGHT_DEFS = [
+  { Icon: BarChart3, key: 'multiMarket' },
+  { Icon: Wallet, key: 'hypotheticalPortfolio' },
+  { Icon: Bell, key: 'smartNotifications' },
+  { Icon: Shield, key: 'secureAccess' },
 ];
 
 export default function OnboardingGate() {
+  const { t } = useTranslation();
   const { preferences, isLoading } = useUserPreferences();
   const updatePreferences = useUpdateUserPreferences();
+  const highlights = HIGHLIGHT_DEFS.map(h => ({
+    Icon: h.Icon,
+    title: t(`onboarding.highlights.${h.key}.title`),
+    body: t(`onboarding.highlights.${h.key}.body`),
+  }));
 
   const show = !isLoading && preferences && preferences.userSub && preferences.onboardingCompleted === false;
 
@@ -56,7 +63,7 @@ export default function OnboardingGate() {
                 transition={{ delay: 0.18 }}
                 className="mt-4 text-xl font-display text-fg"
               >
-                Finance Portal'a Hoş Geldin
+                {t('onboarding.welcomeTitle')}
               </motion.h2>
               <motion.p
                 initial={{ opacity: 0, y: 8 }}
@@ -64,12 +71,12 @@ export default function OnboardingGate() {
                 transition={{ delay: 0.24 }}
                 className="mt-1.5 text-sm text-fg-muted max-w-sm mx-auto"
               >
-                Piyasa verisi, portföy takibi ve bildirimleri tek arayüzde toplayan finans paneli.
+                {t('onboarding.welcomeSubtitle')}
               </motion.p>
             </div>
 
             <div className="px-6 pb-5 space-y-2">
-              {HIGHLIGHTS.map((item, i) => (
+              {highlights.map((item, i) => (
                 <motion.div
                   key={item.title}
                   initial={{ opacity: 0, x: -8 }}
@@ -97,11 +104,11 @@ export default function OnboardingGate() {
                 disabled={updatePreferences.isPending}
                 className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white bg-gradient-accent transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98] disabled:opacity-50 disabled:cursor-wait border-none cursor-pointer"
               >
-                Başlayalım
+                {t('onboarding.startCta')}
                 <ArrowRight className="h-4 w-4" />
               </motion.button>
               <p className="mt-2 text-center text-[10px] text-fg-subtle">
-                Bu pencereyi tekrar görmeyeceksin — Ayarlar'dan tüm seçenekleri yönetebilirsin.
+                {t('onboarding.dismissHint')}
               </p>
             </div>
           </motion.div>

@@ -453,6 +453,30 @@
       "PORTFOLIO_UPDATED": "Portfolio updated"
     }
   },
+  "onboarding": {
+    "welcomeTitle": "Welcome to Finance Portal",
+    "welcomeSubtitle": "A finance dashboard combining market data, portfolio tracking and notifications in one interface.",
+    "startCta": "Let's Start",
+    "dismissHint": "You won't see this window again — manage all options from Settings.",
+    "highlights": {
+      "multiMarket": {
+        "title": "Multi Market",
+        "body": "Stock, crypto, commodity, fund, forex, bond in one place"
+      },
+      "hypotheticalPortfolio": {
+        "title": "Hypothetical Portfolio",
+        "body": "What-if scenarios with historical positions"
+      },
+      "smartNotifications": {
+        "title": "Smart Notifications",
+        "body": "Price alerts and watchlist (coming soon)"
+      },
+      "secureAccess": {
+        "title": "Secure Access",
+        "body": "Keycloak, JWT, optional two-factor authentication"
+      }
+    }
+  },
   "watch": {
     "headerTitle": "Watch",
     "tabs": {

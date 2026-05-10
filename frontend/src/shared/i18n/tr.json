@@ -453,6 +453,30 @@
       "PORTFOLIO_UPDATED": "Portföy güncellendi"
     }
   },
+  "onboarding": {
+    "welcomeTitle": "Finance Portal'a Hoş Geldin",
+    "welcomeSubtitle": "Piyasa verisi, portföy takibi ve bildirimleri tek arayüzde toplayan finans paneli.",
+    "startCta": "Başlayalım",
+    "dismissHint": "Bu pencereyi tekrar görmeyeceksin — Ayarlar'dan tüm seçenekleri yönetebilirsin.",
+    "highlights": {
+      "multiMarket": {
+        "title": "Çoklu Piyasa",
+        "body": "Hisse, kripto, emtia, fon, döviz, tahvil tek noktada"
+      },
+      "hypotheticalPortfolio": {
+        "title": "Hipotetik Portföy",
+        "body": "Geçmiş tarihli pozisyonlarla ne olurdu senaryoları"
+      },
+      "smartNotifications": {
+        "title": "Akıllı Bildirimler",
+        "body": "Fiyat alarmları ve takip listesi (yakında)"
+      },
+      "secureAccess": {
+        "title": "Güvenli Erişim",
+        "body": "Keycloak, JWT, opsiyonel iki adımlı doğrulama"
+      }
+    }
+  },
   "watch": {
     "headerTitle": "Takip",
     "tabs": {

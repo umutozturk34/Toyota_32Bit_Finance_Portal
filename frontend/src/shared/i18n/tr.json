@@ -566,6 +566,19 @@
       }
     }
   },
+  "watchlistItemEdit": {
+    "title": "Asset ayarlarını düzenle",
+    "noteLabel": "Not",
+    "notePlaceholder": "Bu varlık için kişisel notun",
+    "thresholdLabel": "Eşik (% değişim)",
+    "thresholdPlaceholder": "0 = her hareket / örn 5 = %5",
+    "thresholdHint": "Boş bırakırsan global varsayılan kullanılır. <span class=\"font-mono\">0</span> = her hareket bildirim gönderir.",
+    "invalidThreshold": "Geçersiz eşik",
+    "invalidThresholdHint": "Sayısal bir değer gir (örn 0,5 veya 5)",
+    "updated": "Güncellendi",
+    "updatedBody": "{{code}} ayarları kaydedildi",
+    "updateFailed": "Güncelleme başarısız"
+  },
   "priceAlertEdit": {
     "title": "Alarm ayarlarını düzenle",
     "directionLabel": "Yön",

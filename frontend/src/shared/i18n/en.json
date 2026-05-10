@@ -566,6 +566,19 @@
       }
     }
   },
+  "watchlistItemEdit": {
+    "title": "Edit asset settings",
+    "noteLabel": "Note",
+    "notePlaceholder": "Personal note for this asset",
+    "thresholdLabel": "Threshold (% change)",
+    "thresholdPlaceholder": "0 = any movement / e.g. 5 = 5%",
+    "thresholdHint": "Leave blank to use global default. <span class=\"font-mono\">0</span> = every movement triggers a notification.",
+    "invalidThreshold": "Invalid threshold",
+    "invalidThresholdHint": "Enter a numeric value (e.g. 0.5 or 5)",
+    "updated": "Updated",
+    "updatedBody": "{{code}} settings saved",
+    "updateFailed": "Update failed"
+  },
   "priceAlertEdit": {
     "title": "Edit alert settings",
     "directionLabel": "Direction",

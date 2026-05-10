@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useEffect, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     BarChart2, X, LineChart, Activity, PenTool, Triangle, Calendar,
 } from 'lucide-react';
@@ -32,6 +33,7 @@ const TIME_RANGES = [
 ];
 
 const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = null, compareSymbol = null, timeRange = '1Y', onTimeRangeChange }) => {
+    const { t } = useTranslation();
     const { isDark } = useTheme();
     const renderDrawingsRef = useRef(null);
     const textDoneRef = useRef(false);
@@ -204,7 +206,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                     </div>
                     {(showVolumeToggle || isFund) && (
                     <div className="border-t border-border-default px-3 pt-2.5 pb-3 space-y-1.5">
-                        <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-fg-subtle pb-1">Görünüm</p>
+                        <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-fg-subtle pb-1">{t('lightweightChart.view')}</p>
                         {showVolumeToggle && (
                             <button
                                 onClick={() => setShowVolume(!showVolume)}
@@ -220,19 +222,19 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                                     onClick={() => hasInvestorCountData && setShowInvestorCount(!showInvestorCount)}
                                     disabled={!hasInvestorCountData}
                                     className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${!hasInvestorCountData ? 'opacity-45 cursor-not-allowed border-border-default text-fg-subtle' : showInvestorCount ? 'cursor-pointer border-indigo-400/40 bg-indigo-400/10 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.15)]' : 'cursor-pointer border-border-default text-fg-muted hover:text-fg hover:border-border-hover'}`}
-                                    title={hasInvestorCountData ? 'Kişi Sayısı' : 'Bu fon için kişi sayısı verisi yok'}
+                                    title={hasInvestorCountData ? t('lightweightChart.investorCount') : t('lightweightChart.noInvestorCountData')}
                                 >
                                     <Activity className="w-3.5 h-3.5" />
-                                    Kişi Sayısı
+                                    {t('lightweightChart.investorCount')}
                                 </button>
                                 <button
                                     onClick={() => hasPortfolioSizeData && setShowPortfolioSize(!showPortfolioSize)}
                                     disabled={!hasPortfolioSizeData}
                                     className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${!hasPortfolioSizeData ? 'opacity-45 cursor-not-allowed border-border-default text-fg-subtle' : showPortfolioSize ? 'cursor-pointer border-emerald-500/40 bg-emerald-500/10 text-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.15)]' : 'cursor-pointer border-border-default text-fg-muted hover:text-fg hover:border-border-hover'}`}
-                                    title={hasPortfolioSizeData ? 'Portföy Büyüklüğü' : 'Bu fon için portföy verisi yok'}
+                                    title={hasPortfolioSizeData ? t('lightweightChart.portfolioSize') : t('lightweightChart.noPortfolioSizeData')}
                                 >
                                     <BarChart2 className="w-3.5 h-3.5" />
-                                    Portföy Büyüklüğü
+                                    {t('lightweightChart.portfolioSize')}
                                 </button>
                             </>
                         )}
@@ -403,7 +405,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                         <div className="flex items-center justify-between px-3 py-1.5 bg-surface/40">
                             <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
                                 <Activity className="w-3.5 h-3.5 text-indigo-400" />
-                                Kişi Sayısı
+                                {t('lightweightChart.investorCount')}
                             </span>
                             <button
                                 onClick={() => setShowInvestorCount(false)}
@@ -420,7 +422,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                         <div className="flex items-center justify-between px-3 py-1.5 bg-surface/40">
                             <span className="flex items-center gap-1.5 text-xs text-fg-muted font-medium">
                                 <BarChart2 className="w-3.5 h-3.5 text-emerald-500" />
-                                Portföy Büyüklüğü
+                                {t('lightweightChart.portfolioSize')}
                             </span>
                             <button
                                 onClick={() => setShowPortfolioSize(false)}

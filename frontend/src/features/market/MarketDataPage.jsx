@@ -101,7 +101,7 @@ export default function MarketDataPage() {
     setLocalSections((prev) => {
       const base = prev ?? persistedRef.current;
       if (kind === 'ASSET_CARDS' && !finalConfig.name) {
-        finalConfig.name = `Asset Kartları ${base.filter((s) => s.kind === 'ASSET_CARDS').length + 1}`;
+        finalConfig.name = t('widgetTray.assetCardsN', { n: base.filter((s) => s.kind === 'ASSET_CARDS').length + 1 });
       }
       if (opts.placeAtTop) {
         const shifted = base.map((s) => ({ ...s, y: (s.y ?? 0) + size.h }));
@@ -117,7 +117,7 @@ export default function MarketDataPage() {
       ];
     });
     return newId;
-  }, [widgetDefsByKind]);
+  }, [widgetDefsByKind, t]);
 
   const handleTrayClick = useCallback((tile, anchorEl) => {
     const newId = insertSection(tile.kind, tile.config, 0, 0, { placeAtTop: true });

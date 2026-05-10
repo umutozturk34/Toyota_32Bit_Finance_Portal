@@ -165,6 +165,21 @@
       "year": "12 yıl ileri"
     }
   },
+  "lightweightChart": {
+    "view": "Görünüm",
+    "investorCount": "Kişi Sayısı",
+    "portfolioSize": "Portföy Büyüklüğü",
+    "noInvestorCountData": "Bu fon için kişi sayısı verisi yok",
+    "noPortfolioSizeData": "Bu fon için portföy verisi yok"
+  },
+  "overviewCanvas": {
+    "title": "Genel Bakış"
+  },
+  "notifStream": {
+    "newNotification": "Yeni bildirim",
+    "newUserMessage": "Yeni kullanıcı mesajı",
+    "newMessageReceived": "Yeni mesaj geldi"
+  },
   "marketList": {
     "updateStarted": "Güncelleme Başlatıldı",
     "updateFailed": "Güncelleme Hatası",
@@ -552,6 +567,7 @@
       "confirmHint": "adıyla bir portföy hazırlanacak.",
       "successTitle": "Portföyünüz hazır",
       "successHint": "Pozisyon eklemeye başlayabilirsiniz",
+      "defaultName": "Demo Portföy",
       "steps": {
         "verifying": "Hesap doğrulanıyor...",
         "creating": "Portföy oluşturuluyor...",

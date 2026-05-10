@@ -165,6 +165,21 @@
       "year": "12 years forward"
     }
   },
+  "lightweightChart": {
+    "view": "View",
+    "investorCount": "Investor count",
+    "portfolioSize": "Portfolio size",
+    "noInvestorCountData": "No investor count data for this fund",
+    "noPortfolioSizeData": "No portfolio size data for this fund"
+  },
+  "overviewCanvas": {
+    "title": "Overview"
+  },
+  "notifStream": {
+    "newNotification": "New notification",
+    "newUserMessage": "New user message",
+    "newMessageReceived": "New message received"
+  },
   "marketList": {
     "updateStarted": "Update started",
     "updateFailed": "Update failed",
@@ -552,6 +567,7 @@
       "confirmHint": "will be created.",
       "successTitle": "Your portfolio is ready",
       "successHint": "You can start adding positions",
+      "defaultName": "Demo Portfolio",
       "steps": {
         "verifying": "Verifying account...",
         "creating": "Creating portfolio...",

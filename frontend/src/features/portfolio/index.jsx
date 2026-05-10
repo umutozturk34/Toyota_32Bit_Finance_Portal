@@ -21,13 +21,13 @@ import {
   useCreatePortfolio, useInvalidatePortfolio,
 } from './hooks/usePortfolioData';
 
-const DEFAULT_PORTFOLIO_NAME = 'Demo Portföy';
 const ONBOARDING_SUCCESS_HOLD_MS = 900;
 
 export default function Portfolio() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const invalidatePortfolio = useInvalidatePortfolio();
+  const defaultPortfolioName = t('portfolio.onboarding.defaultName');
   const onboardingSteps = [
     { label: t('portfolio.onboarding.steps.verifying'), duration: 600 },
     { label: t('portfolio.onboarding.steps.creating'), duration: 700 },
@@ -98,7 +98,7 @@ export default function Portfolio() {
     setOnboardingPhase('processing');
     try {
       await Promise.all([
-        createPortfolio.mutateAsync(DEFAULT_PORTFOLIO_NAME),
+        createPortfolio.mutateAsync(defaultPortfolioName),
         runAnimation(onboardingSteps),
       ]);
       setOnboardingPhase('success');
@@ -177,7 +177,7 @@ export default function Portfolio() {
                   <div className="text-center space-y-1">
                     <p className="text-sm font-semibold text-fg">{t('portfolio.onboarding.confirmTitle')}</p>
                     <p className="text-xs text-fg-muted">
-                      <span className="font-medium text-fg">{DEFAULT_PORTFOLIO_NAME}</span> {t('portfolio.onboarding.confirmHint')}
+                      <span className="font-medium text-fg">{defaultPortfolioName}</span> {t('portfolio.onboarding.confirmHint')}
                     </p>
                   </div>
                 </div>

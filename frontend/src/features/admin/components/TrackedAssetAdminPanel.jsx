@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Reorder, useDragControls } from 'framer-motion';
@@ -10,6 +11,7 @@ import SearchInput from '../../../shared/components/form/SearchInput';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 
 function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onDelete, highlighted }) {
+    const { t } = useTranslation();
     const dragControls = useDragControls();
 
     return (
@@ -45,14 +47,14 @@ function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onDelete,
                     <span className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px] text-fg-muted">#{index + 1}</span>
                 </div>
                 <p className="truncate text-xs text-fg-muted">{item.displayName || item.assetCode}</p>
-                {type === 'CRYPTO' && item.binanceSymbol && <p className="truncate text-xs text-fg-muted">Binance: {item.binanceSymbol}</p>}
+                {type === 'CRYPTO' && item.binanceSymbol && <p className="truncate text-xs text-fg-muted">{t('trackedAssetAdmin.binance', { symbol: item.binanceSymbol })}</p>}
             </div>
 
             <div className="flex items-center gap-1.5">
                 <button
                     onClick={() => onMoveUp(item.assetCode)}
                     disabled={index === 0}
-                    title="Yukarı taşı"
+                    title={t('trackedAssetAdmin.moveUp')}
                     className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base text-fg-subtle hover:bg-surface disabled:opacity-30 transition-colors"
                 >
                     <ArrowUp className="h-3.5 w-3.5" />
@@ -60,7 +62,7 @@ function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onDelete,
                 <button
                     onClick={() => onMoveDown(item.assetCode)}
                     disabled={index === total - 1}
-                    title="Aşağı taşı"
+                    title={t('trackedAssetAdmin.moveDown')}
                     className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default bg-bg-base text-fg-subtle hover:bg-surface disabled:opacity-30 transition-colors"
                 >
                     <ArrowDown className="h-3.5 w-3.5" />
@@ -71,13 +73,13 @@ function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onDelete,
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                     className="inline-flex h-7 w-7 cursor-grab items-center justify-center rounded-md border border-border-default bg-bg-base text-fg-subtle active:cursor-grabbing hover:bg-surface hover:text-fg transition-colors touch-none"
-                    title="Tut ve sürükle"
+                    title={t('trackedAssetAdmin.dragHandle')}
                 >
                     <GripVertical className="h-3.5 w-3.5" />
                 </motion.span>
                 <button
                     onClick={() => onDelete(item)}
-                    title="Sil"
+                    title={t('common.delete')}
                     className="flex h-7 w-7 items-center justify-center rounded-md border border-danger/30 bg-danger/5 text-danger hover:bg-danger/15 transition-colors"
                 >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -88,6 +90,7 @@ function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onDelete,
 }
 
 export default function TrackedAssetAdminPanel({ type, title, onChanged, refreshToken = 0 }) {
+    const { t } = useTranslation();
     const queryClient = useQueryClient();
     const [items, setItems] = useState([]);
     const [search, setSearch] = useState('');
@@ -140,9 +143,9 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
             setDeleteTarget(null);
             invalidate();
             onChanged?.();
-            toast.success('Silindi', `${deleteTarget.assetCode} başarıyla silindi`);
+            toast.success(t('trackedAssetAdmin.deleted'), t('trackedAssetAdmin.deletedBody', { code: deleteTarget.assetCode }));
         } catch (err) {
-            toast.error('Silme Hatası', err.response?.data?.message || err.message);
+            toast.error(t('trackedAssetAdmin.deleteFailed'), err.response?.data?.message || err.message);
         } finally {
             setDeleting(false);
         }
@@ -177,9 +180,9 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
 
             invalidate();
             onChanged?.();
-            toast.success('Kaydedildi', 'Sıralama güncellendi');
+            toast.success(t('trackedAssetAdmin.saved'), t('trackedAssetAdmin.savedBody'));
         } catch (err) {
-            toast.error('Kaydetme Hatası', err.response?.data?.message || err.message);
+            toast.error(t('trackedAssetAdmin.saveFailed'), err.response?.data?.message || err.message);
         } finally {
             setSavingOrder(false);
         }
@@ -216,14 +219,14 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
         <>
             <div className="rounded-xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-4">
                 <div className="mb-3 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-fg">{title} Tracked Listesi ({search ? `${filteredItems.length}/` : ''}{items.length})</h3>
+                    <h3 className="text-sm font-semibold text-fg">{t('trackedAssetAdmin.heading', { title, count: items.length, prefix: search ? `${filteredItems.length}/` : '' })}</h3>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleResetOrder}
                             disabled={!hasOrderChanges || savingOrder}
                             className="rounded-md border border-border-default bg-bg-base px-2.5 py-1 text-xs text-fg-muted hover:bg-surface disabled:opacity-40 transition-colors"
                         >
-                            Geri Al
+                            {t('common.undo')}
                         </button>
                         <button
                             onClick={handleSaveOrder}
@@ -234,7 +237,7 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
                                     : 'border-border-default bg-bg-base text-fg-muted disabled:opacity-40'
                             }`}
                         >
-                            {savingOrder ? 'Kaydediliyor...' : 'Sırayı Kaydet'}
+                            {savingOrder ? t('trackedAssetAdmin.saving') : t('trackedAssetAdmin.saveOrder')}
                         </button>
                         <button
                             onClick={invalidate}
@@ -247,7 +250,7 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
                 </div>
 
                 <div className="mb-3">
-                    <SearchInput value={search} onChange={setSearch} placeholder={`${title} ara...`} />
+                    <SearchInput value={search} onChange={setSearch} placeholder={t('trackedAssetAdmin.searchPlaceholder', { title })} />
                 </div>
 
                 {hasOrderChanges && (
@@ -258,12 +261,12 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
                         className="mb-3 flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning"
                     >
                         <div className="h-1.5 w-1.5 rounded-full bg-warning animate-pulse" />
-                        Kaydedilmemiş sıralama değişikliği var
+                        {t('trackedAssetAdmin.unsavedChanges')}
                     </motion.div>
                 )}
 
                 {filteredItems.length === 0 ? (
-                    <p className="text-xs text-fg-muted py-4 text-center">{search ? 'Aramayla eşleşen kayıt yok.' : 'Kayıt yok.'}</p>
+                    <p className="text-xs text-fg-muted py-4 text-center">{search ? t('trackedAssetAdmin.noMatch') : t('trackedAssetAdmin.empty')}</p>
                 ) : (
                     <div className="max-h-[420px] overflow-y-auto overflow-x-hidden pr-1 select-none">
                         <Reorder.Group
@@ -293,10 +296,10 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
 
             <ConfirmDialog
                 open={!!deleteTarget}
-                title={`${deleteTarget?.assetCode} silinsin mi?`}
-                message="Bu varlık tracked listesinden kaldırılacak. Mevcut piyasa verileri (mum, snapshot) silinmez."
-                confirmLabel="Sil"
-                cancelLabel="Vazgeç"
+                title={t('trackedAssetAdmin.deletePromptTitle', { code: deleteTarget?.assetCode ?? '' })}
+                message={t('trackedAssetAdmin.deletePromptBody')}
+                confirmLabel={t('common.delete')}
+                cancelLabel={t('common.cancel')}
                 variant="danger"
                 loading={deleting}
                 onConfirm={handleDeleteConfirm}

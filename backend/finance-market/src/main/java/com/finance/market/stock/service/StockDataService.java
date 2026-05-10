@@ -30,8 +30,7 @@ public class StockDataService implements TrackedAssetDataService {
     @Override
     public void validateExists(String symbol) {
         if (!stockUpdateService.exists(symbol)) {
-            throw new BusinessException(
-                    "Hisse senedi bulunamadı: " + symbol, "ASSET_NOT_FOUND");
+            throw new BusinessException("error.market.stockNotFound", symbol);
         }
     }
 

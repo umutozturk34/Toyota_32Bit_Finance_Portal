@@ -8,14 +8,14 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 public record WatchlistItemUpdateRequest(
-        @Size(max = 255, message = "Not en fazla 255 karakter olabilir") String note,
-        @DecimalMin(value = "0", inclusive = true, message = "Eşik 0 veya pozitif olmalı")
-        @DecimalMax(value = "999.9999", message = "Eşik en fazla 999.9999% olabilir")
+        @Size(max = 255, message = "{validation.watchlist.note.maxLen}") String note,
+        @DecimalMin(value = "0", inclusive = true, message = "{validation.watchlist.threshold.nonNegative}")
+        @DecimalMax(value = "999.9999", message = "{validation.watchlist.threshold.maxPercent}")
         BigDecimal deltaThreshold
 ) {
     private static final BigDecimal MIN_NON_ZERO = new BigDecimal("0.0001");
 
-    @AssertTrue(message = "Eşik 0 veya en az 0.0001% olmalı (DB hassasiyeti)")
+    @AssertTrue(message = "{validation.watchlist.threshold.granularity}")
     public boolean isThresholdGranularityValid() {
         if (deltaThreshold == null) return true;
         if (deltaThreshold.signum() == 0) return true;

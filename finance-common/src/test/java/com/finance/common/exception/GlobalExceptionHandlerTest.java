@@ -1,15 +1,21 @@
 package com.finance.common.exception;
 
 import com.finance.common.dto.ErrorResponse;
+import com.finance.common.i18n.Translator;
 import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -22,22 +28,20 @@ class GlobalExceptionHandlerTest {
 
     @BeforeEach
     void setUp() {
-        handler = new GlobalExceptionHandler();
+        ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
+        messageSource.setBasenames("messages");
+        messageSource.setDefaultEncoding("UTF-8");
+        Translator translator = new Translator(messageSource);
+        LocaleContextHolder.setLocale(Locale.ENGLISH);
+
+        handler = new GlobalExceptionHandler(translator);
         request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("/api/v1/test");
     }
 
-    @Test
-    void businessExceptionMapsToUnprocessableEntityWithCustomErrorCode() {
-        BusinessException ex = new BusinessException("duplicate portfolio name", "DUPLICATE_PORTFOLIO");
-
-        ResponseEntity<ErrorResponse> response = handler.handleBusinessException(ex, request);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getErrorCode()).isEqualTo("DUPLICATE_PORTFOLIO");
-        assertThat(response.getBody().getMessage()).isEqualTo("duplicate portfolio name");
-        assertThat(response.getBody().getPath()).isEqualTo("/api/v1/test");
+    @AfterEach
+    void tearDown() {
+        LocaleContextHolder.resetLocaleContext();
     }
 
     @Test

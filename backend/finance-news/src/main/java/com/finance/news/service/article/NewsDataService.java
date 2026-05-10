@@ -31,7 +31,7 @@ public class NewsDataService {
         log.info("Starting news update from {} sources", sources.size());
 
         if (sources.isEmpty()) {
-            throw new BusinessException("No news sources configured");
+            throw new BusinessException("error.news.noSourcesConfigured");
         }
 
         final int[] totalSaved = {0};
@@ -59,7 +59,7 @@ public class NewsDataService {
                 (stopped, e) -> log.warn("Circuit breaker OPEN for RSS feeds, stopping news update"));
 
         if (result.successCount() == 0) {
-            throw new BusinessException("All " + sources.size() + " news sources failed: " + result.failedItems());
+            throw new BusinessException("error.news.allSourcesFailed", sources.size());
         }
 
         if (totalSaved[0] > 0) {

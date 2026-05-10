@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
@@ -22,6 +23,7 @@ const containerVariants = {
 };
 
 export default function News() {
+    const { t } = useTranslation();
     const setCooldown = useAppStore((s) => s.setCooldown);
     const cooldownEnd = useAppStore((s) => s.getCooldownEnd('/news'));
     const [remaining, setRemaining] = useState(() => Math.max(0, cooldownEnd - Date.now()));
@@ -71,8 +73,8 @@ export default function News() {
     const featuredArticles = isFirstPage ? articles.slice(0, 2) : [];
     const restArticles = isFirstPage ? articles.slice(2) : articles;
 
-    if (loading && articles.length === 0) return <LoadingState message="Haberler yükleniyor…" />;
-    if (error) return <ErrorState message="Haberler yüklenirken bir hata oluştu" onRetry={refetch} />;
+    if (loading && articles.length === 0) return <LoadingState message={t('news.loading')} />;
+    if (error) return <ErrorState message={t('news.error')} onRetry={refetch} />;
 
     return (
         <div className="space-y-6 py-6">
@@ -87,12 +89,12 @@ export default function News() {
                         <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10 text-accent">
                             <Newspaper size={20} />
                         </span>
-                        Finansal Haberler
+                        {t('news.title')}
                     </h1>
                     <p className="text-fg-muted text-sm mt-1 ml-12">
-                        Güncel piyasa ve finans haberleri
+                        {t('news.subtitle')}
                         {totalCount > 0 && (
-                            <span className="ml-2 text-fg-subtle">· {totalCount} haber</span>
+                            <span className="ml-2 text-fg-subtle">· {totalCount} {t('news.countLabel')}</span>
                         )}
                     </p>
                 </div>
@@ -101,20 +103,20 @@ export default function News() {
                     id="news-refresh-btn"
                     onClick={handleRefresh}
                     disabled={loading || isCoolingDown}
-                    title={isCoolingDown ? `Cooldown: ${formatRemaining(remaining)}` : 'Yenile'}
+                    title={isCoolingDown ? `${t('news.cooldown')}: ${formatRemaining(remaining)}` : t('news.refresh')}
                     className="flex items-center gap-2 rounded-md border border-border-default bg-bg-base px-4 py-2 text-sm text-fg-muted transition-colors duration-150 hover:bg-surface hover:text-fg disabled:opacity-50 self-start sm:self-auto"
                 >
                     {isCoolingDown ? (
                         <><Clock className="h-4 w-4" />{formatRemaining(remaining)}</>
                     ) : (
-                        <><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />Yenile</>
+                        <><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />{t('news.refresh')}</>
                     )}
                 </button>
             </motion.div>
 
             <div className="flex flex-wrap items-center gap-3">
                 <div className="w-48">
-                    <SearchInput value={listParams.search} onChange={listParams.setSearch} placeholder="Haber ara..." />
+                    <SearchInput value={listParams.search} onChange={listParams.setSearch} placeholder={t('news.searchPlaceholder')} />
                 </div>
             </div>
 
@@ -133,9 +135,9 @@ export default function News() {
                         <SearchX size={28} className="text-fg-subtle" />
                     </div>
                     <p className="text-fg-muted text-sm">
-                        {listParams.search ? 'Aramayla eşleşen haber bulunamadı.' : 'Bu kategoride henüz haber bulunmuyor.'}
+                        {listParams.search ? t('news.noSearchResults') : t('news.emptyCategory')}
                     </p>
-                    <p className="text-fg-subtle text-xs">Haberler periyodik olarak güncellenir.</p>
+                    <p className="text-fg-subtle text-xs">{t('news.refreshHint')}</p>
                 </motion.div>
             ) : (
                 <AnimatePresence mode="wait">

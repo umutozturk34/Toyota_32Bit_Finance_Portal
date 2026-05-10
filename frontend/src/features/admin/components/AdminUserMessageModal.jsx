@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { MessageCircle, Send, Loader2, X } from 'lucide-react';
@@ -8,6 +9,7 @@ import { extractApiError } from '../../../shared/utils/apiError';
 import { MAX_BODY } from '../../messages/util';
 
 export default function AdminUserMessageModal({ open, user, onClose }) {
+  const { t } = useTranslation();
   const [body, setBody] = useState('');
   const send = useSendAdminMessage();
 
@@ -21,10 +23,10 @@ export default function AdminUserMessageModal({ open, user, onClose }) {
     if (!trimmed || send.isPending || !user?.id) return;
     try {
       await send.mutateAsync({ recipientSub: user.id, body: trimmed });
-      toast.success('Mesaj gönderildi', `${user.username} kullanıcısına iletildi`);
+      toast.success(t('adminMessage.sent'), t('adminMessage.sentBody', { username: user.username }));
       onClose?.();
     } catch (err) {
-      toast.error(extractApiError(err, 'Mesaj gönderilemedi'));
+      toast.error(extractApiError(err, t('adminMessage.failed')));
     }
   };
 
@@ -70,7 +72,7 @@ export default function AdminUserMessageModal({ open, user, onClose }) {
             </div>
 
             <label className="block">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">Mesaj</span>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">{t('adminMessage.label')}</span>
               <textarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
@@ -83,11 +85,11 @@ export default function AdminUserMessageModal({ open, user, onClose }) {
                 rows={5}
                 maxLength={MAX_BODY}
                 required
-                placeholder="Kullanıcıya iletmek istediğin mesajı yaz…"
+                placeholder={t('adminMessage.placeholder')}
                 className="mt-1.5 w-full resize-none rounded-xl border border-border-default bg-bg-elevated px-3 py-2.5 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.15)] transition-all"
               />
               <div className="mt-1 flex items-center justify-between text-[10px] font-mono text-fg-subtle">
-                <span>Enter gönder · Shift+Enter satır</span>
+                <span>{t('adminMessage.hint')}</span>
                 <span className={body.length > MAX_BODY - 200 ? 'text-warning' : ''}>{body.length}/{MAX_BODY}</span>
               </div>
             </label>
@@ -99,7 +101,7 @@ export default function AdminUserMessageModal({ open, user, onClose }) {
                 disabled={send.isPending}
                 className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-all cursor-pointer disabled:opacity-50"
               >
-                Vazgeç
+                {t('common.cancel')}
               </button>
               <motion.button
                 type="submit"
@@ -110,7 +112,7 @@ export default function AdminUserMessageModal({ open, user, onClose }) {
                 <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-accent via-accent-bright to-accent" />
                 <span className="relative flex items-center gap-1.5">
                   {send.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                  {send.isPending ? 'Gönderiliyor…' : 'Gönder'}
+                  {send.isPending ? t('adminMessage.sending') : t('adminMessage.send')}
                 </span>
               </motion.button>
             </div>

@@ -23,6 +23,11 @@ public record UserSecurityProperties(
 
     public record Keycloak(
             String frontendClientId,
-            String themeAttribute
-    ) {}
+            String themeAttribute,
+            String localeAttribute
+    ) {
+        public Keycloak {
+            localeAttribute = localeAttribute == null ? "locale" : localeAttribute;
+        }
+    }
 }

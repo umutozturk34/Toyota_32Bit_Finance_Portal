@@ -49,8 +49,8 @@ public class MarketSessionScheduler {
     private void dispatchTransition(SessionMarket market, MarketSession current,
                                     List<NotificationPreference> subscribers) {
         NotificationPayload payload = (current == MarketSession.OPEN)
-                ? new MarketOpenedPayload(market.name(), market.displayLabel())
-                : new MarketClosedPayload(market.name(), market.displayLabel());
+                ? new MarketOpenedPayload(market.name())
+                : new MarketClosedPayload(market.name());
         log.info("Market session transition market={} new={} subscribers={}",
                 market, current, subscribers.size());
         for (NotificationPreference pref : subscribers) {

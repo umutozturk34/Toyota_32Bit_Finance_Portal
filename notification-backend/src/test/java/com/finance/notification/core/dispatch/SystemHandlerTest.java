@@ -1,14 +1,29 @@
 package com.finance.notification.core.dispatch;
 
+import com.finance.common.i18n.Translator;
 import com.finance.notification.core.dispatch.payload.SystemPayload;
 import com.finance.notification.core.model.NotificationType;
+import com.finance.notification.testsupport.HandlerTestSupport;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class SystemHandlerTest {
 
-    private final SystemHandler handler = new SystemHandler();
+    private SystemHandler handler;
+
+    @BeforeEach
+    void setUp() {
+        Translator translator = HandlerTestSupport.turkishTranslator();
+        handler = new SystemHandler(translator);
+    }
+
+    @AfterEach
+    void tearDown() {
+        HandlerTestSupport.resetLocale();
+    }
 
     @Test
     void type_returnsSystem() {

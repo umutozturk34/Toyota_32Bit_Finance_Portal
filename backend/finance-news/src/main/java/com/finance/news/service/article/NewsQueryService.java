@@ -52,7 +52,7 @@ public class NewsQueryService {
     @Transactional(readOnly = true)
     public NewsArticleDetailResponse getById(Long id) {
         NewsArticle article = newsCacheService.getById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("News article not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("error.news.articleNotFound", id));
         return responseMapper.toDetailResponse(article);
     }
 
@@ -68,7 +68,7 @@ public class NewsQueryService {
 
         NewsCategory newsCategory = category == null || category.isBlank()
                 ? null
-                : EnumParser.parseOrBadRequest(NewsCategory.class, category.toUpperCase(), "news category");
+                : EnumParser.parseOrBadRequest(NewsCategory.class, category.toUpperCase(), "enum.field.newsCategory");
         if (newsCategory != null) {
             NewsCategory fixed = newsCategory;
             spec = spec.and((root, query, cb) -> cb.equal(root.get("category"), fixed));

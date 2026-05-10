@@ -1,35 +1,31 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Gem, ChevronUp, ChevronDown, Clock } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
 import { commodityService } from './services/commodityService';
 import { adminService } from '../admin/services/adminService';
 import { formatPrice } from '../../shared/utils/formatters';
+import { commodityName } from '../../shared/utils/commodityName';
 import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
 import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
 import ChangePercentBadge from '../../shared/components/asset/ChangePercentBadge';
 import useListParams from '../../shared/hooks/useListParams';
 
-const SORT_OPTIONS = [
-    { id: 'changePercent', label: 'Değişim %' },
-    { id: 'price', label: 'Fiyat' },
-    { id: 'name', label: 'İsim' },
-];
-
-const SEGMENT_LABELS = {
-    PRECIOUS_METAL: 'Kıymetli Metaller',
-    OTHER: 'Diğerleri',
-};
-
+const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
 const SEGMENT_ORDER = ['PRECIOUS_METAL', 'OTHER'];
 
-const formatCommodityPrice = (price) => formatPrice(price, { locale: 'tr-TR' });
+const formatCommodityPrice = (price) => formatPrice(price);
 
 function CommoditiesPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const listParams = useListParams();
     const segment = listParams.filter || 'ALL';
+    const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) }));
+    const segmentLabel = (id) => t(`market.commodity.segments.${id}`);
+    const localeTag = t('common.localeTag');
 
     const { data: segmentCounts = [] } = useQuery({
         queryKey: ['commoditySegments'],
@@ -39,11 +35,12 @@ function CommoditiesPage() {
 
     const tabItems = [...segmentCounts]
         .sort((a, b) => SEGMENT_ORDER.indexOf(a.type) - SEGMENT_ORDER.indexOf(b.type))
-        .map(s => ({ type: s.type, count: s.count, label: SEGMENT_LABELS[s.type] || s.type }));
+        .map(s => ({ type: s.type, count: s.count, label: segmentLabel(s.type) }));
 
     const renderCard = (commodity, { setBuyTarget }) => {
         const meta = commodity.metadata || {};
         const usd = meta.currentPriceUsd;
+        const displayName = commodityName(t, commodity.code, commodity.name);
         return (
             <AssetCard
                 key={commodity.code}
@@ -52,7 +49,7 @@ function CommoditiesPage() {
             >
                 <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-sm font-semibold text-fg">{commodity.name || commodity.code}</h3>
+                        <h3 className="truncate text-sm font-semibold text-fg">{displayName}</h3>
                         <span className="block truncate text-xs text-fg-muted">{commodity.code}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -62,7 +59,7 @@ function CommoditiesPage() {
                             </span>
                         )}
                         <AssetBuyButton
-                            onClick={() => setBuyTarget({ assetCode: commodity.code, assetName: commodity.name || commodity.code, price: commodity.price })}
+                            onClick={() => setBuyTarget({ assetCode: commodity.code, assetName: displayName, price: commodity.price })}
                         />
                     </div>
                 </div>
@@ -83,39 +80,39 @@ function CommoditiesPage() {
                 <div className="mt-3 space-y-1 border-t border-border-default pt-3">
                     {usd != null && (
                         <div className="flex items-center justify-between text-xs">
-                            <span className="text-fg-muted">USD Fiyat</span>
+                            <span className="text-fg-muted">{t('market.commodity.usdPriceLabel')}</span>
                             <span className="font-mono text-fg">${formatCommodityPrice(usd)}</span>
                         </div>
                     )}
                     {meta.openPrice != null && (
                         <div className="flex items-center justify-between text-xs">
-                            <span className="text-fg-muted">Açılış</span>
+                            <span className="text-fg-muted">{t('market.stock.openLabel')}</span>
                             <span className="font-mono text-fg">₺{formatCommodityPrice(meta.openPrice)}</span>
                         </div>
                     )}
                     {meta.dayHigh != null && (
                         <div className="flex items-center justify-between text-xs">
-                            <span className="flex items-center gap-1 text-fg-muted"><ChevronUp className="h-3 w-3 text-success" />En Yüksek</span>
+                            <span className="flex items-center gap-1 text-fg-muted"><ChevronUp className="h-3 w-3 text-success" />{t('market.stock.highLabel')}</span>
                             <span className="font-mono text-fg">₺{formatCommodityPrice(meta.dayHigh)}</span>
                         </div>
                     )}
                     {meta.dayLow != null && (
                         <div className="flex items-center justify-between text-xs">
-                            <span className="flex items-center gap-1 text-fg-muted"><ChevronDown className="h-3 w-3 text-danger" />En Düşük</span>
+                            <span className="flex items-center gap-1 text-fg-muted"><ChevronDown className="h-3 w-3 text-danger" />{t('market.stock.lowLabel')}</span>
                             <span className="font-mono text-fg">₺{formatCommodityPrice(meta.dayLow)}</span>
                         </div>
                     )}
                     {meta.volume != null && meta.volume > 0 && (
                         <div className="flex items-center justify-between text-xs">
-                            <span className="text-fg-muted">Hacim</span>
-                            <span className="font-mono text-fg">{meta.volume.toLocaleString('tr-TR')} kontrat</span>
+                            <span className="text-fg-muted">{t('market.stock.volumeLabel')}</span>
+                            <span className="font-mono text-fg">{meta.volume.toLocaleString(localeTag)} {t('market.commodity.contractsSuffix')}</span>
                         </div>
                     )}
                 </div>
 
                 <div className="mt-2 flex items-center gap-1 text-[11px] text-fg-subtle">
                     <Clock className="h-3 w-3" />
-                    {commodity.lastUpdated ? new Date(commodity.lastUpdated).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'N/A'}
+                    {commodity.lastUpdated ? new Date(commodity.lastUpdated).toLocaleString(localeTag, { timeZone: 'Europe/Istanbul' }) : 'N/A'}
                 </div>
             </AssetCard>
         );
@@ -128,7 +125,7 @@ function CommoditiesPage() {
 
     return (
         <MarketListPage
-            title="Emtia"
+            title={t('market.commodity.title')}
             icon={<Gem className="h-5 w-5" />}
             emptyIcon={<Gem className="h-7 w-7 text-fg-subtle" />}
             marketType="COMMODITY"
@@ -136,9 +133,9 @@ function CommoditiesPage() {
             queryKey="commodities"
             listParams={listParams}
             queryParams={queryParams}
-            searchPlaceholder="Emtia ara..."
-            countLabel="emtia"
-            sortOptions={SORT_OPTIONS}
+            searchPlaceholder={t('market.commodity.searchPlaceholder')}
+            countLabel={t('market.commodity.countLabel')}
+            sortOptions={sortOptions}
             filterConfig={{
                 tabItems,
                 activeId: segment,
@@ -146,15 +143,15 @@ function CommoditiesPage() {
                 layoutId: 'commodity-segment',
             }}
             adminTriggers={[
-                { key: 'snapshot', label: 'Snapshot', title: 'Emtia snapshot verilerini güncelle', fn: adminService.triggerCommoditySnapshot, successMsg: 'Emtia snapshot güncelleme başlatıldı', refetchDelay: 5000 },
-                { key: 'candles', label: 'Candles (5y)', title: '5 yıllık OHLC verilerini güncelle', fn: adminService.triggerCommodityCandles, successMsg: 'Emtia candle güncelleme başlatıldı' },
-                { key: 'full', label: 'Full Update', title: 'Tam güncelleme (snapshot + 5y candles)', fn: adminService.triggerCommodityFull, successMsg: 'Emtia tam güncelleme başlatıldı' },
+                { key: 'snapshot', label: t('market.admin.snapshot'), title: t('market.admin.snapshotTitle'), fn: adminService.triggerCommoditySnapshot, successMsg: t('market.admin.snapshotStarted'), refetchDelay: 5000 },
+                { key: 'candles', label: t('market.admin.candles'), title: t('market.admin.candlesTitle'), fn: adminService.triggerCommodityCandles, successMsg: t('market.admin.candlesStarted') },
+                { key: 'full', label: t('market.admin.full'), title: t('market.admin.fullTitle'), fn: adminService.triggerCommodityFull, successMsg: t('market.admin.fullStarted') },
             ]}
             renderCard={renderCard}
-            loadingMessage="Emtia verileri yükleniyor…"
-            errorMessage="Emtia verileri yüklenirken hata oluştu"
-            emptyMessage="Henüz emtia verisi yok."
-            emptyHint="Admin butonlarını kullanarak veri çekebilirsiniz."
+            loadingMessage={t('market.commodity.loading')}
+            errorMessage={t('market.commodity.error')}
+            emptyMessage={t('market.commodity.empty')}
+            emptyHint={t('market.empty.adminHint')}
         />
     );
 }

@@ -28,19 +28,18 @@ class EnumParserTest {
     @ParameterizedTest
     @ValueSource(strings = {"stock", "INVALID", "xyz", "123"})
     void parseOrBadRequestThrowsForInvalidValue(String raw) {
-        assertThatThrownBy(() -> EnumParser.parseOrBadRequest(MarketType.class, raw, "type"))
+        assertThatThrownBy(() -> EnumParser.parseOrBadRequest(MarketType.class, raw, "enum.field.marketType"))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Invalid type")
-                .hasMessageContaining(raw);
+                .hasMessage("error.validation.invalidField");
     }
 
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {" ", "   "})
     void parseOrBadRequestThrowsForBlankOrNull(String raw) {
-        assertThatThrownBy(() -> EnumParser.parseOrBadRequest(MarketType.class, raw, "type"))
+        assertThatThrownBy(() -> EnumParser.parseOrBadRequest(MarketType.class, raw, "enum.field.marketType"))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("type is required");
+                .hasMessage("error.validation.fieldRequired");
     }
 
     @ParameterizedTest
@@ -62,8 +61,8 @@ class EnumParserTest {
 
     @Test
     void parseNullableThrowsForInvalidValue() {
-        assertThatThrownBy(() -> EnumParser.parseNullable(MarketType.class, "INVALID", "type"))
+        assertThatThrownBy(() -> EnumParser.parseNullable(MarketType.class, "INVALID", "enum.field.marketType"))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Invalid type: INVALID");
+                .hasMessage("error.validation.invalidField");
     }
 }

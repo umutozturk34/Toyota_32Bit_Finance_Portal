@@ -5,6 +5,7 @@ import com.finance.app.dto.response.overview.RenderedWidget;
 import com.finance.app.dto.response.overview.WidgetKind;
 import com.finance.app.service.overview.MarketOverviewService;
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +25,8 @@ import static org.mockito.Mockito.when;
 class MarketOverviewControllerTest {
 
     @Mock private MarketOverviewService marketOverviewService;
+    @Mock(answer = org.mockito.Answers.RETURNS_DEFAULTS) private com.finance.app.service.overview.WidgetDefinitionService widgetDefinitionService;
+    @Mock private Translator translator;
     @InjectMocks private MarketOverviewController controller;
 
     private Jwt jwt;

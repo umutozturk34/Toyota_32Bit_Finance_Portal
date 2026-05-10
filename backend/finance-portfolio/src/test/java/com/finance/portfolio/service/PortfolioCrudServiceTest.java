@@ -101,7 +101,7 @@ class PortfolioCrudServiceTest {
 
         assertThatThrownBy(() -> service.createPortfolio(USER_SUB, new PortfolioCreateRequest("Main")))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Main");
+                .hasMessage("error.portfolio.duplicateName");
         verify(portfolioRepository, never()).save(any());
     }
 

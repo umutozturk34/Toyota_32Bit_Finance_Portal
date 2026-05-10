@@ -8,6 +8,7 @@ import com.finance.market.core.service.MarketSnapshotProcessor;
 
 import com.finance.common.config.AppProperties;
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.shared.dto.response.GroupCount;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.core.dto.response.MarketAvailabilityResponse;
@@ -30,6 +31,7 @@ public class UnifiedMarketController {
 
     private final AppProperties appProperties;
     private final UnifiedMarketService unifiedMarketService;
+    private final Translator translator;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -57,7 +59,7 @@ public class UnifiedMarketController {
         List<MarketType> types = MarketRequestHelper.parseMarketTypes(type);
         int resolvedSize = MarketRequestHelper.clamp(size, market.getDefaultSize(), market.getMaxSize());
 
-        return ApiResponse.successOrEmpty("Market assets retrieved successfully", "No data found",
+        return ApiResponse.successOrEmpty(translator.translate("api.market.assetsRetrieved"), translator.translate("api.market.noData"),
                 unifiedMarketService.search(types, code, segment, subType, search, sort, direction, filter, page, resolvedSize));
     }
 
@@ -69,7 +71,7 @@ public class UnifiedMarketController {
             @RequestParam String code,
             @RequestParam(defaultValue = "ALL") CandlePeriod period) {
 
-        return ApiResponse.success("Market history retrieved successfully",
+        return ApiResponse.success(translator.translate("api.market.historyRetrieved"),
                 unifiedMarketService.getHistory(type, code, period));
     }
 
@@ -77,7 +79,7 @@ public class UnifiedMarketController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<GroupCount>> getGroupCounts(
             @RequestParam MarketType type) {
-        return ApiResponse.success("Group counts retrieved",
+        return ApiResponse.success(translator.translate("api.market.groupCountsRetrieved"),
                 unifiedMarketService.getGroupCounts(type));
     }
 
@@ -89,7 +91,7 @@ public class UnifiedMarketController {
             @RequestParam String code,
             @Parameter(description = "Year-month (yyyy-MM)", example = "2025-04")
             @RequestParam String yearMonth) {
-        return ApiResponse.success("Monthly availability retrieved",
+        return ApiResponse.success(translator.translate("api.market.availabilityRetrieved"),
                 unifiedMarketService.getMonthlyAvailability(type, code, yearMonth));
     }
 }

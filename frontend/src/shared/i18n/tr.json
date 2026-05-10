@@ -1,0 +1,1497 @@
+{
+  "about": {
+    "heading": {
+      "prefix": "Hakkında",
+      "subtitle": "Gerçek zamanlı piyasa verileri, kurumsal düzeyde güvenlik ve gelişmiş grafik özellikleri sunan kapsamlı bir finansal yönetim sistemi."
+    },
+    "overview": {
+      "title": "Proje Özeti",
+      "body": "Toyota Finance Portal, Toyota bayileri ve finans hizmetleri için tasarlanmış kapsamlı bir finansal yönetim sistemidir. Bu uygulama güvenli kimlik doğrulama, gerçek zamanlı piyasa verileri ve portföy yönetimi yetenekleri sağlar."
+    },
+    "stack": {
+      "title": "Teknoloji Yığını"
+    },
+    "tech": {
+      "frontend": "Frontend",
+      "backend": "Backend",
+      "database": "Veritabanı",
+      "authentication": "Kimlik Doğrulama",
+      "deployment": "Dağıtım"
+    },
+    "version": {
+      "title": "Sürüm",
+      "current": "Güncel Sürüm:",
+      "status": "(Geliştirme Aşamasında)"
+    }
+  },
+  "protectedRoute": {
+    "unauthorized": "Yetkisiz",
+    "unauthorizedBody": "Bu sayfaya erişim yetkin yok.",
+    "requiredRole": "Gerekli rol:"
+  },
+  "nav": {
+    "market": "Piyasa",
+    "news": "Haberler",
+    "stocks": "Hisseler",
+    "crypto": "Kripto",
+    "forex": "Döviz",
+    "funds": "Fonlar",
+    "commodities": "Emtia",
+    "bonds": "Tahvil",
+    "portfolio": "Portföy",
+    "watch": "Takip",
+    "messages": "Mesajlar",
+    "adminTrackedAssets": "Takip Edilen Varlıklar",
+    "adminUsers": "Kullanıcılar",
+    "tasks": "Görevler",
+    "notifications": "Bildirimler",
+    "settings": "Ayarlar",
+    "logout": "Çıkış",
+    "expandSidebar": "Yan menüyü aç",
+    "collapseSidebar": "Yan menüyü daralt",
+    "adminBadge": "Admin"
+  },
+  "common": {
+    "localeTag": "tr-TR",
+    "save": "Kaydet",
+    "cancel": "Vazgeç",
+    "confirm": "Onayla",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "undo": "Geri Al",
+    "remove": "Kaldır",
+    "all": "Tümü",
+    "loading": "Yükleniyor...",
+    "loadingData": "Veriler yükleniyor…",
+    "search": "Ara",
+    "close": "Kapat",
+    "retry": "Tekrar dene",
+    "back": "Geri",
+    "addToPortfolio": "Portföye Ekle",
+    "sortDefault": "Varsayılan",
+    "previous": "Önceki",
+    "next": "Sonraki",
+    "searchEllipsis": "Ara..."
+  },
+  "compareBar": {
+    "placeholder": "Karşılaştır..."
+  },
+  "searchSuggestions": {
+    "placeholder": "Hisse, kripto, döviz, fon ara...",
+    "noMatch": "\"{{query}}\" ile eşleşen sonuç bulunamadı"
+  },
+  "confirmDialog": {
+    "title": "Emin misiniz?",
+    "processing": "İşleniyor..."
+  },
+  "errorState": {
+    "title": "Bir hata oluştu"
+  },
+  "notFound": {
+    "eyebrow": "Sayfa Bulunamadı",
+    "title": "Aradığınız sayfa mevcut değil",
+    "body": "Bu sayfa taşınmış, silinmiş veya hiç var olmamış olabilir.",
+    "home": "Ana Sayfa"
+  },
+  "chartView": {
+    "compareLabel": "Karşılaştır",
+    "fundGroup": {
+      "BYF": "Borsa Yatırım Fonları",
+      "YAT": "Yatırım Fonları"
+    }
+  },
+  "chart": {
+    "tabs": {
+      "indicators": "Göstergeler",
+      "drawings": "Çizim",
+      "fibonacci": "Fibonacci"
+    },
+    "range": {
+      "1M": "1A",
+      "3M": "3A",
+      "6M": "6A",
+      "1Y": "1Y",
+      "5Y": "5Y",
+      "ALL": "Maks"
+    },
+    "historicalAnalysis": "Geçmiş Analizi",
+    "detailDescription": "{{type}} - {{symbol}} detay grafiği ve teknik analiz",
+    "detailMode": "Detay Modu",
+    "detailLockMessage": "Bu sayfa <span class=\"font-semibold\">{{type}}</span> / <span class=\"font-semibold\">{{symbol}}</span> için kilitli.",
+    "assetTypeLabel": "Varlık Tipi",
+    "symbolLabel": "Sembol",
+    "customSymbolPlaceholder": "Özel sembol...",
+    "go": "Git",
+    "loading": "Geçmiş veriler yükleniyor...",
+    "waitingForData": "Grafik verisi bekleniyor...",
+    "retry": "Tekrar Dene",
+    "selectSymbol": "Grafik verisi için bir sembol seçin",
+    "aboutIndicators": {
+      "title": "Teknik Göstergeler Hakkında",
+      "sma": {
+        "title": "SMA 20 (Basit Hareketli Ortalama)",
+        "desc": "20 günlük ortalama fiyat. Kısa vadeli trend göstergesi. SMA20 üzerindeki fiyat yükseliş trendine işaret eder."
+      },
+      "ema": {
+        "title": "EMA 50 (Üstel Hareketli Ortalama)",
+        "desc": "50 günlük ağırlıklı ortalama. SMA'ya kıyasla son fiyat değişimlerine daha hızlı tepki verir."
+      },
+      "tools": {
+        "title": "Çizim Araçları",
+        "desc": "Özel analiz için trend çizgileri, Fibonacci geri çekilmeleri ve serbest çizimleri kullanın."
+      }
+    },
+    "indicators": {
+      "period": "Periyot",
+      "color": "Renk",
+      "add": "Ekle",
+      "cancel": "İptal",
+      "addIndicator": "Gösterge Ekle",
+      "hide": "Gizle",
+      "show": "Göster",
+      "edit": "Düzenle",
+      "remove": "Kaldır"
+    },
+    "drawingPanel": {
+      "tools": {
+        "trendline": "Trend",
+        "horizontal": "Yatay",
+        "vertical": "Dikey",
+        "freehand": "Serbest",
+        "text": "Metin",
+        "emoji": "Emoji"
+      },
+      "emojis": {
+        "rocket": "Roket",
+        "trendUp": "Yükseliş",
+        "trendDown": "Düşüş",
+        "money": "Para",
+        "alert": "Uyarı",
+        "fire": "Ateş",
+        "diamond": "Elmas",
+        "target": "Hedef",
+        "star": "Yıldız",
+        "bull": "Boğa",
+        "bear": "Ayı",
+        "green": "Yeşil",
+        "red": "Kırmızı",
+        "chartUp": "Grafik Yukarı",
+        "bank": "Banka"
+      },
+      "selectIcon": "İkon Seç",
+      "size": "Boyut",
+      "drawingsCount": "Çizimler ({{count}})",
+      "undo": "Geri Al",
+      "clearAll": "Tümünü Temizle",
+      "instructions": {
+        "trendline": "2 nokta tıklayın",
+        "horizontal": "1 nokta tıklayın",
+        "vertical": "1 nokta tıklayın",
+        "freehand": "Çizmek için sürükleyin",
+        "text": "Yerleştirmek için tıklayın",
+        "emoji": "Yerleştirmek için tıklayın",
+        "twoPoint": "2 nokta tıklayın"
+      }
+    },
+    "fibonacci": {
+      "tools": {
+        "retracement": "Geri Çekilme",
+        "extension": "Uzantı"
+      },
+      "instructions": {
+        "threePoint": "3 nokta tıklayın",
+        "twoPoint": "2 nokta tıklayın"
+      },
+      "cancel": "İptal",
+      "active": "Aktif ({{count}})",
+      "clear": "Temizle"
+    },
+    "textInputPlaceholder": "Buraya yazın...",
+    "volume": "Hacim",
+    "toolbar": {
+      "hidePanel": "Paneli gizle",
+      "showPanel": "Paneli göster",
+      "lineChart": "Çizgi grafik",
+      "candleChart": "Mum grafiği",
+      "line": "Çizgi",
+      "candle": "Mum",
+      "magnetLabel": "Mıknatıs",
+      "magnet": {
+        "off": "Kapalı",
+        "weak": "Zayıf (Yüksek/Düşük)",
+        "strong": "Güçlü (OHLC)"
+      },
+      "vs": "vs",
+      "trend": {
+        "up": "Yükseliş",
+        "down": "Düşüş",
+        "neutral": "Yatay"
+      },
+      "drawingsCount": "{{count}} çizim",
+      "drawingsCount_other": "{{count}} çizim",
+      "exitDrawingMode": "Çizim modundan çık",
+      "exitDraw": "Çizimi Kapat",
+      "fullscreen": "Tam ekran",
+      "exitFullscreen": "Tam ekrandan çık",
+      "active": "Aktif",
+      "cancel": "İptal",
+      "activeInstruction": {
+        "freehand": "— Çizmek için tıklayıp sürükle",
+        "click": "— Yerleştirmek için tıkla",
+        "threePoint": "— 3 nokta tıkla",
+        "twoPoint": "— 2 nokta tıkla",
+        "dragDraw": "— Tıkla ve sürükle"
+      }
+    }
+  },
+  "sectionRegistry": {
+    "ASSET_CARDS": {
+      "label": "Asset Kartları",
+      "description": "Sabitlediğin varlıkların anlık fiyat panosu"
+    },
+    "MOVERS": {
+      "label": "Yükselen / Düşen",
+      "description": "Seçtiğin piyasanın günlük hareketleri"
+    },
+    "WATCHLIST": {
+      "label": "Takip Listesi",
+      "description": "Maks 5 takip varlığı gösterir"
+    },
+    "NEWS": {
+      "label": "Haberler",
+      "description": "Kategori bazlı son haberler"
+    }
+  },
+  "widgetSettings": {
+    "newsHeader": "Haber kategorileri",
+    "priorityHint": "Seçim sırası = öncelik",
+    "allCategoriesHint": "Boş bırakırsan tüm kategorilerden gelir",
+    "watchlistHeader": "Liste seçimi",
+    "createListHint": "Önce <span class=\"text-accent font-semibold\">/watch</span> sayfasından bir liste oluştur.",
+    "drag": "Sürükle",
+    "removeChip": "{{code}} kaldır",
+    "assetCardHeader": "Asset Kartı",
+    "panelNameLabel": "Panel adı",
+    "panelNamePlaceholder": "Asset Kartları",
+    "pinnedAssets": "Sabitlenen varlıklar",
+    "emptyHint": "Boş — aşağıdan ara ve ekle. Boş bıraktığında varsayılan liste yüklenir.",
+    "searchHint": "Ara · seç · anında eklenir",
+    "searchPlaceholder": "BTC, AKBNK, USDTRY...",
+    "maxAssets": "Maksimum sayıda varlık eklendi",
+    "closeTooltip": "Kapat (Esc)",
+    "done": "Tamam",
+    "newsCategory": {
+      "CRYPTO": "Kripto",
+      "BORSA_ISTANBUL": "BIST",
+      "BORSA_SIRKETLERI": "Şirket",
+      "TAHVIL_BONO": "Tahvil/Bono",
+      "PARITE": "Parite",
+      "EMTIA": "Emtia",
+      "GENEL_FINANS": "Genel"
+    }
+  },
+  "widgetTray": {
+    "widgetGallery": "Widget Galerisi",
+    "assetCardTab": "Asset Kartı",
+    "watchlistTab": "Takip Listesi",
+    "newsTile": "Haberler",
+    "newAssetCard": "Yeni Asset Kartı",
+    "addNewCard": "+ Yeni Asset Kartı",
+    "queueLabel": "sırada: {{label}}",
+    "watchlistFallback": "Takip {{id}}",
+    "fullHint": "{{max}}/{{max}} doldu — silmeden ekleyemezsin",
+    "dragHint": "Sürükle veya tıkla",
+    "addedCount": "{{count}} / {{max}} eklendi",
+    "alreadyAdded": "Zaten eklenmiş",
+    "widgetLimit": "Limit {{max}} widget",
+    "assetCardLimit": "Maks {{max}} kart paneli",
+    "addPanelHint": "Yeni panel ekle: {{label}}",
+    "assetCardsN": "Asset Kartları {{n}}",
+    "movers": {
+      "STOCK": "Hisse · Yük/Düş",
+      "CRYPTO": "Kripto · Yük/Düş",
+      "FOREX": "Döviz · Yük/Düş",
+      "FUND": "Fon · Yük/Düş",
+      "COMMODITY": "Emtia · Yük/Düş"
+    }
+  },
+  "assetCards": {
+    "remove": "{{code}} kaldır",
+    "emptyPanel": "Boş panel",
+    "emptyHint": "<strong class=\"text-accent\">Ayarlar</strong> ile asset ekle"
+  },
+  "watchlistSection": {
+    "fallbackName": "Takip Listesi",
+    "empty": "Henüz takip varlığı yok"
+  },
+  "datePicker": {
+    "placeholder": "Tarih seçin",
+    "toggleView": "Görünümü değiştir",
+    "dataDays": "{{count}} gün geçmiş veri",
+    "noDataMonth": "bu ay için veri yok",
+    "prev": {
+      "day": "Önceki ay",
+      "month": "Önceki yıl",
+      "year": "12 yıl geri"
+    },
+    "next": {
+      "day": "Sonraki ay",
+      "month": "Sonraki yıl",
+      "year": "12 yıl ileri"
+    }
+  },
+  "lightweightChart": {
+    "view": "Görünüm",
+    "investorCount": "Kişi Sayısı",
+    "portfolioSize": "Portföy Büyüklüğü",
+    "noInvestorCountData": "Bu fon için kişi sayısı verisi yok",
+    "noPortfolioSizeData": "Bu fon için portföy verisi yok"
+  },
+  "overviewCanvas": {
+    "title": "Genel Bakış"
+  },
+  "notifStream": {
+    "newNotification": "Yeni bildirim",
+    "newUserMessage": "Yeni kullanıcı mesajı",
+    "newMessageReceived": "Yeni mesaj geldi"
+  },
+  "marketList": {
+    "updateStarted": "Güncelleme Başlatıldı",
+    "updateFailed": "Güncelleme Hatası",
+    "noSearchMatch": "Aramayla eşleşen sonuç bulunamadı."
+  },
+  "moversSection": {
+    "fallback": "Piyasa",
+    "gainers": "Yükselen",
+    "losers": "Düşen",
+    "noData": "Veri yok"
+  },
+  "errorBoundary": {
+    "eyebrow": "Bir Aksaklık",
+    "title": "Sayfa görüntülenirken bir hata oluştu",
+    "fallbackMessage": "Beklenmeyen bir hata oluştu.",
+    "retry": "Yeniden dene",
+    "home": "Ana sayfaya dön",
+    "consoleNote": "kayıt geliştirici konsoluna yazıldı"
+  },
+  "pageHeader": {
+    "refresh": "Yenile",
+    "cooldown": "Bekleme: {{time}}"
+  },
+  "marketStatus": {
+    "open": "Açık",
+    "closed": "Kapalı",
+    "session": "Seans",
+    "activeSession": "Aktif seans",
+    "outsideSession": "Seans dışı",
+    "willOpen": "açılır",
+    "willClose": "kapanır"
+  },
+  "home": {
+    "live": "Canlı Piyasa Verisi",
+    "heroTitle": {
+      "part1": "Piyasalar, çözüldü.",
+      "part2": "Gerçek zamanlı."
+    },
+    "heroDescription": "Hisse, kripto, döviz ve emtia için tek portal — kurumsal seviyede grafikler, kurumsal SSO ve sıfır konfigürasyon.",
+    "cta": {
+      "createAccount": "Ücretsiz hesap oluştur",
+      "signIn": "Giriş yap"
+    },
+    "stats": {
+      "assetClasses": "Varlık Sınıfı",
+      "latency": "Gecikme",
+      "uptime": "Kesintisiz",
+      "security": "Güvenlik"
+    },
+    "featuresTag": "Özellikler",
+    "featuresHeading": {
+      "part1": "İhtiyacın olan her şey.",
+      "part2": "Fazlası değil."
+    },
+    "features": {
+      "security": {
+        "title": "Bankacılık Seviyesinde Güvenlik",
+        "description": "Keycloak SSO, LDAP federasyonu, 2FA/TOTP — kimlik bilgilerin sunucularımıza hiç dokunmaz."
+      },
+      "marketData": {
+        "title": "Canlı Piyasa Verisi",
+        "description": "Hisse, kripto, döviz ve emtiada saniye altı gecikmeyle gerçek zamanlı fiyatlar."
+      },
+      "charting": {
+        "title": "Gelişmiş Grafik",
+        "description": "TradingView grafikleri; göstergeler, çizim araçları, Fibonacci ve karşılaştırma modu."
+      },
+      "portfolio": {
+        "title": "Portföy Takibi",
+        "description": "Portföy oluştur, K/Z izle ve tüm varlık sınıflarındaki pozisyonlarını yönet."
+      }
+    },
+    "getStartedTag": "Başla",
+    "ctaSection": {
+      "heading": "Daha akıllı işlem yapmaya hazır mısın?",
+      "body": "Saniyeler içinde katıl — kredi kartı yok, taahhüt yok."
+    },
+    "footer": "© 2026 Finance Portal"
+  },
+  "register": {
+    "subtitle": "Hesabını oluştur",
+    "intro": "Finance Portal'a katıl ve finansal verilerini güvenle yönetmeye başla.",
+    "cta": "Keycloak ile Kayıt Ol",
+    "haveAccount": "Zaten hesabın var mı?",
+    "loginHere": "Buradan giriş yap",
+    "features": {
+      "secureAuth": {
+        "title": "Güvenli Kimlik Doğrulama",
+        "desc": "Kurumsal seviyede Keycloak güvenliği"
+      },
+      "rbac": {
+        "title": "Rol Tabanlı Erişim",
+        "desc": "İnce taneli yetki kontrolü"
+      },
+      "twoFactor": {
+        "title": "2FA Desteği",
+        "desc": "İki faktörlü doğrulamaya hazır"
+      }
+    }
+  },
+  "login": {
+    "welcome": "Hesabınıza giriş yapın",
+    "required": "Giriş Gerekli",
+    "intro": "Finance Portal'a erişmek için giriş yapın.",
+    "cta": "Keycloak ile Giriş Yap",
+    "poweredBy": "Powered by Keycloak & Spring Security",
+    "features": {
+      "secureAuth": "Güvenli Kimlik Doğrulama",
+      "rbac": "Rol Tabanlı Erişim Kontrolü",
+      "twoFactor": "İki Faktörlü Doğrulama (2FA)",
+      "sso": "Tek Oturum Açma (SSO)"
+    }
+  },
+  "adminConversations": {
+    "title": "Sohbetler",
+    "userCount": "{{count}} kullanıcı",
+    "matchingCount": "{{count}} eşleşen",
+    "searchPlaceholder": "Kullanıcı veya mesaj ara…",
+    "emptyTitle": "Henüz sohbet yok",
+    "emptyBody": "Kullanıcı bir mesaj gönderdiğinde burada görünecek.",
+    "emptyMatchTitle": "Eşleşen sohbet yok",
+    "emptyMatchBody": "\"{{query}}\" araması için sonuç bulunamadı.",
+    "closedTag": "kapalı",
+    "idLabel": "id"
+  },
+  "adminThread": {
+    "pickConversation": "Bir sohbet seç",
+    "pickConversationHint": "Soldaki listeden kullanıcı seç, geçmişi gör ve yanıt ver.",
+    "closedAt": "Kapatıldı · {{time}}",
+    "activeConversation": "Aktif sohbet",
+    "reopen": "Yeniden aç",
+    "reopenTooltip": "Sohbeti yeniden aç",
+    "close": "Kapat",
+    "closeTooltip": "Sohbeti kapat",
+    "deleteTooltip": "Sohbeti sil",
+    "emptyThread": "Bu sohbette henüz mesaj yok.",
+    "userLabel": "Kullanıcı",
+    "composerPlaceholder": "Kullanıcıya mesaj yaz…",
+    "composerClosedHint": "Sohbet kapalı — yeni mesaj göndermek için önce yeniden aç.",
+    "closeConfirmTitle": "Sohbeti kapat?",
+    "closeConfirmBody": "Kullanıcı bu sohbete yeni mesaj gönderemez. Mevcut mesajlar kalır, geçmişi okumaya devam edebilir.",
+    "deleteConfirmTitle": "Sohbeti sil?",
+    "deleteConfirmBody": "Bu sohbetin tüm mesajları geri alınamaz şekilde silinir.",
+    "reopenedTitle": "Sohbet yeniden açıldı",
+    "reopenedBody": "{{user}} mesajlaşmaya devam edebilir",
+    "closedTitle": "Sohbet kapatıldı",
+    "closedBody": "{{user}} artık yeni mesaj atamaz",
+    "deletedTitle": "Sohbet silindi",
+    "deletedBody": "{{user}} sohbeti tamamen kaldırıldı",
+    "actionFailed": "İşlem başarısız"
+  },
+  "userMessages": {
+    "title": "Mesajlar",
+    "subtitle": "Yönetimle birebir yazışma",
+    "live": "canlı",
+    "emptyTitle": "Sohbet henüz başlamadı",
+    "emptyBody": "İlk mesajını gönder, yönetim ekibimiz seninle yazışsın.",
+    "composeHint": "Aşağıdan yazmaya başla",
+    "adminLabel": "Yönetim",
+    "composerPlaceholder": "Mesajını yaz…",
+    "sendFailed": "Mesaj gönderilemedi"
+  },
+  "messages": {
+    "conversationClosedBanner": "Yönetim sohbetinizi kapattı. Yeniden açılana kadar mesaj gönderemezsiniz.",
+    "conversationClosedHint": "Sohbet kapatıldı. Yeniden açılana kadar mesaj gönderemezsiniz."
+  },
+  "assets": {
+    "labels": {
+      "CRYPTO": "Kripto",
+      "STOCK": "Hisse",
+      "FOREX": "Döviz",
+      "FUND": "Fon",
+      "COMMODITY": "Emtia",
+      "CASH": "Nakit",
+      "ALL": "Tümü"
+    }
+  },
+  "ranges": {
+    "1M": "1A",
+    "3M": "3A",
+    "6M": "6A",
+    "1Y": "1Y",
+    "5Y": "5Y",
+    "ALL": "Maks"
+  },
+  "reports": {
+    "NEVER": "Hiç",
+    "DAILY": "Günlük",
+    "WEEKLY": "Haftalık",
+    "MONTHLY": "Aylık"
+  },
+  "theme": {
+    "DARK": "Koyu",
+    "LIGHT": "Açık"
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "subtitle": "Tercihler anlık olarak kaydedilir",
+    "language": {
+      "title": "Dil",
+      "tr": "TR",
+      "en": "EN"
+    },
+    "theme": "Tema",
+    "chartRange": "Varsayılan Grafik Aralığı",
+    "reportFrequency": "Rapor Sıklığı",
+    "notifications": "Bildirim Tercihleri",
+    "twoFactor": "İki Adımlı Doğrulama",
+    "password": {
+      "title": "Şifre",
+      "change": "Şifre Değiştir",
+      "sending": "…",
+      "emailLink": "E-posta →",
+      "hint": "E-posta adresine gelen linke tıklayarak yeni şifre belirleyebilirsin.",
+      "success": "E-posta gönderildi",
+      "successDesc": "Gelen kutunuzdaki linke tıklayarak şifrenizi değiştirin",
+      "error": "İşlem başarısız",
+      "errorDesc": "E-posta gönderilemedi"
+    },
+    "email": "E-posta",
+    "timezoneSuffix": "saat dilimi (sabit)",
+    "logout": "Çıkış Yap"
+  },
+  "notificationPreferences": {
+    "emailMaster": {
+      "title": "E-posta ana anahtarı",
+      "hint": "Kapalıyken altındaki e-posta seçimleri görmezden gelinir.",
+      "toggleAria": "E-posta bildirimlerini aç/kapat"
+    },
+    "types": {
+      "title": "Bildirim türleri",
+      "priceAlerts": { "label": "Fiyat alarmı", "hint": "Eşik kırıldığında" },
+      "watchlist": { "label": "Takip listesi", "hint": "Sert hareket olduğunda" },
+      "reports": { "label": "Raporlar", "hint": "PDF rapor hazır olduğunda" },
+      "messages": { "label": "Mesajlar", "hint": "Sistem mesajları" },
+      "system": { "label": "Sistem", "hint": "Bakım, güvenlik vb." },
+      "marketOpened": { "label": "Piyasa açıldı", "hint": "Açılış fiyatları yüklendiğinde" },
+      "marketClosed": { "label": "Piyasa kapandı", "hint": "Kapanış fiyatları yüklendiğinde" },
+      "marketDataUpdated": { "label": "Veri güncellendi", "hint": "Cron her tetiklendiğinde" },
+      "newsPublished": { "label": "Yeni haberler", "hint": "Akışa yeni başlık eklendiğinde" },
+      "portfolioUpdated": { "label": "Portföy güncellendi", "hint": "Günlük snapshot alındığında (23:00)" }
+    },
+    "channels": {
+      "email": "E-posta",
+      "inapp": "Uygulama içi"
+    },
+    "channelTitle": {
+      "emailMasterOff": "Ana e-posta anahtarı kapalı",
+      "emailOn": "E-posta açık",
+      "emailOff": "E-posta kapalı",
+      "inappOn": "Uygulama içi açık",
+      "inappOff": "Uygulama içi kapalı"
+    },
+    "footer": "Uygulama içi bildirim her zaman çalışır. E-posta için ana anahtar açık olmalı."
+  },
+  "market": {
+    "sort": {
+      "changePercent": "Değişim %",
+      "price": "Fiyat",
+      "name": "İsim"
+    },
+    "stockSegments": {
+      "MAIN_INDEX": "Ana Endeksler",
+      "SECONDARY_INDEX": "Alt Endeksler",
+      "EQUITY": "Hisseler",
+      "indexLabel": "Endeks"
+    },
+    "stock": {
+      "title": "Borsa İstanbul (BIST)",
+      "searchPlaceholder": "Hisse ara...",
+      "countLabel": "hisse",
+      "openLabel": "Açılış",
+      "highLabel": "En Yüksek",
+      "lowLabel": "En Düşük",
+      "volumeLabel": "Hacim",
+      "loading": "Hisse verileri yükleniyor…",
+      "error": "Hisse senedi verileri yüklenirken hata oluştu",
+      "empty": "Henüz hisse senedi verisi yok."
+    },
+    "crypto": {
+      "title": "Kripto Paralar",
+      "searchPlaceholder": "Kripto ara...",
+      "countLabel": "kripto",
+      "changeLabel": "Değişim",
+      "volumeLabel": "Hacim",
+      "marketCapLabel": "Piyasa Değeri",
+      "loading": "Kripto verileri yükleniyor…",
+      "error": "Kripto para verileri yüklenirken hata oluştu",
+      "empty": "Henüz kripto para verisi yok."
+    },
+    "forex": {
+      "title": "Döviz Kurları",
+      "searchPlaceholder": "Döviz ara...",
+      "countLabel": "döviz çifti",
+      "buyLabel": "Alış:",
+      "sellLabel": "Satış:",
+      "tcmbRates": "TCMB Kurları",
+      "forexBuy": "Döviz Alış:",
+      "forexSell": "Döviz Satış:",
+      "banknoteBuy": "Efektif Alış:",
+      "banknoteSell": "Efektif Satış:",
+      "loading": "Döviz kurları yükleniyor…",
+      "error": "Döviz kuru verileri yüklenirken hata oluştu",
+      "empty": "Henüz döviz kuru verisi bulunmuyor."
+    },
+    "fund": {
+      "title": "Yatırım Fonları",
+      "searchPlaceholder": "Fon ara...",
+      "countLabel": "fon",
+      "fallbackBadge": "FON",
+      "exchangePriceLabel": "Borsa Fiyatı",
+      "investorLabel": "Yatırımcı",
+      "portfolioLabel": "Portföy",
+      "shareCountLabel": "Pay Sayısı",
+      "loading": "Fon verileri yükleniyor…",
+      "error": "Fon verileri yüklenirken hata oluştu",
+      "empty": "Henüz fon verisi bulunmuyor",
+      "types": {
+        "BYF": "Borsa Yatırım Fonları",
+        "YAT": "Yatırım Fonları"
+      },
+      "shortType": {
+        "BYF": "BYF",
+        "YAT": "YAT",
+        "FON": "FON"
+      }
+    },
+    "commodity": {
+      "title": "Emtia",
+      "searchPlaceholder": "Emtia ara...",
+      "countLabel": "emtia",
+      "usdPriceLabel": "USD Fiyat",
+      "contractsSuffix": "kontrat",
+      "loading": "Emtia verileri yükleniyor…",
+      "error": "Emtia verileri yüklenirken hata oluştu",
+      "empty": "Henüz emtia verisi yok.",
+      "segments": {
+        "PRECIOUS_METAL": "Kıymetli Metaller",
+        "OTHER": "Diğerleri"
+      }
+    },
+    "bond": {
+      "title": "Tahvil & Bono",
+      "searchPlaceholder": "ISIN veya seri kodu ara...",
+      "countLabel": "tahvil",
+      "loading": "Tahvil verileri yükleniyor…",
+      "error": "Tahvil verileri yüklenirken hata oluştu",
+      "empty": "Henüz tahvil verisi bulunmuyor.",
+      "noSearchResults": "Aramayla eşleşen tahvil bulunamadı.",
+      "chartLoading": "Grafik yükleniyor…",
+      "noRateData": "Rate verisi yok",
+      "couponRate": "Kupon Oranı",
+      "simpleYield": "Basit Getiri",
+      "issuerLabel": "İhraççı",
+      "treasuryFallback": "HAZİNE",
+      "floating": "Değişken",
+      "startLabel": "Başlangıç",
+      "maturityLabel": "Vade Sonu",
+      "couponDateLabel": "Kupon Tarihi",
+      "daysSuffix": "g",
+      "rateChangeButton": "Faiz Değişimi",
+      "updateLabel": "Güncelle",
+      "updateTitle": "Tahvil verilerini güncelle",
+      "updateStartedTitle": "Güncelleme Başlatıldı",
+      "updateStarted": "Tahvil güncelleme başlatıldı",
+      "updateErrorTitle": "Güncelleme Hatası",
+      "sort": {
+        "simpleYield": "Basit Getiri",
+        "couponRate": "Kupon Oranı",
+        "baseIndex": "Endeks Fiyat",
+        "maturityEnd": "Vade Sonu",
+        "seriesCode": "Seri Kodu"
+      },
+      "types": {
+        "DISCOUNTED": "İskontolu",
+        "FIXED_COUPON": "Sabit Kuponlu",
+        "FLOATING_TLREF": "Değişken - TLREF",
+        "FLOATING_CPI": "Değişken - TÜFE",
+        "FLOATING_AUCTION": "Değişken - İhale",
+        "SUKUK_FIXED": "Sukuk - Sabit",
+        "SUKUK_CPI": "Sukuk - TÜFE"
+      }
+    },
+    "empty": {
+      "adminHint": "Admin butonlarını kullanarak veri çekebilirsiniz."
+    },
+    "admin": {
+      "snapshot": "Snapshot",
+      "candles": "Candles (5y)",
+      "full": "Full Update",
+      "snapshotTitle": "Snapshot verilerini güncelle",
+      "candlesTitle": "Mum verilerini güncelle (uzun sürebilir)",
+      "fullTitle": "Tam güncelleme (snapshot + candles)",
+      "snapshotStarted": "Snapshot güncelleme başlatıldı",
+      "candlesStarted": "Candle güncelleme başlatıldı (Bu işlem birkaç dakika sürebilir)",
+      "fullStarted": "Tam güncelleme başlatıldı"
+    }
+  },
+  "portfolio": {
+    "positions": {
+      "searchPlaceholder": "Pozisyon ara...",
+      "empty": "Henüz pozisyon bulunmuyor",
+      "emptyHint": "Kripto, Hisse, Döviz veya Fon sayfalarından lot ekleyebilirsiniz",
+      "noSearchResults": "Aramayla eşleşen pozisyon bulunamadı.",
+      "preparing": "veriler hazırlanıyor",
+      "assetCol": "Varlık",
+      "quantityCol": "Miktar",
+      "entryDateCol": "Giriş Tarihi",
+      "entryPriceCol": "Giriş Fiyatı",
+      "currentPriceCol": "Güncel Fiyat",
+      "marketValueCol": "Piyasa Değeri",
+      "pnlCol": "K/Z",
+      "actionsCol": "İşlem",
+      "sort": {
+        "currentValue": "Piyasa Değeri",
+        "profitPercent": "K/Z %",
+        "profitAmount": "K/Z Tutar",
+        "entryDate": "Tarih",
+        "assetCode": "Varlık Kodu",
+        "quantity": "Miktar"
+      }
+    },
+    "allocation": {
+      "title": "Dağılım",
+      "total": "Toplam",
+      "empty": "Bu türde varlık bulunmuyor"
+    },
+    "performance": {
+      "title": "Portföy Performansı",
+      "titleByType": "{{type}} Performansı",
+      "calculating": "hesaplanıyor",
+      "lotAdded": "Lot Eklendi",
+      "positionEvents": "Pozisyon Hareketleri",
+      "empty": "Bu aralıkta veri bulunmuyor"
+    },
+    "summary": {
+      "marketValue": "Piyasa Değeri",
+      "totalCost": "Toplam Maliyet",
+      "profitLoss": "Kar / Zarar",
+      "dailyPnl": "Günlük K/Z",
+      "refreshing": "Güncelleniyor..."
+    },
+    "headerTitle": "Portföy",
+    "loading": "Portföy yükleniyor...",
+    "tabs": {
+      "overview": "Genel Bakış",
+      "performance": "Performans"
+    },
+    "onboarding": {
+      "idleTitle": "Portföyünüzü Oluşturun",
+      "idleSubtitle": "Geçmiş tarihli pozisyonlar tanımlayarak hipotetik portföy performansınızı izleyin.",
+      "startCta": "Portföyü Başlat",
+      "confirmTitle": "Portföyü oluşturmayı onaylıyor musunuz?",
+      "confirmHint": "adıyla bir portföy hazırlanacak.",
+      "successTitle": "Portföyünüz hazır",
+      "successHint": "Pozisyon eklemeye başlayabilirsiniz",
+      "defaultName": "Demo Portföy",
+      "steps": {
+        "verifying": "Hesap doğrulanıyor...",
+        "creating": "Portföy oluşturuluyor...",
+        "preparing": "Hazırlanıyor..."
+      }
+    }
+  },
+  "marketAddPosition": {
+    "noPortfolioTitle": "Portföy bulunamadı",
+    "noPortfolioHint": "Pozisyon ekleyebilmek için önce portföyünüzü oluşturmanız gerekiyor.",
+    "goToPortfolio": "Portföye Git"
+  },
+  "positionDelete": {
+    "title": "Pozisyonu Sil",
+    "confirmPrefix": "",
+    "confirmSuffix": "pozisyonu kaldırılacak. Bu işlem geri alınamaz.",
+    "quantityLabel": "Miktar",
+    "entryPriceLabel": "Giriş Fiyatı",
+    "entryDateLabel": "Giriş Tarihi",
+    "successTitle": "Pozisyon silindi",
+    "successDone": "İşlem tamamlandı",
+    "failed": "Pozisyon silinemedi",
+    "steps": {
+      "validating": "İşlem doğrulanıyor...",
+      "removing": "Pozisyon kaldırılıyor...",
+      "updating": "Portföy güncelleniyor..."
+    }
+  },
+  "marketDetail": {
+    "loading": "Yükleniyor...",
+    "error": "Veri yüklenirken hata oluştu",
+    "notFound": "Varlık bulunamadı",
+    "addToPortfolio": "Portföye Ekle",
+    "priceLabel": "Fiyat",
+    "changeLabel": "Değişim",
+    "changeAmountTRY": "Değişim (TL)",
+    "crypto": {
+      "priceUsd": "Fiyat (USD)",
+      "priceTry": "Fiyat (TRY)",
+      "change24h": "24s Değişim",
+      "changeAmountUsd": "24s Δ (USD)",
+      "volume24h": "Hacim (24s)"
+    },
+    "forex": {
+      "buy": "Alış",
+      "sell": "Satış",
+      "delta24h": "24s Δ",
+      "deltaTL": "Δ (TL)",
+      "tcmbBuy": "TCMB Alış",
+      "tcmbSell": "TCMB Satış",
+      "banknoteBuy": "Efektif Alış",
+      "banknoteSell": "Efektif Satış"
+    },
+    "fund": {
+      "exchange": "Borsa",
+      "fundType": "Fon Türü"
+    },
+    "commodity": {
+      "priceTry": "Fiyat (TRY)",
+      "priceUsd": "Fiyat (USD)",
+      "buy": "Alım"
+    }
+  },
+  "commodity": {
+    "name": {
+      "bz_f": "Brent Petrol",
+      "hg_f": "Bakır",
+      "xagtry": "Gümüş (Ons)",
+      "xagtryg": "Gram Gümüş",
+      "xautry": "Altın (Ons)",
+      "xautryg": "Gram Altın",
+      "xpdtry": "Paladyum (Ons)",
+      "xpttry": "Platin (Ons)",
+      "zw_f": "Buğday"
+    }
+  },
+  "marketOverview": {
+    "title": "Piyasa Özeti",
+    "loading": "Piyasa özeti yükleniyor...",
+    "error": "Piyasa verileri yüklenemedi",
+    "liveData": "Canlı piyasa verileri",
+    "editMode": "Düzenleme modu",
+    "unsavedChanges": "Kaydedilmemiş değişiklikler",
+    "saving": "Kaydediliyor",
+    "edit": "Düzenle",
+    "refresh": "Yenile",
+    "reset": "Varsayılan",
+    "resetTitle": "Varsayılan layout'a dön",
+    "revert": "Geri al",
+    "revertTitle": "Bu oturumdaki tüm değişiklikleri geri al",
+    "save": "Kaydet",
+    "gallery": "Galeri",
+    "galleryShow": "Widget galerisini göster",
+    "galleryHide": "Widget galerisini gizle",
+    "editToggleOff": "Düzenleme modunu aç",
+    "editToggleClean": "Düzenleme modunu kapat",
+    "editToggleDirty": "Düzenleme modunu kapat (kaydedilmemiş değişiklikler kaybolur)",
+    "searchPlaceholder": "Hisse, kripto, döviz, fon ara...",
+    "emptyCanvas": "Boş tuval",
+    "emptyDragHint": "Yukardaki galeriden widget sürükle",
+    "emptyEditHint": "Düzenle ile widget ekle",
+    "startEdit": "Düzene Geç"
+  },
+  "toast": {
+    "rateLimitTitle": "İstek limiti aşıldı",
+    "rateLimitMessage": "Çok fazla istek gönderdin. Lütfen biraz bekle."
+  },
+  "error": {
+    "actionFailed": "İşlem başarısız"
+  },
+  "notificationPanel": {
+    "title": "Bildirimler",
+    "broadcastTitle": "Tüm kullanıcılara sistem yayını gönder",
+    "broadcastLabel": "Yayın",
+    "searchPlaceholder": "Bildirimlerde ara…",
+    "filterAll": "Tümü",
+    "filterUnread": "Okunmamış",
+    "markRead": "okundu",
+    "deleteOne": "sil",
+    "deleteAll": "tümünü sil",
+    "empty": "Henüz bildirim yok",
+    "emptyHint": "Bildirimler buraya düşecek.",
+    "emptyUnread": "Okunmamış bildirim yok",
+    "emptyUnreadHint": "Hepsi okundu, tertemiz.",
+    "confirmClearTitle": "Tüm bildirimleri sil?",
+    "confirmClearMessage": "{{count}} bildirim kalıcı olarak silinecek. Bu işlem geri alınamaz.",
+    "justNow": "az önce",
+    "minutesAgo": "{{count}} dk önce",
+    "hoursAgo": "{{count}} sa önce",
+    "daysAgo": "{{count}} gün önce",
+    "types": {
+      "PRICE_ALERT_FIRED": "Fiyat alarmı",
+      "WATCHLIST_DELTA": "Takip listesi",
+      "REPORT_READY": "Rapor",
+      "MESSAGE": "Mesaj",
+      "SYSTEM": "Sistem",
+      "MARKET_OPENED": "Piyasa açıldı",
+      "MARKET_CLOSED": "Piyasa kapandı",
+      "MARKET_DATA_UPDATED": "Veri güncellendi",
+      "NEWS_PUBLISHED": "Yeni haberler",
+      "PORTFOLIO_UPDATED": "Portföy güncellendi"
+    }
+  },
+  "adminTrackedAssets": {
+    "title": "Tracked Assets Yönetimi",
+    "adminRequired": "Bu sayfayı görüntülemek için ADMIN rolü gerekli.",
+    "addOrUpdate": "{{title}} Ekle / Güncelle",
+    "missingFieldTitle": "Eksik Alan",
+    "assetCodeRequired": "Asset code zorunlu",
+    "saveSuccess": "Kayıt Başarılı",
+    "saveSuccessBody": "{{title}} kaydı eklendi/güncellendi",
+    "assetCodeCrypto": "Asset code (örn: bitcoin)",
+    "assetCodeOther": "Asset code (örn: ASELS.IS)",
+    "displayNamePlaceholder": "Görünen isim (opsiyonel)",
+    "binanceSymbolPlaceholder": "Binance symbol (örn: BTCUSDT)",
+    "sortPlaceholder": "Sıra",
+    "saving": "Kaydediliyor...",
+    "tabs": {
+      "CRYPTO": "Kripto",
+      "STOCK": "Hisse",
+      "FUND": "Fon",
+      "COMMODITY": "Emtia",
+      "NEWS": "Haber Kaynakları"
+    }
+  },
+  "adminUsers": {
+    "title": "Kullanıcı Yönetimi",
+    "searchPlaceholder": "Kullanıcı adı veya e-posta ara...",
+    "loadError": "Kullanıcılar yüklenemedi",
+    "noUsersFound": "Kullanıcı bulunamadı",
+    "statusActive": "Aktif",
+    "statusBanned": "Yasaklı",
+    "you": "Sen",
+    "banAction": "Yasakla",
+    "unbanAction": "Yasağı Kaldır",
+    "sendMessageTitle": "Bu kullanıcıya mesaj gönder",
+    "pageSize": "Sayfa boyutu:",
+    "col": {
+      "user": "Kullanıcı",
+      "email": "E-posta",
+      "signupDate": "Kayıt",
+      "status": "Durum",
+      "action": "İşlem"
+    },
+    "toast": {
+      "banned": "Yasaklandı",
+      "bannedBody": "{{username}} artık giriş yapamayacak",
+      "unbanned": "Yasak Kaldırıldı",
+      "unbannedBody": "{{username}} tekrar giriş yapabilir",
+      "unknownError": "Bilinmeyen hata"
+    }
+  },
+  "twoFactor": {
+    "active": "2FA aktif",
+    "inactive": "2FA kapalı",
+    "statusLoading": "Durum kontrol ediliyor…",
+    "descActive": "Hesabın iki adımlı doğrulama ile korunuyor. Güvenliği yeniden kurmak veya devre dışı bırakmak için aşağıdaki seçenekleri kullan.",
+    "descInactive": "Google/Microsoft Authenticator ile hesabını ek güvenlik katmanıyla koru.",
+    "reSetup": "Yeniden kur",
+    "disable": "Devre dışı bırak",
+    "setupCta": "2FA'yı Kur",
+    "footerActive": "Devre dışı bırakırsan tek faktörlü oturum açma aktif olur, hesap güvenliği düşer.",
+    "footerInactive": "Doğrulama kurulum sayfasına yönlendirileceksin.",
+    "redirecting": "Yönlendiriliyor",
+    "redirectingHint": "Authenticator kurulum sayfasına götürüleceksin",
+    "disabledTitle": "2FA devre dışı",
+    "disabledBody": "İki adımlı doğrulama hesabından kaldırıldı",
+    "confirm": {
+      "title": "2FA devre dışı bırakılsın mı?",
+      "message": "Hesabın artık tek faktörlü oturum açma ile korunacak. Bu işlem geri alınabilir — istediğin zaman tekrar kurabilirsin."
+    }
+  },
+  "keycloakAction": {
+    "labels": {
+      "UPDATE_PASSWORD": "Şifre",
+      "CONFIGURE_TOTP": "İki Adımlı Doğrulama",
+      "UPDATE_PROFILE": "Profil",
+      "delete_account": "Hesap Silme"
+    },
+    "success": {
+      "title": "{{label}} güncellendi",
+      "body": "İşlem başarılı"
+    },
+    "cancelled": {
+      "title": "{{label}} iptal edildi",
+      "body": "Hiçbir değişiklik yapılmadı"
+    },
+    "error": {
+      "title": "{{label}} güncellenemedi",
+      "body": "İşlem sırasında bir hata oluştu"
+    }
+  },
+  "onboarding": {
+    "welcomeTitle": "Finance Portal'a Hoş Geldin",
+    "welcomeSubtitle": "Piyasa verisi, portföy takibi ve bildirimleri tek arayüzde toplayan finans paneli.",
+    "startCta": "Başlayalım",
+    "dismissHint": "Bu pencereyi tekrar görmeyeceksin — Ayarlar'dan tüm seçenekleri yönetebilirsin.",
+    "highlights": {
+      "multiMarket": {
+        "title": "Çoklu Piyasa",
+        "body": "Hisse, kripto, emtia, fon, döviz, tahvil tek noktada"
+      },
+      "hypotheticalPortfolio": {
+        "title": "Hipotetik Portföy",
+        "body": "Geçmiş tarihli pozisyonlarla ne olurdu senaryoları"
+      },
+      "smartNotifications": {
+        "title": "Akıllı Bildirimler",
+        "body": "Fiyat alarmları ve takip listesi (yakında)"
+      },
+      "secureAccess": {
+        "title": "Güvenli Erişim",
+        "body": "Keycloak, JWT, opsiyonel iki adımlı doğrulama"
+      }
+    }
+  },
+  "watchlistItemEdit": {
+    "title": "Asset ayarlarını düzenle",
+    "noteLabel": "Not",
+    "notePlaceholder": "Bu varlık için kişisel notun",
+    "thresholdLabel": "Eşik (% değişim)",
+    "thresholdPlaceholder": "0 = her hareket / örn 5 = %5",
+    "thresholdHint": "Boş bırakırsan global varsayılan kullanılır. <span class=\"font-mono\">0</span> = her hareket bildirim gönderir.",
+    "invalidThreshold": "Geçersiz eşik",
+    "invalidThresholdHint": "Sayısal bir değer gir (örn 0,5 veya 5)",
+    "updated": "Güncellendi",
+    "updatedBody": "{{code}} ayarları kaydedildi",
+    "updateFailed": "Güncelleme başarısız"
+  },
+  "positionForm": {
+    "titleAdd": "Pozisyon Ekle",
+    "titleEdit": "Pozisyonu Düzenle",
+    "continue": "Devam Et",
+    "totalCost": "Toplam Maliyet",
+    "fields": {
+      "entryDate": "Giriş Tarihi",
+      "entryPrice": "Giriş Fiyatı (TRY)",
+      "quantity": "Miktar",
+      "quantityShares": "Miktar (adet)",
+      "minOne": "min. 1 adet"
+    },
+    "errors": {
+      "dateRequired": "Giriş tarihi gerekli",
+      "priceInvalid": "Geçerli bir giriş fiyatı girin",
+      "quantityInvalid": "Geçerli bir miktar girin",
+      "quantityInteger": "Bu varlık için tam sayı miktar girin",
+      "addFailed": "Pozisyon eklenemedi",
+      "updateFailed": "Güncelleme başarısız"
+    },
+    "steps": {
+      "validating": "İşlem doğrulanıyor...",
+      "checkingMarket": "Piyasa verisi kontrol ediliyor...",
+      "updating": "Portföy güncelleniyor..."
+    },
+    "confirm": {
+      "heading": "İşleminizi onaylıyor musunuz?",
+      "subAdd": "<span class=\"font-medium text-fg\">{{code}}</span> için lot eklenecek",
+      "subEdit": "<span class=\"font-medium text-fg\">{{code}}</span> için lot güncellenecek",
+      "date": "Tarih",
+      "quantity": "Miktar",
+      "quantityShares": "{{qty}} adet",
+      "unitPrice": "Birim Fiyat"
+    },
+    "success": {
+      "titleAdd": "Pozisyon eklendi",
+      "titleEdit": "Pozisyon güncellendi",
+      "subtitleAdd": "{{code}} pozisyonu ({{qty}} adet) ekle",
+      "subtitleEdit": "{{code}} pozisyonunu güncelle",
+      "completed": "İşlem başarıyla tamamlandı"
+    },
+    "availability": {
+      "has": "Bu tarih için veri mevcut: <span class=\"font-mono font-semibold\">{{price}}</span>",
+      "apply": "Uygula",
+      "none": "Bu tarih için fiyat verisi yok, manuel girin."
+    }
+  },
+  "assetDetail": {
+    "newLot": "Yeni Lot",
+    "pnl": "Kar/Zarar",
+    "dailyPnl": "Günlük K/Z",
+    "noDataInRange": "Bu aralıkta veri bulunmuyor",
+    "marketValue": "Piyasa Değeri",
+    "unitPrice": "Birim Fiyat",
+    "stats": {
+      "quantity": "Miktar",
+      "entryDate": "Giriş Tarihi",
+      "entryPrice": "Giriş Fiyatı",
+      "currentPrice": "Güncel Fiyat",
+      "marketValue": "Piyasa Değeri"
+    }
+  },
+  "tasksPanel": {
+    "title": "Görev Yöneticisi",
+    "active": "Çalışan",
+    "history": "Geçmiş",
+    "noHistory": "Henüz görev geçmişi yok",
+    "taskToast": "Görev",
+    "status": {
+      "RUNNING": "Çalışıyor",
+      "COMPLETED": "Tamamlandı",
+      "FAILED": "Başarısız"
+    },
+    "category": {
+      "CRYPTO": "Kripto",
+      "STOCKS": "Hisse",
+      "FOREX": "Döviz",
+      "FUNDS": "Fon",
+      "COMMODITIES": "Emtia",
+      "BONDS": "Tahvil",
+      "NEWS": "Haber"
+    },
+    "action": {
+      "snapshot": "Snapshot",
+      "candles": "Mum",
+      "fullUpdate": "Tam Güncelleme",
+      "update": "Güncelle"
+    }
+  },
+  "newsSourceAdmin": {
+    "formTitle": "Haber Kaynağı Ekle",
+    "namePlaceholder": "Kaynak adı (örn: BloombergHT)",
+    "urlPlaceholder": "RSS URL",
+    "orderPlaceholder": "Sıra",
+    "addCta": "Ekle",
+    "adding": "Ekleniyor...",
+    "added": "Eklendi",
+    "addedBody": "{{name}} kaynağı eklendi",
+    "addFailed": "Ekleme Hatası",
+    "missingTitle": "Eksik Alan",
+    "missingBody": "Kaynak adı ve URL zorunlu",
+    "categoryAuto": "Otomatik (keyword)",
+    "category": {
+      "CRYPTO": "Kripto",
+      "BORSA_ISTANBUL": "Borsa Istanbul",
+      "BORSA_SIRKETLERI": "Borsa Şirketleri",
+      "TAHVIL_BONO": "Tahvil & Bono",
+      "PARITE": "Parite",
+      "EMTIA": "Emtia",
+      "GENEL_FINANS": "Genel Finans"
+    },
+    "listTitle": "Haber Kaynakları ({{count}})",
+    "errorTitle": "Hata",
+    "loadFailed": "Haber kaynakları yüklenemedi",
+    "updateFailed": "Güncelleme Hatası",
+    "deleted": "Silindi",
+    "deletedBody": "{{name}} kaynağı silindi",
+    "deleteFailed": "Silme Hatası",
+    "deletePromptTitle": "\"{{name}}\" silinsin mi?",
+    "deletePromptBody": "Bu haber kaynağı kalıcı olarak kaldırılacak.",
+    "empty": "Kaynak bulunamadı.",
+    "enabled": "AKTİF",
+    "disabled": "PASİF",
+    "enable": "Etkinleştir",
+    "disable": "Devre dışı bırak"
+  },
+  "trackedAssetAdmin": {
+    "heading": "{{title}} Tracked Listesi ({{prefix}}{{count}})",
+    "moveUp": "Yukarı taşı",
+    "moveDown": "Aşağı taşı",
+    "dragHandle": "Tut ve sürükle",
+    "saveOrder": "Sırayı Kaydet",
+    "saving": "Kaydediliyor...",
+    "saved": "Kaydedildi",
+    "savedBody": "Sıralama güncellendi",
+    "saveFailed": "Kaydetme Hatası",
+    "deleted": "Silindi",
+    "deletedBody": "{{code}} başarıyla silindi",
+    "deleteFailed": "Silme Hatası",
+    "deletePromptTitle": "{{code}} silinsin mi?",
+    "deletePromptBody": "Bu varlık tracked listesinden kaldırılacak. Mevcut piyasa verileri (mum, snapshot) silinmez.",
+    "searchPlaceholder": "{{title}} ara...",
+    "unsavedChanges": "Kaydedilmemiş sıralama değişikliği var",
+    "noMatch": "Aramayla eşleşen kayıt yok.",
+    "empty": "Kayıt yok.",
+    "binance": "Binance: {{symbol}}"
+  },
+  "addPriceAlert": {
+    "title": "Fiyat alarmı",
+    "subtitlePrompt": "Asset seç ve eşik belirle",
+    "searchLabel": "Asset Ara",
+    "searchPlaceholder": "BTC, AAPL, USDTRY...",
+    "change": "Değiştir",
+    "currentPrice": "Şu anki fiyat",
+    "liveData": "canlı veri",
+    "triggerLabel": "Tetikleme türü",
+    "quickSelect": "Hızlı seç (güncel fiyata göre)",
+    "quickPercent": "Hızlı yüzde",
+    "thresholdPctLabel": "Eşik (%)",
+    "thresholdPriceLabel": "Eşik fiyat (₺)",
+    "referenceLabel": "Referans (₺)",
+    "referencePlaceholder": "başlangıç fiyatı",
+    "distanceFromCurrent": "{{signed}}% güncelden uzakta",
+    "projected": "≈ ₺{{price}} olduğunda tetiklenir",
+    "createCta": "Alarmı Oluştur",
+    "creating": "Oluşturuluyor…",
+    "errorAsset": "Bir asset seç",
+    "errorThreshold": "Eşik geçerli bir sayı olmalı",
+    "errorReference": "Yüzde alarmı için referans fiyat gerekli",
+    "created": "{{code}} alarmı oluşturuldu",
+    "failed": "Alarm oluşturulamadı",
+    "direction": {
+      "ABOVE": {
+        "label": "Üstüne çıkarsa",
+        "hint": "Eşik fiyatın üstüne çıktığında bildir"
+      },
+      "BELOW": {
+        "label": "Altına düşerse",
+        "hint": "Eşik fiyatın altına düştüğünde bildir"
+      },
+      "CHANGE_PCT_UP": {
+        "label": "% Yükselirse",
+        "hint": "Referans fiyattan belirtilen yüzdede yükseldiğinde bildir"
+      },
+      "CHANGE_PCT_DOWN": {
+        "label": "% Düşerse",
+        "hint": "Referans fiyattan belirtilen yüzdede düştüğünde bildir"
+      }
+    }
+  },
+  "addWatchlistItem": {
+    "titleCreate": "Listeye ekle",
+    "titleUpdate": "Liste girişini güncelle",
+    "subtitlePrompt": "Önce asset seç, sonra listeye ekle",
+    "searchLabel": "Asset Ara",
+    "searchPlaceholder": "BTC, AAPL, USDTRY...",
+    "change": "Değiştir",
+    "listLabel": "Liste",
+    "pickList": "Liste seç",
+    "noteLabel": "Not",
+    "notePlaceholder": "ETF spot dönemi",
+    "optional": "(opsiyonel)",
+    "thresholdLabel": "% Değişim Eşiği",
+    "thresholdPlaceholder": "varsayılan 5",
+    "thresholdHint": "Boş bırakırsan global %5 eşiği kullanılır.",
+    "duplicateWarn": "<strong>{{code}}</strong> bu listede zaten var. Kaydet butonuyla mevcut not ve eşik değerleri üstüne yazılır.",
+    "addCta": "Listeye Ekle",
+    "updateCta": "Güncelle",
+    "adding": "Ekleniyor…",
+    "updating": "Güncelleniyor…",
+    "errorAsset": "Bir asset seç",
+    "errorList": "Bir liste seç",
+    "errorThreshold": "% eşiği geçerli pozitif sayı olmalı",
+    "added": "{{code}} → {{list}} eklendi",
+    "updated": "{{code}} → {{list}} güncellendi",
+    "fallbackListName": "liste",
+    "failed": "Ekleme başarısız"
+  },
+  "priceAlertEdit": {
+    "title": "Alarm ayarlarını düzenle",
+    "directionLabel": "Yön",
+    "thresholdLabel": "Eşik",
+    "thresholdPlaceholder": "örn 1000000 (TL) ya da 5 (%)",
+    "thresholdHint": "ABOVE/BELOW için TL fiyat, % yön için yüzdelik değer.",
+    "saving": "Kaydediliyor…",
+    "invalidThreshold": "Geçersiz eşik",
+    "invalidThresholdHint": "Sayısal bir değer gir",
+    "updated": "Güncellendi",
+    "updatedBody": "{{code}} alarmı kaydedildi",
+    "updateFailed": "Güncelleme başarısız",
+    "direction": {
+      "ABOVE": "Üstüne çıkarsa",
+      "BELOW": "Altına düşerse",
+      "CHANGE_PCT_UP": "% yükselişte",
+      "CHANGE_PCT_DOWN": "% düşüşte"
+    }
+  },
+  "watchlistRow": {
+    "dragToReorder": "Sürükleyerek sırala",
+    "removeFromList": "Listeden çıkar"
+  },
+  "assetActions": {
+    "inFavorites": "Favorilerde",
+    "addToFavorites": "Favorilere ekle",
+    "addToFavoritesTitle": "Favorilere ekle",
+    "removeFromFavoritesTitle": "Favorilerden çıkar",
+    "addToList": "Listeye ekle",
+    "addToOtherList": "Başka bir listeye ekle",
+    "priceAlert": "Fiyat alarmı",
+    "addedToFavorites": "{{code}} favorilere eklendi",
+    "removedFromFavorites": "{{code}} favorilerden çıkarıldı"
+  },
+  "broadcast": {
+    "title": "Yayın gönder",
+    "subtitle": "Tüm kullanıcılara sistem bildirimi",
+    "titleLabel": "Başlık",
+    "bodyLabel": "Mesaj",
+    "publishCta": "Yayınla",
+    "sending": "Gönderiliyor…",
+    "successTitle": "Yayın gönderildi",
+    "successBody": "{{dispatched}}/{{total}} kullanıcıya iletildi",
+    "failed": "Yayın gönderilemedi"
+  },
+  "adminMessage": {
+    "label": "Mesaj",
+    "placeholder": "Kullanıcıya iletmek istediğin mesajı yaz…",
+    "hint": "Enter gönder · Shift+Enter satır",
+    "send": "Gönder",
+    "sending": "Gönderiliyor…",
+    "sent": "Mesaj gönderildi",
+    "sentBody": "{{username}} kullanıcısına iletildi",
+    "failed": "Mesaj gönderilemedi"
+  },
+  "alertRow": {
+    "active": "aktif",
+    "fired": "tetiklendi",
+    "reactivate": "Yeniden aktifleştir",
+    "direction": {
+      "ABOVE": "üstüne",
+      "BELOW": "altına",
+      "CHANGE_PCT_UP": "% yükseliş",
+      "CHANGE_PCT_DOWN": "% düşüş"
+    }
+  },
+  "createWatchlist": {
+    "title": "Yeni liste",
+    "subtitle": "Maks. 20 liste oluşturabilirsin",
+    "listNameLabel": "Liste Adı",
+    "namePlaceholder": "Crypto Yatırımları",
+    "createCta": "Oluştur",
+    "creating": "Oluşturuluyor…",
+    "nameRequired": "Liste adı gerekli",
+    "successToast": "\"{{name}}\" oluşturuldu",
+    "createFailed": "Liste oluşturulamadı"
+  },
+  "watch": {
+    "headerTitle": "Takip",
+    "tabs": {
+      "watchlist": "Takip listesi",
+      "alerts": "Fiyat alarmları"
+    },
+    "sortOptions": {
+      "CUSTOM": "Sıralamam",
+      "NAME": "Alfabetik",
+      "CURRENT_PRICE": "Fiyat",
+      "CHANGE_PERCENT": "% Değişim",
+      "ADDED_AT": "Eklenme tarihi"
+    },
+    "myLists": "Takip listelerim",
+    "newListCta": "Yeni liste",
+    "deleteListTitle": "Listeyi sil",
+    "addAsset": "Asset ekle",
+    "createAlert": "Alarm oluştur",
+    "loading": "Yükleniyor…",
+    "listsLoading": "Listeler yükleniyor…",
+    "headers": {
+      "asset": "Varlık",
+      "lastPrice": "Son fiyat",
+      "direction": "Yön",
+      "threshold": "Eşik",
+      "status": "Durum"
+    },
+    "emptyList": {
+      "title": "Liste boş",
+      "titleNamed": "\"{{name}}\" listesi boş",
+      "hint": "Bir crypto, hisse, döviz veya fon ekle, hareketleri buradan izle."
+    },
+    "emptyAlerts": {
+      "title": "Henüz alarmın yok",
+      "hint": "Bir asset için ABOVE/BELOW veya yüzde değişim alarmı kur."
+    },
+    "deleteListConfirm": {
+      "title": "Listeyi sil?",
+      "message": "\"{{name}}\" ve içindeki tüm assetler kalıcı olarak silinecek."
+    },
+    "toast": {
+      "itemRemoved": "Listeden çıkarıldı",
+      "alertDeleted": "Alarm silindi",
+      "alertReactivated": "Alarm yeniden aktifleştirildi",
+      "listDeleted": "Liste silindi",
+      "deleteFailed": "Silme başarısız",
+      "reactivateFailed": "Aktifleştirme başarısız"
+    }
+  },
+  "newsDetail": {
+    "loading": "Haber yükleniyor...",
+    "error": "Haber yüklenirken bir hata oluştu.",
+    "notFound": "Haber bulunamadı.",
+    "backToList": "Haberlere Dön",
+    "openSource": "Kaynağa Git"
+  },
+  "news": {
+    "title": "Finansal Haberler",
+    "subtitle": "Güncel piyasa ve finans haberleri",
+    "countLabel": "haber",
+    "searchPlaceholder": "Haber ara...",
+    "loading": "Haberler yükleniyor…",
+    "error": "Haberler yüklenirken bir hata oluştu",
+    "refresh": "Yenile",
+    "cooldown": "Bekleme",
+    "noSearchResults": "Aramayla eşleşen haber bulunamadı.",
+    "emptyCategory": "Bu kategoride henüz haber bulunmuyor.",
+    "readMore": "Devamını Oku",
+    "empty": "Haber yok",
+    "refreshHint": "Haberler periyodik olarak güncellenir.",
+    "categories": {
+      "ALL": "Tümü",
+      "CRYPTO": "Kripto",
+      "BORSA_ISTANBUL": "Borsa İstanbul",
+      "BORSA_SIRKETLERI": "Borsa Şirketleri",
+      "TAHVIL_BONO": "Tahvil & Bono",
+      "PARITE": "Döviz & Parite",
+      "EMTIA": "Emtia",
+      "GENEL_FINANS": "Genel Finans"
+    }
+  },
+  "marketChips": {
+    "title": "Hangi piyasalar",
+    "activeSuffix": "aktif",
+    "BOND": "Tahvil",
+    "footer": "// işaretsiz piyasalar açılış / veri bildirimi atlamaz"
+  },
+  "emailChange": {
+    "currentLabel": "Mevcut",
+    "placeholder": "yeni@email.com",
+    "sendCode": "Mevcut adrese kod gönder",
+    "sending": "gönderiliyor…",
+    "codeArrow": "Kod →",
+    "sendHintBefore": "6 haneli kod",
+    "sendHintAfter": "adresine gönderilir; aşağıda kodu girince yeni adres aktive olur.",
+    "awaitingConfirmation": "Onay Bekleniyor",
+    "expiresPrefix": "Geçerlilik",
+    "expiresSuffix": "'a kadar",
+    "cancel": "Vazgeç",
+    "verifying": "Doğrulanıyor…",
+    "confirm": "Onayla",
+    "toast": {
+      "sameAddress": "Aynı adres",
+      "sameAddressDesc": "Yeni e-posta mevcut adresle aynı olamaz",
+      "codeSent": "Kod gönderildi",
+      "codeSentDesc": "{{email}} adresine 6 haneli onay kodu atıldı",
+      "initiateError": "İşlem başarısız",
+      "codeNotSent": "Kod gönderilemedi",
+      "updated": "E-posta güncellendi",
+      "updatedDesc": "{{email}} adresi artık aktif",
+      "invalidCode": "Geçersiz kod",
+      "codeNotVerified": "Kod doğrulanamadı",
+      "cancelled": "Vazgeçildi",
+      "cancelledDesc": "E-posta değişikliği iptal edildi",
+      "cancelError": "İptal başarısız",
+      "tryAgain": "Tekrar dene"
+    }
+  }
+}

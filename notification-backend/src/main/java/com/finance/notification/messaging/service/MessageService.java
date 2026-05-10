@@ -75,13 +75,13 @@ public class MessageService {
     @Transactional
     public MessageResponse sendAdminToUser(String adminSub, String recipientSub, String body) {
         if (recipientSub == null || recipientSub.isBlank()) {
-            throw new BusinessException("recipientSub cannot be blank for admin-to-user message");
+            throw new BusinessException("error.message.recipientSubBlank");
         }
         if (adminSub.equals(recipientSub)) {
-            throw new BusinessException("Cannot message yourself");
+            throw new BusinessException("error.message.cannotSelfDm");
         }
         if (!userStatus.isActive(recipientSub)) {
-            throw new BusinessException("Cannot send message to a disabled user");
+            throw new BusinessException("error.message.recipientDisabled");
         }
         rejectIfCoolingDown(adminSub);
         rejectDuplicate(adminSub, body);
@@ -103,20 +103,19 @@ public class MessageService {
 
     private void rejectDuplicate(String senderSub, String body) {
         if (duplicateGuard.isDuplicate(senderSub, body)) {
-            throw new BadRequestException("Aynı mesajı kısa süre içinde tekrar gönderdin");
+            throw new BadRequestException("error.message.duplicate");
         }
     }
 
     private void rejectIfCoolingDown(String senderSub) {
         if (cooldownGuard.isCoolingDown(senderSub)) {
-            throw new BadRequestException("Çok sık mesaj gönderiyorsun, lütfen birkaç saniye bekle");
+            throw new BadRequestException("error.message.tooFrequent");
         }
     }
 
     private void rejectIfBacklogFull(String senderSub) {
         if (backlogGuard.wouldExceedBacklog(senderSub)) {
-            throw new BadRequestException("Admin cevap vermeden en fazla "
-                    + backlogGuard.maxUnanswered() + " mesaj gönderebilirsin");
+            throw new BadRequestException("error.message.unanswered", backlogGuard.maxUnanswered());
         }
     }
 
@@ -182,9 +181,9 @@ public class MessageService {
     @Transactional
     public void markRead(Long messageId, String userSub) {
         Message message = repository.findById(messageId)
-                .orElseThrow(() -> new ResourceNotFoundException("Message not found: " + messageId));
+                .orElseThrow(() -> new ResourceNotFoundException("error.message.notFound", messageId));
         if (!userSub.equals(message.getRecipientSub())) {
-            throw new ResourceNotFoundException("Message not found: " + messageId);
+            throw new ResourceNotFoundException("error.message.notFound", messageId);
         }
         if (message.getReadAt() == null) {
             message.setReadAt(LocalDateTime.now());
@@ -253,7 +252,7 @@ public class MessageService {
 
     private void rejectIfClosed(String userSub) {
         if (closedRepository.existsById(userSub)) {
-            throw new BadRequestException("Bu sohbet kapatıldı, yeni mesaj gönderemezsin");
+            throw new BadRequestException("error.message.closed");
         }
     }
 }

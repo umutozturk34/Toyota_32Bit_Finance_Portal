@@ -1,12 +1,12 @@
-import { formatPriceTRY } from '../../../shared/utils/formatters';
+import { formatPriceTRY, currentLocaleTag } from '../../../shared/utils/formatters';
 
 export const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX', 'COMMODITY'];
 export const ONE_HOUR_MS = 60 * 60 * 1000;
 export const SUCCESS_HOLD_MS = 1100;
-export const PROCESSING_STEPS = [
-  { label: 'İşlem doğrulanıyor...', duration: 400 },
-  { label: 'Piyasa verisi kontrol ediliyor...', duration: 400 },
-  { label: 'Portföy güncelleniyor...', duration: 400 },
+export const PROCESSING_STEP_DEFS = [
+  { labelKey: 'validating', duration: 400 },
+  { labelKey: 'checkingMarket', duration: 400 },
+  { labelKey: 'updating', duration: 400 },
 ];
 
 export function todayInputValue() {
@@ -80,16 +80,18 @@ export function buildPriceIndex(response) {
   return index;
 }
 
-const compactCurrencyFormatter = new Intl.NumberFormat('tr-TR', {
-  notation: 'compact',
-  style: 'currency',
-  currency: 'TRY',
-  maximumFractionDigits: 2,
-});
+function compactCurrencyFormatter() {
+  return new Intl.NumberFormat(currentLocaleTag(), {
+    notation: 'compact',
+    style: 'currency',
+    currency: 'TRY',
+    maximumFractionDigits: 2,
+  });
+}
 
 export function formatTotalCost(cost) {
   if (cost == null) return 'N/A';
-  if (Math.abs(cost) >= 1_000_000_000) return compactCurrencyFormatter.format(cost);
+  if (Math.abs(cost) >= 1_000_000_000) return compactCurrencyFormatter().format(cost);
   return formatPriceTRY(cost);
 }
 
@@ -97,7 +99,9 @@ export function preventDecimal(e) {
   if (e.key === '.' || e.key === ',') e.preventDefault();
 }
 
-export function describeAction(isEdit, form, displayCode, isFractional) {
+export function describeAction(t, isEdit, form, displayCode, isFractional) {
   const qty = isFractional ? form.quantity : Math.floor(Number(form.quantity || 0));
-  return isEdit ? `${displayCode} pozisyonunu güncelle` : `${displayCode} pozisyonu (${qty} adet) ekle`;
+  return isEdit
+    ? t('positionForm.success.subtitleEdit', { code: displayCode })
+    : t('positionForm.success.subtitleAdd', { code: displayCode, qty });
 }

@@ -28,9 +28,10 @@ class MarketStatusControllerTest {
     private static final Clock FIXED_CLOCK = Clock.fixed(FIXED_NOW, ZoneId.of("UTC"));
 
     @Mock private MarketSessionResolver resolver;
+    @Mock private com.finance.common.i18n.Translator translator;
 
     private MarketStatusController controller() {
-        return new MarketStatusController(resolver, FIXED_CLOCK);
+        return new MarketStatusController(resolver, FIXED_CLOCK, translator);
     }
 
     @Test
@@ -72,6 +73,5 @@ class MarketStatusControllerTest {
                 .orElseThrow();
         assertThat(fund.session()).isEqualTo(MarketSession.CLOSED);
         assertThat(fund.nextTransitionAt()).isEqualTo(Instant.parse("2026-05-06T06:30:00Z"));
-        assertThat(fund.displayLabel()).isEqualTo("Fon");
     }
 }

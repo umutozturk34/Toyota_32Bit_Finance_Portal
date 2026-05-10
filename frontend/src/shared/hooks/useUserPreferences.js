@@ -7,7 +7,7 @@ const PREFERENCES_KEY = ['userPreferences'];
 const FALLBACK = Object.freeze({
   userSub: null,
   theme: 'DARK',
-  language: 'tr',
+  language: 'en',
   timezone: 'Europe/Istanbul',
   defaultChartRange: '1M',
   reportFrequency: 'NEVER',

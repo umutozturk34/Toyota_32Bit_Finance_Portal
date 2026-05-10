@@ -1,11 +1,15 @@
 package com.finance.notification.watchlist.dispatch;
 
+import com.finance.common.i18n.Translator;
 import com.finance.common.model.MarketType;
 import com.finance.notification.config.NotificationDispatchProperties;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
 import com.finance.notification.core.dispatch.payload.WatchlistDeltaPayload;
 import com.finance.notification.core.model.NotificationType;
+import com.finance.notification.testsupport.HandlerTestSupport;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -20,7 +24,18 @@ class WatchlistDeltaHandlerTest {
             new NotificationDispatchProperties.WatchlistDelta(3),
             new NotificationDispatchProperties.Message(120));
 
-    private final WatchlistDeltaHandler handler = new WatchlistDeltaHandler(DISPATCH);
+    private WatchlistDeltaHandler handler;
+
+    @BeforeEach
+    void setUp() {
+        Translator translator = HandlerTestSupport.turkishTranslator();
+        handler = new WatchlistDeltaHandler(DISPATCH, translator);
+    }
+
+    @AfterEach
+    void tearDown() {
+        HandlerTestSupport.resetLocale();
+    }
 
     private static WatchlistDeltaPayload.DeltaItem item(String code, String name, String image,
                                                          BigDecimal current, BigDecimal delta) {

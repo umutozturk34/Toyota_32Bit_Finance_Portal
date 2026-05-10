@@ -1,16 +1,16 @@
 <#import "template.ftl" as layout>
 <@layout.emailLayout
-    eyebrow="ŞİFRE SIFIRLAMA"
-    title="Yeni şifreni belirle"
-    subtitle="Aşağıdaki bağlantı yalnızca senin için oluşturuldu.">
-    <p>Merhaba <strong>${user.firstName!user.username!''}</strong>,</p>
-    <p>Şifre sıfırlama talebinde bulundun. Aşağıdaki butona tıklayarak güvenli sayfada yeni şifreni belirleyebilirsin.</p>
+    eyebrow=msg("passwordReset.eyebrow")
+    title=msg("passwordReset.title")
+    subtitle=msg("passwordReset.subtitle")>
+    <p>${msg("email.greeting")} <strong>${user.firstName!user.username!''}</strong>,</p>
+    <p>${msg("passwordReset.body1")}</p>
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
         <tr>
             <td class="cta-wrap" align="left">
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" class="cta-table">
                     <tr>
-                        <td class="cta-cell" align="center"><a href="${link}" class="email-cta">Şifremi Sıfırla &nbsp;→</a></td>
+                        <td class="cta-cell" align="center"><a href="${link}" class="email-cta">${msg("passwordReset.cta")} &nbsp;→</a></td>
                     </tr>
                 </table>
             </td>
@@ -18,8 +18,8 @@
     </table>
     <div class="info-box">
         <div class="info-card">
-            <p><strong>Geçerlilik</strong> &nbsp; Bağlantı <span class="num">${linkExpiration}</span> dakika sonra geçersizleşir.</p>
+            <p><strong>${msg("email.expiryLabel")}</strong> &nbsp; ${msg("email.expiryValue", linkExpiration)}</p>
         </div>
     </div>
-    <p style="margin-top:18px;">Bu işlemi sen başlatmadıysan hesabın güvende — bağlantıyı kullanmadığın sürece şifren değişmez. Şüpheli bir aktivite varsa destek ile iletişime geç.</p>
+    <p style="margin-top:18px;">${msg("email.suspiciousFooter")}</p>
 </@layout.emailLayout>

@@ -1,0 +1,1497 @@
+{
+  "about": {
+    "heading": {
+      "prefix": "About",
+      "subtitle": "A comprehensive financial management system with real-time market data, enterprise-grade security, and advanced charting."
+    },
+    "overview": {
+      "title": "Project Overview",
+      "body": "Toyota Finance Portal is a comprehensive financial management system designed for Toyota dealerships and financial services. This application provides secure authentication, real-time market data, and portfolio management capabilities."
+    },
+    "stack": {
+      "title": "Technology Stack"
+    },
+    "tech": {
+      "frontend": "Frontend",
+      "backend": "Backend",
+      "database": "Database",
+      "authentication": "Authentication",
+      "deployment": "Deployment"
+    },
+    "version": {
+      "title": "Version",
+      "current": "Current Version:",
+      "status": "(In Development)"
+    }
+  },
+  "protectedRoute": {
+    "unauthorized": "Unauthorized",
+    "unauthorizedBody": "You don't have permission to access this page.",
+    "requiredRole": "Required role:"
+  },
+  "nav": {
+    "market": "Market",
+    "news": "News",
+    "stocks": "Stocks",
+    "crypto": "Crypto",
+    "forex": "Forex",
+    "funds": "Funds",
+    "commodities": "Commodities",
+    "bonds": "Bonds",
+    "portfolio": "Portfolio",
+    "watch": "Watch",
+    "messages": "Messages",
+    "adminTrackedAssets": "Tracked Assets",
+    "adminUsers": "Users",
+    "tasks": "Tasks",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "logout": "Log out",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar",
+    "adminBadge": "Admin"
+  },
+  "common": {
+    "localeTag": "en-US",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "undo": "Undo",
+    "remove": "Remove",
+    "all": "All",
+    "loading": "Loading...",
+    "loadingData": "Loading data…",
+    "search": "Search",
+    "close": "Close",
+    "retry": "Retry",
+    "back": "Back",
+    "addToPortfolio": "Add to portfolio",
+    "sortDefault": "Default",
+    "previous": "Previous",
+    "next": "Next",
+    "searchEllipsis": "Search..."
+  },
+  "compareBar": {
+    "placeholder": "Compare..."
+  },
+  "searchSuggestions": {
+    "placeholder": "Search stocks, crypto, FX, funds...",
+    "noMatch": "No results match \"{{query}}\""
+  },
+  "confirmDialog": {
+    "title": "Are you sure?",
+    "processing": "Processing..."
+  },
+  "errorState": {
+    "title": "Something went wrong"
+  },
+  "notFound": {
+    "eyebrow": "Page not found",
+    "title": "The page you requested does not exist",
+    "body": "It may have been moved, removed, or never existed.",
+    "home": "Home"
+  },
+  "chartView": {
+    "compareLabel": "Compare",
+    "fundGroup": {
+      "BYF": "Exchange-Traded Funds",
+      "YAT": "Mutual Funds"
+    }
+  },
+  "chart": {
+    "tabs": {
+      "indicators": "Indicators",
+      "drawings": "Draw",
+      "fibonacci": "Fibonacci"
+    },
+    "range": {
+      "1M": "1M",
+      "3M": "3M",
+      "6M": "6M",
+      "1Y": "1Y",
+      "5Y": "5Y",
+      "ALL": "Max"
+    },
+    "historicalAnalysis": "Historical Analysis",
+    "detailDescription": "{{type}} - {{symbol}} detail chart and technical analysis",
+    "detailMode": "Detail Mode",
+    "detailLockMessage": "This page is locked to <span class=\"font-semibold\">{{type}}</span> / <span class=\"font-semibold\">{{symbol}}</span>.",
+    "assetTypeLabel": "Asset Type",
+    "symbolLabel": "Symbol",
+    "customSymbolPlaceholder": "Custom symbol...",
+    "go": "Go",
+    "loading": "Loading historical data...",
+    "waitingForData": "Waiting for chart data...",
+    "retry": "Retry",
+    "selectSymbol": "Select a symbol to view chart data",
+    "aboutIndicators": {
+      "title": "About Technical Indicators",
+      "sma": {
+        "title": "SMA 20 (Simple Moving Average)",
+        "desc": "20-day average price. Short-term trend indicator. Price above SMA20 suggests uptrend."
+      },
+      "ema": {
+        "title": "EMA 50 (Exponential Moving Average)",
+        "desc": "50-day weighted average. Reacts faster to recent price changes than SMA."
+      },
+      "tools": {
+        "title": "Drawing Tools",
+        "desc": "Use trend lines, Fibonacci retracements, and freehand drawings for custom analysis."
+      }
+    },
+    "indicators": {
+      "period": "Period",
+      "color": "Color",
+      "add": "Add",
+      "cancel": "Cancel",
+      "addIndicator": "Add Indicator",
+      "hide": "Hide",
+      "show": "Show",
+      "edit": "Edit",
+      "remove": "Remove"
+    },
+    "drawingPanel": {
+      "tools": {
+        "trendline": "Trend",
+        "horizontal": "Horizontal",
+        "vertical": "Vertical",
+        "freehand": "Freehand",
+        "text": "Text",
+        "emoji": "Emoji"
+      },
+      "emojis": {
+        "rocket": "Rocket",
+        "trendUp": "Trend Up",
+        "trendDown": "Trend Down",
+        "money": "Money",
+        "alert": "Alert",
+        "fire": "Fire",
+        "diamond": "Diamond",
+        "target": "Target",
+        "star": "Star",
+        "bull": "Bull",
+        "bear": "Bear",
+        "green": "Green",
+        "red": "Red",
+        "chartUp": "Chart Up",
+        "bank": "Bank"
+      },
+      "selectIcon": "Select Icon",
+      "size": "Size",
+      "drawingsCount": "Drawings ({{count}})",
+      "undo": "Undo",
+      "clearAll": "Clear All",
+      "instructions": {
+        "trendline": "Click 2 points",
+        "horizontal": "Click 1 point",
+        "vertical": "Click 1 point",
+        "freehand": "Drag to draw",
+        "text": "Click to place",
+        "emoji": "Click to place",
+        "twoPoint": "Click 2 points"
+      }
+    },
+    "fibonacci": {
+      "tools": {
+        "retracement": "Retracement",
+        "extension": "Extension"
+      },
+      "instructions": {
+        "threePoint": "Click 3 points",
+        "twoPoint": "Click 2 points"
+      },
+      "cancel": "Cancel",
+      "active": "Active ({{count}})",
+      "clear": "Clear"
+    },
+    "textInputPlaceholder": "Type here...",
+    "volume": "Volume",
+    "toolbar": {
+      "hidePanel": "Hide panel",
+      "showPanel": "Show panel",
+      "lineChart": "Line chart",
+      "candleChart": "Candlestick chart",
+      "line": "Line",
+      "candle": "Candle",
+      "magnetLabel": "Magnet",
+      "magnet": {
+        "off": "Off",
+        "weak": "Weak (High/Low)",
+        "strong": "Strong (OHLC)"
+      },
+      "vs": "vs",
+      "trend": {
+        "up": "Uptrend",
+        "down": "Downtrend",
+        "neutral": "Sideways"
+      },
+      "drawingsCount": "{{count}} drawing",
+      "drawingsCount_other": "{{count}} drawings",
+      "exitDrawingMode": "Exit drawing mode",
+      "exitDraw": "Exit Draw",
+      "fullscreen": "Fullscreen",
+      "exitFullscreen": "Exit fullscreen",
+      "active": "Active",
+      "cancel": "Cancel",
+      "activeInstruction": {
+        "freehand": "— Click & drag to draw",
+        "click": "— Click to place",
+        "threePoint": "— Click 3 points",
+        "twoPoint": "— Click 2 points",
+        "dragDraw": "— Click & drag"
+      }
+    }
+  },
+  "sectionRegistry": {
+    "ASSET_CARDS": {
+      "label": "Asset cards",
+      "description": "Live price board for the assets you pin"
+    },
+    "MOVERS": {
+      "label": "Gainers / Losers",
+      "description": "Daily movement for the market you pick"
+    },
+    "WATCHLIST": {
+      "label": "Watchlist",
+      "description": "Shows up to 5 tracked assets"
+    },
+    "NEWS": {
+      "label": "News",
+      "description": "Latest news by category"
+    }
+  },
+  "widgetSettings": {
+    "newsHeader": "News categories",
+    "priorityHint": "Selection order = priority",
+    "allCategoriesHint": "Leave empty to include every category",
+    "watchlistHeader": "List selection",
+    "createListHint": "First create a list from the <span class=\"text-accent font-semibold\">/watch</span> page.",
+    "drag": "Drag",
+    "removeChip": "Remove {{code}}",
+    "assetCardHeader": "Asset card",
+    "panelNameLabel": "Panel name",
+    "panelNamePlaceholder": "Asset cards",
+    "pinnedAssets": "Pinned assets",
+    "emptyHint": "Empty — search and add below. Leaving it empty loads the default list.",
+    "searchHint": "Search · pick · added instantly",
+    "searchPlaceholder": "BTC, AKBNK, USDTRY...",
+    "maxAssets": "Max assets reached",
+    "closeTooltip": "Close (Esc)",
+    "done": "Done",
+    "newsCategory": {
+      "CRYPTO": "Crypto",
+      "BORSA_ISTANBUL": "BIST",
+      "BORSA_SIRKETLERI": "Companies",
+      "TAHVIL_BONO": "Bonds",
+      "PARITE": "FX",
+      "EMTIA": "Commodities",
+      "GENEL_FINANS": "General"
+    }
+  },
+  "widgetTray": {
+    "widgetGallery": "Widget gallery",
+    "assetCardTab": "Asset card",
+    "watchlistTab": "Watchlist",
+    "newsTile": "News",
+    "newAssetCard": "New asset card",
+    "addNewCard": "+ New asset card",
+    "queueLabel": "next: {{label}}",
+    "watchlistFallback": "Watchlist {{id}}",
+    "fullHint": "{{max}}/{{max}} filled — remove one to add more",
+    "dragHint": "Drag or click",
+    "addedCount": "{{count}} / {{max}} added",
+    "alreadyAdded": "Already added",
+    "widgetLimit": "Limit {{max}} widgets",
+    "assetCardLimit": "Max {{max}} card panels",
+    "addPanelHint": "Add new panel: {{label}}",
+    "assetCardsN": "Asset cards {{n}}",
+    "movers": {
+      "STOCK": "Stocks · Up/Down",
+      "CRYPTO": "Crypto · Up/Down",
+      "FOREX": "Forex · Up/Down",
+      "FUND": "Funds · Up/Down",
+      "COMMODITY": "Commodities · Up/Down"
+    }
+  },
+  "assetCards": {
+    "remove": "Remove {{code}}",
+    "emptyPanel": "Empty panel",
+    "emptyHint": "Add assets via <strong class=\"text-accent\">Settings</strong>"
+  },
+  "watchlistSection": {
+    "fallbackName": "Watchlist",
+    "empty": "No tracked assets yet"
+  },
+  "datePicker": {
+    "placeholder": "Pick a date",
+    "toggleView": "Toggle view",
+    "dataDays": "{{count}} days of history",
+    "noDataMonth": "no data for this month",
+    "prev": {
+      "day": "Previous month",
+      "month": "Previous year",
+      "year": "12 years back"
+    },
+    "next": {
+      "day": "Next month",
+      "month": "Next year",
+      "year": "12 years forward"
+    }
+  },
+  "lightweightChart": {
+    "view": "View",
+    "investorCount": "Investor count",
+    "portfolioSize": "Portfolio size",
+    "noInvestorCountData": "No investor count data for this fund",
+    "noPortfolioSizeData": "No portfolio size data for this fund"
+  },
+  "overviewCanvas": {
+    "title": "Overview"
+  },
+  "notifStream": {
+    "newNotification": "New notification",
+    "newUserMessage": "New user message",
+    "newMessageReceived": "New message received"
+  },
+  "marketList": {
+    "updateStarted": "Update started",
+    "updateFailed": "Update failed",
+    "noSearchMatch": "No results match the search."
+  },
+  "moversSection": {
+    "fallback": "Market",
+    "gainers": "Gainers",
+    "losers": "Losers",
+    "noData": "No data"
+  },
+  "errorBoundary": {
+    "eyebrow": "Glitch",
+    "title": "An error occurred while rendering this page",
+    "fallbackMessage": "An unexpected error occurred.",
+    "retry": "Retry",
+    "home": "Go home",
+    "consoleNote": "trace logged to developer console"
+  },
+  "pageHeader": {
+    "refresh": "Refresh",
+    "cooldown": "Cooldown: {{time}}"
+  },
+  "marketStatus": {
+    "open": "Open",
+    "closed": "Closed",
+    "session": "Session",
+    "activeSession": "Active session",
+    "outsideSession": "Outside session",
+    "willOpen": "opens in",
+    "willClose": "closes in"
+  },
+  "home": {
+    "live": "Live Market Intelligence",
+    "heroTitle": {
+      "part1": "Markets, decoded.",
+      "part2": "In real time."
+    },
+    "heroDescription": "One portal for stocks, crypto, forex & metals — with institutional-grade charts, enterprise SSO, and zero config.",
+    "cta": {
+      "createAccount": "Create free account",
+      "signIn": "Sign in"
+    },
+    "stats": {
+      "assetClasses": "Asset Classes",
+      "latency": "Latency",
+      "uptime": "Uptime",
+      "security": "Security"
+    },
+    "featuresTag": "Features",
+    "featuresHeading": {
+      "part1": "Everything you need.",
+      "part2": "Nothing you don't."
+    },
+    "features": {
+      "security": {
+        "title": "Bank-Grade Security",
+        "description": "Keycloak SSO, LDAP federation, 2FA/TOTP — your credentials never touch our servers."
+      },
+      "marketData": {
+        "title": "Live Market Data",
+        "description": "Real-time quotes across stocks, crypto, forex & metals with sub-second latency."
+      },
+      "charting": {
+        "title": "Advanced Charting",
+        "description": "TradingView charts with indicators, drawing tools, Fibonacci and compare mode."
+      },
+      "portfolio": {
+        "title": "Portfolio Tracking",
+        "description": "Build portfolios, track P&L, and monitor positions across every asset class."
+      }
+    },
+    "getStartedTag": "Get Started",
+    "ctaSection": {
+      "heading": "Ready to trade smarter?",
+      "body": "Join in seconds — no credit card, no commitment."
+    },
+    "footer": "© 2026 Finance Portal"
+  },
+  "register": {
+    "subtitle": "Create your account",
+    "intro": "Join Finance Portal and start managing your financial data securely.",
+    "cta": "Register with Keycloak",
+    "haveAccount": "Already have an account?",
+    "loginHere": "Login here",
+    "features": {
+      "secureAuth": {
+        "title": "Secure Authentication",
+        "desc": "Enterprise-grade Keycloak security"
+      },
+      "rbac": {
+        "title": "Role-Based Access",
+        "desc": "Granular permission control"
+      },
+      "twoFactor": {
+        "title": "2FA Support",
+        "desc": "Two-factor authentication ready"
+      }
+    }
+  },
+  "login": {
+    "welcome": "Sign in to your account",
+    "required": "Sign-in required",
+    "intro": "Sign in to access Finance Portal.",
+    "cta": "Sign in with Keycloak",
+    "poweredBy": "Powered by Keycloak & Spring Security",
+    "features": {
+      "secureAuth": "Secure Authentication",
+      "rbac": "Role-Based Access Control",
+      "twoFactor": "Two-Factor Authentication (2FA)",
+      "sso": "Single Sign-On (SSO)"
+    }
+  },
+  "adminConversations": {
+    "title": "Conversations",
+    "userCount": "{{count}} users",
+    "matchingCount": "{{count}} matching",
+    "searchPlaceholder": "Search user or message…",
+    "emptyTitle": "No conversations yet",
+    "emptyBody": "When a user sends a message it will appear here.",
+    "emptyMatchTitle": "No matching conversations",
+    "emptyMatchBody": "No results for \"{{query}}\".",
+    "closedTag": "closed",
+    "idLabel": "id"
+  },
+  "adminThread": {
+    "pickConversation": "Pick a conversation",
+    "pickConversationHint": "Select a user from the list to view history and reply.",
+    "closedAt": "Closed · {{time}}",
+    "activeConversation": "Active conversation",
+    "reopen": "Reopen",
+    "reopenTooltip": "Reopen conversation",
+    "close": "Close",
+    "closeTooltip": "Close conversation",
+    "deleteTooltip": "Delete conversation",
+    "emptyThread": "No messages in this conversation yet.",
+    "userLabel": "User",
+    "composerPlaceholder": "Write a message to the user…",
+    "composerClosedHint": "Conversation closed — reopen it to send new messages.",
+    "closeConfirmTitle": "Close conversation?",
+    "closeConfirmBody": "The user can no longer send messages. Existing messages remain visible.",
+    "deleteConfirmTitle": "Delete conversation?",
+    "deleteConfirmBody": "All messages in this conversation will be permanently deleted.",
+    "reopenedTitle": "Conversation reopened",
+    "reopenedBody": "{{user}} can keep messaging",
+    "closedTitle": "Conversation closed",
+    "closedBody": "{{user}} can no longer send new messages",
+    "deletedTitle": "Conversation deleted",
+    "deletedBody": "{{user}}'s conversation has been removed",
+    "actionFailed": "Action failed"
+  },
+  "userMessages": {
+    "title": "Messages",
+    "subtitle": "Direct line with the admin team",
+    "live": "live",
+    "emptyTitle": "Conversation hasn't started yet",
+    "emptyBody": "Send your first message and the admin team will reply.",
+    "composeHint": "Start typing below",
+    "adminLabel": "Admin",
+    "composerPlaceholder": "Write a message…",
+    "sendFailed": "Failed to send message"
+  },
+  "messages": {
+    "conversationClosedBanner": "The admin team closed your conversation. You cannot send messages until it is reopened.",
+    "conversationClosedHint": "Conversation closed. You cannot send messages until it is reopened."
+  },
+  "assets": {
+    "labels": {
+      "CRYPTO": "Crypto",
+      "STOCK": "Stock",
+      "FOREX": "Forex",
+      "FUND": "Fund",
+      "COMMODITY": "Commodity",
+      "CASH": "Cash",
+      "ALL": "All"
+    }
+  },
+  "ranges": {
+    "1M": "1M",
+    "3M": "3M",
+    "6M": "6M",
+    "1Y": "1Y",
+    "5Y": "5Y",
+    "ALL": "Max"
+  },
+  "reports": {
+    "NEVER": "Never",
+    "DAILY": "Daily",
+    "WEEKLY": "Weekly",
+    "MONTHLY": "Monthly"
+  },
+  "theme": {
+    "DARK": "Dark",
+    "LIGHT": "Light"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Preferences are saved instantly",
+    "language": {
+      "title": "Language",
+      "tr": "TR",
+      "en": "EN"
+    },
+    "theme": "Theme",
+    "chartRange": "Default Chart Range",
+    "reportFrequency": "Report Frequency",
+    "notifications": "Notification Preferences",
+    "twoFactor": "Two-Factor Authentication",
+    "password": {
+      "title": "Password",
+      "change": "Change Password",
+      "sending": "…",
+      "emailLink": "Email →",
+      "hint": "Click the link in your email to set a new password.",
+      "success": "Email sent",
+      "successDesc": "Click the link in your inbox to change your password",
+      "error": "Action failed",
+      "errorDesc": "Email could not be sent"
+    },
+    "email": "Email",
+    "timezoneSuffix": "timezone (fixed)",
+    "logout": "Log out"
+  },
+  "notificationPreferences": {
+    "emailMaster": {
+      "title": "Email master switch",
+      "hint": "When off, email selections below are ignored.",
+      "toggleAria": "Toggle email notifications"
+    },
+    "types": {
+      "title": "Notification types",
+      "priceAlerts": { "label": "Price alert", "hint": "When threshold is breached" },
+      "watchlist": { "label": "Watchlist", "hint": "On strong movement" },
+      "reports": { "label": "Reports", "hint": "When PDF report is ready" },
+      "messages": { "label": "Messages", "hint": "System messages" },
+      "system": { "label": "System", "hint": "Maintenance, security, etc." },
+      "marketOpened": { "label": "Market opened", "hint": "When opening prices loaded" },
+      "marketClosed": { "label": "Market closed", "hint": "When closing prices loaded" },
+      "marketDataUpdated": { "label": "Data updated", "hint": "Each time cron triggers" },
+      "newsPublished": { "label": "New articles", "hint": "When new headlines are added" },
+      "portfolioUpdated": { "label": "Portfolio updated", "hint": "When daily snapshot is taken (23:00)" }
+    },
+    "channels": {
+      "email": "Email",
+      "inapp": "In-app"
+    },
+    "channelTitle": {
+      "emailMasterOff": "Email master switch is off",
+      "emailOn": "Email on",
+      "emailOff": "Email off",
+      "inappOn": "In-app on",
+      "inappOff": "In-app off"
+    },
+    "footer": "In-app notifications always run. Email requires the master switch to be on."
+  },
+  "market": {
+    "sort": {
+      "changePercent": "Change %",
+      "price": "Price",
+      "name": "Name"
+    },
+    "stockSegments": {
+      "MAIN_INDEX": "Main Indices",
+      "SECONDARY_INDEX": "Sub Indices",
+      "EQUITY": "Stocks",
+      "indexLabel": "Index"
+    },
+    "stock": {
+      "title": "Borsa Istanbul (BIST)",
+      "searchPlaceholder": "Search stock...",
+      "countLabel": "stocks",
+      "openLabel": "Open",
+      "highLabel": "High",
+      "lowLabel": "Low",
+      "volumeLabel": "Volume",
+      "loading": "Loading stock data…",
+      "error": "Failed to load stock data",
+      "empty": "No stock data yet."
+    },
+    "crypto": {
+      "title": "Cryptocurrencies",
+      "searchPlaceholder": "Search crypto...",
+      "countLabel": "crypto",
+      "changeLabel": "Change",
+      "volumeLabel": "Volume",
+      "marketCapLabel": "Market Cap",
+      "loading": "Loading crypto data…",
+      "error": "Failed to load crypto data",
+      "empty": "No crypto data yet."
+    },
+    "forex": {
+      "title": "Forex Rates",
+      "searchPlaceholder": "Search forex...",
+      "countLabel": "forex pairs",
+      "buyLabel": "Buy:",
+      "sellLabel": "Sell:",
+      "tcmbRates": "TCMB Rates",
+      "forexBuy": "Forex Buy:",
+      "forexSell": "Forex Sell:",
+      "banknoteBuy": "Banknote Buy:",
+      "banknoteSell": "Banknote Sell:",
+      "loading": "Loading forex rates…",
+      "error": "Failed to load forex data",
+      "empty": "No forex data yet."
+    },
+    "fund": {
+      "title": "Investment Funds",
+      "searchPlaceholder": "Search fund...",
+      "countLabel": "funds",
+      "fallbackBadge": "FUND",
+      "exchangePriceLabel": "Exchange Price",
+      "investorLabel": "Investors",
+      "portfolioLabel": "Portfolio",
+      "shareCountLabel": "Shares",
+      "loading": "Loading fund data…",
+      "error": "Failed to load fund data",
+      "empty": "No fund data yet",
+      "types": {
+        "BYF": "Exchange-Traded Funds",
+        "YAT": "Investment Funds"
+      },
+      "shortType": {
+        "BYF": "ETF",
+        "YAT": "MF",
+        "FON": "FUND"
+      }
+    },
+    "commodity": {
+      "title": "Commodities",
+      "searchPlaceholder": "Search commodity...",
+      "countLabel": "commodities",
+      "usdPriceLabel": "USD Price",
+      "contractsSuffix": "contracts",
+      "loading": "Loading commodity data…",
+      "error": "Failed to load commodity data",
+      "empty": "No commodity data yet.",
+      "segments": {
+        "PRECIOUS_METAL": "Precious Metals",
+        "OTHER": "Others"
+      }
+    },
+    "bond": {
+      "title": "Bonds & Bills",
+      "searchPlaceholder": "Search ISIN or series code...",
+      "countLabel": "bonds",
+      "loading": "Loading bond data…",
+      "error": "Failed to load bond data",
+      "empty": "No bond data yet.",
+      "noSearchResults": "No bonds match the search.",
+      "chartLoading": "Loading chart…",
+      "noRateData": "No rate data",
+      "couponRate": "Coupon Rate",
+      "simpleYield": "Simple Yield",
+      "issuerLabel": "Issuer",
+      "treasuryFallback": "TREASURY",
+      "floating": "Floating",
+      "startLabel": "Start",
+      "maturityLabel": "Maturity",
+      "couponDateLabel": "Coupon Date",
+      "daysSuffix": "d",
+      "rateChangeButton": "Rate Movement",
+      "updateLabel": "Update",
+      "updateTitle": "Refresh bond data",
+      "updateStartedTitle": "Update Started",
+      "updateStarted": "Bond update started",
+      "updateErrorTitle": "Update Error",
+      "sort": {
+        "simpleYield": "Simple Yield",
+        "couponRate": "Coupon Rate",
+        "baseIndex": "Index Price",
+        "maturityEnd": "Maturity",
+        "seriesCode": "Series Code"
+      },
+      "types": {
+        "DISCOUNTED": "Discounted",
+        "FIXED_COUPON": "Fixed Coupon",
+        "FLOATING_TLREF": "Floating - TLREF",
+        "FLOATING_CPI": "Floating - CPI",
+        "FLOATING_AUCTION": "Floating - Auction",
+        "SUKUK_FIXED": "Sukuk - Fixed",
+        "SUKUK_CPI": "Sukuk - CPI"
+      }
+    },
+    "empty": {
+      "adminHint": "Use admin buttons to fetch data."
+    },
+    "admin": {
+      "snapshot": "Snapshot",
+      "candles": "Candles (5y)",
+      "full": "Full Update",
+      "snapshotTitle": "Refresh snapshot data",
+      "candlesTitle": "Refresh candle data (may take a while)",
+      "fullTitle": "Full update (snapshot + candles)",
+      "snapshotStarted": "Snapshot update started",
+      "candlesStarted": "Candle update started (this may take a few minutes)",
+      "fullStarted": "Full update started"
+    }
+  },
+  "portfolio": {
+    "positions": {
+      "searchPlaceholder": "Search position...",
+      "empty": "No positions yet",
+      "emptyHint": "Add lots from Crypto, Stock, Forex or Fund pages",
+      "noSearchResults": "No positions match the search.",
+      "preparing": "preparing data",
+      "assetCol": "Asset",
+      "quantityCol": "Quantity",
+      "entryDateCol": "Entry Date",
+      "entryPriceCol": "Entry Price",
+      "currentPriceCol": "Current Price",
+      "marketValueCol": "Market Value",
+      "pnlCol": "P&L",
+      "actionsCol": "Actions",
+      "sort": {
+        "currentValue": "Market Value",
+        "profitPercent": "P&L %",
+        "profitAmount": "P&L Amount",
+        "entryDate": "Date",
+        "assetCode": "Asset Code",
+        "quantity": "Quantity"
+      }
+    },
+    "allocation": {
+      "title": "Allocation",
+      "total": "Total",
+      "empty": "No assets in this category"
+    },
+    "performance": {
+      "title": "Portfolio Performance",
+      "titleByType": "{{type}} Performance",
+      "calculating": "calculating",
+      "lotAdded": "Lot Added",
+      "positionEvents": "Position Events",
+      "empty": "No data in this range"
+    },
+    "summary": {
+      "marketValue": "Market Value",
+      "totalCost": "Total Cost",
+      "profitLoss": "Profit / Loss",
+      "dailyPnl": "Daily P&L",
+      "refreshing": "Refreshing..."
+    },
+    "headerTitle": "Portfolio",
+    "loading": "Loading portfolio...",
+    "tabs": {
+      "overview": "Overview",
+      "performance": "Performance"
+    },
+    "onboarding": {
+      "idleTitle": "Create Your Portfolio",
+      "idleSubtitle": "Define historical positions to track hypothetical portfolio performance.",
+      "startCta": "Start Portfolio",
+      "confirmTitle": "Confirm portfolio creation?",
+      "confirmHint": "will be created.",
+      "successTitle": "Your portfolio is ready",
+      "successHint": "You can start adding positions",
+      "defaultName": "Demo Portfolio",
+      "steps": {
+        "verifying": "Verifying account...",
+        "creating": "Creating portfolio...",
+        "preparing": "Preparing..."
+      }
+    }
+  },
+  "marketAddPosition": {
+    "noPortfolioTitle": "Portfolio not found",
+    "noPortfolioHint": "You need to create a portfolio first before adding positions.",
+    "goToPortfolio": "Go to Portfolio"
+  },
+  "positionDelete": {
+    "title": "Delete Position",
+    "confirmPrefix": "The",
+    "confirmSuffix": "position will be removed. This action cannot be undone.",
+    "quantityLabel": "Quantity",
+    "entryPriceLabel": "Entry Price",
+    "entryDateLabel": "Entry Date",
+    "successTitle": "Position deleted",
+    "successDone": "Operation complete",
+    "failed": "Failed to delete position",
+    "steps": {
+      "validating": "Validating action...",
+      "removing": "Removing position...",
+      "updating": "Updating portfolio..."
+    }
+  },
+  "marketDetail": {
+    "loading": "Loading...",
+    "error": "Failed to load data",
+    "notFound": "Asset not found",
+    "addToPortfolio": "Add to Portfolio",
+    "priceLabel": "Price",
+    "changeLabel": "Change",
+    "changeAmountTRY": "Change (TRY)",
+    "crypto": {
+      "priceUsd": "Price (USD)",
+      "priceTry": "Price (TRY)",
+      "change24h": "24h Change",
+      "changeAmountUsd": "24h Δ (USD)",
+      "volume24h": "Volume (24h)"
+    },
+    "forex": {
+      "buy": "Buy",
+      "sell": "Sell",
+      "delta24h": "24h Δ",
+      "deltaTL": "Δ (TRY)",
+      "tcmbBuy": "TCMB Buy",
+      "tcmbSell": "TCMB Sell",
+      "banknoteBuy": "Banknote Buy",
+      "banknoteSell": "Banknote Sell"
+    },
+    "fund": {
+      "exchange": "Exchange",
+      "fundType": "Fund Type"
+    },
+    "commodity": {
+      "priceTry": "Price (TRY)",
+      "priceUsd": "Price (USD)",
+      "buy": "Bid"
+    }
+  },
+  "commodity": {
+    "name": {
+      "bz_f": "Brent Crude Oil",
+      "hg_f": "Copper",
+      "xagtry": "Silver (Ounce)",
+      "xagtryg": "Silver (Gram)",
+      "xautry": "Gold (Ounce)",
+      "xautryg": "Gold (Gram)",
+      "xpdtry": "Palladium (Ounce)",
+      "xpttry": "Platinum (Ounce)",
+      "zw_f": "Wheat"
+    }
+  },
+  "marketOverview": {
+    "title": "Market Overview",
+    "loading": "Loading market overview...",
+    "error": "Failed to load market data",
+    "liveData": "Live market data",
+    "editMode": "Edit mode",
+    "unsavedChanges": "Unsaved changes",
+    "saving": "Saving",
+    "edit": "Edit",
+    "refresh": "Refresh",
+    "reset": "Default",
+    "resetTitle": "Restore default layout",
+    "revert": "Revert",
+    "revertTitle": "Discard all changes in this session",
+    "save": "Save",
+    "gallery": "Gallery",
+    "galleryShow": "Show widget gallery",
+    "galleryHide": "Hide widget gallery",
+    "editToggleOff": "Enter edit mode",
+    "editToggleClean": "Exit edit mode",
+    "editToggleDirty": "Exit edit mode (unsaved changes will be lost)",
+    "searchPlaceholder": "Search stock, crypto, forex, fund...",
+    "emptyCanvas": "Empty canvas",
+    "emptyDragHint": "Drag a widget from the gallery above",
+    "emptyEditHint": "Add widgets via Edit",
+    "startEdit": "Start Editing"
+  },
+  "toast": {
+    "rateLimitTitle": "Rate limit exceeded",
+    "rateLimitMessage": "You sent too many requests. Please wait a moment."
+  },
+  "error": {
+    "actionFailed": "Action failed"
+  },
+  "notificationPanel": {
+    "title": "Notifications",
+    "broadcastTitle": "Broadcast a system message to all users",
+    "broadcastLabel": "Broadcast",
+    "searchPlaceholder": "Search notifications…",
+    "filterAll": "All",
+    "filterUnread": "Unread",
+    "markRead": "read",
+    "deleteOne": "delete",
+    "deleteAll": "delete all",
+    "empty": "No notifications yet",
+    "emptyHint": "Notifications will appear here.",
+    "emptyUnread": "No unread notifications",
+    "emptyUnreadHint": "All caught up, clean.",
+    "confirmClearTitle": "Delete all notifications?",
+    "confirmClearMessage": "{{count}} notifications will be permanently deleted. This cannot be undone.",
+    "justNow": "just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}} h ago",
+    "daysAgo": "{{count}} d ago",
+    "types": {
+      "PRICE_ALERT_FIRED": "Price alert",
+      "WATCHLIST_DELTA": "Watchlist",
+      "REPORT_READY": "Report",
+      "MESSAGE": "Message",
+      "SYSTEM": "System",
+      "MARKET_OPENED": "Market opened",
+      "MARKET_CLOSED": "Market closed",
+      "MARKET_DATA_UPDATED": "Data updated",
+      "NEWS_PUBLISHED": "New articles",
+      "PORTFOLIO_UPDATED": "Portfolio updated"
+    }
+  },
+  "adminTrackedAssets": {
+    "title": "Tracked Assets Management",
+    "adminRequired": "ADMIN role is required to view this page.",
+    "addOrUpdate": "Add / Update {{title}}",
+    "missingFieldTitle": "Missing Field",
+    "assetCodeRequired": "Asset code is required",
+    "saveSuccess": "Save Successful",
+    "saveSuccessBody": "{{title}} record was added/updated",
+    "assetCodeCrypto": "Asset code (e.g. bitcoin)",
+    "assetCodeOther": "Asset code (e.g. ASELS.IS)",
+    "displayNamePlaceholder": "Display name (optional)",
+    "binanceSymbolPlaceholder": "Binance symbol (e.g. BTCUSDT)",
+    "sortPlaceholder": "Sort",
+    "saving": "Saving...",
+    "tabs": {
+      "CRYPTO": "Crypto",
+      "STOCK": "Stock",
+      "FUND": "Fund",
+      "COMMODITY": "Commodity",
+      "NEWS": "News Sources"
+    }
+  },
+  "adminUsers": {
+    "title": "User Management",
+    "searchPlaceholder": "Search username or email...",
+    "loadError": "Failed to load users",
+    "noUsersFound": "No users found",
+    "statusActive": "Active",
+    "statusBanned": "Banned",
+    "you": "You",
+    "banAction": "Ban",
+    "unbanAction": "Unban",
+    "sendMessageTitle": "Send a message to this user",
+    "pageSize": "Page size:",
+    "col": {
+      "user": "User",
+      "email": "Email",
+      "signupDate": "Signup",
+      "status": "Status",
+      "action": "Action"
+    },
+    "toast": {
+      "banned": "Banned",
+      "bannedBody": "{{username}} can no longer sign in",
+      "unbanned": "Unbanned",
+      "unbannedBody": "{{username}} can sign in again",
+      "unknownError": "Unknown error"
+    }
+  },
+  "twoFactor": {
+    "active": "2FA active",
+    "inactive": "2FA off",
+    "statusLoading": "Checking status…",
+    "descActive": "Your account is protected with two-factor authentication. Use the options below to re-set up or disable.",
+    "descInactive": "Protect your account with an extra layer using Google/Microsoft Authenticator.",
+    "reSetup": "Re-setup",
+    "disable": "Disable",
+    "setupCta": "Set up 2FA",
+    "footerActive": "If you disable, single-factor sign-in is active and account security drops.",
+    "footerInactive": "You will be redirected to the verification setup page.",
+    "redirecting": "Redirecting",
+    "redirectingHint": "You will be taken to the authenticator setup page",
+    "disabledTitle": "2FA disabled",
+    "disabledBody": "Two-factor authentication has been removed from your account",
+    "confirm": {
+      "title": "Disable 2FA?",
+      "message": "Your account will be protected by single-factor sign-in. This is reversible — you can set it up again any time."
+    }
+  },
+  "keycloakAction": {
+    "labels": {
+      "UPDATE_PASSWORD": "Password",
+      "CONFIGURE_TOTP": "Two-Factor Authentication",
+      "UPDATE_PROFILE": "Profile",
+      "delete_account": "Account Deletion"
+    },
+    "success": {
+      "title": "{{label}} updated",
+      "body": "Operation successful"
+    },
+    "cancelled": {
+      "title": "{{label}} cancelled",
+      "body": "No changes were made"
+    },
+    "error": {
+      "title": "{{label}} update failed",
+      "body": "An error occurred during the operation"
+    }
+  },
+  "onboarding": {
+    "welcomeTitle": "Welcome to Finance Portal",
+    "welcomeSubtitle": "A finance dashboard combining market data, portfolio tracking and notifications in one interface.",
+    "startCta": "Let's Start",
+    "dismissHint": "You won't see this window again — manage all options from Settings.",
+    "highlights": {
+      "multiMarket": {
+        "title": "Multi Market",
+        "body": "Stock, crypto, commodity, fund, forex, bond in one place"
+      },
+      "hypotheticalPortfolio": {
+        "title": "Hypothetical Portfolio",
+        "body": "What-if scenarios with historical positions"
+      },
+      "smartNotifications": {
+        "title": "Smart Notifications",
+        "body": "Price alerts and watchlist (coming soon)"
+      },
+      "secureAccess": {
+        "title": "Secure Access",
+        "body": "Keycloak, JWT, optional two-factor authentication"
+      }
+    }
+  },
+  "watchlistItemEdit": {
+    "title": "Edit asset settings",
+    "noteLabel": "Note",
+    "notePlaceholder": "Personal note for this asset",
+    "thresholdLabel": "Threshold (% change)",
+    "thresholdPlaceholder": "0 = any movement / e.g. 5 = 5%",
+    "thresholdHint": "Leave blank to use global default. <span class=\"font-mono\">0</span> = every movement triggers a notification.",
+    "invalidThreshold": "Invalid threshold",
+    "invalidThresholdHint": "Enter a numeric value (e.g. 0.5 or 5)",
+    "updated": "Updated",
+    "updatedBody": "{{code}} settings saved",
+    "updateFailed": "Update failed"
+  },
+  "positionForm": {
+    "titleAdd": "Add position",
+    "titleEdit": "Edit position",
+    "continue": "Continue",
+    "totalCost": "Total cost",
+    "fields": {
+      "entryDate": "Entry date",
+      "entryPrice": "Entry price (TRY)",
+      "quantity": "Quantity",
+      "quantityShares": "Quantity (shares)",
+      "minOne": "min. 1 share"
+    },
+    "errors": {
+      "dateRequired": "Entry date is required",
+      "priceInvalid": "Enter a valid entry price",
+      "quantityInvalid": "Enter a valid quantity",
+      "quantityInteger": "This asset requires a whole-number quantity",
+      "addFailed": "Could not add position",
+      "updateFailed": "Update failed"
+    },
+    "steps": {
+      "validating": "Validating transaction...",
+      "checkingMarket": "Checking market data...",
+      "updating": "Updating portfolio..."
+    },
+    "confirm": {
+      "heading": "Confirm your action?",
+      "subAdd": "Lot will be added for <span class=\"font-medium text-fg\">{{code}}</span>",
+      "subEdit": "Lot will be updated for <span class=\"font-medium text-fg\">{{code}}</span>",
+      "date": "Date",
+      "quantity": "Quantity",
+      "quantityShares": "{{qty}} shares",
+      "unitPrice": "Unit price"
+    },
+    "success": {
+      "titleAdd": "Position added",
+      "titleEdit": "Position updated",
+      "subtitleAdd": "Add {{code}} position ({{qty}} shares)",
+      "subtitleEdit": "Update {{code}} position",
+      "completed": "Action completed successfully"
+    },
+    "availability": {
+      "has": "Data available for this date: <span class=\"font-mono font-semibold\">{{price}}</span>",
+      "apply": "Apply",
+      "none": "No price data for this date — enter manually."
+    }
+  },
+  "assetDetail": {
+    "newLot": "New lot",
+    "pnl": "P/L",
+    "dailyPnl": "Daily P/L",
+    "noDataInRange": "No data in this range",
+    "marketValue": "Market value",
+    "unitPrice": "Unit price",
+    "stats": {
+      "quantity": "Quantity",
+      "entryDate": "Entry date",
+      "entryPrice": "Entry price",
+      "currentPrice": "Current price",
+      "marketValue": "Market value"
+    }
+  },
+  "tasksPanel": {
+    "title": "Task Manager",
+    "active": "Active",
+    "history": "History",
+    "noHistory": "No task history yet",
+    "taskToast": "Task",
+    "status": {
+      "RUNNING": "Running",
+      "COMPLETED": "Completed",
+      "FAILED": "Failed"
+    },
+    "category": {
+      "CRYPTO": "Crypto",
+      "STOCKS": "Stocks",
+      "FOREX": "Forex",
+      "FUNDS": "Funds",
+      "COMMODITIES": "Commodities",
+      "BONDS": "Bonds",
+      "NEWS": "News"
+    },
+    "action": {
+      "snapshot": "Snapshot",
+      "candles": "Candles",
+      "fullUpdate": "Full Update",
+      "update": "Update"
+    }
+  },
+  "newsSourceAdmin": {
+    "formTitle": "Add news source",
+    "namePlaceholder": "Source name (e.g. BloombergHT)",
+    "urlPlaceholder": "RSS URL",
+    "orderPlaceholder": "Order",
+    "addCta": "Add",
+    "adding": "Adding...",
+    "added": "Added",
+    "addedBody": "{{name}} source added",
+    "addFailed": "Add error",
+    "missingTitle": "Missing field",
+    "missingBody": "Source name and URL are required",
+    "categoryAuto": "Auto (keyword)",
+    "category": {
+      "CRYPTO": "Crypto",
+      "BORSA_ISTANBUL": "Borsa Istanbul",
+      "BORSA_SIRKETLERI": "Listed companies",
+      "TAHVIL_BONO": "Bonds",
+      "PARITE": "FX & parity",
+      "EMTIA": "Commodities",
+      "GENEL_FINANS": "General finance"
+    },
+    "listTitle": "News sources ({{count}})",
+    "errorTitle": "Error",
+    "loadFailed": "Failed to load news sources",
+    "updateFailed": "Update error",
+    "deleted": "Deleted",
+    "deletedBody": "{{name}} source deleted",
+    "deleteFailed": "Delete error",
+    "deletePromptTitle": "Delete \"{{name}}\"?",
+    "deletePromptBody": "This news source will be permanently removed.",
+    "empty": "No sources found.",
+    "enabled": "ENABLED",
+    "disabled": "DISABLED",
+    "enable": "Enable",
+    "disable": "Disable"
+  },
+  "trackedAssetAdmin": {
+    "heading": "{{title}} tracked list ({{prefix}}{{count}})",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "dragHandle": "Drag to reorder",
+    "saveOrder": "Save order",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "savedBody": "Order updated",
+    "saveFailed": "Save error",
+    "deleted": "Deleted",
+    "deletedBody": "{{code}} removed successfully",
+    "deleteFailed": "Delete error",
+    "deletePromptTitle": "Delete {{code}}?",
+    "deletePromptBody": "This asset will be removed from the tracked list. Existing market data (candles, snapshots) is preserved.",
+    "searchPlaceholder": "Search {{title}}...",
+    "unsavedChanges": "Unsaved order changes",
+    "noMatch": "No records match the search.",
+    "empty": "No records.",
+    "binance": "Binance: {{symbol}}"
+  },
+  "addPriceAlert": {
+    "title": "Price alert",
+    "subtitlePrompt": "Pick an asset and set a threshold",
+    "searchLabel": "Search asset",
+    "searchPlaceholder": "BTC, AAPL, USDTRY...",
+    "change": "Change",
+    "currentPrice": "Current price",
+    "liveData": "live data",
+    "triggerLabel": "Trigger type",
+    "quickSelect": "Quick pick (relative to current price)",
+    "quickPercent": "Quick percent",
+    "thresholdPctLabel": "Threshold (%)",
+    "thresholdPriceLabel": "Threshold price (TRY)",
+    "referenceLabel": "Reference (TRY)",
+    "referencePlaceholder": "starting price",
+    "distanceFromCurrent": "{{signed}}% away from current",
+    "projected": "≈ TRY {{price}} when triggered",
+    "createCta": "Create alert",
+    "creating": "Creating…",
+    "errorAsset": "Pick an asset",
+    "errorThreshold": "Threshold must be a valid number",
+    "errorReference": "Percent alert requires a reference price",
+    "created": "{{code}} alert created",
+    "failed": "Failed to create alert",
+    "direction": {
+      "ABOVE": {
+        "label": "Crosses above",
+        "hint": "Notify when price moves above the threshold"
+      },
+      "BELOW": {
+        "label": "Drops below",
+        "hint": "Notify when price drops below the threshold"
+      },
+      "CHANGE_PCT_UP": {
+        "label": "% rises",
+        "hint": "Notify when price rises by the given % from reference"
+      },
+      "CHANGE_PCT_DOWN": {
+        "label": "% drops",
+        "hint": "Notify when price drops by the given % from reference"
+      }
+    }
+  },
+  "addWatchlistItem": {
+    "titleCreate": "Add to list",
+    "titleUpdate": "Update list entry",
+    "subtitlePrompt": "Pick an asset, then add it to a list",
+    "searchLabel": "Search asset",
+    "searchPlaceholder": "BTC, AAPL, USDTRY...",
+    "change": "Change",
+    "listLabel": "List",
+    "pickList": "Pick a list",
+    "noteLabel": "Note",
+    "notePlaceholder": "ETF spot phase",
+    "optional": "(optional)",
+    "thresholdLabel": "% Change threshold",
+    "thresholdPlaceholder": "default 5",
+    "thresholdHint": "Leave blank to use the global 5% threshold.",
+    "duplicateWarn": "<strong>{{code}}</strong> already exists in this list. Saving will overwrite its note and threshold.",
+    "addCta": "Add to list",
+    "updateCta": "Update",
+    "adding": "Adding…",
+    "updating": "Updating…",
+    "errorAsset": "Pick an asset",
+    "errorList": "Pick a list",
+    "errorThreshold": "% threshold must be a positive number",
+    "added": "{{code}} → {{list}} added",
+    "updated": "{{code}} → {{list}} updated",
+    "fallbackListName": "list",
+    "failed": "Add failed"
+  },
+  "priceAlertEdit": {
+    "title": "Edit alert settings",
+    "directionLabel": "Direction",
+    "thresholdLabel": "Threshold",
+    "thresholdPlaceholder": "e.g. 1000000 (TRY) or 5 (%)",
+    "thresholdHint": "TRY price for ABOVE/BELOW, percent value for % directions.",
+    "saving": "Saving…",
+    "invalidThreshold": "Invalid threshold",
+    "invalidThresholdHint": "Enter a numeric value",
+    "updated": "Updated",
+    "updatedBody": "{{code}} alert saved",
+    "updateFailed": "Update failed",
+    "direction": {
+      "ABOVE": "Above price",
+      "BELOW": "Below price",
+      "CHANGE_PCT_UP": "% rise",
+      "CHANGE_PCT_DOWN": "% drop"
+    }
+  },
+  "watchlistRow": {
+    "dragToReorder": "Drag to reorder",
+    "removeFromList": "Remove from list"
+  },
+  "assetActions": {
+    "inFavorites": "In Favorites",
+    "addToFavorites": "Add to favorites",
+    "addToFavoritesTitle": "Add to favorites",
+    "removeFromFavoritesTitle": "Remove from favorites",
+    "addToList": "Add to list",
+    "addToOtherList": "Add to another list",
+    "priceAlert": "Price alert",
+    "addedToFavorites": "{{code}} added to favorites",
+    "removedFromFavorites": "{{code}} removed from favorites"
+  },
+  "broadcast": {
+    "title": "Send broadcast",
+    "subtitle": "System notification to all users",
+    "titleLabel": "Title",
+    "bodyLabel": "Message",
+    "publishCta": "Publish",
+    "sending": "Sending…",
+    "successTitle": "Broadcast sent",
+    "successBody": "Delivered to {{dispatched}}/{{total}} users",
+    "failed": "Failed to send broadcast"
+  },
+  "adminMessage": {
+    "label": "Message",
+    "placeholder": "Write the message you want to send to this user…",
+    "hint": "Enter to send · Shift+Enter for newline",
+    "send": "Send",
+    "sending": "Sending…",
+    "sent": "Message sent",
+    "sentBody": "Delivered to {{username}}",
+    "failed": "Failed to send message"
+  },
+  "alertRow": {
+    "active": "active",
+    "fired": "fired",
+    "reactivate": "Reactivate",
+    "direction": {
+      "ABOVE": "above",
+      "BELOW": "below",
+      "CHANGE_PCT_UP": "% rise",
+      "CHANGE_PCT_DOWN": "% drop"
+    }
+  },
+  "createWatchlist": {
+    "title": "New list",
+    "subtitle": "You can create up to 20 lists",
+    "listNameLabel": "List Name",
+    "namePlaceholder": "Crypto Investments",
+    "createCta": "Create",
+    "creating": "Creating…",
+    "nameRequired": "List name is required",
+    "successToast": "\"{{name}}\" created",
+    "createFailed": "Failed to create list"
+  },
+  "watch": {
+    "headerTitle": "Watch",
+    "tabs": {
+      "watchlist": "Watchlist",
+      "alerts": "Price Alerts"
+    },
+    "sortOptions": {
+      "CUSTOM": "My order",
+      "NAME": "Alphabetical",
+      "CURRENT_PRICE": "Price",
+      "CHANGE_PERCENT": "% Change",
+      "ADDED_AT": "Added at"
+    },
+    "myLists": "My watchlists",
+    "newListCta": "New list",
+    "deleteListTitle": "Delete list",
+    "addAsset": "Add asset",
+    "createAlert": "Create alert",
+    "loading": "Loading…",
+    "listsLoading": "Loading lists…",
+    "headers": {
+      "asset": "Asset",
+      "lastPrice": "Last price",
+      "direction": "Direction",
+      "threshold": "Threshold",
+      "status": "Status"
+    },
+    "emptyList": {
+      "title": "List is empty",
+      "titleNamed": "\"{{name}}\" list is empty",
+      "hint": "Add a crypto, stock, forex or fund and track its movements here."
+    },
+    "emptyAlerts": {
+      "title": "No alerts yet",
+      "hint": "Set ABOVE/BELOW or percent-change alerts on any asset."
+    },
+    "deleteListConfirm": {
+      "title": "Delete list?",
+      "message": "\"{{name}}\" and all assets inside will be permanently deleted."
+    },
+    "toast": {
+      "itemRemoved": "Removed from list",
+      "alertDeleted": "Alert deleted",
+      "alertReactivated": "Alert reactivated",
+      "listDeleted": "List deleted",
+      "deleteFailed": "Delete failed",
+      "reactivateFailed": "Reactivate failed"
+    }
+  },
+  "newsDetail": {
+    "loading": "Loading article...",
+    "error": "Failed to load the article.",
+    "notFound": "Article not found.",
+    "backToList": "Back to News",
+    "openSource": "Open Source"
+  },
+  "news": {
+    "title": "Financial News",
+    "subtitle": "Latest market and finance news",
+    "countLabel": "articles",
+    "searchPlaceholder": "Search news...",
+    "loading": "Loading news…",
+    "error": "Failed to load news",
+    "refresh": "Refresh",
+    "cooldown": "Cooldown",
+    "noSearchResults": "No news matches the search.",
+    "emptyCategory": "No news in this category yet.",
+    "readMore": "Read more",
+    "empty": "No news",
+    "refreshHint": "News is refreshed periodically.",
+    "categories": {
+      "ALL": "All",
+      "CRYPTO": "Crypto",
+      "BORSA_ISTANBUL": "Borsa Istanbul",
+      "BORSA_SIRKETLERI": "BIST Companies",
+      "TAHVIL_BONO": "Bonds & Bills",
+      "PARITE": "Forex & Parities",
+      "EMTIA": "Commodities",
+      "GENEL_FINANS": "General Finance"
+    }
+  },
+  "marketChips": {
+    "title": "Which markets",
+    "activeSuffix": "active",
+    "BOND": "Bond",
+    "footer": "// unmarked markets do not skip opening / data notifications"
+  },
+  "emailChange": {
+    "currentLabel": "Current",
+    "placeholder": "new@email.com",
+    "sendCode": "Send code to current address",
+    "sending": "sending…",
+    "codeArrow": "Code →",
+    "sendHintBefore": "A 6-digit code is sent to",
+    "sendHintAfter": "; once you enter it below the new address becomes active.",
+    "awaitingConfirmation": "Awaiting Confirmation",
+    "expiresPrefix": "Valid until",
+    "expiresSuffix": "",
+    "cancel": "Cancel",
+    "verifying": "Verifying…",
+    "confirm": "Confirm",
+    "toast": {
+      "sameAddress": "Same address",
+      "sameAddressDesc": "New email cannot match the current address",
+      "codeSent": "Code sent",
+      "codeSentDesc": "A 6-digit confirmation code was sent to {{email}}",
+      "initiateError": "Action failed",
+      "codeNotSent": "Code could not be sent",
+      "updated": "Email updated",
+      "updatedDesc": "{{email}} is now active",
+      "invalidCode": "Invalid code",
+      "codeNotVerified": "Code could not be verified",
+      "cancelled": "Cancelled",
+      "cancelledDesc": "Email change has been cancelled",
+      "cancelError": "Cancel failed",
+      "tryAgain": "Try again"
+    }
+  }
+}

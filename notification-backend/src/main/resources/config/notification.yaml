@@ -27,3 +27,10 @@ notification:
     backlog-max-unanswered: 2
     cooldown-seconds: 5
     duplicate-window-seconds: 60
+  async:
+    mail:
+      core-pool-size: 4
+      max-pool-size: 16
+      queue-capacity: 500
+      await-termination-seconds: 30
+      thread-name-prefix: notif-mail-

@@ -1,36 +1,30 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from '../../../shared/components/feedback/Toast';
 
-const ACTION_LABELS = {
-  UPDATE_PASSWORD: 'Şifre',
-  CONFIGURE_TOTP: 'İki Adımlı Doğrulama',
-  UPDATE_PROFILE: 'Profil',
-  delete_account: 'Hesap Silme',
-};
-
-const STATUS_HANDLERS = {
-  success: (label) => toast.success(`${label} güncellendi`, 'İşlem başarılı'),
-  cancelled: (label) => toast.warning(`${label} iptal edildi`, 'Hiçbir değişiklik yapılmadı'),
-  error: (label) => toast.error(`${label} güncellenemedi`, 'İşlem sırasında bir hata oluştu'),
-};
-
 export default function KeycloakActionToast() {
+  const { t } = useTranslation();
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const status = params.get('kc_action_status');
     const action = params.get('kc_action');
     if (!status || !action) return;
 
-    const label = ACTION_LABELS[action] || action;
-    const handler = STATUS_HANDLERS[status];
-    if (handler) handler(label);
+    const label = t(`keycloakAction.labels.${action}`, { defaultValue: action });
+    if (status === 'success') {
+      toast.success(t('keycloakAction.success.title', { label }), t('keycloakAction.success.body'));
+    } else if (status === 'cancelled') {
+      toast.warning(t('keycloakAction.cancelled.title', { label }), t('keycloakAction.cancelled.body'));
+    } else if (status === 'error') {
+      toast.error(t('keycloakAction.error.title', { label }), t('keycloakAction.error.body'));
+    }
 
     params.delete('kc_action_status');
     params.delete('kc_action');
     const remaining = params.toString();
     const cleaned = window.location.pathname + (remaining ? `?${remaining}` : '') + window.location.hash;
     window.history.replaceState({}, '', cleaned);
-  }, []);
+  }, [t]);
 
   return null;
 }

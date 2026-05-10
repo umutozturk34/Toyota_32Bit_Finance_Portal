@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Users, Loader2, MessagesSquare, Lock, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { useAdminConversations } from '../../../shared/hooks/useMessages';
@@ -6,6 +7,7 @@ import { containerVariants, cardVariants } from '../../../shared/utils/animation
 import { PAGE_SIZE, relTime } from '../util';
 
 export default function AdminConversationList({ activeUser, onSelect }) {
+  const { t } = useTranslation();
   const [page, setPage] = useState(0);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -32,10 +34,12 @@ export default function AdminConversationList({ activeUser, onSelect }) {
             <Users className="h-3.5 w-3.5 text-accent" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-sm font-bold text-fg leading-tight">Sohbetler</h2>
+            <h2 className="text-sm font-bold text-fg leading-tight">{t('adminConversations.title')}</h2>
             {data && (
               <p className="text-[10px] font-mono text-fg-muted mt-0.5">
-                {isFiltering ? `${data.totalElements} eşleşen` : `${data.totalElements} kullanıcı`}
+                {isFiltering
+                  ? t('adminConversations.matchingCount', { count: data.totalElements })
+                  : t('adminConversations.userCount', { count: data.totalElements })}
               </p>
             )}
           </div>
@@ -46,7 +50,7 @@ export default function AdminConversationList({ activeUser, onSelect }) {
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Kullanıcı veya mesaj ara…"
+            placeholder={t('adminConversations.searchPlaceholder')}
             className="w-full rounded-xl border border-border-default bg-bg-base/60 pl-8 pr-8 py-2 text-[12px] text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)] focus:bg-bg-base transition-all"
           />
           {searchInput && (
@@ -71,12 +75,12 @@ export default function AdminConversationList({ activeUser, onSelect }) {
               {isFiltering ? <Search className="h-5 w-5 text-fg-subtle" /> : <MessagesSquare className="h-5 w-5 text-fg-subtle" />}
             </span>
             <p className="text-xs font-semibold text-fg-muted">
-              {isFiltering ? 'Eşleşen sohbet yok' : 'Henüz sohbet yok'}
+              {isFiltering ? t('adminConversations.emptyMatchTitle') : t('adminConversations.emptyTitle')}
             </p>
             <p className="text-[11px] text-fg-subtle leading-relaxed max-w-[200px]">
               {isFiltering
-                ? `"${search}" araması için sonuç bulunamadı.`
-                : 'Kullanıcı bir mesaj gönderdiğinde burada görünecek.'}
+                ? t('adminConversations.emptyMatchBody', { query: search })
+                : t('adminConversations.emptyBody')}
             </p>
           </div>
         ) : (
@@ -127,7 +131,7 @@ export default function AdminConversationList({ activeUser, onSelect }) {
                             </p>
                           )}
                           <p className="mt-0.5 text-[9px] font-mono flex items-center gap-1 min-w-0" title={c.userSub}>
-                            <span className="text-accent uppercase tracking-[0.14em] shrink-0">id</span>
+                            <span className="text-accent uppercase tracking-[0.14em] shrink-0">{t('adminConversations.idLabel')}</span>
                             <span className="text-fg-subtle truncate">{c.userSub}</span>
                           </p>
                         </>
@@ -141,7 +145,7 @@ export default function AdminConversationList({ activeUser, onSelect }) {
                         )}
                         {c.closed && (
                           <span className="inline-flex items-center gap-0.5 text-[9px] font-mono uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-warning/15 text-warning font-bold border border-warning/20">
-                            <Lock className="h-2 w-2" /> kapalı
+                            <Lock className="h-2 w-2" /> {t('adminConversations.closedTag')}
                           </span>
                         )}
                       </div>
@@ -160,7 +164,7 @@ export default function AdminConversationList({ activeUser, onSelect }) {
             disabled={page === 0}
             className="flex items-center gap-1 px-2 py-1 rounded-md hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <ChevronLeft className="h-3 w-3" /> Önceki
+            <ChevronLeft className="h-3 w-3" /> {t('common.previous')}
           </button>
           <span className="font-mono">{page + 1} / {totalPages}</span>
           <button
@@ -168,7 +172,7 @@ export default function AdminConversationList({ activeUser, onSelect }) {
             disabled={page + 1 >= totalPages}
             className="flex items-center gap-1 px-2 py-1 rounded-md hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            Sonraki <ChevronRight className="h-3 w-3" />
+            {t('common.next')} <ChevronRight className="h-3 w-3" />
           </button>
         </footer>
       )}

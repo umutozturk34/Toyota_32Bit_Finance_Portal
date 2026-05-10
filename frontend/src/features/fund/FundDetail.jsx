@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { LineChart } from 'lucide-react';
 import { fundService } from './services/fundService';
 import { formatPriceTRY, formatVolume, formatCompactTRY } from '../../shared/utils/formatters';
@@ -20,22 +21,23 @@ function FundHeader({ asset }) {
 }
 
 function FundMetadata({ asset }) {
+  const { t } = useTranslation();
   const meta = asset.metadata || {};
   return (
     <MetadataTiles tiles={[
-      { label: 'Fiyat', value: formatPriceTRY(asset.price) },
-      meta.fundType === 'BYF' && meta.bulletinPrice != null && { label: 'Borsa', value: formatPriceTRY(meta.bulletinPrice) },
+      { label: t('marketDetail.priceLabel'), value: formatPriceTRY(asset.price) },
+      meta.fundType === 'BYF' && meta.bulletinPrice != null && { label: t('marketDetail.fund.exchange'), value: formatPriceTRY(meta.bulletinPrice) },
       {
-        label: 'Fon Türü',
+        label: t('marketDetail.fund.fundType'),
         value: (
           <span className="inline-block rounded-md border border-accent/20 bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-bright">
-            {meta.fundType || 'FON'}
+            {meta.fundType ? t(`market.fund.shortType.${meta.fundType}`, { defaultValue: meta.fundType }) : t('market.fund.fallbackBadge')}
           </span>
         ),
       },
-      { label: 'Portföy', value: formatCompactTRY(meta.portfolioSize) },
-      meta.fundType === 'YAT' && meta.investorCount != null && { label: 'Yatırımcı', value: formatVolume(meta.investorCount) },
-      meta.shareCount != null && { label: 'Pay Sayısı', value: formatVolume(meta.shareCount) },
+      { label: t('market.fund.portfolioLabel'), value: formatCompactTRY(meta.portfolioSize) },
+      meta.fundType === 'YAT' && meta.investorCount != null && { label: t('market.fund.investorLabel'), value: formatVolume(meta.investorCount) },
+      meta.shareCount != null && { label: t('market.fund.shareCountLabel'), value: formatVolume(meta.shareCount) },
     ]} />
   );
 }

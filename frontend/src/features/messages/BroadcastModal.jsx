@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { Megaphone, X, Loader2 } from 'lucide-react';
@@ -7,6 +8,7 @@ import { toast } from '../../shared/components/feedback/Toast';
 import { extractApiError } from '../../shared/utils/apiError';
 
 export default function BroadcastModal({ open, onClose }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const broadcast = useBroadcast();
@@ -20,10 +22,10 @@ export default function BroadcastModal({ open, onClose }) {
     if (!title.trim() || !body.trim() || broadcast.isPending) return;
     try {
       const result = await broadcast.mutateAsync({ title: title.trim(), body: body.trim() });
-      toast.success('Yayın gönderildi', `${result.dispatched}/${result.totalRecipients} kullanıcıya iletildi`);
+      toast.success(t('broadcast.successTitle'), t('broadcast.successBody', { dispatched: result.dispatched, total: result.totalRecipients }));
       onClose?.();
     } catch (err) {
-      toast.error(extractApiError(err, 'Yayın gönderilemedi'));
+      toast.error(extractApiError(err, t('broadcast.failed')));
     }
   };
 
@@ -60,13 +62,13 @@ export default function BroadcastModal({ open, onClose }) {
                 <Megaphone className="h-4 w-4 text-accent" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-fg">Yayın gönder</h2>
-                <p className="text-[11px] font-mono text-fg-muted mt-0.5 uppercase tracking-wide">Tüm kullanıcılara sistem bildirimi</p>
+                <h2 className="text-sm font-bold text-fg">{t('broadcast.title')}</h2>
+                <p className="text-[11px] font-mono text-fg-muted mt-0.5 uppercase tracking-wide">{t('broadcast.subtitle')}</p>
               </div>
             </div>
             <div className="space-y-3">
               <label className="block">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">Başlık</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">{t('broadcast.titleLabel')}</span>
                 <input
                   type="text"
                   value={title}
@@ -77,7 +79,7 @@ export default function BroadcastModal({ open, onClose }) {
                 />
               </label>
               <label className="block">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">Mesaj</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">{t('broadcast.bodyLabel')}</span>
                 <textarea
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
@@ -95,7 +97,7 @@ export default function BroadcastModal({ open, onClose }) {
                 disabled={broadcast.isPending}
                 className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-all cursor-pointer disabled:opacity-50"
               >
-                Vazgeç
+                {t('common.cancel')}
               </button>
               <motion.button
                 type="submit"
@@ -106,7 +108,7 @@ export default function BroadcastModal({ open, onClose }) {
                 <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-accent via-accent-bright to-accent" />
                 <span className="relative flex items-center gap-1.5">
                   {broadcast.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  {broadcast.isPending ? 'Gönderiliyor…' : 'Yayınla'}
+                  {broadcast.isPending ? t('broadcast.sending') : t('broadcast.publishCta')}
                 </span>
               </motion.button>
             </div>

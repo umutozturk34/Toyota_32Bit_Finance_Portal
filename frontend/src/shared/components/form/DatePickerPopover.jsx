@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { currentLocaleTag } from '../../utils/formatters';
 
-const WEEKDAYS = ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'];
-const MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-const MONTHS_SHORT = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+function buildMonthLabels(locale, format) {
+  const fmt = new Intl.DateTimeFormat(locale, { month: format });
+  return Array.from({ length: 12 }, (_, i) => fmt.format(new Date(2024, i, 15)));
+}
+
+function buildWeekdayLabels(locale) {
+  const fmt = new Intl.DateTimeFormat(locale, { weekday: 'narrow' });
+  return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2024, 0, i + 1)));
+}
 
 const pad = (n) => String(n).padStart(2, '0');
 const toIso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -23,12 +31,25 @@ function buildGrid(year, month) {
 }
 
 const NEXT_VIEW = { day: 'month', month: 'year', year: 'day' };
-const PREV_LABEL = { day: 'Önceki ay', month: 'Önceki yıl', year: '12 yıl geri' };
-const NEXT_LABEL = { day: 'Sonraki ay', month: 'Sonraki yıl', year: '12 yıl ileri' };
 
 export default function DatePickerPopover({
   value, onChange, onMonthChange, minDate, maxDate, highlightedDates, loading,
 }) {
+  const { t } = useTranslation();
+  const localeTag = currentLocaleTag();
+  const WEEKDAYS = useMemo(() => buildWeekdayLabels(localeTag), [localeTag]);
+  const MONTHS = useMemo(() => buildMonthLabels(localeTag, 'long'), [localeTag]);
+  const MONTHS_SHORT = useMemo(() => buildMonthLabels(localeTag, 'short'), [localeTag]);
+  const PREV_LABEL = useMemo(() => ({
+    day: t('datePicker.prev.day'),
+    month: t('datePicker.prev.month'),
+    year: t('datePicker.prev.year'),
+  }), [t]);
+  const NEXT_LABEL = useMemo(() => ({
+    day: t('datePicker.next.day'),
+    month: t('datePicker.next.month'),
+    year: t('datePicker.next.year'),
+  }), [t]);
   const [open, setOpen] = useState(false);
   const [view, setView] = useState('day');
   const ref = useRef(null);
@@ -82,8 +103,8 @@ export default function DatePickerPopover({
   };
 
   const display = selected
-    ? selected.toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' })
-    : 'Tarih seçin';
+    ? selected.toLocaleDateString(localeTag, { day: '2-digit', month: 'long', year: 'numeric' })
+    : t('datePicker.placeholder');
 
   const highlights = highlightedDates instanceof Set ? highlightedDates : null;
   const dataCount = highlights?.size ?? 0;
@@ -123,7 +144,7 @@ export default function DatePickerPopover({
                 type="button"
                 onClick={() => setView((v) => NEXT_VIEW[v])}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium tracking-tight text-fg hover:text-accent hover:bg-surface transition-colors bg-transparent border-none cursor-pointer flex-1 justify-center"
-                title="Görünümü değiştir"
+                title={t('datePicker.toggleView')}
               >
                 {headerLabel}
                 {loading && <span className="h-1 w-1 rounded-full bg-fg-muted animate-pulse" />}
@@ -166,7 +187,7 @@ export default function DatePickerPopover({
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] text-fg-subtle pt-1 border-t border-border-default">
                   <span className={`w-1 h-1 rounded-full ${dataCount > 0 ? 'bg-success' : 'bg-fg-subtle/40'}`} />
-                  <span>{dataCount > 0 ? `${dataCount} gün geçmiş veri` : 'bu ay için veri yok'}</span>
+                  <span>{dataCount > 0 ? t('datePicker.dataDays', { count: dataCount }) : t('datePicker.noDataMonth')}</span>
                 </div>
               </>
             )}

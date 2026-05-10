@@ -8,11 +8,11 @@ export const ASSET_ICONS = {
   FUND: <LineChart className="w-4 h-4" />,
 };
 
-export const ASSET_LABELS = {
-  BIST: 'BIST',
-  CRYPTO: 'Kripto',
-  FOREX: 'Döviz',
-  FUND: 'Fon',
+export const ASSET_TYPE_KEYS = {
+  BIST: 'STOCK',
+  CRYPTO: 'CRYPTO',
+  FOREX: 'FOREX',
+  FUND: 'FUND',
 };
 
 export const ROUTE_TO_ASSET_TYPE = {

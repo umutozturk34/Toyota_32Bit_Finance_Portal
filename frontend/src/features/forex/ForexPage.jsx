@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { BarChart2, Activity, Clock, Coins } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { forexService } from './services/forexService';
@@ -11,19 +12,19 @@ import AssetCard from '../../shared/components/asset/AssetCard';
 import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
 import useListParams from '../../shared/hooks/useListParams';
 
-const SORT_OPTIONS = [
-    { id: 'changePercent', label: 'Değişim %' },
-    { id: 'price', label: 'Fiyat' },
-    { id: 'name', label: 'İsim' },
-];
+const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
 
-const formatForexPrice = (price) => formatPrice(price, { locale: 'tr-TR', minDecimals: 4, maxDecimals: 4 });
+const formatForexPrice = (price) => formatPrice(price, { minDecimals: 4, maxDecimals: 4 });
 
 function ForexPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const listParams = useListParams();
     const { hasRole } = useAuth();
     const isAdmin = hasRole('ADMIN');
+    const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) }));
+    const localeTag = t('common.localeTag');
+    const dateOptions = { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
 
     const renderCard = (forex, { cls, setBuyTarget }) => {
         const meta = forex.metadata || {};
@@ -55,23 +56,23 @@ function ForexPage() {
                     <div className="mt-2 flex items-center justify-between rounded-md bg-surface px-2.5 py-1.5 text-[10px] text-fg-subtle">
                         <span className="flex items-center gap-1">
                             <BarChart2 className="h-2.5 w-2.5" />
-                            Yahoo: {meta.yahooUpdatedAt ? new Date(meta.yahooUpdatedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A'}
+                            Yahoo: {meta.yahooUpdatedAt ? new Date(meta.yahooUpdatedAt).toLocaleString(localeTag, dateOptions) : 'N/A'}
                         </span>
                         <span className="flex items-center gap-1">
                             <Activity className="h-2.5 w-2.5" />
-                            TCMB: {meta.tcmbUpdatedAt ? new Date(meta.tcmbUpdatedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A'}
+                            TCMB: {meta.tcmbUpdatedAt ? new Date(meta.tcmbUpdatedAt).toLocaleString(localeTag, dateOptions) : 'N/A'}
                         </span>
                     </div>
                 )}
 
                 <div className="mt-3 space-y-1">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs text-fg-muted">Alış:</span>
+                        <span className="text-xs text-fg-muted">{t('market.forex.buyLabel')}</span>
                         <span className="font-mono text-xl font-bold text-fg">₺ {formatForexPrice(sellingPrice ?? forex.price)}</span>
                     </div>
                     {forex.price && (
                         <div className="flex items-center justify-between">
-                            <span className="text-xs text-fg-muted">Satış:</span>
+                            <span className="text-xs text-fg-muted">{t('market.forex.sellLabel')}</span>
                             <span className="font-mono text-base font-semibold text-fg-muted">₺ {formatForexPrice(forex.price)}</span>
                         </div>
                     )}
@@ -90,29 +91,29 @@ function ForexPage() {
                     <div className="mt-3 space-y-1.5 border-t border-border-default pt-3">
                         <h4 className="flex items-center gap-1.5 text-xs font-medium text-fg-muted">
                             <Activity className="h-3 w-3 text-fg-subtle" />
-                            TCMB Kurları
+                            {t('market.forex.tcmbRates')}
                         </h4>
                         {meta.forexBuying && (
                             <div className="flex items-center justify-between text-xs">
-                                <span className="text-fg-muted">Döviz Alış:</span>
+                                <span className="text-fg-muted">{t('market.forex.forexBuy')}</span>
                                 <span className="font-mono text-fg">₺ {formatForexPrice(meta.forexBuying)}</span>
                             </div>
                         )}
                         {meta.forexSelling && (
                             <div className="flex items-center justify-between text-xs">
-                                <span className="text-fg-muted">Döviz Satış:</span>
+                                <span className="text-fg-muted">{t('market.forex.forexSell')}</span>
                                 <span className="font-mono text-fg">₺ {formatForexPrice(meta.forexSelling)}</span>
                             </div>
                         )}
                         {meta.banknoteBuying && (
                             <div className="flex items-center justify-between text-xs">
-                                <span className="text-fg-muted">Efektif Alış:</span>
+                                <span className="text-fg-muted">{t('market.forex.banknoteBuy')}</span>
                                 <span className="font-mono text-fg">₺ {formatForexPrice(meta.banknoteBuying)}</span>
                             </div>
                         )}
                         {meta.banknoteSelling && (
                             <div className="flex items-center justify-between text-xs">
-                                <span className="text-fg-muted">Efektif Satış:</span>
+                                <span className="text-fg-muted">{t('market.forex.banknoteSell')}</span>
                                 <span className="font-mono text-fg">₺ {formatForexPrice(meta.banknoteSelling)}</span>
                             </div>
                         )}
@@ -123,19 +124,19 @@ function ForexPage() {
                     {meta.tcmbUpdatedAt && (
                         <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            TCMB: {new Date(meta.tcmbUpdatedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            TCMB: {new Date(meta.tcmbUpdatedAt).toLocaleString(localeTag, dateOptions)}
                         </span>
                     )}
                     {isAdmin && meta.yahooUpdatedAt && (
                         <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            Yahoo: {new Date(meta.yahooUpdatedAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            Yahoo: {new Date(meta.yahooUpdatedAt).toLocaleString(localeTag, dateOptions)}
                         </span>
                     )}
                     {!meta.tcmbUpdatedAt && !meta.yahooUpdatedAt && forex.lastUpdated && (
                         <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {new Date(forex.lastUpdated).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            {new Date(forex.lastUpdated).toLocaleString(localeTag, dateOptions)}
                         </span>
                     )}
                 </div>
@@ -145,26 +146,26 @@ function ForexPage() {
 
     return (
         <MarketListPage
-            title="Döviz Kurları"
+            title={t('market.forex.title')}
             icon={<Coins className="h-5 w-5" />}
             emptyIcon={<Coins className="h-8 w-8 text-fg-subtle" />}
             marketType="FOREX"
             service={forexService}
             queryKey="forex"
             listParams={listParams}
-            searchPlaceholder="Döviz ara..."
-            countLabel="döviz çifti"
-            sortOptions={SORT_OPTIONS}
+            searchPlaceholder={t('market.forex.searchPlaceholder')}
+            countLabel={t('market.forex.countLabel')}
+            sortOptions={sortOptions}
             adminTriggers={[
-                { key: 'snapshot', label: 'Snapshot', title: 'TCMB + Yahoo snapshot güncelle (~1 dakika, 21 forex × 2sn)', fn: adminService.triggerForexSnapshot, successMsg: 'TCMB + Yahoo snapshot güncelleme başlatıldı', refetchDelay: 5000 },
-                { key: 'candles', label: 'Candles (5y)', title: 'Yahoo Finance candles güncelle (~10 dakika, 20 forex × 5y OHLC)', fn: adminService.triggerForexCandles, successMsg: 'Yahoo Finance candles güncelleme başlatıldı' },
-                { key: 'full', label: 'Full Update', title: 'Yahoo Finance FULL update (~12 dakika, snapshot + 5y candles)', fn: adminService.triggerForexFull, successMsg: 'Yahoo Finance FULL güncelleme başlatıldı', refetchDelay: 5000 },
+                { key: 'snapshot', label: t('market.admin.snapshot'), title: t('market.admin.snapshotTitle'), fn: adminService.triggerForexSnapshot, successMsg: t('market.admin.snapshotStarted'), refetchDelay: 5000 },
+                { key: 'candles', label: t('market.admin.candles'), title: t('market.admin.candlesTitle'), fn: adminService.triggerForexCandles, successMsg: t('market.admin.candlesStarted') },
+                { key: 'full', label: t('market.admin.full'), title: t('market.admin.fullTitle'), fn: adminService.triggerForexFull, successMsg: t('market.admin.fullStarted'), refetchDelay: 5000 },
             ]}
             renderCard={renderCard}
-            loadingMessage="Döviz kurları yükleniyor…"
-            errorMessage="Döviz kuru verileri yüklenirken hata oluştu"
-            emptyMessage="Henüz döviz kuru verisi bulunmuyor."
-            emptyHint="Admin butonlarını kullanarak veri çekebilirsiniz."
+            loadingMessage={t('market.forex.loading')}
+            errorMessage={t('market.forex.error')}
+            emptyMessage={t('market.forex.empty')}
+            emptyHint={t('market.empty.adminHint')}
             gridClass="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-[600px] content-start"
             animatePresence
         />

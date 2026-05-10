@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     BarChart2, ChevronUp, ChevronDown, Diamond,
     LineChart, Layers, Crosshair,
@@ -17,13 +18,27 @@ const ChartToolbar = ({
     compareSymbol = null,
     isFullscreen = false,
     onToggleFullscreen = () => {},
-}) => (
+}) => {
+    const { t } = useTranslation();
+    const magnetLabel = t(`chart.toolbar.magnet.${magnetMode}`);
+    const activeInstructionKey = activeTool === 'FREEHAND'
+        ? 'chart.toolbar.activeInstruction.freehand'
+        : (activeTool === 'TEXT' || activeTool === 'ICON')
+            ? 'chart.toolbar.activeInstruction.click'
+            : (activeTool === 'HORIZONTAL_LINE' || activeTool === 'VERTICAL_LINE')
+                ? 'chart.toolbar.activeInstruction.click'
+                : activeFibTool
+                    ? (activeFibTool === 'EXTENSION'
+                        ? 'chart.toolbar.activeInstruction.threePoint'
+                        : 'chart.toolbar.activeInstruction.twoPoint')
+                    : 'chart.toolbar.activeInstruction.dragDraw';
+    return (
     <>
         <div className="flex items-center gap-3 px-3 py-2 border-b border-border-default bg-surface/40">
             <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-1.5 rounded-md border-none cursor-pointer text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent"
-                title={sidebarOpen ? 'Hide panel' : 'Show panel'}
+                title={sidebarOpen ? t('chart.toolbar.hidePanel') : t('chart.toolbar.showPanel')}
             >
                 <Layers className="w-4 h-4" />
             </button>
@@ -35,10 +50,10 @@ const ChartToolbar = ({
                         background: chartType === 'line' ? 'rgba(94,106,210,0.15)' : 'transparent',
                         color: chartType === 'line' ? '#6872D9' : 'var(--color-fg-muted)',
                     }}
-                    title="Line chart"
+                    title={t('chart.toolbar.lineChart')}
                 >
                     <LineChart className="w-3.5 h-3.5" />
-                    Line
+                    {t('chart.toolbar.line')}
                 </button>
                 {allowCandle && (
                     <button
@@ -49,10 +64,10 @@ const ChartToolbar = ({
                             color: chartType === 'candle' ? '#6872D9' : 'var(--color-fg-muted)',
                             borderLeftColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
                         }}
-                        title="Candlestick chart"
+                        title={t('chart.toolbar.candleChart')}
                     >
                         <BarChart2 className="w-3.5 h-3.5" />
-                        Candle
+                        {t('chart.toolbar.candle')}
                     </button>
                 )}
             </div>
@@ -64,7 +79,7 @@ const ChartToolbar = ({
                     borderColor: magnetMode !== 'off' ? 'rgba(94,106,210,0.3)' : 'var(--color-border-default)',
                     color: magnetMode !== 'off' ? '#5E6AD2' : 'var(--color-fg-muted)',
                 }}
-                title={`Magnet: ${magnetMode === 'off' ? 'Off' : magnetMode === 'weak' ? 'Weak (High/Low)' : 'Strong (OHLC)'}`}
+                title={`${t('chart.toolbar.magnetLabel')}: ${magnetLabel}`}
             >
                 <Magnet className="w-3.5 h-3.5" />
                 {magnetMode !== 'off' && (
@@ -79,7 +94,7 @@ const ChartToolbar = ({
                 {compareSymbol && (
                     <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444' }}>
                         <span className="w-2 h-0.5 rounded bg-[#ef4444]" />
-                        vs {compareSymbol.toUpperCase()}
+                        {t('chart.toolbar.vs')} {compareSymbol.toUpperCase()}
                         <span className="text-[10px] font-mono opacity-70">(%)</span>
                     </span>
                 )}
@@ -92,9 +107,9 @@ const ChartToolbar = ({
                         color: trend.direction === 'up' ? '#10b981' : trend.direction === 'down' ? '#ef4444' : '#f59e0b',
                     }}
                 >
-                    {trend.direction === 'up' && <><ChevronUp className="w-3 h-3" /> Uptrend</>}
-                    {trend.direction === 'down' && <><ChevronDown className="w-3 h-3" /> Downtrend</>}
-                    {trend.direction === 'neutral' && <><Diamond className="w-3 h-3" /> Sideways</>}
+                    {trend.direction === 'up' && <><ChevronUp className="w-3 h-3" /> {t('chart.toolbar.trend.up')}</>}
+                    {trend.direction === 'down' && <><ChevronDown className="w-3 h-3" /> {t('chart.toolbar.trend.down')}</>}
+                    {trend.direction === 'neutral' && <><Diamond className="w-3 h-3" /> {t('chart.toolbar.trend.neutral')}</>}
                     <span style={{ opacity: 0.7 }}>({trend.change > 0 ? '+' : ''}{trend.change.toFixed(2)}%)</span>
                 </div>
             )}
@@ -115,7 +130,7 @@ const ChartToolbar = ({
                 ))}
                 {drawings.length > 0 && (
                     <span className="text-[11px] text-fg-subtle font-medium px-2 py-0.5 rounded-full bg-surface border border-border-default">
-                        {drawings.length} drawing{drawings.length > 1 ? 's' : ''}
+                        {t('chart.toolbar.drawingsCount', { count: drawings.length })}
                     </span>
                 )}
                 {isAnyToolActive && (
@@ -127,16 +142,16 @@ const ChartToolbar = ({
                             borderColor: 'rgba(239,68,68,0.25)',
                             color: '#ef4444',
                         }}
-                        title="Exit drawing mode"
+                        title={t('chart.toolbar.exitDrawingMode')}
                     >
                         <MousePointer2Off className="w-3.5 h-3.5" />
-                        Exit Draw
+                        {t('chart.toolbar.exitDraw')}
                     </button>
                 )}
                 <button
                     onClick={onToggleFullscreen}
                     className="p-1.5 rounded-md border-none cursor-pointer text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent"
-                    title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                    title={isFullscreen ? t('chart.toolbar.exitFullscreen') : t('chart.toolbar.fullscreen')}
                 >
                     {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                 </button>
@@ -146,24 +161,21 @@ const ChartToolbar = ({
             <div className="flex items-center justify-between px-3 py-1.5 bg-[rgba(94,106,210,0.08)] border-b border-[rgba(94,106,210,0.15)]">
                 <span className="flex items-center gap-1.5 text-[11px] text-[#6872D9]">
                     <Crosshair className="w-3.5 h-3.5 text-[#5E6AD2]" />
-                    Active: <strong className="text-fg">{activeTool || activeFibTool}</strong>
+                    {t('chart.toolbar.active')}: <strong className="text-fg">{activeTool || activeFibTool}</strong>
                     <span className="text-fg-subtle">
-                        {activeTool === 'FREEHAND' ? '— Click & drag to draw' :
-                            activeTool === 'TEXT' || activeTool === 'ICON' ? '— Click to place' :
-                                activeTool === 'HORIZONTAL_LINE' || activeTool === 'VERTICAL_LINE' ? '— Click to place' :
-                                    activeFibTool ? (activeFibTool === 'EXTENSION' ? '— Click 3 points' : '— Click 2 points') :
-                                        '— Click & drag'}
+                        {t(activeInstructionKey)}
                     </span>
                 </span>
                 <button
                     className="text-xs text-fg-muted hover:text-fg px-2 py-0.5 rounded hover:bg-surface transition-colors cursor-pointer bg-transparent border-none"
                     onClick={cancelAllDrawing}
                 >
-                    Cancel
+                    {t('chart.toolbar.cancel')}
                 </button>
             </div>
         )}
     </>
-);
+    );
+};
 
 export default ChartToolbar;

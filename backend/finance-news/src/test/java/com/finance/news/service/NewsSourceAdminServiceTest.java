@@ -102,7 +102,8 @@ class NewsSourceAdminServiceTest {
 
         Throwable thrown = org.assertj.core.api.Assertions.catchThrowable(() -> service.create(req));
 
-        assertThat(thrown).isInstanceOf(BadRequestException.class).hasMessageContaining("BBC");
+        assertThat(thrown).isInstanceOf(BadRequestException.class).hasMessage("error.news.sourceNameExists");
+        assertThat(((BadRequestException) thrown).getMessageArgs()).containsExactly("BBC");
     }
 
     @Test

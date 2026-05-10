@@ -13,8 +13,10 @@ import { fundService, trackedAssetService } from '../../shared/services/marketSe
 import { formatBistSymbol } from '../../shared/constants/stocks';
 import { getForexPairs } from '../../shared/constants/forex';
 
-import { ASSET_ICONS, ASSET_LABELS, ROUTE_TO_ASSET_TYPE, ASSET_TYPE_TO_ROUTE, HISTORY_FETCHERS, containerVariants, itemVariants } from './lib/chartViewConstants.jsx';
+import { useTranslation } from 'react-i18next';
+import { ASSET_ICONS, ASSET_TYPE_KEYS, ROUTE_TO_ASSET_TYPE, ASSET_TYPE_TO_ROUTE, HISTORY_FETCHERS, containerVariants, itemVariants } from './lib/chartViewConstants.jsx';
 const ChartView = () => {
+  const { t } = useTranslation();
   const { coinId, assetType: routeAssetType, symbol: routeSymbol } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -218,10 +220,13 @@ const ChartView = () => {
                 <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10 text-accent">
                     <LineChart className="w-5 h-5" />
                 </span>
-                Historical Analysis
+                {t('chart.historicalAnalysis')}
               </h1>
               <p className="mt-1 text-sm text-fg-muted">
-                {ASSET_LABELS[assetType]} - {symbol} detail chart and technical analysis
+                {t('chart.detailDescription', {
+                  type: t(`assets.labels.${ASSET_TYPE_KEYS[assetType] ?? assetType}`, { defaultValue: assetType }),
+                  symbol,
+                })}
               </p>
             </div>
           </div>
@@ -233,16 +238,19 @@ const ChartView = () => {
         >
           {isDetailRoute ? (
             <div className="rounded-lg border border-border-default bg-bg-base px-4 py-3">
-              <p className="text-xs uppercase tracking-wider text-fg-muted">Detail Mode</p>
-              <p className="mt-1 text-sm text-fg">
-                This page is locked to <span className="font-semibold">{ASSET_LABELS[assetType]}</span> / <span className="font-semibold">{symbol}</span>.
-              </p>
+              <p className="text-xs uppercase tracking-wider text-fg-muted">{t('chart.detailMode')}</p>
+              <p className="mt-1 text-sm text-fg" dangerouslySetInnerHTML={{
+                __html: t('chart.detailLockMessage', {
+                  type: t(`assets.labels.${ASSET_TYPE_KEYS[assetType] ?? assetType}`, { defaultValue: assetType }),
+                  symbol,
+                })
+              }} />
             </div>
           ) : (
             <>
               <div className="space-y-2">
                 <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
-                  Asset Type
+                  {t('chart.assetTypeLabel')}
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {['BIST', 'CRYPTO', 'FOREX', 'FUND'].map(type => (
@@ -255,14 +263,14 @@ const ChartView = () => {
                         }`}
                     >
                       {ASSET_ICONS[type]}
-                      {ASSET_LABELS[type]}
+                      {t(`assets.labels.${ASSET_TYPE_KEYS[type] ?? type}`, { defaultValue: type })}
                     </button>
                   ))}
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
-                  Symbol
+                  {t('chart.symbolLabel')}
                 </label>
                 <div className="flex flex-col sm:flex-row gap-3">
                   <select
@@ -276,7 +284,7 @@ const ChartView = () => {
                           const typeFunds = fundList.filter(f => f.fundType === type);
                           if (typeFunds.length === 0) return null;
                           return (
-                            <optgroup key={type} label={type === 'BYF' ? 'Borsa Yatırım Fonları' : 'Yatırım Fonları'}>
+                            <optgroup key={type} label={t(`chartView.fundGroup.${type}`)}>
                               {typeFunds.map(f => (
                                 <option key={f.fundCode} value={f.fundCode}>{f.fundCode}{f.name ? ` - ${f.name}` : ''}</option>
                               ))}
@@ -293,7 +301,7 @@ const ChartView = () => {
                   <form onSubmit={handleCustomSymbol} className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="Custom symbol..."
+                      placeholder={t('chart.customSymbolPlaceholder')}
                       value={customSymbol}
                       onChange={(e) => setCustomSymbol(e.target.value)}
                       className="w-44 rounded-lg border border-border-default bg-bg-elevated px-4 py-2.5 text-sm text-fg placeholder:text-fg-subtle outline-none focus:border-accent focus:ring-1 focus:ring-accent-glow transition-all duration-200"
@@ -302,7 +310,7 @@ const ChartView = () => {
                       type="submit"
                       className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-bright transition-colors duration-150"
                     >
-                      Go
+                      {t('chart.go')}
                     </button>
                   </form>
                 </div>
@@ -312,7 +320,7 @@ const ChartView = () => {
 
           <div className="space-y-2">
             <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
-              Karşılaştır
+              {t('chartView.compareLabel')}
             </label>
             <CompareBar
               compareAsset={compareAsset}
@@ -337,7 +345,7 @@ const ChartView = () => {
                   className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-bg-base/80 z-10"
                 >
                   <Loader2 className="w-8 h-8 text-accent animate-spin" />
-                  <p className="text-sm text-fg-muted">Loading historical data...</p>
+                  <p className="text-sm text-fg-muted">{t('chart.loading')}</p>
                 </motion.div>
               )}
               {error && !loading && (
@@ -357,7 +365,7 @@ const ChartView = () => {
                     className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent text-white text-sm font-medium hover:bg-accent-bright transition-colors duration-150"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    Retry
+                    {t('chart.retry')}
                   </button>
                 </motion.div>
               )}
@@ -383,7 +391,7 @@ const ChartView = () => {
             {!loading && !error && !chartData && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-fg-subtle">
                 <BarChart2 className="w-10 h-10 opacity-40" />
-                <p className="text-sm">Select a symbol to view chart data</p>
+                <p className="text-sm">{t('chart.selectSymbol')}</p>
               </div>
             )}
           </div>
@@ -392,24 +400,24 @@ const ChartView = () => {
         <motion.div variants={itemVariants} className="space-y-4">
           <h3 className="flex items-center gap-2 text-lg font-semibold text-fg">
             <Activity className="w-5 h-5 text-fg-subtle" />
-            About Technical Indicators
+            {t('chart.aboutIndicators.title')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               {
                 icon: TrendingUp,
-                title: 'SMA 20 (Simple Moving Average)',
-                desc: '20-day average price. Short-term trend indicator. Price above SMA20 suggests uptrend.',
+                title: t('chart.aboutIndicators.sma.title'),
+                desc: t('chart.aboutIndicators.sma.desc'),
               },
               {
                 icon: LineChart,
-                title: 'EMA 50 (Exponential Moving Average)',
-                desc: '50-day weighted average. Reacts faster to recent price changes than SMA.',
+                title: t('chart.aboutIndicators.ema.title'),
+                desc: t('chart.aboutIndicators.ema.desc'),
               },
               {
                 icon: BarChart2,
-                title: 'Drawing Tools',
-                desc: 'Use trend lines, Fibonacci retracements, and freehand drawings for custom analysis.',
+                title: t('chart.aboutIndicators.tools.title'),
+                desc: t('chart.aboutIndicators.tools.desc'),
               },
             ].map((card, i) => {
               const Icon = card.icon;

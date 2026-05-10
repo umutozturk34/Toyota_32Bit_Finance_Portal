@@ -52,7 +52,7 @@ public class BondQueryService {
 
         BondType filterType = bondType == null || bondType.isBlank()
                 ? null
-                : EnumParser.parseOrBadRequest(BondType.class, bondType.toUpperCase(), "bond type");
+                : EnumParser.parseOrBadRequest(BondType.class, bondType.toUpperCase(), "enum.field.bondType");
         if (filterType != null) {
             BondType fixed = filterType;
             spec = spec.and((root, query, cb) -> cb.equal(root.get("bondType"), fixed));
@@ -71,7 +71,7 @@ public class BondQueryService {
     public BondResponse getByCode(String seriesCode) {
         Bond bond = bondCacheService.getSnapshot(seriesCode);
         if (bond == null) {
-            throw new ResourceNotFoundException("Bond not found: " + seriesCode);
+            throw new ResourceNotFoundException("error.market.bondNotFound", seriesCode);
         }
         return bondResponseMapper.toBondResponse(bond);
     }

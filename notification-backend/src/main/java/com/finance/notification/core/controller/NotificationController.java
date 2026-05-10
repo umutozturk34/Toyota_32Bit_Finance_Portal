@@ -2,6 +2,7 @@ package com.finance.notification.core.controller;
 
 import com.finance.common.dto.ApiResponse;
 import com.finance.common.dto.response.PagedResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.notification.core.dto.NotificationResponse;
 import com.finance.notification.core.service.NotificationService;
 import jakarta.validation.constraints.Max;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class NotificationController {
 
     private final NotificationService service;
+    private final Translator translator;
 
     @GetMapping
     public ApiResponse<PagedResponse<NotificationResponse>> list(
@@ -38,13 +40,13 @@ public class NotificationController {
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
             @RequestParam(required = false) String search) {
         Page<NotificationResponse> result = service.list(jwt.getSubject(), page, size, unreadOnly, search);
-        return ApiResponse.success("Notifications retrieved",
+        return ApiResponse.success(translator.translate("api.notification.listRetrieved"),
                 PagedResponse.of(result.getContent(), page, size, result.getTotalElements()));
     }
 
     @GetMapping("/unread-count")
     public ApiResponse<Long> unreadCount(@AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.success("Unread count retrieved",
+        return ApiResponse.success(translator.translate("api.notification.unreadCountRetrieved"),
                 service.unreadCount(jwt.getSubject()));
     }
 
@@ -52,13 +54,13 @@ public class NotificationController {
     public ApiResponse<NotificationResponse> markRead(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id) {
-        return ApiResponse.success("Notification marked as read",
+        return ApiResponse.success(translator.translate("api.notification.markedRead"),
                 service.markRead(id, jwt.getSubject()));
     }
 
     @PostMapping("/read-all")
     public ApiResponse<Integer> markAllRead(@AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.success("All notifications marked as read",
+        return ApiResponse.success(translator.translate("api.notification.allMarkedRead"),
                 service.markAllRead(jwt.getSubject()));
     }
 
@@ -67,12 +69,12 @@ public class NotificationController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id) {
         service.delete(id, jwt.getSubject());
-        return ApiResponse.success("Notification deleted", null);
+        return ApiResponse.success(translator.translate("api.notification.deleted"), null);
     }
 
     @DeleteMapping
     public ApiResponse<Integer> deleteAll(@AuthenticationPrincipal Jwt jwt) {
         int removed = service.deleteAll(jwt.getSubject());
-        return ApiResponse.success("All notifications deleted", removed);
+        return ApiResponse.success(translator.translate("api.notification.allDeleted"), removed);
     }
 }

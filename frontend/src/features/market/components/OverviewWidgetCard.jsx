@@ -1,5 +1,6 @@
 import { memo, useMemo } from 'react';
 import { X, Sliders, GripVertical } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { definitionFor } from '../sections/sectionRegistry';
 
 /** @param {{Icon: any, label: string, onClick: (e: any) => void, tone?: string, active?: boolean}} props */
@@ -46,6 +47,7 @@ function OverviewWidgetCard({
   deleting = false, popoverActive = false, onOpenSettings,
   onDelete, onConfigChange,
 }) {
+  const { t } = useTranslation();
   const def = definitionFor(section.kind);
   const Component = def?.Component;
   const dragActive = editMode && draggable && !deleting;
@@ -90,13 +92,13 @@ function OverviewWidgetCard({
           {def.configurable && (
             <ActionDot
               Icon={Sliders}
-              label="Ayarlar"
+              label={t('common.settings')}
               tone="accent"
               active={popoverActive}
               onClick={(e) => onOpenSettings?.(section.sectionId, e.currentTarget)}
             />
           )}
-          <ActionDot Icon={X} label="Sil" tone="danger" onClick={() => onDelete?.(section.sectionId)} />
+          <ActionDot Icon={X} label={t('common.delete')} tone="danger" onClick={() => onDelete?.(section.sectionId)} />
         </div>
       </div>
     </div>

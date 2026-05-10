@@ -1,6 +1,7 @@
 package com.finance.user.controller;
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.user.dto.UserLayoutResponse;
 import com.finance.user.service.UserLayoutService;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +11,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @Log4j2
@@ -21,16 +21,17 @@ import java.util.Map;
 public class UserLayoutController {
 
     private final UserLayoutService service;
+    private final Translator translator;
 
     @GetMapping
     public ApiResponse<UserLayoutResponse> getLayout(@AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.success("Layout retrieved", service.getOrEmpty(jwt.getSubject()));
+        return ApiResponse.success(translator.translate("api.layout.retrieved"), service.getOrEmpty(jwt.getSubject()));
     }
 
     @PutMapping("/overview")
     public ApiResponse<UserLayoutResponse> updateOverview(
             @AuthenticationPrincipal Jwt jwt,
             @RequestBody Map<String, Object> overview) {
-        return ApiResponse.success("Overview layout updated", service.saveOverview(jwt.getSubject(), overview));
+        return ApiResponse.success(translator.translate("api.layout.overviewUpdated"), service.saveOverview(jwt.getSubject(), overview));
     }
 }

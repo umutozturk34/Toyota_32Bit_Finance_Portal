@@ -39,6 +39,6 @@ public class MessagingPresenceTier implements RateLimitTier {
 
     @Override
     public String errorMessage() {
-        return "Aktif konuşma sınırına ulaştın.";
+        return "error.rateLimit.messagingPresence";
     }
 }

@@ -1,10 +1,14 @@
 package com.finance.notification.messaging.dispatch;
 
+import com.finance.common.i18n.Translator;
 import com.finance.notification.config.NotificationDispatchProperties;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.RenderedNotification;
 import com.finance.notification.core.dispatch.payload.MessagePayload;
 import com.finance.notification.core.model.NotificationType;
+import com.finance.notification.testsupport.HandlerTestSupport;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,7 +20,18 @@ class MessageHandlerTest {
             new NotificationDispatchProperties.WatchlistDelta(3),
             new NotificationDispatchProperties.Message(120));
 
-    private final MessageHandler handler = new MessageHandler(DISPATCH);
+    private MessageHandler handler;
+
+    @BeforeEach
+    void setUp() {
+        Translator translator = HandlerTestSupport.turkishTranslator();
+        handler = new MessageHandler(DISPATCH, translator);
+    }
+
+    @AfterEach
+    void tearDown() {
+        HandlerTestSupport.resetLocale();
+    }
 
     @Test
     void type_returnsMessage() {

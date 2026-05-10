@@ -30,8 +30,7 @@ public class CryptoDataService implements TrackedAssetDataService {
     @Override
     public void validateExists(String coinId) {
         if (!cryptoUpdateService.exists(coinId)) {
-            throw new BusinessException(
-                    "Kripto varlık bulunamadı: " + coinId, "ASSET_NOT_FOUND");
+            throw new BusinessException("error.market.cryptoNotFound", coinId);
         }
     }
 

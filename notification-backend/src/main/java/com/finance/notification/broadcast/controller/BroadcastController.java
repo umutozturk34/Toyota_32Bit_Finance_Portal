@@ -1,6 +1,7 @@
 package com.finance.notification.broadcast.controller;
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.notification.broadcast.dto.BroadcastRequest;
 import com.finance.notification.broadcast.dto.BroadcastResult;
 import com.finance.notification.broadcast.service.BroadcastService;
@@ -21,12 +22,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class BroadcastController {
 
     private final BroadcastService service;
+    private final Translator translator;
 
     @PostMapping("/broadcast")
     public ApiResponse<BroadcastResult> broadcast(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody BroadcastRequest request) {
         BroadcastResult result = service.broadcast(jwt.getSubject(), request);
-        return ApiResponse.success("Broadcast dispatched", result);
+        return ApiResponse.success(translator.translate("api.broadcast.dispatched"), result);
     }
 }

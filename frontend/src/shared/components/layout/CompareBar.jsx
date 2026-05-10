@@ -1,8 +1,10 @@
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import SearchSuggestions from '../form/SearchSuggestions';
-import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../../constants/assetTypes';
+import { ASSET_TYPE_COLORS } from '../../constants/assetTypes';
 
 export default function CompareBar({ compareAsset, onSelect, onClear, excludeCodes = [] }) {
+  const { t } = useTranslation();
   if (compareAsset) {
     const color = ASSET_TYPE_COLORS[compareAsset.type] || '#8b5cf6';
     return (
@@ -15,14 +17,14 @@ export default function CompareBar({ compareAsset, onSelect, onClear, excludeCod
             className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded"
             style={{ backgroundColor: color + '18', color }}
           >
-            {ASSET_TYPE_LABELS[compareAsset.type] || compareAsset.type}
+            {t(`assets.labels.${compareAsset.type}`, { defaultValue: compareAsset.type })}
           </span>
         </div>
         <button
           onClick={onClear}
           className="flex items-center gap-1.5 rounded-lg border border-danger/30 px-3 py-2 text-sm font-medium text-danger hover:bg-danger/10 transition-colors cursor-pointer bg-transparent"
         >
-          <X className="w-4 h-4" /> Kaldır
+          <X className="w-4 h-4" /> {t('common.remove')}
         </button>
       </div>
     );
@@ -31,7 +33,7 @@ export default function CompareBar({ compareAsset, onSelect, onClear, excludeCod
   return (
     <div className="w-72">
       <SearchSuggestions
-        placeholder="Karşılaştır..."
+        placeholder={t('compareBar.placeholder')}
         navigateOnSelect={false}
         onSelect={onSelect}
         excludeCodes={excludeCodes}

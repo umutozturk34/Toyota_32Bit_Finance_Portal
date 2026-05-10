@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { motion } from 'framer-motion';
 export default function NotFound() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -32,14 +34,14 @@ export default function NotFound() {
         >
           <div className="flex items-center gap-3 mb-2">
             <span className="h-px w-8 bg-accent/40" />
-            <span className="text-xs font-mono text-accent tracking-[0.3em] uppercase">Sayfa Bulunamadı</span>
+            <span className="text-xs font-mono text-accent tracking-[0.3em] uppercase">{t('notFound.eyebrow')}</span>
             <span className="h-px w-8 bg-accent/40" />
           </div>
           <h1 className="text-3xl font-bold text-fg tracking-tight">
-            Aradığınız sayfa mevcut değil
+            {t('notFound.title')}
           </h1>
           <p className="text-sm text-fg-muted max-w-sm text-center mt-1 leading-relaxed">
-            Bu sayfa taşınmış, silinmiş veya hiç var olmamış olabilir.
+            {t('notFound.body')}
           </p>
         </motion.div>
 
@@ -54,7 +56,7 @@ export default function NotFound() {
             className="px-5 py-2.5 rounded-xl border border-border-default text-sm font-medium text-fg-muted
                        hover:border-border-hover hover:text-fg transition-all duration-200"
           >
-            Geri Dön
+            {t('common.back')}
           </button>
           <button
             onClick={() => navigate('/')}
@@ -62,7 +64,7 @@ export default function NotFound() {
                        hover:bg-accent-bright transition-all duration-200
                        shadow-[0_0_20px_rgba(99,102,241,0.2)]"
           >
-            Ana Sayfa
+            {t('notFound.home')}
           </button>
         </motion.div>
       </div>

@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../feedback/AnimatedIcons';
-import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../../constants/assetTypes';
+import { ASSET_TYPE_COLORS } from '../../constants/assetTypes';
 import { assetCodeLabel } from '../../utils/assetCode';
 import { formatPriceTRY, getChangeClass, changeColors } from '../../utils/formatters';
 import useSearchSuggestions from '../../hooks/useSearchSuggestions';
@@ -17,13 +18,15 @@ function assetRoute(asset) {
 
 export default function SearchSuggestions({
   onSelect,
-  placeholder = 'Hisse, kripto, döviz, fon ara...',
+  placeholder,
   navigateOnSelect = true,
   excludeCodes = [],
   filterType,
   variant = 'default',
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const placeholderText = placeholder ?? t('searchSuggestions.placeholder');
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -76,7 +79,7 @@ export default function SearchSuggestions({
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => { if (debouncedQuery.length >= 2) setOpen(true); }}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
+          placeholder={placeholderText}
           className={
             isHero
               ? 'w-full rounded-2xl border border-border-default bg-bg-elevated pl-12 pr-10 py-4 text-base text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all backdrop-blur-md'
@@ -109,7 +112,7 @@ export default function SearchSuggestions({
           >
             {suggestions.length === 0 && !isFetching ? (
               <div className="px-4 py-6 text-center text-sm text-fg-muted">
-                &ldquo;{debouncedQuery}&rdquo; ile eşleşen sonuç bulunamadı
+                {t('searchSuggestions.noMatch', { query: debouncedQuery })}
               </div>
             ) : (
               <div className="overflow-y-auto max-h-[inherit]">
@@ -144,7 +147,7 @@ export default function SearchSuggestions({
                             className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
                             style={{ backgroundColor: typeColor + '18', color: typeColor }}
                           >
-                            {ASSET_TYPE_LABELS[asset.type] || asset.type}
+                            {t(`assets.labels.${asset.type}`, { defaultValue: asset.type })}
                           </span>
                         </div>
                         {asset.name && (

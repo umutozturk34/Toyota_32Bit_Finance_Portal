@@ -73,7 +73,7 @@ public class NewsSourceAdminService {
         newsSourceRepository.findByNameIgnoreCase(name.trim())
                 .filter(existing -> excludeId == null || !existing.getId().equals(excludeId))
                 .ifPresent(existing -> {
-                    throw new BadRequestException("News source with name '" + name + "' already exists");
+                    throw new BadRequestException("error.news.sourceNameExists", name);
                 });
     }
 }

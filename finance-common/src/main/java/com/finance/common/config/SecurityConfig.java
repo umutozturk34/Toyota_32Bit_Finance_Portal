@@ -41,7 +41,7 @@
         private String jwkSetUri;
         private final AppProperties appProperties;
         @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimitFilter rateLimitFilter) throws Exception {
+        public SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimitFilter rateLimitFilter, com.finance.common.i18n.Translator translator) throws Exception {
             http
                 .csrf(AbstractHttpConfigurer::disable)
                 .anonymous(AbstractHttpConfigurer::disable)
@@ -62,14 +62,18 @@
                     .authenticationEntryPoint((request, response, authException) -> {
                         response.setStatus(401);
                         response.setContentType("application/json");
-                        response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"JWT token required\"}");
+                        response.setCharacterEncoding("UTF-8");
+                        String msg = translator.translate("error.auth.tokenRequired").replace("\"", "\\\"");
+                        response.getWriter().write("{\"error\":\"UNAUTHORIZED\",\"message\":\"" + msg + "\"}");
                     })
                 )
                 .exceptionHandling(exception -> exception
                     .authenticationEntryPoint((request, response, authException) -> {
                         response.setStatus(401);
                         response.setContentType("application/json");
-                        response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"No JWT token provided\"}");
+                        response.setCharacterEncoding("UTF-8");
+                        String msg = translator.translate("error.auth.tokenMissing").replace("\"", "\\\"");
+                        response.getWriter().write("{\"error\":\"UNAUTHORIZED\",\"message\":\"" + msg + "\"}");
                     })
                 )
                 .sessionManagement(session -> session
@@ -79,13 +83,13 @@
             return http.build();
         }
         @Bean
-        public RateLimitFilter rateLimitFilterFactory(ObjectMapper objectMapper, AppProperties appProperties, RedisConnectionFactory redisConnectionFactory, List<RateLimitTier> tiers) {
+        public RateLimitFilter rateLimitFilterFactory(ObjectMapper objectMapper, AppProperties appProperties, RedisConnectionFactory redisConnectionFactory, List<RateLimitTier> tiers, com.finance.common.i18n.Translator translator) {
             LettuceConnectionFactory lettuceFactory = (LettuceConnectionFactory) redisConnectionFactory;
             RedisClient redisClient = (RedisClient) lettuceFactory.getNativeClient();
             StatefulRedisConnection<String, byte[]> connection = redisClient.connect(
                     RedisCodec.of(StringCodec.UTF8, ByteArrayCodec.INSTANCE)
             );
-            return new RateLimitFilter(objectMapper, appProperties, connection, tiers);
+            return new RateLimitFilter(objectMapper, appProperties, connection, tiers, translator);
         }
         
         @Bean

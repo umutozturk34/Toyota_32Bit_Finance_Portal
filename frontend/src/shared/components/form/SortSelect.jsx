@@ -1,15 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowUpNarrowWide, ArrowDownWideNarrow, SlidersHorizontal } from 'lucide-react';
 import { Check } from '../feedback/AnimatedIcons';
 
 export default function SortSelect({ value, direction, options, onSortChange, onDirectionChange, showDefault = true, align = 'left', hideDirection = false }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const isDesc = direction === 'desc';
-  const allOptions = showDefault ? [{ id: '', label: 'Varsayılan' }, ...options] : options;
-  const activeLabel = allOptions.find(o => o.id === value)?.label || (showDefault ? 'Varsayılan' : options[0]?.label);
+  const defaultLabel = t('common.sortDefault');
+  const allOptions = showDefault ? [{ id: '', label: defaultLabel }, ...options] : options;
+  const activeLabel = allOptions.find(o => o.id === value)?.label || (showDefault ? defaultLabel : options[0]?.label);
 
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };

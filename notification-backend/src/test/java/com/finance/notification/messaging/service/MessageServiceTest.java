@@ -103,7 +103,7 @@ class MessageServiceTest {
 
         assertThatThrownBy(() -> service.sendUserToAdmin(USER_SUB, "third one"))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("Admin cevap vermeden");
+                .hasMessage("error.message.unanswered");
         verify(repository, never()).save(any());
     }
 

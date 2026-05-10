@@ -59,7 +59,7 @@ class NewsDataServiceTest {
 
         assertThatThrownBy(() -> service.updateNews())
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("No news sources");
+                .hasMessage("error.news.noSourcesConfigured");
     }
 
     @Test
@@ -70,7 +70,7 @@ class NewsDataServiceTest {
 
         assertThatThrownBy(() -> service.updateNews())
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("All");
+                .hasMessage("error.news.allSourcesFailed");
     }
 
     @Test

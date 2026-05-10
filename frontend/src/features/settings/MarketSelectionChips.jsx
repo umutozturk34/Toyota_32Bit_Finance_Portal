@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 export const MARKET_CHIPS = [
-  { id: 'STOCK', label: 'Hisse' },
-  { id: 'FOREX', label: 'Döviz' },
-  { id: 'FUND', label: 'Fon' },
-  { id: 'COMMODITY', label: 'Emtia' },
-  { id: 'BOND', label: 'Tahvil' },
-  { id: 'CRYPTO', label: 'Kripto' },
+  { id: 'STOCK', labelKey: 'assets.labels.STOCK' },
+  { id: 'FOREX', labelKey: 'assets.labels.FOREX' },
+  { id: 'FUND', labelKey: 'assets.labels.FUND' },
+  { id: 'COMMODITY', labelKey: 'assets.labels.COMMODITY' },
+  { id: 'BOND', labelKey: 'marketChips.BOND' },
+  { id: 'CRYPTO', labelKey: 'assets.labels.CRYPTO' },
 ];
 
 const CONTAINER_VARIANTS = { show: { transition: { staggerChildren: 0.04 } } };
@@ -38,6 +39,7 @@ function CornerBrackets() {
 
 /** @param {MarketSelectionChipsProps} props */
 export default function MarketSelectionChips({ selected, onToggle }) {
+  const { t } = useTranslation();
   const flip = (id) => {
     const next = new Set(selected);
     if (next.has(id)) next.delete(id);
@@ -56,10 +58,10 @@ export default function MarketSelectionChips({ selected, onToggle }) {
       <div className="relative flex items-center justify-between mb-3">
         <h3 className="font-mono text-[10px] tracking-[0.2em] uppercase text-fg-muted flex items-center gap-2">
           <span className="text-accent">▸</span>
-          Hangi piyasalar
+          {t('marketChips.title')}
         </h3>
         <span className="font-mono text-[9px] tracking-[0.2em] text-fg-subtle uppercase tabular-nums">
-          {String(selected.size).padStart(2, '0')}/{String(MARKET_CHIPS.length).padStart(2, '0')} aktif
+          {String(selected.size).padStart(2, '0')}/{String(MARKET_CHIPS.length).padStart(2, '0')} {t('marketChips.activeSuffix')}
         </span>
       </div>
 
@@ -69,7 +71,7 @@ export default function MarketSelectionChips({ selected, onToggle }) {
         animate="show"
         className="relative flex flex-wrap gap-1.5"
       >
-        {MARKET_CHIPS.map(({ id, label }) => {
+        {MARKET_CHIPS.map(({ id, labelKey }) => {
           const active = selected.has(id);
           return (
             <motion.button
@@ -89,14 +91,14 @@ export default function MarketSelectionChips({ selected, onToggle }) {
               <span aria-hidden className={`text-[8px] ${active ? 'text-accent' : 'text-fg-subtle'}`}>
                 {active ? '◉' : '○'}
               </span>
-              {label}
+              {t(labelKey)}
             </motion.button>
           );
         })}
       </motion.div>
 
       <p className="relative font-mono text-[9px] tracking-[0.18em] text-fg-subtle uppercase mt-3 leading-relaxed">
-        // işaretsiz piyasalar açılış / veri bildirimi atlamaz
+        {t('marketChips.footer')}
       </p>
     </motion.div>
   );

@@ -30,8 +30,7 @@ public class FundDataService implements TrackedAssetDataService {
     @Override
     public void validateExists(String fundCode) {
         if (!fundUpdateService.exists(fundCode)) {
-            throw new BusinessException(
-                    "Fon bulunamadı: " + fundCode, "ASSET_NOT_FOUND");
+            throw new BusinessException("error.market.fundNotFound", fundCode);
         }
     }
 

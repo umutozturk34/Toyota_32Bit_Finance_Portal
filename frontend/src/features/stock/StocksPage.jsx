@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { BarChart2, ChevronUp, ChevronDown, Activity, Clock } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
 import { stockService } from './services/stockService';
@@ -14,24 +15,19 @@ import ChangePercentBadge from '../../shared/components/asset/ChangePercentBadge
 import useListParams from '../../shared/hooks/useListParams';
 import { assetCodeLabel } from '../../shared/utils/assetCode';
 
-const SORT_OPTIONS = [
-    { id: 'changePercent', label: 'Değişim %' },
-    { id: 'price', label: 'Fiyat' },
-    { id: 'name', label: 'İsim' },
-];
+const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
+const SEGMENT_IDS = ['MAIN_INDEX', 'SECONDARY_INDEX', 'EQUITY'];
 
-const SEGMENT_LABELS = {
-    MAIN_INDEX: 'Ana Endeksler',
-    SECONDARY_INDEX: 'Alt Endeksler',
-    EQUITY: 'Hisseler',
-};
-
-const formatStockPrice = (price) => formatPrice(price, { locale: 'tr-TR' });
+const formatStockPrice = (price) => formatPrice(price);
 
 function StocksPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const listParams = useListParams();
     const segment = listParams.filter || 'EQUITY';
+
+    const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) }));
+    const segmentLabel = (id) => t(`market.stockSegments.${id}`);
 
     const { data: segmentCounts = [] } = useQuery({
         queryKey: ['stockSegments'],
@@ -47,7 +43,7 @@ function StocksPage() {
 
     const tabItems = segmentCounts
         .filter(s => s.type !== 'MAIN_INDEX')
-        .map(s => ({ type: s.type, count: s.count, label: SEGMENT_LABELS[s.type] || s.type }));
+        .map(s => ({ type: s.type, count: s.count, label: segmentLabel(s.type) }));
 
     const queryParams = { ...listParams.params, segment };
 
@@ -69,7 +65,7 @@ function StocksPage() {
                     >
                         <div>
                             <h3 className="text-base font-semibold text-fg">{index.name || index.code.replace('.IS', '')}</h3>
-                            <span className="text-xs text-fg-muted">Endeks</span>
+                            <span className="text-xs text-fg-muted">{t('market.stockSegments.indexLabel')}</span>
                         </div>
                         <p className="mt-3 font-mono text-2xl font-bold text-fg">{formatStockPrice(index.price)}</p>
                         <div className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
@@ -119,38 +115,38 @@ function StocksPage() {
             <div className="mt-3 space-y-1 border-t border-border-default pt-3">
                 {stock.metadata?.openPrice != null && (
                     <div className="flex items-center justify-between text-xs">
-                        <span className="text-fg-muted">Açılış</span>
+                        <span className="text-fg-muted">{t('market.stock.openLabel')}</span>
                         <span className="font-mono text-fg">₺{formatStockPrice(stock.metadata.openPrice)}</span>
                     </div>
                 )}
                 {stock.metadata?.dayHigh != null && (
                     <div className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-1 text-fg-muted"><ChevronUp className="h-3 w-3 text-success" />En Yüksek</span>
+                        <span className="flex items-center gap-1 text-fg-muted"><ChevronUp className="h-3 w-3 text-success" />{t('market.stock.highLabel')}</span>
                         <span className="font-mono text-fg">₺{formatStockPrice(stock.metadata.dayHigh)}</span>
                     </div>
                 )}
                 {stock.metadata?.dayLow != null && (
                     <div className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-1 text-fg-muted"><ChevronDown className="h-3 w-3 text-danger" />En Düşük</span>
+                        <span className="flex items-center gap-1 text-fg-muted"><ChevronDown className="h-3 w-3 text-danger" />{t('market.stock.lowLabel')}</span>
                         <span className="font-mono text-fg">₺{formatStockPrice(stock.metadata.dayLow)}</span>
                     </div>
                 )}
                 <div className="flex items-center justify-between text-xs">
-                    <span className="text-fg-muted">Hacim</span>
+                    <span className="text-fg-muted">{t('market.stock.volumeLabel')}</span>
                     <span className="font-mono text-fg">{formatVolume(stock.metadata?.volume)}</span>
                 </div>
             </div>
 
             <div className="mt-2 flex items-center gap-1 text-[11px] text-fg-subtle">
                 <Clock className="h-3 w-3" />
-                {stock.lastUpdated ? new Date(stock.lastUpdated).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'N/A'}
+                {stock.lastUpdated ? new Date(stock.lastUpdated).toLocaleString(t('common.localeTag'), { timeZone: 'Europe/Istanbul' }) : 'N/A'}
             </div>
         </AssetCard>
     );
 
     return (
         <MarketListPage
-            title="Borsa İstanbul (BIST)"
+            title={t('market.stock.title')}
             icon={<Activity className="h-5 w-5" />}
             emptyIcon={<BarChart2 className="h-7 w-7 text-fg-subtle" />}
             marketType="STOCK"
@@ -158,9 +154,9 @@ function StocksPage() {
             queryKey="stocks"
             listParams={listParams}
             queryParams={queryParams}
-            searchPlaceholder="Hisse ara..."
-            countLabel="hisse"
-            sortOptions={SORT_OPTIONS}
+            searchPlaceholder={t('market.stock.searchPlaceholder')}
+            countLabel={t('market.stock.countLabel')}
+            sortOptions={sortOptions}
             filterConfig={{
                 tabItems,
                 activeId: segment,
@@ -169,16 +165,16 @@ function StocksPage() {
             }}
             filterShowAll={false}
             adminTriggers={[
-                { key: 'snapshot', label: 'Snapshot', title: 'Hisse snapshot verilerini güncelle (fiyat, hacim vb.)', fn: adminService.triggerStockSnapshot, successMsg: 'Hisse snapshot güncelleme başlatıldı', refetchDelay: 5000 },
-                { key: 'candles', label: 'Candles (5y)', title: '5 yıllık OHLC verilerini güncelle (10-15 dakika)', fn: adminService.triggerStockCandles, successMsg: 'Hisse candle güncelleme başlatıldı (Bu işlem 10-15 dakika sürebilir)' },
-                { key: 'full', label: 'Full Update', title: 'Tam güncelleme (snapshot + 5y candles, 15-20 dakika)', fn: adminService.triggerStockFull, successMsg: 'Hisse tam güncelleme başlatıldı (Bu işlem 15-20 dakika sürebilir)' },
+                { key: 'snapshot', label: t('market.admin.snapshot'), title: t('market.admin.snapshotTitle'), fn: adminService.triggerStockSnapshot, successMsg: t('market.admin.snapshotStarted'), refetchDelay: 5000 },
+                { key: 'candles', label: t('market.admin.candles'), title: t('market.admin.candlesTitle'), fn: adminService.triggerStockCandles, successMsg: t('market.admin.candlesStarted') },
+                { key: 'full', label: t('market.admin.full'), title: t('market.admin.fullTitle'), fn: adminService.triggerStockFull, successMsg: t('market.admin.fullStarted') },
             ]}
             preGridChildren={indicesSection}
             renderCard={renderCard}
-            loadingMessage="Hisse verileri yükleniyor…"
-            errorMessage="Hisse senedi verileri yüklenirken hata oluştu"
-            emptyMessage="Henüz hisse senedi verisi yok."
-            emptyHint="Admin butonlarını kullanarak veri çekebilirsiniz."
+            loadingMessage={t('market.stock.loading')}
+            errorMessage={t('market.stock.error')}
+            emptyMessage={t('market.stock.empty')}
+            emptyHint={t('market.empty.adminHint')}
             gridClass="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-[600px] content-start"
         />
     );

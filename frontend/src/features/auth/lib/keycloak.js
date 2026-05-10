@@ -1,9 +1,14 @@
 import Keycloak from 'keycloak-js';
+import i18n from '../../../shared/i18n/config';
 const keycloak = new Keycloak({
   url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8180',
   realm: import.meta.env.VITE_KEYCLOAK_REALM || 'finance-realm',
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'finance-frontend',
 });
+
+function currentLocale() {
+  return i18n.language || i18n.options.fallbackLng || 'en';
+}
 export const initKeycloak = (onAuthenticatedCallback) => {
   keycloak
     .init({
@@ -20,6 +25,13 @@ export const initKeycloak = (onAuthenticatedCallback) => {
     })
     .catch(() => {});
 };
+async function gotoWithLocale(loginOptions) {
+  const locale = currentLocale();
+  loginOptions.locale = locale;
+  const url = await keycloak.createLoginUrl(loginOptions);
+  const sep = url.includes('?') ? '&' : '?';
+  window.location.href = `${url}${sep}kc_locale=${encodeURIComponent(locale)}`;
+}
 export const doLogin = (options = {}) => {
   const loginOptions = {};
   if (options.redirectUri) {
@@ -28,17 +40,19 @@ export const doLogin = (options = {}) => {
   if (options.action === 'register') {
     loginOptions.action = 'register';
   }
-  keycloak.login(loginOptions);
+  gotoWithLocale(loginOptions);
 };
 export const doLogout = () => {
-  keycloak.logout({ redirectUri: window.location.origin });
+  const locale = encodeURIComponent(currentLocale());
+  keycloak.logout({ redirectUri: `${window.location.origin}?kc_locale=${locale}` });
 };
 export const doForgotPassword = () => {
-  const url = `${keycloak.authServerUrl}/realms/${keycloak.realm}/login-actions/reset-credentials?client_id=${keycloak.clientId}&redirect_uri=${encodeURIComponent(window.location.origin)}`;
+  const locale = encodeURIComponent(currentLocale());
+  const url = `${keycloak.authServerUrl}/realms/${keycloak.realm}/login-actions/reset-credentials?client_id=${keycloak.clientId}&redirect_uri=${encodeURIComponent(window.location.origin)}&kc_locale=${locale}`;
   window.location.href = url;
 };
 export const doChangePassword = () => {
-  keycloak.login({
+  gotoWithLocale({
     action: 'UPDATE_PASSWORD',
     redirectUri: window.location.href,
   });

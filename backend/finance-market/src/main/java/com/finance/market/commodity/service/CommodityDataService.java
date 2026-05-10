@@ -33,7 +33,7 @@ public class CommodityDataService implements TrackedAssetDataService {
         String normalized = CodeNormalizer.upper(code);
         if (derivativeCalculator.isKnownDerivative(normalized)) return;
         if (!commodityUpdateService.exists(code)) {
-            throw new BusinessException("Emtia bulunamadı: " + code, "ASSET_NOT_FOUND");
+            throw new BusinessException("error.market.commodityNotFound", code);
         }
     }
 

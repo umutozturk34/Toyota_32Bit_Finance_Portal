@@ -1,8 +1,10 @@
 import { Send, Loader2, ShieldOff } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { MAX_BODY } from '../util';
 
 export default function Composer({ value, onChange, onSubmit, disabled, placeholder, pending, hint }) {
+  const { t } = useTranslation();
   return (
     <form
       onSubmit={onSubmit}
@@ -44,7 +46,7 @@ export default function Composer({ value, onChange, onSubmit, disabled, placehol
       </div>
       {!hint && (
         <div className="mt-1.5 flex items-center justify-between text-[10px] font-mono text-fg-subtle px-1">
-          <span>Enter gönder · Shift+Enter satır</span>
+          <span>{t('adminMessage.hint')}</span>
           <span className={value.length > MAX_BODY - 200 ? 'text-warning' : ''}>{value.length}/{MAX_BODY}</span>
         </div>
       )}

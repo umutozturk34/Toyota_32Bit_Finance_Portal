@@ -1,5 +1,7 @@
 package com.finance.user.service;
 
+import com.finance.user.client.KeycloakAdminClient;
+import com.finance.user.config.UserSecurityProperties;
 import com.finance.user.dto.UserPreferenceResponse;
 import com.finance.user.dto.UserPreferenceUpdateRequest;
 import com.finance.shared.event.EventPublisherPort;
@@ -26,6 +28,8 @@ public class UserPreferenceService {
     private final UserPreferenceMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
     private final Optional<EventPublisherPort> kafkaPort;
+    private final KeycloakAdminClient keycloakAdminClient;
+    private final UserSecurityProperties securityProperties;
 
     @Transactional(readOnly = true)
     public UserPreferenceResponse getOrDefault(String userSub) {
@@ -34,14 +38,35 @@ public class UserPreferenceService {
                 .orElseGet(() -> mapper.toResponse(UserPreference.defaultsFor(userSub)));
     }
 
+    @Transactional(readOnly = true)
+    public Optional<UserPreferenceResponse> findPersisted(String userSub) {
+        return repository.findById(userSub).map(mapper::toResponse);
+    }
+
     @Transactional
     public UserPreferenceResponse upsert(String userSub, UserPreferenceUpdateRequest request) {
+        if (request.language() != null) {
+            syncToKeycloak(userSub, securityProperties.keycloak().localeAttribute(), request.language());
+        }
+        if (request.theme() != null) {
+            syncToKeycloak(userSub, securityProperties.keycloak().themeAttribute(), request.theme().name());
+        }
         UserPreference entity = repository.findById(userSub)
                 .orElseGet(() -> UserPreference.defaultsFor(userSub));
         applyUpdates(entity, request);
         UserPreference saved = repository.save(entity);
         eventPublisher.publishEvent(mapper.toUpdatedEvent(saved));
         return mapper.toResponse(saved);
+    }
+
+    private void syncToKeycloak(String userSub, String attribute, String value) {
+        try {
+            keycloakAdminClient.setUserAttribute(userSub, attribute, value);
+        } catch (RuntimeException ex) {
+            log.error("Keycloak attribute sync failed user={} attribute={} value={}: {}",
+                    userSub, attribute, value, ex.getMessage());
+            throw new com.finance.common.exception.BusinessException("error.preferences.syncFailed", attribute);
+        }
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

@@ -20,6 +20,7 @@ import com.finance.market.core.service.MarketSnapshotProcessor;
 
 import com.finance.common.config.AppProperties;
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.portfolio.dto.request.PortfolioCreateRequest;
 import com.finance.portfolio.dto.request.PositionRequest;
 import com.finance.portfolio.dto.response.AllocationItem;
@@ -54,16 +55,17 @@ public class PortfolioController {
     private final AppProperties appProperties;
     private final PortfolioFacade portfolioFacade;
     private final PortfolioBackfillTracker backfillTracker;
+    private final Translator translator;
 
     @GetMapping
     public ApiResponse<List<PortfolioResponse>> listPortfolios(@AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.success("Portfolios retrieved",
+        return ApiResponse.success(translator.translate("api.portfolio.listRetrieved"),
                 portfolioFacade.listPortfolios(jwt.getSubject()));
     }
 
     @GetMapping("/limits")
     public ApiResponse<LotLimitsResponse> getLotLimits() {
-        return ApiResponse.success("Lot limits retrieved", portfolioFacade.getLotLimits());
+        return ApiResponse.success(translator.translate("api.portfolio.lotLimitsRetrieved"), portfolioFacade.getLotLimits());
     }
 
     @GetMapping(path = "/{portfolioId}/backfill-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -79,7 +81,7 @@ public class PortfolioController {
     public ApiResponse<PortfolioResponse> createPortfolio(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody PortfolioCreateRequest request) {
-        return ApiResponse.success("Portfolio created",
+        return ApiResponse.success(translator.translate("api.portfolio.created"),
                 portfolioFacade.createPortfolio(jwt.getSubject(), request));
     }
 
@@ -89,7 +91,7 @@ public class PortfolioController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
             @Valid @RequestBody PositionRequest request) {
-        return ApiResponse.success("Position created",
+        return ApiResponse.success(translator.translate("api.portfolio.positionCreated"),
                 portfolioFacade.addPosition(jwt.getSubject(), portfolioId, request));
     }
 
@@ -99,7 +101,7 @@ public class PortfolioController {
             @PathVariable Long portfolioId,
             @PathVariable Long positionId,
             @Valid @RequestBody PositionRequest request) {
-        return ApiResponse.success("Position updated",
+        return ApiResponse.success(translator.translate("api.portfolio.positionUpdated"),
                 portfolioFacade.updatePosition(jwt.getSubject(), portfolioId, positionId, request));
     }
 
@@ -109,7 +111,7 @@ public class PortfolioController {
             @PathVariable Long portfolioId,
             @PathVariable Long positionId) {
         portfolioFacade.deletePosition(jwt.getSubject(), portfolioId, positionId);
-        return ApiResponse.success("Position deleted", null);
+        return ApiResponse.success(translator.translate("api.portfolio.positionDeleted"), null);
     }
 
     @GetMapping("/{portfolioId}/positions")
@@ -123,7 +125,7 @@ public class PortfolioController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) Integer size) {
         int resolvedSize = resolvePageSize(size, appProperties.getPagination().getPortfolio().getPositionsDefaultSize());
-        return ApiResponse.success("Positions retrieved",
+        return ApiResponse.success(translator.translate("api.portfolio.positionsRetrieved"),
                 portfolioFacade.getPositionsPaged(jwt.getSubject(), portfolioId,
                         search, assetType, sort, direction, page, resolvedSize));
     }
@@ -133,7 +135,7 @@ public class PortfolioController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
             @RequestParam(required = false) String assetType) {
-        return ApiResponse.success("Summary retrieved",
+        return ApiResponse.success(translator.translate("api.portfolio.summaryRetrieved"),
                 portfolioFacade.getSummary(jwt.getSubject(), portfolioId, assetType));
     }
 
@@ -143,7 +145,7 @@ public class PortfolioController {
             @PathVariable Long portfolioId,
             @RequestParam(defaultValue = "assetType") String mode,
             @RequestParam(required = false) String assetType) {
-        return ApiResponse.success("Allocation retrieved",
+        return ApiResponse.success(translator.translate("api.portfolio.allocationRetrieved"),
                 portfolioFacade.getAllocation(jwt.getSubject(), portfolioId, mode, assetType));
     }
 
@@ -155,7 +157,7 @@ public class PortfolioController {
         Set<String> includes = Arrays.stream(include.split(","))
                 .map(String::trim)
                 .collect(Collectors.toSet());
-        return ApiResponse.success("Portfolio view retrieved",
+        return ApiResponse.success(translator.translate("api.portfolio.viewRetrieved"),
                 portfolioFacade.getPortfolioView(jwt.getSubject(), portfolioId, includes));
     }
 
@@ -167,7 +169,7 @@ public class PortfolioController {
             @RequestParam(defaultValue = "1M") String range,
             @RequestParam(required = false) String assetType,
             @RequestParam(required = false) String assetCode) {
-        return ApiResponse.success("Chart data retrieved",
+        return ApiResponse.success(translator.translate("api.portfolio.chartRetrieved"),
                 portfolioFacade.getChart(jwt.getSubject(), portfolioId, type, range, assetType, assetCode));
     }
 

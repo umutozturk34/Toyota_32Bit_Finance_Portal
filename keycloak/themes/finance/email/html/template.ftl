@@ -1,14 +1,8 @@
 <#macro emailLayout title="" eyebrow="" subtitle="">
 <#setting time_zone="Europe/Istanbul">
-<#assign themePref = "DARK">
-<#attempt>
-    <#assign themePref = user.attributes['themePreference']>
-<#recover>
-    <#assign themePref = "DARK">
-</#attempt>
-<#assign theme = themePref>
+<#assign theme = (user.attributes['themePreference'])!"DARK">
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="${locale.currentLanguageTag!'en'}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -126,7 +120,7 @@
                                 </td>
                                 <td class="brand-text">
                                     <span class="brand-name">Finance Portal</span>
-                                    <span class="brand-tag">Secure Auth Mail</span>
+                                    <span class="brand-tag">${msg("email.brandTag")}</span>
                                 </td>
                             </tr>
                         </table>
@@ -151,7 +145,7 @@
                 <tr><td><div class="divider">&nbsp;</div></td></tr>
                 <tr>
                     <td class="meta-row">
-                        <span class="item"><strong>SENT</strong> &nbsp; ${.now?string("dd.MM.yyyy")} &nbsp;·&nbsp; ${.now?string("HH:mm")} TRT</span>
+                        <span class="item"><strong>${msg("email.sentLabel")}</strong> &nbsp; ${.now?string("dd.MM.yyyy")} &nbsp;·&nbsp; ${.now?string("HH:mm")} TRT</span>
                     </td>
                 </tr>
             </table>
@@ -159,8 +153,8 @@
             <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;">
                 <tr>
                     <td class="footer-card">
-                        <p>Bu e-posta Finance Portal hesabına bağlı bir işlem nedeniyle otomatik olarak gönderilmiştir.</p>
-                        <p>İçerik tanıdık değilse e-postayı yok sayabilirsin — başka bir aksiyon gerekmez.</p>
+                        <p>${msg("email.footer.line1")}</p>
+                        <p>${msg("email.footer.line2")}</p>
                     </td>
                 </tr>
             </table>

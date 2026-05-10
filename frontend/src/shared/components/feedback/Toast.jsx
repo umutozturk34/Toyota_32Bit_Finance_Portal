@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { CheckCircle, Info, X, ShieldAlert } from 'lucide-react';
 import { AlertTriangle, AlertCircle } from './AnimatedIcons';
 import { TIMINGS, LIMITS } from '../../config/uiConfig';
+import i18n from '../../i18n/config';
 
 const ICONS = {
   success: CheckCircle,
@@ -31,7 +32,7 @@ toast.success = (title, message) => toast('success', title, message);
 toast.error = (title, message) => toast('error', title, message);
 toast.warning = (title, message) => toast('warning', title, message);
 toast.info = (title, message) => toast('info', title, message);
-toast.rateLimit = (message, retryAfter) => toast('rateLimit', 'İstek limiti aşıldı', message, { retryAfter, dedupeKey: 'rateLimit' });
+toast.rateLimit = (message, retryAfter) => toast('rateLimit', i18n.t('toast.rateLimitTitle'), message, { retryAfter, dedupeKey: 'rateLimit' });
 
 export default function ToastContainer() {
   const [items, setItems] = useState([]);

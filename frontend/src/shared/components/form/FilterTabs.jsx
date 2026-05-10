@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
-export default function FilterTabs({ items, activeId, onSelect, allLabel = 'Tümü', allCount, showAll = true, layoutId = 'filter-tab' }) {
+export default function FilterTabs({ items, activeId, onSelect, allLabel, allCount, showAll = true, layoutId = 'filter-tab' }) {
+  const { t } = useTranslation();
+  const allLabelText = allLabel ?? t('common.all');
   const allItems = showAll
-    ? [{ type: 'ALL', label: allLabel, count: allCount }, ...items]
+    ? [{ type: 'ALL', label: allLabelText, count: allCount }, ...items]
     : items;
 
   return (

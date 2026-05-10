@@ -53,7 +53,7 @@ public class PortfolioCrudService {
     @Transactional
     public PortfolioResponse createPortfolio(String userSub, PortfolioCreateRequest request) {
         portfolioRepository.findByUserSubAndName(userSub, request.name())
-                .ifPresent(p -> { throw new BusinessException("Portfolio with name '" + request.name() + "' already exists"); });
+                .ifPresent(p -> { throw new BusinessException("error.portfolio.duplicateName", request.name()); });
 
         Portfolio portfolio = Portfolio.builder().userSub(userSub).name(request.name()).build();
         return mapper.toPortfolioResponse(portfolioRepository.save(portfolio));
@@ -62,10 +62,10 @@ public class PortfolioCrudService {
     @Transactional
     public PositionResponse addPosition(Long portfolioId, String userSub, PositionRequest request) {
         Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
-                .orElseThrow(() -> new ResourceNotFoundException("Portfolio not found: " + portfolioId));
+                .orElseThrow(() -> new ResourceNotFoundException("error.portfolio.notFound", portfolioId));
         validateLot(request);
         AssetType assetType = EnumParser.parseOrBadRequest(AssetType.class,
-                request.assetType().toUpperCase(), "asset type");
+                request.assetType().toUpperCase(), "enum.field.assetType");
         TrackedAsset trackedAsset = requireTrackedAsset(assetType, request.assetCode());
         PortfolioPosition position = PortfolioPosition.builder()
                 .portfolio(portfolio)
@@ -104,11 +104,11 @@ public class PortfolioCrudService {
 
     private PortfolioPosition loadOwnedPosition(Long portfolioId, Long positionId, String userSub) {
         portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
-                .orElseThrow(() -> new ResourceNotFoundException("Portfolio not found: " + portfolioId));
+                .orElseThrow(() -> new ResourceNotFoundException("error.portfolio.notFound", portfolioId));
         PortfolioPosition position = positionRepository.findById(positionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Position not found: " + positionId));
+                .orElseThrow(() -> new ResourceNotFoundException("error.portfolio.position.notFound", positionId));
         if (!position.getPortfolioId().equals(portfolioId)) {
-            throw new BusinessException("Position does not belong to portfolio: " + portfolioId);
+            throw new BusinessException("error.portfolio.position.notInPortfolio", portfolioId);
         }
         return position;
     }
@@ -117,24 +117,24 @@ public class PortfolioCrudService {
         LotLimits limits = portfolioProperties.getLotLimits();
         LocalDate entryDay = request.entryDate() != null ? request.entryDate().toLocalDate() : null;
         if (entryDay != null && limits.getMinEntryDate() != null && entryDay.isBefore(limits.getMinEntryDate())) {
-            throw new BusinessException("Giriş tarihi " + limits.getMinEntryDate() + " tarihinden eski olamaz");
+            throw new BusinessException("error.portfolio.lot.entryDateTooOld", limits.getMinEntryDate());
         }
         if (entryDay != null && entryDay.isAfter(LocalDate.now())) {
-            throw new BusinessException("Giriş tarihi gelecekte olamaz");
+            throw new BusinessException("error.portfolio.lot.entryDateInFuture");
         }
         BigDecimal price = request.entryPrice();
         if (price != null && limits.getMinPriceTry() != null && price.compareTo(limits.getMinPriceTry()) < 0) {
-            throw new BusinessException("Giriş fiyatı en az " + limits.getMinPriceTry() + " TRY olmalı");
+            throw new BusinessException("error.portfolio.lot.priceTooLow", limits.getMinPriceTry());
         }
         if (price != null && limits.getMaxPriceTry() != null && price.compareTo(limits.getMaxPriceTry()) > 0) {
-            throw new BusinessException("Giriş fiyatı en fazla " + limits.getMaxPriceTry() + " TRY olabilir");
+            throw new BusinessException("error.portfolio.lot.priceTooHigh", limits.getMaxPriceTry());
         }
         BigDecimal qty = request.quantity();
         if (qty != null && limits.getMinQuantity() != null && qty.compareTo(limits.getMinQuantity()) < 0) {
-            throw new BusinessException("Miktar en az " + limits.getMinQuantity() + " olmalı");
+            throw new BusinessException("error.portfolio.lot.quantityTooLow", limits.getMinQuantity());
         }
         if (qty != null && limits.getMaxQuantity() != null && qty.compareTo(limits.getMaxQuantity()) > 0) {
-            throw new BusinessException("Miktar en fazla " + limits.getMaxQuantity() + " olabilir");
+            throw new BusinessException("error.portfolio.lot.quantityTooHigh", limits.getMaxQuantity());
         }
     }
 
@@ -156,7 +156,6 @@ public class PortfolioCrudService {
         return trackedAssetRepository
                 .findByAssetTypeAndAssetCodeIgnoreCase(trackedType, normalizedCode)
                 .orElseThrow(() -> new BusinessException(
-                        "Pozisyon eklemek için bu varlık önce takip listesine alınmalı: "
-                                + assetType + " / " + normalizedCode));
+                        "error.portfolio.assetNotTracked", assetType, normalizedCode));
     }
 }

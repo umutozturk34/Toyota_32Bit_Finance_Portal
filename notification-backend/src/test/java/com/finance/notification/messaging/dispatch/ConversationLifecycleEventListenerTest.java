@@ -5,6 +5,8 @@ import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.NotificationStreamRegistry;
 import com.finance.notification.core.dispatch.payload.SystemPayload;
 import com.finance.notification.core.model.NotificationType;
+import com.finance.notification.testsupport.HandlerTestSupport;
+import com.finance.notification.user.UserPreferenceCacheService;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
@@ -13,15 +15,19 @@ import org.mockito.MockitoAnnotations;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Locale;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 class ConversationLifecycleEventListenerTest {
 
     @Mock private NotificationDispatcher dispatcher;
     @Mock private NotificationStreamRegistry streamRegistry;
     @Mock private com.finance.common.security.UserStatusPort userStatus;
+    @Mock private UserPreferenceCacheService preferenceCacheService;
 
     private ConversationLifecycleEventListener listener;
     private AutoCloseable mocks;
@@ -29,8 +35,12 @@ class ConversationLifecycleEventListenerTest {
     @BeforeEach
     void setUp() {
         mocks = MockitoAnnotations.openMocks(this);
-        listener = new ConversationLifecycleEventListener(dispatcher, streamRegistry, userStatus);
+        listener = new ConversationLifecycleEventListener(
+                dispatcher, streamRegistry, userStatus,
+                preferenceCacheService, HandlerTestSupport.turkishTranslator());
         org.mockito.Mockito.lenient().when(userStatus.isActive(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
+        when(preferenceCacheService.resolveLocale(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(new Locale("tr"));
     }
 
     @ParameterizedTest

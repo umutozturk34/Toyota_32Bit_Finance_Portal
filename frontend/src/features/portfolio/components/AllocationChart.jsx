@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { PieChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
@@ -9,7 +10,6 @@ import { formatPriceTRY, formatCompactTRY } from '../../../shared/utils/formatte
 import { usePortfolioAllocation } from '../hooks/usePortfolioData';
 import { cardVariants } from '../../../shared/utils/animations';
 import {
-  ASSET_TYPE_LABELS,
   ASSET_TYPE_CHART_COLORS as ASSET_TYPE_COLORS,
   ASSET_TYPE_TABS as TYPE_TABS,
 } from '../../../shared/constants/assetTypes';
@@ -21,8 +21,10 @@ const COLORS = [
 ];
 
 export default function AllocationChart({ allocation, portfolioId }) {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useSessionState('portfolio-alloc-tab', 'ALL');
+  const assetLabel = (id) => t(`assets.labels.${id}`, { defaultValue: id });
 
   const { data: assetData, isFetching: assetLoading } = usePortfolioAllocation(
     activeTab !== 'ALL' ? portfolioId : null, 'assetCode', activeTab !== 'ALL' ? activeTab : undefined
@@ -47,15 +49,15 @@ export default function AllocationChart({ allocation, portfolioId }) {
 
   const seriesData = useMemo(() => finalData.map((item, idx) => {
     const label = activeTab === 'ALL'
-      ? (ASSET_TYPE_LABELS[item.label] || item.label)
+      ? assetLabel(item.label)
       : item.label;
     const color = activeTab === 'ALL'
       ? (ASSET_TYPE_COLORS[item.label] || COLORS[0])
       : (COLORS[idx % COLORS.length]);
     return { name: label, value: Number(item.valueTry), itemStyle: { color } };
-  }), [finalData, activeTab]);
+  }), [finalData, activeTab, assetLabel]);
 
-  const totalLabel = activeTab === 'ALL' ? 'Toplam' : (ASSET_TYPE_LABELS[activeTab] || activeTab);
+  const totalLabel = activeTab === 'ALL' ? t('portfolio.allocation.total') : assetLabel(activeTab);
   const tooltipBg = isDark ? 'rgba(12,12,20,0.95)' : 'rgba(255,255,255,0.97)';
   const tooltipFg = isDark ? '#e2e2ea' : '#1a1a2e';
   const tooltipBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
@@ -108,11 +110,11 @@ export default function AllocationChart({ allocation, portfolioId }) {
     <motion.div variants={cardVariants} initial="hidden" animate="show" className="space-y-4">
       <div className="flex items-center gap-2">
         <PieChart className="h-4 w-4 text-accent" />
-        <span className="text-sm font-semibold text-fg">Dağılım</span>
+        <span className="text-sm font-semibold text-fg">{t('portfolio.allocation.title')}</span>
       </div>
 
       <div className="flex gap-1 rounded-lg border border-border-default bg-bg-elevated p-1 w-fit flex-wrap">
-        {TYPE_TABS.map(({ id, label }) => {
+        {TYPE_TABS.map(({ id }) => {
           if (id !== 'ALL' && !availableTypes.has(id)) return null;
           return (
             <button
@@ -128,7 +130,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
                 />
               )}
               <span className={`relative z-10 ${activeTab === id ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
-                {label}
+                {assetLabel(id)}
               </span>
             </button>
           );
@@ -142,7 +144,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
           </div>
         ) : seriesData.length === 0 ? (
           <div className="flex items-center justify-center h-80 text-sm text-fg-muted">
-            Bu türde varlık bulunmuyor
+            {t('portfolio.allocation.empty')}
           </div>
         ) : (
           <div className="space-y-4">
@@ -162,7 +164,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
                   ? (ASSET_TYPE_COLORS[item.label] || COLORS[0])
                   : (COLORS[idx % COLORS.length]);
                 const label = activeTab === 'ALL'
-                  ? (ASSET_TYPE_LABELS[item.label] || item.label)
+                  ? assetLabel(item.label)
                   : item.label;
 
                 return (

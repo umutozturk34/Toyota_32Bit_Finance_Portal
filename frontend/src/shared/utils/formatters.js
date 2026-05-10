@@ -1,3 +1,10 @@
+import i18n from '../i18n/config';
+
+export const currentLocaleTag = () => {
+    const lang = i18n.language || i18n.options.fallbackLng || 'en';
+    return lang === 'tr' ? 'tr-TR' : 'en-US';
+};
+
 export const getChangeClass = (change) => {
     if (change > 0) return 'positive';
     if (change < 0) return 'negative';
@@ -18,9 +25,10 @@ export const changeBg = {
 
 export const formatPrice = (
     price,
-    { currency, locale = 'tr-TR', minDecimals = 2, maxDecimals = 2 } = {},
+    { currency, locale, minDecimals = 2, maxDecimals = 2 } = {},
 ) => {
     if (price === null || price === undefined) return 'N/A';
+    const resolvedLocale = locale || currentLocaleTag();
     const opts = {
         minimumFractionDigits: minDecimals,
         maximumFractionDigits: maxDecimals,
@@ -29,7 +37,7 @@ export const formatPrice = (
         opts.style = 'currency';
         opts.currency = currency;
     }
-    return new Intl.NumberFormat(locale, opts).format(price);
+    return new Intl.NumberFormat(resolvedLocale, opts).format(price);
 };
 
 export const formatPriceUSD = (price, maxDecimals = 2) =>
@@ -39,28 +47,35 @@ export const formatPriceTRY = (price) => {
     if (price === null || price === undefined) return 'N/A';
     const num = Number(price);
     const decimals = num < 10 ? 4 : num < 1000 ? 3 : 2;
-    return formatPrice(num, { currency: 'TRY', locale: 'tr-TR', minDecimals: 2, maxDecimals: decimals });
+    return formatPrice(num, { currency: 'TRY', minDecimals: 2, maxDecimals: decimals });
 };
 
 export const formatCompactTRY = (price) => {
     if (price === null || price === undefined) return 'N/A';
-    if (price >= 1_000_000) return `${(price / 1_000_000).toFixed(1)}M ₺`;
-    if (price >= 100_000) return `${(price / 1_000).toFixed(0)}K ₺`;
-    return formatPriceTRY(price);
+    if (price < 100_000) return formatPriceTRY(price);
+    return new Intl.NumberFormat(currentLocaleTag(), {
+        notation: 'compact',
+        style: 'currency',
+        currency: 'TRY',
+        maximumFractionDigits: 1,
+    }).format(price);
 };
 
 export const formatPriceCompactTRY = (price) => {
     if (price === null || price === undefined) return 'N/A';
     const num = Number(price);
-    if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B ₺`;
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M ₺`;
-    if (num >= 10_000) return `${(num / 1_000).toFixed(1)}K ₺`;
-    return formatPriceTRY(num);
+    if (num < 10_000) return formatPriceTRY(num);
+    return new Intl.NumberFormat(currentLocaleTag(), {
+        notation: 'compact',
+        style: 'currency',
+        currency: 'TRY',
+        maximumFractionDigits: 2,
+    }).format(num);
 };
 
 export const formatCompactNumber = (number, currency = 'USD') => {
     if (number === null || number === undefined) return 'N/A';
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(currentLocaleTag(), {
         notation: 'compact',
         compactDisplay: 'short',
         style: 'currency',
@@ -77,12 +92,12 @@ export const formatVolume = (volume) => {
     return String(volume);
 };
 
-export const formatChange = (change, decimals = 4, locale = 'tr-TR') => {
+export const formatChange = (change, decimals = 4, locale) => {
     if (change === null || change === undefined) return 'N/A';
     const prefix = change > 0 ? '+' : '';
     return (
         prefix +
-        new Intl.NumberFormat(locale, {
+        new Intl.NumberFormat(locale || currentLocaleTag(), {
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals,
         }).format(change)
@@ -100,9 +115,9 @@ export const formatPercentAbs = (percent, decimals = 2) => {
     return `${Math.abs(percent).toFixed(decimals)}%`;
 };
 
-export const formatDateTimeShort = (dateString, locale = 'tr-TR') => {
+export const formatDateTimeShort = (dateString, locale) => {
     const date = new Date(dateString);
-    return date.toLocaleString(locale, {
+    return date.toLocaleString(locale || currentLocaleTag(), {
         day: 'numeric',
         month: 'short',
         hour: '2-digit',
@@ -111,9 +126,9 @@ export const formatDateTimeShort = (dateString, locale = 'tr-TR') => {
     });
 };
 
-export const formatDateTimeFull = (dateString, locale = 'tr-TR') => {
+export const formatDateTimeFull = (dateString, locale) => {
     const date = new Date(dateString);
-    return date.toLocaleString(locale, {
+    return date.toLocaleString(locale || currentLocaleTag(), {
         day: 'numeric',
         month: 'long',
         year: 'numeric',

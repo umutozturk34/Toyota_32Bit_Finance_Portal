@@ -1,5 +1,6 @@
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Wallet, BarChart3 } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/AnimatedIcons';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
@@ -7,9 +8,9 @@ import { containerVariants, cardVariants } from '../../../shared/utils/animation
 import { usePortfolioSummary } from '../hooks/usePortfolioData';
 import { ASSET_TYPE_FILTERS as SUMMARY_FILTERS } from '../../../shared/constants/assetTypes';
 
-const VALUE_CARDS = [
-  { key: 'totalValueTry', label: 'Piyasa Değeri', Icon: Wallet, iconBg: 'bg-accent/10', iconColor: 'text-accent', border: 'border-t-accent' },
-  { key: 'totalEntryValueTry', label: 'Toplam Maliyet', Icon: BarChart3, iconBg: 'bg-fg-muted/10', iconColor: 'text-fg-muted', border: 'border-t-fg-muted' },
+const VALUE_CARD_DEFS = [
+  { key: 'totalValueTry', labelKey: 'portfolio.summary.marketValue', Icon: Wallet, iconBg: 'bg-accent/10', iconColor: 'text-accent', border: 'border-t-accent' },
+  { key: 'totalEntryValueTry', labelKey: 'portfolio.summary.totalCost', Icon: BarChart3, iconBg: 'bg-fg-muted/10', iconColor: 'text-fg-muted', border: 'border-t-fg-muted' },
 ];
 
 function PnlCard({ label, value, percent }) {
@@ -38,10 +39,12 @@ function PnlCard({ label, value, percent }) {
 }
 
 export default function SummaryCards({ summary: initialSummary, portfolioId }) {
+  const { t } = useTranslation();
   const [activeFilter, setActiveFilter] = useSessionState('portfolio-summary-filter', null);
 
   const { data: filteredSummary, isFetching: loading } = usePortfolioSummary(portfolioId, activeFilter);
   const summary = activeFilter ? (filteredSummary ?? initialSummary) : initialSummary;
+  const filterLabel = (id) => id ? t(`assets.labels.${id}`) : t('assets.labels.ALL');
 
   return (
     <motion.div
@@ -52,7 +55,7 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
     >
       <div className="flex items-center justify-between">
         <div className="flex gap-0.5 rounded-lg border border-border-default bg-bg-elevated p-0.5">
-          {SUMMARY_FILTERS.map(({ id, label }) => (
+          {SUMMARY_FILTERS.map(({ id }) => (
             <button
               key={id || 'all'}
               onClick={() => setActiveFilter(id)}
@@ -66,18 +69,18 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
                 />
               )}
               <span className={`relative z-10 ${activeFilter === id ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
-                {label}
+                {filterLabel(id)}
               </span>
             </button>
           ))}
         </div>
         {loading && (
-          <span className="text-[10px] text-fg-muted animate-pulse">Güncelleniyor...</span>
+          <span className="text-[10px] text-fg-muted animate-pulse">{t('portfolio.summary.refreshing')}</span>
         )}
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {VALUE_CARDS.map(({ key, label, Icon, iconBg, iconColor, border }) => (
+        {VALUE_CARD_DEFS.map(({ key, labelKey, Icon, iconBg, iconColor, border }) => (
           <motion.div
             key={key}
             variants={cardVariants}
@@ -87,15 +90,15 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
               <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${iconBg}`}>
                 <Icon className={`h-4 w-4 ${iconColor}`} />
               </div>
-              <span className="text-xs text-fg-muted font-medium">{label}</span>
+              <span className="text-xs text-fg-muted font-medium">{t(labelKey)}</span>
             </div>
             <p className="text-lg font-semibold font-mono text-fg">
               {formatPriceTRY(summary?.[key])}
             </p>
           </motion.div>
         ))}
-        <PnlCard label="Kar / Zarar" value={summary?.totalPnlTry} percent={summary?.pnlPercent} />
-        <PnlCard label="Günlük K/Z" value={summary?.dailyPnlTry} percent={summary?.dailyPnlPercent} />
+        <PnlCard label={t('portfolio.summary.profitLoss')} value={summary?.totalPnlTry} percent={summary?.pnlPercent} />
+        <PnlCard label={t('portfolio.summary.dailyPnl')} value={summary?.dailyPnlTry} percent={summary?.dailyPnlPercent} />
       </div>
     </motion.div>
   );

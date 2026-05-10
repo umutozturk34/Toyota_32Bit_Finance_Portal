@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import useChartRange from '../../../shared/hooks/useChartRange';
 import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, Plus } from 'lucide-react';
@@ -6,32 +7,31 @@ import { TrendingUp, TrendingDown, Loader2 } from '../../../shared/components/fe
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/ThemeContext';
 import { useAssetSeries } from '../hooks/usePortfolioData';
-import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
+import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass, currentLocaleTag } from '../../../shared/utils/formatters';
 import { cardVariants } from '../../../shared/utils/animations';
-import { ASSET_TYPE_LABELS } from '../../../shared/constants/assetTypes';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
 import PositionFormModal from './PositionFormModal';
 
-const formatEntryDate = (v) => v ? new Date(v).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const formatEntryDate = (v) => v ? new Date(v).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
-const STAT_CARDS = [
-  { key: 'quantity', label: 'Miktar', Icon: Hash, format: (v) => Number(v).toLocaleString('tr-TR', { maximumFractionDigits: 6 }) },
-  { key: 'entryDate', label: 'Giriş Tarihi', Icon: Calendar, format: formatEntryDate },
-  { key: 'entryPrice', label: 'Giriş Fiyatı', Icon: DollarSign, format: formatPriceTRY },
-  { key: 'currentPriceTry', label: 'Güncel Fiyat', Icon: BarChart3, format: formatPriceTRY },
-  { key: 'marketValueTry', label: 'Piyasa Değeri', Icon: Wallet, format: formatPriceTRY },
+const STAT_CARD_DEFS = [
+  { key: 'quantity', labelKey: 'quantity', Icon: Hash, format: (v) => Number(v).toLocaleString(currentLocaleTag(), { maximumFractionDigits: 6 }) },
+  { key: 'entryDate', labelKey: 'entryDate', Icon: Calendar, format: formatEntryDate },
+  { key: 'entryPrice', labelKey: 'entryPrice', Icon: DollarSign, format: formatPriceTRY },
+  { key: 'currentPriceTry', labelKey: 'currentPrice', Icon: BarChart3, format: formatPriceTRY },
+  { key: 'marketValueTry', labelKey: 'marketValue', Icon: Wallet, format: formatPriceTRY },
 ];
 
 const LINE_COLOR = '#6366f1';
 const UNIT_COLOR = '#f59e0b';
 
-function AssetChart({ data, isDark }) {
-  const option = useMemo(() => buildAssetChartOption(data, isDark), [data, isDark]);
+function AssetChart({ data, isDark, t }) {
+  const option = useMemo(() => buildAssetChartOption(data, isDark, t), [data, isDark, t]);
   if (!option) return null;
   return <ReactECharts option={option} notMerge lazyUpdate style={{ height: 300 }} opts={{ renderer: 'canvas' }} />;
 }
 
-function buildAssetChartOption(data, isDark) {
+function buildAssetChartOption(data, isDark, t) {
   if (!data || data.length === 0) return null;
 
   const muted = isDark ? '#6b6b7a' : '#94a3b8';
@@ -67,18 +67,20 @@ function buildAssetChartOption(data, isDark) {
       formatter: (params) => {
         const point = params?.[0]?.data;
         if (!point) return '';
-        const date = new Date(point.value[0]).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+        const date = new Date(point.value[0]).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'short', year: 'numeric' });
         const market = formatPriceTRY(point.value[1]);
         const unit = formatPriceTRY(point.unitPrice);
+        const marketLabel = t('assetDetail.marketValue');
+        const unitLabel = t('assetDetail.unitPrice');
         return `
           <div style="padding:6px 2px;min-width:180px">
             <div style="font-size:10px;color:${tooltipFg};opacity:0.65;margin-bottom:6px">${date}</div>
             <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px;margin-bottom:3px">
-              <span style="display:flex;align-items:center;gap:5px;color:${tooltipFg};opacity:0.85"><span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:${LINE_COLOR}"></span>Piyasa Değeri</span>
+              <span style="display:flex;align-items:center;gap:5px;color:${tooltipFg};opacity:0.85"><span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:${LINE_COLOR}"></span>${marketLabel}</span>
               <span style="font-family:ui-monospace,monospace;font-weight:600;color:${LINE_COLOR}">${market}</span>
             </div>
             <div style="display:flex;justify-content:space-between;gap:14px;font-size:11px">
-              <span style="display:flex;align-items:center;gap:5px;color:${tooltipFg};opacity:0.85"><span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:${UNIT_COLOR}"></span>Birim Fiyat</span>
+              <span style="display:flex;align-items:center;gap:5px;color:${tooltipFg};opacity:0.85"><span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:${UNIT_COLOR}"></span>${unitLabel}</span>
               <span style="font-family:ui-monospace,monospace;font-weight:600;color:${UNIT_COLOR}">${unit}</span>
             </div>
           </div>`;
@@ -101,7 +103,7 @@ function buildAssetChartOption(data, isDark) {
       splitLine: { lineStyle: { color: grid, type: 'dashed' } },
     },
     series: [{
-      name: 'Piyasa Değeri',
+      name: t('assetDetail.marketValue'),
       type: 'line',
       smooth: data.length < 200,
       showSymbol: false,
@@ -123,6 +125,7 @@ function buildAssetChartOption(data, isDark) {
 }
 
 export default function AssetDetail({ portfolioId, asset, onBack }) {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const [range, setRange] = useChartRange(`portfolio-asset-range-${asset.assetCode}`);
   const [addLotOpen, setAddLotOpen] = useState(false);
@@ -139,7 +142,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
   const displayLabel = asset.assetCode;
   const displayBadge = asset.assetImage || null;
   const displayBadgeText = asset.assetCode.replace('.IS', '').slice(0, 3).toUpperCase();
-  const displaySub = asset.assetName || (ASSET_TYPE_LABELS[asset.assetType] || asset.assetType);
+  const displaySub = asset.assetName || t(`assets.labels.${asset.assetType}`, { defaultValue: asset.assetType });
 
   return (
     <div className="space-y-5">
@@ -175,7 +178,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
           className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-bright transition-all border-none cursor-pointer"
         >
           <Plus className="h-4 w-4" />
-          Yeni Lot
+          {t('assetDetail.newLot')}
         </button>
       </motion.div>
 
@@ -185,13 +188,13 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
         animate="show"
         className="grid grid-cols-2 sm:grid-cols-5 gap-3"
       >
-        {STAT_CARDS.map(({ key, label, Icon, format }) => (
+        {STAT_CARD_DEFS.map(({ key, labelKey, Icon, format }) => (
           <div key={key} className="rounded-xl border border-border-default bg-bg-elevated p-3 space-y-2 card-hover transition-all duration-200 hover:border-border-hover">
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-center w-6 h-6 rounded-md bg-accent/10">
                 <Icon className="h-3 w-3 text-accent" />
               </div>
-              <p className="text-[11px] text-fg-muted">{label}</p>
+              <p className="text-[11px] text-fg-muted">{t(`assetDetail.stats.${labelKey}`)}</p>
             </div>
             <p className="text-sm font-semibold font-mono text-fg">{format(asset[key])}</p>
           </div>
@@ -213,7 +216,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
             {asset.pnlTry >= 0
               ? <TrendingUp className="h-5 w-5 text-success" />
               : <TrendingDown className="h-5 w-5 text-danger" />}
-            <span className="text-sm font-medium text-fg">Kar/Zarar</span>
+            <span className="text-sm font-medium text-fg">{t('assetDetail.pnl')}</span>
           </div>
           <div className="text-right flex items-center gap-3">
             <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>
@@ -237,7 +240,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
               : dailyPnlTry >= 0
                 ? <TrendingUp className="h-5 w-5 text-success" />
                 : <TrendingDown className="h-5 w-5 text-danger" />}
-            <span className="text-sm font-medium text-fg">Günlük K/Z</span>
+            <span className="text-sm font-medium text-fg">{t('assetDetail.dailyPnl')}</span>
           </div>
           <div className="text-right flex items-center gap-3">
             {dailyPnlTry == null ? (
@@ -274,10 +277,10 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
           )}
           {series.length === 0 && !loading ? (
             <div className="flex items-center justify-center h-[300px] text-sm text-fg-muted">
-              Bu aralıkta veri bulunmuyor
+              {t('assetDetail.noDataInRange')}
             </div>
           ) : series.length > 0 ? (
-            <AssetChart data={series} isDark={isDark} />
+            <AssetChart data={series} isDark={isDark} t={t} />
           ) : null}
         </div>
       </motion.div>

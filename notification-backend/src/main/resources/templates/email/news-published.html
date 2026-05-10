@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}"
+      th:replace="~{email/_layout :: layout(eyebrow=#{appEmail.newsPublished.eyebrow}, title=${title}, subtitle=#{appEmail.newsPublished.subtitle}, content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+
+    <p th:style="'margin:0 0 6px;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:' + ${cSubtle} + ';'" th:text="#{appEmail.newsPublished.countLabel}">New articles</p>
+    <p class="num" th:style="'margin:0;font-size:30px;font-weight:700;letter-spacing:-0.4px;line-height:1.1;color:' + ${cFg} + ';'"
+       th:text="${articleCount}">0</p>
+    <p th:if="${slot != null and !slot.isEmpty()}"
+       th:style="'margin:8px 0 0;font-size:13px;font-weight:600;color:' + ${cAccent2} + ';'"
+       th:text="#{'notif.slot.' + ${slot}}">Slot</p>
+
+    <p th:style="'margin:18px 0 0;font-size:14px;line-height:1.7;color:' + ${cFg} + ';'" th:utext="#{appEmail.newsPublished.body}">Latest financial news has been refreshed.</p>
+
+    <div th:style="'margin:18px 0 0;padding:18px 22px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;color:' + ${cFg} + ';font-size:14px;line-height:1.7;'"
+         th:text="${body}">Body summary text.</div>
+
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:20px;">
+        <tr>
+            <td th:style="'background:' + ${cAccent} + ';background-image:linear-gradient(135deg,' + ${cAccent} + ' 0%,' + ${cAccentMid} + ' 50%,' + ${cAccent2} + ' 100%);border-radius:10px;box-shadow:0 6px 22px -4px rgba(99,102,241,0.45);'">
+                <a href="http://localhost/news" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;line-height:1;" th:text="#{appEmail.newsPublished.cta}">Open news →</a>
+            </td>
+        </tr>
+    </table>
+
+    <p th:style="'margin:18px 0 0;font-size:12.5px;color:' + ${cSubtle} + ';line-height:1.65;'" th:text="#{appEmail.newsPublished.footer}">Footer</p>
+</th:block>
+</body>
+</html>

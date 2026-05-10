@@ -1,4 +1,5 @@
 import axios from 'axios';
+import i18n from '../i18n/config';
 import { getToken } from '../../features/auth/lib/keycloak';
 import { toast } from '../components/feedback/Toast';
 import { TIMINGS } from '../config/uiConfig';
@@ -18,6 +19,7 @@ api.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
     } catch {}
+    config.headers['Accept-Language'] = i18n.language || i18n.options.fallbackLng;
     return config;
   },
   (error) => Promise.reject(error)
@@ -30,7 +32,7 @@ api.interceptors.response.use(
       if (now - _lastRateLimitAlert > TIMINGS.RATE_LIMIT_THROTTLE_MS) {
         _lastRateLimitAlert = now;
         const message = error.response?.data?.message
-          || 'Çok fazla istek gönderdin. Lütfen biraz bekle.';
+          || i18n.t('toast.rateLimitMessage');
         const retryAfter = error.response?.headers?.['x-rate-limit-retry-after-seconds']
           || error.response?.headers?.['retry-after'];
         toast.rateLimit(message, retryAfter);

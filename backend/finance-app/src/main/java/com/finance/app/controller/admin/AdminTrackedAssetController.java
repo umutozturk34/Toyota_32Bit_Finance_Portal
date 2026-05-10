@@ -3,6 +3,7 @@ package com.finance.app.controller.admin;
 import com.finance.app.controller.MarketRequestHelper;
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.market.core.dto.request.BulkTrackedAssetOrderUpdateRequest;
 import com.finance.market.core.dto.request.UpsertTrackedAssetRequest;
 import com.finance.market.core.dto.response.TrackedAssetResponse;
@@ -32,6 +33,7 @@ public class AdminTrackedAssetController {
 
     private final TrackedAssetAdminService trackedAssetAdminService;
     private final TrackedAssetQueryService trackedAssetQueryService;
+    private final Translator translator;
 
     @GetMapping
     public ApiResponse<List<TrackedAssetResponse>> getTrackedAssets(
@@ -43,7 +45,7 @@ public class AdminTrackedAssetController {
         List<TrackedAssetType> types = MarketRequestHelper.parseTrackedTypes(type);
         List<TrackedAssetResponse> data = trackedAssetQueryService.searchTrackedAssets(
                 types, search, sort, direction);
-        return ApiResponse.success("Tracked assets retrieved successfully", data);
+        return ApiResponse.success(translator.translate("api.trackedAsset.listRetrieved"), data);
     }
 
     @PostMapping
@@ -51,7 +53,7 @@ public class AdminTrackedAssetController {
             @Valid @RequestBody UpsertTrackedAssetRequest request
     ) {
         TrackedAssetResponse data = trackedAssetAdminService.upsert(request);
-        return ApiResponse.success("Tracked asset saved successfully", data);
+        return ApiResponse.success(translator.translate("api.trackedAsset.saved"), data);
     }
 
     @PatchMapping("/order")
@@ -59,7 +61,7 @@ public class AdminTrackedAssetController {
             @Valid @RequestBody BulkTrackedAssetOrderUpdateRequest request
     ) {
         trackedAssetAdminService.updateSortOrders(request);
-        return ApiResponse.success("Tracked asset order updated", null);
+        return ApiResponse.success(translator.translate("api.trackedAsset.orderUpdated"), null);
     }
 
     @DeleteMapping("/{type}/{code}")
@@ -68,7 +70,7 @@ public class AdminTrackedAssetController {
             @PathVariable String code
     ) {
         trackedAssetAdminService.delete(type, code);
-        return ApiResponse.success("Tracked asset deleted", null);
+        return ApiResponse.success(translator.translate("api.trackedAsset.deleted"), null);
     }
 
 }

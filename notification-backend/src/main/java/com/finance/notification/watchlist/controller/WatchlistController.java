@@ -1,6 +1,7 @@
 package com.finance.notification.watchlist.controller;
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.notification.watchlist.dto.WatchlistCreateRequest;
 import com.finance.notification.watchlist.dto.WatchlistItemCreateRequest;
 import com.finance.notification.watchlist.dto.WatchlistItemResponse;
@@ -37,10 +38,11 @@ public class WatchlistController {
 
     private final WatchlistManagementService managementService;
     private final WatchlistService watchlistService;
+    private final Translator translator;
 
     @GetMapping
     public ApiResponse<List<WatchlistResponse>> list(@AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.success("Watchlists retrieved",
+        return ApiResponse.success(translator.translate("api.watchlist.listRetrieved"),
                 managementService.list(jwt.getSubject()));
     }
 
@@ -48,7 +50,7 @@ public class WatchlistController {
     public ApiResponse<WatchlistResponse> create(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody WatchlistCreateRequest request) {
-        return ApiResponse.success("Watchlist created",
+        return ApiResponse.success(translator.translate("api.watchlist.created"),
                 managementService.create(jwt.getSubject(), request));
     }
 
@@ -57,7 +59,7 @@ public class WatchlistController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
             @Valid @RequestBody WatchlistRenameRequest request) {
-        return ApiResponse.success("Watchlist renamed",
+        return ApiResponse.success(translator.translate("api.watchlist.renamed"),
                 managementService.rename(id, jwt.getSubject(), request));
     }
 
@@ -66,7 +68,7 @@ public class WatchlistController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id) {
         managementService.delete(id, jwt.getSubject());
-        return ApiResponse.success("Watchlist deleted", null);
+        return ApiResponse.success(translator.translate("api.watchlist.deleted"), null);
     }
 
     @GetMapping("/{id}/items")
@@ -75,7 +77,7 @@ public class WatchlistController {
             @PathVariable Long id,
             @RequestParam(defaultValue = "CUSTOM") WatchlistSortBy sort,
             @RequestParam(defaultValue = "ASC") Sort.Direction direction) {
-        return ApiResponse.success("Watchlist items retrieved",
+        return ApiResponse.success(translator.translate("api.watchlist.itemsRetrieved"),
                 watchlistService.listItems(id, jwt.getSubject(), sort, direction));
     }
 
@@ -84,7 +86,7 @@ public class WatchlistController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
             @Valid @RequestBody WatchlistItemCreateRequest request) {
-        return ApiResponse.success("Watchlist item added",
+        return ApiResponse.success(translator.translate("api.watchlist.itemAdded"),
                 watchlistService.addToList(id, jwt.getSubject(), request));
     }
 
@@ -93,7 +95,7 @@ public class WatchlistController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
             @Valid @RequestBody WatchlistReorderRequest request) {
-        return ApiResponse.success("Watchlist items reordered",
+        return ApiResponse.success(translator.translate("api.watchlist.itemsReordered"),
                 watchlistService.reorder(id, jwt.getSubject(), request.itemIds()));
     }
 
@@ -102,7 +104,7 @@ public class WatchlistController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long itemId) {
         watchlistService.removeItem(itemId, jwt.getSubject());
-        return ApiResponse.success("Watchlist item removed", null);
+        return ApiResponse.success(translator.translate("api.watchlist.itemRemoved"), null);
     }
 
     @PutMapping("/items/{itemId}")
@@ -110,7 +112,7 @@ public class WatchlistController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long itemId,
             @Valid @RequestBody com.finance.notification.watchlist.dto.WatchlistItemUpdateRequest request) {
-        return ApiResponse.success("Watchlist item updated",
+        return ApiResponse.success(translator.translate("api.watchlist.itemUpdated"),
                 watchlistService.updateItem(itemId, jwt.getSubject(), request));
     }
 
@@ -118,7 +120,7 @@ public class WatchlistController {
     public ApiResponse<WatchlistItemResponse> addToDefault(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody WatchlistItemCreateRequest request) {
-        return ApiResponse.success("Added to default watchlist",
+        return ApiResponse.success(translator.translate("api.watchlist.addedToDefault"),
                 watchlistService.addToDefault(jwt.getSubject(), request));
     }
 }

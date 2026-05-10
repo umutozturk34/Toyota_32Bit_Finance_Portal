@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, TrendingUp, TrendingDown, Trash2, Pencil } from 'lucide-react';
@@ -8,6 +9,8 @@ import { formatPriceTRY, formatPercent, getChangeClass, changeColors, changeBg }
 import { assetRoute } from '../lib/watchConstants';
 
 export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
+  const { t } = useTranslation();
+  const localeTag = t('common.localeTag');
   const navigate = useNavigate();
   const route = assetRoute(item.marketType, item.assetCode);
   const prefetch = useAssetDetailPrefetch();
@@ -46,7 +49,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
           className={`flex items-center justify-center w-6 h-6 cursor-grab active:cursor-grabbing bg-transparent border-none touch-none transition-colors ${
             isDragging ? 'text-accent' : 'text-fg-subtle hover:text-fg'
           }`}
-          title="Sürükleyerek sırala"
+          title={t('watchlistRow.dragToReorder')}
         >
           <GripVertical className="h-4 w-4" />
         </button>
@@ -66,7 +69,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
           </span>
           {item.deltaThreshold != null && (
             <span className="text-[10px] font-mono text-accent shrink-0 leading-none">
-              ±{Number(item.deltaThreshold).toLocaleString('tr-TR', { maximumFractionDigits: 4 })}%
+              ±{Number(item.deltaThreshold).toLocaleString(localeTag, { maximumFractionDigits: 4 })}%
             </span>
           )}
         </div>
@@ -95,7 +98,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
               <span>{formatPercent(item.changePercent)}</span>
               {item.changeAmount != null && (
                 <span className="font-normal opacity-70">
-                  ({isUp ? '+' : ''}{Number(item.changeAmount).toLocaleString('tr-TR', { maximumFractionDigits: 2 })})
+                  ({isUp ? '+' : ''}{Number(item.changeAmount).toLocaleString(localeTag, { maximumFractionDigits: 2 })})
                 </span>
               )}
             </div>
@@ -111,7 +114,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
             onEdit?.(item);
           }}
           className="flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:text-accent hover:bg-accent/5 bg-transparent border-none cursor-pointer"
-          title="Düzenle"
+          title={t('common.edit')}
         >
           <Pencil className="h-3.5 w-3.5" />
         </button>
@@ -123,7 +126,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
             onRemove(item.id);
           }}
           className="flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:text-danger hover:bg-danger/5 bg-transparent border-none cursor-pointer"
-          title="Listeden çıkar"
+          title={t('watchlistRow.removeFromList')}
         >
           <Trash2 className="h-4 w-4" />
         </button>

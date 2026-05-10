@@ -42,6 +42,6 @@ public class NewsSourceService {
 
     public NewsSource findOrThrow(Long id) {
         return newsSourceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("News source not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("error.news.sourceNotFound", id));
     }
 }

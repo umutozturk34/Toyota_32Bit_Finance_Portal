@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AlertCircle, Eye, Star, Loader2 } from 'lucide-react';
 import {
@@ -13,6 +14,7 @@ import { toast } from '../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../shared/utils/apiError';
 
 export default function AssetActionsBar({ marketType, assetCode, currentPrice }) {
+  const { t } = useTranslation();
   const [alertOpen, setAlertOpen] = useState(false);
   const [watchModalOpen, setWatchModalOpen] = useState(false);
   const lists = useWatchlists();
@@ -35,7 +37,7 @@ export default function AssetActionsBar({ marketType, assetCode, currentPrice })
     try {
       if (isFavorite) {
         await removeWatchlistItem.mutateAsync(favoriteEntry.id);
-        toast.success(`${assetCode} favorilerden çıkarıldı`);
+        toast.success(t('assetActions.removedFromFavorites', { code: assetCode }));
       } else {
         await addToFavorites.mutateAsync({
           marketType,
@@ -43,10 +45,10 @@ export default function AssetActionsBar({ marketType, assetCode, currentPrice })
           note: null,
           deltaThreshold: null,
         });
-        toast.success(`${assetCode} favorilere eklendi`);
+        toast.success(t('assetActions.addedToFavorites', { code: assetCode }));
       }
     } catch (err) {
-      toast.error(extractApiError(err, 'İşlem başarısız'));
+      toast.error(extractApiError(err, t('error.actionFailed')));
     }
   };
 
@@ -60,7 +62,7 @@ export default function AssetActionsBar({ marketType, assetCode, currentPrice })
           whileTap={{ scale: 0.96 }}
           onClick={toggleFavorite}
           disabled={pending}
-          title={isFavorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+          title={isFavorite ? t('assetActions.removeFromFavoritesTitle') : t('assetActions.addToFavoritesTitle')}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer disabled:opacity-50 ${
             isFavorite
               ? 'border-warning/60 bg-warning/15 text-warning hover:bg-warning/20'
@@ -72,18 +74,18 @@ export default function AssetActionsBar({ marketType, assetCode, currentPrice })
           ) : (
             <Star className={`h-3.5 w-3.5 ${isFavorite ? 'fill-warning' : ''}`} />
           )}
-          {isFavorite ? 'Favorilerde' : 'Favorilere ekle'}
+          {isFavorite ? t('assetActions.inFavorites') : t('assetActions.addToFavorites')}
         </motion.button>
 
         <motion.button
           type="button"
           whileTap={{ scale: 0.96 }}
           onClick={() => setWatchModalOpen(true)}
-          title="Başka bir listeye ekle"
+          title={t('assetActions.addToOtherList')}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-border-default bg-bg-elevated text-fg hover:border-border-hover hover:bg-surface transition-colors cursor-pointer"
         >
           <Eye className="h-3.5 w-3.5" />
-          Listeye ekle
+          {t('assetActions.addToList')}
         </motion.button>
 
         <motion.button
@@ -93,7 +95,7 @@ export default function AssetActionsBar({ marketType, assetCode, currentPrice })
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright transition-colors border-none cursor-pointer"
         >
           <AlertCircle className="h-3.5 w-3.5" />
-          Fiyat alarmı
+          {t('assetActions.priceAlert')}
         </motion.button>
       </div>
 

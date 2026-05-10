@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { X, Wallet } from 'lucide-react';
 import { Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
@@ -6,6 +7,7 @@ import PositionFormModal from './PositionFormModal';
 import { usePortfolioList } from '../hooks/usePortfolioData';
 
 export default function MarketAddPositionModal({ assetType, assetCode, assetName, assetImage, currentPrice, onClose, onComplete }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: portfolios, isLoading } = usePortfolioList();
   const portfolioId = portfolios?.[0]?.id ?? null;
@@ -37,15 +39,15 @@ export default function MarketAddPositionModal({ assetType, assetCode, assetName
               <Wallet className="h-7 w-7 text-accent" />
             </div>
             <div className="text-center space-y-1">
-              <p className="text-sm font-semibold text-fg">Portföy bulunamadı</p>
-              <p className="text-xs text-fg-muted">Pozisyon ekleyebilmek için önce portföyünüzü oluşturmanız gerekiyor.</p>
+              <p className="text-sm font-semibold text-fg">{t('marketAddPosition.noPortfolioTitle')}</p>
+              <p className="text-xs text-fg-muted">{t('marketAddPosition.noPortfolioHint')}</p>
             </div>
             <button
               onClick={() => { onClose(); navigate('/portfolio'); }}
               className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-bright border-none cursor-pointer"
             >
               <Wallet className="h-4 w-4" />
-              Portföye Git
+              {t('marketAddPosition.goToPortfolio')}
             </button>
           </div>
         </motion.div>

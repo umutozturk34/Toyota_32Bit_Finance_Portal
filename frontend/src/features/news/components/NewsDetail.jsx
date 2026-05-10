@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, ExternalLink, Building2 } from 'lucide-react';
@@ -9,6 +10,7 @@ import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 
 export default function NewsDetail() {
+    const { t } = useTranslation();
     const { id } = useParams();
     const navigate = useNavigate();
     const [article, setArticle] = useState(null);
@@ -23,17 +25,17 @@ export default function NewsDetail() {
                 const data = await newsService.getNewsById(id);
                 setArticle(data);
             } catch (err) {
-                setError('Haber yuklenirken bir hata olustu.');
+                setError(t('newsDetail.error'));
             } finally {
                 setLoading(false);
             }
         };
         fetchArticle();
-    }, [id]);
+    }, [id, t]);
 
-    if (loading) return <LoadingState message="Haber yukleniyor..." />;
+    if (loading) return <LoadingState message={t('newsDetail.loading')} />;
     if (error) return <ErrorState message={error} onRetry={() => navigate('/news')} />;
-    if (!article) return <ErrorState message="Haber bulunamadi." onRetry={() => navigate('/news')} />;
+    if (!article) return <ErrorState message={t('newsDetail.notFound')} onRetry={() => navigate('/news')} />;
 
     const imgSrc = article.imageUrl || getFallbackImage(article.category, article.id);
     const hasContent = article.content && article.content.trim().length > 0;
@@ -50,7 +52,7 @@ export default function NewsDetail() {
                     className="flex items-center gap-2 text-fg-muted hover:text-fg transition-colors duration-150 text-sm mb-4"
                 >
                     <ArrowLeft size={16} />
-                    Haberlere Don
+                    {t('newsDetail.backToList')}
                 </button>
             </motion.div>
 
@@ -113,7 +115,7 @@ export default function NewsDetail() {
                                 className="inline-flex items-center gap-2 text-accent text-sm font-medium hover:text-accent-bright transition-colors duration-150"
                             >
                                 <ExternalLink size={14} strokeWidth={2} />
-                                Kaynaga Git{article.sourceName ? ` (${article.sourceName})` : ''}
+                                {t('newsDetail.openSource')}{article.sourceName ? ` (${article.sourceName})` : ''}
                             </a>
                         </div>
                     )}

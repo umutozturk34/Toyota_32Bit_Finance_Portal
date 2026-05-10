@@ -1,4 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import GridLayout, { useContainerWidth } from 'react-grid-layout';
 import OverviewWidgetCard from './OverviewWidgetCard';
@@ -55,6 +56,7 @@ export default function OverviewWidgetCanvas({
   deletingIds, activePopoverSectionId, onOpenSettings,
   onChange, onDelete, onConfigChange, onDrop, pendingDropSize,
 }) {
+  const { t } = useTranslation();
   const { containerRef, width } = useContainerWidth();
   const dropDataRef = useRef(null);
   const [mountedCount, setMountedCount] = useState(0);
@@ -146,7 +148,7 @@ export default function OverviewWidgetCanvas({
         <div className="flex flex-col gap-4 pb-8">
           <div className="flex items-center gap-2 px-1 pt-1 pb-2">
             <span aria-hidden className="h-px w-6 bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
-            <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">Genel Bakış</span>
+            <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">{t('overviewCanvas.title')}</span>
             <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-accent/30 via-border-default/40 to-transparent" />
           </div>
           {sections.map((section, i) => (

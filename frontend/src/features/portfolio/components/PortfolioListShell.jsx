@@ -1,5 +1,6 @@
 import { containerVariants } from '../../../shared/utils/animations';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import EmptyState from '../../../shared/components/feedback/EmptyState';
 import SearchInput from '../../../shared/components/form/SearchInput';
 import SortSelect from '../../../shared/components/form/SortSelect';
@@ -19,6 +20,7 @@ export default function PortfolioListShell({
   emptyHint,
   children,
 }) {
+  const { t } = useTranslation();
   const assetTypeFilter = listParams.filter || '';
 
   return (
@@ -39,7 +41,7 @@ export default function PortfolioListShell({
           onDirectionChange={listParams.setDirection}
         />
         <FilterTabs
-          items={ASSET_TYPE_FILTERS.filter(f => f.id).map(f => ({ type: f.id, label: f.label }))}
+          items={ASSET_TYPE_FILTERS.filter(f => f.id).map(f => ({ type: f.id, label: t(`assets.labels.${f.id}`, { defaultValue: f.id }) }))}
           activeId={assetTypeFilter || 'ALL'}
           onSelect={(id) => listParams.setFilter(id === 'ALL' ? '' : id)}
           showAll={true}

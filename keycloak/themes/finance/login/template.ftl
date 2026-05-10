@@ -43,7 +43,7 @@
                     </span>
                     <span class="fp-logo-text">Finance Portal</span>
                 </div>
-                <p>Secure Authentication Portal</p>
+                <p>${msg("template.subtitle")}</p>
             </div>
 
             <div class="fp-card-body">
@@ -63,7 +63,7 @@
             </div>
 
             <div class="fp-card-footer">
-                <p>Powered by Keycloak & Spring Security</p>
+                <p>${msg("template.poweredBy")}</p>
             </div>
         </div>
     </div>

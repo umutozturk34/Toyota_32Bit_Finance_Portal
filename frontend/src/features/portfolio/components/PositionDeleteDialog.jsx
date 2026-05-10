@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { X, Trash2, ShieldCheck } from 'lucide-react';
 import { AlertTriangle, Check, AlertCircle } from '../../../shared/components/feedback/AnimatedIcons';
@@ -9,17 +10,19 @@ import { assetCodeLabel } from '../../../shared/utils/assetCode';
 import { useDeletePosition } from '../hooks/usePortfolioData';
 
 const SUCCESS_HOLD_MS = 1100;
-const PROCESSING_STEPS = [
-  { label: 'İşlem doğrulanıyor...', duration: 350 },
-  { label: 'Pozisyon kaldırılıyor...', duration: 400 },
-  { label: 'Portföy güncelleniyor...', duration: 350 },
-];
 
 export default function PositionDeleteDialog({ portfolioId, position, onClose, onComplete }) {
+  const { t } = useTranslation();
   const [phase, setPhase] = useState('confirm');
   const [error, setError] = useState(null);
   const { processingStep, runAnimation, reset: resetProcessing } = useProcessingAnimation();
   const deleteMutation = useDeletePosition(portfolioId);
+
+  const processingSteps = [
+    { label: t('positionDelete.steps.validating'), duration: 350 },
+    { label: t('positionDelete.steps.removing'), duration: 400 },
+    { label: t('positionDelete.steps.updating'), duration: 350 },
+  ];
 
   if (!position) return null;
   const displayCode = assetCodeLabel(position.assetType, position.assetCode);
@@ -31,13 +34,13 @@ export default function PositionDeleteDialog({ portfolioId, position, onClose, o
     try {
       await Promise.all([
         deleteMutation.mutateAsync(position.id),
-        runAnimation(PROCESSING_STEPS),
+        runAnimation(processingSteps),
       ]);
       setPhase('success');
       setTimeout(() => { onComplete?.(); onClose(); }, SUCCESS_HOLD_MS);
     } catch (err) {
       resetProcessing();
-      setError(err?.response?.data?.message || 'Pozisyon silinemedi');
+      setError(err?.response?.data?.message || t('positionDelete.failed'));
       setPhase('confirm');
     }
   };
@@ -89,7 +92,7 @@ export default function PositionDeleteDialog({ portfolioId, position, onClose, o
               transition={{ delay: 0.2 }}
               className="text-center space-y-1"
             >
-              <p className="text-sm font-semibold text-fg">Pozisyon silindi</p>
+              <p className="text-sm font-semibold text-fg">{t('positionDelete.successTitle')}</p>
               <p className="text-xs text-fg-muted">{displayCode}</p>
             </motion.div>
             <motion.div
@@ -99,12 +102,12 @@ export default function PositionDeleteDialog({ portfolioId, position, onClose, o
               className="flex items-center gap-1.5 text-[11px] text-success/70"
             >
               <ShieldCheck className="h-3.5 w-3.5" />
-              İşlem tamamlandı
+              {t('positionDelete.successDone')}
             </motion.div>
           </motion.div>
         )}
 
-        {phase === 'processing' && <ProcessingSteps steps={PROCESSING_STEPS} currentStep={processingStep} />}
+        {phase === 'processing' && <ProcessingSteps steps={processingSteps} currentStep={processingStep} />}
 
         {phase === 'confirm' && (
           <div className="space-y-4 pt-1">
@@ -118,18 +121,18 @@ export default function PositionDeleteDialog({ portfolioId, position, onClose, o
                 <AlertTriangle className="h-6 w-6 text-danger" />
               </motion.div>
               <div className="text-center space-y-1">
-                <p className="text-sm font-semibold text-fg">Pozisyonu Sil</p>
+                <p className="text-sm font-semibold text-fg">{t('positionDelete.title')}</p>
                 <p className="text-xs text-fg-muted leading-relaxed">
-                  <span className="font-medium text-fg">{displayCode}</span> pozisyonu kaldırılacak. Bu işlem geri alınamaz.
+                  {t('positionDelete.confirmPrefix')} <span className="font-medium text-fg">{displayCode}</span> {t('positionDelete.confirmSuffix')}
                 </p>
               </div>
             </div>
 
             <div className="rounded-lg border border-border-default bg-bg-base px-3 py-2.5 space-y-1.5">
-              <Row label="Miktar" value={Number(position.quantity).toLocaleString('tr-TR', { maximumFractionDigits: 6 })} />
-              <Row label="Giriş Fiyatı" value={formatPriceTRY(position.entryPrice)} />
+              <Row label={t('positionDelete.quantityLabel')} value={Number(position.quantity).toLocaleString(t('common.localeTag'), { maximumFractionDigits: 6 })} />
+              <Row label={t('positionDelete.entryPriceLabel')} value={formatPriceTRY(position.entryPrice)} />
               {position.entryDate && (
-                <Row label="Giriş Tarihi" value={new Date(position.entryDate).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })} />
+                <Row label={t('positionDelete.entryDateLabel')} value={new Date(position.entryDate).toLocaleDateString(t('common.localeTag'), { day: '2-digit', month: 'short', year: 'numeric' })} />
               )}
             </div>
 
@@ -145,14 +148,14 @@ export default function PositionDeleteDialog({ portfolioId, position, onClose, o
                 onClick={onClose}
                 className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-all cursor-pointer"
               >
-                Vazgeç
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleConfirm}
                 className="flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white bg-danger hover:bg-danger/90 transition-all border-none cursor-pointer"
               >
                 <Trash2 className="h-4 w-4" />
-                Sil
+                {t('common.delete')}
               </button>
             </div>
           </div>

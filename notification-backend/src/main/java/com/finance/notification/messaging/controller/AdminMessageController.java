@@ -2,6 +2,7 @@ package com.finance.notification.messaging.controller;
 
 import com.finance.common.dto.ApiResponse;
 import com.finance.common.dto.response.PagedResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.notification.messaging.dto.AdminMessageSendRequest;
 import com.finance.notification.messaging.dto.ConversationSummary;
 import com.finance.notification.messaging.dto.ConversationThread;
@@ -26,12 +27,13 @@ import org.springframework.web.bind.annotation.*;
 public class AdminMessageController {
 
     private final MessageService service;
+    private final Translator translator;
 
     @PostMapping
     public ApiResponse<MessageResponse> sendToUser(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody AdminMessageSendRequest request) {
-        return ApiResponse.success("Message sent to user",
+        return ApiResponse.success(translator.translate("api.adminMessage.sentToUser"),
                 service.sendAdminToUser(jwt.getSubject(), request.recipientSub(), request.body()));
     }
 
@@ -40,13 +42,13 @@ public class AdminMessageController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
         Page<MessageResponse> result = service.getAdminInbox(page, size);
-        return ApiResponse.success("Admin inbox retrieved",
+        return ApiResponse.success(translator.translate("api.adminMessage.inboxRetrieved"),
                 PagedResponse.of(result.getContent(), page, size, result.getTotalElements()));
     }
 
     @GetMapping("/inbox-count")
     public ApiResponse<Long> inboxCount() {
-        return ApiResponse.success("Admin inbox count retrieved", service.getAdminInboxCount());
+        return ApiResponse.success(translator.translate("api.adminMessage.inboxCountRetrieved"), service.getAdminInboxCount());
     }
 
     @GetMapping("/conversations")
@@ -55,19 +57,19 @@ public class AdminMessageController {
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
             @RequestParam(required = false) String search) {
         Page<ConversationSummary> result = service.listConversations(page, size, search);
-        return ApiResponse.success("Conversations retrieved",
+        return ApiResponse.success(translator.translate("api.adminMessage.conversationsRetrieved"),
                 PagedResponse.of(result.getContent(), page, size, result.getTotalElements()));
     }
 
     @GetMapping("/conversations/{userSub}")
     public ApiResponse<ConversationThread> getConversation(@PathVariable String userSub) {
-        return ApiResponse.success("Conversation thread retrieved", service.getConversation(userSub));
+        return ApiResponse.success(translator.translate("api.adminMessage.conversationRetrieved"), service.getConversation(userSub));
     }
 
     @PostMapping("/conversations/{userSub}/mark-read")
     public ApiResponse<Integer> markRead(@PathVariable String userSub) {
         int affected = service.markAdminInboxRead(userSub);
-        return ApiResponse.success("Conversation marked as read", affected);
+        return ApiResponse.success(translator.translate("api.adminMessage.conversationMarkedRead"), affected);
     }
 
     @PostMapping("/conversations/{userSub}/close")
@@ -75,7 +77,7 @@ public class AdminMessageController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable String userSub) {
         service.closeConversation(userSub, jwt.getSubject());
-        return ApiResponse.success("Conversation closed", null);
+        return ApiResponse.success(translator.translate("api.adminMessage.conversationClosed"), null);
     }
 
     @PostMapping("/conversations/{userSub}/reopen")
@@ -83,7 +85,7 @@ public class AdminMessageController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable String userSub) {
         service.reopenConversation(userSub, jwt.getSubject());
-        return ApiResponse.success("Conversation reopened", null);
+        return ApiResponse.success(translator.translate("api.adminMessage.conversationReopened"), null);
     }
 
     @DeleteMapping("/conversations/{userSub}")
@@ -91,6 +93,6 @@ public class AdminMessageController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable String userSub) {
         service.deleteConversation(userSub, jwt.getSubject());
-        return ApiResponse.success("Conversation deleted", null);
+        return ApiResponse.success(translator.translate("api.adminMessage.conversationDeleted"), null);
     }
 }

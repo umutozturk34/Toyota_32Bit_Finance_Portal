@@ -11,23 +11,23 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 public record WatchlistItemCreateRequest(
-        @NotNull(message = "Piyasa tipi zorunlu") MarketType marketType,
-        @NotBlank(message = "Varlık kodu zorunlu") @Size(max = 32, message = "Varlık kodu en fazla 32 karakter olabilir") String assetCode,
-        @Size(max = 255, message = "Not en fazla 255 karakter olabilir") String note,
-        @DecimalMin(value = "0", inclusive = true, message = "Eşik 0 veya pozitif olmalı")
-        @DecimalMax(value = "999.9999", message = "Eşik en fazla 999.9999% olabilir")
+        @NotNull(message = "{validation.watchlist.marketType.required}") MarketType marketType,
+        @NotBlank(message = "{validation.watchlist.assetCode.required}") @Size(max = 32, message = "{validation.watchlist.assetCode.maxLen}") String assetCode,
+        @Size(max = 255, message = "{validation.watchlist.note.maxLen}") String note,
+        @DecimalMin(value = "0", inclusive = true, message = "{validation.watchlist.threshold.nonNegative}")
+        @DecimalMax(value = "999.9999", message = "{validation.watchlist.threshold.maxPercent}")
         BigDecimal deltaThreshold
 ) {
     private static final BigDecimal MIN_NON_ZERO = new BigDecimal("0.0001");
 
-    @AssertTrue(message = "Eşik 0 veya en az 0.0001% olmalı (DB hassasiyeti)")
+    @AssertTrue(message = "{validation.watchlist.threshold.granularity}")
     public boolean isThresholdGranularityValid() {
         if (deltaThreshold == null) return true;
         if (deltaThreshold.signum() == 0) return true;
         return deltaThreshold.compareTo(MIN_NON_ZERO) >= 0;
     }
 
-    @AssertTrue(message = "Tahvil/bono takip listesine eklenemez")
+    @AssertTrue(message = "{validation.watchlist.market.notWatchable}")
     public boolean isMarketTypeWatchable() {
         return marketType != MarketType.BOND;
     }

@@ -8,7 +8,7 @@
                 </span>
                 ${msg("loginAccountTitle")}
             </h3>
-            <p class="fp-section-desc">Please sign in to continue</p>
+            <p class="fp-section-desc">${msg("login.subtitle")}</p>
         </div>
 
         <#if realm.password>

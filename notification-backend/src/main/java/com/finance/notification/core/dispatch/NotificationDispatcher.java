@@ -76,7 +76,8 @@ public class NotificationDispatcher {
             return;
         }
 
-        RenderedNotification rendered = handler.render(request);
+        java.util.Locale recipientLocale = userPreferenceCacheService.resolveLocale(request.userSub());
+        RenderedNotification rendered = handler.render(request, recipientLocale);
         NotificationPreference prefs = loadPreferences(request.userSub());
 
         if (prefs.wantsInApp(request.type())) {
@@ -99,7 +100,7 @@ public class NotificationDispatcher {
                         request.userSub(), request.type());
             } else {
                 String theme = userPreferenceCacheService.resolveTheme(request.userSub());
-                events.publishEvent(new EmailEnqueuedEvent(emailOpt.get(), theme, rendered));
+                events.publishEvent(new EmailEnqueuedEvent(emailOpt.get(), theme, recipientLocale, rendered));
             }
         }
     }
@@ -107,7 +108,7 @@ public class NotificationDispatcher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onEmailEnqueued(EmailEnqueuedEvent event) {
         mailSender.send(event.to(), event.rendered().emailSubject(),
-                event.rendered().emailTemplate(), event.rendered().emailModel(), event.theme());
+                event.rendered().emailTemplate(), event.rendered().emailModel(), event.theme(), event.locale());
     }
 
     private NotificationPreference loadPreferences(String userSub) {
@@ -115,6 +116,6 @@ public class NotificationDispatcher {
                 .orElseGet(() -> NotificationPreference.defaultsFor(userSub));
     }
 
-    public record EmailEnqueuedEvent(String to, String theme, RenderedNotification rendered) {
+    public record EmailEnqueuedEvent(String to, String theme, java.util.Locale locale, RenderedNotification rendered) {
     }
 }

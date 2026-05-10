@@ -1,6 +1,7 @@
 package com.finance.user.controller;
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.user.dto.UserChartBundleResponse;
 import com.finance.user.dto.UserChartDrawingResponse;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserChartDataController {
 
     private final UserChartDataFacade facade;
+    private final Translator translator;
 
     @GetMapping("/{type}/{code}")
     public ApiResponse<UserChartBundleResponse> get(
@@ -35,7 +37,7 @@ public class UserChartDataController {
             @PathVariable TrackedAssetType type,
             @PathVariable String code,
             @RequestParam(required = false) String range) {
-        return ApiResponse.success("Chart data retrieved",
+        return ApiResponse.success(translator.translate("api.chart.dataRetrieved"),
                 facade.getBundle(jwt.getSubject(), type, code, range));
     }
 
@@ -45,7 +47,7 @@ public class UserChartDataController {
             @PathVariable TrackedAssetType type,
             @PathVariable String code,
             @Valid @RequestBody UserChartPreferenceUpdateRequest request) {
-        return ApiResponse.success("Chart preferences updated",
+        return ApiResponse.success(translator.translate("api.chart.preferencesUpdated"),
                 facade.upsertPreferences(jwt.getSubject(), type, code, request.config()));
     }
 
@@ -55,7 +57,7 @@ public class UserChartDataController {
             @PathVariable TrackedAssetType type,
             @PathVariable String code,
             @Valid @RequestBody UserChartDrawingUpdateRequest request) {
-        return ApiResponse.success("Chart drawings updated",
+        return ApiResponse.success(translator.translate("api.chart.drawingsUpdated"),
                 facade.upsertDrawings(jwt.getSubject(), type, code, request.drawings()));
     }
 }

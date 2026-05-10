@@ -1,13 +1,11 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="tr"
-      th:replace="~{email/_layout :: layout(eyebrow='TAKİP LİSTESİ', title=${watchlistName + ' listende hareket var'}, subtitle=${marketLabel + ' · ' + itemCount + ' varlık eşiği aştı'}, content=~{::content})}">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}"
+      th:replace="~{email/_layout :: layout(eyebrow=#{appEmail.watchlistDelta.eyebrow}, title=#{appEmail.watchlistDelta.title(${watchlistName})}, subtitle=#{appEmail.watchlistDelta.subtitle(${marketLabel}, ${itemCount})}, content=~{::content})}">
 <body>
 <th:block th:fragment="content"
           th:with="cSuccess=${dark ? '#34d399' : '#059669'},
                    cDanger=${dark ? '#f87171' : '#dc2626'}">
-    <p th:style="'margin:0 0 16px;color:' + ${cFg} + ';font-size:14px;'">
-        Aşağıdaki varlıklar tanımlı eşiğin üstünde hareket etti.
-    </p>
+    <p th:style="'margin:0 0 16px;color:' + ${cFg} + ';font-size:14px;'" th:text="#{appEmail.watchlistDelta.lead}">Lead</p>
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
         <th:block th:each="item, iter : ${items}">
             <tr>
@@ -40,9 +38,7 @@
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:22px;">
         <tr>
             <td th:style="'background:' + ${cAccent} + ';background-image:linear-gradient(135deg,' + ${cAccent} + ' 0%,' + ${cAccentMid} + ' 50%,' + ${cAccent2} + ' 100%);border-radius:10px;box-shadow:0 6px 22px -4px rgba(99,102,241,0.45);'">
-                <a href="http://localhost/watch" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;line-height:1;">
-                    Takip listemi aç &nbsp;→
-                </a>
+                <a href="http://localhost/watch" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;line-height:1;" th:text="#{appEmail.watchlistDelta.cta}">Open watchlist</a>
             </td>
         </tr>
     </table>

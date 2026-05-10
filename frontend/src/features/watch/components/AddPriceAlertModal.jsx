@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertCircle, ArrowUp, ArrowDown, TrendingUp, TrendingDown,
   Hash, Target, Anchor, Search, Activity,
@@ -8,13 +9,13 @@ import SearchSuggestions from '../../../shared/components/form/SearchSuggestions
 import { useCreatePriceAlert } from '../../../shared/hooks/usePriceAlerts';
 import { toast } from '../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../shared/utils/apiError';
-import { ASSET_TYPE_LABELS } from '../../../shared/constants/assetTypes';
+import { currentLocaleTag } from '../../../shared/utils/formatters';
 
-const DIRECTION_OPTIONS = [
-  { value: 'ABOVE', label: 'Üstüne çıkarsa', short: 'Üstüne', Icon: ArrowUp, tone: 'success', hint: 'Eşik fiyatın üstüne çıktığında bildir' },
-  { value: 'BELOW', label: 'Altına düşerse', short: 'Altına', Icon: ArrowDown, tone: 'danger', hint: 'Eşik fiyatın altına düştüğünde bildir' },
-  { value: 'CHANGE_PCT_UP', label: '% Yükselirse', short: '% Yükseliş', Icon: TrendingUp, tone: 'success', hint: 'Referans fiyattan belirtilen yüzdede yükseldiğinde bildir' },
-  { value: 'CHANGE_PCT_DOWN', label: '% Düşerse', short: '% Düşüş', Icon: TrendingDown, tone: 'danger', hint: 'Referans fiyattan belirtilen yüzdede düştüğünde bildir' },
+const DIRECTION_DEFS = [
+  { value: 'ABOVE', Icon: ArrowUp, tone: 'success' },
+  { value: 'BELOW', Icon: ArrowDown, tone: 'danger' },
+  { value: 'CHANGE_PCT_UP', Icon: TrendingUp, tone: 'success' },
+  { value: 'CHANGE_PCT_DOWN', Icon: TrendingDown, tone: 'danger' },
 ];
 
 const TONE_CLASSES = {
@@ -37,8 +38,8 @@ const QUICK_DELTAS = [
 
 const PCT_PRESETS = [1, 2, 5, 10];
 
-function formatTry(value) {
-  return Number(value).toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+function formatLocale(value) {
+  return Number(value).toLocaleString(currentLocaleTag(), { maximumFractionDigits: 2 });
 }
 
 export default function AddPriceAlertModal({
@@ -48,6 +49,7 @@ export default function AddPriceAlertModal({
   defaultAssetCode,
   defaultReferencePrice,
 }) {
+  const { t } = useTranslation();
   const create = useCreatePriceAlert();
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [direction, setDirection] = useState('ABOVE');
@@ -76,7 +78,7 @@ export default function AddPriceAlertModal({
   const requiresReference = isPercent;
   const currentPrice = selectedAsset?.price ?? null;
 
-  const activeDir = useMemo(() => DIRECTION_OPTIONS.find((d) => d.value === direction), [direction]);
+  const activeDir = useMemo(() => DIRECTION_DEFS.find((d) => d.value === direction), [direction]);
 
   const numericThreshold = Number.parseFloat(threshold);
   const projectedPrice = useMemo(() => {
@@ -116,15 +118,15 @@ export default function AddPriceAlertModal({
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!selectedAsset) return toast.error('Bir asset seç');
+    if (!selectedAsset) return toast.error(t('addPriceAlert.errorAsset'));
     if (!Number.isFinite(numericThreshold) || numericThreshold <= 0) {
-      return toast.error('Eşik geçerli bir sayı olmalı');
+      return toast.error(t('addPriceAlert.errorThreshold'));
     }
     let numericReference = null;
     if (requiresReference) {
       numericReference = Number.parseFloat(referencePrice);
       if (!Number.isFinite(numericReference) || numericReference <= 0) {
-        return toast.error('Yüzde alarmı için referans fiyat gerekli');
+        return toast.error(t('addPriceAlert.errorReference'));
       }
     }
     try {
@@ -136,23 +138,23 @@ export default function AddPriceAlertModal({
         currency: 'TRY',
         referencePrice: numericReference,
       });
-      toast.success(`${selectedAsset.code} alarmı oluşturuldu`);
+      toast.success(t('addPriceAlert.created', { code: selectedAsset.code }));
       onClose();
     } catch (err) {
-      toast.error(extractApiError(err, 'Alarm oluşturulamadı'));
+      toast.error(extractApiError(err, t('addPriceAlert.failed')));
     }
   };
 
   const subtitle = selectedAsset
-    ? `${selectedAsset.code} (${ASSET_TYPE_LABELS[selectedAsset.type] ?? selectedAsset.type})`
-    : 'Asset seç ve eşik belirle';
+    ? `${selectedAsset.code} (${t(`assets.labels.${selectedAsset.type}`, { defaultValue: selectedAsset.type })})`
+    : t('addPriceAlert.subtitlePrompt');
 
   return (
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
       icon={AlertCircle}
-      title="Fiyat alarmı"
+      title={t('addPriceAlert.title')}
       subtitle={subtitle}
       size="md"
     >
@@ -161,7 +163,7 @@ export default function AddPriceAlertModal({
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
               <Search className="h-3 w-3" />
-              Asset Ara
+              {t('addPriceAlert.searchLabel')}
             </label>
             {selectedAsset ? (
               <div className="flex items-center justify-between gap-2 rounded-lg border border-accent/40 bg-accent/5 px-3 py-2.5">
@@ -179,12 +181,12 @@ export default function AddPriceAlertModal({
                   onClick={() => setSelectedAsset(null)}
                   className="text-[11px] font-medium text-fg-muted hover:text-fg transition-colors bg-transparent border-none cursor-pointer"
                 >
-                  Değiştir
+                  {t('addPriceAlert.change')}
                 </button>
               </div>
             ) : (
               <SearchSuggestions
-                placeholder="BTC, AAPL, USDTRY..."
+                placeholder={t('addPriceAlert.searchPlaceholder')}
                 navigateOnSelect={false}
                 onSelect={(asset) => {
                   setSelectedAsset(asset);
@@ -205,12 +207,12 @@ export default function AddPriceAlertModal({
                 <Activity className="h-3.5 w-3.5 text-accent" />
               </div>
               <div className="leading-tight">
-                <div className="text-[10px] uppercase tracking-wider text-fg-muted font-semibold">Şu anki fiyat</div>
-                <div className="text-[10px] text-fg-subtle">canlı veri</div>
+                <div className="text-[10px] uppercase tracking-wider text-fg-muted font-semibold">{t('addPriceAlert.currentPrice')}</div>
+                <div className="text-[10px] text-fg-subtle">{t('addPriceAlert.liveData')}</div>
               </div>
             </div>
             <div className="text-lg font-mono font-bold text-fg tabular-nums">
-              ₺{formatTry(currentPrice)}
+              ₺{formatLocale(currentPrice)}
             </div>
           </div>
         )}
@@ -218,10 +220,10 @@ export default function AddPriceAlertModal({
         <div className="space-y-2">
           <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
             <Target className="h-3 w-3" />
-            Tetikleme türü
+            {t('addPriceAlert.triggerLabel')}
           </label>
           <div className="grid grid-cols-2 gap-2">
-            {DIRECTION_OPTIONS.map(({ value, label, Icon, tone }) => {
+            {DIRECTION_DEFS.map(({ value, Icon, tone }) => {
               const active = direction === value;
               const cls = TONE_CLASSES[tone];
               return (
@@ -234,13 +236,13 @@ export default function AddPriceAlertModal({
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
-                  <span className="text-left leading-tight">{label}</span>
+                  <span className="text-left leading-tight">{t(`addPriceAlert.direction.${value}.label`)}</span>
                 </button>
               );
             })}
           </div>
           <p className="text-[11px] text-fg-subtle leading-relaxed pl-0.5">
-            {activeDir?.hint}
+            {t(`addPriceAlert.direction.${activeDir?.value}.hint`)}
           </p>
         </div>
 
@@ -248,7 +250,7 @@ export default function AddPriceAlertModal({
           <div className="space-y-1.5">
             <label className="text-[11px] font-medium text-fg-muted flex items-center gap-1.5">
               <Hash className="h-3 w-3" />
-              Hızlı seç (güncel fiyata göre)
+              {t('addPriceAlert.quickSelect')}
             </label>
             <div className="grid grid-cols-4 gap-1.5">
               {QUICK_DELTAS.map(({ label, value }) => (
@@ -271,7 +273,7 @@ export default function AddPriceAlertModal({
           <div className="space-y-1.5">
             <label className="text-[11px] font-medium text-fg-muted flex items-center gap-1.5">
               <Hash className="h-3 w-3" />
-              Hızlı yüzde
+              {t('addPriceAlert.quickPercent')}
             </label>
             <div className="grid grid-cols-4 gap-1.5">
               {PCT_PRESETS.map((p) => (
@@ -292,7 +294,7 @@ export default function AddPriceAlertModal({
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
               <Hash className="h-3 w-3" />
-              {isPercent ? 'Eşik (%)' : 'Eşik fiyat (₺)'}
+              {isPercent ? t('addPriceAlert.thresholdPctLabel') : t('addPriceAlert.thresholdPriceLabel')}
             </label>
             <div className="relative">
               <input
@@ -301,7 +303,7 @@ export default function AddPriceAlertModal({
                 min="0"
                 value={threshold}
                 onChange={(e) => setThreshold(e.target.value)}
-                placeholder={isPercent ? '5' : (currentPrice != null ? formatTry(currentPrice) : '100000')}
+                placeholder={isPercent ? '5' : (currentPrice != null ? formatLocale(currentPrice) : '100000')}
                 className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 pr-10 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-mono text-fg-subtle pointer-events-none">
@@ -310,12 +312,14 @@ export default function AddPriceAlertModal({
             </div>
             {distanceFromCurrent != null && (
               <p className={`text-[11px] font-mono leading-relaxed ${distanceFromCurrent.pct >= 0 ? 'text-success/80' : 'text-danger/80'}`}>
-                {distanceFromCurrent.pct >= 0 ? '+' : ''}{distanceFromCurrent.pct.toFixed(2)}% güncelden uzakta
+                {t('addPriceAlert.distanceFromCurrent', {
+                  signed: `${distanceFromCurrent.pct >= 0 ? '+' : ''}${distanceFromCurrent.pct.toFixed(2)}`,
+                })}
               </p>
             )}
             {projectedPrice != null && (
               <p className="text-[11px] font-mono text-fg-subtle leading-relaxed">
-                ≈ ₺{formatTry(projectedPrice)} olduğunda tetiklenir
+                {t('addPriceAlert.projected', { price: formatLocale(projectedPrice) })}
               </p>
             )}
           </div>
@@ -323,7 +327,7 @@ export default function AddPriceAlertModal({
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
                 <Anchor className="h-3 w-3" />
-                Referans (₺)
+                {t('addPriceAlert.referenceLabel')}
               </label>
               <input
                 type="number"
@@ -331,7 +335,7 @@ export default function AddPriceAlertModal({
                 min="0"
                 value={referencePrice}
                 onChange={(e) => setReferencePrice(e.target.value)}
-                placeholder="başlangıç fiyatı"
+                placeholder={t('addPriceAlert.referencePlaceholder')}
                 className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all"
               />
             </div>
@@ -343,7 +347,7 @@ export default function AddPriceAlertModal({
           disabled={create.isPending || !selectedAsset}
           className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white bg-accent hover:bg-accent-bright shadow-lg shadow-accent/25 transition-all border-none cursor-pointer disabled:opacity-50"
         >
-          {create.isPending ? 'Oluşturuluyor…' : 'Alarmı Oluştur'}
+          {create.isPending ? t('addPriceAlert.creating') : t('addPriceAlert.createCta')}
         </button>
       </form>
     </BaseModal>

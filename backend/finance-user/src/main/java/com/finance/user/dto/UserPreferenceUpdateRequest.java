@@ -7,11 +7,11 @@ import jakarta.validation.constraints.Size;
 
 public record UserPreferenceUpdateRequest(
         ThemePreference theme,
-        @Pattern(regexp = "tr|en", message = "language must be 'tr' or 'en'")
+        @Pattern(regexp = "tr|en", message = "{validation.language.pattern}")
         String language,
-        @Size(max = 32, message = "timezone max 32 chars")
+        @Size(max = 32, message = "{validation.timezone.size}")
         String timezone,
-        @Pattern(regexp = "1D|1W|1M|3M|6M|1Y|5Y|ALL", message = "defaultChartRange must be one of 1D|1W|1M|3M|6M|1Y|5Y|ALL")
+        @Pattern(regexp = "1D|1W|1M|3M|6M|1Y|5Y|ALL", message = "{validation.defaultChartRange.pattern}")
         String defaultChartRange,
         ReportFrequency reportFrequency,
         Boolean onboardingCompleted

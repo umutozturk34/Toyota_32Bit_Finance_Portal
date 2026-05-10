@@ -1,6 +1,7 @@
 package com.finance.user.controller;
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.user.dto.EmailChangeConfirmRequest;
 import com.finance.user.dto.EmailChangeInitiateRequest;
 import com.finance.user.dto.EmailChangePendingResponse;
@@ -29,13 +30,14 @@ public class UserCredentialController {
     private final UserCredentialService credentialService;
     private final EmailChangeService emailChangeService;
     private final TwoFactorService twoFactorService;
+    private final Translator translator;
 
     @PostMapping("/password/initiate-change")
     public ApiResponse<Void> initiatePasswordChange(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody PasswordChangeInitiateRequest request) {
         credentialService.initiatePasswordChange(jwt.getSubject(), request.redirectUri());
-        return ApiResponse.success("Şifre sıfırlama bağlantısı e-postana gönderildi", null);
+        return ApiResponse.success(translator.translate("api.credential.passwordResetSent"), null);
     }
 
     @PostMapping("/email/initiate-change")
@@ -43,7 +45,7 @@ public class UserCredentialController {
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody EmailChangeInitiateRequest request) {
         emailChangeService.initiate(jwt.getSubject(), request.newEmail());
-        return ApiResponse.success("Onay kodu mevcut e-posta adresine gönderildi", null);
+        return ApiResponse.success(translator.translate("api.credential.emailCodeSent"), null);
     }
 
     @PostMapping("/email/confirm-change")
@@ -51,7 +53,7 @@ public class UserCredentialController {
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody EmailChangeConfirmRequest request) {
         emailChangeService.confirm(jwt.getSubject(), request.code());
-        return ApiResponse.success("E-posta adresi güncellendi", null);
+        return ApiResponse.success(translator.translate("api.credential.emailUpdated"), null);
     }
 
     @GetMapping("/email/pending")
@@ -59,23 +61,23 @@ public class UserCredentialController {
         EmailChangePendingResponse pending = emailChangeService.currentPending(jwt.getSubject())
                 .map(p -> new EmailChangePendingResponse(p.newEmail(), p.expiresAt()))
                 .orElse(null);
-        return ApiResponse.success("Aktif e-posta değişikliği", pending);
+        return ApiResponse.success(translator.translate("api.credential.pendingEmailChange"), pending);
     }
 
     @DeleteMapping("/email/pending")
     public ApiResponse<Void> cancelEmailChange(@AuthenticationPrincipal Jwt jwt) {
         emailChangeService.cancel(jwt.getSubject());
-        return ApiResponse.success("E-posta değişikliği iptal edildi", null);
+        return ApiResponse.success(translator.translate("api.credential.emailChangeCancelled"), null);
     }
 
     @GetMapping("/2fa")
     public ApiResponse<TwoFactorService.TwoFactorStatus> getTwoFactorStatus(@AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.success("2FA durumu", twoFactorService.status(jwt.getSubject()));
+        return ApiResponse.success(translator.translate("api.credential.twoFactorStatus"), twoFactorService.status(jwt.getSubject()));
     }
 
     @DeleteMapping("/2fa")
     public ApiResponse<Integer> disableTwoFactor(@AuthenticationPrincipal Jwt jwt) {
         int removed = twoFactorService.disable(jwt.getSubject());
-        return ApiResponse.success("2FA devre dışı bırakıldı", removed);
+        return ApiResponse.success(translator.translate("api.credential.twoFactorDisabled"), removed);
     }
 }

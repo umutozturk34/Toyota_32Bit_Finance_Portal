@@ -2,6 +2,7 @@ package com.finance.notification.alert.controller;
 
 import com.finance.common.dto.ApiResponse;
 import com.finance.common.dto.response.PagedResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.notification.alert.dto.PriceAlertCreateRequest;
 import com.finance.notification.alert.dto.PriceAlertResponse;
 import com.finance.notification.alert.dto.PriceAlertUpdateRequest;
@@ -33,12 +34,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class PriceAlertController {
 
     private final PriceAlertService service;
+    private final Translator translator;
 
     @PostMapping
     public ApiResponse<PriceAlertResponse> create(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody PriceAlertCreateRequest request) {
-        return ApiResponse.success("Price alert created",
+        return ApiResponse.success(translator.translate("api.priceAlert.created"),
                 service.create(jwt.getSubject(), request));
     }
 
@@ -48,7 +50,7 @@ public class PriceAlertController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
         Page<PriceAlertResponse> result = service.list(jwt.getSubject(), page, size);
-        return ApiResponse.success("Price alerts retrieved",
+        return ApiResponse.success(translator.translate("api.priceAlert.listRetrieved"),
                 PagedResponse.of(result.getContent(), page, size, result.getTotalElements()));
     }
 
@@ -57,14 +59,14 @@ public class PriceAlertController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id) {
         service.delete(id, jwt.getSubject());
-        return ApiResponse.success("Price alert deleted", null);
+        return ApiResponse.success(translator.translate("api.priceAlert.deleted"), null);
     }
 
     @org.springframework.web.bind.annotation.PostMapping("/{id}/reactivate")
     public ApiResponse<PriceAlertResponse> reactivate(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id) {
-        return ApiResponse.success("Price alert reactivated",
+        return ApiResponse.success(translator.translate("api.priceAlert.reactivated"),
                 service.reactivate(id, jwt.getSubject()));
     }
 
@@ -73,7 +75,7 @@ public class PriceAlertController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id,
             @Valid @RequestBody PriceAlertUpdateRequest request) {
-        return ApiResponse.success("Price alert updated",
+        return ApiResponse.success(translator.translate("api.priceAlert.updated"),
                 service.update(id, jwt.getSubject(), request));
     }
 }

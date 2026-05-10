@@ -113,7 +113,7 @@ public class AdminTaskService {
     private MarketRefresher resolveRefresher(MarketType type) {
         MarketRefresher refresher = refreshers.get(type);
         if (refresher == null) {
-            throw new IllegalArgumentException("No refresher registered for " + type);
+            throw new IllegalArgumentException("error.admin.noRefresher");
         }
         return refresher;
     }

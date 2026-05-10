@@ -3,6 +3,7 @@ package com.finance.notification;
 import com.finance.common.config.AppProperties;
 import com.finance.notification.broadcast.service.BroadcastProperties;
 import com.finance.notification.config.MarketSessionProperties;
+import com.finance.notification.config.NotificationAsyncProperties;
 import com.finance.notification.config.NotificationCacheProperties;
 import com.finance.notification.config.MessagingProperties;
 import com.finance.notification.config.NotificationDispatchProperties;
@@ -29,6 +30,7 @@ import java.util.TimeZone;
         "com.finance.common.config",
         "com.finance.common.exception",
         "com.finance.common.filter",
+        "com.finance.common.i18n",
         "com.finance.common.security"
 })
 @EntityScan(basePackages = {
@@ -45,6 +47,7 @@ import java.util.TimeZone;
         MarketHoursProperties.class,
         MarketSessionProperties.class,
         MessagingProperties.class,
+        NotificationAsyncProperties.class,
         NotificationCacheProperties.class,
         NotificationDispatchProperties.class,
         NotificationKafkaProperties.class,

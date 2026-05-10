@@ -31,7 +31,7 @@ public class AdminUserService {
 
     public void banUser(String userId, String callerSub) {
         if (userId != null && userId.equals(callerSub)) {
-            throw new BusinessException("You cannot ban your own account");
+            throw new BusinessException("error.admin.user.cannotBanSelf");
         }
         client.setEnabled(userId, false);
         userStatusRepository.upsertEnabled(userId, false);

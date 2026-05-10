@@ -4,6 +4,7 @@ import com.finance.notification.market.session.MarketSessionResolver;
 import com.finance.notification.market.session.SessionMarket;
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +24,7 @@ public class MarketStatusController {
 
     private final MarketSessionResolver resolver;
     private final Clock clock;
+    private final Translator translator;
 
     @GetMapping
     public ApiResponse<List<MarketStatusResponse>> listAll() {
@@ -34,6 +36,6 @@ public class MarketStatusController {
                 snapshot.add(MarketStatusResponse.of(market, session, next));
             });
         }
-        return ApiResponse.success("Market status snapshot", snapshot);
+        return ApiResponse.success(translator.translate("api.marketStatus.snapshot"), snapshot);
     }
 }

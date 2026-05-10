@@ -5,7 +5,7 @@ import com.finance.notification.core.model.NotificationType;
 import java.util.HashMap;
 import java.util.Map;
 
-public record MarketClosedPayload(String market, String displayLabel) implements NotificationPayload {
+public record MarketClosedPayload(String market) implements NotificationPayload {
 
     @Override
     public NotificationType type() {
@@ -16,7 +16,6 @@ public record MarketClosedPayload(String market, String displayLabel) implements
     public Map<String, Object> toMetadata() {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("market", market);
-        if (displayLabel != null) metadata.put("displayLabel", displayLabel);
         return metadata;
     }
 }

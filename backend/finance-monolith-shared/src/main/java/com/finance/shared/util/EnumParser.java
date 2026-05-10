@@ -8,12 +8,12 @@ public final class EnumParser {
 
     public static <E extends Enum<E>> E parseOrBadRequest(Class<E> type, String raw, String field) {
         if (raw == null || raw.isBlank()) {
-            throw new BadRequestException(field + " is required");
+            throw new BadRequestException("error.validation.fieldRequired", field);
         }
         try {
             return Enum.valueOf(type, raw);
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid " + field + ": " + raw);
+            throw new BadRequestException("error.validation.invalidField", field, raw);
         }
     }
 
@@ -24,7 +24,7 @@ public final class EnumParser {
         try {
             return Enum.valueOf(type, raw);
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Invalid " + field + ": " + raw);
+            throw new BadRequestException("error.validation.invalidField", field, raw);
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.finance.notification.core.controller;
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.notification.core.dto.NotificationPreferenceResponse;
 import com.finance.notification.core.dto.NotificationPreferenceUpdateRequest;
 import com.finance.notification.core.service.NotificationPreferenceService;
@@ -22,10 +23,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class NotificationPreferenceController {
 
     private final NotificationPreferenceService service;
+    private final Translator translator;
 
     @GetMapping
     public ApiResponse<NotificationPreferenceResponse> get(@AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.success("Preferences retrieved",
+        return ApiResponse.success(translator.translate("api.notificationPreferences.retrieved"),
                 service.getOrDefault(jwt.getSubject()));
     }
 
@@ -33,7 +35,7 @@ public class NotificationPreferenceController {
     public ApiResponse<NotificationPreferenceResponse> upsert(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody NotificationPreferenceUpdateRequest request) {
-        return ApiResponse.success("Preferences updated",
+        return ApiResponse.success(translator.translate("api.notificationPreferences.updated"),
                 service.upsert(jwt.getSubject(), request));
     }
 }

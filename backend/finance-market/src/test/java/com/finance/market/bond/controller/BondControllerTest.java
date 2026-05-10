@@ -4,6 +4,7 @@ import com.finance.market.core.service.MarketSnapshotProcessor;
 
 import com.finance.market.bond.dto.response.BondResponse;
 import com.finance.common.dto.response.PagedResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.market.bond.service.BondQueryService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +24,7 @@ import static org.mockito.Mockito.when;
 class BondControllerTest {
 
     @Mock private BondQueryService bondQueryService;
+    @Mock private Translator translator;
     @InjectMocks private BondController controller;
 
     private BondResponse response(String seriesCode, String type) {

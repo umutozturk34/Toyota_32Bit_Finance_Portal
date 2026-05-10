@@ -4,6 +4,7 @@ import { EventSourcePolyfill } from 'event-source-polyfill';
 import { useAuth } from '../../features/auth/AuthContext';
 import { getToken } from '../../features/auth/lib/keycloak';
 import { toast } from '../components/feedback/Toast';
+import i18n from '../i18n/config';
 
 const STREAM_URL = '/api/v1/notifications/stream';
 const RECONNECT_DELAY_MS = 4_000;
@@ -94,7 +95,7 @@ export default function useNotificationStream() {
         queryClient.invalidateQueries({ queryKey: ['messages'] });
       }
       playChime();
-      const title = payload?.title || 'Yeni bildirim';
+      const title = payload?.title || i18n.t('notifStream.newNotification');
       toast.info(title, payload?.body ?? undefined);
     };
 
@@ -103,8 +104,8 @@ export default function useNotificationStream() {
       try { payload = JSON.parse(event.data); } catch { /* malformed */ }
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       playChime();
-      const preview = payload?.body ? payload.body.slice(0, 80) : 'Yeni mesaj geldi';
-      toast.info('Yeni kullanıcı mesajı', preview);
+      const preview = payload?.body ? payload.body.slice(0, 80) : i18n.t('notifStream.newMessageReceived');
+      toast.info(i18n.t('notifStream.newUserMessage'), preview);
     };
 
     const handleSilentMessageUpdate = () => {

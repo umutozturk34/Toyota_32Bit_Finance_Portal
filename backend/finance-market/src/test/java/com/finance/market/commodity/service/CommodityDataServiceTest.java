@@ -46,7 +46,7 @@ class CommodityDataServiceTest {
 
         assertThatThrownBy(() -> service.validateExists("GC=F"))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("Emtia bulunamadı");
+                .hasMessage("error.market.commodityNotFound");
     }
 
     @Test

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { Eye, ListChecks, FileText, Percent, Search, Star, ChevronDown, Check, Info } from 'lucide-react';
@@ -12,7 +13,6 @@ import {
 } from '../../../shared/hooks/useWatchlist';
 import { toast } from '../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../shared/utils/apiError';
-import { ASSET_TYPE_LABELS } from '../../../shared/constants/assetTypes';
 
 export default function AddWatchlistItemModal({
   isOpen,
@@ -21,6 +21,7 @@ export default function AddWatchlistItemModal({
   defaultMarketType,
   defaultAssetCode,
 }) {
+  const { t } = useTranslation();
   const lists = useWatchlists();
   const watchlists = useMemo(() => lists.data ?? [], [lists.data]);
   const add = useAddWatchlistItem();
@@ -80,13 +81,13 @@ export default function AddWatchlistItemModal({
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!selectedAsset) return toast.error('Bir asset seç');
-    if (selectedListId == null) return toast.error('Bir liste seç');
+    if (!selectedAsset) return toast.error(t('addWatchlistItem.errorAsset'));
+    if (selectedListId == null) return toast.error(t('addWatchlistItem.errorList'));
     let numericThreshold = null;
     if (deltaThreshold !== '') {
       const parsed = Number.parseFloat(deltaThreshold);
       if (Number.isNaN(parsed) || parsed <= 0) {
-        return toast.error('% eşiği geçerli pozitif sayı olmalı');
+        return toast.error(t('addWatchlistItem.errorThreshold'));
       }
       numericThreshold = parsed;
     }
@@ -103,18 +104,21 @@ export default function AddWatchlistItemModal({
       } else {
         await add.mutateAsync({ watchlistId: selectedListId, ...payload });
       }
-      const verb = existingEntry ? 'güncellendi' : 'eklendi';
-      toast.success(`${selectedAsset.code} → ${targetList?.name ?? 'liste'} ${verb}`);
+      const targetName = targetList?.name ?? t('addWatchlistItem.fallbackListName');
+      toast.success(t(existingEntry ? 'addWatchlistItem.updated' : 'addWatchlistItem.added', {
+        code: selectedAsset.code,
+        list: targetName,
+      }));
       onClose();
     } catch (err) {
-      toast.error(extractApiError(err, 'Ekleme başarısız'));
+      toast.error(extractApiError(err, t('addWatchlistItem.failed')));
     }
   };
 
   const pending = add.isPending || addToFavorites.isPending;
   const subtitle = selectedAsset
-    ? `${selectedAsset.code} (${ASSET_TYPE_LABELS[selectedAsset.type] ?? selectedAsset.type})`
-    : 'Önce asset seç, sonra listeye ekle';
+    ? `${selectedAsset.code} (${t(`assets.labels.${selectedAsset.type}`, { defaultValue: selectedAsset.type })})`
+    : t('addWatchlistItem.subtitlePrompt');
   const selectedList = watchlists.find((w) => w.id === selectedListId);
   const isUpdate = existingEntry != null;
 
@@ -123,7 +127,7 @@ export default function AddWatchlistItemModal({
       isOpen={isOpen}
       onClose={onClose}
       icon={Eye}
-      title={isUpdate ? 'Liste girişini güncelle' : 'Listeye ekle'}
+      title={isUpdate ? t('addWatchlistItem.titleUpdate') : t('addWatchlistItem.titleCreate')}
       subtitle={subtitle}
       size="md"
     >
@@ -132,7 +136,7 @@ export default function AddWatchlistItemModal({
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
               <Search className="h-3 w-3" />
-              Asset Ara
+              {t('addWatchlistItem.searchLabel')}
             </label>
             {selectedAsset ? (
               <div className="flex items-center justify-between gap-2 rounded-lg border border-accent/40 bg-accent/5 px-3 py-2.5">
@@ -150,12 +154,12 @@ export default function AddWatchlistItemModal({
                   onClick={() => setSelectedAsset(null)}
                   className="text-[11px] font-medium text-fg-muted hover:text-fg transition-colors bg-transparent border-none cursor-pointer"
                 >
-                  Değiştir
+                  {t('addWatchlistItem.change')}
                 </button>
               </div>
             ) : (
               <SearchSuggestions
-                placeholder="BTC, AAPL, USDTRY..."
+                placeholder={t('addWatchlistItem.searchPlaceholder')}
                 navigateOnSelect={false}
                 onSelect={(asset) => setSelectedAsset(asset)}
               />
@@ -166,7 +170,7 @@ export default function AddWatchlistItemModal({
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
             <ListChecks className="h-3 w-3" />
-            Liste
+            {t('addWatchlistItem.listLabel')}
           </label>
           <div ref={listMenuRef} className="relative">
             <button
@@ -178,7 +182,7 @@ export default function AddWatchlistItemModal({
                 {selectedList?.isDefault && (
                   <Star className="h-3.5 w-3.5 text-warning fill-warning shrink-0" />
                 )}
-                <span className="truncate">{selectedList?.name ?? 'Liste seç'}</span>
+                <span className="truncate">{selectedList?.name ?? t('addWatchlistItem.pickList')}</span>
                 {selectedList && (
                   <span className="text-[11px] font-mono text-fg-subtle shrink-0">
                     {selectedList.itemCount}
@@ -237,14 +241,14 @@ export default function AddWatchlistItemModal({
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
             <FileText className="h-3 w-3" />
-            Not <span className="text-fg-subtle font-normal">(opsiyonel)</span>
+            {t('addWatchlistItem.noteLabel')} <span className="text-fg-subtle font-normal">{t('addWatchlistItem.optional')}</span>
           </label>
           <input
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={255}
-            placeholder="ETF spot dönemi"
+            placeholder={t('addWatchlistItem.notePlaceholder')}
             className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
           />
         </div>
@@ -252,7 +256,7 @@ export default function AddWatchlistItemModal({
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
             <Percent className="h-3 w-3" />
-            % Değişim Eşiği <span className="text-fg-subtle font-normal">(opsiyonel)</span>
+            {t('addWatchlistItem.thresholdLabel')} <span className="text-fg-subtle font-normal">{t('addWatchlistItem.optional')}</span>
           </label>
           <input
             type="number"
@@ -260,21 +264,20 @@ export default function AddWatchlistItemModal({
             min="0"
             value={deltaThreshold}
             onChange={(e) => setDeltaThreshold(e.target.value)}
-            placeholder="varsayılan 5"
+            placeholder={t('addWatchlistItem.thresholdPlaceholder')}
             className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all"
           />
           <p className="text-[11px] text-fg-subtle leading-relaxed">
-            Boş bırakırsan global %5 eşiği kullanılır.
+            {t('addWatchlistItem.thresholdHint')}
           </p>
         </div>
 
         {isUpdate && (
           <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/8 px-3 py-2.5 text-[11px] text-warning leading-relaxed">
             <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-            <span>
-              <strong>{selectedAsset?.code}</strong> bu listede zaten var.
-              Kaydet butonuyla mevcut not ve eşik değerleri üstüne yazılır.
-            </span>
+            <span dangerouslySetInnerHTML={{
+              __html: t('addWatchlistItem.duplicateWarn', { code: selectedAsset?.code ?? '' }),
+            }} />
           </div>
         )}
 
@@ -283,7 +286,9 @@ export default function AddWatchlistItemModal({
           disabled={pending || !selectedAsset || selectedListId == null}
           className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer disabled:opacity-50"
         >
-          {pending ? (isUpdate ? 'Güncelleniyor…' : 'Ekleniyor…') : isUpdate ? 'Güncelle' : 'Listeye Ekle'}
+          {pending
+            ? (isUpdate ? t('addWatchlistItem.updating') : t('addWatchlistItem.adding'))
+            : (isUpdate ? t('addWatchlistItem.updateCta') : t('addWatchlistItem.addCta'))}
         </button>
       </form>
     </BaseModal>

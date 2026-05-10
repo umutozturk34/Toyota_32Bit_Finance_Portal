@@ -1,5 +1,6 @@
 package com.finance.notification.alert.dispatch;
 
+import com.finance.common.i18n.Translator;
 import com.finance.common.model.MarketType;
 import com.finance.notification.alert.model.AlertDirection;
 import com.finance.notification.config.NotificationDispatchProperties;
@@ -22,12 +23,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PriceAlertHandler implements NotificationHandler {
 
-    private static final Locale TR = Locale.forLanguageTag("tr-TR");
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
     private static final String FALLBACK_ASSET_CODE = "?";
-    private static final String FALLBACK_MARKET_LABEL = "Varlık";
 
     private final NotificationDispatchProperties properties;
+    private final Translator translator;
 
     @Override
     public NotificationType type() {
@@ -35,7 +35,7 @@ public class PriceAlertHandler implements NotificationHandler {
     }
 
     @Override
-    public RenderedNotification render(NotificationRequest request) {
+    public RenderedNotification render(NotificationRequest request, Locale locale) {
         if (!(request.payload() instanceof PriceAlertPayload p)) {
             throw new IllegalArgumentException(
                     "PriceAlertHandler expects PriceAlertPayload, got " + request.payload().getClass().getSimpleName());
@@ -45,27 +45,31 @@ public class PriceAlertHandler implements NotificationHandler {
         MarketType marketType = p.marketType();
         String assetCode = p.assetCode() != null ? p.assetCode() : FALLBACK_ASSET_CODE;
         String displayName = displayName(p.assetName(), assetCode);
-        String marketLabel = marketType != null ? marketType.displayLabel() : FALLBACK_MARKET_LABEL;
+        String marketLabel = marketType != null
+                ? translator.translate("market.type." + marketType.name(), locale)
+                : translator.translate("notif.priceAlert.fallbackMarket", locale);
 
+        String title = translator.translate("notif.priceAlert.title", locale, displayName);
         return new RenderedNotification(
-                String.format("%s alarmı tetiklendi", displayName),
-                buildBody(marketLabel, direction, p.threshold(), p.currentPrice()),
-                "Finance Portal — " + displayName + " " + direction.displayLabel().toLowerCase(),
+                title,
+                buildBody(locale, marketLabel, direction, p.threshold(), p.currentPrice()),
+                translator.translate("notif.email.subject", locale, title),
                 "price-alert",
-                buildModel(p, direction, marketLabel, assetCode, displayName));
+                buildModel(p, direction, marketLabel, assetCode, displayName, locale));
     }
 
-    private String buildBody(String marketLabel, AlertDirection direction,
+    private String buildBody(Locale locale, String marketLabel, AlertDirection direction,
                                     BigDecimal threshold, BigDecimal currentPrice) {
-        return String.format("%s — %s. Eşik %s, anlık %s.",
+        return translator.translate("notif.priceAlert.body",
+                locale,
                 marketLabel,
-                direction.displayLabel(),
-                formatPrice(threshold, direction.isPercentBased()),
-                formatPrice(currentPrice, false));
+                translator.translate("alertDirection." + direction.name(), locale),
+                formatPrice(threshold, direction.isPercentBased(), locale),
+                formatPrice(currentPrice, false, locale));
     }
 
     private Map<String, Object> buildModel(PriceAlertPayload p, AlertDirection direction,
-                                                   String marketLabel, String assetCode, String displayName) {
+                                                   String marketLabel, String assetCode, String displayName, Locale locale) {
         Map<String, Object> model = new HashMap<>();
         model.put("assetCode", assetCode);
         model.put("assetCodeUpper", assetCode.toUpperCase());
@@ -73,10 +77,10 @@ public class PriceAlertHandler implements NotificationHandler {
         model.put("image", p.image());
         model.put("marketLabel", marketLabel);
         model.put("direction", direction.name());
-        model.put("directionLabel", direction.displayLabel());
-        model.put("thresholdFormatted", formatPrice(p.threshold(), direction.isPercentBased()));
-        model.put("priceFormatted", formatPrice(p.currentPrice(), false));
-        model.put("changePercent", computeChangePercent(p.currentPrice(), p.threshold(), direction));
+        model.put("directionLabel", translator.translate("alertDirection." + direction.name(), locale));
+        model.put("thresholdFormatted", formatPrice(p.threshold(), direction.isPercentBased(), locale));
+        model.put("priceFormatted", formatPrice(p.currentPrice(), false, locale));
+        model.put("changePercent", computeChangePercent(p.currentPrice(), p.threshold(), direction, locale));
         model.put("isUp", direction.isUpward());
         model.put("isPercent", direction.isPercentBased());
         return model;
@@ -87,9 +91,9 @@ public class PriceAlertHandler implements NotificationHandler {
         return assetCode.toUpperCase();
     }
 
-    private String formatPrice(BigDecimal value, boolean asPercent) {
+    private String formatPrice(BigDecimal value, boolean asPercent, Locale locale) {
         if (value == null) return "—";
-        NumberFormat fmt = NumberFormat.getNumberInstance(TR);
+        NumberFormat fmt = NumberFormat.getNumberInstance(locale);
         if (asPercent) {
             fmt.setMaximumFractionDigits(properties.formatting().fractionDigitsLarge());
             fmt.setMinimumFractionDigits(0);
@@ -100,12 +104,12 @@ public class PriceAlertHandler implements NotificationHandler {
         return "₺" + fmt.format(value);
     }
 
-    private String computeChangePercent(BigDecimal current, BigDecimal threshold, AlertDirection direction) {
+    private String computeChangePercent(BigDecimal current, BigDecimal threshold, AlertDirection direction, Locale locale) {
         if (direction.isPercentBased() || current == null || threshold == null || threshold.signum() == 0) return null;
         BigDecimal pct = current.subtract(threshold)
                 .divide(threshold, properties.formatting().changePercentScale(), RoundingMode.HALF_UP)
                 .multiply(HUNDRED);
-        NumberFormat fmt = NumberFormat.getNumberInstance(TR);
+        NumberFormat fmt = NumberFormat.getNumberInstance(locale);
         fmt.setMaximumFractionDigits(properties.formatting().fractionDigitsLarge());
         fmt.setMinimumFractionDigits(properties.formatting().fractionDigitsLarge());
         String prefix = pct.signum() >= 0 ? "+" : "";

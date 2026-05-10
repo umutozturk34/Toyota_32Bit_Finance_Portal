@@ -37,6 +37,6 @@ public class AdminTriggerTier implements RateLimitTier {
 
     @Override
     public String errorMessage() {
-        return "Admin güncelleme tetikleme sınırına ulaştın. Lütfen daha sonra tekrar dene.";
+        return "error.rateLimit.adminTrigger";
     }
 }

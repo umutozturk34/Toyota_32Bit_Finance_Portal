@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import useSessionState from "../../shared/hooks/useSessionState";
 import { AnimatePresence } from 'framer-motion';
 import ReactECharts from 'echarts-for-react';
+import { useTranslation } from 'react-i18next';
 import {
     Landmark,
     Clock,
@@ -31,25 +32,20 @@ import { toast } from '../../shared/components/feedback/Toast';
 import FilterTabs from '../../shared/components/form/FilterTabs';
 import useListParams from '../../shared/hooks/useListParams';
 import { useTheme } from '../../shared/context/ThemeContext';
-import { BOND_TYPE_LABELS, BOND_TYPE_COLORS, CHART_LINE_COLORS } from './lib/bondConstants';
+import { BOND_TYPE_COLORS, CHART_LINE_COLORS } from './lib/bondConstants';
 
-const SORT_OPTIONS = [
-    { id: 'simpleYield', label: 'Basit Getiri' },
-    { id: 'couponRate', label: 'Kupon Oranı' },
-    { id: 'baseIndex', label: 'Endeks Fiyat' },
-    { id: 'maturityEnd', label: 'Vade Sonu' },
-    { id: 'seriesCode', label: 'Seri Kodu' },
-];
+const SORT_OPTION_IDS = ['simpleYield', 'couponRate', 'baseIndex', 'maturityEnd', 'seriesCode'];
 
 function RateHistoryChart({ isinCode, bondType }) {
+    const { t } = useTranslation();
     const { isDark } = useTheme();
     const { data: rateData, isLoading } = useQuery({
         queryKey: ['bondRateHistory', isinCode],
         queryFn: () => bondService.getRateHistory(isinCode),
     });
 
-    if (isLoading) return <div className="h-48 flex items-center justify-center text-fg-muted text-xs">Grafik yükleniyor…</div>;
-    if (!rateData || rateData.length === 0) return <div className="h-48 flex items-center justify-center text-fg-muted text-xs">Rate verisi yok</div>;
+    if (isLoading) return <div className="h-48 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.chartLoading')}</div>;
+    if (!rateData || rateData.length === 0) return <div className="h-48 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.noRateData')}</div>;
 
     const lineColor = CHART_LINE_COLORS[bondType] || '#8b5cf6';
 
@@ -87,7 +83,7 @@ function RateHistoryChart({ isinCode, bondType }) {
             },
         },
         series: [{
-            name: 'Kupon Oranı',
+            name: t('market.bond.couponRate'),
             type: 'line',
             data: rateData.map(d => Number(d.rate)),
             smooth: true,
@@ -106,6 +102,8 @@ function RateHistoryChart({ isinCode, bondType }) {
 }
 
 function BondCard({ bond, isExpanded, onToggleChart }) {
+    const { t } = useTranslation();
+    const localeTag = t('common.localeTag');
     const maturityDays = daysUntil(bond.maturityEnd);
     const couponDays = daysUntil(bond.nextCouponDate);
     const typeColor = BOND_TYPE_COLORS[bond.bondType] || 'bg-accent/10 text-accent border-accent/20';
@@ -129,29 +127,29 @@ function BondCard({ bond, isExpanded, onToggleChart }) {
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                         <span className={`rounded-lg border px-3 py-1 text-xs font-semibold tracking-wider ${typeColor}`}>
-                            {BOND_TYPE_LABELS[bond.bondType] || bond.bondType}
+                            {t(`market.bond.types.${bond.bondType}`, { defaultValue: bond.bondType })}
                         </span>
                         <span className="font-mono text-2xl font-bold text-fg">
-                            {formatPrice(bond.baseIndex)}
+                            {formatPrice(bond.baseIndex, localeTag)}
                         </span>
                     </div>
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-                    <StatCell icon={Building2} label="İhraççı" value={bond.issuer || 'HAZİNE'} />
-                    <StatCell icon={Percent} label="Kupon Oranı" value={formatRate(bond.couponRate)} mono />
-                    <StatCell icon={TrendingUp} label="Basit Getiri" value={
+                    <StatCell icon={Building2} label={t('market.bond.issuerLabel')} value={bond.issuer || t('market.bond.treasuryFallback')} />
+                    <StatCell icon={Percent} label={t('market.bond.couponRate')} value={formatRate(bond.couponRate)} mono />
+                    <StatCell icon={TrendingUp} label={t('market.bond.simpleYield')} value={
                         isFloatingType(bond.bondType)
-                            ? <span className="text-warning font-medium">Değişken</span>
+                            ? <span className="text-warning font-medium">{t('market.bond.floating')}</span>
                             : formatRate(bond.simpleYield)
                     } mono />
-                    <StatCell icon={Calendar} label="Başlangıç" value={formatDate(bond.maturityStart)} mono />
-                    <StatCell icon={Calendar} label="Vade Sonu" value={
-                        <>{formatDate(bond.maturityEnd)}{maturityDays != null && <span className="ml-1.5 text-fg-subtle">({maturityDays}g)</span>}</>
+                    <StatCell icon={Calendar} label={t('market.bond.startLabel')} value={formatDate(bond.maturityStart, localeTag)} mono />
+                    <StatCell icon={Calendar} label={t('market.bond.maturityLabel')} value={
+                        <>{formatDate(bond.maturityEnd, localeTag)}{maturityDays != null && <span className="ml-1.5 text-fg-subtle">({maturityDays}{t('market.bond.daysSuffix')})</span>}</>
                     } mono />
                     {bond.nextCouponDate && (
-                        <StatCell icon={Calendar} label="Kupon Tarihi" value={
-                            <>{formatDate(bond.nextCouponDate)}{couponDays != null && <span className="ml-1.5 text-fg-subtle">({couponDays}g)</span>}</>
+                        <StatCell icon={Calendar} label={t('market.bond.couponDateLabel')} value={
+                            <>{formatDate(bond.nextCouponDate, localeTag)}{couponDays != null && <span className="ml-1.5 text-fg-subtle">({couponDays}{t('market.bond.daysSuffix')})</span>}</>
                         } mono />
                     )}
                 </div>
@@ -159,7 +157,7 @@ function BondCard({ bond, isExpanded, onToggleChart }) {
                 <div className="mt-4 flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-[11px] text-fg-subtle">
                         <Clock className="h-3 w-3" />
-                        {bond.lastUpdated ? new Date(bond.lastUpdated).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'N/A'}
+                        {bond.lastUpdated ? new Date(bond.lastUpdated).toLocaleString(localeTag, { timeZone: 'Europe/Istanbul' }) : 'N/A'}
                     </div>
                     {bond.couponRate != null && Number(bond.couponRate) > 0 && (
                         <button
@@ -167,7 +165,7 @@ function BondCard({ bond, isExpanded, onToggleChart }) {
                             className="flex items-center gap-1.5 text-xs text-fg-muted hover:text-accent transition-colors cursor-pointer bg-transparent border-none"
                         >
                             <BarChart3 className="h-3.5 w-3.5" />
-                            Faiz Değişimi
+                            {t('market.bond.rateChangeButton')}
                             {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                         </button>
                     )}
@@ -209,14 +207,14 @@ function formatRate(val) {
     return `%${Number(val).toFixed(2)}`;
 }
 
-function formatPrice(val) {
+function formatPrice(val, localeTag = 'en-US') {
     if (val == null) return 'N/A';
-    return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(val);
+    return new Intl.NumberFormat(localeTag, { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(val);
 }
 
-function formatDate(val) {
+function formatDate(val, localeTag = 'en-US') {
     if (!val) return 'N/A';
-    return new Date(val).toLocaleDateString('tr-TR', { timeZone: 'Europe/Istanbul' });
+    return new Date(val).toLocaleDateString(localeTag, { timeZone: 'Europe/Istanbul' });
 }
 
 function daysUntil(dateStr) {
@@ -229,12 +227,14 @@ function isFloatingType(bondType) {
 }
 
 export default function BondsPage() {
+    const { t } = useTranslation();
     const { hasRole } = useAuth();
     const [updating, setUpdating] = useState({});
     const [expandedBond, setExpandedBond] = useSessionState('bonds-expanded', null);
     const isAdmin = hasRole('ADMIN');
     const listParams = useListParams();
     const typeFilter = listParams.filter || 'ALL';
+    const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.bond.sort.${id}`) }));
 
     const { data: bondTypes = [] } = useQuery({
         queryKey: ['bondTypes'],
@@ -261,25 +261,25 @@ export default function BondsPage() {
         setUpdating(prev => ({ ...prev, full: true }));
         try {
             const response = await adminService.triggerBondUpdate();
-            toast.success('Güncelleme Başlatıldı', response.message || 'Tahvil güncelleme başlatıldı');
+            toast.success(t('market.bond.updateStartedTitle'), response.message || t('market.bond.updateStarted'));
             setTimeout(refetch, 10000);
         } catch (err) {
-            toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
+            toast.error(t('market.bond.updateErrorTitle'), err.response?.data?.message || err.message);
         } finally {
             setUpdating(prev => ({ ...prev, full: false }));
         }
     };
 
     const adminActions = [
-        { key: 'full', label: 'Güncelle', title: 'Tahvil verilerini güncelle', handler: handleBondUpdate },
+        { key: 'full', label: t('market.bond.updateLabel'), title: t('market.bond.updateTitle'), handler: handleBondUpdate },
     ];
 
     const handleTypeFilter = (id) => {
         listParams.setFilter(id);
     };
 
-    if (loading && bonds.length === 0) return <LoadingState message="Tahvil verileri yükleniyor…" />;
-    if (error) return <ErrorState message="Tahvil verileri yüklenirken hata oluştu" onRetry={refetch} />;
+    if (loading && bonds.length === 0) return <LoadingState message={t('market.bond.loading')} />;
+    if (error) return <ErrorState message={t('market.bond.error')} onRetry={refetch} />;
 
     return (
         <div className="space-y-6 py-6">
@@ -287,7 +287,7 @@ export default function BondsPage() {
                 icon={<Landmark className="h-5 w-5" />}
                 title={
                     <span className="inline-flex items-center gap-3 flex-wrap">
-                        Tahvil & Bono
+                        {t('market.bond.title')}
                         <MarketStatusBadge market="BOND" compact />
                     </span>
                 }
@@ -303,19 +303,19 @@ export default function BondsPage() {
                     <SearchInput
                         value={listParams.search}
                         onChange={listParams.setSearch}
-                        placeholder="ISIN veya seri kodu ara..."
+                        placeholder={t('market.bond.searchPlaceholder')}
                         withSuggestions
                         suggestFn={(q) => bondService.getAllBonds({ search: q, size: 6 }).then(r => r.content || [])}
                         suggestLabelFn={(b) => b.isinCode || b.seriesCode}
                     />
                 </div>
                 {totalElements > 0 && (
-                    <span className="text-xs text-fg-muted">{totalElements} tahvil</span>
+                    <span className="text-xs text-fg-muted">{totalElements} {t('market.bond.countLabel')}</span>
                 )}
                 <SortSelect
                     value={listParams.sort}
                     direction={listParams.direction}
-                    options={SORT_OPTIONS}
+                    options={sortOptions}
                     onSortChange={listParams.setSort}
                     onDirectionChange={listParams.setDirection}
                 />
@@ -323,7 +323,7 @@ export default function BondsPage() {
 
             {bondTypes.length > 0 && (
                 <FilterTabs
-                    items={bondTypes.map(b => ({ type: b.type, count: b.count, label: BOND_TYPE_LABELS[b.type] || b.type }))}
+                    items={bondTypes.map(b => ({ type: b.type, count: b.count, label: t(`market.bond.types.${b.type}`, { defaultValue: b.type }) }))}
                     activeId={typeFilter}
                     onSelect={handleTypeFilter}
                     allCount={bondTypes.reduce((sum, b) => sum + Number(b.count), 0)}
@@ -350,8 +350,8 @@ export default function BondsPage() {
                     </motion.div>
                 ) : !loading && (
                     <EmptyState
-                        message={listParams.search ? 'Aramayla eşleşen tahvil bulunamadı.' : 'Henüz tahvil verisi bulunmuyor.'}
-                        hint={!listParams.search && isAdmin ? 'Admin butonlarını kullanarak veri çekebilirsiniz.' : undefined}
+                        message={listParams.search ? t('market.bond.noSearchResults') : t('market.bond.empty')}
+                        hint={!listParams.search && isAdmin ? t('market.empty.adminHint') : undefined}
                     />
                 )}
             </AnimatePresence>

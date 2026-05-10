@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
 import { ThemeProvider } from './shared/context/ThemeContext';
+import LanguageSyncBridge from './shared/i18n/useLanguageSync';
 import ToastContainer from './shared/components/feedback/Toast';
 import ProtectedRoute from './shared/components/auth/ProtectedRoute';
 import ErrorBoundary from './shared/components/feedback/ErrorBoundary';
@@ -45,6 +46,7 @@ function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
+      <LanguageSyncBridge />
       <ToastContainer />
       <BrowserRouter>
         <ErrorBoundary>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Plus, Trash2, Eye, EyeOff, Settings2, X, ChevronDown,
 } from 'lucide-react';
@@ -13,6 +14,7 @@ const COLOR_PRESETS = [
     '#f59e0b', '#ef4444', '#06b6d4', '#84cc16', '#f97316',
 ];
 const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndicator, toggleIndicator, allowedTypes }) => {
+    const { t } = useTranslation();
     const availableTypes = allowedTypes
         ? INDICATOR_TYPES.filter(t => allowedTypes.includes(t.value))
         : INDICATOR_TYPES;
@@ -44,7 +46,7 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                             <button
                                 onClick={() => toggleIndicator(ind.id)}
                                 className="shrink-0 p-0 border-none bg-transparent cursor-pointer text-fg-muted hover:text-fg transition-colors"
-                                title={ind.visible ? 'Hide' : 'Show'}
+                                title={ind.visible ? t('chart.indicators.hide') : t('chart.indicators.show')}
                             >
                                 {ind.visible
                                     ? <Eye className="w-3.5 h-3.5" />
@@ -97,14 +99,14 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                                         <button
                                             onClick={() => setEditingId(ind.id)}
                                             className="p-1 border-none bg-transparent cursor-pointer text-fg-muted hover:text-fg rounded hover:bg-surface transition-colors"
-                                            title="Edit"
+                                            title={t('chart.indicators.edit')}
                                         >
                                             <Settings2 className="w-3 h-3" />
                                         </button>
                                         <button
                                             onClick={() => removeIndicator(ind.id)}
                                             className="p-1 border-none bg-transparent cursor-pointer text-fg-muted hover:text-[#ef4444] rounded hover:bg-[rgba(239,68,68,0.1)] transition-colors"
-                                            title="Remove"
+                                            title={t('chart.indicators.remove')}
                                         >
                                             <Trash2 className="w-3 h-3" />
                                         </button>
@@ -133,7 +135,7 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                         ))}
                     </div>
                     <div className="flex items-center gap-2">
-                        <label className="text-[10px] text-fg-muted uppercase tracking-wider font-medium">Period</label>
+                        <label className="text-[10px] text-fg-muted uppercase tracking-wider font-medium">{t('chart.indicators.period')}</label>
                         <input
                             type="number"
                             min={1}
@@ -144,7 +146,7 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                         />
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <label className="text-[10px] text-fg-muted uppercase tracking-wider font-medium mr-1">Color</label>
+                        <label className="text-[10px] text-fg-muted uppercase tracking-wider font-medium mr-1">{t('chart.indicators.color')}</label>
                         {COLOR_PRESETS.map(c => (
                             <button
                                 key={c}
@@ -163,13 +165,13 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                             onClick={handleAdd}
                             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-[#5E6AD2] text-white text-xs font-semibold border-none cursor-pointer hover:bg-[#6872D9] transition-colors"
                         >
-                            <Plus className="w-3 h-3" /> Add
+                            <Plus className="w-3 h-3" /> {t('chart.indicators.add')}
                         </button>
                         <button
                             onClick={() => setShowAddForm(false)}
                             className="px-3 py-1.5 rounded-md bg-transparent text-fg-muted text-xs font-medium border border-border-default cursor-pointer hover:text-fg hover:border-fg-subtle transition-colors"
                         >
-                            Cancel
+                            {t('chart.indicators.cancel')}
                         </button>
                     </div>
                 </div>
@@ -178,7 +180,7 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                     onClick={() => setShowAddForm(true)}
                     className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-fg-muted bg-transparent border border-dashed border-border-default cursor-pointer hover:text-fg hover:border-fg-subtle hover:bg-surface/50 transition-all duration-150"
                 >
-                    <Plus className="w-3 h-3" /> Add Indicator
+                    <Plus className="w-3 h-3" /> {t('chart.indicators.addIndicator')}
                 </button>
             )}
         </div>

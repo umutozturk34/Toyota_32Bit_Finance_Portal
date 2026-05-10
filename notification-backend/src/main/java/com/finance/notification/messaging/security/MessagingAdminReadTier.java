@@ -41,6 +41,6 @@ public class MessagingAdminReadTier implements RateLimitTier {
 
     @Override
     public String errorMessage() {
-        return "Admin okuma sınırına ulaştın.";
+        return "error.rateLimit.messagingAdminRead";
     }
 }

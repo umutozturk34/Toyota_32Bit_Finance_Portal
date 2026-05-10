@@ -1,6 +1,8 @@
 package com.finance.user.service;
 
 
+import com.finance.user.client.KeycloakAdminClient;
+import com.finance.user.config.UserSecurityProperties;
 import com.finance.user.dto.UserPreferenceResponse;
 import com.finance.user.dto.UserPreferenceUpdateRequest;
 import com.finance.user.dto.enums.ReportFrequency;
@@ -18,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.time.Duration;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,14 +36,21 @@ class UserPreferenceServiceTest {
 
     @Mock private UserPreferenceRepository repository;
     @Mock private ApplicationEventPublisher eventPublisher;
+    @Mock private KeycloakAdminClient keycloakAdminClient;
 
     private UserPreferenceMapper mapper;
+    private UserSecurityProperties securityProperties;
     private UserPreferenceService service;
 
     @BeforeEach
     void setUp() {
         mapper = new UserPreferenceMapperImpl();
-        service = new UserPreferenceService(repository, mapper, eventPublisher, Optional.empty());
+        securityProperties = new UserSecurityProperties(
+                new UserSecurityProperties.EmailChange(5, 6, Duration.ofMinutes(5)),
+                new UserSecurityProperties.PasswordReset(300L),
+                new UserSecurityProperties.Keycloak("finance-frontend", "themePreference", "locale"));
+        service = new UserPreferenceService(repository, mapper, eventPublisher, Optional.empty(),
+                keycloakAdminClient, securityProperties);
     }
 
     @Test
@@ -144,6 +154,44 @@ class UserPreferenceServiceTest {
         assertThat(event.reportFrequency()).isEqualTo("WEEKLY");
         assertThat(event.onboardingCompleted()).isTrue();
         assertThat(event.eventId()).isNotBlank();
+    }
+
+    @Test
+    void should_syncLocaleToKeycloak_when_languageProvided() {
+        UserPreferenceUpdateRequest request = new UserPreferenceUpdateRequest(
+                null, "en", null, null, null, null);
+        when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
+        when(repository.save(any(UserPreference.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.upsert(USER_SUB, request);
+
+        verify(keycloakAdminClient).setUserAttribute(USER_SUB, "locale", "en");
+    }
+
+    @Test
+    void should_skipKeycloakSync_when_languageNull() {
+        UserPreferenceUpdateRequest request = new UserPreferenceUpdateRequest(
+                ThemePreference.LIGHT, null, null, null, null, null);
+        when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
+        when(repository.save(any(UserPreference.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.upsert(USER_SUB, request);
+
+        verify(keycloakAdminClient, never()).setUserAttribute(any(), any(), any());
+    }
+
+    @Test
+    void should_swallowKeycloakFailure_when_attributeSyncThrows() {
+        UserPreferenceUpdateRequest request = new UserPreferenceUpdateRequest(
+                null, "en", null, null, null, null);
+        when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
+        when(repository.save(any(UserPreference.class))).thenAnswer(inv -> inv.getArgument(0));
+        org.mockito.Mockito.doThrow(new RuntimeException("keycloak down"))
+                .when(keycloakAdminClient).setUserAttribute(any(), any(), any());
+
+        UserPreferenceResponse response = service.upsert(USER_SUB, request);
+
+        assertThat(response.language()).isEqualTo("en");
     }
 
     @Test

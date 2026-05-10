@@ -33,14 +33,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final AppProperties appProperties;
     private final LettuceBasedProxyManager<String> proxyManager;
     private final List<RateLimitTier> tiers;
+    private final com.finance.common.i18n.Translator translator;
 
     public RateLimitFilter(ObjectMapper objectMapper,
                            AppProperties appProperties,
                            StatefulRedisConnection<String, byte[]> connection,
-                           List<RateLimitTier> tiers) {
+                           List<RateLimitTier> tiers,
+                           com.finance.common.i18n.Translator translator) {
         this.objectMapper = objectMapper;
         this.appProperties = appProperties;
         this.tiers = tiers;
+        this.translator = translator;
         this.proxyManager = Bucket4jLettuce.casBasedBuilder(connection)
                 .expirationAfterWrite(
                         ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(Duration.ofHours(2))
@@ -83,7 +86,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
             response.setHeader("X-Rate-Limit-Remaining", "0");
             response.setHeader("X-Rate-Limit-Retry-After-Seconds", String.valueOf(retryAfterSeconds));
 
-            ErrorResponse error = ErrorResponse.of(tier.errorMessage(), tier.errorCode(), path);
+            String localizedMessage = translator.translateOrSelf(tier.errorMessage());
+            ErrorResponse error = ErrorResponse.of(localizedMessage, tier.errorCode(), path);
             response.getWriter().write(objectMapper.writeValueAsString(error));
         }
     }

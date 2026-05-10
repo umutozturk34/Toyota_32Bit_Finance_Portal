@@ -289,6 +289,19 @@
         "quantity": "Miktar"
       }
     },
+    "allocation": {
+      "title": "Dağılım",
+      "total": "Toplam",
+      "empty": "Bu türde varlık bulunmuyor"
+    },
+    "performance": {
+      "title": "Portföy Performansı",
+      "titleByType": "{{type}} Performansı",
+      "calculating": "hesaplanıyor",
+      "lotAdded": "Lot Eklendi",
+      "positionEvents": "Pozisyon Hareketleri",
+      "empty": "Bu aralıkta veri bulunmuyor"
+    },
     "summary": {
       "marketValue": "Piyasa Değeri",
       "totalCost": "Toplam Maliyet",
@@ -316,6 +329,11 @@
         "preparing": "Hazırlanıyor..."
       }
     }
+  },
+  "marketAddPosition": {
+    "noPortfolioTitle": "Portföy bulunamadı",
+    "noPortfolioHint": "Pozisyon ekleyebilmek için önce portföyünüzü oluşturmanız gerekiyor.",
+    "goToPortfolio": "Portföye Git"
   },
   "positionDelete": {
     "title": "Pozisyonu Sil",

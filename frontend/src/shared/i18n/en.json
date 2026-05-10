@@ -289,6 +289,19 @@
         "quantity": "Quantity"
       }
     },
+    "allocation": {
+      "title": "Allocation",
+      "total": "Total",
+      "empty": "No assets in this category"
+    },
+    "performance": {
+      "title": "Portfolio Performance",
+      "titleByType": "{{type}} Performance",
+      "calculating": "calculating",
+      "lotAdded": "Lot Added",
+      "positionEvents": "Position Events",
+      "empty": "No data in this range"
+    },
     "summary": {
       "marketValue": "Market Value",
       "totalCost": "Total Cost",
@@ -316,6 +329,11 @@
         "preparing": "Preparing..."
       }
     }
+  },
+  "marketAddPosition": {
+    "noPortfolioTitle": "Portfolio not found",
+    "noPortfolioHint": "You need to create a portfolio first before adding positions.",
+    "goToPortfolio": "Go to Portfolio"
   },
   "positionDelete": {
     "title": "Delete Position",

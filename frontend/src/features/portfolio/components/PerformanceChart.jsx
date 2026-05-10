@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import useChartRange from '../../../shared/hooks/useChartRange';
 import ReactECharts from 'echarts-for-react';
@@ -10,14 +11,14 @@ import { cardVariants } from '../../../shared/utils/animations';
 import { useTheme } from '../../../shared/context/ThemeContext';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
+import i18n from '../../../shared/i18n/config';
 import {
   ASSET_TYPE_FILTERS as ASSET_TYPES,
   ASSET_TYPE_COLORS,
-  ASSET_TYPE_LABELS,
 } from '../../../shared/constants/assetTypes';
 
 const POSITION_EVENT_META = {
-  POSITION_ADDED: { color: '#10b981', label: 'Lot Eklendi' },
+  POSITION_ADDED: { color: '#10b981', labelKey: 'portfolio.performance.lotAdded' },
 };
 
 function themePalette(isDark) {
@@ -29,7 +30,8 @@ function themePalette(isDark) {
 function buildTooltipHtml(point, palette) {
   const { bg, fg, muted, border } = palette;
   const totalValue = point.amount ?? (Array.isArray(point.value) ? Number(point.value[1]) : Number(point.value));
-  const date = new Date(point.time).toLocaleDateString('tr-TR', {
+  const localeTag = i18n.t('common.localeTag');
+  const date = new Date(point.time).toLocaleDateString(localeTag, {
     day: '2-digit', month: 'short', year: 'numeric',
   });
   const pnlColor = point.pnl >= 0 ? '#10b981' : '#ef4444';
@@ -37,7 +39,7 @@ function buildTooltipHtml(point, palette) {
 
   const detailRows = (point.details || []).map((d) => {
     const color = ASSET_TYPE_COLORS[d.assetType] || '#6366f1';
-    const label = d.label !== d.assetType ? d.label : (ASSET_TYPE_LABELS[d.assetType] || d.label);
+    const label = d.label !== d.assetType ? d.label : i18n.t(`assets.labels.${d.assetType}`, { defaultValue: d.assetType });
     const dColor = d.pnlTry >= 0 ? '#10b981' : '#ef4444';
     return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0">
       <div style="display:flex;align-items:center;gap:6px">
@@ -57,11 +59,11 @@ function buildTooltipHtml(point, palette) {
   const lotEvents = (point.events || []).filter((e) => POSITION_EVENT_META[e.type]);
   const eventRows = lotEvents.map((ev) => {
     const meta = POSITION_EVENT_META[ev.type];
-    const codeLabel = ev.assetCode || (ASSET_TYPE_LABELS[ev.assetType] || ev.assetType);
+    const codeLabel = ev.assetCode || i18n.t(`assets.labels.${ev.assetType}`, { defaultValue: ev.assetType });
     return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 0">
       <div style="display:flex;align-items:center;gap:5px">
         <span style="width:5px;height:5px;border-radius:50%;background:${meta.color};display:inline-block"></span>
-        <span style="font-size:10px;font-weight:600;color:${meta.color}">${meta.label}</span>
+        <span style="font-size:10px;font-weight:600;color:${meta.color}">${i18n.t(meta.labelKey)}</span>
         <span style="font-size:10px;color:${muted}">${codeLabel}</span>
       </div>
       <span style="font-size:10px;font-family:ui-monospace,monospace;color:${fg};opacity:0.8">${formatPriceTRY(ev.valueTry)}</span>
@@ -69,7 +71,7 @@ function buildTooltipHtml(point, palette) {
   }).join('');
   const eventBlock = eventRows
     ? `<div style="border-top:1px solid ${border};margin-top:6px;padding-top:6px">
-        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:${muted};margin-bottom:4px">Pozisyon Hareketleri</div>
+        <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:${muted};margin-bottom:4px">${i18n.t('portfolio.performance.positionEvents')}</div>
         ${eventRows}
       </div>`
     : '';
@@ -185,6 +187,7 @@ function buildEChartsOption(data, color, palette) {
 }
 
 export default function PerformanceChart({ portfolioId }) {
+  const { t } = useTranslation();
   const { isDark } = useTheme();
   const [range, setRange] = useChartRange('portfolio-perf-range');
   const [activeType, setActiveType] = useSessionState('portfolio-perf-type', null);
@@ -221,8 +224,8 @@ export default function PerformanceChart({ portfolioId }) {
             <div>
               <p className="text-sm font-bold text-fg">
                 {activeType
-                  ? ASSET_TYPES.find((t) => t.id === activeType)?.label + ' Performansı'
-                  : 'Portföy Performansı'}
+                  ? t('portfolio.performance.titleByType', { type: t(`assets.labels.${activeType}`, { defaultValue: activeType }) })
+                  : t('portfolio.performance.title')}
               </p>
               {currentValue && (
                 <div className="flex items-center gap-2.5 mt-0.5">
@@ -241,7 +244,7 @@ export default function PerformanceChart({ portfolioId }) {
             {backfill.running && (
               <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-tight text-accent/90">
                 <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                <span>hesaplanıyor · {String(backfillElapsed).padStart(2, '0')}s</span>
+                <span>{t('portfolio.performance.calculating')} · {String(backfillElapsed).padStart(2, '0')}s</span>
               </div>
             )}
             <div className="flex items-center gap-1.5">
@@ -249,14 +252,14 @@ export default function PerformanceChart({ portfolioId }) {
                 <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-30" />
                 <span className="relative block w-2 h-2 rounded-full bg-success" />
               </span>
-              <span className="text-[10px] text-fg-muted font-medium">Lot Eklendi</span>
+              <span className="text-[10px] text-fg-muted font-medium">{t('portfolio.performance.lotAdded')}</span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center justify-between px-5 pt-4 pb-2 gap-2 flex-wrap">
           <div className="inline-flex gap-0.5 rounded-xl border border-border-default bg-bg-base p-1">
-            {ASSET_TYPES.map(({ id, label }) => (
+            {ASSET_TYPES.map(({ id }) => (
               <button
                 key={id || 'all'}
                 onClick={() => setActiveType(id)}
@@ -270,7 +273,7 @@ export default function PerformanceChart({ portfolioId }) {
                   />
                 )}
                 <span className={`relative z-10 ${activeType === id ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
-                  {label}
+                  {id ? t(`assets.labels.${id}`, { defaultValue: id }) : t('assets.labels.ALL')}
                 </span>
               </button>
             ))}
@@ -295,7 +298,7 @@ export default function PerformanceChart({ portfolioId }) {
           ) : (
             <div className="flex flex-col items-center justify-center h-[380px] gap-3">
               <TrendingUp className="h-8 w-8 text-fg-subtle" />
-              <p className="text-sm text-fg-muted">Bu aralıkta veri bulunmuyor</p>
+              <p className="text-sm text-fg-muted">{t('portfolio.performance.empty')}</p>
             </div>
           )}
         </div>

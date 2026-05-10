@@ -1,5 +1,6 @@
 import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
   X, BellOff, Inbox, Check, CheckCheck, Trash2, AlertCircle, Zap, FileText,
   MessageSquare, Bell, Megaphone, Search, Newspaper, Briefcase, Sunrise, Sunset, RefreshCw,
@@ -17,35 +18,41 @@ import BroadcastModal from '../messages/BroadcastModal';
 import { useAuth } from '../auth/AuthContext';
 
 const TYPE_META = {
-  PRICE_ALERT_FIRED: { Icon: AlertCircle, label: 'Fiyat alarmı', tint: 'text-accent' },
-  WATCHLIST_DELTA: { Icon: Zap, label: 'Takip listesi', tint: 'text-warning' },
-  REPORT_READY: { Icon: FileText, label: 'Rapor', tint: 'text-success' },
-  MESSAGE: { Icon: MessageSquare, label: 'Mesaj', tint: 'text-accent-secondary' },
-  SYSTEM: { Icon: Bell, label: 'Sistem', tint: 'text-fg-muted' },
-  MARKET_OPENED: { Icon: Sunrise, label: 'Piyasa açıldı', tint: 'text-success' },
-  MARKET_CLOSED: { Icon: Sunset, label: 'Piyasa kapandı', tint: 'text-fg-muted' },
-  MARKET_DATA_UPDATED: { Icon: RefreshCw, label: 'Veri güncellendi', tint: 'text-accent' },
-  NEWS_PUBLISHED: { Icon: Newspaper, label: 'Yeni haberler', tint: 'text-accent-secondary' },
-  PORTFOLIO_UPDATED: { Icon: Briefcase, label: 'Portföy güncellendi', tint: 'text-success' },
+  PRICE_ALERT_FIRED: { Icon: AlertCircle, labelKey: 'notificationPanel.types.PRICE_ALERT_FIRED', tint: 'text-accent' },
+  WATCHLIST_DELTA: { Icon: Zap, labelKey: 'notificationPanel.types.WATCHLIST_DELTA', tint: 'text-warning' },
+  REPORT_READY: { Icon: FileText, labelKey: 'notificationPanel.types.REPORT_READY', tint: 'text-success' },
+  MESSAGE: { Icon: MessageSquare, labelKey: 'notificationPanel.types.MESSAGE', tint: 'text-accent-secondary' },
+  SYSTEM: { Icon: Bell, labelKey: 'notificationPanel.types.SYSTEM', tint: 'text-fg-muted' },
+  MARKET_OPENED: { Icon: Sunrise, labelKey: 'notificationPanel.types.MARKET_OPENED', tint: 'text-success' },
+  MARKET_CLOSED: { Icon: Sunset, labelKey: 'notificationPanel.types.MARKET_CLOSED', tint: 'text-fg-muted' },
+  MARKET_DATA_UPDATED: { Icon: RefreshCw, labelKey: 'notificationPanel.types.MARKET_DATA_UPDATED', tint: 'text-accent' },
+  NEWS_PUBLISHED: { Icon: Newspaper, labelKey: 'notificationPanel.types.NEWS_PUBLISHED', tint: 'text-accent-secondary' },
+  PORTFOLIO_UPDATED: { Icon: Briefcase, labelKey: 'notificationPanel.types.PORTFOLIO_UPDATED', tint: 'text-success' },
 };
 
-function relativeTime(iso) {
-  if (!iso) return '';
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const sec = Math.round(diffMs / 1000);
-  if (sec < 60) return 'az önce';
-  const min = Math.round(sec / 60);
-  if (min < 60) return `${min} dk önce`;
-  const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr} sa önce`;
-  const day = Math.round(hr / 24);
-  if (day < 7) return `${day} gün önce`;
-  return new Date(iso).toLocaleDateString('tr-TR');
+function useRelativeTime() {
+  const { t, i18n } = useTranslation();
+  return (iso) => {
+    if (!iso) return '';
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const sec = Math.round(diffMs / 1000);
+    if (sec < 60) return t('notificationPanel.justNow');
+    const min = Math.round(sec / 60);
+    if (min < 60) return t('notificationPanel.minutesAgo', { count: min });
+    const hr = Math.round(min / 60);
+    if (hr < 24) return t('notificationPanel.hoursAgo', { count: hr });
+    const day = Math.round(hr / 24);
+    if (day < 7) return t('notificationPanel.daysAgo', { count: day });
+    return new Date(iso).toLocaleDateString(i18n.language === 'tr' ? 'tr-TR' : 'en-US');
+  };
 }
 
 function NotificationRow({ item, onRead, onDelete }) {
+  const { t } = useTranslation();
+  const relativeTime = useRelativeTime();
   const meta = TYPE_META[item.type] ?? TYPE_META.SYSTEM;
-  const { Icon, label, tint } = meta;
+  const { Icon, labelKey, tint } = meta;
+  const label = t(labelKey);
   const isUnread = item.readAt == null;
 
   return (
@@ -84,7 +91,7 @@ function NotificationRow({ item, onRead, onDelete }) {
             className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
           >
             <Check className="h-3 w-3" />
-            okundu
+            {t('notificationPanel.markRead')}
           </button>
         )}
         <button
@@ -92,7 +99,7 @@ function NotificationRow({ item, onRead, onDelete }) {
           className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-fg-muted hover:text-danger hover:bg-danger/5 transition-colors bg-transparent border-none cursor-pointer"
         >
           <Trash2 className="h-3 w-3" />
-          sil
+          {t('notificationPanel.deleteOne')}
         </button>
       </div>
     </motion.div>
@@ -100,6 +107,7 @@ function NotificationRow({ item, onRead, onDelete }) {
 }
 
 export default function NotificationPanel({ isOpen, onClose }) {
+  const { t } = useTranslation();
   const { hasRole } = useAuth();
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [searchInput, setSearchInput] = useState('');
@@ -146,7 +154,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
             <header className="flex items-center justify-between px-5 h-14 border-b border-border-default shrink-0">
               <div className="flex items-center gap-2">
                 <Bell className="h-4 w-4 text-accent" />
-                <h2 className="text-sm font-bold text-fg tracking-tight font-display">Bildirimler</h2>
+                <h2 className="text-sm font-bold text-fg tracking-tight font-display">{t('notificationPanel.title')}</h2>
                 <span className="text-[10px] font-mono text-fg-subtle px-1.5 py-0.5 rounded-md bg-surface">
                   {total}
                 </span>
@@ -159,11 +167,11 @@ export default function NotificationPanel({ isOpen, onClose }) {
                     whileHover={{ y: -1 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                     className="relative flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold text-white overflow-hidden border-none cursor-pointer shadow-sm shadow-accent/25"
-                    title="Tüm kullanıcılara sistem yayını gönder"
+                    title={t('notificationPanel.broadcastTitle')}
                   >
                     <span aria-hidden className="absolute inset-0 bg-gradient-to-br from-accent via-accent-bright to-accent" />
                     <Megaphone className="relative h-3 w-3" />
-                    <span className="relative">Yayın</span>
+                    <span className="relative">{t('notificationPanel.broadcastLabel')}</span>
                   </motion.button>
                 )}
                 <button
@@ -182,7 +190,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
                   type="text"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Bildirimlerde ara…"
+                  placeholder={t('notificationPanel.searchPlaceholder')}
                   className="w-full rounded-xl border border-border-default bg-bg-base/60 pl-8 pr-8 py-2 text-[12px] text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)] focus:bg-bg-base transition-all"
                 />
                 {searchInput && (
@@ -212,7 +220,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
                       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                     />
                   )}
-                  <span className="relative z-10">Tümü</span>
+                  <span className="relative z-10">{t('notificationPanel.filterAll')}</span>
                 </button>
                 <button
                   onClick={() => setUnreadOnly(true)}
@@ -227,7 +235,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
                       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                     />
                   )}
-                  <span className="relative z-10">Okunmamış</span>
+                  <span className="relative z-10">{t('notificationPanel.filterUnread')}</span>
                 </button>
               </div>
               <div className="flex items-center gap-1.5">
@@ -237,7 +245,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border border-border-default cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <CheckCheck className="h-3 w-3" />
-                  okundu
+                  {t('notificationPanel.markRead')}
                 </button>
                 <button
                   onClick={() => setConfirmClearOpen(true)}
@@ -245,7 +253,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium text-fg-muted hover:text-danger hover:bg-danger/5 transition-colors bg-transparent border border-border-default hover:border-danger/30 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Trash2 className="h-3 w-3" />
-                  tümünü sil
+                  {t('notificationPanel.deleteAll')}
                 </button>
               </div>
             </div>
@@ -265,10 +273,10 @@ export default function NotificationPanel({ isOpen, onClose }) {
                     )}
                   </div>
                   <p className="text-xs text-fg-muted">
-                    {unreadOnly ? 'Okunmamış bildirim yok' : 'Henüz bildirim yok'}
+                    {unreadOnly ? t('notificationPanel.emptyUnread') : t('notificationPanel.empty')}
                   </p>
                   <p className="text-[11px] text-fg-subtle mt-1">
-                    {unreadOnly ? 'Hepsi okundu, tertemiz.' : 'Bildirimler buraya düşecek.'}
+                    {unreadOnly ? t('notificationPanel.emptyUnreadHint') : t('notificationPanel.emptyHint')}
                   </p>
                 </div>
               ) : (
@@ -291,10 +299,10 @@ export default function NotificationPanel({ isOpen, onClose }) {
     <BroadcastModal open={broadcastOpen} onClose={() => setBroadcastOpen(false)} />
     <ConfirmDialog
       open={confirmClearOpen}
-      title="Tüm bildirimleri sil?"
-      message={`${total} bildirim kalıcı olarak silinecek. Bu işlem geri alınamaz.`}
-      confirmLabel="Tümünü sil"
-      cancelLabel="Vazgeç"
+      title={t('notificationPanel.confirmClearTitle')}
+      message={t('notificationPanel.confirmClearMessage', { count: total })}
+      confirmLabel={t('notificationPanel.deleteAll')}
+      cancelLabel={t('common.cancel')}
       variant="danger"
       loading={deleteAllNotifications.isPending}
       onConfirm={() => {

@@ -1,4 +1,6 @@
-export function extractApiError(err, fallback = 'İşlem başarısız') {
+import i18n from '../i18n/config';
+
+export function extractApiError(err, fallback) {
   const data = err?.response?.data;
   if (data && typeof data === 'object') {
     const fieldErrors = data.validationErrors || data.errors;
@@ -17,5 +19,5 @@ export function extractApiError(err, fallback = 'İşlem başarısız') {
     if (typeof data.message === 'string' && data.message.length > 0) return data.message;
   }
   if (typeof err?.message === 'string' && err.message.length > 0) return err.message;
-  return fallback;
+  return fallback ?? i18n.t('error.actionFailed');
 }

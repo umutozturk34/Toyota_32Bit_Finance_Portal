@@ -32,7 +32,7 @@ api.interceptors.response.use(
       if (now - _lastRateLimitAlert > TIMINGS.RATE_LIMIT_THROTTLE_MS) {
         _lastRateLimitAlert = now;
         const message = error.response?.data?.message
-          || 'Çok fazla istek gönderdin. Lütfen biraz bekle.';
+          || i18n.t('toast.rateLimitMessage');
         const retryAfter = error.response?.headers?.['x-rate-limit-retry-after-seconds']
           || error.response?.headers?.['retry-after'];
         toast.rateLimit(message, retryAfter);

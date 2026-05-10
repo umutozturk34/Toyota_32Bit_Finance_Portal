@@ -413,6 +413,46 @@
     "emptyEditHint": "Düzenle ile widget ekle",
     "startEdit": "Düzene Geç"
   },
+  "toast": {
+    "rateLimitTitle": "İstek limiti aşıldı",
+    "rateLimitMessage": "Çok fazla istek gönderdin. Lütfen biraz bekle."
+  },
+  "error": {
+    "actionFailed": "İşlem başarısız"
+  },
+  "notificationPanel": {
+    "title": "Bildirimler",
+    "broadcastTitle": "Tüm kullanıcılara sistem yayını gönder",
+    "broadcastLabel": "Yayın",
+    "searchPlaceholder": "Bildirimlerde ara…",
+    "filterAll": "Tümü",
+    "filterUnread": "Okunmamış",
+    "markRead": "okundu",
+    "deleteOne": "sil",
+    "deleteAll": "tümünü sil",
+    "empty": "Henüz bildirim yok",
+    "emptyHint": "Bildirimler buraya düşecek.",
+    "emptyUnread": "Okunmamış bildirim yok",
+    "emptyUnreadHint": "Hepsi okundu, tertemiz.",
+    "confirmClearTitle": "Tüm bildirimleri sil?",
+    "confirmClearMessage": "{{count}} bildirim kalıcı olarak silinecek. Bu işlem geri alınamaz.",
+    "justNow": "az önce",
+    "minutesAgo": "{{count}} dk önce",
+    "hoursAgo": "{{count}} sa önce",
+    "daysAgo": "{{count}} gün önce",
+    "types": {
+      "PRICE_ALERT_FIRED": "Fiyat alarmı",
+      "WATCHLIST_DELTA": "Takip listesi",
+      "REPORT_READY": "Rapor",
+      "MESSAGE": "Mesaj",
+      "SYSTEM": "Sistem",
+      "MARKET_OPENED": "Piyasa açıldı",
+      "MARKET_CLOSED": "Piyasa kapandı",
+      "MARKET_DATA_UPDATED": "Veri güncellendi",
+      "NEWS_PUBLISHED": "Yeni haberler",
+      "PORTFOLIO_UPDATED": "Portföy güncellendi"
+    }
+  },
   "watch": {
     "headerTitle": "Takip",
     "tabs": {

@@ -413,6 +413,46 @@
     "emptyEditHint": "Add widgets via Edit",
     "startEdit": "Start Editing"
   },
+  "toast": {
+    "rateLimitTitle": "Rate limit exceeded",
+    "rateLimitMessage": "You sent too many requests. Please wait a moment."
+  },
+  "error": {
+    "actionFailed": "Action failed"
+  },
+  "notificationPanel": {
+    "title": "Notifications",
+    "broadcastTitle": "Broadcast a system message to all users",
+    "broadcastLabel": "Broadcast",
+    "searchPlaceholder": "Search notifications…",
+    "filterAll": "All",
+    "filterUnread": "Unread",
+    "markRead": "read",
+    "deleteOne": "delete",
+    "deleteAll": "delete all",
+    "empty": "No notifications yet",
+    "emptyHint": "Notifications will appear here.",
+    "emptyUnread": "No unread notifications",
+    "emptyUnreadHint": "All caught up, clean.",
+    "confirmClearTitle": "Delete all notifications?",
+    "confirmClearMessage": "{{count}} notifications will be permanently deleted. This cannot be undone.",
+    "justNow": "just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}} h ago",
+    "daysAgo": "{{count}} d ago",
+    "types": {
+      "PRICE_ALERT_FIRED": "Price alert",
+      "WATCHLIST_DELTA": "Watchlist",
+      "REPORT_READY": "Report",
+      "MESSAGE": "Message",
+      "SYSTEM": "System",
+      "MARKET_OPENED": "Market opened",
+      "MARKET_CLOSED": "Market closed",
+      "MARKET_DATA_UPDATED": "Data updated",
+      "NEWS_PUBLISHED": "New articles",
+      "PORTFOLIO_UPDATED": "Portfolio updated"
+    }
+  },
   "watch": {
     "headerTitle": "Watch",
     "tabs": {

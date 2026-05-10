@@ -37,7 +37,9 @@
     "retry": "Retry",
     "back": "Back",
     "addToPortfolio": "Add to portfolio",
-    "sortDefault": "Default"
+    "sortDefault": "Default",
+    "previous": "Previous",
+    "next": "Next"
   },
   "compareBar": {
     "placeholder": "Compare..."
@@ -79,6 +81,43 @@
       "twoFactor": "Two-Factor Authentication (2FA)",
       "sso": "Single Sign-On (SSO)"
     }
+  },
+  "adminConversations": {
+    "title": "Conversations",
+    "userCount": "{{count}} users",
+    "matchingCount": "{{count}} matching",
+    "searchPlaceholder": "Search user or message…",
+    "emptyTitle": "No conversations yet",
+    "emptyBody": "When a user sends a message it will appear here.",
+    "emptyMatchTitle": "No matching conversations",
+    "emptyMatchBody": "No results for \"{{query}}\".",
+    "closedTag": "closed"
+  },
+  "adminThread": {
+    "pickConversation": "Pick a conversation",
+    "pickConversationHint": "Select a user from the list to view history and reply.",
+    "closedAt": "Closed · {{time}}",
+    "activeConversation": "Active conversation",
+    "reopen": "Reopen",
+    "reopenTooltip": "Reopen conversation",
+    "close": "Close",
+    "closeTooltip": "Close conversation",
+    "deleteTooltip": "Delete conversation",
+    "emptyThread": "No messages in this conversation yet.",
+    "userLabel": "User",
+    "composerPlaceholder": "Write a message to the user…",
+    "composerClosedHint": "Conversation closed — reopen it to send new messages.",
+    "closeConfirmTitle": "Close conversation?",
+    "closeConfirmBody": "The user can no longer send messages. Existing messages remain visible.",
+    "deleteConfirmTitle": "Delete conversation?",
+    "deleteConfirmBody": "All messages in this conversation will be permanently deleted.",
+    "reopenedTitle": "Conversation reopened",
+    "reopenedBody": "{{user}} can keep messaging",
+    "closedTitle": "Conversation closed",
+    "closedBody": "{{user}} can no longer send new messages",
+    "deletedTitle": "Conversation deleted",
+    "deletedBody": "{{user}}'s conversation has been removed",
+    "actionFailed": "Action failed"
   },
   "userMessages": {
     "title": "Messages",

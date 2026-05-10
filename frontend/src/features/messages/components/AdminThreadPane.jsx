@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
   MessageCircle, Loader2, Lock, Unlock, Trash2, ChevronLeft, ShieldOff,
@@ -16,6 +17,7 @@ import Composer from './Composer';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 
 export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
+  const { t } = useTranslation();
   const { data: thread, isLoading } = useAdminConversation(userSub);
   const sendMutation = useSendAdminMessage();
   const closeMutation = useCloseConversation();
@@ -37,7 +39,7 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
       await sendMutation.mutateAsync({ recipientSub: userSub, body: trimmed });
       setBody('');
     } catch (err) {
-      toast.error(extractApiError(err, 'Mesaj gönderilemedi'));
+      toast.error(extractApiError(err, t('userMessages.sendFailed')));
     }
   };
 
@@ -48,7 +50,7 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
       setConfirmAction(null);
       after?.();
     } catch (err) {
-      toast.error(extractApiError(err, 'İşlem başarısız'));
+      toast.error(extractApiError(err, t('adminThread.actionFailed')));
     }
   };
 
@@ -62,8 +64,8 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
           </span>
         </div>
         <div className="max-w-xs">
-          <p className="text-sm font-bold text-fg">Bir sohbet seç</p>
-          <p className="text-[11px] text-fg-muted mt-1 leading-relaxed">Soldaki listeden kullanıcı seç, geçmişi gör ve yanıt ver.</p>
+          <p className="text-sm font-bold text-fg">{t('adminThread.pickConversation')}</p>
+          <p className="text-[11px] text-fg-muted mt-1 leading-relaxed">{t('adminThread.pickConversationHint')}</p>
         </div>
       </div>
     );
@@ -105,38 +107,38 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
             ) : thread?.closed ? (
               <div className="flex items-center gap-1 text-[10px] font-mono text-warning">
                 <ShieldOff className="h-2.5 w-2.5" />
-                <span>Kapatıldı · {relTime(thread.closedAt)}</span>
+                <span>{t('adminThread.closedAt', { time: relTime(thread.closedAt) })}</span>
               </div>
             ) : (
-              <div className="text-[10px] font-mono text-fg-muted">Aktif sohbet</div>
+              <div className="text-[10px] font-mono text-fg-muted">{t('adminThread.activeConversation')}</div>
             )}
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {thread?.closed ? (
             <button
-              onClick={() => runMutation(reopenMutation, 'Sohbet yeniden açıldı', `${shortSub(userSub)} mesajlaşmaya devam edebilir`)}
+              onClick={() => runMutation(reopenMutation, t('adminThread.reopenedTitle'), t('adminThread.reopenedBody', { user: shortSub(userSub) }))}
               disabled={reopenMutation.isPending}
-              title="Sohbeti yeniden aç"
+              title={t('adminThread.reopenTooltip')}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-fg-muted hover:text-success hover:bg-success/10 transition-colors bg-transparent border-none cursor-pointer disabled:opacity-50"
             >
-              <Unlock className="h-3 w-3" /> Yeniden aç
+              <Unlock className="h-3 w-3" /> {t('adminThread.reopen')}
             </button>
           ) : (
             <button
               onClick={() => setConfirmAction('close')}
-              title="Sohbeti kapat"
+              title={t('adminThread.closeTooltip')}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-fg-muted hover:text-warning hover:bg-warning/10 transition-colors bg-transparent border-none cursor-pointer"
             >
-              <Lock className="h-3 w-3" /> Kapat
+              <Lock className="h-3 w-3" /> {t('adminThread.close')}
             </button>
           )}
           <button
             onClick={() => setConfirmAction('delete')}
-            title="Sohbeti sil"
+            title={t('adminThread.deleteTooltip')}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-fg-muted hover:text-danger hover:bg-danger/10 transition-colors bg-transparent border-none cursor-pointer"
           >
-            <Trash2 className="h-3 w-3" /> Sil
+            <Trash2 className="h-3 w-3" /> {t('common.delete')}
           </button>
         </div>
       </header>
@@ -147,7 +149,7 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
             <Loader2 className="h-4 w-4 animate-spin text-accent" />
           </div>
         ) : (thread?.messages ?? []).length === 0 ? (
-          <div className="text-center py-10 text-xs text-fg-subtle">Bu sohbette henüz mesaj yok.</div>
+          <div className="text-center py-10 text-xs text-fg-subtle">{t('adminThread.emptyThread')}</div>
         ) : (
           <motion.div variants={containerVariants(0.03)} initial="hidden" animate="show" className="space-y-3">
             {thread.messages.map((m) => (
@@ -155,7 +157,7 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
                 key={m.id}
                 message={m}
                 leftSide={m.direction === 'USER_TO_ADMIN'}
-                label={m.direction === 'USER_TO_ADMIN' ? 'Kullanıcı' : null}
+                label={m.direction === 'USER_TO_ADMIN' ? t('adminThread.userLabel') : null}
               />
             ))}
           </motion.div>
@@ -167,30 +169,30 @@ export default function AdminThreadPane({ userSub, onBack, onAfterDelete }) {
         onChange={setBody}
         onSubmit={handleSend}
         disabled={!body.trim() || sendMutation.isPending || thread?.closed}
-        placeholder="Kullanıcıya mesaj yaz…"
+        placeholder={t('adminThread.composerPlaceholder')}
         pending={sendMutation.isPending}
-        hint={thread?.closed ? 'Sohbet kapalı — yeni mesaj göndermek için önce yeniden aç.' : null}
+        hint={thread?.closed ? t('adminThread.composerClosedHint') : null}
       />
 
       <ConfirmDialog
         open={confirmAction === 'close'}
         variant="warning"
-        title="Sohbeti kapat?"
-        message="Kullanıcı bu sohbete yeni mesaj gönderemez. Mevcut mesajlar kalır, geçmişi okumaya devam edebilir."
-        confirmLabel="Kapat"
+        title={t('adminThread.closeConfirmTitle')}
+        message={t('adminThread.closeConfirmBody')}
+        confirmLabel={t('adminThread.close')}
         loading={closeMutation.isPending}
         onCancel={() => setConfirmAction(null)}
-        onConfirm={() => runMutation(closeMutation, 'Sohbet kapatıldı', `${shortSub(userSub)} artık yeni mesaj atamaz`)}
+        onConfirm={() => runMutation(closeMutation, t('adminThread.closedTitle'), t('adminThread.closedBody', { user: shortSub(userSub) }))}
       />
       <ConfirmDialog
         open={confirmAction === 'delete'}
         variant="danger"
-        title="Sohbeti sil?"
-        message="Bu sohbetin tüm mesajları geri alınamaz şekilde silinir."
-        confirmLabel="Sil"
+        title={t('adminThread.deleteConfirmTitle')}
+        message={t('adminThread.deleteConfirmBody')}
+        confirmLabel={t('common.delete')}
         loading={deleteMutation.isPending}
         onCancel={() => setConfirmAction(null)}
-        onConfirm={() => runMutation(deleteMutation, 'Sohbet silindi', `${shortSub(userSub)} sohbeti tamamen kaldırıldı`, onAfterDelete)}
+        onConfirm={() => runMutation(deleteMutation, t('adminThread.deletedTitle'), t('adminThread.deletedBody', { user: shortSub(userSub) }), onAfterDelete)}
       />
     </section>
   );

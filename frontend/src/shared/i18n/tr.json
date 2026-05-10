@@ -37,7 +37,9 @@
     "retry": "Tekrar dene",
     "back": "Geri",
     "addToPortfolio": "Portföye Ekle",
-    "sortDefault": "Varsayılan"
+    "sortDefault": "Varsayılan",
+    "previous": "Önceki",
+    "next": "Sonraki"
   },
   "compareBar": {
     "placeholder": "Karşılaştır..."
@@ -79,6 +81,43 @@
       "twoFactor": "İki Faktörlü Doğrulama (2FA)",
       "sso": "Tek Oturum Açma (SSO)"
     }
+  },
+  "adminConversations": {
+    "title": "Sohbetler",
+    "userCount": "{{count}} kullanıcı",
+    "matchingCount": "{{count}} eşleşen",
+    "searchPlaceholder": "Kullanıcı veya mesaj ara…",
+    "emptyTitle": "Henüz sohbet yok",
+    "emptyBody": "Kullanıcı bir mesaj gönderdiğinde burada görünecek.",
+    "emptyMatchTitle": "Eşleşen sohbet yok",
+    "emptyMatchBody": "\"{{query}}\" araması için sonuç bulunamadı.",
+    "closedTag": "kapalı"
+  },
+  "adminThread": {
+    "pickConversation": "Bir sohbet seç",
+    "pickConversationHint": "Soldaki listeden kullanıcı seç, geçmişi gör ve yanıt ver.",
+    "closedAt": "Kapatıldı · {{time}}",
+    "activeConversation": "Aktif sohbet",
+    "reopen": "Yeniden aç",
+    "reopenTooltip": "Sohbeti yeniden aç",
+    "close": "Kapat",
+    "closeTooltip": "Sohbeti kapat",
+    "deleteTooltip": "Sohbeti sil",
+    "emptyThread": "Bu sohbette henüz mesaj yok.",
+    "userLabel": "Kullanıcı",
+    "composerPlaceholder": "Kullanıcıya mesaj yaz…",
+    "composerClosedHint": "Sohbet kapalı — yeni mesaj göndermek için önce yeniden aç.",
+    "closeConfirmTitle": "Sohbeti kapat?",
+    "closeConfirmBody": "Kullanıcı bu sohbete yeni mesaj gönderemez. Mevcut mesajlar kalır, geçmişi okumaya devam edebilir.",
+    "deleteConfirmTitle": "Sohbeti sil?",
+    "deleteConfirmBody": "Bu sohbetin tüm mesajları geri alınamaz şekilde silinir.",
+    "reopenedTitle": "Sohbet yeniden açıldı",
+    "reopenedBody": "{{user}} mesajlaşmaya devam edebilir",
+    "closedTitle": "Sohbet kapatıldı",
+    "closedBody": "{{user}} artık yeni mesaj atamaz",
+    "deletedTitle": "Sohbet silindi",
+    "deletedBody": "{{user}} sohbeti tamamen kaldırıldı",
+    "actionFailed": "İşlem başarısız"
   },
   "userMessages": {
     "title": "Mesajlar",

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -32,9 +33,9 @@ export default function AssetDetailPage({
   fetchAsset,
   fetchHistory,
   queryKeyPrefix,
-  loadingMessage = 'Yükleniyor...',
-  errorMessage = 'Veri yüklenirken hata oluştu',
-  notFoundMessage = 'Varlık bulunamadı',
+  loadingMessage,
+  errorMessage,
+  notFoundMessage,
   backRoute,
   renderHeader,
   renderMetadata,
@@ -42,7 +43,11 @@ export default function AssetDetailPage({
   showBuyButton = true,
   excludeCompare = [],
 }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const resolvedLoading = loadingMessage ?? t('marketDetail.loading');
+  const resolvedError = errorMessage ?? t('marketDetail.error');
+  const resolvedNotFound = notFoundMessage ?? t('marketDetail.notFound');
   const [buyOpen, setBuyOpen] = useState(false);
   const [compareAsset, setCompareAsset] = useState(null);
   const [timeRange, setTimeRange] = useChartRange(`chart-range-${queryKeyPrefix}-${assetCode}`);
@@ -72,11 +77,11 @@ export default function AssetDetailPage({
   const transform = TRANSFORM_MAP[assetType] || transformCandles;
   const chartData = useMemo(() => transform(historyRaw), [historyRaw, assetType]);
 
-  if (isLoading) return <LoadingState message={loadingMessage} />;
+  if (isLoading) return <LoadingState message={resolvedLoading} />;
   if (error || !asset) {
     return (
       <ErrorState
-        message={error ? errorMessage : notFoundMessage}
+        message={error ? resolvedError : resolvedNotFound}
         onRetry={() => navigate(backRoute || -1)}
       />
     );
@@ -116,7 +121,7 @@ export default function AssetDetailPage({
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer border-none bg-success text-white hover:bg-success/90 transition-colors"
             >
               <ShoppingCart className="h-4 w-4" />
-              Portföye Ekle
+              {t('marketDetail.addToPortfolio')}
             </button>
           )}
         </div>

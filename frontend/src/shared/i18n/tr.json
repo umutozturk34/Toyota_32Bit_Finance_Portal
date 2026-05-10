@@ -265,7 +265,27 @@
       "fullStarted": "Tam güncelleme başlatıldı"
     }
   },
+  "positionDelete": {
+    "title": "Pozisyonu Sil",
+    "confirmPrefix": "",
+    "confirmSuffix": "pozisyonu kaldırılacak. Bu işlem geri alınamaz.",
+    "quantityLabel": "Miktar",
+    "entryPriceLabel": "Giriş Fiyatı",
+    "entryDateLabel": "Giriş Tarihi",
+    "successTitle": "Pozisyon silindi",
+    "successDone": "İşlem tamamlandı",
+    "failed": "Pozisyon silinemedi",
+    "steps": {
+      "validating": "İşlem doğrulanıyor...",
+      "removing": "Pozisyon kaldırılıyor...",
+      "updating": "Portföy güncelleniyor..."
+    }
+  },
   "marketDetail": {
+    "loading": "Yükleniyor...",
+    "error": "Veri yüklenirken hata oluştu",
+    "notFound": "Varlık bulunamadı",
+    "addToPortfolio": "Portföye Ekle",
     "priceLabel": "Fiyat",
     "changeLabel": "Değişim",
     "changeAmountTRY": "Değişim (TL)",
@@ -322,6 +342,13 @@
     "emptyDragHint": "Yukardaki galeriden widget sürükle",
     "emptyEditHint": "Düzenle ile widget ekle",
     "startEdit": "Düzene Geç"
+  },
+  "newsDetail": {
+    "loading": "Haber yükleniyor...",
+    "error": "Haber yüklenirken bir hata oluştu.",
+    "notFound": "Haber bulunamadı.",
+    "backToList": "Haberlere Dön",
+    "openSource": "Kaynağa Git"
   },
   "news": {
     "title": "Finansal Haberler",

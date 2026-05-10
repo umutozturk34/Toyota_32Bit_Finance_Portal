@@ -265,7 +265,27 @@
       "fullStarted": "Full update started"
     }
   },
+  "positionDelete": {
+    "title": "Delete Position",
+    "confirmPrefix": "The",
+    "confirmSuffix": "position will be removed. This action cannot be undone.",
+    "quantityLabel": "Quantity",
+    "entryPriceLabel": "Entry Price",
+    "entryDateLabel": "Entry Date",
+    "successTitle": "Position deleted",
+    "successDone": "Operation complete",
+    "failed": "Failed to delete position",
+    "steps": {
+      "validating": "Validating action...",
+      "removing": "Removing position...",
+      "updating": "Updating portfolio..."
+    }
+  },
   "marketDetail": {
+    "loading": "Loading...",
+    "error": "Failed to load data",
+    "notFound": "Asset not found",
+    "addToPortfolio": "Add to Portfolio",
     "priceLabel": "Price",
     "changeLabel": "Change",
     "changeAmountTRY": "Change (TRY)",
@@ -322,6 +342,13 @@
     "emptyDragHint": "Drag a widget from the gallery above",
     "emptyEditHint": "Add widgets via Edit",
     "startEdit": "Start Editing"
+  },
+  "newsDetail": {
+    "loading": "Loading article...",
+    "error": "Failed to load the article.",
+    "notFound": "Article not found.",
+    "backToList": "Back to News",
+    "openSource": "Open Source"
   },
   "news": {
     "title": "Financial News",

@@ -5,6 +5,7 @@ import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.market.bond.dto.response.BondRateResponse;
 import com.finance.market.bond.dto.response.BondResponse;
 import com.finance.shared.dto.response.GroupCount;
@@ -23,6 +24,7 @@ import java.util.List;
 public class BondController {
 
     private final BondQueryService bondQueryService;
+    private final Translator translator;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -33,21 +35,21 @@ public class BondController {
             @RequestParam(required = false) String direction,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(required = false) Integer size) {
-        return ApiResponse.success("Bonds retrieved successfully",
+        return ApiResponse.success(translator.translate("api.bond.listRetrieved"),
                 bondQueryService.search(search, bondType, sort, direction, page, size));
     }
 
     @GetMapping("/types")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<GroupCount>> getDistinctBondTypes() {
-        return ApiResponse.success("Bond types retrieved",
+        return ApiResponse.success(translator.translate("api.bond.typesRetrieved"),
                 bondQueryService.getTypeCounts());
     }
 
     @GetMapping("/{seriesCode}")
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<BondResponse> getBondByCode(@PathVariable String seriesCode) {
-        return ApiResponse.success("Bond retrieved successfully",
+        return ApiResponse.success(translator.translate("api.bond.retrieved"),
                 bondQueryService.getByCode(seriesCode));
     }
 
@@ -56,7 +58,7 @@ public class BondController {
     public ApiResponse<List<BondRateResponse>> getRateHistory(
             @PathVariable String isinCode,
             @RequestParam(defaultValue = "ALL") CandlePeriod period) {
-        return ApiResponse.success("Rate history retrieved",
+        return ApiResponse.success(translator.translate("api.bond.rateHistoryRetrieved"),
                 bondQueryService.getRateHistory(isinCode, period));
     }
 }

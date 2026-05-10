@@ -1,6 +1,7 @@
 package com.finance.app.controller;
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.market.core.dto.response.TrackedAssetResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.TrackedAssetType;
@@ -21,6 +22,7 @@ import java.util.List;
 public class TrackedAssetController {
 
     private final TrackedAssetQueryService trackedAssetQueryService;
+    private final Translator translator;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -33,7 +35,10 @@ public class TrackedAssetController {
         List<TrackedAssetType> types = MarketRequestHelper.parseTrackedTypes(type);
         List<TrackedAssetResponse> data = trackedAssetQueryService.searchTrackedAssets(
                 types, search, sort, direction);
-        return ApiResponse.successOrEmpty("Tracked assets retrieved successfully", "No tracked assets found", data);
+        return ApiResponse.successOrEmpty(
+                translator.translate("api.trackedAsset.listRetrieved"),
+                translator.translate("api.trackedAsset.empty"),
+                data);
     }
 
     @GetMapping("/{type}/{code}")
@@ -43,8 +48,8 @@ public class TrackedAssetController {
             @PathVariable String code
     ) {
         TrackedAssetResponse data = trackedAssetQueryService.getTrackedAsset(type, code)
-            .orElseThrow(() -> new ResourceNotFoundException("Tracked asset not found: " + type + " / " + code));
-        return ApiResponse.success("Tracked asset retrieved successfully", data);
+            .orElseThrow(() -> new ResourceNotFoundException("error.trackedAsset.notFound", type, code));
+        return ApiResponse.success(translator.translate("api.trackedAsset.retrieved"), data);
     }
 
 }

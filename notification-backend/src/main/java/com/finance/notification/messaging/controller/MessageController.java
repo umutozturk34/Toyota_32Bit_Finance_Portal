@@ -2,6 +2,7 @@ package com.finance.notification.messaging.controller;
 
 import com.finance.common.dto.ApiResponse;
 import com.finance.common.dto.response.PagedResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.notification.messaging.dto.ConversationStatusResponse;
 import com.finance.notification.messaging.dto.MessageResponse;
 import com.finance.notification.messaging.dto.MessageSendRequest;
@@ -25,12 +26,13 @@ import org.springframework.web.bind.annotation.*;
 public class MessageController {
 
     private final MessageService service;
+    private final Translator translator;
 
     @PostMapping
     public ApiResponse<MessageResponse> sendToAdmins(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody MessageSendRequest request) {
-        return ApiResponse.success("Message sent to admins",
+        return ApiResponse.success(translator.translate("api.message.sentToAdmins"),
                 service.sendUserToAdmin(jwt.getSubject(), request.body()));
     }
 
@@ -40,7 +42,7 @@ public class MessageController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
         Page<MessageResponse> result = service.getUserInbox(jwt.getSubject(), page, size);
-        return ApiResponse.success("Inbox retrieved",
+        return ApiResponse.success(translator.translate("api.message.inboxRetrieved"),
                 PagedResponse.of(result.getContent(), page, size, result.getTotalElements()));
     }
 
@@ -50,19 +52,19 @@ public class MessageController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
         Page<MessageResponse> result = service.getUserSent(jwt.getSubject(), page, size);
-        return ApiResponse.success("Sent retrieved",
+        return ApiResponse.success(translator.translate("api.message.sentRetrieved"),
                 PagedResponse.of(result.getContent(), page, size, result.getTotalElements()));
     }
 
     @GetMapping("/unread-count")
     public ApiResponse<Long> unreadCount(@AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.success("Unread count retrieved",
+        return ApiResponse.success(translator.translate("api.message.unreadCountRetrieved"),
                 service.getUserUnreadCount(jwt.getSubject()));
     }
 
     @GetMapping("/status")
     public ApiResponse<ConversationStatusResponse> status(@AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.success("Conversation status retrieved",
+        return ApiResponse.success(translator.translate("api.message.conversationStatusRetrieved"),
                 new ConversationStatusResponse(service.isConversationClosed(jwt.getSubject())));
     }
 
@@ -71,6 +73,6 @@ public class MessageController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long id) {
         service.markRead(id, jwt.getSubject());
-        return ApiResponse.success("Message marked as read", null);
+        return ApiResponse.success(translator.translate("api.message.markedRead"), null);
     }
 }

@@ -41,6 +41,21 @@
   "compareBar": {
     "placeholder": "Karşılaştır..."
   },
+  "userMessages": {
+    "title": "Mesajlar",
+    "subtitle": "Yönetimle birebir yazışma",
+    "live": "canlı",
+    "emptyTitle": "Sohbet henüz başlamadı",
+    "emptyBody": "İlk mesajını gönder, yönetim ekibimiz seninle yazışsın.",
+    "composeHint": "Aşağıdan yazmaya başla",
+    "adminLabel": "Yönetim",
+    "composerPlaceholder": "Mesajını yaz…",
+    "sendFailed": "Mesaj gönderilemedi"
+  },
+  "messages": {
+    "conversationClosedBanner": "Yönetim sohbetinizi kapattı. Yeniden açılana kadar mesaj gönderemezsiniz.",
+    "conversationClosedHint": "Sohbet kapatıldı. Yeniden açılana kadar mesaj gönderemezsiniz."
+  },
   "assets": {
     "labels": {
       "CRYPTO": "Kripto",

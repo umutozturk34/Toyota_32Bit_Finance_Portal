@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { MessageCircle, Loader2, Inbox, Sparkles, Lock } from 'lucide-react';
 import { useUserInbox, useUserSent, useSendMessage, useUserConversationStatus } from '../../../shared/hooks/useMessages';
@@ -8,9 +9,10 @@ import { toast } from '../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../shared/utils/apiError';
 import MessageBubble from '../components/MessageBubble';
 import Composer from '../components/Composer';
-import { CONVERSATION_CLOSED_BANNER, CONVERSATION_CLOSED_HINT } from '../util';
+import { CONVERSATION_CLOSED_BANNER_KEY, CONVERSATION_CLOSED_HINT_KEY } from '../util';
 
 export default function UserMessagesView() {
+  const { t } = useTranslation();
   const inbox = useUserInbox({ page: 0, size: 100 });
   const sent = useUserSent({ page: 0, size: 100 });
   const status = useUserConversationStatus();
@@ -38,7 +40,7 @@ export default function UserMessagesView() {
       await sendMutation.mutateAsync(trimmed);
       setBody('');
     } catch (err) {
-      toast.error(extractApiError(err, 'Mesaj gönderilemedi'));
+      toast.error(extractApiError(err, t('userMessages.sendFailed')));
     }
   };
 
@@ -59,22 +61,22 @@ export default function UserMessagesView() {
             <MessageCircle className="h-5 w-5 text-accent" />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-base font-bold text-fg tracking-tight">Mesajlar</h1>
-            <p className="text-[11px] text-fg-muted mt-0.5">Yönetimle birebir yazışma</p>
+            <h1 className="text-base font-bold text-fg tracking-tight">{t('userMessages.title')}</h1>
+            <p className="text-[11px] text-fg-muted mt-0.5">{t('userMessages.subtitle')}</p>
           </div>
           <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-fg-subtle shrink-0">
             <span className="relative flex w-2 h-2">
               <span aria-hidden className="absolute inset-0 rounded-full bg-success/60 animate-ping" />
               <span className="relative w-2 h-2 rounded-full bg-success" />
             </span>
-            canlı
+            {t('userMessages.live')}
           </div>
         </header>
 
         {closed && (
           <div className="flex items-center gap-2 px-5 py-2.5 border-b border-warning/40 bg-warning/10 text-warning shrink-0">
             <Lock className="h-3.5 w-3.5 shrink-0" />
-            <span className="text-[12px] font-semibold tracking-tight">{CONVERSATION_CLOSED_BANNER}</span>
+            <span className="text-[12px] font-semibold tracking-tight">{t(CONVERSATION_CLOSED_BANNER_KEY)}</span>
           </div>
         )}
 
@@ -82,7 +84,7 @@ export default function UserMessagesView() {
           {isLoading ? (
             <div className="h-full flex items-center justify-center gap-2 text-sm text-fg-muted">
               <Loader2 className="h-4 w-4 animate-spin text-accent" />
-              Yükleniyor…
+              {t('common.loading')}
             </div>
           ) : messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center gap-4 text-center px-6">
@@ -93,12 +95,12 @@ export default function UserMessagesView() {
                 </span>
               </div>
               <div className="space-y-1.5 max-w-xs">
-                <p className="text-base font-bold text-fg">Sohbet henüz başlamadı</p>
-                <p className="text-[12.5px] text-fg-muted leading-relaxed">İlk mesajını gönder, yönetim ekibimiz seninle yazışsın.</p>
+                <p className="text-base font-bold text-fg">{t('userMessages.emptyTitle')}</p>
+                <p className="text-[12.5px] text-fg-muted leading-relaxed">{t('userMessages.emptyBody')}</p>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-accent">
                 <Sparkles className="h-3 w-3" />
-                Aşağıdan yazmaya başla
+                {t('userMessages.composeHint')}
               </div>
             </div>
           ) : (
@@ -108,7 +110,7 @@ export default function UserMessagesView() {
                   key={m.id}
                   message={m}
                   leftSide={m.direction === 'ADMIN_TO_USER'}
-                  label={m.direction === 'ADMIN_TO_USER' ? 'Yönetim' : null}
+                  label={m.direction === 'ADMIN_TO_USER' ? t('userMessages.adminLabel') : null}
                 />
               ))}
             </motion.div>
@@ -120,9 +122,9 @@ export default function UserMessagesView() {
           onChange={setBody}
           onSubmit={handleSend}
           disabled={closed || !body.trim() || sendMutation.isPending}
-          placeholder="Mesajını yaz…"
+          placeholder={t('userMessages.composerPlaceholder')}
           pending={sendMutation.isPending}
-          hint={closed ? CONVERSATION_CLOSED_HINT : undefined}
+          hint={closed ? t(CONVERSATION_CLOSED_HINT_KEY) : undefined}
         />
       </section>
     </motion.div>

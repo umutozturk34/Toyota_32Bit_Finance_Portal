@@ -41,6 +41,21 @@
   "compareBar": {
     "placeholder": "Compare..."
   },
+  "userMessages": {
+    "title": "Messages",
+    "subtitle": "Direct line with the admin team",
+    "live": "live",
+    "emptyTitle": "Conversation hasn't started yet",
+    "emptyBody": "Send your first message and the admin team will reply.",
+    "composeHint": "Start typing below",
+    "adminLabel": "Admin",
+    "composerPlaceholder": "Write a message…",
+    "sendFailed": "Failed to send message"
+  },
+  "messages": {
+    "conversationClosedBanner": "The admin team closed your conversation. You cannot send messages until it is reopened.",
+    "conversationClosedHint": "Conversation closed. You cannot send messages until it is reopened."
+  },
   "assets": {
     "labels": {
       "CRYPTO": "Crypto",

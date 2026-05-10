@@ -453,6 +453,46 @@
       "PORTFOLIO_UPDATED": "Portfolio updated"
     }
   },
+  "twoFactor": {
+    "active": "2FA active",
+    "inactive": "2FA off",
+    "statusLoading": "Checking status…",
+    "descActive": "Your account is protected with two-factor authentication. Use the options below to re-set up or disable.",
+    "descInactive": "Protect your account with an extra layer using Google/Microsoft Authenticator.",
+    "reSetup": "Re-setup",
+    "disable": "Disable",
+    "setupCta": "Set up 2FA",
+    "footerActive": "If you disable, single-factor sign-in is active and account security drops.",
+    "footerInactive": "You will be redirected to the verification setup page.",
+    "redirecting": "Redirecting",
+    "redirectingHint": "You will be taken to the authenticator setup page",
+    "disabledTitle": "2FA disabled",
+    "disabledBody": "Two-factor authentication has been removed from your account",
+    "confirm": {
+      "title": "Disable 2FA?",
+      "message": "Your account will be protected by single-factor sign-in. This is reversible — you can set it up again any time."
+    }
+  },
+  "keycloakAction": {
+    "labels": {
+      "UPDATE_PASSWORD": "Password",
+      "CONFIGURE_TOTP": "Two-Factor Authentication",
+      "UPDATE_PROFILE": "Profile",
+      "delete_account": "Account Deletion"
+    },
+    "success": {
+      "title": "{{label}} updated",
+      "body": "Operation successful"
+    },
+    "cancelled": {
+      "title": "{{label}} cancelled",
+      "body": "No changes were made"
+    },
+    "error": {
+      "title": "{{label}} update failed",
+      "body": "An error occurred during the operation"
+    }
+  },
   "onboarding": {
     "welcomeTitle": "Welcome to Finance Portal",
     "welcomeSubtitle": "A finance dashboard combining market data, portfolio tracking and notifications in one interface.",

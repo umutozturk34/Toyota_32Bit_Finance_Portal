@@ -453,6 +453,46 @@
       "PORTFOLIO_UPDATED": "Portföy güncellendi"
     }
   },
+  "twoFactor": {
+    "active": "2FA aktif",
+    "inactive": "2FA kapalı",
+    "statusLoading": "Durum kontrol ediliyor…",
+    "descActive": "Hesabın iki adımlı doğrulama ile korunuyor. Güvenliği yeniden kurmak veya devre dışı bırakmak için aşağıdaki seçenekleri kullan.",
+    "descInactive": "Google/Microsoft Authenticator ile hesabını ek güvenlik katmanıyla koru.",
+    "reSetup": "Yeniden kur",
+    "disable": "Devre dışı bırak",
+    "setupCta": "2FA'yı Kur",
+    "footerActive": "Devre dışı bırakırsan tek faktörlü oturum açma aktif olur, hesap güvenliği düşer.",
+    "footerInactive": "Doğrulama kurulum sayfasına yönlendirileceksin.",
+    "redirecting": "Yönlendiriliyor",
+    "redirectingHint": "Authenticator kurulum sayfasına götürüleceksin",
+    "disabledTitle": "2FA devre dışı",
+    "disabledBody": "İki adımlı doğrulama hesabından kaldırıldı",
+    "confirm": {
+      "title": "2FA devre dışı bırakılsın mı?",
+      "message": "Hesabın artık tek faktörlü oturum açma ile korunacak. Bu işlem geri alınabilir — istediğin zaman tekrar kurabilirsin."
+    }
+  },
+  "keycloakAction": {
+    "labels": {
+      "UPDATE_PASSWORD": "Şifre",
+      "CONFIGURE_TOTP": "İki Adımlı Doğrulama",
+      "UPDATE_PROFILE": "Profil",
+      "delete_account": "Hesap Silme"
+    },
+    "success": {
+      "title": "{{label}} güncellendi",
+      "body": "İşlem başarılı"
+    },
+    "cancelled": {
+      "title": "{{label}} iptal edildi",
+      "body": "Hiçbir değişiklik yapılmadı"
+    },
+    "error": {
+      "title": "{{label}} güncellenemedi",
+      "body": "İşlem sırasında bir hata oluştu"
+    }
+  },
   "onboarding": {
     "welcomeTitle": "Finance Portal'a Hoş Geldin",
     "welcomeSubtitle": "Piyasa verisi, portföy takibi ve bildirimleri tek arayüzde toplayan finans paneli.",

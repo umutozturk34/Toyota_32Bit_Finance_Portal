@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Shield, ShieldOff, RefreshCw, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 import keycloak from '../lib/keycloak';
@@ -26,12 +27,13 @@ function useDisableTwoFactor() {
 }
 
 export default function TwoFactorPanel() {
+    const { t } = useTranslation();
     const { data: status, isLoading } = useTwoFactorStatus();
     const disable = useDisableTwoFactor();
     const [confirmOpen, setConfirmOpen] = useState(false);
 
     const handleSetup = () => {
-        toast.info('Yönlendiriliyor', 'Authenticator kurulum sayfasına götürüleceksin');
+        toast.info(t('twoFactor.redirecting'), t('twoFactor.redirectingHint'));
         keycloak.login({
             action: 'CONFIGURE_TOTP',
             redirectUri: window.location.href,
@@ -41,10 +43,10 @@ export default function TwoFactorPanel() {
     const handleDisable = async () => {
         try {
             await disable.mutateAsync();
-            toast.success('2FA devre dışı', 'İki adımlı doğrulama hesabından kaldırıldı');
+            toast.success(t('twoFactor.disabledTitle'), t('twoFactor.disabledBody'));
             setConfirmOpen(false);
         } catch (err) {
-            toast.error('İşlem başarısız', err?.response?.data?.message || 'Tekrar dene');
+            toast.error(t('error.actionFailed'), err?.response?.data?.message || t('common.retry'));
         }
     };
 
@@ -52,7 +54,7 @@ export default function TwoFactorPanel() {
         return (
             <div className="flex items-center gap-2 rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-xs text-fg-muted">
                 <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
-                Durum kontrol ediliyor…
+                {t('twoFactor.statusLoading')}
             </div>
         );
     }
@@ -69,12 +71,10 @@ export default function TwoFactorPanel() {
                 {enabled
                     ? <CheckCircle className="h-3.5 w-3.5 shrink-0" />
                     : <AlertTriangle className="h-3.5 w-3.5 shrink-0" />}
-                <span>{enabled ? '2FA aktif' : '2FA kapalı'}</span>
+                <span>{enabled ? t('twoFactor.active') : t('twoFactor.inactive')}</span>
             </div>
             <p className="text-[11px] text-fg-muted leading-relaxed px-1">
-                {enabled
-                    ? 'Hesabın iki adımlı doğrulama ile korunuyor. Güvenliği yeniden kurmak veya devre dışı bırakmak için aşağıdaki seçenekleri kullan.'
-                    : 'Google/Microsoft Authenticator ile hesabını ek güvenlik katmanıyla koru.'}
+                {enabled ? t('twoFactor.descActive') : t('twoFactor.descInactive')}
             </p>
 
             {enabled ? (
@@ -84,7 +84,7 @@ export default function TwoFactorPanel() {
                         className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated hover:bg-surface text-fg py-2.5 text-xs font-semibold transition-colors cursor-pointer"
                     >
                         <RefreshCw className="h-3.5 w-3.5 text-accent" />
-                        Yeniden kur
+                        {t('twoFactor.reSetup')}
                     </button>
                     <button
                         onClick={() => setConfirmOpen(true)}
@@ -92,7 +92,7 @@ export default function TwoFactorPanel() {
                         className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-danger/30 bg-danger/5 hover:bg-danger/10 text-danger py-2.5 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
                     >
                         <ShieldOff className="h-3.5 w-3.5" />
-                        Devre dışı bırak
+                        {t('twoFactor.disable')}
                     </button>
                 </div>
             ) : (
@@ -101,22 +101,20 @@ export default function TwoFactorPanel() {
                     className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer"
                 >
                     <Shield className="h-3.5 w-3.5" />
-                    2FA'yı Kur
+                    {t('twoFactor.setupCta')}
                 </button>
             )}
 
             <p className="text-[10px] text-fg-subtle leading-relaxed px-1">
-                {enabled
-                    ? 'Devre dışı bırakırsan tek faktörlü oturum açma aktif olur, hesap güvenliği düşer.'
-                    : 'Doğrulama kurulum sayfasına yönlendirileceksin.'}
+                {enabled ? t('twoFactor.footerActive') : t('twoFactor.footerInactive')}
             </p>
 
             <ConfirmDialog
                 open={confirmOpen}
-                title="2FA devre dışı bırakılsın mı?"
-                message="Hesabın artık tek faktörlü oturum açma ile korunacak. Bu işlem geri alınabilir — istediğin zaman tekrar kurabilirsin."
-                confirmLabel="Devre dışı bırak"
-                cancelLabel="Vazgeç"
+                title={t('twoFactor.confirm.title')}
+                message={t('twoFactor.confirm.message')}
+                confirmLabel={t('twoFactor.disable')}
+                cancelLabel={t('common.cancel')}
                 variant="danger"
                 loading={disable.isPending}
                 onConfirm={handleDisable}

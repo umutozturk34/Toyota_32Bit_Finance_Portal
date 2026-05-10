@@ -50,11 +50,11 @@ public class UserChartDataFacade {
         int maxFibTools = chartDefaults.limits().maxFibToolsPerAsset();
         Object indicators = config.get("indicators");
         if (indicators instanceof List<?> list && maxIndicators > 0 && list.size() > maxIndicators) {
-            throw new BusinessException("Maximum " + maxIndicators + " indicators allowed per asset");
+            throw new BusinessException("error.chart.indicatorLimit", maxIndicators);
         }
         Object fibTools = config.get("fibTools");
         if (fibTools instanceof List<?> list && maxFibTools > 0 && list.size() > maxFibTools) {
-            throw new BusinessException("Maximum " + maxFibTools + " fibonacci tools allowed per asset");
+            throw new BusinessException("error.chart.fibToolLimit", maxFibTools);
         }
     }
 
@@ -62,7 +62,7 @@ public class UserChartDataFacade {
         if (drawings == null || chartDefaults.limits() == null) return;
         int max = chartDefaults.limits().maxDrawingsPerAsset();
         if (max > 0 && drawings.size() > max) {
-            throw new BusinessException("Maximum " + max + " drawings allowed per asset");
+            throw new BusinessException("error.chart.drawingLimit", max);
         }
     }
 

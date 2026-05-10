@@ -84,7 +84,7 @@ public class UnifiedMarketService implements MarketUpdatePort {
     public List<?> getHistory(MarketType type, String code, CandlePeriod period) {
         MarketHistoryProvider provider = historyProviders.get(type);
         if (provider == null) {
-            throw new ResourceNotFoundException("No history provider registered for " + type);
+            throw new ResourceNotFoundException("error.market.noHistoryProvider", type);
         }
         return provider.getHistory(code, period);
     }
@@ -133,7 +133,7 @@ public class UnifiedMarketService implements MarketUpdatePort {
                 log.debug("Asset lookup failed for type={} code={}: {}", type, code, e.getMessage());
             }
         }
-        throw new ResourceNotFoundException("Asset not found: " + code);
+        throw new ResourceNotFoundException("error.market.assetNotFound", code);
     }
 
     private List<MarketAssetResponse> applyFilter(List<MarketAssetResponse> items, String filter) {

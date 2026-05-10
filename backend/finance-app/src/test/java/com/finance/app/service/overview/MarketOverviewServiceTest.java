@@ -99,7 +99,7 @@ class MarketOverviewServiceTest {
         WidgetSection any = section("movers-stock", WidgetKind.MOVERS, 0);
         OverviewWidgetProvider provider = mock(OverviewWidgetProvider.class);
         when(provider.kind()).thenReturn(WidgetKind.MOVERS);
-        when(provider.fetch(any(), any())).thenThrow(new BusinessException("invalid", "OVERVIEW_INVALID"));
+        when(provider.fetch(any(), any())).thenThrow(new BusinessException("invalid"));
         when(layoutReader.readVisibleSections("user-1")).thenReturn(List.of(any));
         when(registry.providerFor(WidgetKind.MOVERS)).thenReturn(Optional.of(provider));
 

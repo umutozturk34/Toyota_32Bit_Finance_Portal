@@ -88,7 +88,7 @@ public class TrackedAssetQueryService {
         String normalizedCode = type.normalizeCode(assetCode);
         boolean exists = trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode).isPresent();
         if (!exists) {
-            throw new ResourceNotFoundException("Tracked asset not found: " + type + " / " + normalizedCode);
+            throw new ResourceNotFoundException("error.trackedAsset.notFound", type, normalizedCode);
         }
         return normalizedCode;
     }

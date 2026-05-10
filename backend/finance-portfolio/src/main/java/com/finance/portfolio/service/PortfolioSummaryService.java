@@ -103,7 +103,7 @@ public class PortfolioSummaryService {
         BigDecimal totalPnl = pct.amount() != null ? pct.amount() : BigDecimal.ZERO;
         BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
 
-        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetType, "asset type");
+        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetType, "enum.field.assetType");
         DailyPnlSummary daily = aggregateDailyPnl(portfolioId, filterType);
 
         return responseMapper.toSummaryResponse(totalValue, totalEntryValue, totalPnl, pnlPercent,
@@ -198,7 +198,7 @@ public class PortfolioSummaryService {
     }
 
     private List<PortfolioPosition> filterByType(List<PortfolioPosition> positions, String assetTypeName) {
-        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetTypeName, "asset type");
+        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetTypeName, "enum.field.assetType");
         if (filterType == null) return positions;
         return positions.stream().filter(p -> p.getAssetType() == filterType).toList();
     }

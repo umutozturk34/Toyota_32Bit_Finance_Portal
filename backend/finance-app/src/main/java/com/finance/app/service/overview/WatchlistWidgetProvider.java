@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 public class WatchlistWidgetProvider implements OverviewWidgetProvider {
 
     private static final Sort DISPLAY_SORT = Sort.by(Sort.Direction.ASC, "displayOrder");
-    private static final String FALLBACK_NAME = "Liste bulunamadı";
 
     private final OverviewWatchlistRepository watchlistRepository;
     private final OverviewWatchlistItemRepository itemRepository;
@@ -48,7 +47,7 @@ public class WatchlistWidgetProvider implements OverviewWidgetProvider {
     public WatchlistData fetch(String userSub, WidgetSection section) {
         Optional<OverviewWatchlist> resolved = resolveTargetList(userSub, section);
         if (resolved.isEmpty()) {
-            return new WatchlistData(null, FALLBACK_NAME, List.of());
+            return new WatchlistData(null, null, List.of());
         }
         OverviewWatchlist list = resolved.get();
         int limit = readLimit(section);

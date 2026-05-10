@@ -49,7 +49,7 @@ public class TrackedAssetRefreshService {
     private TrackedAssetDataService resolve(TrackedAssetType type) {
         TrackedAssetDataService service = dataServices.get(type);
         if (service == null) {
-            throw new IllegalArgumentException("No data service registered for " + type);
+            throw new IllegalArgumentException("error.trackedAsset.noDataService");
         }
         return service;
     }

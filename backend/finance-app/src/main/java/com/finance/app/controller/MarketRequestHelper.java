@@ -14,14 +14,14 @@ public final class MarketRequestHelper {
     public static List<MarketType> parseMarketTypes(String type) {
         if (type == null || type.isBlank()) return List.of(MarketType.values());
         return Arrays.stream(type.split(","))
-                .map(raw -> EnumParser.parseOrBadRequest(MarketType.class, raw.trim().toUpperCase(), "market type"))
+                .map(raw -> EnumParser.parseOrBadRequest(MarketType.class, raw.trim().toUpperCase(), "enum.field.marketType"))
                 .toList();
     }
 
     public static List<TrackedAssetType> parseTrackedTypes(String type) {
         if (type == null || type.isBlank()) return List.of(TrackedAssetType.values());
         return Arrays.stream(type.split(","))
-                .map(raw -> EnumParser.parseOrBadRequest(TrackedAssetType.class, raw.trim().toUpperCase(), "tracked asset type"))
+                .map(raw -> EnumParser.parseOrBadRequest(TrackedAssetType.class, raw.trim().toUpperCase(), "enum.field.trackedAssetType"))
                 .toList();
     }
 

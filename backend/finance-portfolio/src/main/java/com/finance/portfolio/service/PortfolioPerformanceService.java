@@ -53,7 +53,7 @@ public class PortfolioPerformanceService {
         LocalDateTime end = LocalDateTime.now();
         LocalDateTime start = CandlePeriod.fromCode(range).toStartDateTime(end);
 
-        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetType, "asset type");
+        AssetType filterType = EnumParser.parseNullable(AssetType.class, assetType, "enum.field.assetType");
         return filterType != null
                 ? getAssetTypePerformance(portfolioId, filterType, start, end)
                 : getAggregatePerformance(portfolioId, start, end);
@@ -64,7 +64,7 @@ public class PortfolioPerformanceService {
                                                   String assetType, String assetCode, String range) {
         LocalDateTime end = LocalDateTime.now();
         LocalDateTime start = CandlePeriod.fromCode(range).toStartDateTime(end);
-        AssetType type = EnumParser.parseOrBadRequest(AssetType.class, assetType, "asset type");
+        AssetType type = EnumParser.parseOrBadRequest(AssetType.class, assetType, "enum.field.assetType");
         TrackedAssetType trackedType = TrackedAssetType.valueOf(type.name());
         TrackedAsset tracked = trackedAssetRepository
                 .findByAssetTypeAndAssetCodeIgnoreCase(trackedType, trackedType.normalizeCode(assetCode))

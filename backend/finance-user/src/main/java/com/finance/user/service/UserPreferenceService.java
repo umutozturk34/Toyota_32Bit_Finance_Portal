@@ -38,28 +38,34 @@ public class UserPreferenceService {
                 .orElseGet(() -> mapper.toResponse(UserPreference.defaultsFor(userSub)));
     }
 
+    @Transactional(readOnly = true)
+    public Optional<UserPreferenceResponse> findPersisted(String userSub) {
+        return repository.findById(userSub).map(mapper::toResponse);
+    }
+
     @Transactional
     public UserPreferenceResponse upsert(String userSub, UserPreferenceUpdateRequest request) {
+        if (request.language() != null) {
+            syncToKeycloak(userSub, securityProperties.keycloak().localeAttribute(), request.language());
+        }
+        if (request.theme() != null) {
+            syncToKeycloak(userSub, securityProperties.keycloak().themeAttribute(), request.theme().name());
+        }
         UserPreference entity = repository.findById(userSub)
                 .orElseGet(() -> UserPreference.defaultsFor(userSub));
         applyUpdates(entity, request);
         UserPreference saved = repository.save(entity);
         eventPublisher.publishEvent(mapper.toUpdatedEvent(saved));
-        if (request.language() != null) {
-            syncLocaleToKeycloak(userSub, request.language());
-        }
         return mapper.toResponse(saved);
     }
 
-    private void syncLocaleToKeycloak(String userSub, String language) {
+    private void syncToKeycloak(String userSub, String attribute, String value) {
         try {
-            keycloakAdminClient.setUserAttribute(
-                    userSub,
-                    securityProperties.keycloak().localeAttribute(),
-                    language);
+            keycloakAdminClient.setUserAttribute(userSub, attribute, value);
         } catch (RuntimeException ex) {
-            log.warn("Failed to sync locale to Keycloak user={} language={}: {}",
-                    userSub, language, ex.getMessage());
+            log.error("Keycloak attribute sync failed user={} attribute={} value={}: {}",
+                    userSub, attribute, value, ex.getMessage());
+            throw new com.finance.common.exception.BusinessException("error.preferences.syncFailed", attribute);
         }
     }
 

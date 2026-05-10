@@ -50,7 +50,7 @@ public class ForexQueryService implements MarketHistoryProvider {
     private List<CandleResponse> loadCandles(String currencyCode, LocalDateTime from, LocalDateTime to) {
         String normalized = currencyCode.strip().toUpperCase();
         if (!forexRepository.existsById(normalized)) {
-            throw new ResourceNotFoundException("Forex not found: " + normalized);
+            throw new ResourceNotFoundException("error.market.forexNotFound", normalized);
         }
         List<ForexCandle> candles = forexCandleRepository
                 .findByCurrencyCodeAndCandleDateBetweenOrderByCandleDateAsc(normalized, from, to);

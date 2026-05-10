@@ -128,6 +128,6 @@ public class PortfolioFacade {
 
     private void validateOwner(String userSub, Long portfolioId) {
         portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
-                .orElseThrow(() -> new ResourceNotFoundException("Portfolio not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("error.portfolio.notFound", portfolioId));
     }
 }

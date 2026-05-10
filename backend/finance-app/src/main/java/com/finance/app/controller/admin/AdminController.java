@@ -67,7 +67,7 @@ public class AdminController {
     }
 
     private MarketType parseMarketType(String raw) {
-        return EnumParser.parseOrBadRequest(MarketType.class, raw == null ? null : raw.toUpperCase(), "market type");
+        return EnumParser.parseOrBadRequest(MarketType.class, raw == null ? null : raw.toUpperCase(), "enum.field.marketType");
     }
 
     private String capitalize(String value) {

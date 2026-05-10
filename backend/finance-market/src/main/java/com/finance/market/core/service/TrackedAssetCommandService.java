@@ -78,7 +78,7 @@ public class TrackedAssetCommandService {
         String normalizedCode = type.normalizeCode(assetCode);
         TrackedAsset entity = trackedAssetRepository
                 .findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
-                .orElseThrow(() -> new ResourceNotFoundException("Tracked asset not found: " + type + " / " + normalizedCode));
+                .orElseThrow(() -> new ResourceNotFoundException("error.trackedAsset.notFound", type, normalizedCode));
         trackedAssetRepository.delete(entity);
         codeCache.invalidate(type);
     }
@@ -93,7 +93,7 @@ public class TrackedAssetCommandService {
             String normalizedCode = type.normalizeCode(item.getAssetCode());
             TrackedAsset entity = trackedAssetRepository
                     .findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
-                    .orElseThrow(() -> new ResourceNotFoundException("Tracked asset not found: " + type + " / " + normalizedCode));
+                    .orElseThrow(() -> new ResourceNotFoundException("error.trackedAsset.notFound", type, normalizedCode));
             entity.setSortOrder(item.getSortOrder());
             entitiesToUpdate.add(entity);
         }

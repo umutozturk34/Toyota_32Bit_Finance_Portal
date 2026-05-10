@@ -580,6 +580,53 @@
     "updatedBody": "{{code}} ayarları kaydedildi",
     "updateFailed": "Güncelleme başarısız"
   },
+  "positionForm": {
+    "titleAdd": "Pozisyon Ekle",
+    "titleEdit": "Pozisyonu Düzenle",
+    "continue": "Devam Et",
+    "totalCost": "Toplam Maliyet",
+    "fields": {
+      "entryDate": "Giriş Tarihi",
+      "entryPrice": "Giriş Fiyatı (TRY)",
+      "quantity": "Miktar",
+      "quantityShares": "Miktar (adet)",
+      "minOne": "min. 1 adet"
+    },
+    "errors": {
+      "dateRequired": "Giriş tarihi gerekli",
+      "priceInvalid": "Geçerli bir giriş fiyatı girin",
+      "quantityInvalid": "Geçerli bir miktar girin",
+      "quantityInteger": "Bu varlık için tam sayı miktar girin",
+      "addFailed": "Pozisyon eklenemedi",
+      "updateFailed": "Güncelleme başarısız"
+    },
+    "steps": {
+      "validating": "İşlem doğrulanıyor...",
+      "checkingMarket": "Piyasa verisi kontrol ediliyor...",
+      "updating": "Portföy güncelleniyor..."
+    },
+    "confirm": {
+      "heading": "İşleminizi onaylıyor musunuz?",
+      "subAdd": "<span class=\"font-medium text-fg\">{{code}}</span> için lot eklenecek",
+      "subEdit": "<span class=\"font-medium text-fg\">{{code}}</span> için lot güncellenecek",
+      "date": "Tarih",
+      "quantity": "Miktar",
+      "quantityShares": "{{qty}} adet",
+      "unitPrice": "Birim Fiyat"
+    },
+    "success": {
+      "titleAdd": "Pozisyon eklendi",
+      "titleEdit": "Pozisyon güncellendi",
+      "subtitleAdd": "{{code}} pozisyonu ({{qty}} adet) ekle",
+      "subtitleEdit": "{{code}} pozisyonunu güncelle",
+      "completed": "İşlem başarıyla tamamlandı"
+    },
+    "availability": {
+      "has": "Bu tarih için veri mevcut: <span class=\"font-mono font-semibold\">{{price}}</span>",
+      "apply": "Uygula",
+      "none": "Bu tarih için fiyat verisi yok, manuel girin."
+    }
+  },
   "assetDetail": {
     "newLot": "Yeni Lot",
     "pnl": "Kar/Zarar",

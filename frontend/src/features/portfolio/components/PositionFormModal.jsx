@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
@@ -8,21 +9,26 @@ import DatePickerPopover from '../../../shared/components/form/DatePickerPopover
 import ProcessingSteps from '../../../shared/components/feedback/ProcessingSteps';
 import useProcessingAnimation from '../../../shared/hooks/useProcessingAnimation';
 import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
-import { formatPriceTRY } from '../../../shared/utils/formatters';
+import { formatPriceTRY, currentLocaleTag } from '../../../shared/utils/formatters';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';
 import { useAddPosition, usePortfolioLimits, useUpdatePosition } from '../hooks/usePortfolioData';
 
 import {
-  FRACTIONAL_TYPES, ONE_HOUR_MS, SUCCESS_HOLD_MS, PROCESSING_STEPS,
+  FRACTIONAL_TYPES, ONE_HOUR_MS, SUCCESS_HOLD_MS, PROCESSING_STEP_DEFS,
   todayInputValue, isoToDateInput, dateInputToIso, buildInitialState,
   resolveTarget, toYearMonth, buildPriceIndex, formatTotalCost,
   preventDecimal, describeAction,
 } from '../lib/positionFormHelpers';
 
 export default function PositionFormModal({ mode, portfolioId, asset, position, onClose, onComplete }) {
+  const { t } = useTranslation();
   const target = resolveTarget(mode, asset, position);
   const isFractional = FRACTIONAL_TYPES.includes(target.assetType);
   const isEdit = mode === 'edit';
+  const processingSteps = useMemo(
+    () => PROCESSING_STEP_DEFS.map((s) => ({ label: t(`positionForm.steps.${s.labelKey}`), duration: s.duration })),
+    [t],
+  );
 
   const [form, setForm] = useState(() => buildInitialState(mode, asset, position));
   const [error, setError] = useState(null);
@@ -96,11 +102,11 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
   };
 
   const validate = () => {
-    if (!form.entryDate) return 'Giriş tarihi gerekli';
-    if (!form.entryPrice || Number(form.entryPrice) <= 0) return 'Geçerli bir giriş fiyatı girin';
+    if (!form.entryDate) return t('positionForm.errors.dateRequired');
+    if (!form.entryPrice || Number(form.entryPrice) <= 0) return t('positionForm.errors.priceInvalid');
     const qty = Number(form.quantity);
-    if (!qty || qty <= 0) return 'Geçerli bir miktar girin';
-    if (!isFractional && !Number.isInteger(qty)) return 'Bu varlık için tam sayı miktar girin';
+    if (!qty || qty <= 0) return t('positionForm.errors.quantityInvalid');
+    if (!isFractional && !Number.isInteger(qty)) return t('positionForm.errors.quantityInteger');
     return null;
   };
 
@@ -128,12 +134,12 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
       ? () => updateMutation.mutateAsync({ positionId: position.id, payload })
       : () => addMutation.mutateAsync(payload);
     try {
-      await Promise.all([mutate(), runAnimation(PROCESSING_STEPS)]);
+      await Promise.all([mutate(), runAnimation(processingSteps)]);
       setPhase('success');
       setTimeout(() => { onComplete?.(); onClose(); }, SUCCESS_HOLD_MS);
     } catch (err) {
       resetProcessing();
-      setError(err?.response?.data?.message || (isEdit ? 'Güncelleme başarısız' : 'Pozisyon eklenemedi'));
+      setError(err?.response?.data?.message || (isEdit ? t('positionForm.errors.updateFailed') : t('positionForm.errors.addFailed')));
       setPhase('form');
     }
   };
@@ -165,7 +171,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
             </div>
             <div>
               <h2 className="text-base font-semibold text-fg">
-                {isEdit ? 'Pozisyonu Düzenle' : 'Pozisyon Ekle'}
+                {isEdit ? t('positionForm.titleEdit') : t('positionForm.titleAdd')}
               </h2>
               <p className="text-xs text-fg-muted">{target.assetName || displayCode}</p>
             </div>
@@ -181,12 +187,12 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
 
         {phase === 'success' && (
           <SuccessPanel
-            title={isEdit ? 'Pozisyon güncellendi' : 'Pozisyon eklendi'}
-            subtitle={describeAction(isEdit, form, displayCode, isFractional)}
+            title={isEdit ? t('positionForm.success.titleEdit') : t('positionForm.success.titleAdd')}
+            subtitle={describeAction(t, isEdit, form, displayCode, isFractional)}
           />
         )}
 
-        {phase === 'processing' && <ProcessingSteps steps={PROCESSING_STEPS} currentStep={processingStep} />}
+        {phase === 'processing' && <ProcessingSteps steps={processingSteps} currentStep={processingStep} />}
 
         {phase === 'confirm' && (
           <ConfirmPanel
@@ -205,7 +211,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
                 <Calendar className="h-3 w-3" />
-                Giriş Tarihi
+                {t('positionForm.fields.entryDate')}
               </label>
               <DatePickerPopover
                 value={form.entryDate}
@@ -228,7 +234,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
                 <Tag className="h-3 w-3" />
-                Giriş Fiyatı (TRY)
+                {t('positionForm.fields.entryPrice')}
               </label>
               <input
                 type="number"
@@ -243,7 +249,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
                 <Hash className="h-3 w-3" />
-                Miktar {isFractional ? '' : '(adet)'}
+                {isFractional ? t('positionForm.fields.quantity') : t('positionForm.fields.quantityShares')}
               </label>
               <input
                 type="number"
@@ -252,7 +258,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
                 value={form.quantity}
                 onChange={handleQuantityChange}
                 onKeyDown={isFractional ? undefined : preventDecimal}
-                placeholder={isFractional ? '0.00' : 'min. 1 adet'}
+                placeholder={isFractional ? '0.00' : t('positionForm.fields.minOne')}
                 autoFocus
                 className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
               />
@@ -260,7 +266,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
 
             {totalCost != null && (
               <div className="rounded-xl border border-accent/30 bg-gradient-to-r from-accent/5 to-transparent px-4 py-3 flex items-center justify-between gap-3 min-w-0">
-                <span className="text-xs font-semibold text-accent shrink-0">Toplam Maliyet</span>
+                <span className="text-xs font-semibold text-accent shrink-0">{t('positionForm.totalCost')}</span>
                 <span
                   className="text-lg font-bold font-mono text-accent truncate"
                   title={formatPriceTRY(totalCost)}
@@ -289,7 +295,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
               className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer"
             >
               <Wallet className="h-4 w-4" />
-              {isEdit ? 'Devam Et' : 'Pozisyon Ekle'}
+              {isEdit ? t('positionForm.continue') : t('positionForm.titleAdd')}
             </button>
           </form>
         )}
@@ -299,9 +305,10 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
 }
 
 function ConfirmPanel({ isEdit, displayCode, form, isFractional, totalCost, onCancel, onConfirm }) {
-  const qtyDisplay = Number(form.quantity).toLocaleString('tr-TR', { maximumFractionDigits: isFractional ? 6 : 0 });
+  const { t } = useTranslation();
+  const qtyDisplay = Number(form.quantity).toLocaleString(currentLocaleTag(), { maximumFractionDigits: isFractional ? 6 : 0 });
   const priceDisplay = formatPriceTRY(Number(form.entryPrice));
-  const dateDisplay = new Date(form.entryDate).toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const dateDisplay = new Date(form.entryDate).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'long', year: 'numeric' });
   return (
     <motion.div
       initial={{ opacity: 0, y: 5 }}
@@ -313,18 +320,20 @@ function ConfirmPanel({ isEdit, displayCode, form, isFractional, totalCost, onCa
           <AlertTriangle className="h-6 w-6 text-warning" />
         </div>
         <div className="text-center space-y-1">
-          <p className="text-sm font-semibold text-fg">İşleminizi onaylıyor musunuz?</p>
+          <p className="text-sm font-semibold text-fg">{t('positionForm.confirm.heading')}</p>
           <p className="text-xs text-fg-muted">
-            <span className="font-medium text-fg">{displayCode}</span> için lot {isEdit ? 'güncellenecek' : 'eklenecek'}
+            <span dangerouslySetInnerHTML={{
+              __html: t(isEdit ? 'positionForm.confirm.subEdit' : 'positionForm.confirm.subAdd', { code: displayCode }),
+            }} />
           </p>
         </div>
       </div>
       <div className="rounded-xl border border-border-default bg-bg-base px-4 py-3 space-y-2">
-        <Row label="Tarih" value={dateDisplay} />
-        <Row label="Miktar" value={`${qtyDisplay}${isFractional ? '' : ' adet'}`} />
-        <Row label="Birim Fiyat" value={priceDisplay} />
+        <Row label={t('positionForm.confirm.date')} value={dateDisplay} />
+        <Row label={t('positionForm.confirm.quantity')} value={isFractional ? qtyDisplay : t('positionForm.confirm.quantityShares', { qty: qtyDisplay })} />
+        <Row label={t('positionForm.confirm.unitPrice')} value={priceDisplay} />
         <div className="border-t border-border-default pt-2">
-          <Row label={<span className="font-semibold">Toplam Maliyet</span>} value={
+          <Row label={<span className="font-semibold">{t('positionForm.totalCost')}</span>} value={
             <span className="font-bold text-accent truncate" title={formatPriceTRY(totalCost)}>
               {formatTotalCost(totalCost)}
             </span>
@@ -336,14 +345,14 @@ function ConfirmPanel({ isEdit, displayCode, form, isFractional, totalCost, onCa
           onClick={onCancel}
           className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-all cursor-pointer"
         >
-          Vazgeç
+          {t('common.cancel')}
         </button>
         <button
           onClick={onConfirm}
           className="flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer"
         >
           <Wallet className="h-4 w-4" />
-          Onayla
+          {t('common.confirm')}
         </button>
       </div>
     </motion.div>
@@ -360,6 +369,7 @@ function Row({ label, value }) {
 }
 
 function SuccessPanel({ title, subtitle }) {
+  const { t } = useTranslation();
   return (
     <motion.div
       initial={{ scale: 0.85, opacity: 0 }}
@@ -390,13 +400,14 @@ function SuccessPanel({ title, subtitle }) {
         className="flex items-center gap-1.5 text-[11px] text-success/70"
       >
         <ShieldCheck className="h-3.5 w-3.5" />
-        İşlem başarıyla tamamlandı
+        {t('positionForm.success.completed')}
       </motion.div>
     </motion.div>
   );
 }
 
 function DataAvailabilityHint({ dataAvailable, suggestedPrice, onApply, applied, loading }) {
+  const { t } = useTranslation();
   if (loading) {
     return <div className="h-[30px] rounded-md border border-border-default/40 bg-surface/20 animate-pulse" />;
   }
@@ -405,7 +416,9 @@ function DataAvailabilityHint({ dataAvailable, suggestedPrice, onApply, applied,
       <div className="flex items-center justify-between gap-2 text-[11px] text-success bg-success/5 rounded-md px-2.5 py-1.5 border border-success/20">
         <div className="flex items-center gap-1.5">
           <Check className="h-3 w-3 shrink-0" />
-          <span>Bu tarih için veri mevcut: <span className="font-mono font-semibold">{formatPriceTRY(suggestedPrice)}</span></span>
+          <span dangerouslySetInnerHTML={{
+            __html: t('positionForm.availability.has', { price: formatPriceTRY(suggestedPrice) }),
+          }} />
         </div>
         {!applied && (
           <button
@@ -413,7 +426,7 @@ function DataAvailabilityHint({ dataAvailable, suggestedPrice, onApply, applied,
             onClick={onApply}
             className="text-[10px] font-semibold text-success hover:underline bg-transparent border-none cursor-pointer"
           >
-            Uygula
+            {t('positionForm.availability.apply')}
           </button>
         )}
       </div>
@@ -422,7 +435,7 @@ function DataAvailabilityHint({ dataAvailable, suggestedPrice, onApply, applied,
   return (
     <div className="flex items-center gap-1.5 text-[11px] text-warning bg-warning/5 rounded-md px-2.5 py-1.5 border border-warning/20">
       <AlertCircle className="h-3 w-3 shrink-0" />
-      <span>Bu tarih için fiyat verisi yok, manuel girin.</span>
+      <span>{t('positionForm.availability.none')}</span>
     </div>
   );
 }

@@ -580,6 +580,53 @@
     "updatedBody": "{{code}} settings saved",
     "updateFailed": "Update failed"
   },
+  "positionForm": {
+    "titleAdd": "Add position",
+    "titleEdit": "Edit position",
+    "continue": "Continue",
+    "totalCost": "Total cost",
+    "fields": {
+      "entryDate": "Entry date",
+      "entryPrice": "Entry price (TRY)",
+      "quantity": "Quantity",
+      "quantityShares": "Quantity (shares)",
+      "minOne": "min. 1 share"
+    },
+    "errors": {
+      "dateRequired": "Entry date is required",
+      "priceInvalid": "Enter a valid entry price",
+      "quantityInvalid": "Enter a valid quantity",
+      "quantityInteger": "This asset requires a whole-number quantity",
+      "addFailed": "Could not add position",
+      "updateFailed": "Update failed"
+    },
+    "steps": {
+      "validating": "Validating transaction...",
+      "checkingMarket": "Checking market data...",
+      "updating": "Updating portfolio..."
+    },
+    "confirm": {
+      "heading": "Confirm your action?",
+      "subAdd": "Lot will be added for <span class=\"font-medium text-fg\">{{code}}</span>",
+      "subEdit": "Lot will be updated for <span class=\"font-medium text-fg\">{{code}}</span>",
+      "date": "Date",
+      "quantity": "Quantity",
+      "quantityShares": "{{qty}} shares",
+      "unitPrice": "Unit price"
+    },
+    "success": {
+      "titleAdd": "Position added",
+      "titleEdit": "Position updated",
+      "subtitleAdd": "Add {{code}} position ({{qty}} shares)",
+      "subtitleEdit": "Update {{code}} position",
+      "completed": "Action completed successfully"
+    },
+    "availability": {
+      "has": "Data available for this date: <span class=\"font-mono font-semibold\">{{price}}</span>",
+      "apply": "Apply",
+      "none": "No price data for this date — enter manually."
+    }
+  },
   "assetDetail": {
     "newLot": "New lot",
     "pnl": "P/L",

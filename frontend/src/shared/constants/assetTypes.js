@@ -1,12 +1,3 @@
-export const ASSET_TYPE_LABELS = {
-  CRYPTO: 'Kripto',
-  STOCK: 'Hisse',
-  FOREX: 'Döviz',
-  FUND: 'Fon',
-  COMMODITY: 'Emtia',
-  CASH: 'Nakit',
-};
-
 export const ASSET_TYPE_COLORS = {
   CRYPTO: '#f59e0b',
   STOCK: '#10b981',
@@ -32,28 +23,21 @@ export const ASSET_TYPE_STYLES = {
 };
 
 export const ASSET_TYPE_FILTERS = [
-  { id: null, label: 'Tümü' },
-  { id: 'CRYPTO', label: 'Kripto' },
-  { id: 'STOCK', label: 'Hisse' },
-  { id: 'FOREX', label: 'Döviz' },
-  { id: 'FUND', label: 'Fon' },
-  { id: 'COMMODITY', label: 'Emtia' },
+  { id: null },
+  { id: 'CRYPTO' },
+  { id: 'STOCK' },
+  { id: 'FOREX' },
+  { id: 'FUND' },
+  { id: 'COMMODITY' },
 ];
 
 export const ASSET_TYPE_TABS = [
-  { id: 'ALL', label: 'Tümü' },
-  { id: 'CRYPTO', label: 'Kripto' },
-  { id: 'STOCK', label: 'Hisse' },
-  { id: 'FOREX', label: 'Döviz' },
-  { id: 'FUND', label: 'Fon' },
-  { id: 'COMMODITY', label: 'Emtia' },
+  { id: 'ALL' },
+  { id: 'CRYPTO' },
+  { id: 'STOCK' },
+  { id: 'FOREX' },
+  { id: 'FUND' },
+  { id: 'COMMODITY' },
 ];
 
-export const PORTFOLIO_RANGES = [
-  { id: '1M', label: '1A' },
-  { id: '3M', label: '3A' },
-  { id: '6M', label: '6A' },
-  { id: '1Y', label: '1Y' },
-  { id: '5Y', label: '5Y' },
-  { id: 'ALL', label: 'Maks' },
-];
+export const PORTFOLIO_RANGE_IDS = ['1M', '3M', '6M', '1Y', '5Y', 'ALL'];

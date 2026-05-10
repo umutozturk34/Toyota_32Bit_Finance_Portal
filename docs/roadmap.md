@@ -1,247 +1,274 @@
-# Finance Portal — Yol Haritası
+# Finance Portal — Roadmap
 
-Türkiye finansal piyasalarına odaklı, açık kaynaklı kişisel finans takip platformu. Kripto, hisse senedi, döviz, fon, emtia, tahvil ve bono varlıklarını tek bir uygulamada izleyin; portföyünüzü gerçek zamanlı verilerle yönetin.
-
-**Hedef:** v0.20 (i18n) — Mayıs 2026 sonu
+**Target:** v0.20 (Futures & options market) — 25 May 2026
 
 ---
 
-## Mevcut Yetenekler (v0.13.x)
+## Current Capabilities (v0.17.x)
 
-### Kimlik & Yetkilendirme
+### Identity & Authorization
 
-- Keycloak tabanlı OAuth2 / OpenID Connect kimlik doğrulama
-- JWT tabanlı API erişimi
-- Rol bazlı yetkilendirme (USER / ADMIN)
-- LDAP entegrasyonu (kurumsal kullanım için)
-- Bucket4j ile katmanlı oran sınırlama (`API`, `ADMIN_READ`, `ADMIN_TRIGGER`)
+- Keycloak-based OAuth2 / OpenID Connect authentication
+- JWT-secured API access
+- Role-based authorization (USER / ADMIN)
+- LDAP integration for enterprise deployments
+- Two-tier rate limiting: Nginx edge zones (per-IP burst protection) + in-app Bucket4j over Redis (per-user, per-tier)
 
-### Piyasa Verileri
+### Market Data
 
-| Modül | Kaynak | Kapsam |
-|-------|--------|--------|
-| Kripto | CoinGecko + Binance | 40+ coin, 1 yıllık geçmiş, USD → TRY otomatik dönüşüm |
-| Hisse Senedi | Yahoo Finance | BIST 100, BIST 30, MAIN_INDEX endeksleri |
-| Döviz | TCMB + Yahoo Finance | Resmi kurlar + çapraz pariteler |
-| Fon | TEFAS API | YAT (yatırım fonu) + BYF (borsa yatırım fonu), 5 yıl geçmiş |
-| Emtia | Yahoo Finance | Değerli metaller (altın/gümüş/platin/paladyum) + futures (petrol, doğalgaz, bakır, buğday vb.); altın gram türevi |
-| Tahvil & Bono | TCMB EVDS | Devlet tahvili, hazine bonosu; kupon oranı geçmişi, basit getiri hesabı, vade takvimi |
-| Haber | RSS Akışları | Çoklu kaynak; skor bazlı otomatik kategorilendirme (kripto / parite / hisse / tahvil / makro / genel finans) |
+| Module | Source | Coverage |
+|--------|--------|----------|
+| Crypto | CoinGecko + Binance | 40+ coins, 1y history, automatic USD → TRY conversion |
+| Equities | Yahoo Finance | BIST 100, BIST 30, MAIN_INDEX |
+| FX | TCMB + Yahoo Finance | Official rates + cross-pairs |
+| Funds | TEFAS API | YAT (mutual funds) + BYF (ETFs), 5y history |
+| Commodities | Yahoo Finance | Precious metals (gold/silver/platinum/palladium) + futures (oil, gas, copper, wheat, etc.); gold-gram derivative |
+| Bonds & Bills | TCMB EVDS | Government bonds, treasury bills; coupon-rate history, simple-yield calculation, maturity calendar |
+| News | RSS feeds | Multi-source; score-based auto-categorization (crypto / FX / equities / bonds / macro / general finance) |
 
-### Portföy Yönetimi
+### Portfolio Management
 
-- **Lot bazlı pozisyon modeli** — aynı varlık için birden fazla giriş (farklı tarih ve fiyatla)
-- **Geçmişe yönelik kayıt** — bugün dahi 2015'ten girilen bir BTC için anlamlı performans grafiği
-- **Anlık değerleme** — her piyasa güncellemesinde portföy değeri yeniden hesaplanır
-- **Gün-içi granüler snapshot** — günde tek satır yerine her market güncellemesi ayrı kayıt
-- **Performans grafiği** — toplam değer, K/Z, K/Z yüzdesi; varlık tipi filtresi
-- **Dağılım grafiği** — varlık tipine veya varlık koduna göre pasta grafiği
-- **Pozisyon detay sayfası** — tek varlık için tarihsel piyasa değeri grafiği, lot listesi
-- **Tatil & no-data dayanıklılığı** — bayram günü TEFAS/Yahoo veri dönmediğinde graceful skip; değişim yüzdesi son 2 mum üstünden
+- **Lot-based position model** — multiple entries per asset (different dates and prices)
+- **Backdated entry** — meaningful performance for a BTC lot opened in 2015
+- **Live valuation** — portfolio value recomputed on every market refresh
+- **Intraday-granular snapshots** — one row per market refresh, not per day
+- **Performance chart** — total value, P&L, P&L percent; asset-type filter
+- **Allocation chart** — pie by asset type or by asset code
+- **Position detail page** — historical market value chart for a single asset, lot list
+- **Holiday & no-data resilience** — TEFAS/Yahoo blanks gracefully skipped on public holidays; change percent computed against the last two candles
+- **Animated onboarding** — first-portfolio creation wired to AnimatePresence with idle → confirm → processing → success phases
 
-### Yönetim Paneli
+### Charts & Technical Analysis
 
-- Takip edilen varlık listesi (her piyasa türü için aktif/pasif yönetimi)
-- Kullanıcı yönetimi (oluştur / güncelle / sil)
-- Manuel veri yenileme tetikleyicileri (her market için snapshot / candle / full update)
-- Görev geçmişi paneli (init, scheduler, manuel tetik kayıtları)
+- **Candle / line chart** — LightweightCharts integration, time range picker (1M / 3M / 6M / 1Y / 5Y / Max)
+- **Indicators** — SMA, EMA, RSI, MACD; sub-chart panes scale proportionally to viewport in fullscreen mode
+- **Manual drawings** — trend lines, Fibonacci, horizontal levels, freehand, annotations — persisted per asset (Postgres JSONB)
+- **User preferences** — chart type, volume toggle, magnet mode, fund toggles persisted per asset; F5 restores zoom + pan + visible time range
+- **Compare mode** — two assets compared as percent change from their first common date with a sane baseline; drawings made in compare mode are not persisted
+- **Fullscreen mode** — sub-chart heights distributed proportionally to viewport
 
-### Gözlemlenebilirlik
+### Notifications & Messaging
 
-- OpenTelemetry ile dağıtık trace
-- Kafka üzerinden log akışı
-- OpenSearch + dashboard'lar
+- **Notification microservice** — port 8082, separate Spring Boot app, Kafka event-driven dispatch
+- **Notification types** — price alert, watchlist delta, periodic reports, message, system, market opened/closed, market data updated, **news published** (slot-labelled morning/midday/evening), **portfolio updated** (daily snapshot)
+- **Preference matrix** — every type has independent email + in-app channel toggles; per-market chip selector
+- **Channels** — in-app (bell icon, unread badge, paged list) + SSE live stream + email (Thymeleaf templates)
+- **Messaging** — user ↔ admin one-to-one threads + admin broadcast; auto-mark-read in active conversation; close/delete operations
+- **Slot labelling** — config-driven (`slot.yaml`) keyword → slot mapping shared across notification types
+
+### Admin Panel
+
+- Tracked-asset registry per market type (enable/disable per row)
+- User management — Keycloak admin REST proxy: list/search/pagination, ban/unban (DB-backed `UserStatus`), password reset email, 2FA reset
+- Manual data-refresh triggers (snapshot / candle / full update per market)
+- Task history panel (init, scheduler, manual triggers)
+
+### Observability
+
+- OpenTelemetry distributed tracing
+- Kafka log pipeline; every HTTP request from both backends logged to OpenSearch via shared `RequestLoggingFilter`
+- OpenSearch + dashboards
 - Resilience4j circuit breaker, retry, rate limiter
 
----
+### Settings
 
-## Yaklaşan Sürümler
-
-### v0.14 — Kullanıcı Modülü & Yönetim ✓ landed
-
-**Hedef:** Kullanıcı tercihleri, layout customization, admin paneli, identity-adjacent ops.
-
-**Kapsam:**
-
-- **Tercihler** (`user_preferences` Postgres) — tema, dil, timezone, default grafik aralığı, rapor sıklığı, onboarding flag; ThemeContext TanStack Query backed; settings sidebar UI
-- **Overview customization** (`user_layouts` Postgres JSONB, V64) — kullanıcının overview sayfasına çektiği section'lar (BIST endeksleri, per-market top movers, watchlist, news) — hangileri görünür, hangi sırada, hangi pozisyonda (`react-grid-layout` 12-col grid; sürükle-bırak + boyutlandır), her kart kendi config'iyle (news kategori chip filter + round-robin priority dağılımı, watchlist picker, asset card pin-list); save-side `OverviewWidgetDedupSanitizer` (max 12 widget, max 4 asset card); asset card sparkline (echarts lazy + deterministic seed); single anchored settings popover lifted to `MarketDataPage`
-- **Chart drawings** (`chart_drawings` Postgres JSONB, V65 — Task B follow-up) — trend çizgileri, fibonacci, yatay seviyeler asset bazlı kalıcı kayıt
-- **Admin user management** — Keycloak admin REST proxy (`KeycloakAdminClient`) ile list/search/pagination/ban/unban; self-ban guard
-- **2FA setup** — Keycloak account API entegrasyonu, settings sidebar inline panel
-- **Şifre değiştirme** — Keycloak `executeActionsEmail` ile mail bağlantısı; UPDATE_PASSWORD AIA flow; rate limit (`CredentialActionTier` saatte 3 istek)
-- **Onboarding gate** — ilk login modal'ı, `onboarding_completed` flag
-- **Keycloak email event listener** — UPDATE_PASSWORD/REMOVE_TOTP/UPDATE_TOTP otomatik bildirim mailı
-- **Rate limit OCP refactor** — `RateLimitTier` interface + ayrı `@Component` tier'lar (yeni tier ekleme = yeni dosya)
-- Avatar / profil resmi (v0.16 MinIO entegrasyonu sonrası)
+- Theme (light / dark) — read from `localStorage` before mount so first paint matches user choice (no light → dark flash)
+- Language (Turkish — i18n track scheduled for v0.18)
+- Timezone, default chart range, report frequency preferences
+- Onboarding-completed flag
 
 ---
 
-### v0.15 — Bildirim Mikroservisi & Takip Listesi ✓ landed
+## Shipped Releases
 
-**Hedef:** Event-driven bildirim sistemi — fiyat alarmı, takip listesi, in-app + email bildirimler ayrı bir Spring Boot uygulaması olarak.
+### v0.14 — User Module & Admin ✓ landed
 
-**Mimari:** Ayrı `finance-notification-app` Maven sibling module, port 8082. Monolit ile **Kafka event-driven** iletişim (REST callback yok). Shared `finance_db` ama ayrı Flyway history table.
+**Goal:** User preferences, layout customization, admin panel, identity-adjacent ops.
 
-**Track durumu:**
+**Scope:**
 
-- ✓ **Track A** — notification microservice scaffolding, Kafka contracts, domain entities, email + in-app dispatch, SSE stream, watchlist, price alerts, reports skeleton, messaging migration
-- ✓ **Track B** — market session bildirimleri: minute-tick `MarketSessionScheduler` open/closed transition'lar için (24/7 sentinel ile crypto/news bypass), Kafka `MarketDataUpdateListener` data-updated için (eventId Caffeine idempotency + `auto-offset-reset: latest` ile redelivery güvenli), source-aware başlık (sabah/öğlen/akşam/günlük), per-market opt-in chip selector, terminal-HUD `MarketStatusBadge` her asset detail sayfasında
+- **Preferences** (`user_preferences` Postgres) — theme, language, timezone, default chart range, report frequency, onboarding flag; ThemeContext backed by TanStack Query; settings sidebar UI
+- **Overview customization** (`user_layouts` Postgres JSONB, V64) — sections the user pulls onto the overview page (BIST indices, per-market top movers, watchlist, news) — visibility, order, position (`react-grid-layout` 12-col grid; drag-drop + resize), each card with its own config (news category chips + round-robin priority, watchlist picker, asset-card pin list); save-side `OverviewWidgetDedupSanitizer` (max 12 widgets, max 4 asset-card widgets); asset-card sparkline (echarts lazy + deterministic seed); single anchored settings popover lifted to `MarketDataPage`
+- **Admin user management** — Keycloak admin REST proxy (`KeycloakAdminClient`) with list/search/pagination/ban/unban; self-ban guard
+- **2FA setup** — Keycloak account API integration, settings sidebar inline panel
+- **Password change** — Keycloak `executeActionsEmail` flow with mailed link; UPDATE_PASSWORD AIA flow; rate limit (`CredentialActionTier` 3/hour)
+- **Onboarding gate** — first-login modal, `onboarding_completed` flag
+- **Keycloak email event listener** — UPDATE_PASSWORD/REMOVE_TOTP/UPDATE_TOTP automatic notification mail
+- **Rate-limit OCP refactor** — `RateLimitTier` interface + per-tier `@Component` (adding a tier = new file)
 
-**Kapsam (tamamlanan):**
+---
 
-- **Notification microservice scaffolding** — yeni Spring Boot app, port 8082, Nginx regex routing
+### v0.15 — Notification Microservice & Watchlists ✓ landed
+
+**Goal:** Event-driven notification system — price alerts, watchlists, in-app + email notifications hosted as a separate Spring Boot application.
+
+**Architecture:** Standalone `finance-notification-app` Maven sibling, port 8082. Talks to the monolith via **Kafka events** (no REST callbacks). Shared `finance_db` but with its own Flyway history table.
+
+**Scope (delivered):**
+
+- **Microservice scaffolding** — new Spring Boot app, port 8082, Nginx regex routing
 - **Kafka event contract**:
-  - `market.updated` topic — monolit market refresh sonrası publish; consumer'lar `notification-service-market` (alert/watchlist evaluator) + `notification-data-updated` (data-updated bildirim)
-  - `user.preferences.updated` compacted topic — kullanıcı tercihi değişikliği AFTER_COMMIT publish
-- **Domain entities** (notification microservice tarafında):
+  - `market.updated` — published by the monolith after market refresh; consumed by `notification-service-market` (alert/watchlist evaluator) and `notification-data-updated` (data-updated dispatch)
+  - `user.preferences.updated` — compacted topic, AFTER_COMMIT publish on user preference change
+- **Domain entities** (notification side):
   - `Notification`, `NotificationPreference` (channel matrix × type + master email switch + per-market opt-in CSV)
   - `PriceAlert` (threshold, direction, one-shot/recurring) + `AlertEvaluator`
   - `Watchlist` (named, multiple per user, default "Favoriler" auto-created, max 20) + `WatchlistItem` + `WatchlistEvaluator` (delta detection)
-  - `UserPreferenceCache` (Kafka consumer'dan beslenen lokal cache)
+  - `UserPreferenceCache` (local cache fed by Kafka consumer)
 - **Email dispatch** — Spring Mail + Thymeleaf templates (`price-alert.html`, `watchlist-delta.html`, `report-ready.html`, `market-opened.html`, `market-closed.html`, `market-data-updated.html`)
-- **In-app notifications** — bell icon, unread badge, paged notifications page
-- **SSE live stream** — `/api/v1/notifications/stream` (gerçek zamanlı bildirim push)
-- **Messaging migrate** — user↔admin messaging monolitten notification-app'e taşındı; active-conversation skip + bulk mark-read; closed conversations + admin destructive ops + paged thread view + broadcast
-- **Frontend** — `/messages` (user) ve `/admin/messages` (admin) sayfaları, watchlist + price-alerts UI, settings → 8 satırlı bildirim türleri matrisi (master e-posta + per-type email/inapp + per-market chip selector), `MarketStatusBadge` + `MarketSelectionChips` terminal-HUD bileşenler
+- **In-app notifications** — bell icon, unread badge, paged list
+- **SSE live stream** — `/api/v1/notifications/stream` (real-time push)
+- **Messaging migration** — user↔admin messaging moved from monolith to notification-app; active-conversation skip + bulk mark-read; closed conversations + admin destructive ops + paged thread view + broadcast
+- **Market session notifications** — minute-tick `MarketSessionScheduler` for open/closed transitions (24/7 sentinel bypass for crypto/news), Kafka `MarketDataUpdateListener` for data-updated (Caffeine eventId idempotency + `auto-offset-reset: latest` redelivery-safe), source-aware title (morning/midday/evening/daily), per-market opt-in chip selector, terminal-HUD `MarketStatusBadge` on every asset detail page
+- **Frontend** — `/messages` (user) and `/admin/messages` (admin), watchlist + price-alerts UI, settings → 8-row notification matrix (master email + per-type email/inapp + per-market chip selector), `MarketStatusBadge` + `MarketSelectionChips` terminal-HUD components
 
 ---
 
-### v0.16 — PDF Rapor Sistemi & AWS S3
+### v0.16 — Chart Preferences & Drawings ✓ landed
 
-**Hedef:** Periyodik portföy raporu.
+**Goal:** Per-asset persistence of chart configuration and manual drawings so a logged-in user gets the same chart back on any device.
 
-**Kapsam:**
+**Storage decision:** Postgres JSONB instead of MongoDB. The MongoDB plan from earlier roadmap iterations was dropped — adding a second datastore for two opaque blobs did not justify the operational cost when JSONB columns deliver the same shape with the existing Flyway pipeline.
 
-- Günlük / haftalık / aylık rapor üretimi (kullanıcı tercihine göre)
-- iText ile PDF oluşturma
-- AWS S3 (prod) / MinIO (geliştirme) storage
-- Pre-signed URL ile güvenli indirme
-- 90 gün retention politikası
-- Rapor içeriği: portföy özeti, pozisyon tablosu, dağılım pasta grafiği, performans çizgi grafiği, dönem işlemleri
-- Manuel "Rapor Oluştur" butonu
+**Scope (delivered):**
 
----
-
-### v0.17 — Emir Yönetimi & Market Saatleri
-
-**Hedef:** Market kapalı iken verilen alış/satış emirlerinin yönetimi.
-
-**Kapsam:**
-
-- BIST (10:00–18:00 hafta içi), TEFAS (10:00–13:30 hafta içi), 7/24 piyasalar (kripto, döviz, emtia)
-- `MarketHoursService` — açık/kapalı kontrol, kullanıcıya market durumu göstergesi
-- Kapalı market'te emir → `PENDING_ORDER` durumu
-- Market açılınca otomatik gerçekleşim (scheduler)
-- Bekleyen emirler listesi, iptal akışı
-- Fiyat alarmından gelen otomatik alış için emir entegrasyonu
+- **Schema (V75)** — `user_chart_preferences (user_sub, tracked_asset_id, config JSONB)` + `user_chart_drawings (user_sub, tracked_asset_id, drawings JSONB)`, both with `(user_sub, tracked_asset_id)` UNIQUE and `ON DELETE CASCADE` to `tracked_assets` so deleting a tracked asset purges every user's drawings/preferences for that symbol
+- **Per-asset preferences** — chart type (line/candle), volume toggle, magnet mode, fund toggles (investor count, portfolio size), Fibonacci tools, indicator list (SMA/EMA/RSI/MACD with period + colour); F5 restores all of them
+- **Manual drawings** — trend lines, Fibonacci, horizontal levels, freehand, annotations persisted per asset; debounced PUT removed in favour of immediate save so a fast F5 cannot lose unsaved state
+- **Visible time range persistence** — zoom + pan + visible range stored per asset and restored on F5 (replaces the earlier in-memory `viewportStorage.js`)
+- **Compare mode baseline** — two-symbol percent comparison anchored at the first common date; visible-range subscribe rebases when the user zooms; drawings made while compare is active are deliberately not persisted
+- **Fullscreen sub-chart sizing** — sub-charts (RSI / MACD / Volume / Investor count / Portfolio size) inherit `isFullscreen` and scale heights proportionally to the viewport via ResizeObserver
+- **Backend consolidation** — `UserChartPreferenceController` + `UserChartDrawingController` merged behind one `UserChartDataController` + `UserChartDataFacade` returning a `UserChartBundleResponse`; `UserChartPreferenceMapper` + `UserChartDrawingMapper` (MapStruct) + `JsonNodeConverter` so services no longer hand-wire `JsonNode` ↔ `Map`
+- **Backend defaults from yaml** — `ChartDefaultsProperties` reads `chart.yaml` so frontend gets backend-driven defaults instead of hardcoded fallbacks
 
 ---
 
-### v0.18 — Grafik Çizimleri & MongoDB
+### v0.17 — Notification Expansion ✓ landed
 
-**Hedef:** Teknik analiz çizimlerinin kullanıcıya özel saklanması.
+**Goal:** Surface news refreshes and daily portfolio snapshots as their own notification streams, and tidy up the publisher / consumer infrastructure that grew during v0.15–v0.16.
 
-**Kapsam:**
+**Scope (delivered):**
 
-- MongoDB altyapısı (Docker Compose'a entegre)
-- Trend çizgileri, fibonacci araçları, indikatörler
-- Kullanıcı bazlı izolasyon (JWT sub claim)
-- Otomatik debounced kaydetme
-- "Çizimleri Sil" butonu
-- Cihaz arası senkronizasyon
-
----
-
-### v0.19 — Vadeli İşlem Modülü
-
-**Hedef:** Türev araçlarda kaldıraçlı pozisyon yönetimi.
-
-**Kapsam:**
-
-- `derivative_contracts`, `derivative_positions`, `margin_calls` veri modeli
-- Long / Short pozisyon açma
-- Marjin hesaplama, marjin tamamlama uyarıları
-- Günlük uzlaşma (mark-to-market)
-- Vade sonu otomatik kapatma
-- Kaldıraç oranları
-- Açık pozisyonlar tablosu, K/Z gerçek zamanlı
+- **News dispatch** — `news.published` Kafka topic (separate from `market.updated` so news no longer surfaces as "market data updated"); `NewsScheduler` publishes after each refresh with article count; new `NewsPublishedListener` + `NewsPublishedHandler` + `NewsPublishedPayload` on the consumer side; idempotency cache zone
+- **Portfolio dispatch** — `portfolio.updated` Kafka topic, emitted per saved snapshot by `PortfolioSnapshotService`; corresponding listener / handler / payload pair so users get a one-line "Portföyünüz güncellendi" with daily P&L when their nightly snapshot lands
+- **Config-driven slot resolver** — `SlotProperties` (`notification.keywords`) loaded from `slot.yaml` and consumed by a shared `SlotResolver`; replaces the hard-coded `SLOT_KEYWORDS` table inside `MarketDataUpdatedHandler` and powers the new `NewsPublishedHandler` titles ("Sabah haberleri · 5 yeni başlık"); adding a new slot = config edit, no code change
+- **Event publisher consolidation** — five separate ports (`MarketUpdateEventPort` + `NewsEventPort` + `PortfolioEventPort` + `UserPreferenceEventPort` + `EmailChangeEventPort`) and five Kafka adapters collapsed into a single `EventPublisherPort` + `KafkaEventAdapter`; events implement `DomainEvent` and supply their own `topic()` + `partitionKey()` so the adapter dispatches polymorphically (no `switch`)
+- **`finance-monolith-shared` Maven module** — extracted from `finance-common` so notification-backend pulls only what it actually uses (cache, config, exception handler, filter tier, security port, model entities, event records, KafkaTopics, Bucket4j rate-limit infra). Monolith-only utilities (Batch helpers, sealed asset metadata DTOs, task tracking, pricing/snapshot ports, `CandlePeriod`, `MoneyTRY`, `Percentage`, `RedisKeys`) live in the new module; notification-backend has zero dependency on it
+- **Edge rate-limit + axios polish** — Nginx `limit_req_zone` per route (auth 5 r/s burst 10, api 50 r/s burst 100, static 200 r/s burst 200) + `limit_conn` per IP; axios falls back to standard `Retry-After` header when Bucket4j's custom one is absent
+- **Frontend surface** — 2 new preference toggle rows (news published, portfolio updated), 5 new `NotificationPanel` `TYPE_META` entries (market opened/closed/data-updated + news published + portfolio updated), theme boot splash reads `localStorage` before React mount so the first paint matches the chosen theme even if the preference query fails
+- **Cleanup** — dead `MarketType.NEWS` + `SessionMarket.NEWS` + `MoneyTRYConverter` removed; news scheduler stopped publishing onto `market.updated`; `RequestLoggingFilter` reinstated under `com.finance.common.filter` so both backends log every request to OpenSearch
 
 ---
 
-### v0.20 — Çoklu Dil Desteği & Onboarding
+## Pending Releases
 
-**Hedef:** Uluslararası kullanıcıya açılım ve ilk-giriş deneyimi.
+### v0.18 — Internationalization (next)
 
-**Kapsam:**
+**Goal:** Turkish / English language toggle; open the platform up to international users.
 
-- `react-i18next` entegrasyonu
-- Türkçe + İngilizce çeviri dosyaları
-- Mevcut sabit etiketlerin (varlık tipi, tahvil tipi, fon tipi, segment) i18n'e taşınması
-- Keycloak teması için locale switch
-- Header'da dil seçici
-- İlk giriş tanıtım turu (React Joyride veya custom stepper)
-- "Bir daha gösterme" tercihi
+**Scope:**
 
----
-
-## Mimari Prensipler
-
-- **Modüler monolit** — her varlık türü kendi Maven modülünde (`finance-crypto`, `finance-stock`, `finance-portfolio` vb.); ortak kod `finance-common`'da
-- **Strategy pattern** — `MarketAssetProvider`, `MarketHistoryProvider`, `AssetPricingStrategy` ile piyasa türü genişletmesi açık-kapalı prensibine uygun
-- **Sealed DTO'lar** — `MarketAssetMetadata` sealed interface; tip güvenliği `Map<String, Object>` yerine
-- **Port & Adapter** — modüller arası bağımlılığı tersine çevirmek için `AssetPricingPort`, `HistoricalPricingPort`, `PortfolioSnapshotPort`
-- **Optimistic locking** — `@Version` ile portföy yarış koşulu koruması
-- **Defansif hata yönetimi** — Resilience4j circuit breaker + retry; piyasa kapalıyken graceful skip
-- **API sözleşmesi** — tüm yanıtlar `ApiResponse<T>` zarfında; entity sınıfları controller'dan dışarı sızmaz
+- `react-i18next` integration
+- Move existing fixed labels (asset types, bond types, fund types, segments, slot labels, notification copy) into translation files
+- Locale-aware backend message generation for user-facing email + in-app bodies
+- Keycloak theme locale switch
+- Header language selector, persisted as a user preference
+- Locale-aware number / date formatting
 
 ---
 
-## Teknoloji Yığını
+### v0.19 — PDF Reporting & Email Delivery
+
+**Goal:** Periodic portfolio reporting — generate a PDF on a user-configured schedule and deliver it by email.
+
+**Scope:**
+
+- iText (or Apache PDFBox) for PDF generation
+- Frequency read from user preference (daily / weekly / monthly)
+- Report content: portfolio summary, position table, allocation pie, performance line chart, period transactions
+- AWS S3 (prod) / MinIO (dev) storage
+- Pre-signed URL for secure download
+- 90-day retention policy
+- Email delivery — Thymeleaf template + S3 download link; user notified when the report is ready
+- Manual "Generate Report" button (ad-hoc trigger)
+
+---
+
+### v0.20 — Futures & Options Market (final)
+
+**Goal:** Leveraged position management on derivatives.
+
+**Scope:**
+
+- Futures and options contract data model
+- Long / short position open; for options, call / put + strike + expiry
+- Margin calculation, margin-call alerts
+- Daily settlement (mark-to-market)
+- Auto-close on expiry; for options, strike price + IV (implied volatility) display
+- Leverage ratios, initial margin & maintenance margin display
+- Open positions table, real-time P&L
+
+---
+
+## Architectural Principles
+
+- **Modular monolith + notification microservice** — `finance-app` is the orchestration entry point; market types live under `finance-market`; portfolio / user / news in their own Maven modules; shared code split between `finance-common` (used by both backends) and `finance-monolith-shared` (monolith-only)
+- **Strategy pattern** — `MarketAssetProvider`, `MarketHistoryProvider`, `AssetPricingStrategy` keep market-type extension Open–Closed
+- **Sealed DTOs** — `MarketAssetMetadata` sealed interface for type safety instead of `Map<String, Object>`
+- **Port & Adapter** — cross-module dependencies inverted via `AssetPricingPort`, `PortfolioSnapshotPort`, `EventPublisherPort`, `UserStatusPort`
+- **Event-driven** — monolith → notification microservice over Kafka topics (`market.updated`, `news.published`, `portfolio.updated`, `user.preferences.updated`); polymorphic dispatch through `DomainEvent.topic()` + `partitionKey()`
+- **Optimistic locking** — `@Version` on portfolios guards against race conditions
+- **Defensive error handling** — Resilience4j circuit breaker + retry; graceful skip when a market is closed
+- **API contract** — every response is wrapped in `ApiResponse<T>`; entity classes never leak through controllers
+
+---
+
+## Tech Stack
 
 ### Backend
 
-- Java 21
-- Spring Boot 4
-- PostgreSQL 15 (Flyway migration)
-- Redis (önbellek)
-- Apache Kafka (log akışı)
-- Keycloak (kimlik)
+- Java 21, Spring Boot 4
+- PostgreSQL 15 (Flyway migrations)
+- Redis (cache + Bucket4j rate-limit buckets)
+- Apache Kafka (event bus + log pipeline)
+- Keycloak (identity)
 - Resilience4j
 - Maven multi-module
 
 ### Frontend
 
-- React 19
-- Vite
-- TailwindCSS 4
-- Zustand (client state)
-- TanStack Query (server state)
+- React 19, Vite, TailwindCSS 4
+- Zustand (client state) + TanStack Query (server state)
 - ECharts + LightweightCharts
 - Framer Motion
 
 ### DevOps
 
-- Docker Compose orkestrasyonu
+- Docker Compose orchestration
 - OpenTelemetry + OpenSearch dashboards
-- Nginx reverse proxy
+- Nginx reverse proxy (edge rate-limit + burst protection)
 - GitHub Actions CI
 
 ---
 
-## Sürüm Geçmişi
+## Release History
 
-| Sürüm | Modül | Açıklama |
-|-------|-------|----------|
-| v0.13 | Emtia | Yahoo Finance commodity entegrasyonu, türev hesaplama, segment sınıflandırma; geniş refactor sprintleri |
-| v0.12 | Birleşik Market | Tek `/api/v1/market` endpoint'i, frontend yenilemesi, search suggestions |
-| v0.11 | Portföy | Pozisyon yönetimi, snapshot, performans grafiği |
-| v0.10 | Haber | RSS kaynakları, kategori sınıflandırma |
-| v0.9 | Tahvil & Bono | EVDS entegrasyonu, kupon geçmişi, getiri hesabı |
-| v0.8 | Gözlemlenebilirlik | OpenTelemetry, Kafka, OpenSearch |
-| v0.7 | Fon | TEFAS YAT + BYF |
-| v0.6 | Döviz | TCMB + Yahoo çapraz pariteler |
-| v0.5 | Hisse | Yahoo Finance BIST |
-| v0.4 | Kripto | CoinGecko + Binance |
-| v0.3 | Yönetim Paneli | Takip listesi, kullanıcı yönetimi |
-| v0.2 | Kimlik | Keycloak, JWT, LDAP |
-| v0.1 | Altyapı | Spring Boot, React, Docker, PostgreSQL |
+| Version | Module | Notes |
+|---------|--------|-------|
+| v0.17 | Notification Expansion | News / portfolio dispatch, slot resolver, monolith-shared module, edge rate-limit |
+| v0.16 | Chart Preferences & Drawings | Per-asset chart prefs / drawings, compare baseline, fullscreen |
+| v0.15 | Notification Microservice | Separate port-8082 service, Kafka event-driven, messaging migration |
+| v0.14 | User Module & Admin | Preferences, overview customization, admin proxy, 2FA |
+| v0.13 | Commodities | Yahoo Finance commodity integration, derivative calculation, segment classification |
+| v0.12 | Unified Market | Single `/api/v1/market` endpoint, frontend overhaul, search suggestions |
+| v0.11 | Portfolio | Position management, snapshots, performance chart |
+| v0.10 | News | RSS sources, category classification |
+| v0.9 | Bonds & Bills | EVDS integration, coupon history, yield calculation |
+| v0.8 | Observability | OpenTelemetry, Kafka, OpenSearch |
+| v0.7 | Funds | TEFAS YAT + BYF |
+| v0.6 | FX | TCMB + Yahoo cross-pairs |
+| v0.5 | Equities | Yahoo Finance BIST |
+| v0.4 | Crypto | CoinGecko + Binance |
+| v0.3 | Admin Panel | Tracked-asset list, user management |
+| v0.2 | Identity | Keycloak, JWT, LDAP |
+| v0.1 | Foundation | Spring Boot, React, Docker, PostgreSQL |

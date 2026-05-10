@@ -265,6 +265,37 @@
       "fullStarted": "Tam güncelleme başlatıldı"
     }
   },
+  "marketDetail": {
+    "priceLabel": "Fiyat",
+    "changeLabel": "Değişim",
+    "changeAmountTRY": "Değişim (TL)",
+    "crypto": {
+      "priceUsd": "Fiyat (USD)",
+      "priceTry": "Fiyat (TRY)",
+      "change24h": "24s Değişim",
+      "changeAmountUsd": "24s Δ (USD)",
+      "volume24h": "Hacim (24s)"
+    },
+    "forex": {
+      "buy": "Alış",
+      "sell": "Satış",
+      "delta24h": "24s Δ",
+      "deltaTL": "Δ (TL)",
+      "tcmbBuy": "TCMB Alış",
+      "tcmbSell": "TCMB Satış",
+      "banknoteBuy": "Efektif Alış",
+      "banknoteSell": "Efektif Satış"
+    },
+    "fund": {
+      "exchange": "Borsa",
+      "fundType": "Fon Türü"
+    },
+    "commodity": {
+      "priceTry": "Fiyat (TRY)",
+      "priceUsd": "Fiyat (USD)",
+      "buy": "Alım"
+    }
+  },
   "marketOverview": {
     "title": "Piyasa Özeti",
     "loading": "Piyasa özeti yükleniyor...",

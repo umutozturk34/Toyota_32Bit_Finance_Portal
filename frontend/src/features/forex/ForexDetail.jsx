@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { forexService } from './services/forexService';
 import { getForexFlag, getBaseCurrency } from '../../shared/constants/forex';
@@ -6,7 +7,7 @@ import { getChangeClass, changeColors, formatPrice, formatChange, formatPercent 
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
 
-const fmt = (price) => formatPrice(price, { locale: 'tr-TR', minDecimals: 4, maxDecimals: 4 });
+const fmt = (price) => formatPrice(price, { minDecimals: 4, maxDecimals: 4 });
 
 function ForexHeader({ asset, code }) {
   const flag = getForexFlag(code);
@@ -24,15 +25,16 @@ function ForexHeader({ asset, code }) {
 }
 
 function ForexMetadata({ asset }) {
+  const { t } = useTranslation();
   const meta = asset.metadata || {};
   const cls = getChangeClass(asset.changeAmount);
   const sellingPrice = meta.sellingPrice;
   return (
     <MetadataTiles tiles={[
-      { label: 'Alış', value: `₺${fmt(sellingPrice ?? asset.price)}` },
-      { label: 'Satış', value: `₺${fmt(asset.price)}` },
+      { label: t('marketDetail.forex.buy'), value: `₺${fmt(sellingPrice ?? asset.price)}` },
+      { label: t('marketDetail.forex.sell'), value: `₺${fmt(asset.price)}` },
       {
-        label: '24s Δ',
+        label: t('marketDetail.forex.delta24h'),
         color: changeColors[cls],
         value: (
           <span className="flex items-center gap-0.5">
@@ -41,11 +43,11 @@ function ForexMetadata({ asset }) {
           </span>
         ),
       },
-      { label: 'Δ (TL)', value: `${formatChange(asset.changeAmount)} TRY`, color: changeColors[cls] },
-      meta.forexBuying != null && { label: 'TCMB Alış', value: `₺${fmt(meta.forexBuying)}` },
-      meta.forexSelling != null && { label: 'TCMB Satış', value: `₺${fmt(meta.forexSelling)}` },
-      meta.banknoteBuying != null && { label: 'Efektif Alış', value: `₺${fmt(meta.banknoteBuying)}` },
-      meta.banknoteSelling != null && { label: 'Efektif Satış', value: `₺${fmt(meta.banknoteSelling)}` },
+      { label: t('marketDetail.forex.deltaTL'), value: `${formatChange(asset.changeAmount)} TRY`, color: changeColors[cls] },
+      meta.forexBuying != null && { label: t('marketDetail.forex.tcmbBuy'), value: `₺${fmt(meta.forexBuying)}` },
+      meta.forexSelling != null && { label: t('marketDetail.forex.tcmbSell'), value: `₺${fmt(meta.forexSelling)}` },
+      meta.banknoteBuying != null && { label: t('marketDetail.forex.banknoteBuy'), value: `₺${fmt(meta.banknoteBuying)}` },
+      meta.banknoteSelling != null && { label: t('marketDetail.forex.banknoteSell'), value: `₺${fmt(meta.banknoteSelling)}` },
     ]} />
   );
 }

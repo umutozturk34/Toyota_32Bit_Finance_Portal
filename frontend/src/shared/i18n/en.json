@@ -265,6 +265,37 @@
       "fullStarted": "Full update started"
     }
   },
+  "marketDetail": {
+    "priceLabel": "Price",
+    "changeLabel": "Change",
+    "changeAmountTRY": "Change (TRY)",
+    "crypto": {
+      "priceUsd": "Price (USD)",
+      "priceTry": "Price (TRY)",
+      "change24h": "24h Change",
+      "changeAmountUsd": "24h Δ (USD)",
+      "volume24h": "Volume (24h)"
+    },
+    "forex": {
+      "buy": "Buy",
+      "sell": "Sell",
+      "delta24h": "24h Δ",
+      "deltaTL": "Δ (TRY)",
+      "tcmbBuy": "TCMB Buy",
+      "tcmbSell": "TCMB Sell",
+      "banknoteBuy": "Banknote Buy",
+      "banknoteSell": "Banknote Sell"
+    },
+    "fund": {
+      "exchange": "Exchange",
+      "fundType": "Fund Type"
+    },
+    "commodity": {
+      "priceTry": "Price (TRY)",
+      "priceUsd": "Price (USD)",
+      "buy": "Bid"
+    }
+  },
   "marketOverview": {
     "title": "Market Overview",
     "loading": "Loading market overview...",

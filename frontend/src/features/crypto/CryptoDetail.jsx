@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { cryptoService } from './services/cryptoService';
 import { getChangeClass, changeColors, formatPriceUSD, formatPriceTRY, formatCompactNumber, formatPercentAbs } from '../../shared/utils/formatters';
@@ -25,14 +26,15 @@ function CryptoHeader({ asset }) {
 }
 
 function CryptoMetadata({ asset }) {
+  const { t } = useTranslation();
   const meta = asset.metadata || {};
   const cls = getChangeClass(asset.changePercent);
   return (
     <MetadataTiles tiles={[
-      { label: 'Fiyat (USD)', value: formatPriceUSD(meta.currentPriceUsd) },
-      { label: 'Fiyat (TRY)', value: formatPriceTRY(asset.price) },
+      { label: t('marketDetail.crypto.priceUsd'), value: formatPriceUSD(meta.currentPriceUsd) },
+      { label: t('marketDetail.crypto.priceTry'), value: formatPriceTRY(asset.price) },
       {
-        label: '24s Değişim',
+        label: t('marketDetail.crypto.change24h'),
         color: changeColors[cls],
         value: (
           <span className="flex items-center gap-0.5">
@@ -41,9 +43,9 @@ function CryptoMetadata({ asset }) {
           </span>
         ),
       },
-      { label: '24s Δ (USD)', value: formatPriceUSD(asset.changeAmount), color: changeColors[cls] },
-      { label: 'Piyasa Değeri', value: `$${formatCompactNumber(meta.marketCap)}` },
-      { label: 'Hacim (24s)', value: formatCompactNumber(meta.totalVolume) },
+      { label: t('marketDetail.crypto.changeAmountUsd'), value: formatPriceUSD(asset.changeAmount), color: changeColors[cls] },
+      { label: t('market.crypto.marketCapLabel'), value: `$${formatCompactNumber(meta.marketCap)}` },
+      { label: t('marketDetail.crypto.volume24h'), value: formatCompactNumber(meta.totalVolume) },
     ]} />
   );
 }

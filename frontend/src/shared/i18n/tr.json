@@ -140,6 +140,15 @@
       "COMMODITY": "Emtia · Yük/Düş"
     }
   },
+  "assetCards": {
+    "remove": "{{code}} kaldır",
+    "emptyPanel": "Boş panel",
+    "emptyHint": "<strong class=\"text-accent\">Ayarlar</strong> ile asset ekle"
+  },
+  "watchlistSection": {
+    "fallbackName": "Takip Listesi",
+    "empty": "Henüz takip varlığı yok"
+  },
   "moversSection": {
     "fallback": "Piyasa",
     "gainers": "Yükselen",

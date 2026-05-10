@@ -1,4 +1,5 @@
 import { memo, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layers, X } from 'lucide-react';
@@ -14,6 +15,7 @@ function shortLabel(asset) {
 
 /** @param {{asset: Object, index?: number, onClick: (a: Object) => void, editMode: boolean, onRemove?: (a: Object) => void}} props */
 function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
+  const { t } = useTranslation();
   const handleClick = () => onClick?.(asset);
   const handleRemoveClick = () => onRemove?.(asset);
   const hasChange = asset.changePercent != null;
@@ -72,8 +74,8 @@ function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
           onPointerDown={(e) => e.stopPropagation()}
           className="widget-no-drag absolute -bottom-2 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center w-6 h-6 rounded-full border border-danger/70 bg-bg-deep text-danger hover:bg-danger/20 hover:border-danger transition-all duration-150 cursor-pointer shadow-lg shadow-black/30"
           style={{ pointerEvents: 'auto' }}
-          title={`${shortLabel(asset)} kaldır`}
-          aria-label={`${shortLabel(asset)} kaldır`}
+          title={t('assetCards.remove', { code: shortLabel(asset) })}
+          aria-label={t('assetCards.remove', { code: shortLabel(asset) })}
         >
           <X className="h-2.5 w-2.5" />
         </button>
@@ -86,6 +88,7 @@ const AssetCard = memo(AssetCardImpl);
 
 /** @param {{data: {items: Array<Object>}|null, editMode?: boolean, config?: Object, onConfigChange?: (next: Object) => void}} props */
 export default function AssetCardsSection({ data, editMode = false, config = {}, onConfigChange }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const items = data?.items ?? [];
 
@@ -113,8 +116,8 @@ export default function AssetCardsSection({ data, editMode = false, config = {},
     return (
       <div className="h-full rounded-2xl border border-dashed border-border-default bg-bg-elevated/40 flex flex-col items-center justify-center px-4 py-6 text-center">
         <Layers className="h-5 w-5 text-fg-subtle mb-2" />
-        <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-muted">Boş panel</p>
-        <p className="text-[10px] text-fg-subtle mt-1"><strong className="text-accent">Ayarlar</strong> ile asset ekle</p>
+        <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-muted">{t('assetCards.emptyPanel')}</p>
+        <p className="text-[10px] text-fg-subtle mt-1" dangerouslySetInnerHTML={{ __html: t('assetCards.emptyHint') }} />
       </div>
     );
   }

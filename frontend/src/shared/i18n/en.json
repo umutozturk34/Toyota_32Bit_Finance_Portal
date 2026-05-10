@@ -140,6 +140,15 @@
       "COMMODITY": "Commodities · Up/Down"
     }
   },
+  "assetCards": {
+    "remove": "Remove {{code}}",
+    "emptyPanel": "Empty panel",
+    "emptyHint": "Add assets via <strong class=\"text-accent\">Settings</strong>"
+  },
+  "watchlistSection": {
+    "fallbackName": "Watchlist",
+    "empty": "No tracked assets yet"
+  },
   "moversSection": {
     "fallback": "Market",
     "gainers": "Gainers",

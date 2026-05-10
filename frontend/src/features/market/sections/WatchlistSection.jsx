@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Bookmark, ChevronRight } from 'lucide-react';
 import { formatPriceTRY, getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
@@ -51,9 +52,10 @@ function ItemRow({ item, color, onClick }) {
 
 /** @param {WatchlistSectionProps} props */
 function WatchlistSectionImpl({ data }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const items = data?.items ?? [];
-  const name = data?.watchlistName ?? 'Takip Listesi';
+  const name = data?.watchlistName ?? t('watchlistSection.fallbackName');
 
   return (
     <section className="group relative rounded-xl border border-border-default border-t-2 border-t-accent bg-bg-elevated overflow-hidden h-full flex flex-col card-hover transition-all duration-200 hover:border-border-hover">
@@ -70,7 +72,7 @@ function WatchlistSectionImpl({ data }) {
       </button>
       <div className="p-2 flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
         {items.length === 0
-          ? <p className="text-[11px] text-fg-subtle py-5 text-center">Henüz takip varlığı yok</p>
+          ? <p className="text-[11px] text-fg-subtle py-5 text-center">{t('watchlistSection.empty')}</p>
           : <div className="space-y-0.5">
               {items.map((it) => {
                 const color = ASSET_TYPE_COLORS[it.marketType] || '#6366f1';

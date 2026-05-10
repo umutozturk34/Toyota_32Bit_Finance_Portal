@@ -580,6 +580,33 @@
     "updatedBody": "{{code}} settings saved",
     "updateFailed": "Update failed"
   },
+  "tasksPanel": {
+    "title": "Task Manager",
+    "active": "Active",
+    "history": "History",
+    "noHistory": "No task history yet",
+    "taskToast": "Task",
+    "status": {
+      "RUNNING": "Running",
+      "COMPLETED": "Completed",
+      "FAILED": "Failed"
+    },
+    "category": {
+      "CRYPTO": "Crypto",
+      "STOCKS": "Stocks",
+      "FOREX": "Forex",
+      "FUNDS": "Funds",
+      "COMMODITIES": "Commodities",
+      "BONDS": "Bonds",
+      "NEWS": "News"
+    },
+    "action": {
+      "snapshot": "Snapshot",
+      "candles": "Candles",
+      "fullUpdate": "Full Update",
+      "update": "Update"
+    }
+  },
   "newsSourceAdmin": {
     "formTitle": "Add news source",
     "namePlaceholder": "Source name (e.g. BloombergHT)",

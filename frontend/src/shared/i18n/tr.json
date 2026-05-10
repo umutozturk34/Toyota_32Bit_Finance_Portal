@@ -580,6 +580,33 @@
     "updatedBody": "{{code}} ayarları kaydedildi",
     "updateFailed": "Güncelleme başarısız"
   },
+  "tasksPanel": {
+    "title": "Görev Yöneticisi",
+    "active": "Çalışan",
+    "history": "Geçmiş",
+    "noHistory": "Henüz görev geçmişi yok",
+    "taskToast": "Görev",
+    "status": {
+      "RUNNING": "Çalışıyor",
+      "COMPLETED": "Tamamlandı",
+      "FAILED": "Başarısız"
+    },
+    "category": {
+      "CRYPTO": "Kripto",
+      "STOCKS": "Hisse",
+      "FOREX": "Döviz",
+      "FUNDS": "Fon",
+      "COMMODITIES": "Emtia",
+      "BONDS": "Tahvil",
+      "NEWS": "Haber"
+    },
+    "action": {
+      "snapshot": "Snapshot",
+      "candles": "Mum",
+      "fullUpdate": "Tam Güncelleme",
+      "update": "Güncelle"
+    }
+  },
   "newsSourceAdmin": {
     "formTitle": "Haber Kaynağı Ekle",
     "namePlaceholder": "Kaynak adı (örn: BloombergHT)",

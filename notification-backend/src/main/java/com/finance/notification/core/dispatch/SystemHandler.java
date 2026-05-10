@@ -6,6 +6,7 @@ import com.finance.notification.core.model.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
 import java.util.Map;
 
 @Component
@@ -20,19 +21,19 @@ public class SystemHandler implements NotificationHandler {
     }
 
     @Override
-    public RenderedNotification render(NotificationRequest request) {
+    public RenderedNotification render(NotificationRequest request, Locale locale) {
         if (!(request.payload() instanceof SystemPayload p)) {
             throw new IllegalArgumentException(
                     "SystemHandler expects SystemPayload, got " + request.payload().getClass().getSimpleName());
         }
 
-        String title = p.title() != null ? p.title() : translator.translate("notif.system.fallbackTitle");
+        String title = p.title() != null ? p.title() : translator.translate("notif.system.fallbackTitle", locale);
         String body = p.body() != null ? p.body() : "";
 
         return new RenderedNotification(
                 title,
                 body,
-                translator.translate("notif.email.subject", title),
+                translator.translate("notif.email.subject", locale, title),
                 "system",
                 Map.of("title", title, "body", body));
     }

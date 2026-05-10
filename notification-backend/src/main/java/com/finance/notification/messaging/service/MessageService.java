@@ -75,13 +75,13 @@ public class MessageService {
     @Transactional
     public MessageResponse sendAdminToUser(String adminSub, String recipientSub, String body) {
         if (recipientSub == null || recipientSub.isBlank()) {
-            throw new BusinessException("recipientSub cannot be blank for admin-to-user message");
+            throw new BusinessException("error.message.recipientSubBlank");
         }
         if (adminSub.equals(recipientSub)) {
-            throw new BusinessException("Cannot message yourself");
+            throw new BusinessException("error.message.cannotSelfDm");
         }
         if (!userStatus.isActive(recipientSub)) {
-            throw new BusinessException("Cannot send message to a disabled user");
+            throw new BusinessException("error.message.recipientDisabled");
         }
         rejectIfCoolingDown(adminSub);
         rejectDuplicate(adminSub, body);
@@ -181,9 +181,9 @@ public class MessageService {
     @Transactional
     public void markRead(Long messageId, String userSub) {
         Message message = repository.findById(messageId)
-                .orElseThrow(() -> new ResourceNotFoundException("Message not found: " + messageId));
+                .orElseThrow(() -> new ResourceNotFoundException("error.message.notFound", messageId));
         if (!userSub.equals(message.getRecipientSub())) {
-            throw new ResourceNotFoundException("Message not found: " + messageId);
+            throw new ResourceNotFoundException("error.message.notFound", messageId);
         }
         if (message.getReadAt() == null) {
             message.setReadAt(LocalDateTime.now());

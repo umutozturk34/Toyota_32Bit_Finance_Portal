@@ -42,7 +42,7 @@ class MarketDataUpdatedHandlerTest {
     }
 
     private NotificationRequest requestWithSource(String source) {
-        return NotificationRequest.of("user-1", new MarketDataUpdatedPayload("STOCK", "Hisse", source));
+        return NotificationRequest.of("user-1", new MarketDataUpdatedPayload("STOCK", source));
     }
 
     @Test

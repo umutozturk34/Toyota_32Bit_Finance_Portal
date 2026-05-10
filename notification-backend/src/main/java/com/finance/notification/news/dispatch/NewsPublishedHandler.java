@@ -10,6 +10,7 @@ import com.finance.notification.core.model.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,7 +29,7 @@ public class NewsPublishedHandler implements NotificationHandler {
     }
 
     @Override
-    public RenderedNotification render(NotificationRequest request) {
+    public RenderedNotification render(NotificationRequest request, Locale locale) {
         if (!(request.payload() instanceof NewsPublishedPayload p)) {
             throw new IllegalArgumentException(
                     "NewsPublishedHandler expects NewsPublishedPayload, got "
@@ -38,19 +39,19 @@ public class NewsPublishedHandler implements NotificationHandler {
         Optional<String> slot = slotResolver.slotFor(p.source());
         String title;
         if (slot.isPresent()) {
-            String slotName = translator.translate("notif.slot." + slot.get());
+            String slotName = translator.translate("notif.slot." + slot.get(), locale);
             title = count > 0
-                    ? translator.translate("notif.newsPublished.titleSlotWithCount", slotName, count)
-                    : translator.translate("notif.newsPublished.titleSlot", slotName);
+                    ? translator.translate("notif.newsPublished.titleSlotWithCount", locale, slotName, count)
+                    : translator.translate("notif.newsPublished.titleSlot", locale, slotName);
         } else {
             title = count > 0
-                    ? translator.translate("notif.newsPublished.titleWithCount", count)
-                    : translator.translate("notif.newsPublished.title");
+                    ? translator.translate("notif.newsPublished.titleWithCount", locale, count)
+                    : translator.translate("notif.newsPublished.title", locale);
         }
         String body = count > 0
-                ? translator.translate("notif.newsPublished.bodyWithCount", count)
-                : translator.translate("notif.newsPublished.body");
-        String emailSubject = translator.translate("notif.email.subject", title);
+                ? translator.translate("notif.newsPublished.bodyWithCount", locale, count)
+                : translator.translate("notif.newsPublished.body", locale);
+        String emailSubject = translator.translate("notif.email.subject", locale, title);
         return new RenderedNotification(
                 title,
                 body,

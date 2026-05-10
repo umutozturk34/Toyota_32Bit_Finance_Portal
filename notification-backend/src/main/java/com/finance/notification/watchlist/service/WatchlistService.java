@@ -177,20 +177,18 @@ public class WatchlistService {
         return trackedAssetRepository
                 .findByAssetTypeAndAssetCodeIgnoreCase(trackedType, normalizedCode)
                 .orElseThrow(() -> new BusinessException(
-                        "Bu varlık takip listesinde yok, eklenemez: "
-                                + marketType + " / " + normalizedCode));
+                        "error.watchlist.assetNotTracked", marketType, normalizedCode));
     }
 
     private void validateReorder(List<WatchlistItem> existing, List<Long> itemIds, Long watchlistId) {
         if (itemIds.size() != existing.size()) {
-            throw new BadRequestException(
-                    "Reorder requires every item id; expected " + existing.size() + " got " + itemIds.size());
+            throw new BadRequestException("error.watchlist.reorderSizeMismatch", existing.size(), itemIds.size());
         }
         Set<Long> existingIds = existing.stream()
                 .map(WatchlistItem::getId)
                 .collect(Collectors.toCollection(HashSet::new));
         if (!new HashSet<>(itemIds).equals(existingIds)) {
-            throw new BadRequestException("Reorder ids must match watchlist " + watchlistId + " exactly");
+            throw new BadRequestException("error.watchlist.reorderIdsMismatch", watchlistId);
         }
     }
 
@@ -217,6 +215,6 @@ public class WatchlistService {
     private WatchlistItem ownedItemOr404(Long itemId, String userSub) {
         return repository.findById(itemId)
                 .filter(i -> i.belongsTo(userSub))
-                .orElseThrow(() -> new ResourceNotFoundException("Watchlist item not found id=" + itemId));
+                .orElseThrow(() -> new ResourceNotFoundException("error.watchlist.item.notFound", itemId));
     }
 }

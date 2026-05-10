@@ -3,19 +3,19 @@ package com.finance.notification.alert.model;
 import java.math.BigDecimal;
 
 public enum AlertDirection {
-    ABOVE("Eşiğin üstüne çıktı", true) {
+    ABOVE(true) {
         @Override
         public boolean isFired(BigDecimal currentPrice, BigDecimal lastPrice, BigDecimal threshold) {
             return currentPrice.compareTo(threshold) >= 0;
         }
     },
-    BELOW("Eşiğin altına düştü", false) {
+    BELOW(false) {
         @Override
         public boolean isFired(BigDecimal currentPrice, BigDecimal lastPrice, BigDecimal threshold) {
             return currentPrice.compareTo(threshold) <= 0;
         }
     },
-    CHANGE_PCT_UP("Yüzde olarak yükseldi", true) {
+    CHANGE_PCT_UP(true) {
         @Override
         public boolean isFired(BigDecimal currentPrice, BigDecimal lastPrice, BigDecimal thresholdPct) {
             if (lastPrice == null || lastPrice.signum() == 0) return false;
@@ -25,7 +25,7 @@ public enum AlertDirection {
             return pct.compareTo(thresholdPct) >= 0;
         }
     },
-    CHANGE_PCT_DOWN("Yüzde olarak düştü", false) {
+    CHANGE_PCT_DOWN(false) {
         @Override
         public boolean isFired(BigDecimal currentPrice, BigDecimal lastPrice, BigDecimal thresholdPct) {
             if (lastPrice == null || lastPrice.signum() == 0) return false;
@@ -38,16 +38,10 @@ public enum AlertDirection {
 
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
-    private final String displayLabel;
     private final boolean upward;
 
-    AlertDirection(String displayLabel, boolean upward) {
-        this.displayLabel = displayLabel;
+    AlertDirection(boolean upward) {
         this.upward = upward;
-    }
-
-    public String displayLabel() {
-        return displayLabel;
     }
 
     public boolean isUpward() {

@@ -73,6 +73,5 @@ class MarketStatusControllerTest {
                 .orElseThrow();
         assertThat(fund.session()).isEqualTo(MarketSession.CLOSED);
         assertThat(fund.nextTransitionAt()).isEqualTo(Instant.parse("2026-05-06T06:30:00Z"));
-        assertThat(fund.displayLabel()).isEqualTo("Fon");
     }
 }

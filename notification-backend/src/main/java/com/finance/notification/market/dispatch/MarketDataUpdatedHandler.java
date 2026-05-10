@@ -10,6 +10,7 @@ import com.finance.notification.core.model.NotificationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,21 +29,23 @@ public class MarketDataUpdatedHandler implements NotificationHandler {
     }
 
     @Override
-    public RenderedNotification render(NotificationRequest request) {
+    public RenderedNotification render(NotificationRequest request, Locale locale) {
         if (!(request.payload() instanceof MarketDataUpdatedPayload p)) {
             throw new IllegalArgumentException(
                     "MarketDataUpdatedHandler expects MarketDataUpdatedPayload, got "
                             + request.payload().getClass().getSimpleName());
         }
-        String label = p.displayLabel() != null ? p.displayLabel() : p.market();
+        String label = p.market() != null
+                ? translator.translate("market.type." + p.market(), locale, p.market())
+                : "";
         Optional<String> slot = slotResolver.slotFor(p.source());
         String title = slot
-                .map(s -> translator.translate("notif.marketDataUpdated.titleWithSlot", label, translator.translate("notif.slot." + s)))
-                .orElseGet(() -> translator.translate("notif.marketDataUpdated.title", label));
+                .map(s -> translator.translate("notif.marketDataUpdated.titleWithSlot", locale, label, translator.translate("notif.slot." + s, locale)))
+                .orElseGet(() -> translator.translate("notif.marketDataUpdated.title", locale, label));
         String body = slot
-                .map(s -> translator.translate("notif.marketDataUpdated.bodyWithSlot", label, translator.translate("notif.slot." + s)))
-                .orElseGet(() -> translator.translate("notif.marketDataUpdated.body", label));
-        String emailSubject = translator.translate("notif.email.subject", title);
+                .map(s -> translator.translate("notif.marketDataUpdated.bodyWithSlot", locale, label, translator.translate("notif.slot." + s, locale)))
+                .orElseGet(() -> translator.translate("notif.marketDataUpdated.body", locale, label));
+        String emailSubject = translator.translate("notif.email.subject", locale, title);
         return new RenderedNotification(
                 title,
                 body,

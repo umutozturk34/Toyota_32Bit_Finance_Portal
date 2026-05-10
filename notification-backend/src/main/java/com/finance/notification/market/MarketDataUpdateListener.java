@@ -58,7 +58,7 @@ public class MarketDataUpdateListener {
         for (NotificationPreference pref : preferences.findAll()) {
             if (!pref.subscribesToMarket(market)) continue;
             MarketDataUpdatedPayload payload = new MarketDataUpdatedPayload(
-                    market.name(), market.displayLabel(), event.source());
+                    market.name(), event.source());
             dispatcher.dispatch(NotificationRequest.of(pref.getUserSub(), payload));
         }
         processedEventIds.put(event.eventId(), Boolean.TRUE);

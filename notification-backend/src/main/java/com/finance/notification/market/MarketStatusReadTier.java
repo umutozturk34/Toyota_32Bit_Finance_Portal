@@ -44,6 +44,6 @@ public class MarketStatusReadTier implements RateLimitTier {
 
     @Override
     public String errorMessage() {
-        return "Piyasa durumu sorgu sınırına ulaştın.";
+        return "error.rateLimit.marketStatusRead";
     }
 }

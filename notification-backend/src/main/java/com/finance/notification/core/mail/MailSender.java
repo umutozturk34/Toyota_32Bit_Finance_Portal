@@ -2,6 +2,7 @@ package com.finance.notification.core.mail;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import com.finance.notification.config.NotificationAsyncConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +28,7 @@ public class MailSender {
     @Value("${notification.from-address:noreply@finance.local}")
     private String fromAddress;
 
-    @Async
+    @Async(NotificationAsyncConfig.MAIL_EXECUTOR)
     public void send(String to, String subject, String templateName, Map<String, Object> model, String theme, Locale locale) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

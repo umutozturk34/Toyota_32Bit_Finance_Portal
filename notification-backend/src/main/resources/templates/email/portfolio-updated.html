@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}"
+      th:replace="~{email/_layout :: layout(eyebrow=#{appEmail.portfolioUpdated.eyebrow}, title=${title}, subtitle=#{appEmail.portfolioUpdated.subtitle}, content=~{::content})}">
+<body>
+<th:block th:fragment="content"
+          th:with="cSuccess=${dark ? '#34d399' : '#059669'},
+                   cDanger=${dark ? '#f87171' : '#dc2626'},
+                   isUp=${dailyPnl != null and dailyPnl >= 0},
+                   cChange=${dailyPnl == null ? cMuted : (isUp ? cSuccess : cDanger)},
+                   cChangeBg=${dailyPnl == null ? cInfoBg : (isUp ? (dark ? '#0e2d24' : '#d1fae5') : (dark ? '#3a0f12' : '#fee2e2'))}">
+
+    <p th:style="'margin:0 0 6px;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:' + ${cSubtle} + ';'" th:text="#{appEmail.portfolioUpdated.totalValueLabel}">Total value</p>
+    <p th:if="${totalValue != null}" class="num"
+       th:style="'margin:0;font-size:30px;font-weight:700;letter-spacing:-0.4px;line-height:1.1;color:' + ${cFg} + ';'"
+       th:text="'₺ ' + ${#numbers.formatDecimal(totalValue, 1, 2)}">₺ 0,00</p>
+    <p th:unless="${totalValue != null}" class="num"
+       th:style="'margin:0;font-size:24px;font-weight:600;color:' + ${cMuted} + ';'"
+       th:text="#{appEmail.portfolioUpdated.snapshotOnly}">Snapshot saved</p>
+
+    <p th:if="${dailyPnl != null and dailyPnlPercent != null}" class="num"
+       th:style="'margin:8px 0 0;font-size:13px;font-weight:600;color:' + ${cChange} + ';'">
+        <span th:text="${isUp ? '▲' : '▼'}">▲</span>
+        <span th:text="${(isUp ? '+' : '') + #numbers.formatDecimal(dailyPnl, 1, 2) + ' ₺'}">+0,00 ₺</span>
+        <span th:style="'font-weight:400;color:' + ${cSubtle} + ';'"
+              th:text="'(' + (${isUp} ? '+' : '') + ${#numbers.formatDecimal(dailyPnlPercent, 1, 2)} + '%)'">(0,00%)</span>
+        <span th:style="'font-weight:400;color:' + ${cSubtle} + ';'" th:text="#{appEmail.portfolioUpdated.dailyDelta}">today</span>
+    </p>
+
+    <p th:style="'margin:18px 0 0;font-size:14px;line-height:1.7;color:' + ${cFg} + ';'" th:utext="#{appEmail.portfolioUpdated.body}">Your portfolio snapshot was generated automatically.</p>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:22px;">
+        <tr>
+            <td th:style="'padding:14px 18px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;'">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                    <tr th:if="${totalValue != null}">
+                        <td style="padding:5px 0;"><span th:style="'font-size:12.5px;color:' + ${cMuted} + ';'" th:text="#{appEmail.portfolioUpdated.totalValueLabel}">Total value</span></td>
+                        <td align="right" style="padding:5px 0;"><span class="num" th:style="'font-size:13.5px;font-weight:600;color:' + ${cFg} + ';'"
+                            th:text="'₺ ' + ${#numbers.formatDecimal(totalValue, 1, 2)}">₺ 0,00</span></td>
+                    </tr>
+                    <tr th:if="${dailyPnl != null}">
+                        <td style="padding:5px 0;"><span th:style="'font-size:12.5px;color:' + ${cMuted} + ';'" th:text="#{appEmail.portfolioUpdated.dailyPnlLabel}">Daily P/L</span></td>
+                        <td align="right" style="padding:5px 0;"><span th:style="'font-size:13.5px;font-weight:600;padding:3px 10px;border-radius:999px;background:' + ${cChangeBg} + ';color:' + ${cChange} + ';'"
+                            th:text="${(isUp ? '+' : '') + #numbers.formatDecimal(dailyPnl, 1, 2) + ' ₺'}">+0,00 ₺</span></td>
+                    </tr>
+                    <tr th:if="${dailyPnlPercent != null}">
+                        <td style="padding:5px 0;"><span th:style="'font-size:12.5px;color:' + ${cMuted} + ';'" th:text="#{appEmail.portfolioUpdated.dailyPnlPercentLabel}">Daily change</span></td>
+                        <td align="right" style="padding:5px 0;"><span class="num" th:style="'font-size:13.5px;font-weight:600;color:' + ${cChange} + ';'"
+                            th:text="${(isUp ? '+' : '') + #numbers.formatDecimal(dailyPnlPercent, 1, 2)} + '%'">+0,00%</span></td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:20px;">
+        <tr>
+            <td th:style="'background:' + ${cAccent} + ';background-image:linear-gradient(135deg,' + ${cAccent} + ' 0%,' + ${cAccentMid} + ' 50%,' + ${cAccent2} + ' 100%);border-radius:10px;box-shadow:0 6px 22px -4px rgba(99,102,241,0.45);'">
+                <a href="http://localhost/portfolio" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;line-height:1;" th:text="#{appEmail.portfolioUpdated.cta}">Open portfolio</a>
+            </td>
+        </tr>
+    </table>
+
+    <p th:style="'margin:18px 0 0;font-size:12.5px;color:' + ${cSubtle} + ';line-height:1.65;'" th:text="#{appEmail.portfolioUpdated.footer}">Footer</p>
+</th:block>
+</body>
+</html>

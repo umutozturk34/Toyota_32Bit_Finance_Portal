@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record WatchlistReorderRequest(
-        @NotEmpty List<@NotNull Long> itemIds
+        @NotEmpty(message = "{validation.watchlist.reorder.itemIds.required}")
+        List<@NotNull Long> itemIds
 ) {
 }

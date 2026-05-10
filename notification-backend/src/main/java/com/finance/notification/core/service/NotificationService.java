@@ -80,6 +80,6 @@ public class NotificationService {
         return repository.findById(id)
                 .filter(n -> n.belongsTo(userSub))
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Notification not found id=" + id));
+                        "error.notification.notFound", id));
     }
 }

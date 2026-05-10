@@ -39,6 +39,6 @@ public class MessagingAdminTier implements RateLimitTier {
 
     @Override
     public String errorMessage() {
-        return "Admin mesaj gönderme sınırına ulaştın. Lütfen kısa bir süre sonra tekrar dene.";
+        return "error.rateLimit.messagingAdminWrite";
     }
 }

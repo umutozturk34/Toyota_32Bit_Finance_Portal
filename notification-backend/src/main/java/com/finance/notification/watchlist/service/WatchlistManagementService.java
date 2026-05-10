@@ -2,7 +2,9 @@ package com.finance.notification.watchlist.service;
 
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.common.i18n.Translator;
 import com.finance.notification.config.WatchlistManagementProperties;
+import com.finance.notification.user.UserPreferenceCacheService;
 import com.finance.notification.watchlist.dto.WatchlistCreateRequest;
 import com.finance.notification.watchlist.dto.WatchlistRenameRequest;
 import com.finance.notification.watchlist.dto.WatchlistResponse;
@@ -24,18 +26,24 @@ public class WatchlistManagementService {
     private final WatchlistRepository repository;
     private final WatchlistItemRepository itemRepository;
     private final WatchlistManagementProperties properties;
+    private final Translator translator;
+    private final UserPreferenceCacheService userPreferenceCacheService;
+
+    private String defaultName(String userSub) {
+        return translator.translate("watchlist.defaultName", userPreferenceCacheService.resolveLocale(userSub));
+    }
 
     @Transactional
     public Watchlist ensureDefault(String userSub) {
         return repository.findByUserSubAndIsDefaultTrue(userSub)
-                .orElseGet(() -> repository.save(Watchlist.createDefault(userSub)));
+                .orElseGet(() -> repository.save(Watchlist.createDefault(userSub, defaultName(userSub))));
     }
 
     @Transactional
     public List<WatchlistResponse> list(String userSub) {
         List<Watchlist> watchlists = repository.findByUserSubOrderByIsDefaultDescCreatedAtAsc(userSub);
         if (watchlists.isEmpty()) {
-            watchlists = List.of(repository.save(Watchlist.createDefault(userSub)));
+            watchlists = List.of(repository.save(Watchlist.createDefault(userSub, defaultName(userSub))));
         }
         return watchlists.stream()
                 .map(w -> new WatchlistResponse(
@@ -100,6 +108,6 @@ public class WatchlistManagementService {
     private Watchlist ownedOr404(Long id, String userSub) {
         return repository.findById(id)
                 .filter(w -> w.belongsTo(userSub))
-                .orElseThrow(() -> new ResourceNotFoundException("Watchlist not found id=" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("error.watchlist.notFound", id));
     }
 }

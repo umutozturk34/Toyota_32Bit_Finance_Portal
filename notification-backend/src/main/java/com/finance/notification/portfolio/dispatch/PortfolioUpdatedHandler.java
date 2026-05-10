@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 @Component
@@ -28,21 +29,21 @@ public class PortfolioUpdatedHandler implements NotificationHandler {
     }
 
     @Override
-    public RenderedNotification render(NotificationRequest request) {
+    public RenderedNotification render(NotificationRequest request, Locale locale) {
         if (!(request.payload() instanceof PortfolioUpdatedPayload p)) {
             throw new IllegalArgumentException(
                     "PortfolioUpdatedHandler expects PortfolioUpdatedPayload, got "
                             + request.payload().getClass().getSimpleName());
         }
-        String title = translator.translate("notif.portfolioUpdated.title");
-        String body = formatBody(p.totalValue(), p.dailyPnl(), p.dailyPnlPercent());
+        String title = translator.translate("notif.portfolioUpdated.title", locale);
+        String body = formatBody(locale, p.totalValue(), p.dailyPnl(), p.dailyPnlPercent());
         Map<String, Object> templateData = new HashMap<>();
         templateData.put("title", title);
         templateData.put("body", body);
         if (p.totalValue() != null) templateData.put("totalValue", p.totalValue());
         if (p.dailyPnl() != null) templateData.put("dailyPnl", p.dailyPnl());
         if (p.dailyPnlPercent() != null) templateData.put("dailyPnlPercent", p.dailyPnlPercent());
-        String emailSubject = translator.translate("notif.email.subject", title);
+        String emailSubject = translator.translate("notif.email.subject", locale, title);
         return new RenderedNotification(
                 title,
                 body,
@@ -51,18 +52,19 @@ public class PortfolioUpdatedHandler implements NotificationHandler {
                 templateData);
     }
 
-    private String formatBody(BigDecimal totalValue, BigDecimal dailyPnl, BigDecimal dailyPnlPercent) {
+    private String formatBody(Locale locale, BigDecimal totalValue, BigDecimal dailyPnl, BigDecimal dailyPnlPercent) {
         if (totalValue == null) {
-            return translator.translate("notif.portfolioUpdated.bodySnapshotOnly");
+            return translator.translate("notif.portfolioUpdated.bodySnapshotOnly", locale);
         }
         BigDecimal scaledTotal = totalValue.setScale(2, RoundingMode.HALF_UP);
         if (dailyPnl != null && dailyPnlPercent != null) {
             String sign = dailyPnl.signum() >= 0 ? "+" : "";
             return translator.translate("notif.portfolioUpdated.bodyFull",
+                    locale,
                     scaledTotal,
                     sign + dailyPnl.setScale(2, RoundingMode.HALF_UP),
                     sign + dailyPnlPercent.setScale(2, RoundingMode.HALF_UP));
         }
-        return translator.translate("notif.portfolioUpdated.bodyValueOnly", scaledTotal);
+        return translator.translate("notif.portfolioUpdated.bodyValueOnly", locale, scaledTotal);
     }
 }

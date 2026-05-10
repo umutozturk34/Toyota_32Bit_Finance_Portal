@@ -56,8 +56,7 @@ public class PriceAlertService {
         return trackedAssetRepository
                 .findByAssetTypeAndAssetCodeIgnoreCase(trackedType, normalizedCode)
                 .orElseThrow(() -> new BusinessException(
-                        "Bu varlık takip listesinde yok, alarm oluşturulamaz: "
-                                + marketType + " / " + normalizedCode));
+                        "error.priceAlert.assetNotTracked", marketType, normalizedCode));
     }
 
     @Transactional(readOnly = true)
@@ -121,6 +120,6 @@ public class PriceAlertService {
     private PriceAlert ownedOr404(Long id, String userSub) {
         return repository.findById(id)
                 .filter(a -> a.belongsTo(userSub))
-                .orElseThrow(() -> new ResourceNotFoundException("Price alert not found id=" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("error.priceAlert.notFound", id));
     }
 }

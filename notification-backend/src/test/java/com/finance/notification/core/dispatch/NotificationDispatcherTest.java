@@ -72,7 +72,7 @@ class NotificationDispatcherTest {
         }
 
         @Override
-        public RenderedNotification render(NotificationRequest request) {
+        public RenderedNotification render(NotificationRequest request, java.util.Locale locale) {
             return new RenderedNotification("Title", "Body",
                     "Subject", "system", Map.of("k", "v"));
         }

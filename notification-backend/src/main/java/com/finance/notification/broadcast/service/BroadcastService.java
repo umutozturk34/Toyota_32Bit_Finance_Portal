@@ -25,7 +25,7 @@ public class BroadcastService {
         long total = recipientDirectory.count();
         if (total > properties.maxRecipients()) {
             throw new BadRequestException(
-                    "Broadcast recipients (" + total + ") exceeds limit (" + properties.maxRecipients() + ")");
+                    "error.broadcast.recipientLimit", total, properties.maxRecipients());
         }
         SystemPayload payload = new SystemPayload(request.title(), request.body(), adminSub);
         long dispatched = 0;

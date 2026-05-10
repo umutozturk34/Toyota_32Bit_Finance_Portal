@@ -37,8 +37,6 @@ import java.time.LocalDateTime;
         })
 public class Watchlist {
 
-    public static final String DEFAULT_NAME = "Favoriler";
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
@@ -79,10 +77,10 @@ public class Watchlist {
         this.name = newName;
     }
 
-    public static Watchlist createDefault(String userSub) {
+    public static Watchlist createDefault(String userSub, String name) {
         return Watchlist.builder()
                 .userSub(userSub)
-                .name(DEFAULT_NAME)
+                .name(name)
                 .isDefault(true)
                 .build();
     }

@@ -4,8 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record MessageSendRequest(
-        @NotBlank(message = "body is required")
-        @Size(max = 2000, message = "body must be at most 2000 chars")
+        @NotBlank(message = "{validation.message.body.required}")
+        @Size(max = 2000, message = "{validation.message.body.maxLen}")
         String body
 ) {
 }

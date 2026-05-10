@@ -37,9 +37,9 @@ class MarketOpenedHandlerTest {
     }
 
     @Test
-    void should_renderTurkishOpeningTitleAndBody_when_payloadHasDisplayLabel() {
+    void should_renderTurkishOpeningTitleAndBody_when_payloadHasMarket() {
         NotificationRequest request = NotificationRequest.of(
-                "user-1", new MarketOpenedPayload("STOCK", "Hisse"));
+                "user-1", new MarketOpenedPayload("STOCK"));
 
         RenderedNotification rendered = handler.render(request);
 
@@ -52,20 +52,9 @@ class MarketOpenedHandlerTest {
     }
 
     @Test
-    void should_fallbackToMarketCode_when_displayLabelIsNull() {
-        NotificationRequest request = NotificationRequest.of(
-                "user-1", new MarketOpenedPayload("STOCK", null));
-
-        RenderedNotification rendered = handler.render(request);
-
-        assertThat(rendered.title()).isEqualTo("STOCK piyasası açıldı");
-        assertThat(rendered.emailModel()).containsEntry("displayLabel", "STOCK");
-    }
-
-    @Test
     void should_throwIllegalArgument_when_payloadTypeMismatched() {
         NotificationRequest request = NotificationRequest.of(
-                "user-1", new MarketClosedPayload("STOCK", "Hisse"));
+                "user-1", new MarketClosedPayload("STOCK"));
 
         assertThatThrownBy(() -> handler.render(request))
                 .isInstanceOf(IllegalArgumentException.class)

@@ -42,6 +42,18 @@
   "compareBar": {
     "placeholder": "Karşılaştır..."
   },
+  "searchSuggestions": {
+    "placeholder": "Hisse, kripto, döviz, fon ara...",
+    "noMatch": "\"{{query}}\" ile eşleşen sonuç bulunamadı"
+  },
+  "errorBoundary": {
+    "eyebrow": "Bir Aksaklık",
+    "title": "Sayfa görüntülenirken bir hata oluştu",
+    "fallbackMessage": "Beklenmeyen bir hata oluştu.",
+    "retry": "Yeniden dene",
+    "home": "Ana sayfaya dön",
+    "consoleNote": "kayıt geliştirici konsoluna yazıldı"
+  },
   "pageHeader": {
     "refresh": "Yenile",
     "cooldown": "Bekleme: {{time}}"

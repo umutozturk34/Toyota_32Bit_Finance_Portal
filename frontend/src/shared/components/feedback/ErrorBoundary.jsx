@@ -1,6 +1,8 @@
 import { Component } from 'react';
 import { motion } from 'framer-motion';
 import { AlertOctagon, RefreshCw, Home } from 'lucide-react';
+import i18n from '../../i18n/config';
+import { currentLocaleTag } from '../../utils/formatters';
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -30,10 +32,10 @@ export default class ErrorBoundary extends Component {
 
     const { error, occurredAt } = this.state;
     const time = occurredAt
-      ? occurredAt.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      ? occurredAt.toLocaleTimeString(currentLocaleTag(), { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       : '--:--:--';
     const name = error?.name || 'Error';
-    const message = error?.message || 'Beklenmeyen bir hata oluştu.';
+    const message = error?.message || i18n.t('errorBoundary.fallbackMessage');
 
     return (
       <div className="flex items-center justify-center min-h-[70vh] p-6">
@@ -78,10 +80,10 @@ export default class ErrorBoundary extends Component {
 
               <div className="space-y-1.5">
                 <h2 className="font-mono text-[11px] tracking-[0.22em] uppercase text-accent">
-                  Bir Aksaklık
+                  {i18n.t('errorBoundary.eyebrow')}
                 </h2>
                 <p className="text-base font-semibold text-fg leading-snug">
-                  Sayfa görüntülenirken bir hata oluştu
+                  {i18n.t('errorBoundary.title')}
                 </p>
                 <p className="text-xs text-fg-muted leading-relaxed max-w-[28rem] mx-auto">
                   {message}
@@ -95,7 +97,7 @@ export default class ErrorBoundary extends Component {
                   className="flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-accent-bright transition-colors border-none cursor-pointer"
                 >
                   <RefreshCw className="h-3 w-3" strokeWidth={2.2} />
-                  Yeniden dene
+                  {i18n.t('errorBoundary.retry')}
                 </button>
                 <button
                   type="button"
@@ -103,14 +105,14 @@ export default class ErrorBoundary extends Component {
                   className="flex items-center gap-1.5 rounded-lg border border-border-default bg-transparent px-3.5 py-1.5 text-xs font-medium text-fg-muted hover:text-fg hover:bg-surface transition-colors cursor-pointer"
                 >
                   <Home className="h-3 w-3" strokeWidth={2.2} />
-                  Ana sayfaya dön
+                  {i18n.t('errorBoundary.home')}
                 </button>
               </div>
             </div>
 
             <div className="px-4 py-2 border-t border-border-default/60 bg-bg-base/40">
               <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-fg-subtle/60">
-                kayıt geliştirici konsoluna yazıldı
+                {i18n.t('errorBoundary.consoleNote')}
               </span>
             </div>
           </div>

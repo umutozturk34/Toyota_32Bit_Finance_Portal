@@ -42,6 +42,18 @@
   "compareBar": {
     "placeholder": "Compare..."
   },
+  "searchSuggestions": {
+    "placeholder": "Search stocks, crypto, FX, funds...",
+    "noMatch": "No results match \"{{query}}\""
+  },
+  "errorBoundary": {
+    "eyebrow": "Glitch",
+    "title": "An error occurred while rendering this page",
+    "fallbackMessage": "An unexpected error occurred.",
+    "retry": "Retry",
+    "home": "Go home",
+    "consoleNote": "trace logged to developer console"
+  },
   "pageHeader": {
     "refresh": "Refresh",
     "cooldown": "Cooldown: {{time}}"

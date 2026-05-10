@@ -265,6 +265,58 @@
       "fullStarted": "Tam güncelleme başlatıldı"
     }
   },
+  "portfolio": {
+    "positions": {
+      "searchPlaceholder": "Pozisyon ara...",
+      "empty": "Henüz pozisyon bulunmuyor",
+      "emptyHint": "Kripto, Hisse, Döviz veya Fon sayfalarından lot ekleyebilirsiniz",
+      "noSearchResults": "Aramayla eşleşen pozisyon bulunamadı.",
+      "preparing": "veriler hazırlanıyor",
+      "assetCol": "Varlık",
+      "quantityCol": "Miktar",
+      "entryDateCol": "Giriş Tarihi",
+      "entryPriceCol": "Giriş Fiyatı",
+      "currentPriceCol": "Güncel Fiyat",
+      "marketValueCol": "Piyasa Değeri",
+      "pnlCol": "K/Z",
+      "actionsCol": "İşlem",
+      "sort": {
+        "currentValue": "Piyasa Değeri",
+        "profitPercent": "K/Z %",
+        "profitAmount": "K/Z Tutar",
+        "entryDate": "Tarih",
+        "assetCode": "Varlık Kodu",
+        "quantity": "Miktar"
+      }
+    },
+    "summary": {
+      "marketValue": "Piyasa Değeri",
+      "totalCost": "Toplam Maliyet",
+      "profitLoss": "Kar / Zarar",
+      "dailyPnl": "Günlük K/Z",
+      "refreshing": "Güncelleniyor..."
+    },
+    "headerTitle": "Portföy",
+    "loading": "Portföy yükleniyor...",
+    "tabs": {
+      "overview": "Genel Bakış",
+      "performance": "Performans"
+    },
+    "onboarding": {
+      "idleTitle": "Portföyünüzü Oluşturun",
+      "idleSubtitle": "Geçmiş tarihli pozisyonlar tanımlayarak hipotetik portföy performansınızı izleyin.",
+      "startCta": "Portföyü Başlat",
+      "confirmTitle": "Portföyü oluşturmayı onaylıyor musunuz?",
+      "confirmHint": "adıyla bir portföy hazırlanacak.",
+      "successTitle": "Portföyünüz hazır",
+      "successHint": "Pozisyon eklemeye başlayabilirsiniz",
+      "steps": {
+        "verifying": "Hesap doğrulanıyor...",
+        "creating": "Portföy oluşturuluyor...",
+        "preparing": "Hazırlanıyor..."
+      }
+    }
+  },
   "positionDelete": {
     "title": "Pozisyonu Sil",
     "confirmPrefix": "",

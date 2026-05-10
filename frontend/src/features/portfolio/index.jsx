@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Wallet, LayoutDashboard, TrendingUp as TrendingUpIcon, ShieldCheck } from 'lucide-react';
@@ -21,21 +22,21 @@ import {
 } from './hooks/usePortfolioData';
 
 const DEFAULT_PORTFOLIO_NAME = 'Demo Portföy';
-const ONBOARDING_STEPS = [
-  { label: 'Hesap doğrulanıyor...', duration: 600 },
-  { label: 'Portföy oluşturuluyor...', duration: 700 },
-  { label: 'Hazırlanıyor...', duration: 600 },
-];
 const ONBOARDING_SUCCESS_HOLD_MS = 900;
 
-const TABS = [
-  { id: 'overview', label: 'Genel Bakış', Icon: LayoutDashboard },
-  { id: 'performance', label: 'Performans', Icon: TrendingUpIcon },
-];
-
 export default function Portfolio() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const invalidatePortfolio = useInvalidatePortfolio();
+  const onboardingSteps = [
+    { label: t('portfolio.onboarding.steps.verifying'), duration: 600 },
+    { label: t('portfolio.onboarding.steps.creating'), duration: 700 },
+    { label: t('portfolio.onboarding.steps.preparing'), duration: 600 },
+  ];
+  const tabs = [
+    { id: 'overview', label: t('portfolio.tabs.overview'), Icon: LayoutDashboard },
+    { id: 'performance', label: t('portfolio.tabs.performance'), Icon: TrendingUpIcon },
+  ];
 
   const { data: portfolios, isLoading: listLoading, error: listError } = usePortfolioList();
   const portfolio = portfolios?.[0] ?? null;
@@ -98,7 +99,7 @@ export default function Portfolio() {
     try {
       await Promise.all([
         createPortfolio.mutateAsync(DEFAULT_PORTFOLIO_NAME),
-        runAnimation(ONBOARDING_STEPS),
+        runAnimation(onboardingSteps),
       ]);
       setOnboardingPhase('success');
       setTimeout(() => {
@@ -111,13 +112,13 @@ export default function Portfolio() {
     }
   };
 
-  if (loading) return <LoadingState message="Portföy yükleniyor..." />;
+  if (loading) return <LoadingState message={t('portfolio.loading')} />;
   if (error) return <ErrorState message={error} onRetry={invalidatePortfolio} />;
 
   if (needsOnboarding) {
     return (
       <div className="space-y-6">
-        <PageHeader icon={<Wallet className="h-5 w-5" />} title="Portföy" />
+        <PageHeader icon={<Wallet className="h-5 w-5" />} title={t('portfolio.headerTitle')} />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -141,10 +142,10 @@ export default function Portfolio() {
                 >
                   <Check className="h-8 w-8 text-success" strokeWidth={2.5} />
                 </motion.div>
-                <p className="text-base font-semibold text-fg">Portföyünüz hazır</p>
+                <p className="text-base font-semibold text-fg">{t('portfolio.onboarding.successTitle')}</p>
                 <div className="flex items-center gap-1.5 text-[11px] text-success/70">
                   <ShieldCheck className="h-3.5 w-3.5" />
-                  Pozisyon eklemeye başlayabilirsiniz
+                  {t('portfolio.onboarding.successHint')}
                 </div>
               </motion.div>
             )}
@@ -157,7 +158,7 @@ export default function Portfolio() {
                 transition={{ duration: 0.18 }}
                 className="w-full"
               >
-                <ProcessingSteps steps={ONBOARDING_STEPS} currentStep={processingStep} />
+                <ProcessingSteps steps={onboardingSteps} currentStep={processingStep} />
               </motion.div>
             )}
             {onboardingPhase === 'confirm' && (
@@ -174,9 +175,9 @@ export default function Portfolio() {
                     <AlertTriangle className="h-6 w-6 text-warning" />
                   </div>
                   <div className="text-center space-y-1">
-                    <p className="text-sm font-semibold text-fg">Portföyü oluşturmayı onaylıyor musunuz?</p>
+                    <p className="text-sm font-semibold text-fg">{t('portfolio.onboarding.confirmTitle')}</p>
                     <p className="text-xs text-fg-muted">
-                      <span className="font-medium text-fg">{DEFAULT_PORTFOLIO_NAME}</span> adıyla bir portföy hazırlanacak.
+                      <span className="font-medium text-fg">{DEFAULT_PORTFOLIO_NAME}</span> {t('portfolio.onboarding.confirmHint')}
                     </p>
                   </div>
                 </div>
@@ -185,14 +186,14 @@ export default function Portfolio() {
                     onClick={handleCancelOnboarding}
                     className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-all cursor-pointer"
                   >
-                    Vazgeç
+                    {t('common.cancel')}
                   </button>
                   <button
                     onClick={handleCreatePortfolio}
                     className="flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer"
                   >
                     <Wallet className="h-4 w-4" />
-                    Onayla
+                    {t('common.confirm')}
                   </button>
                 </div>
               </motion.div>
@@ -210,9 +211,9 @@ export default function Portfolio() {
                   <Wallet className="w-8 h-8 text-accent" />
                 </div>
                 <div className="text-center space-y-2">
-                  <h2 className="text-xl font-semibold text-fg">Portföyünüzü Oluşturun</h2>
+                  <h2 className="text-xl font-semibold text-fg">{t('portfolio.onboarding.idleTitle')}</h2>
                   <p className="text-sm text-fg-muted max-w-md">
-                    Geçmiş tarihli pozisyonlar tanımlayarak hipotetik portföy performansınızı izleyin.
+                    {t('portfolio.onboarding.idleSubtitle')}
                   </p>
                 </div>
                 <button
@@ -220,7 +221,7 @@ export default function Portfolio() {
                   className="flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-bright border-none cursor-pointer"
                 >
                   <Wallet className="h-4 w-4" />
-                  Portföyü Başlat
+                  {t('portfolio.onboarding.startCta')}
                 </button>
               </motion.div>
             )}
@@ -244,7 +245,7 @@ export default function Portfolio() {
     <div className="space-y-6">
       <PageHeader
         icon={<Wallet className="h-5 w-5" />}
-        title="Portföy"
+        title={t('portfolio.headerTitle')}
         onRefresh={invalidatePortfolio}
         loading={loading}
       />
@@ -252,7 +253,7 @@ export default function Portfolio() {
       {summary && <SummaryCards summary={summary} portfolioId={portfolio?.id} />}
 
       <div className="flex gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 w-fit">
-        {TABS.map(({ id, label, Icon }) => (
+        {tabs.map(({ id, label, Icon }) => (
           <button
             key={id}
             onClick={() => setActiveTab(id)}

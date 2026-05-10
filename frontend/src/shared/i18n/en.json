@@ -265,6 +265,58 @@
       "fullStarted": "Full update started"
     }
   },
+  "portfolio": {
+    "positions": {
+      "searchPlaceholder": "Search position...",
+      "empty": "No positions yet",
+      "emptyHint": "Add lots from Crypto, Stock, Forex or Fund pages",
+      "noSearchResults": "No positions match the search.",
+      "preparing": "preparing data",
+      "assetCol": "Asset",
+      "quantityCol": "Quantity",
+      "entryDateCol": "Entry Date",
+      "entryPriceCol": "Entry Price",
+      "currentPriceCol": "Current Price",
+      "marketValueCol": "Market Value",
+      "pnlCol": "P&L",
+      "actionsCol": "Actions",
+      "sort": {
+        "currentValue": "Market Value",
+        "profitPercent": "P&L %",
+        "profitAmount": "P&L Amount",
+        "entryDate": "Date",
+        "assetCode": "Asset Code",
+        "quantity": "Quantity"
+      }
+    },
+    "summary": {
+      "marketValue": "Market Value",
+      "totalCost": "Total Cost",
+      "profitLoss": "Profit / Loss",
+      "dailyPnl": "Daily P&L",
+      "refreshing": "Refreshing..."
+    },
+    "headerTitle": "Portfolio",
+    "loading": "Loading portfolio...",
+    "tabs": {
+      "overview": "Overview",
+      "performance": "Performance"
+    },
+    "onboarding": {
+      "idleTitle": "Create Your Portfolio",
+      "idleSubtitle": "Define historical positions to track hypothetical portfolio performance.",
+      "startCta": "Start Portfolio",
+      "confirmTitle": "Confirm portfolio creation?",
+      "confirmHint": "will be created.",
+      "successTitle": "Your portfolio is ready",
+      "successHint": "You can start adding positions",
+      "steps": {
+        "verifying": "Verifying account...",
+        "creating": "Creating portfolio...",
+        "preparing": "Preparing..."
+      }
+    }
+  },
   "positionDelete": {
     "title": "Delete Position",
     "confirmPrefix": "The",

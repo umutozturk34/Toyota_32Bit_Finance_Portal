@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="tr"
-      th:replace="~{email/_layout :: layout(eyebrow='YENİ MESAJ', title='Sana yeni bir mesaj geldi', subtitle='Finance Portal hesabına bağlı bir bildirim', content=~{::content})}">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}"
+      th:replace="~{email/_layout :: layout(eyebrow=#{appEmail.message.eyebrow}, title=#{appEmail.message.title}, subtitle=#{appEmail.message.subtitle}, content=~{::content})}">
 <body>
 <th:block th:fragment="content">
-    <p th:style="'margin:0 0 14px;color:' + ${cFg} + ';font-size:14px;'">
-        Aşağıdaki mesaj sana iletildi:
-    </p>
+    <p th:style="'margin:0 0 14px;color:' + ${cFg} + ';font-size:14px;'" th:text="#{appEmail.message.lead}">Lead</p>
     <blockquote th:style="'margin:14px 0 0;padding:16px 18px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-left:3px solid ' + ${cAccent2} + ';border-radius:10px;line-height:1.7;color:' + ${cFg} + ';font-size:14px;'">
-        <span th:text="${preview}">Mesaj önizlemesi</span>
+        <span th:text="${preview}">Message preview</span>
     </blockquote>
     <p th:style="'margin:18px 0 0;font-size:13px;color:' + ${cMuted} + ';'">
-        Tüm mesajları görmek için <a href="http://localhost/notifications" th:style="'color:' + ${cAccent2} + ';'">Bildirimler</a> sayfasını açabilirsin.
+        <span th:text="#{appEmail.message.linkPrefix}">View all messages on</span>
+        <a href="http://localhost/notifications" th:style="'color:' + ${cAccent2} + ';'" th:text="#{appEmail.message.linkLabel}">Notifications</a>
+        <span th:text="#{appEmail.message.linkSuffix}">.</span>
     </p>
 </th:block>
 </body>

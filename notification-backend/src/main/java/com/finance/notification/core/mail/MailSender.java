@@ -13,6 +13,7 @@ import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Map;
 
 @Log4j2
@@ -27,23 +28,23 @@ public class MailSender {
     private String fromAddress;
 
     @Async
-    public void send(String to, String subject, String templateName, Map<String, Object> model, String theme) {
+    public void send(String to, String subject, String templateName, Map<String, Object> model, String theme, Locale locale) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
             helper.setFrom(fromAddress);
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(renderHtml(templateName, model, theme), true);
+            helper.setText(renderHtml(templateName, model, theme, locale), true);
             mailSender.send(message);
-            log.info("Email sent template={} to={} subject={} theme={}", templateName, to, subject, theme);
+            log.info("Email sent template={} to={} subject={} theme={} locale={}", templateName, to, subject, theme, locale);
         } catch (MessagingException ex) {
             log.error("Failed to send email template={} to={}: {}", templateName, to, ex.getMessage(), ex);
         }
     }
 
-    private String renderHtml(String templateName, Map<String, Object> model, String theme) {
-        Context ctx = new Context();
+    private String renderHtml(String templateName, Map<String, Object> model, String theme, Locale locale) {
+        Context ctx = new Context(locale);
         ctx.setVariables(model);
         ctx.setVariable("theme", theme);
         return templateEngine.process("email/" + templateName, ctx);

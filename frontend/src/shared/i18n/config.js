@@ -28,7 +28,7 @@ i18n
     supportedLngs: ['tr', 'en'],
     interpolation: { escapeValue: false },
     detection: {
-      order: ['cookie', 'localStorage', 'navigator'],
+      order: ['cookie', 'localStorage'],
       lookupCookie: STORAGE_KEY,
       lookupLocalStorage: STORAGE_KEY,
       caches: ['localStorage'],

@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="tr"
-      th:replace="~{email/_layout :: layout(eyebrow='PİYASA KAPANIŞI', title=${title}, subtitle=${displayLabel + ' seansı sona erdi'}, content=~{::content})}">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}"
+      th:replace="~{email/_layout :: layout(eyebrow=#{appEmail.marketClosed.eyebrow}, title=${title}, subtitle=#{appEmail.marketClosed.subtitle(${displayLabel})}, content=~{::content})}">
 <body>
 <th:block th:fragment="content">
-    <p th:style="'margin:0 0 14px;color:' + ${cFg} + ';font-size:14px;'">
-        Takip ettiğin <strong th:text="${displayLabel}">Piyasa</strong> piyasası kapandı.
-        Kapanış fiyatları sisteme yüklendi, gün içi performansı portföy panelinden görebilirsin.
-    </p>
+    <p th:style="'margin:0 0 14px;color:' + ${cFg} + ';font-size:14px;'" th:utext="#{appEmail.marketClosed.body(${displayLabel})}">Body</p>
     <div th:style="'margin:14px 0 0;padding:18px 22px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;color:' + ${cFg} + ';font-size:14px;line-height:1.7;'"
-         th:text="${body}">Piyasa kapandı bildirim metni.</div>
+         th:text="${body}">Notification body text.</div>
 </th:block>
 </body>
 </html>

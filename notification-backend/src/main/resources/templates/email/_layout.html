@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="tr"
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}"
       th:fragment="layout(eyebrow, title, subtitle, content)">
 <head>
     <meta charset="UTF-8">
@@ -49,7 +49,7 @@
                                 </td>
                                 <td style="padding-left:14px;vertical-align:middle;">
                                     <span th:style="'display:block;font-size:15px;font-weight:700;letter-spacing:-0.2px;line-height:1.1;color:' + ${cFg} + ';'">Finance Portal</span>
-                                    <span th:style="'display:block;font-size:10px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;margin-top:4px;color:' + ${cMuted} + ';'" th:text="${eyebrow} ?: 'Notification'">Notification</span>
+                                    <span th:style="'display:block;font-size:10px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;margin-top:4px;color:' + ${cMuted} + ';'" th:text="${eyebrow} ?: #{appEmail.brandTag}">Notification</span>
                                 </td>
                             </tr>
                         </table>
@@ -78,7 +78,7 @@
                 <tr>
                     <td style="padding:18px 40px 22px;">
                         <span th:style="'font-size:10.5px;font-weight:600;letter-spacing:1.4px;color:' + ${cSubtle} + ';text-transform:uppercase;'">
-                            <strong th:style="'color:' + ${cMuted} + ';font-weight:700;'">SENT</strong>
+                            <strong th:style="'color:' + ${cMuted} + ';font-weight:700;'" th:text="#{appEmail.sentLabel}">SENT</strong>
                             &nbsp; <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}">05.05.2026</span>
                             &nbsp;·&nbsp; <span th:text="${#dates.format(#dates.createNow(), 'HH:mm')}">23:00</span> TRT
                         </span>
@@ -89,8 +89,12 @@
             <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;">
                 <tr>
                     <td style="padding:22px 4px 0;">
-                        <p th:style="'margin:0 0 6px;font-size:11.5px;line-height:1.6;color:' + ${cSubtle} + ';'">Bu e-posta Finance Portal hesabına bağlı tercihler nedeniyle otomatik olarak gönderilmiştir.</p>
-                        <p th:style="'margin:0;font-size:10.5px;color:' + ${cSubtle} + ';'">E-posta tercihlerini <a href="http://localhost/settings" th:style="'color:' + ${cAccent2} + ';'">Ayarlar</a> sekmesinden yönetebilirsin.</p>
+                        <p th:style="'margin:0 0 6px;font-size:11.5px;line-height:1.6;color:' + ${cSubtle} + ';'" th:text="#{appEmail.footer.line1}">Footer</p>
+                        <p th:style="'margin:0;font-size:10.5px;color:' + ${cSubtle} + ';'">
+                            <span th:text="#{appEmail.footer.settingsPrefix}">Manage email preferences in</span>
+                            <a href="http://localhost/settings" th:style="'color:' + ${cAccent2} + ';'" th:text="#{appEmail.footer.settingsLink}">Settings</a>
+                            <span th:text="#{appEmail.footer.settingsSuffix}">.</span>
+                        </p>
                     </td>
                 </tr>
             </table>

@@ -2,6 +2,7 @@ package com.finance.notification.user;
 
 import com.finance.common.event.EmailChangeCodeRequestedEvent;
 import com.finance.common.event.KafkaTopics;
+import com.finance.common.i18n.Translator;
 import com.finance.common.security.UserStatusPort;
 import com.finance.notification.core.mail.MailSender;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 @Log4j2
@@ -23,13 +25,19 @@ public class EmailChangeCodeListener {
     private final MailSender mailSender;
     private final Cache<String, Boolean> processedEventIds;
     private final UserStatusPort userStatus;
+    private final UserPreferenceCacheService userPreferenceCacheService;
+    private final Translator translator;
 
     public EmailChangeCodeListener(MailSender mailSender,
                                    @Qualifier("processedEventIds") Cache<String, Boolean> processedEventIds,
-                                   UserStatusPort userStatus) {
+                                   UserStatusPort userStatus,
+                                   UserPreferenceCacheService userPreferenceCacheService,
+                                   Translator translator) {
         this.mailSender = mailSender;
         this.processedEventIds = processedEventIds;
         this.userStatus = userStatus;
+        this.userPreferenceCacheService = userPreferenceCacheService;
+        this.translator = translator;
     }
 
     @KafkaListener(
@@ -56,8 +64,10 @@ public class EmailChangeCodeListener {
         model.put("oldEmail", event.oldEmail());
         model.put("minutesLeft", minutesLeft);
 
-        mailSender.send(event.oldEmail(), "Finance Portal · E-posta değişikliği onayı",
-                "email-change-code", model, event.theme());
+        Locale locale = userPreferenceCacheService.resolveLocale(event.userSub());
+        String subject = translator.translate("email.changeCode.subject", locale);
+        mailSender.send(event.oldEmail(), subject,
+                "email-change-code", model, event.theme(), locale);
 
         processedEventIds.put(event.eventId(), Boolean.TRUE);
         ack.acknowledge();

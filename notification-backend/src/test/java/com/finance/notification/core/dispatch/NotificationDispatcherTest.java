@@ -199,8 +199,8 @@ class NotificationDispatcherTest {
         RenderedNotification rendered = new RenderedNotification("t", "b", "subj", "tpl",
                 Map.of("k", "v"));
 
-        dispatcher.onEmailEnqueued(new NotificationDispatcher.EmailEnqueuedEvent("to@x.com", "LIGHT", rendered));
+        dispatcher.onEmailEnqueued(new NotificationDispatcher.EmailEnqueuedEvent("to@x.com", "LIGHT", java.util.Locale.ENGLISH, rendered));
 
-        verify(mailSender).send("to@x.com", "subj", "tpl", Map.of("k", "v"), "LIGHT");
+        verify(mailSender).send("to@x.com", "subj", "tpl", Map.of("k", "v"), "LIGHT", java.util.Locale.ENGLISH);
     }
 }

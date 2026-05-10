@@ -1,24 +1,30 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../../shared/context/ThemeContext';
 import { useAuth } from '../auth/AuthContext';
 import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
+import i18n from '../../shared/i18n/config';
 import {
-  Shield, BarChart3, Briefcase, UserPlus, LogIn,
-  TrendingUp, Zap, LineChart, ArrowRight,
-  Activity, Lock, Layers, Sun, Moon,
+  UserPlus, LogIn, ArrowRight, Sun, Moon,
 } from 'lucide-react';
 
 import { HeroGraphic, AnimatedDotGrid } from './components/HeroGraphic';
-import { easeOut, features, GLOW_POSITIONS, stats, buildFloatingCards } from './lib/homePageConstants';
+import { easeOut, FEATURE_DEFS, GLOW_POSITIONS, STAT_DEFS, buildFloatingCards } from './lib/homePageConstants';
 
+const LANGS = ['tr', 'en'];
 
 const HomePage = () => {
+  const { t, i18n: i18nInstance } = useTranslation();
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
   const { isAuthenticated } = useAuth();
+  const activeLang = (i18nInstance.language || 'en').slice(0, 2);
+  const handleLangChange = (lang) => {
+    if (lang !== activeLang) i18n.changeLanguage(lang);
+  };
 
   const { data: overview } = useQuery({
     queryKey: ['marketOverview'],
@@ -31,7 +37,26 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-bg-base relative overflow-hidden">
-      <div className="fixed top-5 right-5 z-50">
+      <div className="fixed top-5 right-5 z-50 flex items-center gap-2">
+        <div className="inline-flex items-center gap-0.5 rounded-lg border border-border-default bg-bg-elevated backdrop-blur-md p-0.5">
+          {LANGS.map((lang) => {
+            const active = lang === activeLang;
+            return (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => handleLangChange(lang)}
+                className={`px-2 py-1 rounded-md text-[10px] font-mono font-bold uppercase tracking-[0.16em] transition-colors duration-150 cursor-pointer border-none ${
+                  active
+                    ? 'bg-accent/15 text-accent'
+                    : 'bg-transparent text-fg-subtle hover:text-fg'
+                }`}
+              >
+                {lang}
+              </button>
+            );
+          })}
+        </div>
         <button
           onClick={toggleTheme}
           className="flex items-center justify-center w-9 h-9 rounded-lg border border-border-default bg-bg-elevated backdrop-blur-md text-fg-muted hover:text-fg hover:bg-surface transition-all cursor-pointer"
@@ -84,7 +109,7 @@ const HomePage = () => {
                     <span className="animate-pulse-dot absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
                   </span>
-                  Live Market Intelligence
+                  {t('home.live')}
                 </span>
               </motion.div>
 
@@ -94,9 +119,9 @@ const HomePage = () => {
                 transition={{ duration: 0.7, delay: 0.12, ease: easeOut }}
                 className="text-[2.5rem] md:text-[3.25rem] lg:text-[3.75rem] font-display leading-[1.08] tracking-[-0.02em] text-fg"
               >
-                Markets, decoded.{' '}
+                {t('home.heroTitle.part1')}{' '}
                 <span className="relative inline-block">
-                  <span className="text-gradient">In real time.</span>
+                  <span className="text-gradient">{t('home.heroTitle.part2')}</span>
                   <span className="absolute bottom-[-0.15rem] md:bottom-[-0.3rem] left-0 h-2 md:h-2.5 w-full rounded-sm bg-gradient-to-r from-accent/15 to-accent-bright/10" />
                 </span>
               </motion.h1>
@@ -107,8 +132,7 @@ const HomePage = () => {
                 transition={{ duration: 0.6, delay: 0.22, ease: easeOut }}
                 className="text-base md:text-lg text-fg-muted max-w-lg leading-relaxed mx-auto lg:mx-0"
               >
-                One portal for stocks, crypto, forex &amp; metals — with institutional-grade
-                charts, enterprise SSO, and zero config.
+                {t('home.heroDescription')}
               </motion.p>
 
               <motion.div
@@ -127,7 +151,7 @@ const HomePage = () => {
                   }}
                 >
                   <UserPlus size={15} strokeWidth={1.6} />
-                  Create free account
+                  {t('home.cta.createAccount')}
                   <ArrowRight size={14} strokeWidth={2} className="ml-0.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
                 </button>
                 <button
@@ -135,7 +159,7 @@ const HomePage = () => {
                   className="group flex items-center gap-2 px-6 py-3 text-sm font-semibold rounded-xl cursor-pointer bg-transparent text-fg border border-border-default hover:bg-surface hover:border-border-hover transition-all duration-200 hover:-translate-y-0.5"
                 >
                   <LogIn size={15} strokeWidth={1.6} />
-                  Sign in
+                  {t('home.cta.signIn')}
                 </button>
               </motion.div>
 
@@ -145,13 +169,13 @@ const HomePage = () => {
                 transition={{ duration: 0.6, delay: 0.5 }}
                 className="flex items-center gap-5 sm:gap-6 pt-2 justify-center lg:justify-start flex-wrap"
               >
-                {stats.map((s, i) => {
+                {STAT_DEFS.map((s) => {
                   const Icon = s.icon;
                   return (
-                    <div key={i} className="flex items-center gap-1.5">
+                    <div key={s.key} className="flex items-center gap-1.5">
                       <Icon size={13} className="text-accent" />
                       <span className="text-base font-bold text-fg tracking-tight">{s.value}</span>
-                      <span className="text-[10px] text-fg-subtle uppercase tracking-wider">{s.label}</span>
+                      <span className="text-[10px] text-fg-subtle uppercase tracking-wider">{t(`home.stats.${s.key}`)}</span>
                     </div>
                   );
                 })}
@@ -181,11 +205,11 @@ const HomePage = () => {
           >
             <span className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs font-mono uppercase tracking-[0.12em] border border-border-accent bg-accent-glow text-accent mb-6">
               <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-              Features
+              {t('home.featuresTag')}
             </span>
             <h2 className="text-3xl md:text-[2.5rem] font-display tracking-normal text-fg">
-              Everything you need.{' '}
-              <span className="text-fg-muted">Nothing you don&rsquo;t.</span>
+              {t('home.featuresHeading.part1')}{' '}
+              <span className="text-fg-muted">{t('home.featuresHeading.part2')}</span>
             </h2>
           </motion.div>
 
@@ -196,11 +220,11 @@ const HomePage = () => {
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
             className="grid grid-cols-1 md:grid-cols-2 gap-4"
           >
-            {features.map((f) => {
+            {FEATURE_DEFS.map((f) => {
               const Icon = f.icon;
               return (
                 <motion.div
-                  key={f.title}
+                  key={f.key}
                   variants={{
                     hidden: { opacity: 0, y: 28 },
                     visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: easeOut } },
@@ -221,8 +245,8 @@ const HomePage = () => {
                   <span className="relative inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-accent text-white mb-5 shadow-lg shadow-accent/20 transition-transform duration-300 group-hover:scale-110">
                     <Icon size={20} strokeWidth={1.5} />
                   </span>
-                  <h3 className="relative text-lg font-semibold text-fg mb-2">{f.title}</h3>
-                  <p className="relative text-sm text-fg-muted leading-relaxed">{f.description}</p>
+                  <h3 className="relative text-lg font-semibold text-fg mb-2">{t(`home.features.${f.key}.title`)}</h3>
+                  <p className="relative text-sm text-fg-muted leading-relaxed">{t(`home.features.${f.key}.description`)}</p>
                 </motion.div>
               );
             })}
@@ -241,14 +265,14 @@ const HomePage = () => {
           >
             <span className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs font-mono uppercase tracking-[0.12em] border border-white/10 bg-white/5 text-white/80 mb-6">
               <span className="h-1.5 w-1.5 rounded-full bg-white/60 animate-pulse-dot" />
-              Get Started
+              {t('home.getStartedTag')}
             </span>
 
             <h2 className="text-3xl md:text-4xl font-display text-white mb-4">
-              Ready to trade smarter?
+              {t('home.ctaSection.heading')}
             </h2>
             <p className="text-white/60 mb-10 max-w-md mx-auto text-base leading-relaxed">
-              Join in seconds — no credit card, no commitment.
+              {t('home.ctaSection.body')}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 justify-center">
@@ -257,7 +281,7 @@ const HomePage = () => {
                 className="group relative inline-flex items-center gap-2 px-8 py-3.5 text-sm font-semibold border-none rounded-xl cursor-pointer bg-white text-[#0F172A] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.98]"
               >
                 <UserPlus size={15} strokeWidth={1.6} />
-                Create free account
+                {t('home.cta.createAccount')}
                 <ArrowRight size={15} strokeWidth={2} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
               </button>
               <button
@@ -265,7 +289,7 @@ const HomePage = () => {
                 className="group inline-flex items-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl cursor-pointer bg-transparent text-white/80 border border-white/15 hover:bg-white/5 hover:border-white/25 hover:text-white transition-all duration-200 hover:-translate-y-0.5"
               >
                 <LogIn size={15} strokeWidth={1.6} />
-                Sign in
+                {t('home.cta.signIn')}
               </button>
             </div>
           </motion.div>
@@ -274,7 +298,7 @@ const HomePage = () => {
         </section>
 
         <footer className="py-8 text-center">
-          <p className="text-xs text-fg-subtle">&copy; 2026 Finance Portal</p>
+          <p className="text-xs text-fg-subtle">{t('home.footer')}</p>
         </footer>
       </div>
     </div>

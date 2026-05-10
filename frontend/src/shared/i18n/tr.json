@@ -212,6 +212,53 @@
     "willOpen": "açılır",
     "willClose": "kapanır"
   },
+  "home": {
+    "live": "Canlı Piyasa Verisi",
+    "heroTitle": {
+      "part1": "Piyasalar, çözüldü.",
+      "part2": "Gerçek zamanlı."
+    },
+    "heroDescription": "Hisse, kripto, döviz ve emtia için tek portal — kurumsal seviyede grafikler, kurumsal SSO ve sıfır konfigürasyon.",
+    "cta": {
+      "createAccount": "Ücretsiz hesap oluştur",
+      "signIn": "Giriş yap"
+    },
+    "stats": {
+      "assetClasses": "Varlık Sınıfı",
+      "latency": "Gecikme",
+      "uptime": "Kesintisiz",
+      "security": "Güvenlik"
+    },
+    "featuresTag": "Özellikler",
+    "featuresHeading": {
+      "part1": "İhtiyacın olan her şey.",
+      "part2": "Fazlası değil."
+    },
+    "features": {
+      "security": {
+        "title": "Bankacılık Seviyesinde Güvenlik",
+        "description": "Keycloak SSO, LDAP federasyonu, 2FA/TOTP — kimlik bilgilerin sunucularımıza hiç dokunmaz."
+      },
+      "marketData": {
+        "title": "Canlı Piyasa Verisi",
+        "description": "Hisse, kripto, döviz ve emtiada saniye altı gecikmeyle gerçek zamanlı fiyatlar."
+      },
+      "charting": {
+        "title": "Gelişmiş Grafik",
+        "description": "TradingView grafikleri; göstergeler, çizim araçları, Fibonacci ve karşılaştırma modu."
+      },
+      "portfolio": {
+        "title": "Portföy Takibi",
+        "description": "Portföy oluştur, K/Z izle ve tüm varlık sınıflarındaki pozisyonlarını yönet."
+      }
+    },
+    "getStartedTag": "Başla",
+    "ctaSection": {
+      "heading": "Daha akıllı işlem yapmaya hazır mısın?",
+      "body": "Saniyeler içinde katıl — kredi kartı yok, taahhüt yok."
+    },
+    "footer": "© 2026 Finance Portal"
+  },
   "login": {
     "welcome": "Hesabınıza giriş yapın",
     "required": "Giriş Gerekli",

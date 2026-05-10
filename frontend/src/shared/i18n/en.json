@@ -212,6 +212,53 @@
     "willOpen": "opens in",
     "willClose": "closes in"
   },
+  "home": {
+    "live": "Live Market Intelligence",
+    "heroTitle": {
+      "part1": "Markets, decoded.",
+      "part2": "In real time."
+    },
+    "heroDescription": "One portal for stocks, crypto, forex & metals — with institutional-grade charts, enterprise SSO, and zero config.",
+    "cta": {
+      "createAccount": "Create free account",
+      "signIn": "Sign in"
+    },
+    "stats": {
+      "assetClasses": "Asset Classes",
+      "latency": "Latency",
+      "uptime": "Uptime",
+      "security": "Security"
+    },
+    "featuresTag": "Features",
+    "featuresHeading": {
+      "part1": "Everything you need.",
+      "part2": "Nothing you don't."
+    },
+    "features": {
+      "security": {
+        "title": "Bank-Grade Security",
+        "description": "Keycloak SSO, LDAP federation, 2FA/TOTP — your credentials never touch our servers."
+      },
+      "marketData": {
+        "title": "Live Market Data",
+        "description": "Real-time quotes across stocks, crypto, forex & metals with sub-second latency."
+      },
+      "charting": {
+        "title": "Advanced Charting",
+        "description": "TradingView charts with indicators, drawing tools, Fibonacci and compare mode."
+      },
+      "portfolio": {
+        "title": "Portfolio Tracking",
+        "description": "Build portfolios, track P&L, and monitor positions across every asset class."
+      }
+    },
+    "getStartedTag": "Get Started",
+    "ctaSection": {
+      "heading": "Ready to trade smarter?",
+      "body": "Join in seconds — no credit card, no commitment."
+    },
+    "footer": "© 2026 Finance Portal"
+  },
   "login": {
     "welcome": "Sign in to your account",
     "required": "Sign-in required",

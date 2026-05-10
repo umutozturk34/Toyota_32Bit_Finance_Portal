@@ -3,32 +3,28 @@ import { formatPriceTRY, formatPercent } from '../../../shared/utils/formatters'
 
 export const easeOut = [0.16, 1, 0.3, 1];
 
-export const features = [
+export const FEATURE_DEFS = [
   {
     icon: Shield,
-    title: 'Bank-Grade Security',
-    description: 'Keycloak SSO, LDAP federation, 2FA/TOTP — your credentials never touch our servers.',
+    key: 'security',
     glowPos: 'top-left',
     glowColor: { dark: 'rgba(99,102,241,0.18)', light: 'rgba(0,82,255,0.12)' },
   },
   {
     icon: BarChart3,
-    title: 'Live Market Data',
-    description: 'Real-time quotes across stocks, crypto, forex & metals with sub-second latency.',
+    key: 'marketData',
     glowPos: 'top-right',
     glowColor: { dark: 'rgba(16,185,129,0.16)', light: 'rgba(16,163,127,0.12)' },
   },
   {
     icon: LineChart,
-    title: 'Advanced Charting',
-    description: 'TradingView charts with indicators, drawing tools, Fibonacci and compare mode.',
+    key: 'charting',
     glowPos: 'bottom-left',
     glowColor: { dark: 'rgba(245,158,11,0.14)', light: 'rgba(234,138,0,0.10)' },
   },
   {
     icon: Briefcase,
-    title: 'Portfolio Tracking',
-    description: 'Build portfolios, track P&L, and monitor positions across every asset class.',
+    key: 'portfolio',
     glowPos: 'bottom-right',
     glowColor: { dark: 'rgba(168,85,247,0.16)', light: 'rgba(109,40,217,0.10)' },
   },
@@ -41,11 +37,11 @@ export const GLOW_POSITIONS = {
   'bottom-right': { bottom: '-40%', right: '-40%' },
 };
 
-export const stats = [
-  { value: '4', label: 'Asset Classes', icon: Layers },
-  { value: '<1s', label: 'Latency', icon: Zap },
-  { value: '24/7', label: 'Uptime', icon: Activity },
-  { value: '2FA', label: 'Security', icon: Lock },
+export const STAT_DEFS = [
+  { value: '4', key: 'assetClasses', icon: Layers },
+  { value: '<1s', key: 'latency', icon: Zap },
+  { value: '24/7', key: 'uptime', icon: Activity },
+  { value: '2FA', key: 'security', icon: Lock },
 ];
 
 export const CARD_POSITIONS = [

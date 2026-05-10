@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Users, Search, Ban, ShieldCheck, Loader2, AlertCircle, Mail, ChevronLeft, ChevronRight, User, MessageCircle } from 'lucide-react';
 import PageHeader from '../../../shared/components/layout/PageHeader';
@@ -10,23 +11,26 @@ import AdminUserMessageModal from './AdminUserMessageModal';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
-function formatDate(iso) {
+function formatDate(iso, localeTag) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(localeTag, { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function StatusBadge({ enabled }) {
+  const { t } = useTranslation();
   return (
     <span className={`inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
       enabled ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
     }`}>
       {enabled ? <ShieldCheck className="h-3 w-3" /> : <Ban className="h-3 w-3" />}
-      {enabled ? 'Aktif' : 'Yasaklı'}
+      {enabled ? t('adminUsers.statusActive') : t('adminUsers.statusBanned')}
     </span>
   );
 }
 
 export default function AdminUsersPage() {
+  const { t } = useTranslation();
+  const localeTag = t('common.localeTag');
   const { user: currentUser } = useAuth();
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
@@ -66,25 +70,25 @@ export default function AdminUsersPage() {
     try {
       if (user.enabled) {
         await banMutation.mutateAsync(user.id);
-        toast.success('Yasaklandı', `${user.username} artık giriş yapamayacak`);
+        toast.success(t('adminUsers.toast.banned'), t('adminUsers.toast.bannedBody', { username: user.username }));
       } else {
         await unbanMutation.mutateAsync(user.id);
-        toast.success('Yasak Kaldırıldı', `${user.username} tekrar giriş yapabilir`);
+        toast.success(t('adminUsers.toast.unbanned'), t('adminUsers.toast.unbannedBody', { username: user.username }));
       }
     } catch (err) {
-      toast.error('İşlem Başarısız', err?.response?.data?.message || 'Bilinmeyen hata');
+      toast.error(t('error.actionFailed'), err?.response?.data?.message || t('adminUsers.toast.unknownError'));
     } finally {
       setPendingId(null);
     }
   };
 
-  if (error) return <ErrorState message="Kullanıcılar yüklenemedi" onRetry={() => window.location.reload()} />;
+  if (error) return <ErrorState message={t('adminUsers.loadError')} onRetry={() => window.location.reload()} />;
 
   return (
     <div className="space-y-5">
       <PageHeader
         icon={<Users className="h-5 w-5" />}
-        title="Kullanıcı Yönetimi"
+        title={t('adminUsers.title')}
         onRefresh={handleRefresh}
         loading={isFetching}
       />
@@ -96,7 +100,7 @@ export default function AdminUsersPage() {
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Kullanıcı adı veya e-posta ara..."
+            placeholder={t('adminUsers.searchPlaceholder')}
             className="w-full pl-9 pr-3 py-2 rounded-lg border border-border-default bg-bg-elevated text-sm text-fg placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
           />
         </div>
@@ -104,28 +108,28 @@ export default function AdminUsersPage() {
           type="submit"
           className="px-4 py-2 rounded-lg bg-accent hover:bg-accent-bright text-sm font-semibold text-white border-none cursor-pointer transition-colors"
         >
-          Ara
+          {t('common.search')}
         </button>
       </form>
 
       <div className="rounded-xl border border-border-default bg-bg-elevated overflow-hidden">
         <div className="grid grid-cols-[2fr_2fr_1fr_1fr_140px] gap-3 px-4 py-3 border-b border-border-default text-[11px] font-semibold text-fg-muted uppercase tracking-wide">
-          <span>Kullanıcı</span>
-          <span>E-posta</span>
-          <span>Kayıt</span>
-          <span>Durum</span>
-          <span className="text-right">İşlem</span>
+          <span>{t('adminUsers.col.user')}</span>
+          <span>{t('adminUsers.col.email')}</span>
+          <span>{t('adminUsers.col.signupDate')}</span>
+          <span>{t('adminUsers.col.status')}</span>
+          <span className="text-right">{t('adminUsers.col.action')}</span>
         </div>
         {isLoading && (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-fg-muted">
             <Loader2 className="h-4 w-4 animate-spin text-accent" />
-            Yükleniyor...
+            {t('common.loading')}
           </div>
         )}
         {!isLoading && (!users || users.length === 0) && (
           <div className="flex flex-col items-center justify-center gap-2 py-12 text-sm text-fg-muted">
             <AlertCircle className="h-5 w-5" />
-            Kullanıcı bulunamadı
+            {t('adminUsers.noUsersFound')}
           </div>
         )}
         {!isLoading && users && users.length > 0 && users.map((user) => (
@@ -147,18 +151,18 @@ export default function AdminUsersPage() {
               <Mail className="h-3 w-3 shrink-0" />
               <span className="truncate">{user.email || '—'}</span>
             </div>
-            <span className="text-[11px] text-fg-muted font-mono">{formatDate(user.createdAt)}</span>
+            <span className="text-[11px] text-fg-muted font-mono">{formatDate(user.createdAt, localeTag)}</span>
             <StatusBadge enabled={user.enabled} />
             <button
               onClick={() => setMessagingUser(user)}
-              title="Bu kullanıcıya mesaj gönder"
+              title={t('adminUsers.sendMessageTitle')}
               className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-accent hover:bg-accent/10 transition-colors bg-transparent border-none cursor-pointer"
             >
               <MessageCircle className="h-3.5 w-3.5" />
             </button>
             {user.id === currentUser?.id ? (
               <span className="justify-self-end flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold bg-accent/10 text-accent">
-                <User className="h-3 w-3" /> Sen
+                <User className="h-3 w-3" /> {t('adminUsers.you')}
               </span>
             ) : (
               <button
@@ -173,9 +177,9 @@ export default function AdminUsersPage() {
                 {pendingId === user.id ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
                 ) : user.enabled ? (
-                  <><Ban className="h-3 w-3" /> Yasakla</>
+                  <><Ban className="h-3 w-3" /> {t('adminUsers.banAction')}</>
                 ) : (
-                  <><ShieldCheck className="h-3 w-3" /> Yasağı Kaldır</>
+                  <><ShieldCheck className="h-3 w-3" /> {t('adminUsers.unbanAction')}</>
                 )}
               </button>
             )}
@@ -185,7 +189,7 @@ export default function AdminUsersPage() {
 
       <div className="flex items-center justify-between gap-3 text-xs text-fg-muted">
         <div className="flex items-center gap-2">
-          <span>Sayfa boyutu:</span>
+          <span>{t('adminUsers.pageSize')}</span>
           <div className="flex gap-0.5 rounded-md border border-border-default bg-bg-elevated p-0.5">
             {PAGE_SIZE_OPTIONS.map((size) => (
               <button

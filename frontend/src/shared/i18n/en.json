@@ -453,6 +453,55 @@
       "PORTFOLIO_UPDATED": "Portfolio updated"
     }
   },
+  "adminTrackedAssets": {
+    "title": "Tracked Assets Management",
+    "adminRequired": "ADMIN role is required to view this page.",
+    "addOrUpdate": "Add / Update {{title}}",
+    "missingFieldTitle": "Missing Field",
+    "assetCodeRequired": "Asset code is required",
+    "saveSuccess": "Save Successful",
+    "saveSuccessBody": "{{title}} record was added/updated",
+    "assetCodeCrypto": "Asset code (e.g. bitcoin)",
+    "assetCodeOther": "Asset code (e.g. ASELS.IS)",
+    "displayNamePlaceholder": "Display name (optional)",
+    "binanceSymbolPlaceholder": "Binance symbol (e.g. BTCUSDT)",
+    "sortPlaceholder": "Sort",
+    "saving": "Saving...",
+    "tabs": {
+      "CRYPTO": "Crypto",
+      "STOCK": "Stock",
+      "FUND": "Fund",
+      "COMMODITY": "Commodity",
+      "NEWS": "News Sources"
+    }
+  },
+  "adminUsers": {
+    "title": "User Management",
+    "searchPlaceholder": "Search username or email...",
+    "loadError": "Failed to load users",
+    "noUsersFound": "No users found",
+    "statusActive": "Active",
+    "statusBanned": "Banned",
+    "you": "You",
+    "banAction": "Ban",
+    "unbanAction": "Unban",
+    "sendMessageTitle": "Send a message to this user",
+    "pageSize": "Page size:",
+    "col": {
+      "user": "User",
+      "email": "Email",
+      "signupDate": "Signup",
+      "status": "Status",
+      "action": "Action"
+    },
+    "toast": {
+      "banned": "Banned",
+      "bannedBody": "{{username}} can no longer sign in",
+      "unbanned": "Unbanned",
+      "unbannedBody": "{{username}} can sign in again",
+      "unknownError": "Unknown error"
+    }
+  },
   "twoFactor": {
     "active": "2FA active",
     "inactive": "2FA off",

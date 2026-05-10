@@ -453,6 +453,55 @@
       "PORTFOLIO_UPDATED": "Portföy güncellendi"
     }
   },
+  "adminTrackedAssets": {
+    "title": "Tracked Assets Yönetimi",
+    "adminRequired": "Bu sayfayı görüntülemek için ADMIN rolü gerekli.",
+    "addOrUpdate": "{{title}} Ekle / Güncelle",
+    "missingFieldTitle": "Eksik Alan",
+    "assetCodeRequired": "Asset code zorunlu",
+    "saveSuccess": "Kayıt Başarılı",
+    "saveSuccessBody": "{{title}} kaydı eklendi/güncellendi",
+    "assetCodeCrypto": "Asset code (örn: bitcoin)",
+    "assetCodeOther": "Asset code (örn: ASELS.IS)",
+    "displayNamePlaceholder": "Görünen isim (opsiyonel)",
+    "binanceSymbolPlaceholder": "Binance symbol (örn: BTCUSDT)",
+    "sortPlaceholder": "Sıra",
+    "saving": "Kaydediliyor...",
+    "tabs": {
+      "CRYPTO": "Kripto",
+      "STOCK": "Hisse",
+      "FUND": "Fon",
+      "COMMODITY": "Emtia",
+      "NEWS": "Haber Kaynakları"
+    }
+  },
+  "adminUsers": {
+    "title": "Kullanıcı Yönetimi",
+    "searchPlaceholder": "Kullanıcı adı veya e-posta ara...",
+    "loadError": "Kullanıcılar yüklenemedi",
+    "noUsersFound": "Kullanıcı bulunamadı",
+    "statusActive": "Aktif",
+    "statusBanned": "Yasaklı",
+    "you": "Sen",
+    "banAction": "Yasakla",
+    "unbanAction": "Yasağı Kaldır",
+    "sendMessageTitle": "Bu kullanıcıya mesaj gönder",
+    "pageSize": "Sayfa boyutu:",
+    "col": {
+      "user": "Kullanıcı",
+      "email": "E-posta",
+      "signupDate": "Kayıt",
+      "status": "Durum",
+      "action": "İşlem"
+    },
+    "toast": {
+      "banned": "Yasaklandı",
+      "bannedBody": "{{username}} artık giriş yapamayacak",
+      "unbanned": "Yasak Kaldırıldı",
+      "unbannedBody": "{{username}} tekrar giriş yapabilir",
+      "unknownError": "Bilinmeyen hata"
+    }
+  },
   "twoFactor": {
     "active": "2FA aktif",
     "inactive": "2FA kapalı",

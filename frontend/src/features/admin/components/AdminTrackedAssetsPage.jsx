@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { Database, Plus, Bitcoin, TrendingUp, Briefcase, Newspaper, Gem } from 'lucide-react';
@@ -18,13 +19,14 @@ const INITIAL_FORMS = {
 };
 
 function TrackedAssetForm({ type, title, onSaved }) {
+    const { t } = useTranslation();
     const [form, setForm] = useState(INITIAL_FORMS[type]);
     const [saving, setSaving] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!form.assetCode.trim()) {
-            toast.warning('Eksik Alan', 'Asset code zorunlu');
+            toast.warning(t('adminTrackedAssets.missingFieldTitle'), t('adminTrackedAssets.assetCodeRequired'));
             return;
         }
 
@@ -46,9 +48,9 @@ function TrackedAssetForm({ type, title, onSaved }) {
 
             setForm(INITIAL_FORMS[type]);
             onSaved?.();
-            toast.success('Kayıt Başarılı', `${title} kaydı eklendi/güncellendi`);
+            toast.success(t('adminTrackedAssets.saveSuccess'), t('adminTrackedAssets.saveSuccessBody', { title }));
         } catch (err) {
-            toast.error('İşlem Başarısız', err.response?.data?.message || err.message);
+            toast.error(t('error.actionFailed'), err.response?.data?.message || err.message);
         } finally {
             setSaving(false);
         }
@@ -56,18 +58,18 @@ function TrackedAssetForm({ type, title, onSaved }) {
 
     return (
         <div className="rounded-xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-4">
-            <h3 className="mb-3 text-sm font-semibold text-fg">{title} Ekle / Güncelle</h3>
+            <h3 className="mb-3 text-sm font-semibold text-fg">{t('adminTrackedAssets.addOrUpdate', { title })}</h3>
             <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <input
                     type="text"
-                    placeholder={type === 'CRYPTO' ? 'Asset code (örn: bitcoin)' : 'Asset code (örn: ASELS.IS)'}
+                    placeholder={type === 'CRYPTO' ? t('adminTrackedAssets.assetCodeCrypto') : t('adminTrackedAssets.assetCodeOther')}
                     value={form.assetCode}
                     onChange={(e) => setForm(prev => ({ ...prev, assetCode: e.target.value }))}
                     className="rounded-lg border border-border-default bg-bg-base px-3 py-2 text-sm text-fg outline-none focus:border-accent"
                 />
                 <input
                     type="text"
-                    placeholder="Görünen isim (opsiyonel)"
+                    placeholder={t('adminTrackedAssets.displayNamePlaceholder')}
                     value={form.displayName}
                     onChange={(e) => setForm(prev => ({ ...prev, displayName: e.target.value }))}
                     className="rounded-lg border border-border-default bg-bg-base px-3 py-2 text-sm text-fg outline-none focus:border-accent"
@@ -75,7 +77,7 @@ function TrackedAssetForm({ type, title, onSaved }) {
                 {type === 'CRYPTO' && (
                     <input
                         type="text"
-                        placeholder="Binance symbol (örn: BTCUSDT)"
+                        placeholder={t('adminTrackedAssets.binanceSymbolPlaceholder')}
                         value={form.binanceSymbol || ''}
                         onChange={(e) => setForm(prev => ({ ...prev, binanceSymbol: e.target.value }))}
                         className="rounded-lg border border-border-default bg-bg-base px-3 py-2 text-sm text-fg outline-none focus:border-accent"
@@ -102,7 +104,7 @@ function TrackedAssetForm({ type, title, onSaved }) {
                 <div className="flex items-center gap-2">
                     <input
                         type="number"
-                        placeholder="Sort"
+                        placeholder={t('adminTrackedAssets.sortPlaceholder')}
                         value={form.sortOrder}
                         onChange={(e) => setForm(prev => ({ ...prev, sortOrder: e.target.value }))}
                         className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2 text-sm text-fg outline-none focus:border-accent"
@@ -113,7 +115,7 @@ function TrackedAssetForm({ type, title, onSaved }) {
                         className="flex items-center gap-1 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-bright disabled:opacity-60"
                     >
                         <Plus className="h-4 w-4" />
-                        {saving ? 'Kaydediliyor...' : 'Kaydet'}
+                        {saving ? t('adminTrackedAssets.saving') : t('common.save')}
                     </button>
                 </div>
             </form>
@@ -121,23 +123,25 @@ function TrackedAssetForm({ type, title, onSaved }) {
     );
 }
 
-const ADMIN_TABS = [
-    { id: 'CRYPTO', label: 'Kripto', icon: Bitcoin },
-    { id: 'STOCK', label: 'Hisse', icon: TrendingUp },
-    { id: 'FUND', label: 'Fon', icon: Briefcase },
-    { id: 'COMMODITY', label: 'Emtia', icon: Gem },
-    { id: 'NEWS', label: 'Haber Kaynakları', icon: Newspaper },
+const ADMIN_TAB_DEFS = [
+    { id: 'CRYPTO', icon: Bitcoin },
+    { id: 'STOCK', icon: TrendingUp },
+    { id: 'FUND', icon: Briefcase },
+    { id: 'COMMODITY', icon: Gem },
+    { id: 'NEWS', icon: Newspaper },
 ];
 
 export default function AdminTrackedAssetsPage() {
+    const { t } = useTranslation();
     const { hasRole } = useAuth();
     const [refreshToken, setRefreshToken] = useState(0);
     const [searchParams, setSearchParams] = useSearchParams();
     const activeTab = searchParams.get('tab') || 'CRYPTO';
     const setActiveTab = (tab) => setSearchParams(tab === 'CRYPTO' ? {} : { tab }, { replace: true });
+    const adminTabs = ADMIN_TAB_DEFS.map(tab => ({ ...tab, label: t(`adminTrackedAssets.tabs.${tab.id}`) }));
 
     if (!hasRole('ADMIN')) {
-        return <ErrorState message="Bu sayfayı görüntülemek için ADMIN rolü gerekli." />;
+        return <ErrorState message={t('adminTrackedAssets.adminRequired')} />;
     }
 
     const handleChanged = () => {
@@ -148,13 +152,13 @@ export default function AdminTrackedAssetsPage() {
         <div className="space-y-6 py-6">
             <PageHeader
                 icon={<Database className="h-5 w-5" />}
-                title="Tracked Assets Yönetimi"
+                title={t('adminTrackedAssets.title')}
                 onRefresh={handleChanged}
                 loading={false}
             />
 
             <div className="flex gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 w-fit">
-                {ADMIN_TABS.map(({ id, label, icon: Icon }) => (
+                {adminTabs.map(({ id, label, icon: Icon }) => (
                     <button
                         key={id}
                         onClick={() => setActiveTab(id)}
@@ -175,8 +179,8 @@ export default function AdminTrackedAssetsPage() {
 
             {activeTab !== 'NEWS' && (
                 <>
-                    <TrackedAssetForm type={activeTab} title={ADMIN_TABS.find(t => t.id === activeTab)?.label} onSaved={handleChanged} />
-                    <TrackedAssetAdminPanel type={activeTab} title={ADMIN_TABS.find(t => t.id === activeTab)?.label} onChanged={handleChanged} refreshToken={refreshToken} />
+                    <TrackedAssetForm type={activeTab} title={adminTabs.find(tab => tab.id === activeTab)?.label} onSaved={handleChanged} />
+                    <TrackedAssetAdminPanel type={activeTab} title={adminTabs.find(tab => tab.id === activeTab)?.label} onChanged={handleChanged} refreshToken={refreshToken} />
                 </>
             )}
 

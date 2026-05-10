@@ -149,6 +149,27 @@
     "fallbackName": "Watchlist",
     "empty": "No tracked assets yet"
   },
+  "datePicker": {
+    "placeholder": "Pick a date",
+    "toggleView": "Toggle view",
+    "dataDays": "{{count}} days of history",
+    "noDataMonth": "no data for this month",
+    "prev": {
+      "day": "Previous month",
+      "month": "Previous year",
+      "year": "12 years back"
+    },
+    "next": {
+      "day": "Next month",
+      "month": "Next year",
+      "year": "12 years forward"
+    }
+  },
+  "marketList": {
+    "updateStarted": "Update started",
+    "updateFailed": "Update failed",
+    "noSearchMatch": "No results match the search."
+  },
   "moversSection": {
     "fallback": "Market",
     "gainers": "Gainers",

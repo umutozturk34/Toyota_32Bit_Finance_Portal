@@ -149,6 +149,27 @@
     "fallbackName": "Takip Listesi",
     "empty": "Henüz takip varlığı yok"
   },
+  "datePicker": {
+    "placeholder": "Tarih seçin",
+    "toggleView": "Görünümü değiştir",
+    "dataDays": "{{count}} gün geçmiş veri",
+    "noDataMonth": "bu ay için veri yok",
+    "prev": {
+      "day": "Önceki ay",
+      "month": "Önceki yıl",
+      "year": "12 yıl geri"
+    },
+    "next": {
+      "day": "Sonraki ay",
+      "month": "Sonraki yıl",
+      "year": "12 yıl ileri"
+    }
+  },
+  "marketList": {
+    "updateStarted": "Güncelleme Başlatıldı",
+    "updateFailed": "Güncelleme Hatası",
+    "noSearchMatch": "Aramayla eşleşen sonuç bulunamadı."
+  },
   "moversSection": {
     "fallback": "Piyasa",
     "gainers": "Yükselen",

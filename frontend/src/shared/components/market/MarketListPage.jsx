@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../../features/auth/AuthContext';
@@ -42,6 +43,7 @@ export default function MarketListPage({
   filterShowAll = true,
   animatePresence = false,
 }) {
+  const { t } = useTranslation();
   const { hasRole } = useAuth();
   const [buyTarget, setBuyTarget] = useState(null);
   const [updating, setUpdating] = useState({});
@@ -59,10 +61,10 @@ export default function MarketListPage({
     setUpdating(prev => ({ ...prev, [key]: true }));
     try {
       const response = await fn();
-      toast.success('Güncelleme Başlatıldı', response.message || successMsg || 'Güncelleme başlatıldı');
+      toast.success(t('marketList.updateStarted'), response.message || successMsg || t('marketList.updateStarted'));
       if (refetchDelay) setTimeout(refetch, refetchDelay);
     } catch (err) {
-      toast.error('Güncelleme Hatası', err.response?.data?.message || err.message);
+      toast.error(t('marketList.updateFailed'), err.response?.data?.message || err.message);
     } finally {
       setUpdating(prev => ({ ...prev, [key]: false }));
     }
@@ -146,7 +148,7 @@ export default function MarketListPage({
       {items.length === 0 && !isLoading && (
         <EmptyState
           icon={emptyIcon || icon}
-          message={listParams.search ? 'Aramayla eşleşen sonuç bulunamadı.' : emptyMessage}
+          message={listParams.search ? t('marketList.noSearchMatch') : emptyMessage}
           hint={!listParams.search && isAdmin ? emptyHint : undefined}
         />
       )}

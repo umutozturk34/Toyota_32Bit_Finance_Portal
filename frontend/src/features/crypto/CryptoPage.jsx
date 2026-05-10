@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Bitcoin, BarChart2, Activity, Clock } from 'lucide-react';
 import { TrendingUp, ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { cryptoService } from './services/cryptoService';
@@ -10,15 +11,13 @@ import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
 import ChangePercentBadge from '../../shared/components/asset/ChangePercentBadge';
 import useListParams from '../../shared/hooks/useListParams';
 
-const SORT_OPTIONS = [
-    { id: 'changePercent', label: 'Değişim %' },
-    { id: 'price', label: 'Fiyat' },
-    { id: 'name', label: 'İsim' },
-];
+const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
 
 export default function CryptoPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const listParams = useListParams();
+    const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) }));
 
     const renderCard = (crypto, { setBuyTarget }) => {
         const symbol = crypto.metadata?.symbol;
@@ -68,22 +67,22 @@ export default function CryptoPage() {
 
                 <div className="mt-3 space-y-1 border-t border-border-default pt-3">
                     <div className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-1 text-fg-muted"><Activity className="h-3 w-3" />Change</span>
+                        <span className="flex items-center gap-1 text-fg-muted"><Activity className="h-3 w-3" />{t('market.crypto.changeLabel')}</span>
                         <span className="font-mono text-fg">{formatPriceUSD(crypto.changeAmount)}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-1 text-fg-muted"><BarChart2 className="h-3 w-3" />Volume</span>
+                        <span className="flex items-center gap-1 text-fg-muted"><BarChart2 className="h-3 w-3" />{t('market.crypto.volumeLabel')}</span>
                         <span className="font-mono text-fg">{formatCompactNumber(crypto.metadata?.totalVolume)}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-1 text-fg-muted"><TrendingUp className="h-3 w-3" />Market Cap</span>
+                        <span className="flex items-center gap-1 text-fg-muted"><TrendingUp className="h-3 w-3" />{t('market.crypto.marketCapLabel')}</span>
                         <span className="font-mono text-fg">{formatCompactNumber(crypto.metadata?.marketCap)}</span>
                     </div>
                 </div>
 
                 <div className="mt-2 flex items-center gap-1 text-[11px] text-fg-subtle">
                     <Clock className="h-3 w-3" />
-                    {crypto.lastUpdated ? new Date(crypto.lastUpdated).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'N/A'}
+                    {crypto.lastUpdated ? new Date(crypto.lastUpdated).toLocaleString(t('common.localeTag'), { timeZone: 'Europe/Istanbul' }) : 'N/A'}
                 </div>
             </AssetCard>
         );
@@ -91,26 +90,26 @@ export default function CryptoPage() {
 
     return (
         <MarketListPage
-            title="Kripto Paralar"
+            title={t('market.crypto.title')}
             icon={<Bitcoin className="h-5 w-5" />}
             emptyIcon={<Bitcoin className="h-7 w-7 text-fg-subtle" />}
             marketType="CRYPTO"
             service={cryptoService}
             queryKey="cryptos"
             listParams={listParams}
-            searchPlaceholder="Kripto ara..."
-            countLabel="kripto"
-            sortOptions={SORT_OPTIONS}
+            searchPlaceholder={t('market.crypto.searchPlaceholder')}
+            countLabel={t('market.crypto.countLabel')}
+            sortOptions={sortOptions}
             adminTriggers={[
-                { key: 'snapshot', label: 'Snapshot', title: 'Kripto snapshot verilerini güncelle', fn: adminService.triggerCryptoSnapshot, refetchDelay: 5000 },
-                { key: 'candles', label: 'Candles', title: 'Kripto mum verilerini güncelle', fn: adminService.triggerCryptoCandles },
-                { key: 'full', label: 'Full Update', title: 'Tam güncelleme (snapshot + candles)', fn: adminService.triggerCryptoFull, refetchDelay: 5000 },
+                { key: 'snapshot', label: t('market.admin.snapshot'), title: t('market.admin.snapshotTitle'), fn: adminService.triggerCryptoSnapshot, refetchDelay: 5000 },
+                { key: 'candles', label: t('market.admin.candles'), title: t('market.admin.candlesTitle'), fn: adminService.triggerCryptoCandles },
+                { key: 'full', label: t('market.admin.full'), title: t('market.admin.fullTitle'), fn: adminService.triggerCryptoFull, refetchDelay: 5000 },
             ]}
             renderCard={renderCard}
-            loadingMessage="Kripto verileri yükleniyor…"
-            errorMessage="Kripto para verileri yüklenirken hata oluştu"
-            emptyMessage="Henüz kripto para verisi yok."
-            emptyHint="Admin butonlarını kullanarak veri çekebilirsiniz."
+            loadingMessage={t('market.crypto.loading')}
+            errorMessage={t('market.crypto.error')}
+            emptyMessage={t('market.crypto.empty')}
+            emptyHint={t('market.empty.adminHint')}
             gridClass="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-[600px] content-start"
             animatePresence
         />

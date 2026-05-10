@@ -21,6 +21,7 @@
     "collapseSidebar": "Collapse sidebar"
   },
   "common": {
+    "localeTag": "en-US",
     "save": "Save",
     "cancel": "Cancel",
     "confirm": "Confirm",
@@ -120,6 +121,71 @@
       "inappOff": "In-app off"
     },
     "footer": "In-app notifications always run. Email requires the master switch to be on."
+  },
+  "market": {
+    "sort": {
+      "changePercent": "Change %",
+      "price": "Price",
+      "name": "Name"
+    },
+    "stockSegments": {
+      "MAIN_INDEX": "Main Indices",
+      "SECONDARY_INDEX": "Sub Indices",
+      "EQUITY": "Stocks",
+      "indexLabel": "Index"
+    },
+    "stock": {
+      "title": "Borsa Istanbul (BIST)",
+      "searchPlaceholder": "Search stock...",
+      "countLabel": "stocks",
+      "openLabel": "Open",
+      "highLabel": "High",
+      "lowLabel": "Low",
+      "volumeLabel": "Volume",
+      "loading": "Loading stock data…",
+      "error": "Failed to load stock data",
+      "empty": "No stock data yet."
+    },
+    "crypto": {
+      "title": "Cryptocurrencies",
+      "searchPlaceholder": "Search crypto...",
+      "countLabel": "crypto",
+      "changeLabel": "Change",
+      "volumeLabel": "Volume",
+      "marketCapLabel": "Market Cap",
+      "loading": "Loading crypto data…",
+      "error": "Failed to load crypto data",
+      "empty": "No crypto data yet."
+    },
+    "forex": {
+      "title": "Forex Rates",
+      "searchPlaceholder": "Search forex...",
+      "countLabel": "forex pairs",
+      "buyLabel": "Buy:",
+      "sellLabel": "Sell:",
+      "tcmbRates": "TCMB Rates",
+      "forexBuy": "Forex Buy:",
+      "forexSell": "Forex Sell:",
+      "banknoteBuy": "Banknote Buy:",
+      "banknoteSell": "Banknote Sell:",
+      "loading": "Loading forex rates…",
+      "error": "Failed to load forex data",
+      "empty": "No forex data yet."
+    },
+    "empty": {
+      "adminHint": "Use admin buttons to fetch data."
+    },
+    "admin": {
+      "snapshot": "Snapshot",
+      "candles": "Candles (5y)",
+      "full": "Full Update",
+      "snapshotTitle": "Refresh snapshot data",
+      "candlesTitle": "Refresh candle data (may take a while)",
+      "fullTitle": "Full update (snapshot + candles)",
+      "snapshotStarted": "Snapshot update started",
+      "candlesStarted": "Candle update started (this may take a few minutes)",
+      "fullStarted": "Full update started"
+    }
   },
   "marketChips": {
     "title": "Which markets",

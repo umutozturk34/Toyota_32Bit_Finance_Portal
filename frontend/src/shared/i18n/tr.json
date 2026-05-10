@@ -21,6 +21,7 @@
     "collapseSidebar": "Yan menüyü daralt"
   },
   "common": {
+    "localeTag": "tr-TR",
     "save": "Kaydet",
     "cancel": "Vazgeç",
     "confirm": "Onayla",
@@ -120,6 +121,71 @@
       "inappOff": "Uygulama içi kapalı"
     },
     "footer": "Uygulama içi bildirim her zaman çalışır. E-posta için ana anahtar açık olmalı."
+  },
+  "market": {
+    "sort": {
+      "changePercent": "Değişim %",
+      "price": "Fiyat",
+      "name": "İsim"
+    },
+    "stockSegments": {
+      "MAIN_INDEX": "Ana Endeksler",
+      "SECONDARY_INDEX": "Alt Endeksler",
+      "EQUITY": "Hisseler",
+      "indexLabel": "Endeks"
+    },
+    "stock": {
+      "title": "Borsa İstanbul (BIST)",
+      "searchPlaceholder": "Hisse ara...",
+      "countLabel": "hisse",
+      "openLabel": "Açılış",
+      "highLabel": "En Yüksek",
+      "lowLabel": "En Düşük",
+      "volumeLabel": "Hacim",
+      "loading": "Hisse verileri yükleniyor…",
+      "error": "Hisse senedi verileri yüklenirken hata oluştu",
+      "empty": "Henüz hisse senedi verisi yok."
+    },
+    "crypto": {
+      "title": "Kripto Paralar",
+      "searchPlaceholder": "Kripto ara...",
+      "countLabel": "kripto",
+      "changeLabel": "Değişim",
+      "volumeLabel": "Hacim",
+      "marketCapLabel": "Piyasa Değeri",
+      "loading": "Kripto verileri yükleniyor…",
+      "error": "Kripto para verileri yüklenirken hata oluştu",
+      "empty": "Henüz kripto para verisi yok."
+    },
+    "forex": {
+      "title": "Döviz Kurları",
+      "searchPlaceholder": "Döviz ara...",
+      "countLabel": "döviz çifti",
+      "buyLabel": "Alış:",
+      "sellLabel": "Satış:",
+      "tcmbRates": "TCMB Kurları",
+      "forexBuy": "Döviz Alış:",
+      "forexSell": "Döviz Satış:",
+      "banknoteBuy": "Efektif Alış:",
+      "banknoteSell": "Efektif Satış:",
+      "loading": "Döviz kurları yükleniyor…",
+      "error": "Döviz kuru verileri yüklenirken hata oluştu",
+      "empty": "Henüz döviz kuru verisi bulunmuyor."
+    },
+    "empty": {
+      "adminHint": "Admin butonlarını kullanarak veri çekebilirsiniz."
+    },
+    "admin": {
+      "snapshot": "Snapshot",
+      "candles": "Candles (5y)",
+      "full": "Full Update",
+      "snapshotTitle": "Snapshot verilerini güncelle",
+      "candlesTitle": "Mum verilerini güncelle (uzun sürebilir)",
+      "fullTitle": "Tam güncelleme (snapshot + candles)",
+      "snapshotStarted": "Snapshot güncelleme başlatıldı",
+      "candlesStarted": "Candle güncelleme başlatıldı (Bu işlem birkaç dakika sürebilir)",
+      "fullStarted": "Tam güncelleme başlatıldı"
+    }
   },
   "marketChips": {
     "title": "Hangi piyasalar",

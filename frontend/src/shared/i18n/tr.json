@@ -259,6 +259,27 @@
     },
     "footer": "© 2026 Finance Portal"
   },
+  "register": {
+    "subtitle": "Hesabını oluştur",
+    "intro": "Finance Portal'a katıl ve finansal verilerini güvenle yönetmeye başla.",
+    "cta": "Keycloak ile Kayıt Ol",
+    "haveAccount": "Zaten hesabın var mı?",
+    "loginHere": "Buradan giriş yap",
+    "features": {
+      "secureAuth": {
+        "title": "Güvenli Kimlik Doğrulama",
+        "desc": "Kurumsal seviyede Keycloak güvenliği"
+      },
+      "rbac": {
+        "title": "Rol Tabanlı Erişim",
+        "desc": "İnce taneli yetki kontrolü"
+      },
+      "twoFactor": {
+        "title": "2FA Desteği",
+        "desc": "İki faktörlü doğrulamaya hazır"
+      }
+    }
+  },
   "login": {
     "welcome": "Hesabınıza giriş yapın",
     "required": "Giriş Gerekli",

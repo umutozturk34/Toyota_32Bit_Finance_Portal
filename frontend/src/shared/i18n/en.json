@@ -259,6 +259,27 @@
     },
     "footer": "© 2026 Finance Portal"
   },
+  "register": {
+    "subtitle": "Create your account",
+    "intro": "Join Finance Portal and start managing your financial data securely.",
+    "cta": "Register with Keycloak",
+    "haveAccount": "Already have an account?",
+    "loginHere": "Login here",
+    "features": {
+      "secureAuth": {
+        "title": "Secure Authentication",
+        "desc": "Enterprise-grade Keycloak security"
+      },
+      "rbac": {
+        "title": "Role-Based Access",
+        "desc": "Granular permission control"
+      },
+      "twoFactor": {
+        "title": "2FA Support",
+        "desc": "Two-factor authentication ready"
+      }
+    }
+  },
   "login": {
     "welcome": "Sign in to your account",
     "required": "Sign-in required",

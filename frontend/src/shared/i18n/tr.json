@@ -62,6 +62,13 @@
     "body": "Bu sayfa taşınmış, silinmiş veya hiç var olmamış olabilir.",
     "home": "Ana Sayfa"
   },
+  "chartView": {
+    "compareLabel": "Karşılaştır",
+    "fundGroup": {
+      "BYF": "Borsa Yatırım Fonları",
+      "YAT": "Yatırım Fonları"
+    }
+  },
   "moversSection": {
     "fallback": "Piyasa",
     "gainers": "Yükselen",

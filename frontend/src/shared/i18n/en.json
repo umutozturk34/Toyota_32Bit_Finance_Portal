@@ -62,6 +62,13 @@
     "body": "It may have been moved, removed, or never existed.",
     "home": "Home"
   },
+  "chartView": {
+    "compareLabel": "Compare",
+    "fundGroup": {
+      "BYF": "Exchange-Traded Funds",
+      "YAT": "Mutual Funds"
+    }
+  },
   "moversSection": {
     "fallback": "Market",
     "gainers": "Gainers",

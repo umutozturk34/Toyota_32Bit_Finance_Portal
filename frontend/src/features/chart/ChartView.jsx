@@ -13,8 +13,10 @@ import { fundService, trackedAssetService } from '../../shared/services/marketSe
 import { formatBistSymbol } from '../../shared/constants/stocks';
 import { getForexPairs } from '../../shared/constants/forex';
 
-import { ASSET_ICONS, ASSET_LABELS, ROUTE_TO_ASSET_TYPE, ASSET_TYPE_TO_ROUTE, HISTORY_FETCHERS, containerVariants, itemVariants } from './lib/chartViewConstants.jsx';
+import { useTranslation } from 'react-i18next';
+import { ASSET_ICONS, ASSET_TYPE_KEYS, ROUTE_TO_ASSET_TYPE, ASSET_TYPE_TO_ROUTE, HISTORY_FETCHERS, containerVariants, itemVariants } from './lib/chartViewConstants.jsx';
 const ChartView = () => {
+  const { t } = useTranslation();
   const { coinId, assetType: routeAssetType, symbol: routeSymbol } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -221,7 +223,7 @@ const ChartView = () => {
                 Historical Analysis
               </h1>
               <p className="mt-1 text-sm text-fg-muted">
-                {ASSET_LABELS[assetType]} - {symbol} detail chart and technical analysis
+                {t(`assets.labels.${ASSET_TYPE_KEYS[assetType] ?? assetType}`, { defaultValue: assetType })} - {symbol} detail chart and technical analysis
               </p>
             </div>
           </div>
@@ -235,7 +237,7 @@ const ChartView = () => {
             <div className="rounded-lg border border-border-default bg-bg-base px-4 py-3">
               <p className="text-xs uppercase tracking-wider text-fg-muted">Detail Mode</p>
               <p className="mt-1 text-sm text-fg">
-                This page is locked to <span className="font-semibold">{ASSET_LABELS[assetType]}</span> / <span className="font-semibold">{symbol}</span>.
+                This page is locked to <span className="font-semibold">{t(`assets.labels.${ASSET_TYPE_KEYS[assetType] ?? assetType}`, { defaultValue: assetType })}</span> / <span className="font-semibold">{symbol}</span>.
               </p>
             </div>
           ) : (
@@ -255,7 +257,7 @@ const ChartView = () => {
                         }`}
                     >
                       {ASSET_ICONS[type]}
-                      {ASSET_LABELS[type]}
+                      {t(`assets.labels.${ASSET_TYPE_KEYS[type] ?? type}`, { defaultValue: type })}
                     </button>
                   ))}
                 </div>
@@ -276,7 +278,7 @@ const ChartView = () => {
                           const typeFunds = fundList.filter(f => f.fundType === type);
                           if (typeFunds.length === 0) return null;
                           return (
-                            <optgroup key={type} label={type === 'BYF' ? 'Borsa Yatırım Fonları' : 'Yatırım Fonları'}>
+                            <optgroup key={type} label={t(`chartView.fundGroup.${type}`)}>
                               {typeFunds.map(f => (
                                 <option key={f.fundCode} value={f.fundCode}>{f.fundCode}{f.name ? ` - ${f.name}` : ''}</option>
                               ))}
@@ -312,7 +314,7 @@ const ChartView = () => {
 
           <div className="space-y-2">
             <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
-              Karşılaştır
+              {t('chartView.compareLabel')}
             </label>
             <CompareBar
               compareAsset={compareAsset}

@@ -624,6 +624,16 @@
     "successBody": "Delivered to {{dispatched}}/{{total}} users",
     "failed": "Failed to send broadcast"
   },
+  "adminMessage": {
+    "label": "Message",
+    "placeholder": "Write the message you want to send to this user…",
+    "hint": "Enter to send · Shift+Enter for newline",
+    "send": "Send",
+    "sending": "Sending…",
+    "sent": "Message sent",
+    "sentBody": "Delivered to {{username}}",
+    "failed": "Failed to send message"
+  },
   "alertRow": {
     "active": "active",
     "fired": "fired",

@@ -624,6 +624,16 @@
     "successBody": "{{dispatched}}/{{total}} kullanıcıya iletildi",
     "failed": "Yayın gönderilemedi"
   },
+  "adminMessage": {
+    "label": "Mesaj",
+    "placeholder": "Kullanıcıya iletmek istediğin mesajı yaz…",
+    "hint": "Enter gönder · Shift+Enter satır",
+    "send": "Gönder",
+    "sending": "Gönderiliyor…",
+    "sent": "Mesaj gönderildi",
+    "sentBody": "{{username}} kullanıcısına iletildi",
+    "failed": "Mesaj gönderilemedi"
+  },
   "alertRow": {
     "active": "aktif",
     "fired": "tetiklendi",

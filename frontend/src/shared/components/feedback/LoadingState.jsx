@@ -1,7 +1,10 @@
 import { Loader2 } from './AnimatedIcons';
+import { useTranslation } from 'react-i18next';
 
 import { motion } from 'framer-motion';
-export default function LoadingState({ message = 'Veriler yükleniyor…' }) {
+export default function LoadingState({ message }) {
+    const { t } = useTranslation();
+    const text = message ?? t('common.loadingData');
     return (
         <div className="flex min-h-[60vh] items-center justify-center">
             <motion.div
@@ -13,7 +16,7 @@ export default function LoadingState({ message = 'Veriler yükleniyor…' }) {
                     <div className="absolute inset-0 rounded-full bg-accent/20 blur-xl animate-pulse-glow" />
                     <Loader2 className="relative h-8 w-8 animate-spin text-accent" />
                 </div>
-                <span className="text-fg-muted text-sm font-medium">{message}</span>
+                <span className="text-fg-muted text-sm font-medium">{text}</span>
             </motion.div>
         </div>
     );

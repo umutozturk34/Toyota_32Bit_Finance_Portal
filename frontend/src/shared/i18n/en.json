@@ -28,11 +28,18 @@
     "delete": "Delete",
     "edit": "Edit",
     "undo": "Undo",
+    "remove": "Remove",
+    "all": "All",
     "loading": "Loading...",
+    "loadingData": "Loading data…",
     "search": "Search",
     "close": "Close",
     "retry": "Retry",
-    "back": "Back"
+    "back": "Back",
+    "addToPortfolio": "Add to portfolio"
+  },
+  "compareBar": {
+    "placeholder": "Compare..."
   },
   "assets": {
     "labels": {

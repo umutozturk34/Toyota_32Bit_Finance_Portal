@@ -28,11 +28,18 @@
     "delete": "Sil",
     "edit": "Düzenle",
     "undo": "Geri Al",
+    "remove": "Kaldır",
+    "all": "Tümü",
     "loading": "Yükleniyor...",
+    "loadingData": "Veriler yükleniyor…",
     "search": "Ara",
     "close": "Kapat",
     "retry": "Tekrar dene",
-    "back": "Geri"
+    "back": "Geri",
+    "addToPortfolio": "Portföye Ekle"
+  },
+  "compareBar": {
+    "placeholder": "Karşılaştır..."
   },
   "assets": {
     "labels": {

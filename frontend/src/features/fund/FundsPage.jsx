@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { LineChart, Activity, Clock, Users as UsersIcon, Wallet } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
 import { fundService } from './services/fundService';
@@ -11,21 +12,16 @@ import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
 import ChangePercentBadge from '../../shared/components/asset/ChangePercentBadge';
 import useListParams from '../../shared/hooks/useListParams';
 
-const FUND_TYPE_LABELS = {
-    BYF: 'Borsa Yatırım Fonları',
-    YAT: 'Yatırım Fonları',
-};
-
-const SORT_OPTIONS = [
-    { id: 'changePercent', label: 'Değişim %' },
-    { id: 'price', label: 'Fiyat' },
-    { id: 'name', label: 'İsim' },
-];
+const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
+const FUND_TYPE_IDS = ['BYF', 'YAT'];
 
 function FundsPage() {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const listParams = useListParams();
     const typeFilter = listParams.filter || 'ALL';
+    const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) }));
+    const fundTypeLabel = (id) => FUND_TYPE_IDS.includes(id) ? t(`market.fund.types.${id}`) : id;
 
     const { data: fundTypes = [] } = useQuery({
         queryKey: ['fundTypes'],
@@ -58,7 +54,7 @@ function FundsPage() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                         <span className="rounded-md border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent-bright">
-                            {meta.fundType || 'FON'}
+                            {meta.fundType ? t(`market.fund.shortType.${meta.fundType}`, { defaultValue: meta.fundType }) : t('market.fund.fallbackBadge')}
                         </span>
                         <AssetBuyButton
                             onClick={() => setBuyTarget({ assetCode: fund.code, assetName: fund.name || fund.code, price: fund.price })}
@@ -72,7 +68,7 @@ function FundsPage() {
                     </span>
                     {meta.fundType === 'BYF' && meta.bulletinPrice != null && (
                         <div className="flex items-center gap-2 text-xs text-fg-muted">
-                            <span className="font-medium">Borsa Fiyatı</span>
+                            <span className="font-medium">{t('market.fund.exchangePriceLabel')}</span>
                             <span className="font-mono">{formatPriceTRY(meta.bulletinPrice)}</span>
                         </div>
                     )}
@@ -91,23 +87,23 @@ function FundsPage() {
                 <div className="mt-3 space-y-1 border-t border-border-default pt-3">
                     {meta.fundType === 'YAT' && meta.investorCount != null && (
                         <div className="flex items-center justify-between text-xs">
-                            <span className="flex items-center gap-1 text-fg-muted"><UsersIcon className="h-3 w-3" />Yatırımcı</span>
+                            <span className="flex items-center gap-1 text-fg-muted"><UsersIcon className="h-3 w-3" />{t('market.fund.investorLabel')}</span>
                             <span className="font-mono text-fg">{formatVolume(meta.investorCount)}</span>
                         </div>
                     )}
                     <div className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-1 text-fg-muted"><Wallet className="h-3 w-3" />Portföy</span>
+                        <span className="flex items-center gap-1 text-fg-muted"><Wallet className="h-3 w-3" />{t('market.fund.portfolioLabel')}</span>
                         <span className="font-mono text-fg">{formatCompactTRY(meta.portfolioSize)}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-1 text-fg-muted"><Activity className="h-3 w-3" />Pay Sayısı</span>
+                        <span className="flex items-center gap-1 text-fg-muted"><Activity className="h-3 w-3" />{t('market.fund.shareCountLabel')}</span>
                         <span className="font-mono text-fg">{formatVolume(meta.shareCount)}</span>
                     </div>
                 </div>
 
                 <div className="mt-2 flex items-center gap-1 text-[11px] text-fg-subtle">
                     <Clock className="h-3 w-3" />
-                    {fund.lastUpdated ? new Date(fund.lastUpdated).toLocaleString('tr-TR', { timeZone: 'Europe/Istanbul' }) : 'N/A'}
+                    {fund.lastUpdated ? new Date(fund.lastUpdated).toLocaleString(t('common.localeTag'), { timeZone: 'Europe/Istanbul' }) : 'N/A'}
                 </div>
             </AssetCard>
         );
@@ -115,7 +111,7 @@ function FundsPage() {
 
     return (
         <MarketListPage
-            title="Yatırım Fonları"
+            title={t('market.fund.title')}
             icon={<LineChart className="h-5 w-5" />}
             emptyIcon={<LineChart className="h-7 w-7 text-fg-subtle" />}
             marketType="FUND"
@@ -123,25 +119,25 @@ function FundsPage() {
             queryKey="funds"
             listParams={listParams}
             queryParams={queryParams}
-            searchPlaceholder="Fon ara..."
-            countLabel="fon"
-            sortOptions={SORT_OPTIONS}
+            searchPlaceholder={t('market.fund.searchPlaceholder')}
+            countLabel={t('market.fund.countLabel')}
+            sortOptions={sortOptions}
             filterConfig={{
-                tabItems: fundTypes.map(f => ({ type: f.type, count: f.count, label: FUND_TYPE_LABELS[f.type] || f.type })),
+                tabItems: fundTypes.map(f => ({ type: f.type, count: f.count, label: fundTypeLabel(f.type) })),
                 activeId: typeFilter,
                 onSelect: (id) => listParams.setFilter(id),
                 layoutId: 'fund-type',
             }}
             adminTriggers={[
-                { key: 'snapshot', label: 'Snapshot', title: 'Fon snapshot verilerini güncelle', fn: adminService.triggerFundSnapshot, successMsg: 'Fon snapshot güncelleme başlatıldı', refetchDelay: 5000 },
-                { key: 'candles', label: 'Candles', title: 'Fon mum verilerini güncelle', fn: adminService.triggerFundCandles, successMsg: 'Fon candle güncelleme başlatıldı' },
-                { key: 'full', label: 'Full Update', title: 'Tam güncelleme (snapshot + candles)', fn: adminService.triggerFundFull, successMsg: 'Fon tam güncelleme başlatıldı', refetchDelay: 5000 },
+                { key: 'snapshot', label: t('market.admin.snapshot'), title: t('market.admin.snapshotTitle'), fn: adminService.triggerFundSnapshot, successMsg: t('market.admin.snapshotStarted'), refetchDelay: 5000 },
+                { key: 'candles', label: t('market.admin.candles'), title: t('market.admin.candlesTitle'), fn: adminService.triggerFundCandles, successMsg: t('market.admin.candlesStarted') },
+                { key: 'full', label: t('market.admin.full'), title: t('market.admin.fullTitle'), fn: adminService.triggerFundFull, successMsg: t('market.admin.fullStarted'), refetchDelay: 5000 },
             ]}
             renderCard={renderCard}
-            loadingMessage="Fon verileri yükleniyor…"
-            errorMessage="Fon verileri yüklenirken hata oluştu"
-            emptyMessage="Henüz fon verisi bulunmuyor"
-            emptyHint="Admin butonlarını kullanarak veri çekebilirsiniz."
+            loadingMessage={t('market.fund.loading')}
+            errorMessage={t('market.fund.error')}
+            emptyMessage={t('market.fund.empty')}
+            emptyHint={t('market.empty.adminHint')}
             gridClass="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-[600px] content-start"
             animatePresence
         />

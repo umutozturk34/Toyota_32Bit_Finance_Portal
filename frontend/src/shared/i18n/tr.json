@@ -172,6 +172,84 @@
       "error": "Döviz kuru verileri yüklenirken hata oluştu",
       "empty": "Henüz döviz kuru verisi bulunmuyor."
     },
+    "fund": {
+      "title": "Yatırım Fonları",
+      "searchPlaceholder": "Fon ara...",
+      "countLabel": "fon",
+      "fallbackBadge": "FON",
+      "exchangePriceLabel": "Borsa Fiyatı",
+      "investorLabel": "Yatırımcı",
+      "portfolioLabel": "Portföy",
+      "shareCountLabel": "Pay Sayısı",
+      "loading": "Fon verileri yükleniyor…",
+      "error": "Fon verileri yüklenirken hata oluştu",
+      "empty": "Henüz fon verisi bulunmuyor",
+      "types": {
+        "BYF": "Borsa Yatırım Fonları",
+        "YAT": "Yatırım Fonları"
+      },
+      "shortType": {
+        "BYF": "BYF",
+        "YAT": "YAT",
+        "FON": "FON"
+      }
+    },
+    "commodity": {
+      "title": "Emtia",
+      "searchPlaceholder": "Emtia ara...",
+      "countLabel": "emtia",
+      "usdPriceLabel": "USD Fiyat",
+      "contractsSuffix": "kontrat",
+      "loading": "Emtia verileri yükleniyor…",
+      "error": "Emtia verileri yüklenirken hata oluştu",
+      "empty": "Henüz emtia verisi yok.",
+      "segments": {
+        "PRECIOUS_METAL": "Kıymetli Metaller",
+        "OTHER": "Diğerleri"
+      }
+    },
+    "bond": {
+      "title": "Tahvil & Bono",
+      "searchPlaceholder": "ISIN veya seri kodu ara...",
+      "countLabel": "tahvil",
+      "loading": "Tahvil verileri yükleniyor…",
+      "error": "Tahvil verileri yüklenirken hata oluştu",
+      "empty": "Henüz tahvil verisi bulunmuyor.",
+      "noSearchResults": "Aramayla eşleşen tahvil bulunamadı.",
+      "chartLoading": "Grafik yükleniyor…",
+      "noRateData": "Rate verisi yok",
+      "couponRate": "Kupon Oranı",
+      "simpleYield": "Basit Getiri",
+      "issuerLabel": "İhraççı",
+      "treasuryFallback": "HAZİNE",
+      "floating": "Değişken",
+      "startLabel": "Başlangıç",
+      "maturityLabel": "Vade Sonu",
+      "couponDateLabel": "Kupon Tarihi",
+      "daysSuffix": "g",
+      "rateChangeButton": "Faiz Değişimi",
+      "updateLabel": "Güncelle",
+      "updateTitle": "Tahvil verilerini güncelle",
+      "updateStartedTitle": "Güncelleme Başlatıldı",
+      "updateStarted": "Tahvil güncelleme başlatıldı",
+      "updateErrorTitle": "Güncelleme Hatası",
+      "sort": {
+        "simpleYield": "Basit Getiri",
+        "couponRate": "Kupon Oranı",
+        "baseIndex": "Endeks Fiyat",
+        "maturityEnd": "Vade Sonu",
+        "seriesCode": "Seri Kodu"
+      },
+      "types": {
+        "DISCOUNTED": "İskontolu",
+        "FIXED_COUPON": "Sabit Kuponlu",
+        "FLOATING_TLREF": "Değişken - TLREF",
+        "FLOATING_CPI": "Değişken - TÜFE",
+        "FLOATING_AUCTION": "Değişken - İhale",
+        "SUKUK_FIXED": "Sukuk - Sabit",
+        "SUKUK_CPI": "Sukuk - TÜFE"
+      }
+    },
     "empty": {
       "adminHint": "Admin butonlarını kullanarak veri çekebilirsiniz."
     },

@@ -172,6 +172,84 @@
       "error": "Failed to load forex data",
       "empty": "No forex data yet."
     },
+    "fund": {
+      "title": "Investment Funds",
+      "searchPlaceholder": "Search fund...",
+      "countLabel": "funds",
+      "fallbackBadge": "FUND",
+      "exchangePriceLabel": "Exchange Price",
+      "investorLabel": "Investors",
+      "portfolioLabel": "Portfolio",
+      "shareCountLabel": "Shares",
+      "loading": "Loading fund data…",
+      "error": "Failed to load fund data",
+      "empty": "No fund data yet",
+      "types": {
+        "BYF": "Exchange-Traded Funds",
+        "YAT": "Investment Funds"
+      },
+      "shortType": {
+        "BYF": "ETF",
+        "YAT": "MF",
+        "FON": "FUND"
+      }
+    },
+    "commodity": {
+      "title": "Commodities",
+      "searchPlaceholder": "Search commodity...",
+      "countLabel": "commodities",
+      "usdPriceLabel": "USD Price",
+      "contractsSuffix": "contracts",
+      "loading": "Loading commodity data…",
+      "error": "Failed to load commodity data",
+      "empty": "No commodity data yet.",
+      "segments": {
+        "PRECIOUS_METAL": "Precious Metals",
+        "OTHER": "Others"
+      }
+    },
+    "bond": {
+      "title": "Bonds & Bills",
+      "searchPlaceholder": "Search ISIN or series code...",
+      "countLabel": "bonds",
+      "loading": "Loading bond data…",
+      "error": "Failed to load bond data",
+      "empty": "No bond data yet.",
+      "noSearchResults": "No bonds match the search.",
+      "chartLoading": "Loading chart…",
+      "noRateData": "No rate data",
+      "couponRate": "Coupon Rate",
+      "simpleYield": "Simple Yield",
+      "issuerLabel": "Issuer",
+      "treasuryFallback": "TREASURY",
+      "floating": "Floating",
+      "startLabel": "Start",
+      "maturityLabel": "Maturity",
+      "couponDateLabel": "Coupon Date",
+      "daysSuffix": "d",
+      "rateChangeButton": "Rate Movement",
+      "updateLabel": "Update",
+      "updateTitle": "Refresh bond data",
+      "updateStartedTitle": "Update Started",
+      "updateStarted": "Bond update started",
+      "updateErrorTitle": "Update Error",
+      "sort": {
+        "simpleYield": "Simple Yield",
+        "couponRate": "Coupon Rate",
+        "baseIndex": "Index Price",
+        "maturityEnd": "Maturity",
+        "seriesCode": "Series Code"
+      },
+      "types": {
+        "DISCOUNTED": "Discounted",
+        "FIXED_COUPON": "Fixed Coupon",
+        "FLOATING_TLREF": "Floating - TLREF",
+        "FLOATING_CPI": "Floating - CPI",
+        "FLOATING_AUCTION": "Floating - Auction",
+        "SUKUK_FIXED": "Sukuk - Fixed",
+        "SUKUK_CPI": "Sukuk - CPI"
+      }
+    },
     "empty": {
       "adminHint": "Use admin buttons to fetch data."
     },

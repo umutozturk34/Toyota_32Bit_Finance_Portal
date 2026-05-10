@@ -1,0 +1,21 @@
+{
+  "common": {
+    "save": "Kaydet",
+    "cancel": "Vazgeç",
+    "confirm": "Onayla",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "loading": "Yükleniyor...",
+    "search": "Ara",
+    "close": "Kapat",
+    "retry": "Tekrar dene",
+    "back": "Geri"
+  },
+  "settings": {
+    "language": {
+      "title": "Dil",
+      "tr": "TR",
+      "en": "EN"
+    }
+  }
+}

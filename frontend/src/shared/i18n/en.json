@@ -1,0 +1,21 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "search": "Search",
+    "close": "Close",
+    "retry": "Retry",
+    "back": "Back"
+  },
+  "settings": {
+    "language": {
+      "title": "Language",
+      "tr": "TR",
+      "en": "EN"
+    }
+  }
+}

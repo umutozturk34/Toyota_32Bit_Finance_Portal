@@ -38,6 +38,6 @@ public class ApiTier implements RateLimitTier {
 
     @Override
     public String errorMessage() {
-        return "API istek sınırına ulaştın. Lütfen biraz bekleyip tekrar dene.";
+        return "error.rateLimit.api";
     }
 }

@@ -24,7 +24,11 @@ public class JwtLocaleResolver extends AcceptHeaderLocaleResolver {
 
     @Override
     public Locale resolveLocale(HttpServletRequest request) {
-        return claimLocale().orElseGet(() -> super.resolveLocale(request));
+        Locale headerLocale = super.resolveLocale(request);
+        if (headerLocale != null && supportedLocales.contains(headerLocale)) {
+            return headerLocale;
+        }
+        return claimLocale().orElse(defaultLocale);
     }
 
     private Optional<Locale> claimLocale() {

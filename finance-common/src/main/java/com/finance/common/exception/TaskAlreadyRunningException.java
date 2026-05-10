@@ -8,7 +8,11 @@ public class TaskAlreadyRunningException extends RuntimeException {
     private final String taskType;
 
     public TaskAlreadyRunningException(String taskType) {
-        super(taskType + " is already running, please wait");
+        super("error.task.alreadyRunning");
         this.taskType = taskType;
+    }
+
+    public Object[] getMessageArgs() {
+        return new Object[] { taskType };
     }
 }

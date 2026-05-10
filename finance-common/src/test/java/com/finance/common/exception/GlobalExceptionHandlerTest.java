@@ -45,19 +45,6 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void businessExceptionMapsToUnprocessableEntityWithCustomErrorCode() {
-        BusinessException ex = new BusinessException("duplicate portfolio name", "DUPLICATE_PORTFOLIO");
-
-        ResponseEntity<ErrorResponse> response = handler.handleBusinessException(ex, request);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_CONTENT);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getErrorCode()).isEqualTo("DUPLICATE_PORTFOLIO");
-        assertThat(response.getBody().getMessage()).isEqualTo("duplicate portfolio name");
-        assertThat(response.getBody().getPath()).isEqualTo("/api/v1/test");
-    }
-
-    @Test
     void businessExceptionFallsBackToDefaultErrorCodeWhenNotSpecified() {
         BusinessException ex = new BusinessException("something went wrong");
 

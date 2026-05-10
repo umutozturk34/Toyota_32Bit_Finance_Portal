@@ -37,6 +37,6 @@ public class AdminReadTier implements RateLimitTier {
 
     @Override
     public String errorMessage() {
-        return "Admin okuma isteği sınırına ulaştın. Lütfen kısa bir süre sonra tekrar dene.";
+        return "error.rateLimit.adminRead";
     }
 }

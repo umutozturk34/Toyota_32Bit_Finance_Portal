@@ -1,14 +1,16 @@
 package com.finance.common.model.value;
 
+import com.finance.common.exception.BadRequestException;
+
 public record AssetCode(String value) {
 
     public AssetCode {
         if (value == null) {
-            throw new IllegalArgumentException("AssetCode value cannot be null");
+            throw new BadRequestException("error.assetCode.null");
         }
         String trimmed = value.trim();
         if (trimmed.isEmpty()) {
-            throw new IllegalArgumentException("AssetCode value cannot be blank");
+            throw new BadRequestException("error.assetCode.blank");
         }
         value = trimmed.toUpperCase();
     }

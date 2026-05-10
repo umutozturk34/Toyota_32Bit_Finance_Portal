@@ -147,12 +147,25 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleTaskAlreadyRunning(TaskAlreadyRunningException ex, HttpServletRequest request) {
         log.warn("Task already running: {}", ex.getTaskType());
         ErrorResponse error = ErrorResponse.of(
-                translator.translateOrSelf(ex.getMessage()),
+                translator.translateOrSelf(ex.getMessage(), ex.getMessageArgs()),
                 "TASK_ALREADY_RUNNING",
                 request.getRequestURI()
         );
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
+                .body(error);
+    }
+
+    @ExceptionHandler(SymbolNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleSymbolNotFound(SymbolNotFoundException ex, HttpServletRequest request) {
+        log.warn("Symbol not found: {}", ex.getSymbol());
+        ErrorResponse error = ErrorResponse.of(
+                translator.translateOrSelf(ex.getMessage(), ex.getMessageArgs()),
+                "SYMBOL_NOT_FOUND",
+                request.getRequestURI()
+        );
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
                 .body(error);
     }
 

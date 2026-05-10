@@ -37,6 +37,6 @@ public class CredentialReadTier implements RateLimitTier {
 
     @Override
     public String errorMessage() {
-        return "Kimlik okuma sınırına ulaştın. Lütfen kısa bir süre sonra tekrar dene.";
+        return "error.rateLimit.credentialRead";
     }
 }

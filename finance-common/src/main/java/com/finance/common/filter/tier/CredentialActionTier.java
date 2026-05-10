@@ -41,6 +41,6 @@ public class CredentialActionTier implements RateLimitTier {
 
     @Override
     public String errorMessage() {
-        return "Kimlik işlem sınırına ulaştın. Lütfen 1 saat içinde tekrar dene.";
+        return "error.rateLimit.credentialAction";
     }
 }

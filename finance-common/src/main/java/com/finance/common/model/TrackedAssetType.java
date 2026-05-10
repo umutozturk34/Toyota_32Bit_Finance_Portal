@@ -92,7 +92,7 @@ public enum TrackedAssetType {
     protected static String ensureNonBlank(String raw) {
         String trimmed = raw == null ? "" : raw.trim();
         if (trimmed.isEmpty()) {
-            throw new IllegalArgumentException("Asset code cannot be blank");
+            throw new com.finance.common.exception.BadRequestException("error.assetCode.blank");
         }
         return trimmed;
     }

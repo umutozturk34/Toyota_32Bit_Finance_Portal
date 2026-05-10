@@ -7,11 +7,6 @@ public class BusinessException extends RuntimeException {
         this.errorCode = "BUSINESS_ERROR";
         this.messageArgs = new Object[0];
     }
-    public BusinessException(String message, String errorCode) {
-        super(message);
-        this.errorCode = errorCode;
-        this.messageArgs = new Object[0];
-    }
     public BusinessException(String message, Throwable cause) {
         super(message, cause);
         this.errorCode = "BUSINESS_ERROR";

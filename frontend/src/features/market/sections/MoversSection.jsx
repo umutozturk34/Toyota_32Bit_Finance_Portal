@@ -1,8 +1,9 @@
 import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { BarChart3, ChevronRight } from 'lucide-react';
 import { formatPriceCompactTRY, getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
-import { ASSET_TYPE_LABELS, ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
+import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
 
@@ -47,12 +48,13 @@ function AssetRow({ asset, color, onClick }) {
 
 /** @param {MoversSectionProps} props */
 function MoversSectionImpl({ data }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const market = data?.market;
   const gainers = data?.gainers ?? [];
   const losers = data?.losers ?? [];
   const color = ASSET_TYPE_COLORS[market] || '#6366f1';
-  const label = ASSET_TYPE_LABELS[market] || market || 'Piyasa';
+  const label = market ? t(`assets.labels.${market}`, { defaultValue: market }) : t('moversSection.fallback');
 
   return (
     <section
@@ -80,11 +82,11 @@ function MoversSectionImpl({ data }) {
               <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-40" />
               <span className="relative block w-1.5 h-1.5 rounded-full bg-success" />
             </span>
-            <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-success font-semibold">Yükselen</span>
+            <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-success font-semibold">{t('moversSection.gainers')}</span>
           </div>
           <div className="space-y-0.5 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
             {gainers.length === 0
-              ? <p className="text-[10px] text-fg-subtle px-2 py-3 text-center">Veri yok</p>
+              ? <p className="text-[10px] text-fg-subtle px-2 py-3 text-center">{t('moversSection.noData')}</p>
               : gainers.map((a) => <AssetRow key={a.code} asset={a} color={color} onClick={() => navigate(`${TYPE_ROUTES[market] ?? '/market'}/${a.code}`)} />)}
           </div>
         </div>
@@ -94,11 +96,11 @@ function MoversSectionImpl({ data }) {
               <span className="absolute inset-0 rounded-full bg-danger animate-ping opacity-40" />
               <span className="relative block w-1.5 h-1.5 rounded-full bg-danger" />
             </span>
-            <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-danger font-semibold">Düşen</span>
+            <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-danger font-semibold">{t('moversSection.losers')}</span>
           </div>
           <div className="space-y-0.5 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
             {losers.length === 0
-              ? <p className="text-[10px] text-fg-subtle px-2 py-3 text-center">Veri yok</p>
+              ? <p className="text-[10px] text-fg-subtle px-2 py-3 text-center">{t('moversSection.noData')}</p>
               : losers.map((a) => <AssetRow key={a.code} asset={a} color={color} onClick={() => navigate(`${TYPE_ROUTES[market] ?? '/market'}/${a.code}`)} />)}
           </div>
         </div>

@@ -48,6 +48,25 @@
     "placeholder": "Hisse, kripto, döviz, fon ara...",
     "noMatch": "\"{{query}}\" ile eşleşen sonuç bulunamadı"
   },
+  "confirmDialog": {
+    "title": "Emin misiniz?",
+    "processing": "İşleniyor..."
+  },
+  "errorState": {
+    "title": "Bir hata oluştu"
+  },
+  "notFound": {
+    "eyebrow": "Sayfa Bulunamadı",
+    "title": "Aradığınız sayfa mevcut değil",
+    "body": "Bu sayfa taşınmış, silinmiş veya hiç var olmamış olabilir.",
+    "home": "Ana Sayfa"
+  },
+  "moversSection": {
+    "fallback": "Piyasa",
+    "gainers": "Yükselen",
+    "losers": "Düşen",
+    "noData": "Veri yok"
+  },
   "errorBoundary": {
     "eyebrow": "Bir Aksaklık",
     "title": "Sayfa görüntülenirken bir hata oluştu",

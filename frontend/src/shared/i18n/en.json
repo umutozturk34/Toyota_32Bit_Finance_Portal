@@ -48,6 +48,25 @@
     "placeholder": "Search stocks, crypto, FX, funds...",
     "noMatch": "No results match \"{{query}}\""
   },
+  "confirmDialog": {
+    "title": "Are you sure?",
+    "processing": "Processing..."
+  },
+  "errorState": {
+    "title": "Something went wrong"
+  },
+  "notFound": {
+    "eyebrow": "Page not found",
+    "title": "The page you requested does not exist",
+    "body": "It may have been moved, removed, or never existed.",
+    "home": "Home"
+  },
+  "moversSection": {
+    "fallback": "Market",
+    "gainers": "Gainers",
+    "losers": "Losers",
+    "noData": "No data"
+  },
   "errorBoundary": {
     "eyebrow": "Glitch",
     "title": "An error occurred while rendering this page",

@@ -1,21 +1,26 @@
 import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle } from '../feedback/AnimatedIcons';
 
 export default function ConfirmDialog({
   open,
-  title = 'Emin misiniz?',
+  title,
   message,
-  confirmLabel = 'Sil',
-  cancelLabel = 'Vazgeç',
+  confirmLabel,
+  cancelLabel,
   variant = 'danger',
   icon: CustomIcon,
   onConfirm,
   onCancel,
   loading = false,
 }) {
+  const { t } = useTranslation();
   const Icon = CustomIcon || AlertTriangle;
+  const titleText = title ?? t('confirmDialog.title');
+  const confirmText = confirmLabel ?? t('common.delete');
+  const cancelText = cancelLabel ?? t('common.cancel');
 
   const variants = {
     danger: {
@@ -75,7 +80,7 @@ export default function ConfirmDialog({
                 <Icon className={`h-6 w-6 ${v.iconColor}`} />
               </motion.div>
               <div className="text-center space-y-1">
-                <p className="text-sm font-semibold text-fg">{title}</p>
+                <p className="text-sm font-semibold text-fg">{titleText}</p>
                 {message && (
                   <p className="text-xs text-fg-muted leading-relaxed">{message}</p>
                 )}
@@ -88,14 +93,14 @@ export default function ConfirmDialog({
                 disabled={loading}
                 className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-all cursor-pointer disabled:opacity-50"
               >
-                {cancelLabel}
+                {cancelText}
               </button>
               <button
                 onClick={onConfirm}
                 disabled={loading}
                 className={`flex-1 rounded-lg py-2.5 text-sm font-semibold text-white ${v.btnBg} transition-all border-none cursor-pointer disabled:opacity-50`}
               >
-                {loading ? 'İşleniyor...' : confirmLabel}
+                {loading ? t('confirmDialog.processing') : confirmText}
               </button>
             </div>
           </motion.div>

@@ -580,6 +580,21 @@
     "updatedBody": "{{code}} settings saved",
     "updateFailed": "Update failed"
   },
+  "assetDetail": {
+    "newLot": "New lot",
+    "pnl": "P/L",
+    "dailyPnl": "Daily P/L",
+    "noDataInRange": "No data in this range",
+    "marketValue": "Market value",
+    "unitPrice": "Unit price",
+    "stats": {
+      "quantity": "Quantity",
+      "entryDate": "Entry date",
+      "entryPrice": "Entry price",
+      "currentPrice": "Current price",
+      "marketValue": "Market value"
+    }
+  },
   "tasksPanel": {
     "title": "Task Manager",
     "active": "Active",

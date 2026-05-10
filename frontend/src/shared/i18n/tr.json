@@ -580,6 +580,21 @@
     "updatedBody": "{{code}} ayarları kaydedildi",
     "updateFailed": "Güncelleme başarısız"
   },
+  "assetDetail": {
+    "newLot": "Yeni Lot",
+    "pnl": "Kar/Zarar",
+    "dailyPnl": "Günlük K/Z",
+    "noDataInRange": "Bu aralıkta veri bulunmuyor",
+    "marketValue": "Piyasa Değeri",
+    "unitPrice": "Birim Fiyat",
+    "stats": {
+      "quantity": "Miktar",
+      "entryDate": "Giriş Tarihi",
+      "entryPrice": "Giriş Fiyatı",
+      "currentPrice": "Güncel Fiyat",
+      "marketValue": "Piyasa Değeri"
+    }
+  },
   "tasksPanel": {
     "title": "Görev Yöneticisi",
     "active": "Çalışan",

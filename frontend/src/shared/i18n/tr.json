@@ -69,6 +69,77 @@
       "YAT": "Yatırım Fonları"
     }
   },
+  "sectionRegistry": {
+    "ASSET_CARDS": {
+      "label": "Asset Kartları",
+      "description": "Sabitlediğin varlıkların anlık fiyat panosu"
+    },
+    "MOVERS": {
+      "label": "Yükselen / Düşen",
+      "description": "Seçtiğin piyasanın günlük hareketleri"
+    },
+    "WATCHLIST": {
+      "label": "Takip Listesi",
+      "description": "Maks 5 takip varlığı gösterir"
+    },
+    "NEWS": {
+      "label": "Haberler",
+      "description": "Kategori bazlı son haberler"
+    }
+  },
+  "widgetSettings": {
+    "newsHeader": "Haber kategorileri",
+    "priorityHint": "Seçim sırası = öncelik",
+    "allCategoriesHint": "Boş bırakırsan tüm kategorilerden gelir",
+    "watchlistHeader": "Liste seçimi",
+    "createListHint": "Önce <span class=\"text-accent font-semibold\">/watch</span> sayfasından bir liste oluştur.",
+    "drag": "Sürükle",
+    "removeChip": "{{code}} kaldır",
+    "assetCardHeader": "Asset Kartı",
+    "panelNameLabel": "Panel adı",
+    "panelNamePlaceholder": "Asset Kartları",
+    "pinnedAssets": "Sabitlenen varlıklar",
+    "emptyHint": "Boş — aşağıdan ara ve ekle. Boş bıraktığında varsayılan liste yüklenir.",
+    "searchHint": "Ara · seç · anında eklenir",
+    "searchPlaceholder": "BTC, AKBNK, USDTRY...",
+    "maxAssets": "Maksimum sayıda varlık eklendi",
+    "closeTooltip": "Kapat (Esc)",
+    "done": "Tamam",
+    "newsCategory": {
+      "CRYPTO": "Kripto",
+      "BORSA_ISTANBUL": "BIST",
+      "BORSA_SIRKETLERI": "Şirket",
+      "TAHVIL_BONO": "Tahvil/Bono",
+      "PARITE": "Parite",
+      "EMTIA": "Emtia",
+      "GENEL_FINANS": "Genel"
+    }
+  },
+  "widgetTray": {
+    "widgetGallery": "Widget Galerisi",
+    "assetCardTab": "Asset Kartı",
+    "watchlistTab": "Takip Listesi",
+    "newsTile": "Haberler",
+    "newAssetCard": "Yeni Asset Kartı",
+    "addNewCard": "+ Yeni Asset Kartı",
+    "queueLabel": "sırada: {{label}}",
+    "watchlistFallback": "Takip {{id}}",
+    "fullHint": "{{max}}/{{max}} doldu — silmeden ekleyemezsin",
+    "dragHint": "Sürükle veya tıkla",
+    "addedCount": "{{count}} / {{max}} eklendi",
+    "alreadyAdded": "Zaten eklenmiş",
+    "widgetLimit": "Limit {{max}} widget",
+    "assetCardLimit": "Maks {{max}} kart paneli",
+    "addPanelHint": "Yeni panel ekle: {{label}}",
+    "assetCardsN": "Asset Kartları {{n}}",
+    "movers": {
+      "STOCK": "Hisse · Yük/Düş",
+      "CRYPTO": "Kripto · Yük/Düş",
+      "FOREX": "Döviz · Yük/Düş",
+      "FUND": "Fon · Yük/Düş",
+      "COMMODITY": "Emtia · Yük/Düş"
+    }
+  },
   "moversSection": {
     "fallback": "Piyasa",
     "gainers": "Yükselen",

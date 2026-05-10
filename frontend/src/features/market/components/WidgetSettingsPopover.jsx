@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { X, Search, Layers, Newspaper, Bookmark, GripVertical, Check } from 'lucide-react';
@@ -12,15 +13,7 @@ import { CSS } from '@dnd-kit/utilities';
 import SearchSuggestions from '../../../shared/components/form/SearchSuggestions';
 import { useWatchlists } from '../../../shared/hooks/useWatchlist';
 
-const NEWS_CATEGORIES = [
-  { value: 'CRYPTO', label: 'Kripto' },
-  { value: 'BORSA_ISTANBUL', label: 'BIST' },
-  { value: 'BORSA_SIRKETLERI', label: 'Şirket' },
-  { value: 'TAHVIL_BONO', label: 'Tahvil/Bono' },
-  { value: 'PARITE', label: 'Parite' },
-  { value: 'EMTIA', label: 'Emtia' },
-  { value: 'GENEL_FINANS', label: 'Genel' },
-];
+const NEWS_CATEGORY_VALUES = ['CRYPTO', 'BORSA_ISTANBUL', 'BORSA_SIRKETLERI', 'TAHVIL_BONO', 'PARITE', 'EMTIA', 'GENEL_FINANS'];
 const POPOVER_WIDTH = 340;
 const POPOVER_MAX_HEIGHT = 460;
 const GAP = 10;
@@ -38,6 +31,7 @@ function PopoverHeader({ Icon, title }) {
 }
 
 function NewsConfig({ config, onChange }) {
+  const { t } = useTranslation();
   const selected = new Set(config?.categories || []);
   const ordered = Array.isArray(config?.categories) ? config.categories : [];
   const toggle = (value) => {
@@ -49,44 +43,45 @@ function NewsConfig({ config, onChange }) {
   };
   return (
     <>
-      <PopoverHeader Icon={Newspaper} title="Haber kategorileri" />
-      <p className="font-mono text-[9px] tracking-[0.16em] uppercase text-fg-subtle mb-2">Seçim sırası = öncelik</p>
+      <PopoverHeader Icon={Newspaper} title={t('widgetSettings.newsHeader')} />
+      <p className="font-mono text-[9px] tracking-[0.16em] uppercase text-fg-subtle mb-2">{t('widgetSettings.priorityHint')}</p>
       <div className="flex flex-wrap gap-1.5">
-        {NEWS_CATEGORIES.map((cat) => {
-          const active = selected.has(cat.value);
-          const rank = active ? ordered.indexOf(cat.value) + 1 : null;
+        {NEWS_CATEGORY_VALUES.map((value) => {
+          const active = selected.has(value);
+          const rank = active ? ordered.indexOf(value) + 1 : null;
           return (
             <button
-              key={cat.value}
+              key={value}
               type="button"
-              onClick={() => toggle(cat.value)}
+              onClick={() => toggle(value)}
               className={`relative font-display text-[11px] tracking-tight font-semibold px-2.5 py-1 rounded-md border transition-all cursor-pointer
                 ${active
                   ? 'border-accent bg-accent/15 text-accent shadow-[inset_0_0_10px_-3px_var(--color-accent)]'
                   : 'border-dashed border-border-default bg-transparent text-fg-muted hover:border-accent/50 hover:text-accent hover:bg-accent/5'}`}
             >
               {active && <span className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-accent text-bg-deep text-[9px] font-mono font-bold flex items-center justify-center">{rank}</span>}
-              {cat.label}
+              {t(`widgetSettings.newsCategory.${value}`)}
             </button>
           );
         })}
       </div>
       <p className="font-mono text-[9px] tracking-[0.14em] text-fg-subtle uppercase mt-3 leading-relaxed">
-        Boş bırakırsan tüm kategorilerden gelir
+        {t('widgetSettings.allCategoriesHint')}
       </p>
     </>
   );
 }
 
 function WatchlistConfig({ config, onChange }) {
+  const { t } = useTranslation();
   const { data: lists } = useWatchlists();
   const items = lists || [];
   return (
     <>
-      <PopoverHeader Icon={Bookmark} title="Liste seçimi" />
+      <PopoverHeader Icon={Bookmark} title={t('widgetSettings.watchlistHeader')} />
       {items.length === 0
         ? <p className="text-[11px] text-fg-subtle leading-relaxed">
-            Önce <span className="text-accent font-semibold">/watch</span> sayfasından bir liste oluştur.
+            <span dangerouslySetInnerHTML={{ __html: t('widgetSettings.createListHint') }} />
           </p>
         : <div className="space-y-1.5">
             {items.map((l) => {
@@ -112,6 +107,7 @@ function WatchlistConfig({ config, onChange }) {
 }
 
 function SortableChip({ id, code, type, onRemove }) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -129,7 +125,7 @@ function SortableChip({ id, code, type, onRemove }) {
         {...attributes}
         {...listeners}
         className="flex items-center hover:text-fg transition-colors bg-transparent border-none cursor-grab active:cursor-grabbing p-0"
-        aria-label="Sürükle"
+        aria-label={t('widgetSettings.drag')}
       >
         <GripVertical className="h-3 w-3 opacity-60" />
       </button>
@@ -139,7 +135,7 @@ function SortableChip({ id, code, type, onRemove }) {
         type="button"
         onClick={onRemove}
         className="flex items-center hover:text-danger transition-colors bg-transparent border-none cursor-pointer p-0 ml-0.5"
-        aria-label={`${code} kaldır`}
+        aria-label={t('widgetSettings.removeChip', { code })}
       >
         <X className="h-2.5 w-2.5" />
       </button>
@@ -148,6 +144,7 @@ function SortableChip({ id, code, type, onRemove }) {
 }
 
 function AssetCardsConfig({ config, onChange, autoFocusName }) {
+  const { t } = useTranslation();
   const codes = Array.isArray(config?.assetCodes) ? config.assetCodes : [];
   const name = typeof config?.name === 'string' ? config.name : '';
   const sensors = useSensors(
@@ -171,27 +168,27 @@ function AssetCardsConfig({ config, onChange, autoFocusName }) {
   const full = codes.length >= MAX_ASSET_CHIPS;
   return (
     <div className="flex flex-col h-full min-h-0">
-      <PopoverHeader Icon={Layers} title="Asset Kartı" />
+      <PopoverHeader Icon={Layers} title={t('widgetSettings.assetCardHeader')} />
       <div className="shrink-0 mb-3">
-        <label className="block font-mono text-[9px] tracking-[0.18em] uppercase text-fg-subtle mb-1">Panel adı</label>
+        <label className="block font-mono text-[9px] tracking-[0.18em] uppercase text-fg-subtle mb-1">{t('widgetSettings.panelNameLabel')}</label>
         <input
           type="text"
           value={name}
           onChange={(e) => onChange({ ...config, name: e.target.value })}
-          placeholder="Asset Kartları"
+          placeholder={t('widgetSettings.panelNamePlaceholder')}
           maxLength={40}
           autoFocus={autoFocusName}
           className="w-full font-display text-[13px] font-semibold px-2.5 py-1.5 rounded-md border border-border-default bg-bg-base/60 text-fg placeholder:text-fg-subtle focus:border-accent focus:bg-bg-base focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all"
         />
       </div>
       <div className="shrink-0 flex items-center justify-between mb-1.5">
-        <span className="font-mono text-[9px] tracking-[0.18em] uppercase text-fg-subtle">Sabitlenen varlıklar</span>
+        <span className="font-mono text-[9px] tracking-[0.18em] uppercase text-fg-subtle">{t('widgetSettings.pinnedAssets')}</span>
         <span className={`font-mono text-[9px] tabular-nums ${full ? 'text-warning' : 'text-fg-subtle'}`}>{codes.length}/{MAX_ASSET_CHIPS}</span>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto pr-1 -mr-1 mb-2" style={{ scrollbarWidth: 'thin' }}>
         {codes.length === 0
           ? <p className="text-[11px] text-fg-subtle leading-relaxed">
-              Boş — aşağıdan ara ve ekle. Boş bıraktığında varsayılan liste yüklenir.
+              {t('widgetSettings.emptyHint')}
             </p>
           : <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={ids} strategy={verticalListSortingStrategy}>
@@ -213,12 +210,12 @@ function AssetCardsConfig({ config, onChange, autoFocusName }) {
         <div className={`rounded-lg border bg-bg-base/50 px-2 py-1.5 transition-opacity ${full ? 'opacity-50 pointer-events-none border-border-default' : 'border-border-default'}`}>
           <div className="flex items-center gap-1.5 mb-1.5 px-1">
             <Search className="h-3 w-3 text-fg-subtle" />
-            <span className="font-mono text-[9px] tracking-[0.16em] uppercase text-fg-subtle">Ara · seç · anında eklenir</span>
+            <span className="font-mono text-[9px] tracking-[0.16em] uppercase text-fg-subtle">{t('widgetSettings.searchHint')}</span>
           </div>
-          <SearchSuggestions placeholder="BTC, AKBNK, USDTRY..." navigateOnSelect={false} onSelect={add} />
+          <SearchSuggestions placeholder={t('widgetSettings.searchPlaceholder')} navigateOnSelect={false} onSelect={add} />
         </div>
         {full && (
-          <p className="font-mono text-[9px] tracking-[0.14em] text-warning uppercase">Maksimum sayıda varlık eklendi</p>
+          <p className="font-mono text-[9px] tracking-[0.14em] text-warning uppercase">{t('widgetSettings.maxAssets')}</p>
         )}
       </div>
     </div>
@@ -273,6 +270,7 @@ function placeNear(anchor) {
 
 /** @param {WidgetSettingsPopoverProps} props */
 export default function WidgetSettingsPopover({ anchorEl, kind, config, autoFocusName = false, onChange, onClose }) {
+  const { t } = useTranslation();
   const ref = useRef(null);
   const [pos, setPos] = useState(() => placeNear(anchorEl));
 
@@ -325,8 +323,8 @@ export default function WidgetSettingsPopover({ anchorEl, kind, config, autoFocu
       <button
         type="button"
         onClick={onClose}
-        aria-label="Kapat"
-        title="Kapat (Esc)"
+        aria-label={t('common.close')}
+        title={t('widgetSettings.closeTooltip')}
         className="absolute top-2 right-2 z-10 flex items-center justify-center w-6 h-6 rounded-md border border-border-default bg-bg-deep/80 text-fg-muted hover:text-danger hover:border-danger/50 hover:bg-danger/10 transition-all cursor-pointer"
       >
         <X className="h-3 w-3" />
@@ -343,7 +341,7 @@ export default function WidgetSettingsPopover({ anchorEl, kind, config, autoFocu
           className="flex items-center gap-1.5 rounded-md border border-accent bg-accent text-white px-2.5 py-1 text-[11px] font-display font-semibold tracking-tight hover:bg-accent-bright shadow-md shadow-accent/20 transition-all cursor-pointer"
         >
           <Check className="h-3 w-3" />
-          Tamam
+          {t('widgetSettings.done')}
         </button>
       </div>
     </motion.div>,

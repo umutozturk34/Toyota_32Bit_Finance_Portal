@@ -69,6 +69,77 @@
       "YAT": "Mutual Funds"
     }
   },
+  "sectionRegistry": {
+    "ASSET_CARDS": {
+      "label": "Asset cards",
+      "description": "Live price board for the assets you pin"
+    },
+    "MOVERS": {
+      "label": "Gainers / Losers",
+      "description": "Daily movement for the market you pick"
+    },
+    "WATCHLIST": {
+      "label": "Watchlist",
+      "description": "Shows up to 5 tracked assets"
+    },
+    "NEWS": {
+      "label": "News",
+      "description": "Latest news by category"
+    }
+  },
+  "widgetSettings": {
+    "newsHeader": "News categories",
+    "priorityHint": "Selection order = priority",
+    "allCategoriesHint": "Leave empty to include every category",
+    "watchlistHeader": "List selection",
+    "createListHint": "First create a list from the <span class=\"text-accent font-semibold\">/watch</span> page.",
+    "drag": "Drag",
+    "removeChip": "Remove {{code}}",
+    "assetCardHeader": "Asset card",
+    "panelNameLabel": "Panel name",
+    "panelNamePlaceholder": "Asset cards",
+    "pinnedAssets": "Pinned assets",
+    "emptyHint": "Empty — search and add below. Leaving it empty loads the default list.",
+    "searchHint": "Search · pick · added instantly",
+    "searchPlaceholder": "BTC, AKBNK, USDTRY...",
+    "maxAssets": "Max assets reached",
+    "closeTooltip": "Close (Esc)",
+    "done": "Done",
+    "newsCategory": {
+      "CRYPTO": "Crypto",
+      "BORSA_ISTANBUL": "BIST",
+      "BORSA_SIRKETLERI": "Companies",
+      "TAHVIL_BONO": "Bonds",
+      "PARITE": "FX",
+      "EMTIA": "Commodities",
+      "GENEL_FINANS": "General"
+    }
+  },
+  "widgetTray": {
+    "widgetGallery": "Widget gallery",
+    "assetCardTab": "Asset card",
+    "watchlistTab": "Watchlist",
+    "newsTile": "News",
+    "newAssetCard": "New asset card",
+    "addNewCard": "+ New asset card",
+    "queueLabel": "next: {{label}}",
+    "watchlistFallback": "Watchlist {{id}}",
+    "fullHint": "{{max}}/{{max}} filled — remove one to add more",
+    "dragHint": "Drag or click",
+    "addedCount": "{{count}} / {{max}} added",
+    "alreadyAdded": "Already added",
+    "widgetLimit": "Limit {{max}} widgets",
+    "assetCardLimit": "Max {{max}} card panels",
+    "addPanelHint": "Add new panel: {{label}}",
+    "assetCardsN": "Asset cards {{n}}",
+    "movers": {
+      "STOCK": "Stocks · Up/Down",
+      "CRYPTO": "Crypto · Up/Down",
+      "FOREX": "Forex · Up/Down",
+      "FUND": "Funds · Up/Down",
+      "COMMODITY": "Commodities · Up/Down"
+    }
+  },
   "moversSection": {
     "fallback": "Market",
     "gainers": "Gainers",

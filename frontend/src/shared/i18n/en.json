@@ -566,6 +566,17 @@
       }
     }
   },
+  "broadcast": {
+    "title": "Send broadcast",
+    "subtitle": "System notification to all users",
+    "titleLabel": "Title",
+    "bodyLabel": "Message",
+    "publishCta": "Publish",
+    "sending": "Sending…",
+    "successTitle": "Broadcast sent",
+    "successBody": "Delivered to {{dispatched}}/{{total}} users",
+    "failed": "Failed to send broadcast"
+  },
   "alertRow": {
     "active": "active",
     "fired": "fired",

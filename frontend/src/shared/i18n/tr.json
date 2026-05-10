@@ -566,6 +566,17 @@
       }
     }
   },
+  "broadcast": {
+    "title": "Yayın gönder",
+    "subtitle": "Tüm kullanıcılara sistem bildirimi",
+    "titleLabel": "Başlık",
+    "bodyLabel": "Mesaj",
+    "publishCta": "Yayınla",
+    "sending": "Gönderiliyor…",
+    "successTitle": "Yayın gönderildi",
+    "successBody": "{{dispatched}}/{{total}} kullanıcıya iletildi",
+    "failed": "Yayın gönderilemedi"
+  },
   "alertRow": {
     "active": "aktif",
     "fired": "tetiklendi",

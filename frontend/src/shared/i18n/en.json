@@ -566,6 +566,25 @@
       }
     }
   },
+  "priceAlertEdit": {
+    "title": "Edit alert settings",
+    "directionLabel": "Direction",
+    "thresholdLabel": "Threshold",
+    "thresholdPlaceholder": "e.g. 1000000 (TRY) or 5 (%)",
+    "thresholdHint": "TRY price for ABOVE/BELOW, percent value for % directions.",
+    "saving": "Saving…",
+    "invalidThreshold": "Invalid threshold",
+    "invalidThresholdHint": "Enter a numeric value",
+    "updated": "Updated",
+    "updatedBody": "{{code}} alert saved",
+    "updateFailed": "Update failed",
+    "direction": {
+      "ABOVE": "Above price",
+      "BELOW": "Below price",
+      "CHANGE_PCT_UP": "% rise",
+      "CHANGE_PCT_DOWN": "% drop"
+    }
+  },
   "watchlistRow": {
     "dragToReorder": "Drag to reorder",
     "removeFromList": "Remove from list"

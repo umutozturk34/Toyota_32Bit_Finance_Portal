@@ -566,6 +566,25 @@
       }
     }
   },
+  "priceAlertEdit": {
+    "title": "Alarm ayarlarını düzenle",
+    "directionLabel": "Yön",
+    "thresholdLabel": "Eşik",
+    "thresholdPlaceholder": "örn 1000000 (TL) ya da 5 (%)",
+    "thresholdHint": "ABOVE/BELOW için TL fiyat, % yön için yüzdelik değer.",
+    "saving": "Kaydediliyor…",
+    "invalidThreshold": "Geçersiz eşik",
+    "invalidThresholdHint": "Sayısal bir değer gir",
+    "updated": "Güncellendi",
+    "updatedBody": "{{code}} alarmı kaydedildi",
+    "updateFailed": "Güncelleme başarısız",
+    "direction": {
+      "ABOVE": "Üstüne çıkarsa",
+      "BELOW": "Altına düşerse",
+      "CHANGE_PCT_UP": "% yükselişte",
+      "CHANGE_PCT_DOWN": "% düşüşte"
+    }
+  },
   "watchlistRow": {
     "dragToReorder": "Sürükleyerek sırala",
     "removeFromList": "Listeden çıkar"

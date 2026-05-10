@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { X, Pencil, Save, ArrowUp, ArrowDown, TrendingUp, TrendingDown } from 'lucide-react';
@@ -6,17 +7,19 @@ import { useUpdatePriceAlert } from '../../../shared/hooks/usePriceAlerts';
 import { toast } from '../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../shared/utils/apiError';
 
-const DIRECTION_OPTIONS = [
-  { value: 'ABOVE', label: 'Üstüne çıkarsa', Icon: ArrowUp },
-  { value: 'BELOW', label: 'Altına düşerse', Icon: ArrowDown },
-  { value: 'CHANGE_PCT_UP', label: '% yükselişte', Icon: TrendingUp },
-  { value: 'CHANGE_PCT_DOWN', label: '% düşüşte', Icon: TrendingDown },
+const DIRECTION_DEFS = [
+  { value: 'ABOVE', Icon: ArrowUp },
+  { value: 'BELOW', Icon: ArrowDown },
+  { value: 'CHANGE_PCT_UP', Icon: TrendingUp },
+  { value: 'CHANGE_PCT_DOWN', Icon: TrendingDown },
 ];
 
 export default function EditPriceAlertModal({ open, onClose, alert }) {
+  const { t } = useTranslation();
   const [direction, setDirection] = useState('ABOVE');
   const [threshold, setThreshold] = useState('');
   const update = useUpdatePriceAlert();
+  const directionOptions = DIRECTION_DEFS.map(d => ({ ...d, label: t(`priceAlertEdit.direction.${d.value}`) }));
 
   useEffect(() => {
     if (open && alert) {
@@ -31,15 +34,15 @@ export default function EditPriceAlertModal({ open, onClose, alert }) {
     const trimmed = String(threshold).trim().replace(',', '.');
     const value = Number(trimmed);
     if (trimmed === '' || Number.isNaN(value)) {
-      toast.error('Geçersiz eşik', 'Sayısal bir değer gir');
+      toast.error(t('priceAlertEdit.invalidThreshold'), t('priceAlertEdit.invalidThresholdHint'));
       return;
     }
     try {
       await update.mutateAsync({ id: alert.id, payload: { direction, threshold: value } });
-      toast.success('Güncellendi', `${alert.assetCode} alarmı kaydedildi`);
+      toast.success(t('priceAlertEdit.updated'), t('priceAlertEdit.updatedBody', { code: alert.assetCode }));
       onClose?.();
     } catch (err) {
-      toast.error(extractApiError(err, 'Güncelleme başarısız'));
+      toast.error(extractApiError(err, t('priceAlertEdit.updateFailed')));
     }
   };
 
@@ -77,16 +80,16 @@ export default function EditPriceAlertModal({ open, onClose, alert }) {
                 <Pencil className="h-4 w-4 text-accent" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-fg">Alarm ayarlarını düzenle</h2>
+                <h2 className="text-sm font-bold text-fg">{t('priceAlertEdit.title')}</h2>
                 <p className="text-xs font-mono text-fg-muted mt-0.5">{alert.assetName ?? alert.assetCode}</p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">Yön</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">{t('priceAlertEdit.directionLabel')}</span>
                 <div className="grid grid-cols-2 gap-2 mt-1.5">
-                  {DIRECTION_OPTIONS.map(({ value, label, Icon }) => {
+                  {directionOptions.map(({ value, label, Icon }) => {
                     const active = direction === value;
                     return (
                       <button
@@ -108,17 +111,17 @@ export default function EditPriceAlertModal({ open, onClose, alert }) {
               </div>
 
               <label className="block">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">Eşik</span>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">{t('priceAlertEdit.thresholdLabel')}</span>
                 <input
                   type="text"
                   inputMode="decimal"
                   value={threshold}
                   onChange={(e) => setThreshold(e.target.value)}
-                  placeholder="örn 1000000 (TL) ya da 5 (%)"
+                  placeholder={t('priceAlertEdit.thresholdPlaceholder')}
                   className="mt-1.5 w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-sm font-mono text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)] transition-all"
                 />
                 <p className="mt-1 text-[10px] text-fg-subtle leading-relaxed">
-                  ABOVE/BELOW için TL fiyat, % yön için yüzdelik değer.
+                  {t('priceAlertEdit.thresholdHint')}
                 </p>
               </label>
             </div>
@@ -130,7 +133,7 @@ export default function EditPriceAlertModal({ open, onClose, alert }) {
                 disabled={update.isPending}
                 className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-all cursor-pointer disabled:opacity-50"
               >
-                Vazgeç
+                {t('common.cancel')}
               </button>
               <motion.button
                 type="submit"
@@ -141,7 +144,7 @@ export default function EditPriceAlertModal({ open, onClose, alert }) {
                 <span aria-hidden className="absolute inset-0 bg-gradient-to-r from-accent via-accent-bright to-accent" />
                 <span className="relative flex items-center gap-2">
                   <Save className="h-3.5 w-3.5" />
-                  {update.isPending ? 'Kaydediliyor…' : 'Kaydet'}
+                  {update.isPending ? t('priceAlertEdit.saving') : t('common.save')}
                 </span>
               </motion.button>
             </div>

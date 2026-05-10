@@ -1,9 +1,14 @@
 import Keycloak from 'keycloak-js';
+import i18n from '../../../shared/i18n/config';
 const keycloak = new Keycloak({
   url: import.meta.env.VITE_KEYCLOAK_URL || 'http://localhost:8180',
   realm: import.meta.env.VITE_KEYCLOAK_REALM || 'finance-realm',
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'finance-frontend',
 });
+
+function currentLocale() {
+  return i18n.language || i18n.options.fallbackLng || 'en';
+}
 export const initKeycloak = (onAuthenticatedCallback) => {
   keycloak
     .init({
@@ -21,7 +26,7 @@ export const initKeycloak = (onAuthenticatedCallback) => {
     .catch(() => {});
 };
 export const doLogin = (options = {}) => {
-  const loginOptions = {};
+  const loginOptions = { locale: currentLocale() };
   if (options.redirectUri) {
     loginOptions.redirectUri = options.redirectUri;
   }
@@ -34,12 +39,14 @@ export const doLogout = () => {
   keycloak.logout({ redirectUri: window.location.origin });
 };
 export const doForgotPassword = () => {
-  const url = `${keycloak.authServerUrl}/realms/${keycloak.realm}/login-actions/reset-credentials?client_id=${keycloak.clientId}&redirect_uri=${encodeURIComponent(window.location.origin)}`;
+  const locale = encodeURIComponent(currentLocale());
+  const url = `${keycloak.authServerUrl}/realms/${keycloak.realm}/login-actions/reset-credentials?client_id=${keycloak.clientId}&redirect_uri=${encodeURIComponent(window.location.origin)}&kc_locale=${locale}`;
   window.location.href = url;
 };
 export const doChangePassword = () => {
   keycloak.login({
     action: 'UPDATE_PASSWORD',
+    locale: currentLocale(),
     redirectUri: window.location.href,
   });
 };

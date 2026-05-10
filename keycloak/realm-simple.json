@@ -8,7 +8,7 @@
   "emailTheme": "finance",
   "internationalizationEnabled": true,
   "supportedLocales": ["tr", "en"],
-  "defaultLocale": "tr",
+  "defaultLocale": "en",
   "registrationAllowed": true,
   "resetPasswordAllowed": true,
   "rememberMe": true,

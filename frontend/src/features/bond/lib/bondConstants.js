@@ -1,12 +1,4 @@
-export const BOND_TYPE_LABELS = {
-    DISCOUNTED: 'İskontolu',
-    FIXED_COUPON: 'Sabit Kuponlu',
-    FLOATING_TLREF: 'Değişken - TLREF',
-    FLOATING_CPI: 'Değişken - TÜFE',
-    FLOATING_AUCTION: 'Değişken - İhale',
-    SUKUK_FIXED: 'Sukuk - Sabit',
-    SUKUK_CPI: 'Sukuk - TÜFE',
-};
+export const BOND_TYPES = ['DISCOUNTED', 'FIXED_COUPON', 'FLOATING_TLREF', 'FLOATING_CPI', 'FLOATING_AUCTION', 'SUKUK_FIXED', 'SUKUK_CPI'];
 
 export const BOND_TYPE_COLORS = {
     DISCOUNTED: 'bg-blue-500/10 text-blue-400 border-blue-500/20',

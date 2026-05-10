@@ -39,7 +39,8 @@
     "addToPortfolio": "Add to portfolio",
     "sortDefault": "Default",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "searchEllipsis": "Search..."
   },
   "compareBar": {
     "placeholder": "Compare..."

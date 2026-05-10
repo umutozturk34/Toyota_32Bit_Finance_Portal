@@ -32,7 +32,7 @@ import { toast } from '../../shared/components/feedback/Toast';
 import FilterTabs from '../../shared/components/form/FilterTabs';
 import useListParams from '../../shared/hooks/useListParams';
 import { useTheme } from '../../shared/context/ThemeContext';
-import { BOND_TYPE_LABELS, BOND_TYPE_COLORS, CHART_LINE_COLORS } from './lib/bondConstants';
+import { BOND_TYPE_COLORS, CHART_LINE_COLORS } from './lib/bondConstants';
 
 const SORT_OPTION_IDS = ['simpleYield', 'couponRate', 'baseIndex', 'maturityEnd', 'seriesCode'];
 

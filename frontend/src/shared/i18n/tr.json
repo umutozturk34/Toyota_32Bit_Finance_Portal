@@ -39,7 +39,8 @@
     "addToPortfolio": "Portföye Ekle",
     "sortDefault": "Varsayılan",
     "previous": "Önceki",
-    "next": "Sonraki"
+    "next": "Sonraki",
+    "searchEllipsis": "Ara..."
   },
   "compareBar": {
     "placeholder": "Karşılaştır..."

@@ -1,6 +1,7 @@
 package com.finance.app.controller.admin;
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.news.dto.request.UpsertNewsSourceRequest;
 import com.finance.news.dto.response.NewsSourceResponse;
 import com.finance.news.service.source.NewsSourceAdminService;
@@ -20,19 +21,20 @@ public class AdminNewsSourceController {
 
     private final NewsSourceService newsSourceService;
     private final NewsSourceAdminService newsSourceAdminService;
+    private final Translator translator;
 
     @GetMapping
     public ApiResponse<List<NewsSourceResponse>> getAll(
             @RequestParam(defaultValue = "true") boolean includeDisabled
     ) {
         List<NewsSourceResponse> data = newsSourceService.getAllSources(includeDisabled);
-        return ApiResponse.success("News sources retrieved", data);
+        return ApiResponse.success(translator.translate("api.newsSource.listRetrieved"), data);
     }
 
     @GetMapping("/{id}")
     public ApiResponse<NewsSourceResponse> getById(@PathVariable Long id) {
         NewsSourceResponse data = newsSourceService.getById(id);
-        return ApiResponse.success("News source retrieved", data);
+        return ApiResponse.success(translator.translate("api.newsSource.retrieved"), data);
     }
 
     @PostMapping
@@ -40,7 +42,7 @@ public class AdminNewsSourceController {
             @Valid @RequestBody UpsertNewsSourceRequest request
     ) {
         NewsSourceResponse data = newsSourceAdminService.create(request);
-        return ApiResponse.success("News source created", data);
+        return ApiResponse.success(translator.translate("api.newsSource.created"), data);
     }
 
     @PutMapping("/{id}")
@@ -49,7 +51,7 @@ public class AdminNewsSourceController {
             @Valid @RequestBody UpsertNewsSourceRequest request
     ) {
         NewsSourceResponse data = newsSourceAdminService.update(id, request);
-        return ApiResponse.success("News source updated", data);
+        return ApiResponse.success(translator.translate("api.newsSource.updated"), data);
     }
 
     @PatchMapping("/{id}/enabled")
@@ -58,12 +60,12 @@ public class AdminNewsSourceController {
             @RequestParam boolean enabled
     ) {
         newsSourceAdminService.setEnabled(id, enabled);
-        return ApiResponse.success("News source status updated", null);
+        return ApiResponse.success(translator.translate("api.newsSource.statusUpdated"), null);
     }
 
     @DeleteMapping("/{id}")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         newsSourceAdminService.delete(id);
-        return ApiResponse.success("News source deleted", null);
+        return ApiResponse.success(translator.translate("api.newsSource.deleted"), null);
     }
 }

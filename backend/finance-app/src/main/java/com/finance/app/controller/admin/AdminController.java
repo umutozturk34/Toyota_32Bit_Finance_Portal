@@ -5,6 +5,7 @@ import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.shared.dto.response.TaskTriggerResponse;
 import com.finance.common.model.MarketType;
 import com.finance.app.service.AdminTaskService;
@@ -25,41 +26,39 @@ public class AdminController {
 
     private final AdminTaskService adminTaskService;
     private final TaskTrackingService taskTrackingService;
+    private final Translator translator;
 
     @PostMapping("/trigger/{type}/snapshot")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<TaskTriggerResponse> triggerSnapshot(@PathVariable String type) {
         MarketType marketType = parseMarketType(type);
-        String label = capitalize(type) + " snapshot triggered";
-        return ApiResponse.success(label, adminTaskService.triggerSnapshot(marketType));
+        return ApiResponse.success(translator.translate("api.admin.snapshotTriggered", capitalize(type)), adminTaskService.triggerSnapshot(marketType));
     }
 
     @PostMapping("/trigger/{type}/candles")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<TaskTriggerResponse> triggerCandles(@PathVariable String type) {
         MarketType marketType = parseMarketType(type);
-        String label = capitalize(type) + " candles triggered";
-        return ApiResponse.success(label, adminTaskService.triggerCandles(marketType));
+        return ApiResponse.success(translator.translate("api.admin.candlesTriggered", capitalize(type)), adminTaskService.triggerCandles(marketType));
     }
 
     @PostMapping("/trigger/{type}/full")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<TaskTriggerResponse> triggerFull(@PathVariable String type) {
         MarketType marketType = parseMarketType(type);
-        String label = capitalize(type) + " full update triggered";
-        return ApiResponse.success(label, adminTaskService.triggerFull(marketType));
+        return ApiResponse.success(translator.translate("api.admin.fullUpdateTriggered", capitalize(type)), adminTaskService.triggerFull(marketType));
     }
 
     @PostMapping("/trigger/bond/update")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<TaskTriggerResponse> triggerBondUpdate() {
-        return ApiResponse.success("Bond update triggered", adminTaskService.triggerBondUpdate());
+        return ApiResponse.success(translator.translate("api.admin.bondUpdateTriggered"), adminTaskService.triggerBondUpdate());
     }
 
     @PostMapping("/trigger/news/update")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<TaskTriggerResponse> triggerNewsUpdate() {
-        return ApiResponse.success("News update triggered", adminTaskService.triggerNewsUpdate());
+        return ApiResponse.success(translator.translate("api.admin.newsUpdateTriggered"), adminTaskService.triggerNewsUpdate());
     }
 
     @GetMapping(path = "/tasks/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)

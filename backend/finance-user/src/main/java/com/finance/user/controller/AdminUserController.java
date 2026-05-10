@@ -3,6 +3,7 @@ package com.finance.user.controller;
 
 import com.finance.user.dto.AdminUserResponse;
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.i18n.Translator;
 import com.finance.user.service.AdminUserService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -23,18 +24,19 @@ import java.util.List;
 public class AdminUserController {
 
     private final AdminUserService service;
+    private final Translator translator;
 
     @GetMapping
     public ApiResponse<List<AdminUserResponse>> listUsers(
             @RequestParam(defaultValue = "0") @Min(0) int first,
             @RequestParam(defaultValue = "50") @Min(1) @Max(200) int max,
             @RequestParam(required = false) String search) {
-        return ApiResponse.success("Users retrieved", service.listUsers(first, max, search));
+        return ApiResponse.success(translator.translate("api.admin.usersRetrieved"), service.listUsers(first, max, search));
     }
 
     @GetMapping("/count")
     public ApiResponse<Long> countUsers(@RequestParam(required = false) String search) {
-        return ApiResponse.success("User count retrieved", service.countUsers(search));
+        return ApiResponse.success(translator.translate("api.admin.userCountRetrieved"), service.countUsers(search));
     }
 
     @PutMapping("/{id}/ban")
@@ -42,12 +44,12 @@ public class AdminUserController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable String id) {
         service.banUser(id, jwt.getSubject());
-        return ApiResponse.success("User banned", null);
+        return ApiResponse.success(translator.translate("api.admin.userBanned"), null);
     }
 
     @PutMapping("/{id}/unban")
     public ApiResponse<Void> unbanUser(@PathVariable String id) {
         service.unbanUser(id);
-        return ApiResponse.success("User unbanned", null);
+        return ApiResponse.success(translator.translate("api.admin.userUnbanned"), null);
     }
 }

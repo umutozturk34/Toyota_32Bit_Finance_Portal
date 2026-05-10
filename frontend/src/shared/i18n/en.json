@@ -579,6 +579,49 @@
     "updatedBody": "{{code}} settings saved",
     "updateFailed": "Update failed"
   },
+  "addPriceAlert": {
+    "title": "Price alert",
+    "subtitlePrompt": "Pick an asset and set a threshold",
+    "searchLabel": "Search asset",
+    "searchPlaceholder": "BTC, AAPL, USDTRY...",
+    "change": "Change",
+    "currentPrice": "Current price",
+    "liveData": "live data",
+    "triggerLabel": "Trigger type",
+    "quickSelect": "Quick pick (relative to current price)",
+    "quickPercent": "Quick percent",
+    "thresholdPctLabel": "Threshold (%)",
+    "thresholdPriceLabel": "Threshold price (TRY)",
+    "referenceLabel": "Reference (TRY)",
+    "referencePlaceholder": "starting price",
+    "distanceFromCurrent": "{{signed}}% away from current",
+    "projected": "≈ TRY {{price}} when triggered",
+    "createCta": "Create alert",
+    "creating": "Creating…",
+    "errorAsset": "Pick an asset",
+    "errorThreshold": "Threshold must be a valid number",
+    "errorReference": "Percent alert requires a reference price",
+    "created": "{{code}} alert created",
+    "failed": "Failed to create alert",
+    "direction": {
+      "ABOVE": {
+        "label": "Crosses above",
+        "hint": "Notify when price moves above the threshold"
+      },
+      "BELOW": {
+        "label": "Drops below",
+        "hint": "Notify when price drops below the threshold"
+      },
+      "CHANGE_PCT_UP": {
+        "label": "% rises",
+        "hint": "Notify when price rises by the given % from reference"
+      },
+      "CHANGE_PCT_DOWN": {
+        "label": "% drops",
+        "hint": "Notify when price drops by the given % from reference"
+      }
+    }
+  },
   "addWatchlistItem": {
     "titleCreate": "Add to list",
     "titleUpdate": "Update list entry",

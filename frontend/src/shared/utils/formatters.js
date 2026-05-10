@@ -1,6 +1,6 @@
 import i18n from '../i18n/config';
 
-const currentLocaleTag = () => {
+export const currentLocaleTag = () => {
     const lang = i18n.language || i18n.options.fallbackLng || 'en';
     return lang === 'tr' ? 'tr-TR' : 'en-US';
 };

@@ -579,6 +579,49 @@
     "updatedBody": "{{code}} ayarları kaydedildi",
     "updateFailed": "Güncelleme başarısız"
   },
+  "addPriceAlert": {
+    "title": "Fiyat alarmı",
+    "subtitlePrompt": "Asset seç ve eşik belirle",
+    "searchLabel": "Asset Ara",
+    "searchPlaceholder": "BTC, AAPL, USDTRY...",
+    "change": "Değiştir",
+    "currentPrice": "Şu anki fiyat",
+    "liveData": "canlı veri",
+    "triggerLabel": "Tetikleme türü",
+    "quickSelect": "Hızlı seç (güncel fiyata göre)",
+    "quickPercent": "Hızlı yüzde",
+    "thresholdPctLabel": "Eşik (%)",
+    "thresholdPriceLabel": "Eşik fiyat (₺)",
+    "referenceLabel": "Referans (₺)",
+    "referencePlaceholder": "başlangıç fiyatı",
+    "distanceFromCurrent": "{{signed}}% güncelden uzakta",
+    "projected": "≈ ₺{{price}} olduğunda tetiklenir",
+    "createCta": "Alarmı Oluştur",
+    "creating": "Oluşturuluyor…",
+    "errorAsset": "Bir asset seç",
+    "errorThreshold": "Eşik geçerli bir sayı olmalı",
+    "errorReference": "Yüzde alarmı için referans fiyat gerekli",
+    "created": "{{code}} alarmı oluşturuldu",
+    "failed": "Alarm oluşturulamadı",
+    "direction": {
+      "ABOVE": {
+        "label": "Üstüne çıkarsa",
+        "hint": "Eşik fiyatın üstüne çıktığında bildir"
+      },
+      "BELOW": {
+        "label": "Altına düşerse",
+        "hint": "Eşik fiyatın altına düştüğünde bildir"
+      },
+      "CHANGE_PCT_UP": {
+        "label": "% Yükselirse",
+        "hint": "Referans fiyattan belirtilen yüzdede yükseldiğinde bildir"
+      },
+      "CHANGE_PCT_DOWN": {
+        "label": "% Düşerse",
+        "hint": "Referans fiyattan belirtilen yüzdede düştüğünde bildir"
+      }
+    }
+  },
   "addWatchlistItem": {
     "titleCreate": "Listeye ekle",
     "titleUpdate": "Liste girişini güncelle",

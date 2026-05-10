@@ -11,11 +11,61 @@
     "retry": "Retry",
     "back": "Back"
   },
+  "assets": {
+    "labels": {
+      "CRYPTO": "Crypto",
+      "STOCK": "Stock",
+      "FOREX": "Forex",
+      "FUND": "Fund",
+      "COMMODITY": "Commodity",
+      "CASH": "Cash",
+      "ALL": "All"
+    }
+  },
+  "ranges": {
+    "1M": "1M",
+    "3M": "3M",
+    "6M": "6M",
+    "1Y": "1Y",
+    "5Y": "5Y",
+    "ALL": "Max"
+  },
+  "reports": {
+    "NEVER": "Never",
+    "DAILY": "Daily",
+    "WEEKLY": "Weekly",
+    "MONTHLY": "Monthly"
+  },
+  "theme": {
+    "DARK": "Dark",
+    "LIGHT": "Light"
+  },
   "settings": {
+    "title": "Settings",
+    "subtitle": "Preferences are saved instantly",
     "language": {
       "title": "Language",
       "tr": "TR",
       "en": "EN"
-    }
+    },
+    "theme": "Theme",
+    "chartRange": "Default Chart Range",
+    "reportFrequency": "Report Frequency",
+    "notifications": "Notification Preferences",
+    "twoFactor": "Two-Factor Authentication",
+    "password": {
+      "title": "Password",
+      "change": "Change Password",
+      "sending": "…",
+      "emailLink": "Email →",
+      "hint": "Click the link in your email to set a new password.",
+      "success": "Email sent",
+      "successDesc": "Click the link in your inbox to change your password",
+      "error": "Action failed",
+      "errorDesc": "Email could not be sent"
+    },
+    "email": "Email",
+    "timezoneSuffix": "timezone (fixed)",
+    "logout": "Log out"
   }
 }

@@ -1,5 +1,7 @@
 package com.finance.user.service;
 
+import com.finance.user.client.KeycloakAdminClient;
+import com.finance.user.config.UserSecurityProperties;
 import com.finance.user.dto.UserPreferenceResponse;
 import com.finance.user.dto.UserPreferenceUpdateRequest;
 import com.finance.shared.event.EventPublisherPort;
@@ -26,6 +28,8 @@ public class UserPreferenceService {
     private final UserPreferenceMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
     private final Optional<EventPublisherPort> kafkaPort;
+    private final KeycloakAdminClient keycloakAdminClient;
+    private final UserSecurityProperties securityProperties;
 
     @Transactional(readOnly = true)
     public UserPreferenceResponse getOrDefault(String userSub) {
@@ -41,7 +45,22 @@ public class UserPreferenceService {
         applyUpdates(entity, request);
         UserPreference saved = repository.save(entity);
         eventPublisher.publishEvent(mapper.toUpdatedEvent(saved));
+        if (request.language() != null) {
+            syncLocaleToKeycloak(userSub, request.language());
+        }
         return mapper.toResponse(saved);
+    }
+
+    private void syncLocaleToKeycloak(String userSub, String language) {
+        try {
+            keycloakAdminClient.setUserAttribute(
+                    userSub,
+                    securityProperties.keycloak().localeAttribute(),
+                    language);
+        } catch (RuntimeException ex) {
+            log.warn("Failed to sync locale to Keycloak user={} language={}: {}",
+                    userSub, language, ex.getMessage());
+        }
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

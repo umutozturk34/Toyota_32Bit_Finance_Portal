@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import {
@@ -15,44 +16,33 @@ import NotificationPreferencesSection from './NotificationPreferencesSection';
 import EmailChangeSection from './EmailChangeSection';
 
 const THEME_OPTIONS = [
-  { value: 'DARK', Icon: Moon, label: 'Koyu' },
-  { value: 'LIGHT', Icon: Sun, label: 'Açık' },
+  { value: 'DARK', Icon: Moon, labelKey: 'theme.DARK' },
+  { value: 'LIGHT', Icon: Sun, labelKey: 'theme.LIGHT' },
 ];
 
 const LANGUAGE_OPTIONS = [
-  { value: 'tr', label: 'TR' },
-  { value: 'en', label: 'EN' },
+  { value: 'tr', labelKey: 'settings.language.tr' },
+  { value: 'en', labelKey: 'settings.language.en' },
 ];
 
-const CHART_RANGE_OPTIONS = [
-  { value: '1M', label: '1A' },
-  { value: '3M', label: '3A' },
-  { value: '6M', label: '6A' },
-  { value: '1Y', label: '1Y' },
-  { value: '5Y', label: '5Y' },
-  { value: 'ALL', label: 'Maks' },
-];
-
-const REPORT_OPTIONS = [
-  { value: 'NEVER', label: 'Hiç' },
-  { value: 'DAILY', label: 'Günlük' },
-  { value: 'WEEKLY', label: 'Haftalık' },
-  { value: 'MONTHLY', label: 'Aylık' },
-];
+const CHART_RANGE_VALUES = ['1M', '3M', '6M', '1Y', '5Y', 'ALL'];
+const REPORT_VALUES = ['NEVER', 'DAILY', 'WEEKLY', 'MONTHLY'];
 
 function SegmentedControl({ options, value, onChange, layoutId, compact = false }) {
+  const { t } = useTranslation();
   const padding = compact ? 'px-2 py-1' : 'px-2.5 py-1.5';
   return (
     <div className="flex gap-0.5 rounded-lg border border-border-default bg-bg-elevated p-0.5 overflow-hidden">
       {options.map((opt) => {
         const Icon = opt.Icon;
         const active = value === opt.value;
+        const label = opt.labelKey ? t(opt.labelKey) : opt.label;
         return (
           <button
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            title={opt.label}
+            title={label}
             className={`relative flex-1 rounded-md ${padding} text-[11px] font-medium transition-all border-none cursor-pointer bg-transparent flex items-center justify-center`}
           >
             {active && (
@@ -63,7 +53,7 @@ function SegmentedControl({ options, value, onChange, layoutId, compact = false 
               />
             )}
             <span className={`relative z-10 flex items-center justify-center gap-1 ${active ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
-              {Icon ? <Icon className="h-3.5 w-3.5" /> : opt.label}
+              {Icon ? <Icon className="h-3.5 w-3.5" /> : label}
             </span>
           </button>
         );
@@ -85,11 +75,15 @@ function Section({ icon: Icon, title, children }) {
 }
 
 export default function SettingsSidebar({ isOpen, onClose }) {
+  const { t } = useTranslation();
   const { preferences } = useUserPreferences();
   const updatePreferences = useUpdateUserPreferences();
   const { themePreference, setThemePreference } = useTheme();
   const { logout } = useAuth();
   const [passwordSending, setPasswordSending] = useState(false);
+
+  const chartRangeOptions = CHART_RANGE_VALUES.map((v) => ({ value: v, label: t(`ranges.${v}`) }));
+  const reportOptions = REPORT_VALUES.map((v) => ({ value: v, label: t(`reports.${v}`) }));
 
   const handleChange = (field) => (value) => {
     if (field === 'theme') {
@@ -108,10 +102,10 @@ export default function SettingsSidebar({ isOpen, onClose }) {
     setPasswordSending(true);
     try {
       await userCredentialService.initiatePasswordChange(`${window.location.origin}/`);
-      toast.success('E-posta gönderildi', 'Gelen kutunuzdaki linke tıklayarak şifrenizi değiştirin');
+      toast.success(t('settings.password.success'), t('settings.password.successDesc'));
       onClose();
     } catch (err) {
-      toast.error('İşlem başarısız', err?.response?.data?.message || 'E-posta gönderilemedi');
+      toast.error(t('settings.password.error'), err?.response?.data?.message || t('settings.password.errorDesc'));
     } finally {
       setPasswordSending(false);
     }
@@ -144,8 +138,8 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                   <SettingsIcon className="h-4 w-4 text-accent" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-fg">Ayarlar</h2>
-                  <p className="text-xs text-fg-muted">Tercihler anlık olarak kaydedilir</p>
+                  <h2 className="text-base font-semibold text-fg">{t('settings.title')}</h2>
+                  <p className="text-xs text-fg-muted">{t('settings.subtitle')}</p>
                 </div>
               </div>
               <button
@@ -158,7 +152,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
 
             <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
               <div className="grid grid-cols-[1fr_auto] gap-4 items-start">
-                <Section icon={Palette} title="Tema">
+                <Section icon={Palette} title={t('settings.theme')}>
                   <SegmentedControl
                     options={THEME_OPTIONS}
                     value={themePreference}
@@ -166,7 +160,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                     layoutId="settings-theme"
                   />
                 </Section>
-                <Section icon={Languages} title="Dil">
+                <Section icon={Languages} title={t('settings.language.title')}>
                   <SegmentedControl
                     options={LANGUAGE_OPTIONS}
                     value={preferences.language}
@@ -177,33 +171,33 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                 </Section>
               </div>
 
-              <Section icon={BarChart3} title="Varsayılan Grafik Aralığı">
+              <Section icon={BarChart3} title={t('settings.chartRange')}>
                 <SegmentedControl
-                  options={CHART_RANGE_OPTIONS}
+                  options={chartRangeOptions}
                   value={preferences.defaultChartRange}
                   onChange={handleChange('defaultChartRange')}
                   layoutId="settings-chart-range"
                 />
               </Section>
 
-              <Section icon={Bell} title="Rapor Sıklığı">
+              <Section icon={Bell} title={t('settings.reportFrequency')}>
                 <SegmentedControl
-                  options={REPORT_OPTIONS}
+                  options={reportOptions}
                   value={preferences.reportFrequency}
                   onChange={handleChange('reportFrequency')}
                   layoutId="settings-report"
                 />
               </Section>
 
-              <Section icon={Bell} title="Bildirim Tercihleri">
+              <Section icon={Bell} title={t('settings.notifications')}>
                 <NotificationPreferencesSection />
               </Section>
 
-              <Section icon={Shield} title="İki Adımlı Doğrulama">
+              <Section icon={Shield} title={t('settings.twoFactor')}>
                 <TwoFactorPanel />
               </Section>
 
-              <Section icon={KeyRound} title="Şifre">
+              <Section icon={KeyRound} title={t('settings.password.title')}>
                 <button
                   onClick={handleChangePassword}
                   disabled={passwordSending}
@@ -211,21 +205,21 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                 >
                   <span className="flex items-center gap-2">
                     <KeyRound className="h-3.5 w-3.5 text-accent" />
-                    Şifre Değiştir
+                    {t('settings.password.change')}
                   </span>
-                  <span className="text-[10px] text-fg-muted">{passwordSending ? '…' : 'E-posta →'}</span>
+                  <span className="text-[10px] text-fg-muted">{passwordSending ? t('settings.password.sending') : t('settings.password.emailLink')}</span>
                 </button>
                 <p className="text-[10px] text-fg-subtle leading-relaxed px-1 mt-1.5">
-                  E-posta adresine gelen linke tıklayarak yeni şifre belirleyebilirsin.
+                  {t('settings.password.hint')}
                 </p>
               </Section>
 
-              <Section icon={Mail} title="E-posta">
+              <Section icon={Mail} title={t('settings.email')}>
                 <EmailChangeSection />
               </Section>
 
               <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-[11px] text-fg-muted">
-                <span className="font-mono text-fg">{preferences.timezone}</span> saat dilimi (sabit)
+                <span className="font-mono text-fg">{preferences.timezone}</span> {t('settings.timezoneSuffix')}
               </div>
             </div>
 
@@ -235,7 +229,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                 className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold text-danger border border-danger/30 bg-danger/5 hover:bg-danger/10 transition-all cursor-pointer"
               >
                 <LogOut className="h-3.5 w-3.5" />
-                Çıkış Yap
+                {t('settings.logout')}
               </button>
             </div>
           </motion.aside>

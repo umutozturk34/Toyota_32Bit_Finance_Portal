@@ -11,11 +11,61 @@
     "retry": "Tekrar dene",
     "back": "Geri"
   },
+  "assets": {
+    "labels": {
+      "CRYPTO": "Kripto",
+      "STOCK": "Hisse",
+      "FOREX": "Döviz",
+      "FUND": "Fon",
+      "COMMODITY": "Emtia",
+      "CASH": "Nakit",
+      "ALL": "Tümü"
+    }
+  },
+  "ranges": {
+    "1M": "1A",
+    "3M": "3A",
+    "6M": "6A",
+    "1Y": "1Y",
+    "5Y": "5Y",
+    "ALL": "Maks"
+  },
+  "reports": {
+    "NEVER": "Hiç",
+    "DAILY": "Günlük",
+    "WEEKLY": "Haftalık",
+    "MONTHLY": "Aylık"
+  },
+  "theme": {
+    "DARK": "Koyu",
+    "LIGHT": "Açık"
+  },
   "settings": {
+    "title": "Ayarlar",
+    "subtitle": "Tercihler anlık olarak kaydedilir",
     "language": {
       "title": "Dil",
       "tr": "TR",
       "en": "EN"
-    }
+    },
+    "theme": "Tema",
+    "chartRange": "Varsayılan Grafik Aralığı",
+    "reportFrequency": "Rapor Sıklığı",
+    "notifications": "Bildirim Tercihleri",
+    "twoFactor": "İki Adımlı Doğrulama",
+    "password": {
+      "title": "Şifre",
+      "change": "Şifre Değiştir",
+      "sending": "…",
+      "emailLink": "E-posta →",
+      "hint": "E-posta adresine gelen linke tıklayarak yeni şifre belirleyebilirsin.",
+      "success": "E-posta gönderildi",
+      "successDesc": "Gelen kutunuzdaki linke tıklayarak şifrenizi değiştirin",
+      "error": "İşlem başarısız",
+      "errorDesc": "E-posta gönderilemedi"
+    },
+    "email": "E-posta",
+    "timezoneSuffix": "saat dilimi (sabit)",
+    "logout": "Çıkış Yap"
   }
 }

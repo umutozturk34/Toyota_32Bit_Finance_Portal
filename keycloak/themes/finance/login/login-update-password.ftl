@@ -8,7 +8,7 @@
                 </span>
                 ${msg("updatePasswordTitle")}
             </h3>
-            <p class="fp-section-desc">Choose a new secure password</p>
+            <p class="fp-section-desc">${msg("updatePassword.subtitle")}</p>
         </div>
 
         <form id="kc-passwd-update-form" action="${url.loginAction}" method="post">

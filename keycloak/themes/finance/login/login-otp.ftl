@@ -8,7 +8,7 @@
                 </span>
                 ${msg("loginTotpTitle")}
             </h3>
-            <p class="fp-section-desc">Enter the code from your authenticator app</p>
+            <p class="fp-section-desc">${msg("loginOtp.subtitle")}</p>
         </div>
 
         <form id="kc-otp-login-form" action="${url.loginAction}" method="post">

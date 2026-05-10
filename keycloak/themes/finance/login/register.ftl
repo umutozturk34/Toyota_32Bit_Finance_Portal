@@ -8,7 +8,7 @@
                 </span>
                 ${msg("registerTitle")}
             </h3>
-            <p class="fp-section-desc">Create your Finance Portal account</p>
+            <p class="fp-section-desc">${msg("register.subtitle")}</p>
         </div>
 
         <form id="kc-register-form" action="${url.registrationAction}" method="post">
@@ -87,7 +87,7 @@
             </div>
 
             <div id="kc-registration" style="margin-top: 1.25rem; text-align: center;">
-                <span>Already have an account? <a href="${url.loginUrl}">${kcSanitize(msg("backToLogin"))?no_esc}</a></span>
+                <span>${msg("register.alreadyHaveAccount")} <a href="${url.loginUrl}">${kcSanitize(msg("backToLogin"))?no_esc}</a></span>
             </div>
         </form>
     </#if>

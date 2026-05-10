@@ -27,6 +27,7 @@ app:
     keycloak:
       frontend-client-id: finance-frontend
       theme-attribute: themePreference
+      locale-attribute: locale
   security:
     cors:
       allowed-origin-patterns:

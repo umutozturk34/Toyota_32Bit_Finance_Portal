@@ -566,6 +566,21 @@
       }
     }
   },
+  "watchlistRow": {
+    "dragToReorder": "Sürükleyerek sırala",
+    "removeFromList": "Listeden çıkar"
+  },
+  "assetActions": {
+    "inFavorites": "Favorilerde",
+    "addToFavorites": "Favorilere ekle",
+    "addToFavoritesTitle": "Favorilere ekle",
+    "removeFromFavoritesTitle": "Favorilerden çıkar",
+    "addToList": "Listeye ekle",
+    "addToOtherList": "Başka bir listeye ekle",
+    "priceAlert": "Fiyat alarmı",
+    "addedToFavorites": "{{code}} favorilere eklendi",
+    "removedFromFavorites": "{{code}} favorilerden çıkarıldı"
+  },
   "broadcast": {
     "title": "Yayın gönder",
     "subtitle": "Tüm kullanıcılara sistem bildirimi",

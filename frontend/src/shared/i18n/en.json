@@ -566,6 +566,21 @@
       }
     }
   },
+  "watchlistRow": {
+    "dragToReorder": "Drag to reorder",
+    "removeFromList": "Remove from list"
+  },
+  "assetActions": {
+    "inFavorites": "In Favorites",
+    "addToFavorites": "Add to favorites",
+    "addToFavoritesTitle": "Add to favorites",
+    "removeFromFavoritesTitle": "Remove from favorites",
+    "addToList": "Add to list",
+    "addToOtherList": "Add to another list",
+    "priceAlert": "Price alert",
+    "addedToFavorites": "{{code}} added to favorites",
+    "removedFromFavorites": "{{code}} removed from favorites"
+  },
   "broadcast": {
     "title": "Send broadcast",
     "subtitle": "System notification to all users",

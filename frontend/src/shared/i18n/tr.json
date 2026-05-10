@@ -413,6 +413,48 @@
     "emptyEditHint": "Düzenle ile widget ekle",
     "startEdit": "Düzene Geç"
   },
+  "watch": {
+    "headerTitle": "Takip",
+    "tabs": {
+      "watchlist": "Takip listesi",
+      "alerts": "Fiyat alarmları"
+    },
+    "myLists": "Takip listelerim",
+    "newListCta": "Yeni liste",
+    "deleteListTitle": "Listeyi sil",
+    "addAsset": "Asset ekle",
+    "createAlert": "Alarm oluştur",
+    "loading": "Yükleniyor…",
+    "listsLoading": "Listeler yükleniyor…",
+    "headers": {
+      "asset": "Varlık",
+      "lastPrice": "Son fiyat",
+      "direction": "Yön",
+      "threshold": "Eşik",
+      "status": "Durum"
+    },
+    "emptyList": {
+      "title": "Liste boş",
+      "titleNamed": "\"{{name}}\" listesi boş",
+      "hint": "Bir crypto, hisse, döviz veya fon ekle, hareketleri buradan izle."
+    },
+    "emptyAlerts": {
+      "title": "Henüz alarmın yok",
+      "hint": "Bir asset için ABOVE/BELOW veya yüzde değişim alarmı kur."
+    },
+    "deleteListConfirm": {
+      "title": "Listeyi sil?",
+      "message": "\"{{name}}\" ve içindeki tüm assetler kalıcı olarak silinecek."
+    },
+    "toast": {
+      "itemRemoved": "Listeden çıkarıldı",
+      "alertDeleted": "Alarm silindi",
+      "alertReactivated": "Alarm yeniden aktifleştirildi",
+      "listDeleted": "Liste silindi",
+      "deleteFailed": "Silme başarısız",
+      "reactivateFailed": "Aktifleştirme başarısız"
+    }
+  },
   "newsDetail": {
     "loading": "Haber yükleniyor...",
     "error": "Haber yüklenirken bir hata oluştu.",

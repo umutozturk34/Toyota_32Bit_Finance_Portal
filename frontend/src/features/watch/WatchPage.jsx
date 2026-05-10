@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import {
   DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors,
@@ -41,9 +42,10 @@ import { WATCHLIST_SORT_OPTIONS, DIRECTION_META, assetRoute } from './lib/watchC
 import WatchlistRow from './components/WatchlistRow';
 import AlertRow from './components/AlertRow';
 function ViewTabs({ view, onChange, watchCount, alertsCount }) {
+  const { t } = useTranslation();
   const tabs = [
-    { id: 'watchlist', label: 'Takip listesi', Icon: Star, count: watchCount },
-    { id: 'alerts', label: 'Fiyat alarmları', Icon: AlertCircle, count: alertsCount },
+    { id: 'watchlist', label: t('watch.tabs.watchlist'), Icon: Star, count: watchCount },
+    { id: 'alerts', label: t('watch.tabs.alerts'), Icon: AlertCircle, count: alertsCount },
   ];
   return (
     <div className="flex gap-1 rounded-xl border border-border-default bg-bg-elevated p-1 self-start">
@@ -80,6 +82,7 @@ function ViewTabs({ view, onChange, watchCount, alertsCount }) {
 }
 
 function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-wrap items-center gap-2">
       {lists.map((list) => {
@@ -117,7 +120,7 @@ function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
                 className={`flex items-center justify-center px-1.5 border-l shrink-0 bg-transparent cursor-pointer ${
                   active ? 'border-accent/30 text-accent/70 hover:text-danger' : 'border-border-default text-fg-muted hover:text-danger hover:bg-danger/5'
                 }`}
-                title="Listeyi sil"
+                title={t('watch.deleteListTitle')}
               >
                 <Trash2 className="h-3 w-3" />
               </button>
@@ -131,13 +134,14 @@ function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border border-dashed border-border-default text-fg-muted hover:border-accent hover:text-accent hover:bg-accent/5 transition-colors shrink-0 cursor-pointer bg-transparent"
       >
         <ListPlus className="h-3.5 w-3.5" />
-        Yeni liste
+        {t('watch.newListCta')}
       </button>
     </div>
   );
 }
 
 export default function WatchPage() {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const view = searchParams.get('view') === 'alerts' ? 'alerts' : 'watchlist';
   const setView = useCallback((next) => {
@@ -195,27 +199,27 @@ export default function WatchPage() {
   const handleRemoveWatchlistItem = async (id) => {
     try {
       await removeWatchlistItem.mutateAsync(id);
-      toast.success('Listeden çıkarıldı');
+      toast.success(t('watch.toast.itemRemoved'));
     } catch (err) {
-      toast.error(extractApiError(err, 'Silme başarısız'));
+      toast.error(extractApiError(err, t('watch.toast.deleteFailed')));
     }
   };
 
   const handleDeleteAlert = async (id) => {
     try {
       await deletePriceAlert.mutateAsync(id);
-      toast.success('Alarm silindi');
+      toast.success(t('watch.toast.alertDeleted'));
     } catch (err) {
-      toast.error(extractApiError(err, 'Silme başarısız'));
+      toast.error(extractApiError(err, t('watch.toast.deleteFailed')));
     }
   };
 
   const handleReactivateAlert = async (id) => {
     try {
       await reactivatePriceAlert.mutateAsync(id);
-      toast.success('Alarm yeniden aktifleştirildi');
+      toast.success(t('watch.toast.alertReactivated'));
     } catch (err) {
-      toast.error(extractApiError(err, 'Aktifleştirme başarısız'));
+      toast.error(extractApiError(err, t('watch.toast.reactivateFailed')));
     }
   };
 
@@ -230,10 +234,10 @@ export default function WatchPage() {
     setPendingDeleteList(null);
     try {
       await deleteWatchlist.mutateAsync(list.id);
-      toast.success('Liste silindi');
+      toast.success(t('watch.toast.listDeleted'));
       if (activeListId === list.id) setActiveListId(null);
     } catch (err) {
-      toast.error(extractApiError(err, 'Silme başarısız'));
+      toast.error(extractApiError(err, t('watch.toast.deleteFailed')));
     }
   };
 
@@ -241,7 +245,7 @@ export default function WatchPage() {
     <div className="space-y-5">
       <PageHeader
         icon={<Eye className="h-5 w-5" />}
-        title="Takip"
+        title={t('watch.headerTitle')}
         onRefresh={() => {
           if (isWatchlist) { lists.refetch(); items.refetch(); }
           else { alerts.refetch(); }
@@ -258,7 +262,7 @@ export default function WatchPage() {
         <header className="flex items-center justify-between px-4 py-3 border-b border-border-default gap-3">
           <div className="flex items-center gap-2 shrink-0">
             <Star className="h-4 w-4 text-warning" />
-            <h2 className="text-sm font-bold text-fg tracking-tight">Takip listelerim</h2>
+            <h2 className="text-sm font-bold text-fg tracking-tight">{t('watch.myLists')}</h2>
           </div>
           <motion.button
             onClick={() => setAddItemOpen(true)}
@@ -269,14 +273,14 @@ export default function WatchPage() {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright shadow-lg shadow-accent/20 transition-colors border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="h-3.5 w-3.5" />
-            Asset ekle
+            {t('watch.addAsset')}
           </motion.button>
         </header>
         <div className="px-4 py-3 border-b border-border-default">
           {lists.isLoading ? (
             <div className="flex items-center gap-2 text-xs text-fg-muted">
               <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
-              Listeler yükleniyor…
+              {t('watch.listsLoading')}
             </div>
           ) : (
             <WatchlistTabs
@@ -310,21 +314,21 @@ export default function WatchPage() {
         <div className="grid grid-cols-[auto_auto_1fr_auto_auto] gap-3 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
           <span className="w-6" />
           <span className="w-9">&nbsp;</span>
-          <span>Varlık</span>
-          <span className="text-right">Son fiyat</span>
+          <span>{t('watch.headers.asset')}</span>
+          <span className="text-right">{t('watch.headers.lastPrice')}</span>
           <span className="min-w-[64px]" />
         </div>
         <div className="flex flex-col">
           {items.isLoading || activeListId == null ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-fg-muted">
               <Loader2 className="h-4 w-4 animate-spin text-accent" />
-              Yükleniyor…
+              {t('watch.loading')}
             </div>
           ) : watchItems.length === 0 ? (
             <EmptyState
               icon={<Inbox className="h-5 w-5 text-fg-subtle" />}
-              title={activeList ? `"${activeList.name}" listesi boş` : 'Liste boş'}
-              hint="Bir crypto, hisse, döviz veya fon ekle, hareketleri buradan izle."
+              title={activeList ? t('watch.emptyList.titleNamed', { name: activeList.name }) : t('watch.emptyList.title')}
+              hint={t('watch.emptyList.hint')}
             />
           ) : sortBy === 'CUSTOM' ? (
             <DndContext
@@ -360,7 +364,7 @@ export default function WatchPage() {
         <header className="flex items-center justify-between px-4 py-3 border-b border-border-default">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-accent" />
-            <h2 className="text-sm font-bold text-fg tracking-tight">Fiyat alarmları</h2>
+            <h2 className="text-sm font-bold text-fg tracking-tight">{t('watch.tabs.alerts')}</h2>
             <span className="text-[10px] font-mono text-fg-subtle px-1.5 py-0.5 rounded-md bg-surface">
               {alertItems.length}
             </span>
@@ -373,28 +377,28 @@ export default function WatchPage() {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright shadow-lg shadow-accent/20 transition-colors border-none cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5" />
-            Alarm oluştur
+            {t('watch.createAlert')}
           </motion.button>
         </header>
         <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
           <span className="w-9">&nbsp;</span>
-          <span>Varlık</span>
-          <span>Yön</span>
-          <span className="text-right min-w-[90px]">Eşik</span>
-          <span className="min-w-[80px]">Durum</span>
+          <span>{t('watch.headers.asset')}</span>
+          <span>{t('watch.headers.direction')}</span>
+          <span className="text-right min-w-[90px]">{t('watch.headers.threshold')}</span>
+          <span className="min-w-[80px]">{t('watch.headers.status')}</span>
           <span className="min-w-[110px]" />
         </div>
         <div className="divide-y divide-border-default">
           {alerts.isLoading ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-fg-muted">
               <Loader2 className="h-4 w-4 animate-spin text-accent" />
-              Yükleniyor…
+              {t('watch.loading')}
             </div>
           ) : alertItems.length === 0 ? (
             <EmptyState
               icon={<Inbox className="h-5 w-5 text-fg-subtle" />}
-              title="Henüz alarmın yok"
-              hint="Bir asset için ABOVE/BELOW veya yüzde değişim alarmı kur."
+              title={t('watch.emptyAlerts.title')}
+              hint={t('watch.emptyAlerts.hint')}
             />
           ) : (
             alertItems.map((alert) => (
@@ -430,10 +434,10 @@ export default function WatchPage() {
       />
       <ConfirmDialog
         open={pendingDeleteList != null}
-        title="Listeyi sil?"
-        message={pendingDeleteList ? `"${pendingDeleteList.name}" ve içindeki tüm assetler kalıcı olarak silinecek.` : ''}
-        confirmLabel="Sil"
-        cancelLabel="Vazgeç"
+        title={t('watch.deleteListConfirm.title')}
+        message={pendingDeleteList ? t('watch.deleteListConfirm.message', { name: pendingDeleteList.name }) : ''}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
         variant="danger"
         loading={deleteWatchlist.isPending}
         onConfirm={confirmDeleteList}

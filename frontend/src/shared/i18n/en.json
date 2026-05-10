@@ -413,6 +413,48 @@
     "emptyEditHint": "Add widgets via Edit",
     "startEdit": "Start Editing"
   },
+  "watch": {
+    "headerTitle": "Watch",
+    "tabs": {
+      "watchlist": "Watchlist",
+      "alerts": "Price Alerts"
+    },
+    "myLists": "My watchlists",
+    "newListCta": "New list",
+    "deleteListTitle": "Delete list",
+    "addAsset": "Add asset",
+    "createAlert": "Create alert",
+    "loading": "Loading…",
+    "listsLoading": "Loading lists…",
+    "headers": {
+      "asset": "Asset",
+      "lastPrice": "Last price",
+      "direction": "Direction",
+      "threshold": "Threshold",
+      "status": "Status"
+    },
+    "emptyList": {
+      "title": "List is empty",
+      "titleNamed": "\"{{name}}\" list is empty",
+      "hint": "Add a crypto, stock, forex or fund and track its movements here."
+    },
+    "emptyAlerts": {
+      "title": "No alerts yet",
+      "hint": "Set ABOVE/BELOW or percent-change alerts on any asset."
+    },
+    "deleteListConfirm": {
+      "title": "Delete list?",
+      "message": "\"{{name}}\" and all assets inside will be permanently deleted."
+    },
+    "toast": {
+      "itemRemoved": "Removed from list",
+      "alertDeleted": "Alert deleted",
+      "alertReactivated": "Alert reactivated",
+      "listDeleted": "List deleted",
+      "deleteFailed": "Delete failed",
+      "reactivateFailed": "Reactivate failed"
+    }
+  },
   "newsDetail": {
     "loading": "Loading article...",
     "error": "Failed to load the article.",

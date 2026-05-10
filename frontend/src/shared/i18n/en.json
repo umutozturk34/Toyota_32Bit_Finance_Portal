@@ -566,11 +566,40 @@
       }
     }
   },
+  "alertRow": {
+    "active": "active",
+    "fired": "fired",
+    "reactivate": "Reactivate",
+    "direction": {
+      "ABOVE": "above",
+      "BELOW": "below",
+      "CHANGE_PCT_UP": "% rise",
+      "CHANGE_PCT_DOWN": "% drop"
+    }
+  },
+  "createWatchlist": {
+    "title": "New list",
+    "subtitle": "You can create up to 20 lists",
+    "listNameLabel": "List Name",
+    "namePlaceholder": "Crypto Investments",
+    "createCta": "Create",
+    "creating": "Creating…",
+    "nameRequired": "List name is required",
+    "successToast": "\"{{name}}\" created",
+    "createFailed": "Failed to create list"
+  },
   "watch": {
     "headerTitle": "Watch",
     "tabs": {
       "watchlist": "Watchlist",
       "alerts": "Price Alerts"
+    },
+    "sortOptions": {
+      "CUSTOM": "My order",
+      "NAME": "Alphabetical",
+      "CURRENT_PRICE": "Price",
+      "CHANGE_PERCENT": "% Change",
+      "ADDED_AT": "Added at"
     },
     "myLists": "My watchlists",
     "newListCta": "New list",

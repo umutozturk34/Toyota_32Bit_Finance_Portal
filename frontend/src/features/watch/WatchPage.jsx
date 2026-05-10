@@ -38,7 +38,7 @@ import { toast } from '../../shared/components/feedback/Toast';
 import { extractApiError } from '../../shared/utils/apiError';
 import { formatPriceTRY, formatPercent, getChangeClass, changeColors, changeBg } from '../../shared/utils/formatters';
 
-import { WATCHLIST_SORT_OPTIONS, DIRECTION_META, assetRoute } from './lib/watchConstants';
+import { WATCHLIST_SORT_OPTION_IDS, DIRECTION_META, assetRoute } from './lib/watchConstants';
 import WatchlistRow from './components/WatchlistRow';
 import AlertRow from './components/AlertRow';
 function ViewTabs({ view, onChange, watchCount, alertsCount }) {
@@ -192,6 +192,7 @@ export default function WatchPage() {
   );
 
   const watchItems = items.data ?? [];
+  const watchlistSortOptions = WATCHLIST_SORT_OPTION_IDS.map(id => ({ id, label: t(`watch.sortOptions.${id}`) }));
   const alertItems = alerts.data?.content ?? alerts.data?.items ?? [];
   const alertTotalPages = alerts.data?.totalPages ?? 0;
   const activeList = watchlists.find((w) => w.id === activeListId);
@@ -296,7 +297,7 @@ export default function WatchPage() {
           <SortSelect
             value={sortBy}
             direction={sortDirection.toLowerCase()}
-            options={WATCHLIST_SORT_OPTIONS}
+            options={watchlistSortOptions}
             onSortChange={(id) => {
               const next = id || 'CUSTOM';
               if (next === 'CUSTOM') {

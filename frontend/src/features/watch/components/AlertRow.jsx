@@ -1,13 +1,16 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { RotateCcw, Trash2, Pencil } from 'lucide-react';
 import AssetBadge from '../../../shared/components/asset/AssetBadge';
 import { useAssetDetailPrefetch } from '../../../shared/hooks/useAssetDetailPrefetch';
 import { assetRoute, DIRECTION_META } from '../lib/watchConstants';
 
 export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dir = DIRECTION_META[alert.direction] ?? DIRECTION_META.ABOVE;
   const { Icon, tint } = dir;
+  const localeTag = t('common.localeTag');
   const isFired = !alert.active && alert.triggeredAt;
   const route = assetRoute(alert.marketType, alert.assetCode);
   const prefetch = useAssetDetailPrefetch();
@@ -36,15 +39,15 @@ export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
       </div>
       <div className={`flex items-center gap-1 text-[11px] font-medium ${tint}`}>
         <Icon className="h-3.5 w-3.5" />
-        <span>{dir.label}</span>
+        <span>{t(dir.labelKey)}</span>
       </div>
       <span className="text-sm font-mono font-semibold text-fg tabular-nums min-w-[90px] text-right">
-        ₺{Number(alert.threshold).toLocaleString('tr-TR', { maximumFractionDigits: 2 })}
+        ₺{Number(alert.threshold).toLocaleString(localeTag, { maximumFractionDigits: 2 })}
       </span>
       <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded shrink-0 min-w-[80px] text-center ${
         isFired ? 'bg-fg-subtle/10 text-fg-subtle' : 'bg-success/10 text-success'
       }`}>
-        {isFired ? 'tetiklendi' : 'aktif'}
+        {isFired ? t('alertRow.fired') : t('alertRow.active')}
       </span>
       <div className="flex items-center gap-1 min-w-[110px] justify-end opacity-0 group-hover:opacity-100 transition-opacity">
         {isFired && (
@@ -56,7 +59,7 @@ export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
               onReactivate(alert.id);
             }}
             className="flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:text-accent hover:bg-accent/10 bg-transparent border-none cursor-pointer"
-            title="Yeniden aktifleştir"
+            title={t('alertRow.reactivate')}
           >
             <RotateCcw className="h-4 w-4" />
           </button>
@@ -69,7 +72,7 @@ export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
             onEdit?.(alert);
           }}
           className="flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:text-accent hover:bg-accent/5 bg-transparent border-none cursor-pointer"
-          title="Düzenle"
+          title={t('common.edit')}
         >
           <Pencil className="h-3.5 w-3.5" />
         </button>
@@ -81,7 +84,7 @@ export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
             onDelete(alert.id);
           }}
           className="flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:text-danger hover:bg-danger/5 bg-transparent border-none cursor-pointer"
-          title="Sil"
+          title={t('common.delete')}
         >
           <Trash2 className="h-4 w-4" />
         </button>

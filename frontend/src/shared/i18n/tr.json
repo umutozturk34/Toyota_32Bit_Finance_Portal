@@ -566,11 +566,40 @@
       }
     }
   },
+  "alertRow": {
+    "active": "aktif",
+    "fired": "tetiklendi",
+    "reactivate": "Yeniden aktifleştir",
+    "direction": {
+      "ABOVE": "üstüne",
+      "BELOW": "altına",
+      "CHANGE_PCT_UP": "% yükseliş",
+      "CHANGE_PCT_DOWN": "% düşüş"
+    }
+  },
+  "createWatchlist": {
+    "title": "Yeni liste",
+    "subtitle": "Maks. 20 liste oluşturabilirsin",
+    "listNameLabel": "Liste Adı",
+    "namePlaceholder": "Crypto Yatırımları",
+    "createCta": "Oluştur",
+    "creating": "Oluşturuluyor…",
+    "nameRequired": "Liste adı gerekli",
+    "successToast": "\"{{name}}\" oluşturuldu",
+    "createFailed": "Liste oluşturulamadı"
+  },
   "watch": {
     "headerTitle": "Takip",
     "tabs": {
       "watchlist": "Takip listesi",
       "alerts": "Fiyat alarmları"
+    },
+    "sortOptions": {
+      "CUSTOM": "Sıralamam",
+      "NAME": "Alfabetik",
+      "CURRENT_PRICE": "Fiyat",
+      "CHANGE_PERCENT": "% Değişim",
+      "ADDED_AT": "Eklenme tarihi"
     },
     "myLists": "Takip listelerim",
     "newListCta": "Yeni liste",

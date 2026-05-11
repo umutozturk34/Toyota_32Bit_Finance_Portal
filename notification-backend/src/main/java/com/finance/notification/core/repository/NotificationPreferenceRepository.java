@@ -29,4 +29,20 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
               AND p.marketSessionMarkets LIKE CONCAT('%', :market, '%')
             """)
     Page<NotificationPreference> findMarketDataSubscribed(String market, Pageable pageable);
+
+    @Query("""
+            SELECT p FROM NotificationPreference p
+            WHERE (p.inappMarketOpened = true
+                   OR (p.emailEnabled = true AND p.emailMarketOpened = true))
+              AND p.marketSessionMarkets LIKE CONCAT('%', :market, '%')
+            """)
+    Page<NotificationPreference> findMarketOpenedSubscribed(String market, Pageable pageable);
+
+    @Query("""
+            SELECT p FROM NotificationPreference p
+            WHERE (p.inappMarketClosed = true
+                   OR (p.emailEnabled = true AND p.emailMarketClosed = true))
+              AND p.marketSessionMarkets LIKE CONCAT('%', :market, '%')
+            """)
+    Page<NotificationPreference> findMarketClosedSubscribed(String market, Pageable pageable);
 }

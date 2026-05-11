@@ -89,16 +89,6 @@
   will-change: opacity, transform, filter;
 }
 
-@keyframes asset-chart-fade-kf {
-  0% { opacity: 0; transform: translateY(6px); }
-  100% { opacity: 0.42; transform: translateY(0); }
-}
-.asset-chart-fade {
-  opacity: 0;
-  animation: asset-chart-fade-kf 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  will-change: opacity, transform;
-}
-
 /* RGL resize handle visible & styled in edit mode */
 .react-resizable-handle {
   background-image: none !important;
@@ -272,9 +262,7 @@ button {
 }
 
 .card-hover {
-  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.3s ease, transform 0.25s ease;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.3s ease, transform 0.25s ease, backdrop-filter 0.25s ease;
   box-shadow:
     0 0 30px rgba(99, 102, 241, 0.05),
     0 0 12px rgba(139, 92, 246, 0.025),
@@ -283,6 +271,8 @@ button {
 
 .card-hover:hover {
   border-color: rgba(129, 140, 248, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   box-shadow:
     0 0 50px rgba(99, 102, 241, 0.09),
     0 0 24px rgba(139, 92, 246, 0.05),

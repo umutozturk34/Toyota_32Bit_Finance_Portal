@@ -2,10 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
-import { Activity, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Activity, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, ChevronUp, ChevronDown } from 'lucide-react';
 import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
+import Spinner from '../../shared/components/feedback/Spinner';
 import SearchSuggestions from '../../shared/components/form/SearchSuggestions';
 import { useUserLayout, useUpdateOverviewLayout, DEFAULT_OVERVIEW_LAYOUT } from '../../shared/hooks/useUserLayout';
 import { useMarketOverview } from '../../shared/hooks/useMarketOverview';
@@ -196,7 +197,7 @@ export default function MarketDataPage() {
       <div className="flex items-center gap-1.5 flex-nowrap">
         {updateLayout.isPending && (
           <span className="flex items-center gap-1 font-mono text-[10px] tracking-wider uppercase text-accent/80">
-            <Loader2 className="h-3 w-3 animate-spin" />
+            <Spinner size="xs" tone="inherit" />
             {t('marketOverview.saving')}
           </span>
         )}

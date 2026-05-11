@@ -4,11 +4,12 @@ import { useSearchParams, useParams, useNavigate, useLocation } from 'react-rout
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
 import {
-  LineChart, ArrowLeft, BarChart2, Loader2,
+  LineChart, ArrowLeft, BarChart2,
   AlertTriangle, TrendingUp, RefreshCw, Activity
 } from 'lucide-react';
 import LightweightChart from './components/LightweightChart';
 import CompareBar from '../../shared/components/layout/CompareBar';
+import Spinner from '../../shared/components/feedback/Spinner';
 import { fundService, trackedAssetService } from '../../shared/services/marketService';
 import { formatBistSymbol } from '../../shared/constants/stocks';
 import { getForexPairs } from '../../shared/constants/forex';
@@ -344,7 +345,7 @@ const ChartView = () => {
                   exit={{ opacity: 0 }}
                   className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-bg-base/80 z-10"
                 >
-                  <Loader2 className="w-8 h-8 text-accent animate-spin" />
+                  <Spinner size="lg" tone="accent" />
                   <p className="text-sm text-fg-muted">{t('chart.loading')}</p>
                 </motion.div>
               )}

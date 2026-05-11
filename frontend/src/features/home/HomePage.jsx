@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../../shared/context/ThemeContext';
+import Card from '../../shared/components/card';
 import { useAuth } from '../auth/AuthContext';
 import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
 import i18n from '../../shared/i18n/config';
@@ -223,13 +224,18 @@ const HomePage = () => {
             {FEATURE_DEFS.map((f) => {
               const Icon = f.icon;
               return (
-                <motion.div
+                <Card
+                  as={motion.div}
                   key={f.key}
                   variants={{
                     hidden: { opacity: 0, y: 28 },
                     visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: easeOut } },
                   }}
-                  className="group relative rounded-2xl border bg-bg-elevated backdrop-blur-md p-8 transition-all duration-300 card-hover overflow-hidden"
+                  variant="elevated"
+                  radius="2xl"
+                  padding="xl"
+                  backdropBlur
+                  className="group"
                   style={{
                     borderColor: isDark ? 'rgba(99,102,241,0.15)' : 'rgba(0,82,255,0.12)',
                   }}
@@ -247,7 +253,7 @@ const HomePage = () => {
                   </span>
                   <h3 className="relative text-lg font-semibold text-fg mb-2">{t(`home.features.${f.key}.title`)}</h3>
                   <p className="relative text-sm text-fg-muted leading-relaxed">{t(`home.features.${f.key}.description`)}</p>
-                </motion.div>
+                </Card>
               );
             })}
           </motion.div>

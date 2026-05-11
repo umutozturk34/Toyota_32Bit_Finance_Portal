@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
+import Card from '../../../shared/components/card';
 import { useAuth } from '../AuthContext';
 import { useTheme } from '../../../shared/context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
@@ -39,11 +40,16 @@ const Login = () => {
 
   return (
     <div className="flex justify-center items-center min-h-screen p-6">
-      <motion.div
+      <Card
+        as={motion.div}
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="relative rounded-2xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md max-w-[460px] w-full overflow-hidden"
+        variant="elevated"
+        radius="2xl"
+        padding="none"
+        backdropBlur
+        className="max-w-[460px] w-full"
       >
         {isDark && (
           <span className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-60 h-40 rounded-full bg-accent/[0.07] blur-[80px]" aria-hidden="true" />
@@ -115,7 +121,7 @@ const Login = () => {
         <div className="px-6 py-4 border-t border-border-default">
           <p className="text-fg-subtle text-xs">{t('login.poweredBy')}</p>
         </div>
-      </motion.div>
+      </Card>
     </div>
   );
 };

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import useChartRange from '../../../shared/hooks/useChartRange';
 import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, Plus } from 'lucide-react';
-import { TrendingUp, TrendingDown, Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
+import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/AnimatedIcons';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/ThemeContext';
 import { useAssetSeries } from '../hooks/usePortfolioData';
@@ -11,6 +11,9 @@ import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass, 
 import { cardVariants } from '../../../shared/utils/animations';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
 import PositionFormModal from './PositionFormModal';
+import Card from '../../../shared/components/card';
+import Spinner from '../../../shared/components/feedback/Spinner';
+import IconButton from '../../../shared/components/buttons/IconButton';
 
 const formatEntryDate = (v) => v ? new Date(v).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -153,12 +156,15 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
         className="flex items-center justify-between gap-3"
       >
         <div className="flex items-center gap-3">
-          <button
+          <IconButton
+            variant="secondary"
+            size={9}
+            shape="square"
+            icon={<ArrowLeft className="h-4 w-4" />}
+            aria-label="back"
             onClick={onBack}
-            className="flex items-center justify-center w-9 h-9 rounded-lg border border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:bg-surface hover:-translate-x-0.5 transition-all cursor-pointer"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
+            className="hover:-translate-x-0.5"
+          />
           <div className="flex items-center gap-3">
             {displayBadge ? (
               <img src={displayBadge} alt={displayLabel} className="w-10 h-10 rounded-xl" />
@@ -189,7 +195,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
         className="grid grid-cols-2 sm:grid-cols-5 gap-3"
       >
         {STAT_CARD_DEFS.map(({ key, labelKey, Icon, format }) => (
-          <div key={key} className="rounded-xl border border-border-default bg-bg-elevated p-3 space-y-2 card-hover transition-all duration-200 hover:border-border-hover">
+          <Card key={key} variant="elevated" radius="xl" padding="sm" interactive className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-center w-6 h-6 rounded-md bg-accent/10">
                 <Icon className="h-3 w-3 text-accent" />
@@ -197,7 +203,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
               <p className="text-[11px] text-fg-muted">{t(`assetDetail.stats.${labelKey}`)}</p>
             </div>
             <p className="text-sm font-semibold font-mono text-fg">{format(asset[key])}</p>
-          </div>
+          </Card>
         ))}
       </motion.div>
 
@@ -207,11 +213,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
         animate="show"
         className="grid grid-cols-1 sm:grid-cols-2 gap-3"
       >
-        <div className={`flex items-center justify-between rounded-xl border p-4 card-hover transition-all duration-200 ${
-          asset.pnlTry >= 0
-            ? 'border-success/20 bg-success/5 hover:border-success/40'
-            : 'border-danger/20 bg-danger/5 hover:border-danger/40'
-        }`}>
+        <Card variant="outline" tone={asset.pnlTry >= 0 ? 'success' : 'danger'} radius="xl" padding="md" className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {asset.pnlTry >= 0
               ? <TrendingUp className="h-5 w-5 text-success" />
@@ -226,14 +228,8 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
               {formatPriceTRY(asset.pnlTry)}
             </p>
           </div>
-        </div>
-        <div className={`flex items-center justify-between rounded-xl border p-4 card-hover transition-all duration-200 ${
-          dailyPnlTry == null
-            ? 'border-border-default bg-bg-elevated'
-            : dailyPnlTry >= 0
-              ? 'border-success/20 bg-success/5 hover:border-success/40'
-              : 'border-danger/20 bg-danger/5 hover:border-danger/40'
-        }`}>
+        </Card>
+        <Card variant={dailyPnlTry == null ? 'elevated' : 'outline'} tone={dailyPnlTry == null ? 'default' : (dailyPnlTry >= 0 ? 'success' : 'danger')} radius="xl" padding="md" className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {dailyPnlTry == null
               ? <TrendingUp className="h-5 w-5 text-fg-muted" />
@@ -256,14 +252,19 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
               </>
             )}
           </div>
-        </div>
+        </Card>
       </motion.div>
 
-      <motion.div
+      <Card
+        as={motion.div}
         variants={cardVariants}
         initial="hidden"
         animate="show"
-        className="rounded-2xl border border-border-default bg-bg-elevated backdrop-blur-md p-5 space-y-3 card-hover transition-all duration-200 hover:border-border-hover"
+        variant="elevated"
+        radius="2xl"
+        padding="lg"
+        backdropBlur
+        className="space-y-3"
       >
         <div className="flex items-center justify-end flex-wrap gap-2">
           <RangeSelector value={range} onChange={setRange} layoutId="asset-range" size="sm" />
@@ -272,7 +273,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
         <div className="relative">
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center z-10 bg-bg-elevated/60 rounded-lg">
-              <Loader2 className="h-6 w-6 animate-spin text-accent" />
+              <Spinner size="md" tone="accent" />
             </div>
           )}
           {series.length === 0 && !loading ? (
@@ -283,7 +284,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
             <AssetChart data={series} isDark={isDark} t={t} />
           ) : null}
         </div>
-      </motion.div>
+      </Card>
 
       {addLotOpen && (
         <PositionFormModal

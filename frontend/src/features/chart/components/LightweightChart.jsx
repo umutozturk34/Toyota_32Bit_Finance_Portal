@@ -16,6 +16,7 @@ import IndicatorPanel from './IndicatorPanel';
 import DrawingPanel from './DrawingPanel';
 import FibonacciPanel from './FibonacciPanel';
 import ChartToolbar from './ChartToolbar';
+import Card from '../../../shared/components/card';
 
 const TABS = [
     { id: 'indicators', labelKey: 'chart.tabs.indicators', Icon: Activity },
@@ -144,7 +145,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
     }
 
     return (
-        <div ref={wrapperRef} className={`relative flex rounded-xl border border-border-default bg-bg-elevated card-elevated overflow-hidden ${isFullscreen ? 'h-screen rounded-none' : ''}`} style={isFullscreen ? {} : { minHeight: 560 }}>
+        <Card ref={wrapperRef} variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className={`flex ${isFullscreen ? 'h-screen !rounded-none' : ''}`} style={isFullscreen ? {} : { minHeight: 560 }}>
             {sidebarOpen && (
                 <div className="w-60 shrink-0 border-r border-border-default flex flex-col bg-surface/40 backdrop-blur-md relative">
                     <div className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-indigo-400/40 via-fuchsia-400/20 to-transparent" />
@@ -156,7 +157,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                                 <button
                                     key={id}
                                     onClick={() => setActiveTab(id)}
-                                    className={`relative flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-semibold uppercase tracking-[0.12em] border-none cursor-pointer transition-all duration-200 bg-transparent hover:bg-surface/60 ${isActive ? 'text-fg' : 'text-fg-muted hover:text-fg'}`}
+                                    className={`relative flex-1 flex flex-col items-center gap-1 py-3 px-1 text-[9px] font-semibold uppercase tracking-[0.04em] border-none cursor-pointer transition-all duration-200 bg-transparent hover:bg-surface/60 min-w-0 ${isActive ? 'text-fg' : 'text-fg-muted hover:text-fg'}`}
                                 >
                                     <Icon className={`w-4 h-4 transition-all ${isActive ? 'text-indigo-400 drop-shadow-[0_0_6px_rgba(99,102,241,0.5)]' : ''}`} />
                                     {t(labelKey)}
@@ -436,7 +437,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                 )}
 
             </div>
-        </div>
+        </Card>
     );
 };
 

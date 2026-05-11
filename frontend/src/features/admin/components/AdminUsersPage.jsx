@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Users, Search, Ban, ShieldCheck, Loader2, AlertCircle, Mail, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { Users, Search, Ban, ShieldCheck, AlertCircle, Mail, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import PageHeader from '../../../shared/components/layout/PageHeader';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
+import Spinner from '../../../shared/components/feedback/Spinner';
 import { toast } from '../../../shared/components/feedback/Toast';
 import { useAuth } from '../../auth/AuthContext';
 import { useAdminUsers, useAdminUserCount, useBanUser, useUnbanUser } from '../hooks/useAdminUsers';
@@ -120,7 +121,7 @@ export default function AdminUsersPage() {
         </div>
         {isLoading && (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-fg-muted">
-            <Loader2 className="h-4 w-4 animate-spin text-accent" />
+            <Spinner size="sm" tone="accent" />
             {t('common.loading')}
           </div>
         )}
@@ -166,7 +167,7 @@ export default function AdminUsersPage() {
                 }`}
               >
                 {pendingId === user.id ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <Spinner size="xs" tone="inherit" />
                 ) : user.enabled ? (
                   <><Ban className="h-3 w-3" /> {t('adminUsers.banAction')}</>
                 ) : (

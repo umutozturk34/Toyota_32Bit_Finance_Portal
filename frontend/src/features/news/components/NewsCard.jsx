@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Calendar, ChevronRight } from 'lucide-react';
 import { formatDateTimeShort } from '../../../shared/utils/formatters';
 import { getFallbackImage, CategoryBadge } from '../lib/newsConfig.jsx';
+import Card from '../../../shared/components/card';
 
 const cardVariants = {
     hidden: { opacity: 0, y: 14, scale: 0.98 },
@@ -22,10 +23,14 @@ export default function NewsCard({ article, index }) {
     };
 
     return (
-        <motion.article
+        <Card
+            as={motion.article}
             variants={cardVariants}
             onClick={handleClick}
-            className="group relative flex flex-col rounded-xl overflow-hidden cursor-pointer bg-bg-elevated border border-border-default hover:border-border-hover card-hover transition-all duration-200"
+            interactive
+            radius="xl"
+            padding="none"
+            className="group flex flex-col"
             aria-label={article.title}
         >
             <div className="relative w-full h-44 overflow-hidden bg-surface">
@@ -53,7 +58,7 @@ export default function NewsCard({ article, index }) {
                 {article.description && (
                     <p className="text-fg-muted text-xs leading-relaxed line-clamp-2">
                         {article.description.length > 120
-                            ? article.description.substring(0, 120) + '\u2026'
+                            ? article.description.substring(0, 120) + '…'
                             : article.description}
                     </p>
                 )}
@@ -71,6 +76,6 @@ export default function NewsCard({ article, index }) {
                     </div>
                 </div>
             </div>
-        </motion.article>
+        </Card>
     );
 }

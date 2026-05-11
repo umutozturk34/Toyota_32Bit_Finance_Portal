@@ -7,6 +7,7 @@ import { RefreshCw } from '../../../shared/components/feedback/AnimatedIcons';
 import { adminService } from '../services/adminService';
 import { toast } from '../../../shared/components/feedback/Toast';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
+import Card from '../../../shared/components/card';
 
 const NEWS_CATEGORY_VALUES = ['', 'CRYPTO', 'BORSA_ISTANBUL', 'BORSA_SIRKETLERI', 'TAHVIL_BONO', 'PARITE', 'EMTIA', 'GENEL_FINANS'];
 
@@ -44,7 +45,7 @@ function NewsSourceForm({ onSaved }) {
     };
 
     return (
-        <div className="rounded-xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-4">
+        <Card variant="elevated" backdropBlur padding="md">
             <h3 className="mb-3 text-sm font-semibold text-fg flex items-center gap-2">
                 <Rss className="h-4 w-4 text-accent" />
                 {t('newsSourceAdmin.formTitle')}
@@ -93,7 +94,7 @@ function NewsSourceForm({ onSaved }) {
                     </button>
                 </div>
             </form>
-        </div>
+        </Card>
     );
 }
 
@@ -152,7 +153,7 @@ export default function NewsSourceAdminPanel({ refreshToken = 0 }) {
         <>
             <NewsSourceForm onSaved={loadSources} />
 
-            <div className="rounded-xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-4">
+            <Card variant="elevated" backdropBlur padding="md">
                 <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-fg flex items-center gap-2">
                         <Rss className="h-4 w-4 text-accent" />
@@ -227,7 +228,7 @@ export default function NewsSourceAdminPanel({ refreshToken = 0 }) {
                         </div>
                     </div>
                 )}
-            </div>
+            </Card>
 
             <ConfirmDialog
                 open={!!deleteTarget}

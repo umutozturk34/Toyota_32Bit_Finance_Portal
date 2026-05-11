@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import useChartRange from '../../../shared/hooks/useChartRange';
 import ReactECharts from 'echarts-for-react';
-import { TrendingUp, Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
+import { TrendingUp } from '../../../shared/components/feedback/AnimatedIcons';
 import { usePortfolioPerformance, useBackfillStatus } from '../hooks/usePortfolioData';
 import { formatPriceTRY } from '../../../shared/utils/formatters';
 import { cardVariants } from '../../../shared/utils/animations';
+import Card from '../../../shared/components/card';
+import Spinner from '../../../shared/components/feedback/Spinner';
 import { useTheme } from '../../../shared/context/ThemeContext';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
@@ -210,7 +212,7 @@ export default function PerformanceChart({ portfolioId }) {
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="show">
-      <div className="group relative rounded-2xl border border-border-default bg-bg-elevated backdrop-blur-md overflow-hidden card-hover transition-all duration-300 hover:border-border-hover">
+      <Card variant="elevated" radius="2xl" padding="none" backdropBlur className="group">
         <div
           className="pointer-events-none absolute -top-20 -left-20 w-44 h-44 rounded-full blur-[80px] opacity-0 group-hover:opacity-60 transition-opacity duration-500"
           style={{ background: `radial-gradient(circle, ${mainColor}20 0%, transparent 70%)` }}
@@ -243,7 +245,7 @@ export default function PerformanceChart({ portfolioId }) {
           <div className="flex items-center gap-3">
             {backfill.running && (
               <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-tight text-accent/90">
-                <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                <Spinner size="xs" tone="inherit" />
                 <span>{t('portfolio.performance.calculating')} · {String(backfillElapsed).padStart(2, '0')}s</span>
               </div>
             )}
@@ -284,7 +286,7 @@ export default function PerformanceChart({ portfolioId }) {
         <div className="relative min-h-[380px] px-2">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-accent" />
+              <Spinner size="md" tone="accent" />
             </div>
           ) : option ? (
             <ReactECharts
@@ -302,7 +304,7 @@ export default function PerformanceChart({ portfolioId }) {
             </div>
           )}
         </div>
-      </div>
+      </Card>
     </motion.div>
   );
 }

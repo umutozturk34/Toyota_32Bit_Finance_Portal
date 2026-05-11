@@ -8,6 +8,7 @@ import PageHeader from '../../shared/components/layout/PageHeader';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import ProcessingSteps from '../../shared/components/feedback/ProcessingSteps';
+import Card from '../../shared/components/card';
 import useProcessingAnimation from '../../shared/hooks/useProcessingAnimation';
 import SummaryCards from './components/SummaryCards';
 import PositionsTable from './components/PositionsTable';
@@ -119,10 +120,15 @@ export default function Portfolio() {
     return (
       <div className="space-y-6">
         <PageHeader icon={<Wallet className="h-5 w-5" />} title={t('portfolio.headerTitle')} />
-        <motion.div
+        <Card
+          as={motion.div}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col items-center justify-center gap-5 rounded-xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-12 min-h-[320px]"
+          variant="elevated"
+          radius="xl"
+          padding="xl"
+          backdropBlur
+          className="flex flex-col items-center justify-center gap-5 min-h-[320px]"
         >
           <AnimatePresence mode="wait">
             {onboardingPhase === 'success' && (
@@ -226,7 +232,7 @@ export default function Portfolio() {
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
+        </Card>
       </div>
     );
   }

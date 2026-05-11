@@ -2,6 +2,7 @@ import { Code, Database, Server, Key, Container } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../shared/context/ThemeContext';
+import Card from '../../shared/components/card';
 const containerV = {
   hidden: {},
   show: { transition: { staggerChildren: 0.06, delayChildren: 0.15 } },
@@ -37,11 +38,14 @@ const AboutPage = () => {
       </motion.div>
       <div className="space-y-4">
         {}
-        <motion.section
+        <Card
+          as={motion.section}
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="relative rounded-xl border border-border-default bg-bg-elevated p-6 card-hover overflow-hidden"
+          variant="elevated"
+          radius="xl"
+          padding="lg"
         >
           {isDark && (
             <span className="pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full bg-accent/[0.05] blur-[60px]" aria-hidden="true" />
@@ -50,15 +54,18 @@ const AboutPage = () => {
           <p className="text-fg-muted text-sm leading-relaxed">
             {t('about.overview.body')}
           </p>
-        </motion.section>
+        </Card>
         {}
         <div className="section-line" />
         {}
-        <motion.section
+        <Card
+          as={motion.section}
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="relative rounded-xl border border-border-default bg-bg-elevated p-6 card-hover overflow-hidden"
+          variant="elevated"
+          radius="xl"
+          padding="lg"
         >
           {isDark && (
             <span className="pointer-events-none absolute -bottom-16 -left-16 w-40 h-40 rounded-full bg-[#7c3aed]/[0.04] blur-[60px]" aria-hidden="true" />
@@ -87,13 +94,16 @@ const AboutPage = () => {
               );
             })}
           </motion.div>
-        </motion.section>
+        </Card>
         {}
-        <motion.section
+        <Card
+          as={motion.section}
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="rounded-xl border border-border-default bg-bg-elevated p-6 card-hover"
+          variant="elevated"
+          radius="xl"
+          padding="lg"
         >
           <h2 className="text-lg font-semibold text-fg mb-3">{t('about.version.title')}</h2>
           <p className="text-fg-muted text-sm">
@@ -103,7 +113,7 @@ const AboutPage = () => {
             </span>{' '}
             <span className="text-fg-subtle">{t('about.version.status')}</span>
           </p>
-        </motion.section>
+        </Card>
       </div>
     </div>
   );

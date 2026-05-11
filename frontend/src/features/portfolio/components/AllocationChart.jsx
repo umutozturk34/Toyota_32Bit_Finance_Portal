@@ -4,11 +4,12 @@ import { useTranslation } from 'react-i18next';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { PieChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-import { Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
 import { useTheme } from '../../../shared/context/ThemeContext';
 import { formatPriceTRY, formatCompactTRY } from '../../../shared/utils/formatters';
 import { usePortfolioAllocation } from '../hooks/usePortfolioData';
 import { cardVariants } from '../../../shared/utils/animations';
+import Card from '../../../shared/components/card';
+import Spinner from '../../../shared/components/feedback/Spinner';
 import {
   ASSET_TYPE_CHART_COLORS as ASSET_TYPE_COLORS,
   ASSET_TYPE_TABS as TYPE_TABS,
@@ -137,10 +138,10 @@ export default function AllocationChart({ allocation, portfolioId }) {
         })}
       </div>
 
-      <div className="rounded-2xl border border-border-default bg-bg-elevated backdrop-blur-md p-5 card-hover transition-all duration-200 hover:border-border-hover">
+      <Card variant="elevated" radius="2xl" padding="lg" backdropBlur interactive={false}>
         {loading ? (
           <div className="flex items-center justify-center h-80">
-            <Loader2 className="h-6 w-6 animate-spin text-accent" />
+            <Spinner size="md" tone="accent" />
           </div>
         ) : seriesData.length === 0 ? (
           <div className="flex items-center justify-center h-80 text-sm text-fg-muted">
@@ -185,7 +186,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
             </div>
           </div>
         )}
-      </div>
+      </Card>
     </motion.div>
   );
 }

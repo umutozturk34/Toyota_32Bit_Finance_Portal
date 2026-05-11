@@ -8,6 +8,7 @@ import { RefreshCw } from '../../../shared/components/feedback/AnimatedIcons';
 import { adminService, trackedAssetService } from '../services/adminService';
 import { toast } from '../../../shared/components/feedback/Toast';
 import SearchInput from '../../../shared/components/form/SearchInput';
+import Card from '../../../shared/components/card';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 
 function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onDelete, highlighted }) {
@@ -217,7 +218,7 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
 
     return (
         <>
-            <div className="rounded-xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-4">
+            <Card variant="elevated" backdropBlur padding="md">
                 <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-fg">{t('trackedAssetAdmin.heading', { title, count: items.length, prefix: search ? `${filteredItems.length}/` : '' })}</h3>
                     <div className="flex items-center gap-2">
@@ -292,7 +293,7 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
                         </Reorder.Group>
                     </div>
                 )}
-            </div>
+            </Card>
 
             <ConfirmDialog
                 open={!!deleteTarget}

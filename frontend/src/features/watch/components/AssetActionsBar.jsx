@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { AlertCircle, Eye, Star, Loader2 } from 'lucide-react';
+import { AlertCircle, Eye, Star } from 'lucide-react';
 import {
   useAddToFavorites,
   useWatchlists,
@@ -12,6 +12,7 @@ import AddPriceAlertModal from '../components/AddPriceAlertModal';
 import AddWatchlistItemModal from '../components/AddWatchlistItemModal';
 import { toast } from '../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../shared/utils/apiError';
+import Spinner from '../../../shared/components/feedback/Spinner';
 
 export default function AssetActionsBar({ marketType, assetCode, currentPrice }) {
   const { t } = useTranslation();
@@ -70,7 +71,7 @@ export default function AssetActionsBar({ marketType, assetCode, currentPrice })
           }`}
         >
           {pending ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <Spinner size="sm" tone="inherit" />
           ) : (
             <Star className={`h-3.5 w-3.5 ${isFavorite ? 'fill-warning' : ''}`} />
           )}

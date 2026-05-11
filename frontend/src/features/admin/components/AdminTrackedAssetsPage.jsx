@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { Database, Plus, Bitcoin, TrendingUp, Briefcase, Newspaper, Gem } from 'lucide-react';
 import PageHeader from '../../../shared/components/layout/PageHeader';
@@ -8,6 +7,7 @@ import ErrorState from '../../../shared/components/feedback/ErrorState';
 import { useAuth } from '../../auth/AuthContext';
 import { adminService } from '../services/adminService';
 import { toast } from '../../../shared/components/feedback/Toast';
+import Card from '../../../shared/components/card';
 import TrackedAssetAdminPanel from './TrackedAssetAdminPanel';
 import NewsSourceAdminPanel from './NewsSourceAdminPanel';
 
@@ -57,7 +57,7 @@ function TrackedAssetForm({ type, title, onSaved }) {
     };
 
     return (
-        <div className="rounded-xl border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-4">
+        <Card variant="elevated" backdropBlur padding="md">
             <h3 className="mb-3 text-sm font-semibold text-fg">{t('adminTrackedAssets.addOrUpdate', { title })}</h3>
             <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <input
@@ -119,7 +119,7 @@ function TrackedAssetForm({ type, title, onSaved }) {
                     </button>
                 </div>
             </form>
-        </div>
+        </Card>
     );
 }
 

@@ -6,6 +6,7 @@ import {
   useUpdateNotificationPreferences,
 } from '../../shared/hooks/useNotificationPreferences';
 import MarketSelectionChips, { MARKET_CHIPS } from './MarketSelectionChips';
+import Card from '../../shared/components/card';
 
 const TYPE_ROWS = [
   { id: 'priceAlerts', Icon: AlertCircle },
@@ -87,7 +88,7 @@ export default function NotificationPreferencesSection() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-accent/25 bg-gradient-to-br from-accent/8 to-accent-secondary/4 px-4 py-3.5">
+      <Card variant="gradient" tone="gradient" gradientFrom="accent" gradientTo="accent-secondary" radius="xl" padding="none" className="border-accent/25 px-4 py-3.5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 min-w-0">
             <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/15 shrink-0">
@@ -106,9 +107,9 @@ export default function NotificationPreferencesSection() {
             srLabel={t('notificationPreferences.emailMaster.toggleAria')}
           />
         </div>
-      </div>
+      </Card>
 
-      <div className="rounded-xl border border-border-default bg-bg-elevated overflow-hidden">
+      <Card variant="elevated" radius="xl" padding="none" interactive={false}>
         <div className="grid grid-cols-[1fr_2rem_2rem] gap-4 px-4 py-2.5 border-b border-border-default items-center">
           <h3 className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">{t('notificationPreferences.types.title')}</h3>
           <div className="flex items-center justify-center" title={t('notificationPreferences.channels.email')}>
@@ -158,7 +159,7 @@ export default function NotificationPreferencesSection() {
             {t('notificationPreferences.footer')}
           </p>
         </div>
-      </div>
+      </Card>
 
       <MarketSelectionChips
         selected={parseMarkets(preferences.marketSessionMarkets)}

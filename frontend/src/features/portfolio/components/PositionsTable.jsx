@@ -1,11 +1,12 @@
 import { ChevronRight, Package, Pencil, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
 import { cardVariants } from '../../../shared/utils/animations';
 import { ASSET_TYPE_STYLES } from '../../../shared/constants/assetTypes';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';
+import Card from '../../../shared/components/card';
+import Spinner from '../../../shared/components/feedback/Spinner';
 import { isLotPending, useBackfillStatus, usePortfolioPositions } from '../hooks/usePortfolioData';
 import useListParams from '../../../shared/hooks/useListParams';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
@@ -100,16 +101,23 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
   const deleteClick = guard(onDeleteClick);
 
   return (
-    <motion.div
+    <Card
+      as={motion.div}
       variants={cardVariants}
-      className={`relative rounded-2xl border bg-bg-elevated backdrop-blur-md transition-all duration-200 group overflow-hidden ${pending ? 'border-accent/40 pointer-events-none' : 'border-border-default card-hover hover:border-border-hover'}`}
+      variant="elevated"
+      radius="2xl"
+      padding="none"
+      backdropBlur
+      interactive={!pending}
+      pending={pending}
+      className="group"
     >
       {pending && (
         <>
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent animate-pulse z-10" />
           <div className="absolute top-2.5 left-3 right-3 flex items-center justify-between text-[11px] font-medium text-accent z-10 pointer-events-none">
             <div className="flex items-center gap-1.5">
-              <Loader2 className="h-3 w-3 animate-spin" />
+              <Spinner size="xs" tone="inherit" />
               <span className="tracking-tight">{t('portfolio.positions.preparing')}</span>
             </div>
             <motion.span
@@ -180,6 +188,6 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
         </div>
       </div>
       </div>
-    </motion.div>
+    </Card>
   );
 }

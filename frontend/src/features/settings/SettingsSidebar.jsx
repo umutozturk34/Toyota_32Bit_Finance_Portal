@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { AnimatePresence } from 'framer-motion';
+import SideDrawer from '../../shared/components/modal/SideDrawer';
 import {
   X, Settings as SettingsIcon, Palette, Languages, BarChart3, Bell, Shield,
   Sun, Moon, LogOut, KeyRound, Mail,
@@ -110,47 +110,30 @@ export default function SettingsSidebar({ isOpen, onClose }) {
     }
   };
 
+  const footer = (
+    <div className="px-5 py-3">
+      <button
+        onClick={handleLogout}
+        className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold text-danger border border-danger/30 bg-danger/5 hover:bg-danger/10 transition-all cursor-pointer"
+      >
+        <LogOut className="h-3.5 w-3.5" />
+        {t('settings.logout')}
+      </button>
+    </div>
+  );
+
   return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <div style={{ isolation: 'isolate' }}>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-            className="fixed inset-0 z-40 modal-overlay"
-          />
-          <motion.aside
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
-            style={{ willChange: 'transform' }}
-            className="fixed top-0 right-0 z-50 h-full w-full sm:w-[380px] modal-panel border-l border-border-default flex flex-col"
-          >
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
-
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border-default">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10">
-                  <SettingsIcon className="h-4 w-4 text-accent" />
-                </div>
-                <div>
-                  <h2 className="text-base font-semibold text-fg">{t('settings.title')}</h2>
-                  <p className="text-xs text-fg-muted">{t('settings.subtitle')}</p>
-                </div>
-              </div>
-              <button
-                onClick={onClose}
-                className="flex items-center justify-center w-8 h-8 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+    <SideDrawer
+      open={isOpen}
+      onClose={onClose}
+      width="380px"
+      icon={SettingsIcon}
+      iconTint="text-accent"
+      title={t('settings.title')}
+      subtitle={t('settings.subtitle')}
+      footer={footer}
+    >
+            <div className="px-5 py-5 space-y-6">
               <div className="grid grid-cols-[1fr_auto] gap-4 items-start">
                 <Section icon={Palette} title={t('settings.theme')}>
                   <SegmentedControl
@@ -214,19 +197,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
               </div>
             </div>
 
-            <div className="border-t border-border-default px-5 py-3">
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-semibold text-danger border border-danger/30 bg-danger/5 hover:bg-danger/10 transition-all cursor-pointer"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                {t('settings.logout')}
-              </button>
-            </div>
-          </motion.aside>
-        </div>
-      )}
-    </AnimatePresence>,
+    </SideDrawer>,
     document.body
   );
 }

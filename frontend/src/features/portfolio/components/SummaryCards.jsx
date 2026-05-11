@@ -7,6 +7,7 @@ import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass }
 import { containerVariants, cardVariants } from '../../../shared/utils/animations';
 import { usePortfolioSummary } from '../hooks/usePortfolioData';
 import { ASSET_TYPE_FILTERS as SUMMARY_FILTERS } from '../../../shared/constants/assetTypes';
+import Card from '../../../shared/components/card';
 
 const VALUE_CARD_DEFS = [
   { key: 'totalValueTry', labelKey: 'portfolio.summary.marketValue', Icon: Wallet, iconBg: 'bg-accent/10', iconColor: 'text-accent', border: 'border-t-accent' },
@@ -16,11 +17,16 @@ const VALUE_CARD_DEFS = [
 function PnlCard({ label, value, percent }) {
   const cls = getChangeClass(value);
   const Icon = value >= 0 ? TrendingUp : TrendingDown;
-  const border = value >= 0 ? 'border-t-success' : 'border-t-danger';
   return (
-    <motion.div
+    <Card
+      as={motion.div}
       variants={cardVariants}
-      className={`rounded-xl border border-border-default border-t-2 ${border} bg-bg-elevated p-4 space-y-3 card-hover transition-all duration-200 hover:border-border-hover`}
+      variant="elevated"
+      accentBar={value >= 0 ? 'success' : 'danger'}
+      radius="xl"
+      padding="md"
+      interactive
+      className="space-y-3"
     >
       <div className="flex items-center gap-2.5">
         <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${value >= 0 ? 'bg-success/10' : 'bg-danger/10'}`}>
@@ -34,7 +40,7 @@ function PnlCard({ label, value, percent }) {
       <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium font-mono ${changeBg[cls]} ${changeColors[cls]}`}>
         {formatPercent(percent)}
       </span>
-    </motion.div>
+    </Card>
   );
 }
 
@@ -81,10 +87,15 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {VALUE_CARD_DEFS.map(({ key, labelKey, Icon, iconBg, iconColor, border }) => (
-          <motion.div
+          <Card
+            as={motion.div}
             key={key}
             variants={cardVariants}
-            className={`rounded-xl border border-border-default border-t-2 ${border} bg-bg-elevated p-4 space-y-3 card-hover transition-all duration-200 hover:border-border-hover`}
+            variant="elevated"
+            radius="xl"
+            padding="md"
+            interactive
+            className={`space-y-3 border-t-2 ${border}`}
           >
             <div className="flex items-center gap-2.5">
               <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${iconBg}`}>
@@ -95,7 +106,7 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
             <p className="text-lg font-semibold font-mono text-fg">
               {formatPriceTRY(summary?.[key])}
             </p>
-          </motion.div>
+          </Card>
         ))}
         <PnlCard label={t('portfolio.summary.profitLoss')} value={summary?.totalPnlTry} percent={summary?.pnlPercent} />
         <PnlCard label={t('portfolio.summary.dailyPnl')} value={summary?.dailyPnlTry} percent={summary?.dailyPnlPercent} />

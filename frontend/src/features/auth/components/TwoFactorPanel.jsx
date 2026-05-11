@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Shield, ShieldOff, RefreshCw, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Shield, ShieldOff, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 import keycloak from '../lib/keycloak';
 import { userCredentialService } from '../../../shared/services/userCredentialService';
 import { toast } from '../../../shared/components/feedback/Toast';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
+import Spinner from '../../../shared/components/feedback/Spinner';
 
 const STATUS_KEY = ['twoFactor', 'status'];
 
@@ -53,7 +54,7 @@ export default function TwoFactorPanel() {
     if (isLoading) {
         return (
             <div className="flex items-center gap-2 rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-xs text-fg-muted">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+                <Spinner size="sm" tone="accent" />
                 {t('twoFactor.statusLoading')}
             </div>
         );

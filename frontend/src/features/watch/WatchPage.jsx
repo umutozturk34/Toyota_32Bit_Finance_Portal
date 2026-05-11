@@ -12,7 +12,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useSearchParams } from 'react-router-dom';
 import {
   Eye, AlertCircle, Plus, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown, GripVertical,
-  Loader2, Inbox, Star, ListPlus, RotateCcw, Pencil,
+  Inbox, Star, ListPlus, RotateCcw, Pencil,
 } from 'lucide-react';
 import PageHeader from '../../shared/components/layout/PageHeader';
 import AssetBadge from '../../shared/components/asset/AssetBadge';
@@ -27,6 +27,8 @@ import {
   useReorderWatchlistItems,
 } from '../../shared/hooks/useWatchlist';
 import SortSelect from '../../shared/components/form/SortSelect';
+import Card from '../../shared/components/card';
+import Spinner from '../../shared/components/feedback/Spinner';
 import { usePriceAlerts, useDeletePriceAlert, useReactivatePriceAlert } from '../../shared/hooks/usePriceAlerts';
 import useListParams from '../../shared/hooks/useListParams';
 import Pagination from '../../shared/components/form/Pagination';
@@ -260,7 +262,7 @@ export default function WatchPage() {
       <ViewTabs view={view} onChange={setView} watchCount={watchlists.reduce((acc, w) => acc + (w.itemCount ?? 0), 0)} alertsCount={alerts.data?.totalElements ?? alertItems.length} />
 
       {isWatchlist && (
-      <section className="rounded-xl border border-border-default bg-bg-elevated card-hover">
+      <Card as="section" variant="elevated" radius="xl" padding="none" interactive>
         <header className="flex items-center justify-between px-4 py-3 border-b border-border-default gap-3">
           <div className="flex items-center gap-2 shrink-0">
             <Star className="h-4 w-4 text-warning" />
@@ -281,7 +283,7 @@ export default function WatchPage() {
         <div className="px-4 py-3 border-b border-border-default">
           {lists.isLoading ? (
             <div className="flex items-center gap-2 text-xs text-fg-muted">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+              <Spinner size="sm" tone="accent" />
               {t('watch.listsLoading')}
             </div>
           ) : (
@@ -323,7 +325,7 @@ export default function WatchPage() {
         <div className="flex flex-col">
           {items.isLoading || activeListId == null ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-fg-muted">
-              <Loader2 className="h-4 w-4 animate-spin text-accent" />
+              <Spinner size="sm" tone="accent" />
               {t('watch.loading')}
             </div>
           ) : watchItems.length === 0 ? (
@@ -358,11 +360,11 @@ export default function WatchPage() {
             ))
           )}
         </div>
-      </section>
+      </Card>
       )}
 
       {isAlerts && (
-      <section className="rounded-xl border border-border-default bg-bg-elevated card-hover">
+      <Card as="section" variant="elevated" radius="xl" padding="none" interactive>
         <header className="flex items-center justify-between px-4 py-3 border-b border-border-default">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-accent" />
@@ -393,7 +395,7 @@ export default function WatchPage() {
         <div className="divide-y divide-border-default">
           {alerts.isLoading ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-fg-muted">
-              <Loader2 className="h-4 w-4 animate-spin text-accent" />
+              <Spinner size="sm" tone="accent" />
               {t('watch.loading')}
             </div>
           ) : alertItems.length === 0 ? (
@@ -409,7 +411,7 @@ export default function WatchPage() {
           )}
         </div>
         <Pagination page={alertParams.page} totalPages={alertTotalPages} onPageChange={alertParams.setPage} />
-      </section>
+      </Card>
       )}
 
       <EditWatchlistItemModal

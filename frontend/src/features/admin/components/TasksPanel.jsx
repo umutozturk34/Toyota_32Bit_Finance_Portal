@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { AnimatePresence } from 'framer-motion';
+import SideDrawer from '../../../shared/components/modal/SideDrawer';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import {
     Activity, Play, CheckCircle2, XCircle, Clock,
@@ -12,6 +11,7 @@ import { adminService } from '../services/adminService';
 import { getToken } from '../../auth/lib/keycloak';
 import { toast } from '../../../shared/components/feedback/Toast';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
+import Spinner from '../../../shared/components/feedback/Spinner';
 import { currentLocaleTag } from '../../../shared/utils/formatters';
 
 const EMPTY_STATUS = { running: [], history: [], runningCount: 0 };
@@ -193,45 +193,23 @@ export default function TasksPanel({ open, onClose }) {
         }
     };
 
-    return (
-        <AnimatePresence>
-            {open && (
-                <>
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                        className="fixed inset-0 z-[60] bg-black/30"
-                        onClick={onClose}
-                    />
-                    <motion.div
-                        initial={{ x: '100%' }}
-                        animate={{ x: 0 }}
-                        exit={{ x: '100%' }}
-                        transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
-                        className="fixed top-0 right-0 bottom-0 z-[70] w-[420px] max-w-[90vw] flex flex-col border-l border-border-default bg-bg-base overflow-hidden"
-                    >
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-border-default bg-bg-elevated backdrop-blur-md shrink-0">
-                            <div className="flex items-center gap-2">
-                                <Activity className="w-4 h-4 text-accent" />
-                                <span className="text-sm font-semibold text-fg">{t('tasksPanel.title')}</span>
-                                {taskData.runningCount > 0 && (
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent border border-accent/20">
-                                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                                        {taskData.runningCount}
-                                    </span>
-                                )}
-                            </div>
-                            <button
-                                onClick={onClose}
-                                className="p-1.5 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
+    const headerActions = taskData.runningCount > 0 ? (
+        <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent border border-accent/20">
+            <Spinner size="xs" tone="inherit" />
+            {taskData.runningCount}
+        </span>
+    ) : null;
 
-                        <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-auto-hide">
+    return (
+        <SideDrawer
+            open={open}
+            onClose={onClose}
+            icon={Activity}
+            iconTint="text-accent"
+            title={t('tasksPanel.title')}
+            headerActions={headerActions}
+        >
+                        <div className="p-3 space-y-3">
                             <div className="grid gap-2 grid-cols-2">
                                 {TASK_GROUPS.map(({ categoryKey, icon: CatIcon, color, bg, tasks }) => (
                                     <div key={categoryKey} className="rounded-lg border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-3 space-y-2">
@@ -253,9 +231,9 @@ export default function TasksPanel({ open, onClose }) {
                                                         className="flex items-center gap-1 rounded border border-border-default bg-bg-base px-2 py-1 text-[10px] font-medium text-fg-muted transition-all hover:bg-surface hover:text-fg disabled:opacity-50 disabled:cursor-not-allowed"
                                                     >
                                                         {isRunning ? (
-                                                            <Loader2 className="h-2.5 w-2.5 animate-spin text-accent" />
+                                                            <Spinner size="xs" tone="accent" />
                                                         ) : isTriggering ? (
-                                                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                                            <Spinner size="xs" tone="inherit" />
                                                         ) : (
                                                             <Play className="h-2.5 w-2.5" />
                                                         )}
@@ -308,9 +286,6 @@ export default function TasksPanel({ open, onClose }) {
                                 )}
                             </div>
                         </div>
-                    </motion.div>
-                </>
-            )}
-        </AnimatePresence>
+        </SideDrawer>
     );
 }

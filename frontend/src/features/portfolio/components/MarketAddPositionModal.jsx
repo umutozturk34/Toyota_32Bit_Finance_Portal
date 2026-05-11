@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { X, Wallet } from 'lucide-react';
-import { Loader2 } from '../../../shared/components/feedback/AnimatedIcons';
+import { Wallet } from 'lucide-react';
 import PositionFormModal from './PositionFormModal';
 import { usePortfolioList } from '../hooks/usePortfolioData';
+import BaseModal from '../../../shared/components/modal/BaseModal';
+import Button from '../../../shared/components/buttons/Button';
 
 export default function MarketAddPositionModal({ assetType, assetCode, assetName, assetImage, currentPrice, onClose, onComplete }) {
   const { t } = useTranslation();
@@ -16,42 +16,25 @@ export default function MarketAddPositionModal({ assetType, assetCode, assetName
 
   if (!portfolioId) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute inset-0 modal-overlay backdrop-blur-sm"
-          onClick={onClose}
-        />
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="relative w-full max-w-sm rounded-2xl border border-border-default modal-panel p-6"
-        >
-          <button
-            onClick={onClose}
-            className="absolute top-3 right-3 flex items-center justify-center w-7 h-7 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
+      <BaseModal
+        isOpen
+        onClose={onClose}
+        icon={Wallet}
+        title={t('marketAddPosition.noPortfolioTitle')}
+        subtitle={t('marketAddPosition.noPortfolioHint')}
+        size="sm"
+      >
+        <div className="flex justify-center pt-2">
+          <Button
+            variant="primary"
+            size="md"
+            leftIcon={<Wallet className="h-4 w-4" />}
+            onClick={() => { onClose(); navigate('/portfolio'); }}
           >
-            <X className="h-3.5 w-3.5" />
-          </button>
-          <div className="flex flex-col items-center gap-4 py-4">
-            <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-accent/10">
-              <Wallet className="h-7 w-7 text-accent" />
-            </div>
-            <div className="text-center space-y-1">
-              <p className="text-sm font-semibold text-fg">{t('marketAddPosition.noPortfolioTitle')}</p>
-              <p className="text-xs text-fg-muted">{t('marketAddPosition.noPortfolioHint')}</p>
-            </div>
-            <button
-              onClick={() => { onClose(); navigate('/portfolio'); }}
-              className="flex items-center gap-2 rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-bright border-none cursor-pointer"
-            >
-              <Wallet className="h-4 w-4" />
-              {t('marketAddPosition.goToPortfolio')}
-            </button>
-          </div>
-        </motion.div>
-      </div>
+            {t('marketAddPosition.goToPortfolio')}
+          </Button>
+        </div>
+      </BaseModal>
     );
   }
 

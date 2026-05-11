@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../features/auth/AuthContext';
 import { ShieldOff } from 'lucide-react';
-import { Loader2 } from '../feedback/AnimatedIcons';
+import Spinner from '../feedback/Spinner';
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { isAuthenticated, hasRole, loading } = useAuth();
   const { t } = useTranslation();
@@ -11,7 +11,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="flex items-center gap-3 text-fg-muted">
-          <Loader2 size={20} className="animate-spin text-accent" />
+          <Spinner size="md" tone="accent" />
           {t('common.loading')}
         </div>
       </div>

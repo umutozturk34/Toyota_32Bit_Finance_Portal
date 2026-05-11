@@ -1,0 +1,157 @@
+import { forwardRef } from 'react';
+import { motion } from 'framer-motion';
+
+const cx = (...parts) => parts.filter(Boolean).join(' ');
+
+const VARIANTS = {
+  elevated: 'border border-border-default bg-bg-elevated',
+  glass: 'border border-border-default glass',
+  surface: 'border border-border-default bg-surface',
+  gradient: 'border border-border-default',
+  outline: 'border border-border-default bg-transparent',
+  popover: 'border border-accent/30 bg-bg-deep/95 shadow-2xl',
+  placeholder: 'border border-dashed border-border-default/60 bg-bg-elevated/40',
+};
+
+const TONES = {
+  default: '',
+  success: 'border-success/30 bg-success/5',
+  danger: 'border-danger/30 bg-danger/5',
+  warning: 'border-warning/30 bg-warning/5',
+  accent: 'border-accent/30 bg-accent/5',
+  gradient: '',
+};
+
+const ACCENT_BAR_TOKENS = {
+  accent: 'border-t-accent',
+  'accent-secondary': 'border-t-accent-secondary',
+  success: 'border-t-success',
+  danger: 'border-t-danger',
+  warning: 'border-t-warning',
+};
+
+const RADII = {
+  md: 'rounded-md',
+  lg: 'rounded-lg',
+  xl: 'rounded-xl',
+  '2xl': 'rounded-2xl',
+  '3xl': 'rounded-3xl',
+};
+
+const PADDINGS = {
+  none: '',
+  sm: 'p-3',
+  md: 'p-4',
+  lg: 'p-5',
+  xl: 'p-8',
+};
+
+const GRADIENT_TOKEN_MAP = {
+  accent: 'rgba(99, 102, 241, 0.08)',
+  'accent-secondary': 'rgba(139, 92, 246, 0.06)',
+  success: 'rgba(16, 185, 129, 0.06)',
+  danger: 'rgba(239, 68, 68, 0.06)',
+  warning: 'rgba(245, 158, 11, 0.06)',
+};
+
+const resolveGradientColor = (token) => {
+  if (!token) return null;
+  if (token.startsWith('#') || token.startsWith('rgb') || token.startsWith('hsl')) return token;
+  return GRADIENT_TOKEN_MAP[token] ?? null;
+};
+
+const resolveAccentBar = (accentBar) => {
+  if (!accentBar || accentBar === 'none') return { className: null, style: null };
+  if (accentBar in ACCENT_BAR_TOKENS) {
+    return { className: cx('border-t-2', ACCENT_BAR_TOKENS[accentBar]), style: null };
+  }
+  return { className: 'border-t-2', style: { borderTopColor: accentBar } };
+};
+
+/**
+ * @typedef {Object} CardProps
+ * @property {'elevated'|'glass'|'surface'|'gradient'|'outline'|'popover'|'placeholder'} [variant='elevated']
+ * @property {'default'|'success'|'danger'|'warning'|'accent'|'gradient'} [tone='default']
+ * @property {'none'|'accent'|'accent-secondary'|'success'|'danger'|'warning'|string} [accentBar='none']
+ * @property {'md'|'lg'|'xl'|'2xl'|'3xl'} [radius='xl']
+ * @property {'none'|'sm'|'md'|'lg'|'xl'} [padding='md']
+ * @property {boolean} [interactive]
+ * @property {boolean} [backdropBlur]
+ * @property {boolean} [pending]
+ * @property {string} [gradientFrom]
+ * @property {string} [gradientTo]
+ * @property {React.ElementType} [as]
+ * @property {string} [className]
+ * @property {React.CSSProperties} [style]
+ * @property {React.ReactNode} [children]
+ */
+
+/** @type {React.ForwardRefExoticComponent<CardProps>} */
+const Card = forwardRef(function Card(
+  {
+    variant = 'elevated',
+    tone = 'default',
+    accentBar = 'none',
+    radius = 'xl',
+    padding = 'md',
+    interactive = false,
+    backdropBlur = false,
+    pending = false,
+    gradientFrom,
+    gradientTo,
+    as,
+    className,
+    style,
+    children,
+    ...rest
+  },
+  ref,
+) {
+  const Component = as ?? 'div';
+  const variantClass = VARIANTS[variant] ?? VARIANTS.elevated;
+  const toneClass = TONES[tone] ?? TONES.default;
+  const radiusClass = RADII[radius] ?? RADII.xl;
+  const paddingClass = PADDINGS[padding] ?? PADDINGS.md;
+  const accent = resolveAccentBar(accentBar);
+
+  const gradientStyle = (() => {
+    if (tone !== 'gradient' && variant !== 'gradient') return null;
+    const fromColor = resolveGradientColor(gradientFrom);
+    const toColor = resolveGradientColor(gradientTo);
+    if (!fromColor && !toColor) return null;
+    return {
+      backgroundImage: `linear-gradient(135deg, ${fromColor ?? 'transparent'}, ${toColor ?? 'transparent'})`,
+    };
+  })();
+
+  const composedStyle = {
+    ...(style || {}),
+    ...(accent.style || {}),
+    ...(gradientStyle || {}),
+  };
+
+  return (
+    <Component
+      ref={ref}
+      className={cx(
+        'relative overflow-hidden',
+        variantClass,
+        toneClass,
+        radiusClass,
+        paddingClass,
+        accent.className,
+        interactive && 'card-hover cursor-pointer hover:border-border-hover transition-all duration-200',
+        !interactive && (variant === 'elevated' || variant === 'glass') && 'card-hover transition-all duration-200',
+        backdropBlur && 'backdrop-blur-md',
+        pending && 'opacity-60 pointer-events-none border-accent/40',
+        className,
+      )}
+      style={composedStyle}
+      {...rest}
+    >
+      {children}
+    </Component>
+  );
+});
+
+export default Card;

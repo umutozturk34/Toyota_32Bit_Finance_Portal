@@ -1,4 +1,5 @@
-import { RefreshCw, Loader2, Check } from './AnimatedIcons';
+import { RefreshCw, Check } from './AnimatedIcons';
+import Spinner from './Spinner';
 
 import { motion } from 'framer-motion';
 export default function ProcessingSteps({ steps, currentStep }) {
@@ -17,7 +18,7 @@ export default function ProcessingSteps({ steps, currentStep }) {
             {currentStep > idx ? (
               <Check className="h-3.5 w-3.5 text-success shrink-0" />
             ) : currentStep === idx ? (
-              <Loader2 className="h-3.5 w-3.5 text-accent animate-spin shrink-0" />
+              <Spinner size="sm" tone="accent" className="shrink-0" />
             ) : (
               <div className="h-3.5 w-3.5 rounded-full border border-border-default shrink-0" />
             )}

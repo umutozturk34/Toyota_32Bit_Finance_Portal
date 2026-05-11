@@ -6,6 +6,7 @@ import { Clock } from 'lucide-react';
 import { RefreshCw } from '../feedback/AnimatedIcons';
 import AdminToolbar from '../admin/AdminToolbar';
 import useAppStore from '../../stores/useAppStore';
+import Button from '../buttons/Button';
 
 const COOLDOWN_MS = 3 * 1000;
 
@@ -65,29 +66,18 @@ export default function PageHeader({
                 {title}
             </h1>
             <div className="flex flex-wrap items-center gap-2">
-                <button
+                <Button
+                    variant="secondary"
+                    size="md"
                     onClick={handleRefresh}
                     disabled={loading || isCoolingDown}
+                    loading={loading}
+                    leftIcon={isCoolingDown && !loading ? <Clock className="h-4 w-4" /> : (!loading ? <RefreshCw className="h-4 w-4" /> : null)}
                     title={isCoolingDown ? t('pageHeader.cooldown', { time: formatRemaining(remaining) }) : t('pageHeader.refresh')}
-                    className="flex items-center gap-2 rounded-lg border border-border-default bg-bg-elevated px-4 py-2 text-sm text-fg-muted transition-all duration-200 hover:bg-surface hover:text-fg hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
+                    motionPreset="tapHover"
                 >
-                    {loading ? (
-                        <>
-                            <RefreshCw className="h-4 w-4 animate-spin" />
-                            {t('common.loading')}
-                        </>
-                    ) : isCoolingDown ? (
-                        <>
-                            <Clock className="h-4 w-4" />
-                            {formatRemaining(remaining)}
-                        </>
-                    ) : (
-                        <>
-                            <RefreshCw className="h-4 w-4" />
-                            {t('pageHeader.refresh')}
-                        </>
-                    )}
-                </button>
+                    {loading ? t('common.loading') : isCoolingDown ? formatRemaining(remaining) : t('pageHeader.refresh')}
+                </Button>
                 {isAdmin && adminActions.length > 0 && (
                     <AdminToolbar
                         actions={adminActions}

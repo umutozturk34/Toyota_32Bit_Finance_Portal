@@ -1,5 +1,5 @@
 import { Download, LineChart, Wrench } from 'lucide-react';
-import { Loader2 } from '../feedback/AnimatedIcons';
+import Spinner from '../feedback/Spinner';
 
 export default function AdminToolbar({ actions, updating, disabled = false }) {
     const defaultIcons = {
@@ -19,7 +19,7 @@ export default function AdminToolbar({ actions, updating, disabled = false }) {
                     className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/10 px-4 py-2 text-sm text-accent-bright transition-colors duration-150 hover:bg-accent/20 disabled:opacity-50"
                 >
                     {updating[key] ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Spinner size="sm" tone="inherit" />
                     ) : (
                         icon || defaultIcons[key] || <Wrench className="h-4 w-4" />
                     )}

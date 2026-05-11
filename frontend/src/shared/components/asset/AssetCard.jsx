@@ -1,16 +1,21 @@
-import { cardVariants } from '../../utils/animations';
-
 import { motion } from 'framer-motion';
+import { cardVariants } from '../../utils/animations';
+import Card from '../card';
+
 export default function AssetCard({ onClick, size = 'lg', children, className = '' }) {
-  const padding = size === 'sm' ? 'p-4' : 'p-5';
-  const rounded = size === 'sm' ? 'rounded-xl' : 'rounded-2xl';
+  const padding = size === 'sm' ? 'md' : 'lg';
+  const radius = size === 'sm' ? 'xl' : '2xl';
   return (
-    <motion.div
+    <Card
+      as={motion.div}
       variants={cardVariants}
       onClick={onClick}
-      className={`group cursor-pointer ${rounded} border border-border-default bg-bg-elevated ${padding} card-hover transition-all duration-200 hover:border-border-hover ${className}`}
+      interactive
+      radius={radius}
+      padding={padding}
+      className={`group ${className}`}
     >
       {children}
-    </motion.div>
+    </Card>
   );
 }

@@ -1,0 +1,11 @@
+import Card from './Card';
+import CardHeader from './CardHeader';
+import CardBody from './CardBody';
+import CardFooter from './CardFooter';
+
+Card.Header = CardHeader;
+Card.Body = CardBody;
+Card.Footer = CardFooter;
+
+export default Card;
+export { Card, CardHeader, CardBody, CardFooter };

@@ -66,12 +66,6 @@ public class NotificationPreference {
     @Column(name = "inapp_reports", nullable = false)
     private boolean inappReports;
 
-    @Column(name = "email_messages", nullable = false)
-    private boolean emailMessages;
-
-    @Column(name = "inapp_messages", nullable = false)
-    private boolean inappMessages;
-
     @Column(name = "email_system", nullable = false)
     private boolean emailSystem;
 
@@ -161,8 +155,6 @@ public class NotificationPreference {
                 .inappWatchlist(true)
                 .emailReports(true)
                 .inappReports(true)
-                .emailMessages(false)
-                .inappMessages(true)
                 .emailSystem(false)
                 .inappSystem(true)
                 .emailMarketOpened(false)

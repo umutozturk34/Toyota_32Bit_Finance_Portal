@@ -8,8 +8,6 @@ public record NotificationPreferenceResponse(
         boolean inappWatchlist,
         boolean emailReports,
         boolean inappReports,
-        boolean emailMessages,
-        boolean inappMessages,
         boolean emailSystem,
         boolean inappSystem,
         boolean emailMarketOpened,

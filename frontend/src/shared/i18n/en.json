@@ -40,7 +40,6 @@
     "bonds": "Bonds",
     "portfolio": "Portfolio",
     "watch": "Watch",
-    "messages": "Messages",
     "adminTrackedAssets": "Tracked Assets",
     "adminUsers": "Users",
     "tasks": "Tasks",
@@ -351,9 +350,7 @@
     "title": "Overview"
   },
   "notifStream": {
-    "newNotification": "New notification",
-    "newUserMessage": "New user message",
-    "newMessageReceived": "New message received"
+    "newNotification": "New notification"
   },
   "marketList": {
     "updateStarted": "Update started",
@@ -480,47 +477,6 @@
     "closedTag": "closed",
     "idLabel": "id"
   },
-  "adminThread": {
-    "pickConversation": "Pick a conversation",
-    "pickConversationHint": "Select a user from the list to view history and reply.",
-    "closedAt": "Closed · {{time}}",
-    "activeConversation": "Active conversation",
-    "reopen": "Reopen",
-    "reopenTooltip": "Reopen conversation",
-    "close": "Close",
-    "closeTooltip": "Close conversation",
-    "deleteTooltip": "Delete conversation",
-    "emptyThread": "No messages in this conversation yet.",
-    "userLabel": "User",
-    "composerPlaceholder": "Write a message to the user…",
-    "composerClosedHint": "Conversation closed — reopen it to send new messages.",
-    "closeConfirmTitle": "Close conversation?",
-    "closeConfirmBody": "The user can no longer send messages. Existing messages remain visible.",
-    "deleteConfirmTitle": "Delete conversation?",
-    "deleteConfirmBody": "All messages in this conversation will be permanently deleted.",
-    "reopenedTitle": "Conversation reopened",
-    "reopenedBody": "{{user}} can keep messaging",
-    "closedTitle": "Conversation closed",
-    "closedBody": "{{user}} can no longer send new messages",
-    "deletedTitle": "Conversation deleted",
-    "deletedBody": "{{user}}'s conversation has been removed",
-    "actionFailed": "Action failed"
-  },
-  "userMessages": {
-    "title": "Messages",
-    "subtitle": "Direct line with the admin team",
-    "live": "live",
-    "emptyTitle": "Conversation hasn't started yet",
-    "emptyBody": "Send your first message and the admin team will reply.",
-    "composeHint": "Start typing below",
-    "adminLabel": "Admin",
-    "composerPlaceholder": "Write a message…",
-    "sendFailed": "Failed to send message"
-  },
-  "messages": {
-    "conversationClosedBanner": "The admin team closed your conversation. You cannot send messages until it is reopened.",
-    "conversationClosedHint": "Conversation closed. You cannot send messages until it is reopened."
-  },
   "assets": {
     "labels": {
       "CRYPTO": "Crypto",
@@ -589,7 +545,6 @@
       "priceAlerts": { "label": "Price alert", "hint": "When threshold is breached" },
       "watchlist": { "label": "Watchlist", "hint": "On strong movement" },
       "reports": { "label": "Reports", "hint": "When PDF report is ready" },
-      "messages": { "label": "Messages", "hint": "System messages" },
       "system": { "label": "System", "hint": "Maintenance, security, etc." },
       "marketOpened": { "label": "Market opened", "hint": "When opening prices loaded" },
       "marketClosed": { "label": "Market closed", "hint": "When closing prices loaded" },
@@ -1347,16 +1302,6 @@
     "successTitle": "Broadcast sent",
     "successBody": "Delivered to {{dispatched}}/{{total}} users",
     "failed": "Failed to send broadcast"
-  },
-  "adminMessage": {
-    "label": "Message",
-    "placeholder": "Write the message you want to send to this user…",
-    "hint": "Enter to send · Shift+Enter for newline",
-    "send": "Send",
-    "sending": "Sending…",
-    "sent": "Message sent",
-    "sentBody": "Delivered to {{username}}",
-    "failed": "Failed to send message"
   },
   "alertRow": {
     "active": "active",

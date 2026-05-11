@@ -5,7 +5,7 @@ import com.finance.notification.core.model.NotificationType;
 import java.util.Map;
 
 public sealed interface NotificationPayload
-        permits PriceAlertPayload, WatchlistDeltaPayload, MessagePayload, SystemPayload,
+        permits PriceAlertPayload, WatchlistDeltaPayload, SystemPayload,
                 MarketOpenedPayload, MarketClosedPayload, MarketDataUpdatedPayload,
                 NewsPublishedPayload, PortfolioUpdatedPayload {
 

@@ -1,4 +1,4 @@
-import { Mail, MessageSquare, Bell, AlertCircle, Zap, FileText, Smartphone, Sunrise, Sunset, RefreshCw, Newspaper, Briefcase } from 'lucide-react';
+import { Mail, Bell, AlertCircle, Zap, FileText, Smartphone, Sunrise, Sunset, RefreshCw, Newspaper, Briefcase } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
@@ -11,7 +11,6 @@ const TYPE_ROWS = [
   { id: 'priceAlerts', Icon: AlertCircle },
   { id: 'watchlist', Icon: Zap },
   { id: 'reports', Icon: FileText },
-  { id: 'messages', Icon: MessageSquare },
   { id: 'system', Icon: Bell },
   { id: 'marketOpened', Icon: Sunrise },
   { id: 'marketClosed', Icon: Sunset },

@@ -11,9 +11,7 @@ import {
   DollarSign, Shield,
   LogOut, Briefcase, Activity, Settings, Bell, Eye,
   ChevronLeft, ChevronRight, Menu, Landmark, Wallet, Database, Gem, Users,
-  MessageCircle,
 } from 'lucide-react';
-import { useUnreadMessageCount } from '../hooks/useMessages';
 import TasksPanel from '../../features/admin/components/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
 import NotificationPanel from '../../features/notifications/NotificationPanel';
@@ -33,7 +31,6 @@ const navItems = [
   { to: '/bonds', labelKey: 'nav.bonds', Icon: Landmark },
   { to: '/portfolio', labelKey: 'nav.portfolio', Icon: Wallet },
   { to: '/watch', labelKey: 'nav.watch', Icon: Eye },
-  { to: '/messages', labelKey: 'nav.messages', Icon: MessageCircle, badgeKey: 'messages' },
 ];
 
 const MainLayout = () => {
@@ -51,7 +48,6 @@ const MainLayout = () => {
   });
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
-  const { data: unreadMessageCount = 0 } = useUnreadMessageCount();
   useNotificationStream();
 
   const navType = useNavigationType();
@@ -110,8 +106,7 @@ const MainLayout = () => {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5" style={{ scrollbarWidth: 'thin' }}>
-        {allNav.map(({ to, labelKey, Icon, badgeKey }) => {
-          const badge = badgeKey === 'messages' ? unreadMessageCount : 0;
+        {allNav.map(({ to, labelKey, Icon }) => {
           const label = t(labelKey);
           return (
             <Link
@@ -126,23 +121,13 @@ const MainLayout = () => {
                   : 'text-fg-muted hover:text-fg hover:bg-surface'
               }`}
             >
-              <span className="relative shrink-0">
-                <Icon
-                  size={16}
-                  strokeWidth={1.6}
-                  className={`transition-colors duration-150 ${isActive(to) ? 'text-accent' : 'group-hover:text-fg-muted'}`}
-                />
-                {badge > 0 && collapsed && !isMobile && (
-                  <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-1 rounded-full bg-accent text-white text-[8px] font-bold flex items-center justify-center font-mono leading-none">
-                    {badge > 9 ? '9+' : badge}
-                  </span>
-                )}
-              </span>
+              <Icon
+                size={16}
+                strokeWidth={1.6}
+                className={`shrink-0 transition-colors duration-150 ${isActive(to) ? 'text-accent' : 'group-hover:text-fg-muted'}`}
+              />
               {(!collapsed || isMobile) && (
                 <span className="text-[13px] font-medium">{label}</span>
-              )}
-              {(!collapsed || isMobile) && badge > 0 && (
-                <span className="ml-auto text-[10px] font-mono text-accent">{badge > 99 ? '99+' : badge}</span>
               )}
               {isActive(to) && (
                 <motion.span

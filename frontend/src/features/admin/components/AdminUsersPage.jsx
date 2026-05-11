@@ -1,13 +1,12 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Users, Search, Ban, ShieldCheck, Loader2, AlertCircle, Mail, ChevronLeft, ChevronRight, User, MessageCircle } from 'lucide-react';
+import { Users, Search, Ban, ShieldCheck, Loader2, AlertCircle, Mail, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import PageHeader from '../../../shared/components/layout/PageHeader';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 import { toast } from '../../../shared/components/feedback/Toast';
 import { useAuth } from '../../auth/AuthContext';
 import { useAdminUsers, useAdminUserCount, useBanUser, useUnbanUser } from '../hooks/useAdminUsers';
-import AdminUserMessageModal from './AdminUserMessageModal';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
@@ -37,7 +36,6 @@ export default function AdminUsersPage() {
   const [pageSize, setPageSize] = useState(25);
   const [page, setPage] = useState(0);
   const [pendingId, setPendingId] = useState(null);
-  const [messagingUser, setMessagingUser] = useState(null);
 
   const first = page * pageSize;
   const { data: users, isLoading, isFetching, error, refetch } = useAdminUsers({ first, max: pageSize, search });
@@ -137,7 +135,7 @@ export default function AdminUsersPage() {
             key={user.id}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-[2fr_2fr_1fr_1fr_auto_140px] gap-3 items-center px-4 py-3 border-b border-border-default last:border-b-0 text-sm hover:bg-surface transition-colors"
+            className="grid grid-cols-[2fr_2fr_1fr_1fr_140px] gap-3 items-center px-4 py-3 border-b border-border-default last:border-b-0 text-sm hover:bg-surface transition-colors"
           >
             <div className="min-w-0">
               <div className="font-medium text-fg truncate">{user.username}</div>
@@ -153,13 +151,6 @@ export default function AdminUsersPage() {
             </div>
             <span className="text-[11px] text-fg-muted font-mono">{formatDate(user.createdAt, localeTag)}</span>
             <StatusBadge enabled={user.enabled} />
-            <button
-              onClick={() => setMessagingUser(user)}
-              title={t('adminUsers.sendMessageTitle')}
-              className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-accent hover:bg-accent/10 transition-colors bg-transparent border-none cursor-pointer"
-            >
-              <MessageCircle className="h-3.5 w-3.5" />
-            </button>
             {user.id === currentUser?.id ? (
               <span className="justify-self-end flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-semibold bg-accent/10 text-accent">
                 <User className="h-3 w-3" /> {t('adminUsers.you')}
@@ -230,11 +221,6 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      <AdminUserMessageModal
-        open={!!messagingUser}
-        user={messagingUser}
-        onClose={() => setMessagingUser(null)}
-      />
     </div>
   );
 }

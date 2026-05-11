@@ -14,7 +14,7 @@ import {
 } from '../../shared/hooks/useNotifications';
 import { useEffect, useState } from 'react';
 import ConfirmDialog from '../../shared/components/modal/ConfirmDialog';
-import BroadcastModal from '../messages/BroadcastModal';
+import BroadcastModal from '../admin/broadcast/BroadcastModal';
 import { useAuth } from '../auth/AuthContext';
 import { currentLocaleTag } from '../../shared/utils/formatters';
 

@@ -12,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -34,11 +36,17 @@ public class BroadcastService {
         Page<String> page;
         do {
             page = recipientDirectory.findUserSubs(PageRequest.of(pageIndex, properties.batchSize()));
-            for (String userSub : page.getContent()) {
-                if (dispatchSafely(userSub, payload)) {
-                    dispatched++;
-                } else {
-                    failed++;
+            List<String> recipients = page.getContent().stream()
+                    .filter(sub -> !sub.equals(adminSub))
+                    .toList();
+            if (!recipients.isEmpty()) {
+                dispatcher.preloadPage(recipients);
+                for (String userSub : recipients) {
+                    if (dispatchSafely(userSub, payload)) {
+                        dispatched++;
+                    } else {
+                        failed++;
+                    }
                 }
             }
             pageIndex++;

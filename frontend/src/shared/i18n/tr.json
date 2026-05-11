@@ -40,7 +40,6 @@
     "bonds": "Tahvil",
     "portfolio": "Portföy",
     "watch": "Takip",
-    "messages": "Mesajlar",
     "adminTrackedAssets": "Takip Edilen Varlıklar",
     "adminUsers": "Kullanıcılar",
     "tasks": "Görevler",
@@ -351,9 +350,7 @@
     "title": "Genel Bakış"
   },
   "notifStream": {
-    "newNotification": "Yeni bildirim",
-    "newUserMessage": "Yeni kullanıcı mesajı",
-    "newMessageReceived": "Yeni mesaj geldi"
+    "newNotification": "Yeni bildirim"
   },
   "marketList": {
     "updateStarted": "Güncelleme Başlatıldı",
@@ -480,47 +477,6 @@
     "closedTag": "kapalı",
     "idLabel": "id"
   },
-  "adminThread": {
-    "pickConversation": "Bir sohbet seç",
-    "pickConversationHint": "Soldaki listeden kullanıcı seç, geçmişi gör ve yanıt ver.",
-    "closedAt": "Kapatıldı · {{time}}",
-    "activeConversation": "Aktif sohbet",
-    "reopen": "Yeniden aç",
-    "reopenTooltip": "Sohbeti yeniden aç",
-    "close": "Kapat",
-    "closeTooltip": "Sohbeti kapat",
-    "deleteTooltip": "Sohbeti sil",
-    "emptyThread": "Bu sohbette henüz mesaj yok.",
-    "userLabel": "Kullanıcı",
-    "composerPlaceholder": "Kullanıcıya mesaj yaz…",
-    "composerClosedHint": "Sohbet kapalı — yeni mesaj göndermek için önce yeniden aç.",
-    "closeConfirmTitle": "Sohbeti kapat?",
-    "closeConfirmBody": "Kullanıcı bu sohbete yeni mesaj gönderemez. Mevcut mesajlar kalır, geçmişi okumaya devam edebilir.",
-    "deleteConfirmTitle": "Sohbeti sil?",
-    "deleteConfirmBody": "Bu sohbetin tüm mesajları geri alınamaz şekilde silinir.",
-    "reopenedTitle": "Sohbet yeniden açıldı",
-    "reopenedBody": "{{user}} mesajlaşmaya devam edebilir",
-    "closedTitle": "Sohbet kapatıldı",
-    "closedBody": "{{user}} artık yeni mesaj atamaz",
-    "deletedTitle": "Sohbet silindi",
-    "deletedBody": "{{user}} sohbeti tamamen kaldırıldı",
-    "actionFailed": "İşlem başarısız"
-  },
-  "userMessages": {
-    "title": "Mesajlar",
-    "subtitle": "Yönetimle birebir yazışma",
-    "live": "canlı",
-    "emptyTitle": "Sohbet henüz başlamadı",
-    "emptyBody": "İlk mesajını gönder, yönetim ekibimiz seninle yazışsın.",
-    "composeHint": "Aşağıdan yazmaya başla",
-    "adminLabel": "Yönetim",
-    "composerPlaceholder": "Mesajını yaz…",
-    "sendFailed": "Mesaj gönderilemedi"
-  },
-  "messages": {
-    "conversationClosedBanner": "Yönetim sohbetinizi kapattı. Yeniden açılana kadar mesaj gönderemezsiniz.",
-    "conversationClosedHint": "Sohbet kapatıldı. Yeniden açılana kadar mesaj gönderemezsiniz."
-  },
   "assets": {
     "labels": {
       "CRYPTO": "Kripto",
@@ -589,7 +545,6 @@
       "priceAlerts": { "label": "Fiyat alarmı", "hint": "Eşik kırıldığında" },
       "watchlist": { "label": "Takip listesi", "hint": "Sert hareket olduğunda" },
       "reports": { "label": "Raporlar", "hint": "PDF rapor hazır olduğunda" },
-      "messages": { "label": "Mesajlar", "hint": "Sistem mesajları" },
       "system": { "label": "Sistem", "hint": "Bakım, güvenlik vb." },
       "marketOpened": { "label": "Piyasa açıldı", "hint": "Açılış fiyatları yüklendiğinde" },
       "marketClosed": { "label": "Piyasa kapandı", "hint": "Kapanış fiyatları yüklendiğinde" },
@@ -1347,16 +1302,6 @@
     "successTitle": "Yayın gönderildi",
     "successBody": "{{dispatched}}/{{total}} kullanıcıya iletildi",
     "failed": "Yayın gönderilemedi"
-  },
-  "adminMessage": {
-    "label": "Mesaj",
-    "placeholder": "Kullanıcıya iletmek istediğin mesajı yaz…",
-    "hint": "Enter gönder · Shift+Enter satır",
-    "send": "Gönder",
-    "sending": "Gönderiliyor…",
-    "sent": "Mesaj gönderildi",
-    "sentBody": "{{username}} kullanıcısına iletildi",
-    "failed": "Mesaj gönderilemedi"
   },
   "alertRow": {
     "active": "aktif",

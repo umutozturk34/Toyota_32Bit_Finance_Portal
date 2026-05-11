@@ -8,4 +8,7 @@ public interface UserStatusPort {
 
     default void preload(Collection<String> userSubs) {
     }
+
+    default void invalidate(String userSub) {
+    }
 }

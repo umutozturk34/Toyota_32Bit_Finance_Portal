@@ -38,6 +38,12 @@ public class DbUserStatusAdapter implements UserStatusPort {
     }
 
     @Override
+    public void invalidate(String userSub) {
+        if (userSub == null || userSub.isBlank()) return;
+        cache.invalidate(userSub);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public void preload(Collection<String> userSubs) {
         Set<String> missing = new HashSet<>();

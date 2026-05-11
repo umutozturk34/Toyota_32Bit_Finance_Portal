@@ -1,10 +1,13 @@
 package com.finance.user.service;
 
+import com.finance.common.event.UserStatusChangedEvent;
+import com.finance.common.exception.BusinessException;
+import com.finance.common.repository.UserStatusRepository;
+import com.finance.common.security.UserStatusPort;
+import com.finance.shared.event.EventPublisherPort;
 import com.finance.user.client.KeycloakAdminClient;
 import com.finance.user.dto.AdminUserResponse;
 import com.finance.user.dto.KeycloakUser;
-import com.finance.common.exception.BusinessException;
-import com.finance.common.repository.UserStatusRepository;
 import com.finance.user.mapper.KeycloakUserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +21,8 @@ public class AdminUserService {
     private final KeycloakAdminClient client;
     private final KeycloakUserMapper mapper;
     private final UserStatusRepository userStatusRepository;
+    private final UserStatusPort userStatus;
+    private final EventPublisherPort eventPublisher;
 
     public List<AdminUserResponse> listUsers(int first, int max, String search) {
         List<KeycloakUser> users = client.listUsers(first, max, search);
@@ -33,12 +38,17 @@ public class AdminUserService {
         if (userId != null && userId.equals(callerSub)) {
             throw new BusinessException("error.admin.user.cannotBanSelf");
         }
-        client.setEnabled(userId, false);
-        userStatusRepository.upsertEnabled(userId, false);
+        applyStatusChange(userId, false);
     }
 
     public void unbanUser(String userId) {
-        client.setEnabled(userId, true);
-        userStatusRepository.upsertEnabled(userId, true);
+        applyStatusChange(userId, true);
+    }
+
+    private void applyStatusChange(String userId, boolean enabled) {
+        client.setEnabled(userId, enabled);
+        userStatusRepository.upsertEnabled(userId, enabled);
+        userStatus.invalidate(userId);
+        eventPublisher.publish(UserStatusChangedEvent.of(userId, enabled));
     }
 }

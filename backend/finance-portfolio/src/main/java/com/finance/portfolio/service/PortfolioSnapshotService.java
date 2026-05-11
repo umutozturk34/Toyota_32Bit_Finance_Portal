@@ -81,36 +81,27 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
         BatchLogHelper.logSummary(log, type + " portfolio snapshot", result);
     }
 
-    public void generateDailySnapshots() {
+    public void generateDailySnapshots(String source) {
         LocalDate today = LocalDate.now();
         List<Portfolio> portfolios = portfolioRepository.findAll();
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
                 portfolios,
-                portfolio -> {
-                    PortfolioDailySnapshot saved = transactionTemplate.execute(status -> {
-                        if (dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(portfolio.getId(), today)) {
-                            return null;
-                        }
-                        return generateFullSnapshot(portfolio);
-                    });
-                    if (saved != null) {
-                        events.ifAvailable(port -> port.publish(PortfolioUpdatedEvent.of(
-                                portfolio.getUserSub(),
-                                portfolio.getId(),
-                                saved.getId(),
-                                saved.getTotalValueTry(),
-                                saved.getDailyPnlTry(),
-                                saved.getPnlPercent()
-                        )));
+                portfolio -> transactionTemplate.executeWithoutResult(status -> {
+                    if (!dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(portfolio.getId(), today)) {
+                        generateFullSnapshot(portfolio);
                     }
-                },
+                }),
                 p -> String.valueOf(p.getId()),
                 "daily-snapshot",
                 1, null, null, null
         );
 
-        BatchLogHelper.logSummary(log, "Daily portfolio snapshot (fallback)", result);
+        if (!portfolios.isEmpty()) {
+            events.ifAvailable(port -> port.publish(PortfolioUpdatedEvent.of(source)));
+        }
+
+        BatchLogHelper.logSummary(log, source + " portfolio snapshot", result);
     }
 
     private void insertAssetSnapshots(Portfolio portfolio, AssetType assetType,
@@ -134,6 +125,8 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
         LocalDateTime batchTimestamp = LocalDateTime.now();
         List<PortfolioPosition> positions = positionRepository
                 .findByPortfolioIdAndQuantityGreaterThan(pid, BigDecimal.ZERO);
+
+        if (positions.isEmpty()) return null;
 
         for (PortfolioPosition pos : positions) {
             assetSnapshotRepository.save(calculator.buildAssetSnapshot(pid, pos, batchTimestamp));

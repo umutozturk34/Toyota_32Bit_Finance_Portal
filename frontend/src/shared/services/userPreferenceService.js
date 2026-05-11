@@ -9,7 +9,7 @@ export const userPreferenceService = {
   },
 
   update: async (partial) => {
-    const response = await api.put(PREFERENCES_PATH, partial);
+    const response = await api.patch(PREFERENCES_PATH, partial);
     return response.data.data;
   },
 };

@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "user_preferences")
+@org.hibernate.annotations.DynamicUpdate
 public class UserPreference {
 
     @Id

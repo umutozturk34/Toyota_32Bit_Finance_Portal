@@ -28,6 +28,7 @@ import java.util.Set;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "notification_preferences")
+@org.hibernate.annotations.DynamicUpdate
 public class NotificationPreference {
 
     private static final String MARKETS_DELIMITER = ",";

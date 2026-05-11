@@ -7,7 +7,6 @@ import com.finance.user.dto.UserPreferenceResponse;
 import com.finance.user.dto.UserPreferenceUpdateRequest;
 import com.finance.user.dto.enums.ReportFrequency;
 import com.finance.user.dto.enums.ThemePreference;
-import com.finance.common.event.UserPreferencesUpdatedEvent;
 import com.finance.user.mapper.UserPreferenceMapper;
 import com.finance.user.mapper.UserPreferenceMapperImpl;
 import com.finance.user.model.UserPreference;
@@ -18,7 +17,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -35,7 +33,6 @@ class UserPreferenceServiceTest {
     private static final String USER_SUB = "kc-user-uuid-123";
 
     @Mock private UserPreferenceRepository repository;
-    @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private KeycloakAdminClient keycloakAdminClient;
 
     private UserPreferenceMapper mapper;
@@ -49,8 +46,7 @@ class UserPreferenceServiceTest {
                 new UserSecurityProperties.EmailChange(5, 6, Duration.ofMinutes(5)),
                 new UserSecurityProperties.PasswordReset(300L),
                 new UserSecurityProperties.Keycloak("finance-frontend", "themePreference", "locale"));
-        service = new UserPreferenceService(repository, mapper, eventPublisher, Optional.empty(),
-                keycloakAdminClient, securityProperties);
+        service = new UserPreferenceService(repository, mapper, keycloakAdminClient, securityProperties);
     }
 
     @Test
@@ -136,27 +132,6 @@ class UserPreferenceServiceTest {
     }
 
     @Test
-    void should_publishUpdatedEvent_when_upsertPersists() {
-        UserPreferenceUpdateRequest request = new UserPreferenceUpdateRequest(
-                ThemePreference.LIGHT, "en", null, "1Y", ReportFrequency.WEEKLY, true);
-        when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
-        when(repository.save(any(UserPreference.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        service.upsert(USER_SUB, request);
-
-        ArgumentCaptor<UserPreferencesUpdatedEvent> captor =
-                ArgumentCaptor.forClass(UserPreferencesUpdatedEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        UserPreferencesUpdatedEvent event = captor.getValue();
-        assertThat(event.userSub()).isEqualTo(USER_SUB);
-        assertThat(event.theme()).isEqualTo("LIGHT");
-        assertThat(event.language()).isEqualTo("en");
-        assertThat(event.reportFrequency()).isEqualTo("WEEKLY");
-        assertThat(event.onboardingCompleted()).isTrue();
-        assertThat(event.eventId()).isNotBlank();
-    }
-
-    @Test
     void should_syncLocaleToKeycloak_when_languageProvided() {
         UserPreferenceUpdateRequest request = new UserPreferenceUpdateRequest(
                 null, "en", null, null, null, null);
@@ -178,20 +153,6 @@ class UserPreferenceServiceTest {
         service.upsert(USER_SUB, request);
 
         verify(keycloakAdminClient, never()).setUserAttribute(any(), any(), any());
-    }
-
-    @Test
-    void should_swallowKeycloakFailure_when_attributeSyncThrows() {
-        UserPreferenceUpdateRequest request = new UserPreferenceUpdateRequest(
-                null, "en", null, null, null, null);
-        when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
-        when(repository.save(any(UserPreference.class))).thenAnswer(inv -> inv.getArgument(0));
-        org.mockito.Mockito.doThrow(new RuntimeException("keycloak down"))
-                .when(keycloakAdminClient).setUserAttribute(any(), any(), any());
-
-        UserPreferenceResponse response = service.upsert(USER_SUB, request);
-
-        assertThat(response.language()).isEqualTo("en");
     }
 
     @Test

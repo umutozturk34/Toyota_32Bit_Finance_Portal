@@ -4,18 +4,13 @@ import com.finance.user.client.KeycloakAdminClient;
 import com.finance.user.config.UserSecurityProperties;
 import com.finance.user.dto.UserPreferenceResponse;
 import com.finance.user.dto.UserPreferenceUpdateRequest;
-import com.finance.shared.event.EventPublisherPort;
-import com.finance.common.event.UserPreferencesUpdatedEvent;
 import com.finance.user.mapper.UserPreferenceMapper;
 import com.finance.user.model.UserPreference;
 import com.finance.user.repository.UserPreferenceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.Optional;
 
@@ -26,8 +21,6 @@ public class UserPreferenceService {
 
     private final UserPreferenceRepository repository;
     private final UserPreferenceMapper mapper;
-    private final ApplicationEventPublisher eventPublisher;
-    private final Optional<EventPublisherPort> kafkaPort;
     private final KeycloakAdminClient keycloakAdminClient;
     private final UserSecurityProperties securityProperties;
 
@@ -55,7 +48,6 @@ public class UserPreferenceService {
                 .orElseGet(() -> UserPreference.defaultsFor(userSub));
         applyUpdates(entity, request);
         UserPreference saved = repository.save(entity);
-        eventPublisher.publishEvent(mapper.toUpdatedEvent(saved));
         return mapper.toResponse(saved);
     }
 
@@ -67,11 +59,6 @@ public class UserPreferenceService {
                     userSub, attribute, value, ex.getMessage());
             throw new com.finance.common.exception.BusinessException("error.preferences.syncFailed", attribute);
         }
-    }
-
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    void onUserPreferencesCommitted(UserPreferencesUpdatedEvent event) {
-        kafkaPort.ifPresent(port -> port.publish(event));
     }
 
     private void applyUpdates(UserPreference entity, UserPreferenceUpdateRequest request) {

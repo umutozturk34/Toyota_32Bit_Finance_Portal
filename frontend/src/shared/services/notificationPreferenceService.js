@@ -9,7 +9,7 @@ export const notificationPreferenceService = {
   },
 
   update: async (partial) => {
-    const response = await api.put(PATH, partial);
+    const response = await api.patch(PATH, partial);
     return response.data.data;
   },
 };

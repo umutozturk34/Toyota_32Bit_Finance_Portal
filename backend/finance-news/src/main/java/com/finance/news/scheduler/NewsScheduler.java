@@ -10,8 +10,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -40,8 +38,7 @@ public class NewsScheduler {
         taskTracker.runTracked(taskType, description, () -> {
             int saved = newsDataService.updateNews();
             if (saved > 0) {
-                events.ifAvailable(port ->
-                        port.publish(NewsPublishedEvent.of(saved, List.of(), List.of(), taskType)));
+                events.ifAvailable(port -> port.publish(NewsPublishedEvent.of(taskType)));
             }
         });
     }

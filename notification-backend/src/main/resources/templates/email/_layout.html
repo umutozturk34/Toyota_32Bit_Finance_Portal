@@ -92,7 +92,7 @@
                         <p th:style="'margin:0 0 6px;font-size:11.5px;line-height:1.6;color:' + ${cSubtle} + ';'" th:text="#{appEmail.footer.line1}">Footer</p>
                         <p th:style="'margin:0;font-size:10.5px;color:' + ${cSubtle} + ';'">
                             <span th:text="#{appEmail.footer.settingsPrefix}">Manage email preferences in</span>
-                            <a href="http://localhost/settings" th:style="'color:' + ${cAccent2} + ';'" th:text="#{appEmail.footer.settingsLink}">Settings</a>
+                            <a href="http://localhost/?settings=open" th:style="'color:' + ${cAccent2} + ';'" th:text="#{appEmail.footer.settingsLink}">Settings</a>
                             <span th:text="#{appEmail.footer.settingsSuffix}">.</span>
                         </p>
                     </td>

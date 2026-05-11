@@ -9,7 +9,6 @@ import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.crypto.mapper.CryptoResponseMapper;
 import com.finance.market.crypto.model.Crypto;
-import com.finance.market.crypto.model.CryptoCandle;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.market.crypto.repository.CryptoRepository;

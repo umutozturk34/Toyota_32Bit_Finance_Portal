@@ -1,7 +1,6 @@
 package com.finance.market.fund.config;
 import com.finance.common.config.AppProperties;
 
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.filter.RateLimiterFilter;

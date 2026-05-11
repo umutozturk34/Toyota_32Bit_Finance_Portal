@@ -7,7 +7,6 @@ import com.finance.market.core.service.TrackedAssetQueryService;
 
 import com.finance.market.core.cache.MarketCacheService;
 
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.shared.dto.response.GroupCount;
@@ -15,7 +14,6 @@ import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.stock.mapper.StockResponseMapper;
 import com.finance.common.model.MarketType;
 import com.finance.market.stock.model.Stock;
-import com.finance.market.stock.model.StockCandle;
 import com.finance.common.model.StockSegment;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.market.stock.repository.StockRepository;

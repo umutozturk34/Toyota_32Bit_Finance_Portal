@@ -1,5 +1,4 @@
 package com.finance.market.crypto.mapper;
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.config.AppProperties;

@@ -11,8 +11,6 @@ public interface AssetPricingStrategy {
 
     BigDecimal getPriceTry(String assetCode);
 
-    BigDecimal getSellPriceTry(String assetCode);
-
     AssetPricingPort.AssetMeta getAssetMeta(String assetCode);
 
     AssetPricingPort.PriceBundle getBundle(String assetCode);

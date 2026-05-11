@@ -1,5 +1,4 @@
 package com.finance.market.bond.service;
-import com.finance.market.bond.model.Bond;
 
 
 import com.finance.market.bond.dto.external.BondSerieDto;

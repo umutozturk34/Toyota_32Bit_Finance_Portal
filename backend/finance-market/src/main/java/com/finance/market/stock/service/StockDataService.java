@@ -8,7 +8,6 @@ import com.finance.market.core.cache.MarketCacheService;
 
 import com.finance.common.exception.BusinessException;
 import com.finance.market.stock.model.Stock;
-import com.finance.market.stock.model.StockCandle;
 import com.finance.common.model.TrackedAssetType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

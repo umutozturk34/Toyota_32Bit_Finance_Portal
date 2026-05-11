@@ -1,5 +1,4 @@
 package com.finance.market.fund.mapper;
-import com.finance.common.model.MarketType;
 
 import com.finance.market.core.mapper.MarketMetadataBuilder;
 

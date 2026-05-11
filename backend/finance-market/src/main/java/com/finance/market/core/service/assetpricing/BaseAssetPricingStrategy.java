@@ -18,13 +18,6 @@ public abstract class BaseAssetPricingStrategy implements AssetPricingStrategy {
         return price.setScale(PRICE_SCALE, RoundingMode.HALF_UP);
     }
 
-    protected BigDecimal applyCommission(BigDecimal price, BigDecimal rate) {
-        if (price == null) {
-            return null;
-        }
-        return normalize(price.multiply(BigDecimal.ONE.subtract(rate)));
-    }
-
     protected AssetPricingPort.AssetMeta baseMeta(BaseAsset asset) {
         if (asset == null) {
             return EMPTY_META;

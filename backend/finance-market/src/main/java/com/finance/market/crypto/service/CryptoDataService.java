@@ -8,7 +8,6 @@ import com.finance.market.core.cache.MarketCacheService;
 
 import com.finance.common.exception.BusinessException;
 import com.finance.market.crypto.model.Crypto;
-import com.finance.market.crypto.model.CryptoCandle;
 import com.finance.common.model.TrackedAssetType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

@@ -15,7 +15,6 @@ import com.finance.news.mapper.NewsResponseMapper;
 import com.finance.news.model.NewsArticle;
 import com.finance.news.model.NewsCategory;
 import java.util.List;
-import java.util.Map;
 import com.finance.news.repository.NewsArticleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

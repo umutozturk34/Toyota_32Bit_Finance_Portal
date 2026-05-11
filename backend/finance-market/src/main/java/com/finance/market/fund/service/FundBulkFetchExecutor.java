@@ -1,5 +1,4 @@
 package com.finance.market.fund.service;
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.market.fund.client.TefasClient;
@@ -12,7 +11,6 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;

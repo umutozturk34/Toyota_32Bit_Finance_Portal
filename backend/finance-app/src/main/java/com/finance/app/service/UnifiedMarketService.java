@@ -11,7 +11,6 @@ import com.finance.market.core.service.MarketAssetProvider;
 
 import com.finance.market.core.service.MarketHistoryProvider;
 
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 import com.finance.shared.dto.response.GroupCount;
 import com.finance.market.core.dto.response.MarketAssetResponse;

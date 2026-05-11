@@ -7,14 +7,12 @@ import com.finance.market.core.service.TrackedAssetQueryService;
 
 import com.finance.market.core.cache.MarketCacheService;
 
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.shared.dto.response.GroupCount;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.fund.mapper.FundResponseMapper;
 import com.finance.market.fund.model.Fund;
-import com.finance.market.fund.model.FundCandle;
 import com.finance.market.fund.model.FundType;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;

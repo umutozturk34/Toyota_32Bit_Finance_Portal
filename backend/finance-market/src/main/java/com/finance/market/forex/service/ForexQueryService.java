@@ -1,5 +1,4 @@
 package com.finance.market.forex.service;
-import com.finance.market.forex.model.Forex;
 
 import com.finance.market.core.service.MarketHistoryProvider;
 

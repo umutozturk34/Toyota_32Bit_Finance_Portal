@@ -1,7 +1,6 @@
 package com.finance.notification.watchlist.dispatch;
 
 import com.finance.common.i18n.Translator;
-import com.finance.common.model.MarketType;
 import com.finance.notification.config.NotificationDispatchProperties;
 import com.finance.notification.core.dispatch.NotificationHandler;
 import com.finance.notification.core.dispatch.NotificationRequest;

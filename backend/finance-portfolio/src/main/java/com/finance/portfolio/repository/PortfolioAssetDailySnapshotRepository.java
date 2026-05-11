@@ -1,7 +1,6 @@
 package com.finance.portfolio.repository;
 import com.finance.common.model.TrackedAssetType;
 
-import com.finance.common.model.TrackedAssetType;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
 import org.springframework.data.jpa.repository.JpaRepository;

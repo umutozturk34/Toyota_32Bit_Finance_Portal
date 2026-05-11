@@ -11,11 +11,9 @@ import com.finance.common.event.MarketUpdatedEvent;
 
 import com.finance.market.bond.service.BondDataService;
 
-import com.finance.market.bond.model.Bond;
 
 import com.finance.shared.service.PortfolioSnapshotPort;
 
-import com.finance.portfolio.model.Portfolio;
 
 import com.finance.market.core.service.MarketRefresher;
 

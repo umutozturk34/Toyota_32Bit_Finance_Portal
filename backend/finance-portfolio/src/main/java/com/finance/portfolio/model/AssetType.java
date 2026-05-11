@@ -1,42 +1,12 @@
 package com.finance.portfolio.model;
 import com.finance.common.model.MarketType;
 
-
-import com.finance.market.core.config.CommissionProperties;
-
-import java.math.BigDecimal;
-
 public enum AssetType {
-    CRYPTO(MarketType.CRYPTO) {
-        @Override
-        public BigDecimal commissionRate(CommissionProperties commission) {
-            return commission.getCryptoRate();
-        }
-    },
-    STOCK(MarketType.STOCK) {
-        @Override
-        public BigDecimal commissionRate(CommissionProperties commission) {
-            return commission.getStockRate();
-        }
-    },
-    FOREX(MarketType.FOREX) {
-        @Override
-        public BigDecimal commissionRate(CommissionProperties commission) {
-            return BigDecimal.ZERO;
-        }
-    },
-    FUND(MarketType.FUND) {
-        @Override
-        public BigDecimal commissionRate(CommissionProperties commission) {
-            return commission.getFundRate();
-        }
-    },
-    COMMODITY(MarketType.COMMODITY) {
-        @Override
-        public BigDecimal commissionRate(CommissionProperties commission) {
-            return commission.getCommodityRate();
-        }
-    };
+    CRYPTO(MarketType.CRYPTO),
+    STOCK(MarketType.STOCK),
+    FOREX(MarketType.FOREX),
+    FUND(MarketType.FUND),
+    COMMODITY(MarketType.COMMODITY);
 
     private final MarketType marketType;
 
@@ -47,6 +17,4 @@ public enum AssetType {
     public MarketType marketType() {
         return marketType;
     }
-
-    public abstract BigDecimal commissionRate(CommissionProperties commission);
 }

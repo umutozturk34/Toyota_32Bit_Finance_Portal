@@ -1,7 +1,6 @@
 package com.finance.market.forex.config;
 import com.finance.common.config.AppProperties;
 
-import com.finance.common.config.AppProperties;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

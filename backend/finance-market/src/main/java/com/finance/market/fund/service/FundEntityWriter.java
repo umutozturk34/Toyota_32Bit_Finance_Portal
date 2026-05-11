@@ -9,7 +9,6 @@ import com.finance.market.core.service.TrackedAssetQueryService;
 import com.finance.common.config.AppProperties;
 import com.finance.market.fund.config.FundProperties;
 import com.finance.market.fund.dto.external.TefasFundDto;
-import com.finance.market.core.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.market.fund.mapper.FundMapper;
 import com.finance.market.fund.model.Fund;
 import com.finance.market.fund.model.FundCandle;

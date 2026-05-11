@@ -1,7 +1,6 @@
 package com.finance.market.forex.model;
 import com.finance.market.forex.model.Forex;
 
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import org.junit.jupiter.api.Test;

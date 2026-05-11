@@ -1,21 +1,10 @@
 package com.finance.app.config;
-import com.finance.market.core.config.CommissionProperties;
 
 import com.finance.market.stock.model.Stock;
-
 import com.finance.market.fund.model.Fund;
-
 import com.finance.market.forex.model.Forex;
-
 import com.finance.market.crypto.model.Crypto;
-
 import com.finance.common.model.MarketType;
-
-import com.finance.shared.service.AssetPricingPort;
-
-import com.finance.market.core.service.MarketSnapshotProcessor;
-
-
 import com.finance.shared.service.AssetPricingPort.AssetMeta;
 import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.crypto.service.assetpricing.CryptoPricingStrategy;
@@ -46,16 +35,11 @@ class AssetPricingAdapterTest {
 
     @BeforeEach
     void setUp() {
-        CommissionProperties commission = new CommissionProperties();
-        commission.setStockRate(new BigDecimal("0.002"));
-        commission.setCryptoRate(new BigDecimal("0.0015"));
-        commission.setFundRate(new BigDecimal("0.001"));
-
         adapter = new AssetPricingAdapter(List.of(
-            new CryptoPricingStrategy(cryptoCacheService, commission),
-            new StockPricingStrategy(stockCacheService, commission),
+            new CryptoPricingStrategy(cryptoCacheService),
+            new StockPricingStrategy(stockCacheService),
             new ForexPricingStrategy(forexCacheService),
-            new FundPricingStrategy(fundCacheService, commission)
+            new FundPricingStrategy(fundCacheService)
         ));
     }
 
@@ -135,49 +119,6 @@ class AssetPricingAdapterTest {
         when(cryptoCacheService.getSnapshot("unknown")).thenReturn(null);
 
         assertThat(adapter.getPriceTry(MarketType.CRYPTO, "unknown")).isNull();
-    }
-
-    @Test
-    void getSellPriceTryCryptoAppliesCommission() {
-        when(cryptoCacheService.getSnapshot("bitcoin")).thenReturn(cryptoWith("100000.0000"));
-
-        BigDecimal sellPrice = adapter.getSellPriceTry(MarketType.CRYPTO, "bitcoin");
-
-        assertThat(sellPrice).isEqualByComparingTo(new BigDecimal("99850.0000"));
-    }
-
-    @Test
-    void getSellPriceTryStockAppliesCommission() {
-        when(stockCacheService.getSnapshot("THYAO.IS")).thenReturn(stockWith("50.0000"));
-
-        BigDecimal sellPrice = adapter.getSellPriceTry(MarketType.STOCK, "THYAO.IS");
-
-        assertThat(sellPrice).isEqualByComparingTo(new BigDecimal("49.9000"));
-    }
-
-    @Test
-    void getSellPriceTryFundAppliesCommission() {
-        when(fundCacheService.getSnapshot("BBK")).thenReturn(fundWith("200.0000"));
-
-        BigDecimal sellPrice = adapter.getSellPriceTry(MarketType.FUND, "BBK");
-
-        assertThat(sellPrice).isEqualByComparingTo(new BigDecimal("199.8000"));
-    }
-
-    @Test
-    void getSellPriceTryForexUsesCurrentPriceNotSellingPrice() {
-        when(forexCacheService.getSnapshot("USD")).thenReturn(forexWith("37.5000", "38.5000"));
-
-        BigDecimal sellPrice = adapter.getSellPriceTry(MarketType.FOREX, "USD");
-
-        assertThat(sellPrice).isEqualByComparingTo(new BigDecimal("37.5000"));
-    }
-
-    @Test
-    void getSellPriceTryNullSnapshotReturnsNull() {
-        when(stockCacheService.getSnapshot("DELISTED")).thenReturn(null);
-
-        assertThat(adapter.getSellPriceTry(MarketType.STOCK, "DELISTED")).isNull();
     }
 
     @Test

@@ -20,22 +20,16 @@ class AssetPricingPortTest {
         }
 
         @Override
-        public BigDecimal getSellPriceTry(MarketType type, String assetCode) {
-            return BigDecimal.valueOf(99);
-        }
-
-        @Override
         public AssetMeta getAssetMeta(MarketType type, String assetCode) {
             return new AssetMeta("NAME-" + assetCode, "IMG-" + assetCode);
         }
     };
 
     @Test
-    void getBundleCombinesPriceSellPriceAndMeta() {
+    void getBundleCombinesPriceAndMeta() {
         PriceBundle bundle = port.getBundle(MarketType.CRYPTO, "bitcoin");
 
         assertThat(bundle.price()).isEqualByComparingTo(BigDecimal.valueOf(100));
-        assertThat(bundle.sellPrice()).isEqualByComparingTo(BigDecimal.valueOf(99));
         assertThat(bundle.meta().name()).isEqualTo("NAME-bitcoin");
         assertThat(bundle.meta().image()).isEqualTo("IMG-bitcoin");
     }

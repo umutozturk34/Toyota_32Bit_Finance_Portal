@@ -1,5 +1,4 @@
 package com.finance.market.fund.model;
-import com.finance.market.fund.model.Fund;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;

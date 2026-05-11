@@ -1,12 +1,7 @@
 package com.finance.market.fund.service.assetpricing;
 
-import com.finance.market.core.model.BaseAsset;
 import com.finance.market.core.service.assetpricing.BaseAssetPricingStrategy;
-
-
-import com.finance.market.core.config.CommissionProperties;
 import com.finance.market.fund.model.Fund;
-import com.finance.market.fund.model.FundCandle;
 import com.finance.common.model.MarketType;
 import com.finance.shared.service.AssetPricingPort;
 import com.finance.market.core.cache.MarketCacheService;
@@ -18,12 +13,9 @@ import java.math.BigDecimal;
 public class FundPricingStrategy extends BaseAssetPricingStrategy {
 
     private final MarketCacheService<Fund> cacheService;
-    private final CommissionProperties commissionProperties;
 
-    public FundPricingStrategy(MarketCacheService<Fund> cacheService,
-                               CommissionProperties commissionProperties) {
+    public FundPricingStrategy(MarketCacheService<Fund> cacheService) {
         this.cacheService = cacheService;
-        this.commissionProperties = commissionProperties;
     }
 
     @Override
@@ -41,11 +33,6 @@ public class FundPricingStrategy extends BaseAssetPricingStrategy {
     }
 
     @Override
-    public BigDecimal getSellPriceTry(String assetCode) {
-        return applyCommission(getPriceTry(assetCode), commissionProperties.getFundRate());
-    }
-
-    @Override
     public AssetPricingPort.AssetMeta getAssetMeta(String assetCode) {
         return baseMeta(cacheService.getSnapshot(assetCode));
     }
@@ -54,13 +41,11 @@ public class FundPricingStrategy extends BaseAssetPricingStrategy {
     public AssetPricingPort.PriceBundle getBundle(String assetCode) {
         Fund fund = cacheService.getSnapshot(assetCode);
         if (fund == null) {
-            return new AssetPricingPort.PriceBundle(null, null, EMPTY_META);
+            return new AssetPricingPort.PriceBundle(null, EMPTY_META);
         }
         BigDecimal price = normalize(fund.getPrice());
-        BigDecimal sellPrice = applyCommission(price, commissionProperties.getFundRate());
         return new AssetPricingPort.PriceBundle(
                 price,
-                sellPrice,
                 new AssetPricingPort.AssetMeta(fund.resolveDisplayName(), fund.getImage()));
     }
 }

@@ -1,6 +1,5 @@
 package com.finance.market.core.util;
 
-import com.finance.market.core.model.BaseCandle;
 
 import com.finance.market.core.dto.external.YahooCandleDto;
 

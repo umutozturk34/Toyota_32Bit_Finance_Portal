@@ -1,9 +1,6 @@
 package com.finance.market.forex.service.assetpricing;
 
-import com.finance.market.core.model.BaseAsset;
-
 import com.finance.market.forex.model.Forex;
-import com.finance.market.forex.model.ForexCandle;
 import com.finance.common.model.MarketType;
 import com.finance.shared.service.AssetPricingPort;
 import com.finance.market.core.service.assetpricing.BaseAssetPricingStrategy;
@@ -37,15 +34,6 @@ public class ForexPricingStrategy extends BaseAssetPricingStrategy {
     }
 
     @Override
-    public BigDecimal getSellPriceTry(String assetCode) {
-        Forex forex = cacheService.getSnapshot(assetCode);
-        if (forex == null) {
-            return null;
-        }
-        return normalize(forex.getCurrentPrice());
-    }
-
-    @Override
     public AssetPricingPort.AssetMeta getAssetMeta(String assetCode) {
         return baseMeta(cacheService.getSnapshot(assetCode));
     }
@@ -54,13 +42,11 @@ public class ForexPricingStrategy extends BaseAssetPricingStrategy {
     public AssetPricingPort.PriceBundle getBundle(String assetCode) {
         Forex forex = cacheService.getSnapshot(assetCode);
         if (forex == null) {
-            return new AssetPricingPort.PriceBundle(null, null, EMPTY_META);
+            return new AssetPricingPort.PriceBundle(null, EMPTY_META);
         }
         BigDecimal price = normalize(forex.getSellingPrice() != null ? forex.getSellingPrice() : forex.getCurrentPrice());
-        BigDecimal sellPrice = normalize(forex.getCurrentPrice());
         return new AssetPricingPort.PriceBundle(
                 price,
-                sellPrice,
                 new AssetPricingPort.AssetMeta(forex.resolveDisplayName(), forex.getImage()));
     }
 }

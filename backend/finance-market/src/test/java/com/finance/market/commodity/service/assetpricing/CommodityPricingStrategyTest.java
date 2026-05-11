@@ -1,10 +1,6 @@
 package com.finance.market.commodity.service.assetpricing;
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
-
-import com.finance.market.core.config.CommissionProperties;
 import com.finance.market.commodity.model.Commodity;
-import com.finance.market.commodity.model.CommodityCandle;
 import com.finance.common.model.MarketType;
 import com.finance.shared.service.AssetPricingPort;
 import com.finance.market.core.cache.MarketCacheService;
@@ -25,10 +21,7 @@ class CommodityPricingStrategyTest {
 
     @BeforeEach
     void setUp() {
-        CommissionProperties commission = new CommissionProperties();
-        commission.setCommodityRate(new BigDecimal("0.015"));
-
-        strategy = new CommodityPricingStrategy(cacheService, commission);
+        strategy = new CommodityPricingStrategy(cacheService);
     }
 
     @Test
@@ -53,15 +46,6 @@ class CommodityPricingStrategyTest {
     }
 
     @Test
-    void getSellPriceTryAppliesCommodityCommissionRate() {
-        when(cacheService.getSnapshot("XAUTRY")).thenReturn(buildCommodity(new BigDecimal("160000.0000")));
-
-        BigDecimal sellPrice = strategy.getSellPriceTry("XAUTRY");
-
-        assertThat(sellPrice).isEqualByComparingTo("157600.0000");
-    }
-
-    @Test
     void getAssetMetaReturnsDisplayNameFromCommodity() {
         Commodity commodity = buildCommodity(new BigDecimal("100"));
         commodity.setName("Altın");
@@ -79,13 +63,12 @@ class CommodityPricingStrategyTest {
         AssetPricingPort.PriceBundle bundle = strategy.getBundle("MISSING");
 
         assertThat(bundle.price()).isNull();
-        assertThat(bundle.sellPrice()).isNull();
         assertThat(bundle.meta().name()).isNull();
         assertThat(bundle.meta().image()).isNull();
     }
 
     @Test
-    void getBundleBuildsPriceAndSellWithCommission() {
+    void getBundleBuildsPriceWithMeta() {
         Commodity commodity = buildCommodity(new BigDecimal("160000.0000"));
         commodity.setName("Altın");
         commodity.setImage("/img/gold.svg");
@@ -94,7 +77,6 @@ class CommodityPricingStrategyTest {
         AssetPricingPort.PriceBundle bundle = strategy.getBundle("XAUTRY");
 
         assertThat(bundle.price()).isEqualByComparingTo("160000.0000");
-        assertThat(bundle.sellPrice()).isEqualByComparingTo("157600.0000");
         assertThat(bundle.meta().name()).isEqualTo("Altın");
         assertThat(bundle.meta().image()).isEqualTo("/img/gold.svg");
     }

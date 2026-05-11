@@ -4,7 +4,6 @@ import com.finance.market.core.service.HistoricalPricingPort;
 import com.finance.shared.service.AssetPricingPort;
 import com.finance.portfolio.config.PortfolioProperties;
 
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.portfolio.model.AssetType;

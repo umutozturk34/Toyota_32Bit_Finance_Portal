@@ -1,10 +1,6 @@
 package com.finance.market.crypto.service.assetpricing;
 
-import com.finance.market.core.model.BaseAsset;
-
-import com.finance.market.core.config.CommissionProperties;
 import com.finance.market.crypto.model.Crypto;
-import com.finance.market.crypto.model.CryptoCandle;
 import com.finance.common.model.MarketType;
 import com.finance.shared.service.AssetPricingPort;
 import com.finance.market.core.service.assetpricing.BaseAssetPricingStrategy;
@@ -17,12 +13,9 @@ import java.math.BigDecimal;
 public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
 
     private final MarketCacheService<Crypto> cacheService;
-    private final CommissionProperties commissionProperties;
 
-    public CryptoPricingStrategy(MarketCacheService<Crypto> cacheService,
-                                 CommissionProperties commissionProperties) {
+    public CryptoPricingStrategy(MarketCacheService<Crypto> cacheService) {
         this.cacheService = cacheService;
-        this.commissionProperties = commissionProperties;
     }
 
     @Override
@@ -40,11 +33,6 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
     }
 
     @Override
-    public BigDecimal getSellPriceTry(String assetCode) {
-        return applyCommission(getPriceTry(assetCode), commissionProperties.getCryptoRate());
-    }
-
-    @Override
     public AssetPricingPort.AssetMeta getAssetMeta(String assetCode) {
         Crypto crypto = cacheService.getSnapshot(assetCode);
         if (crypto == null) {
@@ -57,13 +45,11 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
     public AssetPricingPort.PriceBundle getBundle(String assetCode) {
         Crypto crypto = cacheService.getSnapshot(assetCode);
         if (crypto == null) {
-            return new AssetPricingPort.PriceBundle(null, null, EMPTY_META);
+            return new AssetPricingPort.PriceBundle(null, EMPTY_META);
         }
         BigDecimal price = normalize(crypto.getCurrentPriceTry());
-        BigDecimal sellPrice = applyCommission(price, commissionProperties.getCryptoRate());
         return new AssetPricingPort.PriceBundle(
                 price,
-                sellPrice,
                 new AssetPricingPort.AssetMeta(crypto.resolveDisplayName(), crypto.getImage()));
     }
 }

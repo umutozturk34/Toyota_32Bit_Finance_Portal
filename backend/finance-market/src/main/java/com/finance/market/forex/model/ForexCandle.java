@@ -1,7 +1,6 @@
 package com.finance.market.forex.model;
 
 import com.finance.market.core.model.BaseCandle;
-import com.finance.market.forex.model.Forex;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;

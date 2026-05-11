@@ -3,7 +3,6 @@ import com.finance.portfolio.model.AssetType;
 
 import com.finance.common.model.TrackedAsset;
 
-import com.finance.common.model.TrackedAsset;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;

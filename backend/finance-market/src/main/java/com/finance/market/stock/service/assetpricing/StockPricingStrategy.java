@@ -1,13 +1,8 @@
 package com.finance.market.stock.service.assetpricing;
 
-import com.finance.market.core.model.BaseAsset;
 import com.finance.market.core.service.assetpricing.BaseAssetPricingStrategy;
-
-
-import com.finance.market.core.config.CommissionProperties;
 import com.finance.common.model.MarketType;
 import com.finance.market.stock.model.Stock;
-import com.finance.market.stock.model.StockCandle;
 import com.finance.shared.service.AssetPricingPort;
 import com.finance.market.core.cache.MarketCacheService;
 import org.springframework.stereotype.Component;
@@ -18,12 +13,9 @@ import java.math.BigDecimal;
 public class StockPricingStrategy extends BaseAssetPricingStrategy {
 
     private final MarketCacheService<Stock> cacheService;
-    private final CommissionProperties commissionProperties;
 
-    public StockPricingStrategy(MarketCacheService<Stock> cacheService,
-                                CommissionProperties commissionProperties) {
+    public StockPricingStrategy(MarketCacheService<Stock> cacheService) {
         this.cacheService = cacheService;
-        this.commissionProperties = commissionProperties;
     }
 
     @Override
@@ -41,11 +33,6 @@ public class StockPricingStrategy extends BaseAssetPricingStrategy {
     }
 
     @Override
-    public BigDecimal getSellPriceTry(String assetCode) {
-        return applyCommission(getPriceTry(assetCode), commissionProperties.getStockRate());
-    }
-
-    @Override
     public AssetPricingPort.AssetMeta getAssetMeta(String assetCode) {
         return baseMeta(cacheService.getSnapshot(assetCode));
     }
@@ -54,13 +41,11 @@ public class StockPricingStrategy extends BaseAssetPricingStrategy {
     public AssetPricingPort.PriceBundle getBundle(String assetCode) {
         Stock stock = cacheService.getSnapshot(assetCode);
         if (stock == null) {
-            return new AssetPricingPort.PriceBundle(null, null, EMPTY_META);
+            return new AssetPricingPort.PriceBundle(null, EMPTY_META);
         }
         BigDecimal price = normalize(stock.getCurrentPrice());
-        BigDecimal sellPrice = applyCommission(price, commissionProperties.getStockRate());
         return new AssetPricingPort.PriceBundle(
                 price,
-                sellPrice,
                 new AssetPricingPort.AssetMeta(stock.resolveDisplayName(), stock.getImage()));
     }
 }

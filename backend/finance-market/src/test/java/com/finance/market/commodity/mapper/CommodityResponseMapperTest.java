@@ -1,5 +1,4 @@
 package com.finance.market.commodity.mapper;
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.shared.dto.response.CommodityMetadata;

@@ -1,5 +1,4 @@
 package com.finance.app.config;
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import io.swagger.v3.oas.models.Components;

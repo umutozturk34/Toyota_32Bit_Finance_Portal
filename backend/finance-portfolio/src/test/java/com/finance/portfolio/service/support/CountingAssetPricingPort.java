@@ -13,21 +13,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class CountingAssetPricingPort implements AssetPricingPort {
 
     private final Map<AssetKey, BigDecimal> prices = new HashMap<>();
-    private final Map<AssetKey, BigDecimal> sellPrices = new HashMap<>();
     private final Map<AssetKey, AssetMeta> metas = new HashMap<>();
 
     private final AtomicInteger priceCalls = new AtomicInteger();
-    private final AtomicInteger sellPriceCalls = new AtomicInteger();
     private final AtomicInteger metaCalls = new AtomicInteger();
     private final AtomicInteger batchPricesCalls = new AtomicInteger();
     private final AtomicInteger batchBundlesCalls = new AtomicInteger();
 
     public void seedPrice(String type, String code, BigDecimal value) {
         prices.put(new AssetKey(MarketType.valueOf(type), code), value);
-    }
-
-    public void seedSellPrice(String type, String code, BigDecimal value) {
-        sellPrices.put(new AssetKey(MarketType.valueOf(type), code), value);
     }
 
     public void seedMeta(String type, String code, AssetMeta meta) {
@@ -38,12 +32,6 @@ public final class CountingAssetPricingPort implements AssetPricingPort {
     public BigDecimal getPriceTry(MarketType type, String assetCode) {
         priceCalls.incrementAndGet();
         return prices.get(new AssetKey(type, assetCode));
-    }
-
-    @Override
-    public BigDecimal getSellPriceTry(MarketType type, String assetCode) {
-        sellPriceCalls.incrementAndGet();
-        return sellPrices.get(new AssetKey(type, assetCode));
     }
 
     @Override
@@ -68,19 +56,14 @@ public final class CountingAssetPricingPort implements AssetPricingPort {
         Map<AssetKey, PriceBundle> result = new LinkedHashMap<>();
         for (AssetKey key : keys) {
             BigDecimal price = prices.get(key);
-            BigDecimal sell = sellPrices.get(key);
             AssetMeta meta = metas.getOrDefault(key, new AssetMeta(null, null));
-            result.put(key, new PriceBundle(price, sell, meta));
+            result.put(key, new PriceBundle(price, meta));
         }
         return result;
     }
 
     public int priceCalls() {
         return priceCalls.get();
-    }
-
-    public int sellPriceCalls() {
-        return sellPriceCalls.get();
     }
 
     public int metaCalls() {

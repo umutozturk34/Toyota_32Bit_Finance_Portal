@@ -1,5 +1,4 @@
 package com.finance.market.forex.client;
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.fasterxml.jackson.databind.DeserializationFeature;

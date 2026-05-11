@@ -1,5 +1,4 @@
 package com.finance.market.core.cache;
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.fasterxml.jackson.core.type.TypeReference;

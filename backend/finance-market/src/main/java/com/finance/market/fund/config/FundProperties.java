@@ -1,5 +1,4 @@
 package com.finance.market.fund.config;
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import lombok.Getter;

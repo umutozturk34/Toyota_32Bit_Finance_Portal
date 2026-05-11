@@ -1,7 +1,6 @@
 package com.finance.market.crypto.mapper;
 import com.finance.market.core.mapper.BaseMarketMapper;
 
-import com.finance.market.core.mapper.BaseMarketMapper;
 
 import com.finance.market.crypto.dto.external.CoinGeckoCandleDto;
 import com.finance.market.crypto.dto.external.CoinGeckoSnapshotDto;

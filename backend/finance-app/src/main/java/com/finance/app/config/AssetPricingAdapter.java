@@ -29,12 +29,6 @@ public class AssetPricingAdapter implements AssetPricingPort {
         return dispatch(type, assetCode, "price", null, strategy -> strategy.getPriceTry(assetCode));
     }
 
-
-    @Override
-    public BigDecimal getSellPriceTry(MarketType type, String assetCode) {
-        return dispatch(type, assetCode, "sell price", null, strategy -> strategy.getSellPriceTry(assetCode));
-    }
-
     @Override
     public AssetMeta getAssetMeta(MarketType type, String assetCode) {
         return dispatch(type, assetCode, "metadata", EMPTY_META, strategy -> strategy.getAssetMeta(assetCode));
@@ -42,7 +36,7 @@ public class AssetPricingAdapter implements AssetPricingPort {
 
     @Override
     public PriceBundle getBundle(MarketType type, String assetCode) {
-        return dispatch(type, assetCode, "bundle", new PriceBundle(null, null, EMPTY_META),
+        return dispatch(type, assetCode, "bundle", new PriceBundle(null, EMPTY_META),
                 strategy -> strategy.getBundle(assetCode));
     }
 

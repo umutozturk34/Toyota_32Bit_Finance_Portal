@@ -11,13 +11,11 @@ public interface AssetPricingPort {
 
     BigDecimal getPriceTry(MarketType type, String assetCode);
 
-    BigDecimal getSellPriceTry(MarketType type, String assetCode);
-
     record AssetMeta(String name, String image) {}
 
     record AssetKey(MarketType type, String assetCode) {}
 
-    record PriceBundle(BigDecimal price, BigDecimal sellPrice, AssetMeta meta) {}
+    record PriceBundle(BigDecimal price, AssetMeta meta) {}
 
     default AssetMeta getAssetMeta(MarketType type, String assetCode) {
         return new AssetMeta(null, null);
@@ -26,7 +24,6 @@ public interface AssetPricingPort {
     default PriceBundle getBundle(MarketType type, String assetCode) {
         return new PriceBundle(
                 getPriceTry(type, assetCode),
-                getSellPriceTry(type, assetCode),
                 getAssetMeta(type, assetCode));
     }
 

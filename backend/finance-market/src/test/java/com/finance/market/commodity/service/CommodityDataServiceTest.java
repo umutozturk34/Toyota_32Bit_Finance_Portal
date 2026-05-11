@@ -6,7 +6,6 @@ import com.finance.market.core.cache.MarketCacheService;
 
 import com.finance.common.exception.BusinessException;
 import com.finance.market.commodity.model.Commodity;
-import com.finance.market.commodity.model.CommodityCandle;
 import com.finance.common.model.TrackedAssetType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

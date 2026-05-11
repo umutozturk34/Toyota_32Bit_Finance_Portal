@@ -1,5 +1,4 @@
 package com.finance.market.fund.client;
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -1,14 +1,12 @@
 package com.finance.market.commodity.service;
 import com.finance.market.core.cache.MarketCacheService;
 
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.config.AppProperties;
 import com.finance.market.commodity.config.CommodityProperties;
 import com.finance.market.commodity.config.CommodityProperties.DerivativeRule;
 import com.finance.market.commodity.model.Commodity;
-import com.finance.market.commodity.model.CommodityCandle;
 import com.finance.market.commodity.repository.CommodityCandleRepository;
 import com.finance.market.commodity.repository.CommodityRepository;
 import org.junit.jupiter.api.BeforeEach;

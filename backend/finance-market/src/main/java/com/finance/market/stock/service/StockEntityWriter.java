@@ -3,7 +3,6 @@ import com.finance.market.core.service.MarketEntityWriter;
 
 import com.finance.market.core.service.TrackedAssetQueryService;
 
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.common.config.AppProperties;

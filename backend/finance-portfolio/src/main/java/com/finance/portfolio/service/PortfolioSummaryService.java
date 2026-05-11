@@ -1,7 +1,6 @@
 package com.finance.portfolio.service;
 import com.finance.shared.service.AssetPricingPort;
 
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.portfolio.dto.response.AllocationItem;
@@ -182,7 +181,7 @@ public class PortfolioSummaryService {
     }
 
     private PositionResponse toPositionResponse(PortfolioPosition pos, PriceBundle bundle) {
-        PriceBundle effective = bundle != null ? bundle : new PriceBundle(null, null, new AssetMeta(null, null));
+        PriceBundle effective = bundle != null ? bundle : new PriceBundle(null, new AssetMeta(null, null));
         BigDecimal currentPrice = effective.price() != null ? effective.price() : BigDecimal.ZERO;
         BigDecimal entryValue = pos.entryValue();
         BigDecimal marketValue = pos.currentValue(currentPrice);

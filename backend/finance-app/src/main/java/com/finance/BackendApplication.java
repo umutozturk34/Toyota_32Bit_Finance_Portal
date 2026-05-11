@@ -4,7 +4,6 @@ import com.finance.app.config.OverviewProperties;
 import com.finance.market.bond.config.BondProperties;
 import com.finance.common.config.AppProperties;
 import com.finance.common.event.KafkaTopicsProperties;
-import com.finance.market.core.config.CommissionProperties;
 import com.finance.market.commodity.config.CommodityProperties;
 import com.finance.market.crypto.config.CryptoProperties;
 import com.finance.market.forex.config.ForexProperties;
@@ -32,7 +31,6 @@ import java.util.TimeZone;
         AppProperties.class,
         BondProperties.class,
         ChartDefaultsProperties.class,
-        CommissionProperties.class,
         CommodityProperties.class,
         CryptoProperties.class,
         ForexProperties.class,

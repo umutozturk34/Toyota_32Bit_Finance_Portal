@@ -1,6 +1,4 @@
 package com.finance.market.crypto.client;
-import com.finance.common.config.AppProperties;
-
 
 import com.finance.market.crypto.dto.external.CoinGeckoCandleDto;
 import com.finance.market.crypto.dto.external.CoinGeckoSnapshotDto;

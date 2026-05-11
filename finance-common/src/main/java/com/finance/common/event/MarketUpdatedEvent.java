@@ -22,11 +22,6 @@ public record MarketUpdatedEvent(
     }
 
     @Override
-    public String topic() {
-        return KafkaTopics.MARKET_UPDATED;
-    }
-
-    @Override
     public String partitionKey() {
         return marketType.name();
     }

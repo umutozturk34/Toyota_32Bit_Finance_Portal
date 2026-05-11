@@ -1,45 +1,24 @@
 package com.finance.common.event;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record PortfolioUpdatedEvent(
         String eventId,
         OffsetDateTime occurredAt,
-        String userSub,
-        Long portfolioId,
-        Long snapshotId,
-        BigDecimal totalValue,
-        BigDecimal dailyPnl,
-        BigDecimal dailyPnlPercent
+        String source
 ) implements DomainEvent {
 
-    public static PortfolioUpdatedEvent of(String userSub,
-                                           Long portfolioId,
-                                           Long snapshotId,
-                                           BigDecimal totalValue,
-                                           BigDecimal dailyPnl,
-                                           BigDecimal dailyPnlPercent) {
+    public static PortfolioUpdatedEvent of(String source) {
         return new PortfolioUpdatedEvent(
                 UUID.randomUUID().toString(),
                 OffsetDateTime.now(),
-                userSub,
-                portfolioId,
-                snapshotId,
-                totalValue,
-                dailyPnl,
-                dailyPnlPercent
+                source
         );
     }
 
     @Override
-    public String topic() {
-        return KafkaTopics.PORTFOLIO_UPDATED;
-    }
-
-    @Override
     public String partitionKey() {
-        return userSub;
+        return eventId;
     }
 }

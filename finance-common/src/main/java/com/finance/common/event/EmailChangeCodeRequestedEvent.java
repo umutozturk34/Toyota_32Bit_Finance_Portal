@@ -14,11 +14,6 @@ public record EmailChangeCodeRequestedEvent(
 ) implements DomainEvent {
 
     @Override
-    public String topic() {
-        return KafkaTopics.USER_EMAIL_CHANGE_CODE;
-    }
-
-    @Override
     public String partitionKey() {
         return userSub;
     }

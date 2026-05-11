@@ -69,6 +69,20 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.CONFLICT)
                 .body(error);
     }
+
+    @ExceptionHandler(org.springframework.dao.OptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(
+            org.springframework.dao.OptimisticLockingFailureException ex, HttpServletRequest request) {
+        log.warn("Optimistic lock conflict at {}: {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                translator.translate("error.concurrentUpdate"),
+                "CONCURRENT_UPDATE",
+                request.getRequestURI()
+        );
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(error);
+    }
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, HttpServletRequest request) {
         log.error("Illegal argument: {}", ex.getMessage());

@@ -6,6 +6,7 @@ import com.finance.notification.config.NotificationOutboxProperties;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
@@ -83,10 +84,20 @@ public class MailSendConsumer {
             row.setStatus(EmailOutbox.Status.SENT);
             row.setSentAt(LocalDateTime.now());
             row.setRelayedAt(null);
-            repository.save(row);
+            saveOrSkipOnConflict(row, "SENT");
             sentCounter.increment();
+        } catch (OptimisticLockingFailureException stale) {
+            log.warn("Email outbox row {} optimistic lock conflict, another worker won — skip", row.getId());
         } catch (RuntimeException ex) {
             handleFailure(row, ex);
+        }
+    }
+
+    private void saveOrSkipOnConflict(EmailOutbox row, String transitionLabel) {
+        try {
+            repository.save(row);
+        } catch (OptimisticLockingFailureException stale) {
+            log.warn("Email outbox row {} {} update lost optimistic lock — another worker won, skip", row.getId(), transitionLabel);
         }
     }
 
@@ -109,7 +120,7 @@ public class MailSendConsumer {
             log.warn("Email outbox row {} attempt={} failed retryIn={} to={}: {}",
                     row.getId(), row.getAttempts(), backoff, row.getRecipientEmail(), ex.getMessage());
         }
-        repository.save(row);
+        saveOrSkipOnConflict(row, "FAILURE");
     }
 
     private static String truncate(String value, int max) {

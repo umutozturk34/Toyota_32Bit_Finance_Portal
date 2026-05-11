@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -110,6 +111,10 @@ public class NotificationPreference {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Version
+    @Column(nullable = false)
+    private long version;
 
     @PrePersist
     void prePersist() {

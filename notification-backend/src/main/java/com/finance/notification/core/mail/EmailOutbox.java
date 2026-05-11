@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -79,6 +80,10 @@ public class EmailOutbox {
 
     @Column(name = "relayed_at")
     private LocalDateTime relayedAt;
+
+    @Version
+    @Column(nullable = false)
+    private long version;
 
     @PrePersist
     void prePersist() {

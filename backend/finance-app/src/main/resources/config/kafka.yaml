@@ -8,3 +8,12 @@ spring:
       properties:
         '[enable.idempotence]': true
       retries: 5
+
+app:
+  kafka:
+    topics:
+      market-updated: market.updated
+      news-published: news.published
+      portfolio-updated: portfolio.updated
+      user-email-change-code: user.email-change.code-requested
+      mail-dispatch: mail.dispatch

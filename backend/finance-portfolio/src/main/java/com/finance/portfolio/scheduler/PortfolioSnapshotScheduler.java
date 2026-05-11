@@ -15,10 +15,17 @@ public class PortfolioSnapshotScheduler {
     private final PortfolioSnapshotService snapshotService;
     private final TaskTrackingService taskTracker;
 
-    @Scheduled(cron = "${app.scheduler.portfolio.snapshot-cron}", zone = "${app.timezone}")
-    public void runDailySnapshots() {
-        taskTracker.runTracked("scheduled-portfolio-snapshot",
-                "Daily portfolio snapshot generation",
-                snapshotService::generateDailySnapshots);
+    @Scheduled(cron = "${app.scheduler.portfolio.morning-cron}", zone = "${app.timezone}")
+    public void runMorningSnapshot() {
+        taskTracker.runTracked("scheduled-portfolio-snapshot-morning",
+                "Morning portfolio snapshot",
+                () -> snapshotService.generateDailySnapshots("morning"));
+    }
+
+    @Scheduled(cron = "${app.scheduler.portfolio.evening-cron}", zone = "${app.timezone}")
+    public void runEveningSnapshot() {
+        taskTracker.runTracked("scheduled-portfolio-snapshot-evening",
+                "Evening portfolio snapshot",
+                () -> snapshotService.generateDailySnapshots("evening"));
     }
 }

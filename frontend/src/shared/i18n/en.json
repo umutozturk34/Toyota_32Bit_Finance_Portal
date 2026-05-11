@@ -920,7 +920,11 @@
     "rateLimitMessage": "You sent too many requests. Please wait a moment."
   },
   "error": {
-    "actionFailed": "Action failed"
+    "actionFailed": "Action failed",
+    "networkError": "Cannot reach the server. Please check your connection.",
+    "serverUnavailable": "Server is currently unavailable. Please try again shortly.",
+    "gatewayTimeout": "The server took too long to respond. Please try again.",
+    "serverError": "An unexpected server error occurred. Please try again."
   },
   "notificationPanel": {
     "title": "Notifications",

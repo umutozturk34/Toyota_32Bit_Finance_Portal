@@ -69,7 +69,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
     const { config, setField } = useChartConfig(assetType, symbol, timeRange, !compareSymbol);
     const showVolume = config?.showVolume ?? false;
     const chartType = config?.chartType ?? (isFund ? 'line' : 'candle');
-    const magnetMode = config?.magnetMode ?? 'off';
+    const magnetMode = (['off', 'weak', 'strong'].includes(config?.magnetMode)) ? config.magnetMode : 'off';
     const selectedIcon = config?.selectedIcon ?? '\u{1F680}';
     const iconSize = config?.iconSize ?? 22;
     const showInvestorCount = config?.showInvestorCount ?? false;

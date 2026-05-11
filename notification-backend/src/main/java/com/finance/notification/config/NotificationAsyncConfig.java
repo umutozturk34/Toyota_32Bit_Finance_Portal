@@ -14,12 +14,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 @RequiredArgsConstructor
 public class NotificationAsyncConfig {
 
-    public static final String MAIL_EXECUTOR = "mailTaskExecutor";
+    public static final String SSE_EXECUTOR = "sseTaskExecutor";
 
     private final NotificationAsyncProperties properties;
 
-    @Bean(name = MAIL_EXECUTOR)
-    public Executor mailTaskExecutor() {
+    @Bean(name = SSE_EXECUTOR)
+    public Executor sseTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(properties.corePoolSize());
         executor.setMaxPoolSize(properties.maxPoolSize());
@@ -29,7 +29,7 @@ public class NotificationAsyncConfig {
         executor.setAwaitTerminationSeconds(properties.awaitTerminationSeconds());
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.initialize();
-        log.info("Mail async executor configured core={} max={} queue={} prefix={}",
+        log.info("SSE async executor configured core={} max={} queue={} prefix={}",
                 properties.corePoolSize(), properties.maxPoolSize(),
                 properties.queueCapacity(), properties.threadNamePrefix());
         return executor;

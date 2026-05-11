@@ -34,19 +34,48 @@ const useDrawingRenderer = ({
             ctx.setLineDash([]);
 
             if (d.type === 'TREND_LINE') {
-                const s = chartCoordsToPixel(d.startTime, d.startPrice);
-                const e = chartCoordsToPixel(d.endTime, d.endPrice);
+                let s = chartCoordsToPixel(d.startTime, d.startPrice);
+                let e = chartCoordsToPixel(d.endTime, d.endPrice);
+                if (!s || !e) {
+                    const chart = chartRef.current;
+                    const visible = chart?.timeScale().getVisibleRange();
+                    if (visible) {
+                        const toMs = (t) => typeof t === 'number'
+                            ? t * 1000
+                            : (t && t.year ? Date.UTC(t.year, t.month - 1, t.day) : NaN);
+                        const sMs = toMs(d.startTime);
+                        const eMs = toMs(d.endTime);
+                        const fromMs = toMs(visible.from);
+                        const toRangeMs = toMs(visible.to);
+                        const dtMs = eMs - sMs;
+                        const dtPrice = d.endPrice - d.startPrice;
+                        if (Number.isFinite(dtMs) && dtMs !== 0) {
+                            if (!s) {
+                                const clampMs = Math.max(fromMs, Math.min(toRangeMs, sMs));
+                                const frac = (clampMs - sMs) / dtMs;
+                                const clampTime = clampMs === fromMs ? visible.from : visible.to;
+                                s = chartCoordsToPixel(clampTime, d.startPrice + dtPrice * frac);
+                            }
+                            if (!e) {
+                                const clampMs = Math.max(fromMs, Math.min(toRangeMs, eMs));
+                                const frac = (clampMs - sMs) / dtMs;
+                                const clampTime = clampMs === fromMs ? visible.from : visible.to;
+                                e = chartCoordsToPixel(clampTime, d.startPrice + dtPrice * frac);
+                            }
+                        }
+                    }
+                }
                 if (s && e) { ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke(); }
             } else if (d.type === 'HORIZONTAL_LINE') {
-                const p = chartCoordsToPixel(d.time, d.price);
-                if (p) {
+                const y = candleSeriesRef.current?.priceToCoordinate(d.price);
+                if (y != null) {
                     ctx.setLineDash([5, 5]);
-                    ctx.beginPath(); ctx.moveTo(0, p.y); ctx.lineTo(rect.width, p.y); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(rect.width, y); ctx.stroke();
                     ctx.setLineDash([]);
                     ctx.fillStyle = d.color || '#f59e0b';
-                    ctx.fillRect(rect.width - 80, p.y - 10, 75, 20);
+                    ctx.fillRect(rect.width - 80, y - 10, 75, 20);
                     ctx.fillStyle = '#fff'; ctx.font = '11px Inter, sans-serif';
-                    ctx.fillText(`$${d.price.toFixed(2)}`, rect.width - 75, p.y + 4);
+                    ctx.fillText(`₺${d.price.toFixed(2)}`, rect.width - 75, y + 4);
                 }
             } else if (d.type === 'VERTICAL_LINE') {
                 const p = chartCoordsToPixel(d.time, d.price);

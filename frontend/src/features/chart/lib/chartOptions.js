@@ -15,7 +15,7 @@ export const getChartOptions = (isDark) => ({
         horzLine: { color: 'rgba(94, 106, 210, 0.5)', width: 1, style: LineStyle.Dashed },
     },
     rightPriceScale: { borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)' },
-    timeScale: { borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)', timeVisible: true, secondsVisible: false },
+    timeScale: { borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)', timeVisible: true, secondsVisible: false, minBarSpacing: 0.07 },
     handleScale: { axisPressedMouseMove: true },
     handleScroll: { vertTouchDrag: true },
 });

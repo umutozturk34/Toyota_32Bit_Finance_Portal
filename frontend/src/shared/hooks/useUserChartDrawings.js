@@ -13,25 +13,29 @@ export function useUserChartDrawings(type, code, range, enabled = true) {
 export function useUpdateUserChartDrawings(type, code, range) {
   const queryClient = useQueryClient();
   const queryKey = CHART_DATA_KEY(type, code, range);
+  const bundleScope = ['userChartData', type, code];
   return useMutation({
     mutationFn: (drawings) => userChartDrawingService.save({ type, code, drawings }),
     onMutate: async (drawings) => {
-      await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData(queryKey);
-      queryClient.setQueryData(queryKey, (old) => ({
+      await queryClient.cancelQueries({ queryKey: bundleScope, exact: false });
+      const previous = queryClient.getQueriesData({ queryKey: bundleScope, exact: false });
+      const optimistic = { drawings, updatedAt: new Date().toISOString() };
+      queryClient.setQueriesData({ queryKey: bundleScope, exact: false }, (old) => ({
         ...(old ?? {}),
-        drawings: { drawings, updatedAt: new Date().toISOString() },
+        drawings: optimistic,
       }));
       return { previous };
     },
     onError: (_err, _vars, context) => {
-      if (context?.previous !== undefined) {
-        queryClient.setQueryData(queryKey, context.previous);
+      if (Array.isArray(context?.previous)) {
+        context.previous.forEach(([key, value]) => {
+          queryClient.setQueryData(key, value);
+        });
       }
     },
     onSuccess: (saved) => {
       if (!saved) return;
-      queryClient.setQueryData(queryKey, (old) => ({
+      queryClient.setQueriesData({ queryKey: bundleScope, exact: false }, (old) => ({
         ...(old ?? {}),
         drawings: saved,
       }));

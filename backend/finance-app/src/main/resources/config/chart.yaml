@@ -6,7 +6,7 @@ app:
         - { type: EMA, period: 50, color: "#fb923c", visible: false }
       chart-type: candle
       show-volume: false
-      magnet-mode: off
+      magnet-mode: "off"
       icon-size: 22
       selected-icon: "🚀"
     fund:

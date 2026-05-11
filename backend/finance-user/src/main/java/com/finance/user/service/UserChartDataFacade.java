@@ -17,10 +17,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserChartDataFacade {
 
-    private static final Map<String, Integer> RANGE_ORDER = Map.of(
-            "1M", 0, "3M", 1, "6M", 2, "1Y", 3, "5Y", 4, "ALL", 5
-    );
-
     private final UserChartPreferenceService preferenceService;
     private final UserChartDrawingService drawingService;
     private final ChartDefaultsProperties chartDefaults;
@@ -29,7 +25,7 @@ public class UserChartDataFacade {
     public UserChartBundleResponse getBundle(String userSub, TrackedAssetType type, String code, String range) {
         UserChartPreferenceResponse prefs = preferenceService.getOrDefault(userSub, type, code);
         UserChartDrawingResponse drawings = drawingService.getOrDefault(userSub, type, code);
-        return new UserChartBundleResponse(prefs, filterByRange(drawings, range));
+        return new UserChartBundleResponse(prefs, drawings);
     }
 
     public UserChartPreferenceResponse upsertPreferences(String userSub, TrackedAssetType type, String code,
@@ -64,20 +60,5 @@ public class UserChartDataFacade {
         if (max > 0 && drawings.size() > max) {
             throw new BusinessException("error.chart.drawingLimit", max);
         }
-    }
-
-    private UserChartDrawingResponse filterByRange(UserChartDrawingResponse src, String viewRange) {
-        if (src == null || src.drawings() == null || src.drawings().isEmpty()) return src;
-        Integer viewOrder = viewRange == null ? null : RANGE_ORDER.get(viewRange);
-        if (viewOrder == null) return src;
-        List<Map<String, Object>> kept = src.drawings().stream()
-                .filter(d -> {
-                    Object r = d.get("range");
-                    if (!(r instanceof String s)) return true;
-                    Integer drawingOrder = RANGE_ORDER.get(s);
-                    return drawingOrder == null || drawingOrder <= viewOrder;
-                })
-                .toList();
-        return new UserChartDrawingResponse(kept, src.updatedAt());
     }
 }

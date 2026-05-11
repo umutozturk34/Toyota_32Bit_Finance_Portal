@@ -45,7 +45,10 @@ const MainLayout = () => {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [tasksOpen, setTasksOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('settings') === 'open';
+  });
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const { data: unreadMessageCount = 0 } = useUnreadMessageCount();
@@ -62,6 +65,9 @@ const MainLayout = () => {
       window.scrollTo(0, 0);
     }
   }, [location.pathname, navType]);
+
+  const anyOverlayOpen = settingsOpen || notificationsOpen || tasksOpen || mobileOpen;
+  const blurCls = anyOverlayOpen ? 'blur-sm pointer-events-none select-none' : '';
 
   const allNav = [
     ...navItems,
@@ -176,9 +182,7 @@ const MainLayout = () => {
           <span className="relative shrink-0">
             <Bell size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] px-1 rounded-full bg-accent text-white text-[8px] font-bold flex items-center justify-center font-mono leading-none">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent ring-2 ring-bg-base" aria-label={`${unreadCount} unread`} />
             )}
           </span>
           {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.notifications')}</span>}
@@ -233,7 +237,7 @@ const MainLayout = () => {
       )}
 
       <aside
-        className={`hidden lg:flex flex-col fixed top-0 left-0 h-screen ${sidebarW} border-r border-border-default z-20 transition-all duration-200`}
+        className={`hidden lg:flex flex-col fixed top-0 left-0 h-screen ${sidebarW} border-r border-border-default z-20 ${blurCls}`}
         style={{
           background: 'var(--sidebar-bg)',
           backdropFilter: 'var(--sidebar-blur)',
@@ -245,7 +249,7 @@ const MainLayout = () => {
       <div className="hidden lg:block shrink-0 w-16" />
 
       <div
-        className="lg:hidden fixed top-0 left-0 right-0 z-40 h-12 flex items-center justify-between px-3 border-b border-border-default"
+        className={`lg:hidden fixed top-0 left-0 right-0 z-40 h-12 flex items-center justify-between px-3 border-b border-border-default ${blurCls}`}
         style={{
           background: 'var(--sidebar-bg)',
           backdropFilter: 'var(--sidebar-blur)',
@@ -296,7 +300,7 @@ const MainLayout = () => {
         )}
       </AnimatePresence>
 
-      <div className="flex-1 flex flex-col min-w-0 relative overflow-x-hidden">
+      <div className={`flex-1 flex flex-col min-w-0 relative overflow-x-hidden ${blurCls}`}>
         <main className="flex-1 w-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 lg:py-6 pt-16 lg:pt-6">
             <Outlet />

@@ -19,3 +19,13 @@ spring:
       retries: 5
     listener:
       ack-mode: MANUAL_IMMEDIATE
+      concurrency: ${KAFKA_LISTENER_CONCURRENCY:1}
+
+app:
+  kafka:
+    topics:
+      market-updated: market.updated
+      news-published: news.published
+      portfolio-updated: portfolio.updated
+      user-email-change-code: user.email-change.code-requested
+      mail-dispatch: mail.dispatch

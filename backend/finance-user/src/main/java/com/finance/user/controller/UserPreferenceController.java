@@ -26,7 +26,7 @@ public class UserPreferenceController {
         return ApiResponse.success(translator.translate("api.preferences.retrieved"), service.getOrDefault(jwt.getSubject()));
     }
 
-    @PutMapping
+    @PatchMapping
     public ApiResponse<UserPreferenceResponse> updatePreferences(
             @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody UserPreferenceUpdateRequest request) {

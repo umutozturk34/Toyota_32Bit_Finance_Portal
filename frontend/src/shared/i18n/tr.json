@@ -920,7 +920,11 @@
     "rateLimitMessage": "Çok fazla istek gönderdin. Lütfen biraz bekle."
   },
   "error": {
-    "actionFailed": "İşlem başarısız"
+    "actionFailed": "İşlem başarısız",
+    "networkError": "Bağlantı kurulamadı. İnternet bağlantınızı kontrol edin.",
+    "serverUnavailable": "Sunucu şu anda erişilemiyor. Lütfen biraz sonra tekrar deneyin.",
+    "gatewayTimeout": "Sunucu zaman aşımına uğradı. Lütfen tekrar deneyin.",
+    "serverError": "Sunucuda bir hata oluştu. Lütfen tekrar deneyin."
   },
   "notificationPanel": {
     "title": "Bildirimler",

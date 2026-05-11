@@ -1,10 +1,10 @@
 # Finance Portal — Roadmap
 
-**Target:** v0.20 (Futures & options market) — 25 May 2026
+**Target:** v0.20 (Futures & Options) — 25 May 2026
 
 ---
 
-## Current Capabilities (v0.17.x)
+## Current Capabilities (v0.18.x)
 
 ### Identity & Authorization
 
@@ -73,7 +73,7 @@
 ### Settings
 
 - Theme (light / dark) — read from `localStorage` before mount so first paint matches user choice (no light → dark flash)
-- Language (Turkish — i18n track scheduled for v0.18)
+- Language (Turkish + English) — react-i18next driven, locale persisted as a user preference, propagates to Keycloak login theme and backend message bundles
 - Timezone, default chart range, report frequency preferences
 - Onboarding-completed flag
 
@@ -81,7 +81,7 @@
 
 ## Shipped Releases
 
-### v0.14 — User Module & Admin ✓ landed
+### v0.14 — User Module & Admin ✓
 
 **Goal:** User preferences, layout customization, admin panel, identity-adjacent ops.
 
@@ -98,7 +98,7 @@
 
 ---
 
-### v0.15 — Notification Microservice & Watchlists ✓ landed
+### v0.15 — Notification Microservice & Watchlists ✓
 
 **Goal:** Event-driven notification system — price alerts, watchlists, in-app + email notifications hosted as a separate Spring Boot application.
 
@@ -124,7 +124,7 @@
 
 ---
 
-### v0.16 — Chart Preferences & Drawings ✓ landed
+### v0.16 — Chart Preferences & Drawings ✓
 
 **Goal:** Per-asset persistence of chart configuration and manual drawings so a logged-in user gets the same chart back on any device.
 
@@ -143,7 +143,7 @@
 
 ---
 
-### v0.17 — Notification Expansion ✓ landed
+### v0.17 — Notification Expansion ✓
 
 **Goal:** Surface news refreshes and daily portfolio snapshots as their own notification streams, and tidy up the publisher / consumer infrastructure that grew during v0.15–v0.16.
 
@@ -160,53 +160,68 @@
 
 ---
 
-## Pending Releases
-
-### v0.18 — Internationalization (next)
+### v0.18 — Internationalization ✓
 
 **Goal:** Turkish / English language toggle; open the platform up to international users.
 
-**Scope:**
+**Scope (delivered):**
 
-- `react-i18next` integration
-- Move existing fixed labels (asset types, bond types, fund types, segments, slot labels, notification copy) into translation files
-- Locale-aware backend message generation for user-facing email + in-app bodies
-- Keycloak theme locale switch
-- Header language selector, persisted as a user preference
-- Locale-aware number / date formatting
+- `react-i18next` integration with TR + EN bundles built into the frontend
+- Asset types, bond types, fund types, segment labels, slot labels and notification copy migrated into translation files
+- Backend `Translator` + `ResourceBundleMessageSource` in `finance-common`; locale resolved from JWT `locale` claim → `Accept-Language` → default
+- Notification handler titles, in-app bodies and Thymeleaf email templates pull from `messages_{tr,en}.properties`
+- Keycloak realm `internationalizationEnabled` + `loginTheme=finance`; theme `messages_{tr,en}.properties` for login / register / OTP / password / verify-email flows
+- Settings sidebar language toggle persists via user preference; mirrored to Keycloak `locale` user attribute so the next JWT carries it; landing pages get an inline TR/EN switch next to the theme toggle
+- Locale-aware number / date formatting (`Intl.NumberFormat` + `Intl.DateTimeFormat` via `useLocale`)
 
 ---
 
-### v0.19 — PDF Reporting & Email Delivery
+## Pending Releases
+
+### v0.19 — Forex Refactor (EVDS migration)
+
+**Goal:** Consolidate the FX data source — replace TCMB scraping + Yahoo Finance cross-pairs with the single TCMB EVDS API that already drives bonds and bills.
+
+**Scope:**
+
+- `ForexClient` rewritten against `evds2.tcmb.gov.tr/service/evds` (token already provisioned via `EVDS_API_KEY`)
+- Single source for spot, history and cross-pairs — drop the Yahoo Finance dependency for FX
+- Series-code mapping table (`TP.DK.USD.A`, `TP.DK.EUR.A`, …) loaded from a config block instead of switch statements
+- Holiday + weekend gap handling reused from the bonds path
+- Per-pair rate-limit budget honoured at the client; backoff on 429
+- No frontend break — `forexService.getHistory(code, period)` contract preserved
+
+### v0.20 — Futures & Options (final)
+
+**Goal:** Leveraged position management on derivatives — the final release before the 25 May deadline.
+
+**Scope:**
+
+- Futures and options contract data model — separate entities so option-specific fields (strike, expiry, call/put) live on their own
+- Long / short position open; for options, call / put + strike + expiry picker
+- Margin calculation — initial + maintenance — and a margin-call alert dispatch via the existing notification path
+- Daily settlement (mark-to-market) tied into `PortfolioSnapshotScheduler`
+- Auto-close on expiry; for options the strike price + IV (implied volatility) appear on the asset detail page
+- Leverage ratios displayed on the position card; open positions table with real-time P&L
+
+---
+
+## Deferred
+
+Scoped during earlier roadmap iterations but not committed for the 25 May 2026 deadline. May be picked up after v0.20.
+
+### PDF Reporting & Email Delivery
 
 **Goal:** Periodic portfolio reporting — generate a PDF on a user-configured schedule and deliver it by email.
 
-**Scope:**
+**Scope (sketch):**
 
 - iText (or Apache PDFBox) for PDF generation
 - Frequency read from user preference (daily / weekly / monthly)
 - Report content: portfolio summary, position table, allocation pie, performance line chart, period transactions
-- AWS S3 (prod) / MinIO (dev) storage
-- Pre-signed URL for secure download
-- 90-day retention policy
-- Email delivery — Thymeleaf template + S3 download link; user notified when the report is ready
+- AWS S3 (prod) / MinIO (dev) storage; pre-signed URL for secure download; 90-day retention
+- Email delivery — Thymeleaf template + S3 download link via the existing email outbox pipeline; user notified when the report is ready
 - Manual "Generate Report" button (ad-hoc trigger)
-
----
-
-### v0.20 — Futures & Options Market (final)
-
-**Goal:** Leveraged position management on derivatives.
-
-**Scope:**
-
-- Futures and options contract data model
-- Long / short position open; for options, call / put + strike + expiry
-- Margin calculation, margin-call alerts
-- Daily settlement (mark-to-market)
-- Auto-close on expiry; for options, strike price + IV (implied volatility) display
-- Leverage ratios, initial margin & maintenance margin display
-- Open positions table, real-time P&L
 
 ---
 
@@ -255,6 +270,7 @@
 
 | Version | Module | Notes |
 |---------|--------|-------|
+| v0.18 | Internationalization | TR / EN bundles, MessageSource backend, Keycloak login theme, JWT locale claim, locale-aware formatters |
 | v0.17 | Notification Expansion | News / portfolio dispatch, slot resolver, monolith-shared module, edge rate-limit |
 | v0.16 | Chart Preferences & Drawings | Per-asset chart prefs / drawings, compare baseline, fullscreen |
 | v0.15 | Notification Microservice | Separate port-8082 service, Kafka event-driven, messaging migration |

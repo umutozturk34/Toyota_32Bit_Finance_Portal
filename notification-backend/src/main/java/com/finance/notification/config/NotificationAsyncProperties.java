@@ -2,7 +2,7 @@ package com.finance.notification.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties("notification.async.mail")
+@ConfigurationProperties("notification.async.sse")
 public record NotificationAsyncProperties(
         int corePoolSize,
         int maxPoolSize,

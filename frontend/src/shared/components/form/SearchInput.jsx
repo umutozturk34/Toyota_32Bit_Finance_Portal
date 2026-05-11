@@ -79,7 +79,9 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
 
   return (
     <div ref={containerRef} className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-muted pointer-events-none" />
+      <span className="absolute inset-y-0 left-3 z-10 flex items-center pointer-events-none">
+        <Search className="h-3.5 w-3.5 text-fg-muted" />
+      </span>
       <input
         type="text"
         value={local}
@@ -92,7 +94,7 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
       {local && (
         <button
           onClick={handleClear}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-fg-muted hover:text-fg transition-colors cursor-pointer bg-transparent border-none p-0"
+          className="absolute right-2.5 inset-y-0 z-10 flex items-center text-fg-muted hover:text-fg transition-colors cursor-pointer bg-transparent border-none p-0"
         >
           <X className="h-3.5 w-3.5" />
         </button>

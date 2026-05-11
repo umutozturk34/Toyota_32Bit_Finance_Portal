@@ -71,7 +71,9 @@ export default function SearchSuggestions({
   return (
     <div ref={containerRef} className="relative w-full">
       <div className="relative">
-        <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none z-10 ${isHero ? 'h-5 w-5 text-accent' : 'h-3.5 w-3.5 text-fg-muted'}`} />
+        <span className="absolute inset-y-0 left-3.5 z-10 flex items-center pointer-events-none">
+          <Search className={`${isHero ? 'h-5 w-5 text-accent' : 'h-3.5 w-3.5 text-fg-muted'}`} />
+        </span>
         <input
           ref={inputRef}
           type="text"
@@ -89,13 +91,13 @@ export default function SearchSuggestions({
         {query && (
           <button
             onClick={() => { setQuery(''); setDebouncedQuery(''); setOpen(false); }}
-            className={`absolute top-1/2 -translate-y-1/2 text-fg-muted hover:text-fg transition-colors cursor-pointer bg-transparent border-none p-0 ${isHero ? 'right-4' : 'right-2.5'}`}
+            className={`absolute inset-y-0 z-10 flex items-center text-fg-muted hover:text-fg transition-colors cursor-pointer bg-transparent border-none p-0 ${isHero ? 'right-4' : 'right-2.5'}`}
           >
             <X className={isHero ? 'h-5 w-5' : 'h-3.5 w-3.5'} />
           </button>
         )}
         {isFetching && debouncedQuery && (
-          <span className={`absolute top-1/2 -translate-y-1/2 ${isHero ? 'right-12' : 'right-8'}`}>
+          <span className={`absolute inset-y-0 z-10 flex items-center ${isHero ? 'right-12' : 'right-8'}`}>
             <span className="block h-3.5 w-3.5 rounded-full border-2 border-accent border-t-transparent animate-spin" />
           </span>
         )}

@@ -3,8 +3,10 @@ package com.finance.notification.messaging.dispatch;
 import com.finance.common.security.UserStatusPort;
 import com.finance.notification.core.dispatch.NotificationDispatcher;
 import com.finance.notification.core.dispatch.NotificationRequest;
+import com.finance.notification.core.dispatch.NotificationStreamRegistry;
 import com.finance.notification.core.dispatch.payload.MessagePayload;
 import com.finance.notification.core.model.NotificationType;
+import com.finance.notification.messaging.presence.ActiveConversationRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,10 +30,10 @@ class MessageNotificationListenerTest {
     private NotificationDispatcher dispatcher;
 
     @Mock
-    private com.finance.notification.core.dispatch.NotificationStreamRegistry streamRegistry;
+    private NotificationStreamRegistry streamRegistry;
 
     @Mock
-    private com.finance.notification.messaging.presence.ActiveConversationRegistry presence;
+    private ActiveConversationRegistry presence;
 
     @Mock
     private UserStatusPort userStatus;

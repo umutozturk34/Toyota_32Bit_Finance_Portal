@@ -18,6 +18,8 @@ notification:
       body-preview-items: 3
     message:
       preview-max-chars: 120
+    fanout:
+      page-size: 200
   market-session:
     lookahead-days: 14
     status-read-capacity-per-minute: 240
@@ -28,9 +30,9 @@ notification:
     cooldown-seconds: 5
     duplicate-window-seconds: 60
   async:
-    mail:
+    sse:
       core-pool-size: 4
       max-pool-size: 16
-      queue-capacity: 500
+      queue-capacity: 1000
       await-termination-seconds: 30
-      thread-name-prefix: notif-mail-
+      thread-name-prefix: notif-sse-

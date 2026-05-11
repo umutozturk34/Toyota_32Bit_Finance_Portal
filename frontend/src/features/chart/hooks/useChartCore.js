@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import { calculateSMA, calculateEMA } from '../lib/indicators';
 import { getChartOptions } from '../lib/chartOptions';
-import useAppStore from '../../../shared/stores/useAppStore';
-import { TIMINGS } from '../../../shared/config/uiConfig';
 
 const toEpochSec = (chartTime) => {
     if (chartTime == null) return null;
@@ -140,16 +138,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 value: c.volume,
                 color: c.close >= c.open ? 'rgba(38, 166, 154, 0.7)' : 'rgba(239, 83, 80, 0.7)',
             }));
-        const storedRange = useAppStore.getState().getChartViewport(assetType, symbol, timeRange);
-        if (storedRange) {
-            try {
-                chart.timeScale().setVisibleRange({ from: storedRange.from, to: storedRange.to });
-            } catch {
-                chart.timeScale().fitContent();
-            }
-        } else {
-            chart.timeScale().fitContent();
-        }
+        chart.timeScale().fitContent();
         requestAnimationFrame(() => window.scrollTo(0, scrollY));
         setTrend(analyzeTrend(candleData));
         const handleCrosshairMove = (param) => {
@@ -198,21 +187,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             }
         };
         const handleUpdate = () => { if (renderDrawingsRef.current) renderDrawingsRef.current(); };
-        let viewportSaveTimer = null;
-        const handleRangePersist = () => {
-            if (viewportSaveTimer) clearTimeout(viewportSaveTimer);
-            viewportSaveTimer = setTimeout(() => {
-                try {
-                    const range = chart.timeScale().getVisibleRange();
-                    if (!range) return;
-                    const from = toEpochSec(range.from);
-                    const to = toEpochSec(range.to);
-                    if (from && to) useAppStore.getState().setChartViewport(assetType, symbol, timeRange, { from, to });
-                } catch { /* chart already removed */ }
-            }, TIMINGS.CHART_VIEWPORT_THROTTLE_MS);
-        };
         chart.timeScale().subscribeVisibleTimeRangeChange(handleUpdate);
-        chart.timeScale().subscribeVisibleTimeRangeChange(handleRangePersist);
         chart.timeScale().subscribeVisibleLogicalRangeChange(handleUpdate);
         chart.subscribeCrosshairMove(handleCrosshairMove);
         const handleResize = () => {
@@ -230,10 +205,8 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         return () => {
             window.removeEventListener('resize', handleResize);
             resizeObserver.disconnect();
-            if (viewportSaveTimer) clearTimeout(viewportSaveTimer);
             try {
                 chart.timeScale().unsubscribeVisibleTimeRangeChange(handleUpdate);
-                chart.timeScale().unsubscribeVisibleTimeRangeChange(handleRangePersist);
                 chart.timeScale().unsubscribeVisibleLogicalRangeChange(handleUpdate);
                 chart.unsubscribeCrosshairMove(handleCrosshairMove);
             } catch { }

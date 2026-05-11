@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -35,7 +36,7 @@ public class PortfolioUpdatedHandler implements NotificationHandler {
                     "PortfolioUpdatedHandler expects PortfolioUpdatedPayload, got "
                             + request.payload().getClass().getSimpleName());
         }
-        String title = translator.translate("notif.portfolioUpdated.title", locale);
+        String title = translator.translate(titleKey(p.source()), locale);
         String body = formatBody(locale, p.totalValue(), p.dailyPnl(), p.dailyPnlPercent());
         Map<String, Object> templateData = new HashMap<>();
         templateData.put("title", title);
@@ -52,19 +53,35 @@ public class PortfolioUpdatedHandler implements NotificationHandler {
                 templateData);
     }
 
+    private static String titleKey(String source) {
+        return switch (source) {
+            case "morning" -> "notif.portfolioUpdated.titleMorning";
+            case "evening" -> "notif.portfolioUpdated.titleEvening";
+            case null, default -> "notif.portfolioUpdated.title";
+        };
+    }
+
     private String formatBody(Locale locale, BigDecimal totalValue, BigDecimal dailyPnl, BigDecimal dailyPnlPercent) {
         if (totalValue == null) {
             return translator.translate("notif.portfolioUpdated.bodySnapshotOnly", locale);
         }
-        BigDecimal scaledTotal = totalValue.setScale(2, RoundingMode.HALF_UP);
+        String totalText = formatNumber(locale, totalValue, 2);
         if (dailyPnl != null && dailyPnlPercent != null) {
             String sign = dailyPnl.signum() >= 0 ? "+" : "";
             return translator.translate("notif.portfolioUpdated.bodyFull",
                     locale,
-                    scaledTotal,
-                    sign + dailyPnl.setScale(2, RoundingMode.HALF_UP),
-                    sign + dailyPnlPercent.setScale(2, RoundingMode.HALF_UP));
+                    totalText,
+                    sign + formatNumber(locale, dailyPnl, 2),
+                    sign + formatNumber(locale, dailyPnlPercent, 2));
         }
-        return translator.translate("notif.portfolioUpdated.bodyValueOnly", locale, scaledTotal);
+        return translator.translate("notif.portfolioUpdated.bodyValueOnly", locale, totalText);
+    }
+
+    private static String formatNumber(Locale locale, BigDecimal value, int scale) {
+        BigDecimal scaled = value.setScale(scale, RoundingMode.HALF_UP);
+        NumberFormat formatter = NumberFormat.getNumberInstance(locale);
+        formatter.setMinimumFractionDigits(scale);
+        formatter.setMaximumFractionDigits(scale);
+        return formatter.format(scaled);
     }
 }

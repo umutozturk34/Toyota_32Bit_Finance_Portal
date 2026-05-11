@@ -1,6 +1,7 @@
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import useNavigationStore from '../../../shared/stores/useNavigationStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layers, X } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../../shared/components/feedback/AnimatedIcons';
@@ -97,6 +98,7 @@ const AssetCard = memo(AssetCardImpl);
 export default function AssetCardsSection({ data, editMode = false, config = {}, onConfigChange }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const setOrigin = useNavigationStore((s) => s.setOrigin);
   const items = data?.items ?? [];
 
   const visibleItems = useMemo(() => {
@@ -107,7 +109,10 @@ export default function AssetCardsSection({ data, editMode = false, config = {},
     });
   }, [items, config?.assetCodes]);
 
-  const goToAsset = useCallback((asset) => navigate(`${TYPE_ROUTES[asset.type] ?? '/market'}/${asset.code}`), [navigate]);
+  const goToAsset = useCallback((asset) => {
+    setOrigin('/market', window.scrollY);
+    navigate(`${TYPE_ROUTES[asset.type] ?? '/market'}/${asset.code}`);
+  }, [navigate, setOrigin]);
 
   const handleRemove = useCallback((asset) => {
     const explicit = Array.isArray(config?.assetCodes) && config.assetCodes.length > 0;

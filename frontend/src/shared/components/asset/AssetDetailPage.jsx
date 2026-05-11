@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { ShoppingCart } from '../feedback/AnimatedIcons';
 import useChartRange from '../../hooks/useChartRange';
-import useScrollRestoration from '../../hooks/useScrollRestoration';
+import useNavigationBack from '../../hooks/useNavigationBack';
+import Button from '../buttons/Button';
+import IconButton from '../buttons/IconButton';
 import { unifiedMarketService } from '../../services/unifiedMarketService';
 import LoadingState from '../feedback/LoadingState';
 import ErrorState from '../feedback/ErrorState';
@@ -44,7 +45,7 @@ export default function AssetDetailPage({
   excludeCompare = [],
 }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const goBack = useNavigationBack(backRoute);
   const resolvedLoading = loadingMessage ?? t('marketDetail.loading');
   const resolvedError = errorMessage ?? t('marketDetail.error');
   const resolvedNotFound = notFoundMessage ?? t('marketDetail.notFound');
@@ -56,8 +57,6 @@ export default function AssetDetailPage({
     queryKey: [queryKeyPrefix, assetCode],
     queryFn: () => fetchAsset(assetCode),
   });
-
-  useScrollRestoration();
 
   const { data: historyRaw } = useQuery({
     queryKey: [`${queryKeyPrefix}History`, assetCode, timeRange],
@@ -82,7 +81,7 @@ export default function AssetDetailPage({
     return (
       <ErrorState
         message={error ? resolvedError : resolvedNotFound}
-        onRetry={() => navigate(backRoute || -1)}
+        onRetry={goBack}
       />
     );
   }
@@ -98,12 +97,15 @@ export default function AssetDetailPage({
         className="flex items-center justify-between"
       >
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(backRoute || -1)}
-            className="flex items-center justify-center w-9 h-9 rounded-xl border border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:bg-surface hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
+          <IconButton
+            variant="secondary"
+            size={9}
+            shape="square"
+            icon={<ArrowLeft className="h-4 w-4" />}
+            aria-label={t('common.back', { defaultValue: 'back' })}
+            onClick={goBack}
+            className="hover:-translate-y-0.5"
+          />
           {renderHeader(asset)}
           <MarketStatusBadge market={(assetType || '').toUpperCase()} />
         </div>
@@ -116,13 +118,15 @@ export default function AssetDetailPage({
             />
           )}
           {showBuyButton && buyProps && (
-            <button
+            <Button
+              variant="primary"
+              size="md"
+              leftIcon={<ShoppingCart className="h-4 w-4" />}
               onClick={() => setBuyOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer border-none bg-success text-white hover:bg-success/90 transition-colors"
+              className="rounded-xl bg-success hover:bg-success/90"
             >
-              <ShoppingCart className="h-4 w-4" />
               {t('marketDetail.addToPortfolio')}
-            </button>
+            </Button>
           )}
         </div>
       </motion.div>

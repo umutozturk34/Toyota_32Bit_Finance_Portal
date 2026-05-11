@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, ExternalLink, Building2 } from 'lucide-react';
 import { newsService } from '../services/newsService';
 import { formatDateTimeFull } from '../../../shared/utils/formatters';
 import { CategoryBadge, getFallbackImage } from '../lib/newsConfig.jsx';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
+import useNavigationBack from '../../../shared/hooks/useNavigationBack';
 
 export default function NewsDetail() {
     const { t } = useTranslation();
     const { id } = useParams();
-    const navigate = useNavigate();
+    const goBack = useNavigationBack('/news');
     const [article, setArticle] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -34,8 +35,8 @@ export default function NewsDetail() {
     }, [id, t]);
 
     if (loading) return <LoadingState message={t('newsDetail.loading')} />;
-    if (error) return <ErrorState message={error} onRetry={() => navigate('/news')} />;
-    if (!article) return <ErrorState message={t('newsDetail.notFound')} onRetry={() => navigate('/news')} />;
+    if (error) return <ErrorState message={error} onRetry={goBack} />;
+    if (!article) return <ErrorState message={t('newsDetail.notFound')} onRetry={goBack} />;
 
     const imgSrc = article.imageUrl || getFallbackImage(article.category, article.id);
     const hasContent = article.content && article.content.trim().length > 0;
@@ -48,7 +49,7 @@ export default function NewsDetail() {
                 transition={{ duration: 0.3 }}
             >
                 <button
-                    onClick={() => navigate(-1)}
+                    onClick={goBack}
                     className="flex items-center gap-2 text-fg-muted hover:text-fg transition-colors duration-150 text-sm mb-4"
                 >
                     <ArrowLeft size={16} />

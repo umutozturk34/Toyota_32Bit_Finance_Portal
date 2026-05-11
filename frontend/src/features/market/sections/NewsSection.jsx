@@ -1,10 +1,12 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Newspaper, ChevronRight } from 'lucide-react';
 import { getFallbackImage } from '../../news/lib/newsConfig';
 import { currentLocaleTag } from '../../../shared/utils/formatters';
 import { newsCategoryName } from '../../../shared/utils/newsCategoryName';
+import useNavigationStore from '../../../shared/stores/useNavigationStore';
+import Card from '../../../shared/components/card';
 
 function formatDate(iso) {
   if (!iso) return '';
@@ -50,12 +52,17 @@ function NewsRow({ article, onClick }) {
 /** @param {NewsSectionProps} props */
 function NewsSectionImpl({ data }) {
   const navigate = useNavigate();
+  const setOrigin = useNavigationStore((s) => s.setOrigin);
   const { t } = useTranslation();
   const items = data?.items ?? [];
   const categoriesUsed = data?.categoriesUsed ?? [];
+  const goToArticle = useCallback((id) => {
+    setOrigin('/market', window.scrollY);
+    navigate(`/news/${id}`);
+  }, [navigate, setOrigin]);
 
   return (
-    <aside className="group relative rounded-xl border border-border-default border-t-2 border-t-accent-secondary bg-bg-elevated overflow-hidden h-full flex flex-col card-hover transition-all duration-200 hover:border-border-hover">
+    <Card as="aside" accentBar="accent-secondary" radius="xl" padding="none" className="group h-full flex flex-col">
       <button
         type="button"
         onClick={() => navigate('/news')}
@@ -74,11 +81,11 @@ function NewsSectionImpl({ data }) {
         {items.length === 0
           ? <p className="text-[11px] text-fg-subtle py-5 text-center">{t('news.empty')}</p>
           : <div className="space-y-0.5">
-              {items.map((a) => <NewsRow key={a.id} article={a} onClick={() => navigate(`/news/${a.id}`)} />)}
+              {items.map((a) => <NewsRow key={a.id} article={a} onClick={() => goToArticle(a.id)} />)}
             </div>
         }
       </div>
-    </aside>
+    </Card>
   );
 }
 

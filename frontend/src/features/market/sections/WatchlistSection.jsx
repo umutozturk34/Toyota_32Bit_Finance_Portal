@@ -1,10 +1,12 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Bookmark, ChevronRight } from 'lucide-react';
 import { formatPriceTRY, getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 import { localizeWatchlistName } from '../../../shared/utils/watchlistName';
+import useNavigationStore from '../../../shared/stores/useNavigationStore';
+import Card from '../../../shared/components/card';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
 
@@ -55,11 +57,16 @@ function ItemRow({ item, color, onClick }) {
 function WatchlistSectionImpl({ data }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const setOrigin = useNavigationStore((s) => s.setOrigin);
   const items = data?.items ?? [];
   const name = data?.watchlistName ? localizeWatchlistName(t, data.watchlistName) : t('watchlistSection.fallbackName');
+  const goToAsset = useCallback((marketType, assetCode) => {
+    setOrigin('/market', window.scrollY);
+    navigate(`${TYPE_ROUTES[marketType] ?? '/market'}/${assetCode}`);
+  }, [navigate, setOrigin]);
 
   return (
-    <section className="group relative rounded-xl border border-border-default border-t-2 border-t-accent bg-bg-elevated overflow-hidden h-full flex flex-col card-hover transition-all duration-200 hover:border-border-hover">
+    <Card as="section" accentBar="accent" radius="xl" padding="none" className="group h-full flex flex-col">
       <button
         type="button"
         onClick={() => navigate('/watch')}
@@ -82,14 +89,14 @@ function WatchlistSectionImpl({ data }) {
                     key={`${it.marketType}-${it.assetCode}`}
                     item={it}
                     color={color}
-                    onClick={() => navigate(`${TYPE_ROUTES[it.marketType] ?? '/market'}/${it.assetCode}`)}
+                    onClick={() => goToAsset(it.marketType, it.assetCode)}
                   />
                 );
               })}
             </div>
         }
       </div>
-    </section>
+    </Card>
   );
 }
 

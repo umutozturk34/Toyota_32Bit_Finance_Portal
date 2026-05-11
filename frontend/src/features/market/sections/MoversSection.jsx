@@ -1,9 +1,11 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BarChart3, ChevronRight } from 'lucide-react';
 import { formatPriceCompactTRY, getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
+import useNavigationStore from '../../../shared/stores/useNavigationStore';
+import Card from '../../../shared/components/card';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
 
@@ -50,17 +52,19 @@ function AssetRow({ asset, color, onClick }) {
 function MoversSectionImpl({ data }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const setOrigin = useNavigationStore((s) => s.setOrigin);
   const market = data?.market;
   const gainers = data?.gainers ?? [];
+  const goToAsset = useCallback((code) => {
+    setOrigin('/market', window.scrollY);
+    navigate(`${TYPE_ROUTES[market] ?? '/market'}/${code}`);
+  }, [navigate, setOrigin, market]);
   const losers = data?.losers ?? [];
   const color = ASSET_TYPE_COLORS[market] || '#6366f1';
   const label = market ? t(`assets.labels.${market}`, { defaultValue: market }) : t('moversSection.fallback');
 
   return (
-    <section
-      className="group relative rounded-xl border border-border-default border-t-2 bg-bg-elevated overflow-hidden h-full flex flex-col card-hover transition-all duration-200 hover:border-border-hover"
-      style={{ borderTopColor: color }}
-    >
+    <Card as="section" accentBar={color} radius="xl" padding="none" interactive={false} className="group h-full flex flex-col">
       <button
         type="button"
         onClick={() => navigate(TYPE_ROUTES[market] ?? '/market')}
@@ -87,7 +91,7 @@ function MoversSectionImpl({ data }) {
           <div className="space-y-0.5 overflow-y-auto scrollbar-auto-hide">
             {gainers.length === 0
               ? <p className="text-[10px] text-fg-subtle px-2 py-3 text-center">{t('moversSection.noData')}</p>
-              : gainers.map((a) => <AssetRow key={a.code} asset={a} color={color} onClick={() => navigate(`${TYPE_ROUTES[market] ?? '/market'}/${a.code}`)} />)}
+              : gainers.map((a) => <AssetRow key={a.code} asset={a} color={color} onClick={() => goToAsset(a.code)} />)}
           </div>
         </div>
         <div className="p-2 flex flex-col min-h-0">
@@ -101,11 +105,11 @@ function MoversSectionImpl({ data }) {
           <div className="space-y-0.5 overflow-y-auto scrollbar-auto-hide">
             {losers.length === 0
               ? <p className="text-[10px] text-fg-subtle px-2 py-3 text-center">{t('moversSection.noData')}</p>
-              : losers.map((a) => <AssetRow key={a.code} asset={a} color={color} onClick={() => navigate(`${TYPE_ROUTES[market] ?? '/market'}/${a.code}`)} />)}
+              : losers.map((a) => <AssetRow key={a.code} asset={a} color={color} onClick={() => goToAsset(a.code)} />)}
           </div>
         </div>
       </div>
-    </section>
+    </Card>
   );
 }
 

@@ -17,6 +17,7 @@ import SettingsSidebar from '../../features/settings/SettingsSidebar';
 import NotificationPanel from '../../features/notifications/NotificationPanel';
 import { useUnreadNotificationCount } from '../hooks/useNotifications';
 import useNotificationStream from '../hooks/useNotificationStream';
+import useScrollRestoration from '../hooks/useScrollRestoration';
 import OnboardingGate from '../../features/onboarding/OnboardingGate';
 import KeycloakActionToast from '../../features/auth/components/KeycloakActionToast';
 
@@ -49,6 +50,7 @@ const MainLayout = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   useNotificationStream();
+  useScrollRestoration();
 
   const navType = useNavigationType();
   const lastPathRef = useRef(location.pathname);

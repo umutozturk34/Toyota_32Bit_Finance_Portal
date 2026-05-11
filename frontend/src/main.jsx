@@ -5,10 +5,14 @@ import './index.css'
 import './shared/i18n/config'
 import App from './App.jsx'
 
+if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 4_000,
+      staleTime: 30_000,
       retry: 1,
       refetchOnWindowFocus: true,
     },

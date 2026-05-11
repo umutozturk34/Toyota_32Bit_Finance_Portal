@@ -1,14 +1,14 @@
 package com.finance.notification.core.mail;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import com.finance.notification.config.NotificationAsyncConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
@@ -28,20 +28,28 @@ public class MailSender {
     @Value("${notification.from-address:noreply@finance.local}")
     private String fromAddress;
 
-    @Async(NotificationAsyncConfig.MAIL_EXECUTOR)
-    public void send(String to, String subject, String templateName, Map<String, Object> model, String theme, Locale locale) {
+    @CircuitBreaker(name = "smtp")
+    public void sendBlocking(String to, String subject, String templateName,
+                             Map<String, Object> model, String theme, Locale locale) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
             helper.setFrom(fromAddress);
             helper.setTo(to);
-            helper.setSubject(subject);
+            helper.setSubject(sanitizeHeader(subject));
             helper.setText(renderHtml(templateName, model, theme, locale), true);
             mailSender.send(message);
-            log.info("Email sent template={} to={} subject={} theme={} locale={}", templateName, to, subject, theme, locale);
+            log.info("Email sent template={} to={} theme={} locale={}", templateName, to, theme, locale);
         } catch (MessagingException ex) {
-            log.error("Failed to send email template={} to={}: {}", templateName, to, ex.getMessage(), ex);
+            throw new MailDispatchException(ex.getMessage(), ex);
+        } catch (MailException ex) {
+            throw new MailDispatchException(ex.getMessage(), ex);
         }
+    }
+
+    private static String sanitizeHeader(String value) {
+        if (value == null) return null;
+        return value.replaceAll("[\\r\\n\\t]", " ").trim();
     }
 
     private String renderHtml(String templateName, Map<String, Object> model, String theme, Locale locale) {
@@ -49,5 +57,11 @@ public class MailSender {
         ctx.setVariables(model);
         ctx.setVariable("theme", theme);
         return templateEngine.process("email/" + templateName, ctx);
+    }
+
+    public static class MailDispatchException extends RuntimeException {
+        public MailDispatchException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

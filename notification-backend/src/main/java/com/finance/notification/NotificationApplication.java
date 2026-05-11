@@ -7,7 +7,9 @@ import com.finance.notification.config.NotificationAsyncProperties;
 import com.finance.notification.config.NotificationCacheProperties;
 import com.finance.notification.config.MessagingProperties;
 import com.finance.notification.config.NotificationDispatchProperties;
+import com.finance.common.event.KafkaTopicsProperties;
 import com.finance.notification.config.NotificationKafkaProperties;
+import com.finance.notification.config.NotificationOutboxProperties;
 import com.finance.notification.config.NotificationStreamProperties;
 import com.finance.notification.config.WatchlistManagementProperties;
 import com.finance.notification.core.dispatch.slot.SlotProperties;
@@ -44,6 +46,7 @@ import java.util.TimeZone;
 @EnableConfigurationProperties({
         AppProperties.class,
         BroadcastProperties.class,
+        KafkaTopicsProperties.class,
         MarketHoursProperties.class,
         MarketSessionProperties.class,
         MessagingProperties.class,
@@ -51,6 +54,7 @@ import java.util.TimeZone;
         NotificationCacheProperties.class,
         NotificationDispatchProperties.class,
         NotificationKafkaProperties.class,
+        NotificationOutboxProperties.class,
         NotificationStreamProperties.class,
         SlotProperties.class,
         WatchlistManagementProperties.class

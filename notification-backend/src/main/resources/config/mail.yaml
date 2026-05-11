@@ -11,3 +11,29 @@ spring:
 
 notification:
   from-address: ${NOTIFICATION_FROM_ADDRESS:noreply@finance.local}
+  email:
+    outbox:
+      batch-size: 200
+      max-attempts: 5
+      backoffs:
+        - PT1M
+        - PT5M
+        - PT30M
+        - PT2H
+        - PT12H
+      reclaim-after: PT5M
+      sent-retention: P7D
+      poll-delay: PT10S
+      reclaim-delay: PT1M
+      cleanup-cron: "0 0 3 * * *"
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      smtp:
+        sliding-window-size: 20
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true

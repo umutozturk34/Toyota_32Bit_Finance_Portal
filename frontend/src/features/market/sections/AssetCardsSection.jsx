@@ -8,9 +8,14 @@ import { formatPriceTRY, getChangeClass, changeColors, changeBg, formatPercentAb
 import AssetCardChart from './AssetCardChart';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
+const TYPE_ABBR = { STOCK: 'STK', CRYPTO: 'CRY', FOREX: 'FX', FUND: 'FND', COMMODITY: 'CMD', BOND: 'BND' };
 
 function shortLabel(asset) {
   return (asset.code || '').replace('.IS', '');
+}
+
+function typeAbbr(type) {
+  return TYPE_ABBR[type] || type;
 }
 
 /** @param {{asset: Object, index?: number, onClick: (a: Object) => void, editMode: boolean, onRemove?: (a: Object) => void}} props */
@@ -48,10 +53,12 @@ function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
               : <span className="w-4 h-4 rounded-full shrink-0 flex items-center justify-center text-[7px] font-bold text-white" style={{ background: accent }}>{shortLabel(asset).slice(0, 2)}</span>}
             <span className="font-display text-[12px] font-bold text-fg leading-none truncate">{shortLabel(asset)}</span>
           </div>
-          <span className="font-mono text-[6.5px] tracking-[0.22em] uppercase text-fg-subtle/70 shrink-0">{asset.type}</span>
+          <span className="font-mono text-[8px] font-semibold tracking-wider uppercase leading-none px-1 py-0.5 rounded-[3px] bg-surface text-fg-muted shrink-0">
+            {typeAbbr(asset.type)}
+          </span>
         </div>
-        <div className="relative z-10 flex items-end justify-between gap-2">
-          <p className="font-mono text-[16px] font-bold tracking-tight tabular-nums leading-none">
+        <div className="relative z-10 flex items-end justify-between gap-1.5 min-w-0">
+          <p className="font-mono text-[14px] font-bold tracking-tight tabular-nums leading-none truncate min-w-0 flex-1">
             {isPending
               ? <span className="text-fg-subtle inline-flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />

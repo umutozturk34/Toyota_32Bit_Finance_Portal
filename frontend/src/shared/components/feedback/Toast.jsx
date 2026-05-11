@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { CheckCircle, Info, X, ShieldAlert } from 'lucide-react';
@@ -60,14 +61,18 @@ export default function ToastContainer() {
     setItems((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-md pointer-events-none">
+  return createPortal(
+    <div
+      style={{ isolation: 'isolate' }}
+      className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-md pointer-events-none"
+    >
       <AnimatePresence>
         {items.map((item) => (
           <ToastItem key={item.id} item={item} onDismiss={dismiss} />
         ))}
       </AnimatePresence>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -105,7 +110,7 @@ function ToastItem({ item, onDismiss }) {
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
       className="pointer-events-auto"
     >
-      <div className={`relative rounded-xl border ${color.border} modal-panel px-4 py-3.5 flex items-start gap-3 overflow-hidden`}>
+      <div className={`relative rounded-xl border ${color.border} toast-panel px-4 py-3.5 flex items-start gap-3 overflow-hidden`}>
         <div className={`absolute inset-0 bg-gradient-to-r ${color.bg} to-transparent pointer-events-none`} />
         <div className={`relative flex items-center justify-center w-9 h-9 rounded-lg ${color.icon} shrink-0`}>
           <Icon className="h-4.5 w-4.5" />

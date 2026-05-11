@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
@@ -111,8 +112,8 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
 
   const toggle = (tab) => setOpenTab((p) => (p === tab ? null : tab));
 
-  return (
-    <div ref={containerRef} className="fixed left-3 top-[120px] z-30">
+  return createPortal(
+    <div ref={containerRef} className="fixed left-3 top-[120px] z-[55]" style={{ isolation: 'isolate' }}>
       <div className="flex flex-col gap-1.5 rounded-xl border border-accent/30 bg-bg-deep/90 backdrop-blur-md shadow-2xl shadow-black/40 p-1.5">
         <Tab
           active={openTab === 'widget'}
@@ -143,7 +144,7 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
 
       <AnimatePresence>
         {openTab === 'widget' && (
-          <Dropdown key="d-widget" rowIndex={0}>
+          <Dropdown key="d-widget" rowIndex={0} anchorRef={containerRef}>
             <DropdownHint
               text={atCap ? t('widgetTray.fullHint', { max: maxWidgets }) : t('widgetTray.dragHint')}
               tone={atCap ? 'danger' : 'muted'}
@@ -156,7 +157,7 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
           </Dropdown>
         )}
         {openTab === 'asset' && (
-          <Dropdown key="d-asset" rowIndex={1}>
+          <Dropdown key="d-asset" rowIndex={1} anchorRef={containerRef}>
             <DropdownHint text={t('widgetTray.addedCount', { count: assetCardCount, max: maxAssetCards })} tone={assetCardsFull ? 'danger' : 'muted'} />
             <DropdownList>
               <AssetCardAddRow tile={assetCardsTile} maxAssetCards={maxAssetCards} locked={assetCardsFull || atCap} assetCardCount={assetCardCount} onAdd={(tg, el) => { onAdd(tg, el); setOpenTab(null); }} onDragStart={onDragStart} onDragEnd={onDragEnd} />
@@ -164,7 +165,7 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
           </Dropdown>
         )}
         {openTab === 'watchlist' && watchlistItems.length > 0 && (
-          <Dropdown key="d-watchlist" rowIndex={2}>
+          <Dropdown key="d-watchlist" rowIndex={2} anchorRef={containerRef}>
             <DropdownHint text={t('widgetTray.addedCount', { count: watchlistUsedCount, max: watchlistItems.length })} tone="muted" />
             <DropdownList>
               {watchlistItems.map(({ tile, used, locked }) => (
@@ -174,7 +175,8 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
           </Dropdown>
         )}
       </AnimatePresence>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -211,22 +213,39 @@ function Tab({ active, accent, Icon, label, count, disabled = false, onClick }) 
   );
 }
 
-/** @param {{rowIndex: number, children: any}} props */
-function Dropdown({ rowIndex, children }) {
+/** @param {{rowIndex: number, anchorRef: any, children: any}} props */
+function Dropdown({ rowIndex, anchorRef, children }) {
   const tabHeight = 44;
   const gap = 6;
-  const top = rowIndex * (tabHeight + gap);
-  return (
+  const [coords, setCoords] = useState(null);
+  useEffect(() => {
+    const update = () => {
+      const rect = anchorRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setCoords({ left: rect.right + 8, top: rect.top + rowIndex * (tabHeight + gap) });
+    };
+    update();
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, true);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [anchorRef, rowIndex]);
+  if (!coords) return null;
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.12, ease: 'easeOut' }}
-      style={{ top }}
-      className="absolute left-full ml-2 z-50 min-w-[280px] max-w-[420px] rounded-xl border border-accent/30 bg-bg-deep/95 backdrop-blur-md shadow-2xl shadow-black/40 p-2 space-y-2"
+      onMouseDown={(e) => e.stopPropagation()}
+      style={{ position: 'fixed', left: coords.left, top: coords.top, isolation: 'isolate' }}
+      className="z-[60] min-w-[280px] max-w-[420px] rounded-xl border border-accent/30 bg-bg-deep/95 backdrop-blur-md shadow-2xl shadow-black/40 p-2 space-y-2"
     >
       {children}
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 }
 

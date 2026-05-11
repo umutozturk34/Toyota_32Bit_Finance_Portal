@@ -202,7 +202,7 @@ export default function TasksPanel({ open, onClose }) {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.15 }}
-                        className="fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm"
+                        className="fixed inset-0 z-[60] bg-black/30"
                         onClick={onClose}
                     />
                     <motion.div

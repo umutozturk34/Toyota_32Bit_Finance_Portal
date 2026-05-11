@@ -175,40 +175,7 @@
 - Header language selector, persisted as a user preference
 - Locale-aware number / date formatting
 
----
 
-### v0.19 — PDF Reporting & Email Delivery
-
-**Goal:** Periodic portfolio reporting — generate a PDF on a user-configured schedule and deliver it by email.
-
-**Scope:**
-
-- iText (or Apache PDFBox) for PDF generation
-- Frequency read from user preference (daily / weekly / monthly)
-- Report content: portfolio summary, position table, allocation pie, performance line chart, period transactions
-- AWS S3 (prod) / MinIO (dev) storage
-- Pre-signed URL for secure download
-- 90-day retention policy
-- Email delivery — Thymeleaf template + S3 download link; user notified when the report is ready
-- Manual "Generate Report" button (ad-hoc trigger)
-
----
-
-### v0.20 — Futures & Options Market (final)
-
-**Goal:** Leveraged position management on derivatives.
-
-**Scope:**
-
-- Futures and options contract data model
-- Long / short position open; for options, call / put + strike + expiry
-- Margin calculation, margin-call alerts
-- Daily settlement (mark-to-market)
-- Auto-close on expiry; for options, strike price + IV (implied volatility) display
-- Leverage ratios, initial margin & maintenance margin display
-- Open positions table, real-time P&L
-
----
 
 ## Architectural Principles
 

@@ -272,7 +272,7 @@ function placeNear(anchor) {
 export default function WidgetSettingsPopover({ anchorEl, kind, config, autoFocusName = false, onChange, onClose }) {
   const { t } = useTranslation();
   const ref = useRef(null);
-  const [pos, setPos] = useState(() => placeNear(anchorEl));
+  const [pos, setPos] = useState(null);
 
   useLayoutEffect(() => {
     const recompute = () => setPos(placeNear(anchorEl));

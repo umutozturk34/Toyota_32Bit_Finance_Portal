@@ -1,7 +1,16 @@
 import i18n from '../i18n/config';
 
+const STATUS_KEY = {
+  502: 'error.serverUnavailable',
+  503: 'error.serverUnavailable',
+  504: 'error.gatewayTimeout',
+};
+
 export function extractApiError(err, fallback) {
-  const data = err?.response?.data;
+  const response = err?.response;
+  const status = response?.status;
+  const data = response?.data;
+
   if (data && typeof data === 'object') {
     const fieldErrors = data.validationErrors || data.errors;
     if (fieldErrors && typeof fieldErrors === 'object') {
@@ -18,6 +27,10 @@ export function extractApiError(err, fallback) {
     }
     if (typeof data.message === 'string' && data.message.length > 0) return data.message;
   }
-  if (typeof err?.message === 'string' && err.message.length > 0) return err.message;
+
+  if (STATUS_KEY[status]) return i18n.t(STATUS_KEY[status]);
+  if (status >= 500) return i18n.t('error.serverError');
+  if (!response) return i18n.t('error.networkError');
+
   return fallback ?? i18n.t('error.actionFailed');
 }

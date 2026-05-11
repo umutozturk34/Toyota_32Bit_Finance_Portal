@@ -1,5 +1,4 @@
 import { LineChart, BarChart2, RefreshCw, Activity } from 'lucide-react';
-import { getCryptoHistory, stockService, forexService, fundService } from '../../../shared/services/marketService';
 
 export const ASSET_ICONS = {
   BIST: <BarChart2 className="w-4 h-4" />,
@@ -30,15 +29,6 @@ export const ASSET_TYPE_TO_ROUTE = {
 };
 
 export const ensureBistSuffix = (code) => (code.endsWith('.IS') ? code : `${code}.IS`);
-
-export const HISTORY_FETCHERS = {
-  CRYPTO: (code, range) => getCryptoHistory(code, range),
-  STOCK: (code, range) => stockService.getHistory(ensureBistSuffix(code), range),
-  BIST: (code, range) => stockService.getHistory(ensureBistSuffix(code), range),
-  US: (code, range) => stockService.getHistory(ensureBistSuffix(code), range),
-  FOREX: (code, range) => forexService.getHistory(code, range),
-  FUND: (code, range) => fundService.getHistory(code, range),
-};
 
 export const containerVariants = {
   hidden: { opacity: 0 },

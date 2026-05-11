@@ -1,14 +1,13 @@
 package com.finance.market.stock.service;
-import com.finance.market.stock.model.Stock;
 
 import com.finance.market.core.service.MarketRefresher;
 
 import com.finance.market.core.service.TrackedAssetQueryService;
 
-import com.finance.market.core.service.MarketSnapshotProcessor;
 
 
 import com.finance.market.stock.config.StockProperties;
+import com.finance.common.exception.BusinessException;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.shared.util.BatchLogHelper;
@@ -46,8 +45,8 @@ public class StockUpdateService implements MarketRefresher {
     public void refreshAll() {
         List<String> bistStocks = trackedAssetQueryService.getCodes(TrackedAssetType.STOCK);
         if (bistStocks.isEmpty()) {
-            log.warn("No BIST stocks configured");
-            return;
+            log.error("No BIST stocks configured for tracking");
+            throw new BusinessException("No BIST stocks configured for tracking");
         }
         log.info("Starting Yahoo stock sync for {} BIST stocks", bistStocks.size());
         final int[] totalCandles = {0};

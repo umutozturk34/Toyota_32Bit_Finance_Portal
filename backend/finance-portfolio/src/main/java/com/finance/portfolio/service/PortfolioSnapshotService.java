@@ -23,13 +23,6 @@ import com.finance.common.model.TrackedAssetType;
 import com.finance.portfolio.model.AssetType;
 
 
-import com.finance.portfolio.model.AssetType;
-import com.finance.portfolio.model.Portfolio;
-import com.finance.portfolio.model.PortfolioPosition;
-import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
-import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
-import com.finance.portfolio.repository.PortfolioPositionRepository;
-import com.finance.portfolio.repository.PortfolioRepository;
 import com.finance.shared.util.BatchLogHelper;
 import com.finance.shared.util.BatchUpdateRunner;
 import lombok.RequiredArgsConstructor;
@@ -75,7 +68,10 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
                 }),
                 p -> String.valueOf(p.getId()),
                 "portfolio-" + type + "-snapshot",
-                1, null, null, null
+                1,
+                (p, e) -> log.error("Portfolio {} snapshot failed for portfolioId={}: {}",
+                        type, p.getId(), e.getMessage(), e),
+                null, null
         );
 
         BatchLogHelper.logSummary(log, type + " portfolio snapshot", result);
@@ -94,7 +90,10 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
                 }),
                 p -> String.valueOf(p.getId()),
                 "daily-snapshot",
-                1, null, null, null
+                1,
+                (p, e) -> log.error("Daily portfolio snapshot failed for portfolioId={} (source={}): {}",
+                        p.getId(), source, e.getMessage(), e),
+                null, null
         );
 
         if (!portfolios.isEmpty()) {

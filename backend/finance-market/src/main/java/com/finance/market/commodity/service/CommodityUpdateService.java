@@ -1,5 +1,4 @@
 package com.finance.market.commodity.service;
-import com.finance.market.commodity.model.Commodity;
 
 import com.finance.market.core.service.ExchangeRateProvider;
 
@@ -12,6 +11,8 @@ import com.finance.market.core.service.TrackedAssetQueryService;
 
 import com.finance.market.commodity.config.CommodityProperties;
 import com.finance.market.core.dto.external.YahooCandleDto;
+import com.finance.common.exception.BusinessException;
+import com.finance.common.exception.ExternalApiException;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.shared.util.BatchLogHelper;
@@ -56,18 +57,24 @@ public class CommodityUpdateService implements MarketRefresher {
     @Override
     public void refreshAll() {
         List<String> enabledCodes = trackedAssetQueryService.getCodes(TrackedAssetType.COMMODITY);
+        if (enabledCodes.isEmpty()) {
+            log.info("No tracked commodities enabled, nothing to sync");
+            return;
+        }
         List<String> fetchableCodes = enabledCodes.stream()
                 .filter(code -> yahooSymbolResolver.resolve(code) != null)
                 .toList();
         if (fetchableCodes.isEmpty()) {
-            log.info("No Yahoo-fetchable commodities enabled, skipping sync");
-            return;
+            log.error("Tracked commodities exist ({}) but none have Yahoo symbol mappings", enabledCodes.size());
+            throw new BusinessException(
+                    "Tracked commodities exist but none have Yahoo symbol mappings (check yahoo-symbol-overrides yaml)");
         }
 
         Map<String, YahooCandleDto> usdtryCandleMap = exchangeRateProvider.getUsdTryHistory();
         if (usdtryCandleMap.isEmpty()) {
-            log.error("USDTRY candles unavailable, skipping commodity sync");
-            return;
+            log.error("USDTRY candles unavailable, cannot synthesise commodity TRY prices");
+            throw new ExternalApiException("Yahoo Finance",
+                    "USDTRY candles unavailable, cannot synthesise commodity TRY prices");
         }
         ExchangeRateSnapshot usdTry = exchangeRateProvider.getCurrentUsdTry();
 

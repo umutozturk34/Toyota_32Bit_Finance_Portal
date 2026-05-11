@@ -4,6 +4,7 @@ import com.finance.market.core.service.MarketRefresher;
 
 import com.finance.market.forex.config.ForexProperties;
 import com.finance.market.core.dto.external.YahooCandleDto;
+import com.finance.common.exception.ExternalApiException;
 import com.finance.market.forex.mapper.ForexMapper;
 import com.finance.market.forex.model.Forex;
 import com.finance.common.model.MarketType;
@@ -58,8 +59,9 @@ public class ForexUpdateService implements MarketRefresher {
                 .findFirst()
                 .orElse(null);
         if (usdtry == null) {
-            log.error("{} not found, skipping forex sync", baseCurrency);
-            return;
+            log.error("{} not registered as a forex pair, cannot anchor forex sync", baseCurrency);
+            throw new ExternalApiException("Yahoo Finance",
+                    baseCurrency + " not registered as a forex pair, cannot anchor forex sync");
         }
         snapshotProcessor.updatePair(usdtry, Map.of());
         Map<String, YahooCandleDto> usdtryCandleMap = buildUsdtryCandleMap();

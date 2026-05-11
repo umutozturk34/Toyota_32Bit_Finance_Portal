@@ -34,16 +34,16 @@ public class CommodityScheduler extends AbstractMarketScheduler {
 
     @Scheduled(cron = "${app.scheduler.commodity.morning-cron}", zone = "${app.timezone}")
     public void runMorningCommodityUpdate() {
-        executeMarketUpdate("scheduled-commodity-morning", "Scheduled morning commodity update");
+        executeMarketUpdate("scheduled-commodity-morning", "Scheduled morning commodity update (10:45)");
     }
 
     @Scheduled(cron = "${app.scheduler.commodity.afternoon-cron}", zone = "${app.timezone}")
     public void runAfternoonCommodityUpdate() {
-        executeMarketUpdate("scheduled-commodity-afternoon", "Scheduled afternoon commodity update");
+        executeMarketUpdate("scheduled-commodity-afternoon", "Scheduled afternoon commodity update (16:30)");
     }
 
     @Scheduled(cron = "${app.scheduler.commodity.evening-cron}", zone = "${app.timezone}")
     public void runEveningCommodityUpdate() {
-        executeMarketUpdate("scheduled-commodity-evening", "Scheduled evening commodity update");
+        executeMarketUpdate("scheduled-commodity-evening", "Scheduled evening commodity update (22:30)");
     }
 }

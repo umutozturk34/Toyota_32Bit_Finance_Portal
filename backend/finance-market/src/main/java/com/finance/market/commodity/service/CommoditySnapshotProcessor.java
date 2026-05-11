@@ -127,9 +127,10 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
         List<YahooCandleDto> tryCandles = SyntheticPriceCalculator.buildSyntheticCandles(
                 result.candles(), usdtryCandleMap, false, scale);
         if (tryCandles.isEmpty()) {
-            log.warn("No USDTRY-aligned candles for {} (usd={}, usdtry={} entries), skipping",
+            log.warn("No USDTRY-aligned candles for {} (usd={}, usdtry={} entries)",
                     commodityCode, result.candles().size(), usdtryCandleMap.size());
-            return;
+            throw new ExternalApiException("Yahoo Finance",
+                    "No USDTRY-aligned candles for " + commodityCode);
         }
         YahooCandleDto todayTryCandle = tryCandles.get(tryCandles.size() - 1);
         YahooCandleDto previousTryCandle = tryCandles.size() >= 2 ? tryCandles.get(tryCandles.size() - 2) : null;

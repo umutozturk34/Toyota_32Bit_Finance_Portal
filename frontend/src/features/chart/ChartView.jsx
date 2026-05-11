@@ -11,11 +11,20 @@ import LightweightChart from './components/LightweightChart';
 import CompareBar from '../../shared/components/layout/CompareBar';
 import Spinner from '../../shared/components/feedback/Spinner';
 import { fundService, trackedAssetService } from '../../shared/services/marketService';
+import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
 import { formatBistSymbol } from '../../shared/constants/stocks';
 import { getForexPairs } from '../../shared/constants/forex';
 
 import { useTranslation } from 'react-i18next';
-import { ASSET_ICONS, ASSET_TYPE_KEYS, ROUTE_TO_ASSET_TYPE, ASSET_TYPE_TO_ROUTE, HISTORY_FETCHERS, containerVariants, itemVariants } from './lib/chartViewConstants.jsx';
+import { ASSET_ICONS, ASSET_TYPE_KEYS, ROUTE_TO_ASSET_TYPE, ASSET_TYPE_TO_ROUTE, ensureBistSuffix, containerVariants, itemVariants } from './lib/chartViewConstants.jsx';
+
+const fetchHistoryFor = (type, code, range) => {
+  const backendType = (type === 'BIST' || type === 'US') ? 'STOCK' : type;
+  const backendCode = (type === 'BIST' || type === 'STOCK' || type === 'US')
+    ? ensureBistSuffix(code)
+    : code;
+  return unifiedMarketService.getHistory(backendType, backendCode, range);
+};
 const ChartView = () => {
   const { t } = useTranslation();
   const { coinId, assetType: routeAssetType, symbol: routeSymbol } = useParams();
@@ -103,10 +112,7 @@ const ChartView = () => {
 
   const { data: compareRaw } = useQuery({
     queryKey: ['chartCompare', compareAsset?.type, compareAsset?.code, timeRange],
-    queryFn: () => {
-      const fetcher = HISTORY_FETCHERS[compareAsset.type];
-      return fetcher ? fetcher(compareAsset.code, timeRange) : Promise.resolve([]);
-    },
+    queryFn: () => fetchHistoryFor(compareAsset.type, compareAsset.code, timeRange),
     enabled: !!compareAsset,
     placeholderData: (prev) => prev,
   });
@@ -179,10 +185,7 @@ const ChartView = () => {
   }, [symbol, assetType, isDetailRoute, navigate, setSearchParams]);
   const fetchSymbol = assetType === 'BIST' && symbol && !symbol.endsWith('.IS') ? `${symbol}.IS` : symbol;
 
-  const fetchHistory = (sym, type, range) => {
-    const fetcher = HISTORY_FETCHERS[type];
-    return fetcher ? fetcher(sym, range) : Promise.resolve([]);
-  };
+  const fetchHistory = (sym, type, range) => fetchHistoryFor(type, sym, range);
 
   const { data: historyRaw, isLoading: loading, refetch: refetchHistory } = useQuery({
     queryKey: ['chartHistory', assetType, fetchSymbol, timeRange],

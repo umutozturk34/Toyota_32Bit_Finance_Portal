@@ -1,6 +1,4 @@
 package com.finance.notification.market;
-import com.finance.common.event.KafkaTopics;
-
 
 import com.finance.common.event.MarketUpdatedEvent;
 import com.finance.notification.alert.service.PriceAlertEvaluator;
@@ -29,7 +27,7 @@ public class MarketUpdateEventListener {
     }
 
     @KafkaListener(
-            topics = KafkaTopics.MARKET_UPDATED,
+            topics = "${app.kafka.topics.market-updated}",
             groupId = "${spring.kafka.consumer.group-id}-market"
     )
     public void onMarketUpdated(MarketUpdatedEvent event, Acknowledgment ack) {

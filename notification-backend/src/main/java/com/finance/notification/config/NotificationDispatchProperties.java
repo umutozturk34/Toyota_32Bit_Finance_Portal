@@ -6,7 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record NotificationDispatchProperties(
         Formatting formatting,
         WatchlistDelta watchlistDelta,
-        Message message
+        Message message,
+        Fanout fanout
 ) {
 
     public record Formatting(
@@ -21,5 +22,9 @@ public record NotificationDispatchProperties(
 
     public record Message(
             int previewMaxChars
+    ) {}
+
+    public record Fanout(
+            int pageSize
     ) {}
 }

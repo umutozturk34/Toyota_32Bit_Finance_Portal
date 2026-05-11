@@ -1,25 +1,23 @@
 package com.finance.notification.core.dispatch;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.common.security.UserStatusPort;
 import com.finance.notification.core.dispatch.email.UserEmailLookup;
-
-import com.finance.notification.core.mail.MailSender;
-import com.finance.notification.core.mapper.NotificationMapper;
+import com.finance.notification.core.mail.EmailOutbox;
 import com.finance.notification.core.model.Notification;
 import com.finance.notification.core.model.NotificationPreference;
 import com.finance.notification.core.model.NotificationType;
 import com.finance.notification.core.repository.NotificationPreferenceRepository;
-import com.finance.notification.core.repository.NotificationRepository;
 import com.finance.notification.user.UserPreferenceCacheService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -27,72 +25,74 @@ import java.util.Optional;
 @Service
 public class NotificationDispatcher {
 
-    private final NotificationRepository notificationRepository;
     private final NotificationPreferenceRepository preferenceRepository;
     private final UserPreferenceCacheService userPreferenceCacheService;
     private final UserEmailLookup userEmailLookup;
-    private final MailSender mailSender;
-    private final NotificationStreamRegistry streamRegistry;
-    private final NotificationMapper notificationMapper;
     private final UserStatusPort userStatus;
+    private final ObjectMapper objectMapper;
+    private final NotificationPersister persister;
     private final Map<NotificationType, NotificationHandler> handlers;
-    private final org.springframework.context.ApplicationEventPublisher events;
 
-    public NotificationDispatcher(NotificationRepository notificationRepository,
-                                  NotificationPreferenceRepository preferenceRepository,
+    public NotificationDispatcher(NotificationPreferenceRepository preferenceRepository,
                                   UserPreferenceCacheService userPreferenceCacheService,
                                   UserEmailLookup userEmailLookup,
-                                  MailSender mailSender,
-                                  NotificationStreamRegistry streamRegistry,
-                                  NotificationMapper notificationMapper,
                                   UserStatusPort userStatus,
-                                  List<NotificationHandler> handlerList,
-                                  org.springframework.context.ApplicationEventPublisher events) {
-        this.notificationRepository = notificationRepository;
+                                  ObjectMapper objectMapper,
+                                  NotificationPersister persister,
+                                  List<NotificationHandler> handlerList) {
         this.preferenceRepository = preferenceRepository;
         this.userPreferenceCacheService = userPreferenceCacheService;
         this.userEmailLookup = userEmailLookup;
-        this.mailSender = mailSender;
-        this.streamRegistry = streamRegistry;
-        this.notificationMapper = notificationMapper;
         this.userStatus = userStatus;
-        this.events = events;
+        this.objectMapper = objectMapper;
+        this.persister = persister;
         this.handlers = new EnumMap<>(NotificationType.class);
         for (NotificationHandler h : handlerList) {
             this.handlers.put(h.type(), h);
         }
     }
 
+    public void preloadPage(Collection<String> userSubs) {
+        userPreferenceCacheService.preload(userSubs);
+        userStatus.preload(userSubs);
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void dispatch(NotificationRequest request) {
+        dispatch(request, loadPreferences(request.userSub()));
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void dispatch(NotificationRequest request, NotificationPreference prefs) {
+        prepare(request, prefs).ifPresent(prep -> persister.persistBatch(List.of(prep)));
+    }
+
+    public Optional<Prepared> prepare(NotificationRequest request, NotificationPreference prefs) {
         NotificationHandler handler = handlers.get(request.type());
         if (handler == null) {
             log.warn("No handler registered for type={}; dropping dispatch for user={}", request.type(), request.userSub());
-            return;
+            return Optional.empty();
         }
-
         if (!userStatus.isActive(request.userSub())) {
             log.debug("Notification suppressed (user inactive) user={} type={}", request.userSub(), request.type());
-            return;
+            return Optional.empty();
         }
 
-        java.util.Locale recipientLocale = userPreferenceCacheService.resolveLocale(request.userSub());
+        Locale recipientLocale = userPreferenceCacheService.resolveLocale(request.userSub());
         RenderedNotification rendered = handler.render(request, recipientLocale);
-        NotificationPreference prefs = loadPreferences(request.userSub());
 
+        Notification inapp = null;
         if (prefs.wantsInApp(request.type())) {
-            Notification persisted = notificationRepository.saveAndFlush(Notification.create(
+            inapp = Notification.create(
                     request.userSub(),
                     request.type(),
                     rendered.title(),
                     rendered.body(),
                     request.payload().toMetadata(),
-                    request.expiresAt()));
-            log.debug("In-app notification persisted id={} user={} type={}",
-                    persisted.getId(), request.userSub(), request.type());
-            streamRegistry.publish(request.userSub(), notificationMapper.toResponse(persisted));
+                    request.expiresAt());
         }
 
+        EmailOutbox outboxRow = null;
         if (prefs.wantsEmail(request.type())) {
             Optional<String> emailOpt = userEmailLookup.findEmail(request.userSub());
             if (emailOpt.isEmpty()) {
@@ -100,22 +100,28 @@ public class NotificationDispatcher {
                         request.userSub(), request.type());
             } else {
                 String theme = userPreferenceCacheService.resolveTheme(request.userSub());
-                events.publishEvent(new EmailEnqueuedEvent(emailOpt.get(), theme, recipientLocale, rendered));
+                outboxRow = buildOutboxRow(emailOpt.get(), theme, recipientLocale, rendered);
             }
         }
+
+        if (inapp == null && outboxRow == null) return Optional.empty();
+        return Optional.of(new Prepared(request.userSub(), inapp, outboxRow));
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onEmailEnqueued(EmailEnqueuedEvent event) {
-        mailSender.send(event.to(), event.rendered().emailSubject(),
-                event.rendered().emailTemplate(), event.rendered().emailModel(), event.theme(), event.locale());
+    private EmailOutbox buildOutboxRow(String to, String theme, Locale locale, RenderedNotification rendered) {
+        return EmailOutbox.builder()
+                .recipientEmail(to)
+                .subject(rendered.emailSubject())
+                .templateName(rendered.emailTemplate())
+                .model(objectMapper.valueToTree(rendered.emailModel()))
+                .theme(theme)
+                .locale(locale.toLanguageTag())
+                .status(EmailOutbox.Status.PENDING)
+                .build();
     }
 
     private NotificationPreference loadPreferences(String userSub) {
         return preferenceRepository.findById(userSub)
                 .orElseGet(() -> NotificationPreference.defaultsFor(userSub));
-    }
-
-    public record EmailEnqueuedEvent(String to, String theme, java.util.Locale locale, RenderedNotification rendered) {
     }
 }

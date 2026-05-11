@@ -2,12 +2,10 @@ package com.finance.notification.market;
 
 import com.finance.notification.market.session.SessionMarket;
 
-import com.finance.common.event.KafkaTopics;
 import com.finance.common.event.MarketUpdatedEvent;
-import com.finance.notification.core.dispatch.NotificationDispatcher;
-import com.finance.notification.core.dispatch.NotificationRequest;
+import com.finance.notification.core.dispatch.NotificationFanoutService;
+import com.finance.notification.core.dispatch.NotificationFanoutService.FanoutResult;
 import com.finance.notification.core.dispatch.payload.MarketDataUpdatedPayload;
-import com.finance.notification.core.model.NotificationPreference;
 import com.finance.notification.core.repository.NotificationPreferenceRepository;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.extern.log4j.Log4j2;
@@ -24,20 +22,20 @@ public class MarketDataUpdateListener {
 
     private static final String GROUP_ID = "notification-data-updated";
 
-    private final NotificationDispatcher dispatcher;
+    private final NotificationFanoutService fanoutService;
     private final NotificationPreferenceRepository preferences;
     private final Cache<String, Boolean> processedEventIds;
 
-    public MarketDataUpdateListener(NotificationDispatcher dispatcher,
+    public MarketDataUpdateListener(NotificationFanoutService fanoutService,
                                     NotificationPreferenceRepository preferences,
                                     @Qualifier("dataUpdatedProcessedEventIds") Cache<String, Boolean> processedEventIds) {
-        this.dispatcher = dispatcher;
+        this.fanoutService = fanoutService;
         this.preferences = preferences;
         this.processedEventIds = processedEventIds;
     }
 
     @KafkaListener(
-            topics = KafkaTopics.MARKET_UPDATED,
+            topics = "${app.kafka.topics.market-updated}",
             groupId = GROUP_ID,
             containerFactory = "kafkaListenerContainerFactory")
     public void onMarketUpdated(MarketUpdatedEvent event, Acknowledgment ack) {
@@ -55,12 +53,13 @@ public class MarketDataUpdateListener {
             return;
         }
         SessionMarket market = mapped.get();
-        for (NotificationPreference pref : preferences.findAll()) {
-            if (!pref.subscribesToMarket(market)) continue;
-            MarketDataUpdatedPayload payload = new MarketDataUpdatedPayload(
-                    market.name(), event.source());
-            dispatcher.dispatch(NotificationRequest.of(pref.getUserSub(), payload));
-        }
+        MarketDataUpdatedPayload payload = new MarketDataUpdatedPayload(market.name(), event.source());
+        FanoutResult result = fanoutService.fanout(
+                "market.updated",
+                page -> preferences.findMarketDataSubscribed(market.name(), page),
+                pref -> Optional.of(payload));
+        log.info("market.updated marketType={} source={} dispatched={} failed={}",
+                event.marketType(), event.source(), result.dispatched(), result.failed());
         processedEventIds.put(event.eventId(), Boolean.TRUE);
         ack.acknowledge();
     }

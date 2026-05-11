@@ -55,7 +55,7 @@ public class MarketSessionScheduler {
                 market, current, subscribers.size());
         for (NotificationPreference pref : subscribers) {
             if (!pref.subscribesToMarket(market)) continue;
-            dispatcher.dispatch(NotificationRequest.of(pref.getUserSub(), payload));
+            dispatcher.dispatch(NotificationRequest.of(pref.getUserSub(), payload), pref);
         }
     }
 }

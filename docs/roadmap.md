@@ -206,25 +206,6 @@
 
 ---
 
-## Deferred
-
-Scoped during earlier roadmap iterations but not committed for the 25 May 2026 deadline. May be picked up after v0.20.
-
-### PDF Reporting & Email Delivery
-
-**Goal:** Periodic portfolio reporting — generate a PDF on a user-configured schedule and deliver it by email.
-
-**Scope (sketch):**
-
-- iText (or Apache PDFBox) for PDF generation
-- Frequency read from user preference (daily / weekly / monthly)
-- Report content: portfolio summary, position table, allocation pie, performance line chart, period transactions
-- AWS S3 (prod) / MinIO (dev) storage; pre-signed URL for secure download; 90-day retention
-- Email delivery — Thymeleaf template + S3 download link via the existing email outbox pipeline; user notified when the report is ready
-- Manual "Generate Report" button (ad-hoc trigger)
-
----
-
 ## Architectural Principles
 
 - **Modular monolith + notification microservice** — `finance-app` is the orchestration entry point; market types live under `finance-market`; portfolio / user / news in their own Maven modules; shared code split between `finance-common` (used by both backends) and `finance-monolith-shared` (monolith-only)

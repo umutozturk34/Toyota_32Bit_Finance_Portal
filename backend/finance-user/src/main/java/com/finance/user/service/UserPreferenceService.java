@@ -66,7 +66,6 @@ public class UserPreferenceService {
         if (request.language() != null) entity.setLanguage(request.language());
         if (request.timezone() != null) entity.setTimezone(request.timezone());
         if (request.defaultChartRange() != null) entity.setDefaultChartRange(request.defaultChartRange());
-        if (request.reportFrequency() != null) entity.setReportFrequency(request.reportFrequency());
         if (request.onboardingCompleted() != null) entity.setOnboardingCompleted(request.onboardingCompleted());
     }
 }

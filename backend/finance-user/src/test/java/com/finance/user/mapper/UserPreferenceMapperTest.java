@@ -1,7 +1,6 @@
 package com.finance.user.mapper;
 
 import com.finance.user.dto.UserPreferenceResponse;
-import com.finance.user.dto.enums.ReportFrequency;
 import com.finance.user.dto.enums.ThemePreference;
 import com.finance.user.model.UserPreference;
 import org.junit.jupiter.api.Test;
@@ -22,7 +21,6 @@ class UserPreferenceMapperTest {
                 .language("en")
                 .timezone("UTC")
                 .defaultChartRange("3M")
-                .reportFrequency(ReportFrequency.WEEKLY)
                 .onboardingCompleted(true)
                 .build();
 
@@ -33,7 +31,6 @@ class UserPreferenceMapperTest {
         assertThat(response.language()).isEqualTo("en");
         assertThat(response.timezone()).isEqualTo("UTC");
         assertThat(response.defaultChartRange()).isEqualTo("3M");
-        assertThat(response.reportFrequency()).isEqualTo(ReportFrequency.WEEKLY);
         assertThat(response.onboardingCompleted()).isTrue();
     }
 }

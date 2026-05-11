@@ -5,7 +5,6 @@ import java.util.function.Predicate;
 public enum NotificationType {
     PRICE_ALERT_FIRED(NotificationPreference::isEmailPriceAlerts, NotificationPreference::isInappPriceAlerts),
     WATCHLIST_DELTA(NotificationPreference::isEmailWatchlist, NotificationPreference::isInappWatchlist),
-    REPORT_READY(NotificationPreference::isEmailReports, NotificationPreference::isInappReports),
     SYSTEM(NotificationPreference::isEmailSystem, NotificationPreference::isInappSystem),
     MARKET_OPENED(NotificationPreference::isEmailMarketOpened, NotificationPreference::isInappMarketOpened),
     MARKET_CLOSED(NotificationPreference::isEmailMarketClosed, NotificationPreference::isInappMarketClosed),

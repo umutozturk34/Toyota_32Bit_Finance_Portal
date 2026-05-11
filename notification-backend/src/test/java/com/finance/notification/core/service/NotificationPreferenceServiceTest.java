@@ -61,7 +61,7 @@ class NotificationPreferenceServiceTest {
     @Test
     void upsert_appliesPartialRequestAndPersists() {
         NotificationPreferenceUpdateRequest request = new NotificationPreferenceUpdateRequest(
-                null, null, null, true, null, null, null, null, null,
+                null, null, null, true, null, null, null,
                 null, null, null, null, null, null, null, null, null, null, null);
         when(repository.findById("user-1")).thenReturn(Optional.empty());
         when(repository.save(any(NotificationPreference.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -81,7 +81,6 @@ class NotificationPreferenceServiceTest {
                 p.isEmailEnabled(),
                 p.isEmailPriceAlerts(), p.isInappPriceAlerts(),
                 p.isEmailWatchlist(), p.isInappWatchlist(),
-                p.isEmailReports(), p.isInappReports(),
                 p.isEmailSystem(), p.isInappSystem(),
                 p.isEmailMarketOpened(), p.isInappMarketOpened(),
                 p.isEmailMarketClosed(), p.isInappMarketClosed(),

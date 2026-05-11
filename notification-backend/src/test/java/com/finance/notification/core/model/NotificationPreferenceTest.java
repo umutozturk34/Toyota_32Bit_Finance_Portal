@@ -18,8 +18,6 @@ class NotificationPreferenceTest {
         assertThat(prefs.isEmailPriceAlerts()).isTrue();
         assertThat(prefs.isInappWatchlist()).isTrue();
         assertThat(prefs.isEmailWatchlist()).isFalse();
-        assertThat(prefs.isInappReports()).isTrue();
-        assertThat(prefs.isEmailReports()).isTrue();
         assertThat(prefs.isInappSystem()).isTrue();
         assertThat(prefs.isEmailSystem()).isFalse();
     }
@@ -47,7 +45,6 @@ class NotificationPreferenceTest {
     @CsvSource({
             "PRICE_ALERT_FIRED,true,true",
             "WATCHLIST_DELTA,false,true",
-            "REPORT_READY,true,true",
             "SYSTEM,false,true"
     })
     void wantsEmailAndInApp_matchDefaultsPerType(NotificationType type, boolean expectedEmail, boolean expectedInApp) {

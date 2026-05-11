@@ -228,6 +228,5 @@ public class AppProperties {
         private int apiLimit = 60;
         private int credentialActionLimit = 10;
         private int credentialReadLimit = 60;
-        private int messagingAdminLimit = 30;
     }
 }

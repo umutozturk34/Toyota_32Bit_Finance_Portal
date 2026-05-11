@@ -6,8 +6,6 @@ public record NotificationPreferenceUpdateRequest(
         Boolean inappPriceAlerts,
         Boolean emailWatchlist,
         Boolean inappWatchlist,
-        Boolean emailReports,
-        Boolean inappReports,
         Boolean emailSystem,
         Boolean inappSystem,
         Boolean emailMarketOpened,

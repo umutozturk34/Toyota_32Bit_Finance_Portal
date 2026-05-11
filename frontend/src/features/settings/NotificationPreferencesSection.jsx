@@ -1,4 +1,4 @@
-import { Mail, Bell, AlertCircle, Zap, FileText, Smartphone, Sunrise, Sunset, RefreshCw, Newspaper, Briefcase } from 'lucide-react';
+import { Mail, Bell, AlertCircle, Zap, Smartphone, Sunrise, Sunset, RefreshCw, Newspaper, Briefcase } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
@@ -10,7 +10,6 @@ import MarketSelectionChips, { MARKET_CHIPS } from './MarketSelectionChips';
 const TYPE_ROWS = [
   { id: 'priceAlerts', Icon: AlertCircle },
   { id: 'watchlist', Icon: Zap },
-  { id: 'reports', Icon: FileText },
   { id: 'system', Icon: Bell },
   { id: 'marketOpened', Icon: Sunrise },
   { id: 'marketClosed', Icon: Sunset },

@@ -496,12 +496,6 @@
     "5Y": "5Y",
     "ALL": "Maks"
   },
-  "reports": {
-    "NEVER": "Hiç",
-    "DAILY": "Günlük",
-    "WEEKLY": "Haftalık",
-    "MONTHLY": "Aylık"
-  },
   "theme": {
     "DARK": "Koyu",
     "LIGHT": "Açık"
@@ -516,7 +510,6 @@
     },
     "theme": "Tema",
     "chartRange": "Varsayılan Grafik Aralığı",
-    "reportFrequency": "Rapor Sıklığı",
     "notifications": "Bildirim Tercihleri",
     "twoFactor": "İki Adımlı Doğrulama",
     "password": {
@@ -544,7 +537,6 @@
       "title": "Bildirim türleri",
       "priceAlerts": { "label": "Fiyat alarmı", "hint": "Eşik kırıldığında" },
       "watchlist": { "label": "Takip listesi", "hint": "Sert hareket olduğunda" },
-      "reports": { "label": "Raporlar", "hint": "PDF rapor hazır olduğunda" },
       "system": { "label": "Sistem", "hint": "Bakım, güvenlik vb." },
       "marketOpened": { "label": "Piyasa açıldı", "hint": "Açılış fiyatları yüklendiğinde" },
       "marketClosed": { "label": "Piyasa kapandı", "hint": "Kapanış fiyatları yüklendiğinde" },

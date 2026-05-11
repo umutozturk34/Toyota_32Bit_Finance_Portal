@@ -1,6 +1,5 @@
 package com.finance.user.model;
 
-import com.finance.user.dto.enums.ReportFrequency;
 import com.finance.user.dto.enums.ThemePreference;
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,10 +35,6 @@ public class UserPreference {
     @Column(name = "default_chart_range", nullable = false, length = 8)
     private String defaultChartRange;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "report_frequency", nullable = false, length = 16)
-    private ReportFrequency reportFrequency;
-
     @Column(name = "onboarding_completed", nullable = false)
     private Boolean onboardingCompleted;
 
@@ -68,7 +63,6 @@ public class UserPreference {
                 .language("tr")
                 .timezone("Europe/Istanbul")
                 .defaultChartRange("1M")
-                .reportFrequency(ReportFrequency.NEVER)
                 .onboardingCompleted(false)
                 .build();
     }

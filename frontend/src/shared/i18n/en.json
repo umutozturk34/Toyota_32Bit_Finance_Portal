@@ -496,12 +496,6 @@
     "5Y": "5Y",
     "ALL": "Max"
   },
-  "reports": {
-    "NEVER": "Never",
-    "DAILY": "Daily",
-    "WEEKLY": "Weekly",
-    "MONTHLY": "Monthly"
-  },
   "theme": {
     "DARK": "Dark",
     "LIGHT": "Light"
@@ -516,7 +510,6 @@
     },
     "theme": "Theme",
     "chartRange": "Default Chart Range",
-    "reportFrequency": "Report Frequency",
     "notifications": "Notification Preferences",
     "twoFactor": "Two-Factor Authentication",
     "password": {
@@ -544,7 +537,6 @@
       "title": "Notification types",
       "priceAlerts": { "label": "Price alert", "hint": "When threshold is breached" },
       "watchlist": { "label": "Watchlist", "hint": "On strong movement" },
-      "reports": { "label": "Reports", "hint": "When PDF report is ready" },
       "system": { "label": "System", "hint": "Maintenance, security, etc." },
       "marketOpened": { "label": "Market opened", "hint": "When opening prices loaded" },
       "marketClosed": { "label": "Market closed", "hint": "When closing prices loaded" },

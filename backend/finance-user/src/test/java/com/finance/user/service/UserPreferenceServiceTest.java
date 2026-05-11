@@ -5,7 +5,6 @@ import com.finance.user.client.KeycloakAdminClient;
 import com.finance.user.config.UserSecurityProperties;
 import com.finance.user.dto.UserPreferenceResponse;
 import com.finance.user.dto.UserPreferenceUpdateRequest;
-import com.finance.user.dto.enums.ReportFrequency;
 import com.finance.user.dto.enums.ThemePreference;
 import com.finance.user.mapper.UserPreferenceMapper;
 import com.finance.user.mapper.UserPreferenceMapperImpl;
@@ -60,7 +59,6 @@ class UserPreferenceServiceTest {
         assertThat(response.language()).isEqualTo("tr");
         assertThat(response.timezone()).isEqualTo("Europe/Istanbul");
         assertThat(response.defaultChartRange()).isEqualTo("1M");
-        assertThat(response.reportFrequency()).isEqualTo(ReportFrequency.NEVER);
         assertThat(response.onboardingCompleted()).isFalse();
         verify(repository, never()).save(any());
     }
@@ -73,7 +71,6 @@ class UserPreferenceServiceTest {
                 .language("en")
                 .timezone("UTC")
                 .defaultChartRange("1Y")
-                .reportFrequency(ReportFrequency.WEEKLY)
                 .onboardingCompleted(true)
                 .build();
         when(repository.findById(USER_SUB)).thenReturn(Optional.of(persisted));
@@ -83,14 +80,13 @@ class UserPreferenceServiceTest {
         assertThat(response.theme()).isEqualTo(ThemePreference.DARK);
         assertThat(response.language()).isEqualTo("en");
         assertThat(response.defaultChartRange()).isEqualTo("1Y");
-        assertThat(response.reportFrequency()).isEqualTo(ReportFrequency.WEEKLY);
         assertThat(response.onboardingCompleted()).isTrue();
     }
 
     @Test
     void shouldCreateNewRowFromDefaults_whenUpsertOnEmptyDb() {
         UserPreferenceUpdateRequest request = new UserPreferenceUpdateRequest(
-                ThemePreference.DARK, null, null, null, null, true);
+                ThemePreference.DARK, null, null, null, true);
         when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
         when(repository.save(any(UserPreference.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -114,11 +110,10 @@ class UserPreferenceServiceTest {
                 .language("tr")
                 .timezone("Europe/Istanbul")
                 .defaultChartRange("6M")
-                .reportFrequency(ReportFrequency.NEVER)
                 .onboardingCompleted(false)
                 .build();
         UserPreferenceUpdateRequest request = new UserPreferenceUpdateRequest(
-                null, "en", null, "1Y", null, null);
+                null, "en", null, "1Y", null);
         when(repository.findById(USER_SUB)).thenReturn(Optional.of(existing));
         when(repository.save(any(UserPreference.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -127,14 +122,13 @@ class UserPreferenceServiceTest {
         assertThat(existing.getTheme()).isEqualTo(ThemePreference.LIGHT);
         assertThat(existing.getLanguage()).isEqualTo("en");
         assertThat(existing.getDefaultChartRange()).isEqualTo("1Y");
-        assertThat(existing.getReportFrequency()).isEqualTo(ReportFrequency.NEVER);
         assertThat(existing.getOnboardingCompleted()).isFalse();
     }
 
     @Test
     void should_syncLocaleToKeycloak_when_languageProvided() {
         UserPreferenceUpdateRequest request = new UserPreferenceUpdateRequest(
-                null, "en", null, null, null, null);
+                null, "en", null, null, null);
         when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
         when(repository.save(any(UserPreference.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -146,7 +140,7 @@ class UserPreferenceServiceTest {
     @Test
     void should_skipKeycloakSync_when_languageNull() {
         UserPreferenceUpdateRequest request = new UserPreferenceUpdateRequest(
-                ThemePreference.LIGHT, null, null, null, null, null);
+                ThemePreference.LIGHT, null, null, null, null);
         when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
         when(repository.save(any(UserPreference.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -163,10 +157,9 @@ class UserPreferenceServiceTest {
                 .language("en")
                 .timezone("UTC")
                 .defaultChartRange("3M")
-                .reportFrequency(ReportFrequency.DAILY)
                 .onboardingCompleted(true)
                 .build();
-        UserPreferenceUpdateRequest empty = new UserPreferenceUpdateRequest(null, null, null, null, null, null);
+        UserPreferenceUpdateRequest empty = new UserPreferenceUpdateRequest(null, null, null, null, null);
         when(repository.findById(USER_SUB)).thenReturn(Optional.of(existing));
         when(repository.save(any(UserPreference.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -175,7 +168,6 @@ class UserPreferenceServiceTest {
         assertThat(existing.getTheme()).isEqualTo(ThemePreference.DARK);
         assertThat(existing.getLanguage()).isEqualTo("en");
         assertThat(existing.getDefaultChartRange()).isEqualTo("3M");
-        assertThat(existing.getReportFrequency()).isEqualTo(ReportFrequency.DAILY);
         assertThat(existing.getOnboardingCompleted()).isTrue();
     }
 }

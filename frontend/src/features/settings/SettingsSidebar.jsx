@@ -27,7 +27,6 @@ const LANGUAGE_OPTIONS = [
 ];
 
 const CHART_RANGE_VALUES = ['1M', '3M', '6M', '1Y', '5Y', 'ALL'];
-const REPORT_VALUES = ['NEVER', 'DAILY', 'WEEKLY', 'MONTHLY'];
 
 function SegmentedControl({ options, value, onChange, layoutId, compact = false }) {
   const { t } = useTranslation();
@@ -84,7 +83,6 @@ export default function SettingsSidebar({ isOpen, onClose }) {
   const [passwordSending, setPasswordSending] = useState(false);
 
   const chartRangeOptions = CHART_RANGE_VALUES.map((v) => ({ value: v, label: t(`ranges.${v}`) }));
-  const reportOptions = REPORT_VALUES.map((v) => ({ value: v, label: t(`reports.${v}`) }));
 
   const handleChange = (field) => (value) => {
     if (field === 'theme') {
@@ -179,15 +177,6 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                   value={preferences.defaultChartRange}
                   onChange={handleChange('defaultChartRange')}
                   layoutId="settings-chart-range"
-                />
-              </Section>
-
-              <Section icon={Bell} title={t('settings.reportFrequency')}>
-                <SegmentedControl
-                  options={reportOptions}
-                  value={preferences.reportFrequency}
-                  onChange={handleChange('reportFrequency')}
-                  layoutId="settings-report"
                 />
               </Section>
 

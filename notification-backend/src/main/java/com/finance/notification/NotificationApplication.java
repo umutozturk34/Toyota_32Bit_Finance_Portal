@@ -5,7 +5,6 @@ import com.finance.notification.broadcast.service.BroadcastProperties;
 import com.finance.notification.config.MarketSessionProperties;
 import com.finance.notification.config.NotificationAsyncProperties;
 import com.finance.notification.config.NotificationCacheProperties;
-import com.finance.notification.config.MessagingProperties;
 import com.finance.notification.config.NotificationDispatchProperties;
 import com.finance.common.event.KafkaTopicsProperties;
 import com.finance.notification.config.NotificationKafkaProperties;
@@ -49,7 +48,6 @@ import java.util.TimeZone;
         KafkaTopicsProperties.class,
         MarketHoursProperties.class,
         MarketSessionProperties.class,
-        MessagingProperties.class,
         NotificationAsyncProperties.class,
         NotificationCacheProperties.class,
         NotificationDispatchProperties.class,

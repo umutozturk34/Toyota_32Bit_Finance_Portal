@@ -22,7 +22,6 @@ class WatchlistDeltaHandlerTest {
     private static final NotificationDispatchProperties DISPATCH = new NotificationDispatchProperties(
             new NotificationDispatchProperties.Formatting(2, 6, 6),
             new NotificationDispatchProperties.WatchlistDelta(3),
-            new NotificationDispatchProperties.Message(120),
             new NotificationDispatchProperties.Fanout(200));
 
     private WatchlistDeltaHandler handler;

@@ -4,6 +4,7 @@ import com.finance.common.exception.BadRequestException;
 import com.finance.notification.broadcast.dto.BroadcastRequest;
 import com.finance.notification.broadcast.dto.BroadcastResult;
 import com.finance.notification.core.dispatch.NotificationDispatcher;
+import com.finance.notification.core.dispatch.NotificationDispatcher.BatchResult;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.payload.SystemPayload;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Log4j2
@@ -36,33 +38,20 @@ public class BroadcastService {
         Page<String> page;
         do {
             page = recipientDirectory.findUserSubs(PageRequest.of(pageIndex, properties.batchSize()));
-            List<String> recipients = page.getContent().stream()
-                    .filter(sub -> !sub.equals(adminSub))
-                    .toList();
-            if (!recipients.isEmpty()) {
-                dispatcher.preloadPage(recipients);
-                for (String userSub : recipients) {
-                    if (dispatchSafely(userSub, payload)) {
-                        dispatched++;
-                    } else {
-                        failed++;
-                    }
-                }
+            List<NotificationRequest> requests = new ArrayList<>(page.getNumberOfElements());
+            for (String userSub : page.getContent()) {
+                if (userSub.equals(adminSub)) continue;
+                requests.add(NotificationRequest.of(userSub, payload));
+            }
+            if (!requests.isEmpty()) {
+                BatchResult result = dispatcher.dispatchBatched(requests);
+                dispatched += result.dispatched();
+                failed += result.failed();
             }
             pageIndex++;
         } while (page.hasNext());
         log.info("Broadcast complete admin={} title={} total={} dispatched={} failed={}",
                 adminSub, request.title(), total, dispatched, failed);
         return new BroadcastResult(total, dispatched, failed);
-    }
-
-    private boolean dispatchSafely(String userSub, SystemPayload payload) {
-        try {
-            dispatcher.dispatch(NotificationRequest.of(userSub, payload));
-            return true;
-        } catch (RuntimeException ex) {
-            log.warn("Broadcast dispatch failed userSub={} reason={}", userSub, ex.getMessage());
-            return false;
-        }
     }
 }

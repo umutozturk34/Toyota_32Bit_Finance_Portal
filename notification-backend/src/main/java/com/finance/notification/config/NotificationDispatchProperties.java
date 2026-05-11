@@ -6,7 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record NotificationDispatchProperties(
         Formatting formatting,
         WatchlistDelta watchlistDelta,
-        Message message,
         Fanout fanout
 ) {
 
@@ -18,10 +17,6 @@ public record NotificationDispatchProperties(
 
     public record WatchlistDelta(
             int bodyPreviewItems
-    ) {}
-
-    public record Message(
-            int previewMaxChars
     ) {}
 
     public record Fanout(

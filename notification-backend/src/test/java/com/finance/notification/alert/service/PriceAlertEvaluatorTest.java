@@ -7,6 +7,7 @@ import com.finance.notification.alert.mapper.PriceAlertMapper;
 import com.finance.notification.alert.model.AlertDirection;
 import com.finance.notification.alert.model.PriceAlert;
 import com.finance.notification.core.dispatch.NotificationDispatcher;
+import com.finance.notification.core.dispatch.NotificationDispatcher.BatchResult;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.payload.PriceAlertPayload;
 import com.finance.notification.core.model.NotificationType;
@@ -51,18 +52,18 @@ class PriceAlertEvaluatorTest {
     }
 
     @Test
-    void evaluate_skipsWhenNoActiveAlerts() {
+    void should_returnZero_when_noActiveAlerts() {
         when(alertService.activeAlerts(MarketType.CRYPTO)).thenReturn(List.of());
 
         int fired = evaluator.evaluate(MarketType.CRYPTO);
 
         assertThat(fired).isEqualTo(0);
-        verify(dispatcher, never()).dispatch(any());
+        verify(dispatcher, never()).dispatchBatched(any());
         verify(assetSnapshotCache, never()).findByCodes(any(), any());
     }
 
     @Test
-    void evaluate_firesAndDispatchesMappedPayloadWhenAboveTriggered() {
+    void should_dispatchBatchedWithMappedPayload_when_aboveThresholdTriggered() {
         PriceAlert alert = alertFor("BTC", AlertDirection.ABOVE, BigDecimal.valueOf(100), null);
         AssetSnapshot snap = snapshot("BTC", BigDecimal.valueOf(105));
         PriceAlertPayload mapped = new PriceAlertPayload(
@@ -72,6 +73,7 @@ class PriceAlertEvaluatorTest {
         when(assetSnapshotCache.findByCodes(eq(MarketType.CRYPTO), eq(Set.of("BTC"))))
                 .thenReturn(Map.of("BTC", snap));
         when(priceAlertMapper.toFiredPayload(alert, snap, MarketType.CRYPTO)).thenReturn(mapped);
+        when(dispatcher.dispatchBatched(any())).thenReturn(new BatchResult(1, 0));
 
         int fired = evaluator.evaluate(MarketType.CRYPTO);
 
@@ -80,15 +82,17 @@ class PriceAlertEvaluatorTest {
         assertThat(alert.isActive()).isFalse();
         verify(alertService).persist(alert);
 
-        ArgumentCaptor<NotificationRequest> captor = ArgumentCaptor.forClass(NotificationRequest.class);
-        verify(dispatcher).dispatch(captor.capture());
-        assertThat(captor.getValue().type()).isEqualTo(NotificationType.PRICE_ALERT_FIRED);
-        assertThat(captor.getValue().userSub()).isEqualTo("user-1");
-        assertThat(captor.getValue().payload()).isSameAs(mapped);
+        ArgumentCaptor<List<NotificationRequest>> captor = ArgumentCaptor.forClass(List.class);
+        verify(dispatcher).dispatchBatched(captor.capture());
+        assertThat(captor.getValue()).hasSize(1);
+        NotificationRequest captured = captor.getValue().get(0);
+        assertThat(captured.type()).isEqualTo(NotificationType.PRICE_ALERT_FIRED);
+        assertThat(captured.userSub()).isEqualTo("user-1");
+        assertThat(captured.payload()).isSameAs(mapped);
     }
 
     @Test
-    void evaluate_skipsWhenSnapshotMissing() {
+    void should_skipDispatch_when_snapshotMissing() {
         PriceAlert alert = alertFor("BTC", AlertDirection.ABOVE, BigDecimal.valueOf(100), null);
         when(alertService.activeAlerts(MarketType.CRYPTO)).thenReturn(List.of(alert));
         when(assetSnapshotCache.findByCodes(eq(MarketType.CRYPTO), eq(Set.of("BTC"))))
@@ -97,12 +101,12 @@ class PriceAlertEvaluatorTest {
         int fired = evaluator.evaluate(MarketType.CRYPTO);
 
         assertThat(fired).isEqualTo(0);
-        verify(dispatcher, never()).dispatch(any());
+        verify(dispatcher, never()).dispatchBatched(any());
         verify(alertService, never()).persist(any());
     }
 
     @Test
-    void evaluate_doesNotFireWhenThresholdNotCrossed() {
+    void should_notFire_when_thresholdNotCrossed() {
         PriceAlert alert = alertFor("BTC", AlertDirection.ABOVE, BigDecimal.valueOf(100), null);
         when(alertService.activeAlerts(MarketType.CRYPTO)).thenReturn(List.of(alert));
         when(assetSnapshotCache.findByCodes(eq(MarketType.CRYPTO), eq(Set.of("BTC"))))
@@ -111,6 +115,6 @@ class PriceAlertEvaluatorTest {
         int fired = evaluator.evaluate(MarketType.CRYPTO);
 
         assertThat(fired).isEqualTo(0);
-        verify(dispatcher, never()).dispatch(any());
+        verify(dispatcher, never()).dispatchBatched(any());
     }
 }

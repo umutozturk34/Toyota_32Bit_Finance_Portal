@@ -4,6 +4,7 @@ import com.finance.common.cache.AssetSnapshotCache;
 import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.model.MarketType;
 import com.finance.notification.core.dispatch.NotificationDispatcher;
+import com.finance.notification.core.dispatch.NotificationDispatcher.BatchResult;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.payload.WatchlistDeltaPayload;
 import com.finance.notification.watchlist.mapper.WatchlistItemMapper;
@@ -95,7 +96,7 @@ public class WatchlistEvaluator {
     private int dispatchAll(Map<GroupKey, List<WatchlistDeltaPayload.DeltaItem>> firedByGroup, MarketType marketType) {
         if (firedByGroup.isEmpty()) return 0;
         Map<Long, String> watchlistNames = resolveWatchlistNames(firedByGroup.keySet());
-        int notifications = 0;
+        List<NotificationRequest> requests = new ArrayList<>(firedByGroup.size());
         for (Map.Entry<GroupKey, List<WatchlistDeltaPayload.DeltaItem>> entry : firedByGroup.entrySet()) {
             GroupKey key = entry.getKey();
             WatchlistDeltaPayload payload = new WatchlistDeltaPayload(
@@ -103,12 +104,14 @@ public class WatchlistEvaluator {
                     watchlistNames.get(key.watchlistId()),
                     marketType,
                     entry.getValue());
-            dispatcher.dispatch(NotificationRequest.of(key.userSub(), payload));
+            requests.add(NotificationRequest.of(key.userSub(), payload));
             log.info("Watchlist delta fired userSub={} watchlistId={} market={} items={}",
                     key.userSub(), key.watchlistId(), marketType, entry.getValue().size());
-            notifications++;
         }
-        return notifications;
+        BatchResult result = dispatcher.dispatchBatched(requests);
+        log.debug("Watchlist delta dispatch market={} fires={} dispatched={} failed={}",
+                marketType, requests.size(), result.dispatched(), result.failed());
+        return result.dispatched();
     }
 
     private Map<Long, String> resolveWatchlistNames(Set<GroupKey> groups) {

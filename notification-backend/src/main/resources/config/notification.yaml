@@ -16,8 +16,6 @@ notification:
       change-percent-scale: 6
     watchlist-delta:
       body-preview-items: 3
-    message:
-      preview-max-chars: 120
     fanout:
       page-size: 200
   market-session:
@@ -25,10 +23,6 @@ notification:
     status-read-capacity-per-minute: 240
   watchlist:
     max-per-user: 20
-  messaging:
-    backlog-max-unanswered: 2
-    cooldown-seconds: 5
-    duplicate-window-seconds: 60
   async:
     sse:
       core-pool-size: 4

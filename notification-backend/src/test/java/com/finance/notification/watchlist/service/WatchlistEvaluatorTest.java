@@ -4,6 +4,7 @@ import com.finance.common.cache.AssetSnapshotCache;
 import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.model.MarketType;
 import com.finance.notification.core.dispatch.NotificationDispatcher;
+import com.finance.notification.core.dispatch.NotificationDispatcher.BatchResult;
 import com.finance.notification.core.dispatch.NotificationRequest;
 import com.finance.notification.core.dispatch.payload.WatchlistDeltaPayload;
 import com.finance.notification.watchlist.mapper.WatchlistItemMapper;
@@ -66,18 +67,18 @@ class WatchlistEvaluatorTest {
     }
 
     @Test
-    void evaluate_skipsWhenNoItems() {
+    void should_returnZero_when_noItemsForMarket() {
         when(watchlistService.itemsForMarket(MarketType.CRYPTO)).thenReturn(List.of());
 
         int notified = evaluator.evaluate(MarketType.CRYPTO);
 
         assertThat(notified).isEqualTo(0);
-        verify(dispatcher, never()).dispatch(any());
+        verify(dispatcher, never()).dispatchBatched(any());
         verify(assetSnapshotCache, never()).findByCodes(any(), any());
     }
 
     @Test
-    void evaluate_recordsObservationWithoutDispatchOnFirstSighting() {
+    void should_recordObservationWithoutDispatch_when_firstSighting() {
         WatchlistItem fresh = item(1L, 10L, "user-1", "BTC", null, null);
         when(watchlistService.itemsForMarket(MarketType.CRYPTO)).thenReturn(List.of(fresh));
         when(assetSnapshotCache.findByCodes(eq(MarketType.CRYPTO), eq(Set.of("BTC"))))
@@ -86,13 +87,13 @@ class WatchlistEvaluatorTest {
         int notified = evaluator.evaluate(MarketType.CRYPTO);
 
         assertThat(notified).isEqualTo(0);
-        verify(dispatcher, never()).dispatch(any());
+        verify(dispatcher, never()).dispatchBatched(any());
         verify(watchlistService).persist(fresh);
         assertThat(fresh.getLastSeenPrice()).isEqualByComparingTo("100");
     }
 
     @Test
-    void evaluate_batchesItemsOfSameWatchlistIntoSinglePayload() {
+    void should_dispatchSinglePayload_when_sameWatchlistItemsFire() {
         WatchlistItem btc = item(1L, 10L, "user-1", "BTC", BigDecimal.valueOf(100), null);
         WatchlistItem eth = item(2L, 10L, "user-1", "ETH", BigDecimal.valueOf(100), null);
         when(watchlistService.itemsForMarket(MarketType.CRYPTO)).thenReturn(List.of(btc, eth));
@@ -102,13 +103,15 @@ class WatchlistEvaluatorTest {
                         "ETH", snapshot("ETH", BigDecimal.valueOf(94))));
         when(watchlistRepository.findAllById(Set.of(10L)))
                 .thenReturn(List.of(list(10L, "Favorilerim")));
+        when(dispatcher.dispatchBatched(any())).thenReturn(new BatchResult(1, 0));
 
         int notified = evaluator.evaluate(MarketType.CRYPTO);
 
         assertThat(notified).isEqualTo(1);
-        ArgumentCaptor<NotificationRequest> captor = ArgumentCaptor.forClass(NotificationRequest.class);
-        verify(dispatcher, times(1)).dispatch(captor.capture());
-        WatchlistDeltaPayload payload = (WatchlistDeltaPayload) captor.getValue().payload();
+        ArgumentCaptor<List<NotificationRequest>> captor = ArgumentCaptor.forClass(List.class);
+        verify(dispatcher, times(1)).dispatchBatched(captor.capture());
+        assertThat(captor.getValue()).hasSize(1);
+        WatchlistDeltaPayload payload = (WatchlistDeltaPayload) captor.getValue().get(0).payload();
         assertThat(payload.watchlistId()).isEqualTo(10L);
         assertThat(payload.watchlistName()).isEqualTo("Favorilerim");
         assertThat(payload.items()).hasSize(2)
@@ -117,7 +120,7 @@ class WatchlistEvaluatorTest {
     }
 
     @Test
-    void evaluate_separateDispatchesPerWatchlist() {
+    void should_dispatchSeparatePayloadsPerWatchlist_when_multipleListsFire() {
         WatchlistItem favBtc = item(1L, 10L, "user-1", "BTC", BigDecimal.valueOf(100), null);
         WatchlistItem moonBtc = item(2L, 11L, "user-1", "ETH", BigDecimal.valueOf(100), null);
         when(watchlistService.itemsForMarket(MarketType.CRYPTO)).thenReturn(List.of(favBtc, moonBtc));
@@ -127,15 +130,18 @@ class WatchlistEvaluatorTest {
                         "ETH", snapshot("ETH", BigDecimal.valueOf(94))));
         when(watchlistRepository.findAllById(Set.of(10L, 11L)))
                 .thenReturn(List.of(list(10L, "Fav"), list(11L, "Moon")));
+        when(dispatcher.dispatchBatched(any())).thenReturn(new BatchResult(2, 0));
 
         int notified = evaluator.evaluate(MarketType.CRYPTO);
 
         assertThat(notified).isEqualTo(2);
-        verify(dispatcher, times(2)).dispatch(any());
+        ArgumentCaptor<List<NotificationRequest>> captor = ArgumentCaptor.forClass(List.class);
+        verify(dispatcher, times(1)).dispatchBatched(captor.capture());
+        assertThat(captor.getValue()).hasSize(2);
     }
 
     @Test
-    void evaluate_doesNotDispatchWhenAllUnderThreshold() {
+    void should_notDispatch_when_allItemsUnderThreshold() {
         WatchlistItem btc = item(1L, 10L, "user-1", "BTC", BigDecimal.valueOf(100), BigDecimal.valueOf(20));
         when(watchlistService.itemsForMarket(MarketType.CRYPTO)).thenReturn(List.of(btc));
         when(assetSnapshotCache.findByCodes(eq(MarketType.CRYPTO), eq(Set.of("BTC"))))
@@ -144,7 +150,7 @@ class WatchlistEvaluatorTest {
         int notified = evaluator.evaluate(MarketType.CRYPTO);
 
         assertThat(notified).isEqualTo(0);
-        verify(dispatcher, never()).dispatch(any());
+        verify(dispatcher, never()).dispatchBatched(any());
         verify(watchlistService, never()).persist(any());
     }
 }

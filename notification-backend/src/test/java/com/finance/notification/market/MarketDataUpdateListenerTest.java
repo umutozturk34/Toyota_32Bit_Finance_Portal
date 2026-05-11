@@ -49,7 +49,7 @@ class MarketDataUpdateListenerTest {
                 .maximumSize(1_000)
                 .build();
         NotificationDispatchProperties dispatchProperties = new NotificationDispatchProperties(
-                null, null, null, new NotificationDispatchProperties.Fanout(200));
+                null, null, new NotificationDispatchProperties.Fanout(200));
         NotificationFanoutService fanoutService = new NotificationFanoutService(
                 dispatcher, persister, dispatchProperties);
         return new MarketDataUpdateListener(fanoutService, preferences, cache);

@@ -1,7 +1,9 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUserChartPreferences, useUpdateUserChartPreferences } from '../../../shared/hooks/useUserChartPreferences';
 import { CHART_DATA_KEY } from '../../../shared/hooks/useUserChartData';
+
+const PERSIST_DEBOUNCE_MS = 300;
 
 export default function useChartConfig(assetType, assetCode, range, persistEnabled = true) {
   const enabled = !!assetType && !!assetCode && persistEnabled;
@@ -10,6 +12,17 @@ export default function useChartConfig(assetType, assetCode, range, persistEnabl
   const updateMutation = useUpdateUserChartPreferences(assetType, assetCode, range);
   const mutateRef = useRef(updateMutation.mutate);
   mutateRef.current = updateMutation.mutate;
+  const pendingConfigRef = useRef(null);
+  const debounceTimerRef = useRef(null);
+
+  useEffect(() => () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      if (pendingConfigRef.current) {
+        mutateRef.current(pendingConfigRef.current);
+      }
+    }
+  }, []);
 
   const setField = useCallback((key, value) => {
     if (!enabled) return;
@@ -24,7 +37,15 @@ export default function useChartConfig(assetType, assetCode, range, persistEnabl
         preferences: { ...(old?.preferences ?? {}), config: nextConfig },
       };
     });
-    if (nextConfig) mutateRef.current(nextConfig);
+    if (nextConfig) {
+      pendingConfigRef.current = nextConfig;
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        if (pendingConfigRef.current) mutateRef.current(pendingConfigRef.current);
+        pendingConfigRef.current = null;
+        debounceTimerRef.current = null;
+      }, PERSIST_DEBOUNCE_MS);
+    }
   }, [enabled, queryClient, assetType, assetCode, range]);
 
   return {

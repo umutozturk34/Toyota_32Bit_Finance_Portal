@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useUserChartDrawings, useUpdateUserChartDrawings } from '../../../shared/hooks/useUserChartDrawings';
 
 const genId = () => `d-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+const PERSIST_DEBOUNCE_MS = 300;
 
 function rehydrate(remote) {
   if (!Array.isArray(remote)) return [];
@@ -23,6 +24,9 @@ export default function useDrawings(assetType, assetCode, range, persistEnabled 
   const [activeTool, setActiveTool] = useState(null);
   const hydratedRef = useRef(false);
   const hydratedKeyRef = useRef(null);
+  const drawingsRef = useRef(drawings);
+  const debounceTimerRef = useRef(null);
+  drawingsRef.current = drawings;
 
   useEffect(() => {
     setDrawings([]);
@@ -43,8 +47,21 @@ export default function useDrawings(assetType, assetCode, range, persistEnabled 
   useEffect(() => {
     if (!enabled || !hydratedRef.current) return;
     if (!persistRef.current) return;
-    mutateRef.current(drawings);
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      mutateRef.current(drawingsRef.current);
+      debounceTimerRef.current = null;
+    }, PERSIST_DEBOUNCE_MS);
   }, [enabled, drawings]);
+
+  useEffect(() => () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      if (persistRef.current && hydratedRef.current) {
+        mutateRef.current(drawingsRef.current);
+      }
+    }
+  }, []);
 
   const addDrawing = useCallback((drawing) => {
     setDrawings((prev) => [...prev, { ...drawing, id: genId(), range: rangeRef.current }]);

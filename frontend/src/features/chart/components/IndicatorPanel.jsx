@@ -41,7 +41,7 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                     {indicators.map(ind => (
                         <div
                             key={ind.id}
-                            className="group flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface/50 hover:bg-surface transition-colors duration-150"
+                            className="group flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface/50 hover:bg-surface transition-colors duration-150 min-w-0"
                         >
                             <button
                                 onClick={() => toggleIndicator(ind.id)}
@@ -57,7 +57,7 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                                 className="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-white/10"
                                 style={{ background: ind.color }}
                             />
-                            <span className={`text-xs font-semibold tracking-wide ${ind.visible ? 'text-fg' : 'text-fg-muted line-through opacity-50'}`}>
+                            <span className={`text-xs font-semibold tracking-wide truncate min-w-0 ${ind.visible ? 'text-fg' : 'text-fg-muted line-through opacity-50'}`}>
                                 {ind.type}
                             </span>
                             {}
@@ -94,8 +94,8 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                                 </div>
                             ) : (
                                 <>
-                                    <span className="text-[11px] text-fg-muted font-mono">{ind.period}</span>
-                                    <div className="flex items-center gap-0.5 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <span className="text-[11px] text-fg-muted font-mono shrink-0">{ind.period}</span>
+                                    <div className="flex items-center gap-0.5 ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button
                                             onClick={() => setEditingId(ind.id)}
                                             className="p-1 border-none bg-transparent cursor-pointer text-fg-muted hover:text-fg rounded hover:bg-surface transition-colors"

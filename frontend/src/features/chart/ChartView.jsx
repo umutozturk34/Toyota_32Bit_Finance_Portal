@@ -187,7 +187,7 @@ const ChartView = () => {
     queryKey: ['chartHistory', assetType, fetchSymbol, timeRange],
     queryFn: () => fetchHistory(symbol, assetType, timeRange),
     enabled: !!symbol,
-    placeholderData: (prev) => prev,
+    staleTime: 30_000,
   });
 
   const chartData = useMemo(() => {

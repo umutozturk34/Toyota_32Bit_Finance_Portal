@@ -13,6 +13,7 @@ import com.finance.notification.core.model.NotificationPreference;
 import com.finance.notification.core.model.NotificationType;
 import com.finance.notification.core.repository.NotificationPreferenceRepository;
 import com.finance.notification.user.UserPreferenceCacheService;
+import com.finance.notification.user.UserPreferenceCacheService.UserPreferenceSnapshot;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -72,6 +73,20 @@ class NotificationDispatcherTest {
                 userStatus, objectMapper, persister, dispatchProperties, List.of(systemHandler));
         lenient().when(userStatus.isActive(anyString())).thenReturn(true);
         lenient().when(userPreferenceCacheService.resolveLocale(anyString())).thenReturn(Locale.ENGLISH);
+        lenient().when(userPreferenceCacheService.loadAll(any())).thenAnswer(inv -> {
+            java.util.Map<String, UserPreferenceSnapshot> map = new java.util.HashMap<>();
+            for (Object sub : (java.util.Collection<?>) inv.getArgument(0)) {
+                map.put((String) sub, UserPreferenceSnapshot.defaults());
+            }
+            return map;
+        });
+        lenient().when(userStatus.activeStatusOf(any())).thenAnswer(inv -> {
+            java.util.Map<String, Boolean> map = new java.util.HashMap<>();
+            for (Object sub : (java.util.Collection<?>) inv.getArgument(0)) {
+                map.put((String) sub, true);
+            }
+            return map;
+        });
     }
 
     @Test
@@ -202,13 +217,12 @@ class NotificationDispatcherTest {
 
         assertThat(result.dispatched()).isEqualTo(5);
         verify(persister, org.mockito.Mockito.times(3)).persistBatch(any());
-        verify(userStatus, org.mockito.Mockito.times(3)).preload(any());
+        verify(userStatus, org.mockito.Mockito.times(3)).activeStatusOf(any());
     }
 
     @Test
     void should_skipBannedRecipients_when_dispatchBatchedRunsChunk() {
-        when(userStatus.isActive("banned")).thenReturn(false);
-        when(userStatus.isActive("active")).thenReturn(true);
+        when(userStatus.activeStatusOf(any())).thenReturn(Map.of("banned", false, "active", true));
         when(preferenceRepository.findAllById(any())).thenReturn(List.of(
                 enabledSystemPrefs("active")));
 

@@ -4,13 +4,21 @@ import com.finance.common.event.PortfolioUpdatedEvent;
 import com.finance.notification.core.dispatch.NotificationFanoutService;
 import com.finance.notification.core.dispatch.NotificationFanoutService.FanoutResult;
 import com.finance.notification.core.dispatch.payload.PortfolioUpdatedPayload;
+import com.finance.notification.core.model.NotificationPreference;
 import com.finance.notification.core.repository.NotificationPreferenceRepository;
+import com.finance.notification.portfolio.PortfolioSnapshotReader.AggregatedSnapshot;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Log4j2
 @Component
@@ -44,16 +52,27 @@ public class PortfolioUpdatedListener {
             ack.acknowledge();
             return;
         }
-        FanoutResult result = fanoutService.fanout(
+        FanoutResult result = fanoutService.fanoutBulk(
                 "portfolio.updated",
                 preferences::findPortfolioSubscribed,
-                pref -> snapshotReader.findTodayAggregateForUser(pref.getUserSub())
-                        .filter(s -> s.totalValue() != null && s.totalValue().signum() > 0)
-                        .map(s -> new PortfolioUpdatedPayload(
-                                s.totalValue(), s.dailyPnl(), s.dailyPnlPercent(), s.portfolioCount(), event.source())));
+                page -> buildPayloads(page, event.source()));
         log.info("portfolio.updated source={} dispatched={} failed={}",
                 event.source(), result.dispatched(), result.failed());
         processedEventIds.put(event.eventId(), Boolean.TRUE);
         ack.acknowledge();
+    }
+
+    private Map<String, PortfolioUpdatedPayload> buildPayloads(List<NotificationPreference> page, String source) {
+        Set<String> subs = new HashSet<>(page.size());
+        for (NotificationPreference pref : page) subs.add(pref.getUserSub());
+        Map<String, AggregatedSnapshot> aggregates = snapshotReader.findTodayAggregateForUsers(subs);
+        Map<String, PortfolioUpdatedPayload> payloads = new HashMap<>(page.size());
+        for (NotificationPreference pref : page) {
+            AggregatedSnapshot snap = aggregates.get(pref.getUserSub());
+            if (snap == null || snap.totalValue() == null || snap.totalValue().signum() <= 0) continue;
+            payloads.put(pref.getUserSub(), new PortfolioUpdatedPayload(
+                    snap.totalValue(), snap.dailyPnl(), snap.dailyPnlPercent(), snap.portfolioCount(), source));
+        }
+        return payloads;
     }
 }

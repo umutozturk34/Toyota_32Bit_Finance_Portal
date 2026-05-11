@@ -5,7 +5,6 @@ notification:
       retry-max-attempts: 3
   cache:
     dedup-max-entries: 50000
-    presence-max-entries: 50000
     session-tracker-max-markets: 64
   stream:
     emitter-timeout-ms: 0

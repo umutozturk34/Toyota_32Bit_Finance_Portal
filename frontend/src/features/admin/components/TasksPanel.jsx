@@ -231,7 +231,7 @@ export default function TasksPanel({ open, onClose }) {
                             </button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-3 space-y-3" style={{ scrollbarWidth: 'thin' }}>
+                        <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-auto-hide">
                             <div className="grid gap-2 grid-cols-2">
                                 {TASK_GROUPS.map(({ categoryKey, icon: CatIcon, color, bg, tasks }) => (
                                     <div key={categoryKey} className="rounded-lg border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-3 space-y-2">

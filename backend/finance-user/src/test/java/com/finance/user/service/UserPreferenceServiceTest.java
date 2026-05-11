@@ -13,7 +13,6 @@ import com.finance.user.repository.UserPreferenceRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -92,7 +91,7 @@ class UserPreferenceServiceTest {
 
         UserPreferenceResponse response = service.upsert(USER_SUB, request);
 
-        ArgumentCaptor<UserPreference> captor = ArgumentCaptor.forClass(UserPreference.class);
+        org.mockito.ArgumentCaptor<UserPreference> captor = org.mockito.ArgumentCaptor.forClass(UserPreference.class);
         verify(repository).save(captor.capture());
         UserPreference saved = captor.getValue();
         assertThat(saved.getUserSub()).isEqualTo(USER_SUB);
@@ -138,9 +137,9 @@ class UserPreferenceServiceTest {
     }
 
     @Test
-    void should_skipKeycloakSync_when_languageNull() {
+    void should_skipKeycloakSync_when_neitherLanguageNorThemeProvided() {
         UserPreferenceUpdateRequest request = new UserPreferenceUpdateRequest(
-                ThemePreference.LIGHT, null, null, null, null);
+                null, null, null, null, null);
         when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
         when(repository.save(any(UserPreference.class))).thenAnswer(inv -> inv.getArgument(0));
 

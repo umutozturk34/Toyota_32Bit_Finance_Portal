@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { initKeycloak, getUserInfo, doLogin, doLogout, hasRole, forceRefreshToken } from './lib/keycloak';
 const AuthContext = createContext({
   isAuthenticated: false,
@@ -10,6 +11,7 @@ const AuthContext = createContext({
   refreshUser: () => {},
 });
 export const AuthProvider = ({ children }) => {
+  const queryClient = useQueryClient();
   const [authenticated, setAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,7 @@ export const AuthProvider = ({ children }) => {
     doLogin(options);
   };
   const logout = () => {
+    queryClient.clear();
     doLogout();
     setAuthenticated(false);
     setUser(null);

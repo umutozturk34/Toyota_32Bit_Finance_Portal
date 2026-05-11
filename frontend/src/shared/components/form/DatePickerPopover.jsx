@@ -213,7 +213,7 @@ export default function DatePickerPopover({
             )}
 
             {view === 'year' && (
-              <div className="grid grid-cols-4 gap-1 py-1 max-h-60 overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+              <div className="grid grid-cols-4 gap-1 py-1 max-h-60 overflow-y-auto pr-1 scrollbar-auto-hide">
                 {Array.from({ length: 24 }, (_, i) => cursor.year - 11 + i).map((yr) => {
                   const start = new Date(yr, 0, 1);
                   const end = new Date(yr, 11, 31);

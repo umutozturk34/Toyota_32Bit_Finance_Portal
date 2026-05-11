@@ -41,6 +41,8 @@ class MarketDataUpdateListenerTest {
     @Mock private NotificationDispatcher dispatcher;
     @Mock private NotificationPersister persister;
     @Mock private NotificationPreferenceRepository preferences;
+    @Mock private com.finance.notification.user.UserPreferenceCacheService userPreferenceCacheService;
+    @Mock private com.finance.common.security.UserStatusPort userStatus;
     @Mock private Acknowledgment ack;
 
     private MarketDataUpdateListener listener() {
@@ -51,7 +53,7 @@ class MarketDataUpdateListenerTest {
         NotificationDispatchProperties dispatchProperties = new NotificationDispatchProperties(
                 null, null, new NotificationDispatchProperties.Fanout(200));
         NotificationFanoutService fanoutService = new NotificationFanoutService(
-                dispatcher, persister, dispatchProperties);
+                dispatcher, persister, dispatchProperties, userPreferenceCacheService, userStatus);
         return new MarketDataUpdateListener(fanoutService, preferences, cache);
     }
 
@@ -67,7 +69,7 @@ class MarketDataUpdateListenerTest {
     void should_dispatchDataUpdatedForOptedInUser_when_kafkaEventArrives() {
         when(preferences.findMarketDataSubscribed(eq("STOCK"), any(Pageable.class)))
                 .thenReturn(pageOf(subscriber("user-1")));
-        when(dispatcher.prepare(any(NotificationRequest.class), any()))
+        when(dispatcher.prepare(any(NotificationRequest.class), any(), any(), org.mockito.ArgumentMatchers.anyBoolean()))
                 .thenReturn(Optional.of(new Prepared("user-1", null, null)));
 
         listener().onMarketUpdated(MarketUpdatedEvent.of(MarketType.STOCK, "scheduled-stock-morning"), ack);
@@ -110,7 +112,7 @@ class MarketDataUpdateListenerTest {
     void should_dispatchOnce_when_sameEventIdRedeliveredTwice() {
         when(preferences.findMarketDataSubscribed(eq("STOCK"), any(Pageable.class)))
                 .thenReturn(pageOf(subscriber("user-1")));
-        when(dispatcher.prepare(any(NotificationRequest.class), any()))
+        when(dispatcher.prepare(any(NotificationRequest.class), any(), any(), org.mockito.ArgumentMatchers.anyBoolean()))
                 .thenReturn(Optional.of(new Prepared("user-1", null, null)));
         MarketUpdatedEvent event = MarketUpdatedEvent.of(MarketType.STOCK, "scheduled-stock-morning");
         MarketDataUpdateListener subject = listener();

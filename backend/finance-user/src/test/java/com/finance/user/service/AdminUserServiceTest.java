@@ -4,17 +4,13 @@ package com.finance.user.service;
 import com.finance.user.client.KeycloakAdminClient;
 import com.finance.user.dto.AdminUserResponse;
 import com.finance.user.dto.KeycloakUser;
-import com.finance.common.event.UserStatusChangedEvent;
 import com.finance.common.exception.ExternalApiException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.repository.UserStatusRepository;
-import com.finance.common.security.UserStatusPort;
-import com.finance.shared.event.EventPublisherPort;
 import com.finance.user.mapper.KeycloakUserMapperImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -31,15 +27,12 @@ class AdminUserServiceTest {
 
     @Mock private KeycloakAdminClient client;
     @Mock private UserStatusRepository userStatusRepository;
-    @Mock private UserStatusPort userStatus;
-    @Mock private EventPublisherPort eventPublisher;
 
     private AdminUserService service;
 
     @BeforeEach
     void setUp() {
-        service = new AdminUserService(client, new KeycloakUserMapperImpl(), userStatusRepository,
-                userStatus, eventPublisher);
+        service = new AdminUserService(client, new KeycloakUserMapperImpl(), userStatusRepository);
     }
 
     @Test
@@ -76,30 +69,21 @@ class AdminUserServiceTest {
     }
 
     @Test
-    void should_invalidateLocalCacheAndPublishEvent_when_banSucceeds() {
+    void should_persistEnabledFlag_when_banSucceeds() {
         service.banUser("user-id-123", "admin-sub");
 
         verify(userStatusRepository).upsertEnabled("user-id-123", false);
-        verify(userStatus).invalidate("user-id-123");
-        ArgumentCaptor<UserStatusChangedEvent> captor = ArgumentCaptor.forClass(UserStatusChangedEvent.class);
-        verify(eventPublisher).publish(captor.capture());
-        assertThat(captor.getValue().userSub()).isEqualTo("user-id-123");
-        assertThat(captor.getValue().enabled()).isFalse();
     }
 
     @Test
-    void should_invalidateLocalCacheAndPublishEvent_when_unbanSucceeds() {
+    void should_persistEnabledFlag_when_unbanSucceeds() {
         service.unbanUser("user-id-456");
 
-        verify(userStatus).invalidate("user-id-456");
-        ArgumentCaptor<UserStatusChangedEvent> captor = ArgumentCaptor.forClass(UserStatusChangedEvent.class);
-        verify(eventPublisher).publish(captor.capture());
-        assertThat(captor.getValue().userSub()).isEqualTo("user-id-456");
-        assertThat(captor.getValue().enabled()).isTrue();
+        verify(userStatusRepository).upsertEnabled("user-id-456", true);
     }
 
     @Test
-    void should_skipInvalidateAndPublish_when_keycloakBanFails() {
+    void should_skipDbWrite_when_keycloakBanFails() {
         doThrow(new ExternalApiException("KEYCLOAK", "down"))
                 .when(client).setEnabled("user-1", false);
 
@@ -107,10 +91,6 @@ class AdminUserServiceTest {
                 .isInstanceOf(ExternalApiException.class);
         verify(userStatusRepository, org.mockito.Mockito.never())
                 .upsertEnabled(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyBoolean());
-        verify(userStatus, org.mockito.Mockito.never())
-                .invalidate(org.mockito.ArgumentMatchers.any());
-        verify(eventPublisher, org.mockito.Mockito.never())
-                .publish(org.mockito.ArgumentMatchers.any());
     }
 
     @Test

@@ -465,18 +465,6 @@
       "sso": "Tek Oturum Açma (SSO)"
     }
   },
-  "adminConversations": {
-    "title": "Sohbetler",
-    "userCount": "{{count}} kullanıcı",
-    "matchingCount": "{{count}} eşleşen",
-    "searchPlaceholder": "Kullanıcı veya mesaj ara…",
-    "emptyTitle": "Henüz sohbet yok",
-    "emptyBody": "Kullanıcı bir mesaj gönderdiğinde burada görünecek.",
-    "emptyMatchTitle": "Eşleşen sohbet yok",
-    "emptyMatchBody": "\"{{query}}\" araması için sonuç bulunamadı.",
-    "closedTag": "kapalı",
-    "idLabel": "id"
-  },
   "assets": {
     "labels": {
       "CRYPTO": "Kripto",
@@ -896,8 +884,6 @@
     "types": {
       "PRICE_ALERT_FIRED": "Fiyat alarmı",
       "WATCHLIST_DELTA": "Takip listesi",
-      "REPORT_READY": "Rapor",
-      "MESSAGE": "Mesaj",
       "SYSTEM": "Sistem",
       "MARKET_OPENED": "Piyasa açıldı",
       "MARKET_CLOSED": "Piyasa kapandı",
@@ -1319,6 +1305,7 @@
   },
   "watch": {
     "headerTitle": "Takip",
+    "defaultListName": "Favoriler",
     "tabs": {
       "watchlist": "Takip listesi",
       "alerts": "Fiyat alarmları"
@@ -1376,6 +1363,7 @@
   "news": {
     "title": "Finansal Haberler",
     "subtitle": "Güncel piyasa ve finans haberleri",
+    "sourceLanguageNote": "Haberler doğrudan kaynaklardan alındığı için Türkçe yayınlanır.",
     "countLabel": "haber",
     "searchPlaceholder": "Haber ara...",
     "loading": "Haberler yükleniyor…",

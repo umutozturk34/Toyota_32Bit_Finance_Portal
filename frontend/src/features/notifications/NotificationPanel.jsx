@@ -2,8 +2,8 @@ import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
-  X, BellOff, Inbox, Check, CheckCheck, Trash2, AlertCircle, Zap, FileText,
-  MessageSquare, Bell, Megaphone, Search, Newspaper, Briefcase, Sunrise, Sunset, RefreshCw,
+  X, BellOff, Inbox, Check, CheckCheck, Trash2, AlertCircle, Zap,
+  Bell, Megaphone, Search, Newspaper, Briefcase, Sunrise, Sunset, RefreshCw,
 } from 'lucide-react';
 import {
   useNotifications,
@@ -12,7 +12,7 @@ import {
   useDeleteNotification,
   useDeleteAllNotifications,
 } from '../../shared/hooks/useNotifications';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ConfirmDialog from '../../shared/components/modal/ConfirmDialog';
 import BroadcastModal from '../admin/broadcast/BroadcastModal';
 import { useAuth } from '../auth/AuthContext';
@@ -21,8 +21,6 @@ import { currentLocaleTag } from '../../shared/utils/formatters';
 const TYPE_META = {
   PRICE_ALERT_FIRED: { Icon: AlertCircle, labelKey: 'notificationPanel.types.PRICE_ALERT_FIRED', tint: 'text-accent' },
   WATCHLIST_DELTA: { Icon: Zap, labelKey: 'notificationPanel.types.WATCHLIST_DELTA', tint: 'text-warning' },
-  REPORT_READY: { Icon: FileText, labelKey: 'notificationPanel.types.REPORT_READY', tint: 'text-success' },
-  MESSAGE: { Icon: MessageSquare, labelKey: 'notificationPanel.types.MESSAGE', tint: 'text-accent-secondary' },
   SYSTEM: { Icon: Bell, labelKey: 'notificationPanel.types.SYSTEM', tint: 'text-fg-muted' },
   MARKET_OPENED: { Icon: Sunrise, labelKey: 'notificationPanel.types.MARKET_OPENED', tint: 'text-success' },
   MARKET_CLOSED: { Icon: Sunset, labelKey: 'notificationPanel.types.MARKET_CLOSED', tint: 'text-fg-muted' },
@@ -119,7 +117,13 @@ export default function NotificationPanel({ isOpen, onClose }) {
     return () => clearTimeout(id);
   }, [searchInput]);
 
-  const { data, isLoading } = useNotifications({ unreadOnly, page: 0, size: 50, search });
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useNotifications({ unreadOnly, size: 20, search });
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const deleteNotification = useDeleteNotification();
@@ -129,8 +133,22 @@ export default function NotificationPanel({ isOpen, onClose }) {
   const isAdmin = hasRole('ADMIN');
   const isFiltering = search.length > 0;
 
-  const items = data?.content ?? data?.items ?? [];
-  const total = data?.totalElements ?? 0;
+  const items = useMemo(() => (data?.pages ?? []).flatMap((p) => p?.content ?? []), [data]);
+  const total = data?.pages?.[0]?.totalElements ?? 0;
+  const sentinelRef = useRef(null);
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !hasNextPage || isFetchingNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) fetchNextPage();
+      },
+      { rootMargin: '120px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, items.length]);
 
   return (
     <>
@@ -259,7 +277,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2" style={{ scrollbarWidth: 'thin' }}>
+            <div className="flex-1 overflow-y-auto px-5 py-3 space-y-2 scrollbar-auto-hide">
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="h-5 w-5 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
@@ -281,16 +299,25 @@ export default function NotificationPanel({ isOpen, onClose }) {
                   </p>
                 </div>
               ) : (
-                <AnimatePresence initial={false}>
-                  {items.map((item) => (
-                    <NotificationRow
-                      key={item.id}
-                      item={item}
-                      onRead={(id) => markRead.mutate(id)}
-                      onDelete={(id) => deleteNotification.mutate(id)}
-                    />
-                  ))}
-                </AnimatePresence>
+                <>
+                  <AnimatePresence initial={false}>
+                    {items.map((item) => (
+                      <NotificationRow
+                        key={item.id}
+                        item={item}
+                        onRead={(id) => markRead.mutate(id)}
+                        onDelete={(id) => deleteNotification.mutate(id)}
+                      />
+                    ))}
+                  </AnimatePresence>
+                  {hasNextPage && (
+                    <div ref={sentinelRef} className="flex items-center justify-center py-4">
+                      {isFetchingNextPage && (
+                        <div className="h-4 w-4 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </motion.aside>

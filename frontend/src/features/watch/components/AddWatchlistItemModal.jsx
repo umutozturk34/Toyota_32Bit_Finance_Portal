@@ -13,6 +13,7 @@ import {
 } from '../../../shared/hooks/useWatchlist';
 import { toast } from '../../../shared/components/feedback/Toast';
 import { extractApiError } from '../../../shared/utils/apiError';
+import { watchlistName } from '../../../shared/utils/watchlistName';
 
 export default function AddWatchlistItemModal({
   isOpen,
@@ -182,7 +183,7 @@ export default function AddWatchlistItemModal({
                 {selectedList?.isDefault && (
                   <Star className="h-3.5 w-3.5 text-warning fill-warning shrink-0" />
                 )}
-                <span className="truncate">{selectedList?.name ?? t('addWatchlistItem.pickList')}</span>
+                <span className="truncate">{selectedList ? watchlistName(t, selectedList) : t('addWatchlistItem.pickList')}</span>
                 {selectedList && (
                   <span className="text-[11px] font-mono text-fg-subtle shrink-0">
                     {selectedList.itemCount}
@@ -226,7 +227,7 @@ export default function AddWatchlistItemModal({
                         ) : (
                           <span className="w-3.5 h-3.5 shrink-0" />
                         )}
-                        <span className="flex-1 truncate">{w.name}</span>
+                        <span className="flex-1 truncate">{watchlistName(t, w)}</span>
                         <span className="text-[11px] font-mono text-fg-subtle">{w.itemCount}</span>
                         {active && <Check className="h-3.5 w-3.5 text-accent shrink-0" />}
                       </button>

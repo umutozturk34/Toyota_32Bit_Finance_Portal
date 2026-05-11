@@ -105,7 +105,7 @@ const MainLayout = () => {
         )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5" style={{ scrollbarWidth: 'thin' }}>
+      <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5 scrollbar-auto-hide">
         {allNav.map(({ to, labelKey, Icon }) => {
           const label = t(labelKey);
           return (

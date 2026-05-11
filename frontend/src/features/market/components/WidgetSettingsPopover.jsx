@@ -185,7 +185,7 @@ function AssetCardsConfig({ config, onChange, autoFocusName }) {
         <span className="font-mono text-[9px] tracking-[0.18em] uppercase text-fg-subtle">{t('widgetSettings.pinnedAssets')}</span>
         <span className={`font-mono text-[9px] tabular-nums ${full ? 'text-warning' : 'text-fg-subtle'}`}>{codes.length}/{MAX_ASSET_CHIPS}</span>
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto pr-1 -mr-1 mb-2" style={{ scrollbarWidth: 'thin' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 -mr-1 mb-2 scrollbar-auto-hide">
         {codes.length === 0
           ? <p className="text-[11px] text-fg-subtle leading-relaxed">
               {t('widgetSettings.emptyHint')}

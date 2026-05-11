@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bookmark, ChevronRight } from 'lucide-react';
 import { formatPriceTRY, getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
+import { localizeWatchlistName } from '../../../shared/utils/watchlistName';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
 
@@ -55,7 +56,7 @@ function WatchlistSectionImpl({ data }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const items = data?.items ?? [];
-  const name = data?.watchlistName ?? t('watchlistSection.fallbackName');
+  const name = data?.watchlistName ? localizeWatchlistName(t, data.watchlistName) : t('watchlistSection.fallbackName');
 
   return (
     <section className="group relative rounded-xl border border-border-default border-t-2 border-t-accent bg-bg-elevated overflow-hidden h-full flex flex-col card-hover transition-all duration-200 hover:border-border-hover">
@@ -70,7 +71,7 @@ function WatchlistSectionImpl({ data }) {
         <span className="font-display text-[13px] font-bold text-fg truncate">{name}</span>
         <ChevronRight className="h-3.5 w-3.5 text-fg-subtle ml-auto opacity-0 group-hover/title:opacity-100 group-hover/title:translate-x-0.5 transition-all" />
       </button>
-      <div className="p-2 flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+      <div className="p-2 flex-1 min-h-0 overflow-y-auto scrollbar-auto-hide">
         {items.length === 0
           ? <p className="text-[11px] text-fg-subtle py-5 text-center">{t('watchlistSection.empty')}</p>
           : <div className="space-y-0.5">

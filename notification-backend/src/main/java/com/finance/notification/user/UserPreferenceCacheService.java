@@ -1,7 +1,5 @@
 package com.finance.notification.user;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -9,11 +7,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DateTimeException;
-import java.time.Duration;
 import java.time.ZoneId;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -28,68 +27,65 @@ public class UserPreferenceCacheService {
     private static final String BULK_QUERY = "SELECT user_sub, language, theme, timezone FROM user_preferences WHERE user_sub = ANY(?)";
 
     private final JdbcTemplate jdbcTemplate;
-    private final Cache<String, PrefRow> cache;
 
     public UserPreferenceCacheService(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.cache = Caffeine.newBuilder()
-                .expireAfterWrite(Duration.ofSeconds(60))
-                .maximumSize(10_000)
-                .build();
     }
 
-    private record PrefRow(String language, String theme, String timezone) {}
-
-    public void preload(Collection<String> userSubs) {
-        Set<String> missing = new HashSet<>();
-        for (String sub : userSubs) {
-            if (sub == null || sub.isBlank()) continue;
-            if (cache.getIfPresent(sub) == null) missing.add(sub);
+    public record UserPreferenceSnapshot(Locale locale, String theme, ZoneId zone) {
+        public static UserPreferenceSnapshot defaults() {
+            return new UserPreferenceSnapshot(DEFAULT_LOCALE, "DARK", DEFAULT_ZONE);
         }
-        if (missing.isEmpty()) return;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, UserPreferenceSnapshot> loadAll(Collection<String> userSubs) {
+        Set<String> subs = new HashSet<>();
+        for (String sub : userSubs) {
+            if (sub != null && !sub.isBlank()) subs.add(sub);
+        }
+        if (subs.isEmpty()) return Map.of();
+        Map<String, UserPreferenceSnapshot> result = new HashMap<>(subs.size());
         jdbcTemplate.query(BULK_QUERY,
-                ps -> ps.setArray(1, ps.getConnection().createArrayOf("text", missing.toArray())),
+                ps -> ps.setArray(1, ps.getConnection().createArrayOf("text", subs.toArray())),
                 (rs, n) -> {
-                    cache.put(rs.getString(1),
-                            new PrefRow(rs.getString(2), rs.getString(3), rs.getString(4)));
+                    result.put(rs.getString(1), toSnapshot(rs.getString(2), rs.getString(3), rs.getString(4)));
                     return null;
                 });
+        for (String sub : subs) {
+            result.putIfAbsent(sub, UserPreferenceSnapshot.defaults());
+        }
+        return result;
     }
 
-    private Optional<PrefRow> load(String userSub) {
+    @Transactional(readOnly = true)
+    public ZoneId resolveZone(String userSub) {
+        return loadSingle(userSub).map(UserPreferenceSnapshot::zone).orElse(DEFAULT_ZONE);
+    }
+
+    @Transactional(readOnly = true)
+    public String resolveTheme(String userSub) {
+        return loadSingle(userSub).map(UserPreferenceSnapshot::theme).orElse("DARK");
+    }
+
+    @Transactional(readOnly = true)
+    public Locale resolveLocale(String userSub) {
+        return loadSingle(userSub).map(UserPreferenceSnapshot::locale).orElse(DEFAULT_LOCALE);
+    }
+
+    private Optional<UserPreferenceSnapshot> loadSingle(String userSub) {
         if (userSub == null || userSub.isBlank()) return Optional.empty();
-        PrefRow cached = cache.getIfPresent(userSub);
-        if (cached != null) return Optional.of(cached);
         try {
-            PrefRow row = jdbcTemplate.queryForObject(QUERY,
-                    (rs, n) -> new PrefRow(rs.getString(1), rs.getString(2), rs.getString(3)),
-                    userSub);
-            if (row != null) cache.put(userSub, row);
-            return Optional.ofNullable(row);
+            return Optional.ofNullable(jdbcTemplate.queryForObject(QUERY,
+                    (rs, n) -> toSnapshot(rs.getString(1), rs.getString(2), rs.getString(3)),
+                    userSub));
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
     }
 
-    @Transactional(readOnly = true)
-    public ZoneId resolveZone(String userSub) {
-        return load(userSub).map(PrefRow::timezone)
-                .map(UserPreferenceCacheService::parseZoneOrDefault)
-                .orElse(DEFAULT_ZONE);
-    }
-
-    @Transactional(readOnly = true)
-    public String resolveTheme(String userSub) {
-        return load(userSub).map(PrefRow::theme)
-                .map(UserPreferenceCacheService::canonicalTheme)
-                .orElse("DARK");
-    }
-
-    @Transactional(readOnly = true)
-    public Locale resolveLocale(String userSub) {
-        return load(userSub).map(PrefRow::language)
-                .map(UserPreferenceCacheService::canonicalLocale)
-                .orElse(DEFAULT_LOCALE);
+    private static UserPreferenceSnapshot toSnapshot(String language, String theme, String timezone) {
+        return new UserPreferenceSnapshot(canonicalLocale(language), canonicalTheme(theme), parseZoneOrDefault(timezone));
     }
 
     private static Locale canonicalLocale(String value) {

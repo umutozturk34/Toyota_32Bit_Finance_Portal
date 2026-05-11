@@ -10,13 +10,13 @@ import com.finance.notification.core.model.NotificationPreference;
 import com.finance.notification.core.model.NotificationType;
 import com.finance.notification.core.repository.NotificationPreferenceRepository;
 import com.finance.notification.user.UserPreferenceCacheService;
+import com.finance.notification.user.UserPreferenceCacheService.UserPreferenceSnapshot;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,11 +62,6 @@ public class NotificationDispatcher {
         }
     }
 
-    public void preloadPage(Collection<String> userSubs) {
-        userPreferenceCacheService.preload(userSubs);
-        userStatus.preload(userSubs);
-    }
-
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void dispatch(NotificationRequest request) {
         dispatch(request, loadPreferences(request.userSub()));
@@ -94,15 +89,19 @@ public class NotificationDispatcher {
     private ChunkOutcome dispatchChunk(List<NotificationRequest> chunk) {
         Set<String> subs = new HashSet<>(chunk.size());
         for (NotificationRequest req : chunk) subs.add(req.userSub());
-        preloadPage(subs);
         Map<String, NotificationPreference> prefsBySub = loadPreferencesBulk(subs);
+        Map<String, UserPreferenceSnapshot> userPrefs = userPreferenceCacheService.loadAll(subs);
+        Map<String, Boolean> statuses = userStatus.activeStatusOf(subs);
 
         int dispatched = 0;
         int failed = 0;
         List<Prepared> batch = new ArrayList<>(chunk.size());
         for (NotificationRequest req : chunk) {
             try {
-                Optional<Prepared> prep = prepare(req, prefsBySub.get(req.userSub()));
+                Optional<Prepared> prep = prepare(req,
+                        prefsBySub.get(req.userSub()),
+                        userPrefs.get(req.userSub()),
+                        statuses.getOrDefault(req.userSub(), true));
                 if (prep.isPresent()) {
                     batch.add(prep.get());
                     dispatched++;
@@ -132,44 +131,50 @@ public class NotificationDispatcher {
     private record ChunkOutcome(int dispatched, int failed) {}
 
     public Optional<Prepared> prepare(NotificationRequest request, NotificationPreference prefs) {
+        UserPreferenceSnapshot snapshot = userPreferenceCacheService.loadAll(List.of(request.userSub()))
+                .getOrDefault(request.userSub(), UserPreferenceSnapshot.defaults());
+        boolean active = userStatus.isActive(request.userSub());
+        return prepare(request, prefs, snapshot, active);
+    }
+
+    public Optional<Prepared> prepare(NotificationRequest request,
+                                      NotificationPreference prefs,
+                                      UserPreferenceSnapshot snapshot,
+                                      boolean active) {
         NotificationHandler handler = handlers.get(request.type());
         if (handler == null) {
             log.warn("No handler registered for type={}; dropping dispatch for user={}", request.type(), request.userSub());
             return Optional.empty();
         }
-        if (!userStatus.isActive(request.userSub())) {
+        if (!active) {
             log.debug("Notification suppressed (user inactive) user={} type={}", request.userSub(), request.type());
             return Optional.empty();
         }
-
-        Locale recipientLocale = userPreferenceCacheService.resolveLocale(request.userSub());
-        RenderedNotification rendered = handler.render(request, recipientLocale);
-
-        Notification inapp = null;
-        if (prefs.wantsInApp(request.type())) {
-            inapp = Notification.create(
-                    request.userSub(),
-                    request.type(),
-                    rendered.title(),
-                    rendered.body(),
-                    request.payload().toMetadata(),
-                    request.expiresAt());
-        }
-
-        EmailOutbox outboxRow = null;
-        if (prefs.wantsEmail(request.type())) {
-            Optional<String> emailOpt = userEmailLookup.findEmail(request.userSub());
-            if (emailOpt.isEmpty()) {
-                log.debug("Email skipped (no address resolved) user={} type={}",
-                        request.userSub(), request.type());
-            } else {
-                String theme = userPreferenceCacheService.resolveTheme(request.userSub());
-                outboxRow = buildOutboxRow(emailOpt.get(), theme, recipientLocale, rendered);
-            }
-        }
-
+        UserPreferenceSnapshot resolved = snapshot != null ? snapshot : UserPreferenceSnapshot.defaults();
+        RenderedNotification rendered = handler.render(request, resolved.locale());
+        Notification inapp = prefs.wantsInApp(request.type()) ? buildInApp(request, rendered) : null;
+        EmailOutbox outboxRow = prefs.wantsEmail(request.type()) ? buildOutbox(request, rendered, resolved) : null;
         if (inapp == null && outboxRow == null) return Optional.empty();
         return Optional.of(new Prepared(request.userSub(), inapp, outboxRow));
+    }
+
+    private Notification buildInApp(NotificationRequest request, RenderedNotification rendered) {
+        return Notification.create(
+                request.userSub(),
+                request.type(),
+                rendered.title(),
+                rendered.body(),
+                request.payload().toMetadata(),
+                request.expiresAt());
+    }
+
+    private EmailOutbox buildOutbox(NotificationRequest request, RenderedNotification rendered, UserPreferenceSnapshot resolved) {
+        Optional<String> emailOpt = userEmailLookup.findEmail(request.userSub());
+        if (emailOpt.isEmpty()) {
+            log.debug("Email skipped (no address resolved) user={} type={}", request.userSub(), request.type());
+            return null;
+        }
+        return buildOutboxRow(emailOpt.get(), resolved.theme(), resolved.locale(), rendered);
     }
 
     private EmailOutbox buildOutboxRow(String to, String theme, Locale locale, RenderedNotification rendered) {

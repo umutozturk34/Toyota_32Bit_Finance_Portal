@@ -10,10 +10,6 @@ const FALLBACK = Object.freeze({
   inappPriceAlerts: true,
   emailWatchlist: false,
   inappWatchlist: true,
-  emailReports: true,
-  inappReports: true,
-  emailMessages: false,
-  inappMessages: true,
   emailSystem: false,
   inappSystem: true,
 });

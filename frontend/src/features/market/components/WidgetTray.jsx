@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { Layers, TrendingUp, Bookmark, Newspaper, Check, Plus, ChevronRight } from 'lucide-react';
 import { useWidgetDefinitions } from '../../../shared/hooks/useWidgetDefinitions';
+import { localizeWatchlistName } from '../../../shared/utils/watchlistName';
 
 /**
  * @typedef {Object} TrayTileSpec
@@ -46,7 +47,7 @@ function buildWatchlistTiles(watchlists, byKind, t) {
   return watchlists.map((wl) => withSize({
     id: `tile-watchlist-${wl.id}`,
     kind: 'WATCHLIST',
-    label: wl.name || t('widgetTray.watchlistFallback', { id: wl.id }),
+    label: localizeWatchlistName(t, wl.name) || t('widgetTray.watchlistFallback', { id: wl.id }),
     config: { watchlistId: wl.id },
     accent: '#ec4899',
     Icon: Bookmark,

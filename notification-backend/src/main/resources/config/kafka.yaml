@@ -29,4 +29,3 @@ app:
       portfolio-updated: portfolio.updated
       user-email-change-code: user.email-change.code-requested
       mail-dispatch: mail.dispatch
-      user-status-changed: user.status.changed

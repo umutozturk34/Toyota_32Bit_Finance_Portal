@@ -10,7 +10,6 @@ const FALLBACK = Object.freeze({
   language: 'en',
   timezone: 'Europe/Istanbul',
   defaultChartRange: '1M',
-  reportFrequency: 'NEVER',
   onboardingCompleted: false,
 });
 

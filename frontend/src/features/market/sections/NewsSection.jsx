@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Newspaper, ChevronRight } from 'lucide-react';
 import { getFallbackImage } from '../../news/lib/newsConfig';
 import { currentLocaleTag } from '../../../shared/utils/formatters';
+import { newsCategoryName } from '../../../shared/utils/newsCategoryName';
 
 function formatDate(iso) {
   if (!iso) return '';
@@ -11,6 +12,7 @@ function formatDate(iso) {
 }
 
 function NewsRow({ article, onClick }) {
+  const { t } = useTranslation();
   const imgSrc = article.imageUrl || getFallbackImage(article.category, article.id);
   return (
     <button
@@ -30,7 +32,7 @@ function NewsRow({ article, onClick }) {
         <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
           {article.category && (
             <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-accent bg-accent/10 rounded px-1.5 py-0.5">
-              {article.category}
+              {newsCategoryName(t, article.category)}
             </span>
           )}
           <span className="text-[10px] text-fg-subtle">{formatDate(article.publishedAt)}</span>
@@ -64,11 +66,11 @@ function NewsSectionImpl({ data }) {
         </span>
         <span className="font-display text-[13px] font-bold text-fg">{t('nav.news')}</span>
         {categoriesUsed.length > 0 && (
-          <span className="font-mono text-[9px] tracking-[0.14em] uppercase text-fg-subtle">· {categoriesUsed.join(', ')}</span>
+          <span className="font-mono text-[9px] tracking-[0.14em] uppercase text-fg-subtle">· {categoriesUsed.map((c) => newsCategoryName(t, c)).join(', ')}</span>
         )}
         <ChevronRight className="h-3.5 w-3.5 text-fg-subtle ml-auto opacity-0 group-hover/title:opacity-100 group-hover/title:translate-x-0.5 transition-all" />
       </button>
-      <div className="p-2 flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+      <div className="p-2 flex-1 overflow-y-auto scrollbar-auto-hide">
         {items.length === 0
           ? <p className="text-[11px] text-fg-subtle py-5 text-center">{t('news.empty')}</p>
           : <div className="space-y-0.5">

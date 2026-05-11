@@ -465,18 +465,6 @@
       "sso": "Single Sign-On (SSO)"
     }
   },
-  "adminConversations": {
-    "title": "Conversations",
-    "userCount": "{{count}} users",
-    "matchingCount": "{{count}} matching",
-    "searchPlaceholder": "Search user or message…",
-    "emptyTitle": "No conversations yet",
-    "emptyBody": "When a user sends a message it will appear here.",
-    "emptyMatchTitle": "No matching conversations",
-    "emptyMatchBody": "No results for \"{{query}}\".",
-    "closedTag": "closed",
-    "idLabel": "id"
-  },
   "assets": {
     "labels": {
       "CRYPTO": "Crypto",
@@ -896,8 +884,6 @@
     "types": {
       "PRICE_ALERT_FIRED": "Price alert",
       "WATCHLIST_DELTA": "Watchlist",
-      "REPORT_READY": "Report",
-      "MESSAGE": "Message",
       "SYSTEM": "System",
       "MARKET_OPENED": "Market opened",
       "MARKET_CLOSED": "Market closed",
@@ -1319,6 +1305,7 @@
   },
   "watch": {
     "headerTitle": "Watch",
+    "defaultListName": "Favorites",
     "tabs": {
       "watchlist": "Watchlist",
       "alerts": "Price Alerts"
@@ -1376,6 +1363,7 @@
   "news": {
     "title": "Financial News",
     "subtitle": "Latest market and finance news",
+    "sourceLanguageNote": "Articles are published in Turkish as they are pulled directly from the source.",
     "countLabel": "articles",
     "searchPlaceholder": "Search news...",
     "loading": "Loading news…",

@@ -84,7 +84,7 @@ function MoversSectionImpl({ data }) {
             </span>
             <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-success font-semibold">{t('moversSection.gainers')}</span>
           </div>
-          <div className="space-y-0.5 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+          <div className="space-y-0.5 overflow-y-auto scrollbar-auto-hide">
             {gainers.length === 0
               ? <p className="text-[10px] text-fg-subtle px-2 py-3 text-center">{t('moversSection.noData')}</p>
               : gainers.map((a) => <AssetRow key={a.code} asset={a} color={color} onClick={() => navigate(`${TYPE_ROUTES[market] ?? '/market'}/${a.code}`)} />)}
@@ -98,7 +98,7 @@ function MoversSectionImpl({ data }) {
             </span>
             <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-danger font-semibold">{t('moversSection.losers')}</span>
           </div>
-          <div className="space-y-0.5 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+          <div className="space-y-0.5 overflow-y-auto scrollbar-auto-hide">
             {losers.length === 0
               ? <p className="text-[10px] text-fg-subtle px-2 py-3 text-center">{t('moversSection.noData')}</p>
               : losers.map((a) => <AssetRow key={a.code} asset={a} color={color} onClick={() => navigate(`${TYPE_ROUTES[market] ?? '/market'}/${a.code}`)} />)}

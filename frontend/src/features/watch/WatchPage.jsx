@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import PageHeader from '../../shared/components/layout/PageHeader';
 import AssetBadge from '../../shared/components/asset/AssetBadge';
+import { watchlistName } from '../../shared/utils/watchlistName';
 import ConfirmDialog from '../../shared/components/modal/ConfirmDialog';
 import useAppStore from '../../shared/stores/useAppStore';
 import {
@@ -102,10 +103,10 @@ function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-transparent border-none cursor-pointer min-w-0 ${
                 active ? 'text-accent' : 'text-fg-muted hover:text-fg'
               }`}
-              title={list.name}
+              title={watchlistName(t, list)}
             >
               {list.isDefault && <Star className="h-3 w-3 text-warning fill-warning shrink-0" />}
-              <span className="truncate max-w-[140px]">{list.name}</span>
+              <span className="truncate max-w-[140px]">{watchlistName(t, list)}</span>
               <span className={`text-[10px] font-mono shrink-0 ${active ? 'text-accent/70' : 'text-fg-subtle'}`}>
                 {list.itemCount}
               </span>

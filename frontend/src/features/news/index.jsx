@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
-import { Newspaper, Clock, SearchX, Tag } from 'lucide-react';
+import { Newspaper, Clock, SearchX, Tag, Info } from 'lucide-react';
 import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
 import { newsService } from './services/newsService';
 import { TABS, COOLDOWN_MS } from './lib/newsConfig.jsx';
@@ -113,6 +113,11 @@ export default function News() {
                     )}
                 </button>
             </motion.div>
+
+            <div className="flex items-center gap-2 rounded-md border border-border-default bg-bg-elevated/50 px-3 py-2 text-xs text-fg-muted">
+                <Info size={14} className="text-accent shrink-0" />
+                <span>{t('news.sourceLanguageNote')}</span>
+            </div>
 
             <div className="flex flex-wrap items-center gap-3">
                 <div className="w-48">

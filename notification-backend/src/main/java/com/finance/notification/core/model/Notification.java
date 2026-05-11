@@ -30,7 +30,8 @@ import java.util.Map;
 @Entity
 @Table(name = "notifications", indexes = {
         @Index(name = "idx_notifications_user_unread", columnList = "user_sub, read_at"),
-        @Index(name = "idx_notifications_user_created", columnList = "user_sub, created_at DESC")
+        @Index(name = "idx_notifications_user_created", columnList = "user_sub, created_at DESC"),
+        @Index(name = "idx_notifications_expires", columnList = "expires_at")
 })
 public class Notification {
 

@@ -47,13 +47,13 @@
 - **Compare mode** — two assets compared as percent change from their first common date with a sane baseline; drawings made in compare mode are not persisted
 - **Fullscreen mode** — sub-chart heights distributed proportionally to viewport
 
-### Notifications & Messaging
+### Notifications
 
 - **Notification microservice** — port 8082, separate Spring Boot app, Kafka event-driven dispatch
-- **Notification types** — price alert, watchlist delta, periodic reports, message, system, market opened/closed, market data updated, **news published** (slot-labelled morning/midday/evening), **portfolio updated** (daily snapshot)
+- **Notification types** — price alert, watchlist delta, system, market opened/closed, market data updated, **news published** (slot-labelled morning/midday/evening), **portfolio updated** (daily snapshot)
 - **Preference matrix** — every type has independent email + in-app channel toggles; per-market chip selector
-- **Channels** — in-app (bell icon, unread badge, paged list) + SSE live stream + email (Thymeleaf templates)
-- **Messaging** — user ↔ admin one-to-one threads + admin broadcast; auto-mark-read in active conversation; close/delete operations
+- **Channels** — in-app (bell icon, unread badge, paged list) + SSE live stream + email (Thymeleaf templates, durable outbox + Kafka relay + circuit breaker)
+- **Admin broadcast** — paginated dispatch through `NotificationFanoutService` so a single system payload reaches every user without N+1
 - **Slot labelling** — config-driven (`slot.yaml`) keyword → slot mapping shared across notification types
 
 ### Admin Panel
@@ -115,12 +115,11 @@
   - `PriceAlert` (threshold, direction, one-shot/recurring) + `AlertEvaluator`
   - `Watchlist` (named, multiple per user, default "Favoriler" auto-created, max 20) + `WatchlistItem` + `WatchlistEvaluator` (delta detection)
   - `UserPreferenceCache` (local cache fed by Kafka consumer)
-- **Email dispatch** — Spring Mail + Thymeleaf templates (`price-alert.html`, `watchlist-delta.html`, `report-ready.html`, `market-opened.html`, `market-closed.html`, `market-data-updated.html`)
+- **Email dispatch** — Spring Mail + Thymeleaf templates (`price-alert.html`, `watchlist-delta.html`, `market-opened.html`, `market-closed.html`, `market-data-updated.html`)
 - **In-app notifications** — bell icon, unread badge, paged list
 - **SSE live stream** — `/api/v1/notifications/stream` (real-time push)
-- **Messaging migration** — user↔admin messaging moved from monolith to notification-app; active-conversation skip + bulk mark-read; closed conversations + admin destructive ops + paged thread view + broadcast
 - **Market session notifications** — minute-tick `MarketSessionScheduler` for open/closed transitions (24/7 sentinel bypass for crypto/news), Kafka `MarketDataUpdateListener` for data-updated (Caffeine eventId idempotency + `auto-offset-reset: latest` redelivery-safe), source-aware title (morning/midday/evening/daily), per-market opt-in chip selector, terminal-HUD `MarketStatusBadge` on every asset detail page
-- **Frontend** — `/messages` (user) and `/admin/messages` (admin), watchlist + price-alerts UI, settings → 8-row notification matrix (master email + per-type email/inapp + per-market chip selector), `MarketStatusBadge` + `MarketSelectionChips` terminal-HUD components
+- **Frontend** — watchlist + price-alerts UI, settings notification matrix (master email + per-type email/inapp + per-market chip selector), `MarketStatusBadge` + `MarketSelectionChips` terminal-HUD components
 
 ---
 
@@ -254,7 +253,7 @@
 | v0.18 | Internationalization | TR / EN bundles, MessageSource backend, Keycloak login theme, JWT locale claim, locale-aware formatters |
 | v0.17 | Notification Expansion | News / portfolio dispatch, slot resolver, monolith-shared module, edge rate-limit |
 | v0.16 | Chart Preferences & Drawings | Per-asset chart prefs / drawings, compare baseline, fullscreen |
-| v0.15 | Notification Microservice | Separate port-8082 service, Kafka event-driven, messaging migration |
+| v0.15 | Notification Microservice | Separate port-8082 service, Kafka event-driven, in-app + email dispatch |
 | v0.14 | User Module & Admin | Preferences, overview customization, admin proxy, 2FA |
 | v0.13 | Commodities | Yahoo Finance commodity integration, derivative calculation, segment classification |
 | v0.12 | Unified Market | Single `/api/v1/market` endpoint, frontend overhaul, search suggestions |

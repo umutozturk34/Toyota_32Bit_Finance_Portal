@@ -1,7 +1,7 @@
 -- Notification microservice Flyway baseline.
 -- Tables introduced in subsequent migrations as features are added:
 --   V2 messages (migrated from monolit V60)
---   V3 user_preferences_cache (Kafka consumer mirror)
+--   V3 user_preferences_cache (Kafka consumer mirror — dropped in V23)
 --   V4 notifications + notification_preferences
 --   V5 price_alerts
 --   V6 watchlist_items

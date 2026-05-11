@@ -8,7 +8,10 @@ import com.finance.news.service.source.NewsSourceService;
 import com.finance.news.dto.request.UpsertNewsSourceRequest;
 import com.finance.news.dto.response.NewsSourceResponse;
 import com.finance.common.exception.BadRequestException;
+import com.finance.common.exception.BusinessException;
+import com.finance.common.exception.ExternalApiException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.news.client.RssClient;
 import com.finance.news.mapper.NewsSourceMapper;
 import com.finance.news.model.NewsSource;
 import com.finance.news.repository.NewsArticleRepository;
@@ -36,6 +39,7 @@ class NewsSourceAdminServiceTest {
     private NewsSourceMapper mapper;
     private NewsSourceService sourceService;
     private NewsSourceRefreshService refreshService;
+    private RssClient rssClient;
     private NewsSourceAdminService service;
     private MockedStatic<TransactionSynchronizationManager> tsmMock;
 
@@ -46,7 +50,8 @@ class NewsSourceAdminServiceTest {
         mapper = mock(NewsSourceMapper.class);
         sourceService = mock(NewsSourceService.class);
         refreshService = mock(NewsSourceRefreshService.class);
-        service = new NewsSourceAdminService(repository, articleRepository, mapper, sourceService, refreshService);
+        rssClient = mock(RssClient.class);
+        service = new NewsSourceAdminService(repository, articleRepository, mapper, sourceService, refreshService, rssClient);
         tsmMock = mockStatic(TransactionSynchronizationManager.class);
     }
 
@@ -175,5 +180,47 @@ class NewsSourceAdminServiceTest {
         when(sourceService.findOrThrow(99L)).thenThrow(new ResourceNotFoundException("News source not found: 99"));
 
         assertThatThrownBy(() -> service.update(99L, req)).isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void should_throwBusinessException_when_rssFeedUnreachableOnCreate() {
+        UpsertNewsSourceRequest req = request("Broken");
+        when(repository.findByNameIgnoreCase("Broken")).thenReturn(Optional.empty());
+        org.mockito.Mockito.doThrow(new ExternalApiException("RSS", "404 not found"))
+                .when(rssClient).fetchFeed(req.getUrl());
+
+        assertThatThrownBy(() -> service.create(req))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("error.news.sourceUrlInvalid");
+        verify(repository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void should_skipUrlValidation_when_updateKeepsExistingUrl() {
+        NewsSource existing = entity(1L, "BBC");
+        UpsertNewsSourceRequest req = request("BBC");
+        when(sourceService.findOrThrow(1L)).thenReturn(existing);
+        when(repository.findByNameIgnoreCase("BBC")).thenReturn(Optional.of(existing));
+        when(repository.save(existing)).thenReturn(existing);
+        when(mapper.toResponse(existing)).thenReturn(response(1L, "BBC"));
+
+        service.update(1L, req);
+
+        verify(rssClient, org.mockito.Mockito.never()).fetchFeed(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void should_validateUrl_when_updateChangesUrl() {
+        NewsSource existing = entity(1L, "BBC");
+        existing.setUrl("https://old.example.com/rss");
+        UpsertNewsSourceRequest req = request("BBC");
+        when(sourceService.findOrThrow(1L)).thenReturn(existing);
+        when(repository.findByNameIgnoreCase("BBC")).thenReturn(Optional.of(existing));
+        when(repository.save(existing)).thenReturn(existing);
+        when(mapper.toResponse(existing)).thenReturn(response(1L, "BBC"));
+
+        service.update(1L, req);
+
+        verify(rssClient).fetchFeed(req.getUrl());
     }
 }

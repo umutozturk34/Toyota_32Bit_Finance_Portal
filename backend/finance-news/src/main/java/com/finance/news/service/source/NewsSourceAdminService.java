@@ -1,19 +1,17 @@
 package com.finance.news.service.source;
 
-import com.finance.news.service.source.NewsSourceAdminService;
-import com.finance.news.service.source.NewsSourceRefreshService;
-import com.finance.news.service.source.NewsSourceService;
-
+import com.finance.common.exception.BadRequestException;
+import com.finance.common.exception.BusinessException;
+import com.finance.common.exception.ExternalApiException;
+import com.finance.news.client.RssClient;
 import com.finance.news.dto.request.UpsertNewsSourceRequest;
 import com.finance.news.dto.response.NewsSourceResponse;
-import com.finance.common.exception.BadRequestException;
 import com.finance.news.mapper.NewsSourceMapper;
 import com.finance.news.model.NewsSource;
 import com.finance.news.repository.NewsArticleRepository;
 import com.finance.news.repository.NewsSourceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -29,10 +27,12 @@ public class NewsSourceAdminService {
     private final NewsSourceMapper newsSourceMapper;
     private final NewsSourceService newsSourceService;
     private final NewsSourceRefreshService newsSourceRefreshService;
+    private final RssClient rssClient;
 
     @Transactional
     public NewsSourceResponse create(UpsertNewsSourceRequest request) {
         validateNameUniqueness(request.getName(), null);
+        validateUrlReachable(request.getUrl());
         NewsSource entity = newsSourceMapper.toEntity(request);
         NewsSource saved = newsSourceRepository.save(entity);
 
@@ -50,6 +50,9 @@ public class NewsSourceAdminService {
     public NewsSourceResponse update(Long id, UpsertNewsSourceRequest request) {
         NewsSource entity = newsSourceService.findOrThrow(id);
         validateNameUniqueness(request.getName(), id);
+        if (!request.getUrl().equals(entity.getUrl())) {
+            validateUrlReachable(request.getUrl());
+        }
         newsSourceMapper.updateEntity(request, entity);
         return newsSourceMapper.toResponse(newsSourceRepository.save(entity));
     }
@@ -75,5 +78,14 @@ public class NewsSourceAdminService {
                 .ifPresent(existing -> {
                     throw new BadRequestException("error.news.sourceNameExists", name);
                 });
+    }
+
+    private void validateUrlReachable(String url) {
+        try {
+            rssClient.fetchFeed(url);
+        } catch (ExternalApiException ex) {
+            log.warn("News source URL not reachable url={}: {}", url, ex.getMessage());
+            throw new BusinessException("error.news.sourceUrlInvalid", url);
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.finance.user.dto;
 
-import java.time.Instant;
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
 
-public record UserChartPreferenceResponse(Map<String, Object> config, Instant updatedAt) {}
+import java.time.Instant;
+
+public record UserChartPreferenceResponse(JsonNode config, Instant updatedAt) {}

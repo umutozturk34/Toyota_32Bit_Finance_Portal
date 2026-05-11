@@ -1,6 +1,5 @@
 package com.finance.app.service.overview;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.app.dto.response.overview.WidgetKind;
@@ -12,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -31,8 +29,7 @@ class OverviewLayoutReaderTest {
     }
 
     private UserLayoutResponse response(JsonNode overview) {
-        Map<String, Object> map = objectMapper.convertValue(overview, new TypeReference<>() {});
-        return new UserLayoutResponse("user-1", map, Instant.now());
+        return new UserLayoutResponse("user-1", overview, Instant.now());
     }
 
     @Test

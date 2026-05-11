@@ -1,11 +1,12 @@
 package com.finance.user.dto;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import java.time.Instant;
-import java.util.Map;
 
 public record UserLayoutResponse(
         String userSub,
-        Map<String, Object> overview,
+        JsonNode overview,
         Instant updatedAt
 ) {
 }

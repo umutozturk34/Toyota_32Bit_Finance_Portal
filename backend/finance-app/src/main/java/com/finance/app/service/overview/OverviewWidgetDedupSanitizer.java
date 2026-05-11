@@ -1,15 +1,17 @@
 package com.finance.app.service.overview;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.finance.app.config.OverviewProperties;
 import com.finance.user.service.OverviewSaveSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
 @Component
 @Order(10)
@@ -19,48 +21,47 @@ public class OverviewWidgetDedupSanitizer implements OverviewSaveSanitizer {
     private final OverviewProperties properties;
 
     @Override
-    public Map<String, Object> sanitize(Map<String, Object> overview) {
-        if (overview == null) return Map.of();
-        Object sectionsObj = overview.get("sections");
-        if (!(sectionsObj instanceof List<?> sections)) return overview;
+    public JsonNode sanitize(JsonNode overview) {
+        if (overview == null || !overview.isObject()) return overview;
+        JsonNode sectionsNode = overview.get("sections");
+        if (sectionsNode == null || !sectionsNode.isArray()) return overview;
         int maxWidgets = properties.limits().maxWidgetsPerLayout();
         int maxAssetCards = properties.limits().maxAssetCardWidgetsPerLayout();
-        LinkedHashMap<String, Object> dedup = new LinkedHashMap<>();
+        LinkedHashMap<String, JsonNode> dedup = new LinkedHashMap<>();
         int assetCardCount = 0;
-        for (Object o : sections) {
-            if (!(o instanceof Map<?, ?> entry)) continue;
-            Object visibleFlag = entry.get("visible");
-            if (visibleFlag instanceof Boolean v && !v) continue;
-            Object kind = entry.get("kind");
+        for (JsonNode entry : sectionsNode) {
+            if (!entry.isObject()) continue;
+            JsonNode visibleFlag = entry.get("visible");
+            if (visibleFlag != null && visibleFlag.isBoolean() && !visibleFlag.asBoolean()) continue;
+            String kind = entry.path("kind").asText(null);
             if ("ASSET_CARDS".equals(kind)) {
                 if (assetCardCount >= maxAssetCards) continue;
                 assetCardCount++;
             }
-            String key = dedupKey(entry);
+            String key = dedupKey(entry, kind);
             dedup.putIfAbsent(key, entry);
             if (dedup.size() >= maxWidgets) break;
         }
-        Map<String, Object> result = new LinkedHashMap<>(overview);
-        result.put("sections", new ArrayList<>(dedup.values()));
-        return result;
+        ArrayNode deduped = JsonNodeFactory.instance.arrayNode(dedup.size());
+        dedup.values().forEach(deduped::add);
+        ((ObjectNode) overview).set("sections", deduped);
+        return overview;
     }
 
-    private String dedupKey(Map<?, ?> entry) {
-        Object kind = entry.get("kind");
-        Object configObj = entry.get("config");
-        Map<?, ?> config = configObj instanceof Map<?, ?> map ? map : Map.of();
+    private String dedupKey(JsonNode entry, String kind) {
+        JsonNode config = entry.path("config");
         if ("ASSET_CARDS".equals(kind)) {
-            Object sectionId = entry.get("sectionId");
-            return "ASSET_CARDS:" + (sectionId == null ? java.util.UUID.randomUUID() : sectionId);
+            JsonNode sectionId = entry.get("sectionId");
+            return "ASSET_CARDS:" + (sectionId == null || sectionId.isNull() ? UUID.randomUUID() : sectionId.asText());
         }
         if ("WATCHLIST".equals(kind)) {
-            Object wlId = config.get("watchlistId");
-            return "WATCHLIST:" + (wlId == null ? "default" : wlId);
+            JsonNode wlId = config.get("watchlistId");
+            return "WATCHLIST:" + (wlId == null || wlId.isNull() ? "default" : wlId.asText());
         }
         if ("MOVERS".equals(kind)) {
-            Object market = config.get("market");
-            return "MOVERS:" + (market == null ? "any" : market);
+            JsonNode market = config.get("market");
+            return "MOVERS:" + (market == null || market.isNull() ? "any" : market.asText());
         }
-        return String.valueOf(kind);
+        return kind == null ? "null" : kind;
     }
 }

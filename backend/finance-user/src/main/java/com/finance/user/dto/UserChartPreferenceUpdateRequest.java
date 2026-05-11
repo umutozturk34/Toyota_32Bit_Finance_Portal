@@ -1,7 +1,6 @@
 package com.finance.user.dto;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.validation.constraints.NotNull;
 
-import java.util.Map;
-
-public record UserChartPreferenceUpdateRequest(@NotNull Map<String, Object> config) {}
+public record UserChartPreferenceUpdateRequest(@NotNull JsonNode config) {}

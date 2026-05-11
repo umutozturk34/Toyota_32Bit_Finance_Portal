@@ -3,6 +3,7 @@ package com.finance.user.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
@@ -18,9 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 @Log4j2
 @Service
@@ -42,35 +40,34 @@ public class UserChartPreferenceService {
     }
 
     @Transactional
-    public UserChartPreferenceResponse upsert(String userSub, TrackedAssetType type, String code, Map<String, Object> config) {
+    public UserChartPreferenceResponse upsert(String userSub, TrackedAssetType type, String code, JsonNode config) {
         TrackedAsset tracked = resolveTracked(type, code);
         UserChartPreference entity = repository.findByUserSubAndTrackedAsset_Id(userSub, tracked.getId())
                 .orElseGet(() -> UserChartPreference.builder()
                         .userSub(userSub)
                         .trackedAsset(tracked)
                         .build());
-        JsonNode node = config != null ? objectMapper.valueToTree(config) : JsonNodeFactory.instance.objectNode();
-        entity.setConfig(node);
+        entity.setConfig(config != null && !config.isNull() ? config : JsonNodeFactory.instance.objectNode());
         UserChartPreference saved = repository.save(entity);
         log.debug("Saved chart preferences userSub={} trackedAssetId={}", userSub, tracked.getId());
         return mapper.toResponse(saved);
     }
 
-    private Map<String, Object> buildDefaults(TrackedAssetType type) {
+    private JsonNode buildDefaults(TrackedAssetType type) {
         boolean isFund = type == TrackedAssetType.FUND;
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("indicators", chartDefaults.defaults().indicators());
-        map.put("fibTools", List.of());
-        map.put("chartType", isFund ? chartDefaults.fund().chartType() : chartDefaults.defaults().chartType());
-        map.put("showVolume", chartDefaults.defaults().showVolume());
-        map.put("magnetMode", chartDefaults.defaults().magnetMode());
-        map.put("iconSize", chartDefaults.defaults().iconSize());
-        map.put("selectedIcon", chartDefaults.defaults().selectedIcon());
+        ObjectNode node = JsonNodeFactory.instance.objectNode();
+        node.set("indicators", objectMapper.valueToTree(chartDefaults.defaults().indicators()));
+        node.set("fibTools", JsonNodeFactory.instance.arrayNode());
+        node.put("chartType", isFund ? chartDefaults.fund().chartType() : chartDefaults.defaults().chartType());
+        node.put("showVolume", chartDefaults.defaults().showVolume());
+        node.put("magnetMode", chartDefaults.defaults().magnetMode());
+        node.put("iconSize", chartDefaults.defaults().iconSize());
+        node.put("selectedIcon", chartDefaults.defaults().selectedIcon());
         if (isFund) {
-            map.put("showInvestorCount", chartDefaults.fund().showInvestorCount());
-            map.put("showPortfolioSize", chartDefaults.fund().showPortfolioSize());
+            node.put("showInvestorCount", chartDefaults.fund().showInvestorCount());
+            node.put("showPortfolioSize", chartDefaults.fund().showPortfolioSize());
         }
-        return map;
+        return node;
     }
 
     private TrackedAsset resolveTracked(TrackedAssetType type, String code) {

@@ -1,8 +1,8 @@
 package com.finance.user.service;
 
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
 
 @FunctionalInterface
 public interface OverviewSaveSanitizer {
-    Map<String, Object> sanitize(Map<String, Object> overview);
+    JsonNode sanitize(JsonNode overview);
 }

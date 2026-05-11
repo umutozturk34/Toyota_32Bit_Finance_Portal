@@ -1,6 +1,6 @@
 package com.finance.user.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.finance.common.exception.ResourceNotFoundException;
@@ -19,8 +19,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,7 +43,7 @@ class UserChartDrawingServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new UserChartDrawingService(repository, trackedAssetRepository, new ObjectMapper(), mapper);
+        service = new UserChartDrawingService(repository, trackedAssetRepository, mapper);
     }
 
     @Test
@@ -57,7 +55,7 @@ class UserChartDrawingServiceTest {
 
         UserChartDrawingResponse response = service.getOrDefault(USER, TYPE, CODE);
 
-        assertThat(response.drawings()).isEmpty();
+        assertThat(response.drawings().isEmpty()).isTrue();
         assertThat(response.updatedAt()).isNotNull();
     }
 
@@ -69,7 +67,7 @@ class UserChartDrawingServiceTest {
         Instant updated = Instant.parse("2026-05-09T11:00:00Z");
         UserChartDrawing entity = UserChartDrawing.builder()
                 .userSub(USER).trackedAsset(tracked).drawings(storedNode).updatedAt(updated).build();
-        UserChartDrawingResponse mapped = new UserChartDrawingResponse(List.of(Map.of("type", "trendline")), updated);
+        UserChartDrawingResponse mapped = new UserChartDrawingResponse(storedNode, updated);
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 11L)).thenReturn(Optional.of(entity));
@@ -93,7 +91,8 @@ class UserChartDrawingServiceTest {
     @Test
     void upsert_createsNewRow_whenNoExistingDrawing() {
         TrackedAsset tracked = trackedAsset(11L);
-        List<Map<String, Object>> drawings = List.of(Map.of("type", "fibonacci"));
+        ArrayNode drawings = JsonNodeFactory.instance.arrayNode();
+        drawings.addObject().put("type", "fibonacci");
         UserChartDrawingResponse mapped = new UserChartDrawingResponse(drawings, Instant.now());
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
@@ -118,7 +117,8 @@ class UserChartDrawingServiceTest {
         UserChartDrawing existing = UserChartDrawing.builder()
                 .userSub(USER).trackedAsset(tracked)
                 .drawings(JsonNodeFactory.instance.arrayNode()).build();
-        List<Map<String, Object>> newDrawings = List.of(Map.of("type", "rectangle"));
+        ArrayNode newDrawings = JsonNodeFactory.instance.arrayNode();
+        newDrawings.addObject().put("type", "rectangle");
         UserChartDrawingResponse mapped = new UserChartDrawingResponse(newDrawings, Instant.now());
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
@@ -135,14 +135,14 @@ class UserChartDrawingServiceTest {
     @Test
     void upsert_fallsBackToEmptyArray_whenDrawingsIsNull() {
         TrackedAsset tracked = trackedAsset(11L);
-        UserChartDrawingResponse mapped = new UserChartDrawingResponse(List.of(), Instant.now());
+        UserChartDrawingResponse mapped = new UserChartDrawingResponse(JsonNodeFactory.instance.arrayNode(), Instant.now());
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.of(tracked));
         when(repository.findByUserSubAndTrackedAsset_Id(USER, 11L)).thenReturn(Optional.empty());
         when(repository.save(any(UserChartDrawing.class))).thenAnswer(inv -> inv.getArgument(0));
         when(mapper.toResponse(any(UserChartDrawing.class))).thenReturn(mapped);
 
-        UserChartDrawingResponse response = service.upsert(USER, TYPE, CODE, null);
+        UserChartDrawingResponse response = service.upsert(USER, TYPE, CODE, (JsonNode) null);
 
         ArgumentCaptor<UserChartDrawing> captor = ArgumentCaptor.forClass(UserChartDrawing.class);
         verify(repository).save(captor.capture());
@@ -155,7 +155,7 @@ class UserChartDrawingServiceTest {
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TYPE, CODE))
                 .thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.upsert(USER, TYPE, CODE, List.of()))
+        assertThatThrownBy(() -> service.upsert(USER, TYPE, CODE, JsonNodeFactory.instance.arrayNode()))
                 .isInstanceOf(ResourceNotFoundException.class);
         verify(repository, never()).save(any());
     }

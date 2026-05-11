@@ -1,7 +1,6 @@
 package com.finance.app.service.overview;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.finance.app.dto.response.overview.WidgetKind;
 import com.finance.app.dto.response.overview.WidgetSection;
@@ -24,7 +23,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class OverviewLayoutReader {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Map<String, String> LEGACY_ID_MAP = Map.of("bist-indices", "asset-cards-default");
     private static final Map<String, WidgetKind> LEGACY_KIND_BY_PREFIX = Map.of(
             "asset-cards", WidgetKind.ASSET_CARDS,
@@ -38,8 +36,8 @@ public class OverviewLayoutReader {
 
     public List<WidgetSection> readVisibleSections(String userSub) {
         UserLayoutResponse response = userLayoutService.getOrEmpty(userSub);
-        Map<String, Object> raw = response != null ? response.overview() : null;
-        JsonNode overview = raw != null && !raw.isEmpty() ? OBJECT_MAPPER.valueToTree(raw) : null;
+        JsonNode overview = response != null ? response.overview() : null;
+        if (overview == null || overview.isNull() || (overview.isObject() && overview.isEmpty())) overview = null;
         ParseResult parsed = parse(overview);
         if (parsed.allIds().isEmpty()) return defaults.defaultSections();
         return parsed.visible();
@@ -115,19 +113,6 @@ public class OverviewLayoutReader {
                 .map(Map.Entry::getValue)
                 .findFirst()
                 .orElse(null);
-    }
-
-    private List<WidgetSection> mergeWithDefaults(ParseResult parsed) {
-        List<WidgetSection> merged = new ArrayList<>(parsed.visible());
-        int nextOrder = parsed.visible().stream().mapToInt(WidgetSection::order).max().orElse(-1) + 1;
-        Set<WidgetKind> singletonKinds = Set.of(WidgetKind.ASSET_CARDS, WidgetKind.NEWS, WidgetKind.WATCHLIST);
-        for (WidgetSection def : defaults.defaultSections()) {
-            if (parsed.allIds().contains(def.sectionId())) continue;
-            if (singletonKinds.contains(def.kind()) && parsed.allKinds().contains(def.kind())) continue;
-            merged.add(new WidgetSection(def.sectionId(), def.kind(), nextOrder++, def.config()));
-        }
-        merged.sort(Comparator.comparingInt(WidgetSection::order));
-        return merged;
     }
 
     private record ParseResult(List<WidgetSection> visible, Set<String> allIds, Set<WidgetKind> allKinds) {

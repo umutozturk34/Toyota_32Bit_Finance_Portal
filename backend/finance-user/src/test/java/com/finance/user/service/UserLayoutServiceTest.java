@@ -14,9 +14,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,7 +34,7 @@ class UserLayoutServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new UserLayoutService(repository, new UserLayoutMapperImpl(), objectMapper, java.util.List.of());
+        service = new UserLayoutService(repository, new UserLayoutMapperImpl(), java.util.List.of());
     }
 
     @Test
@@ -48,7 +45,7 @@ class UserLayoutServiceTest {
 
         assertThat(layout.userSub()).isEqualTo(USER_SUB);
         assertThat(layout.overview()).isNotNull();
-        assertThat(layout.overview()).isEmpty();
+        assertThat(layout.overview().isEmpty()).isTrue();
         verify(repository, never()).save(any());
     }
 
@@ -62,16 +59,13 @@ class UserLayoutServiceTest {
 
         UserLayoutResponse layout = service.getOrEmpty(USER_SUB);
 
-        @SuppressWarnings("unchecked")
-        java.util.List<Map<String, Object>> sections = (java.util.List<Map<String, Object>>) layout.overview().get("sections");
-        assertThat(sections.get(0).get("id")).isEqualTo("indices");
+        assertThat(layout.overview().get("sections").get(0).get("id").asText()).isEqualTo("indices");
     }
 
     @Test
     void shouldUpsertNewDocument_whenSavingOverviewOnEmptyDb() throws Exception {
-        Map<String, Object> overview = objectMapper.readValue(
-                "{\"sections\":[{\"id\":\"watchlist\",\"visible\":true,\"order\":0}]}",
-                new TypeReference<>() {});
+        JsonNode overview = objectMapper.readTree("""
+                {"sections":[{"id":"watchlist","visible":true,"order":0}]}""");
         when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
         when(repository.saveAndFlush(any(UserLayout.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -90,17 +84,16 @@ class UserLayoutServiceTest {
                 {"sections":[{"id":"indices"}]}""");
         UserLayout existing = UserLayout.builder()
                 .userSub(USER_SUB).overview(oldOverview).build();
-        Map<String, Object> newOverview = objectMapper.readValue(
-                "{\"sections\":[{\"id\":\"top-movers\"},{\"id\":\"news\"}]}",
-                new TypeReference<>() {});
+        JsonNode newOverview = objectMapper.readTree("""
+                {"sections":[{"id":"top-movers"},{"id":"news"}]}""");
         when(repository.findById(USER_SUB)).thenReturn(Optional.of(existing));
         when(repository.saveAndFlush(any(UserLayout.class))).thenAnswer(inv -> inv.getArgument(0));
 
         UserLayoutResponse result = service.saveOverview(USER_SUB, newOverview);
 
-        @SuppressWarnings("unchecked")
-        java.util.List<Map<String, Object>> resultSections = (java.util.List<Map<String, Object>>) result.overview().get("sections");
-        assertThat(resultSections).hasSize(2);
-        assertThat(resultSections.get(0).get("id")).isEqualTo("top-movers");
+        JsonNode resultSections = result.overview().get("sections");
+        assertThat(resultSections.isArray()).isTrue();
+        assertThat(resultSections.size()).isEqualTo(2);
+        assertThat(resultSections.get(0).get("id").asText()).isEqualTo("top-movers");
     }
 }

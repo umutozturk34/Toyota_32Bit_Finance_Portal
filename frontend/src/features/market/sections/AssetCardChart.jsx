@@ -32,16 +32,17 @@ function generateSparkline(seed, changePercent) {
   const rand = mulberry32(seedHash);
   const change = Number.isFinite(changePercent) ? changePercent : 0;
   const start = 100;
+
+  if (change === 0) {
+    return new Array(points).fill(start);
+  }
+
   const end = start * (1 + change / 100);
   const totalDelta = end - start;
   const absChange = Math.abs(change);
 
-  const variant = seedHash % 5;
-  const wavePhase = (seedHash >>> 3) % 100 / 100;
-  const waveFreq = 1.5 + ((seedHash >>> 5) % 30) / 10;
-
-  const noiseMultiplier = absChange < 0.3 ? 2.5 : absChange < 1 ? 1.2 : absChange > 6 ? 0.35 : 0.7;
-  const noiseAmplitude = Math.max(absChange * noiseMultiplier, 0.4);
+  const variant = seedHash % 4;
+  const noiseAmplitude = absChange * 0.18;
 
   const out = new Array(points);
   for (let i = 0; i < points; i += 1) {
@@ -52,21 +53,17 @@ function generateSparkline(seed, changePercent) {
         eased = t * t * (3 - 2 * t);
         break;
       case 1:
-        eased = Math.pow(t, 2.4);
+        eased = Math.pow(t, 1.6);
         break;
       case 2:
-        eased = 1 - Math.pow(1 - t, 2.4);
-        break;
-      case 3:
-        eased = t * t * (3 - 2 * t) + Math.sin((t + wavePhase) * Math.PI * waveFreq) * 0.06;
+        eased = 1 - Math.pow(1 - t, 1.6);
         break;
       default:
-        eased = 0.5 * (1 - Math.cos(Math.PI * Math.pow(t, 1.2)));
+        eased = 0.5 * (1 - Math.cos(Math.PI * t));
     }
     const baseValue = start + totalDelta * eased;
-    const wobble = Math.sin((t + wavePhase) * Math.PI * waveFreq) * noiseAmplitude * 0.35;
-    const noise = (rand() - 0.5) * noiseAmplitude;
-    out[i] = Number((baseValue + noise + wobble).toFixed(3));
+    const noise = (rand() - 0.5) * noiseAmplitude * 2;
+    out[i] = Number((baseValue + noise).toFixed(3));
   }
   return out;
 }

@@ -1,16 +1,15 @@
 package com.finance.app.service.overview;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.finance.app.config.OverviewProperties;
 import com.finance.app.dto.response.overview.WidgetKind;
 import com.finance.user.service.OverviewSaveSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 @Component
 @Order(20)
@@ -20,47 +19,45 @@ public class OverviewWidgetSizeSanitizer implements OverviewSaveSanitizer {
     private final OverviewProperties properties;
 
     @Override
-    public Map<String, Object> sanitize(Map<String, Object> overview) {
-        if (overview == null) return Map.of();
-        Object sectionsObj = overview.get("sections");
-        if (!(sectionsObj instanceof List<?> sections)) return overview;
-        List<Object> clamped = new ArrayList<>(sections.size());
-        for (Object o : sections) {
-            if (!(o instanceof Map<?, ?> entry)) {
-                clamped.add(o);
+    public JsonNode sanitize(JsonNode overview) {
+        if (overview == null || !overview.isObject()) return overview;
+        JsonNode sectionsNode = overview.get("sections");
+        if (sectionsNode == null || !sectionsNode.isArray()) return overview;
+        ArrayNode clamped = JsonNodeFactory.instance.arrayNode(sectionsNode.size());
+        for (JsonNode entry : sectionsNode) {
+            if (!entry.isObject()) {
+                clamped.add(entry);
                 continue;
             }
-            clamped.add(clampEntry(entry));
+            clamped.add(clampEntry((ObjectNode) entry.deepCopy()));
         }
-        Map<String, Object> result = new LinkedHashMap<>(overview);
-        result.put("sections", clamped);
-        return result;
+        ((ObjectNode) overview).set("sections", clamped);
+        return overview;
     }
 
-    private Map<String, Object> clampEntry(Map<?, ?> entry) {
-        LinkedHashMap<String, Object> mutable = new LinkedHashMap<>();
-        for (Map.Entry<?, ?> e : entry.entrySet()) {
-            mutable.put(String.valueOf(e.getKey()), e.getValue());
-        }
-        WidgetKind kind = resolveKind(mutable.get("kind"));
-        if (kind == null) return mutable;
+    private JsonNode clampEntry(ObjectNode entry) {
+        WidgetKind kind = resolveKind(entry.path("kind").asText(null));
+        if (kind == null) return entry;
         OverviewProperties.WidgetSettings settings = properties.settingsFor(kind);
-        Object w = mutable.get("w");
-        Object h = mutable.get("h");
-        int clampedW = w instanceof Number wn ? settings.clampW(wn.intValue()) : settings.defaults().w();
-        int clampedH = h instanceof Number hn ? settings.clampH(hn.intValue()) : settings.defaults().h();
-        mutable.put("w", clampedW);
-        mutable.put("h", clampedH);
-        Object y = mutable.get("y");
+        int clampedW = entry.path("w").isNumber()
+                ? settings.clampW(entry.get("w").asInt())
+                : settings.defaults().w();
+        int clampedH = entry.path("h").isNumber()
+                ? settings.clampH(entry.get("h").asInt())
+                : settings.defaults().h();
+        entry.put("w", clampedW);
+        entry.put("h", clampedH);
         int maxY = Math.max(0, properties.limits().maxLayoutRows() - clampedH);
-        if (y instanceof Number yn) mutable.put("y", Math.max(0, Math.min(maxY, yn.intValue())));
-        return mutable;
+        if (entry.path("y").isNumber()) {
+            entry.put("y", Math.max(0, Math.min(maxY, entry.get("y").asInt())));
+        }
+        return entry;
     }
 
-    private WidgetKind resolveKind(Object raw) {
-        if (!(raw instanceof String s) || s.isBlank()) return null;
+    private WidgetKind resolveKind(String raw) {
+        if (raw == null || raw.isBlank()) return null;
         try {
-            return WidgetKind.valueOf(s);
+            return WidgetKind.valueOf(raw);
         } catch (IllegalArgumentException ex) {
             return null;
         }

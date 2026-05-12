@@ -6,6 +6,7 @@ import com.finance.market.core.service.TrackedAssetCommandService;
 import com.finance.market.core.service.TrackedAssetQueryService;
 
 
+import com.finance.market.core.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.market.core.dto.request.BulkTrackedAssetOrderUpdateRequest;
 import com.finance.market.core.dto.request.UpsertTrackedAssetRequest;
 import com.finance.market.core.dto.response.TrackedAssetResponse;
@@ -33,15 +34,16 @@ public class TrackedAssetAdminService {
 
     @Transactional
     public TrackedAssetResponse upsert(UpsertTrackedAssetRequest request) {
+        TrackedAssetUpsertCommand command = trackedAssetMapper.toUpsertCommand(request);
         TrackedAssetResponse previous = trackedAssetQueryService
-            .getTrackedAsset(request.getAssetType(), request.getAssetCode())
+            .getTrackedAsset(command.getAssetType(), command.getAssetCode())
             .orElse(null);
 
         if (previous == null) {
-            trackedAssetRefreshService.validateAssetExists(request.getAssetType(), request.getAssetCode());
+            trackedAssetRefreshService.validateAssetExists(command);
         }
 
-        TrackedAssetResponse data = trackedAssetCommandService.upsert(trackedAssetMapper.toUpsertCommand(request));
+        TrackedAssetResponse data = trackedAssetCommandService.upsert(command);
 
         boolean shouldRefresh = shouldRefreshAfterUpsert(previous, data);
         TrackedAssetType type = data.getAssetType();

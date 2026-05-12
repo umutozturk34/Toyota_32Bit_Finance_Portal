@@ -1,7 +1,7 @@
 package com.finance.app.service.overview;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.finance.app.dto.response.overview.WidgetKind;
 import com.finance.app.dto.response.overview.WidgetSection;
 import com.finance.user.dto.UserLayoutResponse;

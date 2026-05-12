@@ -220,6 +220,13 @@
         "weak": "Zayıf (Yüksek/Düşük)",
         "strong": "Güçlü (OHLC)"
       },
+      "crosshair": {
+        "price": "Fiyat",
+        "sell": "Satış",
+        "buy": "Alış",
+        "effBuy": "Ef. Alış",
+        "effSell": "Ef. Satış"
+      },
       "vs": "vs",
       "trend": {
         "up": "Yükseliş",
@@ -586,9 +593,7 @@
       "countLabel": "döviz çifti",
       "buyLabel": "Alış:",
       "sellLabel": "Satış:",
-      "tcmbRates": "TCMB Kurları",
-      "forexBuy": "Döviz Alış:",
-      "forexSell": "Döviz Satış:",
+      "banknoteRates": "Efektif Kurlar",
       "banknoteBuy": "Efektif Alış:",
       "banknoteSell": "Efektif Satış:",
       "loading": "Döviz kurları yükleniyor…",
@@ -795,8 +800,6 @@
       "sell": "Satış",
       "delta24h": "24s Δ",
       "deltaTL": "Δ (TL)",
-      "tcmbBuy": "TCMB Alış",
-      "tcmbSell": "TCMB Satış",
       "banknoteBuy": "Efektif Alış",
       "banknoteSell": "Efektif Satış"
     },

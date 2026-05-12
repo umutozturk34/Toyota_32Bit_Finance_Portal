@@ -1,7 +1,7 @@
 package com.finance.market.fund.dto.internal;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import com.finance.market.fund.dto.external.deserializer.SafeBigDecimalDeserializer;
 
 import java.math.BigDecimal;

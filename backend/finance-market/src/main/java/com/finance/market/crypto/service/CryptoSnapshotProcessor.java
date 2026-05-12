@@ -8,6 +8,7 @@ import com.finance.market.core.cache.MarketCacheService;
 
 import com.finance.market.crypto.client.CoinGeckoClient;
 import com.finance.market.crypto.config.CryptoProperties;
+import com.finance.market.crypto.dto.external.CoinGeckoCandleDto;
 import com.finance.market.crypto.dto.external.CoinGeckoSnapshotDto;
 import com.finance.market.crypto.model.Crypto;
 import com.finance.common.model.TrackedAssetType;
@@ -94,9 +95,19 @@ public class CryptoSnapshotProcessor implements MarketSnapshotProcessor {
     }
 
     public boolean exists(String coinId) {
-        return ApiAssetValidator.validate(coinId, false, cid -> {
+        return exists(coinId, null);
+    }
+
+    public boolean exists(String coinId, String binanceSymbol) {
+        boolean coinGeckoExists = ApiAssetValidator.validate(coinId, false, cid -> {
             List<CoinGeckoSnapshotDto> result = coinGeckoClient.fetchMarkets(vsUsd, List.of(cid));
             return !result.isEmpty();
         }, log, "Crypto");
+        if (!coinGeckoExists) return false;
+        if (binanceSymbol == null || binanceSymbol.isBlank()) return true;
+        return ApiAssetValidator.validate(binanceSymbol, true, sym -> {
+            List<CoinGeckoCandleDto> klines = coinGeckoClient.fetchBinanceKlines(coinId, sym, 0L, 1);
+            return !klines.isEmpty();
+        }, log, "Binance");
     }
 }

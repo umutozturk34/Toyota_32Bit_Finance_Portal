@@ -131,7 +131,7 @@ public class PortfolioBackfillService {
         if (active.isEmpty()) return;
 
         List<AssetKey> keys = active.stream().map(PortfolioPosition::toAssetKey).distinct().toList();
-        Map<AssetKey, BigDecimal> dayPrices = assetPricingPort.getPricesTry(keys);
+        Map<AssetKey, BigDecimal> dayPrices = assetPricingPort.getExitPricesTry(keys);
         LocalDateTime ts = LocalDateTime.now();
 
         if (!assetExists) {

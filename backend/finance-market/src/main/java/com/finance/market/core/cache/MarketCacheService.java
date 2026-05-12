@@ -1,6 +1,6 @@
 package com.finance.market.core.cache;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.market.core.model.BaseAsset;
 import lombok.extern.log4j.Log4j2;

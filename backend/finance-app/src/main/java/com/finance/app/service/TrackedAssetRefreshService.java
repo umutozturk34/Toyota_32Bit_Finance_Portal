@@ -1,4 +1,5 @@
 package com.finance.app.service;
+import com.finance.market.core.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.market.core.service.TrackedAssetDataService;
 
 
@@ -22,8 +23,8 @@ public class TrackedAssetRefreshService {
         services.forEach(s -> this.dataServices.put(s.getAssetType(), s));
     }
 
-    public void validateAssetExists(TrackedAssetType type, String code) {
-        resolve(type).validateExists(code);
+    public void validateAssetExists(TrackedAssetUpsertCommand command) {
+        resolve(command.getAssetType()).validateExists(command);
     }
 
     @Async("taskExecutor")

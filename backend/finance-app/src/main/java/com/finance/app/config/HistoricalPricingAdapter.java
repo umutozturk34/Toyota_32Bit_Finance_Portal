@@ -1,17 +1,16 @@
 package com.finance.app.config;
-import com.finance.market.forex.config.ForexProperties;
-
 
 import com.finance.common.config.AppProperties;
 
 
 import com.finance.market.core.dto.response.CandleResponse;
+import com.finance.market.forex.dto.response.ForexCandleResponse;
 import com.finance.market.fund.dto.response.FundCandleResponse;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.service.HistoricalPricingPort;
 import com.finance.market.core.service.MarketHistoryProvider;
 import com.finance.shared.util.EnumDispatcher;
-import com.finance.market.core.util.SyntheticPriceCalculator;
+import com.finance.market.core.util.PriceCrossCalculator;
 import com.finance.portfolio.config.PortfolioProperties;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
@@ -27,19 +26,18 @@ import java.util.stream.Stream;
 @Component
 public class HistoricalPricingAdapter implements HistoricalPricingPort {
 
+    private static final String USD_CURRENCY_CODE = "USD";
+
     private final int priceScale;
     private final int rateLookbackDays;
-    private final String usdPairCode;
     private final Map<MarketType, MarketHistoryProvider> providers;
 
     public HistoricalPricingAdapter(List<MarketHistoryProvider> providerList,
                                      AppProperties appProperties,
-                                     ForexProperties forexProperties,
                                      PortfolioProperties portfolioProperties) {
         this.providers = EnumDispatcher.from(MarketType.class, providerList, MarketHistoryProvider::getMarketType);
         this.priceScale = appProperties.getScale();
         this.rateLookbackDays = portfolioProperties.getHistoricalRateLookbackDays();
-        this.usdPairCode = forexProperties.getBaseCurrency();
     }
 
     @Override
@@ -68,14 +66,14 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
             return usdSeries;
         }
         Map<LocalDate, BigDecimal> rates = indexByDate(
-                forexProvider.getHistoryInRange(usdPairCode, from.minusDays(rateLookbackDays), to));
+                forexProvider.getHistoryInRange(USD_CURRENCY_CODE, from.minusDays(rateLookbackDays), to));
         if (rates.isEmpty()) {
-            log.warn("{} rates empty for {}..{} — crypto series stays in USD", usdPairCode, from, to);
+            log.warn("{} rates empty for {}..{} — crypto series stays in USD", USD_CURRENCY_CODE, from, to);
             return usdSeries;
         }
         return usdSeries.entrySet().stream()
                 .map(e -> Map.entry(e.getKey(),
-                        SyntheticPriceCalculator.safeMultiply(e.getValue(), closestPriorRate(rates, e.getKey()), priceScale)))
+                        PriceCrossCalculator.safeMultiply(e.getValue(), closestPriorRate(rates, e.getKey()), priceScale)))
                 .filter(e -> e.getValue() != null)
                 .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
     }
@@ -99,12 +97,14 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
     }
 
     private static LocalDate candleDate(Object candle) {
+        if (candle instanceof ForexCandleResponse fx) return fx.candleDate().toLocalDate();
         if (candle instanceof CandleResponse c) return c.candleDate().toLocalDate();
         if (candle instanceof FundCandleResponse f) return f.candleDate().toLocalDate();
         return null;
     }
 
     private static BigDecimal candleClose(Object candle) {
+        if (candle instanceof ForexCandleResponse fx) return fx.sellingPrice();
         if (candle instanceof CandleResponse c) return c.close();
         if (candle instanceof FundCandleResponse f) return f.price();
         return null;

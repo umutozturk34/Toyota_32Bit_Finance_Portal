@@ -1,4 +1,4 @@
-package com.finance.common.exception;
+package com.finance.shared.exception;
 
 public class ExternalApiRequestException extends RuntimeException {
     private final String serviceName;

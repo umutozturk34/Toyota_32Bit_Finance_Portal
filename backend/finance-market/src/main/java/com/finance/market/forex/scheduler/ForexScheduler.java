@@ -1,13 +1,10 @@
 package com.finance.market.forex.scheduler;
 import com.finance.market.core.scheduler.AbstractMarketScheduler;
-
 import com.finance.market.core.scheduler.SchedulerPorts;
-
 
 import com.finance.common.model.MarketType;
 import com.finance.market.forex.service.ForexDataService;
 import com.finance.shared.service.TaskTrackingService;
-import com.finance.market.forex.service.TcmbForexService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -16,16 +13,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class ForexScheduler extends AbstractMarketScheduler {
 
-    private final TcmbForexService tcmbForexService;
-    private final ForexDataService yahooForexService;
+    private final ForexDataService forexDataService;
 
-    public ForexScheduler(TcmbForexService tcmbForexService,
-                          ForexDataService yahooForexService,
+    public ForexScheduler(ForexDataService forexDataService,
                           TaskTrackingService taskTracker,
                           SchedulerPorts ports) {
         super(taskTracker, ports);
-        this.tcmbForexService = tcmbForexService;
-        this.yahooForexService = yahooForexService;
+        this.forexDataService = forexDataService;
     }
 
     @Override
@@ -35,22 +29,11 @@ public class ForexScheduler extends AbstractMarketScheduler {
 
     @Override
     protected void runRefresh() {
-        tcmbForexService.fetchAndSaveTcmbRates();
-        yahooForexService.syncAllYahoo();
+        forexDataService.refreshAll();
     }
 
-    @Scheduled(cron = "${app.scheduler.forex.morning-cron}", zone = "${app.timezone}")
-    public void runMorningForexUpdate() {
-        executeMarketUpdate("scheduled-forex-morning", "Scheduled morning forex update (10:30)");
-    }
-
-    @Scheduled(cron = "${app.scheduler.forex.afternoon-cron}", zone = "${app.timezone}")
-    public void runAfternoonForexUpdate() {
-        executeMarketUpdate("scheduled-forex-afternoon", "Scheduled afternoon forex update (16:00)");
-    }
-
-    @Scheduled(cron = "${app.scheduler.forex.evening-cron}", zone = "${app.timezone}")
-    public void runEveningForexUpdate() {
-        executeMarketUpdate("scheduled-forex-evening", "Scheduled evening forex update (22:00)");
+    @Scheduled(cron = "${app.scheduler.forex.daily-cron}", zone = "${app.timezone}")
+    public void runDailyForexUpdate() {
+        executeMarketUpdate("scheduled-forex-daily", "Scheduled daily forex update (16:30)");
     }
 }

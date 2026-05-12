@@ -1,13 +1,11 @@
 package com.finance.market.forex.mapper;
 
-import com.finance.market.core.mapper.MarketMetadataBuilder;
-
-
-import com.finance.market.core.dto.response.CandleResponse;
-import com.finance.shared.dto.response.ForexMetadata;
 import com.finance.market.core.dto.response.MarketAssetResponse;
+import com.finance.market.core.mapper.MarketMetadataBuilder;
+import com.finance.market.forex.dto.response.ForexCandleResponse;
 import com.finance.market.forex.model.Forex;
 import com.finance.market.forex.model.ForexCandle;
+import com.finance.shared.dto.response.ForexMetadata;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -17,15 +15,27 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public abstract class ForexResponseMapper implements MarketMetadataBuilder<Forex, ForexMetadata> {
 
-    public abstract List<CandleResponse> toForexCandleResponses(List<ForexCandle> candles);
+    @Mapping(target = "candleDate", source = "candleDate")
+    @Mapping(target = "open", source = "sellingPrice")
+    @Mapping(target = "high", source = "sellingPrice")
+    @Mapping(target = "low", source = "sellingPrice")
+    @Mapping(target = "close", source = "sellingPrice")
+    @Mapping(target = "sellingPrice", source = "sellingPrice")
+    @Mapping(target = "buyingPrice", source = "buyingPrice")
+    @Mapping(target = "effectiveBuyingPrice", source = "effectiveBuyingPrice")
+    @Mapping(target = "effectiveSellingPrice", source = "effectiveSellingPrice")
+    public abstract ForexCandleResponse toForexCandleResponse(ForexCandle candle);
+
+    public abstract List<ForexCandleResponse> toForexCandleResponses(List<ForexCandle> candles);
 
     @Mapping(target = "code", source = "currencyCode")
-    @Mapping(target = "name", source = "currencyNameTr")
-    @Mapping(target = "price", source = "currentPrice")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "price", source = "sellingPrice")
     @Mapping(target = "changeAmount", source = "changeAmount")
     @Mapping(target = "changePercent", source = "changePercent")
+    @Mapping(target = "lastUpdated", source = "lastUpdated")
     @Mapping(target = "type", expression = "java(MarketType.FOREX)")
-    @Mapping(target = "image", ignore = true)
+    @Mapping(target = "image", source = "image")
     @Mapping(target = "metadata", source = "forex", qualifiedByName = "metadata")
     public abstract MarketAssetResponse toMarketAssetResponse(Forex forex);
 
@@ -35,18 +45,11 @@ public abstract class ForexResponseMapper implements MarketMetadataBuilder<Forex
     @Named("metadata")
     public ForexMetadata buildMetadata(Forex forex) {
         return new ForexMetadata(
+                forex.getBuyingPrice(),
                 forex.getSellingPrice(),
-                forex.getForexBuying(),
-                forex.getForexSelling(),
-                forex.getUnit(),
-                forex.getBanknoteBuying(),
-                forex.getBanknoteSelling(),
-                forex.getYahooUpdatedAt(),
-                forex.getTcmbUpdatedAt(),
-                forex.getOpenPrice(),
-                forex.getDayHigh(),
-                forex.getDayLow(),
-                forex.getVolume()
+                forex.getEffectiveBuyingPrice(),
+                forex.getEffectiveSellingPrice(),
+                forex.isTradable()
         );
     }
 }

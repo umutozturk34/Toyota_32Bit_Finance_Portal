@@ -48,7 +48,7 @@ class SnapshotCalculationServiceTest {
     void shouldCalculatePnlFromCurrentVsEntryPrice_whenBuildingAssetSnapshot() {
         PortfolioPosition pos = stubPosition(AssetType.CRYPTO, "bitcoin",
                 new BigDecimal("0.50000000"), new BigDecimal("2500000.0000"));
-        when(pricingPort.getPriceTry(MarketType.CRYPTO, "bitcoin"))
+        when(pricingPort.getExitPriceTry(MarketType.CRYPTO, "bitcoin"))
                 .thenReturn(new BigDecimal("2600000.0000"));
         LocalDateTime timestamp = LocalDateTime.of(2026, 4, 10, 23, 0);
 
@@ -66,7 +66,7 @@ class SnapshotCalculationServiceTest {
     void shouldShowFullLossInAssetSnapshot_whenPriceIsNull() {
         PortfolioPosition pos = stubPosition(AssetType.STOCK, "DELISTED",
                 new BigDecimal("100.00000000"), new BigDecimal("50.0000"));
-        when(pricingPort.getPriceTry(MarketType.STOCK, "DELISTED")).thenReturn(null);
+        when(pricingPort.getExitPriceTry(MarketType.STOCK, "DELISTED")).thenReturn(null);
 
         PortfolioAssetDailySnapshot snapshot = service.buildAssetSnapshot(1L, pos, LocalDateTime.now());
 
@@ -82,9 +82,9 @@ class SnapshotCalculationServiceTest {
                 .thenReturn(List.of(
                         stubPosition(AssetType.CRYPTO, "bitcoin", new BigDecimal("1.00000000"), new BigDecimal("2400000.0000")),
                         stubPosition(AssetType.STOCK, "THYAO.IS", new BigDecimal("100.00000000"), new BigDecimal("40.0000"))));
-        when(pricingPort.getPriceTry(MarketType.CRYPTO, "bitcoin"))
+        when(pricingPort.getExitPriceTry(MarketType.CRYPTO, "bitcoin"))
                 .thenReturn(new BigDecimal("2500000.0000"));
-        when(pricingPort.getPriceTry(MarketType.STOCK, "THYAO.IS"))
+        when(pricingPort.getExitPriceTry(MarketType.STOCK, "THYAO.IS"))
                 .thenReturn(new BigDecimal("50.0000"));
 
         PortfolioDailySnapshot snapshot = service.buildAggregateSnapshot(portfolio, LocalDateTime.now());
@@ -100,7 +100,7 @@ class SnapshotCalculationServiceTest {
         when(positionRepository.findByPortfolioId(1L))
                 .thenReturn(List.of(stubPosition(AssetType.FUND, "AAK",
                         new BigDecimal("100.00000000"), new BigDecimal("100.0000"))));
-        when(pricingPort.getPriceTry(MarketType.FUND, "AAK"))
+        when(pricingPort.getExitPriceTry(MarketType.FUND, "AAK"))
                 .thenReturn(new BigDecimal("110.0000"));
 
         PortfolioDailySnapshot snapshot = service.buildAggregateSnapshot(portfolio, LocalDateTime.now());

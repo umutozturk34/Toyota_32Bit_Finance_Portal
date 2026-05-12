@@ -21,6 +21,7 @@
 		<jacoco.version>0.8.13</jacoco.version>
 		<byte-buddy.version>1.17.8</byte-buddy.version>
 		<finance-common.version>0.14.1-SNAPSHOT</finance-common.version>
+		<hibernate.version>7.3.4.Final</hibernate.version>
 	</properties>
 
 	<repositories>

@@ -1,8 +1,8 @@
 package com.finance.market.core.cache;
 
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.common.model.MarketType;
 import com.finance.shared.util.RedisKeys;

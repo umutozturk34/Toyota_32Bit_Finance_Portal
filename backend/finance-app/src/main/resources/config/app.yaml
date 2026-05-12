@@ -6,7 +6,7 @@ app:
     connect-timeout-ms: 10000
     read-timeout-ms: 30000
     default-user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    bond-max-in-memory-size-mb: 10
+    evds-max-in-memory-size-mb: 10
     news-max-in-memory-size-mb: 5
 
   async:

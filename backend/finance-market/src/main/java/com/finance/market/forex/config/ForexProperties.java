@@ -5,16 +5,18 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "app.forex")
 public class ForexProperties {
 
-    private BigDecimal spreadRate = new BigDecimal("0.01");
-    private String chartRange = "max";
-    private String chartInterval = "1d";
+    private String dovizDatagroup = "bie_dkdovytl";
+    private String efektifDatagroup = "bie_dkefkytl";
+    private LocalDate backfillStartDate = LocalDate.of(1995, 1, 1);
     private int batchMinSample = 5;
-    private String baseCurrency = "USDTRY";
+    private Map<String, String> flagEmojis = new HashMap<>();
 }

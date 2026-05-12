@@ -1,16 +1,14 @@
 package com.finance.market.forex.service;
 
-import com.finance.market.core.service.MarketHistoryProvider;
-
-
-import com.finance.market.core.dto.response.CandleResponse;
 import com.finance.common.exception.ResourceNotFoundException;
-import com.finance.market.forex.mapper.ForexResponseMapper;
-import com.finance.shared.model.CandlePeriod;
-import com.finance.market.forex.model.ForexCandle;
 import com.finance.common.model.MarketType;
+import com.finance.market.core.service.MarketHistoryProvider;
+import com.finance.market.forex.dto.response.ForexCandleResponse;
+import com.finance.market.forex.mapper.ForexResponseMapper;
+import com.finance.market.forex.model.ForexCandle;
 import com.finance.market.forex.repository.ForexCandleRepository;
 import com.finance.market.forex.repository.ForexRepository;
+import com.finance.shared.model.CandlePeriod;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -37,16 +35,16 @@ public class ForexQueryService implements MarketHistoryProvider {
     }
 
     @Override
-    public List<CandleResponse> getHistory(String currencyCode, CandlePeriod period) {
+    public List<ForexCandleResponse> getHistory(String currencyCode, CandlePeriod period) {
         return loadCandles(currencyCode, period.toStartDateTime(), LocalDateTime.now());
     }
 
     @Override
-    public List<CandleResponse> getHistoryInRange(String currencyCode, LocalDate from, LocalDate to) {
+    public List<ForexCandleResponse> getHistoryInRange(String currencyCode, LocalDate from, LocalDate to) {
         return loadCandles(currencyCode, from.atStartOfDay(), to.atTime(LocalTime.MAX));
     }
 
-    private List<CandleResponse> loadCandles(String currencyCode, LocalDateTime from, LocalDateTime to) {
+    private List<ForexCandleResponse> loadCandles(String currencyCode, LocalDateTime from, LocalDateTime to) {
         String normalized = currencyCode.strip().toUpperCase();
         if (!forexRepository.existsById(normalized)) {
             throw new ResourceNotFoundException("error.market.forexNotFound", normalized);

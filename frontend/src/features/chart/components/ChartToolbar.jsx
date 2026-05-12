@@ -11,6 +11,7 @@ const ChartToolbar = ({
     chartType, setChartType,
     magnetMode, setMagnetMode,
     symbol, trend, crosshairData,
+    assetType,
     indicators, drawings,
     isAnyToolActive, activeTool, activeFibTool,
     cancelAllDrawing,
@@ -113,14 +114,44 @@ const ChartToolbar = ({
                     <span style={{ opacity: 0.7 }}>({trend.change > 0 ? '+' : ''}{trend.change.toFixed(2)}%)</span>
                 </div>
             )}
-            {crosshairData && crosshairData.open != null && (
-                <div className="flex items-center gap-3 text-[11px] font-mono">
-                    <span className="text-fg-muted">O <span className="text-fg">{Number(crosshairData.open).toFixed(2)}</span></span>
-                    <span className="text-fg-muted">H <span className="text-[#10b981]">{Number(crosshairData.high).toFixed(2)}</span></span>
-                    <span className="text-fg-muted">L <span className="text-[#ef4444]">{Number(crosshairData.low).toFixed(2)}</span></span>
-                    <span className="text-fg-muted">C <span style={{ color: Number(crosshairData.close) >= Number(crosshairData.open) ? '#10b981' : '#ef4444' }}>{Number(crosshairData.close).toFixed(2)}</span></span>
-                </div>
-            )}
+            {crosshairData && (() => {
+                const isFund = assetType === 'FUND';
+                const isForex = assetType === 'FOREX';
+                if (isFund && crosshairData.close != null) {
+                    return (
+                        <div className="flex items-center gap-3 text-[11px] font-mono">
+                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.price')} <span className="text-fg">{Number(crosshairData.close).toFixed(4)}</span></span>
+                        </div>
+                    );
+                }
+                if (isForex && crosshairData.sellingPrice != null) {
+                    return (
+                        <div className="flex items-center gap-3 text-[11px] font-mono">
+                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.sell')} <span className="text-fg">{Number(crosshairData.sellingPrice).toFixed(4)}</span></span>
+                            {crosshairData.buyingPrice != null && (
+                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.buy')} <span className="text-fg">{Number(crosshairData.buyingPrice).toFixed(4)}</span></span>
+                            )}
+                            {crosshairData.effectiveBuyingPrice != null && (
+                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.effBuy')} <span className="text-fg">{Number(crosshairData.effectiveBuyingPrice).toFixed(4)}</span></span>
+                            )}
+                            {crosshairData.effectiveSellingPrice != null && (
+                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.effSell')} <span className="text-fg">{Number(crosshairData.effectiveSellingPrice).toFixed(4)}</span></span>
+                            )}
+                        </div>
+                    );
+                }
+                if (crosshairData.open != null) {
+                    return (
+                        <div className="flex items-center gap-3 text-[11px] font-mono">
+                            <span className="text-fg-muted">O <span className="text-fg">{Number(crosshairData.open).toFixed(2)}</span></span>
+                            <span className="text-fg-muted">H <span className="text-[#10b981]">{Number(crosshairData.high).toFixed(2)}</span></span>
+                            <span className="text-fg-muted">L <span className="text-[#ef4444]">{Number(crosshairData.low).toFixed(2)}</span></span>
+                            <span className="text-fg-muted">C <span style={{ color: Number(crosshairData.close) >= Number(crosshairData.open) ? '#10b981' : '#ef4444' }}>{Number(crosshairData.close).toFixed(2)}</span></span>
+                        </div>
+                    );
+                }
+                return null;
+            })()}
             <div className="flex items-center gap-2.5 ml-auto">
                 {indicators.filter(i => i.visible && i.type !== 'RSI').map(ind => (
                     <span key={ind.id} className="flex items-center gap-1 text-[11px] font-medium" style={{ color: ind.color }}>

@@ -61,9 +61,9 @@ class AssetPricingAdapterTest {
         return f;
     }
 
-    private Forex forexWith(String currentPrice, String sellingPrice) {
+    private Forex forexWith(String buyingPrice, String sellingPrice) {
         Forex fx = new Forex();
-        fx.setCurrentPrice(currentPrice != null ? new BigDecimal(currentPrice) : null);
+        fx.setBuyingPrice(buyingPrice != null ? new BigDecimal(buyingPrice) : null);
         fx.setSellingPrice(sellingPrice != null ? new BigDecimal(sellingPrice) : null);
         return fx;
     }
@@ -97,12 +97,12 @@ class AssetPricingAdapterTest {
     }
 
     @Test
-    void getPriceTryForexFallsBackToCurrentPriceWhenSellingPriceNull() {
+    void getPriceTryForexReturnsNullWhenSellingPriceMissing() {
         when(forexCacheService.getSnapshot("USD")).thenReturn(forexWith("38.0000", null));
 
         BigDecimal price = adapter.getPriceTry(MarketType.FOREX, "USD");
 
-        assertThat(price).isEqualByComparingTo(new BigDecimal("38.0000"));
+        assertThat(price).isNull();
     }
 
     @Test

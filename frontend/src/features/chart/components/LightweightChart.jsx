@@ -60,7 +60,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
     const isForex = assetType === 'FOREX';
     const showVolumeToggle = !isFund && !isForex;
     const showFibTab = !isFund;
-    const allowCandle = !isFund;
+    const allowCandle = !isFund && !isForex;
 
     const sidebarOpen = useAppStore((s) => s.chartSidebarOpen);
     const setSidebarOpen = useAppStore((s) => s.setChartSidebarOpen);
@@ -69,7 +69,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
 
     const { config, setField } = useChartConfig(assetType, symbol, timeRange, !compareSymbol);
     const showVolume = config?.showVolume ?? false;
-    const chartType = config?.chartType ?? (isFund ? 'line' : 'candle');
+    const chartType = config?.chartType ?? ((isFund || isForex) ? 'line' : 'candle');
     const magnetMode = (['off', 'weak', 'strong'].includes(config?.magnetMode)) ? config.magnetMode : 'off';
     const selectedIcon = config?.selectedIcon ?? '\u{1F680}';
     const iconSize = config?.iconSize ?? 22;
@@ -255,6 +255,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                     symbol={symbol}
                     trend={trend}
                     crosshairData={crosshairData}
+                    assetType={assetType}
                     indicators={filteredIndicators}
                     drawings={drawings}
                     isAnyToolActive={isAnyToolActive}

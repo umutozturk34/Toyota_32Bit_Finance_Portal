@@ -167,7 +167,9 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
           />
           <div className="flex items-center gap-3">
             {displayBadge ? (
-              <img src={displayBadge} alt={displayLabel} className="w-10 h-10 rounded-xl" />
+              /^https?:\/\//i.test(displayBadge)
+                ? <img src={displayBadge} alt={displayLabel} className="w-10 h-10 rounded-xl" />
+                : <span className="flex items-center justify-center w-10 h-10 rounded-xl text-2xl">{displayBadge}</span>
             ) : (
               <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 text-sm font-bold text-accent">
                 {displayBadgeText}

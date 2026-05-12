@@ -1,6 +1,6 @@
 package com.finance.app.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.finance.market.bond.model.Bond;
 import com.finance.market.bond.repository.BondRepository;
 import com.finance.market.core.cache.MarketCacheService;

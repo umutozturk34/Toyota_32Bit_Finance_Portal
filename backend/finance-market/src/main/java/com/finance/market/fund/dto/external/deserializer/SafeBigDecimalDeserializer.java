@@ -1,17 +1,16 @@
 package com.finance.market.fund.dto.external.deserializer;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 
-public class SafeBigDecimalDeserializer extends JsonDeserializer<BigDecimal> {
+public class SafeBigDecimalDeserializer extends ValueDeserializer<BigDecimal> {
 
     @Override
-    public BigDecimal deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        String value = p.getText();
+    public BigDecimal deserialize(JsonParser p, DeserializationContext ctxt) {
+        String value = p.getString();
         if (value == null || value.isBlank() || "-".equals(value)) {
             return null;
         }

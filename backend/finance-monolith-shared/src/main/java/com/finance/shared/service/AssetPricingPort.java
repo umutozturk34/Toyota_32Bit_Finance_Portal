@@ -11,6 +11,10 @@ public interface AssetPricingPort {
 
     BigDecimal getPriceTry(MarketType type, String assetCode);
 
+    default BigDecimal getExitPriceTry(MarketType type, String assetCode) {
+        return getPriceTry(type, assetCode);
+    }
+
     record AssetMeta(String name, String image) {}
 
     record AssetKey(MarketType type, String assetCode) {}
@@ -27,6 +31,12 @@ public interface AssetPricingPort {
                 getAssetMeta(type, assetCode));
     }
 
+    default PriceBundle getExitBundle(MarketType type, String assetCode) {
+        return new PriceBundle(
+                getExitPriceTry(type, assetCode),
+                getAssetMeta(type, assetCode));
+    }
+
     default Map<AssetKey, PriceBundle> getBundles(Collection<AssetKey> keys) {
         return keys.stream()
                 .map(key -> Map.entry(key, java.util.Optional.ofNullable(getBundle(key.type(), key.assetCode()))))
@@ -37,9 +47,29 @@ public interface AssetPricingPort {
                         (a, b) -> a));
     }
 
+    default Map<AssetKey, PriceBundle> getExitBundles(Collection<AssetKey> keys) {
+        return keys.stream()
+                .map(key -> Map.entry(key, java.util.Optional.ofNullable(getExitBundle(key.type(), key.assetCode()))))
+                .filter(e -> e.getValue().isPresent())
+                .collect(Collectors.toUnmodifiableMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().get(),
+                        (a, b) -> a));
+    }
+
     default Map<AssetKey, BigDecimal> getPricesTry(Collection<AssetKey> keys) {
         return keys.stream()
                 .map(key -> Map.entry(key, java.util.Optional.ofNullable(getPriceTry(key.type(), key.assetCode()))))
+                .filter(e -> e.getValue().isPresent())
+                .collect(Collectors.toUnmodifiableMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue().get(),
+                        (a, b) -> a));
+    }
+
+    default Map<AssetKey, BigDecimal> getExitPricesTry(Collection<AssetKey> keys) {
+        return keys.stream()
+                .map(key -> Map.entry(key, java.util.Optional.ofNullable(getExitPriceTry(key.type(), key.assetCode()))))
                 .filter(e -> e.getValue().isPresent())
                 .collect(Collectors.toUnmodifiableMap(
                         Map.Entry::getKey,

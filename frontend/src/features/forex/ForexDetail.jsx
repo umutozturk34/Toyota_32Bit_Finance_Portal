@@ -1,21 +1,23 @@
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { forexService } from './services/forexService';
-import { getForexFlag, getBaseCurrency } from '../../shared/constants/forex';
-import { getChangeClass, changeColors, formatPrice, formatChange, formatPercent } from '../../shared/utils/formatters';
+import { getBaseCurrency } from '../../shared/constants/forex';
+import { formatPrice } from '../../shared/utils/formatters';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
 
 const fmt = (price) => formatPrice(price, { minDecimals: 4, maxDecimals: 4 });
 
 function ForexHeader({ asset, code }) {
-  const flag = getForexFlag(code);
   const base = getBaseCurrency(code);
 
   return (
     <>
-      <span className="text-2xl">{flag}</span>
+      {asset.image
+        ? (/^https?:\/\//i.test(asset.image)
+            ? <img src={asset.image} alt={code} className="h-6 w-9 rounded-sm object-cover" />
+            : <span className="text-2xl leading-none">{asset.image}</span>)
+        : <span className="text-2xl">💱</span>}
       <div>
         <h1 className="text-xl font-bold text-fg">{base}/TRY</h1>
         <p className="text-xs text-fg-muted">{asset.name}</p>
@@ -27,27 +29,14 @@ function ForexHeader({ asset, code }) {
 function ForexMetadata({ asset }) {
   const { t } = useTranslation();
   const meta = asset.metadata || {};
-  const cls = getChangeClass(asset.changeAmount);
   const sellingPrice = meta.sellingPrice;
+  const buyingPrice = meta.buyingPrice;
   return (
     <MetadataTiles tiles={[
-      { label: t('marketDetail.forex.buy'), value: `₺${fmt(sellingPrice ?? asset.price)}` },
-      { label: t('marketDetail.forex.sell'), value: `₺${fmt(asset.price)}` },
-      {
-        label: t('marketDetail.forex.delta24h'),
-        color: changeColors[cls],
-        value: (
-          <span className="flex items-center gap-0.5">
-            {asset.changeAmount > 0 ? <ArrowUpRight className="h-3 w-3" /> : asset.changeAmount < 0 ? <ArrowDownRight className="h-3 w-3" /> : null}
-            {formatPercent(asset.changePercent)}
-          </span>
-        ),
-      },
-      { label: t('marketDetail.forex.deltaTL'), value: `${formatChange(asset.changeAmount)} TRY`, color: changeColors[cls] },
-      meta.forexBuying != null && { label: t('marketDetail.forex.tcmbBuy'), value: `₺${fmt(meta.forexBuying)}` },
-      meta.forexSelling != null && { label: t('marketDetail.forex.tcmbSell'), value: `₺${fmt(meta.forexSelling)}` },
-      meta.banknoteBuying != null && { label: t('marketDetail.forex.banknoteBuy'), value: `₺${fmt(meta.banknoteBuying)}` },
-      meta.banknoteSelling != null && { label: t('marketDetail.forex.banknoteSell'), value: `₺${fmt(meta.banknoteSelling)}` },
+      { label: t('marketDetail.forex.sell'), value: `₺${fmt(sellingPrice ?? asset.price)}` },
+      buyingPrice != null && { label: t('marketDetail.forex.buy'), value: `₺${fmt(buyingPrice)}` },
+      meta.effectiveBuyingPrice != null && { label: t('marketDetail.forex.banknoteBuy'), value: `₺${fmt(meta.effectiveBuyingPrice)}` },
+      meta.effectiveSellingPrice != null && { label: t('marketDetail.forex.banknoteSell'), value: `₺${fmt(meta.effectiveSellingPrice)}` },
     ]} />
   );
 }

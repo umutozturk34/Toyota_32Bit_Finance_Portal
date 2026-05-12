@@ -17,3 +17,44 @@ app:
       max-drawings-per-asset: 50
       max-indicators-per-asset: 8
       max-fib-tools-per-asset: 12
+    rules:
+      STOCK:
+        allowed-chart-types: [line, candle]
+        allow-volume: true
+        allow-investor-count: false
+        allow-portfolio-size: false
+        allowed-indicators: [SMA, EMA, RSI, MACD, BBANDS]
+        allowed-fib-tools: [RETRACEMENT, EXTENSION]
+        allowed-drawing-types: [TREND_LINE, HORIZONTAL_LINE, VERTICAL_LINE, FREEHAND, TEXT, ICON]
+      CRYPTO:
+        allowed-chart-types: [line, candle]
+        allow-volume: true
+        allow-investor-count: false
+        allow-portfolio-size: false
+        allowed-indicators: [SMA, EMA, RSI, MACD, BBANDS]
+        allowed-fib-tools: [RETRACEMENT, EXTENSION]
+        allowed-drawing-types: [TREND_LINE, HORIZONTAL_LINE, VERTICAL_LINE, FREEHAND, TEXT, ICON]
+      COMMODITY:
+        allowed-chart-types: [line, candle]
+        allow-volume: true
+        allow-investor-count: false
+        allow-portfolio-size: false
+        allowed-indicators: [SMA, EMA, RSI, MACD, BBANDS]
+        allowed-fib-tools: [RETRACEMENT, EXTENSION]
+        allowed-drawing-types: [TREND_LINE, HORIZONTAL_LINE, VERTICAL_LINE, FREEHAND, TEXT, ICON]
+      FOREX:
+        allowed-chart-types: [line]
+        allow-volume: false
+        allow-investor-count: false
+        allow-portfolio-size: false
+        allowed-indicators: [SMA, EMA]
+        allowed-fib-tools: []
+        allowed-drawing-types: [TREND_LINE, HORIZONTAL_LINE, VERTICAL_LINE, FREEHAND, TEXT, ICON]
+      FUND:
+        allowed-chart-types: [line]
+        allow-volume: false
+        allow-investor-count: true
+        allow-portfolio-size: true
+        allowed-indicators: [SMA, EMA]
+        allowed-fib-tools: []
+        allowed-drawing-types: [TREND_LINE, HORIZONTAL_LINE, VERTICAL_LINE, FREEHAND, TEXT, ICON]

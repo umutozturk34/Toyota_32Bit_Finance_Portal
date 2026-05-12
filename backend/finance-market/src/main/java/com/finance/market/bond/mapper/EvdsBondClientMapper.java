@@ -1,11 +1,11 @@
 package com.finance.market.bond.mapper;
 
 
-import com.finance.market.bond.client.EvdsClient;
 import com.finance.market.bond.dto.external.BondRateItemDto;
 import com.finance.market.bond.dto.external.BondSerieDto;
-import com.finance.market.bond.dto.internal.EvdsBondDataResponse;
 import com.finance.market.bond.dto.external.BondSnapshotDto;
+import com.finance.market.core.client.AbstractEvdsClient;
+import com.finance.market.core.dto.internal.EvdsDataResponse;
 import com.finance.market.bond.util.BondSerieFilterUtil;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
@@ -21,11 +21,11 @@ import java.util.Map;
 @Log4j2
 public class EvdsBondClientMapper {
 
-    private static final DateTimeFormatter EVDS_DATE_FMT = EvdsClient.DATE_FMT;
+    private static final DateTimeFormatter EVDS_DATE_FMT = AbstractEvdsClient.DATE_FMT;
 
     public List<BondSnapshotDto> toSnapshotDtos(
             List<BondSerieDto> bondSeries,
-            EvdsBondDataResponse response) {
+            EvdsDataResponse response) {
 
         if (response.items() == null || response.items().isEmpty()) {
             log.warn("EVDS response has no items, returning empty snapshot list");
@@ -62,7 +62,7 @@ public class EvdsBondClientMapper {
         return snapshots;
     }
 
-    public List<BondRateItemDto> toRateItemDtos(EvdsBondDataResponse response, String oranCode) {
+    public List<BondRateItemDto> toRateItemDtos(EvdsDataResponse response, String oranCode) {
         if (response.items() == null || response.items().isEmpty()) {
             log.debug("No items in EVDS response for rate extraction (code={})", oranCode);
             return List.of();

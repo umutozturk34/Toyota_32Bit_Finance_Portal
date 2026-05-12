@@ -25,10 +25,6 @@
 			<groupId>com.finance</groupId>
 			<artifactId>finance-monolith-shared</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.dataformat</groupId>
-			<artifactId>jackson-dataformat-xml</artifactId>
-		</dependency>
 	</dependencies>
 
 </project>

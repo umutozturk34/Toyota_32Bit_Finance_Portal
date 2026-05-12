@@ -1,8 +1,9 @@
 package com.finance.common.cache;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.finance.common.dto.internal.AssetSnapshot;
 import com.finance.common.model.MarketType;
 import lombok.extern.log4j.Log4j2;
@@ -26,8 +27,9 @@ public class RedisAssetSnapshotCache implements AssetSnapshotCache {
 
     public RedisAssetSnapshotCache(RedisConnectionFactory connectionFactory) {
         this.redisTemplate = new StringRedisTemplate(connectionFactory);
-        this.objectMapper = new ObjectMapper()
-                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        this.objectMapper = JsonMapper.builder()
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
     }
 
     @Override

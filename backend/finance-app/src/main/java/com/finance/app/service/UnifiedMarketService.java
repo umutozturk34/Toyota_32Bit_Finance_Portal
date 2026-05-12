@@ -5,7 +5,6 @@ import com.finance.market.core.service.MarketUpdatePort;
 
 import com.finance.market.core.service.HistoricalPricingPort;
 
-import com.finance.market.core.service.MarketAssetProvider.MarketAssetFilters;
 
 import com.finance.market.core.service.MarketAssetProvider;
 

@@ -11,6 +11,10 @@ public interface AssetPricingStrategy {
 
     BigDecimal getPriceTry(String assetCode);
 
+    default BigDecimal getExitPriceTry(String assetCode) {
+        return getPriceTry(assetCode);
+    }
+
     AssetPricingPort.AssetMeta getAssetMeta(String assetCode);
 
     AssetPricingPort.PriceBundle getBundle(String assetCode);

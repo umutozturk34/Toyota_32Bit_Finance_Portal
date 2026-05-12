@@ -19,7 +19,6 @@ public class AppProperties {
     private int scale = 4;
 
     private Api api = new Api();
-    private Tcmb tcmb = new Tcmb();
 
     private Http http = new Http();
     private Async async = new Async();
@@ -41,7 +40,7 @@ public class AppProperties {
         private CoinGeckoProvider coingecko = new CoinGeckoProvider();
         private YahooProvider yahoo = new YahooProvider();
         private BinanceProvider binance = new BinanceProvider();
-        private BondProvider bond = new BondProvider();
+        private EvdsProvider evds = new EvdsProvider();
     }
 
     @Getter
@@ -60,7 +59,7 @@ public class AppProperties {
 
     @Getter
     @Setter
-    public static class BondProvider extends Provider {
+    public static class EvdsProvider extends Provider {
         private String apiKeyHeader = "key";
         private String serieListPath = "/serieList/type=json&code=";
         private String seriesPath = "/series=";
@@ -80,18 +79,11 @@ public class AppProperties {
 
     @Getter
     @Setter
-    public static class Tcmb {
-        private String baseUrl;
-        private String xmlPath;
-    }
-
-    @Getter
-    @Setter
     public static class Http {
         private int connectTimeoutMs = 10000;
         private int readTimeoutMs = 30000;
         private String defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-        private int bondMaxInMemorySizeMb = 10;
+        private int evdsMaxInMemorySizeMb = 10;
         private int newsMaxInMemorySizeMb = 5;
     }
 
@@ -112,7 +104,7 @@ public class AppProperties {
     public static class Scheduler {
         private MarketSchedule crypto = new MarketSchedule();
         private MarketSchedule stock = new MarketSchedule();
-        private MarketSchedule forex = new MarketSchedule();
+        private SingleSchedule forex = new SingleSchedule();
         private MarketSchedule commodity = new MarketSchedule();
         private MarketSchedule news = new MarketSchedule();
         private SingleSchedule fund = new SingleSchedule();

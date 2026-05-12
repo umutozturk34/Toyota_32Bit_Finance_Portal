@@ -19,8 +19,8 @@ final class OverviewPropertiesFixture {
                         List.of(
                                 new OverviewProperties.AssetReferenceConfig(MarketType.STOCK, "XU100.IS"),
                                 new OverviewProperties.AssetReferenceConfig(MarketType.STOCK, "XU030.IS"),
-                                new OverviewProperties.AssetReferenceConfig(MarketType.FOREX, "USDTRY"),
-                                new OverviewProperties.AssetReferenceConfig(MarketType.FOREX, "EURTRY"),
+                                new OverviewProperties.AssetReferenceConfig(MarketType.FOREX, "USD"),
+                                new OverviewProperties.AssetReferenceConfig(MarketType.FOREX, "EUR"),
                                 new OverviewProperties.AssetReferenceConfig(MarketType.CRYPTO, "BTC"),
                                 new OverviewProperties.AssetReferenceConfig(MarketType.COMMODITY, "XAUTRYG")
                         ),

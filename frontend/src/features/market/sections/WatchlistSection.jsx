@@ -23,7 +23,9 @@ function ItemRow({ item, color, onClick }) {
       className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface/60 transition-colors cursor-pointer text-left border-none bg-transparent group"
     >
       {item.image
-        ? <img src={item.image} alt="" loading="lazy" className="w-6 h-6 rounded-full ring-1 ring-border-default shrink-0" />
+        ? (/^https?:\/\//i.test(item.image)
+            ? <img src={item.image} alt="" loading="lazy" className="w-6 h-6 rounded-full ring-1 ring-border-default shrink-0" />
+            : <span className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-base leading-none">{item.image}</span>)
         : <span
             className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-bold text-white shadow-sm"
             style={{ backgroundColor: color }}

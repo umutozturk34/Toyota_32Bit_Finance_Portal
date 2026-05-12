@@ -7,6 +7,7 @@ import com.finance.market.core.cache.MarketCacheService;
 
 
 import com.finance.common.exception.BusinessException;
+import com.finance.market.core.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.market.crypto.model.Crypto;
 import com.finance.common.model.TrackedAssetType;
 import lombok.RequiredArgsConstructor;
@@ -27,8 +28,10 @@ public class CryptoDataService implements TrackedAssetDataService {
     }
 
     @Override
-    public void validateExists(String coinId) {
-        if (!cryptoUpdateService.exists(coinId)) {
+    public void validateExists(TrackedAssetUpsertCommand command) {
+        String coinId = command.getAssetCode();
+        String binanceSymbol = command.getBinanceSymbol();
+        if (!cryptoUpdateService.exists(coinId, binanceSymbol)) {
             throw new BusinessException("error.market.cryptoNotFound", coinId);
         }
     }

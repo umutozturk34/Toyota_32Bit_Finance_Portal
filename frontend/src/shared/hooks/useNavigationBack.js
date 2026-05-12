@@ -1,15 +1,17 @@
 import { useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import useNavigationStore from '../stores/useNavigationStore';
 
 export default function useNavigationBack(fallbackRoute) {
   const navigate = useNavigate();
+  const location = useLocation();
   const consumeOrigin = useNavigationStore((s) => s.consumeOrigin);
 
   return useCallback(() => {
     const origin = consumeOrigin();
-    if (origin?.route) {
-      navigate(origin.route);
+    const here = location.pathname + (location.search || '');
+    if (origin?.route && origin.route !== here) {
+      navigate(origin.route, { replace: true });
       return;
     }
     const canGoBack = typeof window !== 'undefined' && window.history.length > 1;
@@ -18,7 +20,7 @@ export default function useNavigationBack(fallbackRoute) {
       return;
     }
     if (fallbackRoute) {
-      navigate(fallbackRoute);
+      navigate(fallbackRoute, { replace: true });
     }
-  }, [navigate, consumeOrigin, fallbackRoute]);
+  }, [navigate, consumeOrigin, fallbackRoute, location.pathname, location.search]);
 }

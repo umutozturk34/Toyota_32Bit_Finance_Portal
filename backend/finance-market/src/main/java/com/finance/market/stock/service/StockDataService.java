@@ -7,6 +7,7 @@ import com.finance.market.core.cache.MarketCacheService;
 
 
 import com.finance.common.exception.BusinessException;
+import com.finance.market.core.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.market.stock.model.Stock;
 import com.finance.common.model.TrackedAssetType;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,8 @@ public class StockDataService implements TrackedAssetDataService {
     }
 
     @Override
-    public void validateExists(String symbol) {
+    public void validateExists(TrackedAssetUpsertCommand command) {
+        String symbol = command.getAssetCode();
         if (!stockUpdateService.exists(symbol)) {
             throw new BusinessException("error.market.stockNotFound", symbol);
         }

@@ -1,6 +1,6 @@
 package com.finance.news.util;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.finance.news.model.NewsCategory;
 
 import java.io.IOException;

@@ -220,6 +220,13 @@
         "weak": "Weak (High/Low)",
         "strong": "Strong (OHLC)"
       },
+      "crosshair": {
+        "price": "Price",
+        "sell": "Sell",
+        "buy": "Buy",
+        "effBuy": "Banknote Buy",
+        "effSell": "Banknote Sell"
+      },
       "vs": "vs",
       "trend": {
         "up": "Uptrend",
@@ -586,9 +593,7 @@
       "countLabel": "forex pairs",
       "buyLabel": "Buy:",
       "sellLabel": "Sell:",
-      "tcmbRates": "TCMB Rates",
-      "forexBuy": "Forex Buy:",
-      "forexSell": "Forex Sell:",
+      "banknoteRates": "Banknote Rates",
       "banknoteBuy": "Banknote Buy:",
       "banknoteSell": "Banknote Sell:",
       "loading": "Loading forex rates…",
@@ -795,8 +800,6 @@
       "sell": "Sell",
       "delta24h": "24h Δ",
       "deltaTL": "Δ (TRY)",
-      "tcmbBuy": "TCMB Buy",
-      "tcmbSell": "TCMB Sell",
       "banknoteBuy": "Banknote Buy",
       "banknoteSell": "Banknote Sell"
     },

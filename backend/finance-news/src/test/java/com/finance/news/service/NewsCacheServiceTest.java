@@ -2,8 +2,7 @@ package com.finance.news.service;
 
 import com.finance.news.service.article.NewsCacheService;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
 import com.finance.news.config.NewsProperties;
 import com.finance.news.model.NewsArticle;
 import com.finance.news.model.NewsCategory;
@@ -39,7 +38,7 @@ class NewsCacheServiceTest {
     @BeforeEach
     void setUp() {
         articleRepository = mock(NewsArticleRepository.class);
-        objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        objectMapper = new ObjectMapper();
         NewsProperties props = new NewsProperties();
         props.setCacheTtlHours(24);
         when(redisTemplate.opsForValue()).thenReturn(valueOps);

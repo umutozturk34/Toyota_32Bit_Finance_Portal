@@ -52,7 +52,7 @@ public class SnapshotCalculationService {
 
     public PortfolioAssetDailySnapshot buildAssetSnapshot(Long portfolioId, PortfolioPosition pos,
                                                               LocalDateTime batchTimestamp) {
-        BigDecimal price = pricingPort.getPriceTry(pos.getAssetType().marketType(), pos.getAssetCode());
+        BigDecimal price = pricingPort.getExitPriceTry(pos.getAssetType().marketType(), pos.getAssetCode());
         TrackedAsset tracked = pos.getTrackedAsset();
         Optional<PortfolioAssetDailySnapshot> prior = tracked != null
                 ? findClosestPriorAssetSnapshot(portfolioId, tracked.getId(), batchTimestamp)
@@ -93,7 +93,7 @@ public class SnapshotCalculationService {
         Long pid = portfolio.getId();
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(pid);
         List<AssetKey> keys = positions.stream().map(PortfolioPosition::toAssetKey).toList();
-        Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(keys);
+        Map<AssetKey, BigDecimal> prices = pricingPort.getExitPricesTry(keys);
         Map<AssetKey, PortfolioAssetDailySnapshot> priors = fetchClosestPriorAssetSnapshots(pid, positions, batchTimestamp);
         return assembleAggregateSnapshot(portfolio, batchTimestamp, positions, prices, priors);
     }

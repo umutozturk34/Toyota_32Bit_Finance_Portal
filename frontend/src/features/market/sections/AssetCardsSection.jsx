@@ -50,7 +50,9 @@ function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
         <div className="relative z-10 flex items-center justify-between gap-1.5">
           <div className="flex items-center gap-1.5 min-w-0">
             {asset.image
-              ? <img src={asset.image} alt="" loading="lazy" className="w-4 h-4 rounded-full ring-1 ring-border-default shrink-0" />
+              ? (/^https?:\/\//i.test(asset.image)
+                  ? <img src={asset.image} alt="" loading="lazy" className="w-4 h-4 rounded-full ring-1 ring-border-default shrink-0" />
+                  : <span className="w-4 h-4 rounded-full shrink-0 flex items-center justify-center text-xs leading-none">{asset.image}</span>)
               : <span className="w-4 h-4 rounded-full shrink-0 flex items-center justify-center text-[7px] font-bold text-white" style={{ background: accent }}>{shortLabel(asset).slice(0, 2)}</span>}
             <span className="font-display text-[12px] font-bold text-fg leading-none truncate">{shortLabel(asset)}</span>
           </div>

@@ -1,6 +1,6 @@
 app:
   bond:
-    batch-size: 10
+    batch-size: 200
     max-days-per-request: 1000
     datagroup-code: bie_pydibs
     rate-threshold: 0.5

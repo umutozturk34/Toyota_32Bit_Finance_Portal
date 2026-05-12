@@ -1,27 +1,9 @@
-const FOREX_FLAGS = {
-  'USDTRY': '🇺🇸',
-  'EURTRY': '🇪🇺',
-  'GBPTRY': '🇬🇧',
-  'JPYTRY': '🇯🇵',
-  'CHFTRY': '🇨🇭',
-  'CADTRY': '🇨🇦',
-  'AUDTRY': '🇦🇺',
-  'SARTRY': '🇸🇦',
-  'KRWTRY': '🇰🇷',
-  'SEKTRY': '🇸🇪',
-  'NOKTRY': '🇳🇴',
-  'DKKTRY': '🇩🇰',
-  'KWDTRY': '🇰🇼',
-  'RONTRY': '🇷🇴',
-  'RUBTRY': '🇷🇺',
-  'CNYTRY': '🇨🇳',
-  'PKRTRY': '🇵🇰',
-  'QARTRY': '🇶🇦',
-  'AZNTRY': '🇦🇿',
-  'AEDTRY': '🇦🇪',
-  'KZTTRY': '🇰🇿',
-};
+const FOREX_CODES = [
+  'USD', 'EUR', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'SAR', 'KRW', 'SEK',
+  'NOK', 'DKK', 'KWD', 'RON', 'RUB', 'CNY', 'PKR', 'QAR', 'AZN', 'AED',
+  'KZT', 'BGN', 'XDR',
+];
 
-export const getForexFlag = (currencyCode) => FOREX_FLAGS[currencyCode] || '💱';
+export const getBaseCurrency = (currencyCode) => currencyCode;
 
-export const getBaseCurrency = (currencyCode) => currencyCode.replace('TRY', '');
+export const getForexPairs = () => FOREX_CODES;

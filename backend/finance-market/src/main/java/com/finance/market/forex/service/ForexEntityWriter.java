@@ -1,26 +1,21 @@
 package com.finance.market.forex.service;
+
+import com.finance.common.config.AppProperties;
+import com.finance.common.model.MarketType;
+import com.finance.market.core.cache.MarketCacheService;
+import com.finance.market.core.service.AssetRegistryService;
 import com.finance.market.core.service.MarketEntityWriter;
-
-
-import com.finance.market.core.dto.external.YahooCandleDto;
-import com.finance.market.core.dto.external.YahooQuoteDto;
-import com.finance.market.forex.mapper.ForexMapper;
+import com.finance.market.core.util.CandleBatchUpsertTemplate;
+import com.finance.market.forex.config.ForexProperties;
 import com.finance.market.forex.model.Forex;
 import com.finance.market.forex.model.ForexCandle;
 import com.finance.market.forex.repository.ForexCandleRepository;
 import com.finance.market.forex.repository.ForexRepository;
-import com.finance.market.core.util.CandleBatchUpsertTemplate;
-import com.finance.market.core.util.ChangeFromCandlesUpdater;
-import com.finance.market.core.util.SyntheticPriceCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.time.temporal.ChronoUnit;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Log4j2
 @Component
@@ -29,52 +24,59 @@ public class ForexEntityWriter implements MarketEntityWriter {
 
     private final ForexRepository forexRepository;
     private final ForexCandleRepository forexCandleRepository;
-    private final ForexMapper forexMapper;
+    private final MarketCacheService<Forex> forexCacheService;
+    private final AssetRegistryService assetRegistry;
+    private final ForexProperties forexProperties;
+    private final AppProperties appProperties;
 
-    public void applyDirect(Forex forex, YahooQuoteDto quote, BigDecimal spreadRate, int scale) {
-        forex.applyYahooSnapshot(
-                quote.regularMarketPrice(), quote.previousClose(),
-                quote.openPrice(), quote.dayHigh(), quote.dayLow(), quote.volume(),
-                spreadRate, scale);
-        forexRepository.save(forex);
+    public Forex upsertForexShell(ForexSerieMetadata meta) {
+        Forex forex = forexRepository.findById(meta.currencyCode())
+                .orElseGet(() -> Forex.builder().currencyCode(meta.currencyCode()).build());
+        forex.setName(meta.displayNameTr());
+        forex.setImage(forexProperties.getFlagEmojis().get(meta.currencyCode()));
+        forex.setAsset(assetRegistry.upsert(MarketType.FOREX, meta.currencyCode()));
+        return forexRepository.save(forex);
     }
 
-    public void applySynthetic(Forex forex, YahooQuoteDto pairQuote, Forex usdtry,
-                               boolean isUsdBase, BigDecimal spreadRate, int scale,
-                               YahooCandleDto todayTryCandle) {
-        BigDecimal previousClose = SyntheticPriceCalculator.calculateSyntheticPreviousClose(
-                pairQuote.previousClose(), usdtry.getCurrentPrice(), usdtry.getChangeAmount(), isUsdBase, scale);
-        forex.applySyntheticPrice(todayTryCandle.close(), previousClose,
-                todayTryCandle.open(), todayTryCandle.high(), todayTryCandle.low(),
-                spreadRate, scale);
-        forexRepository.save(forex);
+    public Forex saveSnapshot(Forex forex) {
+        Forex saved = forexRepository.save(forex);
+        forexCacheService.putSnapshot(saved.getCurrencyCode(), saved);
+        return saved;
     }
 
-    public boolean refreshChangePercentFromCandles(Forex forex, int scale) {
-        List<ForexCandle> top2 = forexCandleRepository
-                .findTop2ByCurrencyCodeOrderByCandleDateDesc(forex.getCurrencyCode());
-        boolean changed = ChangeFromCandlesUpdater.applyFromTopTwoDescIfMissing(
-                forex, forex.getCurrentPrice(), top2, scale);
-        if (changed) forexRepository.save(forex);
-        return changed;
-    }
-
-    public int upsertCandles(Forex forex, List<YahooCandleDto> candleDtos) {
-        List<YahooCandleDto> uniqueDtos = candleDtos.stream()
-                .collect(Collectors.toMap(
-                        dto -> dto.candleDate().truncatedTo(ChronoUnit.DAYS),
-                        dto -> dto, (a, b) -> b, LinkedHashMap::new))
-                .values().stream().toList();
-        CandleBatchUpsertTemplate.UpsertResult<ForexCandle> upsertResult = CandleBatchUpsertTemplate.upsert(
-                uniqueDtos,
-                dto -> dto.candleDate().truncatedTo(ChronoUnit.DAYS),
-                keys -> forexCandleRepository.findByCurrencyCodeAndCandleDateIn(forex.getCurrencyCode(), keys),
-                candle -> candle.getCandleDate().truncatedTo(ChronoUnit.DAYS),
-                forexMapper::updateCandleEntity,
-                dto -> forexMapper.toCandleEntity(dto, forex.getCurrencyCode(), forex));
-        if (!upsertResult.newEntities().isEmpty()) {
-            forexCandleRepository.saveAll(upsertResult.newEntities());
+    public int upsertCandles(Forex forex, List<ForexCandle> candidates) {
+        if (candidates.isEmpty()) return 0;
+        String currencyCode = forex.getCurrencyCode();
+        CandleBatchUpsertTemplate.UpsertResult<ForexCandle> result = CandleBatchUpsertTemplate.upsert(
+                candidates,
+                ForexCandle::getCandleDate,
+                keys -> forexCandleRepository.findByCurrencyCodeAndCandleDateIn(currencyCode, keys),
+                ForexCandle::getCandleDate,
+                this::updateExistingCandle,
+                candidate -> attachParent(candidate, forex));
+        if (!result.newEntities().isEmpty()) {
+            forexCandleRepository.saveAll(result.newEntities());
         }
-        return upsertResult.totalChanged();
+        if (result.totalChanged() > 0) {
+            log.debug("{} - {} new candles, {} updated", currencyCode, result.insertCount(), result.updateCount());
+        }
+        return result.totalChanged();
+    }
+
+    private void updateExistingCandle(ForexCandle existing, ForexCandle candidate) {
+        existing.setSellingPrice(candidate.getSellingPrice());
+        existing.setBuyingPrice(candidate.getBuyingPrice());
+        existing.setEffectiveBuyingPrice(candidate.getEffectiveBuyingPrice());
+        existing.setEffectiveSellingPrice(candidate.getEffectiveSellingPrice());
+    }
+
+    private ForexCandle attachParent(ForexCandle candidate, Forex forex) {
+        candidate.setForex(forex);
+        candidate.setCurrencyCode(forex.getCurrencyCode());
+        return candidate;
+    }
+
+    public int getScale() {
+        return appProperties.getScale();
     }
 }

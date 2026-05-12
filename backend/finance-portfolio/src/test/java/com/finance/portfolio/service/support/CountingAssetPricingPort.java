@@ -35,6 +35,11 @@ public final class CountingAssetPricingPort implements AssetPricingPort {
     }
 
     @Override
+    public BigDecimal getExitPriceTry(MarketType type, String assetCode) {
+        return getPriceTry(type, assetCode);
+    }
+
+    @Override
     public AssetMeta getAssetMeta(MarketType type, String assetCode) {
         metaCalls.incrementAndGet();
         return metas.getOrDefault(new AssetKey(type, assetCode), new AssetMeta(null, null));
@@ -51,6 +56,11 @@ public final class CountingAssetPricingPort implements AssetPricingPort {
     }
 
     @Override
+    public Map<AssetKey, BigDecimal> getExitPricesTry(Collection<AssetKey> keys) {
+        return getPricesTry(keys);
+    }
+
+    @Override
     public Map<AssetKey, PriceBundle> getBundles(Collection<AssetKey> keys) {
         batchBundlesCalls.incrementAndGet();
         Map<AssetKey, PriceBundle> result = new LinkedHashMap<>();
@@ -60,6 +70,11 @@ public final class CountingAssetPricingPort implements AssetPricingPort {
             result.put(key, new PriceBundle(price, meta));
         }
         return result;
+    }
+
+    @Override
+    public Map<AssetKey, PriceBundle> getExitBundles(Collection<AssetKey> keys) {
+        return getBundles(keys);
     }
 
     public int priceCalls() {

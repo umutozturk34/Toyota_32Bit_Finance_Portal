@@ -1,5 +1,4 @@
 package com.finance.app.service;
-import com.finance.market.forex.service.TcmbForexService;
 
 import com.finance.shared.service.TaskTrackingService;
 
@@ -34,7 +33,6 @@ import java.util.concurrent.Executor;
 public class AdminTaskService {
 
     private final Map<MarketType, MarketRefresher> refreshers;
-    private final TcmbForexService tcmbForexService;
     private final BondDataService bondDataService;
     private final NewsDataService newsDataService;
     private final TaskTrackingService taskTracker;
@@ -44,7 +42,6 @@ public class AdminTaskService {
     private final Optional<EventPublisherPort> eventPublisher;
 
     public AdminTaskService(List<MarketRefresher> refreshers,
-                            TcmbForexService tcmbForexService,
                             BondDataService bondDataService,
                             NewsDataService newsDataService,
                             TaskTrackingService taskTracker,
@@ -53,7 +50,6 @@ public class AdminTaskService {
                             Optional<MarketUpdatePort> marketUpdatePort,
                             Optional<EventPublisherPort> eventPublisher) {
         this.refreshers = EnumDispatcher.from(MarketType.class, refreshers, MarketRefresher::getMarketType);
-        this.tcmbForexService = tcmbForexService;
         this.bondDataService = bondDataService;
         this.newsDataService = newsDataService;
         this.taskTracker = taskTracker;
@@ -91,7 +87,6 @@ public class AdminTaskService {
         String taskType = type.name().toLowerCase() + "-" + suffix;
         String message = type.name() + messageTail;
         return executeTask(taskType, message, () -> {
-            runForexPreStep(type);
             resolveRefresher(type).refreshAll();
             triggerPortfolioSnapshot(type);
             publishMarketEvent(type);
@@ -114,12 +109,6 @@ public class AdminTaskService {
             throw new IllegalArgumentException("error.admin.noRefresher");
         }
         return refresher;
-    }
-
-    private void runForexPreStep(MarketType type) {
-        if (type == MarketType.FOREX) {
-            tcmbForexService.fetchAndSaveTcmbRates();
-        }
     }
 
     private void triggerPortfolioSnapshot(MarketType assetType) {

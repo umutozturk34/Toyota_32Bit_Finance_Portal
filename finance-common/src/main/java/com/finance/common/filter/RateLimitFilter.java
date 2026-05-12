@@ -1,6 +1,6 @@
 package com.finance.common.filter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.finance.common.config.AppProperties;
 import com.finance.common.dto.ErrorResponse;
 import io.github.bucket4j.BucketConfiguration;

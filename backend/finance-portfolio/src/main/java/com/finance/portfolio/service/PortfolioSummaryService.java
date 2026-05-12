@@ -45,7 +45,7 @@ public class PortfolioSummaryService {
     @Transactional(readOnly = true)
     public List<PositionResponse> getPositions(Long portfolioId) {
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
-        Map<AssetKey, PriceBundle> bundles = pricingPort.getBundles(toKeys(positions));
+        Map<AssetKey, PriceBundle> bundles = pricingPort.getExitBundles(toKeys(positions));
         return positions.stream()
                 .map(pos -> toPositionResponse(pos, bundles.get(pos.toAssetKey())))
                 .toList();
@@ -85,7 +85,7 @@ public class PortfolioSummaryService {
         List<PortfolioPosition> positions = filterByType(
                 positionRepository.findByPortfolioId(portfolioId), assetType);
 
-        Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(toKeys(positions));
+        Map<AssetKey, BigDecimal> prices = pricingPort.getExitPricesTry(toKeys(positions));
         BigDecimal totalValue = BigDecimal.ZERO;
         BigDecimal totalEntryValue = BigDecimal.ZERO;
         for (PortfolioPosition pos : positions) {
@@ -142,7 +142,7 @@ public class PortfolioSummaryService {
         Map<String, String> bucketTypes = new LinkedHashMap<>();
         BigDecimal totalValue = BigDecimal.ZERO;
 
-        Map<AssetKey, BigDecimal> prices = pricingPort.getPricesTry(toKeys(positions));
+        Map<AssetKey, BigDecimal> prices = pricingPort.getExitPricesTry(toKeys(positions));
         for (PortfolioPosition pos : positions) {
             BigDecimal price = prices.get(pos.toAssetKey());
             BigDecimal marketValue = price != null

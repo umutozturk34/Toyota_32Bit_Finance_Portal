@@ -1,7 +1,4 @@
 package com.finance.market.core.cache;
-import com.finance.market.core.cache.MarketAssetCacheHelper;
-
-
 
 import com.finance.market.core.model.BaseAsset;
 import com.finance.shared.util.CodeNormalizer;

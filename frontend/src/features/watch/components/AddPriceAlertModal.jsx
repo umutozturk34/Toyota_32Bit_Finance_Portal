@@ -168,9 +168,9 @@ export default function AddPriceAlertModal({
             {selectedAsset ? (
               <div className="flex items-center justify-between gap-2 rounded-lg border border-accent/40 bg-accent/5 px-3 py-2.5">
                 <div className="flex items-center gap-2 min-w-0">
-                  {selectedAsset.image && (
-                    <img src={selectedAsset.image} alt={selectedAsset.code} className="w-6 h-6 rounded shrink-0" />
-                  )}
+                  {selectedAsset.image && (/^https?:\/\//i.test(selectedAsset.image)
+                    ? <img src={selectedAsset.image} alt={selectedAsset.code} className="w-6 h-6 rounded shrink-0" />
+                    : <span className="w-6 h-6 rounded shrink-0 flex items-center justify-center text-base leading-none">{selectedAsset.image}</span>)}
                   <span className="text-sm font-mono font-semibold text-fg truncate">{selectedAsset.code}</span>
                   {selectedAsset.name && (
                     <span className="text-xs text-fg-muted truncate">· {selectedAsset.name}</span>

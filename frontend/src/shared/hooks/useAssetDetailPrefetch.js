@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { STALE } from '../constants/query';
 import { unifiedMarketService } from '../services/unifiedMarketService';
 
 const PREFIX_BY_TYPE = {
@@ -20,12 +21,12 @@ export function useAssetDetailPrefetch() {
     queryClient.prefetchQuery({
       queryKey: [prefix, assetCode],
       queryFn: () => unifiedMarketService.getByCode(marketType, assetCode),
-      staleTime: 60_000,
+      staleTime: STALE.MEDIUM,
     });
     queryClient.prefetchQuery({
       queryKey: [`${prefix}History`, assetCode, DEFAULT_RANGE],
       queryFn: () => unifiedMarketService.getHistory(marketType, assetCode, DEFAULT_RANGE),
-      staleTime: 60_000,
+      staleTime: STALE.MEDIUM,
     });
   };
 }

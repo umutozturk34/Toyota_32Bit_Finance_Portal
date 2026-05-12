@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userPreferenceService } from '../services/userPreferenceService';
 import { useAuth } from '../../features/auth/AuthContext';
+import { STALE, GC } from '../constants/query';
 
 const PREFERENCES_KEY = ['userPreferences'];
 
@@ -18,7 +19,8 @@ export function useUserPreferences() {
   const query = useQuery({
     queryKey: PREFERENCES_KEY,
     queryFn: userPreferenceService.get,
-    staleTime: Infinity,
+    staleTime: STALE.NEVER,
+    gcTime: GC.NEVER,
     retry: false,
     enabled: isAuthenticated && !loading,
   });

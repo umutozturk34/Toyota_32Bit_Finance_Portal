@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { STALE } from '../constants/query';
 import { unifiedMarketService } from '../services/unifiedMarketService';
 import { useAuth } from '../../features/auth/AuthContext';
 
@@ -18,6 +19,6 @@ export function useAssetMeta(marketType, assetCode) {
     queryKey: [prefix, assetCode],
     queryFn: () => unifiedMarketService.getByCode(marketType, assetCode),
     enabled: isAuthenticated && !loading && !!marketType && !!assetCode,
-    staleTime: 60_000,
+    staleTime: STALE.MEDIUM,
   });
 }

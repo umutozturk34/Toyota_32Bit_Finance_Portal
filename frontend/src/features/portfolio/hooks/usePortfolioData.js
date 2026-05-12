@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { portfolioService } from '../services/portfolioService';
 import { getToken } from '../../auth/lib/keycloak';
+import { STALE } from '../../../shared/constants/query';
 
 export function usePortfolioList() {
   return useQuery({
@@ -16,7 +17,7 @@ export function usePortfolioLimits() {
   return useQuery({
     queryKey: ['portfolioLimits'],
     queryFn: portfolioService.getLimits,
-    staleTime: 1000 * 60 * 60,
+    staleTime: STALE.LONG,
   });
 }
 

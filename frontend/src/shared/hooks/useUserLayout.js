@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userLayoutService } from '../services/userLayoutService';
 import { useAuth } from '../../features/auth/AuthContext';
+import { STALE, GC } from '../constants/query';
 
 const LAYOUT_KEY = ['userLayout'];
 const SCHEMA_VERSION = 3;
@@ -91,7 +92,8 @@ export function useUserLayout() {
   const query = useQuery({
     queryKey: LAYOUT_KEY,
     queryFn: userLayoutService.get,
-    staleTime: Infinity,
+    staleTime: STALE.NEVER,
+    gcTime: GC.NEVER,
     enabled: isAuthenticated && !loading,
   });
   const sourceOverview = query.data?.overview;

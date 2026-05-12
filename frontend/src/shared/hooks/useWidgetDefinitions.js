@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { marketOverviewService } from '../services/marketOverviewService';
 import { useAuth } from '../../features/auth/AuthContext';
+import { STALE, GC } from '../constants/query';
 
 const QUERY_KEY = ['widgetDefinitions'];
 const EMPTY_DEFS = Object.freeze({ widgets: [], limits: { maxWidgetsPerLayout: 0, maxAssetCardWidgetsPerLayout: 0, maxConfigLimit: 0, maxLayoutRows: 0 } });
@@ -11,8 +12,8 @@ export function useWidgetDefinitions() {
   const query = useQuery({
     queryKey: QUERY_KEY,
     queryFn: marketOverviewService.getDefinitions,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: STALE.NEVER,
+    gcTime: GC.NEVER,
     retry: false,
     enabled: isAuthenticated && !loading,
   });

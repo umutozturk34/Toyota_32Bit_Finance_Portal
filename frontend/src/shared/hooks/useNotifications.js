@@ -1,6 +1,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notificationService } from '../services/notificationService';
 import { useAuth } from '../../features/auth/AuthContext';
+import { STALE } from '../constants/query';
 
 const LIST_KEY = (userSub, params) => ['notifications', userSub, params];
 const COUNT_KEY = (userSub) => ['notifications', userSub, 'unread-count'];
@@ -17,7 +18,8 @@ export function useNotifications({ unreadOnly = false, size = 20, search = '' } 
       return next < (last?.totalPages ?? 0) ? next : undefined;
     },
     enabled: isAuthenticated && !loading && Boolean(userSub),
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -28,7 +30,8 @@ export function useUnreadNotificationCount() {
     queryKey: COUNT_KEY(userSub),
     queryFn: notificationService.unreadCount,
     enabled: isAuthenticated && !loading && Boolean(userSub),
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
+    refetchOnWindowFocus: true,
   });
 }
 

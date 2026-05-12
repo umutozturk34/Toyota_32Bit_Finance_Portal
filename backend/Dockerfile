@@ -17,6 +17,7 @@ COPY backend/finance-user/pom.xml backend/finance-user/pom.xml
 COPY backend/finance-news/pom.xml backend/finance-news/pom.xml
 COPY backend/finance-portfolio/pom.xml backend/finance-portfolio/pom.xml
 COPY backend/finance-app/pom.xml backend/finance-app/pom.xml
+COPY backend/finance-coverage/pom.xml backend/finance-coverage/pom.xml
 
 RUN --mount=type=secret,id=github_token,target=/run/secrets/github_token \
     --mount=type=cache,target=/root/.m2/repository \

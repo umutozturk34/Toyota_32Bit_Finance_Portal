@@ -53,6 +53,27 @@ class SmallCoverageBatchTest {
     }
 
     @Test
+    void trackedAsset_lifecycleHooks_setTimestampsAndDefaultSortOrder() throws Exception {
+        TrackedAsset asset = TrackedAsset.builder()
+                .assetType(TrackedAssetType.CRYPTO).assetCode("bitcoin").build();
+
+        java.lang.reflect.Method onCreate = TrackedAsset.class.getDeclaredMethod("onCreate");
+        onCreate.setAccessible(true);
+        onCreate.invoke(asset);
+
+        assertThat(asset.getCreatedAt()).isNotNull();
+        assertThat(asset.getUpdatedAt()).isNotNull();
+        assertThat(asset.getSortOrder()).isZero();
+
+        java.lang.reflect.Method onUpdate = TrackedAsset.class.getDeclaredMethod("onUpdate");
+        onUpdate.setAccessible(true);
+        asset.setSortOrder(null);
+        onUpdate.invoke(asset);
+
+        assertThat(asset.getSortOrder()).isZero();
+    }
+
+    @Test
     void kafkaTopicsProperties_recordExposesAllFields() {
         KafkaTopicsProperties props = new KafkaTopicsProperties(
                 "market.updated", "news.published", "portfolio.updated",

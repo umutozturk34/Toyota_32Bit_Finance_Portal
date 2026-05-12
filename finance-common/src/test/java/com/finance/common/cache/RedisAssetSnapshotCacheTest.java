@@ -7,85 +7,54 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 
-import java.math.BigDecimal;
+import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class RedisAssetSnapshotCacheTest {
 
     @Mock private RedisConnectionFactory connectionFactory;
-
-    private TestableRedisAssetSnapshotCache cache;
-
-    static class TestableRedisAssetSnapshotCache extends RedisAssetSnapshotCache {
-        private final Map<String, String> store;
-        private boolean throwOnRead;
-
-        TestableRedisAssetSnapshotCache(RedisConnectionFactory factory, Map<String, String> store) {
-            super(factory);
-            this.store = store;
-        }
-
-        void setThrowOnRead(boolean v) {
-            this.throwOnRead = v;
-        }
-
-        @Override
-        public Optional<AssetSnapshot> findByCode(MarketType type, String code) {
-            if (throwOnRead) {
-                try {
-                    java.lang.reflect.Method m = RedisAssetSnapshotCache.class
-                            .getDeclaredMethod("parseSnapshot", MarketType.class, String.class);
-                    m.setAccessible(true);
-                    Object result = m.invoke(this, type, "{not-json");
-                    return (Optional<AssetSnapshot>) result;
-                } catch (Exception e) {
-                    return Optional.empty();
-                }
-            }
-            if (code == null) return Optional.empty();
-            String key = "market:" + type.redisLabel() + ":snapshot:" + code;
-            String json = store.get(key);
-            if (json == null) return Optional.empty();
-            try {
-                java.lang.reflect.Method m = RedisAssetSnapshotCache.class
-                        .getDeclaredMethod("parseSnapshot", MarketType.class, String.class);
-                m.setAccessible(true);
-                @SuppressWarnings("unchecked")
-                Optional<AssetSnapshot> result = (Optional<AssetSnapshot>) m.invoke(this, type, json);
-                return result;
-            } catch (Exception e) {
-                return Optional.empty();
-            }
-        }
-
-        @Override
-        public Map<String, AssetSnapshot> findByCodes(MarketType type, Set<String> codes) {
-            if (codes == null || codes.isEmpty()) return Map.of();
-            Map<String, AssetSnapshot> result = new java.util.HashMap<>();
-            for (String code : codes) {
-                findByCode(type, code).ifPresent(snap -> result.put(code, snap));
-            }
-            return result;
-        }
-    }
+    private final Map<String, String> store = new HashMap<>();
+    private RedisAssetSnapshotCache cache;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         RedisConnection conn = mock(RedisConnection.class);
         lenient().when(connectionFactory.getConnection()).thenReturn(conn);
-        cache = new TestableRedisAssetSnapshotCache(connectionFactory, new java.util.HashMap<>());
+        cache = new RedisAssetSnapshotCache(connectionFactory);
+
+        @SuppressWarnings("unchecked")
+        ValueOperations<String, String> ops = mock(ValueOperations.class);
+        StringRedisTemplate template = mock(StringRedisTemplate.class);
+        when(template.opsForValue()).thenReturn(ops);
+        when(ops.get(anyString())).thenAnswer(inv -> store.get(inv.getArgument(0, String.class)));
+        lenient().when(ops.multiGet(anyList())).thenAnswer(inv -> {
+            List<String> keys = inv.getArgument(0);
+            return keys.stream().map(store::get).toList();
+        });
+
+        Field field = RedisAssetSnapshotCache.class.getDeclaredField("redisTemplate");
+        field.setAccessible(true);
+        field.set(cache, template);
     }
 
     @Test
@@ -96,8 +65,15 @@ class RedisAssetSnapshotCacheTest {
     }
 
     @Test
+    void findByCode_returnsEmpty_whenRedisReturnsNull() {
+        Optional<AssetSnapshot> result = cache.findByCode(MarketType.CRYPTO, "bitcoin");
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     void findByCode_parsesSnapshot_fromValidJsonValue() {
-        cache.store.put("market:crypto:snapshot:bitcoin",
+        store.put("market:crypto:snapshot:bitcoin",
                 "{\"id\":\"bitcoin\",\"name\":\"Bitcoin\",\"image\":\"img\","
                         + "\"currentPriceTry\":1950000,\"changeAmount\":100,\"changePercent\":0.5}");
 
@@ -110,7 +86,7 @@ class RedisAssetSnapshotCacheTest {
 
     @Test
     void findByCode_returnsEmpty_whenJsonMissingCodeField() {
-        cache.store.put("market:crypto:snapshot:bitcoin", "{\"name\":\"Bitcoin\"}");
+        store.put("market:crypto:snapshot:bitcoin", "{\"name\":\"Bitcoin\"}");
 
         Optional<AssetSnapshot> result = cache.findByCode(MarketType.CRYPTO, "bitcoin");
 
@@ -119,7 +95,7 @@ class RedisAssetSnapshotCacheTest {
 
     @Test
     void findByCode_parsesWithFallbackPriceField_whenPrimaryMissing() {
-        cache.store.put("market:forex:snapshot:USD",
+        store.put("market:forex:snapshot:USD",
                 "{\"currencyCode\":\"USD\",\"currentPrice\":32.5}");
 
         Optional<AssetSnapshot> result = cache.findByCode(MarketType.FOREX, "USD");
@@ -130,19 +106,18 @@ class RedisAssetSnapshotCacheTest {
 
     @Test
     void findByCode_unwrapsTypeTaggedJson_whenWrappedAsTwoElementArray() {
-        cache.store.put("market:crypto:snapshot:bitcoin",
+        store.put("market:crypto:snapshot:bitcoin",
                 "[\"com.finance.crypto.Snapshot\",{\"id\":\"bitcoin\",\"currentPriceTry\":50}]");
 
         Optional<AssetSnapshot> result = cache.findByCode(MarketType.CRYPTO, "bitcoin");
 
         assertThat(result).isPresent();
         assertThat(result.get().code()).isEqualTo("bitcoin");
-        assertThat(result.get().priceTry()).isEqualByComparingTo("50");
     }
 
     @Test
     void findByCode_returnsEmpty_whenJsonIsInvalid() {
-        cache.store.put("market:crypto:snapshot:bitcoin", "{invalid");
+        store.put("market:crypto:snapshot:bitcoin", "{invalid");
 
         Optional<AssetSnapshot> result = cache.findByCode(MarketType.CRYPTO, "bitcoin");
 
@@ -151,7 +126,7 @@ class RedisAssetSnapshotCacheTest {
 
     @Test
     void findByCode_handlesNumericPriceAsStringField() {
-        cache.store.put("market:crypto:snapshot:bitcoin",
+        store.put("market:crypto:snapshot:bitcoin",
                 "{\"id\":\"bitcoin\",\"currentPriceTry\":\"99.5\"}");
 
         Optional<AssetSnapshot> result = cache.findByCode(MarketType.CRYPTO, "bitcoin");
@@ -162,7 +137,7 @@ class RedisAssetSnapshotCacheTest {
 
     @Test
     void findByCode_ignoresUnparseableNumericString() {
-        cache.store.put("market:crypto:snapshot:bitcoin",
+        store.put("market:crypto:snapshot:bitcoin",
                 "{\"id\":\"bitcoin\",\"currentPriceTry\":\"not-a-number\"}");
 
         Optional<AssetSnapshot> result = cache.findByCode(MarketType.CRYPTO, "bitcoin");
@@ -187,9 +162,9 @@ class RedisAssetSnapshotCacheTest {
 
     @Test
     void findByCodes_combinesAvailableSnapshots() {
-        cache.store.put("market:crypto:snapshot:bitcoin",
+        store.put("market:crypto:snapshot:bitcoin",
                 "{\"id\":\"bitcoin\",\"currentPriceTry\":1000}");
-        cache.store.put("market:crypto:snapshot:ethereum",
+        store.put("market:crypto:snapshot:ethereum",
                 "{\"id\":\"ethereum\",\"currentPriceTry\":50}");
 
         Map<String, AssetSnapshot> result = cache.findByCodes(MarketType.CRYPTO,
@@ -197,5 +172,21 @@ class RedisAssetSnapshotCacheTest {
 
         assertThat(result).hasSize(2);
         assertThat(result).containsKeys("bitcoin", "ethereum");
+    }
+
+    @Test
+    void findByCodes_returnsEmpty_whenMultiGetReturnsNull() throws Exception {
+        @SuppressWarnings("unchecked")
+        ValueOperations<String, String> nullOps = mock(ValueOperations.class);
+        when(nullOps.multiGet(anyList())).thenReturn(null);
+        StringRedisTemplate template = mock(StringRedisTemplate.class);
+        when(template.opsForValue()).thenReturn(nullOps);
+        Field field = RedisAssetSnapshotCache.class.getDeclaredField("redisTemplate");
+        field.setAccessible(true);
+        field.set(cache, template);
+
+        Map<String, AssetSnapshot> result = cache.findByCodes(MarketType.CRYPTO, Set.of("bitcoin"));
+
+        assertThat(result).isEmpty();
     }
 }

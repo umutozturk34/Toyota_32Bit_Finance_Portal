@@ -40,6 +40,32 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
     const textDoneRef = useRef(false);
     const wrapperRef = useRef(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [highlight, setHighlight] = useState(null);
+
+    const triggerHighlight = useCallback((kind, id) => {
+        if (!id) return;
+        setHighlight({ kind, id, startMs: Date.now() });
+    }, []);
+
+    const highlightDrawing = useCallback((id) => triggerHighlight('drawing', id), [triggerHighlight]);
+    const highlightFib = useCallback((id) => triggerHighlight('fib', id), [triggerHighlight]);
+
+    useEffect(() => {
+        if (!highlight) return undefined;
+        const DURATION = 2200;
+        let raf;
+        const tick = () => {
+            const elapsed = Date.now() - highlight.startMs;
+            renderDrawingsRef.current?.();
+            if (elapsed > DURATION) {
+                setHighlight(null);
+                return;
+            }
+            raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+    }, [highlight]);
 
     useEffect(() => {
         const onChange = () => setIsFullscreen(document.fullscreenElement === wrapperRef.current);
@@ -129,6 +155,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
         magnetMode, selectedIcon, iconSize,
         data: data, symbol, renderDrawingsRef,
         selectTool, selectFibTool,
+        highlight,
     });
 
     useEffect(() => {
@@ -192,6 +219,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                                 setSelectedIcon={setSelectedIcon}
                                 iconSize={iconSize}
                                 setIconSize={setIconSize}
+                                onHighlight={highlightDrawing}
                             />
                         )}
                         {activeTab === 'fibonacci' && (
@@ -202,6 +230,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                                 fibTools={fibTools}
                                 removeFibTool={removeFibTool}
                                 clearFibTools={clearFibTools}
+                                onHighlight={highlightFib}
                             />
                         )}
                     </div>

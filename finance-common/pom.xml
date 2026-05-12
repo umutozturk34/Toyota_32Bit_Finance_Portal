@@ -30,6 +30,7 @@
 		<mapstruct.version>1.6.3</mapstruct.version>
 		<bucket4j.version>8.17.0</bucket4j.version>
 		<byte-buddy.version>1.17.8</byte-buddy.version>
+		<jacoco.version>0.8.13</jacoco.version>
 	</properties>
 
 	<dependencyManagement>
@@ -165,8 +166,39 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<argLine>-javaagent:${settings.localRepository}/net/bytebuddy/byte-buddy-agent/${byte-buddy.version}/byte-buddy-agent-${byte-buddy.version}.jar -XX:+EnableDynamicAgentLoading</argLine>
+					<argLine>${argLine} -javaagent:${settings.localRepository}/net/bytebuddy/byte-buddy-agent/${byte-buddy.version}/byte-buddy-agent-${byte-buddy.version}.jar -XX:+EnableDynamicAgentLoading</argLine>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<configuration>
+					<excludes>
+						<exclude>**/dto/**</exclude>
+						<exclude>**/config/**</exclude>
+						<exclude>**/*MapperImpl.class</exclude>
+						<exclude>**/*Application.class</exclude>
+						<exclude>**/exception/**</exclude>
+						<exclude>**/migration/**</exclude>
+						<exclude>**/generated/**</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

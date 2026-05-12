@@ -101,7 +101,10 @@ class NewsSourceServiceTest {
 
         assertThatThrownBy(() -> service.getById(99L))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("99");
+                .hasMessage("error.news.sourceNotFound")
+                .extracting(e -> ((ResourceNotFoundException) e).getMessageArgs())
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.ARRAY)
+                .containsExactly(99L);
     }
 
     @Test

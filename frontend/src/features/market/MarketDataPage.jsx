@@ -30,7 +30,7 @@ export default function MarketDataPage() {
   const [galleryOpen, setGalleryOpen] = useState(true);
   const { isLoading: layoutLoading, overview: layout } = useUserLayout();
   const { isLoading: dataLoading, error, refetch, isFetching, widgets } = useMarketOverview();
-  const { byKind: widgetDefsByKind } = useWidgetDefinitions();
+  const { byKind: widgetDefsByKind, isLoading: defsLoading, error: defsError, refetch: refetchDefs } = useWidgetDefinitions();
   const { data: watchlists = [] } = useWatchlists({ enabled: editMode });
   const updateLayout = useUpdateOverviewLayout();
 
@@ -143,8 +143,10 @@ export default function MarketDataPage() {
 
   const toggleGallery = useCallback(() => setGalleryOpen((o) => !o), []);
 
-  if (layoutLoading || dataLoading) return <LoadingState message={t('marketOverview.loading')} />;
-  if (error) return <ErrorState message={t('marketOverview.error')} onRetry={refetch} />;
+  if (layoutLoading || dataLoading || defsLoading) return <LoadingState message={t('marketOverview.loading')} />;
+  if (error || defsError || widgetDefsByKind.size === 0) {
+    return <ErrorState message={t('marketOverview.error')} onRetry={() => { refetch(); refetchDefs(); }} />;
+  }
 
   const popoverSection = popoverState ? sections.find((s) => s.sectionId === popoverState.sectionId) : null;
 

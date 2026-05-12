@@ -70,23 +70,40 @@
   100% { background-position: 200% 0; }
 }
 
-@keyframes skeleton-shimmer-kf {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+@keyframes skeleton-sweep-kf {
+  0% { background-position: -100% 50%; }
+  100% { background-position: 200% 50%; }
 }
-.skeleton-shimmer {
-  animation: skeleton-shimmer-kf 1.4s ease-in-out infinite;
-  will-change: transform;
+.skeleton-sweep {
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 42%,
+      rgba(255, 255, 255, 0.015) 48%,
+      rgba(255, 255, 255, 0.04) 50%,
+      rgba(255, 255, 255, 0.015) 52%,
+      transparent 58%,
+      transparent 100%
+    );
+  background-size: 200% 100%;
+  animation: skeleton-sweep-kf 2.8s linear infinite;
 }
 
-@keyframes widget-fade-in-kf {
-  0% { opacity: 0; transform: scale(0.985); filter: blur(2px); }
-  60% { filter: blur(0); }
-  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+@keyframes widget-rise-kf {
+  0% { opacity: 0; transform: translate3d(0, 14px, 0); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 .widget-fade-in {
-  animation: widget-fade-in-kf 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: opacity, transform, filter;
+  animation: widget-rise-kf 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-sweep,
+  .widget-fade-in {
+    animation: none;
+  }
 }
 
 /* RGL resize handle visible & styled in edit mode */
@@ -465,6 +482,21 @@ button {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+}
+
+[data-theme="light"] .skeleton-sweep {
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 42%,
+      rgba(15, 23, 42, 0.02) 48%,
+      rgba(15, 23, 42, 0.05) 50%,
+      rgba(15, 23, 42, 0.02) 52%,
+      transparent 58%,
+      transparent 100%
+    );
+  background-size: 200% 100%;
 }
 
 [data-theme="light"] .text-gradient {

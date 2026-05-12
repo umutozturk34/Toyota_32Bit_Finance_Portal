@@ -3,16 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import GridLayout, { useContainerWidth } from 'react-grid-layout';
 import OverviewWidgetCard from './OverviewWidgetCard';
+import WidgetSkeleton from './WidgetSkeleton';
 import { useWidgetDefinitions } from '../../../shared/hooks/useWidgetDefinitions';
 import 'react-grid-layout/css/styles.css';
-
-function WidgetSkeleton() {
-  return (
-    <div className="h-full rounded-xl border border-border-default border-t-2 border-t-border-default/60 bg-bg-elevated/40 overflow-hidden relative">
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-bg-elevated/40 to-transparent skeleton-shimmer" aria-hidden="true" />
-    </div>
-  );
-}
 
 function buildWidgetDataMap(widgets) {
   const map = new Map();

@@ -25,7 +25,7 @@ const Register = () => {
 
   React.useEffect(() => {
     if (isAuthenticated) {
-      navigate('/market');
+      navigate('/market', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { STALE } from '../../shared/constants/query';
 import { motion } from 'framer-motion';
 import { useSearchParams, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -61,17 +62,17 @@ const ChartView = () => {
   const { data: trackedCrypto = [] } = useQuery({
     queryKey: ['trackedAssets', 'CRYPTO'],
     queryFn: () => trackedAssetService.getByType('CRYPTO'),
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
   });
   const { data: trackedStocks = [] } = useQuery({
     queryKey: ['trackedAssets', 'STOCK'],
     queryFn: () => trackedAssetService.getByType('STOCK'),
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
   });
   const { data: trackedFunds = [] } = useQuery({
     queryKey: ['trackedAssets', 'FUND'],
     queryFn: () => trackedAssetService.getByType('FUND'),
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
   });
   const trackedUniverse = useMemo(() => {
     const universe = {
@@ -86,7 +87,7 @@ const ChartView = () => {
     queryKey: ['fundList'],
     queryFn: fundService.getAll,
     enabled: assetType === 'FUND',
-    staleTime: 60_000,
+    staleTime: STALE.MEDIUM,
   });
   const fundList = fundListRaw || [];
 
@@ -107,7 +108,7 @@ const ChartView = () => {
     queryKey: ['trackedAsset', singleAssetType, singleCode],
     queryFn: () => trackedAssetService.getOne(singleAssetType, singleCode),
     enabled: !!singleCode && !alreadyTracked,
-    staleTime: 60_000,
+    staleTime: STALE.MEDIUM,
   });
 
   const { data: compareRaw } = useQuery({
@@ -180,7 +181,7 @@ const ChartView = () => {
         navigate(`/charts/${routeType}/${routeSymbol}`, { replace: true });
         return;
       }
-      setSearchParams({ type: assetType, symbol });
+      setSearchParams({ type: assetType, symbol }, { replace: true });
     }
   }, [symbol, assetType, isDetailRoute, navigate, setSearchParams]);
   const fetchSymbol = assetType === 'BIST' && symbol && !symbol.endsWith('.IS') ? `${symbol}.IS` : symbol;
@@ -191,7 +192,7 @@ const ChartView = () => {
     queryKey: ['chartHistory', assetType, fetchSymbol, timeRange],
     queryFn: () => fetchHistory(symbol, assetType, timeRange),
     enabled: !!symbol,
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
   });
 
   const chartData = useMemo(() => {

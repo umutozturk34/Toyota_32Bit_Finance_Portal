@@ -15,7 +15,8 @@ const useNavigationStore = create(
 
   setOrigin: (route, scrollY = 0) => {
     if (!route) return;
-    set({ origin: { route, scrollY, timestamp: Date.now() } });
+    const historyLength = typeof window !== 'undefined' ? window.history.length : 0;
+    set({ origin: { route, scrollY, historyLength, timestamp: Date.now() } });
   },
 
   consumeOrigin: () => {
@@ -25,7 +26,7 @@ const useNavigationStore = create(
       return null;
     }
     set({ origin: null });
-    return { route: current.route, scrollY: current.scrollY };
+    return { route: current.route, scrollY: current.scrollY, historyLength: current.historyLength ?? 0 };
   },
 
   pushPagination: (routeKey, params) => {

@@ -67,8 +67,8 @@ public class AssetCardsWidgetProvider implements OverviewWidgetProvider {
         if (!node.isArray()) return List.of();
         List<AssetReference> refs = new ArrayList<>(node.size());
         for (JsonNode entry : node) {
-            String type = entry.path("type").asText(null);
-            String code = entry.path("code").asText(null);
+            String type = entry.path("type").asString(null);
+            String code = entry.path("code").asString(null);
             if (type == null || code == null || type.isBlank() || code.isBlank()) continue;
             try {
                 refs.add(new AssetReference(MarketType.valueOf(type), code));

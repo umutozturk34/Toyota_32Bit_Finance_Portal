@@ -6,6 +6,7 @@ import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
 import com.finance.app.config.OverviewProperties;
 import com.finance.app.dto.response.overview.WidgetKind;
+import com.finance.common.exception.BusinessException;
 import com.finance.user.service.OverviewSaveSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
@@ -36,20 +37,26 @@ public class OverviewWidgetSizeSanitizer implements OverviewSaveSanitizer {
     }
 
     private JsonNode clampEntry(ObjectNode entry) {
-        WidgetKind kind = resolveKind(entry.path("kind").asText(null));
+        WidgetKind kind = resolveKind(entry.path("kind").asString(null));
         if (kind == null) return entry;
         OverviewProperties.WidgetSettings settings = properties.settingsFor(kind);
-        int clampedW = entry.path("w").isNumber()
-                ? settings.clampW(entry.get("w").asInt())
-                : settings.defaults().w();
-        int clampedH = entry.path("h").isNumber()
-                ? settings.clampH(entry.get("h").asInt())
-                : settings.defaults().h();
-        entry.put("w", clampedW);
-        entry.put("h", clampedH);
-        int maxY = Math.max(0, properties.limits().maxLayoutRows() - clampedH);
+        int reqW = entry.path("w").isNumber() ? entry.get("w").asInt() : settings.defaults().w();
+        int reqH = entry.path("h").isNumber() ? entry.get("h").asInt() : settings.defaults().h();
+        if (reqW < settings.min().w() || reqW > settings.max().w()) {
+            throw new BusinessException("error.overview.widgetSizeExceeded", "width", settings.max().w());
+        }
+        if (reqH < settings.min().h() || reqH > settings.max().h()) {
+            throw new BusinessException("error.overview.widgetSizeExceeded", "height", settings.max().h());
+        }
+        entry.put("w", reqW);
+        entry.put("h", reqH);
+        int maxLayoutRows = properties.limits().maxLayoutRows();
         if (entry.path("y").isNumber()) {
-            entry.put("y", Math.max(0, Math.min(maxY, entry.get("y").asInt())));
+            int y = entry.get("y").asInt();
+            if (y < 0 || y + reqH > maxLayoutRows) {
+                throw new BusinessException("error.overview.layoutRowsExceeded", maxLayoutRows);
+            }
+            entry.put("y", y);
         }
         return entry;
     }

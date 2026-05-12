@@ -66,9 +66,9 @@ class UserChartPreferenceServiceTest {
         UserChartPreferenceResponse response = service.getOrDefault(USER, TYPE, CODE);
 
         JsonNode config = response.config();
-        assertThat(config.get("chartType").asText()).isEqualTo("candle");
+        assertThat(config.get("chartType").asString()).isEqualTo("candle");
         assertThat(config.get("showVolume").asBoolean()).isFalse();
-        assertThat(config.get("magnetMode").asText()).isEqualTo("off");
+        assertThat(config.get("magnetMode").asString()).isEqualTo("off");
         assertThat(config.get("iconSize").asInt()).isEqualTo(22);
         assertThat(config.get("indicators").isArray()).isTrue();
         assertThat(config.get("indicators").size()).isEqualTo(1);

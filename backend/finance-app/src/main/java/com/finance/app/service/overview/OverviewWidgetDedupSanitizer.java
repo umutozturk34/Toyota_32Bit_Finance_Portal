@@ -5,6 +5,7 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.JsonNodeFactory;
 import tools.jackson.databind.node.ObjectNode;
 import com.finance.app.config.OverviewProperties;
+import com.finance.common.exception.BusinessException;
 import com.finance.user.service.OverviewSaveSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
@@ -27,20 +28,30 @@ public class OverviewWidgetDedupSanitizer implements OverviewSaveSanitizer {
         if (sectionsNode == null || !sectionsNode.isArray()) return overview;
         int maxWidgets = properties.limits().maxWidgetsPerLayout();
         int maxAssetCards = properties.limits().maxAssetCardWidgetsPerLayout();
-        LinkedHashMap<String, JsonNode> dedup = new LinkedHashMap<>();
+
+        int visibleCount = 0;
         int assetCardCount = 0;
         for (JsonNode entry : sectionsNode) {
             if (!entry.isObject()) continue;
             JsonNode visibleFlag = entry.get("visible");
             if (visibleFlag != null && visibleFlag.isBoolean() && !visibleFlag.asBoolean()) continue;
-            String kind = entry.path("kind").asText(null);
-            if ("ASSET_CARDS".equals(kind)) {
-                if (assetCardCount >= maxAssetCards) continue;
-                assetCardCount++;
-            }
-            String key = dedupKey(entry, kind);
-            dedup.putIfAbsent(key, entry);
-            if (dedup.size() >= maxWidgets) break;
+            visibleCount++;
+            if ("ASSET_CARDS".equals(entry.path("kind").asString(null))) assetCardCount++;
+        }
+        if (visibleCount > maxWidgets) {
+            throw new BusinessException("error.overview.maxWidgetsExceeded", maxWidgets);
+        }
+        if (assetCardCount > maxAssetCards) {
+            throw new BusinessException("error.overview.maxAssetCardsExceeded", maxAssetCards);
+        }
+
+        LinkedHashMap<String, JsonNode> dedup = new LinkedHashMap<>();
+        for (JsonNode entry : sectionsNode) {
+            if (!entry.isObject()) continue;
+            JsonNode visibleFlag = entry.get("visible");
+            if (visibleFlag != null && visibleFlag.isBoolean() && !visibleFlag.asBoolean()) continue;
+            String kind = entry.path("kind").asString(null);
+            dedup.putIfAbsent(dedupKey(entry, kind), entry);
         }
         ArrayNode deduped = JsonNodeFactory.instance.arrayNode(dedup.size());
         dedup.values().forEach(deduped::add);
@@ -52,15 +63,15 @@ public class OverviewWidgetDedupSanitizer implements OverviewSaveSanitizer {
         JsonNode config = entry.path("config");
         if ("ASSET_CARDS".equals(kind)) {
             JsonNode sectionId = entry.get("sectionId");
-            return "ASSET_CARDS:" + (sectionId == null || sectionId.isNull() ? UUID.randomUUID() : sectionId.asText());
+            return "ASSET_CARDS:" + (sectionId == null || sectionId.isNull() ? UUID.randomUUID() : sectionId.asString());
         }
         if ("WATCHLIST".equals(kind)) {
             JsonNode wlId = config.get("watchlistId");
-            return "WATCHLIST:" + (wlId == null || wlId.isNull() ? "default" : wlId.asText());
+            return "WATCHLIST:" + (wlId == null || wlId.isNull() ? "default" : wlId.asString());
         }
         if ("MOVERS".equals(kind)) {
             JsonNode market = config.get("market");
-            return "MOVERS:" + (market == null || market.isNull() ? "any" : market.asText());
+            return "MOVERS:" + (market == null || market.isNull() ? "any" : market.asString());
         }
         return kind == null ? "null" : kind;
     }

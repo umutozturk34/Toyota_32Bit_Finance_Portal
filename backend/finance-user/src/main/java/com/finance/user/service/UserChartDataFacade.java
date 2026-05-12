@@ -48,11 +48,11 @@ public class UserChartDataFacade {
         if (rules == null || config == null || !config.isObject()) return;
 
         JsonNode chartType = config.get("chartType");
-        if (chartType != null && chartType.isTextual()
+        if (chartType != null && chartType.isString()
                 && rules.allowedChartTypes() != null
                 && !rules.allowedChartTypes().isEmpty()
-                && !rules.allowedChartTypes().contains(chartType.asText())) {
-            throw new BusinessException("error.chart.chartTypeNotAllowed", chartType.asText(), type);
+                && !rules.allowedChartTypes().contains(chartType.asString())) {
+            throw new BusinessException("error.chart.chartTypeNotAllowed", chartType.asString(), type);
         }
 
         rejectFlagIfDisallowed(config, "showVolume", rules.allowVolume(),
@@ -74,7 +74,7 @@ public class UserChartDataFacade {
         Set<String> allowed = rules.allowedDrawingTypes();
         if (allowed == null) return;
         for (JsonNode d : drawings) {
-            String t = d.path("type").asText("");
+            String t = d.path("type").asString("");
             if (!t.isBlank() && !allowed.contains(t)) {
                 throw new BusinessException("error.chart.drawingTypeNotAllowed", t, type);
             }
@@ -96,7 +96,7 @@ public class UserChartDataFacade {
         JsonNode array = config.get(field);
         if (array == null || !array.isArray()) return;
         for (JsonNode item : array) {
-            String t = item.path("type").asText("");
+            String t = item.path("type").asString("");
             if (!t.isBlank() && !allowedTypes.contains(t)) {
                 throw new BusinessException(messageKey, t, type);
             }

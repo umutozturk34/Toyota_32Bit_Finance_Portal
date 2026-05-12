@@ -59,7 +59,7 @@ class UserLayoutServiceTest {
 
         UserLayoutResponse layout = service.getOrEmpty(USER_SUB);
 
-        assertThat(layout.overview().get("sections").get(0).get("id").asText()).isEqualTo("indices");
+        assertThat(layout.overview().get("sections").get(0).get("id").asString()).isEqualTo("indices");
     }
 
     @Test
@@ -74,7 +74,7 @@ class UserLayoutServiceTest {
         ArgumentCaptor<UserLayout> captor = ArgumentCaptor.forClass(UserLayout.class);
         verify(repository).saveAndFlush(captor.capture());
         assertThat(captor.getValue().getUserSub()).isEqualTo(USER_SUB);
-        assertThat(captor.getValue().getOverview().get("sections").get(0).get("id").asText()).isEqualTo("watchlist");
+        assertThat(captor.getValue().getOverview().get("sections").get(0).get("id").asString()).isEqualTo("watchlist");
         assertThat(result.updatedAt()).isNotNull();
     }
 
@@ -94,6 +94,6 @@ class UserLayoutServiceTest {
         JsonNode resultSections = result.overview().get("sections");
         assertThat(resultSections.isArray()).isTrue();
         assertThat(resultSections.size()).isEqualTo(2);
-        assertThat(resultSections.get(0).get("id").asText()).isEqualTo("top-movers");
+        assertThat(resultSections.get(0).get("id").asString()).isEqualTo("top-movers");
     }
 }

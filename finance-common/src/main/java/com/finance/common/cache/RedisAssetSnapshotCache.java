@@ -88,7 +88,7 @@ public class RedisAssetSnapshotCache implements AssetSnapshotCache {
     }
 
     private static JsonNode unwrapTypeTagged(JsonNode node) {
-        if (node != null && node.isArray() && node.size() == 2 && node.get(0).isTextual()) {
+        if (node != null && node.isArray() && node.size() == 2 && node.get(0).isString()) {
             return node.get(1);
         }
         return node;
@@ -98,7 +98,7 @@ public class RedisAssetSnapshotCache implements AssetSnapshotCache {
         if (root == null || field == null) return null;
         JsonNode node = root.get(field);
         if (node == null || node.isNull()) return null;
-        return node.asText(null);
+        return node.asString(null);
     }
 
     private static BigDecimal numericField(JsonNode root, String field) {
@@ -109,9 +109,9 @@ public class RedisAssetSnapshotCache implements AssetSnapshotCache {
             node = node.get(1);
         }
         if (node.isNumber()) return node.decimalValue();
-        if (node.isTextual()) {
+        if (node.isString()) {
             try {
-                return new BigDecimal(node.asText());
+                return new BigDecimal(node.asString());
             } catch (NumberFormatException e) {
                 return null;
             }

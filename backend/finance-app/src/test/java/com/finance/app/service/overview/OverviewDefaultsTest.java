@@ -30,7 +30,7 @@ class OverviewDefaultsTest {
                 .findFirst().orElseThrow();
 
         assertThat(moversStock.kind()).isEqualTo(WidgetKind.MOVERS);
-        assertThat(moversStock.config().get("market").asText()).isEqualTo(MarketType.STOCK.name());
+        assertThat(moversStock.config().get("market").asString()).isEqualTo(MarketType.STOCK.name());
     }
 
     @Test

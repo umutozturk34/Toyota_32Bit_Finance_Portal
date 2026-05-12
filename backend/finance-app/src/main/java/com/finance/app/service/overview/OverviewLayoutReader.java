@@ -79,16 +79,16 @@ public class OverviewLayoutReader {
         }
         if (s.kind() == WidgetKind.MOVERS) {
             JsonNode market = s.config().get("market");
-            return "MOVERS:" + (market != null && !market.isNull() ? market.asText() : "any");
+            return "MOVERS:" + (market != null && !market.isNull() ? market.asString() : "any");
         }
         return s.kind().name();
     }
 
     private WidgetSection parseEntry(JsonNode entry) {
-        String rawId = entry.path("sectionId").asText(null);
+        String rawId = entry.path("sectionId").asString(null);
         if (rawId == null || rawId.isBlank()) return null;
         String sectionId = LEGACY_ID_MAP.getOrDefault(rawId, rawId);
-        WidgetKind kind = parseKind(entry.path("kind").asText(null), sectionId);
+        WidgetKind kind = parseKind(entry.path("kind").asString(null), sectionId);
         if (kind == null) return null;
         int order = entry.path("order").asInt(0);
         JsonNode config = entry.has("config") && entry.get("config").isObject()

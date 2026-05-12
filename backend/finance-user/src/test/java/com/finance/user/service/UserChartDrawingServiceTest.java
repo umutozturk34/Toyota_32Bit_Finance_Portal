@@ -107,7 +107,7 @@ class UserChartDrawingServiceTest {
         UserChartDrawing saved = captor.getValue();
         assertThat(saved.getUserSub()).isEqualTo(USER);
         assertThat(saved.getTrackedAsset()).isSameAs(tracked);
-        assertThat(saved.getDrawings().get(0).get("type").asText()).isEqualTo("fibonacci");
+        assertThat(saved.getDrawings().get(0).get("type").asString()).isEqualTo("fibonacci");
         assertThat(response).isSameAs(mapped);
     }
 
@@ -128,7 +128,7 @@ class UserChartDrawingServiceTest {
 
         UserChartDrawingResponse response = service.upsert(USER, TYPE, CODE, newDrawings);
 
-        assertThat(existing.getDrawings().get(0).get("type").asText()).isEqualTo("rectangle");
+        assertThat(existing.getDrawings().get(0).get("type").asString()).isEqualTo("rectangle");
         assertThat(response).isSameAs(mapped);
     }
 

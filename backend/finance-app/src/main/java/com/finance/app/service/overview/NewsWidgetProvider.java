@@ -85,7 +85,7 @@ public class NewsWidgetProvider implements OverviewWidgetProvider {
         if (node == null || !node.isArray()) return List.of();
         List<String> categories = new ArrayList<>(node.size());
         for (JsonNode entry : node) {
-            String value = entry.asText(null);
+            String value = entry.asString(null);
             if (value != null && !value.isBlank()) categories.add(value);
         }
         return categories;

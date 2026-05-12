@@ -1,12 +1,9 @@
 package com.finance.market.forex.service;
-import com.finance.market.core.service.ExchangeRateProvider;
-
-import com.finance.market.core.service.ExchangeRateSnapshot;
 
 import com.finance.market.core.cache.MarketCacheService;
-
-
 import com.finance.market.core.dto.external.YahooCandleDto;
+import com.finance.market.core.service.ExchangeRateProvider;
+import com.finance.market.core.service.ExchangeRateSnapshot;
 import com.finance.market.forex.model.Forex;
 import com.finance.market.forex.repository.ForexCandleRepository;
 import org.springframework.stereotype.Component;
@@ -18,7 +15,7 @@ import java.util.stream.Collectors;
 @Component
 public class ForexExchangeRateProvider implements ExchangeRateProvider {
 
-    private static final String USD_TRY_CODE = "USDTRY";
+    private static final String USD_CODE = "USD";
 
     private final MarketCacheService<Forex> forexCacheService;
     private final ForexCandleRepository forexCandleRepository;
@@ -31,11 +28,11 @@ public class ForexExchangeRateProvider implements ExchangeRateProvider {
 
     @Override
     public ExchangeRateSnapshot getCurrentUsdTry() {
-        Forex snapshot = forexCacheService.getSnapshot(USD_TRY_CODE);
-        if (snapshot == null || snapshot.getCurrentPrice() == null) {
+        Forex snapshot = forexCacheService.getSnapshot(USD_CODE);
+        if (snapshot == null || snapshot.getSellingPrice() == null) {
             return new ExchangeRateSnapshot(null, null);
         }
-        BigDecimal current = snapshot.getCurrentPrice();
+        BigDecimal current = snapshot.getSellingPrice();
         BigDecimal previous = snapshot.getChangeAmount() != null
                 ? current.subtract(snapshot.getChangeAmount())
                 : current;
@@ -44,10 +41,12 @@ public class ForexExchangeRateProvider implements ExchangeRateProvider {
 
     @Override
     public Map<String, YahooCandleDto> getUsdTryHistory() {
-        return forexCandleRepository.findByCurrencyCodeOrderByCandleDateAsc(USD_TRY_CODE).stream()
+        return forexCandleRepository.findByCurrencyCodeOrderByCandleDateAsc(USD_CODE).stream()
                 .collect(Collectors.toMap(
                         c -> c.getCandleDate().toLocalDate().toString(),
-                        c -> new YahooCandleDto(c.getCandleDate(), c.getOpen(), c.getHigh(), c.getLow(), c.getClose(), null),
+                        c -> new YahooCandleDto(c.getCandleDate(),
+                                c.getSellingPrice(), c.getSellingPrice(), c.getSellingPrice(), c.getSellingPrice(),
+                                null),
                         (a, b) -> a));
     }
 }

@@ -29,8 +29,17 @@ public class ForexPricingStrategy extends BaseAssetPricingStrategy {
         if (forex == null) {
             return null;
         }
-        BigDecimal basePrice = forex.getSellingPrice() != null ? forex.getSellingPrice() : forex.getCurrentPrice();
-        return normalize(basePrice);
+        return normalize(forex.getSellingPrice());
+    }
+
+    @Override
+    public BigDecimal getExitPriceTry(String assetCode) {
+        Forex forex = cacheService.getSnapshot(assetCode);
+        if (forex == null) {
+            return null;
+        }
+        BigDecimal exit = forex.getBuyingPrice() != null ? forex.getBuyingPrice() : forex.getSellingPrice();
+        return normalize(exit);
     }
 
     @Override
@@ -44,9 +53,8 @@ public class ForexPricingStrategy extends BaseAssetPricingStrategy {
         if (forex == null) {
             return new AssetPricingPort.PriceBundle(null, EMPTY_META);
         }
-        BigDecimal price = normalize(forex.getSellingPrice() != null ? forex.getSellingPrice() : forex.getCurrentPrice());
         return new AssetPricingPort.PriceBundle(
-                price,
+                normalize(forex.getSellingPrice()),
                 new AssetPricingPort.AssetMeta(forex.resolveDisplayName(), forex.getImage()));
     }
 }

@@ -1,7 +1,29 @@
 app:
   forex:
-    spread-rate: 0.01
-    chart-range: max
-    chart-interval: 1d
+    doviz-datagroup: bie_dkdovytl
+    efektif-datagroup: bie_dkefkytl
+    backfill-start-date: 1995-01-01
     batch-min-sample: 5
-    base-currency: USDTRY
+    flag-emojis:
+      USD: "🇺🇸"
+      EUR: "🇪🇺"
+      GBP: "🇬🇧"
+      JPY: "🇯🇵"
+      CHF: "🇨🇭"
+      CAD: "🇨🇦"
+      AUD: "🇦🇺"
+      SEK: "🇸🇪"
+      DKK: "🇩🇰"
+      NOK: "🇳🇴"
+      KWD: "🇰🇼"
+      SAR: "🇸🇦"
+      BGN: "🇧🇬"
+      RON: "🇷🇴"
+      RUB: "🇷🇺"
+      CNY: "🇨🇳"
+      AED: "🇦🇪"
+      QAR: "🇶🇦"
+      KRW: "🇰🇷"
+      PKR: "🇵🇰"
+      AZN: "🇦🇿"
+      KZT: "🇰🇿"

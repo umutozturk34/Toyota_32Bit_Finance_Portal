@@ -1,148 +1,108 @@
 package com.finance.market.forex.model;
-import com.finance.market.forex.model.Forex;
-
-
 
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ForexTest {
 
     private static final int SCALE = 4;
-    private static final BigDecimal SPREAD = new BigDecimal("0.01");
+    private static final LocalDateTime DATA_TIMESTAMP = LocalDateTime.of(2026, 5, 11, 0, 0);
 
     @Test
-    void applyYahooSnapshotSetsCurrentPriceAndSellingWithSpread() {
-        Forex forex = Forex.builder().currencyCode("USD").build();
+    void should_dividePricesByUnit_when_unitIsHundred() {
+        Forex forex = Forex.builder().currencyCode("JPY").build();
 
-        forex.applyYahooSnapshot(new BigDecimal("38.0000"), new BigDecimal("37.5000"), null, null, null, null, SPREAD, SCALE);
+        forex.applyEvdsSnapshot(DATA_TIMESTAMP,
+                new BigDecimal("28.7572"), new BigDecimal("28.9476"),
+                new BigDecimal("28.6508"), new BigDecimal("29.0576"), 100, SCALE);
 
-        assertThat(forex.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("38.0000"));
-        assertThat(forex.getSellingPrice()).isEqualByComparingTo(new BigDecimal("38.3800"));
+        assertThat(forex.getBuyingPrice()).isEqualByComparingTo(new BigDecimal("0.2876"));
+        assertThat(forex.getSellingPrice()).isEqualByComparingTo(new BigDecimal("0.2895"));
+        assertThat(forex.getEffectiveBuyingPrice()).isEqualByComparingTo(new BigDecimal("0.2865"));
+        assertThat(forex.getEffectiveSellingPrice()).isEqualByComparingTo(new BigDecimal("0.2906"));
+        assertThat(forex.getLastUpdated()).isEqualTo(DATA_TIMESTAMP);
     }
 
     @Test
-    void applyYahooSnapshotCalculatesChangeFields() {
+    void should_keepRawPrices_when_unitIsOne() {
         Forex forex = Forex.builder().currencyCode("USD").build();
 
-        forex.applyYahooSnapshot(new BigDecimal("38.0000"), new BigDecimal("37.5000"), null, null, null, null, SPREAD, SCALE);
+        forex.applyEvdsSnapshot(DATA_TIMESTAMP,
+                new BigDecimal("45.1900"), new BigDecimal("45.2714"),
+                new BigDecimal("45.1584"), new BigDecimal("45.3393"), 1, SCALE);
 
-        assertThat(forex.getChangeAmount()).isEqualByComparingTo(new BigDecimal("0.5000"));
-        assertThat(forex.getChangePercent()).isEqualByComparingTo(new BigDecimal("1.3333"));
+        assertThat(forex.getBuyingPrice()).isEqualByComparingTo(new BigDecimal("45.1900"));
+        assertThat(forex.getSellingPrice()).isEqualByComparingTo(new BigDecimal("45.2714"));
+        assertThat(forex.getLastUpdated()).isEqualTo(DATA_TIMESTAMP);
     }
 
     @Test
-    void applyYahooSnapshotNullMarketPriceDoesNothing() {
+    void should_preserveNullPrices_when_inputIsNull() {
+        Forex forex = Forex.builder().currencyCode("XDR").build();
+
+        forex.applyEvdsSnapshot(DATA_TIMESTAMP, new BigDecimal("62.1957"), null, null, null, 1, SCALE);
+
+        assertThat(forex.getBuyingPrice()).isEqualByComparingTo(new BigDecimal("62.1957"));
+        assertThat(forex.getSellingPrice()).isNull();
+        assertThat(forex.getEffectiveBuyingPrice()).isNull();
+        assertThat(forex.getEffectiveSellingPrice()).isNull();
+    }
+
+    @Test
+    void should_returnTrue_when_isTradableWithBothPrices() {
         Forex forex = Forex.builder().currencyCode("USD")
-                .currentPrice(new BigDecimal("37.0000")).build();
+                .buyingPrice(new BigDecimal("45.19")).sellingPrice(new BigDecimal("45.27")).build();
 
-        forex.applyYahooSnapshot(null, new BigDecimal("37.5000"), null, null, null, null, SPREAD, SCALE);
-
-        assertThat(forex.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("37.0000"));
+        assertThat(forex.isTradable()).isTrue();
     }
 
     @Test
-    void applyYahooSnapshotNullPreviousCloseNullsChangeFields() {
+    void should_returnFalse_when_isTradableWithMissingSellingPrice() {
+        Forex forex = Forex.builder().currencyCode("XDR")
+                .buyingPrice(new BigDecimal("62.20")).build();
+
+        assertThat(forex.isTradable()).isFalse();
+    }
+
+    @Test
+    void should_returnFalse_when_isTradableWithBothMissing() {
         Forex forex = Forex.builder().currencyCode("USD").build();
 
-        forex.applyYahooSnapshot(new BigDecimal("38.0000"), null, null, null, null, null, SPREAD, SCALE);
-
-        assertThat(forex.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("38.0000"));
-        assertThat(forex.getChangeAmount()).isNull();
-        assertThat(forex.getChangePercent()).isNull();
+        assertThat(forex.isTradable()).isFalse();
     }
 
     @Test
-    void applyYahooSnapshotZeroPreviousCloseNullsChangeFields() {
-        Forex forex = Forex.builder().currencyCode("EUR").build();
-
-        forex.applyYahooSnapshot(new BigDecimal("41.0000"), BigDecimal.ZERO, null, null, null, null, SPREAD, SCALE);
-
-        assertThat(forex.getChangeAmount()).isNull();
-        assertThat(forex.getChangePercent()).isNull();
-    }
-
-    @Test
-    void applySyntheticPriceSetsCurrentAndSellingPrice() {
-        Forex forex = Forex.builder().currencyCode("EUR").build();
-
-        forex.applySyntheticPrice(new BigDecimal("41.5000"), new BigDecimal("41.0000"),
-                null, null, null, SPREAD, SCALE);
-
-        assertThat(forex.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("41.5000"));
-        assertThat(forex.getSellingPrice()).isEqualByComparingTo(new BigDecimal("41.9150"));
-    }
-
-    @Test
-    void applySyntheticPriceCalculatesChangeFromPreviousClose() {
-        Forex forex = Forex.builder().currencyCode("EUR").build();
-
-        forex.applySyntheticPrice(new BigDecimal("41.5000"), new BigDecimal("40.0000"),
-                null, null, null, SPREAD, SCALE);
-
-        assertThat(forex.getChangeAmount()).isEqualByComparingTo(new BigDecimal("1.5000"));
-        assertThat(forex.getChangePercent()).isEqualByComparingTo(new BigDecimal("3.7500"));
-    }
-
-    @Test
-    void applySyntheticPriceNullPreviousCloseSkipsChangeFields() {
-        Forex forex = Forex.builder().currencyCode("GBP")
-                .changeAmount(new BigDecimal("0.5000"))
-                .changePercent(new BigDecimal("1.0000"))
+    void should_returnSellingPrice_when_getPriceTryCalled() {
+        Forex forex = Forex.builder().currencyCode("USD")
+                .sellingPrice(new BigDecimal("45.27"))
                 .build();
 
-        forex.applySyntheticPrice(new BigDecimal("48.0000"), null,
-                null, null, null, SPREAD, SCALE);
-
-        assertThat(forex.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("48.0000"));
-        assertThat(forex.getChangeAmount()).isEqualByComparingTo(new BigDecimal("0.5000"));
-        assertThat(forex.getChangePercent()).isEqualByComparingTo(new BigDecimal("1.0000"));
+        assertThat(forex.getPriceTry()).isEqualByComparingTo(new BigDecimal("45.27"));
     }
 
     @Test
-    void applySyntheticPriceNullSyntheticPriceDoesNothing() {
-        Forex forex = Forex.builder().currencyCode("CHF")
-                .currentPrice(new BigDecimal("42.0000")).build();
-
-        forex.applySyntheticPrice(null, new BigDecimal("41.0000"),
-                null, null, null, SPREAD, SCALE);
-
-        assertThat(forex.getCurrentPrice()).isEqualByComparingTo(new BigDecimal("42.0000"));
-    }
-
-    @Test
-    void applySyntheticPriceSetsOhlcFromCandle() {
+    void should_returnCurrencyCode_when_getCodeCalled() {
         Forex forex = Forex.builder().currencyCode("EUR").build();
 
-        forex.applySyntheticPrice(new BigDecimal("41.5000"), new BigDecimal("41.0000"),
-                new BigDecimal("41.2000"), new BigDecimal("41.6000"), new BigDecimal("41.1000"),
-                SPREAD, SCALE);
-
-        assertThat(forex.getOpenPrice()).isEqualByComparingTo(new BigDecimal("41.2000"));
-        assertThat(forex.getDayHigh()).isEqualByComparingTo(new BigDecimal("41.6000"));
-        assertThat(forex.getDayLow()).isEqualByComparingTo(new BigDecimal("41.1000"));
+        assertThat(forex.getCode()).isEqualTo("EUR");
     }
 
     @Test
-    void applyYahooSnapshotNegativeChangePercent() {
+    void should_resolveNameWhenSet() {
+        Forex forex = Forex.builder().currencyCode("USD").build();
+        forex.setName("ABD Doları");
+
+        assertThat(forex.resolveDisplayName()).isEqualTo("ABD Doları");
+    }
+
+    @Test
+    void should_fallBackToCurrencyCode_when_nameMissing() {
         Forex forex = Forex.builder().currencyCode("USD").build();
 
-        forex.applyYahooSnapshot(new BigDecimal("37.0000"), new BigDecimal("38.0000"), null, null, null, null, SPREAD, SCALE);
-
-        assertThat(forex.getChangeAmount()).isEqualByComparingTo(new BigDecimal("-1.0000"));
-        assertThat(forex.getChangePercent()).isEqualByComparingTo(new BigDecimal("-2.6316"));
-    }
-
-    @Test
-    void applyYahooSnapshotSellingPriceScaledCorrectly() {
-        Forex forex = Forex.builder().currencyCode("EUR").build();
-
-        forex.applyYahooSnapshot(new BigDecimal("41.1234"), new BigDecimal("40.0000"), null, null, null, null, new BigDecimal("0.015"), SCALE);
-
-        assertThat(forex.getSellingPrice()).isEqualByComparingTo(new BigDecimal("41.7403"));
-        assertThat(forex.getSellingPrice().scale()).isEqualTo(SCALE);
+        assertThat(forex.resolveDisplayName()).isEqualTo("USD");
     }
 }

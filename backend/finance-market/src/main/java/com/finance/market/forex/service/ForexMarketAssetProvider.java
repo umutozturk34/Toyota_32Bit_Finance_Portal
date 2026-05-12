@@ -1,12 +1,8 @@
 package com.finance.market.forex.service;
 
-import com.finance.market.core.service.MarketAssetProvider;
-
 import com.finance.market.core.cache.MarketCacheService;
-
-
-
 import com.finance.market.core.dto.response.MarketAssetResponse;
+import com.finance.market.core.service.MarketAssetProvider;
 import com.finance.market.forex.mapper.ForexResponseMapper;
 import com.finance.market.forex.model.Forex;
 import com.finance.common.model.MarketType;
@@ -19,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -30,9 +27,9 @@ import static com.finance.market.core.service.MarketProviderHelper.buildSort;
 public class ForexMarketAssetProvider implements MarketAssetProvider {
 
     private static final Map<String, String> SORT_FIELDS = Map.of(
-            "price", "currentPrice",
+            "price", "sellingPrice",
             "changePercent", "changePercent",
-            "name", "currencyName",
+            "name", "name",
             "default", "changePercent"
     );
 
@@ -55,7 +52,6 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
     @Override
     public List<MarketAssetResponse> search(String searchTerm, MarketAssetFilters filters, String sortBy, String direction, int page, int size) {
         Specification<Forex> spec = buildSpecification(searchTerm);
-
         List<Forex> forexList = forexRepository.findAll(spec, PageRequest.of(page, size, buildSort(sortBy, direction, SORT_FIELDS))).getContent();
         return forexResponseMapper.toMarketAssetResponses(forexList);
     }
@@ -66,7 +62,6 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
         Sort sort = gainers
                 ? Sort.by(Sort.Direction.DESC, "changePercent")
                 : Sort.by(Sort.Direction.ASC, "changePercent");
-
         List<Forex> forexList = forexRepository.findAll(spec, PageRequest.of(0, limit, sort)).getContent();
         return forexResponseMapper.toMarketAssetResponses(forexList);
     }
@@ -85,7 +80,7 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
         Specification<Forex> spec = (root, query, cb) -> cb.conjunction();
         if (searchTerm != null && !searchTerm.isBlank()) {
             spec = spec.and((root, query, cb) ->
-                    LikeSearchSpec.byFieldsContains(root, cb, searchTerm, "currencyCode", "currencyName"));
+                    LikeSearchSpec.byFieldsContains(root, cb, searchTerm, "currencyCode", "name"));
         }
         return spec;
     }
@@ -96,7 +91,7 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
 
     private Specification<Forex> signSpec(boolean gainers) {
         return (root, query, cb) -> gainers
-                ? cb.greaterThan(root.get("changePercent"), java.math.BigDecimal.ZERO)
-                : cb.lessThan(root.get("changePercent"), java.math.BigDecimal.ZERO);
+                ? cb.greaterThan(root.get("changePercent"), BigDecimal.ZERO)
+                : cb.lessThan(root.get("changePercent"), BigDecimal.ZERO);
     }
 }

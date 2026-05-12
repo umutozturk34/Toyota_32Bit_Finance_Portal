@@ -1,177 +1,112 @@
 package com.finance.market.forex.service;
-import com.finance.market.core.cache.MarketCacheService;
 
-import com.finance.market.core.service.MarketSnapshotProcessor;
-
-
-import com.finance.market.forex.client.YahooForexClient;
-import com.finance.common.config.AppProperties;
-import com.finance.market.forex.config.ForexProperties;
-import com.finance.market.core.dto.external.YahooCandleDto;
-import com.finance.market.core.dto.external.YahooQuoteDto;
-import com.finance.market.core.dto.internal.YahooChartFullResult;
 import com.finance.common.exception.ExternalApiException;
-import com.finance.market.forex.mapper.ForexMapper;
+import com.finance.market.core.client.AbstractEvdsClient;
+import com.finance.market.core.dto.internal.EvdsDataResponse;
+import com.finance.market.core.service.MarketSnapshotProcessor;
+import com.finance.market.core.util.ApiAssetValidator;
+import com.finance.market.core.util.TrackedRefreshRunner;
+import com.finance.market.forex.client.EvdsForexClient;
+import com.finance.market.forex.mapper.ForexEvdsMapper;
 import com.finance.market.forex.model.Forex;
+import com.finance.market.forex.model.ForexCandle;
 import com.finance.market.forex.repository.ForexCandleRepository;
-import com.finance.market.forex.repository.ForexRepository;
-import com.finance.market.core.util.SyntheticPriceCalculator;
-import com.finance.market.core.util.YahooRangePolicy;
-import com.finance.market.core.util.YahooSymbolSuffix;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import com.finance.shared.util.CodeNormalizer;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
-import java.time.ZoneId;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Log4j2
 @Component
+@RequiredArgsConstructor
 public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
 
-    private final YahooForexClient yahooForexClient;
-    private final ForexRepository forexRepository;
-    private final ForexCandleRepository forexCandleRepository;
-    private final MarketCacheService<Forex> forexCacheService;
+    private static final DateTimeFormatter EVDS_DATE_FMT = AbstractEvdsClient.DATE_FMT;
+    private static final int LATEST_LOOKBACK_DAYS = 5;
+
+    private final EvdsForexClient evdsClient;
+    private final EvdsForexCurrencyResolver currencyResolver;
+    private final ForexEvdsMapper evdsMapper;
     private final ForexEntityWriter entityWriter;
-    private final ForexMapper forexMapper;
+    private final ForexCandleRepository forexCandleRepository;
     private final TransactionTemplate transactionTemplate;
-    private final BigDecimal spreadRate;
-    private final int scale;
-    private final ZoneId appZone;
-    private final String baseCurrency;
-    private final String chartRange;
-    private final String chartInterval;
 
-    public ForexSnapshotProcessor(YahooForexClient yahooForexClient,
-                                  ForexRepository forexRepository,
-                                  ForexCandleRepository forexCandleRepository,
-                                  MarketCacheService<Forex> forexCacheService,
-                                  ForexEntityWriter entityWriter,
-                                  ForexMapper forexMapper,
-                                  TransactionTemplate transactionTemplate,
-                                  AppProperties appProperties,
-                                  ForexProperties forexProperties) {
-        this.yahooForexClient = yahooForexClient;
-        this.forexRepository = forexRepository;
-        this.forexCandleRepository = forexCandleRepository;
-        this.forexCacheService = forexCacheService;
-        this.entityWriter = entityWriter;
-        this.forexMapper = forexMapper;
-        this.transactionTemplate = transactionTemplate;
-        this.spreadRate = forexProperties.getSpreadRate();
-        this.scale = appProperties.getScale();
-        this.appZone = ZoneId.of(appProperties.getTimezone());
-        this.baseCurrency = forexProperties.getBaseCurrency();
-        this.chartRange = forexProperties.getChartRange();
-        this.chartInterval = forexProperties.getChartInterval();
+    public Forex applyLatestSnapshot(ForexSerieMetadata meta, EvdsDataResponse response) {
+        Forex forex = entityWriter.upsertForexShell(meta);
+        List<ForexCandle> windowCandles = evdsMapper.toCandles(forex, meta, response, entityWriter.getScale());
+        if (!windowCandles.isEmpty()) {
+            entityWriter.upsertCandles(forex, windowCandles);
+        }
+        ForexEvdsMapper.ItemRow latest = evdsMapper.extractLatestRow(response, meta);
+        if (latest == null) {
+            return entityWriter.saveSnapshot(forex);
+        }
+        forex.applyEvdsSnapshot(latest.candleDate(),
+                latest.buyingRaw(), latest.sellingRaw(),
+                latest.effectiveBuyingRaw(), latest.effectiveSellingRaw(),
+                meta.unit(), entityWriter.getScale());
+        applyChangeFromCandles(forex);
+        return entityWriter.saveSnapshot(forex);
     }
 
-    public void updatePair(Forex forex, Map<String, YahooCandleDto> usdtryCandleMap) {
-        String baseSymbol = forex.getCurrencyCode();
-        String yahooSymbol = baseSymbol + YahooSymbolSuffix.FOREX;
-        boolean wasEmpty = forexCandleRepository.countByCurrencyCode(baseSymbol) == 0;
-        String range = forexCandleRepository.findFirstByCurrencyCodeOrderByCandleDateDesc(baseSymbol)
-                .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, chartRange))
-                .orElse(chartRange);
-        try {
-            YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(yahooSymbol, range, chartInterval, true);
-            if (hasUsableQuote(result)) {
-                int saved = transactionTemplate.execute(status -> {
-                    entityWriter.applyDirect(forex, result.quote(), spreadRate, scale);
-                    int upserted = entityWriter.upsertCandles(forex, result.candles());
-                    entityWriter.refreshChangePercentFromCandles(forex, scale);
-                    return upserted;
-                });
-                forexCacheService.putSnapshot(baseSymbol, forex);
-                if (saved > 0 && (!wasEmpty || baseCurrency.equals(baseSymbol))) {
-                    return;
-                }
-                if (saved > 0) {
-                    log.info("{} first-time direct returned {} candles, also trying synthetic backfill",
-                            baseSymbol, saved);
-                }
+    public Optional<LocalDate> findLastCandleDate(String currencyCode) {
+        return forexCandleRepository.findFirstByCurrencyCodeOrderByCandleDateDesc(currencyCode)
+                .map(c -> c.getCandleDate().toLocalDate());
+    }
+
+    @Override
+    public void refreshOne(String currencyCode) {
+        TrackedRefreshRunner.refreshSnapshot(currencyCode, CodeNormalizer::upper, normalized -> {
+            ForexSerieMetadata meta = currencyResolver
+                    .resolveActive(evdsClient.fetchDovizSerieList(), evdsClient.fetchEfektifSerieList())
+                    .stream()
+                    .filter(m -> m.currencyCode().equals(normalized))
+                    .findFirst()
+                    .orElse(null);
+            if (meta == null) {
+                log.warn("Refresh requested for unknown forex currency: {}", normalized);
+                return false;
             }
-        } catch (CallNotPermittedException e) {
-            throw e;
-        } catch (Exception e) {
-            log.warn("Direct fetch failed for {}, trying synthetic", baseSymbol, e);
-        }
-        if (baseCurrency.equals(baseSymbol)) {
-            throw new ExternalApiException("Yahoo Finance", "All forex attempts failed for " + baseSymbol);
-        }
-        trySyntheticUpdate(forex, usdtryCandleMap);
+            EvdsDataResponse response = fetchLatestWindow(meta);
+            if (response == null) return false;
+            transactionTemplate.executeWithoutResult(status -> applyLatestSnapshot(meta, response));
+            return true;
+        }, log, "forex");
     }
 
-    public void refreshOne(String code) {
-        Forex forex = forexRepository.findById(code).orElse(null);
-        if (forex == null) {
-            log.warn("Forex pair {} not found for single-code refresh", code);
-            return;
-        }
-        Map<String, YahooCandleDto> usdtryCandleMap = forexCandleRepository
-                .findByCurrencyCodeOrderByCandleDateAsc(baseCurrency).stream()
-                .collect(Collectors.toMap(
-                        c -> c.getCandleDate().toLocalDate().toString(),
-                        forexMapper::toYahooCandleDto,
-                        (a, b) -> a));
-        updatePair(forex, usdtryCandleMap);
+    @Override
+    public boolean exists(String currencyCode) {
+        return ApiAssetValidator.validate(currencyCode, true,
+                normalized -> currencyResolver.isActiveCurrencyCode(evdsClient.fetchDovizSerieList(), normalized),
+                log, "Forex");
     }
 
-    public boolean exists(String code) {
+    private EvdsDataResponse fetchLatestWindow(ForexSerieMetadata meta) {
+        LocalDate today = LocalDate.now();
+        LocalDate from = today.minusDays(LATEST_LOOKBACK_DAYS);
         try {
-            YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(code + YahooSymbolSuffix.FOREX, "1d", chartInterval, true);
-            return hasUsableQuote(result);
-        } catch (Exception e) {
-            log.warn("Forex existence check failed for {}: {}", code, e.getMessage());
-            return false;
+            return evdsClient.fetchForexData(meta.seriesCodes(),
+                    from.format(EVDS_DATE_FMT), today.format(EVDS_DATE_FMT));
+        } catch (ExternalApiException ex) {
+            log.error("Forex snapshot fetch failed for {}: {}", meta.currencyCode(), ex.getMessage());
+            return null;
         }
     }
 
-    private void trySyntheticUpdate(Forex forex, Map<String, YahooCandleDto> usdtryCandleMap) {
-        if (usdtryCandleMap.isEmpty()) {
-            throw new ExternalApiException("Yahoo Finance",
-                    baseCurrency + " candles not available for " + forex.getCurrencyCode());
-        }
-        Forex usdtry = forexRepository.findById(baseCurrency).orElse(null);
-        if (usdtry == null || usdtry.getCurrentPrice() == null) {
-            throw new ExternalApiException("Yahoo Finance",
-                    baseCurrency + " snapshot not available for synthetic of " + forex.getCurrencyCode());
-        }
-        String coinPart = forex.getCurrencyCode().replace("TRY", "");
-        String[] attempts = {coinPart + "USD" + YahooSymbolSuffix.FOREX, "USD" + coinPart + YahooSymbolSuffix.FOREX};
-        for (String symbol : attempts) {
-            try {
-                YahooChartFullResult<YahooQuoteDto> result = yahooForexClient.fetchChartFull(symbol, chartRange, chartInterval, true);
-                if (!hasUsableQuote(result) || result.candles().isEmpty()) continue;
-                boolean isUsdBase = symbol.startsWith("USD");
-                List<YahooCandleDto> syntheticCandles = SyntheticPriceCalculator.buildSyntheticCandles(
-                        result.candles(), usdtryCandleMap, isUsdBase, scale);
-                if (syntheticCandles.isEmpty()) continue;
-                YahooCandleDto todayTryCandle = syntheticCandles.get(syntheticCandles.size() - 1);
-                int saved = transactionTemplate.execute(status -> {
-                    entityWriter.applySynthetic(forex, result.quote(), usdtry, isUsdBase,
-                            spreadRate, scale, todayTryCandle);
-                    int upserted = entityWriter.upsertCandles(forex, syntheticCandles);
-                    entityWriter.refreshChangePercentFromCandles(forex, scale);
-                    return upserted;
-                });
-                forexCacheService.putSnapshot(forex.getCurrencyCode(), forex);
-                log.debug("Saved {} synthetic candles for {} via {}", saved, forex.getCurrencyCode(), symbol);
-                return;
-            } catch (Exception e) {
-                log.warn("Synthetic {} failed for {}", symbol, forex.getCurrencyCode(), e);
-            }
-        }
-        throw new ExternalApiException("Yahoo Finance",
-                "All synthetic attempts failed for " + forex.getCurrencyCode());
-    }
-
-    private boolean hasUsableQuote(YahooChartFullResult<YahooQuoteDto> result) {
-        return result.quote() != null && result.quote().regularMarketPrice() != null;
+    private void applyChangeFromCandles(Forex forex) {
+        if (forex.getSellingPrice() == null) return;
+        List<ForexCandle> topTwo = forexCandleRepository
+                .findTop2ByCurrencyCodeOrderByCandleDateDesc(forex.getCurrencyCode());
+        if (topTwo.size() < 2) return;
+        BigDecimal previous = topTwo.get(1).getSellingPrice();
+        if (previous == null) return;
+        forex.applyChange(forex.getSellingPrice(), previous, entityWriter.getScale());
     }
 }

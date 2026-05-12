@@ -9,9 +9,7 @@ app:
       afternoon-cron: "0 15 14 * * MON-FRI"
       evening-cron: "0 15 19 * * MON-FRI"
     forex:
-      morning-cron: "0 30 10 * * *"
-      afternoon-cron: "0 0 16 * * *"
-      evening-cron: "0 0 22 * * *"
+      daily-cron: "0 30 16 * * *"
     news:
       morning-cron: "0 0 8 * * *"
       afternoon-cron: "0 30 14 * * *"

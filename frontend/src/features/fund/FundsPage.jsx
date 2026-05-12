@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { STALE } from '../../shared/constants/query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LineChart, Activity, Clock, Users as UsersIcon, Wallet } from 'lucide-react';
@@ -26,7 +27,7 @@ function FundsPage() {
     const { data: fundTypes = [] } = useQuery({
         queryKey: ['fundTypes'],
         queryFn: fundService.getGroupCounts,
-        staleTime: 60_000,
+        staleTime: STALE.MEDIUM,
     });
 
     const queryParams = {

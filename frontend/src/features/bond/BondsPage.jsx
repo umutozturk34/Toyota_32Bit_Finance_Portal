@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { STALE } from '../../shared/constants/query';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import useSessionState from "../../shared/hooks/useSessionState";
@@ -239,7 +240,7 @@ export default function BondsPage() {
     const { data: bondTypes = [] } = useQuery({
         queryKey: ['bondTypes'],
         queryFn: bondService.getTypes,
-        staleTime: 60_000,
+        staleTime: STALE.MEDIUM,
     });
 
     const queryParams = {

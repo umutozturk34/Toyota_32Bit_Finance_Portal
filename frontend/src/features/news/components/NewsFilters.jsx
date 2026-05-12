@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { STALE } from '../../../shared/constants/query';
 import { useTranslation } from 'react-i18next';
 import { Newspaper } from 'lucide-react';
 import { newsService } from '../services/newsService';
@@ -10,7 +11,7 @@ export default function NewsFilters({ activeTab, onTabChange }) {
     const { data: categoryCounts = [] } = useQuery({
         queryKey: ['newsCategories'],
         queryFn: newsService.getCategories,
-        staleTime: 60_000,
+        staleTime: STALE.MEDIUM,
     });
 
     const items = categoryCounts.map(c => {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { STALE } from '../../../shared/constants/query';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Shield, ShieldOff, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
@@ -14,7 +15,7 @@ function useTwoFactorStatus() {
     return useQuery({
         queryKey: STATUS_KEY,
         queryFn: userCredentialService.getTwoFactorStatus,
-        staleTime: 60_000,
+        staleTime: STALE.MEDIUM,
         refetchOnWindowFocus: false,
     });
 }

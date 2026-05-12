@@ -1,6 +1,6 @@
 package com.finance.app.service.overview;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.finance.app.dto.response.overview.WatchlistData;
 import com.finance.app.dto.response.overview.WidgetKind;
 import com.finance.app.dto.response.overview.WidgetSection;

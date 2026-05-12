@@ -1,6 +1,6 @@
 package com.finance.app.service.overview;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.JsonNodeFactory;
 import com.finance.app.dto.response.overview.AssetCardsData;
 import com.finance.app.dto.response.overview.NewsData;
 import com.finance.app.dto.response.overview.RenderedWidget;

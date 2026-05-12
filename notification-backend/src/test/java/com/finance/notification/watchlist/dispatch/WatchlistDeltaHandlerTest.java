@@ -54,7 +54,7 @@ class WatchlistDeltaHandlerTest {
     @Test
     void render_singleItem_titleUsesAssetName() {
         WatchlistDeltaPayload payload = new WatchlistDeltaPayload(
-                7L, "Favorilerim", MarketType.CRYPTO,
+                7L, "Favorilerim", false, MarketType.CRYPTO,
                 List.of(item("btc", "Bitcoin", "https://x/y.png",
                         BigDecimal.valueOf(106), BigDecimal.valueOf(6))));
 
@@ -69,7 +69,7 @@ class WatchlistDeltaHandlerTest {
     @Test
     void render_multipleItems_titleAggregates() {
         WatchlistDeltaPayload payload = new WatchlistDeltaPayload(
-                7L, "Favorilerim", MarketType.CRYPTO,
+                7L, "Favorilerim", false, MarketType.CRYPTO,
                 List.of(
                         item("btc", "Bitcoin", null, BigDecimal.valueOf(106), BigDecimal.valueOf(6)),
                         item("eth", "Ethereum", null, BigDecimal.valueOf(94), BigDecimal.valueOf(-6))
@@ -84,7 +84,7 @@ class WatchlistDeltaHandlerTest {
     @Test
     void render_formatsZeroDeltaWithoutScientificNotation() {
         WatchlistDeltaPayload payload = new WatchlistDeltaPayload(
-                7L, "Liste", MarketType.CRYPTO,
+                7L, "Liste", false, MarketType.CRYPTO,
                 List.of(item("btc", "Bitcoin", null,
                         BigDecimal.valueOf(100),
                         new BigDecimal("0E-8"))));
@@ -99,7 +99,7 @@ class WatchlistDeltaHandlerTest {
     @Test
     void render_fallsBackToWatchlistDefaultLabelWhenNameMissing() {
         WatchlistDeltaPayload payload = new WatchlistDeltaPayload(
-                null, null, MarketType.CRYPTO,
+                null, null, false, MarketType.CRYPTO,
                 List.of(item("btc", "Bitcoin", null,
                         BigDecimal.valueOf(106), BigDecimal.valueOf(6))));
 
@@ -107,5 +107,18 @@ class WatchlistDeltaHandlerTest {
 
         assertThat(result.title()).isEqualTo("Takip listeniz — Bitcoin");
         assertThat(result.emailModel()).containsEntry("watchlistName", "Takip listeniz");
+    }
+
+    @Test
+    void render_useTranslatedLabel_whenDefaultListFlagged() {
+        WatchlistDeltaPayload payload = new WatchlistDeltaPayload(
+                1L, "Favoriler", true, MarketType.CRYPTO,
+                List.of(item("btc", "Bitcoin", null,
+                        BigDecimal.valueOf(106), BigDecimal.valueOf(6))));
+
+        RenderedNotification result = handler.render(NotificationRequest.of("u", payload));
+
+        assertThat(result.title()).isEqualTo("Favoriler — Bitcoin");
+        assertThat(result.emailModel()).containsEntry("watchlistName", "Favoriler");
     }
 }

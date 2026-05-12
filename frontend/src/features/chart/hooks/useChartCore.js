@@ -88,6 +88,10 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 high: Number(c.high ?? close),
                 low: Number(c.low ?? close),
                 close,
+                sellingPrice: c.sellingPrice != null ? Number(c.sellingPrice) : null,
+                buyingPrice: c.buyingPrice != null ? Number(c.buyingPrice) : null,
+                effectiveBuyingPrice: c.effectiveBuyingPrice != null ? Number(c.effectiveBuyingPrice) : null,
+                effectiveSellingPrice: c.effectiveSellingPrice != null ? Number(c.effectiveSellingPrice) : null,
             };
         });
         candleDataRef.current = candleData;
@@ -154,7 +158,12 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 return;
             }
             const cd = candleDataRef.current.find(c => chartTimeEqual(c.time, param.time));
-            if (cd) setCrosshairData({ open: cd.open, high: cd.high, low: cd.low, close: cd.close, time: cd.time });
+            if (cd) setCrosshairData({
+                open: cd.open, high: cd.high, low: cd.low, close: cd.close,
+                sellingPrice: cd.sellingPrice, buyingPrice: cd.buyingPrice,
+                effectiveBuyingPrice: cd.effectiveBuyingPrice, effectiveSellingPrice: cd.effectiveSellingPrice,
+                time: cd.time,
+            });
             const overlays = overlayMetaRef.current;
             if (overlays.size > 0 && param.point) {
                 const mouseY = param.point.y;

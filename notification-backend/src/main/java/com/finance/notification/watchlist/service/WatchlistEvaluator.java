@@ -95,13 +95,15 @@ public class WatchlistEvaluator {
 
     private int dispatchAll(Map<GroupKey, List<WatchlistDeltaPayload.DeltaItem>> firedByGroup, MarketType marketType) {
         if (firedByGroup.isEmpty()) return 0;
-        Map<Long, String> watchlistNames = resolveWatchlistNames(firedByGroup.keySet());
+        Map<Long, WatchlistMeta> watchlistMetas = resolveWatchlistMetas(firedByGroup.keySet());
         List<NotificationRequest> requests = new ArrayList<>(firedByGroup.size());
         for (Map.Entry<GroupKey, List<WatchlistDeltaPayload.DeltaItem>> entry : firedByGroup.entrySet()) {
             GroupKey key = entry.getKey();
+            WatchlistMeta meta = watchlistMetas.getOrDefault(key.watchlistId(), WatchlistMeta.UNKNOWN);
             WatchlistDeltaPayload payload = new WatchlistDeltaPayload(
                     key.watchlistId(),
-                    watchlistNames.get(key.watchlistId()),
+                    meta.name(),
+                    meta.defaultList(),
                     marketType,
                     entry.getValue());
             requests.add(NotificationRequest.of(key.userSub(), payload));
@@ -114,10 +116,17 @@ public class WatchlistEvaluator {
         return result.dispatched();
     }
 
-    private Map<Long, String> resolveWatchlistNames(Set<GroupKey> groups) {
+    private Map<Long, WatchlistMeta> resolveWatchlistMetas(Set<GroupKey> groups) {
         Set<Long> ids = groups.stream().map(GroupKey::watchlistId).collect(Collectors.toUnmodifiableSet());
         if (ids.isEmpty()) return Map.of();
         return watchlistRepository.findAllById(ids).stream()
-                .collect(Collectors.toUnmodifiableMap(Watchlist::getId, Watchlist::getName, (a, b) -> a));
+                .collect(Collectors.toUnmodifiableMap(
+                        Watchlist::getId,
+                        w -> new WatchlistMeta(w.getName(), w.isDefault()),
+                        (a, b) -> a));
+    }
+
+    private record WatchlistMeta(String name, boolean defaultList) {
+        static final WatchlistMeta UNKNOWN = new WatchlistMeta(null, false);
     }
 }

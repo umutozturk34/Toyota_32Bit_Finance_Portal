@@ -1,15 +1,18 @@
 package com.finance.user.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.user.config.ChartDefaultsProperties;
+import com.finance.user.config.ChartDefaultsProperties.AssetTypeRules;
 import com.finance.user.dto.UserChartBundleResponse;
 import com.finance.user.dto.UserChartDrawingResponse;
 import com.finance.user.dto.UserChartPreferenceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -28,14 +31,81 @@ public class UserChartDataFacade {
 
     public UserChartPreferenceResponse upsertPreferences(String userSub, TrackedAssetType type, String code,
                                                           JsonNode config) {
+        validateAssetTypeRules(type, config);
         validateConfigLimits(config);
         return preferenceService.upsert(userSub, type, code, config);
     }
 
     public UserChartDrawingResponse upsertDrawings(String userSub, TrackedAssetType type, String code,
                                                     JsonNode drawings) {
+        validateDrawingsAssetType(type, drawings);
         validateDrawingLimit(drawings);
         return drawingService.upsert(userSub, type, code, drawings);
+    }
+
+    private void validateAssetTypeRules(TrackedAssetType type, JsonNode config) {
+        AssetTypeRules rules = resolveRules(type);
+        if (rules == null || config == null || !config.isObject()) return;
+
+        JsonNode chartType = config.get("chartType");
+        if (chartType != null && chartType.isTextual()
+                && rules.allowedChartTypes() != null
+                && !rules.allowedChartTypes().isEmpty()
+                && !rules.allowedChartTypes().contains(chartType.asText())) {
+            throw new BusinessException("error.chart.chartTypeNotAllowed", chartType.asText(), type);
+        }
+
+        rejectFlagIfDisallowed(config, "showVolume", rules.allowVolume(),
+                "error.chart.volumeNotAllowed", type);
+        rejectFlagIfDisallowed(config, "showInvestorCount", rules.allowInvestorCount(),
+                "error.chart.investorCountNotAllowed", type);
+        rejectFlagIfDisallowed(config, "showPortfolioSize", rules.allowPortfolioSize(),
+                "error.chart.portfolioSizeNotAllowed", type);
+
+        validateTypedArray(config, "indicators", rules.allowedIndicators(),
+                "error.chart.indicatorTypeNotAllowed", type);
+        validateTypedArray(config, "fibTools", rules.allowedFibTools(),
+                "error.chart.fibToolTypeNotAllowed", type);
+    }
+
+    private void validateDrawingsAssetType(TrackedAssetType type, JsonNode drawings) {
+        AssetTypeRules rules = resolveRules(type);
+        if (rules == null || drawings == null || !drawings.isArray()) return;
+        Set<String> allowed = rules.allowedDrawingTypes();
+        if (allowed == null) return;
+        for (JsonNode d : drawings) {
+            String t = d.path("type").asText("");
+            if (!t.isBlank() && !allowed.contains(t)) {
+                throw new BusinessException("error.chart.drawingTypeNotAllowed", t, type);
+            }
+        }
+    }
+
+    private void rejectFlagIfDisallowed(JsonNode config, String field, boolean allowed,
+                                         String messageKey, TrackedAssetType type) {
+        if (allowed) return;
+        JsonNode value = config.get(field);
+        if (value != null && value.isBoolean() && value.asBoolean()) {
+            throw new BusinessException(messageKey, type);
+        }
+    }
+
+    private void validateTypedArray(JsonNode config, String field, Set<String> allowedTypes,
+                                     String messageKey, TrackedAssetType type) {
+        if (allowedTypes == null) return;
+        JsonNode array = config.get(field);
+        if (array == null || !array.isArray()) return;
+        for (JsonNode item : array) {
+            String t = item.path("type").asText("");
+            if (!t.isBlank() && !allowedTypes.contains(t)) {
+                throw new BusinessException(messageKey, t, type);
+            }
+        }
+    }
+
+    private AssetTypeRules resolveRules(TrackedAssetType type) {
+        if (chartDefaults.rules() == null) return null;
+        return chartDefaults.rules().get(type);
     }
 
     private void validateConfigLimits(JsonNode config) {

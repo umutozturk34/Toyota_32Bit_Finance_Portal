@@ -30,6 +30,11 @@ public class AssetPricingAdapter implements AssetPricingPort {
     }
 
     @Override
+    public BigDecimal getExitPriceTry(MarketType type, String assetCode) {
+        return dispatch(type, assetCode, "exitPrice", null, strategy -> strategy.getExitPriceTry(assetCode));
+    }
+
+    @Override
     public AssetMeta getAssetMeta(MarketType type, String assetCode) {
         return dispatch(type, assetCode, "metadata", EMPTY_META, strategy -> strategy.getAssetMeta(assetCode));
     }
@@ -38,6 +43,21 @@ public class AssetPricingAdapter implements AssetPricingPort {
     public PriceBundle getBundle(MarketType type, String assetCode) {
         return dispatch(type, assetCode, "bundle", new PriceBundle(null, EMPTY_META),
                 strategy -> strategy.getBundle(assetCode));
+    }
+
+    @Override
+    public PriceBundle getExitBundle(MarketType type, String assetCode) {
+        AssetPricingStrategy strategy = strategies.get(type);
+        if (strategy == null) {
+            log.warn("Unknown asset type: {}", type);
+            return new PriceBundle(null, EMPTY_META);
+        }
+        try {
+            return new PriceBundle(strategy.getExitPriceTry(assetCode), strategy.getAssetMeta(assetCode));
+        } catch (Exception e) {
+            log.warn("Failed to get exitBundle for {}:{} - {}", type, assetCode, e.getMessage());
+            return new PriceBundle(null, EMPTY_META);
+        }
     }
 
     private <T> T dispatch(MarketType type, String assetCode, String label, T fallback,

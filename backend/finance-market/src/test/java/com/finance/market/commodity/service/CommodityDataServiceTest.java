@@ -6,6 +6,7 @@ import com.finance.market.core.cache.MarketCacheService;
 
 import com.finance.common.exception.BusinessException;
 import com.finance.market.commodity.model.Commodity;
+import com.finance.market.core.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.common.model.TrackedAssetType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,7 +44,7 @@ class CommodityDataServiceTest {
     void validateExistsThrowsWhenApiReportsMissing() {
         when(updateService.exists("GC=F")).thenReturn(false);
 
-        assertThatThrownBy(() -> service.validateExists("GC=F"))
+        assertThatThrownBy(() -> service.validateExists(commandFor("GC=F")))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("error.market.commodityNotFound");
     }
@@ -52,7 +53,7 @@ class CommodityDataServiceTest {
     void validateExistsPassesWhenApiConfirms() {
         when(updateService.exists("GC=F")).thenReturn(true);
 
-        service.validateExists("GC=F");
+        service.validateExists(commandFor("GC=F"));
 
         verify(updateService).exists("GC=F");
     }
@@ -61,9 +62,16 @@ class CommodityDataServiceTest {
     void validateExistsSkipsApiCheckForKnownDerivative() {
         when(derivativeCalculator.isKnownDerivative("XAUTRYG")).thenReturn(true);
 
-        service.validateExists("  xautryg  ");
+        service.validateExists(commandFor("  xautryg  "));
 
         verify(updateService, never()).exists(org.mockito.ArgumentMatchers.anyString());
+    }
+
+    private TrackedAssetUpsertCommand commandFor(String code) {
+        return TrackedAssetUpsertCommand.builder()
+                .assetType(TrackedAssetType.COMMODITY)
+                .assetCode(code)
+                .build();
     }
 
     @Test

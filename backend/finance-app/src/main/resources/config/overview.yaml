@@ -12,8 +12,8 @@ app:
       asset-references:
         - { type: STOCK, code: XU100.IS }
         - { type: STOCK, code: XU030.IS }
-        - { type: FOREX, code: USDTRY }
-        - { type: FOREX, code: EURTRY }
+        - { type: FOREX, code: USD }
+        - { type: FOREX, code: EUR }
         - { type: CRYPTO, code: BTC }
         - { type: COMMODITY, code: XAUTRYG }
       sections:

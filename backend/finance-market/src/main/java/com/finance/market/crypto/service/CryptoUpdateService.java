@@ -101,6 +101,10 @@ public class CryptoUpdateService implements MarketRefresher {
         return snapshotProcessor.exists(code);
     }
 
+    public boolean exists(String coinId, String binanceSymbol) {
+        return snapshotProcessor.exists(coinId, binanceSymbol);
+    }
+
     private void refreshAllCandles() {
         List<String> trackedCoins = trackedAssetQueryService.getCodes(TrackedAssetType.CRYPTO);
         log.info("Starting crypto candle update for {} coins", trackedCoins.size());

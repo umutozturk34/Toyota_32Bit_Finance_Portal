@@ -1,16 +1,17 @@
 package com.finance.market.bond.service;
 
 
-import com.finance.market.bond.client.EvdsClient;
+import com.finance.market.bond.client.EvdsBondClient;
 import com.finance.market.bond.config.BondProperties;
 import com.finance.market.bond.dto.external.BondRateItemDto;
-import com.finance.market.bond.dto.internal.EvdsBondDataResponse;
 import com.finance.common.exception.BusinessException;
 import com.finance.market.bond.mapper.EvdsBondClientMapper;
 import com.finance.market.bond.model.Bond;
 import com.finance.market.bond.model.BondRateHistory;
 import com.finance.market.bond.repository.BondRateHistoryRepository;
 import com.finance.market.bond.util.BondSerieFilterUtil;
+import com.finance.market.core.client.AbstractEvdsClient;
+import com.finance.market.core.dto.internal.EvdsDataResponse;
 import com.finance.market.core.util.WindowedFetchPlanner;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.extern.log4j.Log4j2;
@@ -25,14 +26,14 @@ import java.util.List;
 @Log4j2
 public class BondRateFetcher {
 
-    private static final DateTimeFormatter EVDS_DATE_FMT = EvdsClient.DATE_FMT;
+    private static final DateTimeFormatter EVDS_DATE_FMT = AbstractEvdsClient.DATE_FMT;
 
-    private final EvdsClient evdsClient;
+    private final EvdsBondClient evdsClient;
     private final EvdsBondClientMapper clientMapper;
     private final BondRateHistoryRepository rateHistoryRepository;
     private final int maxDaysPerRequest;
 
-    public BondRateFetcher(EvdsClient evdsClient,
+    public BondRateFetcher(EvdsBondClient evdsClient,
                            EvdsBondClientMapper clientMapper,
                            BondRateHistoryRepository rateHistoryRepository,
                            BondProperties bondProperties) {
@@ -84,7 +85,7 @@ public class BondRateFetcher {
                                                String isinCode, Bond bond) {
         String start = window.start().format(EVDS_DATE_FMT);
         String end = window.end().format(EVDS_DATE_FMT);
-        EvdsBondDataResponse response = evdsClient.fetchBondData(List.of(oranCode), start, end);
+        EvdsDataResponse response = evdsClient.fetchBondData(List.of(oranCode), start, end);
         List<BondRateItemDto> rateItems = clientMapper.toRateItemDtos(response, oranCode);
 
         List<BondRateHistory> records = new ArrayList<>(rateItems.size());

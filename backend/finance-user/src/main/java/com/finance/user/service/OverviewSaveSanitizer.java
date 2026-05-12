@@ -1,6 +1,6 @@
 package com.finance.user.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 @FunctionalInterface
 public interface OverviewSaveSanitizer {

@@ -1,5 +1,4 @@
 package com.finance.app.config;
-import com.finance.market.forex.service.TcmbForexService;
 
 import com.finance.shared.service.TaskTrackingService;
 
@@ -73,7 +72,6 @@ public class MarketDataInitializer implements CommandLineRunner {
     private final ForexRepository forexRepository;
     private final ForexCandleRepository forexCandleRepository;
     private final ForexDataService forexDataService;
-    private final TcmbForexService tcmbForexService;
     private final CommodityRepository commodityRepository;
     private final CommodityCandleRepository commodityCandleRepository;
     private final CommodityDataService commodityDataService;
@@ -98,10 +96,8 @@ public class MarketDataInitializer implements CommandLineRunner {
         init("news", null, articleRepository.count(), 1, null, newsDataService::updateNews);
 
         CompletableFuture<Void> forexFuture = init(
-                "forex", MarketType.FOREX, forexRepository.count(), forexCandleRepository.count(), null, () -> {
-            tcmbForexService.fetchAndSaveTcmbRates();
-            forexDataService.syncAllYahoo();
-        });
+                "forex", MarketType.FOREX, forexRepository.count(), forexCandleRepository.count(), null,
+                forexDataService::refreshAll);
 
         CompletableFuture<Void> stockFuture = init(
                 "stock", MarketType.STOCK, stockRepository.count(), stockCandleRepository.count(), forexFuture,

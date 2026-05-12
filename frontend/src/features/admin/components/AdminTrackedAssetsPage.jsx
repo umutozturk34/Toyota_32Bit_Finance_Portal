@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Database, Plus, Bitcoin, TrendingUp, Briefcase, Newspaper, Gem } from 'lucide-react';
 import PageHeader from '../../../shared/components/layout/PageHeader';
 import ErrorState from '../../../shared/components/feedback/ErrorState';

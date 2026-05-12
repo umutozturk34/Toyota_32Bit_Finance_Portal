@@ -10,7 +10,7 @@ import com.finance.market.commodity.model.CommodityCandle;
 import com.finance.market.commodity.model.CommoditySnapshotInput;
 import com.finance.market.commodity.repository.CommodityCandleRepository;
 import com.finance.market.commodity.repository.CommodityRepository;
-import com.finance.market.core.util.SyntheticPriceCalculator;
+import com.finance.market.core.util.PriceCrossCalculator;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
@@ -173,6 +173,6 @@ public class PreciousMetalDerivativeCalculator {
     }
 
     private BigDecimal divide(BigDecimal value, BigDecimal divisor) {
-        return SyntheticPriceCalculator.safeDivide(value, divisor, scale);
+        return PriceCrossCalculator.safeDivide(value, divisor, scale);
     }
 }

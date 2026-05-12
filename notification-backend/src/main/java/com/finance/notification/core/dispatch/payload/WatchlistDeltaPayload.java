@@ -11,6 +11,7 @@ import java.util.Map;
 public record WatchlistDeltaPayload(
         Long watchlistId,
         String watchlistName,
+        boolean defaultList,
         MarketType marketType,
         List<DeltaItem> items
 ) implements NotificationPayload {
@@ -47,6 +48,7 @@ public record WatchlistDeltaPayload(
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("watchlistId", watchlistId);
         if (watchlistName != null) metadata.put("watchlistName", watchlistName);
+        metadata.put("defaultList", defaultList);
         metadata.put("marketType", marketType.name());
         metadata.put("items", items.stream().map(DeltaItem::toMap).toList());
         return metadata;

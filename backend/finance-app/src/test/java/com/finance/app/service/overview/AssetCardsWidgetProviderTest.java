@@ -1,7 +1,7 @@
 package com.finance.app.service.overview;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.finance.app.dto.response.overview.AssetCardsData;
 import com.finance.app.dto.response.overview.WidgetKind;
 import com.finance.app.dto.response.overview.WidgetSection;
@@ -90,7 +90,7 @@ class AssetCardsWidgetProviderTest {
     @Test
     void should_skipUnknownType_when_referenceTypeHasNoProvider() throws Exception {
         JsonNode config = objectMapper.readTree("""
-                {"assetCodes":[{"type":"FOREX","code":"USDTRY"},{"type":"STOCK","code":"XU100.IS"}]}""");
+                {"assetCodes":[{"type":"FOREX","code":"USD"},{"type":"STOCK","code":"XU100.IS"}]}""");
         when(stockProvider.getByCode("XU100.IS")).thenReturn(stub(MarketType.STOCK, "XU100.IS"));
 
         AssetCardsData data = provider.fetch("user-1", new WidgetSection("a-1", WidgetKind.ASSET_CARDS, 0, config));

@@ -10,7 +10,9 @@ export default function CompareBar({ compareAsset, onSelect, onClear, excludeCod
     return (
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/5 px-3 py-2">
-          {compareAsset.image && <img src={compareAsset.image} alt={compareAsset.code} className="w-5 h-5 rounded" />}
+          {compareAsset.image && (/^https?:\/\//i.test(compareAsset.image)
+            ? <img src={compareAsset.image} alt={compareAsset.code} className="w-5 h-5 rounded" />
+            : <span className="text-base leading-none">{compareAsset.image}</span>)}
           <span className="text-sm font-semibold text-fg">{compareAsset.code}</span>
           {compareAsset.name && <span className="text-xs text-fg-muted truncate max-w-[150px]">{compareAsset.name}</span>}
           <span

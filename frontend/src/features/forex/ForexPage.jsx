@@ -1,11 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BarChart2, Activity, Clock, Coins } from 'lucide-react';
+import { Activity, Clock, Coins } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { forexService } from './services/forexService';
 import { adminService } from '../admin/services/adminService';
-import { getForexFlag, getBaseCurrency } from '../../shared/constants/forex';
-import { useAuth } from '../auth/AuthContext';
+import { getBaseCurrency } from '../../shared/constants/forex';
 import { changeColors, changeBg, formatPrice, formatChange, formatPercent } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
@@ -20,8 +19,6 @@ function ForexPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const listParams = useListParams();
-    const { hasRole } = useAuth();
-    const isAdmin = hasRole('ADMIN');
     const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) }));
     const localeTag = t('common.localeTag');
     const dateOptions = { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
@@ -29,6 +26,9 @@ function ForexPage() {
     const renderCard = (forex, { cls, setBuyTarget }) => {
         const meta = forex.metadata || {};
         const sellingPrice = meta.sellingPrice;
+        const buyingPrice = meta.buyingPrice;
+        const effectiveBuyingPrice = meta.effectiveBuyingPrice;
+        const effectiveSellingPrice = meta.effectiveSellingPrice;
         return (
             <AssetCard
                 key={forex.code}
@@ -38,7 +38,11 @@ function ForexPage() {
                 <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                            <span className="text-lg">{getForexFlag(forex.code)}</span>
+                            {forex.image
+                                ? (/^https?:\/\//i.test(forex.image)
+                                    ? <img src={forex.image} alt={forex.code} className="h-4 w-6 rounded-sm object-cover" />
+                                    : <span className="text-lg leading-none">{forex.image}</span>)
+                                : <span className="text-lg">💱</span>}
                             <h3 className="truncate text-sm font-semibold text-fg">
                                 {getBaseCurrency(forex.code)} / TRY
                             </h3>
@@ -52,34 +56,20 @@ function ForexPage() {
                     />
                 </div>
 
-                {isAdmin && forex.lastUpdated && (
-                    <div className="mt-2 flex items-center justify-between rounded-md bg-surface px-2.5 py-1.5 text-[10px] text-fg-subtle">
-                        <span className="flex items-center gap-1">
-                            <BarChart2 className="h-2.5 w-2.5" />
-                            Yahoo: {meta.yahooUpdatedAt ? new Date(meta.yahooUpdatedAt).toLocaleString(localeTag, dateOptions) : 'N/A'}
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <Activity className="h-2.5 w-2.5" />
-                            TCMB: {meta.tcmbUpdatedAt ? new Date(meta.tcmbUpdatedAt).toLocaleString(localeTag, dateOptions) : 'N/A'}
-                        </span>
-                    </div>
-                )}
-
                 <div className="mt-3 space-y-1">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs text-fg-muted">{t('market.forex.buyLabel')}</span>
+                        <span className="text-xs text-fg-muted">{t('market.forex.sellLabel')}</span>
                         <span className="font-mono text-xl font-bold text-fg">₺ {formatForexPrice(sellingPrice ?? forex.price)}</span>
                     </div>
-                    {forex.price && (
+                    {buyingPrice != null && (
                         <div className="flex items-center justify-between">
-                            <span className="text-xs text-fg-muted">{t('market.forex.sellLabel')}</span>
-                            <span className="font-mono text-base font-semibold text-fg-muted">₺ {formatForexPrice(forex.price)}</span>
+                            <span className="text-xs text-fg-muted">{t('market.forex.buyLabel')}</span>
+                            <span className="font-mono text-base font-semibold text-fg-muted">₺ {formatForexPrice(buyingPrice)}</span>
                         </div>
                     )}
                 </div>
 
-                {(forex.changeAmount !== null && forex.changeAmount !== undefined &&
-                    forex.changePercent !== null && forex.changePercent !== undefined) && (
+                {(forex.changeAmount != null && forex.changePercent != null) && (
                     <div className={`mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
                         {forex.changeAmount > 0 ? <ArrowUpRight className="h-3.5 w-3.5" /> : forex.changeAmount < 0 ? <ArrowDownRight className="h-3.5 w-3.5" /> : null}
                         <span>{formatChange(forex.changeAmount)} TRY</span>
@@ -87,59 +77,35 @@ function ForexPage() {
                     </div>
                 )}
 
-                {(meta.forexBuying || meta.forexSelling) && (
+                {(effectiveBuyingPrice != null || effectiveSellingPrice != null) && (
                     <div className="mt-3 space-y-1.5 border-t border-border-default pt-3">
                         <h4 className="flex items-center gap-1.5 text-xs font-medium text-fg-muted">
                             <Activity className="h-3 w-3 text-fg-subtle" />
-                            {t('market.forex.tcmbRates')}
+                            {t('market.forex.banknoteRates')}
                         </h4>
-                        {meta.forexBuying && (
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="text-fg-muted">{t('market.forex.forexBuy')}</span>
-                                <span className="font-mono text-fg">₺ {formatForexPrice(meta.forexBuying)}</span>
-                            </div>
-                        )}
-                        {meta.forexSelling && (
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="text-fg-muted">{t('market.forex.forexSell')}</span>
-                                <span className="font-mono text-fg">₺ {formatForexPrice(meta.forexSelling)}</span>
-                            </div>
-                        )}
-                        {meta.banknoteBuying && (
+                        {effectiveBuyingPrice != null && (
                             <div className="flex items-center justify-between text-xs">
                                 <span className="text-fg-muted">{t('market.forex.banknoteBuy')}</span>
-                                <span className="font-mono text-fg">₺ {formatForexPrice(meta.banknoteBuying)}</span>
+                                <span className="font-mono text-fg">₺ {formatForexPrice(effectiveBuyingPrice)}</span>
                             </div>
                         )}
-                        {meta.banknoteSelling && (
+                        {effectiveSellingPrice != null && (
                             <div className="flex items-center justify-between text-xs">
                                 <span className="text-fg-muted">{t('market.forex.banknoteSell')}</span>
-                                <span className="font-mono text-fg">₺ {formatForexPrice(meta.banknoteSelling)}</span>
+                                <span className="font-mono text-fg">₺ {formatForexPrice(effectiveSellingPrice)}</span>
                             </div>
                         )}
                     </div>
                 )}
 
-                <div className="mt-3 flex items-center gap-3 text-[11px] text-fg-subtle">
-                    {meta.tcmbUpdatedAt && (
-                        <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            TCMB: {new Date(meta.tcmbUpdatedAt).toLocaleString(localeTag, dateOptions)}
-                        </span>
-                    )}
-                    {isAdmin && meta.yahooUpdatedAt && (
-                        <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            Yahoo: {new Date(meta.yahooUpdatedAt).toLocaleString(localeTag, dateOptions)}
-                        </span>
-                    )}
-                    {!meta.tcmbUpdatedAt && !meta.yahooUpdatedAt && forex.lastUpdated && (
+                {forex.lastUpdated && (
+                    <div className="mt-3 flex items-center gap-3 text-[11px] text-fg-subtle">
                         <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             {new Date(forex.lastUpdated).toLocaleString(localeTag, dateOptions)}
                         </span>
-                    )}
-                </div>
+                    </div>
+                )}
             </AssetCard>
         );
     };

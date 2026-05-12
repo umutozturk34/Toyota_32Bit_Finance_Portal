@@ -23,7 +23,7 @@ import com.finance.market.commodity.model.Commodity;
 import com.finance.market.commodity.model.CommoditySnapshotInput;
 import com.finance.market.commodity.repository.CommodityCandleRepository;
 import com.finance.market.commodity.repository.CommodityRepository;
-import com.finance.market.core.util.SyntheticPriceCalculator;
+import com.finance.market.core.util.PriceCrossCalculator;
 import com.finance.market.core.util.TrackedRefreshRunner;
 import com.finance.market.core.util.YahooRangePolicy;
 import lombok.extern.log4j.Log4j2;
@@ -124,8 +124,8 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
             }
         }
 
-        List<YahooCandleDto> tryCandles = SyntheticPriceCalculator.buildSyntheticCandles(
-                result.candles(), usdtryCandleMap, false, scale);
+        List<YahooCandleDto> tryCandles = PriceCrossCalculator.buildTryCandles(
+                result.candles(), usdtryCandleMap, scale);
         if (tryCandles.isEmpty()) {
             log.warn("No USDTRY-aligned candles for {} (usd={}, usdtry={} entries)",
                     commodityCode, result.candles().size(), usdtryCandleMap.size());

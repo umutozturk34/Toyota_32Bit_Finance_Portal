@@ -1,7 +1,7 @@
 package com.finance.user.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
 import com.finance.user.dto.UserLayoutResponse;
 import com.finance.user.mapper.UserLayoutMapper;
 import com.finance.user.model.UserLayout;

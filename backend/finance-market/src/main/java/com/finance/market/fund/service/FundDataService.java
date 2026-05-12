@@ -7,6 +7,7 @@ import com.finance.market.core.cache.MarketCacheService;
 
 
 import com.finance.common.exception.BusinessException;
+import com.finance.market.core.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.market.fund.model.Fund;
 import com.finance.common.model.TrackedAssetType;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +28,8 @@ public class FundDataService implements TrackedAssetDataService {
     }
 
     @Override
-    public void validateExists(String fundCode) {
+    public void validateExists(TrackedAssetUpsertCommand command) {
+        String fundCode = command.getAssetCode();
         if (!fundUpdateService.exists(fundCode)) {
             throw new BusinessException("error.market.fundNotFound", fundCode);
         }

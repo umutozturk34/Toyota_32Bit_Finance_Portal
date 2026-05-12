@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-const STALE_AFTER_MS = 60_000;
+const STALE_AFTER_MS = 600_000;
 const SCROLL_RETENTION_LIMIT = 30;
 
 const isFresh = (entry) => entry && Date.now() - entry.timestamp <= STALE_AFTER_MS;
@@ -91,7 +91,11 @@ const useNavigationStore = create(
     {
       name: 'finance-navigation-store',
       storage: createJSONStorage(() => sessionStorage),
-      partialize: (state) => ({ scrollByRoute: state.scrollByRoute }),
+      partialize: (state) => ({
+        scrollByRoute: state.scrollByRoute,
+        origin: state.origin,
+        paginationByRoute: state.paginationByRoute,
+      }),
     },
   ),
 );

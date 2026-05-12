@@ -129,16 +129,18 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
                         i === activeIndex ? 'bg-surface' : 'bg-transparent hover:bg-surface/50'
                       }`}
                     >
-                      {asset.image ? (
-                        <img src={asset.image} alt={code} className="w-7 h-7 rounded-lg shrink-0" />
-                      ) : (
-                        <span
-                          className="flex items-center justify-center w-7 h-7 rounded-lg text-[9px] font-bold shrink-0"
-                          style={{ backgroundColor: typeColor + '18', color: typeColor }}
-                        >
-                          {code.replace('.IS', '').slice(0, 3).toUpperCase()}
-                        </span>
-                      )}
+                      {asset.image
+                        ? (/^https?:\/\//i.test(asset.image)
+                            ? <img src={asset.image} alt={code} className="w-7 h-7 rounded-lg shrink-0" />
+                            : <span className="flex items-center justify-center w-7 h-7 rounded-lg text-lg shrink-0">{asset.image}</span>)
+                        : (
+                          <span
+                            className="flex items-center justify-center w-7 h-7 rounded-lg text-[9px] font-bold shrink-0"
+                            style={{ backgroundColor: typeColor + '18', color: typeColor }}
+                          >
+                            {code.replace('.IS', '').slice(0, 3).toUpperCase()}
+                          </span>
+                        )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs font-semibold text-fg truncate">{code}</span>

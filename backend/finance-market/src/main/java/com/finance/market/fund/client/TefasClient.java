@@ -1,14 +1,14 @@
 package com.finance.market.fund.client;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.finance.common.config.AppProperties;
 import com.finance.market.fund.config.FundProperties;
 import com.finance.market.fund.dto.external.TefasFundDto;
 import com.finance.market.fund.dto.internal.TefasFundQueryRequest;
 import com.finance.market.fund.dto.internal.TefasResponse;
 import com.finance.common.exception.ExternalApiException;
-import com.finance.common.exception.ExternalApiRequestException;
+import com.finance.shared.exception.ExternalApiRequestException;
 import com.finance.market.core.filter.TefasSessionManager;
 import com.finance.market.fund.mapper.TefasClientMapper;
 import com.finance.market.fund.model.FundType;

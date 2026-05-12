@@ -131,16 +131,18 @@ export default function SearchSuggestions({
                         isActive ? 'bg-surface' : 'bg-transparent hover:bg-surface/50'
                       }`}
                     >
-                      {asset.image ? (
-                        <img src={asset.image} alt={asset.code} className="w-8 h-8 rounded-lg shrink-0" />
-                      ) : (
-                        <span
-                          className="flex items-center justify-center w-8 h-8 rounded-lg text-[10px] font-bold shrink-0"
-                          style={{ backgroundColor: typeColor + '18', color: typeColor }}
-                        >
-                          {assetCodeLabel(asset.type, asset.code).slice(0, 3).toUpperCase()}
-                        </span>
-                      )}
+                      {asset.image
+                        ? (/^https?:\/\//i.test(asset.image)
+                            ? <img src={asset.image} alt={asset.code} className="w-8 h-8 rounded-lg shrink-0" />
+                            : <span className="flex items-center justify-center w-8 h-8 rounded-lg text-xl shrink-0">{asset.image}</span>)
+                        : (
+                          <span
+                            className="flex items-center justify-center w-8 h-8 rounded-lg text-[10px] font-bold shrink-0"
+                            style={{ backgroundColor: typeColor + '18', color: typeColor }}
+                          >
+                            {assetCodeLabel(asset.type, asset.code).slice(0, 3).toUpperCase()}
+                          </span>
+                        )}
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">

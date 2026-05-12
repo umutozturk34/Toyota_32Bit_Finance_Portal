@@ -7,6 +7,7 @@ import com.finance.market.core.cache.MarketCacheService;
 
 
 import com.finance.common.exception.BusinessException;
+import com.finance.market.core.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.market.commodity.model.Commodity;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.shared.util.CodeNormalizer;
@@ -29,7 +30,8 @@ public class CommodityDataService implements TrackedAssetDataService {
     }
 
     @Override
-    public void validateExists(String code) {
+    public void validateExists(TrackedAssetUpsertCommand command) {
+        String code = command.getAssetCode();
         String normalized = CodeNormalizer.upper(code);
         if (derivativeCalculator.isKnownDerivative(normalized)) return;
         if (!commodityUpdateService.exists(code)) {

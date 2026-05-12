@@ -3,7 +3,7 @@ package com.finance.market.bond.util;
 
 import com.finance.market.bond.dto.external.BondSerieDto;
 import com.finance.market.bond.dto.external.BondSnapshotDto;
-import com.finance.market.bond.dto.internal.EvdsBondSerieResponse;
+import com.finance.market.core.dto.internal.EvdsSerieResponse;
 import com.finance.market.bond.model.Bond;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -54,8 +54,8 @@ class BondSerieFilterUtilTest {
 
     @Test
     void filterExcludesOranSuffix() {
-        List<EvdsBondSerieResponse> series = List.of(
-                new EvdsBondSerieResponse("TP.TRT130225T14.ORAN",
+        List<EvdsSerieResponse> series = List.of(
+                new EvdsSerieResponse("TP.TRT130225T14.ORAN",
                         "TRT (13.02.2025 13.02.2027)"));
 
         List<BondSerieDto> result = BondSerieFilterUtil.filter(series);
@@ -65,8 +65,8 @@ class BondSerieFilterUtilTest {
 
     @Test
     void filterExcludesNonTrtTrdTrbPrefixes() {
-        List<EvdsBondSerieResponse> series = List.of(
-                new EvdsBondSerieResponse("TP.XYZ130225T14.TL",
+        List<EvdsSerieResponse> series = List.of(
+                new EvdsSerieResponse("TP.XYZ130225T14.TL",
                         "XYZ (13.02.2025 13.02.2027)"));
 
         List<BondSerieDto> result = BondSerieFilterUtil.filter(series);
@@ -76,8 +76,8 @@ class BondSerieFilterUtilTest {
 
     @Test
     void filterExcludesExpiredBonds() {
-        List<EvdsBondSerieResponse> series = List.of(
-                new EvdsBondSerieResponse("TP.TRT010120T10.TL",
+        List<EvdsSerieResponse> series = List.of(
+                new EvdsSerieResponse("TP.TRT010120T10.TL",
                         "TRT (01.01.2018 01.01.2020)"));
 
         List<BondSerieDto> result = BondSerieFilterUtil.filter(series);
@@ -90,8 +90,8 @@ class BondSerieFilterUtilTest {
         LocalDate futureDate = LocalDate.now().plusYears(2);
         String endStr = String.format("%02d.%02d.%04d", futureDate.getDayOfMonth(),
                 futureDate.getMonthValue(), futureDate.getYear());
-        List<EvdsBondSerieResponse> series = List.of(
-                new EvdsBondSerieResponse("TP.TRT010124T14.TL",
+        List<EvdsSerieResponse> series = List.of(
+                new EvdsSerieResponse("TP.TRT010124T14.TL",
                         "TRT (01.01.2024 " + endStr + ")"));
 
         List<BondSerieDto> result = BondSerieFilterUtil.filter(series);
@@ -106,9 +106,9 @@ class BondSerieFilterUtilTest {
         String endStr = String.format("%02d.%02d.%04d", future.getDayOfMonth(),
                 future.getMonthValue(), future.getYear());
         String name = "TRT (01.01.2024 " + endStr + ")";
-        List<EvdsBondSerieResponse> series = List.of(
-                new EvdsBondSerieResponse("TP.TRT010124T14.TL", name),
-                new EvdsBondSerieResponse("TP.TRT010124T15.TL", name));
+        List<EvdsSerieResponse> series = List.of(
+                new EvdsSerieResponse("TP.TRT010124T14.TL", name),
+                new EvdsSerieResponse("TP.TRT010124T15.TL", name));
 
         List<BondSerieDto> result = BondSerieFilterUtil.filter(series);
 
@@ -120,8 +120,8 @@ class BondSerieFilterUtilTest {
         LocalDate future = LocalDate.now().plusYears(2);
         String endStr = String.format("%02d.%02d.%04d", future.getDayOfMonth(),
                 future.getMonthValue(), future.getYear());
-        List<EvdsBondSerieResponse> series = List.of(
-                new EvdsBondSerieResponse("TP.TRT010124.TL",
+        List<EvdsSerieResponse> series = List.of(
+                new EvdsSerieResponse("TP.TRT010124.TL",
                         "TRT (01.01.2024 " + endStr + ")"));
 
         List<BondSerieDto> result = BondSerieFilterUtil.filter(series);
@@ -131,8 +131,8 @@ class BondSerieFilterUtilTest {
 
     @Test
     void filterExcludesNullSerieCode() {
-        List<EvdsBondSerieResponse> series = List.of(
-                new EvdsBondSerieResponse(null, "Some name"));
+        List<EvdsSerieResponse> series = List.of(
+                new EvdsSerieResponse(null, "Some name"));
 
         List<BondSerieDto> result = BondSerieFilterUtil.filter(series);
 

@@ -44,8 +44,7 @@ public class WatchlistDeltaHandler implements NotificationHandler {
         String marketLabel = p.marketType() != null
                 ? translator.translate("market.type." + p.marketType().name(), locale)
                 : translator.translate("notif.fallback.assetLabel", locale);
-        String listLabel = (p.watchlistName() != null && !p.watchlistName().isBlank())
-                ? p.watchlistName() : translator.translate("notif.watchlistDelta.fallbackListLabel", locale);
+        String listLabel = resolveListLabel(p, locale);
         int count = p.items().size();
         String title = buildTitle(locale, listLabel, p.items(), count);
 
@@ -59,6 +58,12 @@ public class WatchlistDeltaHandler implements NotificationHandler {
                         "marketLabel", marketLabel,
                         "itemCount", count,
                         "items", renderItems(p.items(), locale)));
+    }
+
+    private String resolveListLabel(WatchlistDeltaPayload p, Locale locale) {
+        if (p.defaultList()) return translator.translate("watchlist.defaultName", locale);
+        if (p.watchlistName() != null && !p.watchlistName().isBlank()) return p.watchlistName();
+        return translator.translate("notif.watchlistDelta.fallbackListLabel", locale);
     }
 
     private String buildTitle(Locale locale, String listLabel, List<WatchlistDeltaPayload.DeltaItem> items, int count) {

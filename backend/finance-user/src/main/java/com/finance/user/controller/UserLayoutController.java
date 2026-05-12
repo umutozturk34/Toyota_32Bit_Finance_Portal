@@ -1,6 +1,6 @@
 package com.finance.user.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.finance.common.dto.ApiResponse;
 import com.finance.common.i18n.Translator;
 import com.finance.user.dto.UserLayoutResponse;

@@ -4,12 +4,19 @@ export default function AssetBadge({ assetType, assetCode, assetImage, size = 'm
   const dims = size === 'sm' ? 'w-7 h-7 text-xs' : 'w-9 h-9 text-sm';
   const typeStyle = ASSET_TYPE_STYLES[assetType] || ASSET_TYPE_STYLES.CRYPTO;
   if (assetImage) {
+    if (/^https?:\/\//i.test(assetImage)) {
+      return (
+        <img
+          src={assetImage}
+          alt={assetCode}
+          className={`${dims} rounded-lg shrink-0 object-cover`}
+        />
+      );
+    }
     return (
-      <img
-        src={assetImage}
-        alt={assetCode}
-        className={`${dims} rounded-lg shrink-0 object-cover`}
-      />
+      <span className={`${dims} flex items-center justify-center rounded-lg text-lg shrink-0`}>
+        {assetImage}
+      </span>
     );
   }
   return (

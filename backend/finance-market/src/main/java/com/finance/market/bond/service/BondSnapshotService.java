@@ -1,12 +1,13 @@
 package com.finance.market.bond.service;
 
 
-import com.finance.market.bond.client.EvdsClient;
+import com.finance.market.bond.client.EvdsBondClient;
 import com.finance.market.bond.config.BondProperties;
 import com.finance.market.bond.dto.external.BondSerieDto;
 import com.finance.market.bond.dto.external.BondSnapshotDto;
-import com.finance.market.bond.dto.internal.EvdsBondDataResponse;
-import com.finance.market.bond.dto.internal.EvdsBondSerieResponse;
+import com.finance.market.core.client.AbstractEvdsClient;
+import com.finance.market.core.dto.internal.EvdsDataResponse;
+import com.finance.market.core.dto.internal.EvdsSerieResponse;
 import com.finance.common.exception.BusinessException;
 import com.finance.market.bond.mapper.EvdsBondClientMapper;
 import com.finance.shared.util.BatchUpdateRunner;
@@ -24,13 +25,13 @@ import java.util.List;
 @Log4j2
 public class BondSnapshotService {
 
-    private static final DateTimeFormatter EVDS_DATE_FMT = EvdsClient.DATE_FMT;
+    private static final DateTimeFormatter EVDS_DATE_FMT = AbstractEvdsClient.DATE_FMT;
 
-    private final EvdsClient evdsClient;
+    private final EvdsBondClient evdsClient;
     private final EvdsBondClientMapper clientMapper;
     private final int batchSize;
 
-    public BondSnapshotService(EvdsClient evdsClient,
+    public BondSnapshotService(EvdsBondClient evdsClient,
                                EvdsBondClientMapper clientMapper,
                                BondProperties bondProperties) {
         this.evdsClient = evdsClient;
@@ -40,7 +41,7 @@ public class BondSnapshotService {
 
     public List<BondSerieDto> fetchAndFilterSeries() {
         log.info("Fetching bond serie list from EVDS");
-        List<EvdsBondSerieResponse> allSeries = evdsClient.fetchBondSerieList();
+        List<EvdsSerieResponse> allSeries = evdsClient.fetchBondSerieList();
         log.info("Fetched {} raw series from EVDS", allSeries.size());
 
         List<BondSerieDto> filtered = BondSerieFilterUtil.filter(allSeries);
@@ -77,7 +78,7 @@ public class BondSnapshotService {
                     log.debug("Snapshot batch {}/{}: {} bonds, {} codes",
                             batchItem.index(), batches.size(), batchItem.batch().size(), codes.size());
 
-                    EvdsBondDataResponse response = evdsClient.fetchBondData(codes, today, today);
+                    EvdsDataResponse response = evdsClient.fetchBondData(codes, today, today);
                     List<BondSnapshotDto> batchSnapshots = clientMapper.toSnapshotDtos(batchItem.batch(), response);
                     allSnapshots.addAll(batchSnapshots);
 

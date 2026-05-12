@@ -1,7 +1,7 @@
 package com.finance.app.service.overview;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 import com.finance.app.config.OverviewProperties;
 import com.finance.app.dto.response.overview.WidgetSection;
 import lombok.RequiredArgsConstructor;

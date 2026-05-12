@@ -1,9 +1,9 @@
 package com.finance.user.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
@@ -51,7 +51,8 @@ class UserChartPreferenceServiceTest {
                         List.of(new ChartDefaultsProperties.IndicatorDefault("SMA", 20, "#c084fc", false)),
                         "candle", false, "off", 22, "🚀"),
                 new ChartDefaultsProperties.FundDefaults("line", false, false),
-                new ChartDefaultsProperties.Limits(50, 8, 12));
+                new ChartDefaultsProperties.Limits(50, 8, 12),
+                java.util.Map.of());
         service = new UserChartPreferenceService(repository, trackedAssetRepository, new ObjectMapper(), defaults, mapper);
     }
 

@@ -231,7 +231,7 @@ class PortfolioBackfillServiceTest {
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(pos));
         lenient().when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today)).thenReturn(false);
         lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(PORTFOLIO_ID, today)).thenReturn(false);
-        when(assetPricingPort.getPricesTry(any()))
+        when(assetPricingPort.getExitPricesTry(any()))
                 .thenReturn(Map.of(new AssetPricingPort.AssetKey(MarketType.STOCK, "THYAO.IS"), new BigDecimal("55")));
         when(calculator.buildAggregatedAssetSnapshot(any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());

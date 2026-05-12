@@ -3,8 +3,8 @@ package com.finance.market.bond.util;
 
 import com.finance.market.bond.dto.external.BondSerieDto;
 import com.finance.market.bond.dto.external.BondSnapshotDto;
-import com.finance.market.bond.dto.internal.EvdsBondSerieResponse;
 import com.finance.market.bond.model.Bond;
+import com.finance.market.core.dto.internal.EvdsSerieResponse;
 import lombok.extern.log4j.Log4j2;
 
 import java.math.BigDecimal;
@@ -50,11 +50,11 @@ public final class BondSerieFilterUtil {
         }
     }
 
-    public static List<BondSerieDto> filter(List<EvdsBondSerieResponse> series) {
+    public static List<BondSerieDto> filter(List<EvdsSerieResponse> series) {
         LocalDate today = LocalDate.now();
         Map<String, BondSerieDto> unique = new LinkedHashMap<>();
 
-        for (EvdsBondSerieResponse s : series) {
+        for (EvdsSerieResponse s : series) {
             String code = s.serieCode();
             if (code == null || code.endsWith(".ORAN"))
                 continue;

@@ -13,4 +13,6 @@ public interface PriceAlertRepository extends JpaRepository<PriceAlert, Long> {
     Page<PriceAlert> findByUserSubOrderByCreatedAtDesc(String userSub, Pageable pageable);
 
     List<PriceAlert> findByActiveTrueAndTrackedAsset_AssetType(TrackedAssetType assetType);
+
+    long countByUserSub(String userSub);
 }

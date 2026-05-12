@@ -2,6 +2,7 @@ package com.finance.notification.alert.service;
 
 import com.finance.common.cache.AssetSnapshotCache;
 import com.finance.common.dto.internal.AssetSnapshot;
+import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
@@ -14,6 +15,7 @@ import com.finance.notification.alert.dto.PriceAlertUpdateRequest;
 import com.finance.notification.alert.mapper.PriceAlertMapper;
 import com.finance.notification.alert.model.PriceAlert;
 import com.finance.notification.alert.repository.PriceAlertRepository;
+import com.finance.notification.config.PriceAlertProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
@@ -36,9 +38,14 @@ public class PriceAlertService {
     private final PriceAlertMapper mapper;
     private final AssetSnapshotCache assetSnapshotCache;
     private final TrackedAssetRepository trackedAssetRepository;
+    private final PriceAlertProperties properties;
 
     @Transactional
     public PriceAlertResponse create(String userSub, PriceAlertCreateRequest request) {
+        int maxPerUser = properties.maxPerUser();
+        if (maxPerUser > 0 && repository.countByUserSub(userSub) >= maxPerUser) {
+            throw new BadRequestException("error.priceAlert.maxReached", maxPerUser);
+        }
         TrackedAsset trackedAsset = requireTrackedAsset(request.marketType(), request.assetCode());
         PriceAlert entity = mapper.toEntity(request, userSub);
         entity.setTrackedAsset(trackedAsset);

@@ -60,7 +60,7 @@ function buildAssetChartOption(data, isDark, t) {
     animation: data.length < 200,
     grid: { left: 65, right: 24, top: 16, bottom: 30 },
     dataZoom: [
-      { type: 'inside', xAxisIndex: 0, filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: 'shift', moveOnMouseWheel: false },
+      { type: 'inside', xAxisIndex: 0, filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: true, moveOnMouseWheel: false, preventDefaultMouseMove: true },
     ],
     tooltip: {
       trigger: 'axis',

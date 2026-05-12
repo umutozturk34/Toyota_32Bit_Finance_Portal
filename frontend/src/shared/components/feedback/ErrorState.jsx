@@ -9,12 +9,13 @@ const cx = (...parts) => parts.filter(Boolean).join(' ');
  * @typedef {Object} ErrorStateProps
  * @property {React.ReactNode} message
  * @property {() => void} [onRetry]
+ * @property {boolean} [retryLoading]
  * @property {boolean} [fullscreen=true]
  * @property {string} [className]
  */
 
 /** @param {ErrorStateProps} props */
-export default function ErrorState({ message, onRetry, fullscreen = true, className }) {
+export default function ErrorState({ message, onRetry, retryLoading = false, fullscreen = true, className }) {
     const { t } = useTranslation();
     return (
         <div className={cx(
@@ -39,7 +40,14 @@ export default function ErrorState({ message, onRetry, fullscreen = true, classN
                     <p className="text-xs text-fg-muted max-w-xs">{message}</p>
                 </div>
                 {onRetry && (
-                    <Button variant="secondary" size="md" leftIcon={<RefreshCw className="h-4 w-4" />} onClick={onRetry}>
+                    <Button
+                        variant="secondary"
+                        size="md"
+                        leftIcon={<RefreshCw className="h-4 w-4" />}
+                        onClick={onRetry}
+                        loading={retryLoading}
+                        disabled={retryLoading}
+                    >
                         {t('common.retry')}
                     </Button>
                 )}

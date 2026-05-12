@@ -53,7 +53,7 @@ export default function AssetDetailPage({
   const [compareAsset, setCompareAsset] = useState(null);
   const [timeRange, setTimeRange] = useChartRange(`chart-range-${queryKeyPrefix}-${assetCode}`);
 
-  const { data: asset, isLoading, error } = useQuery({
+  const { data: asset, isLoading, isFetching, error, refetch: refetchAsset } = useQuery({
     queryKey: [queryKeyPrefix, assetCode],
     queryFn: () => fetchAsset(assetCode),
   });
@@ -81,7 +81,8 @@ export default function AssetDetailPage({
     return (
       <ErrorState
         message={error ? resolvedError : resolvedNotFound}
-        onRetry={goBack}
+        onRetry={error ? refetchAsset : goBack}
+        retryLoading={error ? isFetching : false}
       />
     );
   }

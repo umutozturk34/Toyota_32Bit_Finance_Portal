@@ -1,8 +1,7 @@
 package com.finance.common.config;
 
-import com.finance.common.filter.RateLimiterFilter;
-import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import io.netty.channel.ChannelOption;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +20,6 @@ import java.time.Duration;
 public class WebClientBaseConfig {
 
     private final AppProperties appProperties;
-    private final RateLimiterRegistry rateLimiterRegistry;
 
     @Bean
     public WebClient.Builder webClientBuilder() {
@@ -38,16 +36,6 @@ public class WebClientBaseConfig {
     @Primary
     public WebClient webClient(WebClient.Builder builder) {
         return builder.build();
-    }
-
-    @Bean("yahooWebClient")
-    public WebClient yahooWebClient(WebClient.Builder builder) {
-        return builder
-                .clone()
-                .baseUrl(appProperties.getApi().getYahoo().getBaseUrl())
-                .filter(new RateLimiterFilter(rateLimiterRegistry.rateLimiter("yahoo")))
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(16 * 1024 * 1024))
-                .build();
     }
 
     private ExchangeFilterFunction userAgentFilter(String defaultUserAgent) {

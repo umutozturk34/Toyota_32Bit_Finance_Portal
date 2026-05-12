@@ -11,7 +11,7 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: 3
         record-exceptions:
           - com.finance.common.exception.ExternalApiException
-          - com.finance.common.exception.ExternalApiRequestException
+          - com.finance.shared.exception.ExternalApiRequestException
       yahoo:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 10
@@ -32,7 +32,7 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: 3
         record-exceptions:
           - com.finance.common.exception.ExternalApiException
-      bond:
+      evds:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 10
         minimum-number-of-calls: 5
@@ -43,15 +43,6 @@ resilience4j:
           - com.finance.common.exception.ExternalApiException
         ignore-exceptions:
           - com.finance.common.exception.SymbolNotFoundException
-      tcmb:
-        sliding-window-type: COUNT_BASED
-        sliding-window-size: 10
-        minimum-number-of-calls: 5
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 60s
-        permitted-number-of-calls-in-half-open-state: 3
-        record-exceptions:
-          - com.finance.common.exception.ExternalApiException
       news:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 10
@@ -84,7 +75,7 @@ resilience4j:
         limit-for-period: 1
         limit-refresh-period: 2s
         timeout-duration: 10s
-      bond:
+      evds:
         limit-for-period: 1
         limit-refresh-period: 2s
         timeout-duration: 10s
@@ -103,7 +94,7 @@ resilience4j:
           - io.netty.handler.timeout.ReadTimeoutException
         ignore-exceptions:
           - com.finance.common.exception.BusinessException
-          - com.finance.common.exception.ExternalApiRequestException
+          - com.finance.shared.exception.ExternalApiRequestException
       tefas-bulk:
         max-attempts: 3
         wait-duration: 30s
@@ -115,17 +106,7 @@ resilience4j:
           - io.netty.handler.timeout.ReadTimeoutException
         ignore-exceptions:
           - com.finance.common.exception.BusinessException
-          - com.finance.common.exception.ExternalApiRequestException
-      tcmb:
-        max-attempts: 3
-        wait-duration: 2s
-        enable-exponential-backoff: true
-        exponential-backoff-multiplier: 2
-        retry-exceptions:
-          - com.finance.common.exception.ExternalApiException
-          - java.net.SocketTimeoutException
-          - java.net.ConnectException
-          - io.netty.handler.timeout.ReadTimeoutException
+          - com.finance.shared.exception.ExternalApiRequestException
       coingecko:
         max-attempts: 3
         wait-duration: 3s
@@ -148,7 +129,7 @@ resilience4j:
           - io.netty.handler.timeout.ReadTimeoutException
         ignore-exceptions:
           - com.finance.common.exception.SymbolNotFoundException
-      bond:
+      evds:
         max-attempts: 3
         wait-duration: 2s
         enable-exponential-backoff: true

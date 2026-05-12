@@ -22,6 +22,6 @@ public abstract class BaseAssetPricingStrategy implements AssetPricingStrategy {
         if (asset == null) {
             return EMPTY_META;
         }
-        return new AssetPricingPort.AssetMeta(asset.resolveDisplayName(), null);
+        return new AssetPricingPort.AssetMeta(asset.resolveDisplayName(), asset.getImage());
     }
 }

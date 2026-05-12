@@ -1,5 +1,5 @@
     package com.finance.common.config;
-    import com.fasterxml.jackson.databind.ObjectMapper;
+    import tools.jackson.databind.ObjectMapper;
     import com.finance.common.filter.RateLimitFilter;
     import com.finance.common.filter.RateLimitTier;
     import io.lettuce.core.RedisClient;

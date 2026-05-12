@@ -25,6 +25,7 @@ spring:
         '[jdbc.batch_size]': 200
         '[order_inserts]': true
         '[order_updates]': true
+        '[type.json_format_mapper]': org.hibernate.type.format.jackson.Jackson3JsonFormatMapper
   flyway:
     enabled: true
     baseline-on-migrate: true

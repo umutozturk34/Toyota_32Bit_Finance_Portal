@@ -114,6 +114,63 @@ class PortfolioPositionTest {
         assertThat(pos.getQuantity()).isEqualByComparingTo(new BigDecimal("100"));
     }
 
+    @Test
+    void syncTransientsFromTrackedAsset_populatesAssetTypeAndCode_whenTrackedAssetPresent() {
+        com.finance.common.model.TrackedAsset tracked = com.finance.common.model.TrackedAsset.builder()
+                .assetType(com.finance.common.model.TrackedAssetType.STOCK)
+                .assetCode("AKBNK")
+                .build();
+        PortfolioPosition pos = PortfolioPosition.builder().build();
+        pos.setTrackedAsset(tracked);
+
+        pos.syncTransientsFromTrackedAsset();
+
+        assertThat(pos.getAssetType()).isEqualTo(AssetType.STOCK);
+        assertThat(pos.getAssetCode()).isEqualTo("AKBNK");
+    }
+
+    @Test
+    void syncTransientsFromTrackedAsset_noOps_whenTrackedAssetNull() {
+        PortfolioPosition pos = PortfolioPosition.builder().build();
+
+        pos.syncTransientsFromTrackedAsset();
+
+        assertThat(pos.getAssetType()).isNull();
+        assertThat(pos.getAssetCode()).isNull();
+    }
+
+    @Test
+    void prePersist_setsTimestamps_whenNullOnEntry() {
+        PortfolioPosition pos = PortfolioPosition.builder().build();
+
+        pos.prePersist();
+
+        assertThat(pos.getCreatedAt()).isNotNull();
+        assertThat(pos.getUpdatedAt()).isNotNull();
+    }
+
+    @Test
+    void prePersist_preservesExistingTimestamps() {
+        LocalDateTime existing = LocalDateTime.of(2020, 1, 1, 0, 0);
+        PortfolioPosition pos = PortfolioPosition.builder()
+                .createdAt(existing).updatedAt(existing).build();
+
+        pos.prePersist();
+
+        assertThat(pos.getCreatedAt()).isEqualTo(existing);
+        assertThat(pos.getUpdatedAt()).isEqualTo(existing);
+    }
+
+    @Test
+    void preUpdate_refreshesUpdatedAtTimestamp() {
+        LocalDateTime original = LocalDateTime.of(2020, 1, 1, 0, 0);
+        PortfolioPosition pos = PortfolioPosition.builder().updatedAt(original).build();
+
+        pos.preUpdate();
+
+        assertThat(pos.getUpdatedAt()).isAfter(original);
+    }
+
     private PortfolioPosition lot(BigDecimal qty, BigDecimal price) {
         return PortfolioPosition.builder()
                 .assetType(AssetType.STOCK).assetCode("THYAO.IS")

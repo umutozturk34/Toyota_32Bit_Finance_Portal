@@ -1,9 +1,7 @@
 app:
   chart:
     defaults:
-      indicators:
-        - { type: SMA, period: 20, color: "#c084fc", visible: false }
-        - { type: EMA, period: 50, color: "#fb923c", visible: false }
+      indicators: []
       chart-type: candle
       show-volume: false
       magnet-mode: "off"

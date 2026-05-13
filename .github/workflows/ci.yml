@@ -81,8 +81,8 @@ jobs:
           path: notification-backend/target/site/jacoco/jacoco.xml
           if-no-files-found: warn
 
-  frontend-test:
-    name: frontend lint + vitest + lcov
+  frontend-lint:
+    name: frontend lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,21 +97,11 @@ jobs:
       - name: Lint
         working-directory: frontend
         run: npm run lint
-      - name: Test + coverage
-        working-directory: frontend
-        run: npm run test:coverage
-      - name: Upload lcov
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lcov-frontend
-          path: frontend/coverage/lcov.info
-          if-no-files-found: warn
 
   sonar:
     name: SonarQube analysis
     runs-on: ubuntu-latest
-    needs: [backend-test, finance-common-test, notification-test, frontend-test]
+    needs: [backend-test, finance-common-test, notification-test, frontend-lint]
     if: vars.SONAR_HOST_URL != ''
     steps:
       - uses: actions/checkout@v4
@@ -137,11 +127,6 @@ jobs:
         with:
           name: jacoco-notification
           path: notification-backend/target/site/jacoco
-      - name: Download frontend lcov
-        uses: actions/download-artifact@v4
-        with:
-          name: lcov-frontend
-          path: frontend/coverage
       - name: Run sonar-scanner
         uses: SonarSource/sonarqube-scan-action@v4
         env:

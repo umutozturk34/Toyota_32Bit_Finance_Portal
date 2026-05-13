@@ -45,5 +45,5 @@ export function definitionFor(kind) {
 
 export function newSectionId(kind) {
   const slug = kind.toLowerCase().replace(/_/g, '-');
-  return `${slug}-${Math.random().toString(36).slice(2, 8)}`;
+  return `${slug}-${crypto.randomUUID()}`;
 }

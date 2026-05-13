@@ -95,7 +95,7 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                             ) : (
                                 <>
                                     <span className="text-[11px] text-fg-muted font-mono shrink-0">{ind.period}</span>
-                                    <div className="flex items-center gap-0.5 ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex items-center gap-0.5 ml-auto shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
                                         <button
                                             onClick={() => setEditingId(ind.id)}
                                             className="p-1 border-none bg-transparent cursor-pointer text-fg-muted hover:text-fg rounded hover:bg-surface transition-colors"

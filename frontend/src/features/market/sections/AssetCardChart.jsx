@@ -28,43 +28,43 @@ function mulberry32(seedInit) {
 }
 
 function generateSparkline(seed, changePercent) {
-  const points = 28;
+  const points = 36;
   const seedHash = fnvHash(seed);
   const rand = mulberry32(seedHash);
   const change = Number.isFinite(changePercent) ? changePercent : 0;
   const start = 100;
+  const end = start * (1 + change / 100);
 
   if (change === 0) {
-    return new Array(points).fill(start);
+    const out = new Array(points);
+    const drift = (rand() - 0.5) * 0.4;
+    const vol = 0.35;
+    let walk = 0;
+    for (let i = 0; i < points; i += 1) {
+      walk += (rand() - 0.5) * vol + drift / points;
+      out[i] = Number((start + walk).toFixed(3));
+    }
+    return out;
   }
 
-  const end = start * (1 + change / 100);
-  const totalDelta = end - start;
   const absChange = Math.abs(change);
+  const stepStd = Math.min(absChange * 0.08, 0.55) + 0.18;
 
-  const variant = seedHash % 4;
-  const noiseAmplitude = absChange * 0.18;
+  const walk = new Array(points);
+  walk[0] = 0;
+  for (let i = 1; i < points; i += 1) {
+    const u1 = Math.max(rand(), 1e-9);
+    const u2 = rand();
+    const gauss = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    walk[i] = walk[i - 1] + gauss * stepStd;
+  }
+  const wEnd = walk[points - 1];
 
   const out = new Array(points);
   for (let i = 0; i < points; i += 1) {
     const t = i / (points - 1);
-    let eased;
-    switch (variant) {
-      case 0:
-        eased = t * t * (3 - 2 * t);
-        break;
-      case 1:
-        eased = Math.pow(t, 1.6);
-        break;
-      case 2:
-        eased = 1 - Math.pow(1 - t, 1.6);
-        break;
-      default:
-        eased = 0.5 * (1 - Math.cos(Math.PI * t));
-    }
-    const baseValue = start + totalDelta * eased;
-    const noise = (rand() - 0.5) * noiseAmplitude * 2;
-    out[i] = Number((baseValue + noise).toFixed(3));
+    const bridge = walk[i] - t * wEnd;
+    out[i] = Number((start + (end - start) * t + bridge).toFixed(3));
   }
   return out;
 }

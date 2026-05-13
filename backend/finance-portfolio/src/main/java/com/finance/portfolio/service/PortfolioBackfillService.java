@@ -183,15 +183,17 @@ public class PortfolioBackfillService {
     private Map<AssetKey, PortfolioAssetDailySnapshot> preloadPriorAssetSnapshots(
             Long portfolioId, List<PortfolioPosition> positions, LocalDate from) {
         LocalDateTime cutoff = from.atStartOfDay();
-        Map<AssetKey, PortfolioAssetDailySnapshot> result = new HashMap<>();
+        Map<Long, AssetKey> keyByTrackedId = new HashMap<>();
         for (PortfolioPosition pos : positions) {
-            AssetKey key = pos.toAssetKey();
-            if (result.containsKey(key)) continue;
             if (pos.getTrackedAsset() == null) continue;
-            assetSnapshotRepository
-                    .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
-                            portfolioId, pos.getTrackedAsset().getId(), cutoff)
-                    .ifPresent(p -> result.put(key, p));
+            keyByTrackedId.putIfAbsent(pos.getTrackedAsset().getId(), pos.toAssetKey());
+        }
+        if (keyByTrackedId.isEmpty()) return new HashMap<>();
+        Map<AssetKey, PortfolioAssetDailySnapshot> result = new HashMap<>();
+        for (PortfolioAssetDailySnapshot snap : assetSnapshotRepository
+                .findLatestPerTrackedAssetBefore(portfolioId, keyByTrackedId.keySet(), cutoff)) {
+            AssetKey key = keyByTrackedId.get(snap.getTrackedAsset().getId());
+            if (key != null) result.put(key, snap);
         }
         return result;
     }

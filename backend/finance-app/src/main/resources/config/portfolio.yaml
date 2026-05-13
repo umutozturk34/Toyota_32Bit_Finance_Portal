@@ -5,7 +5,7 @@ app:
     initial-balance: 100000.0000
     min-transaction-amount-try: 10
     lot-limits:
-      min-entry-date: 2000-01-01
+      min-entry-date: 1992-01-01
       min-price-try: 0.0001
       max-price-try: 1000000000
       min-quantity: 0.00000001

@@ -10,7 +10,6 @@ import com.finance.market.core.service.TrackedAssetQueryService;
 
 
 import com.finance.market.commodity.config.CommodityProperties;
-import com.finance.market.core.dto.external.YahooCandleDto;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ExternalApiException;
 import com.finance.common.model.MarketType;
@@ -70,11 +69,11 @@ public class CommodityUpdateService implements MarketRefresher {
                     "Tracked commodities exist but none have Yahoo symbol mappings (check yahoo-symbol-overrides yaml)");
         }
 
-        Map<String, YahooCandleDto> usdtryCandleMap = exchangeRateProvider.getUsdTryHistory();
-        if (usdtryCandleMap.isEmpty()) {
-            log.error("USDTRY candles unavailable, cannot synthesise commodity TRY prices");
+        Map<String, java.math.BigDecimal> usdtryRateMap = exchangeRateProvider.getUsdTryHistory();
+        if (usdtryRateMap.isEmpty()) {
+            log.error("USDTRY rates unavailable, cannot synthesise commodity TRY prices");
             throw new ExternalApiException("Yahoo Finance",
-                    "USDTRY candles unavailable, cannot synthesise commodity TRY prices");
+                    "USDTRY rates unavailable, cannot synthesise commodity TRY prices");
         }
         ExchangeRateSnapshot usdTry = exchangeRateProvider.getCurrentUsdTry();
 
@@ -83,13 +82,12 @@ public class CommodityUpdateService implements MarketRefresher {
         BatchUpdateRunner.Result result = MarketBatchRunner.run(
                 fetchableCodes,
                 code -> {
-                    snapshotProcessor.updateOne(code, usdtryCandleMap, usdTry);
+                    snapshotProcessor.updateOne(code, usdtryRateMap, usdTry);
                 },
                 code -> code,
                 log, "Commodity", "update", batchMinSample);
 
         BatchLogHelper.logSummary(log, "Commodity sync", result);
-        derivativeCalculator.refreshDerivativeCandles();
     }
 
     @Override

@@ -15,18 +15,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PriceCrossCalculatorTest {
 
     @Test
-    void buildTryCandles_multipliesPairByUsdTryPerDate() {
+    void buildTryCandles_scalesEntireOhlcByPerDayRate() {
         LocalDateTime day = LocalDateTime.of(2026, 1, 5, 0, 0);
         YahooCandleDto pair = candle(day, "1.10", "1.12", "1.08", "1.11", 1000L);
-        YahooCandleDto usdtry = candle(day, "30", "31", "29", "30.5", 0L);
 
         List<YahooCandleDto> result = PriceCrossCalculator.buildTryCandles(
-                List.of(pair), Map.of("2026-01-05", usdtry), 2);
+                List.of(pair), Map.of("2026-01-05", new BigDecimal("30.5")), 4);
 
         assertThat(result).hasSize(1);
         YahooCandleDto out = result.getFirst();
-        assertThat(out.open()).isEqualByComparingTo(new BigDecimal("33.00"));
-        assertThat(out.close()).isEqualByComparingTo(new BigDecimal("33.86"));
+        assertThat(out.open()).isEqualByComparingTo(new BigDecimal("33.5500"));
+        assertThat(out.high()).isEqualByComparingTo(new BigDecimal("34.1600"));
+        assertThat(out.low()).isEqualByComparingTo(new BigDecimal("32.9400"));
+        assertThat(out.close()).isEqualByComparingTo(new BigDecimal("33.8550"));
+        assertThat(out.volume()).isEqualTo(1000L);
     }
 
     @Test
@@ -35,7 +37,7 @@ class PriceCrossCalculatorTest {
         YahooCandleDto pair = candle(day, "1.10", "1.12", "1.08", "1.11", 0L);
 
         List<YahooCandleDto> result = PriceCrossCalculator.buildTryCandles(
-                List.of(pair), Map.of(), 2);
+                List.of(pair), Map.of(), 4);
 
         assertThat(result).isEmpty();
     }
@@ -45,10 +47,9 @@ class PriceCrossCalculatorTest {
         LocalDateTime day = LocalDateTime.of(2026, 1, 5, 0, 0);
         YahooCandleDto pair = new YahooCandleDto(day, null,
                 new BigDecimal("1.12"), new BigDecimal("1.08"), new BigDecimal("1.11"), 0L);
-        YahooCandleDto usdtry = candle(day, "30", "31", "29", "30.5", 0L);
 
         List<YahooCandleDto> result = PriceCrossCalculator.buildTryCandles(
-                List.of(pair), Map.of("2026-01-05", usdtry), 2);
+                List.of(pair), Map.of("2026-01-05", new BigDecimal("30")), 4);
 
         assertThat(result).isEmpty();
     }

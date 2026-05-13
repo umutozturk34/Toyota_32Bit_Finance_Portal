@@ -57,7 +57,10 @@ class PreciousMetalDerivativeCalculatorTest {
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         calculator = new PreciousMetalDerivativeCalculator(repository, candleRepository, cacheService,
-                new CommoditySegmentResolver(commodityProps), props, commodityProps);
+                new CommoditySegmentResolver(commodityProps),
+                mock(com.finance.market.core.service.AssetRegistryService.class),
+                mock(com.finance.market.core.service.TrackedAssetCommandService.class),
+                props, commodityProps);
     }
 
     @Test

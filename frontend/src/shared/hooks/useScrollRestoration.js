@@ -1,53 +1,67 @@
-import { useEffect } from 'react';
-import { useLocation, useNavigationType } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { TIMINGS } from '../config/uiConfig';
 import useNavigationStore from '../stores/useNavigationStore';
 
+const RESTORE_DELAYS = [0, 50, 120, 250, 500, 900];
+
 export default function useScrollRestoration() {
-  const { pathname } = useLocation();
-  const navigationType = useNavigationType();
+  const { pathname, search } = useLocation();
+  const fullKey = pathname + (search || '');
   const saveScroll = useNavigationStore((s) => s.saveScroll);
   const consumeScroll = useNavigationStore((s) => s.consumeScroll);
+  const lastKeyRef = useRef(fullKey);
 
   useEffect(() => {
-    if (navigationType !== 'POP') return undefined;
-    const saved = consumeScroll(pathname);
-    if (!saved) return undefined;
-    const restore = () => window.scrollTo({ top: saved.y, behavior: 'instant' });
-    const raf = requestAnimationFrame(restore);
-    const fallback = setTimeout(restore, TIMINGS.SCROLL_RESTORE_FALLBACK_MS ?? 120);
+    if (typeof window === 'undefined') return;
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const saved = consumeScroll(fullKey);
+    if (!saved || !saved.y) return undefined;
+
+    document.body.style.minHeight = `${Math.max(saved.h || 0, saved.y + window.innerHeight)}px`;
+    let cancelled = false;
+    const restore = () => { if (!cancelled) window.scrollTo(0, saved.y); };
+    const timers = RESTORE_DELAYS.map((delay) => window.setTimeout(restore, delay));
+    const release = window.setTimeout(() => {
+      document.body.style.minHeight = '';
+    }, RESTORE_DELAYS[RESTORE_DELAYS.length - 1] + 200);
+
     return () => {
-      cancelAnimationFrame(raf);
-      clearTimeout(fallback);
+      cancelled = true;
+      timers.forEach(window.clearTimeout);
+      window.clearTimeout(release);
     };
-  }, [pathname, navigationType, consumeScroll]);
+  }, [fullKey, consumeScroll]);
 
   useEffect(() => {
-    const releaseTimer = setTimeout(() => {
-      try { document.body.style.minHeight = ''; } catch { /* ignore */ }
-    }, TIMINGS.SCROLL_MIN_HEIGHT_RELEASE_MS);
-
-    let timer = null;
+    if (typeof window === 'undefined') return undefined;
+    let debounceId = null;
     const flush = () => {
-      if (timer) {
-        clearTimeout(timer);
-        timer = null;
+      if (debounceId) {
+        window.clearTimeout(debounceId);
+        debounceId = null;
       }
       try {
-        saveScroll(pathname, window.scrollY, document.documentElement.scrollHeight);
-      } catch { /* ignore */ }
+        saveScroll(fullKey, window.scrollY, document.documentElement.scrollHeight);
+      } catch { /* swallow */ }
     };
-    const save = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(flush, TIMINGS.SCROLL_SAVE_DEBOUNCE_MS);
+    const queueSave = () => {
+      if (debounceId) window.clearTimeout(debounceId);
+      debounceId = window.setTimeout(flush, TIMINGS.SCROLL_SAVE_DEBOUNCE_MS ?? 200);
     };
-    window.addEventListener('scroll', save, { passive: true });
+    window.addEventListener('scroll', queueSave, { passive: true });
     window.addEventListener('beforeunload', flush);
     return () => {
       flush();
-      clearTimeout(releaseTimer);
-      window.removeEventListener('scroll', save);
+      lastKeyRef.current = fullKey;
+      window.removeEventListener('scroll', queueSave);
       window.removeEventListener('beforeunload', flush);
     };
-  }, [pathname, saveScroll]);
+  }, [fullKey, saveScroll]);
 }

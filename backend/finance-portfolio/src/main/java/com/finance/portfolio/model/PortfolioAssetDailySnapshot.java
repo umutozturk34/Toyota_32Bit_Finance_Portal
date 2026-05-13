@@ -21,7 +21,9 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_portfolio_asset_snapshots_pf_date",
                         columnList = "portfolio_id, snapshot_date"),
                 @Index(name = "idx_portfolio_asset_snapshots_pf_created",
-                        columnList = "portfolio_id, created_at")
+                        columnList = "portfolio_id, created_at"),
+                @Index(name = "idx_portfolio_asset_snapshots_pf_tracked_created",
+                        columnList = "portfolio_id, tracked_asset_id, created_at DESC")
         })
 public class PortfolioAssetDailySnapshot {
 

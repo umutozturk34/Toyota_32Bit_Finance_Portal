@@ -92,8 +92,8 @@ const useNavigationStore = create(
       name: 'finance-navigation-store',
       storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
-        scrollByRoute: state.scrollByRoute,
         origin: state.origin,
+        scrollByRoute: state.scrollByRoute,
         paginationByRoute: state.paginationByRoute,
       }),
     },

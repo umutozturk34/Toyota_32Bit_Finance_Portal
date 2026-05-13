@@ -1,12 +1,11 @@
 package com.finance.market.core.service;
 
-import com.finance.market.core.dto.external.YahooCandleDto;
-
+import java.math.BigDecimal;
 import java.util.Map;
 
 public interface ExchangeRateProvider {
 
     ExchangeRateSnapshot getCurrentUsdTry();
 
-    Map<String, YahooCandleDto> getUsdTryHistory();
+    Map<String, BigDecimal> getUsdTryHistory();
 }

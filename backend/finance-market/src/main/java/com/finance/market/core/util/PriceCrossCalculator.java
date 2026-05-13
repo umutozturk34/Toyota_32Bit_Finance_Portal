@@ -13,20 +13,19 @@ public final class PriceCrossCalculator {
     private PriceCrossCalculator() {}
 
     public static List<YahooCandleDto> buildTryCandles(List<YahooCandleDto> pairCandles,
-                                                       Map<String, YahooCandleDto> usdtryCandleByDate,
+                                                       Map<String, BigDecimal> usdTryRateByDate,
                                                        int scale) {
         List<YahooCandleDto> result = new ArrayList<>(pairCandles.size());
         for (YahooCandleDto pair : pairCandles) {
             String dateKey = pair.candleDate().toLocalDate().toString();
-            YahooCandleDto usdtry = usdtryCandleByDate.get(dateKey);
-            if (usdtry == null) continue;
-            BigDecimal open = safeMultiply(usdtry.open(), pair.open(), scale);
-            BigDecimal high = safeMultiply(usdtry.high(), pair.high(), scale);
-            BigDecimal low = safeMultiply(usdtry.low(), pair.low(), scale);
-            BigDecimal close = safeMultiply(usdtry.close(), pair.close(), scale);
+            BigDecimal rate = usdTryRateByDate.get(dateKey);
+            if (rate == null) continue;
+            BigDecimal open = safeMultiply(rate, pair.open(), scale);
+            BigDecimal high = safeMultiply(rate, pair.high(), scale);
+            BigDecimal low = safeMultiply(rate, pair.low(), scale);
+            BigDecimal close = safeMultiply(rate, pair.close(), scale);
             if (open == null || high == null || low == null || close == null) continue;
-            result.add(new YahooCandleDto(pair.candleDate(),
-                    open, maxOf(open, high, close), minOf(open, low, close), close, pair.volume()));
+            result.add(new YahooCandleDto(pair.candleDate(), open, high, low, close, pair.volume()));
         }
         return result;
     }
@@ -45,17 +44,4 @@ public final class PriceCrossCalculator {
         return a.multiply(b).setScale(scale, RoundingMode.HALF_UP);
     }
 
-    private static BigDecimal maxOf(BigDecimal a, BigDecimal b, BigDecimal c) {
-        BigDecimal max = a;
-        if (b.compareTo(max) > 0) max = b;
-        if (c.compareTo(max) > 0) max = c;
-        return max;
-    }
-
-    private static BigDecimal minOf(BigDecimal a, BigDecimal b, BigDecimal c) {
-        BigDecimal min = a;
-        if (b.compareTo(min) < 0) min = b;
-        if (c.compareTo(min) < 0) min = c;
-        return min;
-    }
 }

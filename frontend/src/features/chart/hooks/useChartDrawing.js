@@ -13,6 +13,7 @@ const useChartDrawing = ({
     data, symbol,
     renderDrawingsRef,
     selectTool, selectFibTool,
+    highlight,
 }) => {
     const canvasOverlayRef = useRef(null);
 
@@ -66,6 +67,7 @@ const useChartDrawing = ({
         magnetManagerRef: interaction.magnetManagerRef,
         pixelToChartCoords: interaction.pixelToChartCoords,
         chartCoordsToPixel,
+        highlight,
     });
 
     useEffect(() => {

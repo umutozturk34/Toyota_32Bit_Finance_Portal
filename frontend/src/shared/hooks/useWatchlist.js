@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { STALE } from '../constants/query';
 import { watchlistService } from '../services/watchlistService';
 import { useAuth } from '../../features/auth/AuthContext';
 
@@ -11,7 +12,7 @@ export function useWatchlists({ enabled = true } = {}) {
     queryKey: LISTS_KEY,
     queryFn: watchlistService.list,
     enabled: enabled && isAuthenticated && !loading,
-    staleTime: 60_000,
+    staleTime: STALE.MEDIUM,
   });
 }
 
@@ -21,7 +22,7 @@ export function useWatchlistItems(id, { sort = 'CUSTOM', direction = 'ASC', enab
     queryKey: ITEMS_KEY(id, { sort, direction }),
     queryFn: () => watchlistService.listItems(id, { sort, direction }),
     enabled: enabled && isAuthenticated && !loading && id != null,
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
   });
 }
 

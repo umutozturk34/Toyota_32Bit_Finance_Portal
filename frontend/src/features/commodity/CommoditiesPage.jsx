@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { STALE } from '../../shared/constants/query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Gem, ChevronUp, ChevronDown, Clock } from 'lucide-react';
@@ -30,7 +31,7 @@ function CommoditiesPage() {
     const { data: segmentCounts = [] } = useQuery({
         queryKey: ['commoditySegments'],
         queryFn: commodityService.getGroupCounts,
-        staleTime: 60_000,
+        staleTime: STALE.MEDIUM,
     });
 
     const tabItems = [...segmentCounts]

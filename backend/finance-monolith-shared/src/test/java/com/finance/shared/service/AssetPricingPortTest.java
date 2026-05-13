@@ -16,6 +16,7 @@ class AssetPricingPortTest {
     private final AssetPricingPort port = new AssetPricingPort() {
         @Override
         public BigDecimal getPriceTry(MarketType type, String assetCode) {
+            if ("MISSING".equals(assetCode)) return null;
             return BigDecimal.valueOf(100);
         }
 
@@ -25,8 +26,20 @@ class AssetPricingPortTest {
         }
     };
 
+    private final AssetPricingPort exitDifferingPort = new AssetPricingPort() {
+        @Override
+        public BigDecimal getPriceTry(MarketType type, String assetCode) {
+            return BigDecimal.valueOf(100);
+        }
+
+        @Override
+        public BigDecimal getExitPriceTry(MarketType type, String assetCode) {
+            return BigDecimal.valueOf(95);
+        }
+    };
+
     @Test
-    void getBundleCombinesPriceAndMeta() {
+    void getBundle_combinesPriceAndMeta() {
         PriceBundle bundle = port.getBundle(MarketType.CRYPTO, "bitcoin");
 
         assertThat(bundle.price()).isEqualByComparingTo(BigDecimal.valueOf(100));
@@ -35,7 +48,7 @@ class AssetPricingPortTest {
     }
 
     @Test
-    void getBundlesBuildsMapFromKeys() {
+    void getBundles_buildsMapFromKeys() {
         List<AssetKey> keys = List.of(
                 new AssetKey(MarketType.CRYPTO, "bitcoin"),
                 new AssetKey(MarketType.STOCK, "THYAO.IS"));
@@ -48,8 +61,62 @@ class AssetPricingPortTest {
     }
 
     @Test
-    void getBundlesReturnsEmptyMapForEmptyInput() {
+    void getBundles_returnsEmptyMap_whenInputEmpty() {
         Map<AssetKey, PriceBundle> bundles = port.getBundles(List.of());
+
         assertThat(bundles).isEmpty();
+    }
+
+    @Test
+    void defaultExitPriceTry_fallsBackToGetPriceTry() {
+        BigDecimal price = port.getExitPriceTry(MarketType.STOCK, "AAPL");
+
+        assertThat(price).isEqualByComparingTo("100");
+    }
+
+    @Test
+    void defaultGetAssetMeta_returnsNullNameAndImage() {
+        AssetPricingPort baseline = (t, c) -> BigDecimal.ONE;
+
+        AssetPricingPort.AssetMeta meta = baseline.getAssetMeta(MarketType.STOCK, "X");
+
+        assertThat(meta.name()).isNull();
+        assertThat(meta.image()).isNull();
+    }
+
+    @Test
+    void getExitBundle_usesExitPrice_whenOverridden() {
+        PriceBundle bundle = exitDifferingPort.getExitBundle(MarketType.STOCK, "AAPL");
+
+        assertThat(bundle.price()).isEqualByComparingTo("95");
+    }
+
+    @Test
+    void getExitBundles_buildsMapFromKeys() {
+        AssetKey k = new AssetKey(MarketType.STOCK, "AAPL");
+
+        Map<AssetKey, PriceBundle> result = exitDifferingPort.getExitBundles(List.of(k));
+
+        assertThat(result.get(k).price()).isEqualByComparingTo("95");
+    }
+
+    @Test
+    void getPricesTry_skipsKeysWithNullPrice() {
+        AssetKey k1 = new AssetKey(MarketType.STOCK, "AAPL");
+        AssetKey k2 = new AssetKey(MarketType.STOCK, "MISSING");
+
+        Map<AssetKey, BigDecimal> result = port.getPricesTry(List.of(k1, k2));
+
+        assertThat(result).containsKey(k1).doesNotContainKey(k2);
+    }
+
+    @Test
+    void getExitPricesTry_skipsKeysWithNullPrice() {
+        AssetKey k1 = new AssetKey(MarketType.STOCK, "AAPL");
+        AssetKey k2 = new AssetKey(MarketType.STOCK, "MISSING");
+
+        Map<AssetKey, BigDecimal> result = port.getExitPricesTry(List.of(k1, k2));
+
+        assertThat(result).containsKey(k1).doesNotContainKey(k2);
     }
 }

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { STALE } from '../../../shared/constants/query';
 import { adminUserService } from '../services/adminUserService';
 
 const KEY = (params) => ['adminUsers', params];
@@ -7,7 +8,7 @@ export function useAdminUsers(params) {
   return useQuery({
     queryKey: KEY(params),
     queryFn: () => adminUserService.list(params),
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
   });
 }
 
@@ -15,7 +16,7 @@ export function useAdminUserCount(search) {
   return useQuery({
     queryKey: ['adminUsers', 'count', search],
     queryFn: () => adminUserService.count({ search }),
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
   });
 }
 

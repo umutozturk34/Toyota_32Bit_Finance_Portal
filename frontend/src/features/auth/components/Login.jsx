@@ -30,7 +30,7 @@ const Login = () => {
 
   React.useEffect(() => {
     if (isAuthenticated) {
-      navigate('/market');
+      navigate('/market', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 

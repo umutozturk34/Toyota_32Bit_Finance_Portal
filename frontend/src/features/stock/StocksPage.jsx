@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { STALE } from '../../shared/constants/query';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -32,7 +33,7 @@ function StocksPage() {
     const { data: segmentCounts = [] } = useQuery({
         queryKey: ['stockSegments'],
         queryFn: stockService.getGroupCounts,
-        staleTime: 60_000,
+        staleTime: STALE.MEDIUM,
     });
 
     const { data: indicesData } = useQuery({

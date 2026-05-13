@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import useNavigationBack from '../../shared/hooks/useNavigationBack';
 import { Wallet, LayoutDashboard, TrendingUp as TrendingUpIcon, ShieldCheck } from 'lucide-react';
 import { Check, AlertTriangle } from '../../shared/components/feedback/AnimatedIcons';
 import PageHeader from '../../shared/components/layout/PageHeader';
@@ -26,7 +27,7 @@ const ONBOARDING_SUCCESS_HOLD_MS = 900;
 
 export default function Portfolio() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const goBack = useNavigationBack('/portfolio');
   const invalidatePortfolio = useInvalidatePortfolio();
   const defaultPortfolioName = t('portfolio.onboarding.defaultName');
   const onboardingSteps = [
@@ -70,19 +71,27 @@ export default function Portfolio() {
     selectedAssetCode ? portfolio?.id : null,
     selectedAssetCode ? { search: selectedAssetCode, size: 1 } : {}
   );
-  const selectedAsset = selectedAssetCode
-    ? (viewPositions.find(p => p.assetCode === selectedAssetCode) || searchedPositions?.content?.[0] || null)
-    : null;
+  const [pendingAsset, setPendingAsset] = useState(null);
+  const selectedAsset = (pendingAsset && pendingAsset.assetCode === selectedAssetCode ? pendingAsset : null)
+    || (selectedAssetCode
+      ? (viewPositions.find(p => p.assetCode === selectedAssetCode) || searchedPositions?.content?.[0] || null)
+      : null);
+
+  useEffect(() => {
+    if (!selectedAssetCode) setPendingAsset(null);
+  }, [selectedAssetCode]);
 
   const setSelectedAsset = (asset) => {
     if (asset) {
+      setPendingAsset(asset);
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev);
         next.set('asset', asset.assetCode);
         return next;
       }, { replace: false });
     } else {
-      navigate(-1);
+      setPendingAsset(null);
+      goBack();
     }
   };
 

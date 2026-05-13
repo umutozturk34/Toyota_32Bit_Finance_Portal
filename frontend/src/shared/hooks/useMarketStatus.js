@@ -1,9 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { marketStatusService } from '../services/marketStatusService';
 import { useAuth } from '../../features/auth/AuthContext';
-
-const STALE_MS = 60_000;
-const REFETCH_MS = 60_000;
+import { STALE } from '../constants/query';
 
 const KEY = ['market-status', 'list'];
 
@@ -13,8 +11,8 @@ export function useMarketStatus() {
     queryKey: KEY,
     queryFn: marketStatusService.list,
     enabled: isAuthenticated && !loading,
-    staleTime: STALE_MS,
-    refetchInterval: REFETCH_MS,
+    staleTime: STALE.MEDIUM,
+    refetchInterval: STALE.MEDIUM,
   });
 }
 

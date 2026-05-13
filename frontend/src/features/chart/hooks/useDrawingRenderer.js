@@ -12,7 +12,17 @@ const useDrawingRenderer = ({
     drawClicksRef, magnetManagerRef,
     pixelToChartCoords,
     chartCoordsToPixel,
+    highlight,
 }) => {
+
+    const HIGHLIGHT_DURATION = 2200;
+    const FADE_START = 0.6;
+    const computeEnvelope = (kind, id) => {
+        if (!highlight || highlight.kind !== kind || highlight.id !== id) return 0;
+        const progress = Math.min(1, (Date.now() - highlight.startMs) / HIGHLIGHT_DURATION);
+        if (progress >= 1) return 0;
+        return progress < FADE_START ? 1 : Math.max(0, 1 - (progress - FADE_START) / (1 - FADE_START));
+    };
 
     const renderDrawings = useCallback(() => {
         const canvas = canvasOverlayRef.current;
@@ -27,11 +37,20 @@ const useDrawingRenderer = ({
         ctx.clearRect(0, 0, rect.width, rect.height);
 
         drawings.forEach(d => {
-            ctx.lineWidth = 2;
+            const envelope = computeEnvelope('drawing', d.id);
+            const baseAlpha = 0.45 + 0.55 * Math.abs(Math.sin(Date.now() / 140));
+            const pulse = envelope > 0 ? (1 - envelope) + envelope * baseAlpha : 1;
+            ctx.save();
+            ctx.lineWidth = 2 + envelope * 2;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.strokeStyle = d.color || '#5E6AD2';
             ctx.setLineDash([]);
+            ctx.globalAlpha = pulse;
+            if (envelope > 0) {
+                ctx.shadowColor = d.color || '#5E6AD2';
+                ctx.shadowBlur = 14 * envelope;
+            }
 
             if (d.type === 'TREND_LINE') {
                 let s = chartCoordsToPixel(d.startTime, d.startPrice);
@@ -132,6 +151,7 @@ const useDrawingRenderer = ({
                     ctx.textBaseline = 'alphabetic';
                 }
             }
+            ctx.restore();
         });
 
         fibTools.forEach(f => {
@@ -139,24 +159,33 @@ const useDrawingRenderer = ({
             const s = chartCoordsToPixel(f.startTime, f.startPrice);
             const e = chartCoordsToPixel(f.endTime, f.endPrice);
             if (!s || !e) return;
+            const envelope = computeEnvelope('fib', f.id);
+            const baseAlpha = 0.45 + 0.55 * Math.abs(Math.sin(Date.now() / 140));
+            const pulse = envelope > 0 ? (1 - envelope) + envelope * baseAlpha : 1;
+            const baseColor = f.type === 'EXTENSION' ? '249,115,22' : '236,72,153';
+            ctx.save();
+            ctx.globalAlpha = pulse;
+            if (envelope > 0) {
+                ctx.shadowColor = `rgb(${baseColor})`;
+                ctx.shadowBlur = 14 * envelope;
+            }
             levels.forEach(lev => {
                 const fp = chartCoordsToPixel(f.startTime, lev.price);
                 if (!fp) return;
                 const isKey = lev.level === 0.5 || lev.level === 0.618;
-                ctx.strokeStyle = f.type === 'EXTENSION'
-                    ? `rgba(249,115,22,${isKey ? 1 : 0.6})`
-                    : `rgba(236,72,153,${isKey ? 1 : 0.6})`;
-                ctx.lineWidth = isKey ? 2 : 1;
+                ctx.strokeStyle = `rgba(${baseColor},${isKey ? 1 : 0.6})`;
+                ctx.lineWidth = (isKey ? 2 : 1) + envelope * 2;
                 ctx.setLineDash(lev.level === 0 || lev.level === 1 ? [] : [5, 5]);
                 ctx.beginPath();
                 ctx.moveTo(Math.min(s.x, e.x), fp.y);
                 ctx.lineTo(Math.max(s.x, e.x), fp.y);
                 ctx.stroke();
-                ctx.fillStyle = f.type === 'EXTENSION' ? 'rgba(249,115,22,0.9)' : 'rgba(236,72,153,0.9)';
+                ctx.fillStyle = `rgba(${baseColor},0.9)`;
                 ctx.font = '10px Inter, sans-serif';
                 ctx.fillText(`${lev.label} (${lev.price.toFixed(2)})`, Math.max(s.x, e.x) + 5, fp.y + 4);
             });
             ctx.setLineDash([]);
+            ctx.restore();
         });
 
         if (isDrawing && startPoint && currentPoint && activeTool && activeTool !== 'FREEHAND') {
@@ -207,7 +236,7 @@ const useDrawingRenderer = ({
         if (mgr) {
             drawSnapIndicator(ctx, mgr.getSnap(), { width: rect.width, height: rect.height });
         }
-    }, [drawings, fibTools, isDrawing, startPoint, currentPoint, activeTool, activeFibTool, chartCoordsToPixel, pixelToChartCoords, isDark]);
+    }, [drawings, fibTools, isDrawing, startPoint, currentPoint, activeTool, activeFibTool, chartCoordsToPixel, pixelToChartCoords, isDark, highlight]);
 
     return { renderDrawings };
 };

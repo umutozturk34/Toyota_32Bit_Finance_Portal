@@ -31,10 +31,13 @@ class JwtLocaleResolverTest {
 
     @Test
     void resolveLocale_picksJwtLocaleClaim_whenSupported() {
+        JwtLocaleResolver jwtFirst = new JwtLocaleResolver(
+                List.of(Locale.forLanguageTag("en"), Locale.forLanguageTag("tr")),
+                Locale.forLanguageTag("ja"));
         authenticate(jwtWithLocale("en"));
-        HttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletRequest request = new MockHttpServletRequest();
 
-        Locale result = resolver.resolveLocale(request);
+        Locale result = jwtFirst.resolveLocale(request);
 
         assertThat(result).isEqualTo(Locale.forLanguageTag("en"));
     }

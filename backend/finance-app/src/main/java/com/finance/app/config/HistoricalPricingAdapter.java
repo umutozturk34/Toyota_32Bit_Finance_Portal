@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -71,11 +72,13 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
             log.warn("{} rates empty for {}..{} — crypto series stays in USD", USD_CURRENCY_CODE, from, to);
             return usdSeries;
         }
-        return usdSeries.entrySet().stream()
-                .map(e -> Map.entry(e.getKey(),
-                        PriceCrossCalculator.safeMultiply(e.getValue(), closestPriorRate(rates, e.getKey()), priceScale)))
-                .filter(e -> e.getValue() != null)
-                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<LocalDate, BigDecimal> result = new HashMap<>();
+        for (var entry : usdSeries.entrySet()) {
+            BigDecimal rate = closestPriorRate(rates, entry.getKey());
+            BigDecimal tryPrice = PriceCrossCalculator.safeMultiply(entry.getValue(), rate, priceScale);
+            if (tryPrice != null) result.put(entry.getKey(), tryPrice);
+        }
+        return Map.copyOf(result);
     }
 
     private BigDecimal closestPriorRate(Map<LocalDate, BigDecimal> rates, LocalDate target) {

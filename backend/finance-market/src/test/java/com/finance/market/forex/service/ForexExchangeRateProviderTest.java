@@ -1,7 +1,6 @@
 package com.finance.market.forex.service;
 
 import com.finance.market.core.cache.MarketCacheService;
-import com.finance.market.core.dto.external.YahooCandleDto;
 import com.finance.market.core.service.ExchangeRateSnapshot;
 import com.finance.market.forex.model.Forex;
 import com.finance.market.forex.model.ForexCandle;
@@ -94,11 +93,11 @@ class ForexExchangeRateProviderTest {
         when(forexCandleRepository.findByCurrencyCodeOrderByCandleDateAsc("USD"))
                 .thenReturn(List.of(c1, c2));
 
-        Map<String, YahooCandleDto> history = provider.getUsdTryHistory();
+        Map<String, BigDecimal> history = provider.getUsdTryHistory();
 
         assertThat(history).hasSize(2);
-        assertThat(history.get("2026-05-10").close()).isEqualByComparingTo("45.18");
-        assertThat(history.get("2026-05-11").close()).isEqualByComparingTo("45.27");
+        assertThat(history.get("2026-05-10")).isEqualByComparingTo("45.18");
+        assertThat(history.get("2026-05-11")).isEqualByComparingTo("45.27");
     }
 
     @Test
@@ -106,7 +105,7 @@ class ForexExchangeRateProviderTest {
         when(forexCandleRepository.findByCurrencyCodeOrderByCandleDateAsc("USD"))
                 .thenReturn(List.of());
 
-        Map<String, YahooCandleDto> history = provider.getUsdTryHistory();
+        Map<String, BigDecimal> history = provider.getUsdTryHistory();
 
         assertThat(history).isEmpty();
     }

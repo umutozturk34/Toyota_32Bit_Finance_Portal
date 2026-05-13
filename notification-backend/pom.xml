@@ -126,6 +126,17 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/dto/**</exclude>
+                        <exclude>**/config/**</exclude>
+                        <exclude>**/*MapperImpl.class</exclude>
+                        <exclude>**/*Application.class</exclude>
+                        <exclude>**/exception/**</exclude>
+                        <exclude>**/migration/**</exclude>
+                        <exclude>**/generated/**</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { STALE } from '../constants/query';
 import { userCredentialService } from '../services/userCredentialService';
 import { useAuth } from '../../features/auth/AuthContext';
 
@@ -10,7 +11,7 @@ export function usePendingEmailChange({ enabled = true } = {}) {
     queryKey: PENDING_KEY,
     queryFn: userCredentialService.getPendingEmailChange,
     enabled: enabled && isAuthenticated && !loading,
-    staleTime: 60_000,
+    staleTime: STALE.MEDIUM,
     refetchOnWindowFocus: false,
   });
 }

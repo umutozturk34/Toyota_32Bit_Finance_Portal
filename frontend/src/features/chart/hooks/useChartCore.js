@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import { calculateSMA, calculateEMA } from '../lib/indicators';
 import { getChartOptions } from '../lib/chartOptions';
@@ -55,6 +56,7 @@ const analyzeTrend = (d) => {
 };
 
 const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawingsRef, assetType, compareData, compareSymbol, timeRange }) => {
+    const { t, i18n } = useTranslation();
     const chartContainerRef = useRef(null);
     const chartRef = useRef(null);
     const candleSeriesRef = useRef(null);
@@ -92,6 +94,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 buyingPrice: c.buyingPrice != null ? Number(c.buyingPrice) : null,
                 effectiveBuyingPrice: c.effectiveBuyingPrice != null ? Number(c.effectiveBuyingPrice) : null,
                 effectiveSellingPrice: c.effectiveSellingPrice != null ? Number(c.effectiveSellingPrice) : null,
+                bulletinPrice: c.bulletinPrice != null ? Number(c.bulletinPrice) : null,
             };
         });
         candleDataRef.current = candleData;
@@ -105,7 +108,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             lineSeriesRef.current = null;
             candleSeries.setData(candleData);
         } else if (assetType === 'FUND') {
-            const fundLine = chart.addSeries(LineSeries, {
+            const priceLine = chart.addSeries(LineSeries, {
                 color: '#5E6AD2',
                 lineWidth: 2,
                 crosshairMarkerVisible: true,
@@ -115,10 +118,62 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 crosshairMarkerBackgroundColor: isDark ? '#050506' : '#ffffff',
                 lastValueVisible: true,
                 priceLineVisible: true,
+                title: t('chart.legend.price'),
             });
-            lineSeriesRef.current = fundLine;
-            candleSeriesRef.current = fundLine;
-            fundLine.setData(candleData.map(c => ({ time: c.time, value: c.close })));
+            priceLine.setData(candleData.map(c => ({ time: c.time, value: c.close })));
+            if (candleData.some(c => c.bulletinPrice != null)) {
+                const bulletinLine = chart.addSeries(LineSeries, {
+                    color: '#a855f7',
+                    lineWidth: 1.5,
+                    lineStyle: 2,
+                    crosshairMarkerVisible: true,
+                    crosshairMarkerRadius: 3,
+                    crosshairMarkerBorderColor: '#a855f7',
+                    crosshairMarkerBackgroundColor: isDark ? '#050506' : '#ffffff',
+                    lastValueVisible: true,
+                    priceLineVisible: false,
+                    title: t('chart.legend.bulletin'),
+                });
+                bulletinLine.setData(candleData
+                    .filter(c => c.bulletinPrice != null)
+                    .map(c => ({ time: c.time, value: c.bulletinPrice })));
+            }
+            lineSeriesRef.current = priceLine;
+            candleSeriesRef.current = priceLine;
+        } else if (assetType === 'FOREX') {
+            const sellLine = chart.addSeries(LineSeries, {
+                color: '#10b981',
+                lineWidth: 2,
+                crosshairMarkerVisible: true,
+                crosshairMarkerRadius: 4,
+                crosshairMarkerBorderColor: '#10b981',
+                crosshairMarkerBackgroundColor: isDark ? '#050506' : '#ffffff',
+                lastValueVisible: true,
+                priceLineVisible: true,
+                title: t('chart.legend.sell'),
+            });
+            sellLine.setData(candleData
+                .filter(c => c.sellingPrice != null)
+                .map(c => ({ time: c.time, value: c.sellingPrice })));
+            if (candleData.some(c => c.buyingPrice != null)) {
+                const buyLine = chart.addSeries(LineSeries, {
+                    color: '#ef4444',
+                    lineWidth: 1.5,
+                    lineStyle: 2,
+                    crosshairMarkerVisible: true,
+                    crosshairMarkerRadius: 3,
+                    crosshairMarkerBorderColor: '#ef4444',
+                    crosshairMarkerBackgroundColor: isDark ? '#050506' : '#ffffff',
+                    lastValueVisible: true,
+                    priceLineVisible: false,
+                    title: t('chart.legend.buy'),
+                });
+                buyLine.setData(candleData
+                    .filter(c => c.buyingPrice != null)
+                    .map(c => ({ time: c.time, value: c.buyingPrice })));
+            }
+            lineSeriesRef.current = sellLine;
+            candleSeriesRef.current = sellLine;
         } else {
             const lineSeries = chart.addSeries(LineSeries, {
                 color: '#5E6AD2',
@@ -162,6 +217,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 open: cd.open, high: cd.high, low: cd.low, close: cd.close,
                 sellingPrice: cd.sellingPrice, buyingPrice: cd.buyingPrice,
                 effectiveBuyingPrice: cd.effectiveBuyingPrice, effectiveSellingPrice: cd.effectiveSellingPrice,
+                bulletinPrice: cd.bulletinPrice,
                 time: cd.time,
             });
             const overlays = overlayMetaRef.current;
@@ -221,7 +277,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             } catch { }
             if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
         };
-    }, [data, symbol, chartType, timeRange]);
+    }, [data, symbol, chartType, timeRange, i18n.language]);
 
     useEffect(() => {
         if (chartRef.current) {

@@ -6,5 +6,7 @@ public record YahooQuoteDto(
         BigDecimal openPrice,
         BigDecimal dayHigh,
         BigDecimal dayLow,
-        Long volume
+        Long volume,
+        BigDecimal regularMarketChange,
+        BigDecimal regularMarketChangePercent
 ) {}

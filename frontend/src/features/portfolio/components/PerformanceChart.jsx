@@ -115,7 +115,7 @@ function buildEChartsOption(data, color, palette) {
     animation: data.length < 200,
     grid: { left: 70, right: 24, top: 16, bottom: 32, containLabel: false },
     dataZoom: [
-      { type: 'inside', xAxisIndex: 0, filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: 'shift', moveOnMouseWheel: false },
+      { type: 'inside', xAxisIndex: 0, filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: true, moveOnMouseWheel: false, preventDefaultMouseMove: true },
     ],
     tooltip: {
       trigger: 'axis',
@@ -191,7 +191,7 @@ function buildEChartsOption(data, color, palette) {
 export default function PerformanceChart({ portfolioId }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const [range, setRange] = useChartRange('portfolio-perf-range');
+  const [range, setRange] = useChartRange();
   const [activeType, setActiveType] = useSessionState('portfolio-perf-type', null);
 
   const { data: perfData = [], isLoading: loading } = usePortfolioPerformance(portfolioId, range, activeType);

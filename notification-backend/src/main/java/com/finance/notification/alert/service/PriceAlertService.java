@@ -2,6 +2,7 @@ package com.finance.notification.alert.service;
 
 import com.finance.common.cache.AssetSnapshotCache;
 import com.finance.common.dto.internal.AssetSnapshot;
+import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.MarketType;
@@ -14,6 +15,7 @@ import com.finance.notification.alert.dto.PriceAlertUpdateRequest;
 import com.finance.notification.alert.mapper.PriceAlertMapper;
 import com.finance.notification.alert.model.PriceAlert;
 import com.finance.notification.alert.repository.PriceAlertRepository;
+import com.finance.notification.config.PriceAlertProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
@@ -36,10 +38,21 @@ public class PriceAlertService {
     private final PriceAlertMapper mapper;
     private final AssetSnapshotCache assetSnapshotCache;
     private final TrackedAssetRepository trackedAssetRepository;
+    private final PriceAlertProperties properties;
 
     @Transactional
     public PriceAlertResponse create(String userSub, PriceAlertCreateRequest request) {
+        int maxPerUser = properties.maxPerUser();
+        if (maxPerUser > 0 && repository.countByUserSub(userSub) >= maxPerUser) {
+            throw new BadRequestException("error.priceAlert.maxReached", maxPerUser);
+        }
         TrackedAsset trackedAsset = requireTrackedAsset(request.marketType(), request.assetCode());
+        if (repository.existsByUserSubAndTrackedAsset_IdAndDirectionAndThresholdAndActiveTrue(
+                userSub, trackedAsset.getId(), request.direction(), request.threshold())) {
+            throw new BadRequestException("error.priceAlert.duplicate",
+                    request.marketType(), trackedAsset.getAssetCode(),
+                    request.direction(), request.threshold());
+        }
         PriceAlert entity = mapper.toEntity(request, userSub);
         entity.setTrackedAsset(trackedAsset);
         entity.setAssetCode(trackedAsset.getAssetCode());
@@ -79,6 +92,12 @@ public class PriceAlertService {
     @Transactional
     public PriceAlertResponse reactivate(Long id, String userSub) {
         PriceAlert alert = ownedOr404(id, userSub);
+        if (repository.existsByUserSubAndTrackedAsset_IdAndDirectionAndThresholdAndActiveTrue(
+                userSub, alert.getTrackedAsset().getId(), alert.getDirection(), alert.getThreshold())) {
+            throw new BadRequestException("error.priceAlert.duplicate",
+                    alert.getMarketType(), alert.getAssetCode(),
+                    alert.getDirection(), alert.getThreshold());
+        }
         alert.reactivate();
         PriceAlert saved = repository.save(alert);
         log.info("Price alert reactivated alertId={} userSub={}", id, userSub);

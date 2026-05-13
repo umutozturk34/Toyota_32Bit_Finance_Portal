@@ -80,4 +80,18 @@ class CommodityMarketAssetProviderTest {
         commodity.setCurrentPrice(new BigDecimal("160000.5000"));
         return commodity;
     }
+
+    @Test
+    void getGroupCounts_mapsRepositoryRowsToGroupCount() {
+        when(commodityRepository.countBySegment()).thenReturn(List.of(
+                new Object[]{"PRECIOUS_METAL", 5L},
+                new Object[]{"ENERGY", 3L}));
+
+        List<com.finance.shared.dto.response.GroupCount> result = provider.getGroupCounts();
+
+        assertThat(result).extracting(com.finance.shared.dto.response.GroupCount::type)
+                .containsExactly("PRECIOUS_METAL", "ENERGY");
+        assertThat(result).extracting(com.finance.shared.dto.response.GroupCount::count)
+                .containsExactly(5L, 3L);
+    }
 }

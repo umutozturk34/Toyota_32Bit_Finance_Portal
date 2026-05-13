@@ -1,7 +1,6 @@
 package com.finance.market.forex.service;
 
 import com.finance.market.core.cache.MarketCacheService;
-import com.finance.market.core.dto.external.YahooCandleDto;
 import com.finance.market.core.service.ExchangeRateProvider;
 import com.finance.market.core.service.ExchangeRateSnapshot;
 import com.finance.market.forex.model.Forex;
@@ -40,13 +39,12 @@ public class ForexExchangeRateProvider implements ExchangeRateProvider {
     }
 
     @Override
-    public Map<String, YahooCandleDto> getUsdTryHistory() {
+    public Map<String, BigDecimal> getUsdTryHistory() {
         return forexCandleRepository.findByCurrencyCodeOrderByCandleDateAsc(USD_CODE).stream()
+                .filter(c -> c.getSellingPrice() != null)
                 .collect(Collectors.toMap(
                         c -> c.getCandleDate().toLocalDate().toString(),
-                        c -> new YahooCandleDto(c.getCandleDate(),
-                                c.getSellingPrice(), c.getSellingPrice(), c.getSellingPrice(), c.getSellingPrice(),
-                                null),
+                        c -> c.getSellingPrice(),
                         (a, b) -> a));
     }
 }

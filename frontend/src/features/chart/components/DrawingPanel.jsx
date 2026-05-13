@@ -42,6 +42,7 @@ const DrawingPanel = ({
     setSelectedIcon,
     iconSize,
     setIconSize,
+    onHighlight,
 }) => {
     const { t } = useTranslation();
     const { isDark } = useTheme();
@@ -158,29 +159,37 @@ const DrawingPanel = ({
                             </button>
                         </div>
                     </div>
-                    {drawings.slice(-6).reverse().map(d => {
-                        const tool = DRAWING_TOOLS.find(toolDef => toolDef.id === d.type);
-                        const ToolIcon = tool?.Icon || TrendingUp;
-                        return (
-                            <div
-                                key={d.id}
-                                className="group flex items-center gap-2 px-2 py-1 rounded-md hover:bg-surface transition-colors"
-                            >
-                                <ToolIcon className="w-3 h-3 text-fg-muted group-hover:text-fg transition-colors" />
-                                <span className="text-[11px] text-fg-muted flex-1 truncate">
-                                    {d.type === 'TEXT' ? `"${d.content}"` :
-                                        d.type === 'ICON' ? d.iconId :
-                                            (tool?.labelKey ? t(tool.labelKey) : d.type)}
-                                </span>
+                    <div className="max-h-44 overflow-y-auto scrollbar-auto-hide space-y-0.5 pr-0.5">
+                        {drawings.map((d, idx) => ({ d, idx })).reverse().map(({ d, idx }) => {
+                            const tool = DRAWING_TOOLS.find(toolDef => toolDef.id === d.type);
+                            const ToolIcon = tool?.Icon || TrendingUp;
+                            return (
                                 <button
-                                    onClick={() => removeDrawing(d.id)}
-                                    className="opacity-0 group-hover:opacity-100 p-0.5 border-none bg-transparent cursor-pointer text-fg-muted hover:text-[#ef4444] transition-all"
+                                    key={d.id}
+                                    type="button"
+                                    onClick={() => onHighlight?.(d.id)}
+                                    className="group w-full flex items-center gap-2 px-2 py-1 rounded-md hover:bg-surface transition-colors border-none bg-transparent text-left cursor-pointer"
                                 >
-                                    <Trash2 className="w-3 h-3" />
+                                    <span className="text-[9px] font-mono text-fg-subtle tabular-nums w-5 text-right shrink-0">#{idx + 1}</span>
+                                    <ToolIcon className="w-3 h-3 text-fg-muted group-hover:text-fg transition-colors shrink-0" style={{ color: tool?.color }} />
+                                    <span className="text-[11px] text-fg-muted flex-1 truncate">
+                                        {d.type === 'TEXT' ? `"${d.content}"` :
+                                            d.type === 'ICON' ? d.iconId :
+                                                (tool?.labelKey ? t(tool.labelKey) : d.type)}
+                                    </span>
+                                    <span
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={(e) => { e.stopPropagation(); removeDrawing(d.id); }}
+                                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); removeDrawing(d.id); } }}
+                                        className="opacity-0 group-hover:opacity-100 p-0.5 border-none bg-transparent cursor-pointer text-fg-muted hover:text-[#ef4444] transition-all"
+                                    >
+                                        <Trash2 className="w-3 h-3" />
+                                    </span>
                                 </button>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </div>
             )}
         </div>

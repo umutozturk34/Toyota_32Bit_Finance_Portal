@@ -16,6 +16,10 @@ export function transformCandles(raw) {
         portfolioSize: c.portfolioSize,
         shareCount: c.shareCount,
         bulletinPrice: c.bulletinPrice,
+        sellingPrice: c.sellingPrice,
+        buyingPrice: c.buyingPrice,
+        effectiveBuyingPrice: c.effectiveBuyingPrice,
+        effectiveSellingPrice: c.effectiveSellingPrice,
       };
     }),
   };

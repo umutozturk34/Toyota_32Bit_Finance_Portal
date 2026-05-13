@@ -12,6 +12,7 @@ import com.finance.common.repository.TrackedAssetRepository;
 import com.finance.notification.watchlist.dto.WatchlistItemCreateRequest;
 import com.finance.notification.watchlist.dto.WatchlistItemResponse;
 import com.finance.notification.watchlist.dto.WatchlistItemUpdateRequest;
+import com.finance.notification.config.WatchlistManagementProperties;
 import com.finance.notification.watchlist.mapper.WatchlistItemMapper;
 import com.finance.notification.watchlist.model.Watchlist;
 import com.finance.notification.watchlist.model.WatchlistItem;
@@ -44,6 +45,7 @@ public class WatchlistService {
     private final WatchlistManagementService managementService;
     private final AssetSnapshotCache assetSnapshotCache;
     private final TrackedAssetRepository trackedAssetRepository;
+    private final WatchlistManagementProperties managementProperties;
 
     @Transactional
     public WatchlistItemResponse addToList(Long watchlistId, String userSub,
@@ -156,6 +158,10 @@ public class WatchlistService {
     private WatchlistItemResponse createItem(Watchlist parent, String userSub,
                                               WatchlistItemCreateRequest request,
                                               TrackedAsset trackedAsset) {
+        int maxItems = managementProperties.maxItemsPerList();
+        if (maxItems > 0 && repository.countByWatchlistId(parent.getId()) >= maxItems) {
+            throw new BadRequestException("error.watchlist.itemMaxReached", maxItems);
+        }
         WatchlistItem entity = mapper.toEntity(request, userSub);
         entity.setTrackedAsset(trackedAsset);
         entity.setAssetCode(trackedAsset.getAssetCode());

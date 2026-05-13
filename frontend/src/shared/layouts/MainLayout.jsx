@@ -18,6 +18,7 @@ import NotificationPanel from '../../features/notifications/NotificationPanel';
 import { useUnreadNotificationCount } from '../hooks/useNotifications';
 import useNotificationStream from '../hooks/useNotificationStream';
 import useScrollRestoration from '../hooks/useScrollRestoration';
+import useNavigationStore from '../stores/useNavigationStore';
 import OnboardingGate from '../../features/onboarding/OnboardingGate';
 import KeycloakActionToast from '../../features/auth/components/KeycloakActionToast';
 
@@ -53,16 +54,20 @@ const MainLayout = () => {
   useScrollRestoration();
 
   const navType = useNavigationType();
-  const lastPathRef = useRef(location.pathname);
+  const setOriginInStore = useNavigationStore((s) => s.setOrigin);
+  const lastFullPathRef = useRef(location.pathname + (location.search || ''));
 
   useEffect(() => {
     setMobileOpen(false);
-    if (lastPathRef.current === location.pathname) return;
-    lastPathRef.current = location.pathname;
-    if (navType !== 'POP') {
+    const next = location.pathname + (location.search || '');
+    const prev = lastFullPathRef.current;
+    if (prev === next) return;
+    if (navType === 'PUSH') {
+      setOriginInStore(prev);
       window.scrollTo(0, 0);
     }
-  }, [location.pathname, navType]);
+    lastFullPathRef.current = next;
+  }, [location.pathname, location.search, navType, setOriginInStore]);
 
   const anyOverlayOpen = settingsOpen || notificationsOpen || tasksOpen || mobileOpen;
   const blurCls = anyOverlayOpen ? 'blur-sm pointer-events-none select-none' : '';

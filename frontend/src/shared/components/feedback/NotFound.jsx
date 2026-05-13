@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import useNavigationBack from '../../hooks/useNavigationBack';
 
 import { motion } from 'framer-motion';
 export default function NotFound() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const goBack = useNavigationBack('/');
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-[70vh] overflow-hidden select-none">
@@ -52,7 +54,7 @@ export default function NotFound() {
           className="flex items-center gap-3 mt-2"
         >
           <button
-            onClick={() => navigate(-1)}
+            onClick={goBack}
             className="px-5 py-2.5 rounded-xl border border-border-default text-sm font-medium text-fg-muted
                        hover:border-border-hover hover:text-fg transition-all duration-200"
           >

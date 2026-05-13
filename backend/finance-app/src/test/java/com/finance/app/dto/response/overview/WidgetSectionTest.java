@@ -27,7 +27,7 @@ class WidgetSectionTest {
 
         WidgetSection section = new WidgetSection("section-2", WidgetKind.MOVERS, 1, payload);
 
-        assertThat(section.config().get("market").asText()).isEqualTo("STOCK");
+        assertThat(section.config().get("market").asString()).isEqualTo("STOCK");
     }
 
     @Test

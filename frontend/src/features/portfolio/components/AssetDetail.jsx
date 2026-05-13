@@ -60,7 +60,7 @@ function buildAssetChartOption(data, isDark, t) {
     animation: data.length < 200,
     grid: { left: 65, right: 24, top: 16, bottom: 30 },
     dataZoom: [
-      { type: 'inside', xAxisIndex: 0, filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: 'shift', moveOnMouseWheel: false },
+      { type: 'inside', xAxisIndex: 0, filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: true, moveOnMouseWheel: false, preventDefaultMouseMove: true },
     ],
     tooltip: {
       trigger: 'axis',
@@ -130,7 +130,7 @@ function buildAssetChartOption(data, isDark, t) {
 export default function AssetDetail({ portfolioId, asset, onBack }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const [range, setRange] = useChartRange(`portfolio-asset-range-${asset.assetCode}`);
+  const [range, setRange] = useChartRange();
   const [addLotOpen, setAddLotOpen] = useState(false);
 
   const { data: series = [], isLoading: loading } = useAssetSeries(

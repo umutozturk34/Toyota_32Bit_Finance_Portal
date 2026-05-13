@@ -10,6 +10,7 @@ import com.finance.common.event.KafkaTopicsProperties;
 import com.finance.notification.config.NotificationKafkaProperties;
 import com.finance.notification.config.NotificationOutboxProperties;
 import com.finance.notification.config.NotificationStreamProperties;
+import com.finance.notification.config.PriceAlertProperties;
 import com.finance.notification.config.WatchlistManagementProperties;
 import com.finance.notification.core.dispatch.slot.SlotProperties;
 import com.finance.notification.market.MarketHoursProperties;
@@ -55,6 +56,7 @@ import java.util.TimeZone;
         NotificationOutboxProperties.class,
         NotificationStreamProperties.class,
         SlotProperties.class,
+        PriceAlertProperties.class,
         WatchlistManagementProperties.class
 })
 @EnableAsync

@@ -21,6 +21,24 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
     Optional<PortfolioAssetDailySnapshot> findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
             Long portfolioId, Long trackedAssetId, LocalDateTime cutoff);
 
+    @Query("""
+            SELECT s FROM PortfolioAssetDailySnapshot s
+            WHERE s.portfolioId = :pid
+              AND s.trackedAsset.id IN :trackedIds
+              AND s.createdAt <= :cutoff
+              AND s.id IN (
+                  SELECT MAX(t.id) FROM PortfolioAssetDailySnapshot t
+                  WHERE t.portfolioId = :pid
+                    AND t.trackedAsset.id IN :trackedIds
+                    AND t.createdAt <= :cutoff
+                  GROUP BY t.trackedAsset.id
+              )
+            """)
+    List<PortfolioAssetDailySnapshot> findLatestPerTrackedAssetBefore(
+            @Param("pid") Long portfolioId,
+            @Param("trackedIds") java.util.Collection<Long> trackedIds,
+            @Param("cutoff") LocalDateTime cutoff);
+
     Optional<PortfolioAssetDailySnapshot> findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
             Long portfolioId, Long trackedAssetId, LocalDateTime cutoff);
 

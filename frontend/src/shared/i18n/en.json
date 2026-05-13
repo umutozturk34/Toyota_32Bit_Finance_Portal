@@ -105,6 +105,12 @@
       "drawings": "Draw",
       "fibonacci": "Fibonacci"
     },
+    "legend": {
+      "price": "Price",
+      "bulletin": "Bulletin Price",
+      "sell": "Sell",
+      "buy": "Buy"
+    },
     "range": {
       "1M": "1M",
       "3M": "3M",
@@ -222,6 +228,7 @@
       },
       "crosshair": {
         "price": "Price",
+        "bulletin": "Bulletin",
         "sell": "Sell",
         "buy": "Buy",
         "effBuy": "Banknote Buy",

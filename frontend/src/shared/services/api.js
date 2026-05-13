@@ -24,9 +24,21 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+function isAbortError(error) {
+  if (!error) return false;
+  if (axios.isCancel(error)) return true;
+  if (error.name === 'CanceledError' || error.name === 'AbortError') return true;
+  if (error.code === 'ERR_CANCELED') return true;
+  if (typeof error.message === 'string' && /load failed|aborted|canceled|cancelled/i.test(error.message)) return true;
+  return false;
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (isAbortError(error)) {
+      return Promise.reject(error);
+    }
     if (error.response?.status === 429) {
       const now = Date.now();
       if (now - _lastRateLimitAlert > TIMINGS.RATE_LIMIT_THROTTLE_MS) {
@@ -46,6 +58,7 @@ api.interceptors.response.use(
           doLogin();
         } catch {}
       }
+      return Promise.reject(error);
     }
     return Promise.reject(error);
   }

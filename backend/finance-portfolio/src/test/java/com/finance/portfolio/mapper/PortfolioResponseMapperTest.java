@@ -13,6 +13,51 @@ class PortfolioResponseMapperTest {
     private final PortfolioResponseMapper mapper = new PortfolioResponseMapperImpl();
 
     @Test
+    void toPositionResponse_packsAllArgumentsIntoResponse() {
+        com.finance.portfolio.model.PortfolioPosition pos = com.finance.portfolio.model.PortfolioPosition.builder()
+                .id(7L)
+                .assetType(com.finance.portfolio.model.AssetType.STOCK)
+                .assetCode("AKBNK")
+                .quantity(new BigDecimal("10"))
+                .entryDate(java.time.LocalDateTime.of(2026, 1, 1, 10, 0))
+                .entryPrice(new BigDecimal("50"))
+                .build();
+
+        com.finance.portfolio.dto.response.PositionResponse response = mapper.toPositionResponse(
+                pos, new BigDecimal("60"), new BigDecimal("500"), new BigDecimal("600"),
+                new BigDecimal("100"), new BigDecimal("20"), "Akbank", "akbank.png");
+
+        assertThat(response.id()).isEqualTo(7L);
+        assertThat(response.assetCode()).isEqualTo("AKBNK");
+        assertThat(response.assetName()).isEqualTo("Akbank");
+        assertThat(response.assetImage()).isEqualTo("akbank.png");
+        assertThat(response.entryPrice()).isEqualByComparingTo("50");
+        assertThat(response.currentPriceTry()).isEqualByComparingTo("60");
+        assertThat(response.marketValueTry()).isEqualByComparingTo("600");
+        assertThat(response.pnlPercent()).isEqualByComparingTo("20");
+    }
+
+    @Test
+    void toPositionResponseShell_usesZerosAndComputedEntryValue() {
+        com.finance.portfolio.model.PortfolioPosition pos = com.finance.portfolio.model.PortfolioPosition.builder()
+                .id(8L)
+                .assetType(com.finance.portfolio.model.AssetType.CRYPTO)
+                .assetCode("bitcoin")
+                .quantity(new BigDecimal("2"))
+                .entryDate(java.time.LocalDateTime.now())
+                .entryPrice(new BigDecimal("1000"))
+                .build();
+
+        com.finance.portfolio.dto.response.PositionResponse response = mapper.toPositionResponseShell(pos);
+
+        assertThat(response.currentPriceTry()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(response.pnlTry()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(response.entryValueTry()).isEqualByComparingTo("2000.0000");
+        assertThat(response.assetName()).isNull();
+        assertThat(response.assetImage()).isNull();
+    }
+
+    @Test
     void should_packArgumentsIntoSummary_when_callingToSummaryResponse() {
         BigDecimal total = new BigDecimal("12500.00");
         BigDecimal entry = new BigDecimal("10000.00");

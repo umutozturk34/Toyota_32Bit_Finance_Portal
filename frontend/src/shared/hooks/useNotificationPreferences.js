@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notificationPreferenceService } from '../services/notificationPreferenceService';
 import { useAuth } from '../../features/auth/AuthContext';
+import { STALE, GC } from '../constants/query';
 
 const KEY = ['notificationPreferences'];
 
@@ -19,7 +20,8 @@ export function useNotificationPreferences() {
   const query = useQuery({
     queryKey: KEY,
     queryFn: notificationPreferenceService.get,
-    staleTime: Infinity,
+    staleTime: STALE.NEVER,
+    gcTime: GC.NEVER,
     enabled: isAuthenticated && !loading,
   });
   return {

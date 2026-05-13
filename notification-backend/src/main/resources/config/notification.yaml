@@ -22,6 +22,9 @@ notification:
     status-read-capacity-per-minute: 240
   watchlist:
     max-per-user: 20
+    max-items-per-list: 100
+  alert:
+    max-per-user: 50
   async:
     sse:
       core-pool-size: 4

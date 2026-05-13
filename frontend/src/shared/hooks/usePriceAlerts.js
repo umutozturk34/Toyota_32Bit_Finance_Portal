@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { STALE } from '../constants/query';
 import { priceAlertService } from '../services/priceAlertService';
 import { useAuth } from '../../features/auth/AuthContext';
 
@@ -10,7 +11,7 @@ export function usePriceAlerts({ page = 0, size = 50, enabled = true } = {}) {
     queryKey: KEY({ page, size }),
     queryFn: () => priceAlertService.list({ page, size }),
     enabled: enabled && isAuthenticated && !loading,
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
   });
 }
 

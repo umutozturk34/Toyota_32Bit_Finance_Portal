@@ -50,9 +50,9 @@ public class MoverWidgetProvider implements OverviewWidgetProvider {
         JsonNode node = section.config().get("market");
         if (node == null || node.isNull()) return null;
         try {
-            return MarketType.valueOf(node.asText());
+            return MarketType.valueOf(node.asString());
         } catch (IllegalArgumentException ex) {
-            log.debug("MoverWidget skip — invalid market value={}", node.asText());
+            log.debug("MoverWidget skip — invalid market value={}", node.asString());
             return null;
         }
     }

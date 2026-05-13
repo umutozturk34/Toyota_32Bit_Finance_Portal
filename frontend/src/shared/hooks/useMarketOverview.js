@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { marketOverviewService } from '../services/marketOverviewService';
 import { useAuth } from '../../features/auth/AuthContext';
+import { STALE } from '../constants/query';
 
 const OVERVIEW_KEY = ['marketOverview'];
-const STALE_MS = 30_000;
 const EMPTY_WIDGETS = Object.freeze([]);
 
 export function useMarketOverview() {
@@ -11,7 +11,8 @@ export function useMarketOverview() {
   const query = useQuery({
     queryKey: OVERVIEW_KEY,
     queryFn: marketOverviewService.get,
-    staleTime: STALE_MS,
+    staleTime: STALE.SHORT,
+    refetchOnWindowFocus: true,
     retry: false,
     enabled: isAuthenticated && !loading,
   });

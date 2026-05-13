@@ -91,7 +91,8 @@ public class Commodity extends BaseAsset {
         this.dayHigh = scaleValue(snapshot.tryDayHigh(), scale);
         this.dayLow = scaleValue(snapshot.tryDayLow(), scale);
         this.volume = snapshot.volume();
-        applyChange(snapshot.tryPrice(), snapshot.tryPreviousClose(), scale);
+        applyChangePreferring(snapshot.tryPrice(), snapshot.tryPreviousClose(),
+                null, snapshot.yahooChangePercent(), scale);
         this.yahooUpdatedAt = LocalDateTime.now();
     }
 

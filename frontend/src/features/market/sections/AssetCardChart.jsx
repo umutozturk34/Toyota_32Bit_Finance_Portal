@@ -1,4 +1,5 @@
 import { lazy, Suspense, useMemo } from 'react';
+import useDeferredVisibility from '../../../shared/hooks/useDeferredVisibility';
 
 const ReactECharts = lazy(() => import('echarts-for-react'));
 
@@ -118,14 +119,18 @@ export default function AssetCardChart({ assetCode, changePercent, delayMs = 0 }
   const data = useMemo(() => generateSparkline(assetCode, changePercent), [assetCode, changePercent]);
   const color = useMemo(() => lineColor(changePercent), [changePercent]);
   const option = useMemo(() => buildOption(data, color, delayMs), [data, color, delayMs]);
+  const [ref, ready] = useDeferredVisibility(delayMs);
   return (
     <div
+      ref={ref}
       className="absolute inset-0 pointer-events-none opacity-[0.42]"
       aria-hidden="true"
     >
-      <Suspense fallback={null}>
-        <ReactECharts option={option} style={{ width: '100%', height: '100%' }} opts={{ renderer: 'svg' }} />
-      </Suspense>
+      {ready && (
+        <Suspense fallback={null}>
+          <ReactECharts option={option} style={{ width: '100%', height: '100%' }} opts={{ renderer: 'svg' }} />
+        </Suspense>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { STALE } from '../../shared/constants/query';
 import { motion } from 'framer-motion';
 import { useSearchParams, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +11,7 @@ import {
 import LightweightChart from './components/LightweightChart';
 import CompareBar from '../../shared/components/layout/CompareBar';
 import Spinner from '../../shared/components/feedback/Spinner';
+import useNavigationBack from '../../shared/hooks/useNavigationBack';
 import { fundService, trackedAssetService } from '../../shared/services/marketService';
 import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
 import { formatBistSymbol } from '../../shared/constants/stocks';
@@ -30,6 +32,7 @@ const ChartView = () => {
   const { coinId, assetType: routeAssetType, symbol: routeSymbol } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const goBack = useNavigationBack('/market');
   const [searchParams, setSearchParams] = useSearchParams();
   const normalizedRouteAssetType = routeAssetType?.toLowerCase();
   const routeType = normalizedRouteAssetType ? ROUTE_TO_ASSET_TYPE[normalizedRouteAssetType] : null;
@@ -61,17 +64,17 @@ const ChartView = () => {
   const { data: trackedCrypto = [] } = useQuery({
     queryKey: ['trackedAssets', 'CRYPTO'],
     queryFn: () => trackedAssetService.getByType('CRYPTO'),
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
   });
   const { data: trackedStocks = [] } = useQuery({
     queryKey: ['trackedAssets', 'STOCK'],
     queryFn: () => trackedAssetService.getByType('STOCK'),
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
   });
   const { data: trackedFunds = [] } = useQuery({
     queryKey: ['trackedAssets', 'FUND'],
     queryFn: () => trackedAssetService.getByType('FUND'),
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
   });
   const trackedUniverse = useMemo(() => {
     const universe = {
@@ -86,7 +89,7 @@ const ChartView = () => {
     queryKey: ['fundList'],
     queryFn: fundService.getAll,
     enabled: assetType === 'FUND',
-    staleTime: 60_000,
+    staleTime: STALE.MEDIUM,
   });
   const fundList = fundListRaw || [];
 
@@ -107,7 +110,7 @@ const ChartView = () => {
     queryKey: ['trackedAsset', singleAssetType, singleCode],
     queryFn: () => trackedAssetService.getOne(singleAssetType, singleCode),
     enabled: !!singleCode && !alreadyTracked,
-    staleTime: 60_000,
+    staleTime: STALE.MEDIUM,
   });
 
   const { data: compareRaw } = useQuery({
@@ -180,7 +183,7 @@ const ChartView = () => {
         navigate(`/charts/${routeType}/${routeSymbol}`, { replace: true });
         return;
       }
-      setSearchParams({ type: assetType, symbol });
+      setSearchParams({ type: assetType, symbol }, { replace: true });
     }
   }, [symbol, assetType, isDetailRoute, navigate, setSearchParams]);
   const fetchSymbol = assetType === 'BIST' && symbol && !symbol.endsWith('.IS') ? `${symbol}.IS` : symbol;
@@ -191,7 +194,7 @@ const ChartView = () => {
     queryKey: ['chartHistory', assetType, fetchSymbol, timeRange],
     queryFn: () => fetchHistory(symbol, assetType, timeRange),
     enabled: !!symbol,
-    staleTime: 30_000,
+    staleTime: STALE.SHORT,
   });
 
   const chartData = useMemo(() => {
@@ -214,7 +217,7 @@ const ChartView = () => {
         <motion.div variants={itemVariants} className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate(-1)}
+              onClick={goBack}
               className="flex items-center justify-center w-10 h-10 rounded-lg border border-border-default bg-bg-base text-fg-muted hover:text-fg hover:bg-surface transition-colors duration-150"
             >
               <ArrowLeft className="w-5 h-5" />

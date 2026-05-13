@@ -70,7 +70,7 @@ class WatchlistWidgetProviderTest {
         WatchlistData data = provider.fetch("user-1", sectionFor("{}"));
 
         assertThat(data.watchlistId()).isNull();
-        assertThat(data.watchlistName()).isEqualTo("Liste bulunamadı");
+        assertThat(data.watchlistName()).isNull();
         assertThat(data.items()).isEmpty();
     }
 
@@ -105,7 +105,7 @@ class WatchlistWidgetProviderTest {
         WatchlistData data = provider.fetch("user-1", sectionFor("{\"watchlistId\":99}"));
 
         assertThat(data.watchlistId()).isNull();
-        assertThat(data.watchlistName()).isEqualTo("Liste bulunamadı");
+        assertThat(data.watchlistName()).isNull();
     }
 
     @Test

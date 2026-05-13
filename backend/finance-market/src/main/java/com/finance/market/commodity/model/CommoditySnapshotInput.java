@@ -10,5 +10,6 @@ public record CommoditySnapshotInput(
         BigDecimal tryOpenPrice,
         BigDecimal tryDayHigh,
         BigDecimal tryDayLow,
-        Long volume
+        Long volume,
+        BigDecimal yahooChangePercent
 ) {}

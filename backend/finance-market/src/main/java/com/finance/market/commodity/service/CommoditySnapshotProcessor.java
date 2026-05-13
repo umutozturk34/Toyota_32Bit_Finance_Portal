@@ -87,7 +87,7 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
         this.chartInterval = commodityProperties.getChartInterval();
     }
 
-    public void updateOne(String commodityCode, Map<String, YahooCandleDto> usdtryCandleMap,
+    public void updateOne(String commodityCode, Map<String, java.math.BigDecimal> usdtryRateMap,
                           ExchangeRateSnapshot usdTry) {
         String yahooSymbol = yahooSymbolResolver.resolve(commodityCode);
         if (yahooSymbol == null) return;
@@ -125,10 +125,10 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
         }
 
         List<YahooCandleDto> tryCandles = PriceCrossCalculator.buildTryCandles(
-                result.candles(), usdtryCandleMap, scale);
+                result.candles(), usdtryRateMap, scale);
         if (tryCandles.isEmpty()) {
             log.warn("No USDTRY-aligned candles for {} (usd={}, usdtry={} entries)",
-                    commodityCode, result.candles().size(), usdtryCandleMap.size());
+                    commodityCode, result.candles().size(), usdtryRateMap.size());
             throw new ExternalApiException("Yahoo Finance",
                     "No USDTRY-aligned candles for " + commodityCode);
         }
@@ -144,13 +144,14 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
         commodityCacheService.putSnapshot(commodityCode, commodity);
         if (derivativeCalculator.hasDerivatives(commodityCode)) {
             derivativeCalculator.refreshDerivatives(commodity, usdTry.currentRate(), usdTry.previousRate());
+            derivativeCalculator.refreshDerivativeCandlesForSource(commodityCode);
         }
     }
 
     public void refreshOne(String code) {
         TrackedRefreshRunner.refreshSnapshot(code, yahooSymbolResolver::normalize, normalized -> {
             if (yahooSymbolResolver.resolve(normalized) == null) return false;
-            Map<String, YahooCandleDto> usdtryMap = exchangeRateProvider.getUsdTryHistory();
+            Map<String, java.math.BigDecimal> usdtryMap = exchangeRateProvider.getUsdTryHistory();
             ExchangeRateSnapshot usdTry = exchangeRateProvider.getCurrentUsdTry();
             updateOne(normalized, usdtryMap, usdTry);
             return true;

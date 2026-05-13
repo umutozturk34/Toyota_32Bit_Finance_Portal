@@ -121,6 +121,9 @@ const ChartToolbar = ({
                     return (
                         <div className="flex items-center gap-3 text-[11px] font-mono">
                             <span className="text-fg-muted">{t('chart.toolbar.crosshair.price')} <span className="text-fg">{Number(crosshairData.close).toFixed(4)}</span></span>
+                            {crosshairData.bulletinPrice != null && (
+                                <span className="text-fg-muted">{t('chart.toolbar.crosshair.bulletin')} <span className="text-fg">{Number(crosshairData.bulletinPrice).toFixed(4)}</span></span>
+                            )}
                         </div>
                     );
                 }

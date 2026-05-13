@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { STALE } from '../../shared/constants/query';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -31,7 +32,7 @@ const HomePage = () => {
     queryKey: ['marketOverview'],
     queryFn: () => unifiedMarketService.getOverview(),
     enabled: isAuthenticated,
-    staleTime: 60_000,
+    staleTime: STALE.MEDIUM,
   });
 
   const floatingCards = useMemo(() => buildFloatingCards(overview), [overview]);

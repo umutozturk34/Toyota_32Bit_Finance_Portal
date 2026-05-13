@@ -51,7 +51,7 @@ export default function AssetDetailPage({
   const resolvedNotFound = notFoundMessage ?? t('marketDetail.notFound');
   const [buyOpen, setBuyOpen] = useState(false);
   const [compareAsset, setCompareAsset] = useState(null);
-  const [timeRange, setTimeRange] = useChartRange(`chart-range-${queryKeyPrefix}-${assetCode}`);
+  const [timeRange, setTimeRange] = useChartRange();
 
   const { data: asset, isLoading, isFetching, error, refetch: refetchAsset } = useQuery({
     queryKey: [queryKeyPrefix, assetCode],

@@ -130,7 +130,7 @@ function buildAssetChartOption(data, isDark, t) {
 export default function AssetDetail({ portfolioId, asset, onBack }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const [range, setRange] = useChartRange(`portfolio-asset-range-${asset.assetCode}`);
+  const [range, setRange] = useChartRange();
   const [addLotOpen, setAddLotOpen] = useState(false);
 
   const { data: series = [], isLoading: loading } = useAssetSeries(

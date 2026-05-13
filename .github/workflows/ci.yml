@@ -247,6 +247,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
+      - name: Create empty .env (referenced by env_file)
+        run: touch .env
       - name: Validate compose config
         run: docker compose config --quiet
       - name: Resolve referenced images

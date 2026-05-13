@@ -1,16 +1,21 @@
 import { useEffect, useState } from 'react';
 
+const computeElapsed = (startTimestamp) =>
+  startTimestamp ? Math.floor((Date.now() - startTimestamp) / 1000) : 0;
+
 export default function useElapsedSeconds(startTimestamp) {
-  const [elapsed, setElapsed] = useState(() => (startTimestamp ? Math.floor((Date.now() - startTimestamp) / 1000) : 0));
+  const [elapsed, setElapsed] = useState(() => computeElapsed(startTimestamp));
+  const [trackedStart, setTrackedStart] = useState(startTimestamp);
+
+  if (startTimestamp !== trackedStart) {
+    setTrackedStart(startTimestamp);
+    setElapsed(computeElapsed(startTimestamp));
+  }
 
   useEffect(() => {
-    if (!startTimestamp) {
-      setElapsed(0);
-      return undefined;
-    }
-    setElapsed(Math.floor((Date.now() - startTimestamp) / 1000));
+    if (!startTimestamp) return undefined;
     const id = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startTimestamp) / 1000));
+      setElapsed(computeElapsed(startTimestamp));
     }, 1000);
     return () => clearInterval(id);
   }, [startTimestamp]);

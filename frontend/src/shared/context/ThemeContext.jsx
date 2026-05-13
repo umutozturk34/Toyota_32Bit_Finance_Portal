@@ -1,14 +1,7 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useUserPreferences, useUpdateUserPreferences } from '../hooks/useUserPreferences';
-import { useAuth } from '../../features/auth/AuthContext';
-
-const ThemeContext = createContext({
-    theme: 'dark',
-    themePreference: 'DARK',
-    setThemePreference: () => {},
-    toggleTheme: () => {},
-    isDark: true,
-});
+import { useAuth } from '../../features/auth/useAuth';
+import { ThemeContext } from './useTheme';
 
 function resolveTheme(preference) {
     return preference === 'LIGHT' ? 'light' : 'dark';
@@ -74,18 +67,22 @@ export function ThemeProvider({ children }) {
     const { preferences, hasResolvedPreferences, isFetched: prefsFetched } = useUserPreferences();
     const updatePreferences = useUpdateUserPreferences();
     const [storedPreference, setStoredPreferenceState] = useState(readStoredPreference);
+    const [trackedServerTheme, setTrackedServerTheme] = useState(null);
 
-    useEffect(() => {
-        if (!isAuthenticated) return;
-        if (!hasResolvedPreferences) return;
-        if (!preferences.theme) return;
-        if (preferences.theme === storedPreference) return;
-        setStoredPreferenceState(preferences.theme);
-        persistTheme(resolveTheme(preferences.theme));
-    }, [isAuthenticated, hasResolvedPreferences, preferences.theme, storedPreference]);
+    const serverTheme = isAuthenticated && hasResolvedPreferences ? preferences.theme : null;
+    if (serverTheme && serverTheme !== trackedServerTheme) {
+        setTrackedServerTheme(serverTheme);
+        if (serverTheme !== storedPreference) {
+            setStoredPreferenceState(serverTheme);
+        }
+    }
 
     const themePreference = storedPreference;
     const theme = useMemo(() => resolveTheme(themePreference), [themePreference]);
+
+    useEffect(() => {
+        persistTheme(resolveTheme(storedPreference));
+    }, [storedPreference]);
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -117,10 +114,4 @@ export function ThemeProvider({ children }) {
             {blocking ? <BootSplash /> : children}
         </ThemeContext.Provider>
     );
-}
-
-export function useTheme() {
-    const context = useContext(ThemeContext);
-    if (!context) throw new Error('useTheme must be used within a ThemeProvider');
-    return context;
 }

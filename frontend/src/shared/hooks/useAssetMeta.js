@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { STALE } from '../constants/query';
 import { unifiedMarketService } from '../services/unifiedMarketService';
-import { useAuth } from '../../features/auth/AuthContext';
+import { useAuth } from '../../features/auth/useAuth';
 
 const PREFIX_BY_TYPE = {
   CRYPTO: 'crypto',

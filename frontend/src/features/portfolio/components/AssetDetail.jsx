@@ -5,7 +5,7 @@ import useChartRange from '../../../shared/hooks/useChartRange';
 import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, Plus } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/AnimatedIcons';
 import ReactECharts from 'echarts-for-react';
-import { useTheme } from '../../../shared/context/ThemeContext';
+import { useTheme } from '../../../shared/context/useTheme';
 import { useAssetSeries } from '../hooks/usePortfolioData';
 import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass, currentLocaleTag } from '../../../shared/utils/formatters';
 import { cardVariants } from '../../../shared/utils/animations';

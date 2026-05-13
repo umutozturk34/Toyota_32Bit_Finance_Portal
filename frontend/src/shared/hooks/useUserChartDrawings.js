@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { userChartDrawingService } from '../services/userChartService';
-import { CHART_DATA_KEY, useUserChartData } from './useUserChartData';
+import { useUserChartData } from './useUserChartData';
 
 export function useUserChartDrawings(type, code, range, enabled = true) {
   const bundle = useUserChartData(type, code, range, enabled);
@@ -10,9 +10,8 @@ export function useUserChartDrawings(type, code, range, enabled = true) {
   };
 }
 
-export function useUpdateUserChartDrawings(type, code, range) {
+export function useUpdateUserChartDrawings(type, code) {
   const queryClient = useQueryClient();
-  const queryKey = CHART_DATA_KEY(type, code, range);
   const bundleScope = ['userChartData', type, code];
   return useMutation({
     mutationFn: (drawings) => userChartDrawingService.save({ type, code, drawings }),

@@ -1,24 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Save } from 'lucide-react';
 import { useUpdateWatchlistItem } from '../../../shared/hooks/useWatchlist';
-import { toast } from '../../../shared/components/feedback/Toast';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../../shared/utils/apiError';
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import Button from '../../../shared/components/buttons/Button';
 
 export default function EditWatchlistItemModal({ open, onClose, item, watchlistId }) {
   const { t } = useTranslation();
-  const [note, setNote] = useState('');
-  const [threshold, setThreshold] = useState('');
+  const [note, setNote] = useState(() => item?.note ?? '');
+  const [threshold, setThreshold] = useState(() =>
+    item?.deltaThreshold != null ? String(item.deltaThreshold) : '',
+  );
+  const [sessionKey, setSessionKey] = useState(() => (open && item ? item.id : null));
   const update = useUpdateWatchlistItem(watchlistId);
 
-  useEffect(() => {
+  const currentKey = open && item ? item.id : null;
+  if (currentKey !== sessionKey) {
+    setSessionKey(currentKey);
     if (open && item) {
       setNote(item.note ?? '');
       setThreshold(item.deltaThreshold != null ? String(item.deltaThreshold) : '');
     }
-  }, [open, item]);
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

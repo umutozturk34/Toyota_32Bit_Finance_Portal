@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { PieChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
-import { useTheme } from '../../../shared/context/ThemeContext';
+import { useTheme } from '../../../shared/context/useTheme';
 import { formatPriceTRY, formatCompactTRY } from '../../../shared/utils/formatters';
 import { usePortfolioAllocation } from '../hooks/usePortfolioData';
 import { cardVariants } from '../../../shared/utils/animations';

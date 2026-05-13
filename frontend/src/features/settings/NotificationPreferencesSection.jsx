@@ -5,7 +5,8 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreferences,
 } from '../../shared/hooks/useNotificationPreferences';
-import MarketSelectionChips, { MARKET_CHIPS } from './MarketSelectionChips';
+import MarketSelectionChips from './MarketSelectionChips';
+import { MARKET_CHIPS } from './marketSelectionConstants';
 import Card from '../../shared/components/card';
 
 const TYPE_ROWS = [

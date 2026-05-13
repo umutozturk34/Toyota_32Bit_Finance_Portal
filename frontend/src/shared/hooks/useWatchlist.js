@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '../constants/query';
 import { watchlistService } from '../services/watchlistService';
-import { useAuth } from '../../features/auth/AuthContext';
+import { useAuth } from '../../features/auth/useAuth';
 
 const LISTS_KEY = ['watchlists'];
 const ITEMS_KEY = (id, params) => ['watchlists', id, 'items', params];

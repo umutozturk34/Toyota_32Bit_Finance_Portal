@@ -10,7 +10,7 @@ import { formatPriceTRY } from '../../../shared/utils/formatters';
 import { cardVariants } from '../../../shared/utils/animations';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
-import { useTheme } from '../../../shared/context/ThemeContext';
+import { useTheme } from '../../../shared/context/useTheme';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
 import i18n from '../../../shared/i18n/config';

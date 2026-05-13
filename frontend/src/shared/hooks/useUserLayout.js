@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userLayoutService } from '../services/userLayoutService';
-import { useAuth } from '../../features/auth/AuthContext';
+import { useAuth } from '../../features/auth/useAuth';
 import { STALE, GC } from '../constants/query';
 
 const LAYOUT_KEY = ['userLayout'];
@@ -97,7 +97,10 @@ export function useUserLayout() {
     enabled: isAuthenticated && !loading,
   });
   const sourceOverview = query.data?.overview;
-  const overview = useMemo(() => normalize(sourceOverview), [sourceOverview]);
+  const overview = useMemo(
+    () => (query.isSuccess ? normalize(sourceOverview) : null),
+    [query.isSuccess, sourceOverview],
+  );
   return { ...query, overview };
 }
 

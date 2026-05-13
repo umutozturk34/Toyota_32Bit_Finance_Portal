@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { EventSourcePolyfill } from 'event-source-polyfill';
-import { useAuth } from '../../features/auth/AuthContext';
+import { useAuth } from '../../features/auth/useAuth';
 import { getToken } from '../../features/auth/lib/keycloak';
-import { toast } from '../components/feedback/Toast';
+import { toast } from '../components/feedback/toastBus';
 import i18n from '../i18n/config';
 
 const STREAM_URL = '/api/v1/notifications/stream';

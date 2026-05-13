@@ -6,7 +6,8 @@ import {
   Navigate,
   Outlet,
 } from 'react-router-dom';
-import { AuthProvider, useAuth } from './features/auth/AuthContext';
+import { AuthProvider } from './features/auth/AuthContext';
+import { useAuth } from './features/auth/useAuth';
 import { ThemeProvider } from './shared/context/ThemeContext';
 import LanguageSyncBridge from './shared/i18n/useLanguageSync';
 import ToastContainer from './shared/components/feedback/Toast';

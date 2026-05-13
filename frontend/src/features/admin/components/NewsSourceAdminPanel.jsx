@@ -5,7 +5,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Power, Trash2, Plus, Rss } from 'lucide-react';
 import { RefreshCw } from '../../../shared/components/feedback/AnimatedIcons';
 import { adminService } from '../services/adminService';
-import { toast } from '../../../shared/components/feedback/Toast';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 import Card from '../../../shared/components/card';
 
@@ -110,7 +110,7 @@ export default function NewsSourceAdminPanel({ refreshToken = 0 }) {
         try {
             const data = await adminService.getNewsSources(true);
             setSources(data || []);
-        } catch (err) {
+        } catch {
             toast.error(t('newsSourceAdmin.errorTitle'), t('newsSourceAdmin.loadFailed'));
         } finally {
             setLoading(false);

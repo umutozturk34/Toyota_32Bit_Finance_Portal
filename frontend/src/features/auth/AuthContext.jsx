@@ -1,15 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { initKeycloak, getUserInfo, doLogin, doLogout, hasRole, forceRefreshToken } from './lib/keycloak';
-const AuthContext = createContext({
-  isAuthenticated: false,
-  user: null,
-  loading: true,
-  login: () => {},
-  logout: () => {},
-  hasRole: () => false,
-  refreshUser: () => {},
-});
+import { AuthContext } from './useAuth';
+
 export const AuthProvider = ({ children }) => {
   const queryClient = useQueryClient();
   const [authenticated, setAuthenticated] = useState(false);
@@ -55,11 +48,4 @@ export const AuthProvider = ({ children }) => {
     refreshUser,
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
 };

@@ -5,7 +5,7 @@ import { AnimatePresence } from 'framer-motion';
 import { CheckCircle, Info, X, ShieldAlert } from 'lucide-react';
 import { AlertTriangle, AlertCircle } from './AnimatedIcons';
 import { TIMINGS, LIMITS } from '../../config/uiConfig';
-import i18n from '../../i18n/config';
+import { _registerToastFireHandler } from './toastBus';
 
 const ICONS = {
   success: CheckCircle,
@@ -23,24 +23,12 @@ const COLORS = {
   rateLimit: { border: 'border-warning/30', bg: 'from-warning/8', icon: 'bg-warning/10 text-warning' },
 };
 
-let _fireToast = null;
-
-export function toast(type, title, message, options = {}) {
-  _fireToast?.({ type, title, message, ...options });
-}
-
-toast.success = (title, message) => toast('success', title, message);
-toast.error = (title, message) => toast('error', title, message);
-toast.warning = (title, message) => toast('warning', title, message);
-toast.info = (title, message) => toast('info', title, message);
-toast.rateLimit = (message, retryAfter) => toast('rateLimit', i18n.t('toast.rateLimitTitle'), message, { retryAfter, dedupeKey: 'rateLimit' });
-
 export default function ToastContainer() {
   const [items, setItems] = useState([]);
   const idRef = useRef(0);
 
   useEffect(() => {
-    _fireToast = (data) => {
+    _registerToastFireHandler((data) => {
       setItems((prev) => {
         if (data.dedupeKey) {
           const idx = prev.findIndex((t) => t.dedupeKey === data.dedupeKey);
@@ -53,8 +41,8 @@ export default function ToastContainer() {
         const id = ++idRef.current;
         return [...prev.slice(-4), { ...data, id }];
       });
-    };
-    return () => { _fireToast = null; };
+    });
+    return () => { _registerToastFireHandler(null); };
   }, []);
 
   const dismiss = useCallback((id) => {

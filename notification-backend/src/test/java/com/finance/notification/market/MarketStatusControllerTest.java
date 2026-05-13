@@ -19,6 +19,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,11 +37,12 @@ class MarketStatusControllerTest {
 
     @Test
     void should_returnSnapshotOnlyForConfiguredMarkets_when_listingAll() {
-        when(resolver.resolve(eq(SessionMarket.STOCK), any())).thenReturn(Optional.of(MarketSession.OPEN));
-        when(resolver.resolve(eq(SessionMarket.CRYPTO), any())).thenReturn(Optional.of(MarketSession.OPEN));
-        when(resolver.nextTransition(eq(SessionMarket.STOCK), any()))
+        lenient().when(resolver.resolve(any(), any())).thenReturn(Optional.empty());
+        lenient().when(resolver.resolve(eq(SessionMarket.STOCK), any())).thenReturn(Optional.of(MarketSession.OPEN));
+        lenient().when(resolver.resolve(eq(SessionMarket.CRYPTO), any())).thenReturn(Optional.of(MarketSession.OPEN));
+        lenient().when(resolver.nextTransition(eq(SessionMarket.STOCK), any()))
                 .thenReturn(Optional.of(Instant.parse("2026-05-05T15:00:00Z")));
-        when(resolver.nextTransition(eq(SessionMarket.CRYPTO), any())).thenReturn(Optional.empty());
+        lenient().when(resolver.nextTransition(eq(SessionMarket.CRYPTO), any())).thenReturn(Optional.empty());
 
         ApiResponse<List<MarketStatusResponse>> response = controller().listAll();
 
@@ -61,8 +63,9 @@ class MarketStatusControllerTest {
 
     @Test
     void should_includeNextTransitionWhenPresentAndOmitWhenAbsent_when_listing() {
-        when(resolver.resolve(eq(SessionMarket.FUND), any())).thenReturn(Optional.of(MarketSession.CLOSED));
-        when(resolver.nextTransition(eq(SessionMarket.FUND), any()))
+        lenient().when(resolver.resolve(any(), any())).thenReturn(Optional.empty());
+        lenient().when(resolver.resolve(eq(SessionMarket.FUND), any())).thenReturn(Optional.of(MarketSession.CLOSED));
+        lenient().when(resolver.nextTransition(eq(SessionMarket.FUND), any()))
                 .thenReturn(Optional.of(Instant.parse("2026-05-06T06:30:00Z")));
 
         ApiResponse<List<MarketStatusResponse>> response = controller().listAll();

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { marketOverviewService } from '../services/marketOverviewService';
-import { useAuth } from '../../features/auth/AuthContext';
+import { useAuth } from '../../features/auth/useAuth';
 import { STALE } from '../constants/query';
 
 const OVERVIEW_KEY = ['marketOverview'];

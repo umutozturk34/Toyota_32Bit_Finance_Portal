@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pencil, Save, ArrowUp, ArrowDown, TrendingUp, TrendingDown } from 'lucide-react';
 import { useUpdatePriceAlert } from '../../../shared/hooks/usePriceAlerts';
-import { toast } from '../../../shared/components/feedback/Toast';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../../shared/utils/apiError';
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import Button from '../../../shared/components/buttons/Button';
@@ -16,17 +16,22 @@ const DIRECTION_DEFS = [
 
 export default function EditPriceAlertModal({ open, onClose, alert }) {
   const { t } = useTranslation();
-  const [direction, setDirection] = useState('ABOVE');
-  const [threshold, setThreshold] = useState('');
+  const [direction, setDirection] = useState(() => alert?.direction ?? 'ABOVE');
+  const [threshold, setThreshold] = useState(() =>
+    alert?.threshold != null ? String(alert.threshold) : '',
+  );
+  const [sessionKey, setSessionKey] = useState(() => (open && alert ? alert.id : null));
   const update = useUpdatePriceAlert();
   const directionOptions = DIRECTION_DEFS.map(d => ({ ...d, label: t(`priceAlertEdit.direction.${d.value}`) }));
 
-  useEffect(() => {
+  const currentKey = open && alert ? alert.id : null;
+  if (currentKey !== sessionKey) {
+    setSessionKey(currentKey);
     if (open && alert) {
       setDirection(alert.direction ?? 'ABOVE');
       setThreshold(alert.threshold != null ? String(alert.threshold) : '');
     }
-  }, [open, alert]);
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

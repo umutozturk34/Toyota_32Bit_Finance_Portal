@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { unifiedMarketService } from '../services/unifiedMarketService';
 
@@ -16,6 +16,12 @@ export default function useSearchSuggestions({
 
   const trimmed = query?.trim() || '';
   const queryEnabled = enabled && trimmed.length >= 2;
+
+  const [trackedTrimmed, setTrackedTrimmed] = useState(trimmed);
+  if (trimmed !== trackedTrimmed) {
+    setTrackedTrimmed(trimmed);
+    setActiveIndex(-1);
+  }
 
   const { data, isFetching } = useQuery({
     queryKey: ['searchSuggestions', trimmed, filterType, !!suggestFn],
@@ -35,8 +41,6 @@ export default function useSearchSuggestions({
     ? raw.filter(a => !excludeCodes.includes(a.code))
     : raw;
 
-  useEffect(() => { setActiveIndex(-1); }, [trimmed]);
-
   useEffect(() => {
     if (!onClose) return;
     const handler = (e) => {
@@ -46,7 +50,7 @@ export default function useSearchSuggestions({
     return () => document.removeEventListener('mousedown', handler);
   }, [onClose]);
 
-  const buildKeyDown = (onSelect, onEscape) => (e) => {
+  const buildKeyDown = useCallback((onSelect, onEscape) => (e) => {
     if (suggestions.length === 0) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -60,7 +64,7 @@ export default function useSearchSuggestions({
     } else if (e.key === 'Escape') {
       (onEscape || onClose)?.();
     }
-  };
+  }, [suggestions, activeIndex, onClose]);
 
   return {
     containerRef,

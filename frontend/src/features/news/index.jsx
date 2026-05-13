@@ -6,7 +6,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Newspaper, Clock, SearchX, Tag, Info } from 'lucide-react';
 import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
 import { newsService } from './services/newsService';
-import { TABS, COOLDOWN_MS } from './lib/newsConfig.jsx';
+import { TABS, COOLDOWN_MS } from './lib/newsConfig';
 import NewsFilters from './components/NewsFilters';
 import NewsCard from './components/NewsCard';
 import FeaturedCard from './components/FeaturedCard';

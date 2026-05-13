@@ -34,6 +34,7 @@ class PriceAlertServiceTest {
     @Mock private PriceAlertMapper mapper;
     @Mock private com.finance.common.cache.AssetSnapshotCache assetSnapshotCache;
     @Mock private TrackedAssetRepository trackedAssetRepository;
+    @Mock private com.finance.notification.config.PriceAlertProperties properties;
 
     @InjectMocks
     private PriceAlertService service;
@@ -47,6 +48,7 @@ class PriceAlertServiceTest {
 
     @Test
     void create_persistsMappedEntity() {
+        when(properties.maxPerUser()).thenReturn(20);
         PriceAlertCreateRequest req = new PriceAlertCreateRequest(
                 MarketType.CRYPTO, "BTC", AlertDirection.ABOVE,
                 BigDecimal.valueOf(100), "TRY", null);

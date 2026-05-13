@@ -15,7 +15,7 @@ const useAppStore = create(
       setCooldown: (route, endTime) =>
         set((s) => {
           const next = { ...s.cooldowns, [route]: endTime };
-          try { sessionStorage.setItem('cooldowns', JSON.stringify(next)); } catch {}
+          try { sessionStorage.setItem('cooldowns', JSON.stringify(next)); } catch { /* sessionStorage unavailable */ }
           return { cooldowns: next };
         }),
       getCooldownEnd: (route) => get().cooldowns[route] ?? 0,

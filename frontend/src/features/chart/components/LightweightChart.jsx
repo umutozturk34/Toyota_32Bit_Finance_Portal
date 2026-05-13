@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
     BarChart2, X, LineChart, Activity, PenTool, Triangle, Calendar,
 } from 'lucide-react';
-import { useTheme } from '../../../shared/context/ThemeContext';
+import { useTheme } from '../../../shared/context/useTheme';
 import useAppStore from '../../../shared/stores/useAppStore';
 import useChartConfig from '../hooks/useChartConfig';
 import useIndicators from '../hooks/useIndicators';
@@ -82,7 +82,6 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
     }, []);
 
     const isFund = assetType === 'FUND';
-    const isCrypto = assetType === 'CRYPTO';
     const isForex = assetType === 'FOREX';
     const showVolumeToggle = !isFund && !isForex;
     const showFibTab = !isFund;

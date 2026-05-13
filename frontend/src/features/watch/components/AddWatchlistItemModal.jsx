@@ -11,7 +11,7 @@ import {
   useAddWatchlistItem,
   useAddToFavorites,
 } from '../../../shared/hooks/useWatchlist';
-import { toast } from '../../../shared/components/feedback/Toast';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../../shared/utils/apiError';
 import { watchlistName } from '../../../shared/utils/watchlistName';
 
@@ -28,11 +28,22 @@ export default function AddWatchlistItemModal({
   const add = useAddWatchlistItem();
   const addToFavorites = useAddToFavorites();
 
-  const [selectedListId, setSelectedListId] = useState(null);
-  const [selectedAsset, setSelectedAsset] = useState(null);
+  const buildInitialAsset = () =>
+    defaultMarketType && defaultAssetCode
+      ? { type: defaultMarketType, code: defaultAssetCode, name: defaultAssetCode }
+      : null;
+  const resolveInitialListId = () => {
+    if (watchlistId != null) return watchlistId;
+    const def = watchlists.find((w) => w.isDefault) ?? watchlists[0];
+    return def?.id ?? null;
+  };
+
+  const [selectedListId, setSelectedListId] = useState(resolveInitialListId);
+  const [selectedAsset, setSelectedAsset] = useState(buildInitialAsset);
   const [note, setNote] = useState('');
   const [deltaThreshold, setDeltaThreshold] = useState('');
   const [listMenuOpen, setListMenuOpen] = useState(false);
+  const [wasOpen, setWasOpen] = useState(isOpen);
   const listMenuRef = useRef(null);
 
   const targetItems = useWatchlistItems(selectedListId, { enabled: isOpen && selectedListId != null });
@@ -43,32 +54,18 @@ export default function AddWatchlistItemModal({
     ) ?? null;
   }, [targetItems.data, selectedAsset]);
 
-  useEffect(() => {
-    if (!listMenuOpen) return;
-    const handler = (e) => {
-      if (!listMenuRef.current?.contains(e.target)) setListMenuOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [listMenuOpen]);
+  const [trackedEntryId, setTrackedEntryId] = useState(existingEntry?.id ?? null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    if (defaultMarketType && defaultAssetCode) {
-      setSelectedAsset({ type: defaultMarketType, code: defaultAssetCode, name: defaultAssetCode });
-    } else {
-      setSelectedAsset(null);
-    }
-    if (watchlistId != null) {
-      setSelectedListId(watchlistId);
-    } else {
-      const def = watchlists.find((w) => w.isDefault) ?? watchlists[0];
-      setSelectedListId(def?.id ?? null);
-    }
-  }, [isOpen, defaultMarketType, defaultAssetCode, watchlistId, watchlists]);
+  if (isOpen && !wasOpen) {
+    setWasOpen(true);
+    setSelectedAsset(buildInitialAsset());
+    setSelectedListId(resolveInitialListId());
+  } else if (!isOpen && wasOpen) {
+    setWasOpen(false);
+  }
 
-  useEffect(() => {
-    if (!isOpen) return;
+  if (isOpen && (existingEntry?.id ?? null) !== trackedEntryId) {
+    setTrackedEntryId(existingEntry?.id ?? null);
     if (existingEntry) {
       setNote(existingEntry.note ?? '');
       setDeltaThreshold(
@@ -78,7 +75,16 @@ export default function AddWatchlistItemModal({
       setNote('');
       setDeltaThreshold('');
     }
-  }, [isOpen, existingEntry]);
+  }
+
+  useEffect(() => {
+    if (!listMenuOpen) return;
+    const handler = (e) => {
+      if (!listMenuRef.current?.contains(e.target)) setListMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [listMenuOpen]);
 
   const submit = async (e) => {
     e.preventDefault();

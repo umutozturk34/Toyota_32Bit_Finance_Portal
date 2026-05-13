@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import GridLayout, { useContainerWidth } from 'react-grid-layout';
@@ -51,7 +51,6 @@ export default function OverviewWidgetCanvas({
 }) {
   const { t } = useTranslation();
   const { containerRef, width } = useContainerWidth();
-  const dropDataRef = useRef(null);
   const [mountedCount, setMountedCount] = useState(0);
   const { byKind, limits } = useWidgetDefinitions();
 
@@ -62,6 +61,14 @@ export default function OverviewWidgetCanvas({
   }, [mountedCount, sections.length]);
 
   const widgetDataMap = useMemo(() => buildWidgetDataMap(widgets), [widgets]);
+
+  const mountSlotBySectionId = useMemo(() => {
+    const news = sections.filter((s) => s.kind === 'NEWS');
+    const others = sections.filter((s) => s.kind !== 'NEWS');
+    const map = new Map();
+    [...others, ...news].forEach((s, slot) => map.set(s.sectionId, slot));
+    return map;
+  }, [sections]);
 
   const layout = useMemo(() => sections.map((s) => {
     const def = byKind.get(s.kind);
@@ -144,30 +151,33 @@ export default function OverviewWidgetCanvas({
             <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">{t('overviewCanvas.title')}</span>
             <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-accent/30 via-border-default/40 to-transparent" />
           </div>
-          {sections.map((section, i) => (
-            <motion.div
-              key={section.sectionId}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, delay: Math.min(i * 0.05, 0.5), ease: [0.16, 1, 0.3, 1] }}
-              className="relative rounded-2xl overflow-hidden"
-            >
-              <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-indigo-400/40 via-fuchsia-400/15 to-transparent" />
-              {i < mountedCount ? (
-                <OverviewWidgetCard
-                  section={section}
-                  widgetData={widgetDataMap.get(section.sectionId) ?? null}
-                  editMode={false}
-                  draggable={false}
-                  deleting={deletingIds?.has(section.sectionId) ?? false}
-                  popoverActive={activePopoverSectionId === section.sectionId}
-                  onOpenSettings={onOpenSettings}
-                  onDelete={onDelete}
-                  onConfigChange={onConfigChange}
-                />
-              ) : <WidgetSkeleton />}
-            </motion.div>
-          ))}
+          {sections.map((section, i) => {
+            const slot = mountSlotBySectionId.get(section.sectionId) ?? i;
+            return (
+              <motion.div
+                key={section.sectionId}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: Math.min(i * 0.05, 0.5), ease: [0.16, 1, 0.3, 1] }}
+                className="relative rounded-2xl overflow-hidden"
+              >
+                <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-indigo-400/40 via-fuchsia-400/15 to-transparent" />
+                {slot < mountedCount ? (
+                  <OverviewWidgetCard
+                    section={section}
+                    widgetData={widgetDataMap.get(section.sectionId) ?? null}
+                    editMode={false}
+                    draggable={false}
+                    deleting={deletingIds?.has(section.sectionId) ?? false}
+                    popoverActive={activePopoverSectionId === section.sectionId}
+                    onOpenSettings={onOpenSettings}
+                    onDelete={onDelete}
+                    onConfigChange={onConfigChange}
+                  />
+                ) : <WidgetSkeleton />}
+              </motion.div>
+            );
+          })}
         </div>
       )}
       {!isMobile && width > 0 && (
@@ -185,27 +195,30 @@ export default function OverviewWidgetCanvas({
           onResizeStop={persistChange}
           onDrop={handleDrop}
         >
-          {sections.map((section, i) => (
-            <div key={section.sectionId} className="h-full">
-              {i < mountedCount
-                ? (
-                  <div className="h-full widget-fade-in">
-                    <OverviewWidgetCard
-                      section={section}
-                      widgetData={widgetDataMap.get(section.sectionId) ?? null}
-                      editMode={editMode}
-                      draggable={editMode}
-                      deleting={deletingIds?.has(section.sectionId) ?? false}
-                      popoverActive={activePopoverSectionId === section.sectionId}
-                      onOpenSettings={onOpenSettings}
-                      onDelete={onDelete}
-                      onConfigChange={onConfigChange}
-                    />
-                  </div>
-                )
-                : <WidgetSkeleton />}
-            </div>
-          ))}
+          {sections.map((section, i) => {
+            const slot = mountSlotBySectionId.get(section.sectionId) ?? i;
+            return (
+              <div key={section.sectionId} className="h-full">
+                {slot < mountedCount
+                  ? (
+                    <div className="h-full widget-fade-in">
+                      <OverviewWidgetCard
+                        section={section}
+                        widgetData={widgetDataMap.get(section.sectionId) ?? null}
+                        editMode={editMode}
+                        draggable={editMode}
+                        deleting={deletingIds?.has(section.sectionId) ?? false}
+                        popoverActive={activePopoverSectionId === section.sectionId}
+                        onOpenSettings={onOpenSettings}
+                        onDelete={onDelete}
+                        onConfigChange={onConfigChange}
+                      />
+                    </div>
+                  )
+                  : <WidgetSkeleton />}
+              </div>
+            );
+          })}
         </GridLayout>
       )}
     </div>

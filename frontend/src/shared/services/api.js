@@ -1,7 +1,7 @@
 import axios from 'axios';
 import i18n from '../i18n/config';
 import { getToken } from '../../features/auth/lib/keycloak';
-import { toast } from '../components/feedback/Toast';
+import { toast } from '../components/feedback/toastBus';
 import { TIMINGS } from '../config/uiConfig';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
@@ -18,7 +18,7 @@ api.interceptors.request.use(
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-    } catch {}
+    } catch { /* token unavailable, continue without auth header */ }
     config.headers['Accept-Language'] = i18n.language || i18n.options.fallbackLng;
     return config;
   },
@@ -56,7 +56,7 @@ api.interceptors.response.use(
         try {
           const { doLogin } = await import('../../features/auth/lib/keycloak');
           doLogin();
-        } catch {}
+        } catch { /* login redirect unavailable */ }
       }
       return Promise.reject(error);
     }

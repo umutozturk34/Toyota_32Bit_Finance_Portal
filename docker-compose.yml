@@ -23,6 +23,7 @@ services:
 
   # Spring Boot Backend
   backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/umutozturk34/finance-portal-backend:latest}
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -61,6 +62,7 @@ services:
       - finance-network
 
   notification-backend:
+    image: ${NOTIFICATION_BACKEND_IMAGE:-ghcr.io/umutozturk34/finance-portal-notification-backend:latest}
     build:
       context: .
       dockerfile: notification-backend/Dockerfile
@@ -227,6 +229,7 @@ services:
       - finance-network
 
   frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/umutozturk34/finance-portal-frontend:latest}
     build:
       context: ./frontend
       dockerfile: Dockerfile

@@ -5,8 +5,8 @@ import { Users, Search, Ban, ShieldCheck, AlertCircle, Mail, ChevronLeft, Chevro
 import PageHeader from '../../../shared/components/layout/PageHeader';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 import Spinner from '../../../shared/components/feedback/Spinner';
-import { toast } from '../../../shared/components/feedback/Toast';
-import { useAuth } from '../../auth/AuthContext';
+import { toast } from '../../../shared/components/feedback/toastBus';
+import { useAuth } from '../../auth/useAuth';
 import { useAdminUsers, useAdminUserCount, useBanUser, useUnbanUser } from '../hooks/useAdminUsers';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];

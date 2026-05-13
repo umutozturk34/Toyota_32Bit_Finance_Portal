@@ -1,11 +1,11 @@
-import { lazy, Suspense, useMemo } from 'react';
+import { useMemo } from 'react';
+import ReactECharts from 'echarts-for-react';
 import useDeferredVisibility from '../../../shared/hooks/useDeferredVisibility';
 
-const ReactECharts = lazy(() => import('echarts-for-react'));
-
 function lineColor(changePercent) {
-  if (!Number.isFinite(changePercent) || changePercent === 0) return '#6366f1';
-  return changePercent > 0 ? '#10b981' : '#ef4444';
+  const normalized = Number(changePercent);
+  if (!Number.isFinite(normalized) || normalized === 0) return '#6366f1';
+  return normalized > 0 ? '#10b981' : '#ef4444';
 }
 
 function fnvHash(str) {
@@ -31,20 +31,21 @@ function generateSparkline(seed, changePercent) {
   const points = 36;
   const seedHash = fnvHash(seed);
   const rand = mulberry32(seedHash);
-  const change = Number.isFinite(changePercent) ? changePercent : 0;
+  const normalized = Number(changePercent);
+  const change = Number.isFinite(normalized) ? normalized : 0;
   const start = 100;
   const end = start * (1 + change / 100);
 
   if (change === 0) {
-    const out = new Array(points);
+    const flat = new Array(points);
     const drift = (rand() - 0.5) * 0.4;
     const vol = 0.35;
     let walk = 0;
     for (let i = 0; i < points; i += 1) {
       walk += (rand() - 0.5) * vol + drift / points;
-      out[i] = Number((start + walk).toFixed(3));
+      flat[i] = Number((start + walk).toFixed(3));
     }
-    return out;
+    return flat;
   }
 
   const absChange = Math.abs(change);
@@ -69,7 +70,7 @@ function generateSparkline(seed, changePercent) {
   return out;
 }
 
-function buildOption(data, color, delayMs) {
+function buildOption(data, color) {
   return {
     grid: { top: 8, right: 0, bottom: 0, left: 0, containLabel: false },
     xAxis: { type: 'category', show: false, boundaryGap: false, data: data.map((_, i) => i) },
@@ -90,7 +91,7 @@ function buildOption(data, color, delayMs) {
     tooltip: { show: false },
     animation: true,
     animationDuration: 1100,
-    animationDelay: delayMs,
+    animationDelay: 0,
     animationEasing: 'cubicOut',
     series: [{
       type: 'line',
@@ -108,7 +109,7 @@ function buildOption(data, color, delayMs) {
         },
       },
       animationDuration: 1100,
-      animationDelay: delayMs,
+      animationDelay: 0,
       animationEasing: 'cubicOut',
     }],
   };
@@ -116,9 +117,13 @@ function buildOption(data, color, delayMs) {
 
 /** @param {{assetCode: string, changePercent: number, delayMs?: number}} props */
 export default function AssetCardChart({ assetCode, changePercent, delayMs = 0 }) {
-  const data = useMemo(() => generateSparkline(assetCode, changePercent), [assetCode, changePercent]);
-  const color = useMemo(() => lineColor(changePercent), [changePercent]);
-  const option = useMemo(() => buildOption(data, color, delayMs), [data, color, delayMs]);
+  const normalizedChangePercent = useMemo(() => {
+    const parsed = Number(changePercent);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }, [changePercent]);
+  const data = useMemo(() => generateSparkline(assetCode, normalizedChangePercent), [assetCode, normalizedChangePercent]);
+  const color = useMemo(() => lineColor(normalizedChangePercent), [normalizedChangePercent]);
+  const option = useMemo(() => buildOption(data, color), [data, color]);
   const [ref, ready] = useDeferredVisibility(delayMs);
   return (
     <div
@@ -127,9 +132,7 @@ export default function AssetCardChart({ assetCode, changePercent, delayMs = 0 }
       aria-hidden="true"
     >
       {ready && (
-        <Suspense fallback={null}>
-          <ReactECharts option={option} style={{ width: '100%', height: '100%' }} opts={{ renderer: 'svg' }} />
-        </Suspense>
+        <ReactECharts option={option} style={{ width: '100%', height: '100%' }} opts={{ renderer: 'svg' }} />
       )}
     </div>
   );

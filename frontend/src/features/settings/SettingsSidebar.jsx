@@ -8,10 +8,10 @@ import {
   Sun, Moon, LogOut, KeyRound, Mail,
 } from 'lucide-react';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';
-import { useTheme } from '../../shared/context/ThemeContext';
-import { useAuth } from '../auth/AuthContext';
+import { useTheme } from '../../shared/context/useTheme';
+import { useAuth } from '../auth/useAuth';
 import { userCredentialService } from '../../shared/services/userCredentialService';
-import { toast } from '../../shared/components/feedback/Toast';
+import { toast } from '../../shared/components/feedback/toastBus';
 import TwoFactorPanel from '../auth/components/TwoFactorPanel';
 import NotificationPreferencesSection from './NotificationPreferencesSection';
 import EmailChangeSection from './EmailChangeSection';

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { bondService } from './services/bondService';
 import { adminService } from '../admin/services/adminService';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../auth/useAuth';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
@@ -29,10 +29,10 @@ import MarketStatusBadge from '../../shared/components/layout/MarketStatusBadge'
 import SearchInput from '../../shared/components/form/SearchInput';
 import SortSelect from '../../shared/components/form/SortSelect';
 import Pagination from '../../shared/components/form/Pagination';
-import { toast } from '../../shared/components/feedback/Toast';
+import { toast } from '../../shared/components/feedback/toastBus';
 import FilterTabs from '../../shared/components/form/FilterTabs';
 import useListParams from '../../shared/hooks/useListParams';
-import { useTheme } from '../../shared/context/ThemeContext';
+import { useTheme } from '../../shared/context/useTheme';
 import { BOND_TYPE_COLORS, CHART_LINE_COLORS } from './lib/bondConstants';
 
 const SORT_OPTION_IDS = ['simpleYield', 'couponRate', 'baseIndex', 'maturityEnd', 'seriesCode'];

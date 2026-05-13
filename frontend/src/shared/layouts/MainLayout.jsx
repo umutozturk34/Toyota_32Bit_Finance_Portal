@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Outlet, Link, useLocation, useNavigationType } from 'react-router-dom';
-import { useAuth } from '../../features/auth/AuthContext';
-import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../../features/auth/useAuth';
+import { useTheme } from '../context/useTheme';
 import useAppStore from '../stores/useAppStore';
 import { AnimatePresence } from 'framer-motion';
 import {
@@ -35,6 +35,154 @@ const navItems = [
   { to: '/watch', labelKey: 'nav.watch', Icon: Eye },
 ];
 
+const SidebarContent = ({
+  isMobile = false,
+  collapsed,
+  t,
+  toggleSidebar,
+  allNav,
+  isActive,
+  hasRole,
+  setTasksOpen,
+  setNotificationsOpen,
+  setSettingsOpen,
+  unreadCount,
+  user,
+  logout,
+}) => (
+  <div className="flex flex-col h-full">
+    <div className={`flex items-center ${collapsed && !isMobile ? 'justify-center' : 'justify-between'} h-14 px-3 border-b border-border-default shrink-0`}>
+      {(!collapsed || isMobile) && (
+        <Link to="/" className="flex items-center gap-2.5 no-underline group">
+          <span className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25 group-hover:shadow-accent/50 group-hover:scale-105 transition-all duration-300">
+            <TrendingUp className="w-4 h-4" />
+          </span>
+          <span className="text-sm font-bold text-fg tracking-tight font-display">Finance</span>
+        </Link>
+      )}
+      {collapsed && !isMobile && (
+        <Link to="/" className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25 hover:shadow-accent/50 hover:scale-105 transition-all duration-300 no-underline">
+          <TrendingUp className="w-4 h-4" />
+        </Link>
+      )}
+      {!isMobile && (
+        <button
+          onClick={toggleSidebar}
+          className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
+          title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+        >
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
+      )}
+    </div>
+
+    <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5 scrollbar-auto-hide">
+      {allNav.map(({ to, labelKey, Icon }) => {
+        const label = t(labelKey);
+        return (
+          <Link
+            key={to}
+            to={to}
+            title={collapsed && !isMobile ? label : undefined}
+            className={`group relative flex items-center gap-2.5 rounded-lg no-underline transition-all duration-150 ${
+              collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
+            } ${
+              isActive(to)
+                ? 'bg-accent/10 text-fg'
+                : 'text-fg-muted hover:text-fg hover:bg-surface'
+            }`}
+          >
+            <Icon
+              size={16}
+              strokeWidth={1.6}
+              className={`shrink-0 transition-colors duration-150 ${isActive(to) ? 'text-accent' : 'group-hover:text-fg-muted'}`}
+            />
+            {(!collapsed || isMobile) && (
+              <span className="text-[13px] font-medium">{label}</span>
+            )}
+            {isActive(to) && (
+              <motion.span
+                layoutId="sidebar-indicator"
+                className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-gradient-accent ${collapsed && !isMobile ? 'h-5' : 'h-6'}`}
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              />
+            )}
+          </Link>
+        );
+      })}
+    </nav>
+
+    {hasRole('ADMIN') && (
+      <div className="px-2 py-1.5 border-t border-border-default">
+        <button
+          onClick={() => setTasksOpen(true)}
+          title={collapsed && !isMobile ? t('nav.tasks') : undefined}
+          className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
+            collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
+          }`}
+        >
+          <Activity size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
+          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.tasks')}</span>}
+        </button>
+      </div>
+    )}
+
+    <div className="border-t border-border-default px-2 py-2 space-y-1 shrink-0">
+      <button
+        onClick={() => setNotificationsOpen(true)}
+        title={collapsed && !isMobile ? t('nav.notifications') : undefined}
+        className={`w-full group relative flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
+          collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
+        }`}
+      >
+        <span className="relative shrink-0">
+          <Bell size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent ring-2 ring-bg-base" aria-label={`${unreadCount} unread`} />
+          )}
+        </span>
+        {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.notifications')}</span>}
+        {(!collapsed || isMobile) && unreadCount > 0 && (
+          <span className="ml-auto text-[10px] font-mono text-accent">{unreadCount}</span>
+        )}
+      </button>
+      <button
+        onClick={() => setSettingsOpen(true)}
+        title={collapsed && !isMobile ? t('nav.settings') : undefined}
+        className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
+          collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
+        }`}
+      >
+        <Settings size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
+        {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.settings')}</span>}
+      </button>
+      {(!collapsed || isMobile) && (
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border-default">
+          <span className="w-6 h-6 rounded-full bg-gradient-accent text-white flex items-center justify-center text-[11px] font-bold shrink-0">
+            {user?.username?.charAt(0).toUpperCase() || '?'}
+          </span>
+          <span className="text-[12px] font-medium text-fg truncate">{user?.username}</span>
+          {hasRole('ADMIN') && (
+            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-accent/10 text-accent tracking-wide shrink-0">
+              {t('nav.adminBadge')}
+            </span>
+          )}
+        </div>
+      )}
+      <button
+        onClick={logout}
+        title={collapsed && !isMobile ? t('nav.logout') : undefined}
+        className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
+          collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
+        }`}
+      >
+        <LogOut size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-danger transition-colors" />
+        {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.logout')}</span>}
+      </button>
+    </div>
+  </div>
+);
+
 const MainLayout = () => {
   const { t } = useTranslation();
   const { user, logout, hasRole } = useAuth();
@@ -56,9 +204,15 @@ const MainLayout = () => {
   const navType = useNavigationType();
   const setOriginInStore = useNavigationStore((s) => s.setOrigin);
   const lastFullPathRef = useRef(location.pathname + (location.search || ''));
+  const [trackedPath, setTrackedPath] = useState(location.pathname + (location.search || ''));
+
+  const currentPath = location.pathname + (location.search || '');
+  if (currentPath !== trackedPath) {
+    setTrackedPath(currentPath);
+    setMobileOpen(false);
+  }
 
   useEffect(() => {
-    setMobileOpen(false);
     const next = location.pathname + (location.search || '');
     const prev = lastFullPathRef.current;
     if (prev === next) return;
@@ -85,139 +239,20 @@ const MainLayout = () => {
   const isActive = (path) => location.pathname === path;
   const sidebarW = collapsed ? 'w-16' : 'w-52';
 
-  const SidebarContent = ({ isMobile = false }) => (
-    <div className="flex flex-col h-full">
-      <div className={`flex items-center ${collapsed && !isMobile ? 'justify-center' : 'justify-between'} h-14 px-3 border-b border-border-default shrink-0`}>
-        {(!collapsed || isMobile) && (
-          <Link to="/" className="flex items-center gap-2.5 no-underline group">
-            <span className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25 group-hover:shadow-accent/50 group-hover:scale-105 transition-all duration-300">
-              <TrendingUp className="w-4 h-4" />
-            </span>
-            <span className="text-sm font-bold text-fg tracking-tight font-display">Finance</span>
-          </Link>
-        )}
-        {collapsed && !isMobile && (
-          <Link to="/" className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25 hover:shadow-accent/50 hover:scale-105 transition-all duration-300 no-underline">
-            <TrendingUp className="w-4 h-4" />
-          </Link>
-        )}
-        {!isMobile && (
-          <button
-            onClick={toggleSidebar}
-            className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
-            title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
-          >
-            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-          </button>
-        )}
-      </div>
-
-      <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5 scrollbar-auto-hide">
-        {allNav.map(({ to, labelKey, Icon }) => {
-          const label = t(labelKey);
-          return (
-            <Link
-              key={to}
-              to={to}
-              title={collapsed && !isMobile ? label : undefined}
-              className={`group relative flex items-center gap-2.5 rounded-lg no-underline transition-all duration-150 ${
-                collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-              } ${
-                isActive(to)
-                  ? 'bg-accent/10 text-fg'
-                  : 'text-fg-muted hover:text-fg hover:bg-surface'
-              }`}
-            >
-              <Icon
-                size={16}
-                strokeWidth={1.6}
-                className={`shrink-0 transition-colors duration-150 ${isActive(to) ? 'text-accent' : 'group-hover:text-fg-muted'}`}
-              />
-              {(!collapsed || isMobile) && (
-                <span className="text-[13px] font-medium">{label}</span>
-              )}
-              {isActive(to) && (
-                <motion.span
-                  layoutId="sidebar-indicator"
-                  className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-gradient-accent ${collapsed && !isMobile ? 'h-5' : 'h-6'}`}
-                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                />
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {hasRole('ADMIN') && (
-        <div className="px-2 py-1.5 border-t border-border-default">
-          <button
-            onClick={() => setTasksOpen(true)}
-            title={collapsed && !isMobile ? t('nav.tasks') : undefined}
-            className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-              collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-            }`}
-          >
-            <Activity size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
-            {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.tasks')}</span>}
-          </button>
-        </div>
-      )}
-
-      <div className="border-t border-border-default px-2 py-2 space-y-1 shrink-0">
-        <button
-          onClick={() => setNotificationsOpen(true)}
-          title={collapsed && !isMobile ? t('nav.notifications') : undefined}
-          className={`w-full group relative flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-            collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-          }`}
-        >
-          <span className="relative shrink-0">
-            <Bell size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent ring-2 ring-bg-base" aria-label={`${unreadCount} unread`} />
-            )}
-          </span>
-          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.notifications')}</span>}
-          {(!collapsed || isMobile) && unreadCount > 0 && (
-            <span className="ml-auto text-[10px] font-mono text-accent">{unreadCount}</span>
-          )}
-        </button>
-        <button
-          onClick={() => setSettingsOpen(true)}
-          title={collapsed && !isMobile ? t('nav.settings') : undefined}
-          className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-            collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-          }`}
-        >
-          <Settings size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
-          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.settings')}</span>}
-        </button>
-        {(!collapsed || isMobile) && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border-default">
-            <span className="w-6 h-6 rounded-full bg-gradient-accent text-white flex items-center justify-center text-[11px] font-bold shrink-0">
-              {user?.username?.charAt(0).toUpperCase() || '?'}
-            </span>
-            <span className="text-[12px] font-medium text-fg truncate">{user?.username}</span>
-            {hasRole('ADMIN') && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-accent/10 text-accent tracking-wide shrink-0">
-                {t('nav.adminBadge')}
-              </span>
-            )}
-          </div>
-        )}
-        <button
-          onClick={logout}
-          title={collapsed && !isMobile ? t('nav.logout') : undefined}
-          className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
-            collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
-          }`}
-        >
-          <LogOut size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-danger transition-colors" />
-          {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.logout')}</span>}
-        </button>
-      </div>
-    </div>
-  );
+  const sidebarProps = {
+    collapsed,
+    t,
+    toggleSidebar,
+    allNav,
+    isActive,
+    hasRole,
+    setTasksOpen,
+    setNotificationsOpen,
+    setSettingsOpen,
+    unreadCount,
+    user,
+    logout,
+  };
 
   return (
     <div className="flex min-h-screen bg-bg-base relative">
@@ -236,7 +271,7 @@ const MainLayout = () => {
           WebkitBackdropFilter: 'var(--sidebar-blur)',
         }}
       >
-        <SidebarContent />
+        <SidebarContent {...sidebarProps} />
       </aside>
       <div className="hidden lg:block shrink-0 w-16" />
 
@@ -286,7 +321,7 @@ const MainLayout = () => {
                 WebkitBackdropFilter: 'var(--sidebar-blur)',
               }}
             >
-              <SidebarContent isMobile />
+              <SidebarContent {...sidebarProps} isMobile />
             </motion.aside>
           </>
         )}

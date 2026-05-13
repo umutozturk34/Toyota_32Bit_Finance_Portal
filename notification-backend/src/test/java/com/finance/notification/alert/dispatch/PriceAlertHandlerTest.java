@@ -53,7 +53,7 @@ class PriceAlertHandlerTest {
         RenderedNotification result = handler.render(NotificationRequest.of("u", payload));
 
         assertThat(result.title()).isEqualTo("BTC alarmı tetiklendi");
-        assertThat(result.body()).contains("üstüne çıktı");
+        assertThat(result.body()).contains("üstüne çıkarsa");
         assertThat(result.emailTemplate()).isEqualTo("price-alert");
         assertThat(result.emailSubject()).contains("BTC");
         assertThat(result.emailModel()).containsEntry("assetCode", "BTC");

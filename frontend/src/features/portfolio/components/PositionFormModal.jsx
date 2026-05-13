@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -15,7 +15,7 @@ import { useAddPosition, usePortfolioLimits, useUpdatePosition } from '../hooks/
 
 import {
   FRACTIONAL_TYPES, ONE_HOUR_MS, SUCCESS_HOLD_MS, PROCESSING_STEP_DEFS,
-  todayInputValue, isoToDateInput, dateInputToIso, buildInitialState,
+  todayInputValue, dateInputToIso, buildInitialState,
   resolveTarget, toYearMonth, buildPriceIndex, formatTotalCost,
   preventDecimal, describeAction,
 } from '../lib/positionFormHelpers';
@@ -58,17 +58,18 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
   const addMutation = useAddPosition(portfolioId);
   const updateMutation = useUpdatePosition(portfolioId);
 
-  useEffect(() => {
-    if (priceTouched) return;
-    if (entryLoading) return;
+  const [lastSyncedKey, setLastSyncedKey] = useState(null);
+  const syncKey = entryLoading || priceTouched
+    ? null
+    : `${form.entryDate}|${suggestedPrice ?? 'none'}`;
+  if (syncKey !== null && syncKey !== lastSyncedKey) {
+    setLastSyncedKey(syncKey);
     if (suggestedPrice != null) {
       setForm((prev) => ({ ...prev, entryPrice: String(suggestedPrice) }));
-      return;
-    }
-    if (form.entryDate !== todayInputValue()) {
+    } else if (form.entryDate !== todayInputValue()) {
       setForm((prev) => prev.entryPrice ? { ...prev, entryPrice: '' } : prev);
     }
-  }, [suggestedPrice, priceTouched, form.entryDate, entryLoading]);
+  }
 
   const totalCost = useMemo(() => {
     const q = Number(form.quantity);

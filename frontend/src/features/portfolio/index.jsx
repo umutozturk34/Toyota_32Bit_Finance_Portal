@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
@@ -72,14 +72,17 @@ export default function Portfolio() {
     selectedAssetCode ? { search: selectedAssetCode, size: 1 } : {}
   );
   const [pendingAsset, setPendingAsset] = useState(null);
+  const [trackedAssetCode, setTrackedAssetCode] = useState(selectedAssetCode);
+
+  if (selectedAssetCode !== trackedAssetCode) {
+    setTrackedAssetCode(selectedAssetCode);
+    if (!selectedAssetCode) setPendingAsset(null);
+  }
+
   const selectedAsset = (pendingAsset && pendingAsset.assetCode === selectedAssetCode ? pendingAsset : null)
     || (selectedAssetCode
       ? (viewPositions.find(p => p.assetCode === selectedAssetCode) || searchedPositions?.content?.[0] || null)
       : null);
-
-  useEffect(() => {
-    if (!selectedAssetCode) setPendingAsset(null);
-  }, [selectedAssetCode]);
 
   const setSelectedAsset = (asset) => {
     if (asset) {

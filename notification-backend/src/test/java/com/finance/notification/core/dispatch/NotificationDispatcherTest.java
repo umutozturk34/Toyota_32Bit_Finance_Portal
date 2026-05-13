@@ -120,7 +120,6 @@ class NotificationDispatcherTest {
         prefs.setInappSystem(false);
         prefs.setEmailSystem(true);
         when(preferenceRepository.findById("u")).thenReturn(Optional.of(prefs));
-        when(userPreferenceCacheService.resolveTheme("u")).thenReturn("DARK");
         when(userEmailLookup.findEmail("u")).thenReturn(Optional.of("user@x.com"));
 
         dispatcher.dispatch(NotificationRequest.of("u", systemPayload()));
@@ -139,8 +138,9 @@ class NotificationDispatcherTest {
         prefs.setInappSystem(false);
         prefs.setEmailSystem(true);
         when(preferenceRepository.findById("u")).thenReturn(Optional.of(prefs));
-        when(userPreferenceCacheService.resolveTheme("u")).thenReturn("LIGHT");
-        when(userPreferenceCacheService.resolveLocale("u")).thenReturn(Locale.ENGLISH);
+        org.mockito.Mockito.doReturn(Map.of(
+                "u", new UserPreferenceSnapshot(Locale.ENGLISH, "LIGHT", java.time.ZoneId.of("Europe/Istanbul"))))
+                .when(userPreferenceCacheService).loadAll(any());
         when(userEmailLookup.findEmail("u")).thenReturn(Optional.of("user@x.com"));
 
         dispatcher.dispatch(NotificationRequest.of("u", systemPayload()));
@@ -222,7 +222,12 @@ class NotificationDispatcherTest {
 
     @Test
     void should_skipBannedRecipients_when_dispatchBatchedRunsChunk() {
-        when(userStatus.activeStatusOf(any())).thenReturn(Map.of("banned", false, "active", true));
+        org.mockito.Mockito.doReturn(Map.of("banned", false, "active", true))
+                .when(userStatus).activeStatusOf(any());
+        org.mockito.Mockito.doReturn(Map.of(
+                        "active", UserPreferenceSnapshot.defaults(),
+                        "banned", UserPreferenceSnapshot.defaults()))
+                .when(userPreferenceCacheService).loadAll(any());
         when(preferenceRepository.findAllById(any())).thenReturn(List.of(
                 enabledSystemPrefs("active")));
 

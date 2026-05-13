@@ -33,15 +33,22 @@ export default function SearchSuggestions({
   const inputRef = useRef(null);
   const timerRef = useRef(null);
 
+  const trimmedQuery = query.trim();
+  const tooShort = trimmedQuery.length < 2;
+  const [trackedQuery, setTrackedQuery] = useState(query);
+  if (query !== trackedQuery) {
+    setTrackedQuery(query);
+    if (tooShort && debouncedQuery !== '') {
+      setDebouncedQuery('');
+    }
+  }
+
   useEffect(() => {
     clearTimeout(timerRef.current);
-    if (query.trim().length < 2) {
-      setDebouncedQuery('');
-      return;
-    }
-    timerRef.current = setTimeout(() => setDebouncedQuery(query.trim()), 250);
+    if (tooShort) return undefined;
+    timerRef.current = setTimeout(() => setDebouncedQuery(trimmedQuery), 250);
     return () => clearTimeout(timerRef.current);
-  }, [query]);
+  }, [trimmedQuery, tooShort]);
 
   const { containerRef, suggestions, activeIndex, setActiveIndex, isFetching, buildKeyDown } = useSearchSuggestions({
     query: debouncedQuery,
@@ -61,10 +68,15 @@ export default function SearchSuggestions({
     }
   }, [onSelect, navigateOnSelect, navigate]);
 
-  const handleKeyDown = buildKeyDown(handleSelect, () => {
+  const handleEscape = useCallback(() => {
     setOpen(false);
     inputRef.current?.blur();
-  });
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e) => buildKeyDown(handleSelect, handleEscape)(e),
+    [buildKeyDown, handleSelect, handleEscape],
+  );
 
   const isHero = variant === 'hero';
 

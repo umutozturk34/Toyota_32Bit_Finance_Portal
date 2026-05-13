@@ -60,12 +60,6 @@ api.interceptors.response.use(
       }
       return Promise.reject(error);
     }
-    const status = error.response?.status;
-    if (status >= 400 && status < 600 && !error.config?.skipErrorToast) {
-      const message = error.response?.data?.error?.message
-        || error.response?.data?.message;
-      if (message) toast.error(message);
-    }
     return Promise.reject(error);
   }
 );

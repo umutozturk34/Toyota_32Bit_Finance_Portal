@@ -11,12 +11,6 @@ export default function useNavigationBack(fallbackRoute) {
     const origin = consumeOrigin();
     const here = location.pathname + (location.search || '');
     if (origin?.route && origin.route !== here) {
-      const currentLength = typeof window !== 'undefined' ? window.history.length : 0;
-      const delta = currentLength - (origin.historyLength || 0);
-      if (delta > 0 && delta < currentLength) {
-        navigate(-delta);
-        return;
-      }
       navigate(origin.route, { replace: true });
       return;
     }

@@ -59,7 +59,7 @@ function MoversSectionImpl({ data }) {
   const gainers = data?.gainers ?? [];
   const goToAsset = useCallback((code) => {
     setOrigin('/market', window.scrollY);
-    navigate(`${TYPE_ROUTES[market] ?? '/market'}/${code}`);
+    navigate(`${TYPE_ROUTES[market] ?? '/market'}/${code}`, { state: { from: '/market' } });
   }, [navigate, setOrigin, market]);
   const losers = data?.losers ?? [];
   const color = ASSET_TYPE_COLORS[market] || '#6366f1';

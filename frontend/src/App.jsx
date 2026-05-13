@@ -1,4 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import {
+  createBrowserRouter,
+  RouterProvider,
+  createRoutesFromElements,
+  Route,
+  Navigate,
+  Outlet,
+} from 'react-router-dom';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
 import { ThemeProvider } from './shared/context/ThemeContext';
 import LanguageSyncBridge from './shared/i18n/useLanguageSync';
@@ -41,43 +48,52 @@ function PublicOnly({ children }) {
   return children;
 }
 
+function RootLayout() {
+  return (
+    <ErrorBoundary>
+      <Outlet />
+    </ErrorBoundary>
+  );
+}
+
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route element={<RootLayout />}>
+      <Route index element={<LandingRedirect />} />
+      <Route path="login" element={<PublicOnly><Login /></PublicOnly>} />
+      <Route path="register" element={<PublicOnly><Register /></PublicOnly>} />
+      <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+        <Route path="news" element={<News />} />
+        <Route path="news/:id" element={<NewsDetail />} />
+        <Route path="market" element={<MarketDataPage />} />
+        <Route path="stocks" element={<StocksPage />} />
+        <Route path="stocks/:symbol" element={<StockDetail />} />
+        <Route path="crypto" element={<CryptoPage />} />
+        <Route path="crypto/:id" element={<CryptoDetail />} />
+        <Route path="forex" element={<ForexPage />} />
+        <Route path="forex/:code" element={<ForexDetail />} />
+        <Route path="funds" element={<FundsPage />} />
+        <Route path="funds/:code" element={<FundDetail />} />
+        <Route path="commodities" element={<CommoditiesPage />} />
+        <Route path="commodities/:code" element={<CommodityDetail />} />
+        <Route path="bonds" element={<BondsPage />} />
+        <Route path="admin/tracked-assets" element={<AdminTrackedAssetsPage />} />
+        <Route path="admin/users" element={<AdminUsersPage />} />
+        <Route path="portfolio" element={<Portfolio />} />
+        <Route path="watch" element={<WatchPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Route>
+    </Route>
+  ),
+);
+
 function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-      <LanguageSyncBridge />
-      <ToastContainer />
-      <BrowserRouter>
-        <ErrorBoundary>
-        <Routes>
-          <Route index element={<LandingRedirect />} />
-          <Route path="login" element={<PublicOnly><Login /></PublicOnly>} />
-          <Route path="register" element={<PublicOnly><Register /></PublicOnly>} />
-
-          <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-            <Route path="news" element={<News />} />
-            <Route path="news/:id" element={<NewsDetail />} />
-            <Route path="market" element={<MarketDataPage />} />
-            <Route path="stocks" element={<StocksPage />} />
-            <Route path="stocks/:symbol" element={<StockDetail />} />
-            <Route path="crypto" element={<CryptoPage />} />
-            <Route path="crypto/:id" element={<CryptoDetail />} />
-            <Route path="forex" element={<ForexPage />} />
-            <Route path="forex/:code" element={<ForexDetail />} />
-            <Route path="funds" element={<FundsPage />} />
-            <Route path="funds/:code" element={<FundDetail />} />
-            <Route path="commodities" element={<CommoditiesPage />} />
-            <Route path="commodities/:code" element={<CommodityDetail />} />
-            <Route path="bonds" element={<BondsPage />} />
-            <Route path="admin/tracked-assets" element={<AdminTrackedAssetsPage />} />
-            <Route path="admin/users" element={<AdminUsersPage />} />
-            <Route path="portfolio" element={<Portfolio />} />
-            <Route path="watch" element={<WatchPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
-        </ErrorBoundary>
-      </BrowserRouter>
+        <LanguageSyncBridge />
+        <ToastContainer />
+        <RouterProvider router={router} />
       </ThemeProvider>
     </AuthProvider>
   );

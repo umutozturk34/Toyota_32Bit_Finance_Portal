@@ -15,8 +15,7 @@ const useNavigationStore = create(
 
   setOrigin: (route, scrollY = 0) => {
     if (!route) return;
-    const historyLength = typeof window !== 'undefined' ? window.history.length : 0;
-    set({ origin: { route, scrollY, historyLength, timestamp: Date.now() } });
+    set({ origin: { route, scrollY, timestamp: Date.now() } });
   },
 
   consumeOrigin: () => {
@@ -26,7 +25,7 @@ const useNavigationStore = create(
       return null;
     }
     set({ origin: null });
-    return { route: current.route, scrollY: current.scrollY, historyLength: current.historyLength ?? 0 };
+    return { route: current.route, scrollY: current.scrollY };
   },
 
   pushPagination: (routeKey, params) => {
@@ -93,8 +92,8 @@ const useNavigationStore = create(
       name: 'finance-navigation-store',
       storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
-        scrollByRoute: state.scrollByRoute,
         origin: state.origin,
+        scrollByRoute: state.scrollByRoute,
         paginationByRoute: state.paginationByRoute,
       }),
     },

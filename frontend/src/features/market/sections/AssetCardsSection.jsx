@@ -113,7 +113,7 @@ export default function AssetCardsSection({ data, editMode = false, config = {},
 
   const goToAsset = useCallback((asset) => {
     setOrigin('/market', window.scrollY);
-    navigate(`${TYPE_ROUTES[asset.type] ?? '/market'}/${asset.code}`);
+    navigate(`${TYPE_ROUTES[asset.type] ?? '/market'}/${asset.code}`, { state: { from: '/market' } });
   }, [navigate, setOrigin]);
 
   const handleRemove = useCallback((asset) => {

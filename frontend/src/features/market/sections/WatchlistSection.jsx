@@ -64,7 +64,7 @@ function WatchlistSectionImpl({ data }) {
   const name = data?.watchlistName ? localizeWatchlistName(t, data.watchlistName) : t('watchlistSection.fallbackName');
   const goToAsset = useCallback((marketType, assetCode) => {
     setOrigin('/market', window.scrollY);
-    navigate(`${TYPE_ROUTES[marketType] ?? '/market'}/${assetCode}`);
+    navigate(`${TYPE_ROUTES[marketType] ?? '/market'}/${assetCode}`, { state: { from: '/market' } });
   }, [navigate, setOrigin]);
 
   return (

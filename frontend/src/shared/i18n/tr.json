@@ -105,6 +105,12 @@
       "drawings": "Çizim",
       "fibonacci": "Fibonacci"
     },
+    "legend": {
+      "price": "Fiyat",
+      "bulletin": "Borsa Fiyatı",
+      "sell": "Satış",
+      "buy": "Alış"
+    },
     "range": {
       "1M": "1A",
       "3M": "3A",
@@ -222,6 +228,7 @@
       },
       "crosshair": {
         "price": "Fiyat",
+        "bulletin": "Borsa",
         "sell": "Satış",
         "buy": "Alış",
         "effBuy": "Ef. Alış",

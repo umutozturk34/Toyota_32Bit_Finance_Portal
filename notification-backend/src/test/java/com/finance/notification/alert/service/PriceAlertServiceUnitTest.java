@@ -65,6 +65,7 @@ class PriceAlertServiceUnitTest {
                 .userSub(userSub)
                 .marketType(MarketType.STOCK)
                 .assetCode("THYAO")
+                .trackedAsset(tracked())
                 .direction(AlertDirection.ABOVE)
                 .threshold(new BigDecimal("100"))
                 .active(true)
@@ -180,12 +181,26 @@ class PriceAlertServiceUnitTest {
     void reactivate_callsReactivateAndSaves() {
         PriceAlert a = alert("user-1");
         when(repository.findById(1L)).thenReturn(Optional.of(a));
+        when(repository.existsByUserSubAndTrackedAsset_IdAndDirectionAndThresholdAndActiveTrue(
+                anyString(), any(), any(), any())).thenReturn(false);
         when(repository.save(a)).thenReturn(a);
         when(mapper.toResponse(a)).thenReturn(stubResponse());
 
         service.reactivate(1L, "user-1");
 
         verify(repository).save(a);
+    }
+
+    @Test
+    void reactivate_raises_whenActiveDuplicateExists() {
+        PriceAlert a = alert("user-1");
+        when(repository.findById(1L)).thenReturn(Optional.of(a));
+        when(repository.existsByUserSubAndTrackedAsset_IdAndDirectionAndThresholdAndActiveTrue(
+                anyString(), any(), any(), any())).thenReturn(true);
+
+        assertThatThrownBy(() -> service.reactivate(1L, "user-1"))
+                .isInstanceOf(BadRequestException.class);
+        verify(repository, never()).save(any());
     }
 
     @Test

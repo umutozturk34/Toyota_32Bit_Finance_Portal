@@ -92,6 +92,12 @@ public class PriceAlertService {
     @Transactional
     public PriceAlertResponse reactivate(Long id, String userSub) {
         PriceAlert alert = ownedOr404(id, userSub);
+        if (repository.existsByUserSubAndTrackedAsset_IdAndDirectionAndThresholdAndActiveTrue(
+                userSub, alert.getTrackedAsset().getId(), alert.getDirection(), alert.getThreshold())) {
+            throw new BadRequestException("error.priceAlert.duplicate",
+                    alert.getMarketType(), alert.getAssetCode(),
+                    alert.getDirection(), alert.getThreshold());
+        }
         alert.reactivate();
         PriceAlert saved = repository.save(alert);
         log.info("Price alert reactivated alertId={} userSub={}", id, userSub);

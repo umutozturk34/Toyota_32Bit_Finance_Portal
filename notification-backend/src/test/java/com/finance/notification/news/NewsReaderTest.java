@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,5 +58,43 @@ class NewsReaderTest {
         NewsReader.RecentNews result = reader.findRecent();
 
         assertThat(result.totalCount()).isZero();
+    }
+
+    @Test
+    void findRecent_returnsAggregatedTitlesAndCategories_whenRowsPresent() throws Exception {
+        java.lang.reflect.Constructor<?> ctor = Class.forName(
+                "com.finance.notification.news.NewsReader$TitleCategory")
+                .getDeclaredConstructors()[0];
+        ctor.setAccessible(true);
+        Object row1 = ctor.newInstance("BIST yükseldi", "STOCK");
+        Object row2 = ctor.newInstance("Bitcoin sabit", "CRYPTO");
+        Object row3 = ctor.newInstance("Genel başlık", null);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), any(Timestamp.class), anyInt()))
+                .thenReturn(List.of(row1, row2, row3));
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), any(Timestamp.class)))
+                .thenReturn(42);
+
+        NewsReader.RecentNews result = reader.findRecent();
+
+        assertThat(result.totalCount()).isEqualTo(42);
+        assertThat(result.categories()).containsExactly("STOCK", "CRYPTO");
+        assertThat(result.sampleTitles()).hasSize(3);
+    }
+
+    @Test
+    void findRecent_fallsBackToRowSize_whenCountQueryReturnsNull() throws Exception {
+        java.lang.reflect.Constructor<?> ctor = Class.forName(
+                "com.finance.notification.news.NewsReader$TitleCategory")
+                .getDeclaredConstructors()[0];
+        ctor.setAccessible(true);
+        Object row1 = ctor.newInstance("title", "WORLD");
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), any(Timestamp.class), anyInt()))
+                .thenReturn(List.of(row1));
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), any(Timestamp.class)))
+                .thenReturn(null);
+
+        NewsReader.RecentNews result = reader.findRecent();
+
+        assertThat(result.totalCount()).isEqualTo(1);
     }
 }

@@ -60,6 +60,14 @@ public abstract class BaseAsset {
         this.changePercent = result.percent();
     }
 
+    public final void applyChangePreferring(BigDecimal current, BigDecimal previous,
+                                            BigDecimal preferredAmount, BigDecimal preferredPercent,
+                                            int scale) {
+        PercentChangeCalculator.Result computed = PercentChangeCalculator.compute(current, previous, scale);
+        this.changeAmount = preferredAmount != null ? scaleValue(preferredAmount, scale) : computed.amount();
+        this.changePercent = preferredPercent != null ? scaleValue(preferredPercent, scale) : computed.percent();
+    }
+
     public abstract void scaleFields(int scale);
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

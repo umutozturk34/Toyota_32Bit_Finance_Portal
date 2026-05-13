@@ -39,7 +39,9 @@ public class YahooClientMapper {
                 YahooMetaHelpers.latestNonNull(firstQuote == null ? null : firstQuote.open()),
                 meta.dayHigh(),
                 meta.dayLow(),
-                meta.volume()
+                meta.volume(),
+                meta.regularMarketChange(),
+                meta.regularMarketChangePercent()
         );
     }
 

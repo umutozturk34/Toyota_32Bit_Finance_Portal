@@ -91,7 +91,7 @@ class AbstractYahooClientTest {
     void fetchChartFull_delegatesToMapperForFullResult() {
         TestClient client = buildClient(respondJson(CHART_BODY));
         YahooChartFullResult<YahooQuoteDto> stub = new YahooChartFullResult<>(
-                new YahooQuoteDto(BigDecimal.ONE, null, null, null, null, null), List.of());
+                new YahooQuoteDto(BigDecimal.ONE, null, null, null, null, null, null, null), List.of());
         when(yahooClientMapper.toFullResult(any(), eq(false))).thenReturn(stub);
 
         YahooChartFullResult<YahooQuoteDto> result = client.fetchChartFull("AAPL", "1M", "1d", false);

@@ -89,7 +89,7 @@ class CommoditySnapshotProcessorTest {
 
     private YahooQuoteDto quote(double price) {
         BigDecimal p = BigDecimal.valueOf(price);
-        return new YahooQuoteDto(p, p, p, p, p, 100L);
+        return new YahooQuoteDto(p, p, p, p, p, 100L, null, null);
     }
 
     private Map<String, BigDecimal> usdtryMap() {
@@ -181,7 +181,7 @@ class CommoditySnapshotProcessorTest {
         CommoditySnapshotInput input = new CommoditySnapshotInput(
                 new BigDecimal("2600"), new BigDecimal("2570"),
                 new BigDecimal("80"), new BigDecimal("79"),
-                null, null, null, 100L);
+                null, null, null, 100L, null);
         when(commodityMapper.toSnapshotInput(any(), any(), any())).thenReturn(input);
         when(derivativeCalculator.hasDerivatives("OIL")).thenReturn(false);
         stubTransactionTemplate();
@@ -210,7 +210,7 @@ class CommoditySnapshotProcessorTest {
         when(trackedAssetQueryService.getDisplayNameMap(TrackedAssetType.COMMODITY))
                 .thenReturn(Map.of("XAU", "Altın"));
         CommoditySnapshotInput input = new CommoditySnapshotInput(
-                new BigDecimal("78000"), null, new BigDecimal("2400"), null, null, null, null, 100L);
+                new BigDecimal("78000"), null, new BigDecimal("2400"), null, null, null, null, 100L, null);
         when(commodityMapper.toSnapshotInput(any(), any(), any())).thenReturn(input);
         when(derivativeCalculator.hasDerivatives("XAU")).thenReturn(true);
         stubTransactionTemplate();
@@ -258,7 +258,7 @@ class CommoditySnapshotProcessorTest {
                 .thenReturn(new YahooChartFullResult<>(quote(80), List.of(today)));
         when(commodityRepository.findById("OIL")).thenReturn(Optional.of(existing));
         CommoditySnapshotInput input = new CommoditySnapshotInput(
-                new BigDecimal("2600"), null, new BigDecimal("80"), null, null, null, null, 100L);
+                new BigDecimal("2600"), null, new BigDecimal("80"), null, null, null, null, 100L, null);
         when(commodityMapper.toSnapshotInput(any(), any(), any())).thenReturn(input);
         when(derivativeCalculator.hasDerivatives("OIL")).thenReturn(false);
         stubTransactionTemplate();

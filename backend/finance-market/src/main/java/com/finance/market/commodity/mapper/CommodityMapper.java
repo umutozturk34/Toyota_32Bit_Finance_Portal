@@ -33,7 +33,8 @@ public interface CommodityMapper {
                 todayTryCandle.open(),
                 todayTryCandle.high(),
                 todayTryCandle.low(),
-                quote.volume()
+                quote.volume(),
+                quote.regularMarketChangePercent()
         );
     }
 }

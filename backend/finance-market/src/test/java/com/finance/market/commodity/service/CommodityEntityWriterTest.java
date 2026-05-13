@@ -161,7 +161,7 @@ class CommodityEntityWriterTest {
                 new BigDecimal("2500"), new BigDecimal("2480"),
                 new BigDecimal("75"), new BigDecimal("74"),
                 new BigDecimal("2490"), new BigDecimal("2510"),
-                new BigDecimal("2470"), 1000L);
+                new BigDecimal("2470"), 1000L, null);
     }
 
     private CommodityCandle candle(BigDecimal close, LocalDateTime ts) {

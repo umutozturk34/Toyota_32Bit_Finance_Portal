@@ -23,7 +23,8 @@ class CommodityTest {
                 new BigDecimal("99500"),
                 new BigDecimal("101000"),
                 new BigDecimal("98500"),
-                250000L);
+                250000L,
+                null);
 
         commodity.applyPriceSnapshot(input, SCALE);
 
@@ -45,7 +46,7 @@ class CommodityTest {
                 new BigDecimal("100"),
                 new BigDecimal("10"),
                 new BigDecimal("9"),
-                null, null, null, null);
+                null, null, null, null, null);
 
         commodity.applyPriceSnapshot(input, SCALE);
 
@@ -57,7 +58,7 @@ class CommodityTest {
     void applyPriceSnapshotSkipsWhenTryPriceNull() {
         Commodity commodity = new Commodity();
         commodity.setCurrentPrice(new BigDecimal("999"));
-        CommoditySnapshotInput input = new CommoditySnapshotInput(null, null, null, null, null, null, null, null);
+        CommoditySnapshotInput input = new CommoditySnapshotInput(null, null, null, null, null, null, null, null, null);
 
         commodity.applyPriceSnapshot(input, SCALE);
 
@@ -70,7 +71,7 @@ class CommodityTest {
         CommoditySnapshotInput input = new CommoditySnapshotInput(
                 new BigDecimal("4500"), new BigDecimal("4450"),
                 null, null,
-                new BigDecimal("4480"), new BigDecimal("4520"), new BigDecimal("4440"), 1000L);
+                new BigDecimal("4480"), new BigDecimal("4520"), new BigDecimal("4440"), 1000L, null);
 
         derivative.applyPriceSnapshot(input, SCALE);
 

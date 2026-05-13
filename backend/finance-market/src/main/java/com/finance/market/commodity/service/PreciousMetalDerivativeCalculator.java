@@ -10,6 +10,10 @@ import com.finance.market.commodity.model.CommodityCandle;
 import com.finance.market.commodity.model.CommoditySnapshotInput;
 import com.finance.market.commodity.repository.CommodityCandleRepository;
 import com.finance.market.commodity.repository.CommodityRepository;
+import com.finance.market.core.service.AssetRegistryService;
+import com.finance.market.core.service.TrackedAssetCommandService;
+import com.finance.common.model.MarketType;
+import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.util.PriceCrossCalculator;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -27,10 +31,14 @@ import java.util.stream.Collectors;
 @Log4j2
 public class PreciousMetalDerivativeCalculator {
 
+    private static final int DERIVATIVE_SORT_ORDER = 9999;
+
     private final CommodityRepository commodityRepository;
     private final CommodityCandleRepository commodityCandleRepository;
     private final MarketCacheService<Commodity> commodityCacheService;
     private final CommoditySegmentResolver segmentResolver;
+    private final AssetRegistryService assetRegistry;
+    private final TrackedAssetCommandService trackedAssetCommandService;
     private final int scale;
     private final List<DerivativeRule> rules;
 
@@ -38,12 +46,16 @@ public class PreciousMetalDerivativeCalculator {
                                              CommodityCandleRepository commodityCandleRepository,
                                              MarketCacheService<Commodity> commodityCacheService,
                                              CommoditySegmentResolver segmentResolver,
+                                             AssetRegistryService assetRegistry,
+                                             TrackedAssetCommandService trackedAssetCommandService,
                                              AppProperties appProperties,
                                              CommodityProperties commodityProperties) {
         this.commodityRepository = commodityRepository;
         this.commodityCandleRepository = commodityCandleRepository;
         this.commodityCacheService = commodityCacheService;
         this.segmentResolver = segmentResolver;
+        this.assetRegistry = assetRegistry;
+        this.trackedAssetCommandService = trackedAssetCommandService;
         this.scale = appProperties.getScale();
         this.rules = List.copyOf(commodityProperties.getDerivatives());
     }
@@ -72,6 +84,12 @@ public class PreciousMetalDerivativeCalculator {
         rules.forEach(this::refreshCandlesFromRule);
     }
 
+    public void refreshDerivativeCandlesForSource(String sourceCode) {
+        rules.stream()
+                .filter(rule -> rule.getSourceCode().equals(sourceCode))
+                .forEach(this::refreshCandlesFromRule);
+    }
+
     private void applyRule(DerivativeRule rule, Commodity source, BigDecimal usdTryForPrevious) {
         BigDecimal current = divide(source.getCurrentPrice(), rule.getDivisor());
         BigDecimal open = divide(source.getOpenPrice(), rule.getDivisor());
@@ -79,7 +97,7 @@ public class PreciousMetalDerivativeCalculator {
         BigDecimal low = divide(source.getDayLow(), rule.getDivisor());
         BigDecimal previous = previousFromOnsUsd(source.getPreviousPriceUsd(), usdTryForPrevious, rule.getDivisor());
         CommoditySnapshotInput snapshot = new CommoditySnapshotInput(
-                current, previous, null, null, open, high, low, source.getVolume());
+                current, previous, null, null, open, high, low, source.getVolume(), null);
         persistDerivative(rule, snapshot);
     }
 
@@ -168,8 +186,12 @@ public class PreciousMetalDerivativeCalculator {
             derivative.setCommodityNameTr(rule.getNameTr());
         }
         derivative.applyPriceSnapshot(snapshot, scale);
+        derivative.setAsset(assetRegistry.upsert(MarketType.COMMODITY, code));
         commodityRepository.save(derivative);
         commodityCacheService.putSnapshot(code, derivative);
+        String displayName = rule.getNameTr() != null && !rule.getNameTr().isBlank()
+                ? rule.getNameTr() : rule.getName();
+        trackedAssetCommandService.autoTrack(TrackedAssetType.COMMODITY, code, displayName, DERIVATIVE_SORT_ORDER);
     }
 
     private BigDecimal divide(BigDecimal value, BigDecimal divisor) {

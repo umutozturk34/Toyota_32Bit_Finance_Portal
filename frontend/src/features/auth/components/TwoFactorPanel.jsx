@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Shield, ShieldOff, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 import keycloak from '../lib/keycloak';
 import { userCredentialService } from '../../../shared/services/userCredentialService';
-import { toast } from '../../../shared/components/feedback/Toast';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 import Spinner from '../../../shared/components/feedback/Spinner';
 

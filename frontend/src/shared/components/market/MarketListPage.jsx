@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../../features/auth/AuthContext';
+import { useAuth } from '../../../features/auth/useAuth';
 import { getChangeClass } from '../../utils/formatters';
 import { containerVariants } from '../../utils/animations';
 import LoadingState from '../feedback/LoadingState';
@@ -15,7 +15,7 @@ import SortSelect from '../form/SortSelect';
 import Pagination from '../form/Pagination';
 import MarketAddPositionModal from '../../../features/portfolio/components/MarketAddPositionModal';
 import FilterTabs from '../form/FilterTabs';
-import { toast } from '../feedback/Toast';
+import { toast } from '../feedback/toastBus';
 import useMarketListData from '../../hooks/useMarketListData';
 
 export default function MarketListPage({

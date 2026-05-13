@@ -14,7 +14,7 @@ export default function useSessionState(key, defaultValue) {
 
   const set = useCallback((v) => {
     setValue(v);
-    try { sessionStorage.setItem(k, JSON.stringify(v)); } catch {}
+    try { sessionStorage.setItem(k, JSON.stringify(v)); } catch { /* sessionStorage unavailable */ }
   }, [k]);
 
   return [value, set];

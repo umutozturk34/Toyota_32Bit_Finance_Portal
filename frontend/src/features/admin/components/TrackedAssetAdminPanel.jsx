@@ -6,7 +6,7 @@ import { Reorder, useDragControls } from 'framer-motion';
 import { GripVertical, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { RefreshCw } from '../../../shared/components/feedback/AnimatedIcons';
 import { adminService, trackedAssetService } from '../services/adminService';
-import { toast } from '../../../shared/components/feedback/Toast';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import SearchInput from '../../../shared/components/form/SearchInput';
 import Card from '../../../shared/components/card';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';

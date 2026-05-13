@@ -14,11 +14,8 @@ export default function useDrawings(assetType, assetCode, range, persistEnabled 
   const { data, isSuccess } = useUserChartDrawings(assetType, assetCode, range, persistEnabled);
   const updateMutation = useUpdateUserChartDrawings(assetType, assetCode, range);
   const mutateRef = useRef(updateMutation.mutate);
-  mutateRef.current = updateMutation.mutate;
   const rangeRef = useRef(range);
-  rangeRef.current = range;
   const persistRef = useRef(persistEnabled);
-  persistRef.current = persistEnabled;
 
   const [drawings, setDrawings] = useState([]);
   const [activeTool, setActiveTool] = useState(null);
@@ -26,23 +23,41 @@ export default function useDrawings(assetType, assetCode, range, persistEnabled 
   const hydratedKeyRef = useRef(null);
   const drawingsRef = useRef(drawings);
   const debounceTimerRef = useRef(null);
-  drawingsRef.current = drawings;
 
   useEffect(() => {
+    mutateRef.current = updateMutation.mutate;
+    rangeRef.current = range;
+    persistRef.current = persistEnabled;
+    drawingsRef.current = drawings;
+  });
+
+  const [trackedPersistEnabled, setTrackedPersistEnabled] = useState(persistEnabled);
+  if (persistEnabled !== trackedPersistEnabled) {
+    setTrackedPersistEnabled(persistEnabled);
     setDrawings([]);
     setActiveTool(null);
+  }
+
+  const hydrationKey = enabled && isSuccess && persistEnabled
+    ? `${assetType}:${assetCode}:${range || 'all'}`
+    : null;
+  const [trackedHydrationKey, setTrackedHydrationKey] = useState(null);
+  if (hydrationKey !== null && hydrationKey !== trackedHydrationKey) {
+    setTrackedHydrationKey(hydrationKey);
+    setDrawings(rehydrate(data?.drawings));
+  }
+
+  useEffect(() => {
     hydratedRef.current = false;
     hydratedKeyRef.current = null;
   }, [persistEnabled]);
 
   useEffect(() => {
-    if (!enabled || !isSuccess || !persistEnabled) return;
-    const key = `${assetType}:${assetCode}:${range || 'all'}`;
-    if (hydratedKeyRef.current === key) return;
-    setDrawings(rehydrate(data?.drawings));
-    hydratedRef.current = true;
-    hydratedKeyRef.current = key;
-  }, [enabled, isSuccess, data, assetType, assetCode, range, persistEnabled]);
+    if (trackedHydrationKey !== null) {
+      hydratedRef.current = true;
+      hydratedKeyRef.current = trackedHydrationKey;
+    }
+  }, [trackedHydrationKey]);
 
   useEffect(() => {
     if (!enabled || !hydratedRef.current) return;

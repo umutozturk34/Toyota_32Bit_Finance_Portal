@@ -6,7 +6,7 @@ import {
 } from '@dnd-kit/core';
 import {
   SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates,
-  arrayMove, useSortable,
+  arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useSearchParams } from 'react-router-dom';
@@ -37,11 +37,9 @@ import AddWatchlistItemModal from './components/AddWatchlistItemModal';
 import CreateWatchlistModal from './components/CreateWatchlistModal';
 import EditWatchlistItemModal from './components/EditWatchlistItemModal';
 import EditPriceAlertModal from './components/EditPriceAlertModal';
-import { toast } from '../../shared/components/feedback/Toast';
+import { toast } from '../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../shared/utils/apiError';
-import { formatPriceTRY, formatPercent, getChangeClass, changeColors, changeBg } from '../../shared/utils/formatters';
-
-import { WATCHLIST_SORT_OPTION_IDS, DIRECTION_META, assetRoute } from './lib/watchConstants';
+import { WATCHLIST_SORT_OPTION_IDS, DIRECTION_META } from './lib/watchConstants';
 import WatchlistRow from './components/WatchlistRow';
 import AlertRow from './components/AlertRow';
 function ViewTabs({ view, onChange, watchCount, alertsCount }) {

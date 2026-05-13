@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Megaphone } from 'lucide-react';
 import { useBroadcast } from './useBroadcast';
-import { toast } from '../../../shared/components/feedback/Toast';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../../shared/utils/apiError';
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import Button from '../../../shared/components/buttons/Button';
@@ -11,11 +11,16 @@ export default function BroadcastModal({ open, onClose }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [wasOpen, setWasOpen] = useState(open);
   const broadcast = useBroadcast();
 
-  useEffect(() => {
-    if (open) { setTitle(''); setBody(''); }
-  }, [open]);
+  if (open && !wasOpen) {
+    setWasOpen(true);
+    setTitle('');
+    setBody('');
+  } else if (!open && wasOpen) {
+    setWasOpen(false);
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

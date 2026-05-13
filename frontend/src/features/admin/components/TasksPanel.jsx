@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { adminService } from '../services/adminService';
 import { getToken } from '../../auth/lib/keycloak';
-import { toast } from '../../../shared/components/feedback/Toast';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
 import Spinner from '../../../shared/components/feedback/Spinner';
 import { currentLocaleTag } from '../../../shared/utils/formatters';

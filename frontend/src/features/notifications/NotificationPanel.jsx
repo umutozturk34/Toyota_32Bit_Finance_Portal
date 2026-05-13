@@ -14,7 +14,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ConfirmDialog from '../../shared/components/modal/ConfirmDialog';
 import BroadcastModal from '../admin/broadcast/BroadcastModal';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../auth/useAuth';
 import { currentLocaleTag } from '../../shared/utils/formatters';
 import SideDrawer from '../../shared/components/modal/SideDrawer';
 import Button from '../../shared/components/buttons/Button';

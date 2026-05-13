@@ -34,7 +34,7 @@ export default function MarketDataPage() {
   const { data: watchlists = [] } = useWatchlists({ enabled: editMode });
   const updateLayout = useUpdateOverviewLayout();
 
-  const persistedSections = layout.sections;
+  const persistedSections = layout?.sections;
   const sections = editMode && localSections ? localSections : persistedSections;
   const isDirty = editMode && localSections !== null && localSections !== persistedSections;
 

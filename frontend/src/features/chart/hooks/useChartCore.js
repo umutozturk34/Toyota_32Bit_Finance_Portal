@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import { calculateSMA, calculateEMA } from '../lib/indicators';
@@ -66,7 +66,13 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
     const volumeDataRef = useRef([]);
     const overlayMetaRef = useRef(new Map());
     const hoveredOverlayRef = useRef(null);
-    const [trend, setTrend] = useState(null);
+    const trend = useMemo(() => {
+        if (!data?.candles?.length) return null;
+        const candleData = data.candles.map(c => ({
+            close: Number(c.close ?? c.price ?? 0),
+        }));
+        return analyzeTrend(candleData);
+    }, [data]);
     const [crosshairData, setCrosshairData] = useState(null);
 
     useEffect(() => {
@@ -199,14 +205,13 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             }));
         chart.timeScale().fitContent();
         requestAnimationFrame(() => window.scrollTo(0, scrollY));
-        setTrend(analyzeTrend(candleData));
         const handleCrosshairMove = (param) => {
             if (renderDrawingsRef.current) renderDrawingsRef.current();
             if (!param || !param.time) {
                 setCrosshairData(null);
                 if (hoveredOverlayRef.current) {
                     for (const [s, m] of overlayMetaRef.current) {
-                        try { s.applyOptions({ color: m.color, lineWidth: 2 }); } catch { }
+                        try { s.applyOptions({ color: m.color, lineWidth: 2 }); } catch { /* series detached */ }
                     }
                     hoveredOverlayRef.current = null;
                 }
@@ -234,7 +239,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                         if (y == null) continue;
                         const dist = Math.abs(mouseY - y);
                         if (dist < closestDist) { closestDist = dist; closest = series; }
-                    } catch { }
+                    } catch { /* series detached */ }
                 }
                 const hovered = closestDist < 20 ? closest : null;
                 if (hovered !== hoveredOverlayRef.current) {
@@ -274,7 +279,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 chart.timeScale().unsubscribeVisibleTimeRangeChange(handleUpdate);
                 chart.timeScale().unsubscribeVisibleLogicalRangeChange(handleUpdate);
                 chart.unsubscribeCrosshairMove(handleCrosshairMove);
-            } catch { }
+            } catch { /* chart already disposed */ }
             if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
         };
     }, [data, symbol, chartType, timeRange, i18n.language]);
@@ -300,29 +305,29 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         if (!chart) return;
 
         if (compareSeriesRef.current) {
-            try { chart.removeSeries(compareSeriesRef.current); } catch {}
+            try { chart.removeSeries(compareSeriesRef.current); } catch { /* already removed */ }
             compareSeriesRef.current = null;
         }
         if (mainPercentSeriesRef.current) {
-            try { chart.removeSeries(mainPercentSeriesRef.current); } catch {}
+            try { chart.removeSeries(mainPercentSeriesRef.current); } catch { /* already removed */ }
             mainPercentSeriesRef.current = null;
         }
         if (zeroLineSeriesRef.current) {
-            try { chart.removeSeries(zeroLineSeriesRef.current); } catch {}
+            try { chart.removeSeries(zeroLineSeriesRef.current); } catch { /* already removed */ }
             zeroLineSeriesRef.current = null;
         }
 
         const mainSeries = candleSeriesRef.current;
         if (!compareData?.candles?.length || !compareSymbol) {
             if (mainSeries) {
-                try { mainSeries.applyOptions({ visible: true }); } catch {}
+                try { mainSeries.applyOptions({ visible: true }); } catch { /* series detached */ }
             }
-            try { chart.priceScale('left').applyOptions({ visible: false }); } catch {}
+            try { chart.priceScale('left').applyOptions({ visible: false }); } catch { /* scale missing */ }
             try {
                 chart.priceScale('right').applyOptions({
                     mode: 0,
                 });
-            } catch {}
+            } catch { /* scale missing */ }
             return;
         }
 
@@ -346,12 +351,12 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         const MIN_SANE_BASELINE = 0.01;
 
         if (commonPoints.length === 0) {
-            if (mainSeries) try { mainSeries.applyOptions({ visible: true }); } catch {}
+            if (mainSeries) try { mainSeries.applyOptions({ visible: true }); } catch { /* series detached */ }
             return;
         }
 
         if (mainSeries) {
-            try { mainSeries.applyOptions({ visible: false }); } catch {}
+            try { mainSeries.applyOptions({ visible: false }); } catch { /* series detached */ }
         }
 
         const fmtPercent = (p) => (p >= 0 ? '+' : '') + p.toFixed(2) + '%';
@@ -389,7 +394,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
 
         const initial = computePercent();
         if (!initial) {
-            if (mainSeries) try { mainSeries.applyOptions({ visible: true }); } catch {}
+            if (mainSeries) try { mainSeries.applyOptions({ visible: true }); } catch { /* series detached */ }
             return;
         }
         const mainPercentData = initial.main;
@@ -471,21 +476,21 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         chart.timeScale().subscribeVisibleTimeRangeChange(handleVisibleRangeChange);
 
         return () => {
-            try { chart.timeScale().unsubscribeVisibleTimeRangeChange(handleVisibleRangeChange); } catch {}
+            try { chart.timeScale().unsubscribeVisibleTimeRangeChange(handleVisibleRangeChange); } catch { /* chart disposed */ }
             if (compareSeriesRef.current && chartRef.current) {
-                try { chartRef.current.removeSeries(compareSeriesRef.current); } catch {}
+                try { chartRef.current.removeSeries(compareSeriesRef.current); } catch { /* already removed */ }
                 compareSeriesRef.current = null;
             }
             if (mainPercentSeriesRef.current && chartRef.current) {
-                try { chartRef.current.removeSeries(mainPercentSeriesRef.current); } catch {}
+                try { chartRef.current.removeSeries(mainPercentSeriesRef.current); } catch { /* already removed */ }
                 mainPercentSeriesRef.current = null;
             }
             if (zeroLineSeriesRef.current && chartRef.current) {
-                try { chartRef.current.removeSeries(zeroLineSeriesRef.current); } catch {}
+                try { chartRef.current.removeSeries(zeroLineSeriesRef.current); } catch { /* already removed */ }
                 zeroLineSeriesRef.current = null;
             }
             if (mainSeries) {
-                try { mainSeries.applyOptions({ visible: true }); } catch {}
+                try { mainSeries.applyOptions({ visible: true }); } catch { /* series detached */ }
             }
         };
     }, [compareData, compareSymbol, data, isDark, symbol, chartType]);
@@ -500,7 +505,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         existingIds.forEach(id => {
             if (!desiredIds.has(id)) {
                 overlayMetaRef.current.delete(indicatorSeriesRef.current[id]);
-                try { chart.removeSeries(indicatorSeriesRef.current[id]); } catch { }
+                try { chart.removeSeries(indicatorSeriesRef.current[id]); } catch { /* already removed */ }
                 delete indicatorSeriesRef.current[id];
             }
         });

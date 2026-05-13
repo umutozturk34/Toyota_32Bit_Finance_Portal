@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { useTheme } from '../../shared/context/ThemeContext';
+import { useTheme } from '../../shared/context/useTheme';
 import Card from '../../shared/components/card';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../auth/useAuth';
 import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
 import i18n from '../../shared/i18n/config';
 import {

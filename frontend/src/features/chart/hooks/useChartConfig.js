@@ -11,7 +11,9 @@ export default function useChartConfig(assetType, assetCode, range, persistEnabl
   const { data, isSuccess } = useUserChartPreferences(assetType, assetCode, range, persistEnabled);
   const updateMutation = useUpdateUserChartPreferences(assetType, assetCode, range);
   const mutateRef = useRef(updateMutation.mutate);
-  mutateRef.current = updateMutation.mutate;
+  useEffect(() => {
+    mutateRef.current = updateMutation.mutate;
+  });
   const pendingConfigRef = useRef(null);
   const debounceTimerRef = useRef(null);
 

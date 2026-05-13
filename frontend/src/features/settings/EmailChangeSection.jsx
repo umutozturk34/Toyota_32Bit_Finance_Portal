@@ -9,8 +9,8 @@ import {
   useConfirmEmailChange,
   useCancelEmailChange,
 } from '../../shared/hooks/useEmailChange';
-import { useAuth } from '../auth/AuthContext';
-import { toast } from '../../shared/components/feedback/Toast';
+import { useAuth } from '../auth/useAuth';
+import { toast } from '../../shared/components/feedback/toastBus';
 import { currentLocaleTag } from '../../shared/utils/formatters';
 
 function CurrentEmailRow({ email }) {

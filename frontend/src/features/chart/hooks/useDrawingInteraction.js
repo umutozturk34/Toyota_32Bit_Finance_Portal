@@ -4,10 +4,9 @@ import { createMagnetManager } from '../lib/magnetManager';
 
 const useDrawingInteraction = ({
     canvasOverlayRef,
-    chartRef,
     isDark,
-    drawings, addDrawing, cancelTool,
-    fibTools, addFibTool, cancelFibTool,
+    addDrawing, cancelTool,
+    addFibTool, cancelFibTool,
     activeTool, activeFibTool,
     magnetMode,
     selectedIcon, iconSize,

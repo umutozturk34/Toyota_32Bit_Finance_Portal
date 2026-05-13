@@ -5,7 +5,8 @@ import { useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, ExternalLink, Building2 } from 'lucide-react';
 import { newsService } from '../services/newsService';
 import { formatDateTimeFull } from '../../../shared/utils/formatters';
-import { CategoryBadge, getFallbackImage } from '../lib/newsConfig.jsx';
+import { CategoryBadge } from '../lib/newsConfig.jsx';
+import { getFallbackImage } from '../lib/newsConfig';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 import useNavigationBack from '../../../shared/hooks/useNavigationBack';
@@ -25,7 +26,7 @@ export default function NewsDetail() {
             try {
                 const data = await newsService.getNewsById(id);
                 setArticle(data);
-            } catch (err) {
+            } catch {
                 setError(t('newsDetail.error'));
             } finally {
                 setLoading(false);

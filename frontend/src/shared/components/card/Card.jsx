@@ -1,5 +1,4 @@
 import { forwardRef } from 'react';
-import { motion } from 'framer-motion';
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
 

@@ -52,6 +52,7 @@ export default function DatePickerPopover({
   }), [t]);
   const [open, setOpen] = useState(false);
   const [view, setView] = useState('day');
+  const [trackedOpen, setTrackedOpen] = useState(false);
   const ref = useRef(null);
 
   const selected = useMemo(() => fromIso(value), [value]);
@@ -60,11 +61,18 @@ export default function DatePickerPopover({
   const max = useMemo(() => fromIso(maxDate), [maxDate]);
   const initial = selected || today;
   const [cursor, setCursor] = useState({ year: initial.getFullYear(), month: initial.getMonth() });
+  const [trackedValue, setTrackedValue] = useState(value);
   const [, startTransition] = useTransition();
 
-  useEffect(() => {
+  if (value !== trackedValue) {
+    setTrackedValue(value);
     if (selected) setCursor({ year: selected.getFullYear(), month: selected.getMonth() });
-  }, [value]);
+  }
+
+  if (open !== trackedOpen) {
+    setTrackedOpen(open);
+    if (!open) setView('day');
+  }
 
   useEffect(() => {
     if (typeof onMonthChange !== 'function') return;
@@ -76,10 +84,6 @@ export default function DatePickerPopover({
     const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) setView('day');
   }, [open]);
 
   const grid = useMemo(() => buildGrid(cursor.year, cursor.month), [cursor.year, cursor.month]);

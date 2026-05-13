@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notificationPreferenceService } from '../services/notificationPreferenceService';
-import { useAuth } from '../../features/auth/AuthContext';
+import { useAuth } from '../../features/auth/useAuth';
 import { STALE, GC } from '../constants/query';
 
 const KEY = ['notificationPreferences'];

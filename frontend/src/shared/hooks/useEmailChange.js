@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { STALE } from '../constants/query';
 import { userCredentialService } from '../services/userCredentialService';
-import { useAuth } from '../../features/auth/AuthContext';
+import { useAuth } from '../../features/auth/useAuth';
 
 const PENDING_KEY = ['emailChange', 'pending'];
 

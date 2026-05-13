@@ -75,7 +75,10 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
     }
   }, [navigate, onChange, suggestFn, suggestLabelFn]);
 
-  const handleKeyDown = buildKeyDown(handleSelect);
+  const handleKeyDown = useCallback(
+    (e) => buildKeyDown(handleSelect)(e),
+    [buildKeyDown, handleSelect],
+  );
 
   return (
     <div ref={containerRef} className="relative">

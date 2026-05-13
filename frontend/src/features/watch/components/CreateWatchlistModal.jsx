@@ -1,19 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ListPlus, Tag } from 'lucide-react';
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import { useCreateWatchlist } from '../../../shared/hooks/useWatchlist';
-import { toast } from '../../../shared/components/feedback/Toast';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../../shared/utils/apiError';
 
 export default function CreateWatchlistModal({ isOpen, onClose, onCreated }) {
   const { t } = useTranslation();
   const create = useCreateWatchlist();
   const [name, setName] = useState('');
+  const [wasOpen, setWasOpen] = useState(isOpen);
 
-  useEffect(() => {
-    if (isOpen) setName('');
-  }, [isOpen]);
+  if (isOpen && !wasOpen) {
+    setWasOpen(true);
+    setName('');
+  } else if (!isOpen && wasOpen) {
+    setWasOpen(false);
+  }
 
   const submit = async (e) => {
     e.preventDefault();

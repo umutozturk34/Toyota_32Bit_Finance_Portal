@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Calendar, ChevronRight } from 'lucide-react';
 import { formatDateTimeShort } from '../../../shared/utils/formatters';
-import { getFallbackImage, CategoryBadge } from '../lib/newsConfig.jsx';
+import { CategoryBadge } from '../lib/newsConfig.jsx';
+import { getFallbackImage } from '../lib/newsConfig';
 import Card from '../../../shared/components/card';
 
 const cardVariants = {

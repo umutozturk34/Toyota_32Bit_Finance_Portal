@@ -10,7 +10,7 @@ import {
 } from '../../../shared/hooks/useWatchlist';
 import AddPriceAlertModal from '../components/AddPriceAlertModal';
 import AddWatchlistItemModal from '../components/AddWatchlistItemModal';
-import { toast } from '../../../shared/components/feedback/Toast';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../../shared/utils/apiError';
 import Spinner from '../../../shared/components/feedback/Spinner';
 

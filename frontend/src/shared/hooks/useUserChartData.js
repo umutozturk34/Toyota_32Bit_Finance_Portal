@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { userChartDataService } from '../services/userChartService';
-import { useAuth } from '../../features/auth/AuthContext';
+import { useAuth } from '../../features/auth/useAuth';
 import { STALE, GC } from '../constants/query';
 
 export const CHART_DATA_KEY = (type, code, range) => ['userChartData', type, code, range || 'all'];

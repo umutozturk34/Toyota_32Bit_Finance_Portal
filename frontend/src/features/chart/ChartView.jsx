@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { STALE } from '../../shared/constants/query';
 import { motion } from 'framer-motion';
 import { useSearchParams, useParams, useNavigate, useLocation } from 'react-router-dom';
@@ -33,12 +33,12 @@ const ChartView = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const goBack = useNavigationBack('/market');
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
   const normalizedRouteAssetType = routeAssetType?.toLowerCase();
   const routeType = normalizedRouteAssetType ? ROUTE_TO_ASSET_TYPE[normalizedRouteAssetType] : null;
   const routeSymbolValue = routeSymbol ? decodeURIComponent(routeSymbol) : null;
   const isDetailRoute = Boolean(routeType && routeSymbolValue);
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
   const [assetType, setAssetType] = useState(() => {
     if (routeType) return routeType;
     const params = new URLSearchParams(window.location.search);
@@ -93,9 +93,12 @@ const ChartView = () => {
   });
   const fundList = fundListRaw || [];
 
-  useEffect(() => {
+  const [compareTrackingKey, setCompareTrackingKey] = useState(`${assetType}|${symbol}`);
+  const compareKey = `${assetType}|${symbol}`;
+  if (compareKey !== compareTrackingKey) {
+    setCompareTrackingKey(compareKey);
     setCompareAsset(null);
-  }, [assetType, symbol]);
+  }
 
   const singleAssetType = { CRYPTO: 'CRYPTO', BIST: 'STOCK', FUND: 'FUND' }[assetType];
   const singleCode = symbol && singleAssetType
@@ -106,7 +109,7 @@ const ChartView = () => {
     ? (trackedUniverse[singleKey] || []).some(item => item.assetCode === singleCode)
     : true;
 
-  const { data: singleTracked } = useQuery({
+  useQuery({
     queryKey: ['trackedAsset', singleAssetType, singleCode],
     queryFn: () => trackedAssetService.getOne(singleAssetType, singleCode),
     enabled: !!singleCode && !alreadyTracked,
@@ -139,42 +142,42 @@ const ChartView = () => {
     FOREX: getForexPairs(),
     FUND: trackedFundSymbols.length > 0 ? trackedFundSymbols : fundList.map(f => f.fundCode),
   };
-  useEffect(() => {
+  const urlSyncKey = `${routeType ?? ''}|${routeSymbolValue ?? ''}|${location.search}|${coinId ?? ''}`;
+  const [trackedUrlSyncKey, setTrackedUrlSyncKey] = useState(urlSyncKey);
+  if (urlSyncKey !== trackedUrlSyncKey) {
+    setTrackedUrlSyncKey(urlSyncKey);
     if (routeType && routeSymbolValue) {
       const nextSymbol = routeType === 'BIST' && routeSymbolValue.endsWith('.IS')
         ? routeSymbolValue.replace('.IS', '')
         : routeSymbolValue;
       setAssetType(routeType);
       setSymbol(nextSymbol);
-      return;
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const urlType = params.get('type');
-    let urlSymbol = params.get('symbol');
-    if (urlType && ['BIST', 'CRYPTO', 'FOREX', 'FUND'].includes(urlType)) {
-      if (urlType === 'BIST' && urlSymbol && urlSymbol.endsWith('.IS')) {
-        urlSymbol = urlSymbol.replace('.IS', '');
+    } else {
+      const params = new URLSearchParams(window.location.search);
+      const urlType = params.get('type');
+      let urlSymbol = params.get('symbol');
+      if (urlType && ['BIST', 'CRYPTO', 'FOREX', 'FUND'].includes(urlType)) {
+        if (urlType === 'BIST' && urlSymbol && urlSymbol.endsWith('.IS')) {
+          urlSymbol = urlSymbol.replace('.IS', '');
+        }
+        setAssetType(urlType);
+        if (urlSymbol) setSymbol(urlSymbol);
+      } else if (coinId) {
+        setSymbol(coinId);
+        setAssetType('CRYPTO');
       }
-      setAssetType(urlType);
-      if (urlSymbol) setSymbol(urlSymbol);
-    } else if (coinId) {
-      setSymbol(coinId);
-      setAssetType('CRYPTO');
     }
-  }, [location.search, routeType, routeSymbolValue, coinId, searchParams]);
-  const initialAssetTypeRef = useRef(assetType);
-  useEffect(() => {
-    if (initialAssetTypeRef.current === assetType) {
-      initialAssetTypeRef.current = null;
-      return;
-    }
+  }
+
+  const [trackedAssetType, setTrackedAssetType] = useState(assetType);
+  if (assetType !== trackedAssetType) {
+    setTrackedAssetType(assetType);
     const symbols = presetSymbols[assetType];
     if (symbols && symbols.length > 0 && !symbols.includes(symbol)) {
       setSymbol(symbols[0]);
     }
     setCustomSymbol('');
-  }, [assetType, fundList]);
+  }
   useEffect(() => {
     if (symbol) {
       if (isDetailRoute) {

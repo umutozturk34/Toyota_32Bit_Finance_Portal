@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AlertCircle, ArrowUp, ArrowDown, TrendingUp, TrendingDown,
@@ -7,7 +7,7 @@ import {
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import SearchSuggestions from '../../../shared/components/form/SearchSuggestions';
 import { useCreatePriceAlert } from '../../../shared/hooks/usePriceAlerts';
-import { toast } from '../../../shared/components/feedback/Toast';
+import { toast } from '../../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../../shared/utils/apiError';
 import { currentLocaleTag } from '../../../shared/utils/formatters';
 
@@ -51,28 +51,33 @@ export default function AddPriceAlertModal({
 }) {
   const { t } = useTranslation();
   const create = useCreatePriceAlert();
-  const [selectedAsset, setSelectedAsset] = useState(null);
-  const [direction, setDirection] = useState('ABOVE');
-  const [threshold, setThreshold] = useState('');
-  const [referencePrice, setReferencePrice] = useState('');
 
-  useEffect(() => {
-    if (!isOpen) return;
+  const buildInitialAsset = () =>
+    defaultMarketType && defaultAssetCode
+      ? {
+          type: defaultMarketType,
+          code: defaultAssetCode,
+          name: defaultAssetCode,
+          price: defaultReferencePrice,
+        }
+      : null;
+  const initialRefStr = defaultReferencePrice != null ? String(defaultReferencePrice) : '';
+
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  const [selectedAsset, setSelectedAsset] = useState(buildInitialAsset);
+  const [direction, setDirection] = useState('ABOVE');
+  const [threshold, setThreshold] = useState(initialRefStr);
+  const [referencePrice, setReferencePrice] = useState(initialRefStr);
+
+  if (isOpen && !wasOpen) {
+    setWasOpen(true);
     setDirection('ABOVE');
-    const refStr = defaultReferencePrice != null ? String(defaultReferencePrice) : '';
-    setReferencePrice(refStr);
-    setThreshold(refStr);
-    if (defaultMarketType && defaultAssetCode) {
-      setSelectedAsset({
-        type: defaultMarketType,
-        code: defaultAssetCode,
-        name: defaultAssetCode,
-        price: defaultReferencePrice,
-      });
-    } else {
-      setSelectedAsset(null);
-    }
-  }, [isOpen, defaultMarketType, defaultAssetCode, defaultReferencePrice]);
+    setReferencePrice(initialRefStr);
+    setThreshold(initialRefStr);
+    setSelectedAsset(buildInitialAsset());
+  } else if (!isOpen && wasOpen) {
+    setWasOpen(false);
+  }
 
   const isPercent = direction === 'CHANGE_PCT_UP' || direction === 'CHANGE_PCT_DOWN';
   const requiresReference = isPercent;

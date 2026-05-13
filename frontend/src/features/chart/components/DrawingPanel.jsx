@@ -4,7 +4,7 @@ import {
     TrendingUp, Minus, ArrowDownUp, Pencil,
     Type, Trash2, X, Star,
 } from 'lucide-react';
-import { useTheme } from '../../../shared/context/ThemeContext';
+import { useTheme } from '../../../shared/context/useTheme';
 const DRAWING_TOOLS = [
     { id: 'TREND_LINE', labelKey: 'chart.drawingPanel.tools.trendline', Icon: TrendingUp, color: '#5E6AD2' },
     { id: 'HORIZONTAL_LINE', labelKey: 'chart.drawingPanel.tools.horizontal', Icon: Minus, color: '#f59e0b' },

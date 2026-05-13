@@ -24,7 +24,7 @@ const useChartDrawing = ({
             const time = chart.timeScale().coordinateToTime(x);
             const price = candleSeriesRef.current?.coordinateToPrice(y);
             if (time && price !== null) return { time, price };
-        } catch { }
+        } catch { /* chart not ready */ }
         return null;
     }, []);
 
@@ -35,7 +35,7 @@ const useChartDrawing = ({
             const x = chart.timeScale().timeToCoordinate(time);
             const y = candleSeriesRef.current.priceToCoordinate(price);
             if (x !== null && y !== null) return { x, y };
-        } catch { }
+        } catch { /* chart not ready */ }
         return null;
     }, []);
 

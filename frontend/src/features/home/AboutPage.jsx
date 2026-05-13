@@ -1,7 +1,7 @@
 import { Code, Database, Server, Key, Container } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../shared/context/ThemeContext';
+import { useTheme } from '../../shared/context/useTheme';
 import Card from '../../shared/components/card';
 const containerV = {
   hidden: {},

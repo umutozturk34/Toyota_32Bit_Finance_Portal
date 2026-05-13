@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userPreferenceService } from '../services/userPreferenceService';
-import { useAuth } from '../../features/auth/AuthContext';
+import { useAuth } from '../../features/auth/useAuth';
 import { STALE, GC } from '../constants/query';
 
 const PREFERENCES_KEY = ['userPreferences'];

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { userLayoutService } from '../services/userLayoutService';
-import { useAuth } from '../../features/auth/AuthContext';
+import { useAuth } from '../../features/auth/useAuth';
 import { STALE, GC } from '../constants/query';
 
 const LAYOUT_KEY = ['userLayout'];

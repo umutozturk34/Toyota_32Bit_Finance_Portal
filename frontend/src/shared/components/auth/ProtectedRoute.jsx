@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../../../features/auth/AuthContext';
+import { useAuth } from '../../../features/auth/useAuth';
 import { ShieldOff } from 'lucide-react';
 import Spinner from '../feedback/Spinner';
 const ProtectedRoute = ({ children, requiredRole }) => {

@@ -28,7 +28,7 @@ export default function MarketDataPage() {
   const [deletingIds, setDeletingIds] = useState(() => new Set());
   const [popoverState, setPopoverState] = useState(null);
   const [galleryOpen, setGalleryOpen] = useState(true);
-  const { isLoading: layoutLoading, overview: layout } = useUserLayout();
+  const { isLoading: layoutLoading, overview: layout, error: layoutError, refetch: refetchLayout } = useUserLayout();
   const { isLoading: dataLoading, error, refetch, isFetching, widgets } = useMarketOverview();
   const { byKind: widgetDefsByKind, isLoading: defsLoading, error: defsError, refetch: refetchDefs } = useWidgetDefinitions();
   const { data: watchlists = [] } = useWatchlists({ enabled: editMode });
@@ -144,8 +144,8 @@ export default function MarketDataPage() {
   const toggleGallery = useCallback(() => setGalleryOpen((o) => !o), []);
 
   if (layoutLoading || dataLoading || defsLoading) return <LoadingState message={t('marketOverview.loading')} />;
-  if (error || defsError || widgetDefsByKind.size === 0) {
-    return <ErrorState message={t('marketOverview.error')} onRetry={() => { refetch(); refetchDefs(); }} />;
+  if (error || defsError || layoutError || !layout || widgetDefsByKind.size === 0) {
+    return <ErrorState message={t('marketOverview.error')} onRetry={() => { refetch(); refetchDefs(); refetchLayout(); }} />;
   }
 
   const popoverSection = popoverState ? sections.find((s) => s.sectionId === popoverState.sectionId) : null;

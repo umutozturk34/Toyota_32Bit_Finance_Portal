@@ -23,7 +23,7 @@ function NewsRow({ article, onClick }) {
       className="w-full flex items-start gap-2.5 p-2 rounded-lg hover:bg-surface/60 transition-colors cursor-pointer text-left border-none bg-transparent group"
     >
       {imgSrc
-        ? <img src={imgSrc} alt="" loading="lazy" className="w-12 h-12 rounded-md object-cover shrink-0 ring-1 ring-border-default" />
+        ? <img src={imgSrc} alt="" loading="lazy" decoding="async" fetchpriority="low" width="48" height="48" className="w-12 h-12 rounded-md object-cover shrink-0 ring-1 ring-border-default" />
         : <span className="w-12 h-12 rounded-md bg-surface flex items-center justify-center shrink-0">
             <Newspaper className="h-4 w-4 text-fg-subtle" />
           </span>}

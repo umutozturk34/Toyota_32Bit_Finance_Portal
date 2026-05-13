@@ -97,7 +97,10 @@ export function useUserLayout() {
     enabled: isAuthenticated && !loading,
   });
   const sourceOverview = query.data?.overview;
-  const overview = useMemo(() => normalize(sourceOverview), [sourceOverview]);
+  const overview = useMemo(
+    () => (query.isSuccess ? normalize(sourceOverview) : null),
+    [query.isSuccess, sourceOverview],
+  );
   return { ...query, overview };
 }
 

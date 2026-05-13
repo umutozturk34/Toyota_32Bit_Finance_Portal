@@ -75,7 +75,7 @@ class MarketDataUpdateListenerTest {
         listener().onMarketUpdated(MarketUpdatedEvent.of(MarketType.STOCK, "scheduled-stock-morning"), ack);
 
         ArgumentCaptor<NotificationRequest> captor = ArgumentCaptor.forClass(NotificationRequest.class);
-        verify(dispatcher, times(1)).prepare(captor.capture(), any());
+        verify(dispatcher, times(1)).prepare(captor.capture(), any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
         assertThat(captor.getValue().userSub()).isEqualTo("user-1");
         assertThat(captor.getValue().payload().type().name()).isEqualTo("MARKET_DATA_UPDATED");
         verify(persister).persistBatch(any());
@@ -89,7 +89,7 @@ class MarketDataUpdateListenerTest {
 
         listener().onMarketUpdated(MarketUpdatedEvent.of(MarketType.STOCK, "scheduler"), ack);
 
-        verify(dispatcher, never()).prepare(any(), any());
+        verify(dispatcher, never()).prepare(any(), any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
         verify(persister, never()).persistBatch(any());
         verify(ack).acknowledge();
     }
@@ -105,7 +105,7 @@ class MarketDataUpdateListenerTest {
                 .hasMessage("DB down");
 
         verify(ack, never()).acknowledge();
-        verify(dispatcher, never()).prepare(any(), any());
+        verify(dispatcher, never()).prepare(any(), any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
     }
 
     @Test
@@ -120,7 +120,7 @@ class MarketDataUpdateListenerTest {
         subject.onMarketUpdated(event, ack);
         subject.onMarketUpdated(event, ack);
 
-        verify(dispatcher, times(1)).prepare(any(), any());
+        verify(dispatcher, times(1)).prepare(any(), any(), any(), org.mockito.ArgumentMatchers.anyBoolean());
         verify(ack, times(2)).acknowledge();
     }
 }

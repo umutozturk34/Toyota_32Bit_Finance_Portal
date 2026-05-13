@@ -113,6 +113,21 @@ class PriceAlertServiceUnitTest {
     }
 
     @Test
+    void create_raises_whenActiveDuplicateExists() {
+        when(repository.countByUserSub("user-1")).thenReturn(0L);
+        TrackedAsset trackedAsset = tracked();
+        when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(eq(TrackedAssetType.STOCK), anyString()))
+                .thenReturn(Optional.of(trackedAsset));
+        when(repository.existsByUserSubAndTrackedAsset_IdAndDirectionAndThresholdAndActiveTrue(
+                eq("user-1"), eq(trackedAsset.getId()), any(), any()))
+                .thenReturn(true);
+
+        assertThatThrownBy(() -> service.create("user-1", createRequest()))
+                .isInstanceOf(BadRequestException.class);
+        verify(repository, never()).save(any());
+    }
+
+    @Test
     void list_returnsEmptyPage_whenAlertsEmpty() {
         when(repository.findByUserSubOrderByCreatedAtDesc(eq("user-1"), any(PageRequest.class)))
                 .thenReturn(Page.empty());

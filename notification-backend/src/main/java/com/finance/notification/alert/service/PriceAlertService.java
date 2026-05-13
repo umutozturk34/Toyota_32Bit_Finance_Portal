@@ -47,6 +47,12 @@ public class PriceAlertService {
             throw new BadRequestException("error.priceAlert.maxReached", maxPerUser);
         }
         TrackedAsset trackedAsset = requireTrackedAsset(request.marketType(), request.assetCode());
+        if (repository.existsByUserSubAndTrackedAsset_IdAndDirectionAndThresholdAndActiveTrue(
+                userSub, trackedAsset.getId(), request.direction(), request.threshold())) {
+            throw new BadRequestException("error.priceAlert.duplicate",
+                    request.marketType(), trackedAsset.getAssetCode(),
+                    request.direction(), request.threshold());
+        }
         PriceAlert entity = mapper.toEntity(request, userSub);
         entity.setTrackedAsset(trackedAsset);
         entity.setAssetCode(trackedAsset.getAssetCode());

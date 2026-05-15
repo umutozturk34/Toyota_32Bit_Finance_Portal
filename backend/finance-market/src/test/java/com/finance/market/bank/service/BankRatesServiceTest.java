@@ -33,7 +33,15 @@ class BankRatesServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new BankRatesService(List.of(provider), repository);
+        service = new BankRatesService(List.of(provider), repository, null);
+        java.lang.reflect.Field selfField;
+        try {
+            selfField = BankRatesService.class.getDeclaredField("self");
+            selfField.setAccessible(true);
+            selfField.set(service, service);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static BankRateSnapshot snap(String bankCode, String currency, BankRateAssetKind kind,

@@ -45,7 +45,7 @@ public class BankExchangeRate {
     @Column(name = "bank_logo_url", length = 512)
     private String bankLogoUrl;
 
-    @Column(name = "currency_code", nullable = false, length = 16)
+    @Column(name = "currency_code", nullable = false, length = 32)
     private String currencyCode;
 
     @Column(name = "currency_name", length = 64)

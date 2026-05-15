@@ -27,24 +27,40 @@ import java.util.Map;
 public class DovizComBankRateProvider implements BankRateProvider {
 
     private static final String SOURCE = "DOVIZ_COM";
-    private static final String ANCHOR_BANK_SLUG = "garanti-bbva";
+    private static final String DEFAULT_ANCHOR = "garanti-bbva";
     private static final String MARKET_BANK_CODE = "MARKET";
     private static final String MARKET_BANK_NAME = "Piyasa";
 
     private static final Map<String, String[]> CURRENCIES = new LinkedHashMap<>();
     static {
-        CURRENCIES.put("USD", new String[]{"amerikan-dolari", "Amerikan Doları"});
-        CURRENCIES.put("EUR", new String[]{"euro", "Euro"});
-        CURRENCIES.put("GBP", new String[]{"sterlin", "İngiliz Sterlini"});
-        CURRENCIES.put("CHF", new String[]{"isvicre-frangi", "İsviçre Frangı"});
-        CURRENCIES.put("CAD", new String[]{"kanada-dolari", "Kanada Doları"});
-        CURRENCIES.put("AUD", new String[]{"avustralya-dolari", "Avustralya Doları"});
-        CURRENCIES.put("JPY", new String[]{"japon-yeni", "Japon Yeni"});
-        CURRENCIES.put("SAR", new String[]{"suudi-arabistan-riyali", "Suudi Arabistan Riyali"});
-        CURRENCIES.put("CNY", new String[]{"cin-yuani", "Çin Yuanı"});
-        CURRENCIES.put("DKK", new String[]{"danimarka-kronu", "Danimarka Kronu"});
-        CURRENCIES.put("SEK", new String[]{"isvec-kronu", "İsveç Kronu"});
-        CURRENCIES.put("NOK", new String[]{"norvec-kronu", "Norveç Kronu"});
+        CURRENCIES.put("USD", new String[]{"amerikan-dolari", "Amerikan Doları", DEFAULT_ANCHOR});
+        CURRENCIES.put("EUR", new String[]{"euro", "Euro", DEFAULT_ANCHOR});
+        CURRENCIES.put("GBP", new String[]{"sterlin", "İngiliz Sterlini", DEFAULT_ANCHOR});
+        CURRENCIES.put("CHF", new String[]{"isvicre-frangi", "İsviçre Frangı", DEFAULT_ANCHOR});
+        CURRENCIES.put("CAD", new String[]{"kanada-dolari", "Kanada Doları", DEFAULT_ANCHOR});
+        CURRENCIES.put("AUD", new String[]{"avustralya-dolari", "Avustralya Doları", DEFAULT_ANCHOR});
+        CURRENCIES.put("JPY", new String[]{"japon-yeni", "Japon Yeni", DEFAULT_ANCHOR});
+        CURRENCIES.put("SAR", new String[]{"suudi-arabistan-riyali", "Suudi Arabistan Riyali", DEFAULT_ANCHOR});
+        CURRENCIES.put("CNY", new String[]{"cin-yuani", "Çin Yuanı", DEFAULT_ANCHOR});
+        CURRENCIES.put("DKK", new String[]{"danimarka-kronu", "Danimarka Kronu", DEFAULT_ANCHOR});
+        CURRENCIES.put("SEK", new String[]{"isvec-kronu", "İsveç Kronu", DEFAULT_ANCHOR});
+        CURRENCIES.put("NOK", new String[]{"norvec-kronu", "Norveç Kronu", DEFAULT_ANCHOR});
+        CURRENCIES.put("RUB", new String[]{"rus-rublesi", "Rus Rublesi", "akbank"});
+        CURRENCIES.put("QAR", new String[]{"katar-riyali", "Katar Riyali", "akbank"});
+        CURRENCIES.put("KWD", new String[]{"kuveyt-dinari", "Kuveyt Dinarı", "akbank"});
+        CURRENCIES.put("AED", new String[]{"birlesik-arap-emirlikleri-dirhemi", "BAE Dirhemi", "akbank"});
+        CURRENCIES.put("ZAR", new String[]{"guney-afrika-randi", "Güney Afrika Randı", "akbank"});
+        CURRENCIES.put("HKD", new String[]{"hong-kong-dolari", "Hong Kong Doları", "akbank"});
+        CURRENCIES.put("PLN", new String[]{"polonya-zlotisi", "Polonya Zlotisi", "akbank"});
+        CURRENCIES.put("RON", new String[]{"romen-leyi", "Romen Leyi", "akbank"});
+        CURRENCIES.put("SGD", new String[]{"singapur-dolari", "Singapur Doları", "denizbank"});
+        CURRENCIES.put("NZD", new String[]{"yeni-zelanda-dolari", "Yeni Zelanda Doları", "denizbank"});
+        CURRENCIES.put("CZK", new String[]{"cek-korunasi", "Çek Korunası", "denizbank"});
+        CURRENCIES.put("HUF", new String[]{"macar-forinti", "Macar Forinti", "denizbank"});
+        CURRENCIES.put("INR", new String[]{"hindistan-rupisi", "Hindistan Rupisi", "denizbank"});
+        CURRENCIES.put("THB", new String[]{"tayland-bahti", "Tayland Bahti", "denizbank"});
+        CURRENCIES.put("MXN", new String[]{"meksika-pesosu", "Meksika Pesosu", "denizbank"});
+        CURRENCIES.put("BRL", new String[]{"brezilya-reali", "Brezilya Reali", "denizbank"});
     }
 
     private static final Map<String, String[]> GOLDS = new LinkedHashMap<>();
@@ -99,7 +115,8 @@ public class DovizComBankRateProvider implements BankRateProvider {
             String code = e.getKey();
             String slug = e.getValue()[0];
             String displayName = e.getValue()[1];
-            String url = currencyBaseUrl + "/" + ANCHOR_BANK_SLUG + "/" + slug;
+            String anchor = e.getValue().length > 2 ? e.getValue()[2] : DEFAULT_ANCHOR;
+            String url = currencyBaseUrl + "/" + anchor + "/" + slug;
             result.addAll(scrape(url, code, displayName, BankRateAssetKind.CURRENCY));
         }
         for (Map.Entry<String, String[]> e : GOLDS.entrySet()) {

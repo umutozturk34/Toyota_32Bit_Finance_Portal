@@ -91,7 +91,9 @@ export default function ViopPage() {
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <h3 className="truncate text-sm font-semibold text-fg">{contract.code}</h3>
-            <span className="block truncate text-xs text-fg-muted">{contract.name}</span>
+            {contract.name && contract.name !== contract.code && (
+              <span className="block truncate text-xs text-fg-muted">{contract.name}</span>
+            )}
           </div>
           {tradeable && (
             <div className="shrink-0">

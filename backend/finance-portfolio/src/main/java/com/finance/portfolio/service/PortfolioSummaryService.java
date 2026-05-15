@@ -86,6 +86,29 @@ public class PortfolioSummaryService {
                 : BigDecimal.ZERO;
         String statusTag = closed ? " · KAPALI" : "";
         String name = position.getDirection().name() + " · " + position.getViopContract().getSymbol() + statusTag;
+        String kindName = position.getViopContract().getKind() != null
+                ? position.getViopContract().getKind().name() : null;
+        BigDecimal strike = position.getViopContract().getStrikePrice();
+        BigDecimal maxLoss = null;
+        BigDecimal maxGain = null;
+        if ("OPTION".equals(kindName)) {
+            if (position.getDirection().name().equals("LONG")) {
+                maxLoss = entryNotional;
+            } else {
+                maxGain = entryNotional;
+            }
+        }
+        com.finance.portfolio.dto.response.DerivativeMeta meta = new com.finance.portfolio.dto.response.DerivativeMeta(
+                position.getDirection().name(),
+                kindName,
+                position.getViopContract().getContractSize(),
+                position.lockedMargin(),
+                position.getViopContract().getExpiryDate(),
+                position.getViopContract().getCurrency(),
+                closed,
+                strike,
+                maxLoss,
+                maxGain);
         return new PositionResponse(
                 position.getId(),
                 AssetType.VIOP.name(),
@@ -99,7 +122,8 @@ public class PortfolioSummaryService {
                 entryNotional,
                 marketValue,
                 pnl,
-                pnlPercent);
+                pnlPercent,
+                meta);
     }
 
     /**

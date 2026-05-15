@@ -35,6 +35,71 @@ function formatEntryDate(dateStr, localeTag) {
   return new Date(dateStr).toLocaleDateString(localeTag, { day: '2-digit', month: 'short', year: '2-digit' });
 }
 
+function DerivativeChips({ meta, money, t, localeTag }) {
+  if (!meta) return null;
+  const isLong = meta.direction === 'LONG';
+  const formatExpiry = (iso) => {
+    if (!iso) return null;
+    return new Date(iso).toLocaleDateString(localeTag, { day: '2-digit', month: 'short', year: '2-digit' });
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+      <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide border ${
+        isLong
+          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+          : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+      }`}>
+        {meta.direction}
+      </span>
+      {meta.contractKind && (
+        <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-mono text-fg-muted bg-bg-elevated border border-border-default">
+          {meta.contractKind}
+        </span>
+      )}
+      {meta.contractSize != null && Number(meta.contractSize) !== 1 && (
+        <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-mono text-fg-muted bg-bg-elevated border border-border-default">
+          {Number(meta.contractSize).toLocaleString(localeTag)}×
+        </span>
+      )}
+      {meta.lockedMarginTry != null && (
+        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] text-accent bg-accent/10 border border-accent/30">
+          <span className="font-bold uppercase tracking-wide">{t('portfolio.derivatives.margin', 'Teminat')}</span>
+          <span className="font-mono">{money(meta.lockedMarginTry)}</span>
+        </span>
+      )}
+      {meta.expiryDate && (
+        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] text-fg-muted bg-bg-elevated border border-border-default">
+          <span className="font-bold uppercase tracking-wide">{t('portfolio.derivatives.expiry', 'Vade')}</span>
+          <span className="font-mono">{formatExpiry(meta.expiryDate)}</span>
+        </span>
+      )}
+      {meta.strikePrice != null && (
+        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] text-fg-muted bg-bg-elevated border border-border-default">
+          <span className="font-bold uppercase tracking-wide">{t('portfolio.derivatives.strike', 'Strike')}</span>
+          <span className="font-mono">{money(meta.strikePrice)}</span>
+        </span>
+      )}
+      {meta.maxLossTry != null && (
+        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] text-rose-400 bg-rose-500/10 border border-rose-500/30">
+          <span className="font-bold uppercase tracking-wide">{t('portfolio.derivatives.maxLoss', 'Max Kayıp')}</span>
+          <span className="font-mono">{money(meta.maxLossTry)}</span>
+        </span>
+      )}
+      {meta.maxGainTry != null && (
+        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30">
+          <span className="font-bold uppercase tracking-wide">{t('portfolio.derivatives.maxGain', 'Max Kazanç')}</span>
+          <span className="font-mono">{money(meta.maxGainTry)}</span>
+        </span>
+      )}
+      {meta.currency && meta.currency !== 'TRY' && (
+        <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-mono text-fg-muted bg-bg-elevated border border-border-default">
+          {meta.currency}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function PositionsTable({ portfolioId, onAssetClick: assetClickProp, onEditClick: editClickProp, onDeleteClick: deleteClickProp, onCloseClick: closeClickProp }) {
   const { t } = useTranslation();
   const listParams = useListParams({ defaultSize: 8, prefix: 'pos' });
@@ -94,7 +159,7 @@ export default function PositionsTable({ portfolioId, onAssetClick: assetClickPr
           </button>
         ))}
       </div>
-      <div className="hidden lg:grid lg:grid-cols-[1.3fr_0.7fr_1fr_1fr_1fr_1fr_1.2fr_72px_20px] gap-2 px-4 py-2 text-xs text-fg-muted font-medium">
+      <div className="hidden lg:grid lg:grid-cols-[1.8fr_0.6fr_0.9fr_0.9fr_0.9fr_0.9fr_1.1fr_72px_20px] gap-2 px-4 py-2 text-xs text-fg-muted font-medium">
         <span>{t('portfolio.positions.assetCol')}</span>
         <span className="text-right">{t('portfolio.positions.quantityCol')}</span>
         <span className="text-right">{t('portfolio.positions.entryDateCol')}</span>
@@ -131,6 +196,28 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
   const assetTypeLabel = t(`assets.labels.${pos.assetType}`, { defaultValue: pos.assetType });
   const isDerivative = pos.assetType === 'VIOP';
   const isClosedDerivative = isDerivative && pos.assetName && pos.assetName.includes('KAPALI');
+  const derivativeName = (() => {
+    if (!isDerivative) return null;
+    const meta = pos.derivative;
+    if (!meta) return null;
+    const parts = [];
+    if (pos.assetCode) {
+      const m = pos.assetCode.match(/^[OF]_([A-Z0-9]+?)(?:E?\d|$)/);
+      if (m) parts.push(m[1]);
+    }
+    if (meta.contractKind === 'OPTION') {
+      if (pos.assetCode?.includes('_C')) parts.push(t('portfolio.derivatives.call', 'Call'));
+      else if (pos.assetCode?.includes('_P')) parts.push(t('portfolio.derivatives.put', 'Put'));
+      else parts.push('Option');
+    } else if (meta.contractKind === 'FUTURE') {
+      parts.push(t('portfolio.derivatives.future', 'Vadeli'));
+    }
+    if (meta.expiryDate) {
+      const d = new Date(meta.expiryDate);
+      parts.push(d.toLocaleDateString(localeTag, { day: '2-digit', month: 'short', year: '2-digit' }));
+    }
+    return parts.length > 0 ? parts.join(' · ') : null;
+  })();
   const displayName = pos.assetName && pos.assetName !== pos.assetCode
     ? pos.assetName.replace(/\s·\sKAPALI$/, '')
     : assetTypeLabel;
@@ -176,12 +263,14 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
         </>
       )}
       <div className={pending ? 'pt-7 opacity-50' : ''}>
-      <div className="hidden lg:grid lg:grid-cols-[1.3fr_0.7fr_1fr_1fr_1fr_1fr_1.2fr_72px_20px] gap-2 items-center p-4 min-w-0">
+      <div className="hidden lg:grid lg:grid-cols-[1.8fr_0.6fr_0.9fr_0.9fr_0.9fr_0.9fr_1.1fr_72px_20px] gap-2 items-center p-4 min-w-0">
         <div className="flex items-center gap-2.5 cursor-pointer min-w-0" onClick={assetClick}>
           <AssetBadge pos={pos} />
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <p className="text-sm font-semibold text-fg leading-tight truncate">{assetCodeLabel(pos.assetType, pos.assetCode)}</p>
+            <div className="flex items-start gap-1.5 flex-wrap">
+              <p className={`font-semibold text-fg leading-tight ${isDerivative ? 'text-xs break-all' : 'text-sm truncate'}`}>
+                {assetCodeLabel(pos.assetType, pos.assetCode)}
+              </p>
               {isDerivative && (
                 <span className={`shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
                   isClosedDerivative
@@ -192,7 +281,15 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-fg-muted truncate">{displayName}</p>
+            {!isDerivative && (
+              <p className="text-[11px] text-fg-muted truncate">{displayName}</p>
+            )}
+            {isDerivative && derivativeName && (
+              <p className="text-[11px] text-fg-muted truncate">{derivativeName}</p>
+            )}
+            {isDerivative && pos.derivative && (
+              <DerivativeChips meta={pos.derivative} money={money} t={t} localeTag={localeTag} />
+            )}
           </div>
         </div>
         <p className="text-right text-[11px] font-mono text-fg truncate">{Number(pos.quantity).toLocaleString(localeTag, { maximumFractionDigits: 6 })}</p>
@@ -239,7 +336,15 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-fg-muted truncate">{displayName}</p>
+              {!isDerivative && (
+                <p className="text-[11px] text-fg-muted truncate">{displayName}</p>
+              )}
+              {isDerivative && derivativeName && (
+                <p className="text-[11px] text-fg-muted truncate">{derivativeName}</p>
+              )}
+              {isDerivative && pos.derivative && (
+                <DerivativeChips meta={pos.derivative} money={money} t={t} localeTag={localeTag} />
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">

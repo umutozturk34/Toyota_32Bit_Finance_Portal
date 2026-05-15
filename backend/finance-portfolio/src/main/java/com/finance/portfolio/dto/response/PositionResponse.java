@@ -16,5 +16,15 @@ public record PositionResponse(
         BigDecimal entryValueTry,
         BigDecimal marketValueTry,
         BigDecimal pnlTry,
-        BigDecimal pnlPercent
-) {}
+        BigDecimal pnlPercent,
+        DerivativeMeta derivative
+) {
+    public PositionResponse(Long id, String assetType, String assetCode, String assetName,
+                            String assetImage, BigDecimal quantity, LocalDateTime entryDate,
+                            BigDecimal entryPrice, BigDecimal currentPriceTry,
+                            BigDecimal entryValueTry, BigDecimal marketValueTry,
+                            BigDecimal pnlTry, BigDecimal pnlPercent) {
+        this(id, assetType, assetCode, assetName, assetImage, quantity, entryDate, entryPrice,
+                currentPriceTry, entryValueTry, marketValueTry, pnlTry, pnlPercent, null);
+    }
+}

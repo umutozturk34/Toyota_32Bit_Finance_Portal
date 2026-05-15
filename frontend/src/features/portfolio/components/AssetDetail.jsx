@@ -267,8 +267,8 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
         initial="hidden"
         animate="show"
         variant="elevated"
-        radius="2xl"
-        padding="lg"
+        radius="xl"
+        padding="md"
         backdropBlur
         className="space-y-3"
       >

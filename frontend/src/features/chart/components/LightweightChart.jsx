@@ -168,10 +168,10 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
 
     if (!data?.candles?.length) {
         return (
-            <div className="flex flex-col items-center justify-center h-80 rounded-xl border border-border-default bg-bg-elevated card-elevated">
+            <Card variant="elevated" radius="xl" padding="lg" backdropBlur interactive={false} className="flex flex-col items-center justify-center h-80">
                 <LineChart className="w-12 h-12 mb-3 text-fg-subtle" />
                 <p className="text-fg-muted text-sm">{t('chart.waitingForData')}</p>
-            </div>
+            </Card>
         );
     }
 

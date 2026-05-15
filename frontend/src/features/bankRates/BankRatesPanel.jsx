@@ -2,13 +2,48 @@ import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Banknote, Clock, Coins, DollarSign, RefreshCw, Search, X } from 'lucide-react';
+import { Banknote, Clock, Coins, Crown, DollarSign, Gem, RefreshCw, Search, Sparkles, X } from 'lucide-react';
 import { useBankRates, useBankRateCurrencies } from './hooks/useBankRates';
 import Card from '../../shared/components/card';
 import Spinner from '../../shared/components/feedback/Spinner';
 import { formatDateTimeShort } from '../../shared/utils/formatters';
 
 const DEFAULT_CURRENCY_BY_KIND = { CURRENCY: 'USD', GOLD: 'GRAM_ALTIN' };
+
+const CURRENCY_COUNTRY = {
+  USD: 'US', EUR: 'EU', GBP: 'GB', CHF: 'CH', CAD: 'CA', AUD: 'AU', JPY: 'JP', SAR: 'SA',
+  CNY: 'CN', DKK: 'DK', SEK: 'SE', NOK: 'NO', RUB: 'RU', QAR: 'QA', KWD: 'KW', AED: 'AE',
+  ZAR: 'ZA', HKD: 'HK', PLN: 'PL', RON: 'RO', SGD: 'SG', NZD: 'NZ', CZK: 'CZ', HUF: 'HU',
+  INR: 'IN', THB: 'TH', MXN: 'MX', BRL: 'BR',
+};
+
+function flagEmoji(currencyCode) {
+  const cc = CURRENCY_COUNTRY[currencyCode];
+  if (!cc) return null;
+  if (cc === 'EU') return '🇪🇺';
+  return String.fromCodePoint(...cc.split('').map(c => 0x1F1E6 + c.charCodeAt(0) - 'A'.charCodeAt(0)));
+}
+
+const GOLD_VISUAL = {
+  GRAM_ALTIN:        { Icon: Coins,    color: 'text-amber-400' },
+  CEYREK_ALTIN:      { Icon: Coins,    color: 'text-amber-400' },
+  YARIM_ALTIN:       { Icon: Coins,    color: 'text-amber-400' },
+  TAM_ALTIN:         { Icon: Coins,    color: 'text-amber-400' },
+  BESLI_ALTIN:       { Icon: Coins,    color: 'text-amber-400' },
+  CUMHURIYET_ALTINI: { Icon: Crown,    color: 'text-amber-500' },
+  HAMIT_ALTIN:       { Icon: Crown,    color: 'text-amber-500' },
+  RESAT_ALTIN:       { Icon: Crown,    color: 'text-amber-500' },
+  ATA_ALTIN:         { Icon: Crown,    color: 'text-amber-500' },
+  GRAM_HAS_ALTIN:    { Icon: Sparkles, color: 'text-yellow-400' },
+  AYAR_14:           { Icon: Gem,      color: 'text-orange-400' },
+  AYAR_18:           { Icon: Gem,      color: 'text-orange-400' },
+  AYAR_22_BILEZIK:   { Icon: Gem,      color: 'text-orange-400' },
+  GUMUS:             { Icon: Coins,    color: 'text-slate-300' },
+};
+
+function goldVisual(code) {
+  return GOLD_VISUAL[code] || { Icon: Coins, tone: 'text-warning bg-warning/15' };
+}
 
 function formatRate(value, localeTag) {
   if (value == null) return '—';
@@ -48,9 +83,9 @@ function BankCard({ row, t, localeTag }) {
         )}
         <div className="min-w-0">
           <p className="text-sm font-semibold text-fg truncate">{displayName}</p>
-          <p className="text-[10px] text-fg-muted truncate font-mono">
-            {isMarket ? t('bankRates.marketHint') : row.bankCode}
-          </p>
+          {isMarket && (
+            <p className="text-[10px] text-fg-muted truncate">{t('bankRates.marketHint')}</p>
+          )}
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -72,17 +107,24 @@ function BankCard({ row, t, localeTag }) {
   );
 }
 
-function FilterItem({ active, label, code, count, onClick, showCode = true }) {
+function FilterItem({ active, label, code, count, onClick, showCode = true, kind }) {
+  const isGold = kind === 'GOLD';
+  const flag = isGold ? null : flagEmoji(code);
+  const goldIcon = isGold ? goldVisual(code) : null;
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-left text-sm transition-all border ${
+      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-all border ${
         active
           ? 'bg-accent/15 border-accent/40 text-accent font-semibold'
           : 'bg-transparent border-transparent text-fg-muted hover:text-fg hover:bg-surface'
       }`}
     >
-      <div className="min-w-0">
+      {flag && <span className="shrink-0 text-lg leading-none">{flag}</span>}
+      {goldIcon && (
+        <goldIcon.Icon className={`shrink-0 h-5 w-5 ${goldIcon.color}`} fill="currentColor" stroke="currentColor" strokeWidth={1.2} strokeLinejoin="round" />
+      )}
+      <div className="min-w-0 flex-1">
         <p className="truncate">{label}</p>
         {showCode && (
           <p className="text-[10px] font-mono opacity-70">{code}</p>
@@ -123,7 +165,12 @@ export default function BankRatesPanel() {
   const { data: rates = [], isLoading: ratesLoading, isFetching, refetch } = useBankRates({ currency, kind });
 
   const orderedCurrencies = useMemo(() => {
-    const known = ['USD', 'EUR', 'GBP', 'CHF', 'SAR', 'AUD', 'CAD', 'JPY', 'CNY', 'DKK', 'SEK', 'NOK'];
+    const known = [
+      'USD', 'EUR', 'GBP', 'CHF', 'SAR', 'AUD', 'CAD', 'JPY',
+      'CNY', 'DKK', 'SEK', 'NOK',
+      'RUB', 'QAR', 'KWD', 'AED', 'ZAR', 'HKD', 'PLN', 'RON',
+      'SGD', 'NZD', 'CZK', 'HUF', 'INR', 'THB', 'MXN', 'BRL',
+    ];
     const goldOrder = [
       'GRAM_ALTIN', 'CEYREK_ALTIN', 'YARIM_ALTIN', 'TAM_ALTIN', 'ATA_ALTIN',
       'CUMHURIYET_ALTINI', 'HAMIT_ALTIN', 'RESAT_ALTIN', 'BESLI_ALTIN', 'GRAM_HAS_ALTIN',
@@ -200,6 +247,14 @@ export default function BankRatesPanel() {
           </button>
         </div>
 
+        <div className="flex items-center justify-between px-1 text-[10px] font-mono text-fg-muted">
+          <span>
+            {kind === 'GOLD'
+              ? t('bankRates.goldCount', { count: filteredCurrencies.length, total: orderedCurrencies.length })
+              : t('bankRates.currencyCount', { count: filteredCurrencies.length, total: orderedCurrencies.length })}
+          </span>
+        </div>
+
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-muted pointer-events-none" />
           <input
@@ -231,6 +286,7 @@ export default function BankRatesPanel() {
               code={code}
               label={labelFor(code)}
               showCode={kind !== 'GOLD'}
+              kind={kind}
               onClick={() => setCurrency(code)}
             />
           ))}
@@ -245,9 +301,21 @@ export default function BankRatesPanel() {
       <div className="flex-1 flex flex-col gap-4 min-w-0">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className={`flex items-center justify-center w-10 h-10 rounded-xl ${kind === 'GOLD' ? 'bg-warning/15 text-warning' : 'bg-accent/15 text-accent'}`}>
-              {kind === 'GOLD' ? <Coins className="h-5 w-5" /> : <Banknote className="h-5 w-5" />}
-            </div>
+            {kind === 'GOLD' ? (
+              (() => {
+                const gv = goldVisual(currency);
+                const GIcon = gv.Icon;
+                return (
+                  <GIcon className={`h-8 w-8 ${gv.color}`} fill="currentColor" stroke="currentColor" strokeWidth={1.2} strokeLinejoin="round" />
+                );
+              })()
+            ) : flagEmoji(currency) ? (
+              <span className="text-3xl leading-none">{flagEmoji(currency)}</span>
+            ) : (
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/15 text-accent">
+                <Banknote className="h-5 w-5" />
+              </div>
+            )}
             <div>
               <h2 className="text-lg font-bold text-fg">
                 {labelFor(currency)}

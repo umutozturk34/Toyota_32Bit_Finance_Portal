@@ -10,11 +10,12 @@ export const DIRECTION_META = {
 };
 
 const ROUTE_BY_TYPE = {
-  CRYPTO: (code) => `/crypto/${code}`,
-  STOCK: (code) => `/stocks/${code}`,
-  FOREX: (code) => `/forex/${code}`,
-  FUND: (code) => `/funds/${code}`,
-  COMMODITY: (code) => `/commodities/${code}`,
+  CRYPTO: (code) => `/crypto/${encodeURIComponent(code)}`,
+  STOCK: (code) => `/stocks/${encodeURIComponent(code)}`,
+  FOREX: (code) => `/forex/${encodeURIComponent(code)}`,
+  FUND: (code) => `/funds/${encodeURIComponent(code)}`,
+  COMMODITY: (code) => `/commodities/${encodeURIComponent(code)}`,
+  VIOP: (code) => `/viop/${encodeURIComponent(code)}`,
   BOND: () => '/bonds',
 };
 

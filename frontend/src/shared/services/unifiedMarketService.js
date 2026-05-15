@@ -3,6 +3,7 @@ import api from './api';
 const ASSETS = '/market';
 
 const PERIOD_MAP = {
+  '1W': 'ONE_WEEK',
   '1M': 'ONE_MONTH',
   '3M': 'THREE_MONTHS',
   '6M': 'SIX_MONTHS',

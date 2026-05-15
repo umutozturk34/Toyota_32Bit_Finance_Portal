@@ -5,14 +5,16 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Search, X } from 'lucide-react';
 import { ASSET_TYPE_COLORS } from '../../constants/assetTypes';
-import { formatPriceTRY, getChangeClass, changeColors } from '../../utils/formatters';
+import { getChangeClass, changeColors } from '../../utils/formatters';
+import { useMoney } from '../../hooks/useMoney';
 import { assetCodeLabel } from '../../utils/assetCode';
 import useSearchSuggestions from '../../hooks/useSearchSuggestions';
 
-const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
 
 export default function SearchInput({ value, onChange, placeholder, debounceMs = 400, withSuggestions = false, filterType, suggestFn, suggestLabelFn }) {
   const { t } = useTranslation();
+  const { format: money } = useMoney();
   const navigate = useNavigate();
   const placeholderText = placeholder ?? t('common.searchEllipsis');
   const [local, setLocal] = useState(value || '');
@@ -160,7 +162,7 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
                       </div>
                       {(asset.price != null || asset.baseIndex != null) && (
                         <div className="text-right shrink-0">
-                          <p className="text-xs font-mono font-semibold text-fg">{formatPriceTRY(asset.price ?? asset.baseIndex)}</p>
+                          <p className="text-xs font-mono font-semibold text-fg">{money(asset.price ?? asset.baseIndex)}</p>
                           {asset.changePercent != null && (
                             <span className={`text-[10px] font-mono ${changeColors[cls]}`}>
                               {asset.changePercent > 0 ? '+' : ''}{asset.changePercent?.toFixed(2)}%

@@ -10,7 +10,7 @@ import {
   Newspaper, BarChart3, TrendingUp, Bitcoin,
   DollarSign, Shield,
   LogOut, Briefcase, Activity, Settings, Bell, Eye,
-  ChevronLeft, ChevronRight, Menu, Landmark, Wallet, Database, Gem, Users,
+  ChevronLeft, ChevronRight, Menu, Landmark, Wallet, Database, Gem, Users, Layers,
 } from 'lucide-react';
 import TasksPanel from '../../features/admin/components/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
@@ -31,6 +31,7 @@ const navItems = [
   { to: '/funds', labelKey: 'nav.funds', Icon: Briefcase },
   { to: '/commodities', labelKey: 'nav.commodities', Icon: Gem },
   { to: '/bonds', labelKey: 'nav.bonds', Icon: Landmark },
+  { to: '/viop', labelKey: 'nav.viop', Icon: Layers },
   { to: '/portfolio', labelKey: 'nav.portfolio', Icon: Wallet },
   { to: '/watch', labelKey: 'nav.watch', Icon: Eye },
 ];

@@ -17,6 +17,7 @@ import LightweightChart from '../../../features/chart/components/LightweightChar
 import AssetActionsBar from '../../../features/watch/components/AssetActionsBar';
 import MarketStatusBadge from '../layout/MarketStatusBadge';
 import { transformCandles, transformFundCandles } from '../../utils/candleTransform';
+import { useRateHistory } from '../../hooks/useRateHistory';
 
 function extractCurrentPrice(asset) {
   if (!asset) return null;
@@ -26,6 +27,47 @@ function extractCurrentPrice(asset) {
 const TRANSFORM_MAP = {
   FUND: transformFundCandles,
 };
+
+const CANDLE_MONEY_FIELDS = [
+  'open', 'high', 'low', 'close',
+  'sellingPrice', 'buyingPrice', 'effectiveBuyingPrice', 'effectiveSellingPrice', 'bulletinPrice',
+];
+
+function naturalCurrencyFor(assetType, asset) {
+  if (assetType === 'VIOP') return asset?.metadata?.currency || 'TRY';
+  if (assetType === 'CRYPTO') return 'USD';
+  if (assetType === 'COMMODITY' && asset?.code && asset.code.toUpperCase().endsWith('USD')) return 'USD';
+  return 'TRY';
+}
+
+function convertCandleSet(data, convertAt, baseCurrency, naturalCurrency) {
+  if (!data?.candles) return data;
+  return {
+    ...data,
+    candles: data.candles.map((candle) => {
+      const date = candle.candleDate || candle.date;
+      const next = { ...candle };
+      for (const field of CANDLE_MONEY_FIELDS) {
+        if (next[field] != null) next[field] = convertAt(next[field], baseCurrency, date, naturalCurrency);
+      }
+      return next;
+    }),
+  };
+}
+
+const RANGE_DAYS = { '1W': 7, '1M': 31, '3M': 93, '6M': 186, '1Y': 372, '5Y': 1830 };
+const CLIENT_FILTER_RANGES = new Set(['1W', '1M', '3M', '6M', '1Y']);
+
+function filterCandlesClientSide(candles, range) {
+  if (!Array.isArray(candles) || candles.length === 0) return candles;
+  if (range === 'ALL' || !RANGE_DAYS[range]) return candles;
+  const cutoffMs = Date.now() - RANGE_DAYS[range] * 24 * 60 * 60 * 1000;
+  return candles.filter((c) => {
+    const ts = c.candleDate || c.date;
+    if (!ts) return false;
+    return new Date(ts).getTime() >= cutoffMs;
+  });
+}
 
 export default function AssetDetailPage({
   assetCode,
@@ -43,8 +85,11 @@ export default function AssetDetailPage({
   getBuyProps,
   showBuyButton = true,
   excludeCompare = [],
+  buyModalComponent: BuyModalComponent = MarketAddPositionModal,
+  clientSideRangeFilter = false,
 }) {
   const { t } = useTranslation();
+  const { convertAt } = useRateHistory();
   const goBack = useNavigationBack(backRoute);
   const resolvedLoading = loadingMessage ?? t('marketDetail.loading');
   const resolvedError = errorMessage ?? t('marketDetail.error');
@@ -52,17 +97,23 @@ export default function AssetDetailPage({
   const [buyOpen, setBuyOpen] = useState(false);
   const [compareAsset, setCompareAsset] = useState(null);
   const [timeRange, setTimeRange] = useChartRange();
+  const effectiveRange = clientSideRangeFilter && !CLIENT_FILTER_RANGES.has(timeRange) ? '1Y' : timeRange;
 
   const { data: asset, isLoading, isFetching, error, refetch: refetchAsset } = useQuery({
     queryKey: [queryKeyPrefix, assetCode],
     queryFn: () => fetchAsset(assetCode),
   });
 
+  const fetchRange = clientSideRangeFilter ? '5Y' : timeRange;
   const { data: historyRaw } = useQuery({
-    queryKey: [`${queryKeyPrefix}History`, assetCode, timeRange],
-    queryFn: () => fetchHistory(assetCode, timeRange),
+    queryKey: [`${queryKeyPrefix}History`, assetCode, fetchRange],
+    queryFn: () => fetchHistory(assetCode, fetchRange),
     placeholderData: (prev) => prev,
   });
+  const filteredHistoryRaw = useMemo(
+    () => (clientSideRangeFilter ? filterCandlesClientSide(historyRaw, effectiveRange) : historyRaw),
+    [historyRaw, effectiveRange, clientSideRangeFilter],
+  );
 
   const compareSymbol = compareAsset?.code || null;
 
@@ -74,7 +125,16 @@ export default function AssetDetailPage({
   });
 
   const transform = TRANSFORM_MAP[assetType] || transformCandles;
-  const chartData = useMemo(() => transform(historyRaw), [historyRaw, assetType]);
+  const baseCurrency = asset?.metadata?.currency || 'TRY';
+  const naturalCurrency = naturalCurrencyFor(assetType, asset);
+  const chartData = useMemo(
+    () => convertCandleSet(transform(filteredHistoryRaw), convertAt, baseCurrency, naturalCurrency),
+    [filteredHistoryRaw, transform, convertAt, baseCurrency, naturalCurrency],
+  );
+  const convertedCompareData = useMemo(
+    () => convertCandleSet(compareData, convertAt, 'TRY', 'TRY'),
+    [compareData, convertAt],
+  );
 
   if (isLoading) return <LoadingState message={resolvedLoading} />;
   if (error || !asset) {
@@ -147,14 +207,14 @@ export default function AssetDetailPage({
         data={chartData}
         symbol={assetCode}
         assetType={chartAssetType || assetType}
-        compareData={compareData}
+        compareData={convertedCompareData}
         compareSymbol={compareSymbol}
-        timeRange={timeRange}
+        timeRange={effectiveRange}
         onTimeRangeChange={setTimeRange}
       />
 
       {buyOpen && buyProps && (
-        <MarketAddPositionModal
+        <BuyModalComponent
           {...buyProps}
           onClose={() => setBuyOpen(false)}
           onComplete={() => setBuyOpen(false)}

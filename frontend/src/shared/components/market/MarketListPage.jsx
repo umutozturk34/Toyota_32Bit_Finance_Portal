@@ -42,6 +42,7 @@ export default function MarketListPage({
   preGridChildren,
   filterShowAll = true,
   animatePresence = false,
+  buyModalComponent: BuyModalComponent = MarketAddPositionModal,
 }) {
   const { t } = useTranslation();
   const { hasRole } = useAuth();
@@ -156,12 +157,13 @@ export default function MarketListPage({
       <Pagination page={listParams.page} totalPages={totalPages} onPageChange={listParams.setPage} />
 
       {buyTarget && (
-        <MarketAddPositionModal
+        <BuyModalComponent
           assetType={marketType}
           assetCode={buyTarget.assetCode}
           assetName={buyTarget.assetName}
           assetImage={buyTarget.assetImage}
           currentPrice={buyTarget.price}
+          metadata={buyTarget.metadata}
           onClose={() => setBuyTarget(null)}
           onComplete={() => setBuyTarget(null)}
         />

@@ -10,6 +10,7 @@ export default function useListParams({ defaultDirection = 'desc', defaultSize =
   const direction = searchParams.get(`${p}dir`) || defaultDirection;
   const page = Number(searchParams.get(`${p}page`)) || 0;
   const filter = searchParams.get(`${p}filter`) || null;
+  const subFilter = searchParams.get(`${p}sub`) || null;
 
   const update = useCallback((updates) => {
     setSearchParams((prev) => {
@@ -28,6 +29,7 @@ export default function useListParams({ defaultDirection = 'desc', defaultSize =
   const handleDirection = useCallback((v) => update({ dir: v, page: 0 }), [update]);
   const handlePage = useCallback((v) => update({ page: v }), [update]);
   const handleFilter = useCallback((v) => update({ filter: v, page: 0 }), [update]);
+  const handleSubFilter = useCallback((v) => update({ sub: v, page: 0 }), [update]);
 
   const params = useMemo(() => ({
     ...(search && { search }),
@@ -36,8 +38,8 @@ export default function useListParams({ defaultDirection = 'desc', defaultSize =
   }), [search, sort, direction, page, defaultSize]);
 
   return {
-    search, sort, direction, page, size: defaultSize, filter,
+    search, sort, direction, page, size: defaultSize, filter, subFilter,
     setSearch: handleSearch, setSort: handleSort, setDirection: handleDirection,
-    setPage: handlePage, setFilter: handleFilter, update, params,
+    setPage: handlePage, setFilter: handleFilter, setSubFilter: handleSubFilter, update, params,
   };
 }

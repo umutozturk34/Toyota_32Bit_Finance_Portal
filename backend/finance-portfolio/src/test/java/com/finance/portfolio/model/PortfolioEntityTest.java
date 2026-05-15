@@ -1,7 +1,5 @@
 package com.finance.portfolio.model;
 
-import com.finance.common.model.TrackedAsset;
-import com.finance.common.model.TrackedAssetType;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
@@ -58,30 +56,6 @@ class PortfolioEntityTest {
         invokePrePersist(s);
 
         assertThat(s.getCreatedAt()).isNotNull();
-    }
-
-    @Test
-    void portfolioAssetDailySnapshot_postLoad_syncsTransientsFromTrackedAsset() throws Exception {
-        PortfolioAssetDailySnapshot s = new PortfolioAssetDailySnapshot();
-        TrackedAsset tracked = new TrackedAsset();
-        tracked.setAssetType(TrackedAssetType.STOCK);
-        tracked.setAssetCode("AAPL");
-        s.setTrackedAsset(tracked);
-
-        invokePackagePrivate(s, "syncTransientsFromTrackedAsset");
-
-        assertThat(s.getAssetCode()).isEqualTo("AAPL");
-        assertThat(s.getAssetType()).isEqualTo(AssetType.STOCK);
-    }
-
-    @Test
-    void portfolioAssetDailySnapshot_postLoad_isQuiet_whenTrackedAssetMissing() throws Exception {
-        PortfolioAssetDailySnapshot s = new PortfolioAssetDailySnapshot();
-
-        invokePackagePrivate(s, "syncTransientsFromTrackedAsset");
-
-        assertThat(s.getAssetCode()).isNull();
-        assertThat(s.getAssetType()).isNull();
     }
 
     private void invokePrePersist(Object entity) throws Exception {

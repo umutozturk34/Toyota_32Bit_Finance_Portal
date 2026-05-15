@@ -9,6 +9,7 @@ import com.finance.market.core.service.MarketRefresher;
 import com.finance.market.core.service.TrackedAssetCommandService;
 import com.finance.market.core.util.MarketBatchRunner;
 import com.finance.market.core.util.WindowedFetchPlanner;
+import com.finance.market.bank.service.BankRatesService;
 import com.finance.market.forex.client.EvdsForexClient;
 import com.finance.market.forex.config.ForexProperties;
 import com.finance.market.forex.mapper.ForexEvdsMapper;
@@ -46,6 +47,7 @@ public class ForexUpdateService implements MarketRefresher {
     private final TrackedAssetCommandService trackedAssetCommandService;
     private final ForexProperties forexProperties;
     private final TransactionTemplate transactionTemplate;
+    private final BankRatesService bankRatesService;
 
     @Override
     public MarketType getMarketType() {
@@ -96,6 +98,13 @@ public class ForexUpdateService implements MarketRefresher {
                 ForexSerieMetadata::currencyCode,
                 log, "Forex", "backfill", forexProperties.getBatchMinSample());
         BatchLogHelper.logSummary(log, "Forex candle backfill", backfillResult);
+
+        try {
+            int count = bankRatesService.refreshAll();
+            log.info("Bank rates piggyback refresh: {} rows persisted", count);
+        } catch (Exception e) {
+            log.warn("Bank rates piggyback refresh failed: {}", e.getMessage());
+        }
     }
 
     @Override

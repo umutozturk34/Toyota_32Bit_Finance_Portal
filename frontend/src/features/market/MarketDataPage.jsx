@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
-import { Activity, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, ChevronUp, ChevronDown } from 'lucide-react';
+import { Activity, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, ChevronUp, ChevronDown, Banknote } from 'lucide-react';
+import BankRatesPanel from '../bankRates/BankRatesPanel';
 import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
@@ -28,6 +30,14 @@ export default function MarketDataPage() {
   const [deletingIds, setDeletingIds] = useState(() => new Set());
   const [popoverState, setPopoverState] = useState(null);
   const [galleryOpen, setGalleryOpen] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') === 'rates' ? 'rates' : 'overview';
+  const setActiveTab = useCallback((next) => {
+    const params = new URLSearchParams(searchParams);
+    if (next === 'overview') params.delete('tab');
+    else params.set('tab', next);
+    setSearchParams(params, { replace: true });
+  }, [searchParams, setSearchParams]);
   const { isLoading: layoutLoading, overview: layout, error: layoutError, refetch: refetchLayout } = useUserLayout();
   const { isLoading: dataLoading, error, refetch, isFetching, widgets } = useMarketOverview();
   const { byKind: widgetDefsByKind, isLoading: defsLoading, error: defsError, refetch: refetchDefs } = useWidgetDefinitions();
@@ -303,6 +313,26 @@ export default function MarketDataPage() {
         </button>
       </div>
       <div className="w-full max-w-md"><SearchSuggestions variant="hero" placeholder={t('marketOverview.searchPlaceholder')} /></div>
+      <div className="inline-flex items-center gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 self-start">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer ${
+            activeTab === 'overview' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
+          }`}
+        >
+          <Activity className="h-3.5 w-3.5" />
+          {t('marketOverview.tabOverview', 'Genel Bakış')}
+        </button>
+        <button
+          onClick={() => setActiveTab('rates')}
+          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer ${
+            activeTab === 'rates' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
+          }`}
+        >
+          <Banknote className="h-3.5 w-3.5" />
+          {t('marketOverview.tabRates', 'Kurlar')}
+        </button>
+      </div>
     </div>
   );
 
@@ -322,7 +352,9 @@ export default function MarketDataPage() {
     </AnimatePresence>
   );
 
-  const grid = sections.length === 0
+  const grid = activeTab === 'rates'
+    ? <BankRatesPanel />
+    : sections.length === 0
     ? (
       <div className="rounded-xl border-2 border-dashed border-accent/30 bg-bg-elevated/40 px-6 py-16 text-center">
         <p className="font-display text-base font-bold text-fg mb-1">{t('marketOverview.emptyCanvas')}</p>

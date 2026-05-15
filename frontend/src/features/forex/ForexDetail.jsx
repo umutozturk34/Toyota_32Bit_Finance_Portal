@@ -2,11 +2,9 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { forexService } from './services/forexService';
 import { getBaseCurrency } from '../../shared/constants/forex';
-import { formatPrice } from '../../shared/utils/formatters';
+import { useMoney } from '../../shared/hooks/useMoney';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
-
-const fmt = (price) => formatPrice(price, { minDecimals: 4, maxDecimals: 4 });
 
 function ForexHeader({ asset, code }) {
   const base = getBaseCurrency(code);
@@ -28,15 +26,16 @@ function ForexHeader({ asset, code }) {
 
 function ForexMetadata({ asset }) {
   const { t } = useTranslation();
+  const { format: money } = useMoney();
   const meta = asset.metadata || {};
   const sellingPrice = meta.sellingPrice;
   const buyingPrice = meta.buyingPrice;
   return (
     <MetadataTiles tiles={[
-      { label: t('marketDetail.forex.sell'), value: `₺${fmt(sellingPrice ?? asset.price)}` },
-      buyingPrice != null && { label: t('marketDetail.forex.buy'), value: `₺${fmt(buyingPrice)}` },
-      meta.effectiveBuyingPrice != null && { label: t('marketDetail.forex.banknoteBuy'), value: `₺${fmt(meta.effectiveBuyingPrice)}` },
-      meta.effectiveSellingPrice != null && { label: t('marketDetail.forex.banknoteSell'), value: `₺${fmt(meta.effectiveSellingPrice)}` },
+      { label: t('marketDetail.forex.sell'), value: money(sellingPrice ?? asset.price) },
+      buyingPrice != null && { label: t('marketDetail.forex.buy'), value: money(buyingPrice) },
+      meta.effectiveBuyingPrice != null && { label: t('marketDetail.forex.banknoteBuy'), value: money(meta.effectiveBuyingPrice) },
+      meta.effectiveSellingPrice != null && { label: t('marketDetail.forex.banknoteSell'), value: money(meta.effectiveSellingPrice) },
     ]} />
   );
 }

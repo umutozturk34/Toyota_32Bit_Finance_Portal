@@ -2,11 +2,10 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { stockService } from './services/stockService';
-import { getChangeClass, changeColors, formatPrice, formatVolume, formatPercentAbs } from '../../shared/utils/formatters';
+import { getChangeClass, changeColors, formatVolume, formatPercentAbs } from '../../shared/utils/formatters';
+import { useMoney } from '../../shared/hooks/useMoney';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
-
-const fmt = (price) => formatPrice(price);
 
 function StockHeader({ asset }) {
   const displaySymbol = asset.code?.replace('.IS', '') || '';
@@ -25,11 +24,12 @@ function StockHeader({ asset }) {
 
 function StockMetadata({ asset }) {
   const { t } = useTranslation();
+  const { format: money } = useMoney();
   const meta = asset.metadata || {};
   const cls = getChangeClass(asset.changePercent);
   return (
     <MetadataTiles tiles={[
-      { label: t('marketDetail.priceLabel'), value: `₺${fmt(asset.price)}` },
+      { label: t('marketDetail.priceLabel'), value: money(asset.price) },
       {
         label: t('marketDetail.changeLabel'),
         color: changeColors[cls],
@@ -40,11 +40,11 @@ function StockMetadata({ asset }) {
           </span>
         ),
       },
-      { label: t('marketDetail.changeAmountTRY'), value: `₺${fmt(asset.changeAmount)}`, color: changeColors[cls] },
+      { label: t('marketDetail.changeAmountTRY'), value: money(asset.changeAmount), color: changeColors[cls] },
       { label: t('market.stock.volumeLabel'), value: formatVolume(meta.volume) },
-      meta.openPrice != null && { label: t('market.stock.openLabel'), value: `₺${fmt(meta.openPrice)}` },
-      meta.dayHigh != null && { label: t('market.stock.highLabel'), value: `₺${fmt(meta.dayHigh)}`, color: 'text-success' },
-      meta.dayLow != null && { label: t('market.stock.lowLabel'), value: `₺${fmt(meta.dayLow)}`, color: 'text-danger' },
+      meta.openPrice != null && { label: t('market.stock.openLabel'), value: money(meta.openPrice) },
+      meta.dayHigh != null && { label: t('market.stock.highLabel'), value: money(meta.dayHigh), color: 'text-success' },
+      meta.dayLow != null && { label: t('market.stock.lowLabel'), value: money(meta.dayLow), color: 'text-danger' },
     ]} />
   );
 }

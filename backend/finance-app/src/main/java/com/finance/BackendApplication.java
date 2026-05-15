@@ -11,6 +11,7 @@ import com.finance.market.fund.config.FundProperties;
 import com.finance.news.config.NewsProperties;
 import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.market.stock.config.StockProperties;
+import com.finance.market.viop.config.ViopProperties;
 import com.finance.user.config.ChartDefaultsProperties;
 import com.finance.user.config.KeycloakAdminProperties;
 import com.finance.user.config.UserSecurityProperties;
@@ -41,7 +42,8 @@ import java.util.TimeZone;
         OverviewProperties.class,
         PortfolioProperties.class,
         StockProperties.class,
-        UserSecurityProperties.class
+        UserSecurityProperties.class,
+        ViopProperties.class
 })
 public class BackendApplication {
     public static void main(String[] args) {

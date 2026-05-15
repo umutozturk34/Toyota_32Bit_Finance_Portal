@@ -112,7 +112,7 @@ class PortfolioBackfillServiceTest {
         lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
         when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
-        when(calculator.buildAggregateSnapshotAtWithPriors(any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
+        when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
 
         service.backfillSinceDate(PORTFOLIO_ID, from);
 
@@ -159,12 +159,12 @@ class PortfolioBackfillServiceTest {
         lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
         when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
-        when(calculator.buildAggregateSnapshotAtWithPriors(any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
+        when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
 
         service.backfillSinceDate(PORTFOLIO_ID, from);
 
         ArgumentCaptor<List<PortfolioPosition>> activeCaptor = activeCaptor();
-        verify(calculator, times(3)).buildAggregateSnapshotAtWithPriors(any(), any(), activeCaptor.capture(), any(), any());
+        verify(calculator, times(3)).buildAggregateSnapshotAtFromRows(any(), any(), activeCaptor.capture(), any(), any());
         assertThat(activeCaptor.getAllValues().get(0)).extracting(PortfolioPosition::getAssetCode)
                 .containsExactly("THYAO.IS");
         assertThat(activeCaptor.getAllValues().get(1)).extracting(PortfolioPosition::getAssetCode)
@@ -185,7 +185,7 @@ class PortfolioBackfillServiceTest {
         lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
         when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
-        when(calculator.buildAggregateSnapshotAtWithPriors(any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
+        when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
 
         service.backfillSinceDate(PORTFOLIO_ID, from);
 
@@ -210,7 +210,7 @@ class PortfolioBackfillServiceTest {
         lenient().when(assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(any(), any())).thenReturn(false);
         when(calculator.buildAggregatedAssetSnapshotWithPrior(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
-        when(calculator.buildAggregateSnapshotAtWithPriors(any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
+        when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
 
         service.backfillSinceDate(PORTFOLIO_ID, from);
 
@@ -235,7 +235,7 @@ class PortfolioBackfillServiceTest {
                 .thenReturn(Map.of(new AssetPricingPort.AssetKey(MarketType.STOCK, "THYAO.IS"), new BigDecimal("55")));
         when(calculator.buildAggregatedAssetSnapshot(any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(mockAssetSnapshot());
-        when(calculator.buildAggregateSnapshotAt(any(), any(), any(), any())).thenReturn(mockDailySnapshot());
+        when(calculator.buildAggregateSnapshotAtFromRows(any(), any(), any(), any(), any())).thenReturn(mockDailySnapshot());
 
         service.snapshotToday(PORTFOLIO_ID);
 

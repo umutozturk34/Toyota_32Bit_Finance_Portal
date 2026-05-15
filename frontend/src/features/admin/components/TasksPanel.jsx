@@ -5,7 +5,7 @@ import { EventSourcePolyfill } from 'event-source-polyfill';
 import {
     Activity, Play, CheckCircle2, XCircle, Clock,
     Loader2, Zap, Database, X,
-    TrendingUp, DollarSign, Bitcoin, Briefcase, Landmark, Newspaper, Gem,
+    TrendingUp, DollarSign, Bitcoin, Briefcase, Landmark, Newspaper, Gem, Layers,
 } from 'lucide-react';
 import { adminService } from '../services/adminService';
 import { getToken } from '../../auth/lib/keycloak';
@@ -100,6 +100,15 @@ const TASK_GROUPS = [
             { key: 'commodity-snapshot', labelKey: 'snapshot', trigger: () => adminService.triggerCommoditySnapshot() },
             { key: 'commodity-candles', labelKey: 'candles', trigger: () => adminService.triggerCommodityCandles() },
             { key: 'commodity-full', labelKey: 'fullUpdate', trigger: () => adminService.triggerCommodityFull() },
+        ],
+    },
+    {
+        categoryKey: 'VIOP',
+        icon: Layers,
+        color: 'text-indigo-400',
+        bg: 'bg-indigo-400/10',
+        tasks: [
+            { key: 'viop-full', labelKey: 'fullUpdate', trigger: () => adminService.triggerViopFull() },
         ],
     },
     {

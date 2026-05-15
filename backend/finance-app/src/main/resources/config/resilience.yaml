@@ -61,6 +61,17 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: 3
         record-exceptions:
           - com.finance.common.exception.ExternalApiException
+      viop:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 60s
+        permitted-number-of-calls-in-half-open-state: 3
+        record-exceptions:
+          - com.finance.common.exception.ExternalApiException
+        ignore-exceptions:
+          - com.finance.common.exception.SymbolNotFoundException
   ratelimiter:
     instances:
       yahoo:
@@ -78,6 +89,10 @@ resilience4j:
       evds:
         limit-for-period: 1
         limit-refresh-period: 2s
+        timeout-duration: 10s
+      viop:
+        limit-for-period: 2
+        limit-refresh-period: 1s
         timeout-duration: 10s
   retry:
     retryAspectOrder: 2
@@ -161,6 +176,19 @@ resilience4j:
           - java.net.SocketTimeoutException
           - java.net.ConnectException
           - io.netty.handler.timeout.ReadTimeoutException
+      viop:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.finance.common.exception.ExternalApiException
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - io.netty.handler.timeout.ReadTimeoutException
+        ignore-exceptions:
+          - com.finance.common.exception.BusinessException
+          - com.finance.common.exception.SymbolNotFoundException
 
 management:
   endpoint:

@@ -7,24 +7,24 @@ import { BarChart2, ChevronUp, ChevronDown, Activity, Clock } from 'lucide-react
 import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
 import { stockService } from './services/stockService';
 import { adminService } from '../admin/services/adminService';
-import { getChangeClass, changeColors, changeBg, formatPrice, formatVolume, formatPercentAbs } from '../../shared/utils/formatters';
+import { getChangeClass, changeColors, changeBg, formatVolume, formatPercentAbs } from '../../shared/utils/formatters';
 import { containerVariants, cardVariants } from '../../shared/utils/animations';
 import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
 import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
 import ChangePercentBadge from '../../shared/components/asset/ChangePercentBadge';
 import useListParams from '../../shared/hooks/useListParams';
+import { useMoney } from '../../shared/hooks/useMoney';
 import { assetCodeLabel } from '../../shared/utils/assetCode';
 
 const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
 const SEGMENT_IDS = ['MAIN_INDEX', 'SECONDARY_INDEX', 'EQUITY'];
 
-const formatStockPrice = (price) => formatPrice(price);
-
 function StocksPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const listParams = useListParams();
+    const { format: money } = useMoney();
     const segment = listParams.filter || 'EQUITY';
 
     const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) }));
@@ -68,7 +68,7 @@ function StocksPage() {
                             <h3 className="text-base font-semibold text-fg">{index.name || index.code.replace('.IS', '')}</h3>
                             <span className="text-xs text-fg-muted">{t('market.stockSegments.indexLabel')}</span>
                         </div>
-                        <p className="mt-3 font-mono text-2xl font-bold text-fg">{formatStockPrice(index.price)}</p>
+                        <p className="mt-3 font-mono text-2xl font-bold text-fg">{money(index.price)}</p>
                         <div className={`mt-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
                             {index.changePercent > 0 ? <ChevronUp className="h-3.5 w-3.5" /> : index.changePercent < 0 ? <ChevronDown className="h-3.5 w-3.5" /> : null}
                             {formatPercentAbs(index.changePercent)}
@@ -101,7 +101,7 @@ function StocksPage() {
             </div>
 
             <div className="mt-3">
-                <p className="font-mono text-xl font-bold text-fg">₺{formatStockPrice(stock.price)}</p>
+                <p className="font-mono text-xl font-bold text-fg">{money(stock.price)}</p>
                 <ChangePercentBadge
                     value={stock.changePercent}
                     positiveIcon={<TrendingUp className="h-3.5 w-3.5" />}
@@ -109,7 +109,7 @@ function StocksPage() {
                     size="sm"
                     className="mt-1"
                 >
-                    <span className="ml-1 opacity-75">({stock.changeAmount > 0 ? '+' : ''}₺{formatStockPrice(stock.changeAmount)})</span>
+                    <span className="ml-1 opacity-75">({stock.changeAmount > 0 ? '+' : ''}{money(stock.changeAmount)})</span>
                 </ChangePercentBadge>
             </div>
 
@@ -117,19 +117,19 @@ function StocksPage() {
                 {stock.metadata?.openPrice != null && (
                     <div className="flex items-center justify-between text-xs">
                         <span className="text-fg-muted">{t('market.stock.openLabel')}</span>
-                        <span className="font-mono text-fg">₺{formatStockPrice(stock.metadata.openPrice)}</span>
+                        <span className="font-mono text-fg">{money(stock.metadata.openPrice)}</span>
                     </div>
                 )}
                 {stock.metadata?.dayHigh != null && (
                     <div className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-1 text-fg-muted"><ChevronUp className="h-3 w-3 text-success" />{t('market.stock.highLabel')}</span>
-                        <span className="font-mono text-fg">₺{formatStockPrice(stock.metadata.dayHigh)}</span>
+                        <span className="font-mono text-fg">{money(stock.metadata.dayHigh)}</span>
                     </div>
                 )}
                 {stock.metadata?.dayLow != null && (
                     <div className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-1 text-fg-muted"><ChevronDown className="h-3 w-3 text-danger" />{t('market.stock.lowLabel')}</span>
-                        <span className="font-mono text-fg">₺{formatStockPrice(stock.metadata.dayLow)}</span>
+                        <span className="font-mono text-fg">{money(stock.metadata.dayLow)}</span>
                     </div>
                 )}
                 <div className="flex items-center justify-between text-xs">

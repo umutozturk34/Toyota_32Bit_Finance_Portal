@@ -9,7 +9,8 @@ import DatePickerPopover from '../../../shared/components/form/DatePickerPopover
 import ProcessingSteps from '../../../shared/components/feedback/ProcessingSteps';
 import useProcessingAnimation from '../../../shared/hooks/useProcessingAnimation';
 import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
-import { formatPriceTRY, currentLocaleTag } from '../../../shared/utils/formatters';
+import { currentLocaleTag } from '../../../shared/utils/formatters';
+import { useMoney } from '../../../shared/hooks/useMoney';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';
 import { useAddPosition, usePortfolioLimits, useUpdatePosition } from '../hooks/usePortfolioData';
 
@@ -22,6 +23,7 @@ import {
 
 export default function PositionFormModal({ mode, portfolioId, asset, position, onClose, onComplete }) {
   const { t } = useTranslation();
+  const { format: money } = useMoney();
   const target = resolveTarget(mode, asset, position);
   const isFractional = FRACTIONAL_TYPES.includes(target.assetType);
   const isEdit = mode === 'edit';
@@ -270,7 +272,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
                 <span className="text-xs font-semibold text-accent shrink-0">{t('positionForm.totalCost')}</span>
                 <span
                   className="text-lg font-bold font-mono text-accent truncate"
-                  title={formatPriceTRY(totalCost)}
+                  title={money(totalCost)}
                 >
                   {formatTotalCost(totalCost)}
                 </span>
@@ -307,8 +309,9 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
 
 function ConfirmPanel({ isEdit, displayCode, form, isFractional, totalCost, onCancel, onConfirm }) {
   const { t } = useTranslation();
+  const { format: money } = useMoney();
   const qtyDisplay = Number(form.quantity).toLocaleString(currentLocaleTag(), { maximumFractionDigits: isFractional ? 6 : 0 });
-  const priceDisplay = formatPriceTRY(Number(form.entryPrice));
+  const priceDisplay = money(Number(form.entryPrice));
   const dateDisplay = new Date(form.entryDate).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'long', year: 'numeric' });
   return (
     <motion.div
@@ -335,7 +338,7 @@ function ConfirmPanel({ isEdit, displayCode, form, isFractional, totalCost, onCa
         <Row label={t('positionForm.confirm.unitPrice')} value={priceDisplay} />
         <div className="border-t border-border-default pt-2">
           <Row label={<span className="font-semibold">{t('positionForm.totalCost')}</span>} value={
-            <span className="font-bold text-accent truncate" title={formatPriceTRY(totalCost)}>
+            <span className="font-bold text-accent truncate" title={money(totalCost)}>
               {formatTotalCost(totalCost)}
             </span>
           } />
@@ -409,6 +412,7 @@ function SuccessPanel({ title, subtitle }) {
 
 function DataAvailabilityHint({ dataAvailable, suggestedPrice, onApply, applied, loading }) {
   const { t } = useTranslation();
+  const { format: money } = useMoney();
   if (loading) {
     return <div className="h-[30px] rounded-md border border-border-default/40 bg-surface/20 animate-pulse" />;
   }
@@ -418,7 +422,7 @@ function DataAvailabilityHint({ dataAvailable, suggestedPrice, onApply, applied,
         <div className="flex items-center gap-1.5">
           <Check className="h-3 w-3 shrink-0" />
           <span dangerouslySetInnerHTML={{
-            __html: t('positionForm.availability.has', { price: formatPriceTRY(suggestedPrice) }),
+            __html: t('positionForm.availability.has', { price: money(suggestedPrice) }),
           }} />
         </div>
         {!applied && (

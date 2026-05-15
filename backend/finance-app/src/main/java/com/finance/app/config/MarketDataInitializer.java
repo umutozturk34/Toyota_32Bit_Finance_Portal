@@ -40,6 +40,10 @@ import com.finance.market.bond.repository.BondRepository;
 
 import com.finance.market.bond.service.BondDataService;
 
+import com.finance.market.viop.repository.ViopContractRepository;
+
+import com.finance.market.viop.service.ViopDataService;
+
 
 
 import com.finance.common.model.MarketType;
@@ -77,6 +81,8 @@ public class MarketDataInitializer implements CommandLineRunner {
     private final CommodityDataService commodityDataService;
     private final BondRepository bondRepository;
     private final BondDataService bondDataService;
+    private final ViopContractRepository viopContractRepository;
+    private final ViopDataService viopDataService;
     private final NewsArticleRepository articleRepository;
     private final NewsDataService newsDataService;
     private final TaskTrackingService taskTracker;
@@ -92,6 +98,8 @@ public class MarketDataInitializer implements CommandLineRunner {
                 fundDataService::refreshAll);
 
         init("bond", null, bondRepository.count(), 1, null, bondDataService::updateBonds);
+
+        init("viop", MarketType.VIOP, viopContractRepository.count(), 1, null, viopDataService::refreshAll);
 
         init("news", null, articleRepository.count(), 1, null, newsDataService::updateNews);
 

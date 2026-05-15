@@ -41,6 +41,7 @@ class PortfolioSnapshotServiceTest {
     @Mock private PortfolioPositionRepository positionRepository;
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     @Mock private PortfolioDailySnapshotRepository dailySnapshotRepository;
+    @Mock private com.finance.portfolio.derivative.repository.DerivativePositionRepository derivativePositionRepository;
     @Mock private TransactionTemplate transactionTemplate;
     @SuppressWarnings("unchecked")
     @Mock private ObjectProvider<EventPublisherPort> events;
@@ -51,7 +52,7 @@ class PortfolioSnapshotServiceTest {
     @BeforeEach
     void setUp() {
         service = new PortfolioSnapshotService(calculator, portfolioRepository, positionRepository,
-                assetSnapshotRepository, dailySnapshotRepository, transactionTemplate, events);
+                derivativePositionRepository, assetSnapshotRepository, dailySnapshotRepository, transactionTemplate, events);
         org.mockito.Mockito.lenient().doAnswer(inv -> {
             java.util.function.Consumer<org.springframework.transaction.TransactionStatus> cb = inv.getArgument(0);
             cb.accept(null);

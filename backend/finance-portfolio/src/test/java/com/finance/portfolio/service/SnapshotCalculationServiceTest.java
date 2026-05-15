@@ -42,6 +42,8 @@ class SnapshotCalculationServiceTest {
     void setUp() {
         service = new SnapshotCalculationService(pricingPort, positionRepository,
                 dailySnapshotRepository, assetSnapshotRepository, new PortfolioProperties());
+        org.mockito.Mockito.lenient().when(assetSnapshotRepository.findLatestPerAsset(org.mockito.ArgumentMatchers.anyLong()))
+                .thenReturn(List.of());
     }
 
     @Test

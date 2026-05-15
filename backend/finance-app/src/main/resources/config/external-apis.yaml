@@ -22,3 +22,16 @@ app:
     binance:
       base-url: https://api.binance.com
       klines-path: /api/v3/klines
+
+  market:
+    viop:
+      base-url: https://www.isyatirim.com.tr
+      contract-list-page-path: /tr-tr/urunler/Sayfalar/Islem-Goren-Kontratlar.aspx
+      viop-analysis-page-path: /tr-tr/analiz/Sayfalar/viop.aspx
+      vadeli-metadata-path: /_layouts/15/Isyatirim.Website/Common/Data.aspx/VadeliIslemler
+      opsiyon-metadata-path: /_layouts/15/Isyatirim.Website/Common/Data.aspx/OpsiyonSozlesmeleri
+      one-endeks-path: /_layouts/15/Isyatirim.Website/Common/Data.aspx/OneEndeks
+      chart-data-path: /_Layouts/15/IsYatirim.Website/Common/ChartData.aspx/IndexHistoricalAll
+      user-agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.2 Safari/605.1.15"
+      session-ttl: 30m
+      request-timeout: 20s

@@ -15,6 +15,9 @@ import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 
+import com.finance.portfolio.derivative.model.DerivativePosition;
+import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
+import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
 import com.finance.portfolio.model.Portfolio;
 
 import com.finance.common.model.MarketType;
@@ -43,6 +46,7 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
     private final SnapshotCalculationService calculator;
     private final PortfolioRepository portfolioRepository;
     private final PortfolioPositionRepository positionRepository;
+    private final DerivativePositionRepository derivativePositionRepository;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     private final PortfolioDailySnapshotRepository dailySnapshotRepository;
     private final TransactionTemplate transactionTemplate;
@@ -50,13 +54,21 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
 
     @Override
     public void onMarketUpdate(MarketType marketType) {
-        AssetType type = AssetType.valueOf(marketType.name());
+        AssetType type = AssetType.fromMarketType(marketType);
+        if (type == null) {
+            return;
+        }
         List<Portfolio> portfolios = portfolioRepository.findAll();
         LocalDateTime batchTimestamp = LocalDateTime.now();
 
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
                 portfolios,
                 portfolio -> transactionTemplate.executeWithoutResult(status -> {
+                    if (type == AssetType.VIOP) {
+                        snapshotDerivativePositions(portfolio, batchTimestamp);
+                        insertAggregateSnapshot(portfolio, batchTimestamp);
+                        return;
+                    }
                     boolean hasPositions = !positionRepository
                             .findByPortfolioIdAndTrackedAsset_AssetTypeAndQuantityGreaterThan(
                                     portfolio.getId(), TrackedAssetType.valueOf(type.name()), BigDecimal.ZERO)
@@ -75,6 +87,24 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
         );
 
         BatchLogHelper.logSummary(log, type + " portfolio snapshot", result);
+    }
+
+    private void snapshotDerivativePositions(Portfolio portfolio, LocalDateTime batchTimestamp) {
+        // Include closed positions too — their snapshot is frozen at close_price by the
+        // calculator, so today's aggregate keeps reflecting the realized P&L until the user
+        // explicitly deletes the position.
+        List<DerivativePosition> positions = derivativePositionRepository
+                .findByPortfolioId(portfolio.getId());
+        if (positions.isEmpty()) {
+            return;
+        }
+        for (DerivativePosition position : positions) {
+            PortfolioAssetDailySnapshot snapshot = calculator.buildDerivativeAssetSnapshot(
+                    portfolio.getId(), position, batchTimestamp);
+            if (snapshot != null) {
+                assetSnapshotRepository.save(snapshot);
+            }
+        }
     }
 
     public void generateDailySnapshots(String source) {
@@ -124,11 +154,17 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
         LocalDateTime batchTimestamp = LocalDateTime.now();
         List<PortfolioPosition> positions = positionRepository
                 .findByPortfolioIdAndQuantityGreaterThan(pid, BigDecimal.ZERO);
+        // Include closed VIOP positions too — calculator freezes their snapshot at close_price.
+        List<DerivativePosition> derivatives = derivativePositionRepository.findByPortfolioId(pid);
 
-        if (positions.isEmpty()) return null;
+        if (positions.isEmpty() && derivatives.isEmpty()) return null;
 
         for (PortfolioPosition pos : positions) {
             assetSnapshotRepository.save(calculator.buildAssetSnapshot(pid, pos, batchTimestamp));
+        }
+        for (DerivativePosition dpos : derivatives) {
+            PortfolioAssetDailySnapshot snap = calculator.buildDerivativeAssetSnapshot(pid, dpos, batchTimestamp);
+            if (snap != null) assetSnapshotRepository.save(snap);
         }
 
         return insertAggregateSnapshot(portfolio, batchTimestamp);

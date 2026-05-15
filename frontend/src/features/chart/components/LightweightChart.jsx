@@ -24,7 +24,8 @@ const TABS = [
     { id: 'fibonacci', labelKey: 'chart.tabs.fibonacci', Icon: Triangle },
 ];
 
-const TIME_RANGES = [
+const TIME_RANGES_FULL = [
+    { id: '1W', labelKey: 'chart.range.1W', months: 0 },
     { id: '1M', labelKey: 'chart.range.1M', months: 1 },
     { id: '3M', labelKey: 'chart.range.3M', months: 3 },
     { id: '6M', labelKey: 'chart.range.6M', months: 6 },
@@ -33,7 +34,10 @@ const TIME_RANGES = [
     { id: 'ALL', labelKey: 'chart.range.ALL', months: 0 },
 ];
 
+const TIME_RANGES_VIOP = TIME_RANGES_FULL.filter(({ id }) => id !== '5Y' && id !== 'ALL');
+
 const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = null, compareSymbol = null, timeRange = '1Y', onTimeRangeChange }) => {
+    const TIME_RANGES = assetType === 'VIOP' ? TIME_RANGES_VIOP : TIME_RANGES_FULL;
     const { t } = useTranslation();
     const { isDark } = useTheme();
     const renderDrawingsRef = useRef(null);
@@ -83,9 +87,10 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
 
     const isFund = assetType === 'FUND';
     const isForex = assetType === 'FOREX';
-    const showVolumeToggle = !isFund && !isForex;
+    const isViop = assetType === 'VIOP';
+    const showVolumeToggle = !isFund && !isForex && !isViop;
     const showFibTab = !isFund;
-    const allowCandle = !isFund && !isForex;
+    const allowCandle = !isFund && !isForex && !isViop;
 
     const sidebarOpen = useAppStore((s) => s.chartSidebarOpen);
     const setSidebarOpen = useAppStore((s) => s.setChartSidebarOpen);
@@ -94,7 +99,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
 
     const { config, setField } = useChartConfig(assetType, symbol, timeRange, !compareSymbol);
     const showVolume = config?.showVolume ?? false;
-    const chartType = config?.chartType ?? ((isFund || isForex) ? 'line' : 'candle');
+    const chartType = config?.chartType ?? ((isFund || isForex || isViop) ? 'line' : 'candle');
     const magnetMode = (['off', 'weak', 'strong'].includes(config?.magnetMode)) ? config.magnetMode : 'off';
     const selectedIcon = config?.selectedIcon ?? '\u{1F680}';
     const iconSize = config?.iconSize ?? 22;

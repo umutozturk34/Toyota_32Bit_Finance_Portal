@@ -5,9 +5,10 @@ import { motion } from 'framer-motion';
 import SideDrawer from '../../shared/components/modal/SideDrawer';
 import {
   X, Settings as SettingsIcon, Palette, Languages, BarChart3, Bell, Shield,
-  Sun, Moon, LogOut, KeyRound, Mail,
+  Sun, Moon, LogOut, KeyRound, Mail, Coins,
 } from 'lucide-react';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';
+import useAppStore from '../../shared/stores/useAppStore';
 import { useTheme } from '../../shared/context/useTheme';
 import { useAuth } from '../auth/useAuth';
 import { userCredentialService } from '../../shared/services/userCredentialService';
@@ -26,7 +27,14 @@ const LANGUAGE_OPTIONS = [
   { value: 'en', labelKey: 'settings.language.en' },
 ];
 
-const CHART_RANGE_VALUES = ['1M', '3M', '6M', '1Y', '5Y', 'ALL'];
+const CHART_RANGE_VALUES = ['1W', '1M', '3M', '6M', '1Y', '5Y', 'ALL'];
+
+const CURRENCY_OPTIONS = [
+  { value: 'TRY', label: '₺ TRY' },
+  { value: 'USD', label: '$ USD' },
+  { value: 'EUR', label: '€ EUR' },
+  { value: 'ORIGINAL', labelKey: 'settings.currencyOriginal' },
+];
 
 function SegmentedControl({ options, value, onChange, layoutId, compact = false }) {
   const { t } = useTranslation();
@@ -80,6 +88,8 @@ export default function SettingsSidebar({ isOpen, onClose }) {
   const updatePreferences = useUpdateUserPreferences();
   const { themePreference, setThemePreference } = useTheme();
   const { logout } = useAuth();
+  const displayCurrency = useAppStore((s) => s.displayCurrency);
+  const setDisplayCurrency = useAppStore((s) => s.setDisplayCurrency);
   const [passwordSending, setPasswordSending] = useState(false);
 
   const chartRangeOptions = CHART_RANGE_VALUES.map((v) => ({ value: v, label: t(`ranges.${v}`) }));
@@ -160,6 +170,15 @@ export default function SettingsSidebar({ isOpen, onClose }) {
                   value={preferences.defaultChartRange}
                   onChange={handleChange('defaultChartRange')}
                   layoutId="settings-chart-range"
+                />
+              </Section>
+
+              <Section icon={Coins} title={t('settings.displayCurrency')}>
+                <SegmentedControl
+                  options={CURRENCY_OPTIONS}
+                  value={displayCurrency}
+                  onChange={setDisplayCurrency}
+                  layoutId="settings-currency"
                 />
               </Section>
 

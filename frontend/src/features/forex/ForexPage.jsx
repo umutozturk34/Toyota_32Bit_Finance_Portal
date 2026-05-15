@@ -5,20 +5,21 @@ import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/A
 import { forexService } from './services/forexService';
 import { adminService } from '../admin/services/adminService';
 import { getBaseCurrency } from '../../shared/constants/forex';
-import { changeColors, changeBg, formatPrice, formatChange, formatPercent } from '../../shared/utils/formatters';
+import { changeColors, changeBg, formatChange, formatPercent } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
 import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
 import useListParams from '../../shared/hooks/useListParams';
+import { useMoney } from '../../shared/hooks/useMoney';
 
 const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
-
-const formatForexPrice = (price) => formatPrice(price, { minDecimals: 4, maxDecimals: 4 });
 
 function ForexPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const listParams = useListParams();
+    const { format: money } = useMoney();
+    const formatForexPrice = (price) => money(price, 'TRY', { minDecimals: 4, maxDecimals: 4 });
     const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) }));
     const localeTag = t('common.localeTag');
     const dateOptions = { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' };
@@ -59,12 +60,12 @@ function ForexPage() {
                 <div className="mt-3 space-y-1">
                     <div className="flex items-center justify-between">
                         <span className="text-xs text-fg-muted">{t('market.forex.sellLabel')}</span>
-                        <span className="font-mono text-xl font-bold text-fg">₺ {formatForexPrice(sellingPrice ?? forex.price)}</span>
+                        <span className="font-mono text-xl font-bold text-fg">{formatForexPrice(sellingPrice ?? forex.price)}</span>
                     </div>
                     {buyingPrice != null && (
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-fg-muted">{t('market.forex.buyLabel')}</span>
-                            <span className="font-mono text-base font-semibold text-fg-muted">₺ {formatForexPrice(buyingPrice)}</span>
+                            <span className="font-mono text-base font-semibold text-fg-muted">{formatForexPrice(buyingPrice)}</span>
                         </div>
                     )}
                 </div>
@@ -86,13 +87,13 @@ function ForexPage() {
                         {effectiveBuyingPrice != null && (
                             <div className="flex items-center justify-between text-xs">
                                 <span className="text-fg-muted">{t('market.forex.banknoteBuy')}</span>
-                                <span className="font-mono text-fg">₺ {formatForexPrice(effectiveBuyingPrice)}</span>
+                                <span className="font-mono text-fg">{formatForexPrice(effectiveBuyingPrice)}</span>
                             </div>
                         )}
                         {effectiveSellingPrice != null && (
                             <div className="flex items-center justify-between text-xs">
                                 <span className="text-fg-muted">{t('market.forex.banknoteSell')}</span>
-                                <span className="font-mono text-fg">₺ {formatForexPrice(effectiveSellingPrice)}</span>
+                                <span className="font-mono text-fg">{formatForexPrice(effectiveSellingPrice)}</span>
                             </div>
                         )}
                     </div>

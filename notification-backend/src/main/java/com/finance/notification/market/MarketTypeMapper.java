@@ -23,6 +23,7 @@ public final class MarketTypeMapper {
         map.put(MarketType.COMMODITY, SessionMarket.COMMODITY);
         map.put(MarketType.BOND, SessionMarket.BOND);
         map.put(MarketType.CRYPTO, SessionMarket.CRYPTO);
+        map.put(MarketType.VIOP, SessionMarket.VIOP);
         return map;
     }
 

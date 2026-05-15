@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import useSessionState from '../../../shared/hooks/useSessionState';
@@ -6,7 +6,8 @@ import useChartRange from '../../../shared/hooks/useChartRange';
 import ReactECharts from 'echarts-for-react';
 import { TrendingUp } from '../../../shared/components/feedback/AnimatedIcons';
 import { usePortfolioPerformance, useBackfillStatus } from '../hooks/usePortfolioData';
-import { formatPriceTRY } from '../../../shared/utils/formatters';
+import { useRateHistory } from '../../../shared/hooks/useRateHistory';
+import { formatPrice } from '../../../shared/utils/formatters';
 import { cardVariants } from '../../../shared/utils/animations';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
@@ -29,7 +30,7 @@ function themePalette(isDark) {
     : { bg: 'rgba(255,255,255,0.98)', fg: '#1a1a2e', muted: '#94a3b8', border: 'rgba(0,0,0,0.08)', grid: 'rgba(0,0,0,0.04)' };
 }
 
-function buildTooltipHtml(point, palette) {
+function buildTooltipHtml(point, palette, money) {
   const { bg, fg, muted, border } = palette;
   const totalValue = point.amount ?? (Array.isArray(point.value) ? Number(point.value[1]) : Number(point.value));
   const localeTag = i18n.t('common.localeTag');
@@ -49,8 +50,8 @@ function buildTooltipHtml(point, palette) {
         <span style="font-size:11px;color:${fg};opacity:0.85">${label}</span>
       </div>
       <div style="display:flex;gap:8px;align-items:baseline">
-        <span style="font-size:11px;font-family:ui-monospace,monospace;color:${fg}">${formatPriceTRY(d.valueTry)}</span>
-        <span style="font-size:10px;font-family:ui-monospace,monospace;color:${dColor}">${d.pnlTry >= 0 ? '+' : ''}${formatPriceTRY(d.pnlTry)}</span>
+        <span style="font-size:11px;font-family:ui-monospace,monospace;color:${fg}">${money(d.valueTry)}</span>
+        <span style="font-size:10px;font-family:ui-monospace,monospace;color:${dColor}">${d.pnlTry >= 0 ? '+' : ''}${money(d.pnlTry)}</span>
       </div>
     </div>`;
   }).join('');
@@ -68,7 +69,7 @@ function buildTooltipHtml(point, palette) {
         <span style="font-size:10px;font-weight:600;color:${meta.color}">${i18n.t(meta.labelKey)}</span>
         <span style="font-size:10px;color:${muted}">${codeLabel}</span>
       </div>
-      <span style="font-size:10px;font-family:ui-monospace,monospace;color:${fg};opacity:0.8">${formatPriceTRY(ev.valueTry)}</span>
+      <span style="font-size:10px;font-family:ui-monospace,monospace;color:${fg};opacity:0.8">${money(ev.valueTry)}</span>
     </div>`;
   }).join('');
   const eventBlock = eventRows
@@ -81,15 +82,15 @@ function buildTooltipHtml(point, palette) {
   return `<div style="padding:12px 16px;min-width:260px;background:${bg};border-radius:12px;border:1px solid ${border};box-shadow:0 8px 32px rgba(0,0,0,0.25)">
     <div style="font-size:10px;color:${muted};margin-bottom:8px;letter-spacing:0.3px">${date}</div>
     <div style="display:flex;justify-content:space-between;align-items:baseline;gap:16px">
-      <span style="font-size:16px;font-weight:700;font-family:ui-monospace,monospace;color:${fg}">${formatPriceTRY(totalValue)}</span>
-      <span style="font-size:11px;font-family:ui-monospace,monospace;color:${pnlColor};font-weight:600">${pnlPrefix}${formatPriceTRY(point.pnl)} (${pnlPrefix}${point.pnlPercent?.toFixed(2) ?? '0.00'}%)</span>
+      <span style="font-size:16px;font-weight:700;font-family:ui-monospace,monospace;color:${fg}">${money(totalValue)}</span>
+      <span style="font-size:11px;font-family:ui-monospace,monospace;color:${pnlColor};font-weight:600">${pnlPrefix}${money(point.pnl)} (${pnlPrefix}${point.pnlPercent?.toFixed(2) ?? '0.00'}%)</span>
     </div>
     ${detailBlock}
     ${eventBlock}
   </div>`;
 }
 
-function buildEChartsOption(data, color, palette) {
+function buildEChartsOption(data, color, palette, money) {
   const seriesData = data.map((d) => ({
     value: [d.time, d.value],
     amount: d.value,
@@ -125,7 +126,7 @@ function buildEChartsOption(data, color, palette) {
       extraCssText: 'box-shadow:none;',
       formatter: (params) => {
         const point = params?.[0]?.data;
-        return point ? buildTooltipHtml(point, palette) : '';
+        return point ? buildTooltipHtml(point, palette, money) : '';
       },
     },
     xAxis: {
@@ -144,7 +145,7 @@ function buildEChartsOption(data, color, palette) {
       axisLabel: {
         color: palette.muted,
         fontSize: 10,
-        formatter: (val) => formatPriceTRY(val),
+        formatter: (val) => money(val),
       },
       splitLine: { lineStyle: { color: palette.grid, type: 'dashed' } },
     },
@@ -191,6 +192,7 @@ function buildEChartsOption(data, color, palette) {
 export default function PerformanceChart({ portfolioId }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
+  const { convertAt, currency } = useRateHistory();
   const [range, setRange] = useChartRange();
   const [activeType, setActiveType] = useSessionState('portfolio-perf-type', null);
 
@@ -198,14 +200,43 @@ export default function PerformanceChart({ portfolioId }) {
   const backfill = useBackfillStatus(portfolioId);
   const backfillElapsed = useElapsedSeconds(backfill.since);
 
+  // Portfolio aggregates are TRY-canonical; for ORIGINAL preference the chart still shows TRY
+  // (mixing per-asset natural currencies in a portfolio total makes no sense). Any non-ISO code
+  // would throw a RangeError in Intl.NumberFormat — guard with a SUPPORTED fallback.
+  const safeCurrency = currency === 'USD' || currency === 'EUR' ? currency : 'TRY';
+  const money = useCallback((value) => {
+    if (value == null) return 'N/A';
+    const abs = Math.abs(value);
+    const maxDecimals = abs < 10 ? 4 : abs < 1000 ? 3 : 2;
+    return formatPrice(value, { currency: safeCurrency, minDecimals: 2, maxDecimals });
+  }, [safeCurrency]);
+
+  const convertedPerfData = useMemo(() => perfData.map((point) => {
+    const dateStr = new Date(point.time).toISOString().slice(0, 10);
+    return {
+      ...point,
+      value: convertAt(point.value, 'TRY', dateStr),
+      pnl: convertAt(point.pnl, 'TRY', dateStr),
+      details: (point.details || []).map((d) => ({
+        ...d,
+        valueTry: convertAt(d.valueTry, 'TRY', dateStr),
+        pnlTry: convertAt(d.pnlTry, 'TRY', dateStr),
+      })),
+      events: (point.events || []).map((e) => ({
+        ...e,
+        valueTry: convertAt(e.valueTry, 'TRY', dateStr),
+      })),
+    };
+  }), [perfData, convertAt]);
+
   const mainColor = activeType ? (ASSET_TYPE_COLORS[activeType] || '#6366f1') : '#6366f1';
   const palette = useMemo(() => themePalette(isDark), [isDark]);
   const option = useMemo(
-    () => (perfData.length > 0 ? buildEChartsOption(perfData, mainColor, palette) : null),
-    [perfData, mainColor, palette]
+    () => (convertedPerfData.length > 0 ? buildEChartsOption(convertedPerfData, mainColor, palette, money) : null),
+    [convertedPerfData, mainColor, palette, money]
   );
 
-  const currentValue = perfData.length > 0 ? perfData[perfData.length - 1] : null;
+  const currentValue = convertedPerfData.length > 0 ? convertedPerfData[convertedPerfData.length - 1] : null;
   const totalPnl = currentValue?.pnl ?? null;
   const totalPnlPercent = currentValue?.pnlPercent ?? null;
   const pnlPositive = totalPnl != null && totalPnl >= 0;
@@ -231,10 +262,10 @@ export default function PerformanceChart({ portfolioId }) {
               </p>
               {currentValue && (
                 <div className="flex items-center gap-2.5 mt-0.5">
-                  <span className="text-xl font-mono font-bold text-fg tracking-tight">{formatPriceTRY(currentValue.value)}</span>
+                  <span className="text-xl font-mono font-bold text-fg tracking-tight">{money(currentValue.value)}</span>
                   {totalPnl != null && (
                     <span className={`inline-flex items-center gap-1 text-xs font-mono font-semibold px-2 py-0.5 rounded-md ${pnlPositive ? 'text-success bg-success/10' : 'text-danger bg-danger/10'}`}>
-                      {pnlPositive ? '+' : ''}{formatPriceTRY(totalPnl)} ({totalPnlPercent?.toFixed(2)}%)
+                      {pnlPositive ? '+' : ''}{money(totalPnl)} ({totalPnlPercent?.toFixed(2)}%)
                     </span>
                   )}
                 </div>
@@ -290,7 +321,7 @@ export default function PerformanceChart({ portfolioId }) {
             </div>
           ) : option ? (
             <ReactECharts
-              key={`${activeType}-${range}-${isDark}`}
+              key={`${activeType}-${range}-${isDark}-${currency}`}
               option={option}
               notMerge
               lazyUpdate

@@ -6,5 +6,6 @@ public enum SessionMarket {
     FUND,
     COMMODITY,
     BOND,
-    CRYPTO
+    CRYPTO,
+    VIOP
 }

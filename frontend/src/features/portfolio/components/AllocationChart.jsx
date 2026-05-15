@@ -5,7 +5,7 @@ import useSessionState from '../../../shared/hooks/useSessionState';
 import { PieChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/useTheme';
-import { formatPriceTRY, formatCompactTRY } from '../../../shared/utils/formatters';
+import { useMoney } from '../../../shared/hooks/useMoney';
 import { usePortfolioAllocation } from '../hooks/usePortfolioData';
 import { cardVariants } from '../../../shared/utils/animations';
 import Card from '../../../shared/components/card';
@@ -24,6 +24,7 @@ const COLORS = [
 export default function AllocationChart({ allocation, portfolioId }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
+  const { format: money, formatCompact: moneyCompact } = useMoney();
   const [activeTab, setActiveTab] = useSessionState('portfolio-alloc-tab', 'ALL');
   const assetLabel = (id) => t(`assets.labels.${id}`, { defaultValue: id });
 
@@ -78,7 +79,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
         const pct = totalValue > 0 ? ((params.value / totalValue) * 100).toFixed(1) : '0.0';
         return `<div style="padding:4px 0">
           <div style="font-size:11px;color:${tooltipFg};opacity:0.85;margin-bottom:2px">${params.name}</div>
-          <div style="font-size:13px;font-family:ui-monospace,monospace;font-weight:700;color:${tooltipFg}">${formatPriceTRY(params.value)}</div>
+          <div style="font-size:13px;font-family:ui-monospace,monospace;font-weight:700;color:${tooltipFg}">${money(params.value)}</div>
           <div style="font-size:10px;color:${labelMuted}">%${pct}</div>
         </div>`;
       },
@@ -91,7 +92,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
       label: {
         show: true,
         position: 'center',
-        formatter: () => `{label|${totalLabel}}\n{value|${formatCompactTRY(totalValue)}}`,
+        formatter: () => `{label|${totalLabel}}\n{value|${moneyCompact(totalValue)}}`,
         rich: {
           label: { fontSize: 11, color: labelMuted, fontWeight: 500, padding: [0, 0, 4, 0] },
           value: { fontSize: 14, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: labelFg },
@@ -105,7 +106,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
       },
       data: seriesData,
     }],
-  }), [seriesData, totalValue, totalLabel, tooltipBg, tooltipBorder, tooltipFg, labelFg, labelMuted, ringStroke]);
+  }), [seriesData, totalValue, totalLabel, tooltipBg, tooltipBorder, tooltipFg, labelFg, labelMuted, ringStroke, money, moneyCompact]);
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="show" className="space-y-4">
@@ -179,7 +180,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
                     />
                     <span className="text-xs font-medium text-fg flex-1 truncate">{label}</span>
                     <span className="text-xs font-mono text-fg-muted">{pct.toFixed(1)}%</span>
-                    <span className="text-xs font-mono font-semibold text-fg">{formatPriceTRY(value)}</span>
+                    <span className="text-xs font-mono font-semibold text-fg">{money(value)}</span>
                   </div>
                 );
               })}

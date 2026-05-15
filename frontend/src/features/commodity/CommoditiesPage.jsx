@@ -6,23 +6,22 @@ import { Gem, ChevronUp, ChevronDown, Clock } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
 import { commodityService } from './services/commodityService';
 import { adminService } from '../admin/services/adminService';
-import { formatPrice } from '../../shared/utils/formatters';
 import { commodityName } from '../../shared/utils/commodityName';
 import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
 import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
 import ChangePercentBadge from '../../shared/components/asset/ChangePercentBadge';
 import useListParams from '../../shared/hooks/useListParams';
+import { useMoney } from '../../shared/hooks/useMoney';
 
 const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
 const SEGMENT_ORDER = ['PRECIOUS_METAL', 'OTHER'];
-
-const formatCommodityPrice = (price) => formatPrice(price);
 
 function CommoditiesPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const listParams = useListParams();
+    const { format: money } = useMoney();
     const segment = listParams.filter || 'ALL';
     const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) }));
     const segmentLabel = (id) => t(`market.commodity.segments.${id}`);
@@ -66,7 +65,7 @@ function CommoditiesPage() {
                 </div>
 
                 <div className="mt-3">
-                    <p className="font-mono text-xl font-bold text-fg">₺{formatCommodityPrice(commodity.price)}</p>
+                    <p className="font-mono text-xl font-bold text-fg">{money(commodity.price)}</p>
                     <ChangePercentBadge
                         value={commodity.changePercent}
                         positiveIcon={<TrendingUp className="h-3.5 w-3.5" />}
@@ -74,7 +73,7 @@ function CommoditiesPage() {
                         size="sm"
                         className="mt-1"
                     >
-                        <span className="ml-1 opacity-75">({commodity.changeAmount > 0 ? '+' : ''}₺{formatCommodityPrice(commodity.changeAmount)})</span>
+                        <span className="ml-1 opacity-75">({commodity.changeAmount > 0 ? '+' : ''}{money(commodity.changeAmount)})</span>
                     </ChangePercentBadge>
                 </div>
 
@@ -82,25 +81,25 @@ function CommoditiesPage() {
                     {usd != null && (
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-fg-muted">{t('market.commodity.usdPriceLabel')}</span>
-                            <span className="font-mono text-fg">${formatCommodityPrice(usd)}</span>
+                            <span className="font-mono text-fg">{money(usd, 'USD')}</span>
                         </div>
                     )}
                     {meta.openPrice != null && (
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-fg-muted">{t('market.stock.openLabel')}</span>
-                            <span className="font-mono text-fg">₺{formatCommodityPrice(meta.openPrice)}</span>
+                            <span className="font-mono text-fg">{money(meta.openPrice)}</span>
                         </div>
                     )}
                     {meta.dayHigh != null && (
                         <div className="flex items-center justify-between text-xs">
                             <span className="flex items-center gap-1 text-fg-muted"><ChevronUp className="h-3 w-3 text-success" />{t('market.stock.highLabel')}</span>
-                            <span className="font-mono text-fg">₺{formatCommodityPrice(meta.dayHigh)}</span>
+                            <span className="font-mono text-fg">{money(meta.dayHigh)}</span>
                         </div>
                     )}
                     {meta.dayLow != null && (
                         <div className="flex items-center justify-between text-xs">
                             <span className="flex items-center gap-1 text-fg-muted"><ChevronDown className="h-3 w-3 text-danger" />{t('market.stock.lowLabel')}</span>
-                            <span className="font-mono text-fg">₺{formatCommodityPrice(meta.dayLow)}</span>
+                            <span className="font-mono text-fg">{money(meta.dayLow)}</span>
                         </div>
                     )}
                     {meta.volume != null && meta.volume > 0 && (

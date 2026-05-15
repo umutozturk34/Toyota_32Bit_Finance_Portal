@@ -2,12 +2,11 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { commodityService } from './services/commodityService';
-import { getChangeClass, changeColors, formatPrice, formatPercentAbs } from '../../shared/utils/formatters';
+import { getChangeClass, changeColors, formatPercentAbs } from '../../shared/utils/formatters';
+import { useMoney } from '../../shared/hooks/useMoney';
 import { commodityName } from '../../shared/utils/commodityName';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
-
-const fmt = (price) => formatPrice(price);
 
 function CommodityHeader({ asset }) {
   const { t } = useTranslation();
@@ -29,14 +28,15 @@ function CommodityHeader({ asset }) {
 
 function CommodityMetadata({ asset }) {
   const { t } = useTranslation();
+  const { format: money } = useMoney();
   const meta = asset.metadata || {};
   const cls = getChangeClass(asset.changePercent);
   const usd = meta.currentPriceUsd;
   const localeTag = t('common.localeTag');
   return (
     <MetadataTiles tiles={[
-      { label: t('marketDetail.commodity.priceTry'), value: `₺${fmt(asset.price)}` },
-      { label: t('marketDetail.commodity.priceUsd'), value: usd != null ? `$${fmt(usd)}` : '—' },
+      { label: t('marketDetail.commodity.priceTry'), value: money(asset.price) },
+      { label: t('marketDetail.commodity.priceUsd'), value: usd != null ? money(usd, 'USD') : '—' },
       {
         label: t('marketDetail.forex.delta24h'),
         color: changeColors[cls],
@@ -47,11 +47,11 @@ function CommodityMetadata({ asset }) {
           </span>
         ),
       },
-      { label: t('marketDetail.forex.deltaTL'), value: `₺${fmt(asset.changeAmount)}`, color: changeColors[cls] },
-      meta.sellingPrice != null && { label: t('marketDetail.commodity.buy'), value: `₺${fmt(meta.sellingPrice)}` },
-      meta.openPrice != null && { label: t('market.stock.openLabel'), value: `₺${fmt(meta.openPrice)}` },
-      meta.dayHigh != null && { label: t('market.stock.highLabel'), value: `₺${fmt(meta.dayHigh)}`, color: 'text-success' },
-      meta.dayLow != null && { label: t('market.stock.lowLabel'), value: `₺${fmt(meta.dayLow)}`, color: 'text-danger' },
+      { label: t('marketDetail.forex.deltaTL'), value: money(asset.changeAmount), color: changeColors[cls] },
+      meta.sellingPrice != null && { label: t('marketDetail.commodity.buy'), value: money(meta.sellingPrice) },
+      meta.openPrice != null && { label: t('market.stock.openLabel'), value: money(meta.openPrice) },
+      meta.dayHigh != null && { label: t('market.stock.highLabel'), value: money(meta.dayHigh), color: 'text-success' },
+      meta.dayLow != null && { label: t('market.stock.lowLabel'), value: money(meta.dayLow), color: 'text-danger' },
       meta.volume != null && meta.volume > 0 && { label: t('market.stock.volumeLabel'), value: meta.volume.toLocaleString(localeTag) },
     ]} />
   );

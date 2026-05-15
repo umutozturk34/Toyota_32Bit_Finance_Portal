@@ -1,6 +1,7 @@
 package com.finance.portfolio.service;
 
 
+import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
 import com.finance.portfolio.dto.response.AllocationItem;
 import com.finance.portfolio.dto.response.PortfolioSummaryResponse;
 import com.finance.portfolio.dto.response.PositionResponse;
@@ -29,6 +30,7 @@ class PortfolioSummaryServiceTest {
 
     @Mock private PortfolioPositionRepository positionRepository;
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
+    @Mock private DerivativePositionRepository derivativePositionRepository;
 
     private CountingAssetPricingPort counting;
     private PortfolioResponseMapper responseMapper;
@@ -39,7 +41,9 @@ class PortfolioSummaryServiceTest {
         counting = new CountingAssetPricingPort();
         responseMapper = new PortfolioResponseMapperImpl();
         service = new PortfolioSummaryService(counting, positionRepository, responseMapper,
-                assetSnapshotRepository);
+                assetSnapshotRepository, derivativePositionRepository);
+        org.mockito.Mockito.lenient().when(derivativePositionRepository.findOpenByPortfolio(org.mockito.ArgumentMatchers.anyLong()))
+                .thenReturn(java.util.List.of());
     }
 
     @Test

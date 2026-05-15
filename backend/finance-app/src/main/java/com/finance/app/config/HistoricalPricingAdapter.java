@@ -6,6 +6,7 @@ import com.finance.common.config.AppProperties;
 import com.finance.market.core.dto.response.CandleResponse;
 import com.finance.market.forex.dto.response.ForexCandleResponse;
 import com.finance.market.fund.dto.response.FundCandleResponse;
+import com.finance.market.viop.dto.ViopHistoryPoint;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.service.HistoricalPricingPort;
 import com.finance.market.core.service.MarketHistoryProvider;
@@ -103,6 +104,7 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
         if (candle instanceof ForexCandleResponse fx) return fx.candleDate().toLocalDate();
         if (candle instanceof CandleResponse c) return c.candleDate().toLocalDate();
         if (candle instanceof FundCandleResponse f) return f.candleDate().toLocalDate();
+        if (candle instanceof ViopHistoryPoint v) return v.candleDate().toLocalDate();
         return null;
     }
 
@@ -110,6 +112,7 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
         if (candle instanceof ForexCandleResponse fx) return fx.sellingPrice();
         if (candle instanceof CandleResponse c) return c.close();
         if (candle instanceof FundCandleResponse f) return f.price();
+        if (candle instanceof ViopHistoryPoint v) return v.close();
         return null;
     }
 }

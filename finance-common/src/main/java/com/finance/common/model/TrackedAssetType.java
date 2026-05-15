@@ -59,6 +59,12 @@ public enum TrackedAssetType {
         public String normalizeCode(String raw) {
             return ensureNonBlank(raw).toUpperCase(Locale.ROOT);
         }
+    },
+    VIOP(MarketType.VIOP) {
+        @Override
+        public String normalizeCode(String raw) {
+            return ensureNonBlank(raw).toUpperCase(Locale.ROOT);
+        }
     };
 
     private final MarketType marketType;

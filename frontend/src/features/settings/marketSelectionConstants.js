@@ -5,4 +5,5 @@ export const MARKET_CHIPS = [
   { id: 'COMMODITY', labelKey: 'assets.labels.COMMODITY' },
   { id: 'BOND', labelKey: 'marketChips.BOND' },
   { id: 'CRYPTO', labelKey: 'assets.labels.CRYPTO' },
+  { id: 'VIOP', labelKey: 'assets.labels.VIOP' },
 ];

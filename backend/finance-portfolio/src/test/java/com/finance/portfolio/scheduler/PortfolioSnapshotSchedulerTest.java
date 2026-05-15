@@ -1,5 +1,6 @@
 package com.finance.portfolio.scheduler;
 
+import com.finance.portfolio.derivative.service.DerivativePositionService;
 import com.finance.portfolio.service.PortfolioSnapshotService;
 import com.finance.shared.service.TaskTrackingService;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,13 +18,14 @@ import static org.mockito.Mockito.verify;
 class PortfolioSnapshotSchedulerTest {
 
     @Mock private PortfolioSnapshotService snapshotService;
+    @Mock private DerivativePositionService derivativePositionService;
     @Mock private TaskTrackingService taskTracker;
 
     private PortfolioSnapshotScheduler scheduler;
 
     @BeforeEach
     void setUp() {
-        scheduler = new PortfolioSnapshotScheduler(snapshotService, taskTracker);
+        scheduler = new PortfolioSnapshotScheduler(snapshotService, derivativePositionService, taskTracker);
         doAnswer(inv -> { ((Runnable) inv.getArgument(2)).run(); return null; })
                 .when(taskTracker).runTracked(any(), any(), any());
     }

@@ -108,7 +108,8 @@ public class PortfolioSummaryService {
                 closed,
                 strike,
                 maxLoss,
-                maxGain);
+                maxGain,
+                position.getViopContract().getDisplayName());
         return new PositionResponse(
                 position.getId(),
                 AssetType.VIOP.name(),

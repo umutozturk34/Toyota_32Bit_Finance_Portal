@@ -5,7 +5,9 @@ import { motion } from 'framer-motion';
 import { Banknote, Clock, Coins, Crown, DollarSign, Gem, RefreshCw, Search, Sparkles, X } from 'lucide-react';
 import { useBankRates, useBankRateCurrencies } from './hooks/useBankRates';
 import Card from '../../shared/components/card';
+import CurrencyMarker from '../../shared/components/currency/CurrencyMarker';
 import Spinner from '../../shared/components/feedback/Spinner';
+import { useMoney } from '../../shared/hooks/useMoney';
 import { formatDateTimeShort } from '../../shared/utils/formatters';
 
 const DEFAULT_CURRENCY_BY_KIND = { CURRENCY: 'USD', GOLD: 'GRAM_ALTIN' };
@@ -52,12 +54,15 @@ function formatRate(value, localeTag) {
   return num.toLocaleString(localeTag || 'tr-TR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
 }
 
-function BankCard({ row, t, localeTag }) {
+function BankCard({ row, t, localeTag, displayCurrency, money }) {
   const spread = row.buyRate != null && row.sellRate != null
     ? Number(row.sellRate) - Number(row.buyRate)
     : null;
   const isMarket = row.bankCode === 'MARKET';
   const displayName = isMarket ? t('bankRates.marketBank') : row.bankName;
+  const formatValue = (v) => v == null ? '—' : money(v);
+  const formatSpread = (s) => s == null ? null : money(s);
+  const marker = displayCurrency === 'ORIGINAL' ? 'TRY' : displayCurrency;
   return (
     <Card
       variant="elevated"
@@ -71,7 +76,7 @@ function BankCard({ row, t, localeTag }) {
           <img
             src={row.bankLogoUrl}
             alt={displayName}
-            className="w-10 h-10 rounded-lg object-contain bg-white p-1"
+            className="w-10 h-10 rounded-lg object-contain"
             onError={(e) => { e.target.style.display = 'none'; }}
           />
         ) : (
@@ -90,17 +95,21 @@ function BankCard({ row, t, localeTag }) {
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-lg border border-success/25 bg-success/5 px-2.5 py-2">
-          <p className="text-[10px] text-success uppercase tracking-wide font-medium">{t('bankRates.buy')}</p>
-          <p className="text-sm font-mono font-bold text-success">{formatRate(row.buyRate, localeTag)}</p>
+          <p className="text-[10px] text-success uppercase tracking-wide font-medium flex items-center gap-1">
+            {t('bankRates.buy')} <CurrencyMarker code={marker} />
+          </p>
+          <p className="text-sm font-mono font-bold text-success">{formatValue(row.buyRate)}</p>
         </div>
         <div className="rounded-lg border border-danger/25 bg-danger/5 px-2.5 py-2">
-          <p className="text-[10px] text-danger uppercase tracking-wide font-medium">{t('bankRates.sell')}</p>
-          <p className="text-sm font-mono font-bold text-danger">{formatRate(row.sellRate, localeTag)}</p>
+          <p className="text-[10px] text-danger uppercase tracking-wide font-medium flex items-center gap-1">
+            {t('bankRates.sell')} <CurrencyMarker code={marker} />
+          </p>
+          <p className="text-sm font-mono font-bold text-danger">{formatValue(row.sellRate)}</p>
         </div>
       </div>
       {spread != null && (
         <div className="text-[10px] text-fg-muted text-right font-mono">
-          {t('bankRates.spread')}: {spread.toFixed(4)}
+          {t('bankRates.spread')}: {formatSpread(spread)}
         </div>
       )}
     </Card>
@@ -122,7 +131,7 @@ function FilterItem({ active, label, code, count, onClick, showCode = true, kind
     >
       {flag && <span className="shrink-0 text-lg leading-none">{flag}</span>}
       {goldIcon && (
-        <goldIcon.Icon className={`shrink-0 h-5 w-5 ${goldIcon.color}`} fill="currentColor" stroke="currentColor" strokeWidth={1.2} strokeLinejoin="round" />
+        <goldIcon.Icon className={`shrink-0 h-5 w-5 ${goldIcon.color}`} strokeWidth={2} />
       )}
       <div className="min-w-0 flex-1">
         <p className="truncate">{label}</p>
@@ -143,6 +152,7 @@ export default function BankRatesPanel() {
   const { t } = useTranslation();
   const localeTag = t('common.localeTag');
   const labelFor = (code) => t(`bankRates.currency.${code}`, code);
+  const { format: money, currency: displayCurrency } = useMoney();
   const [searchParams, setSearchParams] = useSearchParams();
   const kindParam = searchParams.get('kind');
   const kind = kindParam === 'GOLD' ? 'GOLD' : 'CURRENCY';
@@ -216,13 +226,13 @@ export default function BankRatesPanel() {
   const isLoading = ratesLoading && rates.length === 0;
 
   return (
-    <div className="flex gap-4 items-start min-h-[600px]">
+    <div className="flex gap-4 items-start">
       <Card
         variant="elevated"
         radius="xl"
         padding="sm"
         backdropBlur
-        className="w-60 shrink-0 flex flex-col gap-3 sticky top-4 max-h-[calc(100vh-2rem)]"
+        className="w-60 shrink-0 flex flex-col gap-3 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-hidden"
       >
         <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-bg-base">
           <button
@@ -306,7 +316,7 @@ export default function BankRatesPanel() {
                 const gv = goldVisual(currency);
                 const GIcon = gv.Icon;
                 return (
-                  <GIcon className={`h-8 w-8 ${gv.color}`} fill="currentColor" stroke="currentColor" strokeWidth={1.2} strokeLinejoin="round" />
+                  <GIcon className={`h-8 w-8 ${gv.color}`} strokeWidth={2} />
                 );
               })()
             ) : flagEmoji(currency) ? (
@@ -386,7 +396,7 @@ export default function BankRatesPanel() {
           >
             {filteredRates.map((row) => (
               <motion.div key={row.id} variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}>
-                <BankCard row={row} t={t} localeTag={localeTag} />
+                <BankCard row={row} t={t} localeTag={localeTag} money={money} displayCurrency={displayCurrency} />
               </motion.div>
             ))}
           </motion.div>

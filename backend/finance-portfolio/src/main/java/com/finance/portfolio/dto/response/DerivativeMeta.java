@@ -13,5 +13,6 @@ public record DerivativeMeta(
         boolean closed,
         BigDecimal strikePrice,
         BigDecimal maxLossTry,
-        BigDecimal maxGainTry
+        BigDecimal maxGainTry,
+        String displayName
 ) { }

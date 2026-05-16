@@ -196,28 +196,7 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
   const assetTypeLabel = t(`assets.labels.${pos.assetType}`, { defaultValue: pos.assetType });
   const isDerivative = pos.assetType === 'VIOP';
   const isClosedDerivative = isDerivative && pos.assetName && pos.assetName.includes('KAPALI');
-  const derivativeName = (() => {
-    if (!isDerivative) return null;
-    const meta = pos.derivative;
-    if (!meta) return null;
-    const parts = [];
-    if (pos.assetCode) {
-      const m = pos.assetCode.match(/^[OF]_([A-Z0-9]+?)(?:E?\d|$)/);
-      if (m) parts.push(m[1]);
-    }
-    if (meta.contractKind === 'OPTION') {
-      if (pos.assetCode?.includes('_C')) parts.push(t('portfolio.derivatives.call', 'Call'));
-      else if (pos.assetCode?.includes('_P')) parts.push(t('portfolio.derivatives.put', 'Put'));
-      else parts.push('Option');
-    } else if (meta.contractKind === 'FUTURE') {
-      parts.push(t('portfolio.derivatives.future', 'Vadeli'));
-    }
-    if (meta.expiryDate) {
-      const d = new Date(meta.expiryDate);
-      parts.push(d.toLocaleDateString(localeTag, { day: '2-digit', month: 'short', year: '2-digit' }));
-    }
-    return parts.length > 0 ? parts.join(' · ') : null;
-  })();
+  const derivativeName = isDerivative ? pos.derivative?.displayName : null;
   const displayName = pos.assetName && pos.assetName !== pos.assetCode
     ? pos.assetName.replace(/\s·\sKAPALI$/, '')
     : assetTypeLabel;

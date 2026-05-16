@@ -48,6 +48,9 @@ public class ViopContract extends BaseAsset {
     @Column(name = "symbol", nullable = false, length = 64)
     private String symbol;
 
+    @Column(name = "display_name", length = 128)
+    private String displayName;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "kind", nullable = false, length = 16)
     private ViopContractKind kind;
@@ -150,6 +153,6 @@ public class ViopContract extends BaseAsset {
 
     @Override
     public String resolveDisplayName() {
-        return firstNonBlank(getName(), symbol);
+        return firstNonBlank(displayName, getName(), symbol);
     }
 }

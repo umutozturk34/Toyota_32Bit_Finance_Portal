@@ -140,6 +140,9 @@ public class ViopEntityWriter implements MarketEntityWriter {
                 .build();
         entity.setCategory(categoryResolver.resolve(parsed.kind(), parsed.underlying(), null));
         entity.setName(symbol);
+        entity.setDisplayName(ViopDisplayNameBuilder.build(parsed.kind(), parsed.underlying(),
+                parsed.optionSide(), parsed.strikePrice(),
+                symbolParser.impliedExpiry(parsed.expiryYear(), parsed.expiryMonth())));
         entity.setAsset(assetRegistry.upsert(MarketType.VIOP, symbol));
         trackedAssetCommand.autoTrack(TrackedAssetType.VIOP, symbol, entity.getName(), 0);
         return entity;
@@ -159,6 +162,8 @@ public class ViopEntityWriter implements MarketEntityWriter {
         if (entity.getName() == null || entity.getName().isBlank()) {
             entity.setName(spec.displayName() != null ? spec.displayName() : spec.symbol());
         }
+        entity.setDisplayName(ViopDisplayNameBuilder.build(spec.kind(), spec.underlying(),
+                spec.optionSide(), spec.strikePrice(), spec.expiryDate()));
         if (entity.isActive() && spec.expiryDate() != null && spec.expiryDate().isBefore(LocalDate.now())) {
             entity.setActive(false);
         }

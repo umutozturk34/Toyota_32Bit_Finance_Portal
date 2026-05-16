@@ -107,7 +107,7 @@ public class ViopMarketAssetProvider implements MarketAssetProvider {
         }
         if (searchTerm != null && !searchTerm.isBlank()) {
             spec = spec.and((root, query, cb) ->
-                    LikeSearchSpec.byFieldsContains(root, cb, searchTerm, "symbol", "name", "underlying"));
+                    LikeSearchSpec.byFieldsContains(root, cb, searchTerm, "symbol", "name", "underlying", "displayName"));
         }
         return spec;
     }

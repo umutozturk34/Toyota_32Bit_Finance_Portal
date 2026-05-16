@@ -127,6 +127,13 @@ jobs:
         with:
           name: jacoco-notification
           path: notification-backend/target/site/jacoco
+      - name: Compile backend modules for sonar bytecode analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          (cd finance-common && mvn -B -ntp -DskipTests test-compile)
+          (cd backend && ./mvnw -B -ntp -DskipTests test-compile)
+          (cd notification-backend && mvn -B -ntp -DskipTests test-compile)
       - name: Run sonar-scanner
         uses: SonarSource/sonarqube-scan-action@v4
         env:

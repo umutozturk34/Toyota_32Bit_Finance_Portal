@@ -133,15 +133,27 @@ export default function AssetDetailPage({
     () => convertCandleSet(transform(filteredHistoryRaw), convertAt, baseCurrency, naturalCurrency),
     [filteredHistoryRaw, transform, convertAt, baseCurrency, naturalCurrency],
   );
+  const compareDataSig = compareQueries
+    .map((q, idx) => {
+      const a = compareAssets[idx];
+      return `${a?.type}:${a?.code}:${q.data?.candles?.length ?? 0}:${q.dataUpdatedAt ?? 0}`;
+    })
+    .join('|');
   const convertedCompareDatas = useMemo(
     () => compareQueries
       .map((q, idx) => ({ data: q.data, asset: compareAssets[idx] }))
-      .filter((row) => row.data)
+      .filter((row) => row.data && row.asset)
       .map((row) => ({
         symbol: row.asset.code,
-        data: convertCandleSet(row.data, convertAt, 'TRY', 'TRY'),
+        data: convertCandleSet(
+          row.data,
+          convertAt,
+          'TRY',
+          naturalCurrencyFor(row.asset.type, row.asset),
+        ),
       })),
-    [compareQueries, compareAssets, convertAt],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [compareDataSig, convertAt],
   );
 
   if (isLoading) return <LoadingState message={resolvedLoading} />;

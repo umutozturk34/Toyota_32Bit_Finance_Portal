@@ -479,7 +479,8 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 try { mainSeries.applyOptions({ visible: true }); } catch { void 0; }
             }
         };
-    }, [compareDatas, hasCompare, data, isDark, symbol, chartType, showSecondaryLines]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [compareDatas.map(c => `${c.symbol}:${c.data?.candles?.length ?? 0}`).join('|'), hasCompare, data, isDark, symbol, chartType, showSecondaryLines]);
 
     useEffect(() => {
         const chart = chartRef.current;

@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -52,7 +53,6 @@ class FundCandleBulkSyncServiceTest {
         when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND))
                 .thenReturn(List.of());
         when(fundRepository.findAllById(List.of())).thenReturn(List.of());
-        when(fundRepository.findByFundType(FundType.BYF)).thenReturn(List.of());
 
         service.refreshAllCandles();
 
@@ -60,12 +60,11 @@ class FundCandleBulkSyncServiceTest {
     }
 
     @Test
-    void should_collectByfFundsFromRepository_when_typeIsBYF() {
+    void should_collectByfFundsFromTracked_when_typeIsBYF() {
         Fund byf = fundWith("BLH", FundType.BYF);
-        when(fundRepository.findByFundType(FundType.BYF)).thenReturn(List.of(byf));
         when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND))
-                .thenReturn(List.of());
-        when(fundRepository.findAllById(List.of())).thenReturn(List.of());
+                .thenReturn(List.of("BLH"));
+        when(fundRepository.findAllById(List.of("BLH"))).thenReturn(List.of(byf));
 
         service.refreshAllCandles();
 
@@ -80,7 +79,6 @@ class FundCandleBulkSyncServiceTest {
     void should_filterOutByfFundsFromYatTrackedList_when_collectingYatFunds() {
         Fund yatFund = fundWith("TI2", FundType.YAT);
         Fund byfFund = fundWith("BLH", FundType.BYF);
-        when(fundRepository.findByFundType(FundType.BYF)).thenReturn(List.of(byfFund));
         when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND))
                 .thenReturn(List.of("TI2", "BLH"));
         when(fundRepository.findAllById(List.of("TI2", "BLH")))
@@ -98,20 +96,48 @@ class FundCandleBulkSyncServiceTest {
     @Test
     void should_skipFetch_when_allFundsUpToDate() {
         Fund byf = fundWith("BLH", FundType.BYF);
-        when(fundRepository.findByFundType(FundType.BYF)).thenReturn(List.of(byf));
         when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND))
-                .thenReturn(List.of());
-        when(fundRepository.findAllById(List.of())).thenReturn(List.of());
+                .thenReturn(List.of("BLH"));
+        when(fundRepository.findAllById(List.of("BLH"))).thenReturn(List.of(byf));
         LocalDateTime fiveYearsAgo = LocalDateTime.now().minusYears(5);
         LocalDateTime futureLatest = LocalDateTime.now().plusDays(1);
         when(fundCandleRepository.findCandleDateRangePerFund())
                 .thenReturn(Collections.singletonList(new Object[]{"BLH", fiveYearsAgo, futureLatest}));
         when(fundCandleRepository.countCandlesPerFund())
                 .thenReturn(Collections.singletonList(new Object[]{"BLH", 1000L}));
+        // Gap detector should find nothing — fill every day in a buffer wider than lookback
+        LocalDate todayDate = LocalDate.now();
+        List<LocalDateTime> completeDates = new java.util.ArrayList<>();
+        for (LocalDate d = todayDate.minusDays(60); !d.isAfter(todayDate); d = d.plusDays(1)) {
+            completeDates.add(d.atStartOfDay());
+        }
+        when(fundCandleRepository.findCandleDatesSince(eq("BLH"), any(LocalDateTime.class)))
+                .thenReturn(completeDates);
 
         service.refreshAllCandles();
 
         verify(bulkFetchExecutor, never()).runWindows(any(), anyList(), any(), any());
+    }
+
+    @Test
+    void should_backfillGap_when_midHistoryDatesAreMissing() {
+        Fund byf = fundWith("BLH", FundType.BYF);
+        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND))
+                .thenReturn(List.of("BLH"));
+        when(fundRepository.findAllById(List.of("BLH"))).thenReturn(List.of(byf));
+        LocalDateTime fiveYearsAgo = LocalDateTime.now().minusYears(5);
+        LocalDateTime futureLatest = LocalDateTime.now().plusDays(1);
+        when(fundCandleRepository.findCandleDateRangePerFund())
+                .thenReturn(Collections.singletonList(new Object[]{"BLH", fiveYearsAgo, futureLatest}));
+        when(fundCandleRepository.countCandlesPerFund())
+                .thenReturn(Collections.singletonList(new Object[]{"BLH", 1000L}));
+        // Gap: empty set in lookback → ALL business days missing
+        when(fundCandleRepository.findCandleDatesSince(eq("BLH"), any(LocalDateTime.class)))
+                .thenReturn(List.of());
+
+        service.refreshAllCandles();
+
+        verify(bulkFetchExecutor).runWindows(eq(FundType.BYF), anyList(), any(), any());
     }
 
     private Fund fundWith(String code, FundType type) {

@@ -1,13 +1,13 @@
 import { useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { cardVariants } from '../../../shared/utils/animations';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { PieChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/useTheme';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { usePortfolioAllocation } from '../hooks/usePortfolioData';
-import { cardVariants } from '../../../shared/utils/animations';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
 import {

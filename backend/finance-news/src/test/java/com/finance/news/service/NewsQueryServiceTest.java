@@ -108,4 +108,84 @@ class NewsQueryServiceTest {
         assertThat(pageable.getSort().getOrderFor("publishedAt")).isNotNull();
         assertThat(pageable.getSort().getOrderFor("publishedAt").getDirection()).isEqualTo(Sort.Direction.DESC);
     }
+
+    @Test
+    void should_applyCategoryFilter_when_searchCalledWithCategory() {
+        when(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(responseMapper.toResponses(List.of())).thenReturn(List.of());
+
+        service.search("CRYPTO", null, "publishedAt", "desc", 0, 10);
+
+        verify(articleRepository).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    void should_applySearchTermFilter_when_searchCalledWithTerm() {
+        when(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(responseMapper.toResponses(List.of())).thenReturn(List.of());
+
+        service.search(null, "bitcoin", "publishedAt", "desc", 0, 10);
+
+        verify(articleRepository).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    void should_combineCategoryAndSearchTerm_when_bothProvided() {
+        when(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(responseMapper.toResponses(List.of())).thenReturn(List.of());
+
+        service.search("CRYPTO", "ethereum", "publishedAt", "desc", 0, 10);
+
+        verify(articleRepository).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    void should_treatBlankCategoryAsAbsent_when_searchCalled() {
+        when(articleRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(responseMapper.toResponses(List.of())).thenReturn(List.of());
+
+        service.search("   ", "  ", "publishedAt", "desc", 0, 10);
+
+        verify(articleRepository).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    void should_returnDetailResponse_when_getByIdFindsArticle() {
+        NewsArticle article = article("Bitcoin", NewsCategory.CRYPTO);
+        com.finance.news.dto.response.NewsArticleDetailResponse detail =
+                new com.finance.news.dto.response.NewsArticleDetailResponse(
+                        1L, "Bitcoin", "https://x.com", "summary", "content",
+                        "Test", "CRYPTO", LocalDateTime.now(), null);
+        when(newsCacheService.getById(1L)).thenReturn(java.util.Optional.of(article));
+        when(responseMapper.toDetailResponse(article)).thenReturn(detail);
+
+        com.finance.news.dto.response.NewsArticleDetailResponse out = service.getById(1L);
+
+        assertThat(out.id()).isEqualTo(1L);
+    }
+
+    @Test
+    void should_throwResourceNotFound_when_getByIdMissesCache() {
+        when(newsCacheService.getById(404L)).thenReturn(java.util.Optional.empty());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.getById(404L))
+                .isInstanceOf(com.finance.common.exception.ResourceNotFoundException.class)
+                .hasMessageContaining("error.news.articleNotFound");
+    }
+
+    @Test
+    void should_mapCategoryCountsFromRepositoryRows_when_getCategoryCountsCalled() {
+        when(articleRepository.countByCategory()).thenReturn(List.of(
+                new Object[]{NewsCategory.CRYPTO, 12L},
+                new Object[]{NewsCategory.BORSA_ISTANBUL, 5L}));
+
+        List<com.finance.shared.dto.response.GroupCount> counts = service.getCategoryCounts();
+
+        assertThat(counts).hasSize(2);
+        assertThat(counts.get(0).count()).isEqualTo(12L);
+    }
 }

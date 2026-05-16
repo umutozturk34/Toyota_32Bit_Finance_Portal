@@ -15,6 +15,10 @@ public class AppProperties {
     private String tefasApiPath;
     private String tefasBaseUrl;
     private String tefasSessionPath = "/tr";
+    private String tefasReturnsPath = "/api/funds/fonGetiriBazliBilgiGetir";
+    private String tefasAllocationPath = "/api/funds/dagilimSiraliGetirT";
+    private String tefasInfoPath = "/api/funds/fonBilgiGetir";
+    private String tefasProfilePath = "/api/funds/fonProfilBilgiGetir";
     private String timezone = "Europe/Istanbul";
     private int scale = 4;
 

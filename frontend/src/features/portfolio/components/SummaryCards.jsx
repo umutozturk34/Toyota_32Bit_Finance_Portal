@@ -1,11 +1,11 @@
 import useSessionState from '../../../shared/hooks/useSessionState';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { containerVariants, cardVariants } from '../../../shared/utils/animations';
 import { Wallet, BarChart3 } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/AnimatedIcons';
 import { formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
-import { containerVariants, cardVariants } from '../../../shared/utils/animations';
 import { usePortfolioSummary } from '../hooks/usePortfolioData';
 import { ASSET_TYPE_FILTERS as SUMMARY_FILTERS } from '../../../shared/constants/assetTypes';
 import Card from '../../../shared/components/card';

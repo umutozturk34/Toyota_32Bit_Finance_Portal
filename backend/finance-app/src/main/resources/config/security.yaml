@@ -54,4 +54,4 @@ app:
   rate-limit:
     admin-trigger-limit: 20
     admin-read-limit: 20
-    api-limit: 60
+    api-limit: 100

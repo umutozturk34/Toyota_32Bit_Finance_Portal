@@ -12,6 +12,7 @@ import LightweightChart from './components/LightweightChart';
 import CompareBar from '../../shared/components/layout/CompareBar';
 import Spinner from '../../shared/components/feedback/Spinner';
 import useNavigationBack from '../../shared/hooks/useNavigationBack';
+import useChartRange from '../../shared/hooks/useChartRange';
 import { fundService, trackedAssetService } from '../../shared/services/marketService';
 import { unifiedMarketService } from '../../shared/services/unifiedMarketService';
 import { formatBistSymbol } from '../../shared/constants/stocks';
@@ -57,7 +58,7 @@ const ChartView = () => {
     if (urlType === 'BIST' && sym.endsWith('.IS')) sym = sym.replace('.IS', '');
     return sym;
   });
-  const [timeRange, setTimeRange] = useState('6M');
+  const [timeRange, setTimeRange] = useChartRange();
   const [customSymbol, setCustomSymbol] = useState('');
   const [compareAsset, setCompareAsset] = useState(null);
 
@@ -333,9 +334,10 @@ const ChartView = () => {
               {t('chartView.compareLabel')}
             </label>
             <CompareBar
-              compareAsset={compareAsset}
-              onSelect={setCompareAsset}
-              onClear={() => setCompareAsset(null)}
+              compareAssets={compareAsset ? [compareAsset] : []}
+              onAdd={setCompareAsset}
+              onRemove={() => setCompareAsset(null)}
+              maxAssets={1}
               excludeCodes={[symbol, fetchSymbol].filter(Boolean)}
             />
           </div>
@@ -391,8 +393,9 @@ const ChartView = () => {
                   data={chartData}
                   symbol={symbol}
                   assetType={assetType}
-                  compareData={compareData}
-                  compareSymbol={compareSymbol}
+                  compareDatas={compareData && compareSymbol
+                    ? [{ symbol: compareSymbol, data: compareData }]
+                    : []}
                   timeRange={timeRange}
                   onTimeRangeChange={setTimeRange}
                 />

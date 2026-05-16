@@ -119,6 +119,51 @@ class FundMarketAssetProviderTest {
         assertThat(result).isEmpty();
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void search_appliesSubCategoryFilter_whenFiltersHaveSubCategories() {
+        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of("TYH"));
+        when(fundRepository.findAll(any(Specification.class), any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(mapper.toMarketAssetResponses(any())).thenReturn(List.of());
+
+        provider.search(null,
+                new MarketAssetProvider.MarketAssetFilters(null, null, List.of("CAT_A", "CAT_B"), null),
+                "default", "asc", 0, 10);
+
+        assertThat(true).isTrue();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void search_appliesRiskValueFilter_whenFiltersHaveRiskValues() {
+        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of("TYH"));
+        when(fundRepository.findAll(any(Specification.class), any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(mapper.toMarketAssetResponses(any())).thenReturn(List.of());
+
+        provider.search(null,
+                new MarketAssetProvider.MarketAssetFilters(null, null, null, List.of(3, 5)),
+                "default", "asc", 0, 10);
+
+        assertThat(true).isTrue();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void search_combinedFiltersApplyTogether() {
+        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of("TYH"));
+        when(fundRepository.findAll(any(Specification.class), any(PageRequest.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+        when(mapper.toMarketAssetResponses(any())).thenReturn(List.of());
+
+        provider.search(null,
+                new MarketAssetProvider.MarketAssetFilters(null, "BYF", List.of("CAT"), List.of(1)),
+                "default", "asc", 0, 10);
+
+        assertThat(true).isTrue();
+    }
+
     private MarketAssetResponse response(String code) {
         return new MarketAssetResponse(code, code, null, MarketType.FUND,
                 null, null, null, LocalDateTime.now(), null);

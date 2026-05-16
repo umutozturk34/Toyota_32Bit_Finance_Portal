@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { ShoppingCart } from '../feedback/AnimatedIcons';
 import useChartRange from '../../hooks/useChartRange';
@@ -82,6 +82,7 @@ export default function AssetDetailPage({
   backRoute,
   renderHeader,
   renderMetadata,
+  renderSidebar,
   getBuyProps,
   showBuyButton = true,
   excludeCompare = [],
@@ -95,7 +96,8 @@ export default function AssetDetailPage({
   const resolvedError = errorMessage ?? t('marketDetail.error');
   const resolvedNotFound = notFoundMessage ?? t('marketDetail.notFound');
   const [buyOpen, setBuyOpen] = useState(false);
-  const [compareAsset, setCompareAsset] = useState(null);
+  const [compareAssets, setCompareAssets] = useState([]);
+  const [showSecondaryLines, setShowSecondaryLines] = useState(true);
   const [timeRange, setTimeRange] = useChartRange();
   const effectiveRange = clientSideRangeFilter && !CLIENT_FILTER_RANGES.has(timeRange) ? '1Y' : timeRange;
 
@@ -115,13 +117,13 @@ export default function AssetDetailPage({
     [historyRaw, effectiveRange, clientSideRangeFilter],
   );
 
-  const compareSymbol = compareAsset?.code || null;
-
-  const { data: compareData } = useQuery({
-    queryKey: ['compareHistory', compareAsset?.type, compareSymbol, timeRange],
-    queryFn: () => unifiedMarketService.getHistory(compareAsset.type, compareSymbol, timeRange)
-      .then(TRANSFORM_MAP[assetType] || transformCandles),
-    enabled: !!compareAsset,
+  const compareQueries = useQueries({
+    queries: compareAssets.map((a) => ({
+      queryKey: ['compareHistory', a.type, a.code, timeRange],
+      queryFn: () => unifiedMarketService.getHistory(a.type, a.code, timeRange)
+        .then(TRANSFORM_MAP[a.type] || transformCandles),
+      enabled: !!a.code,
+    })),
   });
 
   const transform = TRANSFORM_MAP[assetType] || transformCandles;
@@ -131,9 +133,27 @@ export default function AssetDetailPage({
     () => convertCandleSet(transform(filteredHistoryRaw), convertAt, baseCurrency, naturalCurrency),
     [filteredHistoryRaw, transform, convertAt, baseCurrency, naturalCurrency],
   );
-  const convertedCompareData = useMemo(
-    () => convertCandleSet(compareData, convertAt, 'TRY', 'TRY'),
-    [compareData, convertAt],
+  const compareDataSig = compareQueries
+    .map((q, idx) => {
+      const a = compareAssets[idx];
+      return `${a?.type}:${a?.code}:${q.data?.candles?.length ?? 0}:${q.dataUpdatedAt ?? 0}`;
+    })
+    .join('|');
+  const convertedCompareDatas = useMemo(
+    () => compareQueries
+      .map((q, idx) => ({ data: q.data, asset: compareAssets[idx] }))
+      .filter((row) => row.data && row.asset)
+      .map((row) => ({
+        symbol: row.asset.code,
+        data: convertCandleSet(
+          row.data,
+          convertAt,
+          'TRY',
+          naturalCurrencyFor(row.asset.type, row.asset),
+        ),
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [compareDataSig, convertAt],
   );
 
   if (isLoading) return <LoadingState message={resolvedLoading} />;
@@ -194,24 +214,44 @@ export default function AssetDetailPage({
 
       {renderMetadata(asset)}
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <CompareBar
-          compareAsset={compareAsset}
-          onSelect={setCompareAsset}
-          onClear={() => setCompareAsset(null)}
+          compareAssets={compareAssets}
+          onAdd={(asset) => setCompareAssets((prev) => [...prev, asset])}
+          onRemove={(asset) => setCompareAssets((prev) =>
+            prev.filter((a) => !(a.code === asset.code && a.type === asset.type)))}
           excludeCodes={[assetCode, ...excludeCompare]}
         />
       </div>
 
-      <LightweightChart
-        data={chartData}
-        symbol={assetCode}
-        assetType={chartAssetType || assetType}
-        compareData={convertedCompareData}
-        compareSymbol={compareSymbol}
-        timeRange={effectiveRange}
-        onTimeRangeChange={setTimeRange}
-      />
+      {renderSidebar ? (
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <LightweightChart
+            data={chartData}
+            symbol={assetCode}
+            assetType={chartAssetType || assetType}
+            compareDatas={convertedCompareDatas}
+            timeRange={effectiveRange}
+            onTimeRangeChange={setTimeRange}
+            showSecondaryLines={showSecondaryLines}
+            onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
+          />
+          <aside className="xl:sticky xl:top-4 xl:self-start space-y-3">
+            {renderSidebar(asset)}
+          </aside>
+        </div>
+      ) : (
+        <LightweightChart
+          data={chartData}
+          symbol={assetCode}
+          assetType={chartAssetType || assetType}
+          compareDatas={convertedCompareDatas}
+          timeRange={effectiveRange}
+          onTimeRangeChange={setTimeRange}
+          showSecondaryLines={showSecondaryLines}
+          onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
+        />
+      )}
 
       {buyOpen && buyProps && (
         <BuyModalComponent

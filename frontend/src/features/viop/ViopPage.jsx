@@ -30,6 +30,24 @@ function formatExpiry(dateStr, localeTag) {
   return new Date(dateStr).toLocaleDateString(localeTag, { day: '2-digit', month: 'short', year: '2-digit' });
 }
 
+function buildViopName(meta, fallback, t, localeTag) {
+  if (!meta || !meta.kind) return fallback;
+  const parts = [];
+  if (meta.underlying) parts.push(meta.underlying);
+  if (meta.kind === 'OPTION') {
+    if (meta.optionSide) parts.push(t(`viop.side.${meta.optionSide}`, { defaultValue: meta.optionSide }));
+    if (meta.strikePrice != null) {
+      const strike = Number(meta.strikePrice);
+      parts.push(Number.isInteger(strike) ? String(strike) : strike.toFixed(2).replace(/\.?0+$/, ''));
+    }
+  } else if (meta.kind === 'FUTURE') {
+    parts.push(t('viop.kind.FUTURE', { defaultValue: 'Vadeli' }));
+  }
+  let name = parts.join(' ');
+  if (meta.expiryDate) name += ' · ' + formatExpiry(meta.expiryDate, localeTag);
+  return name || fallback;
+}
+
 export default function ViopPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -76,6 +94,7 @@ export default function ViopPage() {
 
   const renderCard = (contract, { setBuyTarget }) => {
     const meta = contract.metadata || {};
+    const displayName = buildViopName(meta, contract.code, t, i18n.language);
     const isOption = meta.kind === 'OPTION';
     const currency = meta.currency || 'TRY';
     const tradeable = contract.price != null;
@@ -91,8 +110,8 @@ export default function ViopPage() {
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <h3 className="truncate text-sm font-semibold text-fg">{contract.code}</h3>
-            {contract.name && contract.name !== contract.code && (
-              <span className="block truncate text-xs text-fg-muted">{contract.name}</span>
+            {displayName && displayName !== contract.code && (
+              <span className="block truncate text-xs text-fg-muted">{displayName}</span>
             )}
           </div>
           {tradeable && (
@@ -176,14 +195,14 @@ export default function ViopPage() {
       sortOptions={sortOptions}
       filterConfig={{
         tabItems,
-        activeId: kindFilter,
+        activeId: kindFilter ?? 'ALL',
         onSelect: (id) => listParams.update({ filter: id === 'ALL' ? '' : id, sub: '', page: 0 }),
         layoutId: 'viop-kind',
       }}
       preGridChildren={classCounts.length > 0 && (
         <FilterTabs
           items={classCounts}
-          activeId={classFilter}
+          activeId={classFilter ?? 'ALL'}
           onSelect={(id) => listParams.setSubFilter(id === 'ALL' ? '' : id)}
           layoutId="viop-class"
         />

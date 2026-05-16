@@ -360,7 +360,11 @@
     "investorCount": "Investor count",
     "portfolioSize": "Portfolio size",
     "noInvestorCountData": "No investor count data for this fund",
-    "noPortfolioSizeData": "No portfolio size data for this fund"
+    "noPortfolioSizeData": "No portfolio size data for this fund",
+    "bulletinPriceToggle": "Exchange price",
+    "buyingPriceToggle": "Buy price",
+    "toggleBulletinPrice": "Toggle exchange price line",
+    "toggleBuyingPrice": "Toggle buy price line"
   },
   "overviewCanvas": {
     "title": "Overview"
@@ -501,6 +505,78 @@
     "1Y": "1Y",
     "5Y": "5Y",
     "ALL": "Max"
+  },
+  "assetClass": {
+    "hs": "Equity",
+    "bb": "Bank Debt",
+    "byf": "ETF",
+    "d": "Government Bond",
+    "dt": "Government Bond",
+    "db": "FX Bond",
+    "fb": "Commercial Paper",
+    "tr": "Reverse Repo",
+    "tpp": "Takasbank Money Market",
+    "vmtl": "Time Deposit TRY",
+    "vmd": "Time Deposit FX",
+    "vmau": "Time Deposit Gold",
+    "vm": "Time Deposit",
+    "vdm": "Demand Deposit",
+    "eut": "Eurobond",
+    "osks": "Corporate Lease Cert.",
+    "ost": "Corporate Bond",
+    "yhs": "Foreign Equity",
+    "ybyf": "Foreign ETF",
+    "yba": "Foreign Debt",
+    "ymk": "Foreign Securities",
+    "kh": "Precious Metals",
+    "khtl": "Precious Metals TRY",
+    "khd": "Precious Metals FX",
+    "khau": "Precious Metals Gold",
+    "kks": "Lease Certificate",
+    "kksd": "Lease Cert. FX",
+    "kkstl": "Lease Cert. TRY",
+    "vint": "Futures Contract",
+    "yyf": "Foreign Fund",
+    "gsykb": "Venture Capital Debt",
+    "gsyy": "Venture Capital Investor",
+    "gykb": "REIT Debt",
+    "gyy": "REIT Investor",
+    "hb": "Treasury Bill",
+    "dot": "Other Equity",
+    "kba": "Public Debt",
+    "fkb": "Financial Lease Bond",
+    "ybkb": "Foreign Debt Security",
+    "ybosb": "Foreign Equity Capital",
+    "km": "Precious Metal",
+    "kibd": "Lease Issue Bond FX",
+    "kksyd": "Foreign Lease Cert. FX",
+    "oksyd": "Foreign Corp. Lease Cert.",
+    "osdb": "Corporate FX Debt",
+    "kmbyf": "Precious Metal ETF",
+    "kmkba": "Precious Metal Public Debt",
+    "kmkks": "Precious Metal Lease Cert.",
+    "r": "Repo",
+    "t": "Bond",
+    "gas": "Real Estate Cert."
+  },
+  "fundCategory": {
+    "Para Piyasası Şemsiye Fonu": "Money Market Umbrella",
+    "Para Piyasası Fonu": "Money Market",
+    "Hisse Senedi Şemsiye Fonu": "Equity Umbrella",
+    "Hisse Senedi Yoğun": "Equity Heavy",
+    "Borçlanma Araçları Şemsiye Fonu": "Debt Instruments",
+    "Karma Şemsiye Fonu": "Mixed Umbrella",
+    "Değişken Şemsiye Fonu": "Variable Umbrella",
+    "Fon Sepeti Şemsiye Fonu": "Fund of Funds",
+    "Kıymetli Madenler Şemsiye Fonu": "Precious Metals Umbrella",
+    "Katılım Şemsiye Fonu": "Participation Umbrella",
+    "Serbest Şemsiye Fonu": "Hedge Umbrella",
+    "Garantili Şemsiye Fonu": "Guaranteed Umbrella",
+    "Koruma Amaçlı Şemsiye Fonu": "Capital Protected",
+    "Altın Fonu": "Gold Fund",
+    "Gümüş Fonu": "Silver Fund",
+    "Endeks Fon": "Index Fund",
+    "Yabancı Fon": "Foreign Fund"
   },
   "bankRates": {
     "tabCurrency": "Currency",
@@ -721,7 +797,13 @@
         "BYF": "ETF",
         "YAT": "MF",
         "FON": "FUND"
-      }
+      },
+      "dayBadge": "today",
+      "return1yLabel": "1Y",
+      "rankLabel": "Category rank",
+      "filterCategoryLabel": "Category",
+      "filterRiskLabel": "Risk",
+      "clearFilters": "Clear"
     },
     "commodity": {
       "title": "Commodities",
@@ -965,7 +1047,25 @@
     },
     "fund": {
       "exchange": "Exchange",
-      "fundType": "Fund Type"
+      "fundType": "Fund Type",
+      "categoryLabel": "Category",
+      "riskLabel": "Risk",
+      "marketShareLabel": "Market Share",
+      "kapLinkLabel": "Open in KAP",
+      "allocationTitle": "Asset Allocation",
+      "allocationEmpty": "No allocation data",
+      "allocationOther": "Other",
+      "allocationAssetCountLabel": "assets",
+      "return": {
+        "1m": "1M",
+        "3m": "3M",
+        "6m": "6M",
+        "ytd": "YTD",
+        "1y": "1Y",
+        "3y": "3Y",
+        "5y": "5Y"
+      },
+      "returnsTitle": "Returns"
     },
     "commodity": {
       "priceTry": "Price (TRY)",
@@ -1609,7 +1709,13 @@
     "volumeLot": "Volume (lot)",
     "kind": {
       "future": "Futures",
-      "option": "Option"
+      "option": "Option",
+      "FUTURE": "Futures",
+      "OPTION": "Option"
+    },
+    "side": {
+      "CALL": "Call",
+      "PUT": "Put"
     },
     "class": {
       "PAY": "Equity",

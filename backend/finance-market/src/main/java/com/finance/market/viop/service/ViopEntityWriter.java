@@ -170,6 +170,7 @@ public class ViopEntityWriter implements MarketEntityWriter {
     }
 
     private void applySnapshot(ViopContract entity, ViopQuoteSnapshot snap) {
+        backfillDisplayName(entity);
         if (snap.dayClose() != null) entity.setDayClose(snap.dayClose());
         if (snap.bid() != null) entity.setBid(snap.bid());
         if (snap.ask() != null) entity.setAsk(snap.ask());
@@ -189,6 +190,15 @@ public class ViopEntityWriter implements MarketEntityWriter {
         Instant ts = snap.updatedAt() != null ? snap.updatedAt() : Instant.now();
         entity.setLastUpdated(LocalDateTime.ofInstant(ts, ISTANBUL));
         entity.applyChange(entity.getLastPrice(), entity.getDayClose(), PRICE_SCALE);
+    }
+
+    private void backfillDisplayName(ViopContract entity) {
+        if (entity.getDisplayName() != null && !entity.getDisplayName().isBlank()) return;
+        String name = ViopDisplayNameBuilder.build(entity.getKind(), entity.getUnderlying(),
+                entity.getOptionSide(), entity.getStrikePrice(), entity.getExpiryDate());
+        if (name != null && !name.isBlank()) {
+            entity.setDisplayName(name);
+        }
     }
 
     private static BigDecimal firstPositive(BigDecimal... candidates) {

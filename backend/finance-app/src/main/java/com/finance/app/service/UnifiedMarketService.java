@@ -52,14 +52,16 @@ public class UnifiedMarketService implements MarketUpdatePort {
     public PagedResponse<MarketAssetResponse> search(List<MarketType> types, String code,
                                                      String segment, String subType, String search,
                                                      String sort, String direction,
-                                                     String filter, int page, int size) {
+                                                     String filter, int page, int size,
+                                                     List<String> subCategories, List<Integer> riskValues) {
         if (code != null && !code.isBlank()) {
             return handleSingleAssetLookup(types, code);
         }
 
         boolean hasSearch = search != null && !search.isBlank();
 
-        MarketAssetProvider.MarketAssetFilters filters = new MarketAssetProvider.MarketAssetFilters(segment, subType);
+        MarketAssetProvider.MarketAssetFilters filters = new MarketAssetProvider.MarketAssetFilters(
+                segment, subType, subCategories, riskValues);
         List<MarketAssetResponse> allResults = new ArrayList<>();
         long total = 0;
         for (MarketType type : types) {

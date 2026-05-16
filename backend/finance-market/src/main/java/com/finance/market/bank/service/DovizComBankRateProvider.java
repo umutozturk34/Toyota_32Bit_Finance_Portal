@@ -145,6 +145,10 @@ public class DovizComBankRateProvider implements BankRateProvider {
                 return List.of();
             }
             return parse(res.body(), currencyCode, currencyName, kind);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            log.warn("doviz.com {} {} scrape interrupted: {}", kind, currencyCode, ex.getMessage());
+            return List.of();
         } catch (Exception ex) {
             log.warn("doviz.com {} {} scrape failed: {}", kind, currencyCode, ex.getMessage());
             return List.of();

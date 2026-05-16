@@ -189,4 +189,146 @@ class ViopHistoryProviderTest {
         verify(candleRepository).findBySymbolAndCandleDateBetweenOrderByCandleDateAsc(
                 eq("F_USDTRY0626"), any(), any());
     }
+
+    @Test
+    void should_skipFetch_when_contractMissingDuringPersist() {
+        when(marketData.fetchHistory(eq("F_X"), any(), any(), any())).thenReturn(List.of(
+                new ViopHistoryPoint(LocalDateTime.of(2026, 4, 1, 18, 0), new BigDecimal("35.40"))));
+        when(contractRepository.findBySymbol("F_X")).thenReturn(Optional.empty());
+
+        int persisted = provider.fetchAndPersist("F_X",
+                LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 5));
+
+        assertThat(persisted).isZero();
+        verify(candleRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void should_persistFetchedPoints_when_contractFoundAndPointsHaveValues() {
+        when(marketData.fetchHistory(eq("F_USDTRY0626"), any(), any(), any())).thenReturn(List.of(
+                new ViopHistoryPoint(LocalDateTime.of(2026, 4, 1, 18, 0), new BigDecimal("35.40")),
+                new ViopHistoryPoint(LocalDateTime.of(2026, 4, 2, 18, 0), new BigDecimal("35.55"))));
+        when(contractRepository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(contract));
+        when(candleRepository.findBySymbolAndCandleDateIn(eq("F_USDTRY0626"), any()))
+                .thenReturn(List.of());
+
+        int persisted = provider.fetchAndPersist("F_USDTRY0626",
+                LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 2));
+
+        assertThat(persisted).isEqualTo(2);
+        verify(candleRepository).saveAll(any());
+    }
+
+    @Test
+    void should_updateExistingCandles_when_dateAlreadyPresentDuringPersist() {
+        LocalDateTime dt = LocalDateTime.of(2026, 4, 1, 18, 0);
+        ViopCandle existing = ViopCandle.builder()
+                .symbol("F_USDTRY0626")
+                .candleDate(dt)
+                .close(new BigDecimal("35.10"))
+                .build();
+        when(marketData.fetchHistory(eq("F_USDTRY0626"), any(), any(), any())).thenReturn(List.of(
+                new ViopHistoryPoint(dt, new BigDecimal("35.55"))));
+        when(contractRepository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(contract));
+        when(candleRepository.findBySymbolAndCandleDateIn(eq("F_USDTRY0626"), any()))
+                .thenReturn(List.of(existing));
+
+        int persisted = provider.fetchAndPersist("F_USDTRY0626",
+                LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 1));
+
+        assertThat(persisted).isEqualTo(1);
+        assertThat(existing.getClose()).isEqualByComparingTo("35.55");
+    }
+
+    @Test
+    void should_skipNullDatePoints_when_persistingFetchedPoints() {
+        when(marketData.fetchHistory(eq("F_USDTRY0626"), any(), any(), any())).thenReturn(List.of(
+                new ViopHistoryPoint(null, new BigDecimal("35.40")),
+                new ViopHistoryPoint(LocalDateTime.of(2026, 4, 2, 18, 0), null),
+                new ViopHistoryPoint(LocalDateTime.of(2026, 4, 3, 18, 0), new BigDecimal("35.60"))));
+        when(contractRepository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(contract));
+        when(candleRepository.findBySymbolAndCandleDateIn(eq("F_USDTRY0626"), any()))
+                .thenReturn(List.of());
+
+        int persisted = provider.fetchAndPersist("F_USDTRY0626",
+                LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 3));
+
+        assertThat(persisted).isEqualTo(1);
+    }
+
+    @Test
+    void should_fetchOnlyMissingRange_when_latestStoredOlderThanRequestedTo() {
+        ViopCandle latest = ViopCandle.builder()
+                .symbol("F_USDTRY0626")
+                .candleDate(LocalDateTime.of(2026, 3, 25, 18, 0))
+                .close(new BigDecimal("34"))
+                .build();
+        when(candleRepository.findFirstBySymbolOrderByCandleDateDesc("F_USDTRY0626"))
+                .thenReturn(Optional.of(latest));
+        when(marketData.fetchHistory(anyString(), any(), any(), any())).thenReturn(List.of());
+
+        int persisted = provider.refreshCandlesUpTo("F_USDTRY0626", LocalDate.of(2026, 4, 1));
+
+        assertThat(persisted).isZero();
+        verify(marketData).fetchHistory(eq("F_USDTRY0626"), any(), any(), any());
+    }
+
+    @Test
+    void should_refreshSameDay_when_latestStoredEqualsRequestedTo() {
+        LocalDate today = LocalDate.now();
+        ViopCandle latest = ViopCandle.builder()
+                .symbol("F_USDTRY0626")
+                .candleDate(today.atTime(12, 0))
+                .close(new BigDecimal("35"))
+                .build();
+        when(candleRepository.findFirstBySymbolOrderByCandleDateDesc("F_USDTRY0626"))
+                .thenReturn(Optional.of(latest));
+        when(marketData.fetchHistory(anyString(), any(), any(), any())).thenReturn(List.of());
+
+        int persisted = provider.refreshCandlesUpTo("F_USDTRY0626", today);
+
+        assertThat(persisted).isZero();
+        verify(marketData).fetchHistory(anyString(), any(), any(), any());
+    }
+
+    @Test
+    void should_fetchFullFiveYears_when_noStoredCandleExists() {
+        when(candleRepository.findFirstBySymbolOrderByCandleDateDesc("F_USDTRY0626"))
+                .thenReturn(Optional.empty());
+        when(marketData.fetchHistory(anyString(), any(), any(), any())).thenReturn(List.of());
+
+        provider.refreshCandlesUpTo("F_USDTRY0626", LocalDate.of(2026, 5, 1));
+
+        verify(marketData).fetchHistory(eq("F_USDTRY0626"), any(), any(), any());
+    }
+
+    @Test
+    void should_clampLoadOrFetchRangeWhenToIsInFuture() {
+        when(candleRepository.findFirstBySymbolOrderByCandleDateDesc("F_X")).thenReturn(Optional.empty());
+        when(candleRepository.findBySymbolAndCandleDateBetweenOrderByCandleDateAsc(
+                anyString(), any(), any())).thenReturn(List.of());
+        when(marketData.fetchHistory(anyString(), any(), any(), any())).thenReturn(List.of());
+
+        provider.getHistoryInRange("F_X", LocalDate.now().minusDays(2), LocalDate.now().plusDays(30));
+
+        verify(marketData).fetchHistory(eq("F_X"), any(), any(), any());
+    }
+
+    @Test
+    void should_skipFetch_when_latestStoredEqualsEffectiveToOnLoad() {
+        LocalDate today = LocalDate.now();
+        ViopCandle latest = ViopCandle.builder()
+                .symbol("F_X")
+                .candleDate(today.atTime(12, 0))
+                .close(new BigDecimal("35"))
+                .build();
+        when(candleRepository.findFirstBySymbolOrderByCandleDateDesc("F_X"))
+                .thenReturn(Optional.of(latest));
+        when(candleRepository.findBySymbolAndCandleDateBetweenOrderByCandleDateAsc(
+                anyString(), any(), any())).thenReturn(List.of(latest));
+
+        provider.getHistoryInRange("F_X", today.minusDays(5), today);
+
+        verify(marketData, never()).fetchHistory(anyString(), any(), any(), any());
+    }
 }

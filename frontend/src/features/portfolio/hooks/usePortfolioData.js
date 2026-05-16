@@ -56,7 +56,7 @@ export function useBackfillStatus(portfolioId) {
             if (prev.running && !next.running) invalidate();
             return next;
           });
-        } catch { /* malformed payload */ }
+        } catch { void 0; }
       });
       source.onerror = () => source.close();
     })();
@@ -122,12 +122,31 @@ export function useAssetSeries(portfolioId, assetType, assetCode, range) {
   });
 }
 
+function rateLimitAwareRetry(failureCount, error) {
+  if (error?.response?.status === 429) return failureCount < 3;
+  if (failureCount === 0) return true;
+  return false;
+}
+
+function rateLimitAwareDelay(failureCount, error) {
+  if (error?.response?.status === 429) {
+    const headerSecs = error.response?.headers?.['x-rate-limit-retry-after-seconds']
+      ?? error.response?.headers?.['retry-after'];
+    const secs = Number(headerSecs);
+    if (Number.isFinite(secs) && secs > 0) return Math.min(secs * 1000, 30_000);
+    return Math.min(2000 * (failureCount + 1), 10_000);
+  }
+  return 1000 * Math.pow(2, failureCount);
+}
+
 export function usePortfolioPositions(portfolioId, params) {
   return useQuery({
     queryKey: ['portfolioPositions', portfolioId, params],
     queryFn: () => portfolioService.getPositions(portfolioId, params),
     enabled: !!portfolioId,
     placeholderData: (prev) => prev,
+    retry: rateLimitAwareRetry,
+    retryDelay: rateLimitAwareDelay,
   });
 }
 

@@ -84,15 +84,15 @@ public class FundCandleBulkSyncService {
     }
 
     private List<Fund> collectTrackedFunds(FundType fundType) {
+        List<Fund> tracked = fundRepository.findAllById(
+                trackedAssetQueryService.getCodes(TrackedAssetType.FUND));
         return switch (fundType) {
-            case BYF -> fundRepository.findByFundType(FundType.BYF);
-            case YAT -> fundRepository.findAllById(
-                            trackedAssetQueryService.getCodes(TrackedAssetType.FUND))
-                    .stream()
-                    .filter(f -> f.getFundType() != FundType.BYF)
-                    .toList();
+            case BYF -> tracked.stream().filter(f -> f.getFundType() == FundType.BYF).toList();
+            case YAT -> tracked.stream().filter(f -> f.getFundType() != FundType.BYF).toList();
         };
     }
+
+    private static final int GAP_DETECTION_LOOKBACK_DAYS = 30;
 
     private List<WindowedFetchPlanner.DateWindow> computeRequiredWindows(
             List<Fund> funds, LocalDate earliest, LocalDate today) {
@@ -117,6 +117,10 @@ public class FundCandleBulkSyncService {
                 LocalDate fundForwardStart = max.plusDays(1);
                 if (forwardStart == null || fundForwardStart.isBefore(forwardStart)) forwardStart = fundForwardStart;
             }
+            LocalDate gapStart = detectGapStart(fund.getFundCode(), today);
+            if (gapStart != null && (forwardStart == null || gapStart.isBefore(forwardStart))) {
+                forwardStart = gapStart;
+            }
         }
 
         if (anyNeedsFullFetch) {
@@ -126,5 +130,19 @@ public class FundCandleBulkSyncService {
             return WindowedFetchPlanner.planForward(forwardStart, today, windowing.windowSizeDays());
         }
         return List.of();
+    }
+
+    private LocalDate detectGapStart(String fundCode, LocalDate today) {
+        LocalDate windowStart = today.minusDays(GAP_DETECTION_LOOKBACK_DAYS);
+        java.util.Set<LocalDate> stored = fundCandleRepository
+                .findCandleDatesSince(fundCode, windowStart.atStartOfDay()).stream()
+                .map(LocalDateTime::toLocalDate)
+                .collect(Collectors.toSet());
+        for (LocalDate d = windowStart; d.isBefore(today); d = d.plusDays(1)) {
+            java.time.DayOfWeek dow = d.getDayOfWeek();
+            if (dow == java.time.DayOfWeek.SATURDAY || dow == java.time.DayOfWeek.SUNDAY) continue;
+            if (!stored.contains(d)) return d;
+        }
+        return null;
     }
 }

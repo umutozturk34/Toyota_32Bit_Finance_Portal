@@ -1,4 +1,5 @@
 export const RANGE_OPTIONS = [
+  { id: '1W', label: '1H', months: 0 },
   { id: '1M', label: '1A', months: 1 },
   { id: '3M', label: '3A', months: 3 },
   { id: '6M', label: '6A', months: 6 },

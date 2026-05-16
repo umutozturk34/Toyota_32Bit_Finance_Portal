@@ -74,4 +74,51 @@ class ForexPricingStrategyTest {
         assertThat(bundle.price()).isNull();
         assertThat(bundle.meta()).isNotNull();
     }
+
+    @Test
+    void should_returnBuyingPrice_when_getExitPriceTryWithBuyingPriceSet() {
+        Forex usd = Forex.builder().currencyCode("USD")
+                .buyingPrice(new BigDecimal("45.0000"))
+                .sellingPrice(new BigDecimal("45.2714"))
+                .build();
+        when(cacheService.getSnapshot("USD")).thenReturn(usd);
+
+        BigDecimal exit = strategy.getExitPriceTry("USD");
+
+        assertThat(exit).isEqualByComparingTo("45.0000");
+    }
+
+    @Test
+    void should_returnSellingPrice_when_getExitPriceTryAndBuyingMissing() {
+        Forex usd = Forex.builder().currencyCode("USD")
+                .sellingPrice(new BigDecimal("45.2714"))
+                .build();
+        when(cacheService.getSnapshot("USD")).thenReturn(usd);
+
+        BigDecimal exit = strategy.getExitPriceTry("USD");
+
+        assertThat(exit).isEqualByComparingTo("45.2714");
+    }
+
+    @Test
+    void should_returnNull_when_getExitPriceTryAndCacheMisses() {
+        when(cacheService.getSnapshot("XYZ")).thenReturn(null);
+
+        BigDecimal exit = strategy.getExitPriceTry("XYZ");
+
+        assertThat(exit).isNull();
+    }
+
+    @Test
+    void should_returnAssetMeta_when_getAssetMetaWithCachedForex() {
+        Forex usd = Forex.builder().currencyCode("USD")
+                .sellingPrice(new BigDecimal("45.2714"))
+                .image("flag")
+                .build();
+        when(cacheService.getSnapshot("USD")).thenReturn(usd);
+
+        AssetPricingPort.AssetMeta meta = strategy.getAssetMeta("USD");
+
+        assertThat(meta).isNotNull();
+    }
 }

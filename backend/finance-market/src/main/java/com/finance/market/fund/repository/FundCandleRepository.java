@@ -19,6 +19,10 @@ public interface FundCandleRepository extends JpaRepository<FundCandle, Long> {
     @Query("SELECT c.fundCode, COUNT(c) FROM FundCandle c GROUP BY c.fundCode")
     List<Object[]> countCandlesPerFund();
 
+    @Query("SELECT c.candleDate FROM FundCandle c WHERE c.fundCode = :fundCode AND c.candleDate >= :from ORDER BY c.candleDate ASC")
+    List<LocalDateTime> findCandleDatesSince(@org.springframework.data.repository.query.Param("fundCode") String fundCode,
+                                             @org.springframework.data.repository.query.Param("from") LocalDateTime from);
+
     List<FundCandle> findByFundCodeOrderByCandleDateDesc(String fundCode);
 
     List<FundCandle> findByFundCodeOrderByCandleDateAsc(String fundCode);

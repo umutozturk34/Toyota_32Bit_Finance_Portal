@@ -78,6 +78,8 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
     useEffect(() => {
         if (!chartContainerRef.current || !data?.candles?.length) return;
         const scrollY = window.scrollY;
+        const accentColor = isDark ? '#5E6AD2' : '#4338ca';
+        const bulletinColor = isDark ? '#a855f7' : '#7e22ce';
         if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
         indicatorSeriesRef.current = {};
         overlayMetaRef.current.clear();
@@ -115,12 +117,12 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             candleSeries.setData(candleData);
         } else if (assetType === 'FUND') {
             const priceLine = chart.addSeries(LineSeries, {
-                color: '#5E6AD2',
+                color: accentColor,
                 lineWidth: 2,
                 crosshairMarkerVisible: true,
                 crosshairMarkerRadius: 4,
                 crosshairMarkerBorderWidth: 1.5,
-                crosshairMarkerBorderColor: '#5E6AD2',
+                crosshairMarkerBorderColor: accentColor,
                 crosshairMarkerBackgroundColor: isDark ? '#050506' : '#ffffff',
                 lastValueVisible: true,
                 priceLineVisible: true,
@@ -129,12 +131,12 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             priceLine.setData(candleData.map(c => ({ time: c.time, value: c.close })));
             if (candleData.some(c => c.bulletinPrice != null)) {
                 const bulletinLine = chart.addSeries(LineSeries, {
-                    color: '#a855f7',
+                    color: bulletinColor,
                     lineWidth: 1.5,
                     lineStyle: 2,
                     crosshairMarkerVisible: true,
                     crosshairMarkerRadius: 3,
-                    crosshairMarkerBorderColor: '#a855f7',
+                    crosshairMarkerBorderColor: bulletinColor,
                     crosshairMarkerBackgroundColor: isDark ? '#050506' : '#ffffff',
                     lastValueVisible: true,
                     priceLineVisible: false,
@@ -182,12 +184,12 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             candleSeriesRef.current = sellLine;
         } else {
             const lineSeries = chart.addSeries(LineSeries, {
-                color: '#5E6AD2',
+                color: accentColor,
                 lineWidth: 2,
                 crosshairMarkerVisible: true,
                 crosshairMarkerRadius: 4,
                 crosshairMarkerBorderWidth: 1.5,
-                crosshairMarkerBorderColor: '#5E6AD2',
+                crosshairMarkerBorderColor: accentColor,
                 crosshairMarkerBackgroundColor: isDark ? '#050506' : '#ffffff',
                 lastValueVisible: true,
                 priceLineVisible: true,
@@ -204,14 +206,17 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 color: c.close >= c.open ? 'rgba(38, 166, 154, 0.7)' : 'rgba(239, 83, 80, 0.7)',
             }));
         chart.timeScale().fitContent();
-        requestAnimationFrame(() => window.scrollTo(0, scrollY));
+        requestAnimationFrame(() => {
+            window.scrollTo(0, scrollY);
+            try { chart.timeScale().fitContent(); } catch { void 0; }
+        });
         const handleCrosshairMove = (param) => {
             if (renderDrawingsRef.current) renderDrawingsRef.current();
             if (!param || !param.time) {
                 setCrosshairData(null);
                 if (hoveredOverlayRef.current) {
                     for (const [s, m] of overlayMetaRef.current) {
-                        try { s.applyOptions({ color: m.color, lineWidth: 2 }); } catch { /* series detached */ }
+                        try { s.applyOptions({ color: m.color, lineWidth: 2 }); } catch { void 0; }
                     }
                     hoveredOverlayRef.current = null;
                 }
@@ -239,7 +244,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                         if (y == null) continue;
                         const dist = Math.abs(mouseY - y);
                         if (dist < closestDist) { closestDist = dist; closest = series; }
-                    } catch { /* series detached */ }
+                    } catch { void 0; }
                 }
                 const hovered = closestDist < 20 ? closest : null;
                 if (hovered !== hoveredOverlayRef.current) {
@@ -279,7 +284,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 chart.timeScale().unsubscribeVisibleTimeRangeChange(handleUpdate);
                 chart.timeScale().unsubscribeVisibleLogicalRangeChange(handleUpdate);
                 chart.unsubscribeCrosshairMove(handleCrosshairMove);
-            } catch { /* chart already disposed */ }
+            } catch { void 0; }
             if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
         };
     }, [data, symbol, chartType, timeRange, i18n.language]);
@@ -305,29 +310,29 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         if (!chart) return;
 
         if (compareSeriesRef.current) {
-            try { chart.removeSeries(compareSeriesRef.current); } catch { /* already removed */ }
+            try { chart.removeSeries(compareSeriesRef.current); } catch { void 0; }
             compareSeriesRef.current = null;
         }
         if (mainPercentSeriesRef.current) {
-            try { chart.removeSeries(mainPercentSeriesRef.current); } catch { /* already removed */ }
+            try { chart.removeSeries(mainPercentSeriesRef.current); } catch { void 0; }
             mainPercentSeriesRef.current = null;
         }
         if (zeroLineSeriesRef.current) {
-            try { chart.removeSeries(zeroLineSeriesRef.current); } catch { /* already removed */ }
+            try { chart.removeSeries(zeroLineSeriesRef.current); } catch { void 0; }
             zeroLineSeriesRef.current = null;
         }
 
         const mainSeries = candleSeriesRef.current;
         if (!compareData?.candles?.length || !compareSymbol) {
             if (mainSeries) {
-                try { mainSeries.applyOptions({ visible: true }); } catch { /* series detached */ }
+                try { mainSeries.applyOptions({ visible: true }); } catch { void 0; }
             }
-            try { chart.priceScale('left').applyOptions({ visible: false }); } catch { /* scale missing */ }
+            try { chart.priceScale('left').applyOptions({ visible: false }); } catch { void 0; }
             try {
                 chart.priceScale('right').applyOptions({
                     mode: 0,
                 });
-            } catch { /* scale missing */ }
+            } catch { void 0; }
             return;
         }
 
@@ -351,12 +356,12 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         const MIN_SANE_BASELINE = 0.01;
 
         if (commonPoints.length === 0) {
-            if (mainSeries) try { mainSeries.applyOptions({ visible: true }); } catch { /* series detached */ }
+            if (mainSeries) try { mainSeries.applyOptions({ visible: true }); } catch { void 0; }
             return;
         }
 
         if (mainSeries) {
-            try { mainSeries.applyOptions({ visible: false }); } catch { /* series detached */ }
+            try { mainSeries.applyOptions({ visible: false }); } catch { void 0; }
         }
 
         const fmtPercent = (p) => (p >= 0 ? '+' : '') + p.toFixed(2) + '%';
@@ -394,7 +399,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
 
         const initial = computePercent();
         if (!initial) {
-            if (mainSeries) try { mainSeries.applyOptions({ visible: true }); } catch { /* series detached */ }
+            if (mainSeries) try { mainSeries.applyOptions({ visible: true }); } catch { void 0; }
             return;
         }
         const mainPercentData = initial.main;
@@ -471,26 +476,26 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             try {
                 mainPercentSeries.setData(next.main);
                 compareSeries.setData(next.compare);
-            } catch { /* series removed */ }
+            } catch { void 0; }
         };
         chart.timeScale().subscribeVisibleTimeRangeChange(handleVisibleRangeChange);
 
         return () => {
-            try { chart.timeScale().unsubscribeVisibleTimeRangeChange(handleVisibleRangeChange); } catch { /* chart disposed */ }
+            try { chart.timeScale().unsubscribeVisibleTimeRangeChange(handleVisibleRangeChange); } catch { void 0; }
             if (compareSeriesRef.current && chartRef.current) {
-                try { chartRef.current.removeSeries(compareSeriesRef.current); } catch { /* already removed */ }
+                try { chartRef.current.removeSeries(compareSeriesRef.current); } catch { void 0; }
                 compareSeriesRef.current = null;
             }
             if (mainPercentSeriesRef.current && chartRef.current) {
-                try { chartRef.current.removeSeries(mainPercentSeriesRef.current); } catch { /* already removed */ }
+                try { chartRef.current.removeSeries(mainPercentSeriesRef.current); } catch { void 0; }
                 mainPercentSeriesRef.current = null;
             }
             if (zeroLineSeriesRef.current && chartRef.current) {
-                try { chartRef.current.removeSeries(zeroLineSeriesRef.current); } catch { /* already removed */ }
+                try { chartRef.current.removeSeries(zeroLineSeriesRef.current); } catch { void 0; }
                 zeroLineSeriesRef.current = null;
             }
             if (mainSeries) {
-                try { mainSeries.applyOptions({ visible: true }); } catch { /* series detached */ }
+                try { mainSeries.applyOptions({ visible: true }); } catch { void 0; }
             }
         };
     }, [compareData, compareSymbol, data, isDark, symbol, chartType]);
@@ -505,7 +510,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         existingIds.forEach(id => {
             if (!desiredIds.has(id)) {
                 overlayMetaRef.current.delete(indicatorSeriesRef.current[id]);
-                try { chart.removeSeries(indicatorSeriesRef.current[id]); } catch { /* already removed */ }
+                try { chart.removeSeries(indicatorSeriesRef.current[id]); } catch { void 0; }
                 delete indicatorSeriesRef.current[id];
             }
         });

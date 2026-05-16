@@ -10,6 +10,7 @@ import com.finance.market.viop.dto.ViopQuoteSnapshot;
 import com.finance.market.viop.model.ViopCategory;
 import com.finance.market.viop.model.ViopContract;
 import com.finance.market.viop.model.ViopContractKind;
+import com.finance.market.viop.model.ViopOptionSide;
 import com.finance.market.viop.repository.ViopContractRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -158,5 +159,44 @@ class ViopEntityWriterTest {
 
         assertThat(expired).isZero();
         verify(repository, never()).saveAll(any());
+    }
+
+    @Test
+    void should_backfillDisplayName_when_existingContractMissingItDuringSnapshot() {
+        ViopContract entity = ViopContract.builder()
+                .symbol("O_ISCTRE0526P14.00")
+                .kind(ViopContractKind.OPTION)
+                .underlying("ISCTR")
+                .optionSide(ViopOptionSide.PUT)
+                .strikePrice(new BigDecimal("14.00"))
+                .expiryDate(LocalDate.of(2026, 5, 31))
+                .active(true)
+                .build();
+        when(repository.findBySymbol("O_ISCTRE0526P14.00")).thenReturn(Optional.of(entity));
+        ViopQuoteSnapshot snap = org.mockito.Mockito.mock(ViopQuoteSnapshot.class);
+
+        writer.applySnapshot("O_ISCTRE0526P14.00", snap);
+
+        assertThat(entity.getDisplayName()).isEqualTo("ISCTR Put 14 · 31 May 26");
+    }
+
+    @Test
+    void should_preserveExistingDisplayName_when_alreadyPopulatedDuringSnapshot() {
+        ViopContract entity = ViopContract.builder()
+                .symbol("O_HALKBE0526P41.00")
+                .kind(ViopContractKind.OPTION)
+                .underlying("HALKB")
+                .optionSide(ViopOptionSide.PUT)
+                .strikePrice(new BigDecimal("41.00"))
+                .expiryDate(LocalDate.of(2026, 5, 31))
+                .displayName("HALKB Put 41 · 31 May 26")
+                .active(true)
+                .build();
+        when(repository.findBySymbol("O_HALKBE0526P41.00")).thenReturn(Optional.of(entity));
+        ViopQuoteSnapshot snap = org.mockito.Mockito.mock(ViopQuoteSnapshot.class);
+
+        writer.applySnapshot("O_HALKBE0526P41.00", snap);
+
+        assertThat(entity.getDisplayName()).isEqualTo("HALKB Put 41 · 31 May 26");
     }
 }

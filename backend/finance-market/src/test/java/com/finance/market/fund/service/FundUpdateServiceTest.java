@@ -31,13 +31,15 @@ class FundUpdateServiceTest {
     @Mock private FundEntityWriter entityWriter;
     @Mock private FundCandleBulkSyncService bulkSyncService;
     @Mock private FundCandleIncrementalRefreshService incrementalRefreshService;
+    @Mock private FundDetailEnrichmentService detailEnrichmentService;
 
     private FundUpdateService service;
 
     @BeforeEach
     void setUp() {
         service = new FundUpdateService(fundRepository, fundCandleRepository, fundCacheService,
-                snapshotProcessor, entityWriter, bulkSyncService, incrementalRefreshService);
+                snapshotProcessor, entityWriter, bulkSyncService, incrementalRefreshService,
+                detailEnrichmentService);
     }
 
     @Test

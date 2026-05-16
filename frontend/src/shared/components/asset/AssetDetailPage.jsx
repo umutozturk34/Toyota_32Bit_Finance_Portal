@@ -82,6 +82,7 @@ export default function AssetDetailPage({
   backRoute,
   renderHeader,
   renderMetadata,
+  renderSidebar,
   getBuyProps,
   showBuyButton = true,
   excludeCompare = [],
@@ -203,15 +204,32 @@ export default function AssetDetailPage({
         />
       </div>
 
-      <LightweightChart
-        data={chartData}
-        symbol={assetCode}
-        assetType={chartAssetType || assetType}
-        compareData={convertedCompareData}
-        compareSymbol={compareSymbol}
-        timeRange={effectiveRange}
-        onTimeRangeChange={setTimeRange}
-      />
+      {renderSidebar ? (
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <LightweightChart
+            data={chartData}
+            symbol={assetCode}
+            assetType={chartAssetType || assetType}
+            compareData={convertedCompareData}
+            compareSymbol={compareSymbol}
+            timeRange={effectiveRange}
+            onTimeRangeChange={setTimeRange}
+          />
+          <aside className="xl:sticky xl:top-4 xl:self-start space-y-3">
+            {renderSidebar(asset)}
+          </aside>
+        </div>
+      ) : (
+        <LightweightChart
+          data={chartData}
+          symbol={assetCode}
+          assetType={chartAssetType || assetType}
+          compareData={convertedCompareData}
+          compareSymbol={compareSymbol}
+          timeRange={effectiveRange}
+          onTimeRangeChange={setTimeRange}
+        />
+      )}
 
       {buyOpen && buyProps && (
         <BuyModalComponent

@@ -195,14 +195,14 @@ export default function ViopPage() {
       sortOptions={sortOptions}
       filterConfig={{
         tabItems,
-        activeId: kindFilter,
+        activeId: kindFilter ?? 'ALL',
         onSelect: (id) => listParams.update({ filter: id === 'ALL' ? '' : id, sub: '', page: 0 }),
         layoutId: 'viop-kind',
       }}
       preGridChildren={classCounts.length > 0 && (
         <FilterTabs
           items={classCounts}
-          activeId={classFilter}
+          activeId={classFilter ?? 'ALL'}
           onSelect={(id) => listParams.setSubFilter(id === 'ALL' ? '' : id)}
           layoutId="viop-class"
         />

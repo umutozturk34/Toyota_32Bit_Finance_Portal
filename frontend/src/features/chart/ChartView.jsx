@@ -334,9 +334,10 @@ const ChartView = () => {
               {t('chartView.compareLabel')}
             </label>
             <CompareBar
-              compareAsset={compareAsset}
-              onSelect={setCompareAsset}
-              onClear={() => setCompareAsset(null)}
+              compareAssets={compareAsset ? [compareAsset] : []}
+              onAdd={setCompareAsset}
+              onRemove={() => setCompareAsset(null)}
+              maxAssets={1}
               excludeCodes={[symbol, fetchSymbol].filter(Boolean)}
             />
           </div>
@@ -392,8 +393,9 @@ const ChartView = () => {
                   data={chartData}
                   symbol={symbol}
                   assetType={assetType}
-                  compareData={compareData}
-                  compareSymbol={compareSymbol}
+                  compareDatas={compareData && compareSymbol
+                    ? [{ symbol: compareSymbol, data: compareData }]
+                    : []}
                   timeRange={timeRange}
                   onTimeRangeChange={setTimeRange}
                 />

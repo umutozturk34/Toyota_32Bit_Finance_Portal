@@ -36,7 +36,8 @@ const TIME_RANGES_FULL = [
 
 const TIME_RANGES_VIOP = TIME_RANGES_FULL.filter(({ id }) => id !== '5Y' && id !== 'ALL');
 
-const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = null, compareSymbol = null, timeRange = '1Y', onTimeRangeChange }) => {
+const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [], timeRange = '1Y', onTimeRangeChange, showSecondaryLines = true, onToggleSecondaryLines }) => {
+    const compareSymbol = compareDatas.length > 0 ? compareDatas.map(c => c.symbol).join(',') : null;
     const TIME_RANGES = assetType === 'VIOP' ? TIME_RANGES_VIOP : TIME_RANGES_FULL;
     const { t } = useTranslation();
     const { isDark } = useTheme();
@@ -135,7 +136,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
 
     const { chartRef, chartContainerRef, candleSeriesRef, candleDataRef, volumeDataRef, trend, crosshairData } = useChartCore({
         data: data, symbol, chartType: allowCandle ? chartType : 'line', isDark, indicators: filteredIndicators, renderDrawingsRef, assetType,
-        compareData: compareData, compareSymbol, timeRange,
+        compareDatas, timeRange, showSecondaryLines,
     });
 
     const { rsiContainerRef, macdContainerRef, volumeContainerRef, investorCountContainerRef, portfolioSizeContainerRef } = useSubCharts({
@@ -238,9 +239,19 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareData = nu
                             />
                         )}
                     </div>
-                    {(showVolumeToggle || isFund) && (
+                    {(showVolumeToggle || isFund || isForex) && (
                     <div className="border-t border-border-default px-3 pt-2.5 pb-3 space-y-1.5">
                         <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-fg-subtle pb-1">{t('lightweightChart.view')}</p>
+                        {(isFund || isForex) && onToggleSecondaryLines && (
+                            <button
+                                onClick={onToggleSecondaryLines}
+                                className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 cursor-pointer ${showSecondaryLines ? 'border-violet-400/40 bg-violet-400/10 text-violet-400 shadow-[0_0_12px_rgba(167,139,250,0.15)]' : 'border-border-default bg-transparent text-fg-muted hover:text-fg hover:border-border-hover'}`}
+                                title={isFund ? t('lightweightChart.toggleBulletinPrice', { defaultValue: 'Borsa Fiyatı' }) : t('lightweightChart.toggleBuyingPrice', { defaultValue: 'Alış Fiyatı' })}
+                            >
+                                <BarChart2 className="w-3.5 h-3.5" />
+                                {isFund ? t('lightweightChart.bulletinPriceToggle', { defaultValue: 'Borsa Fiyatı' }) : t('lightweightChart.buyingPriceToggle', { defaultValue: 'Alış Fiyatı' })}
+                            </button>
+                        )}
                         {showVolumeToggle && (
                             <button
                                 onClick={() => setShowVolume(!showVolume)}

@@ -360,7 +360,11 @@
     "investorCount": "Investor count",
     "portfolioSize": "Portfolio size",
     "noInvestorCountData": "No investor count data for this fund",
-    "noPortfolioSizeData": "No portfolio size data for this fund"
+    "noPortfolioSizeData": "No portfolio size data for this fund",
+    "bulletinPriceToggle": "Exchange price",
+    "buyingPriceToggle": "Buy price",
+    "toggleBulletinPrice": "Toggle exchange price line",
+    "toggleBuyingPrice": "Toggle buy price line"
   },
   "overviewCanvas": {
     "title": "Overview"

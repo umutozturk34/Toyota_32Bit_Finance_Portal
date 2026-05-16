@@ -360,7 +360,11 @@
     "investorCount": "Ki\u015fi Say\u0131s\u0131",
     "portfolioSize": "Portf\u00f6y B\u00fcy\u00fckl\u00fc\u011f\u00fc",
     "noInvestorCountData": "Bu fon i\u00e7in ki\u015fi say\u0131s\u0131 verisi yok",
-    "noPortfolioSizeData": "Bu fon i\u00e7in portf\u00f6y verisi yok"
+    "noPortfolioSizeData": "Bu fon i\u00e7in portf\u00f6y verisi yok",
+    "bulletinPriceToggle": "Borsa Fiyat\u0131",
+    "buyingPriceToggle": "Al\u0131\u015f Fiyat\u0131",
+    "toggleBulletinPrice": "Borsa fiyat\u0131 \u00e7izgisini g\u00f6ster/gizle",
+    "toggleBuyingPrice": "Al\u0131\u015f fiyat\u0131 \u00e7izgisini g\u00f6ster/gizle"
   },
   "overviewCanvas": {
     "title": "Genel Bak\u0131\u015f"

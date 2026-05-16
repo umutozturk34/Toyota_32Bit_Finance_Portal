@@ -154,4 +154,105 @@ class SnapshotCalculationServiceTest {
                 .entryDate(LocalDateTime.now())
                 .build();
     }
+
+    private com.finance.market.viop.model.ViopContract derivativeContract(String symbol,
+                                                                          BigDecimal contractSize,
+                                                                          BigDecimal lastPrice) {
+        return com.finance.market.viop.model.ViopContract.builder()
+                .symbol(symbol)
+                .kind(com.finance.market.viop.model.ViopContractKind.FUTURE)
+                .contractSize(contractSize)
+                .currency("TRY")
+                .lastPrice(lastPrice)
+                .active(true)
+                .build();
+    }
+
+    private com.finance.portfolio.derivative.model.DerivativePosition derivativePosition(
+            com.finance.market.viop.model.ViopContract contract, BigDecimal entry, BigDecimal qty,
+            com.finance.portfolio.derivative.model.DerivativeDirection direction) {
+        return com.finance.portfolio.derivative.model.DerivativePosition.builder()
+                .id(10L)
+                .direction(direction)
+                .entryDate(java.time.LocalDate.of(2026, 4, 1))
+                .entryPrice(entry)
+                .quantityLot(qty)
+                .viopContract(contract)
+                .build();
+    }
+
+    @Test
+    void should_buildDerivativeSnapshotWithLivePrice_whenPositionIsOpen() {
+        com.finance.market.viop.model.ViopContract c = derivativeContract(
+                "F_USDTRY0626", new BigDecimal("1000"), new BigDecimal("35.50"));
+        com.finance.portfolio.derivative.model.DerivativePosition pos = derivativePosition(
+                c, new BigDecimal("35.20"), new BigDecimal("2"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+
+        PortfolioAssetDailySnapshot snap = service.buildDerivativeAssetSnapshot(1L, pos,
+                LocalDateTime.of(2026, 5, 1, 18, 0));
+
+        assertThat(snap).isNotNull();
+        assertThat(snap.getAssetType()).isEqualTo(AssetType.VIOP);
+        assertThat(snap.getAssetCode()).isEqualTo("F_USDTRY0626");
+        assertThat(snap.getUnitPriceTry()).isEqualByComparingTo("35.5000");
+        assertThat(snap.getMarketValueTry()).isEqualByComparingTo("71000.0000");
+        assertThat(snap.getTotalCostTry()).isEqualByComparingTo("70400.0000");
+        assertThat(snap.getPnlTry()).isEqualByComparingTo("600.0000");
+    }
+
+    @Test
+    void should_freezeAtClosePrice_whenPositionIsClosed() {
+        com.finance.market.viop.model.ViopContract c = derivativeContract(
+                "F_USDTRY0626", new BigDecimal("1000"), new BigDecimal("99.99"));
+        com.finance.portfolio.derivative.model.DerivativePosition pos = derivativePosition(
+                c, new BigDecimal("35.20"), new BigDecimal("1"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+        pos.closeWith(java.time.LocalDate.of(2026, 5, 1), new BigDecimal("36.00"),
+                com.finance.portfolio.derivative.model.DerivativeCloseReason.USER_CLOSED);
+
+        PortfolioAssetDailySnapshot snap = service.buildDerivativeAssetSnapshot(1L, pos, LocalDateTime.now());
+
+        assertThat(snap.getUnitPriceTry()).isEqualByComparingTo("36.0000");
+        assertThat(snap.getPnlTry()).isEqualByComparingTo("800.0000");
+    }
+
+    @Test
+    void should_invertPnl_whenShortPositionPriceGoesUp() {
+        com.finance.market.viop.model.ViopContract c = derivativeContract(
+                "F_USDTRY0626", new BigDecimal("1000"), new BigDecimal("35.50"));
+        com.finance.portfolio.derivative.model.DerivativePosition pos = derivativePosition(
+                c, new BigDecimal("35.20"), new BigDecimal("1"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.SHORT);
+
+        PortfolioAssetDailySnapshot snap = service.buildDerivativeAssetSnapshot(1L, pos, LocalDateTime.now());
+
+        assertThat(snap.getPnlTry()).isEqualByComparingTo("-300.0000");
+    }
+
+    @Test
+    void should_returnNullSnapshot_whenContractMissingOnDerivative() {
+        com.finance.portfolio.derivative.model.DerivativePosition pos = derivativePosition(
+                null, new BigDecimal("35.20"), new BigDecimal("1"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+
+        PortfolioAssetDailySnapshot snap = service.buildDerivativeAssetSnapshot(1L, pos, LocalDateTime.now());
+
+        assertThat(snap).isNull();
+    }
+
+    @Test
+    void should_useFxRateOverride_whenBuildingDerivativeSnapshotAt() {
+        com.finance.market.viop.model.ViopContract c = derivativeContract(
+                "F_X", new BigDecimal("100"), null);
+        c.setCurrency("USD");
+        com.finance.portfolio.derivative.model.DerivativePosition pos = derivativePosition(
+                c, new BigDecimal("100.00"), new BigDecimal("1"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+
+        PortfolioAssetDailySnapshot snap = service.buildDerivativeAssetSnapshotAt(1L, pos,
+                LocalDateTime.now(), new BigDecimal("3.50"), new BigDecimal("32.00"));
+
+        assertThat(snap.getUnitPriceTry()).isEqualByComparingTo("112.0000");
+    }
 }

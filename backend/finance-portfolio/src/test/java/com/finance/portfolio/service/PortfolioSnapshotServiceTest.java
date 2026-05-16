@@ -155,6 +155,98 @@ class PortfolioSnapshotServiceTest {
         verify(events, never()).ifAvailable(any());
     }
 
+    @Test
+    void onMarketUpdate_returnsImmediately_whenMarketTypeIsNotMappable() {
+        service.onMarketUpdate(MarketType.BOND);
+
+        verify(portfolioRepository, never()).findAll();
+        verify(assetSnapshotRepository, never()).save(any());
+    }
+
+    @Test
+    void onMarketUpdate_buildsDerivativeSnapshots_whenViopMarketTriggered() {
+        Portfolio portfolio = portfolio(1L);
+        com.finance.portfolio.derivative.model.DerivativePosition deriv =
+                org.mockito.Mockito.mock(com.finance.portfolio.derivative.model.DerivativePosition.class);
+        when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
+        when(derivativePositionRepository.findByPortfolioId(1L)).thenReturn(List.of(deriv));
+        when(calculator.buildDerivativeAssetSnapshot(org.mockito.ArgumentMatchers.eq(1L),
+                org.mockito.ArgumentMatchers.eq(deriv), any()))
+                .thenReturn(mock(PortfolioAssetDailySnapshot.class));
+        when(calculator.buildAggregateSnapshot(any(), any())).thenReturn(mock(PortfolioDailySnapshot.class));
+
+        service.onMarketUpdate(MarketType.VIOP);
+
+        verify(assetSnapshotRepository).save(any());
+        verify(dailySnapshotRepository).save(any());
+    }
+
+    @Test
+    void onMarketUpdate_viopSkipsSave_whenNoDerivativePositions() {
+        Portfolio portfolio = portfolio(1L);
+        when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
+        when(derivativePositionRepository.findByPortfolioId(1L)).thenReturn(List.of());
+        when(calculator.buildAggregateSnapshot(any(), any())).thenReturn(mock(PortfolioDailySnapshot.class));
+
+        service.onMarketUpdate(MarketType.VIOP);
+
+        verify(assetSnapshotRepository, never()).save(any());
+        verify(dailySnapshotRepository).save(any());
+    }
+
+    @Test
+    void onMarketUpdate_skipsNullDerivativeSnapshot_whenCalculatorReturnsNull() {
+        Portfolio portfolio = portfolio(1L);
+        com.finance.portfolio.derivative.model.DerivativePosition deriv =
+                org.mockito.Mockito.mock(com.finance.portfolio.derivative.model.DerivativePosition.class);
+        when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
+        when(derivativePositionRepository.findByPortfolioId(1L)).thenReturn(List.of(deriv));
+        when(calculator.buildDerivativeAssetSnapshot(any(), any(), any())).thenReturn(null);
+        when(calculator.buildAggregateSnapshot(any(), any())).thenReturn(mock(PortfolioDailySnapshot.class));
+
+        service.onMarketUpdate(MarketType.VIOP);
+
+        verify(assetSnapshotRepository, never()).save(any());
+    }
+
+    @Test
+    void generateDailySnapshots_includesDerivatives_whenFullSnapshotIsGenerated() {
+        Portfolio portfolio = portfolio(1L);
+        com.finance.portfolio.derivative.model.DerivativePosition deriv =
+                org.mockito.Mockito.mock(com.finance.portfolio.derivative.model.DerivativePosition.class);
+        when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
+        when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(1L, LocalDate.now())).thenReturn(false);
+        when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
+                .thenReturn(List.of());
+        when(derivativePositionRepository.findByPortfolioId(1L)).thenReturn(List.of(deriv));
+        when(calculator.buildDerivativeAssetSnapshot(any(), any(), any())).thenReturn(mock(PortfolioAssetDailySnapshot.class));
+        when(calculator.buildAggregateSnapshot(any(), any())).thenReturn(mock(PortfolioDailySnapshot.class));
+
+        service.generateDailySnapshots("scheduler");
+
+        verify(assetSnapshotRepository).save(any());
+        verify(dailySnapshotRepository).save(any());
+    }
+
+    @Test
+    void generateDailySnapshots_skipsNullDerivativeSnapshot_whenCalculatorReturnsNull() {
+        Portfolio portfolio = portfolio(1L);
+        com.finance.portfolio.derivative.model.DerivativePosition deriv =
+                org.mockito.Mockito.mock(com.finance.portfolio.derivative.model.DerivativePosition.class);
+        when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
+        when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(1L, LocalDate.now())).thenReturn(false);
+        when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
+                .thenReturn(List.of());
+        when(derivativePositionRepository.findByPortfolioId(1L)).thenReturn(List.of(deriv));
+        when(calculator.buildDerivativeAssetSnapshot(any(), any(), any())).thenReturn(null);
+        when(calculator.buildAggregateSnapshot(any(), any())).thenReturn(mock(PortfolioDailySnapshot.class));
+
+        service.generateDailySnapshots("scheduler");
+
+        verify(assetSnapshotRepository, never()).save(any());
+        verify(dailySnapshotRepository).save(any());
+    }
+
     private Portfolio portfolio(Long id) {
         Portfolio p = Portfolio.builder().id(id).userSub("u").name("My").build();
         return p;

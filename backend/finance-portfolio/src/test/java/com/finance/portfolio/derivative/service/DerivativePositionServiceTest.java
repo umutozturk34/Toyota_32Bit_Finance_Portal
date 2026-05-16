@@ -33,6 +33,7 @@ import org.mockito.quality.Strictness;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -390,5 +391,257 @@ class DerivativePositionServiceTest {
         service.autoCloseExpired();
 
         assertThat(pos.getClosePrice()).isEqualByComparingTo("36.50");
+    }
+
+    @Test
+    void should_throwResourceNotFoundException_when_portfolioIsNotOwnedByUser() {
+        Portfolio otherPortfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub("other-user").name("test").build();
+        when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(otherPortfolio));
+
+        assertThatThrownBy(() -> service.list(PORTFOLIO_ID, USER_SUB))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("error.portfolio.notFound");
+    }
+
+    @Test
+    void should_throwResourceNotFoundException_when_portfolioDoesNotExist() {
+        when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.list(PORTFOLIO_ID, USER_SUB))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void should_resolveEntryPriceFromHistory_when_openRequestMissesEntryPrice() {
+        OpenDerivativePositionRequest req = new OpenDerivativePositionRequest(
+                "F_USDTRY0626", DerivativeDirection.LONG, LocalDate.of(2026, 4, 1),
+                null, new BigDecimal("1"), null, null);
+        when(contractRepository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(contract));
+        when(viopMarketData.fetchHistory(eq("F_USDTRY0626"), any(), any(), any())).thenReturn(List.of(
+                new com.finance.market.viop.dto.ViopHistoryPoint(
+                        java.time.LocalDateTime.of(2026, 4, 1, 18, 0),
+                        new BigDecimal("35.40"))));
+        when(positionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.open(PORTFOLIO_ID, USER_SUB, req);
+
+        verify(positionRepository).save(any(DerivativePosition.class));
+    }
+
+    @Test
+    void should_throwBadRequest_when_entryPriceCannotBeResolvedFromHistory() {
+        OpenDerivativePositionRequest req = new OpenDerivativePositionRequest(
+                "F_USDTRY0626", DerivativeDirection.LONG, LocalDate.of(2026, 4, 1),
+                null, new BigDecimal("1"), null, null);
+        when(contractRepository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(contract));
+        when(viopMarketData.fetchHistory(eq("F_USDTRY0626"), any(), any(), any())).thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.open(PORTFOLIO_ID, USER_SUB, req))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("error.viop.entryPriceUnavailable");
+    }
+
+    @Test
+    void should_openAndImmediatelyClose_when_openRequestIncludesCloseDate() {
+        OpenDerivativePositionRequest req = new OpenDerivativePositionRequest(
+                "F_USDTRY0626", DerivativeDirection.LONG, LocalDate.of(2026, 4, 1),
+                new BigDecimal("35.20"), new BigDecimal("1"),
+                LocalDate.of(2026, 4, 20), new BigDecimal("36.00"));
+        when(contractRepository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(contract));
+        when(positionRepository.save(any())).thenAnswer(inv -> {
+            DerivativePosition saved = inv.getArgument(0);
+            return saved;
+        });
+
+        service.open(PORTFOLIO_ID, USER_SUB, req);
+
+        verify(positionRepository).save(any(DerivativePosition.class));
+    }
+
+    @Test
+    void should_throwBadRequest_when_openCloseDateProvidedButHistoryEmpty() {
+        OpenDerivativePositionRequest req = new OpenDerivativePositionRequest(
+                "F_USDTRY0626", DerivativeDirection.LONG, LocalDate.of(2026, 4, 1),
+                new BigDecimal("35.20"), new BigDecimal("1"),
+                LocalDate.of(2026, 4, 20), null);
+        when(contractRepository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(contract));
+        when(viopMarketData.fetchHistory(eq("F_USDTRY0626"), any(), any(), any())).thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.open(PORTFOLIO_ID, USER_SUB, req))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("error.viop.closePriceUnavailable");
+    }
+
+    @Test
+    void should_throwResourceNotFoundException_when_closingMissingPosition() {
+        CloseDerivativePositionRequest req = new CloseDerivativePositionRequest(
+                LocalDate.of(2026, 5, 1), new BigDecimal("36.00"));
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.close(POSITION_ID, PORTFOLIO_ID, USER_SUB, req))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("error.derivative.positionNotFound");
+    }
+
+    @Test
+    void should_throwBadRequest_when_closeDateBeforeEntryDateOnUpdateClose() {
+        CloseDerivativePositionRequest req = new CloseDerivativePositionRequest(
+                LocalDate.of(2026, 3, 1), new BigDecimal("36.00"));
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID))
+                .thenReturn(Optional.of(closedPosition()));
+
+        assertThatThrownBy(() -> service.updateClose(POSITION_ID, PORTFOLIO_ID, USER_SUB, req))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("error.derivative.closeBeforeEntry");
+    }
+
+    @Test
+    void should_updateClosePriceAndRebuildSnapshots_when_updateCloseValid() {
+        CloseDerivativePositionRequest req = new CloseDerivativePositionRequest(
+                LocalDate.of(2026, 5, 10), new BigDecimal("37.50"));
+        DerivativePosition position = closedPosition();
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID)).thenReturn(Optional.of(position));
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(position));
+
+        service.updateClose(POSITION_ID, PORTFOLIO_ID, USER_SUB, req);
+
+        assertThat(position.isOpen()).isFalse();
+        assertThat(position.getClosePrice()).isEqualByComparingTo("37.50");
+        assertThat(position.getCloseDate()).isEqualTo(LocalDate.of(2026, 5, 10));
+        verify(assetSnapshotRepository).deleteByPortfolioIdAndAssetTypeAndAssetCode(
+                eq(PORTFOLIO_ID), any(), eq("F_USDTRY0626"));
+    }
+
+    @Test
+    void should_throwResourceNotFound_when_updateClosePositionMissing() {
+        CloseDerivativePositionRequest req = new CloseDerivativePositionRequest(
+                LocalDate.of(2026, 5, 1), new BigDecimal("36.00"));
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.updateClose(POSITION_ID, PORTFOLIO_ID, USER_SUB, req))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void should_throwResourceNotFound_when_reopenPositionMissing() {
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.reopen(POSITION_ID, PORTFOLIO_ID, USER_SUB))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void should_rebuildPeerSnapshots_when_updatingOpenPositionHasPeers() {
+        UpdateDerivativePositionRequest req = new UpdateDerivativePositionRequest(
+                DerivativeDirection.LONG, LocalDate.of(2026, 4, 15),
+                new BigDecimal("36.00"), new BigDecimal("3"));
+        DerivativePosition position = openPosition();
+        DerivativePosition peer = DerivativePosition.builder()
+                .id(200L)
+                .portfolio(portfolio)
+                .viopContract(contract)
+                .direction(DerivativeDirection.SHORT)
+                .entryDate(LocalDate.of(2026, 4, 5))
+                .entryPrice(new BigDecimal("35.40"))
+                .quantityLot(new BigDecimal("2"))
+                .build();
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID)).thenReturn(Optional.of(position));
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(position, peer));
+
+        service.updateOpen(POSITION_ID, PORTFOLIO_ID, USER_SUB, req);
+
+        verify(historyProvider, org.mockito.Mockito.atLeastOnce())
+                .fetchAndPersist(eq("F_USDTRY0626"), any(), any());
+    }
+
+    @Test
+    void should_skipDelete_when_positionHasNullContract() {
+        DerivativePosition position = DerivativePosition.builder()
+                .id(POSITION_ID)
+                .portfolio(portfolio)
+                .viopContract(null)
+                .direction(DerivativeDirection.LONG)
+                .entryDate(LocalDate.of(2026, 4, 1))
+                .entryPrice(new BigDecimal("35.20"))
+                .quantityLot(new BigDecimal("1"))
+                .build();
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID)).thenReturn(Optional.of(position));
+
+        service.delete(POSITION_ID, PORTFOLIO_ID, USER_SUB);
+
+        verify(positionRepository).delete(position);
+        verify(assetSnapshotRepository, never())
+                .deleteByPortfolioIdAndAssetTypeAndAssetCode(anyLong(), any(), any());
+    }
+
+    @Test
+    void should_handleForeignCurrencyAutoClose_when_contractCurrencyIsUsd() {
+        contract.setCurrency("USD");
+        contract.setSettlementPrice(new BigDecimal("3.5"));
+        contract.setExpiryDate(LocalDate.of(2026, 6, 30));
+        DerivativePosition pos = openPosition();
+        when(positionRepository.findOpenWithExpiredContract(any())).thenReturn(List.of(pos));
+        when(positionRepository.findOpenByPortfolio(PORTFOLIO_ID)).thenReturn(List.of());
+        when(historicalPricingPort.getPriceSeries(any(), eq("USD"), any(), any()))
+                .thenReturn(java.util.Map.of(LocalDate.of(2026, 6, 30), new BigDecimal("32.0")));
+
+        int closed = service.autoCloseExpired();
+
+        assertThat(closed).isEqualTo(1);
+        assertThat(pos.getClosePrice()).isEqualByComparingTo("112.0");
+    }
+
+    @Test
+    void should_fallbackToNativePriceOnAutoClose_when_noFxSeriesAvailable() {
+        contract.setCurrency("USD");
+        contract.setSettlementPrice(new BigDecimal("3.5"));
+        contract.setExpiryDate(LocalDate.of(2026, 6, 30));
+        DerivativePosition pos = openPosition();
+        when(positionRepository.findOpenWithExpiredContract(any())).thenReturn(List.of(pos));
+        when(positionRepository.findOpenByPortfolio(PORTFOLIO_ID)).thenReturn(List.of());
+        when(historicalPricingPort.getPriceSeries(any(), eq("USD"), any(), any()))
+                .thenReturn(java.util.Map.of());
+
+        service.autoCloseExpired();
+
+        assertThat(pos.getClosePrice()).isEqualByComparingTo("3.5");
+    }
+
+    @Test
+    void should_persistSnapshots_when_openingForeignCurrencyPosition() {
+        contract.setCurrency("USD");
+        OpenDerivativePositionRequest req = new OpenDerivativePositionRequest(
+                "F_USDTRY0626", DerivativeDirection.LONG, LocalDate.of(2026, 4, 1),
+                new BigDecimal("35.20"), new BigDecimal("1"), null, null);
+        when(contractRepository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(contract));
+        when(positionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(historicalPricingPort.getPriceSeries(any(), eq("USD"), any(), any()))
+                .thenReturn(java.util.Map.of(LocalDate.of(2026, 4, 1), new BigDecimal("32.0")));
+
+        service.open(PORTFOLIO_ID, USER_SUB, req);
+
+        verify(historyProvider).fetchAndPersist(eq("F_USDTRY0626"), any(), any());
+    }
+
+    @Test
+    void should_buildSnapshotsFromCandles_when_backfillHasCandleHistory() {
+        OpenDerivativePositionRequest req = new OpenDerivativePositionRequest(
+                "F_USDTRY0626", DerivativeDirection.LONG, LocalDate.of(2026, 4, 1),
+                new BigDecimal("35.20"), new BigDecimal("1"), null, null);
+        when(contractRepository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(contract));
+        when(positionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        ViopCandle candle = ViopCandle.builder()
+                .symbol("F_USDTRY0626")
+                .candleDate(LocalDate.of(2026, 4, 1).atTime(LocalTime.NOON))
+                .close(new BigDecimal("35.60"))
+                .build();
+        when(candleRepository.findBySymbolAndCandleDateBetweenOrderByCandleDateAsc(
+                eq("F_USDTRY0626"), any(), any())).thenReturn(List.of(candle));
+        when(snapshotCalculator.buildDerivativeAssetSnapshotAt(any(), any(), any(), any(), any()))
+                .thenReturn(com.finance.portfolio.model.PortfolioAssetDailySnapshot.builder().build());
+
+        service.open(PORTFOLIO_ID, USER_SUB, req);
+
+        verify(assetSnapshotRepository, org.mockito.Mockito.atLeastOnce()).save(any());
     }
 }

@@ -153,4 +153,119 @@ class PreciousMetalDerivativeCalculatorTest {
         c.setCommodityCode(code);
         derivativeStore.put(code, c);
     }
+
+    @Test
+    void should_returnTrue_when_isKnownDerivativeCalledForRegisteredDerivative() {
+        boolean known = calculator.isKnownDerivative("XAUTRYG");
+
+        assertThat(known).isTrue();
+    }
+
+    @Test
+    void should_returnFalse_when_isKnownDerivativeCalledForUnregistered() {
+        boolean known = calculator.isKnownDerivative("UNKNOWN");
+
+        assertThat(known).isFalse();
+    }
+
+    @Test
+    void should_returnEarly_when_refreshDerivativesCalledWithNullSource() {
+        calculator.refreshDerivatives(null, new BigDecimal("40"), new BigDecimal("40"));
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void should_fallBackToCurrentUsdTry_when_previousRateIsNull() {
+        Commodity gold = buildCommodity("GC=F", new BigDecimal("4000"));
+        BigDecimal usdTry = new BigDecimal("40.0");
+
+        calculator.refreshDerivatives(gold, usdTry, null);
+
+        verify(cacheService, atLeastOnce()).putSnapshot(eq("XAUTRYG"), any(Commodity.class));
+    }
+
+    @Test
+    void should_createNewDerivative_when_persistDerivativeAndCommodityMissing() {
+        Commodity gold = buildCommodity("GC=F", new BigDecimal("4000"));
+        derivativeStore.remove("XAUTRYG");
+        BigDecimal usdTry = new BigDecimal("40.0");
+
+        calculator.refreshDerivatives(gold, usdTry, usdTry);
+
+        verify(repository).save(any(Commodity.class));
+    }
+
+    @Test
+    void should_skipCandleRefresh_when_noSourceCandles() {
+        when(candleRepository.findByCommodityCodeOrderByCandleDateAsc("GC=F")).thenReturn(List.of());
+
+        calculator.refreshDerivativeCandles();
+
+        verify(candleRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void should_insertDerivativeCandles_when_sourceCandlesExistAndNoneStored() {
+        com.finance.market.commodity.model.CommodityCandle src = com.finance.market.commodity.model.CommodityCandle.builder()
+                .commodityCode("GC=F")
+                .candleDate(java.time.LocalDateTime.of(2026, 4, 1, 18, 0))
+                .open(new BigDecimal("4000"))
+                .high(new BigDecimal("4050"))
+                .low(new BigDecimal("3990"))
+                .close(new BigDecimal("4020"))
+                .build();
+        when(candleRepository.findByCommodityCodeOrderByCandleDateAsc("GC=F")).thenReturn(List.of(src));
+        when(candleRepository.findByCommodityCodeOrderByCandleDateAsc("XAUTRYG")).thenReturn(List.of());
+        when(candleRepository.findByCommodityCodeOrderByCandleDateAsc("SI=F")).thenReturn(List.of());
+
+        calculator.refreshDerivativeCandles();
+
+        verify(candleRepository, atLeastOnce()).saveAll(any());
+    }
+
+    @Test
+    void should_updateDerivativeCandles_when_existingCandlesPresent() {
+        com.finance.market.commodity.model.CommodityCandle src = com.finance.market.commodity.model.CommodityCandle.builder()
+                .commodityCode("GC=F")
+                .candleDate(java.time.LocalDateTime.of(2026, 4, 1, 18, 0))
+                .open(new BigDecimal("4000"))
+                .high(new BigDecimal("4050"))
+                .low(new BigDecimal("3990"))
+                .close(new BigDecimal("4020"))
+                .build();
+        com.finance.market.commodity.model.CommodityCandle existing = com.finance.market.commodity.model.CommodityCandle.builder()
+                .commodityCode("XAUTRYG")
+                .candleDate(java.time.LocalDateTime.of(2026, 4, 1, 18, 0))
+                .open(new BigDecimal("100"))
+                .high(new BigDecimal("110"))
+                .low(new BigDecimal("90"))
+                .close(new BigDecimal("105"))
+                .build();
+        when(candleRepository.findByCommodityCodeOrderByCandleDateAsc("GC=F")).thenReturn(List.of(src));
+        when(candleRepository.findByCommodityCodeOrderByCandleDateAsc("XAUTRYG")).thenReturn(List.of(existing));
+        when(candleRepository.findByCommodityCodeOrderByCandleDateAsc("SI=F")).thenReturn(List.of());
+
+        calculator.refreshDerivativeCandlesForSource("GC=F");
+
+        verify(candleRepository, atLeastOnce()).saveAll(any());
+    }
+
+    @Test
+    void should_skipCandleRefresh_when_derivativeCommodityMissing() {
+        derivativeStore.remove("XAUTRYG");
+        com.finance.market.commodity.model.CommodityCandle src = com.finance.market.commodity.model.CommodityCandle.builder()
+                .commodityCode("GC=F")
+                .candleDate(java.time.LocalDateTime.of(2026, 4, 1, 18, 0))
+                .open(new BigDecimal("4000"))
+                .high(new BigDecimal("4050"))
+                .low(new BigDecimal("3990"))
+                .close(new BigDecimal("4020"))
+                .build();
+        when(candleRepository.findByCommodityCodeOrderByCandleDateAsc("GC=F")).thenReturn(List.of(src));
+
+        calculator.refreshDerivativeCandlesForSource("GC=F");
+
+        verify(candleRepository, never()).saveAll(any());
+    }
 }

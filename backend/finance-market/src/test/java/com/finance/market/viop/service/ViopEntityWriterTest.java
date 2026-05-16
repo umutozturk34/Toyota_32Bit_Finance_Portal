@@ -199,4 +199,129 @@ class ViopEntityWriterTest {
 
         assertThat(entity.getDisplayName()).isEqualTo("HALKB Put 41 · 31 May 26");
     }
+
+    @Test
+    void should_writeAllSnapshotFields_when_snapshotHasFullValues() {
+        ViopContract entity = ViopContract.builder()
+                .symbol("F_USDTRY0626")
+                .kind(ViopContractKind.FUTURE)
+                .underlying("USDTRY")
+                .expiryDate(LocalDate.of(2026, 6, 30))
+                .active(true)
+                .build();
+        when(repository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(entity));
+        ViopQuoteSnapshot snap = new ViopQuoteSnapshot(
+                "F_USDTRY0626", java.time.Instant.parse("2026-04-01T18:00:00Z"),
+                new BigDecimal("35.10"), new BigDecimal("35.20"),
+                new BigDecimal("35.15"), new BigDecimal("35.00"),
+                new BigDecimal("35.05"), new BigDecimal("35.60"), new BigDecimal("34.90"),
+                new BigDecimal("100"), new BigDecimal("3515"),
+                new BigDecimal("35.18"), new BigDecimal("35.10"),
+                new BigDecimal("36.50"), new BigDecimal("34.00"),
+                new BigDecimal("35.40"), new BigDecimal("34.80"), new BigDecimal("35.20"),
+                new BigDecimal("36.00"), new BigDecimal("34.50"), new BigDecimal("35.30"),
+                new BigDecimal("34.95"), new BigDecimal("34.80"),
+                new BigDecimal("3500"), new BigDecimal("0.01"));
+
+        writer.applySnapshot("F_USDTRY0626", snap);
+
+        assertThat(entity.getBid()).isEqualByComparingTo("35.10");
+        assertThat(entity.getAsk()).isEqualByComparingTo("35.20");
+        assertThat(entity.getDayClose()).isEqualByComparingTo("35.00");
+        assertThat(entity.getOpenPrice()).isEqualByComparingTo("35.05");
+        assertThat(entity.getDayHigh()).isEqualByComparingTo("35.60");
+        assertThat(entity.getDayLow()).isEqualByComparingTo("34.90");
+        assertThat(entity.getVolumeLot()).isEqualByComparingTo("100");
+        assertThat(entity.getVolumeTry()).isEqualByComparingTo("3515");
+        assertThat(entity.getSettlementPrice()).isEqualByComparingTo("35.18");
+        assertThat(entity.getInitialMargin()).isEqualByComparingTo("3500");
+        assertThat(entity.getTickSize()).isEqualByComparingTo("0.01");
+        assertThat(entity.getLastPrice()).isEqualByComparingTo("35.15");
+    }
+
+    @Test
+    void should_fallBackToDayCloseLastPrice_when_lastIsNullOrZero() {
+        ViopContract entity = ViopContract.builder()
+                .symbol("F_USDTRY0626")
+                .kind(ViopContractKind.FUTURE)
+                .active(true)
+                .build();
+        when(repository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(entity));
+        ViopQuoteSnapshot snap = new ViopQuoteSnapshot(
+                "F_USDTRY0626", null,
+                null, null, null, new BigDecimal("35.00"),
+                null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null);
+
+        writer.applySnapshot("F_USDTRY0626", snap);
+
+        assertThat(entity.getLastPrice()).isEqualByComparingTo("35.00");
+    }
+
+    @Test
+    void should_returnEmpty_when_bulkSnapshotsContainsUnknownSymbolsBootstrapFails() {
+        ViopQuoteSnapshot snap = new ViopQuoteSnapshot(
+                "WEIRD_SYMBOL", null, null, null, new BigDecimal("100"), null,
+                null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null);
+        when(repository.findAll()).thenReturn(List.of());
+
+        Set<String> seen = writer.applyBulkSnapshots(List.of(snap));
+
+        assertThat(seen).isEmpty();
+    }
+
+    @Test
+    void should_bootstrapAndPersist_when_bulkSnapshotsIntroducesNewKnownSymbol() {
+        ViopQuoteSnapshot snap = new ViopQuoteSnapshot(
+                "F_USDTRY0626", null, null, null, new BigDecimal("35.15"), null,
+                null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null);
+        when(repository.findAll()).thenReturn(List.of());
+
+        Set<String> seen = writer.applyBulkSnapshots(List.of(snap));
+
+        assertThat(seen).contains("F_USDTRY0626");
+        verify(repository).save(any(ViopContract.class));
+    }
+
+    @Test
+    void should_useExistingEntity_when_bulkSnapshotSymbolAlreadyKnown() {
+        ViopContract existing = ViopContract.builder()
+                .symbol("F_USDTRY0626")
+                .kind(ViopContractKind.FUTURE)
+                .active(false)
+                .build();
+        when(repository.findAll()).thenReturn(List.of(existing));
+        ViopQuoteSnapshot snap = new ViopQuoteSnapshot(
+                "F_USDTRY0626", null, null, null, new BigDecimal("35.15"), null,
+                null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null);
+
+        Set<String> seen = writer.applyBulkSnapshots(List.of(snap));
+
+        assertThat(seen).containsExactly("F_USDTRY0626");
+        assertThat(existing.isActive()).isTrue();
+    }
+
+    @Test
+    void should_markExpiredDuringEnrich_when_specExpiryIsBeforeToday() {
+        ViopContract existing = ViopContract.builder()
+                .symbol("F_OLD")
+                .kind(ViopContractKind.FUTURE)
+                .active(true)
+                .build();
+        when(repository.findBySymbol("F_OLD")).thenReturn(Optional.of(existing));
+        ViopContractSpec spec = ViopContractSpec.future("F_OLD", "old", "X",
+                LocalDate.of(2020, 1, 1), new BigDecimal("1000"), new BigDecimal("3000"),
+                "Nakdi", "TRY");
+
+        writer.enrichSpecs(List.of(spec));
+
+        assertThat(existing.isActive()).isFalse();
+    }
 }

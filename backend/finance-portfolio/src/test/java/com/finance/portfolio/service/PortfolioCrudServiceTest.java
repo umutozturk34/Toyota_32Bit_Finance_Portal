@@ -198,6 +198,155 @@ class PortfolioCrudServiceTest {
         verify(positionRepository).delete(existing);
     }
 
+    @Test
+    void should_throwBusinessException_when_entryDateBeforeMinAllowed() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        PositionRequest request = new PositionRequest(
+                "STOCK", "THYAO.IS", new BigDecimal("10"),
+                LocalDateTime.of(1900, 1, 1, 9, 0), new BigDecimal("40"));
+
+        assertThatThrownBy(() -> service.addPosition(PORTFOLIO_ID, USER_SUB, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.lot.entryDateTooOld");
+        verify(positionRepository, never()).save(any());
+    }
+
+    @Test
+    void should_throwBusinessException_when_entryDateIsInFuture() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        PositionRequest request = new PositionRequest(
+                "STOCK", "THYAO.IS", new BigDecimal("10"),
+                LocalDateTime.now().plusDays(5), new BigDecimal("40"));
+
+        assertThatThrownBy(() -> service.addPosition(PORTFOLIO_ID, USER_SUB, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.lot.entryDateInFuture");
+        verify(positionRepository, never()).save(any());
+    }
+
+    @Test
+    void should_throwBusinessException_when_entryPriceBelowMinAllowed() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        PositionRequest request = new PositionRequest(
+                "STOCK", "THYAO.IS", new BigDecimal("10"),
+                LocalDateTime.of(2024, 1, 1, 9, 0), new BigDecimal("0.00000001"));
+
+        assertThatThrownBy(() -> service.addPosition(PORTFOLIO_ID, USER_SUB, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.lot.priceTooLow");
+    }
+
+    @Test
+    void should_throwBusinessException_when_entryPriceAboveMaxAllowed() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        PositionRequest request = new PositionRequest(
+                "STOCK", "THYAO.IS", new BigDecimal("10"),
+                LocalDateTime.of(2024, 1, 1, 9, 0), new BigDecimal("9999999999"));
+
+        assertThatThrownBy(() -> service.addPosition(PORTFOLIO_ID, USER_SUB, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.lot.priceTooHigh");
+    }
+
+    @Test
+    void should_throwBusinessException_when_quantityBelowMinAllowed() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        PositionRequest request = new PositionRequest(
+                "STOCK", "THYAO.IS", new BigDecimal("0.000000001"),
+                LocalDateTime.of(2024, 1, 1, 9, 0), new BigDecimal("40"));
+
+        assertThatThrownBy(() -> service.addPosition(PORTFOLIO_ID, USER_SUB, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.lot.quantityTooLow");
+    }
+
+    @Test
+    void should_throwBusinessException_when_quantityAboveMaxAllowed() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        PositionRequest request = new PositionRequest(
+                "STOCK", "THYAO.IS", new BigDecimal("9999999999"),
+                LocalDateTime.of(2024, 1, 1, 9, 0), new BigDecimal("40"));
+
+        assertThatThrownBy(() -> service.addPosition(PORTFOLIO_ID, USER_SUB, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.lot.quantityTooHigh");
+    }
+
+    @Test
+    void should_throwBusinessException_when_addingPositionForUnknownTrackedAsset() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType.STOCK, "GHOST.IS"))
+                .thenReturn(Optional.empty());
+        PositionRequest request = new PositionRequest(
+                "STOCK", "GHOST.IS", new BigDecimal("10"),
+                LocalDateTime.of(2024, 1, 1, 9, 0), new BigDecimal("40"));
+
+        assertThatThrownBy(() -> service.addPosition(PORTFOLIO_ID, USER_SUB, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("error.portfolio.assetNotTracked");
+        verify(positionRepository, never()).save(any());
+    }
+
+    @Test
+    void should_publishLotChangedEvent_when_addingPosition() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        LocalDateTime entryDate = LocalDateTime.of(2024, 1, 15, 10, 0);
+        PositionRequest request = new PositionRequest(
+                "stock", "THYAO.IS", new BigDecimal("100"), entryDate, new BigDecimal("40"));
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
+        stubTrackedAsset(TrackedAssetType.STOCK, "THYAO.IS");
+
+        service.addPosition(PORTFOLIO_ID, USER_SUB, request);
+
+        verify(eventPublisher).publishEvent(any(PortfolioBackfillService.LotChangedEvent.class));
+    }
+
+    @Test
+    void should_publishLotChangedEvent_when_deletingPosition() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        PortfolioPosition existing = stubPosition(PORTFOLIO_ID, AssetType.STOCK, "THYAO.IS",
+                new BigDecimal("10"), new BigDecimal("40"));
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.findById(33L)).thenReturn(Optional.of(existing));
+
+        service.deletePosition(PORTFOLIO_ID, 33L, USER_SUB);
+
+        verify(eventPublisher).publishEvent(any(PortfolioBackfillService.LotChangedEvent.class));
+    }
+
+    @Test
+    void should_useEarliestEntryDate_when_updateMovesEntryEarlier() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        PortfolioPosition existing = PortfolioPosition.builder()
+                .portfolioId(PORTFOLIO_ID)
+                .assetType(AssetType.STOCK).assetCode("THYAO.IS")
+                .quantity(new BigDecimal("100"))
+                .entryDate(LocalDateTime.of(2024, 6, 1, 10, 0))
+                .entryPrice(new BigDecimal("40"))
+                .build();
+        LocalDateTime earlier = LocalDateTime.of(2024, 1, 1, 9, 0);
+        PositionRequest request = new PositionRequest(
+                "STOCK", "THYAO.IS", new BigDecimal("100"), earlier, new BigDecimal("40"));
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.findById(33L)).thenReturn(Optional.of(existing));
+        when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        service.updatePosition(PORTFOLIO_ID, 33L, USER_SUB, request);
+
+        ArgumentCaptor<PortfolioBackfillService.LotChangedEvent> captor =
+                ArgumentCaptor.forClass(PortfolioBackfillService.LotChangedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        assertThat(captor.getValue().fromDate()).isEqualTo(earlier.toLocalDate());
+    }
+
     private PortfolioPosition stubPosition(Long portfolioId, AssetType type, String code,
                                             BigDecimal qty, BigDecimal entryPrice) {
         return PortfolioPosition.builder()

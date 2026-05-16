@@ -44,6 +44,11 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      - name: Install finance-common to local repo
+        working-directory: finance-common
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mvn -B -ntp -DskipTests install
       - name: Build + test backend reactor
         working-directory: backend
         env:
@@ -68,6 +73,11 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      - name: Install finance-common to local repo
+        working-directory: finance-common
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mvn -B -ntp -DskipTests install
       - name: Build + test notification-backend
         working-directory: notification-backend
         env:
@@ -131,7 +141,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          (cd finance-common && mvn -B -ntp -DskipTests test-compile)
+          (cd finance-common && mvn -B -ntp -DskipTests install)
           (cd backend && ./mvnw -B -ntp -DskipTests test-compile)
           (cd notification-backend && mvn -B -ntp -DskipTests test-compile)
       - name: Run sonar-scanner

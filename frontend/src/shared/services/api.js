@@ -8,6 +8,9 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  paramsSerializer: {
+    indexes: null,
+  },
 });
 let _lastRateLimitAlert = 0;
 
@@ -18,7 +21,7 @@ api.interceptors.request.use(
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-    } catch { /* token unavailable, continue without auth header */ }
+    } catch { void 0; }
     config.headers['Accept-Language'] = i18n.language || i18n.options.fallbackLng;
     return config;
   },
@@ -56,7 +59,7 @@ api.interceptors.response.use(
         try {
           const { doLogin } = await import('../../features/auth/lib/keycloak');
           doLogin();
-        } catch { /* login redirect unavailable */ }
+        } catch { void 0; }
       }
       return Promise.reject(error);
     }

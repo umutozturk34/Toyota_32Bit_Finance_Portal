@@ -47,14 +47,14 @@ class UnifiedMarketControllerTest {
         PagedResponse<MarketAssetResponse> paged =
                 PagedResponse.of(List.of(), 0, 20, 0);
         when(unifiedMarketService.search(List.of(MarketType.STOCK), null, null, null, null,
-                null, "desc", "all", 0, 20)).thenReturn(paged);
+                null, "desc", "all", 0, 20, null, null)).thenReturn(paged);
 
         ApiResponse<PagedResponse<MarketAssetResponse>> response = controller.getMarketAssets(
-                "STOCK", null, null, null, null, null, "desc", "all", 0, null);
+                "STOCK", null, null, null, null, null, "desc", "all", 0, null, null, null);
 
         assertThat(response).isNotNull();
         verify(unifiedMarketService).search(List.of(MarketType.STOCK), null, null, null, null,
-                null, "desc", "all", 0, 20);
+                null, "desc", "all", 0, 20, null, null);
     }
 
     @Test
@@ -65,14 +65,14 @@ class UnifiedMarketControllerTest {
         when(appProperties.getPagination()).thenReturn(pagination);
         when(unifiedMarketService.search(
                 java.util.Arrays.asList(MarketType.values()), null, null, null, null,
-                null, "desc", "all", 0, 100))
+                null, "desc", "all", 0, 100, null, null))
                 .thenReturn(PagedResponse.of(List.of(), 0, 100, 0));
 
-        controller.getMarketAssets(null, null, null, null, null, null, "desc", "all", 0, 999);
+        controller.getMarketAssets(null, null, null, null, null, null, "desc", "all", 0, 999, null, null);
 
         verify(unifiedMarketService).search(
                 java.util.Arrays.asList(MarketType.values()), null, null, null, null,
-                null, "desc", "all", 0, 100);
+                null, "desc", "all", 0, 100, null, null);
     }
 
     @Test

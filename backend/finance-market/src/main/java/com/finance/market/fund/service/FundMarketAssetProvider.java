@@ -84,9 +84,19 @@ public class FundMarketAssetProvider extends BaseTrackedMarketAssetProvider<Fund
 
     @Override
     protected Specification<Fund> applyCustomFilters(Specification<Fund> spec, MarketAssetFilters filters) {
-        if (filters == null || !filters.hasSubType()) return spec;
-        FundType fundTypeFilter = FundType.valueOf(filters.subType());
-        return spec.and((root, query, cb) -> cb.equal(root.get("fundType"), fundTypeFilter));
+        if (filters == null) return spec;
+        Specification<Fund> result = spec;
+        if (filters.hasSubType()) {
+            FundType fundTypeFilter = FundType.valueOf(filters.subType());
+            result = result.and((root, query, cb) -> cb.equal(root.get("fundType"), fundTypeFilter));
+        }
+        if (filters.hasSubCategories()) {
+            result = result.and((root, query, cb) -> root.get("subCategory").in(filters.subCategories()));
+        }
+        if (filters.hasRiskValues()) {
+            result = result.and((root, query, cb) -> root.get("riskValue").in(filters.riskValues()));
+        }
+        return result;
     }
 
     @Override

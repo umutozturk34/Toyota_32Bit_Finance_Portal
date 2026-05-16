@@ -66,7 +66,7 @@ class UnifiedMarketServiceTest {
         when(stockProvider.getByCode("THYAO")).thenReturn(expected);
 
         PagedResponse<MarketAssetResponse> result = service.search(
-                List.of(MarketType.STOCK), "THYAO", null, null, null, null, null, null, 0, 10);
+                List.of(MarketType.STOCK), "THYAO", null, null, null, null, null, null, 0, 10, null, null);
 
         assertThat(result.content()).containsExactly(expected);
     }
@@ -78,7 +78,7 @@ class UnifiedMarketServiceTest {
 
         assertThatThrownBy(() -> service.search(
                 List.of(MarketType.STOCK, MarketType.CRYPTO), "UNKNOWN",
-                null, null, null, null, null, null, 0, 10))
+                null, null, null, null, null, null, 0, 10, null, null))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
@@ -90,7 +90,7 @@ class UnifiedMarketServiceTest {
 
         PagedResponse<MarketAssetResponse> result = service.search(
                 List.of(MarketType.STOCK, MarketType.CRYPTO), "X",
-                null, null, null, null, null, null, 0, 10);
+                null, null, null, null, null, null, 0, 10, null, null);
 
         assertThat(result.content()).hasSize(1);
     }
@@ -104,7 +104,7 @@ class UnifiedMarketServiceTest {
 
         PagedResponse<MarketAssetResponse> result = service.search(
                 List.of(MarketType.STOCK), null, null, null, null,
-                "changePercent", "asc", null, 0, 10);
+                "changePercent", "asc", null, 0, 10, null, null);
 
         assertThat(result.content()).hasSize(2);
         assertThat(result.totalElements()).isEqualTo(2);
@@ -118,7 +118,7 @@ class UnifiedMarketServiceTest {
 
         PagedResponse<MarketAssetResponse> result = service.search(
                 List.of(MarketType.STOCK), null, null, null, "THY",
-                "changePercent", "desc", null, 0, 10);
+                "changePercent", "desc", null, 0, 10, null, null);
 
         assertThat(result.totalElements()).isEqualTo(1);
         verify(stockProvider).countBySearch(eq("THY"), any());
@@ -133,7 +133,7 @@ class UnifiedMarketServiceTest {
 
         PagedResponse<MarketAssetResponse> result = service.search(
                 List.of(MarketType.STOCK), null, null, null, null,
-                "changePercent", "desc", "gainers", 0, 10);
+                "changePercent", "desc", "gainers", 0, 10, null, null);
 
         assertThat(result.content()).extracting(MarketAssetResponse::code).containsExactly("UP");
     }
@@ -147,7 +147,7 @@ class UnifiedMarketServiceTest {
 
         PagedResponse<MarketAssetResponse> result = service.search(
                 List.of(MarketType.STOCK), null, null, null, null,
-                "changePercent", "desc", "losers", 0, 10);
+                "changePercent", "desc", "losers", 0, 10, null, null);
 
         assertThat(result.content()).extracting(MarketAssetResponse::code).containsExactly("DOWN");
     }
@@ -161,7 +161,7 @@ class UnifiedMarketServiceTest {
 
         PagedResponse<MarketAssetResponse> result = service.search(
                 List.of(MarketType.STOCK), null, null, null, null,
-                "changePercent", "desc", "all", 0, 10);
+                "changePercent", "desc", "all", 0, 10, null, null);
 
         assertThat(result.content()).hasSize(2);
     }
@@ -175,7 +175,7 @@ class UnifiedMarketServiceTest {
 
         PagedResponse<MarketAssetResponse> result = service.search(
                 List.of(MarketType.STOCK), null, null, null, null,
-                "price", "asc", null, 0, 10);
+                "price", "asc", null, 0, 10, null, null);
 
         assertThat(result.content()).extracting(MarketAssetResponse::code).containsExactly("A", "B");
     }
@@ -189,7 +189,7 @@ class UnifiedMarketServiceTest {
 
         PagedResponse<MarketAssetResponse> result = service.search(
                 List.of(MarketType.STOCK), null, null, null, null,
-                "name", "asc", null, 0, 10);
+                "name", "asc", null, 0, 10, null, null);
 
         assertThat(result.content()).extracting(MarketAssetResponse::code).containsExactly("A", "Z");
     }

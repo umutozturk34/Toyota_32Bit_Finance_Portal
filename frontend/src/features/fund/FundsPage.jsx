@@ -1,8 +1,9 @@
+import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { STALE } from '../../shared/constants/query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LineChart, Activity, Clock, Users as UsersIcon, Wallet } from 'lucide-react';
+import { LineChart, Tag, Activity, Clock, Users as UsersIcon, Wallet, X } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
 import { fundService } from './services/fundService';
 import { adminService } from '../admin/services/adminService';
@@ -11,6 +12,7 @@ import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
 import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
 import ChangePercentBadge from '../../shared/components/asset/ChangePercentBadge';
+import RiskBadge from '../../shared/components/asset/RiskBadge';
 import useListParams from '../../shared/hooks/useListParams';
 import { useMoney } from '../../shared/hooks/useMoney';
 
@@ -32,13 +34,124 @@ function FundsPage() {
         staleTime: STALE.MEDIUM,
     });
 
-    const queryParams = {
+    const { data: subCategoryOptions = [] } = useQuery({
+        queryKey: ['fundSubCategories'],
+        queryFn: fundService.getSubCategories,
+        staleTime: STALE.LONG,
+    });
+
+    const [searchParams, setSearchParams] = useSearchParams();
+    const selectedSubCategories = useMemo(() => {
+        const raw = searchParams.get('cats');
+        return raw ? raw.split(',').filter(Boolean) : [];
+    }, [searchParams]);
+    const selectedRisks = useMemo(() => {
+        const raw = searchParams.get('risk');
+        return raw ? raw.split(',').map(Number).filter(n => !Number.isNaN(n)) : [];
+    }, [searchParams]);
+
+    const updateFilters = useCallback((updates) => {
+        setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            if (updates.cats !== undefined) {
+                if (updates.cats.length === 0) next.delete('cats');
+                else next.set('cats', updates.cats.join(','));
+            }
+            if (updates.risk !== undefined) {
+                if (updates.risk.length === 0) next.delete('risk');
+                else next.set('risk', updates.risk.join(','));
+            }
+            return next;
+        }, { replace: true });
+    }, [setSearchParams]);
+
+    const queryParams = useMemo(() => ({
         ...listParams.params,
         ...(typeFilter !== 'ALL' && { subType: typeFilter }),
-    };
+        ...(selectedSubCategories.length > 0 && { subCategory: selectedSubCategories }),
+        ...(selectedRisks.length > 0 && { riskValue: selectedRisks }),
+    }), [listParams.params, typeFilter, selectedSubCategories, selectedRisks]);
+
+    const toggleSubCat = useCallback((cat) => {
+        const next = selectedSubCategories.includes(cat)
+            ? selectedSubCategories.filter(c => c !== cat)
+            : [...selectedSubCategories, cat];
+        updateFilters({ cats: next });
+    }, [selectedSubCategories, updateFilters]);
+    const toggleRisk = useCallback((r) => {
+        const next = selectedRisks.includes(r)
+            ? selectedRisks.filter(x => x !== r)
+            : [...selectedRisks, r];
+        updateFilters({ risk: next });
+    }, [selectedRisks, updateFilters]);
+    const clearFilters = useCallback(() => updateFilters({ cats: [], risk: [] }), [updateFilters]);
+    const hasActiveFilters = selectedSubCategories.length > 0 || selectedRisks.length > 0;
+
+    const filterToolbar = (
+        <div className="mb-3 space-y-2">
+            <div className="flex items-start gap-2 flex-wrap">
+                <span className="text-[11px] font-semibold text-fg-muted uppercase tracking-wider pt-1.5">{t('market.fund.filterCategoryLabel')}</span>
+                <div className="flex flex-wrap gap-1">
+                    {subCategoryOptions.map(cat => {
+                        const active = selectedSubCategories.includes(cat);
+                        return (
+                            <button
+                                key={cat}
+                                type="button"
+                                onClick={() => toggleSubCat(cat)}
+                                className={`px-2 py-0.5 text-[11px] rounded-md border transition-colors ${
+                                    active
+                                        ? 'border-accent/40 bg-accent/15 text-accent-bright font-semibold'
+                                        : 'border-border-default bg-bg-base/40 text-fg-muted hover:text-fg hover:border-border-strong'
+                                }`}
+                            >
+                                {t(`fundCategory.${cat}`, { defaultValue: cat })}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] font-semibold text-fg-muted uppercase tracking-wider">{t('market.fund.filterRiskLabel')}</span>
+                <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5, 6, 7].map(r => {
+                        const active = selectedRisks.includes(r);
+                        return (
+                            <button
+                                key={r}
+                                type="button"
+                                onClick={() => toggleRisk(r)}
+                                className={`w-7 h-7 text-[11px] rounded-md border font-semibold transition-colors ${
+                                    active
+                                        ? 'border-accent/40 bg-accent/15 text-accent-bright'
+                                        : 'border-border-default bg-bg-base/40 text-fg-muted hover:text-fg'
+                                }`}
+                                title={`Risk ${r}`}
+                            >
+                                {r}
+                            </button>
+                        );
+                    })}
+                </div>
+                {hasActiveFilters && (
+                    <button
+                        type="button"
+                        onClick={clearFilters}
+                        className="ml-2 inline-flex items-center gap-1 text-[11px] text-fg-muted hover:text-fg"
+                    >
+                        <X className="h-3 w-3" />
+                        {t('market.fund.clearFilters')}
+                    </button>
+                )}
+            </div>
+        </div>
+    );
 
     const renderCard = (fund, { setBuyTarget }) => {
         const meta = fund.metadata || {};
+        const oneYear = meta.return1y;
+        const rawCategory = meta.category || meta.subCategory;
+        const categoryLabel = rawCategory ? t(`fundCategory.${rawCategory}`, { defaultValue: rawCategory }) : null;
         return (
             <AssetCard
                 key={fund.code}
@@ -56,6 +169,7 @@ function FundsPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                        {meta.riskValue != null && <RiskBadge value={meta.riskValue} />}
                         <span className="rounded-md border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent-bright">
                             {meta.fundType ? t(`market.fund.shortType.${meta.fundType}`, { defaultValue: meta.fundType }) : t('market.fund.fallbackBadge')}
                         </span>
@@ -65,27 +179,41 @@ function FundsPage() {
                     </div>
                 </div>
 
-                <div className="mt-3 space-y-1">
-                    <span className="block truncate font-mono text-xl font-bold text-fg">
-                        {money(fund.price)}
-                    </span>
-                    {meta.fundType === 'BYF' && meta.bulletinPrice != null && (
-                        <div className="flex items-center gap-2 text-xs text-fg-muted">
-                            <span className="font-medium">{t('market.fund.exchangePriceLabel')}</span>
-                            <span className="font-mono">{money(meta.bulletinPrice)}</span>
+                {categoryLabel && (
+                    <div className="mt-2 inline-flex items-center gap-1 rounded-md border border-accent/20 bg-accent/5 px-2 py-0.5 max-w-full">
+                        <Tag className="h-3 w-3 text-accent shrink-0" />
+                        <span className="truncate text-[11px] font-medium text-accent-bright">{categoryLabel}</span>
+                    </div>
+                )}
+
+                <div className="mt-3 flex items-end justify-between gap-3">
+                    <div className="min-w-0">
+                        <span className="block truncate font-mono text-xl font-bold text-fg">{money(fund.price)}</span>
+                        {meta.fundType === 'BYF' && meta.bulletinPrice != null && (
+                            <div className="flex items-center gap-2 text-xs text-fg-muted mt-0.5">
+                                <span className="font-medium">{t('market.fund.exchangePriceLabel')}</span>
+                                <span className="font-mono">{money(meta.bulletinPrice)}</span>
+                            </div>
+                        )}
+                        <ChangePercentBadge
+                            value={fund.changePercent}
+                            positiveIcon={<TrendingUp className="h-3 w-3" />}
+                            negativeIcon={<TrendingDown className="h-3 w-3" />}
+                            size="sm"
+                            className="mt-1"
+                        >
+                            <span className="ml-1 opacity-75">{t('market.fund.dayBadge')}</span>
+                        </ChangePercentBadge>
+                    </div>
+                    {oneYear != null && (
+                        <div className="text-right shrink-0">
+                            <span className={`block font-mono text-base font-semibold ${oneYear >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                {oneYear >= 0 ? '+' : ''}{Number(oneYear).toFixed(2)}%
+                            </span>
+                            <span className="block text-[10px] uppercase tracking-wider text-fg-subtle">{t('market.fund.return1yLabel')}</span>
                         </div>
                     )}
                 </div>
-
-                <ChangePercentBadge
-                    value={fund.changePercent}
-                    positiveIcon={<TrendingUp className="h-3.5 w-3.5" />}
-                    negativeIcon={<TrendingDown className="h-3.5 w-3.5" />}
-                    size="sm"
-                    className="mt-2"
-                >
-                    <span className="ml-1 opacity-75">24h</span>
-                </ChangePercentBadge>
 
                 <div className="mt-3 space-y-1 border-t border-border-default pt-3">
                     {meta.fundType === 'YAT' && meta.investorCount != null && (
@@ -94,14 +222,24 @@ function FundsPage() {
                             <span className="font-mono text-fg">{formatVolume(meta.investorCount)}</span>
                         </div>
                     )}
-                    <div className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-1 text-fg-muted"><Wallet className="h-3 w-3" />{t('market.fund.portfolioLabel')}</span>
-                        <span className="font-mono text-fg">{moneyCompact(meta.portfolioSize)}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-1 text-fg-muted"><Activity className="h-3 w-3" />{t('market.fund.shareCountLabel')}</span>
-                        <span className="font-mono text-fg">{formatVolume(meta.shareCount)}</span>
-                    </div>
+                    {meta.portfolioSize != null && (
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="flex items-center gap-1 text-fg-muted"><Wallet className="h-3 w-3" />{t('market.fund.portfolioLabel')}</span>
+                            <span className="font-mono text-fg">{moneyCompact(meta.portfolioSize)}</span>
+                        </div>
+                    )}
+                    {meta.shareCount != null && (
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="flex items-center gap-1 text-fg-muted"><Activity className="h-3 w-3" />{t('market.fund.shareCountLabel')}</span>
+                            <span className="font-mono text-fg">{formatVolume(meta.shareCount)}</span>
+                        </div>
+                    )}
+                    {meta.categoryRank != null && meta.categoryTotalFunds != null && (
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-fg-muted">{t('market.fund.rankLabel')}</span>
+                            <span className="font-mono text-fg">{meta.categoryRank}/{meta.categoryTotalFunds}</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="mt-2 flex items-center gap-1 text-[11px] text-fg-subtle">
@@ -137,6 +275,7 @@ function FundsPage() {
                 { key: 'full', label: t('market.admin.full'), title: t('market.admin.fullTitle'), fn: adminService.triggerFundFull, successMsg: t('market.admin.fullStarted'), refetchDelay: 5000 },
             ]}
             renderCard={renderCard}
+            preGridChildren={filterToolbar}
             loadingMessage={t('market.fund.loading')}
             errorMessage={t('market.fund.error')}
             emptyMessage={t('market.fund.empty')}

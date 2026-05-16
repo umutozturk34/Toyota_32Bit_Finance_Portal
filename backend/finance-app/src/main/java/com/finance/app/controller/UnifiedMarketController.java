@@ -50,14 +50,18 @@ public class UnifiedMarketController {
             @Parameter(description = "Filter by change", schema = @Schema(allowableValues = {"all", "gainers", "losers"}))
             @RequestParam(defaultValue = "all") String filter,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(required = false) Integer size) {
+            @RequestParam(required = false) Integer size,
+            @Parameter(description = "Fund sub-category filter (multi)")
+            @RequestParam(required = false) List<String> subCategory,
+            @Parameter(description = "Fund risk level filter (1-7, multi)")
+            @RequestParam(required = false) List<Integer> riskValue) {
 
         AppProperties.Market market = appProperties.getPagination().getMarket();
         List<MarketType> types = MarketRequestHelper.parseMarketTypes(type);
         int resolvedSize = MarketRequestHelper.clamp(size, market.getDefaultSize(), market.getMaxSize());
 
         return ApiResponse.successOrEmpty(translator.translate("api.market.assetsRetrieved"), translator.translate("api.market.noData"),
-                unifiedMarketService.search(types, code, segment, subType, search, sort, direction, filter, page, resolvedSize));
+                unifiedMarketService.search(types, code, segment, subType, search, sort, direction, filter, page, resolvedSize, subCategory, riskValue));
     }
 
     @GetMapping("/history")

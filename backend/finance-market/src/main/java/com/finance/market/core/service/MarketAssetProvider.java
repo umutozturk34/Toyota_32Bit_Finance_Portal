@@ -24,13 +24,19 @@ public interface MarketAssetProvider {
         return List.of();
     }
 
-    record MarketAssetFilters(String segment, String subType) {
+    record MarketAssetFilters(String segment, String subType,
+                              java.util.List<String> subCategories,
+                              java.util.List<Integer> riskValues) {
+        public MarketAssetFilters(String segment, String subType) {
+            this(segment, subType, null, null);
+        }
+
         public static MarketAssetFilters none() {
-            return new MarketAssetFilters(null, null);
+            return new MarketAssetFilters(null, null, null, null);
         }
 
         public static MarketAssetFilters ofSegment(String segment) {
-            return new MarketAssetFilters(segment, null);
+            return new MarketAssetFilters(segment, null, null, null);
         }
 
         public boolean hasSegment() {
@@ -39,6 +45,14 @@ public interface MarketAssetProvider {
 
         public boolean hasSubType() {
             return subType != null && !subType.isBlank();
+        }
+
+        public boolean hasSubCategories() {
+            return subCategories != null && !subCategories.isEmpty();
+        }
+
+        public boolean hasRiskValues() {
+            return riskValues != null && !riskValues.isEmpty();
         }
     }
 }

@@ -39,17 +39,15 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
     }
   };
 
-  if (!position) return null;
-
-  const direction = (position.assetName && position.assetName.split(' · ')[0]) || 'LONG';
+  const direction = (position?.assetName && position.assetName.split(' · ')[0]) || 'LONG';
   const isLong = direction === 'LONG';
-  const qty = Number(position.quantity || position.quantityLot || 1);
-  const entryPrice = Number(position.entryPrice || 0);
-  const symbol = position.contractSymbol || position.assetCode;
+  const qty = Number(position?.quantity || position?.quantityLot || 1);
+  const entryPrice = Number(position?.entryPrice || 0);
+  const symbol = position?.contractSymbol || position?.assetCode;
 
   const todayDate = todayIso();
   const isToday = closeDate === todayDate;
-  const liveSuggested = position.currentPriceTry != null ? Number(position.currentPriceTry) : null;
+  const liveSuggested = position?.currentPriceTry != null ? Number(position.currentPriceTry) : null;
   const syncKey = `${closeDate}|${isToday && liveSuggested != null ? liveSuggested : 'none'}`;
   const [trackedKey, setTrackedKey] = useState(syncKey);
   if (syncKey !== trackedKey) {
@@ -69,10 +67,10 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
   };
 
   const sizeTimesQty = useMemo(() => {
-    const notional = Number(position.entryValueTry);
+    const notional = Number(position?.entryValueTry);
     if (!Number.isFinite(notional) || !Number.isFinite(entryPrice) || entryPrice <= 0) return qty;
     return notional / entryPrice;
-  }, [position.entryValueTry, entryPrice, qty]);
+  }, [position?.entryValueTry, entryPrice, qty]);
 
   const realizedPnl = useMemo(() => {
     const exit = Number(closePrice);
@@ -86,6 +84,8 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
     const notional = entryPrice * sizeTimesQty;
     return notional > 0 ? (realizedPnl / notional) * 100 : null;
   }, [realizedPnl, entryPrice, sizeTimesQty]);
+
+  if (!position) return null;
 
   const submit = async (e) => {
     e.preventDefault();

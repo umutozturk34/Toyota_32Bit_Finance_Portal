@@ -77,7 +77,7 @@ export default function DatePickerPopover({
   useEffect(() => {
     if (typeof onMonthChange !== 'function') return;
     startTransition(() => onMonthChange(cursor.year, cursor.month));
-  }, [cursor.year, cursor.month]);
+  }, [cursor.year, cursor.month, onMonthChange]);
 
   useEffect(() => {
     if (!open) return undefined;

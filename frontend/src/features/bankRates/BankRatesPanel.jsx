@@ -47,14 +47,7 @@ function goldVisual(code) {
   return GOLD_VISUAL[code] || { Icon: Coins, tone: 'text-warning bg-warning/15' };
 }
 
-function formatRate(value, localeTag) {
-  if (value == null) return '—';
-  const num = Number(value);
-  if (!Number.isFinite(num)) return '—';
-  return num.toLocaleString(localeTag || 'tr-TR', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
-}
-
-function BankCard({ row, t, localeTag, displayCurrency, money }) {
+function BankCard({ row, t, displayCurrency, money }) {
   const spread = row.buyRate != null && row.sellRate != null
     ? Number(row.sellRate) - Number(row.buyRate)
     : null;
@@ -151,7 +144,7 @@ function FilterItem({ active, label, code, count, onClick, showCode = true, kind
 export default function BankRatesPanel() {
   const { t } = useTranslation();
   const localeTag = t('common.localeTag');
-  const labelFor = (code) => t(`bankRates.currency.${code}`, code);
+  const labelFor = useCallback((code) => t(`bankRates.currency.${code}`, code), [t]);
   const { format: money, currency: displayCurrency } = useMoney();
   const [searchParams, setSearchParams] = useSearchParams();
   const kindParam = searchParams.get('kind');
@@ -396,7 +389,7 @@ export default function BankRatesPanel() {
           >
             {filteredRates.map((row) => (
               <motion.div key={row.id} variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}>
-                <BankCard row={row} t={t} localeTag={localeTag} money={money} displayCurrency={displayCurrency} />
+                <BankCard row={row} t={t} money={money} displayCurrency={displayCurrency} />
               </motion.div>
             ))}
           </motion.div>

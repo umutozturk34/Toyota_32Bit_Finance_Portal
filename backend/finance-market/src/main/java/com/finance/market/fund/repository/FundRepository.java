@@ -18,4 +18,7 @@ public interface FundRepository extends JpaRepository<Fund, String>, JpaSpecific
 
     @Query("SELECT f.fundType, COUNT(f) FROM Fund f WHERE f.fundType IS NOT NULL GROUP BY f.fundType ORDER BY f.fundType")
     List<Object[]> countByFundType();
+
+    @Query("SELECT DISTINCT f.subCategory FROM Fund f WHERE f.subCategory IS NOT NULL ORDER BY f.subCategory")
+    List<String> findDistinctSubCategories();
 }

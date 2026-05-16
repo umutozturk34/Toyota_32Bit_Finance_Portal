@@ -2,6 +2,10 @@ app:
   tefas-api-path: /api/funds/fonGnlBlgSiraliGetir
   tefas-base-url: https://www.tefas.gov.tr
   tefas-session-path: /tr
+  tefas-returns-path: /api/funds/fonGetiriBazliBilgiGetir
+  tefas-allocation-path: /api/funds/dagilimSiraliGetirT
+  tefas-info-path: /api/funds/fonBilgiGetir
+  tefas-profile-path: /api/funds/fonProfilBilgiGetir
 
   api:
     coingecko:

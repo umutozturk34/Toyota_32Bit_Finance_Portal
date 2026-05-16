@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,6 +30,7 @@ public class FundUpdateService implements MarketRefresher {
     private final FundEntityWriter entityWriter;
     private final FundCandleBulkSyncService bulkSyncService;
     private final FundCandleIncrementalRefreshService incrementalRefreshService;
+    private final FundDetailEnrichmentService detailEnrichmentService;
 
     @Override
     public MarketType getMarketType() {
@@ -40,6 +42,8 @@ public class FundUpdateService implements MarketRefresher {
         snapshotProcessor.refreshAll();
         bulkSyncService.refreshAllCandles();
         recomputeChangePercents();
+        detailEnrichmentService.enrichReturnsAndRisk();
+        detailEnrichmentService.enrichAllocations(LocalDate.now());
         log.info("[TIMING] Total fund update took {}s", (System.currentTimeMillis() - totalStart) / 1000);
     }
 
@@ -47,6 +51,21 @@ public class FundUpdateService implements MarketRefresher {
     public void refresh(String fundCode) {
         snapshotProcessor.refreshOne(fundCode);
         incrementalRefreshService.refresh(fundCode);
+        try {
+            detailEnrichmentService.enrichSingleFundDetails(fundCode);
+        } catch (Exception e) {
+            log.warn("Single-fund detail enrichment failed for {}: {}", fundCode, e.getMessage());
+        }
+        try {
+            detailEnrichmentService.enrichReturnsAndRisk();
+        } catch (Exception e) {
+            log.warn("Returns/risk bulk enrichment failed during single-fund refresh of {}: {}", fundCode, e.getMessage());
+        }
+        try {
+            detailEnrichmentService.enrichAllocations(LocalDate.now());
+        } catch (Exception e) {
+            log.warn("Allocation bulk enrichment failed during single-fund refresh of {}: {}", fundCode, e.getMessage());
+        }
     }
 
     public boolean exists(String fundCode) {

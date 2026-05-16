@@ -42,6 +42,57 @@ public class Fund extends BaseAsset {
     @Column(name = "portfolio_size", precision = 19, scale = 2)
     private BigDecimal portfolioSize;
 
+    @Column(name = "risk_value")
+    private Integer riskValue;
+
+    @Column(name = "category", length = 80)
+    private String category;
+
+    @Column(name = "sub_category", length = 80)
+    private String subCategory;
+
+    @Column(name = "category_rank")
+    private Integer categoryRank;
+
+    @Column(name = "category_total_funds")
+    private Integer categoryTotalFunds;
+
+    @Column(name = "market_share", precision = 9, scale = 4)
+    private BigDecimal marketShare;
+
+    @Column(name = "isin_code", length = 16)
+    private String isinCode;
+
+    @Column(name = "kap_link", length = 255)
+    private String kapLink;
+
+    @Column(name = "management_fee", precision = 9, scale = 4)
+    private BigDecimal managementFee;
+
+    @Column(name = "expense_ratio", precision = 9, scale = 4)
+    private BigDecimal expenseRatio;
+
+    @Column(name = "return_1m", precision = 12, scale = 4)
+    private BigDecimal return1m;
+
+    @Column(name = "return_3m", precision = 12, scale = 4)
+    private BigDecimal return3m;
+
+    @Column(name = "return_6m", precision = 12, scale = 4)
+    private BigDecimal return6m;
+
+    @Column(name = "return_1y", precision = 12, scale = 4)
+    private BigDecimal return1y;
+
+    @Column(name = "return_ytd", precision = 12, scale = 4)
+    private BigDecimal returnYtd;
+
+    @Column(name = "return_3y", precision = 12, scale = 4)
+    private BigDecimal return3y;
+
+    @Column(name = "return_5y", precision = 12, scale = 4)
+    private BigDecimal return5y;
+
     public void applyScaling(FundType fundType) {
         this.price = scaleValue(this.price, 6);
         this.bulletinPrice = fundType != null && fundType.scalesBulletinPrice() ? scaleValue(this.bulletinPrice, 4) : null;

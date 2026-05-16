@@ -2,18 +2,20 @@ import { memo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BarChart3, ChevronRight } from 'lucide-react';
-import { formatPriceCompactTRY, getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
+import { getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
+import { useMoney } from '../../../shared/hooks/useMoney';
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 import useNavigationStore from '../../../shared/stores/useNavigationStore';
 import Card from '../../../shared/components/card';
 
-const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
 
 function shortLabel(asset) {
   return (asset.code || '').replace('.IS', '');
 }
 
 function AssetRow({ asset, color, onClick }) {
+  const { formatCompact: moneyCompact } = useMoney();
   const cls = getChangeClass(asset.changePercent);
   return (
     <button
@@ -35,7 +37,7 @@ function AssetRow({ asset, color, onClick }) {
       <span className="font-display text-[12px] font-semibold text-fg truncate flex-1 min-w-[60px] group-hover:text-accent transition-colors">
         {shortLabel(asset)}
       </span>
-      <span className="font-mono text-[11px] font-bold text-fg tabular-nums shrink-0">{formatPriceCompactTRY(asset.price)}</span>
+      <span className="font-mono text-[11px] font-bold text-fg tabular-nums shrink-0">{moneyCompact(asset.price)}</span>
       {asset.changePercent != null && (
         <span className={`font-mono text-[10px] font-semibold tabular-nums min-w-[48px] text-right shrink-0 ${changeColors[cls]}`}>
           {formatPercent(asset.changePercent)}

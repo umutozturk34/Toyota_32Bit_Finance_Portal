@@ -21,6 +21,8 @@ export const adminService = {
   triggerCommodityCandles: () => api.post('/admin/trigger/commodity/candles').then(r => r.data.data),
   triggerCommodityFull: () => api.post('/admin/trigger/commodity/full').then(r => r.data.data),
 
+  triggerViopFull: () => api.post('/admin/trigger/viop/full').then(r => r.data.data),
+
   triggerBondUpdate: () => api.post('/admin/trigger/bond/update').then(r => r.data.data),
   triggerNewsUpdate: () => api.post('/admin/trigger/news/update').then(r => r.data.data),
 

@@ -2,19 +2,21 @@ import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Bookmark, ChevronRight } from 'lucide-react';
-import { formatPriceTRY, getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
+import { getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
+import { useMoney } from '../../../shared/hooks/useMoney';
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 import { localizeWatchlistName } from '../../../shared/utils/watchlistName';
 import useNavigationStore from '../../../shared/stores/useNavigationStore';
 import Card from '../../../shared/components/card';
 
-const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
 
 function shortLabel(item) {
   return (item.assetCode || '').replace('.IS', '');
 }
 
 function ItemRow({ item, color, onClick }) {
+  const { format: money } = useMoney();
   const cls = getChangeClass(item.changePercent);
   return (
     <button
@@ -39,7 +41,7 @@ function ItemRow({ item, color, onClick }) {
         <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-fg-subtle leading-tight">{item.marketType}</span>
       </div>
       <div className="flex flex-col items-end shrink-0">
-        <span className="font-mono text-[12px] font-bold text-fg tabular-nums leading-tight">{formatPriceTRY(item.price)}</span>
+        <span className="font-mono text-[12px] font-bold text-fg tabular-nums leading-tight">{money(item.price)}</span>
         {item.changePercent != null && (
           <span className={`font-mono text-[10px] font-semibold tabular-nums leading-tight ${changeColors[cls]}`}>
             {formatPercent(item.changePercent)}

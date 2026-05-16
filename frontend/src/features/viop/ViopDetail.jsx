@@ -1,0 +1,93 @@
+import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { ChevronUp, ChevronDown } from 'lucide-react';
+import { viopService } from './services/viopService';
+import { getChangeClass, changeColors, formatPrice, formatPercentAbs } from '../../shared/utils/formatters';
+import { useMoney } from '../../shared/hooks/useMoney';
+import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
+import MetadataTiles from '../../shared/components/asset/MetadataTiles';
+import MarketOpenDerivativeModal from '../portfolio/components/MarketOpenDerivativeModal';
+
+const fmt = (price) => (price != null ? formatPrice(price) : '—');
+
+function formatExpiry(dateStr, localeTag) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString(localeTag, { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function ViopHeader({ asset }) {
+  const meta = asset.metadata || {};
+  const subtitle = [meta.kind, meta.underlying].filter(Boolean).join(' · ');
+  return (
+    <>
+      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-400/10 text-indigo-400 text-xs font-bold">
+        {meta.kind === 'OPTION' ? 'OPT' : 'FUT'}
+      </span>
+      <div>
+        <h1 className="text-xl font-bold text-fg">{asset.code}</h1>
+        {subtitle && <p className="text-xs text-fg-muted">{subtitle}</p>}
+      </div>
+    </>
+  );
+}
+
+function ViopMetadata({ asset }) {
+  const { t } = useTranslation();
+  const { format: money } = useMoney();
+  const meta = asset.metadata || {};
+  const cls = getChangeClass(asset.changePercent);
+  const localeTag = t('common.localeTag');
+  const isOption = meta.kind === 'OPTION';
+  const currency = meta.currency || 'TRY';
+  return (
+    <MetadataTiles tiles={[
+      { label: t('viop.lastPrice'), value: asset.price != null ? money(asset.price, currency) : t('viop.noPrice') },
+      asset.changePercent != null && {
+        label: t('marketDetail.forex.delta24h', 'Değişim'),
+        color: changeColors[cls],
+        value: (
+          <span className="flex items-center gap-0.5">
+            {asset.changePercent > 0 ? <ChevronUp className="h-3 w-3" /> : asset.changePercent < 0 ? <ChevronDown className="h-3 w-3" /> : null}
+            {formatPercentAbs(asset.changePercent)}
+          </span>
+        ),
+      },
+      { label: t('viop.underlying'), value: meta.underlying || '—' },
+      { label: t('viop.expiry'), value: formatExpiry(meta.expiryDate, localeTag) },
+      meta.contractSize != null && { label: t('viop.contractSize'), value: fmt(meta.contractSize) },
+      meta.initialMargin != null && { label: t('viop.initialMargin'), value: money(meta.initialMargin, currency) },
+      meta.settlementType && { label: t('viop.settlement'), value: meta.settlementType },
+      isOption && meta.optionSide && { label: t('viop.optionSide'), value: meta.optionSide },
+      isOption && meta.strikePrice != null && { label: t('viop.strike'), value: fmt(meta.strikePrice) },
+      meta.volumeLot != null && { label: t('viop.volumeLot'), value: fmt(meta.volumeLot) },
+    ]} />
+  );
+}
+
+export default function ViopDetail() {
+  const { symbol } = useParams();
+
+  return (
+    <AssetDetailPage
+      assetCode={symbol}
+      assetType="VIOP"
+      chartAssetType="VIOP"
+      queryKeyPrefix="viop"
+      fetchAsset={() => viopService.getByCode(symbol)}
+      fetchHistory={(_, range) => viopService.getHistory(symbol, range)}
+      clientSideRangeFilter
+      backRoute="/viop"
+      excludeCompare={[symbol]}
+      renderHeader={(asset) => <ViopHeader asset={asset} />}
+      renderMetadata={(asset) => <ViopMetadata asset={asset} />}
+      showBuyButton={true}
+      buyModalComponent={MarketOpenDerivativeModal}
+      getBuyProps={(asset) => (asset.price == null ? null : {
+        assetCode: asset.code || symbol,
+        assetName: asset.name || symbol,
+        currentPrice: asset.price,
+        metadata: asset.metadata,
+      })}
+    />
+  );
+}

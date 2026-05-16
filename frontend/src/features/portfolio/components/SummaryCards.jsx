@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Wallet, BarChart3 } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/AnimatedIcons';
-import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
+import { formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
+import { useMoney } from '../../../shared/hooks/useMoney';
 import { containerVariants, cardVariants } from '../../../shared/utils/animations';
 import { usePortfolioSummary } from '../hooks/usePortfolioData';
 import { ASSET_TYPE_FILTERS as SUMMARY_FILTERS } from '../../../shared/constants/assetTypes';
@@ -15,6 +16,7 @@ const VALUE_CARD_DEFS = [
 ];
 
 function PnlCard({ label, value, percent }) {
+  const { format: money } = useMoney();
   const cls = getChangeClass(value);
   const Icon = value >= 0 ? TrendingUp : TrendingDown;
   return (
@@ -35,7 +37,7 @@ function PnlCard({ label, value, percent }) {
         <span className="text-xs text-fg-muted font-medium">{label}</span>
       </div>
       <p className={`text-lg font-semibold font-mono ${changeColors[cls]}`}>
-        {formatPriceTRY(value)}
+        {money(value)}
       </p>
       <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium font-mono ${changeBg[cls]} ${changeColors[cls]}`}>
         {formatPercent(percent)}
@@ -46,6 +48,7 @@ function PnlCard({ label, value, percent }) {
 
 export default function SummaryCards({ summary: initialSummary, portfolioId }) {
   const { t } = useTranslation();
+  const { format: money } = useMoney();
   const [activeFilter, setActiveFilter] = useSessionState('portfolio-summary-filter', null);
 
   const { data: filteredSummary, isFetching: loading } = usePortfolioSummary(portfolioId, activeFilter);
@@ -104,7 +107,7 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
               <span className="text-xs text-fg-muted font-medium">{t(labelKey)}</span>
             </div>
             <p className="text-lg font-semibold font-mono text-fg">
-              {formatPriceTRY(summary?.[key])}
+              {money(summary?.[key])}
             </p>
           </Card>
         ))}

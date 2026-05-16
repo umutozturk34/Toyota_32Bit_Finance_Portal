@@ -9,6 +9,7 @@ import lombok.Getter;
 @Getter
 public enum CandlePeriod {
 
+    ONE_WEEK("1W", 0, end -> end.minusWeeks(1)),
     ONE_MONTH("1M", 1, end -> end.minusMonths(1)),
     THREE_MONTHS("3M", 3, end -> end.minusMonths(3)),
     SIX_MONTHS("6M", 6, end -> end.minusMonths(6)),
@@ -37,7 +38,9 @@ public enum CandlePeriod {
     }
 
     public LocalDate toStartDate() {
-        return this == ALL ? EPOCH_DATE : LocalDate.now().minusMonths(months);
+        if (this == ALL) return EPOCH_DATE;
+        if (this == ONE_WEEK) return LocalDate.now().minusWeeks(1);
+        return LocalDate.now().minusMonths(months);
     }
 
     public static CandlePeriod fromCode(String code) {

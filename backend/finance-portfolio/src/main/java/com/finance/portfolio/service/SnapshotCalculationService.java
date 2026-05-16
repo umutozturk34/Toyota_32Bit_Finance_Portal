@@ -30,11 +30,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 @Log4j2
@@ -49,6 +49,114 @@ public class SnapshotCalculationService {
     private final PortfolioDailySnapshotRepository dailySnapshotRepository;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     private final PortfolioProperties portfolioProperties;
+
+    /**
+     * Snapshot row for an open VIOP derivative position. Derivatives carry no cash cost basis
+     * (margin-based), so totalCost is the entry-side notional (entryPrice × contractSize × lot)
+     * and pnl is the realized-or-unrealized P&L. Stored with assetType=VIOP, assetCode=symbol,
+     * trackedAsset=null — the new persisted columns (V90) handle this without a TrackedAsset.
+     */
+    public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshot(Long portfolioId,
+                                                                      com.finance.portfolio.derivative.model.DerivativePosition position,
+                                                                      LocalDateTime batchTimestamp) {
+        if (position.getViopContract() == null) return null;
+        // Closed positions: snapshot freezes at the locked close_price (TRY) so the row keeps
+        // contributing the realized P&L to today's aggregate without tracking the contract's
+        // live last_price after close. Open: live last_price (native, FX × applied downstream).
+        if (!position.isOpen() && position.getClosePrice() != null) {
+            return buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp,
+                    position.getClosePrice(), BigDecimal.ONE);
+        }
+        BigDecimal currentPrice = position.getViopContract().getLastPrice();
+        return buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp, currentPrice);
+    }
+
+    /**
+     * Snapshot row for a VIOP derivative position at a specific point in time using a specific
+     * exit price. Used by {@code DerivativePositionService} backfill to persist one row per day
+     * between entry and today, reading the close from {@code viop_candles}; daily P&L is derived
+     * from the immediately prior persisted snapshot so the aggregate path is self-sufficient
+     * (no runtime augmentation).
+     */
+    public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshotAt(Long portfolioId,
+                                                                       com.finance.portfolio.derivative.model.DerivativePosition position,
+                                                                       LocalDateTime batchTimestamp,
+                                                                       BigDecimal exitPrice) {
+        return buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp, exitPrice, null);
+    }
+
+    /**
+     * Variant accepting an explicit FX rate (USD/TRY or EUR/TRY) for the snapshot's date —
+     * used by {@code DerivativePositionService.backfillSnapshots} to apply per-date historical
+     * conversion so portfolio chart timestamps follow the same per-day rule that asset-detail
+     * charts use. When {@code fxRateOverride} is null, falls back to the live FX from the
+     * pricing strategy.
+     */
+    public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshotAt(Long portfolioId,
+                                                                       com.finance.portfolio.derivative.model.DerivativePosition position,
+                                                                       LocalDateTime batchTimestamp,
+                                                                       BigDecimal exitPrice,
+                                                                       BigDecimal fxRateOverride) {
+        if (position.getViopContract() == null) return null;
+        BigDecimal contractSize = position.getViopContract().getContractSize() != null
+                ? position.getViopContract().getContractSize() : BigDecimal.ONE;
+        BigDecimal qty = position.getQuantityLot() != null ? position.getQuantityLot() : BigDecimal.ZERO;
+        // exit_price comes from viop_candles in NATIVE currency. Convert to TRY for the snapshot
+        // using the per-date FX rate (caller passes via fxRateOverride). entry_price is already
+        // TRY-canonical in DB — used as-is.
+        BigDecimal fxRate = fxRateOverride != null && fxRateOverride.signum() > 0
+                ? fxRateOverride
+                : contractFxRate(position.getViopContract().getCurrency());
+        BigDecimal unitPrice = (exitPrice != null ? exitPrice : BigDecimal.ZERO)
+                .multiply(fxRate).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        BigDecimal marketValue = unitPrice.multiply(contractSize).multiply(qty)
+                .setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        BigDecimal entryPriceTry = position.getEntryPrice() != null
+                ? position.getEntryPrice().setScale(MoneyScale.PRICE, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        BigDecimal totalCost = entryPriceTry.multiply(contractSize).multiply(qty)
+                .setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        BigDecimal perLot = position.getDirection() != null
+                ? position.getDirection().pnlPerLot(entryPriceTry, unitPrice, contractSize)
+                : null;
+        BigDecimal pnl = perLot != null ? perLot.multiply(qty) : BigDecimal.ZERO;
+
+        String code = position.getViopContract().getSymbol();
+        Optional<PortfolioAssetDailySnapshot> prior = assetSnapshotRepository
+                .findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanOrderByCreatedAtDesc(
+                        portfolioId, AssetType.VIOP, code, batchTimestamp);
+        BigDecimal dailyPnl = null;
+        BigDecimal dailyPercent = null;
+        if (prior.isPresent() && prior.get().getUnitPriceTry() != null) {
+            BigDecimal priorPrice = prior.get().getUnitPriceTry();
+            BigDecimal priorPerLot = position.getDirection() != null
+                    ? position.getDirection().pnlPerLot(priorPrice, unitPrice, contractSize)
+                    : null;
+            if (priorPerLot != null) {
+                dailyPnl = priorPerLot.multiply(qty).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+                BigDecimal priorValue = prior.get().getMarketValueTry();
+                if (priorValue != null && priorValue.compareTo(BigDecimal.ZERO) > 0) {
+                    dailyPercent = dailyPnl.multiply(HUNDRED).divide(priorValue, MoneyScale.PRICE, RoundingMode.HALF_UP);
+                }
+            }
+        }
+
+        return PortfolioAssetDailySnapshot.builder()
+                .portfolioId(portfolioId)
+                .assetType(AssetType.VIOP)
+                .assetCode(code)
+                .trackedAsset(null)
+                .snapshotDate(batchTimestamp.toLocalDate())
+                .createdAt(batchTimestamp)
+                .quantity(qty)
+                .unitPriceTry(unitPrice)
+                .marketValueTry(marketValue)
+                .totalCostTry(totalCost)
+                .pnlTry(pnl.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP))
+                .dailyPnlTry(dailyPnl)
+                .dailyPnlPercent(dailyPercent)
+                .build();
+    }
 
     public PortfolioAssetDailySnapshot buildAssetSnapshot(Long portfolioId, PortfolioPosition pos,
                                                               LocalDateTime batchTimestamp) {
@@ -89,29 +197,30 @@ public class SnapshotCalculationService {
                 totalQuantity, totalCost, unitPriceTry, Optional.ofNullable(prior));
     }
 
+    /**
+     * Live path. Per-asset rows have already been persisted at {@code batchTimestamp};
+     * aggregate's daily P&L is the sum of {@code dailyPnlTry} from the latest per-asset row
+     * for each currently-held (assetType, assetCode).
+     */
     public PortfolioDailySnapshot buildAggregateSnapshot(Portfolio portfolio, LocalDateTime batchTimestamp) {
         Long pid = portfolio.getId();
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(pid);
         List<AssetKey> keys = positions.stream().map(PortfolioPosition::toAssetKey).toList();
         Map<AssetKey, BigDecimal> prices = pricingPort.getExitPricesTry(keys);
-        Map<AssetKey, PortfolioAssetDailySnapshot> priors = fetchClosestPriorAssetSnapshots(pid, positions, batchTimestamp);
-        return assembleAggregateSnapshot(portfolio, batchTimestamp, positions, prices, priors);
+        List<PortfolioAssetDailySnapshot> contributingRows = fetchLatestHeldAssetRows(pid, positions);
+        return assembleAggregateSnapshot(portfolio, batchTimestamp, positions, prices, contributingRows);
     }
 
-    public PortfolioDailySnapshot buildAggregateSnapshotAt(Portfolio portfolio, LocalDateTime batchTimestamp,
-                                                            List<PortfolioPosition> positions,
-                                                            Map<AssetKey, BigDecimal> prices) {
-        Map<AssetKey, PortfolioAssetDailySnapshot> priors = fetchClosestPriorAssetSnapshots(
-                portfolio.getId(), positions, batchTimestamp);
-        return assembleAggregateSnapshot(portfolio, batchTimestamp, positions, prices, priors);
-    }
-
-    public PortfolioDailySnapshot buildAggregateSnapshotAtWithPriors(Portfolio portfolio, LocalDateTime batchTimestamp,
-                                                                       List<PortfolioPosition> positions,
-                                                                       Map<AssetKey, BigDecimal> prices,
-                                                                       Map<AssetKey, PortfolioAssetDailySnapshot> priorAssets) {
+    /**
+     * Backfill path. Caller has the per-asset rows for this batch in memory and passes them
+     * directly so the aggregate's daily P&L equals their {@code dailyPnlTry} sum.
+     */
+    public PortfolioDailySnapshot buildAggregateSnapshotAtFromRows(Portfolio portfolio, LocalDateTime batchTimestamp,
+                                                                     List<PortfolioPosition> positions,
+                                                                     Map<AssetKey, BigDecimal> prices,
+                                                                     List<PortfolioAssetDailySnapshot> rowsForBatch) {
         return assembleAggregateSnapshot(portfolio, batchTimestamp, positions, prices,
-                priorAssets != null ? priorAssets : Map.of());
+                rowsForBatch != null ? rowsForBatch : List.of());
     }
 
     private PortfolioAssetDailySnapshot assembleAssetSnapshot(Long portfolioId, AssetType assetType,
@@ -147,7 +256,7 @@ public class SnapshotCalculationService {
     private PortfolioDailySnapshot assembleAggregateSnapshot(Portfolio portfolio, LocalDateTime batchTimestamp,
                                                               List<PortfolioPosition> positions,
                                                               Map<AssetKey, BigDecimal> prices,
-                                                              Map<AssetKey, PortfolioAssetDailySnapshot> priorAssets) {
+                                                              List<PortfolioAssetDailySnapshot> contributingRows) {
         BigDecimal totalMarketValue = BigDecimal.ZERO;
         BigDecimal totalEntryValue = BigDecimal.ZERO;
         for (PortfolioPosition pos : positions) {
@@ -162,7 +271,7 @@ public class SnapshotCalculationService {
         PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalMarketValue, totalEntryValue, MoneyScale.PRICE);
         BigDecimal totalPnl = pct.amount() != null ? pct.amount() : BigDecimal.ZERO;
         BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
-        DailyDelta daily = computeAggregateDelta(positions, prices, priorAssets);
+        DailyDelta daily = sumAssetDailies(contributingRows);
 
         return PortfolioDailySnapshot.builder()
                 .portfolioId(portfolio.getId())
@@ -193,34 +302,40 @@ public class SnapshotCalculationService {
         return new DailyDelta(amount, percent);
     }
 
-    private DailyDelta computeAggregateDelta(List<PortfolioPosition> positions,
-                                              Map<AssetKey, BigDecimal> currentPrices,
-                                              Map<AssetKey, PortfolioAssetDailySnapshot> priorAssets) {
-        if (priorAssets == null || priorAssets.isEmpty()) return DailyDelta.EMPTY;
-        Map<AssetKey, Boolean> seen = new LinkedHashMap<>();
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        BigDecimal totalPriorValue = BigDecimal.ZERO;
+    private DailyDelta sumAssetDailies(List<PortfolioAssetDailySnapshot> rows) {
+        if (rows == null || rows.isEmpty()) return DailyDelta.EMPTY;
+        BigDecimal totalDaily = BigDecimal.ZERO;
+        BigDecimal totalPrior = BigDecimal.ZERO;
         boolean any = false;
-        for (PortfolioPosition pos : positions) {
-            AssetKey key = pos.toAssetKey();
-            if (seen.put(key, true) != null) continue;
-            PortfolioAssetDailySnapshot prior = priorAssets.get(key);
-            if (prior == null) continue;
-            BigDecimal currentPrice = currentPrices.get(key);
-            if (currentPrice == null) continue;
-            BigDecimal priorQty = prior.getQuantity();
-            BigDecimal priorPrice = prior.getUnitPriceTry();
-            if (priorQty == null || priorPrice == null) continue;
-            totalAmount = totalAmount.add(priorQty.multiply(currentPrice.subtract(priorPrice)));
-            totalPriorValue = totalPriorValue.add(priorQty.multiply(priorPrice));
+        for (PortfolioAssetDailySnapshot r : rows) {
+            BigDecimal daily = r.getDailyPnlTry();
+            if (daily == null) continue;
+            BigDecimal market = r.getMarketValueTry() != null ? r.getMarketValueTry() : BigDecimal.ZERO;
+            totalDaily = totalDaily.add(daily);
+            totalPrior = totalPrior.add(market.subtract(daily));
             any = true;
         }
         if (!any) return DailyDelta.EMPTY;
-        BigDecimal amount = totalAmount.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
-        BigDecimal percent = totalPriorValue.compareTo(BigDecimal.ZERO) > 0
-                ? amount.multiply(HUNDRED).divide(totalPriorValue, MoneyScale.PRICE, RoundingMode.HALF_UP)
+        BigDecimal amount = totalDaily.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        BigDecimal percent = totalPrior.compareTo(BigDecimal.ZERO) > 0
+                ? amount.multiply(HUNDRED).divide(totalPrior, MoneyScale.PRICE, RoundingMode.HALF_UP)
                 : null;
         return new DailyDelta(amount, percent);
+    }
+
+    private List<PortfolioAssetDailySnapshot> fetchLatestHeldAssetRows(Long portfolioId,
+                                                                        List<PortfolioPosition> positions) {
+        Set<String> heldKeys = new HashSet<>();
+        for (PortfolioPosition pos : positions) {
+            if (pos.getAssetType() != null && pos.getAssetCode() != null) {
+                heldKeys.add(pos.getAssetType().name() + "|" + pos.getAssetCode());
+            }
+        }
+        return assetSnapshotRepository.findLatestPerAsset(portfolioId).stream()
+                .filter(r -> r.getAssetType() != null && r.getAssetCode() != null
+                        && (heldKeys.contains(r.getAssetType().name() + "|" + r.getAssetCode())
+                            || r.getAssetType() == AssetType.VIOP))
+                .toList();
     }
 
     private Optional<PortfolioAssetDailySnapshot> findClosestPriorAssetSnapshot(
@@ -235,18 +350,13 @@ public class SnapshotCalculationService {
         return pickClosest(older, newer, target, PortfolioAssetDailySnapshot::getCreatedAt);
     }
 
-    private Map<AssetKey, PortfolioAssetDailySnapshot> fetchClosestPriorAssetSnapshots(
-            Long portfolioId, List<PortfolioPosition> positions, LocalDateTime batchTimestamp) {
-        Map<AssetKey, PortfolioAssetDailySnapshot> result = new HashMap<>();
-        for (PortfolioPosition pos : positions) {
-            AssetKey key = pos.toAssetKey();
-            if (result.containsKey(key)) continue;
-            TrackedAsset tracked = pos.getTrackedAsset();
-            if (tracked == null) continue;
-            findClosestPriorAssetSnapshot(portfolioId, tracked.getId(), batchTimestamp)
-                    .ifPresent(p -> result.put(key, p));
+    private BigDecimal contractFxRate(String currency) {
+        if (currency == null || currency.isBlank() || "TRY".equalsIgnoreCase(currency)) {
+            return BigDecimal.ONE;
         }
-        return result;
+        BigDecimal rate = pricingPort.getExitPriceTry(
+                com.finance.common.model.MarketType.FOREX, currency.toUpperCase());
+        return rate != null && rate.signum() > 0 ? rate : BigDecimal.ONE;
     }
 
     private static <T> Optional<T> pickClosest(Optional<T> older, Optional<T> newer,

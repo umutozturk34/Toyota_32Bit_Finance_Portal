@@ -1,6 +1,13 @@
 package com.finance.portfolio.service;
 
 
+import com.finance.market.viop.model.ViopCategory;
+import com.finance.market.viop.model.ViopContract;
+import com.finance.market.viop.model.ViopContractKind;
+import com.finance.portfolio.derivative.model.DerivativeCloseReason;
+import com.finance.portfolio.derivative.model.DerivativeDirection;
+import com.finance.portfolio.derivative.model.DerivativePosition;
+import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
 import com.finance.portfolio.dto.response.AllocationItem;
 import com.finance.portfolio.dto.response.PortfolioSummaryResponse;
 import com.finance.portfolio.dto.response.PositionResponse;
@@ -29,6 +36,7 @@ class PortfolioSummaryServiceTest {
 
     @Mock private PortfolioPositionRepository positionRepository;
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
+    @Mock private DerivativePositionRepository derivativePositionRepository;
 
     private CountingAssetPricingPort counting;
     private PortfolioResponseMapper responseMapper;
@@ -39,7 +47,9 @@ class PortfolioSummaryServiceTest {
         counting = new CountingAssetPricingPort();
         responseMapper = new PortfolioResponseMapperImpl();
         service = new PortfolioSummaryService(counting, positionRepository, responseMapper,
-                assetSnapshotRepository);
+                assetSnapshotRepository, derivativePositionRepository);
+        org.mockito.Mockito.lenient().when(derivativePositionRepository.findOpenByPortfolio(org.mockito.ArgumentMatchers.anyLong()))
+                .thenReturn(java.util.List.of());
     }
 
     @Test
@@ -123,5 +133,134 @@ class PortfolioSummaryServiceTest {
                 .entryPrice(entryPrice)
                 .entryDate(LocalDateTime.now())
                 .build();
+    }
+
+    private ViopContract sampleContract(BigDecimal lastPrice) {
+        return ViopContract.builder()
+                .symbol("F_USDTRY0626")
+                .kind(ViopContractKind.FUTURE)
+                .category(ViopCategory.CURRENCY_FUTURE_TRY)
+                .contractSize(new BigDecimal("1000"))
+                .initialMargin(new BigDecimal("3500.00"))
+                .currency("TRY")
+                .lastPrice(lastPrice)
+                .active(true)
+                .build();
+    }
+
+    private DerivativePosition longOpenPosition() {
+        return DerivativePosition.builder()
+                .id(50L)
+                .direction(DerivativeDirection.LONG)
+                .entryDate(java.time.LocalDate.of(2026, 4, 1))
+                .entryPrice(new BigDecimal("35.20"))
+                .quantityLot(new BigDecimal("1"))
+                .viopContract(sampleContract(new BigDecimal("35.50")))
+                .build();
+    }
+
+    @Test
+    void shouldAppendDerivativeRowsToPositions_whenPortfolioHasOpenViop() {
+        when(positionRepository.findByPortfolioId(1L)).thenReturn(List.of());
+        when(derivativePositionRepository.findByPortfolioId(1L)).thenReturn(List.of(longOpenPosition()));
+
+        List<PositionResponse> result = service.getPositions(1L);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).assetType()).isEqualTo("VIOP");
+        assertThat(result.get(0).assetCode()).isEqualTo("F_USDTRY0626");
+        assertThat(result.get(0).derivative()).isNotNull();
+        assertThat(result.get(0).derivative().direction()).isEqualTo("LONG");
+        assertThat(result.get(0).derivative().lockedMarginTry()).isEqualByComparingTo("3500.00");
+    }
+
+    @Test
+    void shouldAppendKapaliSuffixToClosedDerivativeName_whenPositionIsClosed() {
+        DerivativePosition closed = longOpenPosition();
+        closed.closeWith(java.time.LocalDate.of(2026, 5, 1),
+                new BigDecimal("36.00"), DerivativeCloseReason.USER_CLOSED);
+        when(positionRepository.findByPortfolioId(1L)).thenReturn(List.of());
+        when(derivativePositionRepository.findByPortfolioId(1L)).thenReturn(List.of(closed));
+
+        List<PositionResponse> result = service.getPositions(1L);
+
+        assertThat(result.get(0).assetName()).contains("KAPALI");
+        assertThat(result.get(0).derivative().closed()).isTrue();
+    }
+
+    @Test
+    void shouldIncludeDerivativesInAllocation_whenGroupingByAssetType() {
+        when(positionRepository.findByPortfolioId(1L)).thenReturn(List.of());
+        when(derivativePositionRepository.findByPortfolioId(1L)).thenReturn(List.of(longOpenPosition()));
+
+        List<AllocationItem> allocation = service.getAllocation(1L, "assetType", null);
+
+        assertThat(allocation).extracting(AllocationItem::label).contains("VIOP");
+        AllocationItem viop = allocation.stream().filter(a -> a.label().equals("VIOP")).findFirst().orElseThrow();
+        assertThat(viop.valueTry()).isPositive();
+    }
+
+    @Test
+    void shouldExcludeDerivatives_whenAllocationFilteredToSpotAssetType() {
+        when(positionRepository.findByPortfolioId(1L)).thenReturn(List.of());
+        org.mockito.Mockito.lenient().when(derivativePositionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(longOpenPosition()));
+
+        List<AllocationItem> allocation = service.getAllocation(1L, "assetType", "STOCK");
+
+        assertThat(allocation).isEmpty();
+    }
+
+    @Test
+    void shouldIncludeDerivativeNotionalAndPnl_whenSummaryAggregatesAllTypes() {
+        when(positionRepository.findByPortfolioId(1L)).thenReturn(List.of());
+        when(derivativePositionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(longOpenPosition()));
+
+        PortfolioSummaryResponse summary = service.getSummary(1L, null);
+
+        assertThat(summary.totalValueTry()).isPositive();
+        assertThat(summary.totalEntryValueTry()).isPositive();
+    }
+
+    @Test
+    void shouldFilterSummaryToViopOnly_whenAssetTypeIsViop() {
+        when(positionRepository.findByPortfolioId(1L)).thenReturn(List.of());
+        when(derivativePositionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(longOpenPosition()));
+
+        PortfolioSummaryResponse summary = service.getSummary(1L, "VIOP");
+
+        assertThat(summary.totalValueTry()).isPositive();
+    }
+
+    @Test
+    void shouldComputePagedPositions_whenGetPositionsPagedInvokedWithSearchAndSort() {
+        counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("60"));
+        counting.seedPrice("STOCK", "AKBNK.IS", new BigDecimal("55"));
+        when(positionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(
+                        stubPosition(AssetType.STOCK, "THYAO.IS", new BigDecimal("100"), new BigDecimal("40")),
+                        stubPosition(AssetType.STOCK, "AKBNK.IS", new BigDecimal("50"), new BigDecimal("45"))));
+
+        com.finance.common.dto.response.PagedResponse<PositionResponse> result =
+                service.getPositionsPaged(1L, "THY", null, "profitAmount", "desc", 0, 10);
+
+        assertThat(result.content()).hasSize(1);
+        assertThat(result.content().get(0).assetCode()).isEqualTo("THYAO.IS");
+    }
+
+    @Test
+    void shouldReturnEmptyPage_whenSearchMatchesNoPositions() {
+        counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("60"));
+        when(positionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(stubPosition(AssetType.STOCK, "THYAO.IS",
+                        new BigDecimal("100"), new BigDecimal("40"))));
+
+        com.finance.common.dto.response.PagedResponse<PositionResponse> result =
+                service.getPositionsPaged(1L, "ZZZZ", null, "assetCode", "asc", 0, 10);
+
+        assertThat(result.content()).isEmpty();
+        assertThat(result.totalElements()).isZero();
     }
 }

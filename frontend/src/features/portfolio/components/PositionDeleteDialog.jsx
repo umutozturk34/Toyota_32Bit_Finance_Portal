@@ -5,18 +5,22 @@ import { X, Trash2, ShieldCheck } from 'lucide-react';
 import { AlertTriangle, Check, AlertCircle } from '../../../shared/components/feedback/AnimatedIcons';
 import ProcessingSteps from '../../../shared/components/feedback/ProcessingSteps';
 import useProcessingAnimation from '../../../shared/hooks/useProcessingAnimation';
-import { formatPriceTRY } from '../../../shared/utils/formatters';
+import { useMoney } from '../../../shared/hooks/useMoney';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';
 import { useDeletePosition } from '../hooks/usePortfolioData';
+import { useDeleteDerivativePosition } from '../hooks/useDerivativePositions';
 
 const SUCCESS_HOLD_MS = 1100;
 
 export default function PositionDeleteDialog({ portfolioId, position, onClose, onComplete }) {
   const { t } = useTranslation();
+  const { format: money } = useMoney();
   const [phase, setPhase] = useState('confirm');
   const [error, setError] = useState(null);
   const { processingStep, runAnimation, reset: resetProcessing } = useProcessingAnimation();
-  const deleteMutation = useDeletePosition(portfolioId);
+  const spotDelete = useDeletePosition(portfolioId);
+  const derivativeDelete = useDeleteDerivativePosition(portfolioId);
+  const deleteMutation = position?.assetType === 'VIOP' ? derivativeDelete : spotDelete;
 
   const processingSteps = [
     { label: t('positionDelete.steps.validating'), duration: 350 },
@@ -130,7 +134,7 @@ export default function PositionDeleteDialog({ portfolioId, position, onClose, o
 
             <div className="rounded-lg border border-border-default bg-bg-base px-3 py-2.5 space-y-1.5">
               <Row label={t('positionDelete.quantityLabel')} value={Number(position.quantity).toLocaleString(t('common.localeTag'), { maximumFractionDigits: 6 })} />
-              <Row label={t('positionDelete.entryPriceLabel')} value={formatPriceTRY(position.entryPrice)} />
+              <Row label={t('positionDelete.entryPriceLabel')} value={money(position.entryPrice)} />
               {position.entryDate && (
                 <Row label={t('positionDelete.entryDateLabel')} value={new Date(position.entryDate).toLocaleDateString(t('common.localeTag'), { day: '2-digit', month: 'short', year: 'numeric' })} />
               )}

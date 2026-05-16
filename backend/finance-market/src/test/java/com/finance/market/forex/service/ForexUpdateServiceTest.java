@@ -37,6 +37,7 @@ class ForexUpdateServiceTest {
     @Mock private ForexEntityWriter entityWriter;
     @Mock private ForexRepository forexRepository;
     @Mock private TrackedAssetCommandService trackedAssetCommandService;
+    @Mock private com.finance.market.bank.service.BankRatesService bankRatesService;
 
     private final ForexEvdsMapper evdsMapper = new ForexEvdsMapper();
     private final ForexProperties forexProperties = new ForexProperties();
@@ -54,7 +55,8 @@ class ForexUpdateServiceTest {
     void setUp() {
         forexProperties.setBackfillStartDate(LocalDate.of(2024, 1, 1));
         service = new ForexUpdateService(evdsClient, currencyResolver, snapshotProcessor, entityWriter,
-                evdsMapper, forexRepository, trackedAssetCommandService, forexProperties, transactionTemplate);
+                evdsMapper, forexRepository, trackedAssetCommandService, forexProperties, transactionTemplate,
+                bankRatesService);
     }
 
     @Test

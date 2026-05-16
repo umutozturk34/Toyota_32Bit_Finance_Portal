@@ -7,13 +7,15 @@ import { Search, X } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../feedback/AnimatedIcons';
 import { ASSET_TYPE_COLORS } from '../../constants/assetTypes';
 import { assetCodeLabel } from '../../utils/assetCode';
-import { formatPriceTRY, getChangeClass, changeColors } from '../../utils/formatters';
+import { getChangeClass, changeColors } from '../../utils/formatters';
+import { useMoney } from '../../hooks/useMoney';
 import useSearchSuggestions from '../../hooks/useSearchSuggestions';
 
-const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
 
 function assetRoute(asset) {
-  return (TYPE_ROUTES[asset.type] || '/market') + '/' + asset.code;
+  const base = TYPE_ROUTES[asset.type] || '/market';
+  return `${base}/${encodeURIComponent(asset.code)}`;
 }
 
 export default function SearchSuggestions({
@@ -25,6 +27,7 @@ export default function SearchSuggestions({
   variant = 'default',
 }) {
   const { t } = useTranslation();
+  const { format: money } = useMoney();
   const navigate = useNavigate();
   const placeholderText = placeholder ?? t('searchSuggestions.placeholder');
   const [query, setQuery] = useState('');
@@ -172,7 +175,7 @@ export default function SearchSuggestions({
                       </div>
 
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-mono font-semibold text-fg">{formatPriceTRY(asset.price)}</p>
+                        <p className="text-sm font-mono font-semibold text-fg">{money(asset.price)}</p>
                         {asset.changePercent != null && (
                           <div className={`flex items-center justify-end gap-0.5 text-[11px] font-mono font-medium ${changeColors[cls]}`}>
                             {asset.changePercent > 0 ? <TrendingUp className="h-3 w-3" /> : asset.changePercent < 0 ? <TrendingDown className="h-3 w-3" /> : null}

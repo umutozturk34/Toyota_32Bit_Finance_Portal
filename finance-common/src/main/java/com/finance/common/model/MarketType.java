@@ -6,7 +6,8 @@ public enum MarketType {
     FOREX("forex", "currencyCode", "sellingPrice", "currentPrice"),
     FUND("fund", "fundCode", "price", null),
     COMMODITY("commodity", "commodityCode", "currentPrice", null),
-    BOND("bond", "code", "currentPrice", null);
+    BOND("bond", "code", "currentPrice", null),
+    VIOP("viop", "symbol", "lastPrice", "dayClose");
 
     private final String redisLabel;
     private final String codeField;

@@ -5,11 +5,13 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, TrendingUp, TrendingDown, Trash2, Pencil } from 'lucide-react';
 import AssetBadge from '../../../shared/components/asset/AssetBadge';
 import { useAssetDetailPrefetch } from '../../../shared/hooks/useAssetDetailPrefetch';
-import { formatPriceTRY, formatPercent, getChangeClass, changeColors, changeBg } from '../../../shared/utils/formatters';
+import { formatPercent, getChangeClass, changeColors, changeBg } from '../../../shared/utils/formatters';
+import { useMoney } from '../../../shared/hooks/useMoney';
 import { assetRoute } from '../lib/watchConstants';
 
 export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
   const { t } = useTranslation();
+  const { format: money } = useMoney();
   const localeTag = t('common.localeTag');
   const navigate = useNavigate();
   const route = assetRoute(item.marketType, item.assetCode);
@@ -85,7 +87,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
       </div>
       <div className="flex flex-col items-end justify-center leading-tight">
         <div className="text-sm font-mono font-semibold text-fg tabular-nums leading-none">
-          {item.currentPrice != null ? formatPriceTRY(item.currentPrice) : '—'}
+          {item.currentPrice != null ? money(item.currentPrice) : '—'}
         </div>
         {item.changePercent != null && (() => {
           const cls = getChangeClass(item.changePercent);

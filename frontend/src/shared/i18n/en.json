@@ -38,6 +38,7 @@
     "funds": "Funds",
     "commodities": "Commodities",
     "bonds": "Bonds",
+    "viop": "VIOP",
     "portfolio": "Portfolio",
     "watch": "Watch",
     "adminTrackedAssets": "Tracked Assets",
@@ -61,7 +62,7 @@
     "remove": "Remove",
     "all": "All",
     "loading": "Loading...",
-    "loadingData": "Loading data…",
+    "loadingData": "Loading data\u2026",
     "search": "Search",
     "close": "Close",
     "retry": "Retry",
@@ -112,6 +113,7 @@
       "buy": "Buy"
     },
     "range": {
+      "1W": "1W",
       "1M": "1M",
       "3M": "3M",
       "6M": "6M",
@@ -249,11 +251,11 @@
       "active": "Active",
       "cancel": "Cancel",
       "activeInstruction": {
-        "freehand": "— Click & drag to draw",
-        "click": "— Click to place",
-        "threePoint": "— Click 3 points",
-        "twoPoint": "— Click 2 points",
-        "dragDraw": "— Click & drag"
+        "freehand": "\u2014 Click & drag to draw",
+        "click": "\u2014 Click to place",
+        "threePoint": "\u2014 Click 3 points",
+        "twoPoint": "\u2014 Click 2 points",
+        "dragDraw": "\u2014 Click & drag"
       }
     }
   },
@@ -287,8 +289,8 @@
     "panelNameLabel": "Panel name",
     "panelNamePlaceholder": "Asset cards",
     "pinnedAssets": "Pinned assets",
-    "emptyHint": "Empty — search and add below. Leaving it empty loads the default list.",
-    "searchHint": "Search · pick · added instantly",
+    "emptyHint": "Empty \u2014 search and add below. Leaving it empty loads the default list.",
+    "searchHint": "Search \u00b7 pick \u00b7 added instantly",
     "searchPlaceholder": "BTC, AKBNK, USDTRY...",
     "maxAssets": "Max assets reached",
     "closeTooltip": "Close (Esc)",
@@ -312,7 +314,7 @@
     "addNewCard": "+ New asset card",
     "queueLabel": "next: {{label}}",
     "watchlistFallback": "Watchlist {{id}}",
-    "fullHint": "{{max}}/{{max}} filled — remove one to add more",
+    "fullHint": "{{max}}/{{max}} filled \u2014 remove one to add more",
     "dragHint": "Drag or click",
     "addedCount": "{{count}} / {{max}} added",
     "alreadyAdded": "Already added",
@@ -321,11 +323,11 @@
     "addPanelHint": "Add new panel: {{label}}",
     "assetCardsN": "Asset cards {{n}}",
     "movers": {
-      "STOCK": "Stocks · Up/Down",
-      "CRYPTO": "Crypto · Up/Down",
-      "FOREX": "Forex · Up/Down",
-      "FUND": "Funds · Up/Down",
-      "COMMODITY": "Commodities · Up/Down"
+      "STOCK": "Stocks \u00b7 Up/Down",
+      "CRYPTO": "Crypto \u00b7 Up/Down",
+      "FOREX": "Forex \u00b7 Up/Down",
+      "FUND": "Funds \u00b7 Up/Down",
+      "COMMODITY": "Commodities \u00b7 Up/Down"
     }
   },
   "assetCards": {
@@ -404,7 +406,7 @@
       "part1": "Markets, decoded.",
       "part2": "In real time."
     },
-    "heroDescription": "One portal for stocks, crypto, forex & metals — with institutional-grade charts, enterprise SSO, and zero config.",
+    "heroDescription": "One portal for stocks, crypto, forex & metals \u2014 with institutional-grade charts, enterprise SSO, and zero config.",
     "cta": {
       "createAccount": "Create free account",
       "signIn": "Sign in"
@@ -423,7 +425,7 @@
     "features": {
       "security": {
         "title": "Bank-Grade Security",
-        "description": "Keycloak SSO, LDAP federation, 2FA/TOTP — your credentials never touch our servers."
+        "description": "Keycloak SSO, LDAP federation, 2FA/TOTP \u2014 your credentials never touch our servers."
       },
       "marketData": {
         "title": "Live Market Data",
@@ -441,9 +443,9 @@
     "getStartedTag": "Get Started",
     "ctaSection": {
       "heading": "Ready to trade smarter?",
-      "body": "Join in seconds — no credit card, no commitment."
+      "body": "Join in seconds \u2014 no credit card, no commitment."
     },
-    "footer": "© 2026 Finance Portal"
+    "footer": "\u00a9 2026 Finance Portal"
   },
   "register": {
     "subtitle": "Create your account",
@@ -487,16 +489,82 @@
       "FUND": "Fund",
       "COMMODITY": "Commodity",
       "CASH": "Cash",
-      "ALL": "All"
+      "ALL": "All",
+      "VIOP": "VIOP"
     }
   },
   "ranges": {
+    "1W": "1W",
     "1M": "1M",
     "3M": "3M",
     "6M": "6M",
     "1Y": "1Y",
     "5Y": "5Y",
     "ALL": "Max"
+  },
+  "bankRates": {
+    "tabCurrency": "Currency",
+    "tabGold": "Gold",
+    "buy": "Buy",
+    "sell": "Sell",
+    "spread": "Spread",
+    "refresh": "Refresh",
+    "searchCurrency": "Search...",
+    "searchBank": "Search bank...",
+    "noMatch": "No match",
+    "lastUpdated": "Last updated",
+    "marketBank": "Market",
+    "marketHint": "Overall market price",
+    "currencyCount": "{{count}} / {{total}} currencies",
+    "goldCount": "{{count}} / {{total}} gold types",
+    "emptyTitle": "No bank rates found for this currency",
+    "emptyHint": "Check when the scheduler last ran",
+    "noData": "No data",
+    "bankCount": "{{count}} banks",
+    "currency": {
+      "USD": "US Dollar",
+      "EUR": "Euro",
+      "GBP": "British Pound",
+      "CHF": "Swiss Franc",
+      "SAR": "Saudi Riyal",
+      "AUD": "Australian Dollar",
+      "CAD": "Canadian Dollar",
+      "JPY": "Japanese Yen",
+      "CNY": "Chinese Yuan",
+      "DKK": "Danish Krone",
+      "SEK": "Swedish Krona",
+      "NOK": "Norwegian Krone",
+      "RUB": "Russian Ruble",
+      "QAR": "Qatari Riyal",
+      "KWD": "Kuwaiti Dinar",
+      "AED": "UAE Dirham",
+      "ZAR": "South African Rand",
+      "HKD": "Hong Kong Dollar",
+      "PLN": "Polish Zloty",
+      "RON": "Romanian Leu",
+      "SGD": "Singapore Dollar",
+      "NZD": "New Zealand Dollar",
+      "CZK": "Czech Koruna",
+      "HUF": "Hungarian Forint",
+      "INR": "Indian Rupee",
+      "THB": "Thai Baht",
+      "MXN": "Mexican Peso",
+      "BRL": "Brazilian Real",
+      "GRAM_ALTIN": "Gram Gold",
+      "CEYREK_ALTIN": "Quarter Gold",
+      "YARIM_ALTIN": "Half Gold",
+      "TAM_ALTIN": "Full Gold",
+      "ATA_ALTIN": "Ata Gold",
+      "CUMHURIYET_ALTINI": "Republic Gold",
+      "HAMIT_ALTIN": "Hamit Gold",
+      "RESAT_ALTIN": "Resat Gold",
+      "BESLI_ALTIN": "Five-Piece Gold",
+      "GRAM_HAS_ALTIN": "Pure Gram Gold",
+      "AYAR_14": "14K Gold",
+      "AYAR_18": "18K Gold",
+      "AYAR_22_BILEZIK": "22K Bracelet",
+      "GUMUS": "Silver"
+    }
   },
   "theme": {
     "DARK": "Dark",
@@ -517,8 +585,8 @@
     "password": {
       "title": "Password",
       "change": "Change Password",
-      "sending": "…",
-      "emailLink": "Email →",
+      "sending": "\u2026",
+      "emailLink": "Email \u2192",
       "hint": "Click the link in your email to set a new password.",
       "success": "Email sent",
       "successDesc": "Click the link in your inbox to change your password",
@@ -527,7 +595,9 @@
     },
     "email": "Email",
     "timezoneSuffix": "timezone (fixed)",
-    "logout": "Log out"
+    "logout": "Log out",
+    "displayCurrency": "Display Currency",
+    "currencyOriginal": "Original"
   },
   "notificationPreferences": {
     "emailMaster": {
@@ -537,14 +607,38 @@
     },
     "types": {
       "title": "Notification types",
-      "priceAlerts": { "label": "Price alert", "hint": "When threshold is breached" },
-      "watchlist": { "label": "Watchlist", "hint": "On strong movement" },
-      "system": { "label": "System", "hint": "Maintenance, security, etc." },
-      "marketOpened": { "label": "Market opened", "hint": "When opening prices loaded" },
-      "marketClosed": { "label": "Market closed", "hint": "When closing prices loaded" },
-      "marketDataUpdated": { "label": "Data updated", "hint": "Each time cron triggers" },
-      "newsPublished": { "label": "New articles", "hint": "When new headlines are added" },
-      "portfolioUpdated": { "label": "Portfolio updated", "hint": "When daily snapshot is taken (23:00)" }
+      "priceAlerts": {
+        "label": "Price alert",
+        "hint": "When threshold is breached"
+      },
+      "watchlist": {
+        "label": "Watchlist",
+        "hint": "On strong movement"
+      },
+      "system": {
+        "label": "System",
+        "hint": "Maintenance, security, etc."
+      },
+      "marketOpened": {
+        "label": "Market opened",
+        "hint": "When opening prices loaded"
+      },
+      "marketClosed": {
+        "label": "Market closed",
+        "hint": "When closing prices loaded"
+      },
+      "marketDataUpdated": {
+        "label": "Data updated",
+        "hint": "Each time cron triggers"
+      },
+      "newsPublished": {
+        "label": "New articles",
+        "hint": "When new headlines are added"
+      },
+      "portfolioUpdated": {
+        "label": "Portfolio updated",
+        "hint": "When daily snapshot is taken (23:00)"
+      }
     },
     "channels": {
       "email": "Email",
@@ -579,7 +673,7 @@
       "highLabel": "High",
       "lowLabel": "Low",
       "volumeLabel": "Volume",
-      "loading": "Loading stock data…",
+      "loading": "Loading stock data\u2026",
       "error": "Failed to load stock data",
       "empty": "No stock data yet."
     },
@@ -590,7 +684,7 @@
       "changeLabel": "Change",
       "volumeLabel": "Volume",
       "marketCapLabel": "Market Cap",
-      "loading": "Loading crypto data…",
+      "loading": "Loading crypto data\u2026",
       "error": "Failed to load crypto data",
       "empty": "No crypto data yet."
     },
@@ -603,7 +697,7 @@
       "banknoteRates": "Banknote Rates",
       "banknoteBuy": "Banknote Buy:",
       "banknoteSell": "Banknote Sell:",
-      "loading": "Loading forex rates…",
+      "loading": "Loading forex rates\u2026",
       "error": "Failed to load forex data",
       "empty": "No forex data yet."
     },
@@ -616,7 +710,7 @@
       "investorLabel": "Investors",
       "portfolioLabel": "Portfolio",
       "shareCountLabel": "Shares",
-      "loading": "Loading fund data…",
+      "loading": "Loading fund data\u2026",
       "error": "Failed to load fund data",
       "empty": "No fund data yet",
       "types": {
@@ -635,7 +729,7 @@
       "countLabel": "commodities",
       "usdPriceLabel": "USD Price",
       "contractsSuffix": "contracts",
-      "loading": "Loading commodity data…",
+      "loading": "Loading commodity data\u2026",
       "error": "Failed to load commodity data",
       "empty": "No commodity data yet.",
       "segments": {
@@ -647,11 +741,11 @@
       "title": "Bonds & Bills",
       "searchPlaceholder": "Search ISIN or series code...",
       "countLabel": "bonds",
-      "loading": "Loading bond data…",
+      "loading": "Loading bond data\u2026",
       "error": "Failed to load bond data",
       "empty": "No bond data yet.",
       "noSearchResults": "No bonds match the search.",
-      "chartLoading": "Loading chart…",
+      "chartLoading": "Loading chart\u2026",
       "noRateData": "No rate data",
       "couponRate": "Coupon Rate",
       "simpleYield": "Simple Yield",
@@ -722,7 +816,10 @@
         "entryDate": "Date",
         "assetCode": "Asset Code",
         "quantity": "Quantity"
-      }
+      },
+      "statusAll": "All",
+      "statusOpen": "Open / Spot",
+      "statusClosed": "Closed / Sold"
     },
     "allocation": {
       "title": "Allocation",
@@ -748,7 +845,8 @@
     "loading": "Loading portfolio...",
     "tabs": {
       "overview": "Overview",
-      "performance": "Performance"
+      "performance": "Performance",
+      "viop": "VIOP"
     },
     "onboarding": {
       "idleTitle": "Create Your Portfolio",
@@ -764,6 +862,61 @@
         "creating": "Creating portfolio...",
         "preparing": "Preparing..."
       }
+    },
+    "derivatives": {
+      "title": "Derivative Positions",
+      "tabTitle": "VIOP Positions",
+      "openAction": "Open Position",
+      "submitOpen": "Open",
+      "openTitle": "Open Derivative Position",
+      "openFailed": "Failed to open position",
+      "empty": "No derivative positions yet",
+      "emptyHint": "Open positions from the VIOP page",
+      "symbol": "Contract symbol",
+      "direction": "Direction",
+      "qty": "Lots",
+      "entryDate": "Entry date",
+      "entryPrice": "Entry price",
+      "entryPriceOptional": "Entry price (optional)",
+      "premium": "Premium",
+      "premiumOptional": "Premium (optional)",
+      "autoFromHistory": "Leave blank \u2192 taken from history",
+      "alsoClosePast": "If already closed",
+      "closeDate": "Close date",
+      "closePrice": "Close price",
+      "closePriceOptional": "Close price (blank \u2192 from history)",
+      "closeTitle": "Close Position",
+      "closeAction": "Close position",
+      "closeConfirm": "Close",
+      "closeFailed": "Failed to close position",
+      "editCloseTitle": "Edit Close",
+      "editCloseConfirm": "Update",
+      "editEntryTitle": "Edit Position",
+      "submitUpdate": "Update",
+      "updateFailed": "Position could not be updated",
+      "reopen": "Reopen",
+      "reopenFailed": "Position could not be reopened",
+      "deleteTitle": "Delete position",
+      "confirmDelete": "This derivative position record will be deleted.",
+      "open": "Open",
+      "closed": "Closed",
+      "expired": "Expired",
+      "entry": "Entry",
+      "current": "Current",
+      "exit": "Exit",
+      "expiry": "Expiry",
+      "pnl": "P&L",
+      "margin": "Margin",
+      "notional": "Notional value",
+      "leverage": "Leverage",
+      "strike": "Strike",
+      "maxLoss": "Max Loss",
+      "maxGain": "Max Gain",
+      "call": "Call",
+      "put": "Put",
+      "future": "Future",
+      "dataAvailable": "Data available on this date: {{price}}",
+      "dataUnavailable": "No data on this date \u2014 nearest prior price will be used"
     }
   },
   "marketAddPosition": {
@@ -799,14 +952,14 @@
       "priceUsd": "Price (USD)",
       "priceTry": "Price (TRY)",
       "change24h": "24h Change",
-      "changeAmountUsd": "24h Δ (USD)",
+      "changeAmountUsd": "24h \u0394 (USD)",
       "volume24h": "Volume (24h)"
     },
     "forex": {
       "buy": "Buy",
       "sell": "Sell",
-      "delta24h": "24h Δ",
-      "deltaTL": "Δ (TRY)",
+      "delta24h": "24h \u0394",
+      "deltaTL": "\u0394 (TRY)",
       "banknoteBuy": "Banknote Buy",
       "banknoteSell": "Banknote Sell"
     },
@@ -838,6 +991,8 @@
     "loading": "Loading market overview...",
     "error": "Failed to load market data",
     "liveData": "Live market data",
+    "tabOverview": "Overview",
+    "tabRates": "Bank Rates",
     "editMode": "Edit mode",
     "unsavedChanges": "Unsaved changes",
     "saving": "Saving",
@@ -875,7 +1030,7 @@
     "title": "Notifications",
     "broadcastTitle": "Broadcast a system message to all users",
     "broadcastLabel": "Broadcast",
-    "searchPlaceholder": "Search notifications…",
+    "searchPlaceholder": "Search notifications\u2026",
     "filterAll": "All",
     "filterUnread": "Unread",
     "markRead": "read",
@@ -954,7 +1109,7 @@
   "twoFactor": {
     "active": "2FA active",
     "inactive": "2FA off",
-    "statusLoading": "Checking status…",
+    "statusLoading": "Checking status\u2026",
     "descActive": "Your account is protected with two-factor authentication. Use the options below to re-set up or disable.",
     "descInactive": "Protect your account with an extra layer using Google/Microsoft Authenticator.",
     "reSetup": "Re-setup",
@@ -968,7 +1123,7 @@
     "disabledBody": "Two-factor authentication has been removed from your account",
     "confirm": {
       "title": "Disable 2FA?",
-      "message": "Your account will be protected by single-factor sign-in. This is reversible — you can set it up again any time."
+      "message": "Your account will be protected by single-factor sign-in. This is reversible \u2014 you can set it up again any time."
     }
   },
   "keycloakAction": {
@@ -995,7 +1150,7 @@
     "welcomeTitle": "Welcome to Finance Portal",
     "welcomeSubtitle": "A finance dashboard combining market data, portfolio tracking and notifications in one interface.",
     "startCta": "Let's Start",
-    "dismissHint": "You won't see this window again — manage all options from Settings.",
+    "dismissHint": "You won't see this window again \u2014 manage all options from Settings.",
     "highlights": {
       "multiMarket": {
         "title": "Multi Market",
@@ -1072,7 +1227,7 @@
     "availability": {
       "has": "Data available for this date: <span class=\"font-mono font-semibold\">{{price}}</span>",
       "apply": "Apply",
-      "none": "No price data for this date — enter manually."
+      "none": "No price data for this date \u2014 enter manually."
     }
   },
   "assetDetail": {
@@ -1108,7 +1263,8 @@
       "FUNDS": "Funds",
       "COMMODITIES": "Commodities",
       "BONDS": "Bonds",
-      "NEWS": "News"
+      "NEWS": "News",
+      "VIOP": "VIOP"
     },
     "action": {
       "snapshot": "Snapshot",
@@ -1191,9 +1347,9 @@
     "referenceLabel": "Reference (TRY)",
     "referencePlaceholder": "starting price",
     "distanceFromCurrent": "{{signed}}% away from current",
-    "projected": "≈ TRY {{price}} when triggered",
+    "projected": "\u2248 TRY {{price}} when triggered",
     "createCta": "Create alert",
-    "creating": "Creating…",
+    "creating": "Creating\u2026",
     "errorAsset": "Pick an asset",
     "errorThreshold": "Threshold must be a valid number",
     "errorReference": "Percent alert requires a reference price",
@@ -1236,13 +1392,13 @@
     "duplicateWarn": "<strong>{{code}}</strong> already exists in this list. Saving will overwrite its note and threshold.",
     "addCta": "Add to list",
     "updateCta": "Update",
-    "adding": "Adding…",
-    "updating": "Updating…",
+    "adding": "Adding\u2026",
+    "updating": "Updating\u2026",
     "errorAsset": "Pick an asset",
     "errorList": "Pick a list",
     "errorThreshold": "% threshold must be a positive number",
-    "added": "{{code}} → {{list}} added",
-    "updated": "{{code}} → {{list}} updated",
+    "added": "{{code}} \u2192 {{list}} added",
+    "updated": "{{code}} \u2192 {{list}} updated",
     "fallbackListName": "list",
     "failed": "Add failed"
   },
@@ -1252,7 +1408,7 @@
     "thresholdLabel": "Threshold",
     "thresholdPlaceholder": "e.g. 1000000 (TRY) or 5 (%)",
     "thresholdHint": "TRY price for ABOVE/BELOW, percent value for % directions.",
-    "saving": "Saving…",
+    "saving": "Saving\u2026",
     "invalidThreshold": "Invalid threshold",
     "invalidThresholdHint": "Enter a numeric value",
     "updated": "Updated",
@@ -1286,7 +1442,7 @@
     "titleLabel": "Title",
     "bodyLabel": "Message",
     "publishCta": "Publish",
-    "sending": "Sending…",
+    "sending": "Sending\u2026",
     "successTitle": "Broadcast sent",
     "successBody": "Delivered to {{dispatched}}/{{total}} users",
     "failed": "Failed to send broadcast"
@@ -1308,7 +1464,7 @@
     "listNameLabel": "List Name",
     "namePlaceholder": "Crypto Investments",
     "createCta": "Create",
-    "creating": "Creating…",
+    "creating": "Creating\u2026",
     "nameRequired": "List name is required",
     "successToast": "\"{{name}}\" created",
     "createFailed": "Failed to create list"
@@ -1332,8 +1488,8 @@
     "deleteListTitle": "Delete list",
     "addAsset": "Add asset",
     "createAlert": "Create alert",
-    "loading": "Loading…",
-    "listsLoading": "Loading lists…",
+    "loading": "Loading\u2026",
+    "listsLoading": "Loading lists\u2026",
     "headers": {
       "asset": "Asset",
       "lastPrice": "Last price",
@@ -1376,7 +1532,7 @@
     "sourceLanguageNote": "Articles are published in Turkish as they are pulled directly from the source.",
     "countLabel": "articles",
     "searchPlaceholder": "Search news...",
-    "loading": "Loading news…",
+    "loading": "Loading news\u2026",
     "error": "Failed to load news",
     "refresh": "Refresh",
     "cooldown": "Cooldown",
@@ -1406,15 +1562,15 @@
     "currentLabel": "Current",
     "placeholder": "new@email.com",
     "sendCode": "Send code to current address",
-    "sending": "sending…",
-    "codeArrow": "Code →",
+    "sending": "sending\u2026",
+    "codeArrow": "Code \u2192",
     "sendHintBefore": "A 6-digit code is sent to",
     "sendHintAfter": "; once you enter it below the new address becomes active.",
     "awaitingConfirmation": "Awaiting Confirmation",
     "expiresPrefix": "Valid until",
     "expiresSuffix": "",
     "cancel": "Cancel",
-    "verifying": "Verifying…",
+    "verifying": "Verifying\u2026",
     "confirm": "Confirm",
     "toast": {
       "sameAddress": "Same address",
@@ -1431,6 +1587,47 @@
       "cancelledDesc": "Email change has been cancelled",
       "cancelError": "Cancel failed",
       "tryAgain": "Try again"
+    }
+  },
+  "viop": {
+    "title": "VIOP \u2014 Futures & Options",
+    "searchPlaceholder": "Search contracts (F_USDTRY...)",
+    "countLabel": "contracts",
+    "loading": "Loading VIOP contracts",
+    "error": "Failed to load VIOP data",
+    "empty": "No contracts found",
+    "openPosition": "Open position",
+    "noPrice": "No price",
+    "lastPrice": "Last price",
+    "underlying": "Underlying",
+    "expiry": "Expiry",
+    "contractSize": "Contract size",
+    "initialMargin": "Initial margin",
+    "settlement": "Settlement",
+    "optionSide": "Type",
+    "strike": "Strike price",
+    "volumeLot": "Volume (lot)",
+    "kind": {
+      "future": "Futures",
+      "option": "Option"
+    },
+    "class": {
+      "PAY": "Equity",
+      "INDEX": "Index",
+      "CURRENCY": "Currency",
+      "METAL": "Metal"
+    },
+    "category": {
+      "PAY_FUTURE": "Equity Futures",
+      "INDEX_FUTURE": "Index Futures",
+      "CURRENCY_FUTURE_TRY": "Currency Futures",
+      "CURRENCY_FUTURE_USD": "Currency Futures (USD)",
+      "METAL_FUTURE_TRY": "Metal Futures",
+      "METAL_FUTURE_USD": "Metal Futures (USD)",
+      "METAL_FUTURE": "Metal Futures",
+      "PAY_OPTION": "Equity Option",
+      "INDEX_OPTION": "Index Option",
+      "CURRENCY_OPTION": "Currency Option"
     }
   }
 }

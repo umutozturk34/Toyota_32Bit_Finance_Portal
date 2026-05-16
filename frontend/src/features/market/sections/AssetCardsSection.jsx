@@ -5,11 +5,12 @@ import useNavigationStore from '../../../shared/stores/useNavigationStore';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Layers, X } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../../shared/components/feedback/AnimatedIcons';
-import { formatPriceTRY, getChangeClass, changeColors, changeBg, formatPercentAbs } from '../../../shared/utils/formatters';
+import { getChangeClass, changeColors, changeBg, formatPercentAbs } from '../../../shared/utils/formatters';
+import { useMoney } from '../../../shared/hooks/useMoney';
 import AssetCardChart from './AssetCardChart';
 
-const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities' };
-const TYPE_ABBR = { STOCK: 'STK', CRYPTO: 'CRY', FOREX: 'FX', FUND: 'FND', COMMODITY: 'CMD', BOND: 'BND' };
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
+const TYPE_ABBR = { STOCK: 'STK', CRYPTO: 'CRY', FOREX: 'FX', FUND: 'FND', COMMODITY: 'CMD', BOND: 'BND', VIOP: 'VIO' };
 
 function shortLabel(asset) {
   return (asset.code || '').replace('.IS', '');
@@ -22,6 +23,7 @@ function typeAbbr(type) {
 /** @param {{asset: Object, index?: number, onClick: (a: Object) => void, editMode: boolean, onRemove?: (a: Object) => void}} props */
 function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
   const { t } = useTranslation();
+  const { format: money } = useMoney();
   const handleClick = () => onClick?.(asset);
   const handleRemoveClick = () => onRemove?.(asset);
   const hasChange = asset.changePercent != null;
@@ -67,7 +69,7 @@ function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
                   <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                   <span className="text-fg-muted">— ₺</span>
                 </span>
-              : <span className="text-fg">{formatPriceTRY(asset.price)}</span>}
+              : <span className="text-fg">{money(asset.price)}</span>}
           </p>
           {hasChange && (
             <div className={`shrink-0 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-mono font-semibold tabular-nums ${changeBg[cls]} ${changeColors[cls]}`}>

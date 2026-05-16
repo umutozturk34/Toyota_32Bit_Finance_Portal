@@ -17,6 +17,8 @@ import AllocationChart from './components/AllocationChart';
 import PerformanceChart from './components/PerformanceChart';
 import PositionFormModal from './components/PositionFormModal';
 import PositionDeleteDialog from './components/PositionDeleteDialog';
+import CloseDerivativePositionDialog from './components/CloseDerivativePositionDialog';
+import EditDerivativePositionModal from './components/EditDerivativePositionModal';
 import AssetDetail from './components/AssetDetail';
 import {
   usePortfolioList, usePortfolioView, usePortfolioPositions,
@@ -100,6 +102,7 @@ export default function Portfolio() {
 
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [closeTarget, setCloseTarget] = useState(null);
   const [onboardingPhase, setOnboardingPhase] = useState('idle');
   const createPortfolio = useCreatePortfolio();
   const { processingStep, runAnimation, reset: resetOnboarding } = useProcessingAnimation();
@@ -294,14 +297,17 @@ export default function Portfolio() {
 
       <div className="min-h-[400px]">
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-            <PositionsTable
-              portfolioId={portfolio?.id}
-              onAssetClick={setSelectedAsset}
-              onEditClick={setEditTarget}
-              onDeleteClick={setDeleteTarget}
-            />
-            <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+              <PositionsTable
+                portfolioId={portfolio?.id}
+                onAssetClick={setSelectedAsset}
+                onEditClick={setEditTarget}
+                onDeleteClick={setDeleteTarget}
+                onCloseClick={setCloseTarget}
+              />
+              <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
+            </div>
           </div>
         )}
 
@@ -310,7 +316,15 @@ export default function Portfolio() {
         )}
       </div>
 
-      {editTarget && portfolio && (
+      {editTarget && portfolio && editTarget.assetType === 'VIOP' && (
+        <EditDerivativePositionModal
+          portfolioId={portfolio.id}
+          position={editTarget}
+          onClose={() => { setEditTarget(null); invalidatePortfolio(); }}
+        />
+      )}
+
+      {editTarget && portfolio && editTarget.assetType !== 'VIOP' && (
         <PositionFormModal
           mode="edit"
           portfolioId={portfolio.id}
@@ -326,6 +340,14 @@ export default function Portfolio() {
           position={deleteTarget}
           onClose={() => setDeleteTarget(null)}
           onComplete={invalidatePortfolio}
+        />
+      )}
+
+      {closeTarget && portfolio && (
+        <CloseDerivativePositionDialog
+          portfolioId={portfolio.id}
+          position={closeTarget}
+          onClose={() => { setCloseTarget(null); invalidatePortfolio(); }}
         />
       )}
     </div>

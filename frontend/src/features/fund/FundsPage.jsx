@@ -6,12 +6,13 @@ import { LineChart, Activity, Clock, Users as UsersIcon, Wallet } from 'lucide-r
 import { TrendingUp, TrendingDown } from '../../shared/components/feedback/AnimatedIcons';
 import { fundService } from './services/fundService';
 import { adminService } from '../admin/services/adminService';
-import { formatPriceTRY, formatCompactTRY, formatVolume } from '../../shared/utils/formatters';
+import { formatVolume } from '../../shared/utils/formatters';
 import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
 import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
 import ChangePercentBadge from '../../shared/components/asset/ChangePercentBadge';
 import useListParams from '../../shared/hooks/useListParams';
+import { useMoney } from '../../shared/hooks/useMoney';
 
 const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
 const FUND_TYPE_IDS = ['BYF', 'YAT'];
@@ -20,6 +21,7 @@ function FundsPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const listParams = useListParams();
+    const { format: money, formatCompact: moneyCompact } = useMoney();
     const typeFilter = listParams.filter || 'ALL';
     const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) }));
     const fundTypeLabel = (id) => FUND_TYPE_IDS.includes(id) ? t(`market.fund.types.${id}`) : id;
@@ -65,12 +67,12 @@ function FundsPage() {
 
                 <div className="mt-3 space-y-1">
                     <span className="block truncate font-mono text-xl font-bold text-fg">
-                        {formatPriceTRY(fund.price)}
+                        {money(fund.price)}
                     </span>
                     {meta.fundType === 'BYF' && meta.bulletinPrice != null && (
                         <div className="flex items-center gap-2 text-xs text-fg-muted">
                             <span className="font-medium">{t('market.fund.exchangePriceLabel')}</span>
-                            <span className="font-mono">{formatPriceTRY(meta.bulletinPrice)}</span>
+                            <span className="font-mono">{money(meta.bulletinPrice)}</span>
                         </div>
                     )}
                 </div>
@@ -94,7 +96,7 @@ function FundsPage() {
                     )}
                     <div className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-1 text-fg-muted"><Wallet className="h-3 w-3" />{t('market.fund.portfolioLabel')}</span>
-                        <span className="font-mono text-fg">{formatCompactTRY(meta.portfolioSize)}</span>
+                        <span className="font-mono text-fg">{moneyCompact(meta.portfolioSize)}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-1 text-fg-muted"><Activity className="h-3 w-3" />{t('market.fund.shareCountLabel')}</span>

@@ -9,8 +9,11 @@ const useAppStore = create(
       activeWatchlistId: null,
       chartSidebarOpen: false,
       chartActiveTab: 'indicators',
+      displayCurrency: 'TRY',
 
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
+
+      setDisplayCurrency: (currency) => set({ displayCurrency: currency }),
 
       setCooldown: (route, endTime) =>
         set((s) => {
@@ -32,6 +35,7 @@ const useAppStore = create(
         activeWatchlistId: state.activeWatchlistId,
         chartSidebarOpen: state.chartSidebarOpen,
         chartActiveTab: state.chartActiveTab,
+        displayCurrency: state.displayCurrency,
       }),
     }
   )

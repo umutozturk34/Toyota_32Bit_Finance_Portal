@@ -16,6 +16,8 @@ import com.finance.market.fund.model.Fund;
 import com.finance.market.fund.repository.FundRepository;
 import com.finance.market.stock.model.Stock;
 import com.finance.market.stock.repository.StockRepository;
+import com.finance.market.viop.model.ViopContract;
+import com.finance.market.viop.repository.ViopContractRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -90,5 +92,15 @@ public class MarketCacheConfig {
         return new MarketCacheService<>(redisTemplate, objectMapper,
                 RedisKeys.marketSnapshotPrefix("Bond"), ttl, Bond.class, "Bond",
                 bondRepository::findById);
+    }
+
+    @Bean
+    public MarketCacheService<ViopContract> viopCacheService(
+            RedisTemplate<String, Object> redisTemplate,
+            @Qualifier("redisObjectMapper") ObjectMapper objectMapper,
+            ViopContractRepository viopContractRepository) {
+        return new MarketCacheService<>(redisTemplate, objectMapper,
+                RedisKeys.marketSnapshotPrefix("Viop"), ttl, ViopContract.class, "Viop",
+                viopContractRepository::findBySymbol);
     }
 }

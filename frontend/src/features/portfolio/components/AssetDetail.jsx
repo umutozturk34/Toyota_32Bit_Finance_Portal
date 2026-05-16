@@ -7,10 +7,12 @@ import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/An
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/useTheme';
 import { useAssetSeries } from '../hooks/usePortfolioData';
-import { formatPriceTRY, formatPercent, changeColors, changeBg, getChangeClass, currentLocaleTag } from '../../../shared/utils/formatters';
+import { formatPercent, changeColors, changeBg, getChangeClass, currentLocaleTag } from '../../../shared/utils/formatters';
+import { useMoney } from '../../../shared/hooks/useMoney';
 import { cardVariants } from '../../../shared/utils/animations';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
 import PositionFormModal from './PositionFormModal';
+import MarketOpenDerivativeModal from './MarketOpenDerivativeModal';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
 import IconButton from '../../../shared/components/buttons/IconButton';
@@ -20,21 +22,22 @@ const formatEntryDate = (v) => v ? new Date(v).toLocaleDateString(currentLocaleT
 const STAT_CARD_DEFS = [
   { key: 'quantity', labelKey: 'quantity', Icon: Hash, format: (v) => Number(v).toLocaleString(currentLocaleTag(), { maximumFractionDigits: 6 }) },
   { key: 'entryDate', labelKey: 'entryDate', Icon: Calendar, format: formatEntryDate },
-  { key: 'entryPrice', labelKey: 'entryPrice', Icon: DollarSign, format: formatPriceTRY },
-  { key: 'currentPriceTry', labelKey: 'currentPrice', Icon: BarChart3, format: formatPriceTRY },
-  { key: 'marketValueTry', labelKey: 'marketValue', Icon: Wallet, format: formatPriceTRY },
+  { key: 'entryPrice', labelKey: 'entryPrice', Icon: DollarSign, money: true },
+  { key: 'currentPriceTry', labelKey: 'currentPrice', Icon: BarChart3, money: true },
+  { key: 'marketValueTry', labelKey: 'marketValue', Icon: Wallet, money: true },
 ];
 
 const LINE_COLOR = '#6366f1';
 const UNIT_COLOR = '#f59e0b';
 
 function AssetChart({ data, isDark, t }) {
-  const option = useMemo(() => buildAssetChartOption(data, isDark, t), [data, isDark, t]);
+  const { format: money } = useMoney();
+  const option = useMemo(() => buildAssetChartOption(data, isDark, t, money), [data, isDark, t, money]);
   if (!option) return null;
   return <ReactECharts option={option} notMerge lazyUpdate style={{ height: 300 }} opts={{ renderer: 'canvas' }} />;
 }
 
-function buildAssetChartOption(data, isDark, t) {
+function buildAssetChartOption(data, isDark, t, money) {
   if (!data || data.length === 0) return null;
 
   const muted = isDark ? '#6b6b7a' : '#94a3b8';
@@ -71,8 +74,8 @@ function buildAssetChartOption(data, isDark, t) {
         const point = params?.[0]?.data;
         if (!point) return '';
         const date = new Date(point.value[0]).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'short', year: 'numeric' });
-        const market = formatPriceTRY(point.value[1]);
-        const unit = formatPriceTRY(point.unitPrice);
+        const market = money(point.value[1]);
+        const unit = money(point.unitPrice);
         const marketLabel = t('assetDetail.marketValue');
         const unitLabel = t('assetDetail.unitPrice');
         return `
@@ -102,7 +105,7 @@ function buildAssetChartOption(data, isDark, t) {
       max: dataMax + padding,
       axisLine: { show: false },
       axisTick: { show: false },
-      axisLabel: { color: muted, fontSize: 10, formatter: (val) => formatPriceTRY(val) },
+      axisLabel: { color: muted, fontSize: 10, formatter: (val) => money(val) },
       splitLine: { lineStyle: { color: grid, type: 'dashed' } },
     },
     series: [{
@@ -130,6 +133,7 @@ function buildAssetChartOption(data, isDark, t) {
 export default function AssetDetail({ portfolioId, asset, onBack }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
+  const { format: money } = useMoney();
   const [range, setRange] = useChartRange();
   const [addLotOpen, setAddLotOpen] = useState(false);
 
@@ -196,7 +200,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
         animate="show"
         className="grid grid-cols-2 sm:grid-cols-5 gap-3"
       >
-        {STAT_CARD_DEFS.map(({ key, labelKey, Icon, format }) => (
+        {STAT_CARD_DEFS.map(({ key, labelKey, Icon, format, money: isMoney }) => (
           <Card key={key} variant="elevated" radius="xl" padding="sm" interactive className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-center w-6 h-6 rounded-md bg-accent/10">
@@ -204,7 +208,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
               </div>
               <p className="text-[11px] text-fg-muted">{t(`assetDetail.stats.${labelKey}`)}</p>
             </div>
-            <p className="text-sm font-semibold font-mono text-fg">{format(asset[key])}</p>
+            <p className="text-sm font-semibold font-mono text-fg">{isMoney ? money(asset[key]) : format(asset[key])}</p>
           </Card>
         ))}
       </motion.div>
@@ -227,7 +231,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
               {formatPercent(asset.pnlPercent)}
             </span>
             <p className={`text-lg font-semibold font-mono ${changeColors[pnlClass]}`}>
-              {formatPriceTRY(asset.pnlTry)}
+              {money(asset.pnlTry)}
             </p>
           </div>
         </Card>
@@ -249,7 +253,7 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
                   {formatPercent(dailyPnlPercent)}
                 </span>
                 <p className={`text-lg font-semibold font-mono ${changeColors[dailyClass]}`}>
-                  {formatPriceTRY(dailyPnlTry)}
+                  {money(dailyPnlTry)}
                 </p>
               </>
             )}
@@ -263,8 +267,8 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
         initial="hidden"
         animate="show"
         variant="elevated"
-        radius="2xl"
-        padding="lg"
+        radius="xl"
+        padding="md"
         backdropBlur
         className="space-y-3"
       >
@@ -288,7 +292,17 @@ export default function AssetDetail({ portfolioId, asset, onBack }) {
         </div>
       </Card>
 
-      {addLotOpen && (
+      {addLotOpen && asset.assetType === 'VIOP' && (
+        <MarketOpenDerivativeModal
+          assetCode={asset.assetCode}
+          assetName={asset.assetName}
+          currentPrice={asset.currentPriceTry}
+          metadata={asset.metadata}
+          onClose={() => setAddLotOpen(false)}
+          onComplete={() => setAddLotOpen(false)}
+        />
+      )}
+      {addLotOpen && asset.assetType !== 'VIOP' && (
         <PositionFormModal
           mode="add"
           portfolioId={portfolioId}

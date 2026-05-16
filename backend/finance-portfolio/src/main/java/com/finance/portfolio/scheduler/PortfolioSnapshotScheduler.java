@@ -1,5 +1,6 @@
 package com.finance.portfolio.scheduler;
 
+import com.finance.portfolio.derivative.service.DerivativePositionService;
 import com.finance.portfolio.service.PortfolioSnapshotService;
 import com.finance.shared.service.TaskTrackingService;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 public class PortfolioSnapshotScheduler {
 
     private final PortfolioSnapshotService snapshotService;
+    private final DerivativePositionService derivativePositionService;
     private final TaskTrackingService taskTracker;
 
     @Scheduled(cron = "${app.scheduler.portfolio.morning-cron}", zone = "${app.timezone}")
@@ -26,6 +28,9 @@ public class PortfolioSnapshotScheduler {
     public void runEveningSnapshot() {
         taskTracker.runTracked("scheduled-portfolio-snapshot-evening",
                 "Evening portfolio snapshot",
-                () -> snapshotService.generateDailySnapshots("evening"));
+                () -> {
+                    snapshotService.generateDailySnapshots("evening");
+                    derivativePositionService.autoCloseExpired();
+                });
     }
 }

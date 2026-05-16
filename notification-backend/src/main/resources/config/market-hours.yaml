@@ -31,3 +31,8 @@ notification:
         close: '00:00'
         trading-days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
         zone: Europe/Istanbul
+      VIOP:
+        open: '09:30'
+        close: '18:15'
+        trading-days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY]
+        zone: Europe/Istanbul

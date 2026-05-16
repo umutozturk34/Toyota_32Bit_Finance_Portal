@@ -10,6 +10,8 @@ import com.finance.portfolio.mapper.PortfolioSnapshotMapper;
 import com.finance.portfolio.model.AssetType;
 import com.finance.shared.model.CandlePeriod;
 import com.finance.portfolio.model.PerformanceEventType;
+import com.finance.portfolio.derivative.model.DerivativePosition;
+import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
 import com.finance.portfolio.model.PortfolioPosition;
 import com.finance.portfolio.model.MoneyScale;
@@ -26,6 +28,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -44,6 +48,7 @@ public class PortfolioPerformanceService {
 
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     private final PortfolioPositionRepository positionRepository;
+    private final DerivativePositionRepository derivativePositionRepository;
     private final TrackedAssetRepository trackedAssetRepository;
     private final PortfolioSnapshotMapper snapshotMapper;
 
@@ -64,14 +69,21 @@ public class PortfolioPerformanceService {
         LocalDateTime end = LocalDateTime.now();
         LocalDateTime start = CandlePeriod.fromCode(range).toStartDateTime(end);
         AssetType type = EnumParser.parseOrBadRequest(AssetType.class, assetType, "enum.field.assetType");
-        TrackedAssetType trackedType = TrackedAssetType.valueOf(type.name());
-        TrackedAsset tracked = trackedAssetRepository
-                .findByAssetTypeAndAssetCodeIgnoreCase(trackedType, trackedType.normalizeCode(assetCode))
-                .orElse(null);
-        if (tracked == null) return List.of();
-        List<PortfolioAssetDailySnapshot> snapshots = assetSnapshotRepository
-                .findByPortfolioIdAndTrackedAssetIdAndCreatedAtBetweenOrderByCreatedAtAsc(
-                        portfolioId, tracked.getId(), start, end);
+        List<PortfolioAssetDailySnapshot> snapshots;
+        if (type == AssetType.VIOP) {
+            snapshots = assetSnapshotRepository
+                    .findByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtBetweenOrderByCreatedAtAsc(
+                            portfolioId, type, assetCode, start, end);
+        } else {
+            TrackedAssetType trackedType = TrackedAssetType.valueOf(type.name());
+            TrackedAsset tracked = trackedAssetRepository
+                    .findByAssetTypeAndAssetCodeIgnoreCase(trackedType, trackedType.normalizeCode(assetCode))
+                    .orElse(null);
+            if (tracked == null) return List.of();
+            snapshots = assetSnapshotRepository
+                    .findByPortfolioIdAndTrackedAssetIdAndCreatedAtBetweenOrderByCreatedAtAsc(
+                            portfolioId, tracked.getId(), start, end);
+        }
         return snapshotMapper.toAssetSeriesPoints(snapshots);
     }
 
@@ -82,6 +94,7 @@ public class PortfolioPerformanceService {
         List<PortfolioAssetDailySnapshot> assetSnapshots = assetSnapshotRepository
                 .findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(portfolioId, start, end);
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
+        List<DerivativePosition> derivatives = derivativePositionRepository.findOpenByPortfolio(portfolioId);
 
         Map<LocalDateTime, List<PortfolioAssetDailySnapshot>> assetsByTimestamp = assetSnapshots.stream()
                 .collect(Collectors.groupingBy(PortfolioAssetDailySnapshot::getCreatedAt,
@@ -95,7 +108,7 @@ public class PortfolioPerformanceService {
             List<PortfolioAssetDailySnapshot> assets = assetsByTimestamp.getOrDefault(agg.createdAt(), List.of());
             Map<String, BigDecimal> currTypeValues = new LinkedHashMap<>();
             List<PerformanceAssetDetail> details = aggregateByType(assets, currTypeValues);
-            List<PerformanceEvent> events = buildEvents(positions, prevTime, agg.createdAt(),
+            List<PerformanceEvent> events = buildEvents(positions, derivatives, prevTime, agg.createdAt(),
                     prevTypeValues, currTypeValues, true);
             result.add(new PerformancePoint(agg.createdAt(), agg.totalValueTry(),
                     agg.totalPnlTry(), agg.pnlPercent(), details, events));
@@ -123,11 +136,13 @@ public class PortfolioPerformanceService {
     private List<PerformancePoint> getAssetTypePerformance(Long portfolioId, AssetType assetType,
                                                             LocalDateTime start, LocalDateTime end) {
         List<PortfolioAssetDailySnapshot> snapshots = assetSnapshotRepository
-                .findByPortfolioIdAndTrackedAsset_AssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
-                        portfolioId, TrackedAssetType.valueOf(assetType.name()), start, end);
-        List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId).stream()
-                .filter(p -> p.getAssetType() == assetType)
-                .toList();
+                .findByPortfolioIdAndAssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
+                        portfolioId, assetType, start, end);
+        List<PortfolioPosition> positions = assetType == AssetType.VIOP
+                ? List.of()
+                : positionRepository.findByPortfolioId(portfolioId).stream()
+                        .filter(p -> p.getAssetType() == assetType)
+                        .toList();
 
         Map<LocalDateTime, List<PortfolioAssetDailySnapshot>> grouped = snapshots.stream()
                 .collect(Collectors.groupingBy(PortfolioAssetDailySnapshot::getCreatedAt,
@@ -140,7 +155,7 @@ public class PortfolioPerformanceService {
         for (Map.Entry<LocalDateTime, List<PortfolioAssetDailySnapshot>> e : grouped.entrySet()) {
             Map<String, BigDecimal> currAssetValues = new LinkedHashMap<>();
             AssetCodeAgg agg = aggregateByCode(e.getValue(), currAssetValues);
-            List<PerformanceEvent> events = buildEvents(positions, prevTime, e.getKey(),
+            List<PerformanceEvent> events = buildEvents(positions, List.of(), prevTime, e.getKey(),
                     prevAssetValues, currAssetValues, false);
             result.add(new PerformancePoint(e.getKey(), agg.totalValue, agg.totalPnl, agg.pnlPercent,
                     agg.details, events));
@@ -176,6 +191,7 @@ public class PortfolioPerformanceService {
     }
 
     private List<PerformanceEvent> buildEvents(List<PortfolioPosition> positions,
+                                                List<DerivativePosition> derivatives,
                                                 LocalDateTime prevTime, LocalDateTime currentTime,
                                                 Map<String, BigDecimal> prevValues,
                                                 Map<String, BigDecimal> currValues,
@@ -188,13 +204,29 @@ public class PortfolioPerformanceService {
                         && !p.getEntryDate().isAfter(currentTime))
                 .toList();
 
-        if (!addedInWindow.isEmpty()) {
+        List<DerivativePosition> derivativesAdded = derivatives == null ? List.of() : derivatives.stream()
+                .filter(d -> d.getEntryDate() != null && d.getViopContract() != null)
+                .filter(d -> {
+                    LocalDateTime entry = d.getEntryDate().atStartOfDay();
+                    return entry.isAfter(prevTime) && !entry.isAfter(currentTime);
+                })
+                .toList();
+
+        if (!addedInWindow.isEmpty() || !derivativesAdded.isEmpty()) {
             for (PortfolioPosition pos : addedInWindow) {
                 events.add(new PerformanceEvent(
                         PerformanceEventType.POSITION_ADDED,
                         pos.getAssetType().name(),
                         pos.getAssetCode(),
                         pos.entryValue()));
+            }
+            for (DerivativePosition d : derivativesAdded) {
+                BigDecimal notional = d.nominalExposure();
+                events.add(new PerformanceEvent(
+                        PerformanceEventType.POSITION_ADDED,
+                        AssetType.VIOP.name(),
+                        d.getViopContract().getSymbol(),
+                        notional != null ? notional : BigDecimal.ZERO));
             }
         } else if (prevValues != null) {
             Set<String> allKeys = new LinkedHashSet<>();

@@ -2,7 +2,8 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LineChart } from 'lucide-react';
 import { fundService } from './services/fundService';
-import { formatPriceTRY, formatVolume, formatCompactTRY } from '../../shared/utils/formatters';
+import { formatVolume } from '../../shared/utils/formatters';
+import { useMoney } from '../../shared/hooks/useMoney';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
 
@@ -22,11 +23,12 @@ function FundHeader({ asset }) {
 
 function FundMetadata({ asset }) {
   const { t } = useTranslation();
+  const { format: money, formatCompact: moneyCompact } = useMoney();
   const meta = asset.metadata || {};
   return (
     <MetadataTiles tiles={[
-      { label: t('marketDetail.priceLabel'), value: formatPriceTRY(asset.price) },
-      meta.fundType === 'BYF' && meta.bulletinPrice != null && { label: t('marketDetail.fund.exchange'), value: formatPriceTRY(meta.bulletinPrice) },
+      { label: t('marketDetail.priceLabel'), value: money(asset.price) },
+      meta.fundType === 'BYF' && meta.bulletinPrice != null && { label: t('marketDetail.fund.exchange'), value: money(meta.bulletinPrice) },
       {
         label: t('marketDetail.fund.fundType'),
         value: (
@@ -35,7 +37,7 @@ function FundMetadata({ asset }) {
           </span>
         ),
       },
-      { label: t('market.fund.portfolioLabel'), value: formatCompactTRY(meta.portfolioSize) },
+      { label: t('market.fund.portfolioLabel'), value: moneyCompact(meta.portfolioSize) },
       meta.fundType === 'YAT' && meta.investorCount != null && { label: t('market.fund.investorLabel'), value: formatVolume(meta.investorCount) },
       meta.shareCount != null && { label: t('market.fund.shareCountLabel'), value: formatVolume(meta.shareCount) },
     ]} />

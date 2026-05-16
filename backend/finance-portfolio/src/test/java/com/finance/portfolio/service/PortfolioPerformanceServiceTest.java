@@ -37,6 +37,7 @@ class PortfolioPerformanceServiceTest {
 
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     @Mock private PortfolioPositionRepository positionRepository;
+    @Mock private com.finance.portfolio.derivative.repository.DerivativePositionRepository derivativePositionRepository;
     @Mock private TrackedAssetRepository trackedAssetRepository;
     @Mock private PortfolioSnapshotMapper snapshotMapper;
 
@@ -46,7 +47,10 @@ class PortfolioPerformanceServiceTest {
     void setUp() {
         service = new PortfolioPerformanceService(
                 assetSnapshotRepository, positionRepository,
+                derivativePositionRepository,
                 trackedAssetRepository, snapshotMapper);
+        org.mockito.Mockito.lenient().when(derivativePositionRepository.findOpenByPortfolio(org.mockito.ArgumentMatchers.anyLong()))
+                .thenReturn(java.util.List.of());
     }
 
     @Test
@@ -127,8 +131,8 @@ class PortfolioPerformanceServiceTest {
                 new BigDecimal("6000"), new BigDecimal("4000"), new BigDecimal("2000"));
         PortfolioAssetDailySnapshot stockB = assetSnapWithCost(t, AssetType.STOCK, "ASELS.IS",
                 new BigDecimal("3000"), new BigDecimal("2000"), new BigDecimal("1000"));
-        when(assetSnapshotRepository.findByPortfolioIdAndTrackedAsset_AssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
-                eq(PORTFOLIO_ID), eq(TrackedAssetType.STOCK), any(), any()))
+        when(assetSnapshotRepository.findByPortfolioIdAndAssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
+                eq(PORTFOLIO_ID), eq(AssetType.STOCK), any(), any()))
                 .thenReturn(List.of(stockA, stockB));
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
 

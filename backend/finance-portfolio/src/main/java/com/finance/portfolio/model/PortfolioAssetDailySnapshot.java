@@ -35,23 +35,16 @@ public class PortfolioAssetDailySnapshot {
     @Column(name = "portfolio_id", nullable = false)
     private Long portfolioId;
 
-    @Transient
+    @Enumerated(EnumType.STRING)
+    @Column(name = "asset_type", nullable = false, length = 32)
     private AssetType assetType;
 
-    @Transient
+    @Column(name = "asset_code", nullable = false, length = 100)
     private String assetCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tracked_asset_id", nullable = false)
+    @JoinColumn(name = "tracked_asset_id")
     private TrackedAsset trackedAsset;
-
-    @PostLoad
-    void syncTransientsFromTrackedAsset() {
-        if (trackedAsset != null) {
-            this.assetType = AssetType.valueOf(trackedAsset.getAssetType().name());
-            this.assetCode = trackedAsset.getAssetCode();
-        }
-    }
 
     @Column(name = "snapshot_date", nullable = false)
     private LocalDate snapshotDate;

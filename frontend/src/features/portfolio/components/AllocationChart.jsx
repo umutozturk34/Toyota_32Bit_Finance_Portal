@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import useSessionState from '../../../shared/hooks/useSessionState';
@@ -26,7 +26,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
   const { isDark } = useTheme();
   const { format: money, formatCompact: moneyCompact } = useMoney();
   const [activeTab, setActiveTab] = useSessionState('portfolio-alloc-tab', 'ALL');
-  const assetLabel = (id) => t(`assets.labels.${id}`, { defaultValue: id });
+  const assetLabel = useCallback((id) => t(`assets.labels.${id}`, { defaultValue: id }), [t]);
 
   const { data: assetData, isFetching: assetLoading } = usePortfolioAllocation(
     activeTab !== 'ALL' ? portfolioId : null, 'assetCode', activeTab !== 'ALL' ? activeTab : undefined

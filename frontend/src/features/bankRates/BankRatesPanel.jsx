@@ -144,7 +144,7 @@ function FilterItem({ active, label, code, count, onClick, showCode = true, kind
 export default function BankRatesPanel() {
   const { t } = useTranslation();
   const localeTag = t('common.localeTag');
-  const labelFor = (code) => t(`bankRates.currency.${code}`, code);
+  const labelFor = useCallback((code) => t(`bankRates.currency.${code}`, code), [t]);
   const { format: money, currency: displayCurrency } = useMoney();
   const [searchParams, setSearchParams] = useSearchParams();
   const kindParam = searchParams.get('kind');

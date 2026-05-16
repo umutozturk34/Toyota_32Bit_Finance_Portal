@@ -65,7 +65,7 @@ export function useBackfillStatus(portfolioId) {
       cancelled = true;
       if (source) source.close();
     };
-  }, [portfolioId]);
+  }, [portfolioId, invalidate]);
 
   return state;
 }

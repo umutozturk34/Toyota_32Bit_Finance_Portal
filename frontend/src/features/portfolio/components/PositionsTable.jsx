@@ -100,7 +100,7 @@ function DerivativeChips({ meta, money, t, localeTag }) {
   );
 }
 
-export default function PositionsTable({ portfolioId, onAssetClick: assetClickProp, onEditClick: editClickProp, onDeleteClick: deleteClickProp, onCloseClick: closeClickProp }) {
+export default function PositionsTable({ portfolioId, backfill: backfillProp, onAssetClick: assetClickProp, onEditClick: editClickProp, onDeleteClick: deleteClickProp, onCloseClick: closeClickProp }) {
   const { t } = useTranslation();
   const listParams = useListParams({ defaultSize: 8, prefix: 'pos' });
   const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`portfolio.positions.sort.${id}`) }));
@@ -113,7 +113,8 @@ export default function PositionsTable({ portfolioId, onAssetClick: assetClickPr
   const { data } = usePortfolioPositions(portfolioId, queryParams);
   const allPositions = data?.content || [];
   const totalPages = data?.totalPages || 0;
-  const backfill = useBackfillStatus(portfolioId);
+  const ownBackfill = useBackfillStatus(backfillProp ? null : portfolioId);
+  const backfill = backfillProp ?? ownBackfill;
   const elapsed = useElapsedSeconds(backfill.since);
 
   const [statusFilter, setStatusFilter] = useState('all');
@@ -126,6 +127,29 @@ export default function PositionsTable({ portfolioId, onAssetClick: assetClickPr
 
   if (!portfolioId) return null;
 
+  const statusFilterBar = (
+    <div className="flex items-center gap-1 p-1 rounded-lg bg-bg-elevated border border-border-default w-fit">
+      {[
+        { id: 'all', label: t('portfolio.positions.statusAll') },
+        { id: 'open', label: t('portfolio.positions.statusOpen') },
+        { id: 'closed', label: t('portfolio.positions.statusClosed') },
+      ].map((opt) => (
+        <button
+          key={opt.id}
+          type="button"
+          onClick={() => setStatusFilter(opt.id)}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all border-none cursor-pointer ${
+            statusFilter === opt.id
+              ? 'bg-accent/15 text-accent'
+              : 'bg-transparent text-fg-muted hover:text-fg'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <PortfolioListShell
       listParams={listParams}
@@ -137,28 +161,9 @@ export default function PositionsTable({ portfolioId, onAssetClick: assetClickPr
       emptyIcon={<Package className="h-8 w-8 text-fg-muted" />}
       emptyMessage={listParams.search ? t('portfolio.positions.noSearchResults') : t('portfolio.positions.empty')}
       emptyHint={!listParams.search ? t('portfolio.positions.emptyHint') : undefined}
+      secondaryFilters={statusFilterBar}
     >
       <div className="space-y-3">
-      <div className="flex items-center gap-1 p-1 rounded-lg bg-bg-elevated border border-border-default w-fit">
-        {[
-          { id: 'all', label: t('portfolio.positions.statusAll') },
-          { id: 'open', label: t('portfolio.positions.statusOpen') },
-          { id: 'closed', label: t('portfolio.positions.statusClosed') },
-        ].map((opt) => (
-          <button
-            key={opt.id}
-            type="button"
-            onClick={() => setStatusFilter(opt.id)}
-            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all border-none cursor-pointer ${
-              statusFilter === opt.id
-                ? 'bg-accent/15 text-accent'
-                : 'bg-transparent text-fg-muted hover:text-fg'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-      </div>
       <div className="hidden lg:grid lg:grid-cols-[1.8fr_0.6fr_0.9fr_0.9fr_0.9fr_0.9fr_1.1fr_72px_20px] gap-2 px-4 py-2 text-xs text-fg-muted font-medium">
         <span>{t('portfolio.positions.assetCol')}</span>
         <span className="text-right">{t('portfolio.positions.quantityCol')}</span>

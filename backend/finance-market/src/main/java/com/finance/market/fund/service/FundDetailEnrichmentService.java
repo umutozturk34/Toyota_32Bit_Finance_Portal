@@ -57,6 +57,20 @@ public class FundDetailEnrichmentService {
         return updated;
     }
 
+    @Transactional
+    public int enrichReturnsAndRiskForFund(String fundCode) {
+        Fund fund = fundRepository.findById(fundCode).orElse(null);
+        if (fund == null) return 0;
+        FundType type = fund.getFundType() != null ? fund.getFundType() : FundType.YAT;
+        try {
+            List<TefasFundReturnsDto> rows = tefasClient.fetchReturns(type);
+            return applyReturns(rows, Set.of(fundCode));
+        } catch (Exception e) {
+            log.warn("Single-fund returns enrichment failed for {}: {}", fundCode, e.getMessage());
+            return 0;
+        }
+    }
+
     private static final int ALLOCATION_WALKBACK_DAYS = 7;
 
     @Transactional
@@ -87,6 +101,31 @@ public class FundDetailEnrichmentService {
         }
         log.info("Fund allocation enrichment: {} funds persisted", updated);
         return updated;
+    }
+
+    @Transactional
+    public int enrichAllocationsForFund(String fundCode, LocalDate date) {
+        Fund fund = fundRepository.findById(fundCode).orElse(null);
+        if (fund == null) return 0;
+        FundType type = fund.getFundType() != null ? fund.getFundType() : FundType.YAT;
+        Set<String> single = Set.of(fundCode);
+        try {
+            LocalDate cursor = date;
+            List<TefasFundAllocationDto> rows = List.of();
+            for (int attempt = 0; attempt <= ALLOCATION_WALKBACK_DAYS; attempt++) {
+                rows = tefasClient.fetchAllocations(type, cursor);
+                if (rows.stream().anyMatch(dto -> fundCode.equals(dto.fundCode()))) break;
+                cursor = cursor.minusDays(1);
+            }
+            if (rows.isEmpty()) {
+                log.warn("Single-fund allocation: no data for {} within {} days walkback ending {}", fundCode, ALLOCATION_WALKBACK_DAYS, date);
+                return 0;
+            }
+            return applyAllocations(rows, single, cursor);
+        } catch (Exception e) {
+            log.warn("Single-fund allocation enrichment failed for {}: {}", fundCode, e.getMessage());
+            return 0;
+        }
     }
 
     @Transactional

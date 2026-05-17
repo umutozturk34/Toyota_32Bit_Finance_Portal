@@ -22,7 +22,7 @@ import EditDerivativePositionModal from './components/EditDerivativePositionModa
 import AssetDetail from './components/AssetDetail';
 import {
   usePortfolioList, usePortfolioView, usePortfolioPositions,
-  useCreatePortfolio, useInvalidatePortfolio,
+  useCreatePortfolio, useInvalidatePortfolio, useBackfillStatus,
 } from './hooks/usePortfolioData';
 
 const ONBOARDING_SUCCESS_HOLD_MS = 900;
@@ -51,6 +51,7 @@ export default function Portfolio() {
   const summary = view?.summary ?? null;
   const allocation = view?.allocation ?? [];
   const viewPositions = view?.positions?.content ?? [];
+  const backfill = useBackfillStatus(portfolio?.id);
 
   const loading = listLoading || (portfolio && viewLoading);
   const error = (!is404 && listError?.response?.data?.message) || viewError?.response?.data?.message || null;
@@ -301,6 +302,7 @@ export default function Portfolio() {
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
               <PositionsTable
                 portfolioId={portfolio?.id}
+                backfill={backfill}
                 onAssetClick={setSelectedAsset}
                 onEditClick={setEditTarget}
                 onDeleteClick={setDeleteTarget}
@@ -312,7 +314,7 @@ export default function Portfolio() {
         )}
 
         {activeTab === 'performance' && portfolio && (
-          <PerformanceChart portfolioId={portfolio.id} />
+          <PerformanceChart portfolioId={portfolio.id} backfill={backfill} />
         )}
       </div>
 

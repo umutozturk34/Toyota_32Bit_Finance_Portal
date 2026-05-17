@@ -206,6 +206,110 @@ class FundDetailEnrichmentServiceTest {
         verify(tefasClient, never()).fetchInfo(any(), anyString());
     }
 
+    @Test
+    void should_applyReturnsOnlyForRequestedFund_when_enrichReturnsAndRiskForFund() {
+        Fund target = Fund.builder().fundCode("AAL").fundType(FundType.YAT).build();
+        Fund other = Fund.builder().fundCode("BBB").fundType(FundType.YAT).build();
+        when(fundRepository.findById("AAL")).thenReturn(Optional.of(target));
+        when(fundRepository.findAllById(List.of("AAL"))).thenReturn(List.of(target));
+        TefasFundReturnsDto targetDto = new TefasFundReturnsDto("AAL", "ATA", "Sub", true,
+                new BigDecimal("1"), new BigDecimal("2"), new BigDecimal("3"),
+                new BigDecimal("4"), new BigDecimal("5"),
+                new BigDecimal("6"), new BigDecimal("7"), "4");
+        TefasFundReturnsDto otherDto = new TefasFundReturnsDto("BBB", "BBB", "Sub", true,
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, "1");
+        when(tefasClient.fetchReturns(FundType.YAT)).thenReturn(List.of(targetDto, otherDto));
+
+        int updated = service.enrichReturnsAndRiskForFund("AAL");
+
+        assertThat(updated).isEqualTo(1);
+        assertThat(target.getReturn1m()).isEqualByComparingTo("1");
+        assertThat(target.getRiskValue()).isEqualTo(4);
+        assertThat(other.getReturn1m()).isNull();
+        verify(tefasClient, never()).fetchReturns(FundType.BYF);
+    }
+
+    @Test
+    void should_returnZero_when_enrichReturnsAndRiskForFund_fundCodeDoesNotExist() {
+        when(fundRepository.findById("ZZZ")).thenReturn(Optional.empty());
+
+        int updated = service.enrichReturnsAndRiskForFund("ZZZ");
+
+        assertThat(updated).isZero();
+        verify(tefasClient, never()).fetchReturns(any(FundType.class));
+    }
+
+    @Test
+    void should_returnZero_when_enrichReturnsAndRiskForFund_tefasThrows() {
+        Fund fund = Fund.builder().fundCode("AAL").fundType(FundType.YAT).build();
+        when(fundRepository.findById("AAL")).thenReturn(Optional.of(fund));
+        when(tefasClient.fetchReturns(FundType.YAT)).thenThrow(new RuntimeException("network"));
+
+        int updated = service.enrichReturnsAndRiskForFund("AAL");
+
+        assertThat(updated).isZero();
+    }
+
+    @Test
+    void should_applyAllocationsOnlyForRequestedFund_when_enrichAllocationsForFund() {
+        Fund target = Fund.builder().fundCode("AAL").fundType(FundType.YAT).build();
+        when(fundRepository.findById("AAL")).thenReturn(Optional.of(target));
+        LocalDate date = LocalDate.of(2026, 5, 16);
+        TefasFundAllocationDto targetDto = new TefasFundAllocationDto();
+        setField(targetDto, "fundCode", "AAL");
+        targetDto.putUnknown("Hisse", 60.0);
+        targetDto.putUnknown("Tahvil", 40.0);
+        TefasFundAllocationDto otherDto = new TefasFundAllocationDto();
+        setField(otherDto, "fundCode", "BBB");
+        otherDto.putUnknown("Hisse", 100.0);
+        when(tefasClient.fetchAllocations(FundType.YAT, date)).thenReturn(List.of(targetDto, otherDto));
+
+        int updated = service.enrichAllocationsForFund("AAL", date);
+
+        assertThat(updated).isEqualTo(1);
+        ArgumentCaptor<Set<String>> codesCap = ArgumentCaptor.forClass(Set.class);
+        verify(allocationRepository).deleteByFundCodeIn(codesCap.capture());
+        assertThat(codesCap.getValue()).containsExactly("AAL");
+        ArgumentCaptor<List<FundAllocation>> savedCap = ArgumentCaptor.forClass(List.class);
+        verify(allocationRepository).saveAll(savedCap.capture());
+        assertThat(savedCap.getValue()).hasSize(2);
+        assertThat(savedCap.getValue()).allMatch(a -> a.getFundCode().equals("AAL"));
+    }
+
+    @Test
+    void should_walkBack_when_enrichAllocationsForFund_targetMissingOnRequestedDate() {
+        Fund fund = Fund.builder().fundCode("AAL").fundType(FundType.YAT).build();
+        when(fundRepository.findById("AAL")).thenReturn(Optional.of(fund));
+        LocalDate date = LocalDate.of(2026, 5, 16);
+        TefasFundAllocationDto otherOnly = new TefasFundAllocationDto();
+        setField(otherOnly, "fundCode", "BBB");
+        otherOnly.putUnknown("Hisse", 10.0);
+        TefasFundAllocationDto withTarget = new TefasFundAllocationDto();
+        setField(withTarget, "fundCode", "AAL");
+        withTarget.putUnknown("Hisse", 70.0);
+        when(tefasClient.fetchAllocations(FundType.YAT, date)).thenReturn(List.of(otherOnly));
+        when(tefasClient.fetchAllocations(FundType.YAT, date.minusDays(1))).thenReturn(List.of(withTarget));
+
+        int updated = service.enrichAllocationsForFund("AAL", date);
+
+        assertThat(updated).isEqualTo(1);
+        verify(tefasClient).fetchAllocations(FundType.YAT, date);
+        verify(tefasClient).fetchAllocations(FundType.YAT, date.minusDays(1));
+        verify(tefasClient, never()).fetchAllocations(eq(FundType.YAT), eq(date.minusDays(2)));
+    }
+
+    @Test
+    void should_returnZero_when_enrichAllocationsForFund_fundCodeDoesNotExist() {
+        when(fundRepository.findById("ZZZ")).thenReturn(Optional.empty());
+
+        int updated = service.enrichAllocationsForFund("ZZZ", LocalDate.of(2026, 5, 16));
+
+        assertThat(updated).isZero();
+        verify(tefasClient, never()).fetchAllocations(any(FundType.class), any());
+        verify(allocationRepository, never()).saveAll(anyCollection());
+    }
+
     private static void setField(Object target, String fieldName, Object value) {
         try {
             java.lang.reflect.Field f = target.getClass().getDeclaredField(fieldName);

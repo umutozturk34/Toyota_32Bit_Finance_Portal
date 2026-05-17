@@ -63,10 +63,13 @@ export default function useNotificationStream() {
     const handleNotification = (event) => {
       let payload = null;
       try { payload = JSON.parse(event.data); } catch { /* malformed */ }
-      queryClient.setQueryData(['notifications', 'unread-count'], (old) => {
-        const n = Number(old);
-        return (Number.isFinite(n) ? n : 0) + 1;
-      });
+      queryClient.setQueriesData(
+        { predicate: (q) => q.queryKey[0] === 'notifications' && q.queryKey[q.queryKey.length - 1] === 'unread-count' },
+        (old) => {
+          const n = Number(old);
+          return (Number.isFinite(n) ? n : 0) + 1;
+        }
+      );
       if (payload && payload.id != null) {
         queryClient.setQueriesData(
           { predicate: (q) => q.queryKey[0] === 'notifications' && typeof q.queryKey[1] === 'object' && q.queryKey[1] !== null },

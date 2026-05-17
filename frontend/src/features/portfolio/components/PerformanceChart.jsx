@@ -189,7 +189,7 @@ function buildEChartsOption(data, color, palette, money) {
   };
 }
 
-export default function PerformanceChart({ portfolioId }) {
+export default function PerformanceChart({ portfolioId, backfill: backfillProp }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { convertAt, currency } = useRateHistory();
@@ -197,7 +197,8 @@ export default function PerformanceChart({ portfolioId }) {
   const [activeType, setActiveType] = useSessionState('portfolio-perf-type', null);
 
   const { data: perfData = [], isLoading: loading } = usePortfolioPerformance(portfolioId, range, activeType);
-  const backfill = useBackfillStatus(portfolioId);
+  const ownBackfill = useBackfillStatus(backfillProp ? null : portfolioId);
+  const backfill = backfillProp ?? ownBackfill;
   const backfillElapsed = useElapsedSeconds(backfill.since);
 
   // Portfolio aggregates are TRY-canonical; for ORIGINAL preference the chart still shows TRY

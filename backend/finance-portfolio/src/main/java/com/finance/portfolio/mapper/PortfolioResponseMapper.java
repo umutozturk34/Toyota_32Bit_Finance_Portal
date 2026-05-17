@@ -32,11 +32,15 @@ public abstract class PortfolioResponseMapper {
                 pos.getQuantity(),
                 pos.getEntryDate(),
                 pos.getEntryPrice(),
+                pos.getExitDate(),
+                pos.getExitPrice(),
+                pos.isClosed() ? pos.realizedPnl() : null,
                 currentPriceTry,
                 entryValueTry,
                 marketValueTry,
                 pnlTry,
-                pnlPercent
+                pnlPercent,
+                null
         );
     }
 

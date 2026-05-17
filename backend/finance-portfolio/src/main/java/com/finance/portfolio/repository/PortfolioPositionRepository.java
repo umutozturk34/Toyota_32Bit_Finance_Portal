@@ -18,4 +18,6 @@ public interface PortfolioPositionRepository extends JpaRepository<PortfolioPosi
 
     List<PortfolioPosition> findByPortfolioIdAndTrackedAsset_AssetTypeAndQuantityGreaterThan(
             Long portfolioId, TrackedAssetType assetType, BigDecimal minQuantity);
+
+    void deleteByPortfolioId(Long portfolioId);
 }

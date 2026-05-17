@@ -12,6 +12,9 @@ public record PositionResponse(
         BigDecimal quantity,
         LocalDateTime entryDate,
         BigDecimal entryPrice,
+        LocalDateTime exitDate,
+        BigDecimal exitPrice,
+        BigDecimal realizedPnlTry,
         BigDecimal currentPriceTry,
         BigDecimal entryValueTry,
         BigDecimal marketValueTry,
@@ -25,6 +28,7 @@ public record PositionResponse(
                             BigDecimal entryValueTry, BigDecimal marketValueTry,
                             BigDecimal pnlTry, BigDecimal pnlPercent) {
         this(id, assetType, assetCode, assetName, assetImage, quantity, entryDate, entryPrice,
+                null, null, null,
                 currentPriceTry, entryValueTry, marketValueTry, pnlTry, pnlPercent, null);
     }
 }

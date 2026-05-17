@@ -21,4 +21,6 @@ public interface DerivativePositionRepository extends JpaRepository<DerivativePo
     List<DerivativePosition> findOpenWithExpiredContract(@Param("today") LocalDate today);
 
     Optional<DerivativePosition> findByIdAndPortfolioId(Long id, Long portfolioId);
+
+    void deleteByPortfolio_Id(Long portfolioId);
 }

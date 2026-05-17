@@ -143,6 +143,16 @@ public class DerivativePosition {
         this.closeReason = null;
     }
 
+    public void reduceQuantity(BigDecimal soldQty) {
+        if (soldQty == null || soldQty.signum() <= 0) {
+            throw new IllegalArgumentException("soldQty must be positive");
+        }
+        if (quantityLot == null || soldQty.compareTo(quantityLot) >= 0) {
+            throw new IllegalStateException("soldQty exceeds quantityLot");
+        }
+        this.quantityLot = quantityLot.subtract(soldQty);
+    }
+
     public void updateEntry(DerivativeDirection direction, LocalDate entryDate,
                              BigDecimal entryPrice, BigDecimal quantityLot) {
         this.direction = direction;

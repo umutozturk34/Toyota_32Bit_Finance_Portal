@@ -23,6 +23,7 @@ public class Portfolio {
     @Column(name = "user_sub", nullable = false)
     private String userSub;
 
+    @Setter
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 

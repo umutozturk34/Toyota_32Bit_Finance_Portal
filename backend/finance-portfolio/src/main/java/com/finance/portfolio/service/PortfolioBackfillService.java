@@ -284,6 +284,7 @@ public class PortfolioBackfillService {
     private static List<PortfolioPosition> activePositionsOn(List<PortfolioPosition> all, LocalDate day) {
         return all.stream()
                 .filter(p -> p.getEntryDate() != null && !p.getEntryDate().toLocalDate().isAfter(day))
+                .filter(p -> p.getExitDate() == null || !p.getExitDate().toLocalDate().isBefore(day))
                 .toList();
     }
 
@@ -293,9 +294,14 @@ public class PortfolioBackfillService {
         for (PortfolioPosition pos : positions) {
             AssetKey key = pos.toAssetKey();
             if (result.containsKey(key)) continue;
-            BigDecimal price = pos.getEntryDate() != null && pos.getEntryDate().toLocalDate().equals(day)
-                    ? pos.getEntryPrice()
-                    : nearestPriceOnOrBefore(seriesByKey.get(key), day);
+            BigDecimal price;
+            if (pos.isClosed() && pos.getExitDate().toLocalDate().equals(day)) {
+                price = pos.getExitPrice();
+            } else if (pos.getEntryDate() != null && pos.getEntryDate().toLocalDate().equals(day)) {
+                price = pos.getEntryPrice();
+            } else {
+                price = nearestPriceOnOrBefore(seriesByKey.get(key), day);
+            }
             if (price != null) result.put(key, price);
         }
         return result;

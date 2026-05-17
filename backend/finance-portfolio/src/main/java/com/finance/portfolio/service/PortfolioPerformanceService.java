@@ -204,6 +204,12 @@ public class PortfolioPerformanceService {
                         && !p.getEntryDate().isAfter(currentTime))
                 .toList();
 
+        List<PortfolioPosition> soldInWindow = positions.stream()
+                .filter(p -> p.getExitDate() != null
+                        && p.getExitDate().isAfter(prevTime)
+                        && !p.getExitDate().isAfter(currentTime))
+                .toList();
+
         List<DerivativePosition> derivativesAdded = derivatives == null ? List.of() : derivatives.stream()
                 .filter(d -> d.getEntryDate() != null && d.getViopContract() != null)
                 .filter(d -> {
@@ -212,7 +218,17 @@ public class PortfolioPerformanceService {
                 })
                 .toList();
 
-        if (!addedInWindow.isEmpty() || !derivativesAdded.isEmpty()) {
+        List<DerivativePosition> derivativesClosed = derivatives == null ? List.of() : derivatives.stream()
+                .filter(d -> d.getCloseDate() != null && d.getViopContract() != null)
+                .filter(d -> {
+                    LocalDateTime closeTs = d.getCloseDate().atStartOfDay();
+                    return closeTs.isAfter(prevTime) && !closeTs.isAfter(currentTime);
+                })
+                .toList();
+
+        boolean hasTradeEvent = !addedInWindow.isEmpty() || !soldInWindow.isEmpty()
+                || !derivativesAdded.isEmpty() || !derivativesClosed.isEmpty();
+        if (hasTradeEvent) {
             for (PortfolioPosition pos : addedInWindow) {
                 events.add(new PerformanceEvent(
                         PerformanceEventType.POSITION_ADDED,
@@ -220,10 +236,28 @@ public class PortfolioPerformanceService {
                         pos.getAssetCode(),
                         pos.entryValue()));
             }
+            for (PortfolioPosition pos : soldInWindow) {
+                BigDecimal proceeds = pos.getExitPrice() != null
+                        ? pos.getExitPrice().multiply(pos.getQuantity())
+                        : BigDecimal.ZERO;
+                events.add(new PerformanceEvent(
+                        PerformanceEventType.POSITION_SOLD,
+                        pos.getAssetType().name(),
+                        pos.getAssetCode(),
+                        proceeds));
+            }
             for (DerivativePosition d : derivativesAdded) {
                 BigDecimal notional = d.nominalExposure();
                 events.add(new PerformanceEvent(
                         PerformanceEventType.POSITION_ADDED,
+                        AssetType.VIOP.name(),
+                        d.getViopContract().getSymbol(),
+                        notional != null ? notional : BigDecimal.ZERO));
+            }
+            for (DerivativePosition d : derivativesClosed) {
+                BigDecimal notional = d.nominalExposure();
+                events.add(new PerformanceEvent(
+                        PerformanceEventType.POSITION_SOLD,
                         AssetType.VIOP.name(),
                         d.getViopContract().getSymbol(),
                         notional != null ? notional : BigDecimal.ZERO));

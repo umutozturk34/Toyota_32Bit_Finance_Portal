@@ -57,18 +57,6 @@ public class ViopHistoryProvider implements MarketHistoryProvider {
     }
 
     private List<ViopHistoryPoint> loadOrFetchRange(String code, LocalDate from, LocalDate to) {
-        LocalDate today = LocalDate.now();
-        LocalDate effectiveTo = to.isAfter(today) ? today : to;
-        Optional<ViopCandle> latest = candleRepository.findFirstBySymbolOrderByCandleDateDesc(code);
-        LocalDate latestStored = latest.map(c -> c.getCandleDate().toLocalDate()).orElse(null);
-
-        if (latestStored == null || latestStored.isBefore(effectiveTo)) {
-            LocalDate fetchFrom = latestStored != null ? latestStored.plusDays(1) : from;
-            if (!fetchFrom.isAfter(effectiveTo)) {
-                fetchAndPersist(code, fetchFrom, effectiveTo);
-            }
-        }
-
         LocalDateTime fromDT = from.atStartOfDay();
         LocalDateTime toDT = to.plusDays(1).atStartOfDay().minusSeconds(1);
         return candleRepository

@@ -5,6 +5,7 @@ import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.portfolio.config.PortfolioProperties.LotLimits;
 import com.finance.portfolio.dto.request.PortfolioCreateRequest;
 import com.finance.portfolio.dto.request.PositionRequest;
+import com.finance.portfolio.dto.request.PositionSellRequest;
 import com.finance.portfolio.dto.response.PortfolioResponse;
 import com.finance.portfolio.dto.response.PositionResponse;
 import com.finance.common.exception.BusinessException;
@@ -16,6 +17,9 @@ import com.finance.portfolio.mapper.PortfolioResponseMapper;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.Portfolio;
 import com.finance.portfolio.model.PortfolioPosition;
+import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
+import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
+import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import com.finance.portfolio.repository.PortfolioRepository;
 import com.finance.shared.util.EnumParser;
@@ -37,6 +41,9 @@ public class PortfolioCrudService {
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioPositionRepository positionRepository;
+    private final PortfolioDailySnapshotRepository dailySnapshotRepository;
+    private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
+    private final DerivativePositionRepository derivativePositionRepository;
     private final TrackedAssetRepository trackedAssetRepository;
     private final PortfolioResponseMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
@@ -56,6 +63,28 @@ public class PortfolioCrudService {
 
         Portfolio portfolio = Portfolio.builder().userSub(userSub).name(request.name()).build();
         return mapper.toPortfolioResponse(portfolioRepository.save(portfolio));
+    }
+
+    @Transactional
+    public PortfolioResponse renamePortfolio(String userSub, Long portfolioId, PortfolioCreateRequest request) {
+        Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
+                .orElseThrow(() -> new ResourceNotFoundException("error.portfolio.notFound", portfolioId));
+        portfolioRepository.findByUserSubAndName(userSub, request.name())
+                .filter(p -> !p.getId().equals(portfolioId))
+                .ifPresent(p -> { throw new BusinessException("error.portfolio.duplicateName", request.name()); });
+        portfolio.setName(request.name());
+        return mapper.toPortfolioResponse(portfolioRepository.save(portfolio));
+    }
+
+    @Transactional
+    public void deletePortfolio(String userSub, Long portfolioId) {
+        Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
+                .orElseThrow(() -> new ResourceNotFoundException("error.portfolio.notFound", portfolioId));
+        derivativePositionRepository.deleteByPortfolio_Id(portfolioId);
+        positionRepository.deleteByPortfolioId(portfolioId);
+        assetSnapshotRepository.deleteByPortfolioId(portfolioId);
+        dailySnapshotRepository.deleteByPortfolioId(portfolioId);
+        portfolioRepository.delete(portfolio);
     }
 
     @Transactional
@@ -99,6 +128,68 @@ public class PortfolioCrudService {
         LocalDateTime entryDate = position.getEntryDate();
         positionRepository.delete(position);
         publishLotChange(portfolioId, position, entryDate, false);
+    }
+
+    @Transactional
+    public PositionResponse sellPosition(Long portfolioId, Long positionId, String userSub, PositionSellRequest request) {
+        PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
+        if (position.getAssetType() == AssetType.VIOP) {
+            throw new BusinessException("error.portfolio.sell.useDerivativeClose");
+        }
+        if (position.isClosed()) {
+            throw new BusinessException("error.portfolio.sell.alreadyClosed");
+        }
+        validateSell(position, request);
+
+        BigDecimal sellQty = request.quantity();
+        PortfolioPosition resulting;
+        if (sellQty.compareTo(position.getQuantity()) == 0) {
+            position.closeWith(request.exitDate(), request.exitPrice());
+            resulting = positionRepository.save(position);
+        } else {
+            PortfolioPosition closedSlice = PortfolioPosition.builder()
+                    .portfolio(position.getPortfolio())
+                    .assetType(position.getAssetType())
+                    .assetCode(position.getAssetCode())
+                    .quantity(sellQty)
+                    .entryDate(position.getEntryDate())
+                    .entryPrice(position.getEntryPrice())
+                    .exitDate(request.exitDate())
+                    .exitPrice(request.exitPrice())
+                    .build();
+            closedSlice.setTrackedAsset(position.getTrackedAsset());
+            positionRepository.save(closedSlice);
+            position.updateLot(null, null, position.getQuantity().subtract(sellQty));
+            resulting = positionRepository.save(position);
+        }
+
+        publishLotChange(portfolioId, position, position.getEntryDate(), true);
+        return mapper.toPositionResponseShell(resulting);
+    }
+
+    @Transactional
+    public PositionResponse reopenPosition(Long portfolioId, Long positionId, String userSub) {
+        PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
+        if (!position.isClosed()) {
+            throw new BusinessException("error.portfolio.reopen.notClosed");
+        }
+        position.reopen();
+        PortfolioPosition saved = positionRepository.save(position);
+        publishLotChange(portfolioId, position, position.getEntryDate(), true);
+        return mapper.toPositionResponseShell(saved);
+    }
+
+    private void validateSell(PortfolioPosition position, PositionSellRequest request) {
+        if (request.quantity().compareTo(position.getQuantity()) > 0) {
+            throw new BusinessException("error.portfolio.sell.quantityExceedsPosition");
+        }
+        LocalDate exitDay = request.exitDate().toLocalDate();
+        if (exitDay.isBefore(position.getEntryDate().toLocalDate())) {
+            throw new BusinessException("error.portfolio.sell.dateBeforeEntry");
+        }
+        if (exitDay.isAfter(LocalDate.now())) {
+            throw new BusinessException("error.portfolio.sell.dateInFuture");
+        }
     }
 
     private PortfolioPosition loadOwnedPosition(Long portfolioId, Long positionId, String userSub) {

@@ -20,6 +20,7 @@ import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.portfolio.config.PortfolioProperties.LotLimits;
 import com.finance.portfolio.dto.request.PortfolioCreateRequest;
 import com.finance.portfolio.dto.request.PositionRequest;
+import com.finance.portfolio.dto.request.PositionSellRequest;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.portfolio.repository.PortfolioRepository;
 import lombok.RequiredArgsConstructor;
@@ -71,6 +72,28 @@ public class PortfolioFacade {
 
     public void deletePosition(String userSub, Long portfolioId, Long positionId) {
         crudService.deletePosition(portfolioId, positionId, userSub);
+    }
+
+    public PositionResponse sellPosition(String userSub, Long portfolioId, Long positionId, PositionSellRequest request) {
+        return crudService.sellPosition(portfolioId, positionId, userSub, request);
+    }
+
+    public PositionResponse reopenPosition(String userSub, Long portfolioId, Long positionId) {
+        return crudService.reopenPosition(portfolioId, positionId, userSub);
+    }
+
+    public PortfolioResponse renamePortfolio(String userSub, Long portfolioId, PortfolioCreateRequest request) {
+        return crudService.renamePortfolio(userSub, portfolioId, request);
+    }
+
+    public void deletePortfolio(String userSub, Long portfolioId) {
+        crudService.deletePortfolio(userSub, portfolioId);
+    }
+
+    public com.finance.portfolio.dto.response.AssetAggregateResponse getAssetAggregate(
+            String userSub, Long portfolioId, String assetType, String assetCode) {
+        validateOwner(userSub, portfolioId);
+        return summaryService.getAssetAggregate(portfolioId, assetType, assetCode);
     }
 
     public PagedResponse<PositionResponse> getPositionsPaged(String userSub, Long portfolioId,

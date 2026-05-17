@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronRight, Package, Pencil, Trash2, XCircle } from 'lucide-react';
+import { ChevronRight, Package, Pencil, Trash2, XCircle, ShoppingBag, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -9,7 +9,8 @@ import { ASSET_TYPE_STYLES } from '../../../shared/constants/assetTypes';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
-import { isLotPending, useBackfillStatus, usePortfolioPositions } from '../hooks/usePortfolioData';
+import { isLotPending, useBackfillStatus, usePortfolioPositions, useReopenPosition } from '../hooks/usePortfolioData';
+import { useReopenDerivativePosition } from '../hooks/useDerivativePositions';
 import useListParams from '../../../shared/hooks/useListParams';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
 import PortfolioListShell from './PortfolioListShell';
@@ -100,7 +101,7 @@ function DerivativeChips({ meta, money, t, localeTag }) {
   );
 }
 
-export default function PositionsTable({ portfolioId, backfill: backfillProp, onAssetClick: assetClickProp, onEditClick: editClickProp, onDeleteClick: deleteClickProp, onCloseClick: closeClickProp }) {
+export default function PositionsTable({ portfolioId, backfill: backfillProp, onAssetClick: assetClickProp, onEditClick: editClickProp, onDeleteClick: deleteClickProp, onCloseClick: closeClickProp, onSellClick: sellClickProp }) {
   const { t } = useTranslation();
   const listParams = useListParams({ defaultSize: 8, prefix: 'pos' });
   const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`portfolio.positions.sort.${id}`) }));
@@ -117,12 +118,20 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
   const backfill = backfillProp ?? ownBackfill;
   const elapsed = useElapsedSeconds(backfill.since);
 
+  const reopenMutation = useReopenPosition(portfolioId);
+  const reopenDerivativeMutation = useReopenDerivativePosition(portfolioId);
+
   const [statusFilter, setStatusFilter] = useState('all');
+  const isPositionClosed = (pos) => {
+    if (pos.assetType === 'VIOP') {
+      return pos.assetName && pos.assetName.includes('KAPALI');
+    }
+    return !!pos.exitDate;
+  };
   const positions = allPositions.filter((pos) => {
     if (statusFilter === 'all') return true;
-    const isClosed = pos.assetType === 'VIOP'
-      && pos.assetName && pos.assetName.includes('KAPALI');
-    return statusFilter === 'closed' ? isClosed : !isClosed;
+    const closed = isPositionClosed(pos);
+    return statusFilter === 'closed' ? closed : !closed;
   });
 
   if (!portfolioId) return null;
@@ -186,6 +195,8 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
           onEditClick={editClickProp}
           onDeleteClick={deleteClickProp}
           onCloseClick={closeClickProp}
+          onSellClick={sellClickProp}
+          onReopenClick={(p) => (p.assetType === 'VIOP' ? reopenDerivativeMutation : reopenMutation).mutate(p.id)}
         />
       ))}
       </div>
@@ -193,7 +204,7 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
   );
 }
 
-function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDeleteClick, onCloseClick }) {
+function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDeleteClick, onCloseClick, onSellClick, onReopenClick }) {
   const { t } = useTranslation();
   const { format: money } = useMoney();
   const pnlClass = getChangeClass(pos.pnlTry);
@@ -201,18 +212,23 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
   const assetTypeLabel = t(`assets.labels.${pos.assetType}`, { defaultValue: pos.assetType });
   const isDerivative = pos.assetType === 'VIOP';
   const isClosedDerivative = isDerivative && pos.assetName && pos.assetName.includes('KAPALI');
+  const isClosedSpot = !isDerivative && !!pos.exitDate;
   const derivativeName = isDerivative ? pos.derivative?.displayName : null;
   const displayName = pos.assetName && pos.assetName !== pos.assetCode
     ? pos.assetName.replace(/\s·\sKAPALI$/, '')
     : assetTypeLabel;
-  const showEdit = true;
+  const showEdit = !isClosedSpot;
   const showCloseButton = isDerivative && !isClosedDerivative;
+  const showSellButton = !isDerivative && !isClosedSpot;
+  const showReopenButton = isClosedSpot || isClosedDerivative;
 
   const guard = (fn) => () => { if (!pending && fn) fn(pos); };
   const assetClick = guard(onAssetClick);
   const editClick = isClosedDerivative ? guard(onCloseClick) : guard(onEditClick);
   const deleteClick = guard(onDeleteClick);
   const closeClick = guard(onCloseClick);
+  const sellClick = guard(onSellClick);
+  const reopenClick = guard(onReopenClick);
 
   return (
     <Card
@@ -264,6 +280,11 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
                   {isClosedDerivative ? t('portfolio.derivatives.closed') : t('portfolio.derivatives.open')}
                 </span>
               )}
+              {isClosedSpot && (
+                <span className="shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-warning/15 text-warning border border-warning/30">
+                  {t('portfolio.positions.statusSold', { defaultValue: 'SATILDI' })}
+                </span>
+              )}
             </div>
             {!isDerivative && (
               <p className="text-[11px] text-fg-muted truncate">{displayName}</p>
@@ -289,6 +310,16 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
           {showEdit && (
             <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
               <Pencil className="h-3 w-3" />
+            </button>
+          )}
+          {showSellButton && (
+            <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', 'Sell')}>
+              <ShoppingBag className="h-3 w-3" />
+            </button>
+          )}
+          {showReopenButton && (
+            <button onClick={(e) => { e.stopPropagation(); reopenClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.reopen.title', 'Reopen')}>
+              <RotateCcw className="h-3 w-3" />
             </button>
           )}
           {showCloseButton && (
@@ -319,6 +350,11 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
                     {isClosedDerivative ? t('portfolio.derivatives.closed') : t('portfolio.derivatives.open')}
                   </span>
                 )}
+                {isClosedSpot && (
+                  <span className="shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-warning/15 text-warning border border-warning/30">
+                    {t('portfolio.positions.statusSold', { defaultValue: 'SATILDI' })}
+                  </span>
+                )}
               </div>
               {!isDerivative && (
                 <p className="text-[11px] text-fg-muted truncate">{displayName}</p>
@@ -336,6 +372,16 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
             {showEdit && (
               <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
                 <Pencil className="h-3 w-3" />
+              </button>
+            )}
+            {showSellButton && (
+              <button onClick={(e) => { e.stopPropagation(); sellClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.sell.title', 'Sell')}>
+                <ShoppingBag className="h-3 w-3" />
+              </button>
+            )}
+            {showReopenButton && (
+              <button onClick={(e) => { e.stopPropagation(); reopenClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer" aria-label={t('portfolio.reopen.title', 'Reopen')}>
+                <RotateCcw className="h-3 w-3" />
               </button>
             )}
             {showCloseButton && (

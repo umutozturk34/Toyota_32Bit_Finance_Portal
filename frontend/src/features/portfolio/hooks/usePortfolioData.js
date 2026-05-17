@@ -135,6 +135,16 @@ export function useAssetSeries(portfolioId, assetType, assetCode, range) {
   });
 }
 
+export function useAssetAggregate(portfolioId, assetType, assetCode) {
+  return useQuery({
+    queryKey: ['assetAggregate', portfolioId, assetType, assetCode],
+    queryFn: () => portfolioService.getAssetAggregate(portfolioId, assetType, assetCode),
+    enabled: !!portfolioId && !!assetType && !!assetCode,
+    staleTime: STALE.SHORT,
+    refetchOnWindowFocus: false,
+  });
+}
+
 function rateLimitAwareRetry(failureCount, error) {
   if (error?.response?.status === 429) return failureCount < 3;
   if (failureCount === 0) return true;
@@ -190,10 +200,42 @@ export function useDeletePosition(portfolioId) {
   });
 }
 
+export function useSellPosition(portfolioId) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: ({ positionId, payload }) => portfolioService.sellPosition(portfolioId, positionId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useReopenPosition(portfolioId) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: (positionId) => portfolioService.reopenPosition(portfolioId, positionId),
+    onSuccess: invalidate,
+  });
+}
+
 export function useCreatePortfolio() {
   const invalidate = useInvalidatePortfolio();
   return useMutation({
     mutationFn: portfolioService.create,
+    onSuccess: invalidate,
+  });
+}
+
+export function useRenamePortfolio() {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: ({ portfolioId, name }) => portfolioService.renamePortfolio(portfolioId, name),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeletePortfolio() {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: (portfolioId) => portfolioService.deletePortfolio(portfolioId),
     onSuccess: invalidate,
   });
 }
@@ -208,6 +250,7 @@ export function useInvalidatePortfolio() {
     queryClient.invalidateQueries({ queryKey: ['portfolioPerformance'] });
     queryClient.invalidateQueries({ queryKey: ['portfolioPositions'] });
     queryClient.invalidateQueries({ queryKey: ['assetSeries'] });
+    queryClient.invalidateQueries({ queryKey: ['assetAggregate'] });
   }, [queryClient]);
 }
 
@@ -217,5 +260,6 @@ export function useInvalidateAfterBackfill() {
     queryClient.invalidateQueries({ queryKey: ['portfolioView'] });
     queryClient.invalidateQueries({ queryKey: ['portfolioPerformance'] });
     queryClient.invalidateQueries({ queryKey: ['assetSeries'] });
+    queryClient.invalidateQueries({ queryKey: ['assetAggregate'] });
   }, [queryClient]);
 }

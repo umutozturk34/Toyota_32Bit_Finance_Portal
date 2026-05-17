@@ -40,6 +40,31 @@ export const portfolioService = {
     return res.data.data;
   },
 
+  sellPosition: async (portfolioId, positionId, payload) => {
+    const res = await api.post(`${BASE}/${portfolioId}/positions/${positionId}/sell`, payload);
+    return res.data.data;
+  },
+
+  reopenPosition: async (portfolioId, positionId) => {
+    const res = await api.post(`${BASE}/${portfolioId}/positions/${positionId}/reopen`);
+    return res.data.data;
+  },
+
+  getAssetAggregate: async (portfolioId, assetType, assetCode) => {
+    const res = await api.get(`${BASE}/${portfolioId}/assets/${assetType}/${encodeURIComponent(assetCode)}/summary`);
+    return res.data.data;
+  },
+
+  renamePortfolio: async (portfolioId, name) => {
+    const res = await api.put(`${BASE}/${portfolioId}`, { name });
+    return res.data.data;
+  },
+
+  deletePortfolio: async (portfolioId) => {
+    const res = await api.delete(`${BASE}/${portfolioId}`);
+    return res.data.data;
+  },
+
   getAllocation: async (portfolioId, mode = 'assetType', assetType) => {
     const params = { mode };
     if (assetType) params.assetType = assetType;

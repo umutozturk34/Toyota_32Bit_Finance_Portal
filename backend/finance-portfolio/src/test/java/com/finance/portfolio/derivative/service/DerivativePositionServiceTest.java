@@ -216,6 +216,48 @@ class DerivativePositionServiceTest {
     }
 
     @Test
+    void should_partialCloseAndKeepRemainderOpen_when_closeQtyIsLessThanPosition() {
+        DerivativePosition position = DerivativePosition.builder()
+                .id(POSITION_ID).portfolio(portfolio).viopContract(contract)
+                .direction(DerivativeDirection.LONG)
+                .entryDate(LocalDate.of(2026, 4, 1))
+                .entryPrice(new BigDecimal("35.20"))
+                .quantityLot(new BigDecimal("5"))
+                .build();
+        CloseDerivativePositionRequest req = new CloseDerivativePositionRequest(
+                LocalDate.of(2026, 5, 1), new BigDecimal("36.00"), new BigDecimal("2"));
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID))
+                .thenReturn(Optional.of(position));
+        when(positionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(positionRepository.findOpenByPortfolio(PORTFOLIO_ID)).thenReturn(List.of());
+
+        service.close(POSITION_ID, PORTFOLIO_ID, USER_SUB, req);
+
+        assertThat(position.isOpen()).isTrue();
+        assertThat(position.getQuantityLot()).isEqualByComparingTo("3");
+        org.mockito.ArgumentCaptor<DerivativePosition> cap = org.mockito.ArgumentCaptor.forClass(DerivativePosition.class);
+        verify(positionRepository, org.mockito.Mockito.atLeast(2)).save(cap.capture());
+        DerivativePosition closedSlice = cap.getAllValues().stream()
+                .filter(p -> !p.isOpen()).findFirst().orElseThrow();
+        assertThat(closedSlice.getQuantityLot()).isEqualByComparingTo("2");
+        assertThat(closedSlice.getEntryPrice()).isEqualByComparingTo("35.20");
+        assertThat(closedSlice.getClosePrice()).isEqualByComparingTo("36.00");
+    }
+
+    @Test
+    void should_throwBadRequest_when_closeQuantityExceedsPosition() {
+        DerivativePosition position = openPosition();
+        CloseDerivativePositionRequest req = new CloseDerivativePositionRequest(
+                LocalDate.of(2026, 5, 1), new BigDecimal("36.00"), new BigDecimal("99"));
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID))
+                .thenReturn(Optional.of(position));
+
+        assertThatThrownBy(() -> service.close(POSITION_ID, PORTFOLIO_ID, USER_SUB, req))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("closeQtyExceedsPosition");
+    }
+
+    @Test
     void should_throwBadRequest_when_updateCloseTargetIsOpen() {
         CloseDerivativePositionRequest req = new CloseDerivativePositionRequest(
                 LocalDate.of(2026, 5, 1), new BigDecimal("36.00"));

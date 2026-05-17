@@ -458,7 +458,12 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             autoScale: true,
         });
 
-        chart.timeScale().fitContent();
+        if (firstTime && lastTime) {
+            try { chart.timeScale().setVisibleRange({ from: firstTime, to: lastTime }); }
+            catch { chart.timeScale().fitContent(); }
+        } else {
+            chart.timeScale().fitContent();
+        }
 
         return () => {
             compareSeriesRefs.current.forEach(s => {

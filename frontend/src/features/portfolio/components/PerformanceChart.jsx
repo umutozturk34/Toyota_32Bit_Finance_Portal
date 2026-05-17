@@ -22,6 +22,7 @@ import {
 
 const POSITION_EVENT_META = {
   POSITION_ADDED: { color: '#10b981', labelKey: 'portfolio.performance.lotAdded' },
+  POSITION_SOLD: { color: '#ef4444', labelKey: 'portfolio.performance.lotSold' },
 };
 
 function themePalette(isDark) {

@@ -39,7 +39,7 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
   const { t } = useTranslation();
   const { format: money, currency: displayCurrency } = useMoney();
   const { convertAt, rateAt } = useRateHistory();
-  const symbol = (lockedContract?.symbol || '').toUpperCase();
+  const symbol = (lockedContract?.symbol || lockedContract?.code || '').toUpperCase();
   const meta = lockedContract?.metadata || {};
   const isOption = meta.kind === 'OPTION';
   const currency = meta.currency || 'TRY';

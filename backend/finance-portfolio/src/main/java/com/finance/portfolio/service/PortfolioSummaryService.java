@@ -343,8 +343,10 @@ public class PortfolioSummaryService {
 
     @Transactional(readOnly = true)
     public List<AllocationItem> getAllocation(Long portfolioId, String mode, String assetTypeFilter) {
-        List<PortfolioPosition> positions = filterByType(
-                positionRepository.findByPortfolioId(portfolioId), assetTypeFilter);
+        boolean cashOnly = "CASH".equalsIgnoreCase(assetTypeFilter);
+        List<PortfolioPosition> positions = cashOnly
+                ? positionRepository.findByPortfolioId(portfolioId)
+                : filterByType(positionRepository.findByPortfolioId(portfolioId), assetTypeFilter);
 
         boolean byType = "assetType".equals(mode);
         Map<String, BigDecimal> buckets = new LinkedHashMap<>();
@@ -355,7 +357,8 @@ public class PortfolioSummaryService {
         List<PortfolioPosition> openPositions = positions.stream()
                 .filter(p -> !p.isClosed())
                 .toList();
-        Map<AssetKey, BigDecimal> prices = pricingPort.getExitPricesTry(toKeys(openPositions));
+        Map<AssetKey, BigDecimal> prices = cashOnly
+                ? Map.of() : pricingPort.getExitPricesTry(toKeys(openPositions));
         for (PortfolioPosition pos : positions) {
             if (pos.isClosed()) {
                 BigDecimal proceeds = pos.getExitPrice() != null
@@ -364,6 +367,7 @@ public class PortfolioSummaryService {
                 cashTotal = cashTotal.add(proceeds);
                 continue;
             }
+            if (cashOnly) continue;
             BigDecimal price = prices.get(pos.toAssetKey());
             BigDecimal marketValue = price != null
                     ? price.multiply(pos.getQuantity()).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP)
@@ -375,6 +379,7 @@ public class PortfolioSummaryService {
         }
 
         boolean includeDerivatives = assetTypeFilter == null || assetTypeFilter.isBlank()
+                || cashOnly
                 || AssetType.VIOP.name().equalsIgnoreCase(assetTypeFilter)
                 || "FUTURE".equalsIgnoreCase(assetTypeFilter) || "OPTION".equalsIgnoreCase(assetTypeFilter);
         if (includeDerivatives) {
@@ -393,6 +398,7 @@ public class PortfolioSummaryService {
                     cashTotal = cashTotal.add(proceeds);
                     continue;
                 }
+                if (cashOnly) continue;
                 BigDecimal currentPriceTry = convertLiveToTry(dpos.getViopContract().getLastPrice(),
                         dpos.getViopContract().getCurrency());
                 BigDecimal pnl = dpos.realizedOrUnrealizedPnl(currentPriceTry);

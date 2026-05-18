@@ -65,6 +65,7 @@ class DerivativePositionServiceTest {
     @Mock private SnapshotCalculationService snapshotCalculator;
     @Mock private ViopMarketDataPort viopMarketData;
     @Mock private DerivativePositionMapper mapper;
+    @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     private DerivativePositionService service;
     private Portfolio portfolio;
@@ -74,7 +75,7 @@ class DerivativePositionServiceTest {
     void setUp() {
         service = new DerivativePositionService(positionRepository, portfolioRepository,
                 contractRepository, candleRepository, historyProvider, historicalPricingPort,
-                assetSnapshotRepository, snapshotCalculator, viopMarketData, mapper);
+                assetSnapshotRepository, snapshotCalculator, viopMarketData, mapper, eventPublisher);
 
         portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).name("test").build();
 

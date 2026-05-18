@@ -24,9 +24,12 @@ import com.finance.portfolio.model.Portfolio;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioRepository;
+import com.finance.portfolio.service.PortfolioBackfillService;
 import com.finance.portfolio.service.SnapshotCalculationService;
+import com.finance.portfolio.model.AssetType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,6 +63,15 @@ public class DerivativePositionService {
     private final SnapshotCalculationService snapshotCalculator;
     private final ViopMarketDataPort viopMarketData;
     private final DerivativePositionMapper mapper;
+    private final ApplicationEventPublisher eventPublisher;
+
+    private void publishLotChange(Long portfolioId, DerivativePosition position, LocalDate from) {
+        if (from == null) return;
+        String symbol = position.getViopContract() != null ? position.getViopContract().getSymbol() : null;
+        if (symbol == null) return;
+        eventPublisher.publishEvent(new PortfolioBackfillService.LotChangedEvent(
+                portfolioId, AssetType.VIOP, symbol, from, true));
+    }
 
     @Transactional(readOnly = true)
     public List<DerivativePositionResponse> list(Long portfolioId, String userSub) {
@@ -112,6 +124,7 @@ public class DerivativePositionService {
         }
         DerivativePosition saved = positionRepository.save(position);
         backfillSnapshots(saved);
+        publishLotChange(portfolioId, saved, saved.getEntryDate());
         log.info("DerivativePosition opened portfolio={} contract={} direction={} qty={}",
                 portfolioId, contract.getSymbol(), request.direction(), request.quantityLot());
         return mapper.toResponse(saved);
@@ -265,6 +278,7 @@ public class DerivativePositionService {
                 backfillSnapshots(remaining);
             }
         }
+        publishLotChange(portfolioId, primary, primary.getEntryDate());
         log.info("DerivativePosition closed id={} portfolio={} closeDate={} partial={}",
                 positionId, portfolioId, request.closeDate(), partial);
         return mapper.toResponse(primary);
@@ -343,6 +357,7 @@ public class DerivativePositionService {
                 backfillSnapshots(remaining);
             }
         }
+        publishLotChange(portfolioId, position, position.getEntryDate());
         log.info("DerivativePosition entry updated id={} portfolio={} entryDate={} qty={}",
                 positionId, portfolioId, request.entryDate(), request.quantityLot());
         return mapper.toResponse(position);
@@ -368,6 +383,7 @@ public class DerivativePositionService {
                 backfillSnapshots(remaining);
             }
         }
+        publishLotChange(portfolioId, position, position.getEntryDate());
         log.info("DerivativePosition reopened id={} portfolio={}", positionId, portfolioId);
         return mapper.toResponse(position);
     }

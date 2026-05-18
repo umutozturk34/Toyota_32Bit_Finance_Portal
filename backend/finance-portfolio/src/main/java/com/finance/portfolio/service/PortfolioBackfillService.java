@@ -99,8 +99,12 @@ public class PortfolioBackfillService {
             if (event.visibleToUi()) tracker.start(portfolioId, event.assetType(), event.assetCode());
             try {
                 transactionTemplate.executeWithoutResult(status -> {
-                    wipeSnapshotsFrom(portfolioId, event.fromDate());
-                    backfillSinceDate(portfolioId, event.fromDate());
+                    boolean isViop = event.assetType() == AssetType.VIOP;
+                    wipeDailySnapshotsFrom(portfolioId, event.fromDate());
+                    if (!isViop) {
+                        wipeAssetSnapshotsFrom(portfolioId, event.fromDate());
+                        backfillSinceDate(portfolioId, event.fromDate());
+                    }
                     snapshotToday(portfolioId);
                 });
             } catch (Exception e) {
@@ -112,9 +116,13 @@ public class PortfolioBackfillService {
         }
     }
 
-    private void wipeSnapshotsFrom(Long portfolioId, LocalDate from) {
+    private void wipeDailySnapshotsFrom(Long portfolioId, LocalDate from) {
         if (from == null) return;
         dailySnapshotRepository.deleteByPortfolioIdAndSnapshotDateGreaterThanEqual(portfolioId, from);
+    }
+
+    private void wipeAssetSnapshotsFrom(Long portfolioId, LocalDate from) {
+        if (from == null) return;
         assetSnapshotRepository.deleteByPortfolioIdAndSnapshotDateGreaterThanEqual(portfolioId, from);
     }
 
@@ -128,13 +136,13 @@ public class PortfolioBackfillService {
 
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
         List<PortfolioPosition> active = activePositionsOn(positions, today);
-        if (active.isEmpty()) return;
 
         List<AssetKey> keys = active.stream().map(PortfolioPosition::toAssetKey).distinct().toList();
-        Map<AssetKey, BigDecimal> dayPrices = assetPricingPort.getExitPricesTry(keys);
+        Map<AssetKey, BigDecimal> dayPrices = keys.isEmpty()
+                ? Map.of() : assetPricingPort.getExitPricesTry(keys);
         LocalDateTime ts = LocalDateTime.now();
 
-        if (!assetExists) {
+        if (!assetExists && !active.isEmpty()) {
             Map<AssetKey, List<PortfolioPosition>> byAsset = groupByAsset(active);
             List<PortfolioAssetDailySnapshot> batch = new ArrayList<>();
             for (Map.Entry<AssetKey, List<PortfolioPosition>> entry : byAsset.entrySet()) {

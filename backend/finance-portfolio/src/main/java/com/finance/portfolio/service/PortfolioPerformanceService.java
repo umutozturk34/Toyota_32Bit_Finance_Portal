@@ -94,7 +94,7 @@ public class PortfolioPerformanceService {
         List<PortfolioAssetDailySnapshot> assetSnapshots = assetSnapshotRepository
                 .findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(portfolioId, start, end);
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
-        List<DerivativePosition> derivatives = derivativePositionRepository.findOpenByPortfolio(portfolioId);
+        List<DerivativePosition> derivatives = derivativePositionRepository.findByPortfolioId(portfolioId);
 
         Map<LocalDateTime, List<PortfolioAssetDailySnapshot>> assetsByTimestamp = assetSnapshots.stream()
                 .collect(Collectors.groupingBy(PortfolioAssetDailySnapshot::getCreatedAt,
@@ -143,6 +143,9 @@ public class PortfolioPerformanceService {
                 : positionRepository.findByPortfolioId(portfolioId).stream()
                         .filter(p -> p.getAssetType() == assetType)
                         .toList();
+        List<DerivativePosition> derivatives = assetType == AssetType.VIOP
+                ? derivativePositionRepository.findByPortfolioId(portfolioId)
+                : List.of();
 
         Map<LocalDateTime, List<PortfolioAssetDailySnapshot>> grouped = snapshots.stream()
                 .collect(Collectors.groupingBy(PortfolioAssetDailySnapshot::getCreatedAt,
@@ -155,7 +158,7 @@ public class PortfolioPerformanceService {
         for (Map.Entry<LocalDateTime, List<PortfolioAssetDailySnapshot>> e : grouped.entrySet()) {
             Map<String, BigDecimal> currAssetValues = new LinkedHashMap<>();
             AssetCodeAgg agg = aggregateByCode(e.getValue(), currAssetValues);
-            List<PerformanceEvent> events = buildEvents(positions, List.of(), prevTime, e.getKey(),
+            List<PerformanceEvent> events = buildEvents(positions, derivatives, prevTime, e.getKey(),
                     prevAssetValues, currAssetValues, false);
             result.add(new PerformancePoint(e.getKey(), agg.totalValue, agg.totalPnl, agg.pnlPercent,
                     agg.details, events));

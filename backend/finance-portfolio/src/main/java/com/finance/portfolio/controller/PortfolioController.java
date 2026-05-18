@@ -21,6 +21,7 @@ import com.finance.common.dto.ApiResponse;
 import com.finance.common.i18n.Translator;
 import com.finance.portfolio.dto.request.PortfolioCreateRequest;
 import com.finance.portfolio.dto.request.PositionRequest;
+import com.finance.portfolio.dto.request.PositionSellRequest;
 import com.finance.portfolio.service.PortfolioBackfillTracker;
 import com.finance.portfolio.service.PortfolioFacade;
 import jakarta.validation.Valid;
@@ -104,6 +105,52 @@ public class PortfolioController {
             @PathVariable Long positionId) {
         portfolioFacade.deletePosition(jwt.getSubject(), portfolioId, positionId);
         return ApiResponse.success(translator.translate("api.portfolio.positionDeleted"), null);
+    }
+
+    @PostMapping("/{portfolioId}/positions/{positionId}/sell")
+    public ApiResponse<PositionResponse> sellPosition(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long portfolioId,
+            @PathVariable Long positionId,
+            @Valid @RequestBody PositionSellRequest request) {
+        return ApiResponse.success(translator.translate("api.portfolio.positionSold"),
+                portfolioFacade.sellPosition(jwt.getSubject(), portfolioId, positionId, request));
+    }
+
+    @PostMapping("/{portfolioId}/positions/{positionId}/reopen")
+    public ApiResponse<PositionResponse> reopenPosition(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long portfolioId,
+            @PathVariable Long positionId) {
+        return ApiResponse.success(translator.translate("api.portfolio.positionReopened"),
+                portfolioFacade.reopenPosition(jwt.getSubject(), portfolioId, positionId));
+    }
+
+    @PutMapping("/{portfolioId}")
+    public ApiResponse<PortfolioResponse> renamePortfolio(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long portfolioId,
+            @Valid @RequestBody PortfolioCreateRequest request) {
+        return ApiResponse.success(translator.translate("api.portfolio.renamed"),
+                portfolioFacade.renamePortfolio(jwt.getSubject(), portfolioId, request));
+    }
+
+    @DeleteMapping("/{portfolioId}")
+    public ApiResponse<Void> deletePortfolio(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long portfolioId) {
+        portfolioFacade.deletePortfolio(jwt.getSubject(), portfolioId);
+        return ApiResponse.success(translator.translate("api.portfolio.deleted"), null);
+    }
+
+    @GetMapping("/{portfolioId}/assets/{assetType}/{assetCode}/summary")
+    public ApiResponse<com.finance.portfolio.dto.response.AssetAggregateResponse> getAssetAggregate(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long portfolioId,
+            @PathVariable String assetType,
+            @PathVariable String assetCode) {
+        return ApiResponse.success(translator.translate("api.portfolio.assetAggregateRetrieved"),
+                portfolioFacade.getAssetAggregate(jwt.getSubject(), portfolioId, assetType, assetCode));
     }
 
     @GetMapping("/{portfolioId}/positions")

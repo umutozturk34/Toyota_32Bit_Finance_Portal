@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { portfolioService } from '../services/portfolioService';
@@ -10,6 +10,8 @@ export function usePortfolioList() {
     queryKey: ['portfolios'],
     queryFn: portfolioService.list,
     retry: false,
+    staleTime: STALE.SHORT,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -18,6 +20,7 @@ export function usePortfolioLimits() {
     queryKey: ['portfolioLimits'],
     queryFn: portfolioService.getLimits,
     staleTime: STALE.LONG,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -27,7 +30,7 @@ const lotKey = (assetType, assetCode) => `${assetType}:${assetCode}`;
 
 export function useBackfillStatus(portfolioId) {
   const [state, setState] = useState(EMPTY_BACKFILL);
-  const invalidate = useInvalidatePortfolio();
+  const invalidate = useInvalidateAfterBackfill();
 
   useEffect(() => {
     if (!portfolioId) return undefined;
@@ -79,6 +82,8 @@ export function usePortfolioView(portfolioId) {
     queryKey: ['portfolioView', portfolioId],
     queryFn: () => portfolioService.getView(portfolioId),
     enabled: !!portfolioId,
+    staleTime: STALE.SHORT,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -87,6 +92,8 @@ export function usePortfolioSummary(portfolioId, assetType) {
     queryKey: ['portfolioSummary', portfolioId, assetType],
     queryFn: () => portfolioService.getSummary(portfolioId, assetType),
     enabled: !!portfolioId && !!assetType,
+    staleTime: STALE.SHORT,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -95,6 +102,8 @@ export function usePortfolioAllocation(portfolioId, mode, assetType) {
     queryKey: ['portfolioAllocation', portfolioId, mode, assetType],
     queryFn: () => portfolioService.getAllocation(portfolioId, mode, assetType),
     enabled: !!portfolioId,
+    staleTime: STALE.SHORT,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -103,6 +112,8 @@ export function usePortfolioPerformance(portfolioId, range, assetType) {
     queryKey: ['portfolioPerformance', portfolioId, range, assetType],
     queryFn: () => portfolioService.getPerformance(portfolioId, range, assetType),
     enabled: !!portfolioId,
+    staleTime: STALE.SHORT,
+    refetchOnWindowFocus: false,
     select: (data) => (data || []).map((d) => ({
       time: new Date(d.timestamp).getTime(),
       value: Number(d.totalValueTry),
@@ -119,6 +130,18 @@ export function useAssetSeries(portfolioId, assetType, assetCode, range) {
     queryKey: ['assetSeries', portfolioId, assetType, assetCode, range],
     queryFn: () => portfolioService.getAssetSeries(portfolioId, assetType, assetCode, range),
     enabled: !!portfolioId && !!assetType && !!assetCode,
+    staleTime: STALE.SHORT,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useAssetAggregate(portfolioId, assetType, assetCode) {
+  return useQuery({
+    queryKey: ['assetAggregate', portfolioId, assetType, assetCode],
+    queryFn: () => portfolioService.getAssetAggregate(portfolioId, assetType, assetCode),
+    enabled: !!portfolioId && !!assetType && !!assetCode,
+    staleTime: STALE.SHORT,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -145,6 +168,8 @@ export function usePortfolioPositions(portfolioId, params) {
     queryFn: () => portfolioService.getPositions(portfolioId, params),
     enabled: !!portfolioId,
     placeholderData: (prev) => prev,
+    staleTime: STALE.SHORT,
+    refetchOnWindowFocus: false,
     retry: rateLimitAwareRetry,
     retryDelay: rateLimitAwareDelay,
   });
@@ -175,6 +200,22 @@ export function useDeletePosition(portfolioId) {
   });
 }
 
+export function useSellPosition(portfolioId) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: ({ positionId, payload }) => portfolioService.sellPosition(portfolioId, positionId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useReopenPosition(portfolioId) {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: (positionId) => portfolioService.reopenPosition(portfolioId, positionId),
+    onSuccess: invalidate,
+  });
+}
+
 export function useCreatePortfolio() {
   const invalidate = useInvalidatePortfolio();
   return useMutation({
@@ -183,9 +224,25 @@ export function useCreatePortfolio() {
   });
 }
 
+export function useRenamePortfolio() {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: ({ portfolioId, name }) => portfolioService.renamePortfolio(portfolioId, name),
+    onSuccess: invalidate,
+  });
+}
+
+export function useDeletePortfolio() {
+  const invalidate = useInvalidatePortfolio();
+  return useMutation({
+    mutationFn: (portfolioId) => portfolioService.deletePortfolio(portfolioId),
+    onSuccess: invalidate,
+  });
+}
+
 export function useInvalidatePortfolio() {
   const queryClient = useQueryClient();
-  return () => {
+  return useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['portfolios'] });
     queryClient.invalidateQueries({ queryKey: ['portfolioView'] });
     queryClient.invalidateQueries({ queryKey: ['portfolioSummary'] });
@@ -193,5 +250,16 @@ export function useInvalidatePortfolio() {
     queryClient.invalidateQueries({ queryKey: ['portfolioPerformance'] });
     queryClient.invalidateQueries({ queryKey: ['portfolioPositions'] });
     queryClient.invalidateQueries({ queryKey: ['assetSeries'] });
-  };
+    queryClient.invalidateQueries({ queryKey: ['assetAggregate'] });
+  }, [queryClient]);
+}
+
+export function useInvalidateAfterBackfill() {
+  const queryClient = useQueryClient();
+  return useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['portfolioView'] });
+    queryClient.invalidateQueries({ queryKey: ['portfolioPerformance'] });
+    queryClient.invalidateQueries({ queryKey: ['assetSeries'] });
+    queryClient.invalidateQueries({ queryKey: ['assetAggregate'] });
+  }, [queryClient]);
 }

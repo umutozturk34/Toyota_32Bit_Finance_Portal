@@ -263,4 +263,56 @@ class PortfolioSummaryServiceTest {
         assertThat(result.content()).isEmpty();
         assertThat(result.totalElements()).isZero();
     }
+
+    @Test
+    void shouldComputeWeightedAverageAndTotals_whenAggregatingMultipleOpenLots() {
+        counting.seedPrice("STOCK", "GARAN.IS", new BigDecimal("100"));
+        when(positionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(
+                        stubPosition(AssetType.STOCK, "GARAN.IS", new BigDecimal("10"), new BigDecimal("80")),
+                        stubPosition(AssetType.STOCK, "GARAN.IS", new BigDecimal("30"), new BigDecimal("90")),
+                        stubPosition(AssetType.STOCK, "AKBNK.IS", new BigDecimal("5"), new BigDecimal("60"))));
+
+        com.finance.portfolio.dto.response.AssetAggregateResponse result =
+                service.getAssetAggregate(1L, "STOCK", "GARAN.IS");
+
+        assertThat(result.lotCount()).isEqualTo(2);
+        assertThat(result.totalQuantity()).isEqualByComparingTo("40");
+        assertThat(result.weightedAvgEntryPrice()).isEqualByComparingTo("87.5000");
+        assertThat(result.totalMarketValueTry()).isEqualByComparingTo("4000.0000");
+        assertThat(result.totalPnlTry()).isEqualByComparingTo("500.0000");
+    }
+
+    @Test
+    void shouldExcludeClosedLots_whenAggregatingAsset() {
+        counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("60"));
+        PortfolioPosition closed = stubPosition(AssetType.STOCK, "THYAO.IS",
+                new BigDecimal("20"), new BigDecimal("50"));
+        closed.closeWith(LocalDateTime.now(), new BigDecimal("55"));
+        when(positionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(
+                        stubPosition(AssetType.STOCK, "THYAO.IS", new BigDecimal("10"), new BigDecimal("45")),
+                        closed));
+
+        com.finance.portfolio.dto.response.AssetAggregateResponse result =
+                service.getAssetAggregate(1L, "STOCK", "THYAO.IS");
+
+        assertThat(result.lotCount()).isEqualTo(1);
+        assertThat(result.totalQuantity()).isEqualByComparingTo("10");
+        assertThat(result.totalMarketValueTry()).isEqualByComparingTo("600.0000");
+    }
+
+    @Test
+    void shouldReturnZeroAggregate_whenNoOpenLotsMatchAsset() {
+        when(positionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(stubPosition(AssetType.STOCK, "AKBNK.IS",
+                        new BigDecimal("5"), new BigDecimal("40"))));
+
+        com.finance.portfolio.dto.response.AssetAggregateResponse result =
+                service.getAssetAggregate(1L, "STOCK", "THYAO.IS");
+
+        assertThat(result.lotCount()).isZero();
+        assertThat(result.totalQuantity()).isEqualByComparingTo("0");
+        assertThat(result.totalMarketValueTry()).isEqualByComparingTo("0");
+    }
 }

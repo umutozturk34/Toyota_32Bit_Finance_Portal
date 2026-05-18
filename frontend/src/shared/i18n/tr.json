@@ -74,7 +74,20 @@
     "searchEllipsis": "Ara..."
   },
   "compareBar": {
-    "placeholder": "Kar\u015f\u0131la\u015ft\u0131r..."
+    "placeholder": "Kar\u015f\u0131la\u015ft\u0131r...",
+    "title": "Kar\u015f\u0131la\u015ft\u0131r",
+    "searchPlaceholder": "Sembol ara...",
+    "addMore": "+ Ekle"
+  },
+  "portfolioSwitcher": {
+    "newPortfolio": "Yeni portf\u00f6y",
+    "namePlaceholder": "Portf\u00f6y ad\u0131",
+    "confirmDelete": "\u00ab{{name}}\u00bb silinsin mi?",
+    "deleteTitle": "Portf\u00f6y\u00fc sil?",
+    "deleteMessage": "\u00ab{{name}}\u00bb portf\u00f6y\u00fc t\u00fcm pozisyon, snapshot ve ge\u00e7mi\u015f ile birlikte kal\u0131c\u0131 olarak silinecek. Bu i\u015flem geri al\u0131namaz.",
+    "createFailed": "Olu\u015fturma ba\u015far\u0131s\u0131z",
+    "renameFailed": "Yeniden adland\u0131rma ba\u015far\u0131s\u0131z",
+    "deleteFailed": "Silme ba\u015far\u0131s\u0131z"
   },
   "searchSuggestions": {
     "placeholder": "Hisse, kripto, d\u00f6viz, fon ara...",
@@ -901,7 +914,8 @@
       },
       "statusAll": "T\u00fcm\u00fc",
       "statusOpen": "A\u00e7\u0131k / Spot",
-      "statusClosed": "Kapal\u0131 / Sat\u0131ld\u0131"
+      "statusClosed": "Kapal\u0131 / Sat\u0131ld\u0131",
+      "statusSold": "SATILDI"
     },
     "allocation": {
       "title": "Da\u011f\u0131l\u0131m",
@@ -913,6 +927,9 @@
       "titleByType": "{{type}} Performans\u0131",
       "calculating": "hesaplan\u0131yor",
       "lotAdded": "Lot Eklendi",
+      "lotSold": "Lot Satıldı",
+      "lotSoldOrClosed": "Lot Satıldı / Kapatıldı",
+      "lotMixed": "Karma İşlem",
       "positionEvents": "Pozisyon Hareketleri",
       "empty": "Bu aral\u0131kta veri bulunmuyor"
     },
@@ -945,6 +962,36 @@
         "preparing": "Haz\u0131rlan\u0131yor..."
       }
     },
+    "sell": {
+      "title": "{{code}} pozisyonunu sat",
+      "position": "Pozisyon",
+      "holdingLabel": "Mevcut miktar",
+      "entryPriceLabel": "Giri\u015f fiyat\u0131",
+      "entryDateLabel": "Giri\u015f tarihi",
+      "quantityLabel": "Sat\u0131lacak miktar",
+      "exitPriceLabel": "Sat\u0131\u015f fiyat\u0131",
+      "exitDateLabel": "Sat\u0131\u015f tarihi",
+      "useCurrent": "Anl\u0131k fiyat",
+      "vsEntry": "giri\u015f fiyat\u0131na g\u00f6re",
+      "today": "Bug\u00fcn",
+      "yesterday": "D\u00fcn",
+      "invalidDateHint": "Giri\u015f tarihinden \u00f6nce veya gelecekte olamaz",
+      "invalidPriceHint": "Ge\u00e7ersiz fiyat",
+      "remainingOpen": "A\u00e7\u0131k kalan",
+      "historicalHint": "Ge\u00e7mi\u015f tarih \u2014 fiyat\u0131 manuel gir",
+      "useDatePrice": "O g\u00fcnk\u00fc fiyat",
+      "loadingPrice": "Fiyat y\u00fckleniyor...",
+      "noPriceForDate": "Bu tarih i\u00e7in fiyat yok",
+      "proceedsLabel": "Sat\u0131\u015f geliri",
+      "realizedPnlLabel": "Realize K\u00e2r/Zarar",
+      "partialHint": "Kalan {{remaining}} adet pozisyon a\u00e7\u0131k devam edecek",
+      "invalidQuantityHint": "Miktar 0 ile {{max}} aras\u0131nda olmal\u0131",
+      "confirm": "Sat\u0131\u015f\u0131 Onayla",
+      "failed": "Sat\u0131\u015f ba\u015far\u0131s\u0131z"
+    },
+    "reopen": {
+      "title": "Pozisyonu tekrar a\u00e7"
+    },
     "derivatives": {
       "title": "T\u00fcrev Pozisyonlar",
       "tabTitle": "V\u0130OP Pozisyonlar\u0131",
@@ -967,6 +1014,8 @@
       "closeDate": "Kapan\u0131\u015f tarihi",
       "closePrice": "Kapan\u0131\u015f fiyat\u0131",
       "closePriceOptional": "Kapan\u0131\u015f fiyat\u0131 (bo\u015f \u2192 ge\u00e7mi\u015ften)",
+      "closeQtyLabel": "Kapat\u0131lacak lot",
+      "closeQtyHint": "Miktar 0 ile {{max}} aras\u0131nda olmal\u0131",
       "closeTitle": "Pozisyon Kapat",
       "closeAction": "Pozisyon kapat",
       "closeConfirm": "Kapat",
@@ -1332,17 +1381,32 @@
   },
   "assetDetail": {
     "newLot": "Yeni Lot",
+    "updating": "Güncelleniyor...",
     "pnl": "Kar/Zarar",
     "dailyPnl": "G\u00fcnl\u00fck K/Z",
     "noDataInRange": "Bu aral\u0131kta veri bulunmuyor",
     "marketValue": "Piyasa De\u011feri",
     "unitPrice": "Birim Fiyat",
+    "lotCount": "{{count}} lot",
     "stats": {
       "quantity": "Miktar",
       "entryDate": "Giri\u015f Tarihi",
       "entryPrice": "Giri\u015f Fiyat\u0131",
       "currentPrice": "G\u00fcncel Fiyat",
       "marketValue": "Piyasa De\u011feri"
+    },
+    "lots": {
+      "title": "Lotlar",
+      "entryDate": "Giri\u015f tarihi",
+      "entryPrice": "Giri\u015f fiyat\u0131",
+      "quantity": "Miktar",
+      "marketValue": "Piyasa de\u011feri",
+      "pnl": "K/Z",
+      "closed": "KAPALI",
+      "lotMarkerBuy": "AL",
+      "lotMarkerSell": "SAT",
+      "lotMarkerOpen": "AÇ",
+      "lotMarkerClose": "KAPAT"
     }
   },
   "tasksPanel": {

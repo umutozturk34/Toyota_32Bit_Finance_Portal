@@ -41,7 +41,7 @@ export default function PositionDeleteDialog({ portfolioId, position, onClose, o
         runAnimation(processingSteps),
       ]);
       setPhase('success');
-      setTimeout(() => { onComplete?.(); onClose(); }, SUCCESS_HOLD_MS);
+      setTimeout(() => { onClose(); onComplete?.(); }, SUCCESS_HOLD_MS);
     } catch (err) {
       resetProcessing();
       setError(err?.response?.data?.message || t('positionDelete.failed'));

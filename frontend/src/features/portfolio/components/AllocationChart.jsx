@@ -41,11 +41,15 @@ export default function AllocationChart({ allocation, portfolioId }) {
 
   const finalData = useMemo(() => {
     const items = activeTab === 'ALL' ? (allocation || []) : (assetData || []);
-    return items.filter((i) => Number(i.valueTry) > 0);
+    return items.filter((i) => {
+      const value = Number(i.valueTry);
+      if (i.label === 'CASH') return value !== 0;
+      return value > 0;
+    });
   }, [activeTab, allocation, assetData]);
 
   const totalValue = useMemo(
-    () => finalData.reduce((sum, item) => sum + Number(item.valueTry), 0),
+    () => finalData.reduce((sum, item) => sum + Math.abs(Number(item.valueTry)), 0),
     [finalData]
   );
 
@@ -53,10 +57,14 @@ export default function AllocationChart({ allocation, portfolioId }) {
     const label = activeTab === 'ALL'
       ? assetLabel(item.label)
       : item.label;
-    const color = activeTab === 'ALL'
-      ? (ASSET_TYPE_COLORS[item.label] || COLORS[0])
-      : (COLORS[idx % COLORS.length]);
-    return { name: label, value: Number(item.valueTry), itemStyle: { color } };
+    const value = Number(item.valueTry);
+    const isNegativeCash = item.label === 'CASH' && value < 0;
+    const color = isNegativeCash
+      ? '#ef4444'
+      : activeTab === 'ALL'
+        ? (ASSET_TYPE_COLORS[item.label] || COLORS[0])
+        : (COLORS[idx % COLORS.length]);
+    return { name: label, value: Math.abs(value), itemStyle: { color } };
   }), [finalData, activeTab, assetLabel]);
 
   const totalLabel = activeTab === 'ALL' ? t('portfolio.allocation.total') : assetLabel(activeTab);
@@ -161,10 +169,14 @@ export default function AllocationChart({ allocation, portfolioId }) {
             <div className="space-y-1.5">
               {finalData.map((item, idx) => {
                 const value = Number(item.valueTry);
-                const pct = totalValue > 0 ? (value / totalValue) * 100 : 0;
-                const color = activeTab === 'ALL'
-                  ? (ASSET_TYPE_COLORS[item.label] || COLORS[0])
-                  : (COLORS[idx % COLORS.length]);
+                const absValue = Math.abs(value);
+                const pct = totalValue > 0 ? (absValue / totalValue) * 100 : 0;
+                const isNegativeCash = item.label === 'CASH' && value < 0;
+                const color = isNegativeCash
+                  ? '#ef4444'
+                  : activeTab === 'ALL'
+                    ? (ASSET_TYPE_COLORS[item.label] || COLORS[0])
+                    : (COLORS[idx % COLORS.length]);
                 const label = activeTab === 'ALL'
                   ? assetLabel(item.label)
                   : item.label;
@@ -180,7 +192,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
                     />
                     <span className="text-xs font-medium text-fg flex-1 truncate">{label}</span>
                     <span className="text-xs font-mono text-fg-muted">{pct.toFixed(1)}%</span>
-                    <span className="text-xs font-mono font-semibold text-fg">{money(value)}</span>
+                    <span className={`text-xs font-mono font-semibold ${isNegativeCash ? 'text-danger' : 'text-fg'}`}>{money(value)}</span>
                   </div>
                 );
               })}

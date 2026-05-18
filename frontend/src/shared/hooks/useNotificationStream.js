@@ -63,15 +63,43 @@ export default function useNotificationStream() {
     const handleNotification = (event) => {
       let payload = null;
       try { payload = JSON.parse(event.data); } catch { /* malformed */ }
-      queryClient.setQueryData(['notifications', 'unread-count'], (old) => {
-        const n = Number(old);
-        return (Number.isFinite(n) ? n : 0) + 1;
-      });
+      queryClient.setQueriesData(
+        { predicate: (q) => q.queryKey[0] === 'notifications' && q.queryKey[q.queryKey.length - 1] === 'unread-count' },
+        (old) => {
+          const n = Number(old);
+          return (Number.isFinite(n) ? n : 0) + 1;
+        }
+      );
       if (payload && payload.id != null) {
         queryClient.setQueriesData(
-          { predicate: (q) => q.queryKey[0] === 'notifications' && typeof q.queryKey[1] === 'object' && q.queryKey[1] !== null },
+          {
+            predicate: (q) => {
+              if (q.queryKey[0] !== 'notifications') return false;
+              const last = q.queryKey[q.queryKey.length - 1];
+              return typeof last === 'object' && last !== null;
+            },
+          },
           (data) => {
             if (!data) return data;
+            if (data?.pages && Array.isArray(data.pages)) {
+              return {
+                ...data,
+                pages: data.pages.map((page, idx) => {
+                  if (idx !== 0 || !page) return page;
+                  if (Array.isArray(page.content) && !page.content.some((n) => n.id === payload.id)) {
+                    return {
+                      ...page,
+                      content: [payload, ...page.content],
+                      totalElements: (page.totalElements ?? 0) + 1,
+                    };
+                  }
+                  if (Array.isArray(page.items) && !page.items.some((n) => n.id === payload.id)) {
+                    return { ...page, items: [payload, ...page.items] };
+                  }
+                  return page;
+                }),
+              };
+            }
             if (Array.isArray(data.content)) {
               if (data.content.some((n) => n.id === payload.id)) return data;
               return {
@@ -89,7 +117,11 @@ export default function useNotificationStream() {
         );
       }
       queryClient.invalidateQueries({
-        predicate: (q) => q.queryKey[0] === 'notifications' && q.queryKey[1] !== 'unread-count',
+        predicate: (q) => {
+          if (q.queryKey[0] !== 'notifications') return false;
+          const last = q.queryKey[q.queryKey.length - 1];
+          return last !== 'unread-count';
+        },
       });
       playChime();
       const title = payload?.title || i18n.t('notifStream.newNotification');

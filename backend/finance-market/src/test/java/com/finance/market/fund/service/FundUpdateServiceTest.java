@@ -16,6 +16,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -105,6 +106,17 @@ class FundUpdateServiceTest {
 
         verify(snapshotProcessor).refreshOne("TYH");
         verify(incrementalRefreshService).refresh("TYH");
+    }
+
+    @Test
+    void refresh_invokesPerFundEnrichersAndNeverBulkEnrichers() {
+        service.refresh("TYH");
+
+        verify(detailEnrichmentService).enrichSingleFundDetails("TYH");
+        verify(detailEnrichmentService).enrichReturnsAndRiskForFund("TYH");
+        verify(detailEnrichmentService).enrichAllocationsForFund(eq("TYH"), any(java.time.LocalDate.class));
+        verify(detailEnrichmentService, never()).enrichReturnsAndRisk();
+        verify(detailEnrichmentService, never()).enrichAllocations(any(java.time.LocalDate.class));
     }
 
     @Test

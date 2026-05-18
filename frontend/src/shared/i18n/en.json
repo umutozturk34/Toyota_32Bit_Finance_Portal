@@ -74,7 +74,20 @@
     "searchEllipsis": "Search..."
   },
   "compareBar": {
-    "placeholder": "Compare..."
+    "placeholder": "Compare...",
+    "title": "Compare",
+    "searchPlaceholder": "Search symbol...",
+    "addMore": "+ Add"
+  },
+  "portfolioSwitcher": {
+    "newPortfolio": "New portfolio",
+    "namePlaceholder": "Portfolio name",
+    "confirmDelete": "Delete «{{name}}»?",
+    "deleteTitle": "Delete portfolio?",
+    "deleteMessage": "Portfolio «{{name}}» will be permanently deleted along with all positions, snapshots and history. This cannot be undone.",
+    "createFailed": "Creation failed",
+    "renameFailed": "Rename failed",
+    "deleteFailed": "Delete failed"
   },
   "searchSuggestions": {
     "placeholder": "Search stocks, crypto, FX, funds...",
@@ -901,7 +914,8 @@
       },
       "statusAll": "All",
       "statusOpen": "Open / Spot",
-      "statusClosed": "Closed / Sold"
+      "statusClosed": "Closed / Sold",
+      "statusSold": "SOLD"
     },
     "allocation": {
       "title": "Allocation",
@@ -913,6 +927,9 @@
       "titleByType": "{{type}} Performance",
       "calculating": "calculating",
       "lotAdded": "Lot Added",
+      "lotSold": "Lot Sold",
+      "lotSoldOrClosed": "Lot Sold / Closed",
+      "lotMixed": "Mixed Activity",
       "positionEvents": "Position Events",
       "empty": "No data in this range"
     },
@@ -945,6 +962,36 @@
         "preparing": "Preparing..."
       }
     },
+    "sell": {
+      "title": "Sell {{code}}",
+      "position": "Position",
+      "holdingLabel": "Holding",
+      "entryPriceLabel": "Entry price",
+      "entryDateLabel": "Entry date",
+      "quantityLabel": "Quantity to sell",
+      "exitPriceLabel": "Sell price",
+      "exitDateLabel": "Sell date",
+      "useCurrent": "Current price",
+      "vsEntry": "vs entry price",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "invalidDateHint": "Cannot be before entry date or in the future",
+      "invalidPriceHint": "Invalid price",
+      "remainingOpen": "Stays open",
+      "historicalHint": "Past date — enter price manually",
+      "useDatePrice": "Price on that day",
+      "loadingPrice": "Loading price...",
+      "noPriceForDate": "No price for this date",
+      "proceedsLabel": "Proceeds",
+      "realizedPnlLabel": "Realized P/L",
+      "partialHint": "Remaining {{remaining}} units stay open",
+      "invalidQuantityHint": "Quantity must be between 0 and {{max}}",
+      "confirm": "Confirm sale",
+      "failed": "Sale failed"
+    },
+    "reopen": {
+      "title": "Reopen position"
+    },
     "derivatives": {
       "title": "Derivative Positions",
       "tabTitle": "VIOP Positions",
@@ -967,6 +1014,8 @@
       "closeDate": "Close date",
       "closePrice": "Close price",
       "closePriceOptional": "Close price (blank \u2192 from history)",
+      "closeQtyLabel": "Lots to close",
+      "closeQtyHint": "Quantity must be between 0 and {{max}}",
       "closeTitle": "Close Position",
       "closeAction": "Close position",
       "closeConfirm": "Close",
@@ -1332,17 +1381,32 @@
   },
   "assetDetail": {
     "newLot": "New lot",
+    "updating": "Updating...",
     "pnl": "P/L",
     "dailyPnl": "Daily P/L",
     "noDataInRange": "No data in this range",
     "marketValue": "Market value",
     "unitPrice": "Unit price",
+    "lotCount": "{{count}} lots",
     "stats": {
       "quantity": "Quantity",
       "entryDate": "Entry date",
       "entryPrice": "Entry price",
       "currentPrice": "Current price",
       "marketValue": "Market value"
+    },
+    "lots": {
+      "title": "Lots",
+      "entryDate": "Entry date",
+      "entryPrice": "Entry price",
+      "quantity": "Quantity",
+      "marketValue": "Market value",
+      "pnl": "P/L",
+      "closed": "CLOSED",
+      "lotMarkerBuy": "BUY",
+      "lotMarkerSell": "SELL",
+      "lotMarkerOpen": "OPEN",
+      "lotMarkerClose": "CLOSE"
     }
   },
   "tasksPanel": {

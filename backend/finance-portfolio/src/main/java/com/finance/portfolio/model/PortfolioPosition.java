@@ -65,6 +65,12 @@ public class PortfolioPosition {
     @Column(name = "entry_price", nullable = false, precision = 19, scale = 4)
     private BigDecimal entryPrice;
 
+    @Column(name = "exit_date")
+    private LocalDateTime exitDate;
+
+    @Column(name = "exit_price", precision = 19, scale = 4)
+    private BigDecimal exitPrice;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -109,5 +115,24 @@ public class PortfolioPosition {
         if (newEntryDate != null) this.entryDate = newEntryDate;
         if (newEntryPrice != null) this.entryPrice = newEntryPrice;
         if (newQuantity != null) this.quantity = newQuantity;
+    }
+
+    public boolean isClosed() {
+        return exitDate != null;
+    }
+
+    public void closeWith(LocalDateTime when, BigDecimal price) {
+        this.exitDate = when;
+        this.exitPrice = price;
+    }
+
+    public void reopen() {
+        this.exitDate = null;
+        this.exitPrice = null;
+    }
+
+    public BigDecimal realizedPnl() {
+        if (exitPrice == null) return BigDecimal.ZERO;
+        return exitPrice.subtract(entryPrice).multiply(quantity).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
     }
 }

@@ -4,6 +4,7 @@ import com.finance.shared.service.AssetPricingPort;
 
 
 import com.finance.portfolio.dto.response.AllocationItem;
+import com.finance.portfolio.dto.response.AssetAggregateResponse;
 import com.finance.common.dto.response.PagedResponse;
 import com.finance.portfolio.dto.response.PortfolioSummaryResponse;
 import com.finance.portfolio.dto.response.PositionResponse;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -110,6 +112,10 @@ public class PortfolioSummaryService {
                 maxLoss,
                 maxGain,
                 position.getViopContract().getDisplayName());
+        LocalDateTime exitDate = position.getCloseDate() != null
+                ? position.getCloseDate().atStartOfDay() : null;
+        BigDecimal exitPriceVal = position.getClosePrice();
+        BigDecimal realizedForResponse = !position.isOpen() && pnl != null ? pnl : null;
         return new PositionResponse(
                 position.getId(),
                 AssetType.VIOP.name(),
@@ -119,6 +125,9 @@ public class PortfolioSummaryService {
                 qty,
                 position.getEntryDate() != null ? position.getEntryDate().atStartOfDay() : null,
                 entryPrice,
+                exitDate,
+                exitPriceVal,
+                realizedForResponse,
                 currentPriceTry,
                 entryNotional,
                 marketValue,
@@ -286,17 +295,79 @@ public class PortfolioSummaryService {
     }
 
     @Transactional(readOnly = true)
+    public AssetAggregateResponse getAssetAggregate(Long portfolioId, String assetTypeRaw, String assetCode) {
+        AssetType assetType = EnumParser.parseOrBadRequest(AssetType.class, assetTypeRaw, "enum.field.assetType");
+        List<PortfolioPosition> lots = positionRepository.findByPortfolioId(portfolioId).stream()
+                .filter(p -> p.getAssetType() == assetType)
+                .filter(p -> assetCode.equalsIgnoreCase(p.getAssetCode()))
+                .filter(p -> !p.isClosed())
+                .toList();
+        if (lots.isEmpty()) {
+            return new AssetAggregateResponse(
+                    assetType.name(), assetCode, null, null,
+                    0, BigDecimal.ZERO, null, BigDecimal.ZERO,
+                    BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                    BigDecimal.ZERO, BigDecimal.ZERO);
+        }
+        PortfolioPosition first = lots.get(0);
+        AssetKey key = first.toAssetKey();
+        PriceBundle bundle = pricingPort.getExitBundle(key.type(), key.assetCode());
+        BigDecimal currentPrice = bundle.price() != null ? bundle.price() : BigDecimal.ZERO;
+
+        BigDecimal totalQty = BigDecimal.ZERO;
+        BigDecimal totalEntryValue = BigDecimal.ZERO;
+        BigDecimal totalMarketValue = BigDecimal.ZERO;
+        java.time.LocalDateTime earliest = null;
+        for (PortfolioPosition lot : lots) {
+            totalQty = totalQty.add(lot.getQuantity());
+            totalEntryValue = totalEntryValue.add(lot.entryValue());
+            totalMarketValue = totalMarketValue.add(lot.currentValue(currentPrice));
+            if (earliest == null || (lot.getEntryDate() != null && lot.getEntryDate().isBefore(earliest))) {
+                earliest = lot.getEntryDate();
+            }
+        }
+        BigDecimal weightedAvg = totalQty.signum() > 0
+                ? totalEntryValue.divide(totalQty, MoneyScale.PRICE, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        BigDecimal totalPnl = totalMarketValue.subtract(totalEntryValue).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        BigDecimal pnlPercent = totalEntryValue.signum() > 0
+                ? totalPnl.multiply(new BigDecimal("100")).divide(totalEntryValue, MoneyScale.PRICE, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        AssetMeta meta = bundle.meta() != null ? bundle.meta() : new AssetMeta(null, null);
+        return new AssetAggregateResponse(
+                assetType.name(), assetCode,
+                meta.name(), meta.image(),
+                lots.size(), totalQty, earliest, weightedAvg,
+                currentPrice, totalEntryValue, totalMarketValue, totalPnl, pnlPercent);
+    }
+
+    @Transactional(readOnly = true)
     public List<AllocationItem> getAllocation(Long portfolioId, String mode, String assetTypeFilter) {
-        List<PortfolioPosition> positions = filterByType(
-                positionRepository.findByPortfolioId(portfolioId), assetTypeFilter);
+        boolean cashOnly = "CASH".equalsIgnoreCase(assetTypeFilter);
+        List<PortfolioPosition> positions = cashOnly
+                ? positionRepository.findByPortfolioId(portfolioId)
+                : filterByType(positionRepository.findByPortfolioId(portfolioId), assetTypeFilter);
 
         boolean byType = "assetType".equals(mode);
         Map<String, BigDecimal> buckets = new LinkedHashMap<>();
         Map<String, String> bucketTypes = new LinkedHashMap<>();
         BigDecimal totalValue = BigDecimal.ZERO;
+        BigDecimal cashTotal = BigDecimal.ZERO;
 
-        Map<AssetKey, BigDecimal> prices = pricingPort.getExitPricesTry(toKeys(positions));
+        List<PortfolioPosition> openPositions = positions.stream()
+                .filter(p -> !p.isClosed())
+                .toList();
+        Map<AssetKey, BigDecimal> prices = cashOnly
+                ? Map.of() : pricingPort.getExitPricesTry(toKeys(openPositions));
         for (PortfolioPosition pos : positions) {
+            if (pos.isClosed()) {
+                BigDecimal proceeds = pos.getExitPrice() != null
+                        ? pos.getExitPrice().multiply(pos.getQuantity()).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP)
+                        : BigDecimal.ZERO;
+                cashTotal = cashTotal.add(proceeds);
+                continue;
+            }
+            if (cashOnly) continue;
             BigDecimal price = prices.get(pos.toAssetKey());
             BigDecimal marketValue = price != null
                     ? price.multiply(pos.getQuantity()).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP)
@@ -308,6 +379,7 @@ public class PortfolioSummaryService {
         }
 
         boolean includeDerivatives = assetTypeFilter == null || assetTypeFilter.isBlank()
+                || cashOnly
                 || AssetType.VIOP.name().equalsIgnoreCase(assetTypeFilter)
                 || "FUTURE".equalsIgnoreCase(assetTypeFilter) || "OPTION".equalsIgnoreCase(assetTypeFilter);
         if (includeDerivatives) {
@@ -318,10 +390,17 @@ public class PortfolioSummaryService {
                         && !assetTypeFilter.equalsIgnoreCase(kindName)) continue;
                 BigDecimal entryNotional = dpos.nominalExposure();
                 if (entryNotional == null) continue;
-                BigDecimal currentPriceTry = !dpos.isOpen()
-                        ? dpos.getClosePrice()
-                        : convertLiveToTry(dpos.getViopContract().getLastPrice(),
-                                dpos.getViopContract().getCurrency());
+                if (!dpos.isOpen()) {
+                    BigDecimal realized = dpos.realizedOrUnrealizedPnl(dpos.getClosePrice());
+                    BigDecimal proceeds = realized != null
+                            ? entryNotional.add(realized).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP)
+                            : entryNotional.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+                    cashTotal = cashTotal.add(proceeds);
+                    continue;
+                }
+                if (cashOnly) continue;
+                BigDecimal currentPriceTry = convertLiveToTry(dpos.getViopContract().getLastPrice(),
+                        dpos.getViopContract().getCurrency());
                 BigDecimal pnl = dpos.realizedOrUnrealizedPnl(currentPriceTry);
                 BigDecimal marketValue = pnl != null ? entryNotional.add(pnl) : entryNotional;
                 marketValue = marketValue.abs().setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
@@ -330,6 +409,14 @@ public class PortfolioSummaryService {
                 bucketTypes.putIfAbsent(key, AssetType.VIOP.name());
                 totalValue = totalValue.add(marketValue);
             }
+        }
+
+        if (cashTotal.signum() != 0 && (assetTypeFilter == null || assetTypeFilter.isBlank()
+                || "CASH".equalsIgnoreCase(assetTypeFilter))) {
+            String cashKey = byType ? "CASH" : "CASH";
+            buckets.merge(cashKey, cashTotal, BigDecimal::add);
+            bucketTypes.putIfAbsent(cashKey, "CASH");
+            totalValue = totalValue.add(cashTotal);
         }
 
         BigDecimal denominator = totalValue;

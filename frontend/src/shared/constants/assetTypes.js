@@ -5,6 +5,7 @@ export const ASSET_TYPE_COLORS = {
   FUND: '#8b5cf6',
   COMMODITY: '#f97316',
   VIOP: '#6366f1',
+  CASH: '#94a3b8',
 };
 
 export const ASSET_TYPE_CHART_COLORS = {
@@ -14,6 +15,7 @@ export const ASSET_TYPE_CHART_COLORS = {
   FUND: '#c084fc',
   COMMODITY: '#fb923c',
   VIOP: '#818cf8',
+  CASH: '#cbd5e1',
 };
 
 export const ASSET_TYPE_STYLES = {
@@ -23,6 +25,7 @@ export const ASSET_TYPE_STYLES = {
   FUND: { bg: 'bg-violet-400/10', text: 'text-violet-400' },
   COMMODITY: { bg: 'bg-orange-400/10', text: 'text-orange-400' },
   VIOP: { bg: 'bg-indigo-400/10', text: 'text-indigo-400' },
+  CASH: { bg: 'bg-slate-400/10', text: 'text-slate-400' },
 };
 
 export const ASSET_TYPE_FILTERS = [
@@ -43,6 +46,7 @@ export const ASSET_TYPE_TABS = [
   { id: 'FUND' },
   { id: 'COMMODITY' },
   { id: 'VIOP' },
+  { id: 'CASH' },
 ];
 
 export const PORTFOLIO_RANGE_IDS = ['1M', '3M', '6M', '1Y', '5Y', 'ALL'];

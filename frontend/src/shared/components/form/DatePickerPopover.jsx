@@ -53,7 +53,21 @@ export default function DatePickerPopover({
   const [open, setOpen] = useState(false);
   const [view, setView] = useState('day');
   const [trackedOpen, setTrackedOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
   const ref = useRef(null);
+  const triggerRef = useRef(null);
+
+  const openWithDirection = () => {
+    if (open) { setOpen(false); return; }
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const estimatedPopupHeight = 360;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      setOpenUp(spaceBelow < estimatedPopupHeight && spaceAbove > spaceBelow + 80);
+    }
+    setOpen(true);
+  };
 
   const selected = useMemo(() => fromIso(value), [value]);
   const today = useMemo(() => new Date(), []);
@@ -85,6 +99,7 @@ export default function DatePickerPopover({
     document.addEventListener('mousedown', close);
     return () => document.removeEventListener('mousedown', close);
   }, [open]);
+
 
   const grid = useMemo(() => buildGrid(cursor.year, cursor.month), [cursor.year, cursor.month]);
   const outOfRange = (d) => (max && d > max) || (min && d < min);
@@ -122,8 +137,9 @@ export default function DatePickerPopover({
   return (
     <div ref={ref} className="relative">
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => setOpen((p) => !p)}
+        onClick={openWithDirection}
         className="w-full flex items-center justify-between rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-colors hover:border-border-hover cursor-pointer"
       >
         <span className={selected ? 'text-fg' : 'text-fg-subtle'}>{display}</span>
@@ -133,11 +149,11 @@ export default function DatePickerPopover({
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -2 }}
+            initial={{ opacity: 0, y: openUp ? 2 : -2 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -2 }}
+            exit={{ opacity: 0, y: openUp ? 2 : -2 }}
             transition={{ duration: 0.1, ease: 'easeOut' }}
-            className="absolute z-50 left-0 right-0 mt-1.5 rounded-xl border border-border-default p-3 space-y-2"
+            className={`absolute z-50 left-0 right-0 rounded-xl border border-border-default p-3 space-y-2 ${openUp ? 'bottom-full mb-1.5' : 'mt-1.5'}`}
             style={{ backgroundColor: 'var(--color-bg-base, #0f0f17)', boxShadow: '0 12px 40px -8px rgba(0,0,0,0.6)' }}
           >
             <div className="flex items-center justify-between gap-1">

@@ -303,15 +303,13 @@ class ViopHistoryProviderTest {
     }
 
     @Test
-    void should_clampLoadOrFetchRangeWhenToIsInFuture() {
-        when(candleRepository.findFirstBySymbolOrderByCandleDateDesc("F_X")).thenReturn(Optional.empty());
+    void should_neverTriggerExternalFetch_when_readPathServesChartRange() {
         when(candleRepository.findBySymbolAndCandleDateBetweenOrderByCandleDateAsc(
                 anyString(), any(), any())).thenReturn(List.of());
-        when(marketData.fetchHistory(anyString(), any(), any(), any())).thenReturn(List.of());
 
         provider.getHistoryInRange("F_X", LocalDate.now().minusDays(2), LocalDate.now().plusDays(30));
 
-        verify(marketData).fetchHistory(eq("F_X"), any(), any(), any());
+        verify(marketData, never()).fetchHistory(anyString(), any(), any(), any());
     }
 
     @Test

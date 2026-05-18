@@ -18,6 +18,7 @@ export default function PortfolioListShell({
   emptyIcon,
   emptyMessage,
   emptyHint,
+  secondaryFilters,
   children,
 }) {
   const { t } = useTranslation();
@@ -48,6 +49,8 @@ export default function PortfolioListShell({
           layoutId={filterLayoutId}
         />
       </div>
+
+      {secondaryFilters}
 
       {isEmpty ? (
         <EmptyState icon={emptyIcon} message={emptyMessage} hint={emptyHint} />

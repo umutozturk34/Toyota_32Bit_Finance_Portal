@@ -57,14 +57,14 @@ public class FundUpdateService implements MarketRefresher {
             log.warn("Single-fund detail enrichment failed for {}: {}", fundCode, e.getMessage());
         }
         try {
-            detailEnrichmentService.enrichReturnsAndRisk();
+            detailEnrichmentService.enrichReturnsAndRiskForFund(fundCode);
         } catch (Exception e) {
-            log.warn("Returns/risk bulk enrichment failed during single-fund refresh of {}: {}", fundCode, e.getMessage());
+            log.warn("Single-fund returns enrichment failed for {}: {}", fundCode, e.getMessage());
         }
         try {
-            detailEnrichmentService.enrichAllocations(LocalDate.now());
+            detailEnrichmentService.enrichAllocationsForFund(fundCode, LocalDate.now());
         } catch (Exception e) {
-            log.warn("Allocation bulk enrichment failed during single-fund refresh of {}: {}", fundCode, e.getMessage());
+            log.warn("Single-fund allocation enrichment failed for {}: {}", fundCode, e.getMessage());
         }
     }
 

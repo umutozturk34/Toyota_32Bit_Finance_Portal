@@ -19,7 +19,7 @@ export function useNotifications({ unreadOnly = false, size = 20, search = '' } 
     },
     enabled: isAuthenticated && !loading && Boolean(userSub),
     staleTime: STALE.SHORT,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -30,8 +30,8 @@ export function useUnreadNotificationCount() {
     queryKey: COUNT_KEY(userSub),
     queryFn: notificationService.unreadCount,
     enabled: isAuthenticated && !loading && Boolean(userSub),
-    staleTime: STALE.SHORT,
-    refetchOnWindowFocus: true,
+    staleTime: STALE.MEDIUM,
+    refetchOnWindowFocus: false,
   });
 }
 

@@ -23,7 +23,8 @@ import java.time.LocalDateTime;
 public class PortfolioDailySnapshot {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "portfolio_daily_snapshot_seq")
+    @SequenceGenerator(name = "portfolio_daily_snapshot_seq", sequenceName = "portfolio_daily_snapshot_seq", allocationSize = 50)
     @EqualsAndHashCode.Include
     private Long id;
 

@@ -49,25 +49,31 @@ export default function CompareBar({ compareAssets = [], onAdd, onRemove, exclud
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {chips}
-      {canAddMore && !adding && (
-        <motion.button
-          onClick={() => setAdding(true)}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="group flex items-center gap-2 rounded-lg border border-dashed border-accent/40 px-3.5 py-2 text-sm font-medium text-accent hover:bg-accent/10 hover:border-accent/70 transition-all cursor-pointer bg-transparent"
-        >
-          <GitCompare className="w-4 h-4 transition-transform group-hover:rotate-12" />
-          <span>{compareAssets.length === 0
-            ? t('compareBar.placeholder')
-            : t('compareBar.addMore', { defaultValue: '+ Compare' })}</span>
-          <span className="text-[10px] text-fg-muted opacity-0 group-hover:opacity-100 transition-opacity">
-            {compareAssets.length}/{maxAssets}
-          </span>
-        </motion.button>
-      )}
-      <AnimatePresence>
+      <AnimatePresence mode="wait" initial={false}>
+        {canAddMore && !adding && (
+          <motion.button
+            key="add-btn"
+            onClick={() => setAdding(true)}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="group flex items-center gap-2 rounded-lg border border-dashed border-accent/40 px-3.5 py-2 text-sm font-medium text-accent hover:bg-accent/10 hover:border-accent/70 transition-colors cursor-pointer bg-transparent"
+          >
+            <GitCompare className="w-4 h-4 transition-transform group-hover:rotate-12" />
+            <span>{compareAssets.length === 0
+              ? t('compareBar.placeholder')
+              : t('compareBar.addMore', { defaultValue: '+ Compare' })}</span>
+            <span className="text-[10px] text-fg-muted opacity-0 group-hover:opacity-100 transition-opacity">
+              {compareAssets.length}/{maxAssets}
+            </span>
+          </motion.button>
+        )}
         {canAddMore && adding && (
           <motion.div
+            key="panel"
             initial={{ opacity: 0, scale: 0.96, y: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: -4 }}
@@ -99,6 +105,7 @@ export default function CompareBar({ compareAssets = [], onAdd, onRemove, exclud
             />
             <div className="flex items-center justify-end pt-0.5">
               <button
+                type="button"
                 onClick={() => setAdding(false)}
                 className="text-[11px] font-medium text-fg-muted hover:text-fg px-2 py-1 rounded transition-colors cursor-pointer bg-transparent border-none"
               >

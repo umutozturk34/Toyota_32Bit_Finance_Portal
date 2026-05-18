@@ -80,31 +80,56 @@ const SidebarContent = ({
     <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5 scrollbar-auto-hide">
       {allNav.map(({ to, labelKey, Icon }) => {
         const label = t(labelKey);
+        const active = isActive(to);
         return (
           <Link
             key={to}
             to={to}
             title={collapsed && !isMobile ? label : undefined}
-            className={`group relative flex items-center gap-2.5 rounded-lg no-underline transition-all duration-150 ${
+            className={`group relative flex items-center gap-2.5 rounded-lg no-underline overflow-hidden transition-all duration-200 ease-out ${
               collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
             } ${
-              isActive(to)
-                ? 'bg-accent/10 text-fg'
-                : 'text-fg-muted hover:text-fg hover:bg-surface'
+              active
+                ? 'text-fg shadow-[0_4px_20px_-6px_rgba(99,102,241,0.35)]'
+                : 'text-fg-muted hover:text-fg hover:translate-x-0.5'
             }`}
           >
+            {active && (
+              <motion.span
+                layoutId="sidebar-active-bg"
+                className="absolute inset-0 rounded-lg bg-gradient-to-r from-accent/20 via-accent/10 to-accent/5 border border-accent/20"
+                transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              />
+            )}
+            {!active && (
+              <span className="absolute inset-0 rounded-lg bg-surface/0 group-hover:bg-surface/60 transition-colors duration-200" />
+            )}
             <Icon
               size={16}
               strokeWidth={1.6}
-              className={`shrink-0 transition-colors duration-150 ${isActive(to) ? 'text-accent' : 'group-hover:text-fg-muted'}`}
+              className={`relative shrink-0 transition-all duration-200 ${
+                active
+                  ? 'text-accent scale-110 drop-shadow-[0_0_6px_rgba(99,102,241,0.5)]'
+                  : 'group-hover:text-fg-muted group-hover:scale-105'
+              }`}
             />
-            {(!collapsed || isMobile) && (
-              <span className="text-[13px] font-medium">{label}</span>
-            )}
-            {isActive(to) && (
+            <AnimatePresence initial={false}>
+              {(!collapsed || isMobile) && (
+                <motion.span
+                  initial={{ opacity: 0, x: -4 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -4 }}
+                  transition={{ duration: 0.16, ease: 'easeOut' }}
+                  className={`relative text-[13px] font-medium whitespace-nowrap ${active ? 'font-semibold' : ''}`}
+                >
+                  {label}
+                </motion.span>
+              )}
+            </AnimatePresence>
+            {active && (
               <motion.span
                 layoutId="sidebar-indicator"
-                className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-gradient-accent ${collapsed && !isMobile ? 'h-5' : 'h-6'}`}
+                className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-accent shadow-[0_0_8px_rgba(99,102,241,0.7)] ${collapsed && !isMobile ? 'h-5' : 'h-6'}`}
                 transition={{ type: 'spring', stiffness: 500, damping: 35 }}
               />
             )}
@@ -238,7 +263,7 @@ const MainLayout = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
-  const sidebarW = collapsed ? 'w-16' : 'w-52';
+  const sidebarWidth = collapsed ? 64 : 208;
 
   const sidebarProps = {
     collapsed,
@@ -264,16 +289,26 @@ const MainLayout = () => {
         </div>
       )}
 
-      <aside
-        className={`hidden lg:flex flex-col fixed top-0 left-0 h-screen ${sidebarW} border-r border-border-default z-20 ${blurCls}`}
+      <motion.aside
+        animate={{ width: sidebarWidth }}
+        initial={false}
+        transition={{ type: 'spring', stiffness: 380, damping: 36, mass: 0.8 }}
+        className={`hidden lg:flex flex-col fixed top-0 left-0 h-screen border-r border-border-default z-30 ${blurCls} overflow-hidden`}
         style={{
           background: 'var(--sidebar-bg)',
           backdropFilter: 'var(--sidebar-blur)',
           WebkitBackdropFilter: 'var(--sidebar-blur)',
+          boxShadow: collapsed ? '4px 0 24px -8px rgba(0,0,0,0.25)' : '8px 0 40px -8px rgba(0,0,0,0.45)',
         }}
       >
-        <SidebarContent {...sidebarProps} />
-      </aside>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-accent/20 to-transparent" />
+          <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-accent/[0.03] to-transparent" />
+        </div>
+        <div className="relative flex flex-col h-full">
+          <SidebarContent {...sidebarProps} />
+        </div>
+      </motion.aside>
       <div className="hidden lg:block shrink-0 w-16" />
 
       <div

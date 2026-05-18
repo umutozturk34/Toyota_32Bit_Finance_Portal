@@ -928,6 +928,8 @@
       "calculating": "hesaplan\u0131yor",
       "lotAdded": "Lot Eklendi",
       "lotSold": "Lot Satıldı",
+      "lotSoldOrClosed": "Lot Satıldı / Kapatıldı",
+      "lotMixed": "Karma İşlem",
       "positionEvents": "Pozisyon Hareketleri",
       "empty": "Bu aral\u0131kta veri bulunmuyor"
     },

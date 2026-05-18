@@ -928,6 +928,8 @@
       "calculating": "calculating",
       "lotAdded": "Lot Added",
       "lotSold": "Lot Sold",
+      "lotSoldOrClosed": "Lot Sold / Closed",
+      "lotMixed": "Mixed Activity",
       "positionEvents": "Position Events",
       "empty": "No data in this range"
     },

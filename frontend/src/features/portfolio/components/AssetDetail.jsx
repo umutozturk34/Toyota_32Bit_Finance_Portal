@@ -173,7 +173,7 @@ function buildAssetChartOption(data, isDark, t, convertAt, displayCurrency, lots
         },
       },
       markLine: lots.length > 0 ? buildLotMarkLines(lots, isDark) : undefined,
-      markPoint: lots.length > 0 ? buildLotMarkPoints(lots, t, isDark, convertAt, displayCurrency) : undefined,
+      markPoint: lots.length > 0 ? buildLotMarkPoints(lots, t, isDark, convertAt, displayCurrency, seriesData) : undefined,
     }],
   };
 }
@@ -190,8 +190,7 @@ function buildLotMarkLines(lots, isDark) {
         seen.add(key);
         data.push({
           xAxis: new Date(lot.entryDate).getTime(),
-          lineStyle: { color: buyColor, type: 'dashed', width: 1, opacity: 0.4 },
-          symbol: ['none', 'none'],
+          lineStyle: { color: buyColor, type: 'dashed', width: 1, opacity: 0.3 },
           label: { show: false },
         });
       }
@@ -202,17 +201,36 @@ function buildLotMarkLines(lots, isDark) {
         seen.add(key);
         data.push({
           xAxis: new Date(lot.exitDate).getTime(),
-          lineStyle: { color: sellColor, type: 'dashed', width: 1, opacity: 0.4 },
-          symbol: ['none', 'none'],
+          lineStyle: { color: sellColor, type: 'dashed', width: 1, opacity: 0.3 },
           label: { show: false },
         });
       }
     }
   });
-  return { silent: true, animation: false, data };
+  return {
+    silent: true,
+    animation: false,
+    symbol: ['none', 'none'],
+    symbolSize: 0,
+    data,
+  };
 }
 
-function buildLotMarkPoints(lots, t, isDark, convertAt, displayCurrency) {
+function nearestSeriesY(seriesData, ts) {
+  if (!seriesData || seriesData.length === 0) return null;
+  let bestY = null;
+  let bestDiff = Infinity;
+  for (const d of seriesData) {
+    const diff = Math.abs(d.value[0] - ts);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestY = d.value[1];
+    }
+  }
+  return bestY;
+}
+
+function buildLotMarkPoints(lots, t, isDark, convertAt, displayCurrency, seriesData) {
   const buyColor = isDark ? '#10b981' : '#059669';
   const sellColor = isDark ? '#ef4444' : '#dc2626';
   const targetCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency ? 'TRY' : displayCurrency;
@@ -233,16 +251,17 @@ function buildLotMarkPoints(lots, t, isDark, convertAt, displayCurrency) {
     const key = `${kind}|${iso}`;
     const qty = Number(lot.quantity) || 0;
     const priceConverted = Number(convertAt(Number(price), 'TRY', iso) ?? price);
+    const signature = `${iso}|${Number(price).toFixed(6)}`;
     if (!grouped.has(key)) {
       grouped.set(key, {
         kind, iso, ts: new Date(date).getTime(),
-        totalQty: 0, totalValue: 0, count: 0,
+        totalQty: 0, totalValue: 0, signatures: new Set(),
       });
     }
     const g = grouped.get(key);
     g.totalQty += qty;
     g.totalValue += priceConverted * qty;
-    g.count += 1;
+    g.signatures.add(signature);
   };
   lots.forEach((lot) => {
     addToGroup(lot, 'entry');
@@ -255,17 +274,19 @@ function buildLotMarkPoints(lots, t, isDark, convertAt, displayCurrency) {
     const labelText = isEntry ? buyLabel : sellLabel;
     const letter = labelText.charAt(0).toUpperCase();
     const avgPrice = g.totalQty > 0 ? g.totalValue / g.totalQty : 0;
-    const formatter = g.count > 1 ? `${letter}${g.count}` : letter;
-    const name = g.count > 1
-      ? `${labelText} ${g.totalQty.toLocaleString()} (${g.count}×) · ${targetCurrency} ${avgPrice.toFixed(4)} avg`
+    const eventCount = g.signatures.size;
+    const formatter = eventCount > 1 ? `${letter}${eventCount}` : letter;
+    const name = eventCount > 1
+      ? `${labelText} ${g.totalQty.toLocaleString()} (${eventCount}×) · ${targetCurrency} ${avgPrice.toFixed(4)} avg`
       : `${labelText} ${g.totalQty.toLocaleString()} · ${targetCurrency} ${avgPrice.toFixed(4)}`;
+    const snapY = nearestSeriesY(seriesData, g.ts) ?? g.totalValue;
     data.push({
       name,
-      coord: [g.ts, g.totalValue],
+      coord: [g.ts, snapY],
       symbol: 'circle',
-      symbolSize: g.count > 1 ? 26 : 22,
+      symbolSize: eventCount > 1 ? 26 : 22,
       itemStyle: { color, borderColor: '#ffffff', borderWidth: 2, shadowBlur: 6, shadowColor: 'rgba(0,0,0,0.5)' },
-      label: { show: true, formatter, color: '#ffffff', fontSize: g.count > 1 ? 10 : 11, fontWeight: 700, position: 'inside' },
+      label: { show: true, formatter, color: '#ffffff', fontSize: eventCount > 1 ? 10 : 11, fontWeight: 700, position: 'inside' },
     });
   });
   return {
@@ -356,7 +377,41 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
     };
   }, [asset.assetType, lots]);
 
-  const effectiveAggregate = aggregate && aggregate.lotCount > 0 ? aggregate : viopAggregate;
+  const closedAggregate = useMemo(() => {
+    if (lots.length === 0) return null;
+    const allClosed = lots.every((l) => l.exitDate != null);
+    if (!allClosed) return null;
+    let totalEntryQty = 0;
+    let weightedNum = 0;
+    let totalRealizedPnl = 0;
+    let earliest = null;
+    for (const l of lots) {
+      const q = Number(l.quantity) || 0;
+      const ep = Number(l.entryPrice) || 0;
+      totalEntryQty += q;
+      weightedNum += q * ep;
+      totalRealizedPnl += Number(l.realizedPnlTry ?? l.pnlTry ?? 0);
+      if (l.entryDate && (!earliest || new Date(l.entryDate) < new Date(earliest))) {
+        earliest = l.entryDate;
+      }
+    }
+    const weightedAvg = totalEntryQty > 0 ? weightedNum / totalEntryQty : 0;
+    const pnlPercent = weightedAvg > 0 && totalEntryQty > 0
+      ? (totalRealizedPnl / (weightedAvg * totalEntryQty)) * 100
+      : 0;
+    return {
+      lotCount: lots.length,
+      totalQuantity: 0,
+      weightedAvgEntryPrice: weightedAvg,
+      earliestEntryDate: earliest,
+      currentPriceTry: 0,
+      totalMarketValueTry: 0,
+      totalPnlTry: totalRealizedPnl,
+      pnlPercent,
+    };
+  }, [lots]);
+
+  const effectiveAggregate = (aggregate && aggregate.lotCount > 0 ? aggregate : viopAggregate) || closedAggregate;
   const hasAggregate = effectiveAggregate && effectiveAggregate.lotCount > 0;
   const aggQuantity = hasAggregate ? effectiveAggregate.totalQuantity : asset.quantity;
   const aggEntryDate = hasAggregate ? effectiveAggregate.earliestEntryDate : asset.entryDate;

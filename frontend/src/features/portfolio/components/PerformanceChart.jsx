@@ -104,7 +104,24 @@ function buildEChartsOption(data, color, palette, money) {
 
   const markPointData = data
     .filter((d) => (d.events || []).some((e) => POSITION_EVENT_META[e.type]))
-    .map((d) => ({ coord: [d.time, d.value] }));
+    .map((d) => {
+      const evs = (d.events || []).filter((e) => POSITION_EVENT_META[e.type]);
+      const hasSold = evs.some((e) => e.type === 'POSITION_SOLD');
+      const hasAdded = evs.some((e) => e.type === 'POSITION_ADDED');
+      const color = hasSold && hasAdded
+        ? '#f59e0b'
+        : hasSold ? '#ef4444' : '#10b981';
+      return {
+        coord: [d.time, d.value],
+        itemStyle: {
+          color,
+          borderColor: color === '#ef4444' ? '#1f0a0a' : color === '#f59e0b' ? '#2a1a05' : '#0a1f17',
+          borderWidth: 2,
+          shadowColor: color + '99',
+          shadowBlur: 8,
+        },
+      };
+    });
 
   const values = data.map((d) => d.value);
   const dataMin = Math.min(...values);
@@ -282,12 +299,25 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
                 <span>{t('portfolio.performance.calculating')} · {String(backfillElapsed).padStart(2, '0')}s</span>
               </div>
             )}
-            <div className="flex items-center gap-1.5">
-              <span className="relative w-2 h-2">
-                <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-30" />
-                <span className="relative block w-2 h-2 rounded-full bg-success" />
-              </span>
-              <span className="text-[10px] text-fg-muted font-medium">{t('portfolio.performance.lotAdded')}</span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="relative w-2 h-2">
+                  <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-30" />
+                  <span className="relative block w-2 h-2 rounded-full bg-success" />
+                </span>
+                <span className="text-[10px] text-fg-muted font-medium">
+                  {t('portfolio.performance.lotAdded')}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="relative w-2 h-2">
+                  <span className="absolute inset-0 rounded-full bg-danger animate-ping opacity-30" />
+                  <span className="relative block w-2 h-2 rounded-full bg-danger" />
+                </span>
+                <span className="text-[10px] text-fg-muted font-medium">
+                  {t('portfolio.performance.lotSoldOrClosed', { defaultValue: 'Lot Sold/Closed' })}
+                </span>
+              </div>
             </div>
           </div>
         </div>

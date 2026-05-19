@@ -62,7 +62,7 @@ class PortfolioFacadeViewTest {
         when(summaryService.getSummary(1L, null)).thenReturn(summary());
         when(summaryService.getPositionsPaged(eq(1L), isNull(), isNull(), isNull(), isNull(), eq(0), eq(10)))
                 .thenReturn(PagedResponse.of(List.<PositionResponse>of(), 0, 10, 0));
-        when(summaryService.getAllocation(1L, "assetType", null)).thenReturn(List.<AllocationItem>of());
+        when(summaryService.getAllocation(1L, "assetType", null, null)).thenReturn(List.<AllocationItem>of());
 
         PortfolioViewResponse view = facade.getPortfolioView("user-1", 1L,
                 Set.of("summary", "positions", "allocation"));
@@ -84,7 +84,7 @@ class PortfolioFacadeViewTest {
         assertThat(view.allocation()).isNull();
         verify(summaryService, never())
                 .getPositionsPaged(anyLong(), isNull(), isNull(), isNull(), isNull(), anyInt(), anyInt());
-        verify(summaryService, never()).getAllocation(anyLong(), eq("assetType"), isNull());
+        verify(summaryService, never()).getAllocation(anyLong(), eq("assetType"), isNull(), isNull());
     }
 
     @Test

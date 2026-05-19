@@ -33,6 +33,7 @@ class SnapshotCalculationServiceTest {
 
     @Mock(answer = Answers.CALLS_REAL_METHODS) private AssetPricingPort pricingPort;
     @Mock private PortfolioPositionRepository positionRepository;
+    @Mock private com.finance.portfolio.derivative.repository.DerivativePositionRepository derivativePositionRepository;
     @Mock private PortfolioDailySnapshotRepository dailySnapshotRepository;
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
 
@@ -40,8 +41,11 @@ class SnapshotCalculationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SnapshotCalculationService(pricingPort, positionRepository,
-                dailySnapshotRepository, assetSnapshotRepository, new PortfolioProperties());
+        service = new SnapshotCalculationService(pricingPort, positionRepository, derivativePositionRepository,
+                dailySnapshotRepository, assetSnapshotRepository, new PortfolioProperties(),
+                new DerivativeSnapshotAssembler(pricingPort, assetSnapshotRepository));
+        org.mockito.Mockito.lenient().when(derivativePositionRepository.findByPortfolioId(org.mockito.ArgumentMatchers.anyLong()))
+                .thenReturn(List.of());
         org.mockito.Mockito.lenient().when(assetSnapshotRepository.findLatestPerAsset(org.mockito.ArgumentMatchers.anyLong()))
                 .thenReturn(List.of());
     }
@@ -54,7 +58,8 @@ class SnapshotCalculationServiceTest {
                 .thenReturn(new BigDecimal("2600000.0000"));
         LocalDateTime timestamp = LocalDateTime.of(2026, 4, 10, 23, 0);
 
-        PortfolioAssetDailySnapshot snapshot = service.buildAssetSnapshot(1L, pos, timestamp);
+        PortfolioAssetDailySnapshot snapshot = service
+                .buildAssetSnapshotsForPositions(1L, List.of(pos), timestamp).get(0);
 
         assertThat(snapshot.getMarketValueTry()).isEqualByComparingTo(new BigDecimal("1300000.0000"));
         assertThat(snapshot.getTotalCostTry()).isEqualByComparingTo(new BigDecimal("1250000.0000"));
@@ -70,11 +75,31 @@ class SnapshotCalculationServiceTest {
                 new BigDecimal("100.00000000"), new BigDecimal("50.0000"));
         when(pricingPort.getExitPriceTry(MarketType.STOCK, "DELISTED")).thenReturn(null);
 
-        PortfolioAssetDailySnapshot snapshot = service.buildAssetSnapshot(1L, pos, LocalDateTime.now());
+        PortfolioAssetDailySnapshot snapshot = service
+                .buildAssetSnapshotsForPositions(1L, List.of(pos), LocalDateTime.now()).get(0);
 
         assertThat(snapshot.getUnitPriceTry()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(snapshot.getMarketValueTry()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(snapshot.getPnlTry()).isEqualByComparingTo(new BigDecimal("-5000.0000"));
+    }
+
+    @Test
+    void shouldSumLotsOfSameAsset_whenBuildingAssetSnapshotsForPositions() {
+        PortfolioPosition lotA = stubPosition(AssetType.FUND, "BND",
+                new BigDecimal("100"), new BigDecimal("3.00"));
+        PortfolioPosition lotB = stubPosition(AssetType.FUND, "BND",
+                new BigDecimal("50"), new BigDecimal("3.10"));
+        when(pricingPort.getExitPriceTry(MarketType.FUND, "BND")).thenReturn(new BigDecimal("3.20"));
+
+        List<PortfolioAssetDailySnapshot> snapshots = service
+                .buildAssetSnapshotsForPositions(1L, List.of(lotA, lotB), LocalDateTime.now());
+
+        assertThat(snapshots).hasSize(1);
+        PortfolioAssetDailySnapshot snap = snapshots.get(0);
+        assertThat(snap.getQuantity()).isEqualByComparingTo(new BigDecimal("150"));
+        assertThat(snap.getTotalCostTry()).isEqualByComparingTo(new BigDecimal("455.0000"));
+        assertThat(snap.getMarketValueTry()).isEqualByComparingTo(new BigDecimal("480.0000"));
+        assertThat(snap.getPnlTry()).isEqualByComparingTo(new BigDecimal("25.0000"));
     }
 
     @Test
@@ -117,8 +142,9 @@ class SnapshotCalculationServiceTest {
         counting.seedPrice("STOCK", "THYAO.IS", new BigDecimal("50.0000"));
         counting.seedPrice("FUND", "AAK", new BigDecimal("110.0000"));
 
-        SnapshotCalculationService countedService = new SnapshotCalculationService(counting, positionRepository,
-                dailySnapshotRepository, assetSnapshotRepository, new PortfolioProperties());
+        SnapshotCalculationService countedService = new SnapshotCalculationService(counting, positionRepository, derivativePositionRepository,
+                dailySnapshotRepository, assetSnapshotRepository, new PortfolioProperties(),
+                new DerivativeSnapshotAssembler(counting, assetSnapshotRepository));
 
         Portfolio portfolio = Portfolio.builder().id(1L).build();
         when(positionRepository.findByPortfolioId(1L))
@@ -400,7 +426,7 @@ class SnapshotCalculationServiceTest {
 
         PortfolioDailySnapshot snap = service.buildAggregateSnapshotAtFromRows(portfolio,
                 LocalDateTime.of(2026, 5, 1, 18, 0),
-                List.of(pos), prices, List.of(row1, row2));
+                List.of(pos), List.of(), prices, List.of(row1, row2));
 
         assertThat(snap.getDailyPnlTry()).isEqualByComparingTo("150.0000");
     }
@@ -415,7 +441,7 @@ class SnapshotCalculationServiceTest {
 
         PortfolioDailySnapshot snap = service.buildAggregateSnapshotAtFromRows(portfolio,
                 LocalDateTime.now(),
-                List.of(pos), prices, null);
+                List.of(pos), List.of(), prices, null);
 
         assertThat(snap.getDailyPnlTry()).isNull();
     }

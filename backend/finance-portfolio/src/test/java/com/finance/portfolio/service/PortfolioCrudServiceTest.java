@@ -133,6 +133,28 @@ class PortfolioCrudServiceTest {
     }
 
     @Test
+    void shouldPersistClosedPosition_whenExitFieldsProvidedOnAdd() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        LocalDateTime entryDate = LocalDateTime.of(2024, 1, 15, 10, 0);
+        LocalDateTime exitDate = LocalDateTime.of(2024, 2, 20, 16, 30);
+        PositionRequest request = new PositionRequest(
+                "stock", "THYAO.IS", new BigDecimal("100"), entryDate, new BigDecimal("40"),
+                exitDate, new BigDecimal("55"));
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
+        stubTrackedAsset(TrackedAssetType.STOCK, "THYAO.IS");
+
+        service.addPosition(PORTFOLIO_ID, USER_SUB, request);
+
+        ArgumentCaptor<PortfolioPosition> captor = ArgumentCaptor.forClass(PortfolioPosition.class);
+        verify(positionRepository).save(captor.capture());
+        PortfolioPosition saved = captor.getValue();
+        assertThat(saved.isClosed()).isTrue();
+        assertThat(saved.getExitDate()).isEqualTo(exitDate);
+        assertThat(saved.getExitPrice()).isEqualByComparingTo(new BigDecimal("55"));
+    }
+
+    @Test
     void shouldThrowResourceNotFound_whenAddingPositionToPortfolioNotOwned() {
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.empty());
         PositionRequest request = new PositionRequest(
@@ -192,16 +214,41 @@ class PortfolioCrudServiceTest {
     }
 
     @Test
-    void shouldDeletePosition_whenOwnershipValid() {
+    void shouldDeletePositionAndCleanSnapshots_whenLastLotForAsset() {
         Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
         PortfolioPosition existing = stubPosition(PORTFOLIO_ID, AssetType.CRYPTO, "bitcoin",
                 new BigDecimal("0.5"), new BigDecimal("2400000"));
+        existing.setTrackedAsset(TrackedAsset.builder().id(7L)
+                .assetType(TrackedAssetType.CRYPTO).assetCode("bitcoin").build());
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
         when(positionRepository.findById(33L)).thenReturn(Optional.of(existing));
+        when(positionRepository.existsByPortfolioIdAndTrackedAsset_IdAndIdNot(PORTFOLIO_ID, 7L, 33L))
+                .thenReturn(false);
 
         service.deletePosition(PORTFOLIO_ID, 33L, USER_SUB);
 
         verify(positionRepository).delete(existing);
+        verify(assetSnapshotRepository).deleteByPortfolioIdAndAssetTypeAndAssetCode(
+                PORTFOLIO_ID, AssetType.CRYPTO, "bitcoin");
+    }
+
+    @Test
+    void shouldDeletePositionButKeepSnapshots_whenOtherLotExistsForSameAsset() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        PortfolioPosition existing = stubPosition(PORTFOLIO_ID, AssetType.CRYPTO, "bitcoin",
+                new BigDecimal("0.5"), new BigDecimal("2400000"));
+        existing.setTrackedAsset(TrackedAsset.builder().id(7L)
+                .assetType(TrackedAssetType.CRYPTO).assetCode("bitcoin").build());
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.findById(33L)).thenReturn(Optional.of(existing));
+        when(positionRepository.existsByPortfolioIdAndTrackedAsset_IdAndIdNot(PORTFOLIO_ID, 7L, 33L))
+                .thenReturn(true);
+
+        service.deletePosition(PORTFOLIO_ID, 33L, USER_SUB);
+
+        verify(positionRepository).delete(existing);
+        verify(assetSnapshotRepository, never()).deleteByPortfolioIdAndAssetTypeAndAssetCode(
+                any(), any(), any());
     }
 
     @Test

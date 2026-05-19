@@ -73,9 +73,13 @@ class DerivativePositionServiceTest {
 
     @BeforeEach
     void setUp() {
+        DerivativeSnapshotMaintenance snapshotMaintenance = new DerivativeSnapshotMaintenance(
+                candleRepository, historicalPricingPort, assetSnapshotRepository, snapshotCalculator);
+        DerivativePriceResolver priceResolver = new DerivativePriceResolver(
+                candleRepository, historicalPricingPort);
         service = new DerivativePositionService(positionRepository, portfolioRepository,
-                contractRepository, candleRepository, historyProvider, historicalPricingPort,
-                assetSnapshotRepository, snapshotCalculator, viopMarketData, mapper, eventPublisher);
+                contractRepository, assetSnapshotRepository, mapper, eventPublisher,
+                snapshotMaintenance, priceResolver);
 
         portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).name("test").build();
 
@@ -362,7 +366,7 @@ class DerivativePositionServiceTest {
         service.open(PORTFOLIO_ID, USER_SUB, req);
 
         verify(positionRepository).save(any(DerivativePosition.class));
-        verify(historyProvider).fetchAndPersist(eq("F_USDTRY0626"), any(), any());
+        verify(historyProvider, org.mockito.Mockito.never()).fetchAndPersist(any(), any(), any());
     }
 
     @Test
@@ -460,10 +464,13 @@ class DerivativePositionServiceTest {
                 "F_USDTRY0626", DerivativeDirection.LONG, LocalDate.of(2026, 4, 1),
                 null, new BigDecimal("1"), null, null);
         when(contractRepository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(contract));
-        when(viopMarketData.fetchHistory(eq("F_USDTRY0626"), any(), any(), any())).thenReturn(List.of(
-                new com.finance.market.viop.dto.ViopHistoryPoint(
-                        java.time.LocalDateTime.of(2026, 4, 1, 18, 0),
-                        new BigDecimal("35.40"))));
+        when(candleRepository.findFirstBySymbolAndCandleDateLessThanEqualOrderByCandleDateDesc(
+                eq("F_USDTRY0626"), any())).thenReturn(Optional.of(
+                com.finance.market.viop.model.ViopCandle.builder()
+                        .symbol("F_USDTRY0626")
+                        .candleDate(java.time.LocalDateTime.of(2026, 4, 1, 18, 0))
+                        .close(new BigDecimal("35.40"))
+                        .build()));
         when(positionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         service.open(PORTFOLIO_ID, USER_SUB, req);
@@ -593,8 +600,8 @@ class DerivativePositionServiceTest {
 
         service.updateOpen(POSITION_ID, PORTFOLIO_ID, USER_SUB, req);
 
-        verify(historyProvider, org.mockito.Mockito.atLeastOnce())
-                .fetchAndPersist(eq("F_USDTRY0626"), any(), any());
+        verify(historyProvider, org.mockito.Mockito.never())
+                .fetchAndPersist(any(), any(), any());
     }
 
     @Test
@@ -663,7 +670,7 @@ class DerivativePositionServiceTest {
 
         service.open(PORTFOLIO_ID, USER_SUB, req);
 
-        verify(historyProvider).fetchAndPersist(eq("F_USDTRY0626"), any(), any());
+        verify(historyProvider, org.mockito.Mockito.never()).fetchAndPersist(any(), any(), any());
     }
 
     @Test
@@ -680,11 +687,12 @@ class DerivativePositionServiceTest {
                 .build();
         when(candleRepository.findBySymbolAndCandleDateBetweenOrderByCandleDateAsc(
                 eq("F_USDTRY0626"), any(), any())).thenReturn(List.of(candle));
-        when(snapshotCalculator.buildDerivativeAssetSnapshotAt(any(), any(), any(), any(), any()))
+        when(snapshotCalculator.buildDerivativeAssetSnapshotAt(any(), any(), any(), any(), any(), any()))
                 .thenReturn(com.finance.portfolio.model.PortfolioAssetDailySnapshot.builder().build());
 
         service.open(PORTFOLIO_ID, USER_SUB, req);
 
-        verify(assetSnapshotRepository, org.mockito.Mockito.atLeastOnce()).save(any());
+        verify(assetSnapshotRepository).saveAll(org.mockito.ArgumentMatchers.argThat(
+                c -> ((java.util.Collection<?>) c).size() >= 1));
     }
 }

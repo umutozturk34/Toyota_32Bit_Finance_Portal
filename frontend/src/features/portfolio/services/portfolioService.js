@@ -65,9 +65,10 @@ export const portfolioService = {
     return res.data.data;
   },
 
-  getAllocation: async (portfolioId, mode = 'assetType', assetType) => {
+  getAllocation: async (portfolioId, mode = 'assetType', assetType, limit) => {
     const params = { mode };
     if (assetType) params.assetType = assetType;
+    if (limit) params.limit = limit;
     const res = await api.get(`${BASE}/${portfolioId}/allocation`, { params });
     return res.data.data;
   },

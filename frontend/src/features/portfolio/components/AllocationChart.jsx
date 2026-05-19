@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -10,6 +10,7 @@ import { useMoney } from '../../../shared/hooks/useMoney';
 import { usePortfolioAllocation } from '../hooks/usePortfolioData';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
+import FilterTabs from '../../../shared/components/form/FilterTabs';
 import {
   ASSET_TYPE_CHART_COLORS as ASSET_TYPE_COLORS,
   ASSET_TYPE_TABS as TYPE_TABS,
@@ -26,10 +27,32 @@ export default function AllocationChart({ allocation, portfolioId }) {
   const { isDark } = useTheme();
   const { format: money, formatCompact: moneyCompact } = useMoney();
   const [activeTab, setActiveTab] = useSessionState('portfolio-alloc-tab', 'ALL');
-  const assetLabel = useCallback((id) => t(`assets.labels.${id}`, { defaultValue: id }), [t]);
+  const assetLabel = useCallback((id) => {
+    if (id === 'CASH') return t('portfolio.allocation.closedLabel');
+    if (id === 'OTHER') return t('portfolio.allocation.otherLabel');
+    return t(`assets.labels.${id}`, { defaultValue: id });
+  }, [t]);
+  const chartRef = useRef(null);
+  const [hoveredSliceName, setHoveredSliceName] = useState(null);
+
+  const highlightSlice = useCallback((name) => {
+    const inst = chartRef.current?.getEchartsInstance?.();
+    if (inst) inst.dispatchAction({ type: 'highlight', seriesIndex: 0, name });
+  }, []);
+  const downplaySlice = useCallback((name) => {
+    const inst = chartRef.current?.getEchartsInstance?.();
+    if (inst) inst.dispatchAction({ type: 'downplay', seriesIndex: 0, name });
+  }, []);
+  const chartEvents = useMemo(() => ({
+    mouseover: (params) => setHoveredSliceName(params?.name ?? null),
+    mouseout: () => setHoveredSliceName(null),
+  }), []);
 
   const { data: assetData, isFetching: assetLoading } = usePortfolioAllocation(
-    activeTab !== 'ALL' ? portfolioId : null, 'assetCode', activeTab !== 'ALL' ? activeTab : undefined
+    activeTab !== 'ALL' ? portfolioId : null,
+    'assetCode',
+    activeTab !== 'ALL' ? activeTab : undefined,
+    6
   );
 
   const availableTypes = useMemo(() => {
@@ -58,13 +81,21 @@ export default function AllocationChart({ allocation, portfolioId }) {
       ? assetLabel(item.label)
       : item.label;
     const value = Number(item.valueTry);
-    const isNegativeCash = item.label === 'CASH' && value < 0;
-    const color = isNegativeCash
-      ? '#ef4444'
+    const isCash = item.label === 'CASH';
+    const realized = item.realizedPnlTry != null ? Number(item.realizedPnlTry) : null;
+    const color = isCash
+      ? (realized != null && realized < 0 ? '#ef4444' : '#10b981')
       : activeTab === 'ALL'
         ? (ASSET_TYPE_COLORS[item.label] || COLORS[0])
         : (COLORS[idx % COLORS.length]);
-    return { name: label, value: Math.abs(value), itemStyle: { color } };
+    return {
+      name: label,
+      value: Math.abs(value),
+      itemStyle: { color },
+      _cost: item.costTry != null ? Number(item.costTry) : null,
+      _realized: realized,
+      _isCash: isCash,
+    };
   }), [finalData, activeTab, assetLabel]);
 
   const totalLabel = activeTab === 'ALL' ? t('portfolio.allocation.total') : assetLabel(activeTab);
@@ -80,15 +111,29 @@ export default function AllocationChart({ allocation, portfolioId }) {
     animation: true,
     tooltip: {
       trigger: 'item',
+      appendToBody: true,
+      confine: false,
       backgroundColor: tooltipBg,
       borderColor: tooltipBorder,
       textStyle: { color: tooltipFg, fontSize: 11 },
+      extraCssText: 'z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.25);',
       formatter: (params) => {
         const pct = totalValue > 0 ? ((params.value / totalValue) * 100).toFixed(1) : '0.0';
+        const data = params.data || {};
+        let breakdown = '';
+        if (data._isCash && data._cost != null && data._realized != null) {
+          const realized = data._realized;
+          const sign = realized >= 0 ? '+' : '−';
+          const realizedColor = realized >= 0 ? '#10b981' : '#ef4444';
+          breakdown = `<div style="margin-top:6px;padding-top:6px;border-top:1px solid ${tooltipBorder};font-size:11px;font-family:ui-monospace,monospace;color:${tooltipFg}">
+              ${money(data._cost)} <span style="color:${realizedColor}">${sign} ${money(Math.abs(realized))}</span>
+            </div>`;
+        }
         return `<div style="padding:4px 0">
           <div style="font-size:11px;color:${tooltipFg};opacity:0.85;margin-bottom:2px">${params.name}</div>
           <div style="font-size:13px;font-family:ui-monospace,monospace;font-weight:700;color:${tooltipFg}">${money(params.value)}</div>
           <div style="font-size:10px;color:${labelMuted}">%${pct}</div>
+          ${breakdown}
         </div>`;
       },
     },
@@ -123,29 +168,15 @@ export default function AllocationChart({ allocation, portfolioId }) {
         <span className="text-sm font-semibold text-fg">{t('portfolio.allocation.title')}</span>
       </div>
 
-      <div className="flex gap-1 rounded-lg border border-border-default bg-bg-elevated p-1 w-fit flex-wrap">
-        {TYPE_TABS.map(({ id }) => {
-          if (id !== 'ALL' && !availableTypes.has(id)) return null;
-          return (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id)}
-              className="relative rounded-md px-3 py-1.5 text-xs font-medium transition-all border-none cursor-pointer bg-transparent"
-            >
-              {activeTab === id && (
-                <motion.span
-                  layoutId="alloc-tab"
-                  className="absolute inset-0 rounded-md bg-accent/15"
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                />
-              )}
-              <span className={`relative z-10 ${activeTab === id ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
-                {assetLabel(id)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      <FilterTabs
+        items={TYPE_TABS.filter(({ id }) => id !== 'ALL' && availableTypes.has(id))
+          .map(({ id }) => ({ type: id, label: assetLabel(id) }))}
+        activeId={activeTab}
+        onSelect={setActiveTab}
+        allLabel={assetLabel('ALL')}
+        showAll
+        layoutId="alloc-tab"
+      />
 
       <Card variant="elevated" radius="2xl" padding="lg" backdropBlur interactive={false}>
         {loading ? (
@@ -159,11 +190,13 @@ export default function AllocationChart({ allocation, portfolioId }) {
         ) : (
           <div className="space-y-4">
             <ReactECharts
+              ref={chartRef}
               key={`${isDark}-${activeTab}`}
               option={option}
               notMerge
               style={{ height: 220 }}
               opts={{ renderer: 'canvas' }}
+              onEvents={chartEvents}
             />
 
             <div className="space-y-1.5">
@@ -171,9 +204,11 @@ export default function AllocationChart({ allocation, portfolioId }) {
                 const value = Number(item.valueTry);
                 const absValue = Math.abs(value);
                 const pct = totalValue > 0 ? (absValue / totalValue) * 100 : 0;
-                const isNegativeCash = item.label === 'CASH' && value < 0;
-                const color = isNegativeCash
-                  ? '#ef4444'
+                const isCash = item.label === 'CASH';
+                const cost = item.costTry != null ? Number(item.costTry) : null;
+                const realized = item.realizedPnlTry != null ? Number(item.realizedPnlTry) : null;
+                const color = isCash
+                  ? (realized != null && realized < 0 ? '#ef4444' : '#10b981')
                   : activeTab === 'ALL'
                     ? (ASSET_TYPE_COLORS[item.label] || COLORS[0])
                     : (COLORS[idx % COLORS.length]);
@@ -181,18 +216,36 @@ export default function AllocationChart({ allocation, portfolioId }) {
                   ? assetLabel(item.label)
                   : item.label;
 
+                const isHovered = hoveredSliceName === label;
+                const showBreakdown = isCash && cost != null && realized != null;
                 return (
                   <div
                     key={label}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-surface/50 transition-colors"
+                    onMouseEnter={() => highlightSlice(label)}
+                    onMouseLeave={() => downplaySlice(label)}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 cursor-default transition-colors ${
+                      isHovered ? 'bg-surface/70 ring-1 ring-accent/30' : 'hover:bg-surface/50'
+                    }`}
                   >
                     <span
                       className="w-3 h-3 rounded-full shrink-0"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="text-xs font-medium text-fg flex-1 truncate">{label}</span>
-                    <span className="text-xs font-mono text-fg-muted">{pct.toFixed(1)}%</span>
-                    <span className={`text-xs font-mono font-semibold ${isNegativeCash ? 'text-danger' : 'text-fg'}`}>{money(value)}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-fg truncate">{label}</p>
+                      {showBreakdown && (
+                        <p className="text-[10px] font-mono mt-0.5">
+                          <span className="text-fg-muted">{money(cost)}</span>
+                          <span className={realized >= 0 ? 'text-success' : 'text-danger'}>
+                            {' '}{realized >= 0 ? '+' : '−'} {money(Math.abs(realized))}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-xs font-mono text-fg-muted shrink-0 tabular-nums">{pct.toFixed(1)}%</span>
+                    {!showBreakdown && (
+                      <span className={`text-xs font-mono font-semibold shrink-0 ${isCash ? (realized != null && realized < 0 ? 'text-danger' : 'text-success') : 'text-fg'}`}>{money(value)}</span>
+                    )}
                   </div>
                 );
               })}

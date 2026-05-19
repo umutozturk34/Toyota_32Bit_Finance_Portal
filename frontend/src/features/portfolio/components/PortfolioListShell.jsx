@@ -59,7 +59,7 @@ export default function PortfolioListShell({
           variants={containerVariants(0.04)}
           initial="hidden"
           animate="show"
-          className="space-y-2 min-h-[500px]"
+          className="space-y-2"
         >
           {children}
         </motion.div>

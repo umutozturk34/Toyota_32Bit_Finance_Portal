@@ -16,7 +16,8 @@ const VALUE_CARD_DEFS = [
 ];
 
 function PnlCard({ label, value, percent }) {
-  const { format: money } = useMoney();
+  const { format: money, formatCompact: moneyCompact } = useMoney();
+  const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
   const cls = getChangeClass(value);
   const Icon = value >= 0 ? TrendingUp : TrendingDown;
   return (
@@ -26,29 +27,32 @@ function PnlCard({ label, value, percent }) {
       variant="elevated"
       accentBar={value >= 0 ? 'success' : 'danger'}
       radius="xl"
-      padding="md"
+      padding="sm"
       interactive
-      className="space-y-3"
+      className="space-y-1.5"
     >
-      <div className="flex items-center gap-2.5">
-        <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${value >= 0 ? 'bg-success/10' : 'bg-danger/10'}`}>
-          <Icon className={`h-4 w-4 ${value >= 0 ? 'text-success' : 'text-danger'}`} />
+      <div className="flex items-center gap-2">
+        <div className={`flex items-center justify-center w-6 h-6 rounded-md ${value >= 0 ? 'bg-success/10' : 'bg-danger/10'}`}>
+          <Icon className={`h-3.5 w-3.5 ${value >= 0 ? 'text-success' : 'text-danger'}`} />
         </div>
-        <span className="text-xs text-fg-muted font-medium">{label}</span>
+        <span className="text-[11px] text-fg-muted font-medium">{label}</span>
       </div>
-      <p className={`text-lg font-semibold font-mono ${changeColors[cls]}`}>
-        {money(value)}
-      </p>
-      <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium font-mono ${changeBg[cls]} ${changeColors[cls]}`}>
-        {formatPercent(percent)}
-      </span>
+      <div className="flex items-baseline justify-between gap-2">
+        <p className={`text-base font-semibold font-mono ${changeColors[cls]} truncate`} title={money(value)}>
+          {bigMoney(value)}
+        </p>
+        <span className={`shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium font-mono ${changeBg[cls]} ${changeColors[cls]}`}>
+          {formatPercent(percent)}
+        </span>
+      </div>
     </Card>
   );
 }
 
 export default function SummaryCards({ summary: initialSummary, portfolioId }) {
   const { t } = useTranslation();
-  const { format: money } = useMoney();
+  const { format: money, formatCompact: moneyCompact } = useMoney();
+  const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
   const [activeFilter, setActiveFilter] = useSessionState('portfolio-summary-filter', null);
 
   const { data: filteredSummary, isFetching: loading } = usePortfolioSummary(portfolioId, activeFilter);
@@ -96,18 +100,18 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
             variants={cardVariants}
             variant="elevated"
             radius="xl"
-            padding="md"
+            padding="sm"
             interactive
-            className={`space-y-3 border-t-2 ${border}`}
+            className={`space-y-1.5 border-t-2 ${border}`}
           >
-            <div className="flex items-center gap-2.5">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-lg ${iconBg}`}>
-                <Icon className={`h-4 w-4 ${iconColor}`} />
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center justify-center w-6 h-6 rounded-md ${iconBg}`}>
+                <Icon className={`h-3.5 w-3.5 ${iconColor}`} />
               </div>
-              <span className="text-xs text-fg-muted font-medium">{t(labelKey)}</span>
+              <span className="text-[11px] text-fg-muted font-medium">{t(labelKey)}</span>
             </div>
-            <p className="text-lg font-semibold font-mono text-fg">
-              {money(summary?.[key])}
+            <p className="text-base font-semibold font-mono text-fg truncate" title={money(summary?.[key])}>
+              {bigMoney(summary?.[key])}
             </p>
           </Card>
         ))}

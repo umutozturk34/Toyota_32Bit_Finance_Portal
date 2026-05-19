@@ -15,6 +15,7 @@ import { cardVariants } from '../../../shared/utils/animations';
 import RangeSelector from '../../../shared/components/form/RangeSelector';
 import PositionFormModal from './PositionFormModal';
 import MarketOpenDerivativeModal from './MarketOpenDerivativeModal';
+import PositionStatusBadge from './PositionStatusBadge';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
 import IconButton from '../../../shared/components/buttons/IconButton';
@@ -32,23 +33,31 @@ const STAT_CARD_DEFS = [
 const LINE_COLOR = '#6366f1';
 const UNIT_COLOR = '#f59e0b';
 
-function AssetChart({ data, isDark, t, convertAt, displayCurrency, lots = [] }) {
+function AssetChart({ data, isDark, t, convertAt, displayCurrency }) {
   const option = useMemo(
-    () => buildAssetChartOption(data, isDark, t, convertAt, displayCurrency, lots),
-    [data, isDark, t, convertAt, displayCurrency, lots]
+    () => buildAssetChartOption(data, isDark, t, convertAt, displayCurrency),
+    [data, isDark, t, convertAt, displayCurrency]
   );
   if (!option) return null;
-  return <ReactECharts option={option} notMerge lazyUpdate style={{ height: 300 }} opts={{ renderer: 'canvas' }} />;
+  return <ReactECharts option={option} notMerge lazyUpdate style={{ height: 340 }} opts={{ renderer: 'canvas' }} />;
 }
 
 function formatChartMoney(value, currency) {
   if (value == null || !Number.isFinite(value)) return 'N/A';
   const abs = Math.abs(value);
+  if (abs >= 100_000) {
+    return new Intl.NumberFormat(currentLocaleTag(), {
+      notation: 'compact',
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 1,
+    }).format(value);
+  }
   const maxDecimals = abs < 10 ? 4 : abs < 1000 ? 3 : 2;
   return formatPrice(value, { currency, minDecimals: 2, maxDecimals });
 }
 
-function buildAssetChartOption(data, isDark, t, convertAt, displayCurrency, lots = []) {
+function buildAssetChartOption(data, isDark, t, convertAt, displayCurrency) {
   if (!data || data.length === 0) return null;
 
   const muted = isDark ? '#6b6b7a' : '#94a3b8';
@@ -64,29 +73,9 @@ function buildAssetChartOption(data, isDark, t, convertAt, displayCurrency, lots
       value: [new Date(d.timestamp).getTime(), Number(convertAt(d.marketValueTry, 'TRY', dateStr) ?? 0)],
       unitPrice: Number(convertAt(d.unitPriceTry, 'TRY', dateStr) ?? 0),
       quantity: Number(d.quantity ?? 0),
+      events: d.events || [],
     };
   });
-
-  lots.forEach((lot) => {
-    const qty = Number(lot.quantity) || 0;
-    if (lot.entryDate && lot.entryPrice != null) {
-      const iso = String(lot.entryDate).slice(0, 10);
-      const entryPriceConv = Number(convertAt(Number(lot.entryPrice), 'TRY', iso) ?? lot.entryPrice);
-      const ts = new Date(lot.entryDate).getTime();
-      if (!seriesData.some((d) => d.value[0] === ts)) {
-        seriesData.push({ value: [ts, entryPriceConv * qty], unitPrice: entryPriceConv, quantity: qty });
-      }
-    }
-    if (lot.exitDate && lot.exitPrice != null) {
-      const iso = String(lot.exitDate).slice(0, 10);
-      const exitPriceConv = Number(convertAt(Number(lot.exitPrice), 'TRY', iso) ?? lot.exitPrice);
-      const ts = new Date(lot.exitDate).getTime();
-      if (!seriesData.some((d) => d.value[0] === ts)) {
-        seriesData.push({ value: [ts, exitPriceConv * qty], unitPrice: exitPriceConv, quantity: qty });
-      }
-    }
-  });
-  seriesData.sort((a, b) => a.value[0] - b.value[0]);
 
   const values = seriesData.map((d) => d.value[1]);
   const dataMin = Math.min(...values);
@@ -94,21 +83,54 @@ function buildAssetChartOption(data, isDark, t, convertAt, displayCurrency, lots
   const span = dataMax - dataMin;
   const padding = span > 0 ? span * 0.08 : dataMax * 0.05;
 
-  const lotTimestamps = lots.flatMap((l) => [
-    l.entryDate ? new Date(l.entryDate).getTime() : null,
-    l.exitDate ? new Date(l.exitDate).getTime() : null,
-  ]).filter((t) => t != null);
   const seriesTimes = seriesData.map((d) => d.value[0]);
-  const xMin = Math.min(...seriesTimes, ...lotTimestamps);
-  const xMax = Math.max(...seriesTimes, ...lotTimestamps);
+  let xMin = Math.min(...seriesTimes);
+  let xMax = Math.max(...seriesTimes);
+  if (xMin === xMax) {
+    const halfDay = 12 * 3600 * 1000;
+    xMin -= halfDay;
+    xMax += halfDay;
+  }
 
+  const uniqueXCount = new Set(seriesData.map((d) => d.value[0])).size;
+  const showZoom = data.length >= 2 && uniqueXCount >= 2;
   return {
     backgroundColor: 'transparent',
     animation: data.length < 200,
-    grid: { left: 65, right: 24, top: 34, bottom: 30 },
-    dataZoom: [
-      { type: 'inside', xAxisIndex: 0, filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: true, moveOnMouseWheel: false, preventDefaultMouseMove: true },
-    ],
+    grid: { left: 65, right: 24, top: 34, bottom: showZoom ? 92 : 40 },
+    dataZoom: showZoom ? [
+      {
+        type: 'inside',
+        xAxisIndex: 0,
+        filterMode: 'none',
+        zoomOnMouseWheel: true,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false,
+        preventDefaultMouseMove: true,
+      },
+      {
+        type: 'slider',
+        xAxisIndex: 0,
+        height: 26,
+        bottom: 8,
+        filterMode: 'none',
+        borderColor: 'transparent',
+        backgroundColor: 'transparent',
+        dataBackground: {
+          lineStyle: { color: '#6366f160', width: 1 },
+          areaStyle: { color: '#6366f120' },
+        },
+        selectedDataBackground: {
+          lineStyle: { color: '#6366f1', width: 1 },
+          areaStyle: { color: '#6366f140' },
+        },
+        fillerColor: 'rgba(99,102,241,0.12)',
+        handleStyle: { color: '#6366f1', borderColor: '#6366f1' },
+        moveHandleStyle: { color: '#6366f1', opacity: 0.4 },
+        showDetail: false,
+        brushSelect: false,
+      },
+    ] : [],
     tooltip: {
       trigger: 'axis',
       backgroundColor: tooltipBg,
@@ -142,7 +164,15 @@ function buildAssetChartOption(data, isDark, t, convertAt, displayCurrency, lots
       max: xMax,
       axisLine: { show: false },
       axisTick: { show: false },
-      axisLabel: { color: muted, fontSize: 10 },
+      axisLabel: {
+        color: muted, fontSize: 10,
+        hideOverlap: true,
+        formatter: (val) => {
+          const d = new Date(val);
+          return `${d.getDate()} ${d.toLocaleString(currentLocaleTag(), { month: 'short' })}`;
+        },
+      },
+      minInterval: 24 * 3600 * 1000,
       splitLine: { show: false },
     },
     yAxis: {
@@ -163,7 +193,7 @@ function buildAssetChartOption(data, isDark, t, convertAt, displayCurrency, lots
       data: seriesData,
       itemStyle: { color: LINE_COLOR },
       lineStyle: { width: 2.2, color: LINE_COLOR },
-      areaStyle: {
+      areaStyle: seriesData.length < 2 ? undefined : {
         color: {
           type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [
@@ -172,138 +202,43 @@ function buildAssetChartOption(data, isDark, t, convertAt, displayCurrency, lots
           ],
         },
       },
-      markLine: lots.length > 0 ? buildLotMarkLines(lots, isDark) : undefined,
-      markPoint: lots.length > 0 ? buildLotMarkPoints(lots, t, isDark, convertAt, displayCurrency, seriesData) : undefined,
+      markPoint: buildEventMarkPoints(seriesData),
     }],
   };
 }
 
-function buildLotMarkLines(lots, isDark) {
-  const buyColor = isDark ? '#10b981' : '#059669';
-  const sellColor = isDark ? '#ef4444' : '#dc2626';
-  const seen = new Set();
-  const data = [];
-  lots.forEach((lot) => {
-    if (lot.entryDate && lot.entryPrice != null) {
-      const key = `entry|${String(lot.entryDate).slice(0, 10)}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        data.push({
-          xAxis: new Date(lot.entryDate).getTime(),
-          lineStyle: { color: buyColor, type: 'dashed', width: 1, opacity: 0.3 },
-          label: { show: false },
-        });
-      }
-    }
-    if (lot.exitDate && lot.exitPrice != null) {
-      const key = `exit|${String(lot.exitDate).slice(0, 10)}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        data.push({
-          xAxis: new Date(lot.exitDate).getTime(),
-          lineStyle: { color: sellColor, type: 'dashed', width: 1, opacity: 0.3 },
-          label: { show: false },
-        });
-      }
-    }
-  });
-  return {
-    silent: true,
-    animation: false,
-    symbol: ['none', 'none'],
-    symbolSize: 0,
-    data,
-  };
-}
+const POSITION_EVENT_TYPES = new Set(['POSITION_ADDED', 'POSITION_SOLD']);
 
-function nearestSeriesY(seriesData, ts) {
-  if (!seriesData || seriesData.length === 0) return null;
-  let bestY = null;
-  let bestDiff = Infinity;
-  for (const d of seriesData) {
-    const diff = Math.abs(d.value[0] - ts);
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      bestY = d.value[1];
-    }
-  }
-  return bestY;
-}
-
-function buildLotMarkPoints(lots, t, isDark, convertAt, displayCurrency, seriesData) {
-  const buyColor = isDark ? '#10b981' : '#059669';
-  const sellColor = isDark ? '#ef4444' : '#dc2626';
-  const targetCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency ? 'TRY' : displayCurrency;
-  const isViop = lots[0]?.assetType === 'VIOP';
-  const buyLabel = isViop
-    ? t('assetDetail.lots.lotMarkerOpen', { defaultValue: 'AÇ' })
-    : t('assetDetail.lots.lotMarkerBuy', { defaultValue: 'AL' });
-  const sellLabel = isViop
-    ? t('assetDetail.lots.lotMarkerClose', { defaultValue: 'KAPAT' })
-    : t('assetDetail.lots.lotMarkerSell', { defaultValue: 'SAT' });
-  const grouped = new Map();
-  const addToGroup = (lot, kind) => {
-    const isEntry = kind === 'entry';
-    const date = isEntry ? lot.entryDate : lot.exitDate;
-    const price = isEntry ? lot.entryPrice : lot.exitPrice;
-    if (!date || price == null) return;
-    const iso = String(date).slice(0, 10);
-    const key = `${kind}|${iso}`;
-    const qty = Number(lot.quantity) || 0;
-    const priceConverted = Number(convertAt(Number(price), 'TRY', iso) ?? price);
-    const signature = `${iso}|${Number(price).toFixed(6)}`;
-    if (!grouped.has(key)) {
-      grouped.set(key, {
-        kind, iso, ts: new Date(date).getTime(),
-        totalQty: 0, totalValue: 0, signatures: new Set(),
-      });
-    }
-    const g = grouped.get(key);
-    g.totalQty += qty;
-    g.totalValue += priceConverted * qty;
-    g.signatures.add(signature);
-  };
-  lots.forEach((lot) => {
-    addToGroup(lot, 'entry');
-    addToGroup(lot, 'exit');
-  });
-  const data = [];
-  grouped.forEach((g) => {
-    const isEntry = g.kind === 'entry';
-    const color = isEntry ? buyColor : sellColor;
-    const labelText = isEntry ? buyLabel : sellLabel;
-    const letter = labelText.charAt(0).toUpperCase();
-    const avgPrice = g.totalQty > 0 ? g.totalValue / g.totalQty : 0;
-    const eventCount = g.signatures.size;
-    const formatter = eventCount > 1 ? `${letter}${eventCount}` : letter;
-    const name = eventCount > 1
-      ? `${labelText} ${g.totalQty.toLocaleString()} (${eventCount}×) · ${targetCurrency} ${avgPrice.toFixed(4)} avg`
-      : `${labelText} ${g.totalQty.toLocaleString()} · ${targetCurrency} ${avgPrice.toFixed(4)}`;
-    const snapY = nearestSeriesY(seriesData, g.ts) ?? g.totalValue;
-    data.push({
-      name,
-      coord: [g.ts, snapY],
-      symbol: 'circle',
-      symbolSize: eventCount > 1 ? 26 : 22,
-      itemStyle: { color, borderColor: '#ffffff', borderWidth: 2, shadowBlur: 6, shadowColor: 'rgba(0,0,0,0.5)' },
-      label: { show: true, formatter, color: '#ffffff', fontSize: eventCount > 1 ? 10 : 11, fontWeight: 700, position: 'inside' },
+function buildEventMarkPoints(seriesData) {
+  const data = seriesData
+    .filter((d) => (d.events || []).some((e) => POSITION_EVENT_TYPES.has(e.type)))
+    .map((d) => {
+      const evs = d.events.filter((e) => POSITION_EVENT_TYPES.has(e.type));
+      const hasSold = evs.some((e) => e.type === 'POSITION_SOLD');
+      const hasAdded = evs.some((e) => e.type === 'POSITION_ADDED');
+      const color = hasSold && hasAdded ? '#f59e0b' : hasSold ? '#ef4444' : '#10b981';
+      const borderColor = color === '#ef4444' ? '#1f0a0a' : color === '#f59e0b' ? '#2a1a05' : '#0a1f17';
+      return {
+        coord: [d.value[0], d.value[1]],
+        itemStyle: { color, borderColor, borderWidth: 2, shadowColor: color + '99', shadowBlur: 8 },
+      };
     });
-  });
+  if (data.length === 0) return undefined;
   return {
-    silent: false,
+    symbol: 'circle',
+    symbolSize: 12,
+    label: { show: false },
+    emphasis: { scale: 1.3, label: { show: false } },
     animation: false,
     data,
-    tooltip: {
-      trigger: 'item',
-      formatter: (p) => `<span style="font-size:11px;font-weight:600">${p.name}</span>`,
-    },
   };
 }
 
 export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onEditLot, onDeleteLot, onSellLot, onReopenLot, hasActiveDialog = false }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { format: money } = useMoney();
+  const { format: money, formatCompact: moneyCompact } = useMoney();
+  const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
   const { convertAt, currency: displayCurrency } = useRateHistory();
   const [range, setRange] = useChartRange();
   const [addLotOpen, setAddLotOpen] = useState(false);
@@ -316,7 +251,12 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
     const anyOpen = lots.some((l) => l.exitDate == null);
     if (anyOpen) return null;
     const exits = lots
-      .map((l) => (l.exitDate ? new Date(l.exitDate).getTime() : null))
+      .map((l) => {
+        if (!l.exitDate) return null;
+        const d = new Date(l.exitDate);
+        d.setHours(23, 59, 59, 999);
+        return d.getTime();
+      })
       .filter((n) => n != null);
     return exits.length > 0 ? Math.max(...exits) : null;
   }, [lots]);
@@ -444,7 +384,11 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
   const displayLabel = asset.assetCode;
   const displayBadge = asset.assetImage || null;
   const displayBadgeText = asset.assetCode.replace('.IS', '').slice(0, 3).toUpperCase();
-  const displaySub = asset.assetName || t(`assets.labels.${asset.assetType}`, { defaultValue: asset.assetType });
+  const anyLotOpen = lots.some((l) => l.exitDate == null);
+  const rawAssetName = asset.assetName || t(`assets.labels.${asset.assetType}`, { defaultValue: asset.assetType });
+  const displaySub = anyLotOpen
+    ? rawAssetName.replace(/\s*·\s*KAPALI\s*$/i, '')
+    : rawAssetName;
 
   return (
     <div className="space-y-5">
@@ -574,7 +518,33 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
         backdropBlur
         className="space-y-3"
       >
-        <div className="flex items-center justify-end flex-wrap gap-2">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          {lots.length > 0 ? (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="relative w-2 h-2">
+                  <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-30" />
+                  <span className="relative block w-2 h-2 rounded-full bg-success" />
+                </span>
+                <span className="text-[10px] text-fg-muted font-medium">
+                  {t(asset.assetType === 'VIOP'
+                    ? 'assetDetail.lots.lotMarkerOpen'
+                    : 'portfolio.performance.lotAdded')}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="relative w-2 h-2">
+                  <span className="absolute inset-0 rounded-full bg-danger animate-ping opacity-30" />
+                  <span className="relative block w-2 h-2 rounded-full bg-danger" />
+                </span>
+                <span className="text-[10px] text-fg-muted font-medium">
+                  {t(asset.assetType === 'VIOP'
+                    ? 'assetDetail.lots.lotMarkerClose'
+                    : 'portfolio.performance.lotSoldOrClosed')}
+                </span>
+              </div>
+            </div>
+          ) : <span />}
           <RangeSelector value={range} onChange={setRange} layoutId="asset-range" size="sm" />
         </div>
 
@@ -591,11 +561,11 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
             </div>
           )}
           {series.length === 0 && !loading ? (
-            <div className="flex items-center justify-center h-[300px] text-sm text-fg-muted">
+            <div className="flex items-center justify-center h-[340px] text-sm text-fg-muted">
               {t('assetDetail.noDataInRange')}
             </div>
           ) : series.length > 0 ? (
-            <AssetChart data={series} isDark={isDark} t={t} convertAt={convertAt} displayCurrency={displayCurrency} lots={lots} />
+            <AssetChart data={series} isDark={isDark} t={t} convertAt={convertAt} displayCurrency={displayCurrency} />
           ) : null}
         </div>
       </Card>
@@ -624,58 +594,58 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
             </div>
           </div>
 
-          <div className="hidden md:grid md:grid-cols-[1fr_1fr_1fr_1.2fr_1.2fr_auto] gap-2 px-3 text-[10px] uppercase tracking-wide text-fg-muted font-medium">
-            <span>{t('assetDetail.lots.entryDate', { defaultValue: 'Giriş tarihi' })}</span>
-            <span className="text-right">{t('assetDetail.lots.entryPrice', { defaultValue: 'Giriş fiyatı' })}</span>
-            <span className="text-right">{t('assetDetail.lots.quantity', { defaultValue: 'Miktar' })}</span>
-            <span className="text-right">{t('assetDetail.lots.marketValue', { defaultValue: 'Piyasa değeri' })}</span>
-            <span className="text-right">{t('assetDetail.lots.pnl', { defaultValue: 'K/Z' })}</span>
-            <span />
+          <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_72px_minmax(0,0.7fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-3 px-3 py-1 text-[10px] uppercase tracking-wider text-fg-muted font-medium whitespace-nowrap">
+            <span>{t('portfolio.positions.entryDateCol')}</span>
+            <span>{t('portfolio.positions.exitDateLabel')}</span>
+            <span>{t('portfolio.positions.statusCol')}</span>
+            <span>{t('portfolio.positions.quantityCol')}</span>
+            <span>{t('portfolio.positions.entryPriceCol')}</span>
+            <span>{t('portfolio.positions.marketValueCol')}</span>
+            <span>{t('portfolio.positions.pnlCol')}</span>
+            <span>{t('portfolio.positions.actionsCol')}</span>
           </div>
 
           <div className="space-y-1.5">
             {lots.map((lot) => {
               const lotPnlClass = getChangeClass(lot.pnlTry);
               const isLotClosed = !!lot.exitDate;
-              const closedBadgeKey = lot.assetType === 'VIOP'
-                ? 'portfolio.derivatives.closed'
-                : 'portfolio.positions.statusSold';
               return (
                 <motion.div
                   key={lot.id}
                   layout
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`grid grid-cols-2 md:grid-cols-[1fr_1fr_1fr_1.2fr_1.2fr_auto] gap-2 items-center px-3 py-2 rounded-lg border border-border-default ${
+                  className={`grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_72px_minmax(0,0.7fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-3 items-center px-3 py-2 rounded-lg border border-border-default min-w-0 ${
                     isLotClosed ? 'bg-bg-elevated/50 opacity-70' : 'bg-bg-elevated hover:border-accent/40'
                   } transition-colors`}
                 >
-                  <span className="text-xs font-mono text-fg-muted">
+                  <span className="text-[11px] font-mono text-fg-muted text-left truncate">
                     {formatEntryDate(lot.entryDate)}
-                    {isLotClosed && (
-                      <span className="ml-1.5 inline-flex items-center rounded bg-warning/15 text-warning text-[9px] font-bold px-1 py-0.5">
-                        {t(closedBadgeKey, { defaultValue: lot.assetType === 'VIOP' ? 'KAPALI' : 'SATILDI' })}
-                      </span>
-                    )}
                   </span>
-                  <span className="text-xs font-mono text-fg text-right">
-                    {money(lot.entryPrice)}
+                  <span className="text-[11px] font-mono text-fg-muted text-left truncate">
+                    {lot.exitDate ? formatEntryDate(lot.exitDate) : '—'}
                   </span>
-                  <span className="text-xs font-mono text-fg text-right">
+                  <div className="flex justify-start">
+                    <PositionStatusBadge closed={isLotClosed} isDerivative={lot.assetType === 'VIOP'} />
+                  </div>
+                  <span className="text-[11px] font-mono text-fg text-left truncate">
                     {Number(lot.quantity).toLocaleString(currentLocaleTag(), { maximumFractionDigits: 6 })}
                   </span>
-                  <span className="text-xs font-mono text-fg text-right">
-                    {money(lot.marketValueTry)}
+                  <span className="text-[11px] font-mono text-fg text-left truncate">
+                    {money(lot.entryPrice)}
                   </span>
-                  <div className="text-right">
-                    <span className={`text-xs font-mono font-semibold ${changeColors[lotPnlClass]}`}>
-                      {money(lot.pnlTry)}
-                    </span>
-                    <span className={`block text-[10px] font-mono ${changeColors[lotPnlClass]}`}>
+                  <span className="text-[11px] font-mono text-fg text-left truncate" title={money(lot.marketValueTry)}>
+                    {bigMoney(lot.marketValueTry)}
+                  </span>
+                  <div className="text-left min-w-0">
+                    <p className={`text-[11px] font-mono font-semibold ${changeColors[lotPnlClass]} truncate`} title={money(lot.pnlTry)}>
+                      {bigMoney(lot.pnlTry)}
+                    </p>
+                    <span className={`inline-flex items-center rounded px-1 py-0.5 text-[10px] font-mono ${changeColors[lotPnlClass]}`}>
                       {formatPercent(lot.pnlPercent)}
                     </span>
                   </div>
-                  <div className="flex justify-end gap-1">
+                  <div className="flex justify-start gap-1">
                     {!isLotClosed && onEditLot && (
                       <button
                         onClick={() => onEditLot(lot)}

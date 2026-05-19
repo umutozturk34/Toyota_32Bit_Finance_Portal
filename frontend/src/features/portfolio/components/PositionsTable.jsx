@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ChevronRight, Package, Pencil, Trash2, XCircle, ShoppingBag, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,8 @@ import { useReopenDerivativePosition } from '../hooks/useDerivativePositions';
 import useListParams from '../../../shared/hooks/useListParams';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
 import PortfolioListShell from './PortfolioListShell';
+import FilterTabs from '../../../shared/components/form/FilterTabs';
+import PositionStatusBadge from './PositionStatusBadge';
 
 const SORT_OPTION_IDS = ['currentValue', 'profitPercent', 'profitAmount', 'entryDate', 'assetCode', 'quantity'];
 
@@ -121,7 +123,13 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
   const reopenMutation = useReopenPosition(portfolioId);
   const reopenDerivativeMutation = useReopenDerivativePosition(portfolioId);
 
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const statusFilter = searchParams.get('status') || 'all';
+  const setStatusFilter = (next) => setSearchParams((prev) => {
+    const sp = new URLSearchParams(prev);
+    if (next === 'all') sp.delete('status'); else sp.set('status', next);
+    return sp;
+  }, { replace: true });
   const isPositionClosed = (pos) => {
     if (pos.assetType === 'VIOP') {
       return pos.assetName && pos.assetName.includes('KAPALI');
@@ -137,26 +145,17 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
   if (!portfolioId) return null;
 
   const statusFilterBar = (
-    <div className="flex items-center gap-1 p-1 rounded-lg bg-bg-elevated border border-border-default w-fit">
-      {[
-        { id: 'all', label: t('portfolio.positions.statusAll') },
-        { id: 'open', label: t('portfolio.positions.statusOpen') },
-        { id: 'closed', label: t('portfolio.positions.statusClosed') },
-      ].map((opt) => (
-        <button
-          key={opt.id}
-          type="button"
-          onClick={() => setStatusFilter(opt.id)}
-          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all border-none cursor-pointer ${
-            statusFilter === opt.id
-              ? 'bg-accent/15 text-accent'
-              : 'bg-transparent text-fg-muted hover:text-fg'
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
-    </div>
+    <FilterTabs
+      items={[
+        { type: 'open', label: t('portfolio.positions.statusOpen') },
+        { type: 'closed', label: t('portfolio.positions.statusClosed') },
+      ]}
+      activeId={statusFilter === 'all' ? 'ALL' : statusFilter}
+      onSelect={(id) => setStatusFilter(id === 'ALL' ? 'all' : id)}
+      allLabel={t('portfolio.positions.statusAll')}
+      showAll
+      layoutId="pos-status"
+    />
   );
 
   return (
@@ -173,15 +172,17 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
       secondaryFilters={statusFilterBar}
     >
       <div className="space-y-3">
-      <div className="hidden lg:grid lg:grid-cols-[1.8fr_0.6fr_0.9fr_0.9fr_0.9fr_0.9fr_1.1fr_72px_20px] gap-2 px-4 py-2 text-xs text-fg-muted font-medium">
+      <div className="hidden lg:grid lg:grid-cols-[minmax(220px,2.4fr)_56px_92px_92px_72px_84px_84px_104px_112px_104px_24px] gap-3 px-4 py-2 text-[10px] text-fg-muted font-medium uppercase tracking-wider whitespace-nowrap">
         <span>{t('portfolio.positions.assetCol')}</span>
-        <span className="text-right">{t('portfolio.positions.quantityCol')}</span>
-        <span className="text-right">{t('portfolio.positions.entryDateCol')}</span>
-        <span className="text-right">{t('portfolio.positions.entryPriceCol')}</span>
-        <span className="text-right">{t('portfolio.positions.currentPriceCol')}</span>
-        <span className="text-right">{t('portfolio.positions.marketValueCol')}</span>
-        <span className="text-right">{t('portfolio.positions.pnlCol')}</span>
-        <span className="text-center">{t('portfolio.positions.actionsCol')}</span>
+        <span>{t('portfolio.positions.quantityCol')}</span>
+        <span>{t('portfolio.positions.entryDateCol')}</span>
+        <span>{t('portfolio.positions.exitDateLabel')}</span>
+        <span>{t('portfolio.positions.statusCol')}</span>
+        <span>{t('portfolio.positions.entryPriceCol')}</span>
+        <span>{t('portfolio.positions.currentPriceCol')}</span>
+        <span>{t('portfolio.positions.marketValueCol')}</span>
+        <span>{t('portfolio.positions.pnlCol')}</span>
+        <span>{t('portfolio.positions.actionsCol')}</span>
         <span />
       </div>
 
@@ -206,7 +207,8 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
 
 function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDeleteClick, onCloseClick, onSellClick, onReopenClick }) {
   const { t } = useTranslation();
-  const { format: money } = useMoney();
+  const { format: money, formatCompact: moneyCompact } = useMoney();
+  const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
   const pnlClass = getChangeClass(pos.pnlTry);
   const localeTag = t('common.localeTag');
   const assetTypeLabel = t(`assets.labels.${pos.assetType}`, { defaultValue: pos.assetType });
@@ -263,7 +265,7 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
         </>
       )}
       <div className={pending ? 'pt-7 opacity-50' : ''}>
-      <div className="hidden lg:grid lg:grid-cols-[1.8fr_0.6fr_0.9fr_0.9fr_0.9fr_0.9fr_1.1fr_72px_20px] gap-2 items-center p-4 min-w-0">
+      <div className="hidden lg:grid lg:grid-cols-[minmax(220px,2.4fr)_56px_92px_92px_72px_84px_84px_104px_112px_104px_24px] gap-3 items-start p-4 min-w-0">
         <div className="flex items-center gap-2.5 cursor-pointer min-w-0" onClick={assetClick}>
           <AssetBadge pos={pos} />
           <div className="min-w-0">
@@ -271,20 +273,6 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
               <p className={`font-semibold text-fg leading-tight ${isDerivative ? 'text-xs break-all' : 'text-sm truncate'}`}>
                 {assetCodeLabel(pos.assetType, pos.assetCode)}
               </p>
-              {isDerivative && (
-                <span className={`shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
-                  isClosedDerivative
-                    ? 'bg-warning/15 text-warning border border-warning/30'
-                    : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                }`}>
-                  {isClosedDerivative ? t('portfolio.derivatives.closed') : t('portfolio.derivatives.open')}
-                </span>
-              )}
-              {isClosedSpot && (
-                <span className="shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-warning/15 text-warning border border-warning/30">
-                  {t('portfolio.positions.statusSold', { defaultValue: 'SATILDI' })}
-                </span>
-              )}
             </div>
             {!isDerivative && (
               <p className="text-[11px] text-fg-muted truncate">{displayName}</p>
@@ -297,16 +285,22 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
             )}
           </div>
         </div>
-        <p className="text-right text-[11px] font-mono text-fg truncate">{Number(pos.quantity).toLocaleString(localeTag, { maximumFractionDigits: 6 })}</p>
-        <p className="text-right text-[11px] font-mono text-fg-muted truncate">{formatEntryDate(pos.entryDate, localeTag)}</p>
-        <p className="text-right text-[11px] font-mono text-fg truncate">{money(pos.entryPrice)}</p>
-        <p className="text-right text-[11px] font-mono text-fg truncate">{money(pos.currentPriceTry)}</p>
-        <p className="text-right text-[11px] font-mono text-fg truncate">{money(pos.marketValueTry)}</p>
-        <div className="text-right min-w-0">
-          <p className={`text-[11px] font-mono font-semibold ${changeColors[pnlClass]} truncate`}>{money(pos.pnlTry)}</p>
+        <p className="text-left text-[11px] font-mono text-fg truncate">{Number(pos.quantity).toLocaleString(localeTag, { maximumFractionDigits: 6 })}</p>
+        <p className="text-left text-[11px] font-mono text-fg-muted truncate">{formatEntryDate(pos.entryDate, localeTag)}</p>
+        <p className="text-left text-[11px] font-mono text-fg-muted truncate">
+          {isClosedSpot || isClosedDerivative ? formatEntryDate(pos.exitDate, localeTag) || '—' : '—'}
+        </p>
+        <div className="flex justify-start">
+          <PositionStatusBadge closed={isClosedSpot || isClosedDerivative} isDerivative={isDerivative} />
+        </div>
+        <p className="text-left text-[11px] font-mono text-fg truncate">{money(pos.entryPrice)}</p>
+        <p className={`text-left text-[11px] font-mono truncate ${isClosedSpot || isClosedDerivative ? 'text-fg-muted italic' : 'text-fg'}`}>{money(pos.currentPriceTry)}</p>
+        <p className={`text-left text-[11px] font-mono truncate ${isClosedSpot || isClosedDerivative ? 'text-fg-muted italic' : 'text-fg'}`} title={money(pos.marketValueTry)}>{bigMoney(pos.marketValueTry)}</p>
+        <div className="text-left min-w-0">
+          <p className={`text-[11px] font-mono font-semibold ${changeColors[pnlClass]} truncate`} title={money(pos.pnlTry)}>{bigMoney(pos.pnlTry)}</p>
           <span className={`inline-flex items-center rounded px-1 py-0.5 text-[10px] font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>{formatPercent(pos.pnlPercent)}</span>
         </div>
-        <div className="flex justify-center gap-1">
+        <div className="flex justify-start gap-1">
           {showEdit && (
             <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
               <Pencil className="h-3 w-3" />
@@ -341,20 +335,7 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-sm font-semibold text-fg truncate">{pos.assetCode}</p>
-                {isDerivative && (
-                  <span className={`shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
-                    isClosedDerivative
-                      ? 'bg-warning/15 text-warning border border-warning/30'
-                      : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                  }`}>
-                    {isClosedDerivative ? t('portfolio.derivatives.closed') : t('portfolio.derivatives.open')}
-                  </span>
-                )}
-                {isClosedSpot && (
-                  <span className="shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-warning/15 text-warning border border-warning/30">
-                    {t('portfolio.positions.statusSold', { defaultValue: 'SATILDI' })}
-                  </span>
-                )}
+                <PositionStatusBadge closed={isClosedSpot || isClosedDerivative} isDerivative={isDerivative} />
               </div>
               {!isDerivative && (
                 <p className="text-[11px] text-fg-muted truncate">{displayName}</p>
@@ -397,8 +378,11 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.quantityCol')}</p><p className="font-mono text-fg font-medium">{Number(pos.quantity).toLocaleString(localeTag, { maximumFractionDigits: 6 })}</p></div>
           <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryDateCol')}</p><p className="font-mono text-fg font-medium">{formatEntryDate(pos.entryDate, localeTag)}</p></div>
+          {(isClosedSpot || isClosedDerivative) && (
+            <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.exitDateLabel')}</p><p className="font-mono text-fg font-medium">{formatEntryDate(pos.exitDate, localeTag) || '—'}</p></div>
+          )}
           <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryPriceCol')}</p><p className="font-mono text-fg font-medium">{money(pos.entryPrice)}</p></div>
-          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.pnlCol')}</p><p className={`font-mono font-semibold ${changeColors[pnlClass]}`}>{money(pos.pnlTry)}</p></div>
+          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.pnlCol')}</p><p className={`font-mono font-semibold ${changeColors[pnlClass]}`} title={money(pos.pnlTry)}>{bigMoney(pos.pnlTry)}</p></div>
         </div>
       </div>
       </div>

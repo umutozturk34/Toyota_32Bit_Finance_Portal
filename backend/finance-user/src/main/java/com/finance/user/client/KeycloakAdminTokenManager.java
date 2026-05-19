@@ -22,9 +22,6 @@ import java.util.concurrent.atomic.AtomicReference;
 @Component
 public class KeycloakAdminTokenManager {
 
-    private static final String TOKEN_CLIENT_ID = "admin-cli";
-    private static final String TOKEN_PATH = "/realms/master/protocol/openid-connect/token";
-
     private final WebClient webClient;
     private final KeycloakAdminProperties properties;
     private final AtomicReference<TokenSnapshot> snapshot = new AtomicReference<>();
@@ -55,12 +52,12 @@ public class KeycloakAdminTokenManager {
     private TokenResponse fetchToken() {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("grant_type", "password");
-        form.add("client_id", TOKEN_CLIENT_ID);
+        form.add("client_id", properties.getTokenClientId());
         form.add("username", properties.getAdminUser());
         form.add("password", properties.getAdminPassword());
         try {
             return webClient.post()
-                    .uri(TOKEN_PATH)
+                    .uri(properties.getTokenPath())
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                     .body(BodyInserters.fromFormData(form))
                     .retrieve()

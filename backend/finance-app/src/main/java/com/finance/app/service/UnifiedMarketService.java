@@ -130,7 +130,7 @@ public class UnifiedMarketService implements MarketUpdatePort {
                     return PagedResponse.of(List.of(found), 0, 1, 1);
                 }
             } catch (Exception e) {
-                log.debug("Asset lookup failed for type={} code={}: {}", type, code, e.getMessage());
+                log.debug("Instrument lookup failed for type={} code={}: {}", type, code, e.getMessage());
             }
         }
         throw new ResourceNotFoundException("error.market.assetNotFound", code);

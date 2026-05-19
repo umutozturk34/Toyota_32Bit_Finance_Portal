@@ -109,7 +109,7 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
     }
 
     private static BigDecimal candleClose(Object candle) {
-        if (candle instanceof ForexCandleResponse fx) return fx.sellingPrice();
+        if (candle instanceof ForexCandleResponse fx) return fx.buyingPrice();
         if (candle instanceof CandleResponse c) return c.close();
         if (candle instanceof FundCandleResponse f) return f.price();
         if (candle instanceof ViopHistoryPoint v) return v.close();

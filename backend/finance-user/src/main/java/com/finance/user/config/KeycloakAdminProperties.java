@@ -14,4 +14,7 @@ public class KeycloakAdminProperties {
     private String adminUser = "admin";
     private String adminPassword = "";
     private long tokenSafetyMarginSeconds = 10;
+    private String tokenClientId = "admin-cli";
+    private String tokenPath = "/realms/master/protocol/openid-connect/token";
+    private String otpCredentialType = "otp";
 }

@@ -33,7 +33,7 @@ public class UnifiedMarketController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<PagedResponse<MarketAssetResponse>> getMarketAssets(
-            @Parameter(description = "Asset types (comma-separated)", schema = @Schema(allowableValues = {"STOCK", "CRYPTO", "FOREX", "FUND", "COMMODITY"}))
+            @Parameter(description = "Instrument types (comma-separated)", schema = @Schema(allowableValues = {"STOCK", "CRYPTO", "FOREX", "FUND", "COMMODITY"}))
             @RequestParam(required = false) String type,
             @Parameter(description = "Single asset code lookup", example = "THYAO.IS")
             @RequestParam(required = false) String code,
@@ -68,7 +68,7 @@ public class UnifiedMarketController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<List<?>> getMarketHistory(
             @RequestParam MarketType type,
-            @Parameter(description = "Asset code", example = "THYAO.IS")
+            @Parameter(description = "Instrument code", example = "THYAO.IS")
             @RequestParam String code,
             @RequestParam(defaultValue = "ALL") CandlePeriod period) {
 
@@ -88,7 +88,7 @@ public class UnifiedMarketController {
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<MarketAvailabilityResponse> getMonthlyAvailability(
             @RequestParam MarketType type,
-            @Parameter(description = "Asset code", example = "THYAO.IS")
+            @Parameter(description = "Instrument code", example = "THYAO.IS")
             @RequestParam String code,
             @Parameter(description = "Year-month (yyyy-MM)", example = "2025-04")
             @RequestParam String yearMonth) {

@@ -40,6 +40,8 @@ class AdminTaskServiceTest {
     @Mock private MarketRefresher stockRefresher;
     @Mock private BondDataService bondDataService;
     @Mock private NewsDataService newsDataService;
+    @Mock private com.finance.market.macro.service.MacroIndicatorRegistryService macroRegistry;
+    @Mock private com.finance.market.macro.service.MacroIndicatorFetchService macroFetcher;
     @Mock private TaskTrackingService taskTracker;
     @Mock private PortfolioSnapshotPort portfolioSnapshotPort;
     @Mock private MarketUpdatePort marketUpdatePort;
@@ -56,6 +58,7 @@ class AdminTaskServiceTest {
                         Instant.now(), null, null));
         inline = Runnable::run;
         service = new AdminTaskService(List.of(stockRefresher), bondDataService, newsDataService,
+                macroRegistry, macroFetcher,
                 taskTracker, inline,
                 Optional.of(portfolioSnapshotPort),
                 Optional.of(marketUpdatePort),

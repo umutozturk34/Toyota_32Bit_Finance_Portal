@@ -40,7 +40,7 @@ public class RedisAssetSnapshotCache implements AssetSnapshotCache {
             if (json == null) return Optional.empty();
             return parseSnapshot(type, json);
         } catch (Exception e) {
-            log.warn("Asset snapshot read failed type={} code={}: {}", type, code, e.getMessage());
+            log.warn("Instrument snapshot read failed type={} code={}: {}", type, code, e.getMessage());
             return Optional.empty();
         }
     }
@@ -61,7 +61,7 @@ public class RedisAssetSnapshotCache implements AssetSnapshotCache {
                 parseSnapshot(type, json).ifPresent(s -> result.put(code, s));
             }
         } catch (Exception e) {
-            log.warn("Asset snapshot batch read failed type={} count={}: {}",
+            log.warn("Instrument snapshot batch read failed type={} count={}: {}",
                     type, codes.size(), e.getMessage());
         }
         return result;
@@ -80,9 +80,11 @@ public class RedisAssetSnapshotCache implements AssetSnapshotCache {
             BigDecimal changeAmount = numericField(root, "changeAmount");
             BigDecimal changePercent = numericField(root, "changePercent");
             if (code == null) return Optional.empty();
-            return Optional.of(new AssetSnapshot(code, name, image, price, changeAmount, changePercent));
+            String currency = type == MarketType.VIOP ? textField(root, "currency") : null;
+            if (currency == null || currency.isBlank()) currency = "TRY";
+            return Optional.of(new AssetSnapshot(code, name, image, price, changeAmount, changePercent, currency));
         } catch (Exception e) {
-            log.warn("Asset snapshot parse failed type={}: {}", type, e.getMessage());
+            log.warn("Instrument snapshot parse failed type={}: {}", type, e.getMessage());
             return Optional.empty();
         }
     }

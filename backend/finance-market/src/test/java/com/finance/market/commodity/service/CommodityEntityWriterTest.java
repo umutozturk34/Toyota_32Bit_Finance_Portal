@@ -1,6 +1,6 @@
 package com.finance.market.commodity.service;
 
-import com.finance.common.model.Asset;
+import com.finance.common.model.Instrument;
 import com.finance.common.model.MarketType;
 import com.finance.market.commodity.mapper.CommodityMapper;
 import com.finance.market.commodity.model.Commodity;
@@ -52,7 +52,7 @@ class CommodityEntityWriterTest {
         commodity.setCurrentPrice(BigDecimal.ZERO);
         commodity.setCurrentPriceUsd(BigDecimal.ZERO);
         CommoditySnapshotInput snapshot = snapshot();
-        Asset asset = mock(Asset.class);
+        Instrument asset = mock(Instrument.class);
         when(assetRegistry.upsert(MarketType.COMMODITY, CODE)).thenReturn(asset);
 
         writer.applySnapshot(commodity, snapshot, "GCQ", 4);
@@ -68,7 +68,7 @@ class CommodityEntityWriterTest {
         commodity.setYahooSymbol("PREEXISTING");
         commodity.setCurrentPrice(BigDecimal.ZERO);
         commodity.setCurrentPriceUsd(BigDecimal.ZERO);
-        when(assetRegistry.upsert(MarketType.COMMODITY, CODE)).thenReturn(mock(Asset.class));
+        when(assetRegistry.upsert(MarketType.COMMODITY, CODE)).thenReturn(mock(Instrument.class));
 
         writer.applySnapshot(commodity, snapshot(), "OVERRIDE", 4);
 
@@ -126,7 +126,7 @@ class CommodityEntityWriterTest {
     void upsertCandles_persistsCommodity_whenNotYetInRepository() {
         Commodity commodity = commodityWithCode();
         when(commodityRepository.findById(CODE)).thenReturn(Optional.empty());
-        when(assetRegistry.upsert(MarketType.COMMODITY, CODE)).thenReturn(mock(Asset.class));
+        when(assetRegistry.upsert(MarketType.COMMODITY, CODE)).thenReturn(mock(Instrument.class));
         when(candleRepository.findByCommodityCodeAndCandleDateIn(any(), anyList())).thenReturn(List.of());
         CommodityCandle newCandle = mock(CommodityCandle.class);
         when(commodityMapper.toCandleEntity(any(), any(), any())).thenReturn(newCandle);

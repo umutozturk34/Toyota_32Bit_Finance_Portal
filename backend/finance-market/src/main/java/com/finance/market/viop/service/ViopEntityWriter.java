@@ -65,20 +65,38 @@ public class ViopEntityWriter implements MarketEntityWriter {
         if (snapshots == null || snapshots.isEmpty()) return seen;
         Map<String, ViopContract> existing = repository.findAll().stream()
                 .collect(Collectors.toMap(ViopContract::getSymbol, Function.identity()));
+        int priceChanged = 0;
+        int bootstrapped = 0;
         for (ViopQuoteSnapshot snap : snapshots) {
             ViopContract entity = existing.get(snap.symbol());
-            if (entity == null) {
+            boolean isNew = entity == null;
+            if (isNew) {
                 entity = bootstrapFromSymbol(snap.symbol());
                 if (entity == null) continue;
+                bootstrapped++;
             }
+            BigDecimal priorLast = entity.getLastPrice();
+            BigDecimal priorClose = entity.getDayClose();
             entity.setActive(true);
             applySnapshot(entity, snap);
             entity.scaleFields(PRICE_SCALE);
             ViopContract saved = repository.save(entity);
             cacheService.putSnapshot(saved.getSymbol(), saved);
             seen.add(snap.symbol());
+            if (isNew || !valuesEqual(priorLast, saved.getLastPrice())
+                    || !valuesEqual(priorClose, saved.getDayClose())) {
+                priceChanged++;
+            }
         }
+        log.info("VIOP snapshots: received={} priceChanged={} newContracts={} unchanged={}",
+                seen.size(), priceChanged, bootstrapped, seen.size() - priceChanged);
         return seen;
+    }
+
+    private static boolean valuesEqual(BigDecimal a, BigDecimal b) {
+        if (a == null && b == null) return true;
+        if (a == null || b == null) return false;
+        return a.compareTo(b) == 0;
     }
 
     @Transactional

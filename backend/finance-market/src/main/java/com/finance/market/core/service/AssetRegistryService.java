@@ -1,8 +1,8 @@
 package com.finance.market.core.service;
 
-import com.finance.common.model.Asset;
+import com.finance.common.model.Instrument;
 import com.finance.common.model.MarketType;
-import com.finance.common.repository.AssetRepository;
+import com.finance.common.repository.InstrumentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -13,18 +13,18 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AssetRegistryService {
 
-    private final AssetRepository repository;
+    private final InstrumentRepository repository;
 
     @Transactional
-    public Asset upsert(MarketType marketType, String assetCode) {
+    public Instrument upsert(MarketType marketType, String assetCode) {
         return repository.findByMarketTypeAndAssetCodeIgnoreCase(marketType, assetCode)
-                .orElseGet(() -> repository.save(Asset.create(marketType, assetCode)));
+                .orElseGet(() -> repository.save(Instrument.create(marketType, assetCode)));
     }
 
     @Transactional(readOnly = true)
-    public Asset requireOne(MarketType marketType, String assetCode) {
+    public Instrument requireOne(MarketType marketType, String assetCode) {
         return repository.findByMarketTypeAndAssetCodeIgnoreCase(marketType, assetCode)
                 .orElseThrow(() -> new IllegalStateException(
-                        "Asset not registered marketType=" + marketType + " code=" + assetCode));
+                        "Instrument not registered marketType=" + marketType + " code=" + assetCode));
     }
 }

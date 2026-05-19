@@ -15,16 +15,17 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -134,25 +135,30 @@ public class ViopHistoryProvider implements MarketHistoryProvider {
                 .collect(java.util.stream.Collectors.toMap(ViopCandle::getCandleDate, c -> c, (a, b) -> a));
 
         List<ViopCandle> toSave = new ArrayList<>(points.size());
+        int updated = 0;
+        int inserted = 0;
         for (ViopHistoryPoint point : points) {
             if (point.candleDate() == null || point.close() == null) continue;
             ViopCandle row = existing.get(point.candleDate());
             if (row != null) {
+                if (row.getClose() != null && row.getClose().compareTo(point.close()) == 0) continue;
                 row.setClose(point.close());
                 toSave.add(row);
+                updated++;
             } else {
                 toSave.add(ViopCandle.builder()
                         .contract(contract)
                         .candleDate(point.candleDate())
                         .close(point.close())
                         .build());
+                inserted++;
             }
         }
         if (!toSave.isEmpty()) {
             candleRepository.saveAll(toSave);
-            log.info("VIOP candles persisted symbol={} count={} range={}..{}",
-                    code, toSave.size(), from, to);
+            log.info("VIOP candles persisted symbol={} inserted={} updated={} range={}..{}",
+                    code, inserted, updated, from, to);
         }
-        return toSave.size();
+        return inserted + updated;
     }
 }

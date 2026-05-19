@@ -6,11 +6,11 @@ import java.lang.reflect.Method;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class AssetTest {
+class InstrumentTest {
 
     @Test
     void create_buildsActiveAssetWithMarketTypeAndCode() {
-        Asset asset = Asset.create(MarketType.CRYPTO, "bitcoin");
+        Instrument asset = Instrument.create(MarketType.CRYPTO, "bitcoin");
 
         assertThat(asset.getMarketType()).isEqualTo(MarketType.CRYPTO);
         assertThat(asset.getAssetCode()).isEqualTo("bitcoin");
@@ -19,21 +19,21 @@ class AssetTest {
 
     @Test
     void matches_returnsTrue_whenMarketTypeAndCodeMatchIgnoreCase() {
-        Asset asset = Asset.create(MarketType.STOCK, "THYAO");
+        Instrument asset = Instrument.create(MarketType.STOCK, "THYAO");
 
         assertThat(asset.matches(MarketType.STOCK, "thyao")).isTrue();
     }
 
     @Test
     void matches_returnsFalse_whenMarketTypeDiffers() {
-        Asset asset = Asset.create(MarketType.STOCK, "THYAO");
+        Instrument asset = Instrument.create(MarketType.STOCK, "THYAO");
 
         assertThat(asset.matches(MarketType.CRYPTO, "thyao")).isFalse();
     }
 
     @Test
     void deactivate_andReactivate_togglesActiveFlag() {
-        Asset asset = Asset.create(MarketType.STOCK, "THYAO");
+        Instrument asset = Instrument.create(MarketType.STOCK, "THYAO");
 
         asset.deactivate();
         assertThat(asset.isActive()).isFalse();
@@ -44,7 +44,7 @@ class AssetTest {
 
     @Test
     void prePersist_assignsTimestamps_whenNull() throws Exception {
-        Asset asset = Asset.create(MarketType.STOCK, "THYAO");
+        Instrument asset = Instrument.create(MarketType.STOCK, "THYAO");
         invokePackagePrivate(asset, "prePersist");
 
         assertThat(asset.getCreatedAt()).isNotNull();

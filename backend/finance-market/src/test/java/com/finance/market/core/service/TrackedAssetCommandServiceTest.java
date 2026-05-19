@@ -1,7 +1,7 @@
 package com.finance.market.core.service;
 
 import com.finance.common.exception.ResourceNotFoundException;
-import com.finance.common.model.Asset;
+import com.finance.common.model.Instrument;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.StockSegment;
 import com.finance.common.model.TrackedAsset;
@@ -64,14 +64,14 @@ class TrackedAssetCommandServiceTest {
         return a;
     }
 
-    private Asset asset(MarketType type, String code) {
-        return Asset.builder().marketType(type).assetCode(code).build();
+    private Instrument asset(MarketType type, String code) {
+        return Instrument.builder().marketType(type).assetCode(code).build();
     }
 
     @Test
     void upsert_createsNewEntity_whenRepositoryEmpty() {
         TrackedAssetUpsertCommand command = cmd("bitcoin", "Bitcoin", 5);
-        Asset asset = asset(MarketType.CRYPTO, "bitcoin");
+        Instrument asset = asset(MarketType.CRYPTO, "bitcoin");
         when(assetRegistry.upsert(MarketType.CRYPTO, "bitcoin")).thenReturn(asset);
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType.CRYPTO, "bitcoin"))
                 .thenReturn(Optional.empty());
@@ -89,7 +89,7 @@ class TrackedAssetCommandServiceTest {
     @Test
     void upsert_keepsExistingDisplayName_whenCommandDisplayNameIsNull() {
         TrackedAssetUpsertCommand command = cmd("bitcoin", null, 1);
-        Asset asset = asset(MarketType.CRYPTO, "bitcoin");
+        Instrument asset = asset(MarketType.CRYPTO, "bitcoin");
         TrackedAsset previous = existing("bitcoin", "Already set");
         when(assetRegistry.upsert(MarketType.CRYPTO, "bitcoin")).thenReturn(asset);
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType.CRYPTO, "bitcoin"))
@@ -106,7 +106,7 @@ class TrackedAssetCommandServiceTest {
     @Test
     void upsert_clearsDisplayName_whenCommandDisplayNameBlank() {
         TrackedAssetUpsertCommand command = cmd("bitcoin", "   ", 1);
-        Asset asset = asset(MarketType.CRYPTO, "bitcoin");
+        Instrument asset = asset(MarketType.CRYPTO, "bitcoin");
         TrackedAsset previous = existing("bitcoin", "Old");
         when(assetRegistry.upsert(MarketType.CRYPTO, "bitcoin")).thenReturn(asset);
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType.CRYPTO, "bitcoin"))
@@ -123,7 +123,7 @@ class TrackedAssetCommandServiceTest {
     @Test
     void upsert_trimsDisplayName_whenCommandHasWhitespace() {
         TrackedAssetUpsertCommand command = cmd("bitcoin", "  Bitcoin  ", 1);
-        Asset asset = asset(MarketType.CRYPTO, "bitcoin");
+        Instrument asset = asset(MarketType.CRYPTO, "bitcoin");
         TrackedAsset previous = existing("bitcoin", "Old");
         when(assetRegistry.upsert(MarketType.CRYPTO, "bitcoin")).thenReturn(asset);
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType.CRYPTO, "bitcoin"))
@@ -140,7 +140,7 @@ class TrackedAssetCommandServiceTest {
     @Test
     void upsert_defaultsSortOrderToZero_whenCommandSortOrderIsNull() {
         TrackedAssetUpsertCommand command = cmd("bitcoin", "Bitcoin", null);
-        Asset asset = asset(MarketType.CRYPTO, "bitcoin");
+        Instrument asset = asset(MarketType.CRYPTO, "bitcoin");
         when(assetRegistry.upsert(MarketType.CRYPTO, "bitcoin")).thenReturn(asset);
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType.CRYPTO, "bitcoin"))
                 .thenReturn(Optional.empty());
@@ -155,7 +155,7 @@ class TrackedAssetCommandServiceTest {
 
     @Test
     void autoTrack_savesEntity_whenAssetNotYetTracked() {
-        Asset asset = asset(MarketType.CRYPTO, "bitcoin");
+        Instrument asset = asset(MarketType.CRYPTO, "bitcoin");
         when(assetRegistry.upsert(MarketType.CRYPTO, "bitcoin")).thenReturn(asset);
         when(trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType.CRYPTO, "bitcoin"))
                 .thenReturn(Optional.empty());

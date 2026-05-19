@@ -28,15 +28,15 @@ import java.time.LocalDateTime;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
-@Table(name = "assets",
+@Table(name = "instruments",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uc_assets_market_code", columnNames = {"market_type", "asset_code"})
+                @UniqueConstraint(name = "uc_instruments_type_code", columnNames = {"instrument_type", "asset_code"})
         },
         indexes = {
-                @Index(name = "idx_assets_market_type", columnList = "market_type"),
-                @Index(name = "idx_assets_active", columnList = "active")
+                @Index(name = "idx_instruments_instrument_type", columnList = "instrument_type"),
+                @Index(name = "idx_instruments_active", columnList = "active")
         })
-public class Asset {
+public class Instrument {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,7 +44,7 @@ public class Asset {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "market_type", nullable = false, length = 16)
+    @Column(name = "instrument_type", nullable = false, length = 16)
     private MarketType marketType;
 
     @Column(name = "asset_code", nullable = false, length = 100)
@@ -66,8 +66,8 @@ public class Asset {
         if (updatedAt == null) updatedAt = now;
     }
 
-    public static Asset create(MarketType marketType, String assetCode) {
-        return Asset.builder()
+    public static Instrument create(MarketType marketType, String assetCode) {
+        return Instrument.builder()
                 .marketType(marketType)
                 .assetCode(assetCode)
                 .active(true)

@@ -19,6 +19,9 @@ public interface ViopCandleRepository extends JpaRepository<ViopCandle, Long> {
 
     Optional<ViopCandle> findFirstBySymbolOrderByCandleDateDesc(String symbol);
 
+    Optional<ViopCandle> findFirstBySymbolAndCandleDateLessThanEqualOrderByCandleDateDesc(
+            String symbol, LocalDateTime cutoff);
+
     List<ViopCandle> findBySymbolAndCandleDateIn(String symbol, Collection<LocalDateTime> candleDates);
 
     long countBySymbol(String symbol);

@@ -36,7 +36,7 @@ public class ViopDataService implements MarketRefresher {
         enrichSpecs();
         enrichMissingPrices();
         sweepExpired();
-        refreshAllCandles();
+        syncCandlesFromLastStored();
     }
 
     @Override
@@ -53,9 +53,11 @@ public class ViopDataService implements MarketRefresher {
 
     public Set<String> refreshLiveSnapshots() {
         List<ViopQuoteSnapshot> snapshots = marketData.fetchAllLiveSnapshots();
-        Set<String> seen = entityWriter.applyBulkSnapshots(snapshots);
-        log.info("VIOP live snapshots applied: {} actively-traded contracts", seen.size());
-        return seen;
+        if (snapshots == null || snapshots.isEmpty()) {
+            log.info("VIOP live snapshots: upstream returned 0 rows (market closed or upstream stale)");
+            return Set.of();
+        }
+        return entityWriter.applyBulkSnapshots(snapshots);
     }
 
     public int deactivateStale(Set<String> activeSymbols) {
@@ -91,23 +93,37 @@ public class ViopDataService implements MarketRefresher {
         return entityWriter.markExpired(LocalDate.now());
     }
 
-    public int refreshAllCandles() {
-        // Strategy: historical gap-fill via upstream for past days, today's close synced from
-        // each contract's already-updated last_price (no extra upstream call for today). Keeps
-        // candle and live snapshot in lock-step throughout the trading day.
+    private boolean isLastPriceFromToday(com.finance.market.viop.model.ViopContract contract, LocalDate today) {
+        java.time.LocalDateTime lastUpdated = contract.getLastUpdated();
+        return lastUpdated != null && lastUpdated.toLocalDate().equals(today);
+    }
+
+    /**
+     * Gap-fills VIOP candles from each contract's last stored candle through yesterday via the
+     * upstream history endpoint, then syncs today's candle from the in-memory {@code lastPrice}
+     * (no extra upstream call for today). Re-fetching candles we already have is intentionally
+     * avoided — this is fill-since-last, not "refresh everything". On non-trading days
+     * (weekend/holiday) upstream still serves the previous session's snapshot; those must NOT
+     * be written under today's date, so today-sync requires the snapshot timestamp to be today.
+     */
+    public int syncCandlesFromLastStored() {
         List<com.finance.market.viop.model.ViopContract> active = contractRepository.findAll(
                 (root, query, cb) -> cb.isTrue(root.get("active")));
         LocalDate today = LocalDate.now();
         LocalDate yesterday = today.minusDays(1);
         int totalPersisted = 0;
         int contractsTouched = 0;
+        int staleSkipped = 0;
         for (com.finance.market.viop.model.ViopContract contract : active) {
             String symbol = contract.getSymbol();
             try {
                 int historical = historyProvider.refreshCandlesUpTo(symbol, yesterday);
-                int todaySync = contract.getLastPrice() != null
-                        ? historyProvider.upsertTodayCandle(symbol, contract.getLastPrice())
-                        : 0;
+                int todaySync = 0;
+                if (contract.getLastPrice() != null && isLastPriceFromToday(contract, today)) {
+                    todaySync = historyProvider.upsertTodayCandle(symbol, contract.getLastPrice());
+                } else if (contract.getLastPrice() != null) {
+                    staleSkipped++;
+                }
                 int persisted = historical + todaySync;
                 if (persisted > 0) {
                     totalPersisted += persisted;
@@ -117,8 +133,8 @@ public class ViopDataService implements MarketRefresher {
                 log.debug("VIOP candle refresh skipped for {}: {}", symbol, e.getMessage());
             }
         }
-        log.info("VIOP candle refresh: {} candle writes across {}/{} active contracts",
-                totalPersisted, contractsTouched, active.size());
+        log.info("VIOP candle refresh: {} candle writes across {}/{} active contracts (today-sync skipped for {} stale snapshots)",
+                totalPersisted, contractsTouched, active.size(), staleSkipped);
         return totalPersisted;
     }
 }

@@ -51,13 +51,23 @@ class ViopDataServiceTest {
 
     @Test
     void should_fetchAndApplyLiveSnapshots_when_refreshLiveSnapshotsCalled() {
-        List<ViopQuoteSnapshot> snaps = List.of();
+        List<ViopQuoteSnapshot> snaps = List.of(
+                org.mockito.Mockito.mock(ViopQuoteSnapshot.class));
         when(marketData.fetchAllLiveSnapshots()).thenReturn(snaps);
         when(entityWriter.applyBulkSnapshots(snaps)).thenReturn(Set.of("F_X", "F_Y"));
 
         Set<String> result = service.refreshLiveSnapshots();
 
         assertThat(result).containsExactlyInAnyOrder("F_X", "F_Y");
+    }
+
+    @Test
+    void should_returnEmptySet_when_upstreamReturnsNoSnapshots() {
+        when(marketData.fetchAllLiveSnapshots()).thenReturn(List.of());
+
+        Set<String> result = service.refreshLiveSnapshots();
+
+        assertThat(result).isEmpty();
     }
 
     @Test
@@ -154,15 +164,30 @@ class ViopDataServiceTest {
     }
 
     @Test
-    void should_iterateActiveContractsForCandleRefresh_when_refreshAllCandlesCalled() {
+    void should_iterateActiveContractsForCandleSync_when_syncCandlesFromLastStoredCalled() {
         ViopContract c = ViopContract.builder().symbol("F_X").kind(ViopContractKind.FUTURE)
-                .active(true).lastPrice(new BigDecimal("35")).build();
+                .active(true).lastPrice(new BigDecimal("35"))
+                .lastUpdated(java.time.LocalDateTime.now()).build();
         when(contractRepository.findAll(any(Specification.class))).thenReturn(List.of(c));
         when(historyProvider.refreshCandlesUpTo(anyString(), any())).thenReturn(1);
         when(historyProvider.upsertTodayCandle(anyString(), any())).thenReturn(1);
 
-        int persisted = service.refreshAllCandles();
+        int persisted = service.syncCandlesFromLastStored();
 
         assertThat(persisted).isEqualTo(2);
+    }
+
+    @Test
+    void should_skipTodayCandleUpsert_when_lastPriceIsStaleFromBeforeToday() {
+        ViopContract c = ViopContract.builder().symbol("F_X").kind(ViopContractKind.FUTURE)
+                .active(true).lastPrice(new BigDecimal("35"))
+                .lastUpdated(java.time.LocalDateTime.now().minusDays(1)).build();
+        when(contractRepository.findAll(any(Specification.class))).thenReturn(List.of(c));
+        when(historyProvider.refreshCandlesUpTo(anyString(), any())).thenReturn(0);
+
+        int persisted = service.syncCandlesFromLastStored();
+
+        assertThat(persisted).isEqualTo(0);
+        verify(historyProvider, org.mockito.Mockito.never()).upsertTodayCandle(anyString(), any());
     }
 }

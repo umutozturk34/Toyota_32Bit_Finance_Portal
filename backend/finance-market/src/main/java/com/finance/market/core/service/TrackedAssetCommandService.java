@@ -7,7 +7,7 @@ import com.finance.market.core.dto.request.TrackedAssetOrderItemRequest;
 import com.finance.market.core.dto.response.TrackedAssetResponse;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.market.core.mapper.TrackedAssetMapper;
-import com.finance.common.model.Asset;
+import com.finance.common.model.Instrument;
 import com.finance.common.model.StockSegment;
 import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
@@ -34,7 +34,7 @@ public class TrackedAssetCommandService {
         TrackedAssetType type = command.getAssetType();
         String normalizedCode = type.normalizeCode(command.getAssetCode());
 
-        Asset asset = assetRegistry.upsert(type.marketType(), normalizedCode);
+        Instrument asset = assetRegistry.upsert(type.marketType(), normalizedCode);
 
         TrackedAsset entity = trackedAssetRepository
                 .findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode)
@@ -62,7 +62,7 @@ public class TrackedAssetCommandService {
         if (trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode).isPresent()) {
             return;
         }
-        Asset asset = assetRegistry.upsert(type.marketType(), normalizedCode);
+        Instrument asset = assetRegistry.upsert(type.marketType(), normalizedCode);
         TrackedAsset entity = TrackedAsset.builder()
                 .assetType(type)
                 .assetCode(normalizedCode)

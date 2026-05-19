@@ -152,6 +152,11 @@ public class ViopContract extends BaseAsset {
     }
 
     @Override
+    public String resolvePriceCurrency() {
+        return currency != null && !currency.isBlank() ? currency : "TRY";
+    }
+
+    @Override
     public String resolveDisplayName() {
         return firstNonBlank(displayName, getName(), symbol);
     }

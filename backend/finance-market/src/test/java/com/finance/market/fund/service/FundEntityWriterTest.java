@@ -1,7 +1,7 @@
 package com.finance.market.fund.service;
 
 import com.finance.common.config.AppProperties;
-import com.finance.common.model.Asset;
+import com.finance.common.model.Instrument;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.service.AssetRegistryService;
@@ -73,7 +73,7 @@ class FundEntityWriterTest {
         Fund existing = fund("TI2", new BigDecimal("1.40"));
         when(fundRepository.findById("TI2")).thenReturn(Optional.of(existing));
         when(assetRegistry.upsert(MarketType.FUND, "TI2"))
-                .thenReturn(Asset.builder().marketType(MarketType.FUND).assetCode("TI2").build());
+                .thenReturn(Instrument.builder().marketType(MarketType.FUND).assetCode("TI2").build());
 
         Fund saved = writer.saveSnapshot(d, FundType.YAT);
 
@@ -90,7 +90,7 @@ class FundEntityWriterTest {
         when(fundRepository.findById("TI2")).thenReturn(Optional.empty());
         when(fundMapper.toEntity(eq(d), eq(FundType.YAT), any(LocalDateTime.class))).thenReturn(created);
         when(assetRegistry.upsert(MarketType.FUND, "TI2"))
-                .thenReturn(Asset.builder().marketType(MarketType.FUND).assetCode("TI2").build());
+                .thenReturn(Instrument.builder().marketType(MarketType.FUND).assetCode("TI2").build());
 
         Fund saved = writer.saveSnapshot(d, FundType.YAT);
 

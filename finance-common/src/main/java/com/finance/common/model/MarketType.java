@@ -7,7 +7,10 @@ public enum MarketType {
     FUND("fund", "fundCode", "price", null),
     COMMODITY("commodity", "commodityCode", "currentPrice", null),
     BOND("bond", "code", "currentPrice", null),
-    VIOP("viop", "symbol", "lastPrice", "dayClose");
+    VIOP("viop", "symbol", "lastPrice", "dayClose"),
+    MACRO_RATE("macro_rate", "code", "lastValue", null),
+    MACRO_INFLATION("macro_inflation", "code", "lastValue", null),
+    MACRO_DEPOSIT("macro_deposit", "code", "lastValue", null);
 
     private final String redisLabel;
     private final String codeField;

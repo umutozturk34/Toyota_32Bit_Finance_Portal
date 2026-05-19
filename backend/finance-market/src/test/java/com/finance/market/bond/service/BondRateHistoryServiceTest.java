@@ -1,7 +1,7 @@
 package com.finance.market.bond.service;
 
 import com.finance.common.exception.BusinessException;
-import com.finance.common.model.Asset;
+import com.finance.common.model.Instrument;
 import com.finance.common.model.MarketType;
 import com.finance.market.bond.config.BondProperties;
 import com.finance.market.bond.dto.external.BondSnapshotDto;
@@ -83,8 +83,8 @@ class BondRateHistoryServiceTest {
         return b;
     }
 
-    private Asset bondAsset(String code) {
-        return Asset.builder().marketType(MarketType.BOND).assetCode(code).build();
+    private Instrument bondAsset(String code) {
+        return Instrument.builder().marketType(MarketType.BOND).assetCode(code).build();
     }
 
     private BondRateHistory rateRecord(String isin, LocalDate date, BigDecimal coupon) {

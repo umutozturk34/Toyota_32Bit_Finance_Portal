@@ -1,7 +1,7 @@
 package com.finance.market.crypto.service;
 
 import com.finance.common.model.MarketType;
-import com.finance.common.model.Asset;
+import com.finance.common.model.Instrument;
 import com.finance.market.core.service.AssetRegistryService;
 import com.finance.market.crypto.dto.external.CoinGeckoCandleDto;
 import com.finance.market.crypto.dto.external.CoinGeckoSnapshotDto;
@@ -51,7 +51,7 @@ class CryptoEntityWriterTest {
         CoinGeckoSnapshotDto dto = snapshotDto();
         BigDecimal tryPrice = new BigDecimal("3500");
         Crypto fresh = cryptoWithId();
-        Asset asset = org.mockito.Mockito.mock(Asset.class);
+        Instrument asset = org.mockito.Mockito.mock(Instrument.class);
         when(cryptoRepository.findById(COIN_ID)).thenReturn(Optional.empty());
         when(cryptoMapper.toEntity(any(CoinGeckoSnapshotDto.class), any(BigDecimal.class), any(LocalDateTime.class)))
                 .thenReturn(fresh);
@@ -70,7 +70,7 @@ class CryptoEntityWriterTest {
         CoinGeckoSnapshotDto dto = snapshotDto();
         BigDecimal tryPrice = new BigDecimal("3500");
         Crypto existing = cryptoWithId();
-        Asset asset = org.mockito.Mockito.mock(Asset.class);
+        Instrument asset = org.mockito.Mockito.mock(Instrument.class);
         when(cryptoRepository.findById(COIN_ID)).thenReturn(Optional.of(existing));
         when(assetRegistry.upsert(MarketType.CRYPTO, COIN_ID)).thenReturn(asset);
 

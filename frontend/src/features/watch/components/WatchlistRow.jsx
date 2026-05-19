@@ -7,6 +7,7 @@ import AssetBadge from '../../../shared/components/asset/AssetBadge';
 import { useAssetDetailPrefetch } from '../../../shared/hooks/useAssetDetailPrefetch';
 import { formatPercent, getChangeClass, changeColors, changeBg } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
+import { priceCurrencyOf } from '../../../shared/utils/priceCurrency';
 import { assetRoute } from '../lib/watchConstants';
 
 export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
@@ -87,7 +88,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
       </div>
       <div className="flex flex-col items-end justify-center leading-tight">
         <div className="text-sm font-mono font-semibold text-fg tabular-nums leading-none">
-          {item.currentPrice != null ? money(item.currentPrice) : '—'}
+          {item.currentPrice != null ? money(item.currentPrice, priceCurrencyOf(item)) : '—'}
         </div>
         {item.changePercent != null && (() => {
           const cls = getChangeClass(item.changePercent);

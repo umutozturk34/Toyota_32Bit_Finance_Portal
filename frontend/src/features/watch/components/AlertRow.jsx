@@ -4,6 +4,7 @@ import { RotateCcw, Trash2, Pencil } from 'lucide-react';
 import AssetBadge from '../../../shared/components/asset/AssetBadge';
 import { useAssetDetailPrefetch } from '../../../shared/hooks/useAssetDetailPrefetch';
 import { assetRoute, DIRECTION_META } from '../lib/watchConstants';
+import { currencySymbolOf } from '../../../shared/utils/priceCurrency';
 
 export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
   const { t } = useTranslation();
@@ -15,6 +16,9 @@ export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
   const route = assetRoute(alert.marketType, alert.assetCode);
   const prefetch = useAssetDetailPrefetch();
   const triggerPrefetch = () => prefetch(alert.marketType, alert.assetCode);
+  const isPercent = alert.direction === 'CHANGE_PCT_UP' || alert.direction === 'CHANGE_PCT_DOWN';
+  const thresholdSymbol = isPercent ? '%' : currencySymbolOf(alert.currency);
+  const thresholdValue = Number(alert.threshold).toLocaleString(localeTag, { maximumFractionDigits: isPercent ? 2 : 2 });
 
   return (
     <div
@@ -42,7 +46,7 @@ export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
         <span>{t(dir.labelKey)}</span>
       </div>
       <span className="text-sm font-mono font-semibold text-fg tabular-nums min-w-[90px] text-right">
-        ₺{Number(alert.threshold).toLocaleString(localeTag, { maximumFractionDigits: 2 })}
+        {isPercent ? `${thresholdValue}${thresholdSymbol}` : `${thresholdSymbol}${thresholdValue}`}
       </span>
       <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded shrink-0 min-w-[80px] text-center ${
         isFired ? 'bg-fg-subtle/10 text-fg-subtle' : 'bg-success/10 text-success'

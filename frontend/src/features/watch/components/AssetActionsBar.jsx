@@ -14,7 +14,7 @@ import { toast } from '../../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../../shared/utils/apiError';
 import Spinner from '../../../shared/components/feedback/Spinner';
 
-export default function AssetActionsBar({ marketType, assetCode, currentPrice }) {
+export default function AssetActionsBar({ marketType, assetCode, currentPrice, currency }) {
   const { t } = useTranslation();
   const [alertOpen, setAlertOpen] = useState(false);
   const [watchModalOpen, setWatchModalOpen] = useState(false);
@@ -106,6 +106,7 @@ export default function AssetActionsBar({ marketType, assetCode, currentPrice })
         defaultMarketType={marketType}
         defaultAssetCode={assetCode}
         defaultReferencePrice={currentPrice}
+        defaultCurrency={currency}
       />
       <AddWatchlistItemModal
         isOpen={watchModalOpen}

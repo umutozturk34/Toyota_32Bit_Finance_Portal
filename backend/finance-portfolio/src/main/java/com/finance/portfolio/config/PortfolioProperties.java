@@ -21,6 +21,8 @@ public class PortfolioProperties {
     private LotLimits lotLimits = new LotLimits();
     private Snapshot snapshot = new Snapshot();
     private Backfill backfill = new Backfill();
+    private View view = new View();
+    private Performance performance = new Performance();
 
     @Getter
     @Setter
@@ -43,5 +45,21 @@ public class PortfolioProperties {
     public static class Backfill {
         private int priceLookbackDays = 7;
         private int lockStripes = 32;
+        private int stateCacheExpiryHours = 2;
+        private int emitterCacheExpiryMinutes = 30;
+        private int emittersCacheMaxSize = 10_000;
+        private int snapshotTimeHour = 12;
+    }
+
+    @Getter
+    @Setter
+    public static class View {
+        private int positionPageSize = 10;
+    }
+
+    @Getter
+    @Setter
+    public static class Performance {
+        private int detailTopNLimit = 8;
     }
 }

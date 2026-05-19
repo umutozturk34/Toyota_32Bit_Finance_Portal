@@ -37,6 +37,9 @@ public class PortfolioDailySnapshot {
     @Column(name = "total_value_try", nullable = false, precision = 19, scale = 4)
     private BigDecimal totalValueTry;
 
+    @Column(name = "cash_try", nullable = false, precision = 19, scale = 4)
+    private BigDecimal cashTry;
+
     @Column(name = "total_cost_try", nullable = false, precision = 19, scale = 4)
     private BigDecimal totalCostTry;
 

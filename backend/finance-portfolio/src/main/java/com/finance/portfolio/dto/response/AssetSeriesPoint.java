@@ -2,6 +2,7 @@ package com.finance.portfolio.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record AssetSeriesPoint(
         LocalDateTime timestamp,
@@ -9,5 +10,6 @@ public record AssetSeriesPoint(
         BigDecimal marketValueTry,
         BigDecimal pnlTry,
         BigDecimal dailyPnlTry,
-        BigDecimal dailyPnlPercent
+        BigDecimal dailyPnlPercent,
+        List<PerformanceEvent> events
 ) {}

@@ -7,6 +7,7 @@ import java.util.List;
 public record PerformancePoint(
         LocalDateTime timestamp,
         BigDecimal totalValueTry,
+        BigDecimal cashTry,
         BigDecimal totalPnlTry,
         BigDecimal pnlPercent,
         List<PerformanceAssetDetail> details,

@@ -67,6 +67,15 @@ public abstract class PortfolioResponseMapper {
                                            String assetType,
                                            BigDecimal valueTry,
                                            BigDecimal percent) {
-        return new AllocationItem(label, assetType, valueTry, percent);
+        return new AllocationItem(label, assetType, valueTry, percent, null, null);
+    }
+
+    public AllocationItem toAllocationItem(String label,
+                                           String assetType,
+                                           BigDecimal valueTry,
+                                           BigDecimal percent,
+                                           BigDecimal costTry,
+                                           BigDecimal realizedPnlTry) {
+        return new AllocationItem(label, assetType, valueTry, percent, costTry, realizedPnlTry);
     }
 }

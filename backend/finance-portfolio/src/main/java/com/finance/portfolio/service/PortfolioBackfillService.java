@@ -42,10 +42,11 @@ import java.util.Set;
 @Service
 public class PortfolioBackfillService {
 
-    private static final LocalTime SNAPSHOT_TIME = LocalTime.of(23, 0);
+    private static final LocalTime SNAPSHOT_TIME = LocalTime.NOON;
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioPositionRepository positionRepository;
+    private final com.finance.portfolio.derivative.repository.DerivativePositionRepository derivativePositionRepository;
     private final PortfolioDailySnapshotRepository dailySnapshotRepository;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     private final HistoricalPricingPort historicalPricingPort;
@@ -59,6 +60,7 @@ public class PortfolioBackfillService {
 
     public PortfolioBackfillService(PortfolioRepository portfolioRepository,
                                      PortfolioPositionRepository positionRepository,
+                                     com.finance.portfolio.derivative.repository.DerivativePositionRepository derivativePositionRepository,
                                      PortfolioDailySnapshotRepository dailySnapshotRepository,
                                      PortfolioAssetDailySnapshotRepository assetSnapshotRepository,
                                      HistoricalPricingPort historicalPricingPort,
@@ -69,6 +71,7 @@ public class PortfolioBackfillService {
                                      PortfolioProperties portfolioProperties) {
         this.portfolioRepository = portfolioRepository;
         this.positionRepository = positionRepository;
+        this.derivativePositionRepository = derivativePositionRepository;
         this.dailySnapshotRepository = dailySnapshotRepository;
         this.assetSnapshotRepository = assetSnapshotRepository;
         this.historicalPricingPort = historicalPricingPort;
@@ -102,9 +105,12 @@ public class PortfolioBackfillService {
                     boolean isViop = event.assetType() == AssetType.VIOP;
                     wipeDailySnapshotsFrom(portfolioId, event.fromDate());
                     if (!isViop) {
-                        wipeAssetSnapshotsFrom(portfolioId, event.fromDate());
-                        backfillSinceDate(portfolioId, event.fromDate());
+                        wipeAssetSnapshotsForAsset(portfolioId, event.assetType(),
+                                event.assetCode(), event.fromDate());
+                        backfillAssetSinceDate(portfolioId, event.assetType(),
+                                event.assetCode(), event.fromDate());
                     }
+                    rebuildDailyAggregatesFrom(portfolioId, event.fromDate());
                     snapshotToday(portfolioId);
                 });
             } catch (Exception e) {
@@ -118,21 +124,42 @@ public class PortfolioBackfillService {
 
     private void wipeDailySnapshotsFrom(Long portfolioId, LocalDate from) {
         if (from == null) return;
-        dailySnapshotRepository.deleteByPortfolioIdAndSnapshotDateGreaterThanEqual(portfolioId, from);
+        LocalDate today = LocalDate.now();
+        if (from.isAfter(today)) return;
+        dailySnapshotRepository.deleteByPortfolioIdAndSnapshotDateBetween(portfolioId, from, today);
     }
 
-    private void wipeAssetSnapshotsFrom(Long portfolioId, LocalDate from) {
-        if (from == null) return;
-        assetSnapshotRepository.deleteByPortfolioIdAndSnapshotDateGreaterThanEqual(portfolioId, from);
+    private void wipeAssetSnapshotsForAsset(Long portfolioId, AssetType assetType,
+                                            String assetCode, LocalDate from) {
+        if (from == null || assetCode == null) return;
+        LocalDate today = LocalDate.now();
+        if (from.isAfter(today)) return;
+        assetSnapshotRepository.deleteByPortfolioIdAndAssetTypeAndAssetCodeAndSnapshotDateBetween(
+                portfolioId, assetType, assetCode, from, today);
+    }
+
+    private Map<AssetKey, BigDecimal> lastKnownPrices(Long portfolioId,
+                                                       java.util.Set<AssetKey> keys,
+                                                       LocalDate today,
+                                                       Set<AssetKey> existingKeys) {
+        Map<AssetKey, BigDecimal> result = new HashMap<>();
+        for (AssetKey key : keys) {
+            if (existingKeys.contains(key)) continue;
+            assetSnapshotRepository
+                    .findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanOrderByCreatedAtDesc(
+                            portfolioId, com.finance.portfolio.model.AssetType.valueOf(key.type().name()),
+                            key.assetCode(), today.atStartOfDay())
+                    .ifPresent(snap -> {
+                        if (snap.getUnitPriceTry() != null) result.put(key, snap.getUnitPriceTry());
+                    });
+        }
+        return result;
     }
 
     public void snapshotToday(Long portfolioId) {
         LocalDate today = LocalDate.now();
         Portfolio portfolio = portfolioRepository.findById(portfolioId).orElse(null);
         if (portfolio == null) return;
-        boolean dailyExists = dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(portfolioId, today);
-        boolean assetExists = assetSnapshotRepository.existsByPortfolioIdAndSnapshotDate(portfolioId, today);
-        if (dailyExists && assetExists) return;
 
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
         List<PortfolioPosition> active = activePositionsOn(positions, today);
@@ -142,11 +169,13 @@ public class PortfolioBackfillService {
                 ? Map.of() : assetPricingPort.getExitPricesTry(keys);
         LocalDateTime ts = LocalDateTime.now();
 
-        if (!assetExists && !active.isEmpty()) {
+        if (!active.isEmpty()) {
             Map<AssetKey, List<PortfolioPosition>> byAsset = groupByAsset(active);
+            Map<AssetKey, BigDecimal> fallbackPrices = lastKnownPrices(portfolioId, byAsset.keySet(), today, Set.of());
             List<PortfolioAssetDailySnapshot> batch = new ArrayList<>();
             for (Map.Entry<AssetKey, List<PortfolioPosition>> entry : byAsset.entrySet()) {
                 BigDecimal price = dayPrices.get(entry.getKey());
+                if (price == null) price = fallbackPrices.get(entry.getKey());
                 if (price == null) continue;
                 PortfolioPosition first = entry.getValue().get(0);
                 BigDecimal totalQty = sumField(entry.getValue(), PortfolioPosition::getQuantity);
@@ -155,14 +184,26 @@ public class PortfolioBackfillService {
                         portfolioId, first.getAssetType(), first.getAssetCode(), first.getTrackedAsset(),
                         ts, totalQty, totalCost, price));
             }
-            assetSnapshotRepository.saveAll(batch);
+            if (!batch.isEmpty()) assetSnapshotRepository.saveAll(batch);
         }
-        if (!dailyExists) {
-            List<PortfolioAssetDailySnapshot> todayRows = assetSnapshotRepository
-                    .findByPortfolioIdAndSnapshotDate(portfolio.getId(), today);
-            dailySnapshotRepository.saveAll(List.of(
-                    calculator.buildAggregateSnapshotAtFromRows(portfolio, ts, active, dayPrices, todayRows)));
+
+        List<PortfolioPosition> openedByToday = positions.stream()
+                .filter(p -> p.getEntryDate() != null && !p.getEntryDate().toLocalDate().isAfter(today))
+                .toList();
+        List<com.finance.portfolio.derivative.model.DerivativePosition> derivatives =
+                derivativePositionRepository.findByPortfolioId(portfolioId);
+        List<com.finance.portfolio.derivative.model.DerivativePosition> derivativesOpenedByToday = derivatives.stream()
+                .filter(d -> d.getEntryDate() != null && !d.getEntryDate().isAfter(today))
+                .toList();
+        if (openedByToday.isEmpty() && derivativesOpenedByToday.isEmpty()) return;
+        if (!active.isEmpty() && dayPrices.isEmpty()) {
+            log.info("Skipping snapshotToday for portfolio {} — live prices unavailable, will retry on next market update", portfolioId);
+            return;
         }
+        List<PortfolioAssetDailySnapshot> todayRows = assetSnapshotRepository
+                .findByPortfolioIdAndSnapshotDate(portfolio.getId(), today);
+        dailySnapshotRepository.saveAll(List.of(
+                calculator.buildAggregateSnapshotAtFromRows(portfolio, ts, openedByToday, derivativesOpenedByToday, dayPrices, todayRows)));
     }
 
     public void backfillSinceDate(Long portfolioId, LocalDate from) {
@@ -173,7 +214,9 @@ public class PortfolioBackfillService {
         if (from == null || from.isAfter(end)) return;
 
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
-        if (positions.isEmpty()) return;
+        List<com.finance.portfolio.derivative.model.DerivativePosition> derivatives =
+                derivativePositionRepository.findByPortfolioId(portfolioId);
+        if (positions.isEmpty() && derivatives.isEmpty()) return;
 
         Set<LocalDate> dailyExisting = Set.copyOf(dailySnapshotRepository.findExistingDates(portfolioId, from, end));
         Set<LocalDate> assetExisting = Set.copyOf(assetSnapshotRepository.findExistingDates(portfolioId, from, end));
@@ -183,11 +226,104 @@ public class PortfolioBackfillService {
         List<PortfolioAssetDailySnapshot> assetBatch = new ArrayList<>();
         List<PortfolioDailySnapshot> dailyBatch = new ArrayList<>();
         for (LocalDate day = from; !day.isAfter(end); day = day.plusDays(1)) {
-            collectDay(portfolio, day, positions, seriesByKey, dailyExisting, assetExisting,
+            collectDay(portfolio, day, positions, derivatives, seriesByKey, dailyExisting, assetExisting,
                     assetBatch, dailyBatch, priorAssetByKey);
         }
 
         if (!assetBatch.isEmpty()) assetSnapshotRepository.saveAll(assetBatch);
+        if (!dailyBatch.isEmpty()) dailySnapshotRepository.saveAll(dailyBatch);
+    }
+
+    public void backfillAssetSinceDate(Long portfolioId, AssetType assetType,
+                                       String assetCode, LocalDate from) {
+        if (from == null || assetCode == null) return;
+        Portfolio portfolio = portfolioRepository.findById(portfolioId).orElse(null);
+        if (portfolio == null) return;
+
+        LocalDate end = LocalDate.now().minusDays(1);
+        if (from.isAfter(end)) return;
+
+        List<PortfolioPosition> scopedLots = positionRepository.findByPortfolioId(portfolioId).stream()
+                .filter(p -> p.getAssetType() == assetType)
+                .filter(p -> assetCode.equalsIgnoreCase(p.getAssetCode()))
+                .toList();
+        if (scopedLots.isEmpty()) return;
+
+        Map<AssetKey, Map<LocalDate, BigDecimal>> seriesByKey = loadHistoricalSeries(scopedLots, from, end);
+        boolean allSeriesEmpty = seriesByKey.values().stream().allMatch(s -> s == null || s.isEmpty());
+        boolean expectsHistory = !from.equals(end.plusDays(1)) && !from.equals(LocalDate.now());
+        if (allSeriesEmpty && expectsHistory) {
+            throw new com.finance.common.exception.BusinessException("error.portfolio.backfill.upstreamUnavailable",
+                    "Historical pricing unavailable for " + assetType + ":" + assetCode + " — aborting to preserve existing snapshots");
+        }
+        Map<AssetKey, PortfolioAssetDailySnapshot> priorAssetByKey = preloadPriorAssetSnapshots(portfolioId, scopedLots, from);
+
+        List<PortfolioAssetDailySnapshot> assetBatch = new ArrayList<>();
+        for (LocalDate day = from; !day.isAfter(end); day = day.plusDays(1)) {
+            List<PortfolioPosition> active = activePositionsOn(scopedLots, day);
+            if (active.isEmpty()) {
+                collectClosingSnapshot(portfolioId, scopedLots, day, assetBatch, priorAssetByKey);
+                continue;
+            }
+            Map<AssetKey, BigDecimal> dayPrices = pricesForDay(active, day, seriesByKey);
+            LocalDateTime ts = day.atTime(SNAPSHOT_TIME);
+            collectAssetSnapshots(portfolioId, active, ts, dayPrices, assetBatch, priorAssetByKey,
+                    new ArrayList<>());
+        }
+        if (!assetBatch.isEmpty()) assetSnapshotRepository.saveAll(assetBatch);
+    }
+
+    private void collectClosingSnapshot(Long portfolioId, List<PortfolioPosition> scopedLots,
+                                         LocalDate day, List<PortfolioAssetDailySnapshot> batch,
+                                         Map<AssetKey, PortfolioAssetDailySnapshot> priorAssetByKey) {
+        PortfolioPosition closedOnDay = scopedLots.stream()
+                .filter(p -> p.isClosed() && day.equals(p.getExitDate().toLocalDate()))
+                .findFirst().orElse(null);
+        if (closedOnDay == null) return;
+        BigDecimal exitPrice = closedOnDay.getExitPrice() != null ? closedOnDay.getExitPrice() : BigDecimal.ZERO;
+        LocalDateTime ts = day.atTime(SNAPSHOT_TIME);
+        PortfolioAssetDailySnapshot prior = priorAssetByKey.get(closedOnDay.toAssetKey());
+        PortfolioAssetDailySnapshot zero = calculator.buildAggregatedAssetSnapshotWithPrior(
+                portfolioId, closedOnDay.getAssetType(), closedOnDay.getAssetCode(),
+                closedOnDay.getTrackedAsset(), ts,
+                BigDecimal.ZERO, BigDecimal.ZERO, exitPrice, prior);
+        batch.add(zero);
+        priorAssetByKey.put(closedOnDay.toAssetKey(), zero);
+    }
+
+    public void rebuildDailyAggregatesFrom(Long portfolioId, LocalDate from) {
+        if (from == null) return;
+        Portfolio portfolio = portfolioRepository.findById(portfolioId).orElse(null);
+        if (portfolio == null) return;
+
+        LocalDate end = LocalDate.now().minusDays(1);
+        if (from.isAfter(end)) return;
+
+        List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
+        List<com.finance.portfolio.derivative.model.DerivativePosition> derivatives =
+                derivativePositionRepository.findByPortfolioId(portfolioId);
+        if (positions.isEmpty() && derivatives.isEmpty()) return;
+
+        Map<LocalDate, List<PortfolioAssetDailySnapshot>> assetByDay = assetSnapshotRepository
+                .findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(portfolioId, from, end)
+                .stream()
+                .collect(java.util.stream.Collectors.groupingBy(PortfolioAssetDailySnapshot::getSnapshotDate));
+
+        List<PortfolioDailySnapshot> dailyBatch = new ArrayList<>();
+        for (LocalDate day = from; !day.isAfter(end); day = day.plusDays(1)) {
+            final LocalDate currentDay = day;
+            List<PortfolioPosition> openedByDay = positions.stream()
+                    .filter(p -> p.getEntryDate() != null && !p.getEntryDate().toLocalDate().isAfter(currentDay))
+                    .toList();
+            List<com.finance.portfolio.derivative.model.DerivativePosition> derivativesOpenedByDay = derivatives.stream()
+                    .filter(d -> d.getEntryDate() != null && !d.getEntryDate().isAfter(currentDay))
+                    .toList();
+            if (openedByDay.isEmpty() && derivativesOpenedByDay.isEmpty()) continue;
+            List<PortfolioAssetDailySnapshot> dayRows = assetByDay.getOrDefault(currentDay, List.of());
+            LocalDateTime ts = currentDay.atTime(SNAPSHOT_TIME);
+            dailyBatch.add(calculator.buildAggregateSnapshotAtFromRows(
+                    portfolio, ts, openedByDay, derivativesOpenedByDay, Map.of(), dayRows));
+        }
         if (!dailyBatch.isEmpty()) dailySnapshotRepository.saveAll(dailyBatch);
     }
 
@@ -223,6 +359,7 @@ public class PortfolioBackfillService {
 
     private void collectDay(Portfolio portfolio, LocalDate day,
                             List<PortfolioPosition> allPositions,
+                            List<com.finance.portfolio.derivative.model.DerivativePosition> allDerivatives,
                             Map<AssetKey, Map<LocalDate, BigDecimal>> seriesByKey,
                             Set<LocalDate> dailyExisting, Set<LocalDate> assetExisting,
                             List<PortfolioAssetDailySnapshot> assetBatch,
@@ -232,9 +369,15 @@ public class PortfolioBackfillService {
         boolean assetExists = assetExisting.contains(day);
         if (dailyExists && assetExists) return;
 
-        List<PortfolioPosition> active = activePositionsOn(allPositions, day);
-        if (active.isEmpty()) return;
+        List<PortfolioPosition> openedByDay = allPositions.stream()
+                .filter(p -> p.getEntryDate() != null && !p.getEntryDate().toLocalDate().isAfter(day))
+                .toList();
+        List<com.finance.portfolio.derivative.model.DerivativePosition> derivativesOpenedByDay = allDerivatives.stream()
+                .filter(d -> d.getEntryDate() != null && !d.getEntryDate().isAfter(day))
+                .toList();
+        if (openedByDay.isEmpty() && derivativesOpenedByDay.isEmpty()) return;
 
+        List<PortfolioPosition> active = activePositionsOn(allPositions, day);
         Map<AssetKey, BigDecimal> dayPrices = pricesForDay(active, day, seriesByKey);
         LocalDateTime ts = day.atTime(SNAPSHOT_TIME);
         Long portfolioId = portfolio.getId();
@@ -246,7 +389,7 @@ public class PortfolioBackfillService {
             dayRows.addAll(assetSnapshotRepository.findByPortfolioIdAndSnapshotDate(portfolioId, day));
         }
         if (!dailyExists) {
-            dailyBatch.add(calculator.buildAggregateSnapshotAtFromRows(portfolio, ts, active, dayPrices, dayRows));
+            dailyBatch.add(calculator.buildAggregateSnapshotAtFromRows(portfolio, ts, openedByDay, derivativesOpenedByDay, dayPrices, dayRows));
         }
     }
 
@@ -292,7 +435,7 @@ public class PortfolioBackfillService {
     private static List<PortfolioPosition> activePositionsOn(List<PortfolioPosition> all, LocalDate day) {
         return all.stream()
                 .filter(p -> p.getEntryDate() != null && !p.getEntryDate().toLocalDate().isAfter(day))
-                .filter(p -> p.getExitDate() == null || !p.getExitDate().toLocalDate().isBefore(day))
+                .filter(p -> p.getExitDate() == null || p.getExitDate().toLocalDate().isAfter(day))
                 .toList();
     }
 
@@ -303,9 +446,7 @@ public class PortfolioBackfillService {
             AssetKey key = pos.toAssetKey();
             if (result.containsKey(key)) continue;
             BigDecimal price;
-            if (pos.isClosed() && pos.getExitDate().toLocalDate().equals(day)) {
-                price = pos.getExitPrice();
-            } else if (pos.getEntryDate() != null && pos.getEntryDate().toLocalDate().equals(day)) {
+            if (pos.getEntryDate() != null && pos.getEntryDate().toLocalDate().equals(day)) {
                 price = pos.getEntryPrice();
             } else {
                 price = nearestPriceOnOrBefore(seriesByKey.get(key), day);

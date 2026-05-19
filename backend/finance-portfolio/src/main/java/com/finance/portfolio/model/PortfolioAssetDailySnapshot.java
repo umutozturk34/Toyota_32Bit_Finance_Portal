@@ -1,5 +1,4 @@
 package com.finance.portfolio.model;
-import com.finance.portfolio.model.AssetType;
 
 import com.finance.common.model.TrackedAsset;
 
@@ -23,7 +22,9 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_portfolio_asset_snapshots_pf_created",
                         columnList = "portfolio_id, created_at"),
                 @Index(name = "idx_portfolio_asset_snapshots_pf_tracked_created",
-                        columnList = "portfolio_id, tracked_asset_id, created_at DESC")
+                        columnList = "portfolio_id, tracked_asset_id, created_at DESC"),
+                @Index(name = "idx_portfolio_asset_snapshots_pf_type_code_created",
+                        columnList = "portfolio_id, asset_type, asset_code, created_at DESC")
         })
 public class PortfolioAssetDailySnapshot {
 

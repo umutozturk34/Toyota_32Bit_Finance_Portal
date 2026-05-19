@@ -1,23 +1,22 @@
 package com.finance.portfolio.service;
 
 
-import com.finance.portfolio.config.PortfolioProperties;
-import com.finance.portfolio.config.PortfolioProperties.LotLimits;
-import com.finance.portfolio.dto.request.PortfolioCreateRequest;
-import com.finance.portfolio.dto.request.PositionRequest;
-import com.finance.portfolio.dto.request.PositionSellRequest;
-import com.finance.portfolio.dto.response.PortfolioResponse;
-import com.finance.portfolio.dto.response.PositionResponse;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.common.repository.TrackedAssetRepository;
+import com.finance.portfolio.config.PortfolioProperties;
+import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
+import com.finance.portfolio.dto.request.PortfolioCreateRequest;
+import com.finance.portfolio.dto.request.PositionRequest;
+import com.finance.portfolio.dto.request.PositionSellRequest;
+import com.finance.portfolio.dto.response.PortfolioResponse;
+import com.finance.portfolio.dto.response.PositionResponse;
 import com.finance.portfolio.mapper.PortfolioResponseMapper;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.Portfolio;
 import com.finance.portfolio.model.PortfolioPosition;
-import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
@@ -30,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -91,7 +89,7 @@ public class PortfolioCrudService {
     public PositionResponse addPosition(Long portfolioId, String userSub, PositionRequest request) {
         Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
                 .orElseThrow(() -> new ResourceNotFoundException("error.portfolio.notFound", portfolioId));
-        validateLot(request);
+        PortfolioValidator.validateLot(request, portfolioProperties.getLotLimits());
         AssetType assetType = EnumParser.parseOrBadRequest(AssetType.class,
                 request.assetType().toUpperCase(), "enum.field.assetType");
         TrackedAsset trackedAsset = requireTrackedAsset(assetType, request.assetCode());
@@ -104,6 +102,9 @@ public class PortfolioCrudService {
                 .entryPrice(request.entryPrice())
                 .build();
         position.setTrackedAsset(trackedAsset);
+        if (request.exitDate() != null && request.exitPrice() != null) {
+            position.closeWith(request.exitDate(), request.exitPrice());
+        }
         PortfolioPosition saved = positionRepository.save(position);
 
         publishLotChange(portfolioId, saved, saved.getEntryDate(), true);
@@ -112,7 +113,7 @@ public class PortfolioCrudService {
 
     @Transactional
     public PositionResponse updatePosition(Long portfolioId, Long positionId, String userSub, PositionRequest request) {
-        validateLot(request);
+        PortfolioValidator.validateLot(request, portfolioProperties.getLotLimits());
         PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
         LocalDateTime previousEntry = position.getEntryDate();
         position.updateLot(request.entryDate(), request.entryPrice(), request.quantity());
@@ -126,7 +127,15 @@ public class PortfolioCrudService {
     public void deletePosition(Long portfolioId, Long positionId, String userSub) {
         PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
         LocalDateTime entryDate = position.getEntryDate();
+        Long trackedAssetId = position.getTrackedAsset() != null
+                ? position.getTrackedAsset().getId() : null;
+        boolean hasOtherLot = trackedAssetId != null && positionRepository
+                .existsByPortfolioIdAndTrackedAsset_IdAndIdNot(portfolioId, trackedAssetId, positionId);
         positionRepository.delete(position);
+        if (!hasOtherLot) {
+            assetSnapshotRepository.deleteByPortfolioIdAndAssetTypeAndAssetCode(
+                    portfolioId, position.getAssetType(), position.getAssetCode());
+        }
         publishLotChange(portfolioId, position, entryDate, false);
     }
 
@@ -139,7 +148,7 @@ public class PortfolioCrudService {
         if (position.isClosed()) {
             throw new BusinessException("error.portfolio.sell.alreadyClosed");
         }
-        validateSell(position, request);
+        PortfolioValidator.validateSell(position, request);
 
         BigDecimal sellQty = request.quantity();
         PortfolioPosition resulting;
@@ -179,19 +188,6 @@ public class PortfolioCrudService {
         return mapper.toPositionResponseShell(saved);
     }
 
-    private void validateSell(PortfolioPosition position, PositionSellRequest request) {
-        if (request.quantity().compareTo(position.getQuantity()) > 0) {
-            throw new BusinessException("error.portfolio.sell.quantityExceedsPosition");
-        }
-        LocalDate exitDay = request.exitDate().toLocalDate();
-        if (exitDay.isBefore(position.getEntryDate().toLocalDate())) {
-            throw new BusinessException("error.portfolio.sell.dateBeforeEntry");
-        }
-        if (exitDay.isAfter(LocalDate.now())) {
-            throw new BusinessException("error.portfolio.sell.dateInFuture");
-        }
-    }
-
     private PortfolioPosition loadOwnedPosition(Long portfolioId, Long positionId, String userSub) {
         portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
                 .orElseThrow(() -> new ResourceNotFoundException("error.portfolio.notFound", portfolioId));
@@ -201,31 +197,6 @@ public class PortfolioCrudService {
             throw new BusinessException("error.portfolio.position.notInPortfolio", portfolioId);
         }
         return position;
-    }
-
-    private void validateLot(PositionRequest request) {
-        LotLimits limits = portfolioProperties.getLotLimits();
-        LocalDate entryDay = request.entryDate() != null ? request.entryDate().toLocalDate() : null;
-        if (entryDay != null && limits.getMinEntryDate() != null && entryDay.isBefore(limits.getMinEntryDate())) {
-            throw new BusinessException("error.portfolio.lot.entryDateTooOld", limits.getMinEntryDate());
-        }
-        if (entryDay != null && entryDay.isAfter(LocalDate.now())) {
-            throw new BusinessException("error.portfolio.lot.entryDateInFuture");
-        }
-        BigDecimal price = request.entryPrice();
-        if (price != null && limits.getMinPriceTry() != null && price.compareTo(limits.getMinPriceTry()) < 0) {
-            throw new BusinessException("error.portfolio.lot.priceTooLow", limits.getMinPriceTry());
-        }
-        if (price != null && limits.getMaxPriceTry() != null && price.compareTo(limits.getMaxPriceTry()) > 0) {
-            throw new BusinessException("error.portfolio.lot.priceTooHigh", limits.getMaxPriceTry());
-        }
-        BigDecimal qty = request.quantity();
-        if (qty != null && limits.getMinQuantity() != null && qty.compareTo(limits.getMinQuantity()) < 0) {
-            throw new BusinessException("error.portfolio.lot.quantityTooLow", limits.getMinQuantity());
-        }
-        if (qty != null && limits.getMaxQuantity() != null && qty.compareTo(limits.getMaxQuantity()) > 0) {
-            throw new BusinessException("error.portfolio.lot.quantityTooHigh", limits.getMaxQuantity());
-        }
     }
 
     private void publishLotChange(Long portfolioId, PortfolioPosition position, LocalDateTime fromDate, boolean visibleToUi) {

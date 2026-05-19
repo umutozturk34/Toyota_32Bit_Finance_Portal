@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bookmark, ChevronRight } from 'lucide-react';
 import { getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
+import { priceCurrencyOf } from '../../../shared/utils/priceCurrency';
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 import { localizeWatchlistName } from '../../../shared/utils/watchlistName';
 import useNavigationStore from '../../../shared/stores/useNavigationStore';
@@ -41,7 +42,7 @@ function ItemRow({ item, color, onClick }) {
         <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-fg-subtle leading-tight">{item.marketType}</span>
       </div>
       <div className="flex flex-col items-end shrink-0">
-        <span className="font-mono text-[12px] font-bold text-fg tabular-nums leading-tight">{money(item.price)}</span>
+        <span className="font-mono text-[12px] font-bold text-fg tabular-nums leading-tight">{money(item.price, priceCurrencyOf(item))}</span>
         {item.changePercent != null && (
           <span className={`font-mono text-[10px] font-semibold tabular-nums leading-tight ${changeColors[cls]}`}>
             {formatPercent(item.changePercent)}

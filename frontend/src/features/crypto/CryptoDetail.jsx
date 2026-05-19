@@ -28,7 +28,7 @@ function CryptoHeader({ asset }) {
 
 function CryptoMetadata({ asset }) {
   const { t } = useTranslation();
-  const { format: money } = useMoney();
+  const { format: money, formatCompact } = useMoney();
   const meta = asset.metadata || {};
   const cls = getChangeClass(asset.changePercent);
   return (
@@ -46,7 +46,7 @@ function CryptoMetadata({ asset }) {
         ),
       },
       { label: t('marketDetail.crypto.changeAmountUsd'), value: money(asset.changeAmount, 'USD'), color: changeColors[cls] },
-      { label: t('market.crypto.marketCapLabel'), value: `$${formatCompactNumber(meta.marketCap)}` },
+      { label: t('market.crypto.marketCapLabel'), value: formatCompact(meta.marketCap, 'USD') },
       { label: t('marketDetail.crypto.volume24h'), value: formatCompactNumber(meta.totalVolume) },
     ]} />
   );

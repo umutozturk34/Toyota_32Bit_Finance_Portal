@@ -18,6 +18,7 @@ import AssetActionsBar from '../../../features/watch/components/AssetActionsBar'
 import MarketStatusBadge from '../layout/MarketStatusBadge';
 import { transformCandles, transformFundCandles } from '../../utils/candleTransform';
 import { useRateHistory } from '../../hooks/useRateHistory';
+import { priceCurrencyOf } from '../../utils/priceCurrency';
 
 function extractCurrentPrice(asset) {
   if (!asset) return null;
@@ -34,9 +35,8 @@ const CANDLE_MONEY_FIELDS = [
 ];
 
 function naturalCurrencyFor(assetType, asset) {
-  if (assetType === 'VIOP') return asset?.metadata?.currency || 'TRY';
   if (assetType === 'CRYPTO') return 'USD';
-  if (assetType === 'COMMODITY' && asset?.code && asset.code.toUpperCase().endsWith('USD')) return 'USD';
+  if (assetType === 'VIOP') return asset?.metadata?.currency || 'TRY';
   return 'TRY';
 }
 
@@ -127,8 +127,8 @@ export default function AssetDetailPage({
   });
 
   const transform = TRANSFORM_MAP[assetType] || transformCandles;
-  const baseCurrency = asset?.metadata?.currency || 'TRY';
   const naturalCurrency = naturalCurrencyFor(assetType, asset);
+  const baseCurrency = asset?.metadata?.currency || naturalCurrency;
   const chartData = useMemo(
     () => convertCandleSet(transform(filteredHistoryRaw), convertAt, baseCurrency, naturalCurrency),
     [filteredHistoryRaw, transform, convertAt, baseCurrency, naturalCurrency],
@@ -143,15 +143,13 @@ export default function AssetDetailPage({
     () => compareQueries
       .map((q, idx) => ({ data: q.data, asset: compareAssets[idx] }))
       .filter((row) => row.data && row.asset)
-      .map((row) => ({
-        symbol: row.asset.code,
-        data: convertCandleSet(
-          row.data,
-          convertAt,
-          'TRY',
-          naturalCurrencyFor(row.asset.type, row.asset),
-        ),
-      })),
+      .map((row) => {
+        const compareNatural = naturalCurrencyFor(row.asset.type, row.asset);
+        return {
+          symbol: row.asset.code,
+          data: convertCandleSet(row.data, convertAt, compareNatural, compareNatural),
+        };
+      }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [compareDataSig, convertAt],
   );
@@ -196,6 +194,7 @@ export default function AssetDetailPage({
               marketType={assetType}
               assetCode={assetCode}
               currentPrice={extractCurrentPrice(asset)}
+              currency={priceCurrencyOf({ type: assetType, ...asset })}
             />
           )}
           {showBuyButton && buyProps && (

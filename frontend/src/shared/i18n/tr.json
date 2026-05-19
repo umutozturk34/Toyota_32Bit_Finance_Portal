@@ -899,9 +899,9 @@
       "assetCol": "Varl\u0131k",
       "quantityCol": "Miktar",
       "entryDateCol": "Giri\u015f Tarihi",
-      "entryPriceCol": "Giri\u015f Fiyat\u0131",
-      "currentPriceCol": "G\u00fcncel Fiyat",
-      "marketValueCol": "Piyasa De\u011feri",
+      "entryPriceCol": "Giri\u015f",
+      "currentPriceCol": "Fiyat",
+      "marketValueCol": "Toplam",
       "pnlCol": "K/Z",
       "actionsCol": "\u0130\u015flem",
       "sort": {
@@ -913,13 +913,21 @@
         "quantity": "Miktar"
       },
       "statusAll": "T\u00fcm\u00fc",
-      "statusOpen": "A\u00e7\u0131k / Spot",
-      "statusClosed": "Kapal\u0131 / Sat\u0131ld\u0131",
-      "statusSold": "SATILDI"
+      "statusOpen": "A\u00c7IK",
+      "statusSold": "SATILDI",
+      "statusClosed": "KAPALI",
+      "exitDateLabel": "\u00c7\u0131k\u0131\u015f Tarihi",
+      "statusCol": "Durum"
     },
     "allocation": {
       "title": "Da\u011f\u0131l\u0131m",
       "total": "Toplam",
+      "closedLabel": "Kapat\u0131lm\u0131\u015f Pozisyonlar",
+      "costLabel": "Maliyet",
+      "otherLabel": "Di\u011fer",
+      "realizedTitle": "Ger\u00e7ekle\u015fen K/Z",
+      "realizedTotal": "Net K/Z",
+      "realizedEmpty": "Kapat\u0131lm\u0131\u015f pozisyon yok",
       "empty": "Bu t\u00fcrde varl\u0131k bulunmuyor"
     },
     "performance": {
@@ -931,6 +939,8 @@
       "lotSoldOrClosed": "Lot Satıldı / Kapatıldı",
       "lotMixed": "Karma İşlem",
       "positionEvents": "Pozisyon Hareketleri",
+      "realizedPnlLabel": "Ger\u00e7ekle\u015fen K/Z",
+      "realizedPnlTitle": "Ger\u00e7ekle\u015fen K/Z Performans\u0131",
       "empty": "Bu aral\u0131kta veri bulunmuyor"
     },
     "summary": {
@@ -1118,8 +1128,7 @@
     },
     "commodity": {
       "priceTry": "Fiyat (TRY)",
-      "priceUsd": "Fiyat (USD)",
-      "buy": "Al\u0131m"
+      "priceUsd": "Fiyat (USD)"
     }
   },
   "commodity": {
@@ -1142,6 +1151,48 @@
     "liveData": "Canl\u0131 piyasa verileri",
     "tabOverview": "Genel Bak\u0131\u015f",
     "tabRates": "Kurlar",
+    "tabMacro": "G\u00f6stergeler",
+    "macro": {
+      "loading": "G\u00f6stergeler y\u00fckleniyor...",
+      "error": "G\u00f6stergeler al\u0131namad\u0131",
+      "empty": "Hen\u00fcz g\u00f6sterge yok",
+      "policyRate": "Politika Faizi",
+      "tlrefRate": "TLREF",
+      "tlrefIndex": "TLREF Endeksi",
+      "cpiIndex": "T\u00dcFE",
+      "ppiIndex": "Y\u0130-\u00dcFE",
+      "depositTryTotal": "TL Mevduat",
+      "depositUsdTotal": "USD Mevduat",
+      "depositEurTotal": "EUR Mevduat",
+      "depositTry1m": "TL 1 Ay",
+      "depositTry3m": "TL 3 Ay",
+      "depositTry6m": "TL 6 Ay",
+      "depositTry1y": "TL 1 Y\u0131l",
+      "depositTry1yPlus": "TL 1 Y\u0131l+",
+      "depositUsd1m": "USD 1 Ay",
+      "depositUsd3m": "USD 3 Ay",
+      "depositUsd6m": "USD 6 Ay",
+      "depositUsd1y": "USD 1 Y\u0131l",
+      "depositUsd1yPlus": "USD 1 Y\u0131l+",
+      "depositEur1m": "EUR 1 Ay",
+      "depositEur3m": "EUR 3 Ay",
+      "depositEur6m": "EUR 6 Ay",
+      "depositEur1y": "EUR 1 Y\u0131l",
+      "depositEur1yPlus": "EUR 1 Y\u0131l+",
+      "yieldCurveCta": "Vade Detay\u0131 \u2192",
+      "yieldCurveTab": "Vade E\u011frisi",
+      "headlineTab": "Genel",
+      "categoryRates": "Faiz",
+      "categoryInflation": "Enflasyon",
+      "categoryDeposit": "Mevduat",
+      "lastUpdated": "Son g\u00fcncelleme",
+      "sparkline90d": "Son 90 g\u00fcn",
+      "historyTitle": "{{label}} Ge\u00e7mi\u015fi",
+      "rangeOneYear": "1Y",
+      "rangeThreeYears": "3Y",
+      "rangeFiveYears": "5Y",
+      "rangeAll": "T\u00fcm\u00fc"
+    },
     "editMode": "D\u00fczenleme modu",
     "unsavedChanges": "Kaydedilmemi\u015f de\u011fi\u015fiklikler",
     "saving": "Kaydediliyor",
@@ -1342,15 +1393,21 @@
       "entryPrice": "Giri\u015f Fiyat\u0131 (TRY)",
       "quantity": "Miktar",
       "quantityShares": "Miktar (adet)",
-      "minOne": "min. 1 adet"
+      "minOne": "min. 1 adet",
+      "exitDate": "\u00c7\u0131k\u0131\u015f Tarihi",
+      "exitPrice": "\u00c7\u0131k\u0131\u015f Fiyat\u0131"
     },
+    "alreadySoldToggle": "Bu pozisyonu zaten satt\u0131m",
     "errors": {
       "dateRequired": "Giri\u015f tarihi gerekli",
       "priceInvalid": "Ge\u00e7erli bir giri\u015f fiyat\u0131 girin",
       "quantityInvalid": "Ge\u00e7erli bir miktar girin",
       "quantityInteger": "Bu varl\u0131k i\u00e7in tam say\u0131 miktar girin",
       "addFailed": "Pozisyon eklenemedi",
-      "updateFailed": "G\u00fcncelleme ba\u015far\u0131s\u0131z"
+      "updateFailed": "G\u00fcncelleme ba\u015far\u0131s\u0131z",
+      "exitDateRequired": "\u00c7\u0131k\u0131\u015f tarihi gerekli",
+      "exitPriceInvalid": "Ge\u00e7erli bir \u00e7\u0131k\u0131\u015f fiyat\u0131 girin",
+      "exitBeforeEntry": "\u00c7\u0131k\u0131\u015f tarihi giri\u015f tarihinden \u00f6nce olamaz"
     },
     "steps": {
       "validating": "\u0130\u015flem do\u011frulan\u0131yor...",
@@ -1364,7 +1421,9 @@
       "date": "Tarih",
       "quantity": "Miktar",
       "quantityShares": "{{qty}} adet",
-      "unitPrice": "Birim Fiyat"
+      "unitPrice": "Birim Fiyat",
+      "exitDate": "Çıkış Tarihi",
+      "exitPrice": "Çıkış Fiyatı"
     },
     "success": {
       "titleAdd": "Pozisyon eklendi",
@@ -1428,13 +1487,15 @@
       "COMMODITIES": "Emtia",
       "BONDS": "Tahvil",
       "NEWS": "Haber",
-      "VIOP": "V\u0130OP"
+      "VIOP": "V\u0130OP",
+      "MACRO": "G\u00f6stergeler"
     },
     "action": {
       "snapshot": "Snapshot",
       "candles": "Mum",
       "fullUpdate": "Tam G\u00fcncelleme",
-      "update": "G\u00fcncelle"
+      "update": "G\u00fcncelle",
+      "refresh": "Yenile"
     }
   },
   "newsSourceAdmin": {

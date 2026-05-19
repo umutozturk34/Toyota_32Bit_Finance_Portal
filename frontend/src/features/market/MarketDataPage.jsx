@@ -3,8 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
-import { Activity, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, ChevronUp, ChevronDown, Banknote } from 'lucide-react';
+import { Activity, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, ChevronUp, ChevronDown, Banknote, BarChart3 } from 'lucide-react';
 import BankRatesPanel from '../bankRates/BankRatesPanel';
+import MacroIndicatorsPanel from '../macro/MacroIndicatorsPanel';
 import { RefreshCw } from '../../shared/components/feedback/AnimatedIcons';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
@@ -31,7 +32,8 @@ export default function MarketDataPage() {
   const [popoverState, setPopoverState] = useState(null);
   const [galleryOpen, setGalleryOpen] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') === 'rates' ? 'rates' : 'overview';
+  const tabParam = searchParams.get('tab');
+  const activeTab = tabParam === 'rates' ? 'rates' : tabParam === 'macro' ? 'macro' : 'overview';
   const setActiveTab = useCallback((next) => {
     const params = new URLSearchParams(searchParams);
     if (next === 'overview') params.delete('tab');
@@ -332,6 +334,15 @@ export default function MarketDataPage() {
           <Banknote className="h-3.5 w-3.5" />
           {t('marketOverview.tabRates', 'Kurlar')}
         </button>
+        <button
+          onClick={() => setActiveTab('macro')}
+          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer ${
+            activeTab === 'macro' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
+          }`}
+        >
+          <BarChart3 className="h-3.5 w-3.5" />
+          {t('marketOverview.tabMacro', 'Göstergeler')}
+        </button>
       </div>
     </div>
   );
@@ -354,6 +365,8 @@ export default function MarketDataPage() {
 
   const grid = activeTab === 'rates'
     ? <BankRatesPanel />
+    : activeTab === 'macro'
+    ? <MacroIndicatorsPanel />
     : sections.length === 0
     ? (
       <div className="rounded-xl border-2 border-dashed border-accent/30 bg-bg-elevated/40 px-6 py-16 text-center">

@@ -9,6 +9,7 @@ import { ASSET_TYPE_COLORS } from '../../constants/assetTypes';
 import { assetCodeLabel } from '../../utils/assetCode';
 import { getChangeClass, changeColors } from '../../utils/formatters';
 import { useMoney } from '../../hooks/useMoney';
+import { priceCurrencyOf } from '../../utils/priceCurrency';
 import useSearchSuggestions from '../../hooks/useSearchSuggestions';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
@@ -175,7 +176,7 @@ export default function SearchSuggestions({
                       </div>
 
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-mono font-semibold text-fg">{money(asset.price)}</p>
+                        <p className="text-sm font-mono font-semibold text-fg">{money(asset.price, priceCurrencyOf(asset))}</p>
                         {asset.changePercent != null && (
                           <div className={`flex items-center justify-end gap-0.5 text-[11px] font-mono font-medium ${changeColors[cls]}`}>
                             {asset.changePercent > 0 ? <TrendingUp className="h-3 w-3" /> : asset.changePercent < 0 ? <TrendingDown className="h-3 w-3" /> : null}

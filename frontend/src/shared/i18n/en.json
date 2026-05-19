@@ -899,9 +899,9 @@
       "assetCol": "Asset",
       "quantityCol": "Quantity",
       "entryDateCol": "Entry Date",
-      "entryPriceCol": "Entry Price",
-      "currentPriceCol": "Current Price",
-      "marketValueCol": "Market Value",
+      "entryPriceCol": "Entry",
+      "currentPriceCol": "Price",
+      "marketValueCol": "Total",
       "pnlCol": "P&L",
       "actionsCol": "Actions",
       "sort": {
@@ -913,13 +913,21 @@
         "quantity": "Quantity"
       },
       "statusAll": "All",
-      "statusOpen": "Open / Spot",
-      "statusClosed": "Closed / Sold",
-      "statusSold": "SOLD"
+      "statusOpen": "Open",
+      "statusSold": "Sold",
+      "statusClosed": "Closed",
+      "exitDateLabel": "Exit Date",
+      "statusCol": "Status"
     },
     "allocation": {
       "title": "Allocation",
       "total": "Total",
+      "closedLabel": "Closed Positions",
+      "costLabel": "Cost",
+      "otherLabel": "Other",
+      "realizedTitle": "Realized P/L",
+      "realizedTotal": "Net P/L",
+      "realizedEmpty": "No closed positions",
       "empty": "No assets in this category"
     },
     "performance": {
@@ -931,6 +939,8 @@
       "lotSoldOrClosed": "Lot Sold / Closed",
       "lotMixed": "Mixed Activity",
       "positionEvents": "Position Events",
+      "realizedPnlLabel": "Realized P/L",
+      "realizedPnlTitle": "Realized P/L Performance",
       "empty": "No data in this range"
     },
     "summary": {
@@ -1118,8 +1128,7 @@
     },
     "commodity": {
       "priceTry": "Price (TRY)",
-      "priceUsd": "Price (USD)",
-      "buy": "Bid"
+      "priceUsd": "Price (USD)"
     }
   },
   "commodity": {
@@ -1142,6 +1151,48 @@
     "liveData": "Live market data",
     "tabOverview": "Overview",
     "tabRates": "Bank Rates",
+    "tabMacro": "Indicators",
+    "macro": {
+      "loading": "Loading indicators...",
+      "error": "Failed to load indicators",
+      "empty": "No indicators yet",
+      "policyRate": "Policy Rate",
+      "tlrefRate": "TLREF",
+      "tlrefIndex": "TLREF Index",
+      "cpiIndex": "CPI",
+      "ppiIndex": "PPI",
+      "depositTryTotal": "TRY Deposit",
+      "depositUsdTotal": "USD Deposit",
+      "depositEurTotal": "EUR Deposit",
+      "depositTry1m": "TRY 1M",
+      "depositTry3m": "TRY 3M",
+      "depositTry6m": "TRY 6M",
+      "depositTry1y": "TRY 1Y",
+      "depositTry1yPlus": "TRY 1Y+",
+      "depositUsd1m": "USD 1M",
+      "depositUsd3m": "USD 3M",
+      "depositUsd6m": "USD 6M",
+      "depositUsd1y": "USD 1Y",
+      "depositUsd1yPlus": "USD 1Y+",
+      "depositEur1m": "EUR 1M",
+      "depositEur3m": "EUR 3M",
+      "depositEur6m": "EUR 6M",
+      "depositEur1y": "EUR 1Y",
+      "depositEur1yPlus": "EUR 1Y+",
+      "yieldCurveCta": "Yield Curve →",
+      "yieldCurveTab": "Yield Curve",
+      "headlineTab": "Headline",
+      "categoryRates": "Rates",
+      "categoryInflation": "Inflation",
+      "categoryDeposit": "Deposit",
+      "lastUpdated": "Last updated",
+      "sparkline90d": "Last 90 days",
+      "historyTitle": "{{label}} History",
+      "rangeOneYear": "1Y",
+      "rangeThreeYears": "3Y",
+      "rangeFiveYears": "5Y",
+      "rangeAll": "All"
+    },
     "editMode": "Edit mode",
     "unsavedChanges": "Unsaved changes",
     "saving": "Saving",
@@ -1342,15 +1393,21 @@
       "entryPrice": "Entry price (TRY)",
       "quantity": "Quantity",
       "quantityShares": "Quantity (shares)",
-      "minOne": "min. 1 share"
+      "minOne": "min. 1 share",
+      "exitDate": "Exit date",
+      "exitPrice": "Exit price"
     },
+    "alreadySoldToggle": "I already sold this position",
     "errors": {
       "dateRequired": "Entry date is required",
       "priceInvalid": "Enter a valid entry price",
       "quantityInvalid": "Enter a valid quantity",
       "quantityInteger": "This asset requires a whole-number quantity",
       "addFailed": "Could not add position",
-      "updateFailed": "Update failed"
+      "updateFailed": "Update failed",
+      "exitDateRequired": "Exit date is required",
+      "exitPriceInvalid": "Enter a valid exit price",
+      "exitBeforeEntry": "Exit date cannot be before entry date"
     },
     "steps": {
       "validating": "Validating transaction...",
@@ -1364,7 +1421,9 @@
       "date": "Date",
       "quantity": "Quantity",
       "quantityShares": "{{qty}} shares",
-      "unitPrice": "Unit price"
+      "unitPrice": "Unit price",
+      "exitDate": "Exit date",
+      "exitPrice": "Exit price"
     },
     "success": {
       "titleAdd": "Position added",
@@ -1428,13 +1487,15 @@
       "COMMODITIES": "Commodities",
       "BONDS": "Bonds",
       "NEWS": "News",
-      "VIOP": "VIOP"
+      "VIOP": "VIOP",
+      "MACRO": "Indicators"
     },
     "action": {
       "snapshot": "Snapshot",
       "candles": "Candles",
       "fullUpdate": "Full Update",
-      "update": "Update"
+      "update": "Update",
+      "refresh": "Refresh"
     }
   },
   "newsSourceAdmin": {

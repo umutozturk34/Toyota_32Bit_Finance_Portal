@@ -7,6 +7,7 @@ import { Layers, X } from 'lucide-react';
 import { ArrowUpRight, ArrowDownRight } from '../../../shared/components/feedback/AnimatedIcons';
 import { getChangeClass, changeColors, changeBg, formatPercentAbs } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
+import { priceCurrencyOf } from '../../../shared/utils/priceCurrency';
 import AssetCardChart from './AssetCardChart';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
@@ -69,7 +70,7 @@ function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
                   <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                   <span className="text-fg-muted">— ₺</span>
                 </span>
-              : <span className="text-fg">{money(asset.price)}</span>}
+              : <span className="text-fg">{money(asset.price, priceCurrencyOf(asset))}</span>}
           </p>
           {hasChange && (
             <div className={`shrink-0 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-mono font-semibold tabular-nums ${changeBg[cls]} ${changeColors[cls]}`}>

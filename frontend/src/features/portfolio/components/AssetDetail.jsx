@@ -144,6 +144,30 @@ function buildAssetChartOption(data, isDark, t, convertAt, displayCurrency) {
         const unit = formatChartMoney(point.unitPrice, targetCurrency);
         const marketLabel = t('assetDetail.marketValue');
         const unitLabel = t('assetDetail.unitPrice');
+        const events = (point.events || []).filter((e) => POSITION_EVENT_TYPES.has(e.type));
+        const eventsBlock = events.length === 0 ? '' : `
+          <div style="border-top:1px solid ${tooltipBorder};margin-top:6px;padding-top:6px">
+            <div style="font-size:9px;text-transform:uppercase;letter-spacing:0.8px;color:${tooltipFg};opacity:0.55;margin-bottom:4px">${t('portfolio.performance.positionEvents')}</div>
+            ${events.map((ev) => {
+              const isSold = ev.type === 'POSITION_SOLD';
+              const color = isSold ? '#ef4444' : '#10b981';
+              const label = t(isSold ? 'portfolio.performance.lotSold' : 'portfolio.performance.lotAdded');
+              const codeLabel = ev.assetCode || ev.assetType || '';
+              const qty = ev.quantity != null ? Number(ev.quantity) : null;
+              const qtyText = qty != null && qty > 0
+                ? `<span style="font-size:10px;font-family:ui-monospace,monospace;color:${tooltipFg};opacity:0.55">×${qty.toLocaleString(currentLocaleTag(), { maximumFractionDigits: 8 })}</span>`
+                : '';
+              return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 0">
+                <div style="display:flex;align-items:center;gap:5px">
+                  <span style="width:5px;height:5px;border-radius:50%;background:${color};display:inline-block"></span>
+                  <span style="font-size:10px;font-weight:600;color:${color}">${label}</span>
+                  <span style="font-size:10px;color:${tooltipFg};opacity:0.6">${codeLabel}</span>
+                  ${qtyText}
+                </div>
+                <span style="font-size:10px;font-family:ui-monospace,monospace;color:${tooltipFg};opacity:0.85">${formatChartMoney(Number(ev.valueTry) || 0, targetCurrency)}</span>
+              </div>`;
+            }).join('')}
+          </div>`;
         return `
           <div style="padding:6px 2px;min-width:180px">
             <div style="font-size:10px;color:${tooltipFg};opacity:0.65;margin-bottom:6px">${date}</div>
@@ -155,6 +179,7 @@ function buildAssetChartOption(data, isDark, t, convertAt, displayCurrency) {
               <span style="display:flex;align-items:center;gap:5px;color:${tooltipFg};opacity:0.85"><span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:${UNIT_COLOR}"></span>${unitLabel}</span>
               <span style="font-family:ui-monospace,monospace;font-weight:600;color:${UNIT_COLOR}">${unit}</span>
             </div>
+            ${eventsBlock}
           </div>`;
       },
     },

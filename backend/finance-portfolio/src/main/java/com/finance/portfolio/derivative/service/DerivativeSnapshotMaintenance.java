@@ -40,9 +40,9 @@ public class DerivativeSnapshotMaintenance {
         if (position.getViopContract() == null) return;
         String symbol = position.getViopContract().getSymbol();
         LocalDate from = position.getEntryDate();
-        LocalDate to = position.getCloseDate() != null
-                ? position.getCloseDate().minusDays(1)
-                : LocalDate.now();
+        LocalDate today = LocalDate.now();
+        LocalDate closeDate = position.getCloseDate();
+        LocalDate to = closeDate != null ? closeDate : today;
         if (from == null || from.isAfter(to)) return;
         log.debug("Backfilling viop snapshots positionId={} symbol={} range={}..{}",
                 position.getId(), symbol, from, to);
@@ -62,12 +62,14 @@ public class DerivativeSnapshotMaintenance {
                 ? position.getEntryPrice().divide(entryFxAtOpen, 8, RoundingMode.HALF_UP)
                 : position.getEntryPrice();
         BigDecimal lastFxRate = BigDecimal.ONE;
-        LocalDate closeDate = position.getCloseDate();
         BigDecimal closePriceOverride = position.getClosePrice();
         List<PortfolioAssetDailySnapshot> batch = new ArrayList<>();
         PortfolioAssetDailySnapshot priorInBatch = null;
         for (LocalDate date = from; !date.isAfter(to); date = date.plusDays(1)) {
-            boolean useCloseOverride = closeDate != null && date.equals(closeDate) && closePriceOverride != null;
+            boolean isCloseDay = closeDate != null && date.equals(closeDate);
+            boolean isTodayOpen = closeDate == null && date.equals(today);
+            if (isTodayOpen) continue;
+            boolean useCloseOverride = isCloseDay && closePriceOverride != null;
             BigDecimal close = useCloseOverride
                     ? closePriceOverride
                     : closeByDate.getOrDefault(date, lastKnown);
@@ -88,12 +90,42 @@ public class DerivativeSnapshotMaintenance {
                 batch.add(snapshot);
                 priorInBatch = snapshot;
             }
+            if (isCloseDay) {
+                PortfolioAssetDailySnapshot zero = buildZeroDerivativeSnapshot(
+                        position, ts.plusSeconds(1), close, priorInBatch);
+                batch.add(zero);
+                priorInBatch = zero;
+            }
         }
         if (!batch.isEmpty()) {
             assetSnapshotRepository.saveAll(batch);
             log.info("Viop snapshot backfill complete positionId={} symbol={} rows={}",
                     position.getId(), symbol, batch.size());
         }
+    }
+
+    private PortfolioAssetDailySnapshot buildZeroDerivativeSnapshot(DerivativePosition position,
+                                                                     LocalDateTime ts,
+                                                                     BigDecimal unitPrice,
+                                                                     PortfolioAssetDailySnapshot prior) {
+        BigDecimal dailyPnl = prior != null && prior.getMarketValueTry() != null
+                ? prior.getMarketValueTry().negate()
+                : BigDecimal.ZERO;
+        return PortfolioAssetDailySnapshot.builder()
+                .portfolioId(position.getPortfolio().getId())
+                .assetType(AssetType.VIOP)
+                .assetCode(position.getViopContract().getSymbol())
+                .trackedAsset(null)
+                .snapshotDate(ts.toLocalDate())
+                .createdAt(ts)
+                .quantity(BigDecimal.ZERO)
+                .unitPriceTry(unitPrice != null ? unitPrice : BigDecimal.ZERO)
+                .marketValueTry(BigDecimal.ZERO)
+                .totalCostTry(BigDecimal.ZERO)
+                .pnlTry(BigDecimal.ZERO)
+                .dailyPnlTry(dailyPnl)
+                .dailyPnlPercent(BigDecimal.ZERO)
+                .build();
     }
 
     public void consolidateSymbolSnapshots(Long portfolioId, String symbol) {

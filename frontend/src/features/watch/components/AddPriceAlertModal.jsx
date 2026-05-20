@@ -10,6 +10,7 @@ import { useCreatePriceAlert } from '../../../shared/hooks/usePriceAlerts';
 import { toast } from '../../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../../shared/utils/apiError';
 import { currentLocaleTag } from '../../../shared/utils/formatters';
+import { priceCurrencyOf, currencySymbolOf } from '../../../shared/utils/priceCurrency';
 
 const DIRECTION_DEFS = [
   { value: 'ABOVE', Icon: ArrowUp, tone: 'success' },
@@ -48,6 +49,7 @@ export default function AddPriceAlertModal({
   defaultMarketType,
   defaultAssetCode,
   defaultReferencePrice,
+  defaultCurrency,
 }) {
   const { t } = useTranslation();
   const create = useCreatePriceAlert();
@@ -59,6 +61,7 @@ export default function AddPriceAlertModal({
           code: defaultAssetCode,
           name: defaultAssetCode,
           price: defaultReferencePrice,
+          currency: defaultCurrency,
         }
       : null;
   const initialRefStr = defaultReferencePrice != null ? String(defaultReferencePrice) : '';
@@ -82,6 +85,8 @@ export default function AddPriceAlertModal({
   const isPercent = direction === 'CHANGE_PCT_UP' || direction === 'CHANGE_PCT_DOWN';
   const requiresReference = isPercent;
   const currentPrice = selectedAsset?.price ?? null;
+  const alertCurrency = priceCurrencyOf(selectedAsset);
+  const symbol = currencySymbolOf(alertCurrency);
 
   const activeDir = useMemo(() => DIRECTION_DEFS.find((d) => d.value === direction), [direction]);
 
@@ -140,7 +145,7 @@ export default function AddPriceAlertModal({
         assetCode: selectedAsset.code,
         direction,
         threshold: numericThreshold,
-        currency: 'TRY',
+        currency: alertCurrency,
         referencePrice: numericReference,
       });
       toast.success(t('addPriceAlert.created', { code: selectedAsset.code }));
@@ -217,7 +222,7 @@ export default function AddPriceAlertModal({
               </div>
             </div>
             <div className="text-lg font-mono font-bold text-fg tabular-nums">
-              ₺{formatLocale(currentPrice)}
+              {symbol}{formatLocale(currentPrice)}
             </div>
           </div>
         )}
@@ -312,7 +317,7 @@ export default function AddPriceAlertModal({
                 className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 pr-10 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-mono text-fg-subtle pointer-events-none">
-                {isPercent ? '%' : '₺'}
+                {isPercent ? '%' : symbol}
               </span>
             </div>
             {distanceFromCurrent != null && (

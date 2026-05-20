@@ -97,10 +97,10 @@ export function usePortfolioSummary(portfolioId, assetType) {
   });
 }
 
-export function usePortfolioAllocation(portfolioId, mode, assetType) {
+export function usePortfolioAllocation(portfolioId, mode, assetType, limit) {
   return useQuery({
-    queryKey: ['portfolioAllocation', portfolioId, mode, assetType],
-    queryFn: () => portfolioService.getAllocation(portfolioId, mode, assetType),
+    queryKey: ['portfolioAllocation', portfolioId, mode, assetType, limit ?? null],
+    queryFn: () => portfolioService.getAllocation(portfolioId, mode, assetType, limit),
     enabled: !!portfolioId,
     staleTime: STALE.SHORT,
     refetchOnWindowFocus: false,
@@ -117,6 +117,7 @@ export function usePortfolioPerformance(portfolioId, range, assetType) {
     select: (data) => (data || []).map((d) => ({
       time: new Date(d.timestamp).getTime(),
       value: Number(d.totalValueTry),
+      cash: Number(d.cashTry ?? 0),
       pnl: Number(d.totalPnlTry),
       pnlPercent: Number(d.pnlPercent),
       details: d.details || [],
@@ -242,15 +243,17 @@ export function useDeletePortfolio() {
 
 export function useInvalidatePortfolio() {
   const queryClient = useQueryClient();
-  return useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['portfolios'] });
-    queryClient.invalidateQueries({ queryKey: ['portfolioView'] });
-    queryClient.invalidateQueries({ queryKey: ['portfolioSummary'] });
-    queryClient.invalidateQueries({ queryKey: ['portfolioAllocation'] });
-    queryClient.invalidateQueries({ queryKey: ['portfolioPerformance'] });
-    queryClient.invalidateQueries({ queryKey: ['portfolioPositions'] });
-    queryClient.invalidateQueries({ queryKey: ['assetSeries'] });
-    queryClient.invalidateQueries({ queryKey: ['assetAggregate'] });
+  return useCallback(async () => {
+    await Promise.all([
+      queryClient.refetchQueries({ queryKey: ['portfolios'] }),
+      queryClient.refetchQueries({ queryKey: ['portfolioView'] }),
+      queryClient.refetchQueries({ queryKey: ['portfolioSummary'] }),
+      queryClient.refetchQueries({ queryKey: ['portfolioAllocation'] }),
+      queryClient.refetchQueries({ queryKey: ['portfolioPerformance'] }),
+      queryClient.refetchQueries({ queryKey: ['portfolioPositions'] }),
+      queryClient.refetchQueries({ queryKey: ['assetSeries'] }),
+      queryClient.refetchQueries({ queryKey: ['assetAggregate'] }),
+    ]);
   }, [queryClient]);
 }
 

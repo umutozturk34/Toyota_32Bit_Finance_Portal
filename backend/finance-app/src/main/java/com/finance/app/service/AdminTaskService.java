@@ -1,24 +1,17 @@
 package com.finance.app.service;
 
-import com.finance.shared.service.TaskTrackingService;
-
-import com.finance.news.service.article.NewsDataService;
-
-import com.finance.market.core.service.MarketUpdatePort;
-import com.finance.shared.event.EventPublisherPort;
 import com.finance.common.event.MarketUpdatedEvent;
-
-import com.finance.market.bond.service.BondDataService;
-
-
-import com.finance.shared.service.PortfolioSnapshotPort;
-
-
-import com.finance.market.core.service.MarketRefresher;
-
-
-import com.finance.shared.dto.response.TaskTriggerResponse;
 import com.finance.common.model.MarketType;
+import com.finance.market.bond.service.BondDataService;
+import com.finance.market.core.service.MarketRefresher;
+import com.finance.market.core.service.MarketUpdatePort;
+import com.finance.market.macro.service.MacroIndicatorFetchService;
+import com.finance.market.macro.service.MacroIndicatorRegistryService;
+import com.finance.news.service.article.NewsDataService;
+import com.finance.shared.dto.response.TaskTriggerResponse;
+import com.finance.shared.event.EventPublisherPort;
+import com.finance.shared.service.PortfolioSnapshotPort;
+import com.finance.shared.service.TaskTrackingService;
 import com.finance.shared.util.EnumDispatcher;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -35,6 +28,8 @@ public class AdminTaskService {
     private final Map<MarketType, MarketRefresher> refreshers;
     private final BondDataService bondDataService;
     private final NewsDataService newsDataService;
+    private final MacroIndicatorRegistryService macroRegistry;
+    private final MacroIndicatorFetchService macroFetcher;
     private final TaskTrackingService taskTracker;
     private final Executor taskExecutor;
     private final Optional<PortfolioSnapshotPort> portfolioSnapshotPort;
@@ -44,6 +39,8 @@ public class AdminTaskService {
     public AdminTaskService(List<MarketRefresher> refreshers,
                             BondDataService bondDataService,
                             NewsDataService newsDataService,
+                            MacroIndicatorRegistryService macroRegistry,
+                            MacroIndicatorFetchService macroFetcher,
                             TaskTrackingService taskTracker,
                             Executor taskExecutor,
                             Optional<PortfolioSnapshotPort> portfolioSnapshotPort,
@@ -52,6 +49,8 @@ public class AdminTaskService {
         this.refreshers = EnumDispatcher.from(MarketType.class, refreshers, MarketRefresher::getMarketType);
         this.bondDataService = bondDataService;
         this.newsDataService = newsDataService;
+        this.macroRegistry = macroRegistry;
+        this.macroFetcher = macroFetcher;
         this.taskTracker = taskTracker;
         this.taskExecutor = taskExecutor;
         this.portfolioSnapshotPort = portfolioSnapshotPort;
@@ -81,6 +80,15 @@ public class AdminTaskService {
         return executeTask("news-update",
                 "News feed update started in background",
                 newsDataService::updateNews);
+    }
+
+    public TaskTriggerResponse triggerMacroRefresh() {
+        return executeTask("macro-refresh",
+                "Macro indicator refresh started in background",
+                () -> {
+                    macroRegistry.synchronizeFromConfig();
+                    macroFetcher.refreshAll();
+                });
     }
 
     private TaskTriggerResponse triggerMarketRefresh(MarketType type, String suffix, String messageTail) {

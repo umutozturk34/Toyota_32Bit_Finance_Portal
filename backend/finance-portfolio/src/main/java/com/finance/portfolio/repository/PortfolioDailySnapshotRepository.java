@@ -35,9 +35,23 @@ public interface PortfolioDailySnapshotRepository extends JpaRepository<Portfoli
     List<PortfolioDailySnapshot> findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(
             Long portfolioId, LocalDateTime start, LocalDateTime end);
 
+    @Query("""
+            SELECT new com.finance.portfolio.dto.internal.PortfolioAggregateRow(
+                d.createdAt, d.totalValueTry, d.cashTry, d.totalCostTry, d.totalPnlTry)
+            FROM PortfolioDailySnapshot d
+            WHERE d.portfolioId = :pid AND d.createdAt BETWEEN :start AND :end
+            ORDER BY d.createdAt ASC
+            """)
+    List<com.finance.portfolio.dto.internal.PortfolioAggregateRow> findAggregateByPortfolio(
+            @Param("pid") Long portfolioId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end);
+
     void deleteByPortfolioIdAndSnapshotDate(Long portfolioId, LocalDate snapshotDate);
 
     void deleteByPortfolioIdAndSnapshotDateGreaterThanEqual(Long portfolioId, LocalDate from);
+
+    void deleteByPortfolioIdAndSnapshotDateBetween(Long portfolioId, LocalDate from, LocalDate to);
 
     void deleteByPortfolioId(Long portfolioId);
 }

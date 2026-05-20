@@ -1,27 +1,19 @@
 package com.finance.portfolio.controller;
-import com.finance.portfolio.dto.response.PositionResponse;
-
-import com.finance.portfolio.dto.response.PortfolioViewResponse;
-
-import com.finance.portfolio.dto.response.PortfolioSummaryResponse;
-
-import com.finance.portfolio.dto.response.PortfolioResponse;
-
-
-import com.finance.common.dto.response.PagedResponse;
-
-import com.finance.portfolio.dto.response.LotLimitsResponse;
-
-import com.finance.portfolio.dto.response.AllocationItem;
-
-
 
 import com.finance.common.config.AppProperties;
 import com.finance.common.dto.ApiResponse;
+import com.finance.common.dto.response.PagedResponse;
 import com.finance.common.i18n.Translator;
 import com.finance.portfolio.dto.request.PortfolioCreateRequest;
 import com.finance.portfolio.dto.request.PositionRequest;
 import com.finance.portfolio.dto.request.PositionSellRequest;
+import com.finance.portfolio.dto.response.AllocationItem;
+import com.finance.portfolio.dto.response.AssetAggregateResponse;
+import com.finance.portfolio.dto.response.LotLimitsResponse;
+import com.finance.portfolio.dto.response.PortfolioResponse;
+import com.finance.portfolio.dto.response.PortfolioSummaryResponse;
+import com.finance.portfolio.dto.response.PortfolioViewResponse;
+import com.finance.portfolio.dto.response.PositionResponse;
 import com.finance.portfolio.service.PortfolioBackfillTracker;
 import com.finance.portfolio.service.PortfolioFacade;
 import jakarta.validation.Valid;
@@ -31,7 +23,16 @@ import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Arrays;
@@ -44,6 +45,12 @@ import java.util.stream.Collectors;
 @PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class PortfolioController {
+
+    private static final String DEFAULT_VIEW_INCLUDES = "summary,positions,allocation";
+    private static final String DEFAULT_CHART_RANGE = "1M";
+    private static final String DEFAULT_ALLOCATION_MODE = "assetType";
+    private static final int MIN_PAGE_SIZE = 1;
+    private static final String INCLUDES_SEPARATOR = ",";
 
     private final AppProperties appProperties;
     private final PortfolioFacade portfolioFacade;
@@ -144,7 +151,7 @@ public class PortfolioController {
     }
 
     @GetMapping("/{portfolioId}/assets/{assetType}/{assetCode}/summary")
-    public ApiResponse<com.finance.portfolio.dto.response.AssetAggregateResponse> getAssetAggregate(
+    public ApiResponse<AssetAggregateResponse> getAssetAggregate(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
             @PathVariable String assetType,
@@ -182,18 +189,19 @@ public class PortfolioController {
     public ApiResponse<List<AllocationItem>> getAllocation(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
-            @RequestParam(defaultValue = "assetType") String mode,
-            @RequestParam(required = false) String assetType) {
+            @RequestParam(defaultValue = DEFAULT_ALLOCATION_MODE) String mode,
+            @RequestParam(required = false) String assetType,
+            @RequestParam(required = false) Integer limit) {
         return ApiResponse.success(translator.translate("api.portfolio.allocationRetrieved"),
-                portfolioFacade.getAllocation(jwt.getSubject(), portfolioId, mode, assetType));
+                portfolioFacade.getAllocation(jwt.getSubject(), portfolioId, mode, assetType, limit));
     }
 
     @GetMapping("/{portfolioId}/view")
     public ApiResponse<PortfolioViewResponse> getPortfolioView(
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
-            @RequestParam(defaultValue = "summary,positions,allocation") String include) {
-        Set<String> includes = Arrays.stream(include.split(","))
+            @RequestParam(defaultValue = DEFAULT_VIEW_INCLUDES) String include) {
+        Set<String> includes = Arrays.stream(include.split(INCLUDES_SEPARATOR))
                 .map(String::trim)
                 .collect(Collectors.toSet());
         return ApiResponse.success(translator.translate("api.portfolio.viewRetrieved"),
@@ -205,7 +213,7 @@ public class PortfolioController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
             @RequestParam String type,
-            @RequestParam(defaultValue = "1M") String range,
+            @RequestParam(defaultValue = DEFAULT_CHART_RANGE) String range,
             @RequestParam(required = false) String assetType,
             @RequestParam(required = false) String assetCode) {
         return ApiResponse.success(translator.translate("api.portfolio.chartRetrieved"),
@@ -214,6 +222,7 @@ public class PortfolioController {
 
     private int resolvePageSize(Integer size, int defaultSize) {
         int requestedSize = size == null ? defaultSize : size;
-        return Math.max(1, Math.min(requestedSize, appProperties.getPagination().getPortfolio().getMaxSize()));
+        int maxSize = appProperties.getPagination().getPortfolio().getMaxSize();
+        return Math.max(MIN_PAGE_SIZE, Math.min(requestedSize, maxSize));
     }
 }

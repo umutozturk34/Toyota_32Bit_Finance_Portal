@@ -19,6 +19,7 @@ public interface WatchlistItemMapper {
     @Mapping(target = "currentPrice", ignore = true)
     @Mapping(target = "changeAmount", ignore = true)
     @Mapping(target = "changePercent", ignore = true)
+    @Mapping(target = "currency", ignore = true)
     WatchlistItemResponse toResponse(WatchlistItem item);
 
     @Mapping(target = "id", source = "item.id")
@@ -29,6 +30,7 @@ public interface WatchlistItemMapper {
     @Mapping(target = "currentPrice", source = "snapshot.priceTry")
     @Mapping(target = "changeAmount", source = "snapshot.changeAmount")
     @Mapping(target = "changePercent", source = "snapshot.changePercent")
+    @Mapping(target = "currency", source = "snapshot.currency")
     @Mapping(target = "note", source = "item.note")
     @Mapping(target = "deltaThreshold", source = "item.deltaThreshold")
     @Mapping(target = "lastSeenPrice", source = "item.lastSeenPrice")

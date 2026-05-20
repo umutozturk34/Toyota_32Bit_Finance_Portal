@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -11,32 +11,80 @@ import useProcessingAnimation from '../../../shared/hooks/useProcessingAnimation
 import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
 import { currentLocaleTag } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
+import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';
 import { useAddPosition, usePortfolioLimits, usePortfolioPositions, useUpdatePosition } from '../hooks/usePortfolioData';
 
 import {
   FRACTIONAL_TYPES, ONE_HOUR_MS, SUCCESS_HOLD_MS, PROCESSING_STEP_DEFS,
-  todayInputValue, dateInputToIso, buildInitialState,
-  resolveTarget, toYearMonth, buildPriceIndex, formatTotalCost,
+  todayInputValue, dateInputToIso, isoToDateInput, buildInitialState,
+  resolveTarget, toYearMonth, buildPriceIndex,
   preventDecimal, describeAction,
 } from '../lib/positionFormHelpers';
 
 export default function PositionFormModal({ mode, portfolioId, asset, position, onClose, onComplete }) {
   const { t } = useTranslation();
-  const { format: money } = useMoney();
+  const { format: money, formatCompact } = useMoney();
+  const { rateAt, currency: displayCurrency } = useRateHistory();
   const target = resolveTarget(mode, asset, position);
   const isFractional = FRACTIONAL_TYPES.includes(target.assetType);
   const isEdit = mode === 'edit';
+  const nativeCurrency = target.assetType === 'CRYPTO' ? 'USD' : 'TRY';
+  const inputCurrency = displayCurrency === 'ORIGINAL' ? nativeCurrency : displayCurrency;
   const processingSteps = useMemo(
     () => PROCESSING_STEP_DEFS.map((s) => ({ label: t(`positionForm.steps.${s.labelKey}`), duration: s.duration })),
     [t],
   );
 
-  const [form, setForm] = useState(() => buildInitialState(mode, asset, position));
+  const tryToDisplay = useCallback((tryValue, dateStr) => {
+    if (tryValue == null || tryValue === '') return null;
+    const num = Number(tryValue);
+    if (!Number.isFinite(num)) return null;
+    if (inputCurrency === 'TRY') return num;
+    const rate = rateAt(inputCurrency, dateStr);
+    return rate != null && rate > 0 ? num / rate : num;
+  }, [inputCurrency, rateAt]);
+
+  const displayToTry = useCallback((displayValue, dateStr) => {
+    if (displayValue == null || displayValue === '') return null;
+    const num = Number(displayValue);
+    if (!Number.isFinite(num)) return null;
+    if (inputCurrency === 'TRY') return num;
+    const rate = rateAt(inputCurrency, dateStr);
+    return rate != null && rate > 0 ? num * rate : num;
+  }, [inputCurrency, rateAt]);
+
+  const [form, setForm] = useState(() => ({ ...buildInitialState(mode, asset, position), entryPrice: '' }));
   const [error, setError] = useState(null);
   const [priceTouched, setPriceTouched] = useState(isEdit);
   const [phase, setPhase] = useState('form');
   const [viewMonth, setViewMonth] = useState(() => toYearMonth(buildInitialState(mode, asset, position).entryDate));
+  const [initialFilled, setInitialFilled] = useState(false);
+  const [closeEnabled, setCloseEnabled] = useState(false);
+  const [exitDate, setExitDate] = useState(todayInputValue());
+  const [exitPrice, setExitPrice] = useState('');
+  const [exitPriceTouched, setExitPriceTouched] = useState(false);
+  const [exitViewMonth, setExitViewMonth] = useState(() => toYearMonth(todayInputValue()));
+
+  const todayIso = todayInputValue();
+  const editEntryDateIso = useMemo(
+    () => (isEdit && position?.entryDate ? isoToDateInput(position.entryDate) : null),
+    [isEdit, position?.entryDate],
+  );
+  const initialSeedTry = isEdit ? position?.entryPrice : asset?.currentPrice;
+  const initialSeedDate = editEntryDateIso ?? todayIso;
+  const initialSeedDisplay = useMemo(
+    () => tryToDisplay(initialSeedTry, initialSeedDate),
+    [initialSeedTry, initialSeedDate, tryToDisplay],
+  );
+  if (!initialFilled) {
+    if (initialSeedTry == null) {
+      setInitialFilled(true);
+    } else if (initialSeedDisplay != null) {
+      setInitialFilled(true);
+      setForm((prev) => ({ ...prev, entryPrice: String(initialSeedDisplay) }));
+    }
+  }
 
   const entryMonth = toYearMonth(form.entryDate);
 
@@ -54,8 +102,34 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
   const entryLoading = viewLoading;
   const viewPrices = useMemo(() => buildPriceIndex(viewAvailability), [viewAvailability]);
   const highlightedDates = useMemo(() => new Set(viewPrices.keys()), [viewPrices]);
-  const suggestedPrice = entryMonth === viewMonth ? viewPrices.get(form.entryDate) : undefined;
-  const dataAvailable = suggestedPrice != null;
+  const suggestedPriceTry = entryMonth === viewMonth ? viewPrices.get(form.entryDate) : undefined;
+  const suggestedPriceDisplay = useMemo(
+    () => tryToDisplay(suggestedPriceTry, form.entryDate),
+    [suggestedPriceTry, form.entryDate, tryToDisplay],
+  );
+  const dataAvailable = suggestedPriceDisplay != null;
+
+  const { data: exitAvailability, isFetching: exitLoading } = useQuery({
+    queryKey: ['marketAvailability', target.assetType, target.assetCode, exitViewMonth],
+    queryFn: () => unifiedMarketService.getMonthlyAvailability(target.assetType, target.assetCode, exitViewMonth),
+    enabled: Boolean(closeEnabled && target.assetType && target.assetCode && exitViewMonth),
+    staleTime: ONE_HOUR_MS,
+    placeholderData: (prev) => prev,
+  });
+  const exitPrices = useMemo(() => buildPriceIndex(exitAvailability), [exitAvailability]);
+  const exitHighlights = useMemo(() => new Set(exitPrices.keys()), [exitPrices]);
+  const exitSuggestedTry = toYearMonth(exitDate) === exitViewMonth ? exitPrices.get(exitDate) : undefined;
+  const exitSuggestedDisplay = useMemo(
+    () => tryToDisplay(exitSuggestedTry, exitDate),
+    [exitSuggestedTry, exitDate, tryToDisplay],
+  );
+  const [exitSyncKey, setExitSyncKey] = useState(null);
+  const eKey = (!closeEnabled || exitPriceTouched) ? null : `${exitDate}|${exitSuggestedDisplay ?? 'none'}`;
+  if (eKey !== null && eKey !== exitSyncKey) {
+    setExitSyncKey(eKey);
+    if (exitSuggestedDisplay != null) setExitPrice(String(exitSuggestedDisplay));
+  }
+
 
   const addMutation = useAddPosition(portfolioId);
   const updateMutation = useUpdatePosition(portfolioId);
@@ -76,21 +150,21 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
   const [lastSyncedKey, setLastSyncedKey] = useState(null);
   const syncKey = entryLoading || priceTouched
     ? null
-    : `${form.entryDate}|${suggestedPrice ?? 'none'}`;
+    : `${form.entryDate}|${suggestedPriceDisplay ?? 'none'}|${inputCurrency}`;
   if (syncKey !== null && syncKey !== lastSyncedKey) {
     setLastSyncedKey(syncKey);
-    if (suggestedPrice != null) {
-      setForm((prev) => ({ ...prev, entryPrice: String(suggestedPrice) }));
-    } else if (form.entryDate !== todayInputValue()) {
+    if (suggestedPriceDisplay != null) {
+      setForm((prev) => ({ ...prev, entryPrice: String(suggestedPriceDisplay) }));
+    } else if (form.entryDate !== todayIso) {
       setForm((prev) => prev.entryPrice ? { ...prev, entryPrice: '' } : prev);
     }
   }
 
-  const totalCost = useMemo(() => {
+  const totalCostTry = useMemo(() => {
     const q = Number(form.quantity);
-    const p = Number(form.entryPrice);
-    return q > 0 && p > 0 ? q * p : null;
-  }, [form.quantity, form.entryPrice]);
+    const priceTry = displayToTry(form.entryPrice, form.entryDate);
+    return q > 0 && priceTry != null && priceTry > 0 ? q * priceTry : null;
+  }, [form.quantity, form.entryPrice, form.entryDate, displayToTry]);
 
   const handleDateChange = (iso) => {
     setForm((prev) => ({ ...prev, entryDate: iso }));
@@ -112,8 +186,8 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
   };
 
   const useSuggestedPrice = () => {
-    if (suggestedPrice == null) return;
-    setForm((prev) => ({ ...prev, entryPrice: String(suggestedPrice) }));
+    if (suggestedPriceDisplay == null) return;
+    setForm((prev) => ({ ...prev, entryPrice: String(suggestedPriceDisplay) }));
     setPriceTouched(false);
   };
 
@@ -123,6 +197,13 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
     const qty = Number(form.quantity);
     if (!qty || qty <= 0) return t('positionForm.errors.quantityInvalid');
     if (!isFractional && !Number.isInteger(qty)) return t('positionForm.errors.quantityInteger');
+    if (closeEnabled) {
+      if (!exitDate) return t('positionForm.errors.exitDateRequired', { defaultValue: 'Çıkış tarihi gerekli' });
+      if (!exitPrice || Number(exitPrice) <= 0) return t('positionForm.errors.exitPriceInvalid', { defaultValue: 'Çıkış fiyatı geçersiz' });
+      if (new Date(exitDate) < new Date(form.entryDate)) {
+        return t('positionForm.errors.exitBeforeEntry', { defaultValue: 'Çıkış tarihi giriş tarihinden önce olamaz' });
+      }
+    }
     return null;
   };
 
@@ -139,12 +220,26 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
   const handleConfirm = async () => {
     setError(null);
     setPhase('processing');
+    const entryPriceTry = displayToTry(form.entryPrice, form.entryDate);
+    if (entryPriceTry == null || entryPriceTry <= 0) {
+      setError(t('positionForm.errors.priceInvalid'));
+      setPhase('form');
+      return;
+    }
+    const exitPriceTry = closeEnabled && exitPrice ? displayToTry(exitPrice, exitDate) : null;
+    if (closeEnabled && (exitPriceTry == null || exitPriceTry <= 0)) {
+      setError(t('positionForm.errors.exitPriceInvalid', { defaultValue: 'Çıkış fiyatı geçersiz' }));
+      setPhase('form');
+      return;
+    }
     const payload = {
       assetType: target.assetType,
       assetCode: target.assetCode,
       quantity: Number(form.quantity),
       entryDate: dateInputToIso(form.entryDate),
-      entryPrice: Number(form.entryPrice),
+      entryPrice: entryPriceTry,
+      exitDate: closeEnabled ? dateInputToIso(exitDate) : null,
+      exitPrice: closeEnabled ? exitPriceTry : null,
     };
     const mutate = isEdit
       ? () => updateMutation.mutateAsync({ positionId: position.id, payload })
@@ -237,7 +332,11 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
             displayCode={displayCode}
             form={form}
             isFractional={isFractional}
-            totalCost={totalCost}
+            totalCostTry={totalCostTry}
+            inputCurrency={inputCurrency}
+            closeEnabled={closeEnabled}
+            exitDate={exitDate}
+            exitPrice={exitPrice}
             onCancel={() => setPhase('form')}
             onConfirm={handleConfirm}
           />
@@ -262,9 +361,10 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
               <DataAvailabilityHint
                 dataAvailable={dataAvailable}
                 loading={entryLoading}
-                suggestedPrice={suggestedPrice}
+                suggestedPrice={suggestedPriceDisplay}
+                inputCurrency={inputCurrency}
                 onApply={useSuggestedPrice}
-                applied={!priceTouched && suggestedPrice != null && Number(form.entryPrice) === suggestedPrice}
+                applied={!priceTouched && suggestedPriceDisplay != null && Number(form.entryPrice) === suggestedPriceDisplay}
               />
             </div>
 
@@ -301,14 +401,60 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
               />
             </div>
 
-            {totalCost != null && (
+            {!isEdit && (
+              <div className="rounded-lg border border-border-default bg-bg-base/60">
+                <button
+                  type="button"
+                  onClick={() => setCloseEnabled((v) => !v)}
+                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-fg-muted hover:text-fg cursor-pointer bg-transparent border-none"
+                >
+                  <span>{t('positionForm.alreadySoldToggle', { defaultValue: 'Bu pozisyonu zaten sattım' })}</span>
+                  <span className={`text-[10px] ${closeEnabled ? 'text-accent' : ''}`}>{closeEnabled ? '−' : '+'}</span>
+                </button>
+                {closeEnabled && (
+                  <div className="space-y-3 px-3 pb-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
+                        <Calendar className="h-3 w-3" />
+                        {t('positionForm.fields.exitDate', { defaultValue: 'Çıkış tarihi' })}
+                      </label>
+                      <DatePickerPopover
+                        value={exitDate}
+                        onChange={(iso) => { setExitDate(iso); setExitPriceTouched(false); setError(null); }}
+                        onMonthChange={(y, m) => setExitViewMonth(`${y}-${String(m + 1).padStart(2, '0')}`)}
+                        minDate={form.entryDate}
+                        maxDate={todayInputValue()}
+                        highlightedDates={exitHighlights}
+                        loading={exitLoading}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
+                        <Tag className="h-3 w-3" />
+                        {t('positionForm.fields.exitPrice', { defaultValue: 'Çıkış fiyatı' })}
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={exitPrice}
+                        onChange={(e) => { setExitPrice(e.target.value); setExitPriceTouched(true); setError(null); }}
+                        placeholder="0.00"
+                        className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {totalCostTry != null && (
               <div className="rounded-xl border border-accent/30 bg-gradient-to-r from-accent/5 to-transparent px-4 py-3 flex items-center justify-between gap-3 min-w-0">
                 <span className="text-xs font-semibold text-accent shrink-0">{t('positionForm.totalCost')}</span>
                 <span
                   className="text-lg font-bold font-mono text-accent truncate"
-                  title={money(totalCost)}
+                  title={money(totalCostTry)}
                 >
-                  {formatTotalCost(totalCost)}
+                  {formatCompact(totalCostTry, 'TRY', 1_000_000_000)}
                 </span>
               </div>
             )}
@@ -341,12 +487,17 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
   );
 }
 
-function ConfirmPanel({ isEdit, displayCode, form, isFractional, totalCost, onCancel, onConfirm }) {
+function ConfirmPanel({ isEdit, displayCode, form, isFractional, totalCostTry, inputCurrency,
+                        closeEnabled, exitDate, exitPrice, onCancel, onConfirm }) {
   const { t } = useTranslation();
-  const { format: money } = useMoney();
+  const { format: money, formatCompact } = useMoney();
   const qtyDisplay = Number(form.quantity).toLocaleString(currentLocaleTag(), { maximumFractionDigits: isFractional ? 6 : 0 });
-  const priceDisplay = money(Number(form.entryPrice));
+  const priceDisplay = money(Number(form.entryPrice), inputCurrency);
   const dateDisplay = new Date(form.entryDate).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'long', year: 'numeric' });
+  const exitDateDisplay = closeEnabled && exitDate
+    ? new Date(exitDate).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'long', year: 'numeric' })
+    : null;
+  const exitPriceDisplay = closeEnabled && exitPrice ? money(Number(exitPrice), inputCurrency) : null;
   return (
     <motion.div
       initial={{ opacity: 0, y: 5 }}
@@ -370,10 +521,16 @@ function ConfirmPanel({ isEdit, displayCode, form, isFractional, totalCost, onCa
         <Row label={t('positionForm.confirm.date')} value={dateDisplay} />
         <Row label={t('positionForm.confirm.quantity')} value={isFractional ? qtyDisplay : t('positionForm.confirm.quantityShares', { qty: qtyDisplay })} />
         <Row label={t('positionForm.confirm.unitPrice')} value={priceDisplay} />
+        {exitDateDisplay && (
+          <div className="border-t border-border-default pt-2 space-y-2">
+            <Row label={t('positionForm.confirm.exitDate', { defaultValue: 'Çıkış tarihi' })} value={exitDateDisplay} />
+            <Row label={t('positionForm.confirm.exitPrice', { defaultValue: 'Çıkış fiyatı' })} value={exitPriceDisplay} />
+          </div>
+        )}
         <div className="border-t border-border-default pt-2">
           <Row label={<span className="font-semibold">{t('positionForm.totalCost')}</span>} value={
-            <span className="font-bold text-accent truncate" title={money(totalCost)}>
-              {formatTotalCost(totalCost)}
+            <span className="font-bold text-accent truncate" title={money(totalCostTry)}>
+              {formatCompact(totalCostTry, 'TRY', 1_000_000_000)}
             </span>
           } />
         </div>
@@ -444,7 +601,7 @@ function SuccessPanel({ title, subtitle }) {
   );
 }
 
-function DataAvailabilityHint({ dataAvailable, suggestedPrice, onApply, applied, loading }) {
+function DataAvailabilityHint({ dataAvailable, suggestedPrice, inputCurrency, onApply, applied, loading }) {
   const { t } = useTranslation();
   const { format: money } = useMoney();
   if (loading) {
@@ -456,7 +613,7 @@ function DataAvailabilityHint({ dataAvailable, suggestedPrice, onApply, applied,
         <div className="flex items-center gap-1.5">
           <Check className="h-3 w-3 shrink-0" />
           <span dangerouslySetInnerHTML={{
-            __html: t('positionForm.availability.has', { price: money(suggestedPrice) }),
+            __html: t('positionForm.availability.has', { price: money(suggestedPrice, inputCurrency) }),
           }} />
         </div>
         {!applied && (

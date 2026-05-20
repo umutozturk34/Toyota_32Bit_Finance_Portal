@@ -5,7 +5,7 @@ import { EventSourcePolyfill } from 'event-source-polyfill';
 import {
     Activity, Play, CheckCircle2, XCircle, Clock,
     Loader2, Zap, Database, X,
-    TrendingUp, DollarSign, Bitcoin, Briefcase, Landmark, Newspaper, Gem, Layers,
+    TrendingUp, DollarSign, Bitcoin, Briefcase, Landmark, Newspaper, Gem, Layers, BarChart3,
 } from 'lucide-react';
 import { adminService } from '../services/adminService';
 import { getToken } from '../../auth/lib/keycloak';
@@ -127,6 +127,15 @@ const TASK_GROUPS = [
         bg: 'bg-[#f472b6]/10',
         tasks: [
             { key: 'news-update', labelKey: 'update', trigger: () => adminService.triggerNewsUpdate() },
+        ],
+    },
+    {
+        categoryKey: 'MACRO',
+        icon: BarChart3,
+        color: 'text-[#22d3ee]',
+        bg: 'bg-[#22d3ee]/10',
+        tasks: [
+            { key: 'macro-refresh', labelKey: 'refresh', trigger: () => adminService.triggerMacroRefresh() },
         ],
     },
 ];

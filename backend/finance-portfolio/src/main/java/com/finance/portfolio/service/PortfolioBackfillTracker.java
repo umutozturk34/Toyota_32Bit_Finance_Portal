@@ -1,5 +1,6 @@
 package com.finance.portfolio.service;
 
+import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.portfolio.dto.response.BackfillStatusResponse;
 import com.finance.portfolio.dto.response.BackfillStatusResponse.PendingAsset;
 import com.finance.portfolio.model.AssetType;
@@ -24,28 +25,33 @@ public class PortfolioBackfillTracker {
 
     private record PortfolioState(Set<PendingAsset> pending, long since) {}
 
-    private final Cache<Long, PortfolioState> states = Caffeine.newBuilder()
-            .expireAfterWrite(Duration.ofHours(2))
-            .maximumSize(1_000)
-            .removalListener((Long id, PortfolioState state, com.github.benmanes.caffeine.cache.RemovalCause cause) -> {
-                if (cause.wasEvicted() && state != null) {
-                    log.warn("Backfill state evicted portfolioId={} pending={} cause={}",
-                            id, state.pending().size(), cause);
-                }
-            })
-            .build();
+    private final Cache<Long, PortfolioState> states;
+    private final Cache<Long, CopyOnWriteArrayList<SseEmitter>> emitters;
 
-    private final Cache<Long, CopyOnWriteArrayList<SseEmitter>> emitters = Caffeine.newBuilder()
-            .expireAfterAccess(Duration.ofMinutes(30))
-            .maximumSize(10_000)
-            .removalListener((Long id, CopyOnWriteArrayList<SseEmitter> list, com.github.benmanes.caffeine.cache.RemovalCause cause) -> {
-                if (cause.wasEvicted() && list != null) {
-                    log.warn("Backfill emitters evicted portfolioId={} count={} cause={}",
-                            id, list.size(), cause);
-                    list.forEach(SseEmitter::complete);
-                }
-            })
-            .build();
+    public PortfolioBackfillTracker(PortfolioProperties props) {
+        PortfolioProperties.Backfill cfg = props.getBackfill();
+        this.states = Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofHours(cfg.getStateCacheExpiryHours()))
+                .maximumSize(1_000)
+                .removalListener((Long id, PortfolioState state, com.github.benmanes.caffeine.cache.RemovalCause cause) -> {
+                    if (cause.wasEvicted() && state != null) {
+                        log.warn("Backfill state evicted portfolioId={} pending={} cause={}",
+                                id, state.pending().size(), cause);
+                    }
+                })
+                .build();
+        this.emitters = Caffeine.newBuilder()
+                .expireAfterAccess(Duration.ofMinutes(cfg.getEmitterCacheExpiryMinutes()))
+                .maximumSize(cfg.getEmittersCacheMaxSize())
+                .removalListener((Long id, CopyOnWriteArrayList<SseEmitter> list, com.github.benmanes.caffeine.cache.RemovalCause cause) -> {
+                    if (cause.wasEvicted() && list != null) {
+                        log.warn("Backfill emitters evicted portfolioId={} count={} cause={}",
+                                id, list.size(), cause);
+                        list.forEach(SseEmitter::complete);
+                    }
+                })
+                .build();
+    }
 
     public void start(Long portfolioId, AssetType assetType, String assetCode) {
         PendingAsset key = new PendingAsset(assetType.name(), assetCode);

@@ -8,6 +8,11 @@ public record AssetSnapshot(
         String image,
         BigDecimal priceTry,
         BigDecimal changeAmount,
-        BigDecimal changePercent
+        BigDecimal changePercent,
+        String currency
 ) {
+    public AssetSnapshot(String code, String name, String image, BigDecimal priceTry,
+                         BigDecimal changeAmount, BigDecimal changePercent) {
+        this(code, name, image, priceTry, changeAmount, changePercent, "TRY");
+    }
 }

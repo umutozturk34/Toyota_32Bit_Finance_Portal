@@ -166,9 +166,9 @@ class PortfolioFacadeTest {
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER))
                 .thenReturn(Optional.of(mock(Portfolio.class)));
         List<AllocationItem> allocation = List.of();
-        when(summaryService.getAllocation(PORTFOLIO_ID, "assetType", null)).thenReturn(allocation);
+        when(summaryService.getAllocation(PORTFOLIO_ID, "assetType", null, null)).thenReturn(allocation);
 
-        assertThat(facade.getAllocation(USER, PORTFOLIO_ID, "assetType", null)).isSameAs(allocation);
+        assertThat(facade.getAllocation(USER, PORTFOLIO_ID, "assetType", null, null)).isSameAs(allocation);
     }
 
     @Test
@@ -189,10 +189,11 @@ class PortfolioFacadeTest {
     void getPortfolioView_assemblesAllSections_whenAllIncludesPresent() {
         when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER))
                 .thenReturn(Optional.of(mock(Portfolio.class)));
+        when(portfolioProperties.getView()).thenReturn(new PortfolioProperties.View());
         when(summaryService.getSummary(PORTFOLIO_ID, null)).thenReturn(mock(PortfolioSummaryResponse.class));
         when(summaryService.getPositionsPaged(PORTFOLIO_ID, null, null, null, null, 0, 10))
                 .thenReturn(PagedResponse.of(List.of(), 0, 10, 0));
-        when(summaryService.getAllocation(PORTFOLIO_ID, "assetType", null)).thenReturn(List.of());
+        when(summaryService.getAllocation(PORTFOLIO_ID, "assetType", null, null)).thenReturn(List.of());
 
         PortfolioViewResponse response = facade.getPortfolioView(USER, PORTFOLIO_ID,
                 Set.of("summary", "positions", "allocation"));

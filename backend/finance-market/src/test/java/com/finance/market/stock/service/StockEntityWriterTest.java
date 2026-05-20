@@ -1,7 +1,7 @@
 package com.finance.market.stock.service;
 
 import com.finance.common.config.AppProperties;
-import com.finance.common.model.Asset;
+import com.finance.common.model.Instrument;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.service.AssetRegistryService;
 import com.finance.market.core.service.TrackedAssetQueryService;
@@ -61,7 +61,7 @@ class StockEntityWriterTest {
         YahooStockQuoteDto dto = stockQuote("Türk Hava Yolları", new BigDecimal("250.00"));
         Stock entity = Stock.builder().symbol("THYAO.IS").build();
         entity.setName("Türk Hava Yolları");
-        Asset asset = Asset.create(MarketType.STOCK, "THYAO.IS");
+        Instrument asset = Instrument.create(MarketType.STOCK, "THYAO.IS");
         when(stockRepository.findById("THYAO.IS")).thenReturn(Optional.empty());
         when(stockMapper.toEntity(eq(dto), any())).thenReturn(entity);
         when(assetRegistry.upsert(MarketType.STOCK, "THYAO.IS")).thenReturn(asset);
@@ -78,7 +78,7 @@ class StockEntityWriterTest {
         YahooStockQuoteDto dto = stockQuote("Akbank", new BigDecimal("80.00"));
         Stock existing = Stock.builder().symbol("AKBNK.IS").build();
         existing.setName("Akbank");
-        Asset asset = Asset.create(MarketType.STOCK, "AKBNK.IS");
+        Instrument asset = Instrument.create(MarketType.STOCK, "AKBNK.IS");
         when(stockRepository.findById("AKBNK.IS")).thenReturn(Optional.of(existing));
         when(assetRegistry.upsert(MarketType.STOCK, "AKBNK.IS")).thenReturn(asset);
 
@@ -180,7 +180,7 @@ class StockEntityWriterTest {
     void saveSnapshot_setsResolvedStockSegment_fromTrackedAsset() {
         YahooStockQuoteDto dto = stockQuote("Akbank", new BigDecimal("80.00"));
         Stock entity = Stock.builder().symbol("AKBNK.IS").build();
-        Asset asset = Asset.create(MarketType.STOCK, "AKBNK.IS");
+        Instrument asset = Instrument.create(MarketType.STOCK, "AKBNK.IS");
         TrackedAssetResponse tracked = TrackedAssetResponse.builder()
                 .assetCode("AKBNK.IS").stockSegment(StockSegment.MAIN_INDEX).build();
         when(stockRepository.findById("AKBNK.IS")).thenReturn(Optional.empty());
@@ -198,7 +198,7 @@ class StockEntityWriterTest {
     void saveSnapshot_fallsBackToEquitySegment_whenTrackedAssetMissing() {
         YahooStockQuoteDto dto = stockQuote("Akbank", new BigDecimal("80.00"));
         Stock entity = Stock.builder().symbol("AKBNK.IS").build();
-        Asset asset = Asset.create(MarketType.STOCK, "AKBNK.IS");
+        Instrument asset = Instrument.create(MarketType.STOCK, "AKBNK.IS");
         when(stockRepository.findById("AKBNK.IS")).thenReturn(Optional.empty());
         when(stockMapper.toEntity(eq(dto), any())).thenReturn(entity);
         when(assetRegistry.upsert(MarketType.STOCK, "AKBNK.IS")).thenReturn(asset);

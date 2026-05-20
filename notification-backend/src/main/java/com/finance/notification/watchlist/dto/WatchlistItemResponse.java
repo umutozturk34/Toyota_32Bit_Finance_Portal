@@ -14,6 +14,7 @@ public record WatchlistItemResponse(
         BigDecimal currentPrice,
         BigDecimal changeAmount,
         BigDecimal changePercent,
+        String currency,
         String note,
         BigDecimal deltaThreshold,
         BigDecimal lastSeenPrice,

@@ -66,7 +66,7 @@ class WatchlistControllerTest {
 
     private WatchlistItemResponse sampleItem() {
         return new WatchlistItemResponse(10L, MarketType.STOCK, "AAPL", "Apple", null,
-                BigDecimal.TEN, BigDecimal.ONE, BigDecimal.ONE, null, null, null,
+                BigDecimal.TEN, BigDecimal.ONE, BigDecimal.ONE, "TRY", null, null, null,
                 LocalDateTime.now(), LocalDateTime.now());
     }
 

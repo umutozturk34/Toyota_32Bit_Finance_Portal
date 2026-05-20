@@ -40,6 +40,14 @@ import com.finance.market.bond.repository.BondRepository;
 
 import com.finance.market.bond.service.BondDataService;
 
+import com.finance.market.macro.repository.MacroIndicatorRepository;
+
+import com.finance.market.macro.repository.MacroIndicatorPointRepository;
+
+import com.finance.market.macro.service.MacroIndicatorRegistryService;
+
+import com.finance.market.macro.service.MacroIndicatorFetchService;
+
 import com.finance.market.viop.repository.ViopContractRepository;
 
 import com.finance.market.viop.service.ViopDataService;
@@ -81,6 +89,10 @@ public class MarketDataInitializer implements CommandLineRunner {
     private final CommodityDataService commodityDataService;
     private final BondRepository bondRepository;
     private final BondDataService bondDataService;
+    private final MacroIndicatorRepository macroIndicatorRepository;
+    private final MacroIndicatorPointRepository macroIndicatorPointRepository;
+    private final MacroIndicatorRegistryService macroRegistry;
+    private final MacroIndicatorFetchService macroFetcher;
     private final ViopContractRepository viopContractRepository;
     private final ViopDataService viopDataService;
     private final NewsArticleRepository articleRepository;
@@ -98,6 +110,11 @@ public class MarketDataInitializer implements CommandLineRunner {
                 fundDataService::refreshAll);
 
         init("bond", null, bondRepository.count(), 1, null, bondDataService::updateBonds);
+
+        init("macro", null, macroIndicatorRepository.count(), macroIndicatorPointRepository.count(), null, () -> {
+            macroRegistry.synchronizeFromConfig();
+            macroFetcher.refreshAll();
+        });
 
         init("viop", MarketType.VIOP, viopContractRepository.count(), 1, null, viopDataService::refreshAll);
 

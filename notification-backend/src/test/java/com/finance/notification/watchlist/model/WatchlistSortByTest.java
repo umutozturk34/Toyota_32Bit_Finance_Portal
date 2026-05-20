@@ -17,7 +17,7 @@ class WatchlistSortByTest {
 
     private WatchlistItemResponse item(BigDecimal currentPrice, BigDecimal changePercent) {
         return new WatchlistItemResponse(1L, MarketType.STOCK, "X", "X", null,
-                currentPrice, null, changePercent, null, null, null, null, null);
+                currentPrice, null, changePercent, "TRY", null, null, null, null, null);
     }
 
     @Test

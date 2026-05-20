@@ -165,7 +165,7 @@ class WatchlistServiceTest {
 
     private WatchlistItemResponse stub(WatchlistItem i) {
         return new WatchlistItemResponse(i.getId(), i.getMarketType(), i.getAssetCode(),
-                null, null, null, null, null,
+                null, null, null, null, null, "TRY",
                 i.getNote(), i.getDeltaThreshold(), i.getLastSeenPrice(), i.getLastSeenAt(),
                 i.getCreatedAt());
     }

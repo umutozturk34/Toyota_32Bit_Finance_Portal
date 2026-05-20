@@ -145,11 +145,29 @@ const ChartToolbar = ({
                 }
                 if (crosshairData.open != null) {
                     return (
-                        <div className="flex items-center gap-3 text-[11px] font-mono">
+                        <div className="flex items-center gap-3 text-[11px] font-mono flex-wrap">
                             <span className="text-fg-muted">O <span className="text-fg">{Number(crosshairData.open).toFixed(2)}</span></span>
                             <span className="text-fg-muted">H <span className="text-[#10b981]">{Number(crosshairData.high).toFixed(2)}</span></span>
                             <span className="text-fg-muted">L <span className="text-[#ef4444]">{Number(crosshairData.low).toFixed(2)}</span></span>
                             <span className="text-fg-muted">C <span style={{ color: Number(crosshairData.close) >= Number(crosshairData.open) ? '#10b981' : '#ef4444' }}>{Number(crosshairData.close).toFixed(2)}</span></span>
+                            {crosshairData.compares?.map((c) => (
+                                <span key={c.symbol} className="text-fg-muted flex items-center gap-1">
+                                    <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
+                                    {c.symbol} <span style={{ color: c.color }}>{Number(c.value).toFixed(2)}</span>
+                                </span>
+                            ))}
+                        </div>
+                    );
+                }
+                if (crosshairData.compares?.length > 0) {
+                    return (
+                        <div className="flex items-center gap-3 text-[11px] font-mono flex-wrap">
+                            {crosshairData.compares.map((c) => (
+                                <span key={c.symbol} className="text-fg-muted flex items-center gap-1">
+                                    <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
+                                    {c.symbol} <span style={{ color: c.color }}>{Number(c.value).toFixed(2)}</span>
+                                </span>
+                            ))}
                         </div>
                     );
                 }

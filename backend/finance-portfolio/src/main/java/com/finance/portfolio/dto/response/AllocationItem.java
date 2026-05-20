@@ -6,5 +6,7 @@ public record AllocationItem(
         String label,
         String assetType,
         BigDecimal valueTry,
-        BigDecimal percent
+        BigDecimal percent,
+        BigDecimal costTry,
+        BigDecimal realizedPnlTry
 ) {}

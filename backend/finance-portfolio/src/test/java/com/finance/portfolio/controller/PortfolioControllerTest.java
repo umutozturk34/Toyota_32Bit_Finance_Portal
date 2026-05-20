@@ -182,10 +182,10 @@ class PortfolioControllerTest {
     @Test
     void getAllocation_delegatesToFacade() {
         List<AllocationItem> allocation = List.of();
-        when(portfolioFacade.getAllocation(USER, 7L, "assetType", null)).thenReturn(allocation);
+        when(portfolioFacade.getAllocation(USER, 7L, "assetType", null, null)).thenReturn(allocation);
         when(translator.translate("api.portfolio.allocationRetrieved")).thenReturn("ok");
 
-        ApiResponse<List<AllocationItem>> response = controller.getAllocation(jwt, 7L, "assetType", null);
+        ApiResponse<List<AllocationItem>> response = controller.getAllocation(jwt, 7L, "assetType", null, null);
 
         assertThat(response.getData()).isSameAs(allocation);
     }

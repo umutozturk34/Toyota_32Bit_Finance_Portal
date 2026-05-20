@@ -59,6 +59,12 @@ public class AdminController {
         return ApiResponse.success(translator.translate("api.admin.newsUpdateTriggered"), adminTaskService.triggerNewsUpdate());
     }
 
+    @PostMapping("/trigger/macro/refresh")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ApiResponse<TaskTriggerResponse> triggerMacroRefresh() {
+        return ApiResponse.success(translator.translate("api.admin.macroRefreshTriggered"), adminTaskService.triggerMacroRefresh());
+    }
+
     @GetMapping(path = "/tasks/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamTaskStatus() {
         return taskTrackingService.subscribeToStatus();

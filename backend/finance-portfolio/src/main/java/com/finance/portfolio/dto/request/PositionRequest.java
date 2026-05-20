@@ -12,5 +12,12 @@ public record PositionRequest(
         @NotBlank String assetCode,
         @NotNull @Positive BigDecimal quantity,
         @NotNull LocalDateTime entryDate,
-        @NotNull @Positive BigDecimal entryPrice
-) {}
+        @NotNull @Positive BigDecimal entryPrice,
+        LocalDateTime exitDate,
+        @Positive BigDecimal exitPrice
+) {
+    public PositionRequest(String assetType, String assetCode, BigDecimal quantity,
+                           LocalDateTime entryDate, BigDecimal entryPrice) {
+        this(assetType, assetCode, quantity, entryDate, entryPrice, null, null);
+    }
+}

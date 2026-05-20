@@ -25,6 +25,7 @@ export const adminService = {
 
   triggerBondUpdate: () => api.post('/admin/trigger/bond/update').then(r => r.data.data),
   triggerNewsUpdate: () => api.post('/admin/trigger/news/update').then(r => r.data.data),
+  triggerMacroRefresh: () => api.post('/admin/trigger/macro/refresh').then(r => r.data.data),
 
   getNewsSources: async (includeDisabled = true) => {
     const response = await api.get('/admin/news-sources', { params: { includeDisabled } });

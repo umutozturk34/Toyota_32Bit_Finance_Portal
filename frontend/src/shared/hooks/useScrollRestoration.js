@@ -4,6 +4,7 @@ import { TIMINGS } from '../config/uiConfig';
 import useNavigationStore from '../stores/useNavigationStore';
 
 const RESTORE_DELAYS = [0, 50, 120, 250, 500, 900];
+const SCROLL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' ', 'Spacebar']);
 
 export default function useScrollRestoration() {
   const { pathname, search } = useLocation();
@@ -25,18 +26,34 @@ export default function useScrollRestoration() {
     if (!saved || !saved.y) return undefined;
 
     document.body.style.minHeight = `${Math.max(saved.h || 0, saved.y + window.innerHeight)}px`;
-    let cancelled = false;
-    const restore = () => { if (!cancelled) window.scrollTo(0, saved.y); };
-    const timers = RESTORE_DELAYS.map((delay) => window.setTimeout(restore, delay));
-    const release = window.setTimeout(() => {
-      document.body.style.minHeight = '';
-    }, RESTORE_DELAYS[RESTORE_DELAYS.length - 1] + 200);
 
-    return () => {
+    let cancelled = false;
+    const timers = [];
+    let release = 0;
+
+    const abort = () => {
+      if (cancelled) return;
       cancelled = true;
       timers.forEach(window.clearTimeout);
       window.clearTimeout(release);
+      document.body.style.minHeight = '';
+      window.removeEventListener('wheel', abort);
+      window.removeEventListener('touchstart', abort);
+      window.removeEventListener('pointerdown', abort);
+      window.removeEventListener('keydown', onKeyDown);
     };
+    const onKeyDown = (e) => { if (SCROLL_KEYS.has(e.key)) abort(); };
+
+    window.addEventListener('wheel', abort, { passive: true });
+    window.addEventListener('touchstart', abort, { passive: true });
+    window.addEventListener('pointerdown', abort);
+    window.addEventListener('keydown', onKeyDown);
+
+    const restore = () => { if (!cancelled) window.scrollTo(0, saved.y); };
+    RESTORE_DELAYS.forEach((delay) => timers.push(window.setTimeout(restore, delay)));
+    release = window.setTimeout(abort, RESTORE_DELAYS[RESTORE_DELAYS.length - 1] + 200);
+
+    return abort;
   }, [fullKey, consumeScroll]);
 
   useEffect(() => {

@@ -18,6 +18,7 @@ spring:
       - classpath:config/news.yaml
       - classpath:config/scheduler.yaml
       - classpath:config/portfolio.yaml
+      - classpath:config/macro.yaml
       - classpath:config/overview.yaml
       - classpath:config/chart.yaml
       - classpath:config/resilience.yaml

@@ -1,5 +1,3 @@
-import { formatPriceTRY, currentLocaleTag } from '../../../shared/utils/formatters';
-
 export const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX', 'COMMODITY'];
 export const ONE_HOUR_MS = 60 * 60 * 1000;
 export const SUCCESS_HOLD_MS = 1100;
@@ -78,21 +76,6 @@ export function buildPriceIndex(response) {
   const index = new Map();
   collectIsoDateEntries(response, index);
   return index;
-}
-
-function compactCurrencyFormatter() {
-  return new Intl.NumberFormat(currentLocaleTag(), {
-    notation: 'compact',
-    style: 'currency',
-    currency: 'TRY',
-    maximumFractionDigits: 2,
-  });
-}
-
-export function formatTotalCost(cost) {
-  if (cost == null) return 'N/A';
-  if (Math.abs(cost) >= 1_000_000_000) return compactCurrencyFormatter().format(cost);
-  return formatPriceTRY(cost);
 }
 
 export function preventDecimal(e) {

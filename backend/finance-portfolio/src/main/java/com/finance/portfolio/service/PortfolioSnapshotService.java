@@ -90,9 +90,6 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
     }
 
     private void snapshotDerivativePositions(Portfolio portfolio, LocalDateTime batchTimestamp) {
-        // Include closed positions too — their snapshot is frozen at close_price by the
-        // calculator, so today's aggregate keeps reflecting the realized P&L until the user
-        // explicitly deletes the position.
         List<DerivativePosition> positions = derivativePositionRepository
                 .findByPortfolioId(portfolio.getId());
         if (positions.isEmpty()) {
@@ -136,13 +133,12 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
     private void insertAssetSnapshots(Portfolio portfolio, AssetType assetType,
                                        LocalDateTime batchTimestamp) {
         Long pid = portfolio.getId();
-        List<PortfolioPosition> positions = positionRepository
+        List<PortfolioPosition> open = positionRepository
                 .findByPortfolioIdAndTrackedAsset_AssetTypeAndQuantityGreaterThan(
-                        pid, TrackedAssetType.valueOf(assetType.name()), BigDecimal.ZERO);
-
-        for (PortfolioPosition pos : positions) {
-            assetSnapshotRepository.save(calculator.buildAssetSnapshot(pid, pos, batchTimestamp));
-        }
+                        pid, TrackedAssetType.valueOf(assetType.name()), BigDecimal.ZERO)
+                .stream().filter(p -> !p.isClosed()).toList();
+        calculator.buildAssetSnapshotsForPositions(pid, open, batchTimestamp)
+                .forEach(assetSnapshotRepository::save);
     }
 
     private PortfolioDailySnapshot insertAggregateSnapshot(Portfolio portfolio, LocalDateTime batchTimestamp) {
@@ -152,16 +148,15 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
     private PortfolioDailySnapshot generateFullSnapshot(Portfolio portfolio) {
         Long pid = portfolio.getId();
         LocalDateTime batchTimestamp = LocalDateTime.now();
-        List<PortfolioPosition> positions = positionRepository
-                .findByPortfolioIdAndQuantityGreaterThan(pid, BigDecimal.ZERO);
-        // Include closed VIOP positions too — calculator freezes their snapshot at close_price.
+        List<PortfolioPosition> open = positionRepository
+                .findByPortfolioIdAndQuantityGreaterThan(pid, BigDecimal.ZERO)
+                .stream().filter(p -> !p.isClosed()).toList();
         List<DerivativePosition> derivatives = derivativePositionRepository.findByPortfolioId(pid);
 
-        if (positions.isEmpty() && derivatives.isEmpty()) return null;
+        if (open.isEmpty() && derivatives.isEmpty()) return null;
 
-        for (PortfolioPosition pos : positions) {
-            assetSnapshotRepository.save(calculator.buildAssetSnapshot(pid, pos, batchTimestamp));
-        }
+        calculator.buildAssetSnapshotsForPositions(pid, open, batchTimestamp)
+                .forEach(assetSnapshotRepository::save);
         for (DerivativePosition dpos : derivatives) {
             PortfolioAssetDailySnapshot snap = calculator.buildDerivativeAssetSnapshot(pid, dpos, batchTimestamp);
             if (snap != null) assetSnapshotRepository.save(snap);

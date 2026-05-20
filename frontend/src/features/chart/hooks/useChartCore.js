@@ -32,6 +32,12 @@ const toChartTime = (dateStr) => {
     return new Date(s).getTime() / 1000;
 };
 
+const chartTimeKey = (t) => {
+    if (!t) return '';
+    if (typeof t === 'object') return `${t.year}-${t.month}-${t.day}`;
+    return String(t);
+};
+
 const chartTimeEqual = (a, b) => {
     if (a === b) return true;
     if (a && b && typeof a === 'object' && typeof b === 'object') {
@@ -75,6 +81,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         return analyzeTrend(candleData);
     }, [data]);
     const [crosshairData, setCrosshairData] = useState(null);
+    const compareDataAtKeyRef = useRef({ byKey: new Map(), symbols: [] });
 
     useEffect(() => {
         if (!chartContainerRef.current || !data?.candles?.length) return;
@@ -224,12 +231,23 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 return;
             }
             const cd = candleDataRef.current.find(c => chartTimeEqual(c.time, param.time));
+            const compareInfo = compareDataAtKeyRef.current;
+            const compares = [];
+            if (compareInfo.symbols.length > 0) {
+                const k = chartTimeKey(param.time);
+                for (const { symbol, color } of compareInfo.symbols) {
+                    const byKey = compareInfo.byKey.get(symbol);
+                    const pt = byKey?.get(k);
+                    if (pt) compares.push({ symbol, value: pt.value, color });
+                }
+            }
             if (cd) setCrosshairData({
                 open: cd.open, high: cd.high, low: cd.low, close: cd.close,
                 sellingPrice: cd.sellingPrice, buyingPrice: cd.buyingPrice,
                 effectiveBuyingPrice: cd.effectiveBuyingPrice, effectiveSellingPrice: cd.effectiveSellingPrice,
                 bulletinPrice: cd.bulletinPrice,
                 time: cd.time,
+                compares: compares.length > 0 ? compares : undefined,
             });
             const overlays = overlayMetaRef.current;
             if (overlays.size > 0 && param.point) {
@@ -338,11 +356,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         const candleData = candleDataRef.current;
         if (!candleData.length) return;
 
-        const keyOf = (t) => {
-            if (!t) return '';
-            if (typeof t === 'object') return `${t.year}-${t.month}-${t.day}`;
-            return String(t);
-        };
+        const keyOf = chartTimeKey;
 
         const mainPoints = candleData.map(c => ({ time: c.time, value: Number(c.close), key: keyOf(c.time), epoch: toEpochSec(c.time) }));
         const validCompares = compareDatas
@@ -355,9 +369,14 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 return { symbol: cd.symbol, points, byKey: new Map(points.map(p => [p.key, p])), color: COMPARE_COLORS[idx % COMPARE_COLORS.length] };
             });
         if (validCompares.length === 0) {
+            compareDataAtKeyRef.current = { byKey: new Map(), symbols: [] };
             if (mainSeries) try { mainSeries.applyOptions({ visible: true }); } catch { void 0; }
             return;
         }
+        compareDataAtKeyRef.current = {
+            byKey: new Map(validCompares.map(c => [c.symbol, c.byKey])),
+            symbols: validCompares.map(c => ({ symbol: c.symbol, color: c.color })),
+        };
 
         const MIN_SANE_BASELINE = 0.01;
         const commonPoints = mainPoints.filter(p =>

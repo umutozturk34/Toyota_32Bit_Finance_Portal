@@ -1,4 +1,5 @@
 package com.finance.portfolio.repository;
+
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,7 +39,7 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
             """)
     List<PortfolioAssetDailySnapshot> findLatestPerTrackedAssetBefore(
             @Param("pid") Long portfolioId,
-            @Param("trackedIds") java.util.Collection<Long> trackedIds,
+            @Param("trackedIds") Collection<Long> trackedIds,
             @Param("cutoff") LocalDateTime cutoff);
 
     Optional<PortfolioAssetDailySnapshot> findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
@@ -64,22 +66,6 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
     List<PortfolioAssetDailySnapshot> findByPortfolioIdAndCreatedAtBetweenOrderByCreatedAtAsc(
             Long portfolioId, LocalDateTime start, LocalDateTime end);
 
-    @Query("""
-            SELECT new com.finance.portfolio.dto.internal.PortfolioAggregateRow(
-                s.createdAt,
-                SUM(s.marketValueTry),
-                SUM(s.totalCostTry),
-                SUM(s.pnlTry))
-            FROM PortfolioAssetDailySnapshot s
-            WHERE s.portfolioId = :pid AND s.createdAt BETWEEN :start AND :end
-            GROUP BY s.createdAt
-            ORDER BY s.createdAt ASC
-            """)
-    List<com.finance.portfolio.dto.internal.PortfolioAggregateRow> findAggregateByPortfolio(
-            @Param("pid") Long portfolioId,
-            @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end);
-
     List<PortfolioAssetDailySnapshot> findByPortfolioIdAndAssetTypeAndCreatedAtBetweenOrderByCreatedAtAsc(
             Long portfolioId, AssetType assetType, LocalDateTime start, LocalDateTime end);
 
@@ -98,5 +84,14 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
 
     void deleteByPortfolioIdAndSnapshotDateGreaterThanEqual(Long portfolioId, LocalDate from);
 
+    void deleteByPortfolioIdAndAssetTypeAndAssetCodeAndSnapshotDateGreaterThanEqual(
+            Long portfolioId, AssetType assetType, String assetCode, LocalDate from);
+
+    void deleteByPortfolioIdAndAssetTypeAndAssetCodeAndSnapshotDateBetween(
+            Long portfolioId, AssetType assetType, String assetCode, LocalDate from, LocalDate to);
+
     void deleteByPortfolioId(Long portfolioId);
+
+    List<PortfolioAssetDailySnapshot> findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(
+            Long portfolioId, LocalDate from, LocalDate to);
 }

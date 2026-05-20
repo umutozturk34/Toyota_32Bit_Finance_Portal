@@ -36,7 +36,7 @@ public class TrackedAsset {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "asset_id")
-    private Asset asset;
+    private Instrument asset;
 
     @Column(name = "display_name", length = 255)
     private String displayName;

@@ -6,6 +6,7 @@ import { toast } from '../../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../../shared/utils/apiError';
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import Button from '../../../shared/components/buttons/Button';
+import { currencySymbolOf } from '../../../shared/utils/priceCurrency';
 
 const DIRECTION_DEFS = [
   { value: 'ABOVE', Icon: ArrowUp },
@@ -32,6 +33,7 @@ export default function EditPriceAlertModal({ open, onClose, alert }) {
       setThreshold(alert.threshold != null ? String(alert.threshold) : '');
     }
   }
+  const isPercent = direction === 'CHANGE_PCT_UP' || direction === 'CHANGE_PCT_DOWN';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -89,14 +91,19 @@ export default function EditPriceAlertModal({ open, onClose, alert }) {
 
         <label className="block">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">{t('priceAlertEdit.thresholdLabel')}</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={threshold}
-            onChange={(e) => setThreshold(e.target.value)}
-            placeholder={t('priceAlertEdit.thresholdPlaceholder')}
-            className="mt-1.5 w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-sm font-mono text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)] transition-all"
-          />
+          <div className="relative mt-1.5">
+            <input
+              type="text"
+              inputMode="decimal"
+              value={threshold}
+              onChange={(e) => setThreshold(e.target.value)}
+              placeholder={t('priceAlertEdit.thresholdPlaceholder')}
+              className="w-full rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 pr-10 text-sm font-mono text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.12)] transition-all"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-mono text-fg-subtle pointer-events-none">
+              {isPercent ? '%' : currencySymbolOf(alert.currency)}
+            </span>
+          </div>
           <p className="mt-1 text-[10px] text-fg-subtle leading-relaxed">
             {t('priceAlertEdit.thresholdHint')}
           </p>

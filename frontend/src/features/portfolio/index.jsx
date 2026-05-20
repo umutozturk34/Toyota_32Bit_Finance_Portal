@@ -14,6 +14,7 @@ import useProcessingAnimation from '../../shared/hooks/useProcessingAnimation';
 import SummaryCards from './components/SummaryCards';
 import PositionsTable from './components/PositionsTable';
 import AllocationChart from './components/AllocationChart';
+import RealizedPnlChart from './components/RealizedPnlChart';
 import PerformanceChart from './components/PerformanceChart';
 import PositionFormModal from './components/PositionFormModal';
 import PositionDeleteDialog from './components/PositionDeleteDialog';
@@ -353,24 +354,27 @@ export default function Portfolio() {
     );
   }
 
-  if (selectedAsset) {
-    const lots = viewPositions.filter(
-      (p) => p.assetCode === selectedAsset.assetCode && p.assetType === selectedAsset.assetType
-    );
-    const handleSellOrClose = (lot) => {
-      if (lot.assetType === 'VIOP') setCloseTarget(lot);
-      else setSellTarget(lot);
-    };
-    const handleReopen = (lot) => {
-      if (lot.assetType === 'VIOP') reopenViop.mutate(lot.id);
-      else reopenSpot.mutate(lot.id);
-    };
-    return (
-      <>
+  const handleSellOrClose = (lot) => {
+    if (lot.assetType === 'VIOP') setCloseTarget(lot);
+    else setSellTarget(lot);
+  };
+  const handleReopen = (lot) => {
+    if (lot.assetType === 'VIOP') reopenViop.mutate(lot.id);
+    else reopenSpot.mutate(lot.id);
+  };
+  const selectedLots = selectedAsset
+    ? viewPositions.filter(
+        (p) => p.assetCode === selectedAsset.assetCode && p.assetType === selectedAsset.assetType
+      )
+    : [];
+
+  return (
+    <>
+      {selectedAsset ? (
         <AssetDetail
           portfolioId={portfolio.id}
           asset={selectedAsset}
-          lots={lots}
+          lots={selectedLots}
           onBack={() => setSelectedAsset(null)}
           onEditLot={setEditTarget}
           onDeleteLot={setDeleteTarget}
@@ -378,49 +382,7 @@ export default function Portfolio() {
           onReopenLot={handleReopen}
           hasActiveDialog={Boolean(deleteTarget || editTarget || sellTarget || closeTarget)}
         />
-        {editTarget && portfolio && editTarget.assetType === 'VIOP' && (
-          <EditDerivativePositionModal
-            portfolioId={portfolio.id}
-            position={editTarget}
-            onClose={() => { setEditTarget(null); invalidatePortfolio(); }}
-          />
-        )}
-        {editTarget && portfolio && editTarget.assetType !== 'VIOP' && (
-          <PositionFormModal
-            mode="edit"
-            portfolioId={portfolio.id}
-            position={editTarget}
-            onClose={() => setEditTarget(null)}
-            onComplete={invalidatePortfolio}
-          />
-        )}
-        {deleteTarget && portfolio && (
-          <PositionDeleteDialog
-            portfolioId={portfolio.id}
-            position={deleteTarget}
-            onClose={() => setDeleteTarget(null)}
-            onComplete={invalidatePortfolio}
-          />
-        )}
-        {sellTarget && portfolio && (
-          <SellPositionDialog
-            portfolioId={portfolio.id}
-            position={sellTarget}
-            onClose={() => setSellTarget(null)}
-          />
-        )}
-        {closeTarget && portfolio && (
-          <CloseDerivativePositionDialog
-            portfolioId={portfolio.id}
-            position={closeTarget}
-            onClose={() => { setCloseTarget(null); invalidatePortfolio(); }}
-          />
-        )}
-      </>
-    );
-  }
-
-  return (
+      ) : (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <PageHeader
@@ -462,10 +424,14 @@ export default function Portfolio() {
         ))}
       </div>
 
-      <div className="min-h-[400px]">
+      <div>
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
+              <RealizedPnlChart portfolioId={portfolio?.id} />
+            </div>
+            <div className="min-w-0">
               <PositionsTable
                 portfolioId={portfolio?.id}
                 backfill={backfill}
@@ -475,7 +441,6 @@ export default function Portfolio() {
                 onCloseClick={setCloseTarget}
                 onSellClick={setSellTarget}
               />
-              <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
             </div>
           </div>
         )}
@@ -484,6 +449,8 @@ export default function Portfolio() {
           <PerformanceChart portfolioId={portfolio.id} backfill={backfill} />
         )}
       </div>
+    </div>
+      )}
 
       {editTarget && portfolio && editTarget.assetType === 'VIOP' && (
         <EditDerivativePositionModal
@@ -503,15 +470,6 @@ export default function Portfolio() {
         />
       )}
 
-      {deleteTarget && portfolio && (
-        <PositionDeleteDialog
-          portfolioId={portfolio.id}
-          position={deleteTarget}
-          onClose={() => setDeleteTarget(null)}
-          onComplete={invalidatePortfolio}
-        />
-      )}
-
       {closeTarget && portfolio && (
         <CloseDerivativePositionDialog
           portfolioId={portfolio.id}
@@ -527,6 +485,15 @@ export default function Portfolio() {
           onClose={() => setSellTarget(null)}
         />
       )}
-    </div>
+
+      {deleteTarget && portfolio && (
+        <PositionDeleteDialog
+          portfolioId={portfolio.id}
+          position={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onComplete={invalidatePortfolio}
+        />
+      )}
+    </>
   );
 }

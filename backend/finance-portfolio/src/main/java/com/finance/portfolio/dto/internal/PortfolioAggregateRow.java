@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 public record PortfolioAggregateRow(
         LocalDateTime createdAt,
         BigDecimal totalValueTry,
+        BigDecimal cashTry,
         BigDecimal totalCostTry,
         BigDecimal totalPnlTry
 ) {

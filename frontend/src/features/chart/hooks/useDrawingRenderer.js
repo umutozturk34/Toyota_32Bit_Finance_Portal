@@ -94,7 +94,7 @@ const useDrawingRenderer = ({
                     ctx.fillStyle = d.color || '#f59e0b';
                     ctx.fillRect(rect.width - 80, y - 10, 75, 20);
                     ctx.fillStyle = '#fff'; ctx.font = '11px Inter, sans-serif';
-                    ctx.fillText(`₺${d.price.toFixed(2)}`, rect.width - 75, y + 4);
+                    ctx.fillText(d.price.toFixed(2), rect.width - 75, y + 4);
                 }
             } else if (d.type === 'VERTICAL_LINE') {
                 const p = chartCoordsToPixel(d.time, d.price);

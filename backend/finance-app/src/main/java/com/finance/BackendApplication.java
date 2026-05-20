@@ -8,6 +8,7 @@ import com.finance.market.commodity.config.CommodityProperties;
 import com.finance.market.crypto.config.CryptoProperties;
 import com.finance.market.forex.config.ForexProperties;
 import com.finance.market.fund.config.FundProperties;
+import com.finance.market.macro.config.MacroProperties;
 import com.finance.news.config.NewsProperties;
 import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.market.stock.config.StockProperties;
@@ -38,6 +39,7 @@ import java.util.TimeZone;
         FundProperties.class,
         KafkaTopicsProperties.class,
         KeycloakAdminProperties.class,
+        MacroProperties.class,
         NewsProperties.class,
         OverviewProperties.class,
         PortfolioProperties.class,

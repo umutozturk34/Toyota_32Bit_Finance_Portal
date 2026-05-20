@@ -42,8 +42,11 @@ function buildTooltipHtml(point, palette, money) {
   const pnlPrefix = point.pnl >= 0 ? '+' : '';
 
   const detailRows = (point.details || []).map((d) => {
-    const color = ASSET_TYPE_COLORS[d.assetType] || '#6366f1';
-    const label = d.label !== d.assetType ? d.label : i18n.t(`assets.labels.${d.assetType}`, { defaultValue: d.assetType });
+    const isOther = d.label === 'OTHER';
+    const color = isOther ? '#7d8590' : (ASSET_TYPE_COLORS[d.assetType] || '#6366f1');
+    const label = isOther
+      ? i18n.t('portfolio.allocation.otherLabel')
+      : d.label !== d.assetType ? d.label : i18n.t(`assets.labels.${d.assetType}`, { defaultValue: d.assetType });
     const dColor = d.pnlTry >= 0 ? '#10b981' : '#ef4444';
     return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0">
       <div style="display:flex;align-items:center;gap:6px">
@@ -56,8 +59,17 @@ function buildTooltipHtml(point, palette, money) {
       </div>
     </div>`;
   }).join('');
-  const detailBlock = detailRows
-    ? `<div style="border-top:1px solid ${border};margin-top:8px;padding-top:8px">${detailRows}</div>`
+  const cashRow = point.cash != null && point.cash !== 0
+    ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:6px;height:6px;border-radius:50%;background:#94a3b8;display:inline-block;flex-shrink:0"></span>
+          <span style="font-size:11px;color:${fg};opacity:0.85">${i18n.t('portfolio.performance.realizedPnlLabel', { defaultValue: 'Realized P/L' })}</span>
+        </div>
+        <span style="font-size:11px;font-family:ui-monospace,monospace;color:${point.cash < 0 ? '#ef4444' : fg}">${money(point.cash)}</span>
+      </div>`
+    : '';
+  const detailBlock = (detailRows || cashRow)
+    ? `<div style="border-top:1px solid ${border};margin-top:8px;padding-top:8px">${detailRows}${cashRow}</div>`
     : '';
 
   const lotEvents = (point.events || []).filter((e) => POSITION_EVENT_META[e.type]);
@@ -95,6 +107,7 @@ function buildEChartsOption(data, color, palette, money) {
   const seriesData = data.map((d) => ({
     value: [d.time, d.value],
     amount: d.value,
+    cash: d.cash,
     pnl: d.pnl,
     pnlPercent: d.pnlPercent,
     details: d.details,
@@ -129,15 +142,45 @@ function buildEChartsOption(data, color, palette, money) {
   const span = dataMax - dataMin;
   const padding = span > 0 ? span * 0.08 : dataMax * 0.05;
 
+  const showZoom = data.length >= 2;
   return {
     backgroundColor: 'transparent',
     animation: data.length < 200,
-    grid: { left: 70, right: 24, top: 16, bottom: 32, containLabel: false },
-    dataZoom: [
-      { type: 'inside', xAxisIndex: 0, filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: true, moveOnMouseWheel: false, preventDefaultMouseMove: true },
-    ],
+    grid: { left: 70, right: 24, top: 16, bottom: showZoom ? 92 : 40, containLabel: false },
+    dataZoom: showZoom ? [
+      {
+        type: 'inside',
+        filterMode: 'none',
+        zoomOnMouseWheel: true,
+        moveOnMouseMove: true,
+        moveOnMouseWheel: false,
+        preventDefaultMouseMove: true,
+      },
+      {
+        type: 'slider',
+        height: 26,
+        bottom: 8,
+        filterMode: 'none',
+        borderColor: 'transparent',
+        backgroundColor: 'transparent',
+        dataBackground: {
+          lineStyle: { color: '#6366f160', width: 1 },
+          areaStyle: { color: '#6366f120' },
+        },
+        selectedDataBackground: {
+          lineStyle: { color: '#6366f1', width: 1 },
+          areaStyle: { color: '#6366f140' },
+        },
+        fillerColor: 'rgba(99,102,241,0.12)',
+        handleStyle: { color: '#6366f1', borderColor: '#6366f1' },
+        moveHandleStyle: { color: '#6366f1', opacity: 0.4 },
+        showDetail: false,
+        brushSelect: false,
+      },
+    ] : [],
     tooltip: {
       trigger: 'axis',
+      confine: true,
       backgroundColor: 'transparent',
       borderWidth: 0,
       padding: 0,
@@ -151,12 +194,20 @@ function buildEChartsOption(data, color, palette, money) {
       type: 'time',
       axisLine: { show: false },
       axisTick: { show: false },
-      axisLabel: { color: palette.muted, fontSize: 10 },
+      axisLabel: {
+        color: palette.muted, fontSize: 10,
+        hideOverlap: true,
+        formatter: (val) => {
+          const d = new Date(val);
+          return `${d.getDate()} ${d.toLocaleString(i18n.t('common.localeTag'), { month: 'short' })}`;
+        },
+      },
+      minInterval: 24 * 3600 * 1000,
       splitLine: { show: false },
     },
     yAxis: {
       type: 'value',
-      min: Math.max(0, dataMin - padding),
+      min: dataMin - padding,
       max: dataMax + padding,
       axisLine: { show: false },
       axisTick: { show: false },
@@ -214,7 +265,8 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
   const [range, setRange] = useChartRange();
   const [activeType, setActiveType] = useSessionState('portfolio-perf-type', null);
 
-  const { data: perfData = [], isLoading: loading } = usePortfolioPerformance(portfolioId, range, activeType);
+  const { data: perfData = [], isLoading, isFetching } = usePortfolioPerformance(portfolioId, range, activeType);
+  const loading = isLoading || isFetching;
   const ownBackfill = useBackfillStatus(backfillProp ? null : portfolioId);
   const backfill = backfillProp ?? ownBackfill;
   const backfillElapsed = useElapsedSeconds(backfill.since);
@@ -236,6 +288,7 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
       ...point,
       value: convertAt(point.value, 'TRY', dateStr),
       pnl: convertAt(point.pnl, 'TRY', dateStr),
+      cash: convertAt(point.cash, 'TRY', dateStr),
       details: (point.details || []).map((d) => ({
         ...d,
         valueTry: convertAt(d.valueTry, 'TRY', dateStr),
@@ -248,17 +301,23 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
     };
   }), [perfData, convertAt]);
 
-  const mainColor = activeType ? (ASSET_TYPE_COLORS[activeType] || '#6366f1') : '#6366f1';
+  const currentValue = convertedPerfData.length > 0 ? convertedPerfData[convertedPerfData.length - 1] : null;
+  const isRealized = activeType === 'CASH';
+  const currentRealized = currentValue?.value ?? 0;
+  const mainColor = isRealized
+    ? (currentRealized < 0 ? '#ef4444' : '#10b981')
+    : (activeType ? (ASSET_TYPE_COLORS[activeType] || '#6366f1') : '#6366f1');
   const palette = useMemo(() => themePalette(isDark), [isDark]);
   const option = useMemo(
     () => (convertedPerfData.length > 0 ? buildEChartsOption(convertedPerfData, mainColor, palette, money) : null),
     [convertedPerfData, mainColor, palette, money]
   );
 
-  const currentValue = convertedPerfData.length > 0 ? convertedPerfData[convertedPerfData.length - 1] : null;
   const totalPnl = currentValue?.pnl ?? null;
   const totalPnlPercent = currentValue?.pnlPercent ?? null;
-  const pnlPositive = totalPnl != null && totalPnl >= 0;
+  const pnlPositive = isRealized
+    ? currentRealized >= 0
+    : totalPnl != null && totalPnl >= 0;
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="show">
@@ -275,9 +334,11 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
             </span>
             <div>
               <p className="text-sm font-bold text-fg">
-                {activeType
-                  ? t('portfolio.performance.titleByType', { type: t(`assets.labels.${activeType}`, { defaultValue: activeType }) })
-                  : t('portfolio.performance.title')}
+                {isRealized
+                  ? t('portfolio.performance.realizedPnlTitle')
+                  : activeType
+                    ? t('portfolio.performance.titleByType', { type: t(`assets.labels.${activeType}`, { defaultValue: activeType }) })
+                    : t('portfolio.performance.title')}
               </p>
               {currentValue && (
                 <div className="flex items-center gap-2.5 mt-0.5">
@@ -324,7 +385,7 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
 
         <div className="flex items-center justify-between px-5 pt-4 pb-2 gap-2 flex-wrap">
           <div className="inline-flex gap-0.5 rounded-xl border border-border-default bg-bg-base p-1">
-            {ASSET_TYPES.map(({ id }) => (
+            {[...ASSET_TYPES, { id: 'CASH' }].map(({ id }) => (
               <button
                 key={id || 'all'}
                 onClick={() => setActiveType(id)}
@@ -338,7 +399,11 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
                   />
                 )}
                 <span className={`relative z-10 ${activeType === id ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
-                  {id ? t(`assets.labels.${id}`, { defaultValue: id }) : t('assets.labels.ALL')}
+                  {id === 'CASH'
+                    ? t('portfolio.performance.realizedPnlLabel')
+                    : id
+                      ? t(`assets.labels.${id}`, { defaultValue: id })
+                      : t('assets.labels.ALL')}
                 </span>
               </button>
             ))}
@@ -346,7 +411,7 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
           <RangeSelector value={range} onChange={setRange} layoutId="perf-range" size="md" />
         </div>
 
-        <div className="relative min-h-[380px] px-2">
+        <div className="relative min-h-[420px] px-2">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <Spinner size="md" tone="accent" />
@@ -357,11 +422,11 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
               option={option}
               notMerge
               lazyUpdate
-              style={{ height: 380 }}
+              style={{ height: 420 }}
               opts={{ renderer: 'canvas' }}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center h-[380px] gap-3">
+            <div className="flex flex-col items-center justify-center h-[420px] gap-3">
               <TrendingUp className="h-8 w-8 text-fg-subtle" />
               <p className="text-sm text-fg-muted">{t('portfolio.performance.empty')}</p>
             </div>

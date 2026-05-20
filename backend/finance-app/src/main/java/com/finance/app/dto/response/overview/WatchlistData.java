@@ -21,7 +21,8 @@ public record WatchlistData(
             MarketType marketType,
             String image,
             BigDecimal price,
-            BigDecimal changePercent
+            BigDecimal changePercent,
+            String currency
     ) {
     }
 }

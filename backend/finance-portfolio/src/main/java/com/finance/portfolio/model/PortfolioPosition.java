@@ -1,8 +1,4 @@
 package com.finance.portfolio.model;
-import com.finance.portfolio.model.Portfolio;
-
-import com.finance.portfolio.model.AssetType;
-
 
 import com.finance.common.model.TrackedAsset;
 import com.finance.shared.service.AssetPricingPort;
@@ -22,8 +18,6 @@ import java.time.LocalDateTime;
 @Table(name = "portfolio_positions",
         indexes = @Index(name = "idx_portfolio_positions_portfolio", columnList = "portfolio_id"))
 public class PortfolioPosition {
-
-    private static final int PRICE_SCALE = 4;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -98,17 +92,17 @@ public class PortfolioPosition {
     }
 
     public BigDecimal entryValue() {
-        return entryPrice.multiply(quantity).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
+        return entryPrice.multiply(quantity).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
     }
 
     public BigDecimal currentValue(BigDecimal currentPrice) {
         if (currentPrice == null) return BigDecimal.ZERO;
-        return currentPrice.multiply(quantity).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
+        return currentPrice.multiply(quantity).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
     }
 
     public BigDecimal unrealizedPnl(BigDecimal currentPrice) {
         if (currentPrice == null) return BigDecimal.ZERO;
-        return currentPrice.subtract(entryPrice).multiply(quantity).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
+        return currentPrice.subtract(entryPrice).multiply(quantity).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
     }
 
     public void updateLot(LocalDateTime newEntryDate, BigDecimal newEntryPrice, BigDecimal newQuantity) {
@@ -133,6 +127,6 @@ public class PortfolioPosition {
 
     public BigDecimal realizedPnl() {
         if (exitPrice == null) return BigDecimal.ZERO;
-        return exitPrice.subtract(entryPrice).multiply(quantity).setScale(PRICE_SCALE, RoundingMode.HALF_UP);
+        return exitPrice.subtract(entryPrice).multiply(quantity).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
     }
 }

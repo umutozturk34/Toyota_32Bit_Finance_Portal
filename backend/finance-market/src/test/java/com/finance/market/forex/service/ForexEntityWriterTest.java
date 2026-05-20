@@ -1,7 +1,7 @@
 package com.finance.market.forex.service;
 
 import com.finance.common.config.AppProperties;
-import com.finance.common.model.Asset;
+import com.finance.common.model.Instrument;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.core.service.AssetRegistryService;
@@ -55,7 +55,7 @@ class ForexEntityWriterTest {
     @Test
     void should_createAndSaveForexShell_when_repositoryHasNoMatch() {
         when(forexRepository.findById("USD")).thenReturn(Optional.empty());
-        when(assetRegistry.upsert(MarketType.FOREX, "USD")).thenReturn(Asset.create(MarketType.FOREX, "USD"));
+        when(assetRegistry.upsert(MarketType.FOREX, "USD")).thenReturn(Instrument.create(MarketType.FOREX, "USD"));
         when(forexRepository.save(any(Forex.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Forex shell = writer.upsertForexShell(usd);
@@ -71,7 +71,7 @@ class ForexEntityWriterTest {
     void should_reuseExistingForex_when_repositoryReturnsMatch() {
         Forex existing = Forex.builder().currencyCode("USD").build();
         when(forexRepository.findById("USD")).thenReturn(Optional.of(existing));
-        when(assetRegistry.upsert(MarketType.FOREX, "USD")).thenReturn(Asset.create(MarketType.FOREX, "USD"));
+        when(assetRegistry.upsert(MarketType.FOREX, "USD")).thenReturn(Instrument.create(MarketType.FOREX, "USD"));
         when(forexRepository.save(existing)).thenReturn(existing);
 
         Forex shell = writer.upsertForexShell(usd);

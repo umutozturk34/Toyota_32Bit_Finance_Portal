@@ -1,7 +1,7 @@
 package com.finance.market.core.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.finance.common.model.Asset;
+import com.finance.common.model.Instrument;
 import com.finance.shared.util.PercentChangeCalculator;
 import com.finance.common.dto.internal.AssetSnapshot;
 import jakarta.persistence.Column;
@@ -52,7 +52,7 @@ public abstract class BaseAsset {
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "asset_id")
-    private Asset asset;
+    private Instrument asset;
 
     public final void applyChange(BigDecimal current, BigDecimal previous, int scale) {
         PercentChangeCalculator.Result result = PercentChangeCalculator.compute(current, previous, scale);
@@ -79,8 +79,12 @@ public abstract class BaseAsset {
 
     public abstract BigDecimal getPriceTry();
 
+    public String resolvePriceCurrency() {
+        return "TRY";
+    }
+
     public final AssetSnapshot toSnapshot() {
         return new AssetSnapshot(getCode(), resolveDisplayName(), getImage(), getPriceTry(),
-                getChangeAmount(), getChangePercent());
+                getChangeAmount(), getChangePercent(), resolvePriceCurrency());
     }
 }

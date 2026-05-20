@@ -1,0 +1,201 @@
+app:
+  macro:
+    backfill-start-date: 2018-01-01
+    batch-size: 23
+    indicators:
+      - code: TP_BISPOLFAIZ_TUR
+        label: policyRate
+        category: RATES
+        unit: PERCENT
+        frequency: DAILY
+        prominent: true
+
+      - code: TP_BISTTLREF_ORAN
+        label: tlrefRate
+        category: RATES
+        unit: PERCENT
+        frequency: DAILY
+        prominent: true
+
+      - code: TP_BISTTLREF_KAPANIS
+        label: tlrefIndex
+        category: RATES
+        unit: INDEX
+        frequency: DAILY
+        prominent: false
+
+      - code: TP_TUFE1YI_T1
+        label: cpiIndex
+        category: INFLATION
+        unit: INDEX
+        frequency: MONTHLY
+        prominent: true
+
+      - code: TP_GENENDEKS_T1
+        label: ppiIndex
+        category: INFLATION
+        unit: INDEX
+        frequency: MONTHLY
+        prominent: true
+
+      - code: TP_TRYTAS_MT06
+        label: depositTryTotal
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: TRY
+        maturity: TOTAL
+        prominent: true
+
+      - code: TP_TRYTAS_MT01
+        label: depositTry1m
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: TRY
+        maturity: M1
+        prominent: false
+
+      - code: TP_TRYTAS_MT02
+        label: depositTry3m
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: TRY
+        maturity: M3
+        prominent: false
+
+      - code: TP_TRYTAS_MT03
+        label: depositTry6m
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: TRY
+        maturity: M6
+        prominent: false
+
+      - code: TP_TRYTAS_MT04
+        label: depositTry1y
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: TRY
+        maturity: M12
+        prominent: false
+
+      - code: TP_TRYTAS_MT05
+        label: depositTry1yPlus
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: TRY
+        maturity: M12_PLUS
+        prominent: false
+
+      - code: TP_USDTAS_MT06
+        label: depositUsdTotal
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: USD
+        maturity: TOTAL
+        prominent: true
+
+      - code: TP_USDTAS_MT01
+        label: depositUsd1m
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: USD
+        maturity: M1
+        prominent: false
+
+      - code: TP_USDTAS_MT02
+        label: depositUsd3m
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: USD
+        maturity: M3
+        prominent: false
+
+      - code: TP_USDTAS_MT03
+        label: depositUsd6m
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: USD
+        maturity: M6
+        prominent: false
+
+      - code: TP_USDTAS_MT04
+        label: depositUsd1y
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: USD
+        maturity: M12
+        prominent: false
+
+      - code: TP_USDTAS_MT05
+        label: depositUsd1yPlus
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: USD
+        maturity: M12_PLUS
+        prominent: false
+
+      - code: TP_EURTAS_MT06
+        label: depositEurTotal
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: EUR
+        maturity: TOTAL
+        prominent: true
+
+      - code: TP_EURTAS_MT01
+        label: depositEur1m
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: EUR
+        maturity: M1
+        prominent: false
+
+      - code: TP_EURTAS_MT02
+        label: depositEur3m
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: EUR
+        maturity: M3
+        prominent: false
+
+      - code: TP_EURTAS_MT03
+        label: depositEur6m
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: EUR
+        maturity: M6
+        prominent: false
+
+      - code: TP_EURTAS_MT04
+        label: depositEur1y
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: EUR
+        maturity: M12
+        prominent: false
+
+      - code: TP_EURTAS_MT05
+        label: depositEur1yPlus
+        category: DEPOSIT
+        unit: PERCENT
+        frequency: WEEKLY
+        currency: EUR
+        maturity: M12_PLUS
+        prominent: false

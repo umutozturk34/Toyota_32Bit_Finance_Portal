@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { BarChart3, ChevronRight } from 'lucide-react';
 import { getChangeClass, changeColors, formatPercent } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
+import { priceCurrencyOf } from '../../../shared/utils/priceCurrency';
 import { ASSET_TYPE_COLORS } from '../../../shared/constants/assetTypes';
 import useNavigationStore from '../../../shared/stores/useNavigationStore';
 import Card from '../../../shared/components/card';
@@ -37,7 +38,7 @@ function AssetRow({ asset, color, onClick }) {
       <span className="font-display text-[12px] font-semibold text-fg truncate flex-1 min-w-[60px] group-hover:text-accent transition-colors">
         {shortLabel(asset)}
       </span>
-      <span className="font-mono text-[11px] font-bold text-fg tabular-nums shrink-0">{moneyCompact(asset.price)}</span>
+      <span className="font-mono text-[11px] font-bold text-fg tabular-nums shrink-0">{moneyCompact(asset.price, priceCurrencyOf(asset))}</span>
       {asset.changePercent != null && (
         <span className={`font-mono text-[10px] font-semibold tabular-nums min-w-[48px] text-right shrink-0 ${changeColors[cls]}`}>
           {formatPercent(asset.changePercent)}

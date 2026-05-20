@@ -48,7 +48,6 @@ function CommodityMetadata({ asset }) {
         ),
       },
       { label: t('marketDetail.forex.deltaTL'), value: money(asset.changeAmount), color: changeColors[cls] },
-      meta.sellingPrice != null && { label: t('marketDetail.commodity.buy'), value: money(meta.sellingPrice) },
       meta.openPrice != null && { label: t('market.stock.openLabel'), value: money(meta.openPrice) },
       meta.dayHigh != null && { label: t('market.stock.highLabel'), value: money(meta.dayHigh), color: 'text-success' },
       meta.dayLow != null && { label: t('market.stock.lowLabel'), value: money(meta.dayLow), color: 'text-danger' },

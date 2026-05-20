@@ -3,6 +3,7 @@ package com.finance.portfolio.service;
 import com.finance.common.event.PortfolioUpdatedEvent;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
+import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.Portfolio;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
 import com.finance.portfolio.model.PortfolioDailySnapshot;
@@ -15,6 +16,7 @@ import com.finance.shared.event.EventPublisherPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
@@ -23,10 +25,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -74,14 +79,15 @@ class PortfolioSnapshotServiceTest {
     }
 
     @Test
-    void onMarketUpdate_savesAssetSnapshotPerPosition_thenAggregate() {
+    void onMarketUpdate_savesEachAssetSnapshotProducedByCalculator_thenAggregate() {
         Portfolio portfolio = portfolio(1L);
         PortfolioPosition p1 = position();
         PortfolioPosition p2 = position();
         when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
         when(positionRepository.findByPortfolioIdAndTrackedAsset_AssetTypeAndQuantityGreaterThan(
                 1L, TrackedAssetType.STOCK, BigDecimal.ZERO)).thenReturn(List.of(p1, p2));
-        when(calculator.buildAssetSnapshot(any(), any(), any())).thenReturn(mock(PortfolioAssetDailySnapshot.class));
+        when(calculator.buildAssetSnapshotsForPositions(any(), any(), any())).thenReturn(
+                List.of(mock(PortfolioAssetDailySnapshot.class), mock(PortfolioAssetDailySnapshot.class)));
         when(calculator.buildAggregateSnapshot(any(), any())).thenReturn(mock(PortfolioDailySnapshot.class));
 
         service.onMarketUpdate(MarketType.STOCK);
@@ -108,7 +114,8 @@ class PortfolioSnapshotServiceTest {
         when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(1L, LocalDate.now())).thenReturn(false);
         when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
                 .thenReturn(List.of(position()));
-        when(calculator.buildAssetSnapshot(any(), any(), any())).thenReturn(mock(PortfolioAssetDailySnapshot.class));
+        when(calculator.buildAssetSnapshotsForPositions(any(), any(), any()))
+                .thenReturn(List.of(mock(PortfolioAssetDailySnapshot.class)));
         when(calculator.buildAggregateSnapshot(any(), any())).thenReturn(mock(PortfolioDailySnapshot.class));
 
         service.generateDailySnapshots("scheduler");
@@ -256,7 +263,58 @@ class PortfolioSnapshotServiceTest {
         return org.mockito.Mockito.mock(PortfolioPosition.class);
     }
 
+    private static PortfolioPosition lot(AssetType type, String code, BigDecimal qty, BigDecimal entryPrice) {
+        return PortfolioPosition.builder()
+                .assetType(type).assetCode(code)
+                .quantity(qty)
+                .entryPrice(entryPrice)
+                .entryDate(LocalDateTime.now())
+                .build();
+    }
+
     private static <T> T mock(Class<T> type) {
         return org.mockito.Mockito.mock(type);
+    }
+
+    @Test
+    void onMarketUpdate_excludesClosedPositions_whenBuildingAssetSnapshots() {
+        Portfolio portfolio = portfolio(1L);
+        PortfolioPosition open = lot(AssetType.FUND, "BLH", new BigDecimal("9"), new BigDecimal("45"));
+        PortfolioPosition closed = lot(AssetType.FUND, "FIL", new BigDecimal("1"), new BigDecimal("3"));
+        closed.closeWith(LocalDateTime.now().minusDays(1), new BigDecimal("3.4"));
+        when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
+        when(positionRepository.findByPortfolioIdAndTrackedAsset_AssetTypeAndQuantityGreaterThan(
+                1L, TrackedAssetType.FUND, BigDecimal.ZERO)).thenReturn(List.of(open, closed));
+        when(calculator.buildAssetSnapshotsForPositions(any(), any(), any()))
+                .thenReturn(List.of(mock(PortfolioAssetDailySnapshot.class)));
+        when(calculator.buildAggregateSnapshot(any(), any())).thenReturn(mock(PortfolioDailySnapshot.class));
+
+        service.onMarketUpdate(MarketType.FUND);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<PortfolioPosition>> positionsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(calculator).buildAssetSnapshotsForPositions(eq(1L), positionsCaptor.capture(), any());
+        assertThat(positionsCaptor.getValue()).containsExactly(open);
+    }
+
+    @Test
+    void onMarketUpdate_passesAllPositionsToCalculator_andSavesEachReturnedAggregatedSnapshot() {
+        Portfolio portfolio = portfolio(1L);
+        PortfolioPosition lotA = lot(AssetType.FUND, "BND", new BigDecimal("100"), new BigDecimal("3.00"));
+        PortfolioPosition lotB = lot(AssetType.FUND, "BND", new BigDecimal("50"), new BigDecimal("3.10"));
+        PortfolioAssetDailySnapshot aggregated = mock(PortfolioAssetDailySnapshot.class);
+        when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
+        when(positionRepository.findByPortfolioIdAndTrackedAsset_AssetTypeAndQuantityGreaterThan(
+                1L, TrackedAssetType.FUND, BigDecimal.ZERO)).thenReturn(List.of(lotA, lotB));
+        when(calculator.buildAssetSnapshotsForPositions(any(), any(), any())).thenReturn(List.of(aggregated));
+        when(calculator.buildAggregateSnapshot(any(), any())).thenReturn(mock(PortfolioDailySnapshot.class));
+
+        service.onMarketUpdate(MarketType.FUND);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<PortfolioPosition>> positionsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(calculator).buildAssetSnapshotsForPositions(eq(1L), positionsCaptor.capture(), any());
+        assertThat(positionsCaptor.getValue()).containsExactly(lotA, lotB);
+        verify(assetSnapshotRepository, times(1)).save(aggregated);
     }
 }

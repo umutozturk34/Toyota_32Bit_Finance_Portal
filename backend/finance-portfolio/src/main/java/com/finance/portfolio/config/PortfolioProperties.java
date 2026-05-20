@@ -18,6 +18,7 @@ public class PortfolioProperties {
     private BigDecimal initialBalance = new BigDecimal("1000000.0000");
     private BigDecimal minTransactionAmountTry = new BigDecimal("10");
     private int historicalRateLookbackDays = 7;
+    private int maxPortfoliosPerUser = 5;
     private LotLimits lotLimits = new LotLimits();
     private Snapshot snapshot = new Snapshot();
     private Backfill backfill = new Backfill();

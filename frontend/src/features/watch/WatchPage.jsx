@@ -329,7 +329,7 @@ export default function WatchPage() {
           ) : watchItems.length === 0 ? (
             <EmptyState
               icon={<Inbox className="h-5 w-5 text-fg-subtle" />}
-              title={activeList ? t('watch.emptyList.titleNamed', { name: activeList.name }) : t('watch.emptyList.title')}
+              title={activeList ? t('watch.emptyList.titleNamed', { name: watchlistName(t, activeList) }) : t('watch.emptyList.title')}
               hint={t('watch.emptyList.hint')}
             />
           ) : sortBy === 'CUSTOM' ? (

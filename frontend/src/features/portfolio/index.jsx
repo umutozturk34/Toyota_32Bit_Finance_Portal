@@ -123,19 +123,24 @@ export default function Portfolio() {
   const [closeTarget, setCloseTarget] = useState(null);
   const [sellTarget, setSellTarget] = useState(null);
   const [onboardingPhase, setOnboardingPhase] = useState('idle');
+  const [onboardingName, setOnboardingName] = useState('');
   const createPortfolio = useCreatePortfolio();
   const reopenSpot = useReopenPosition(portfolio?.id);
   const reopenViop = useReopenDerivativePosition(portfolio?.id);
   const { processingStep, runAnimation, reset: resetOnboarding } = useProcessingAnimation();
 
-  const handleStartOnboarding = () => setOnboardingPhase('confirm');
+  const handleStartOnboarding = () => {
+    setOnboardingName(defaultPortfolioName);
+    setOnboardingPhase('confirm');
+  };
   const handleCancelOnboarding = () => setOnboardingPhase('idle');
 
   const handleCreatePortfolio = async () => {
+    const trimmedName = onboardingName.trim() || defaultPortfolioName;
     setOnboardingPhase('processing');
     try {
       await Promise.all([
-        createPortfolio.mutateAsync(defaultPortfolioName),
+        createPortfolio.mutateAsync(trimmedName),
         runAnimation(onboardingSteps),
       ]);
       setOnboardingPhase('success');
@@ -264,11 +269,17 @@ export default function Portfolio() {
                     transition={{ delay: 0.1, duration: 0.25 }}
                   >
                     <p className="text-sm font-semibold text-fg">{t('portfolio.onboarding.confirmTitle')}</p>
-                    <p className="text-xs text-fg-muted">
-                      <span className="font-medium text-fg">{defaultPortfolioName}</span> {t('portfolio.onboarding.confirmHint')}
-                    </p>
+                    <p className="text-xs text-fg-muted">{t('portfolio.onboarding.confirmHint')}</p>
                   </motion.div>
                 </div>
+                <input
+                  type="text"
+                  value={onboardingName}
+                  onChange={(e) => setOnboardingName(e.target.value)}
+                  placeholder={defaultPortfolioName}
+                  maxLength={64}
+                  className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
+                />
                 <motion.div
                   className="flex gap-2"
                   initial={{ opacity: 0, y: 4 }}

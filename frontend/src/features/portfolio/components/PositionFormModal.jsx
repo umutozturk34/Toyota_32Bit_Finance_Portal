@@ -13,7 +13,7 @@ import { currentLocaleTag } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';
-import { useAddPosition, usePortfolioLimits, usePortfolioPositions, useUpdatePosition } from '../hooks/usePortfolioData';
+import { useAddPosition, usePortfolioLimits, useUpdatePosition } from '../hooks/usePortfolioData';
 
 import {
   FRACTIONAL_TYPES, ONE_HOUR_MS, SUCCESS_HOLD_MS, PROCESSING_STEP_DEFS,
@@ -134,18 +134,6 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
   const addMutation = useAddPosition(portfolioId);
   const updateMutation = useUpdatePosition(portfolioId);
 
-  const { data: existingMatches } = usePortfolioPositions(
-    !isEdit && portfolioId ? portfolioId : null,
-    !isEdit ? { search: target.assetCode, size: 50 } : {},
-  );
-  const previouslySoldCount = useMemo(() => {
-    if (isEdit || !existingMatches?.content) return 0;
-    return existingMatches.content.filter(
-      (p) => p.assetType === target.assetType
-        && p.assetCode?.toUpperCase() === target.assetCode?.toUpperCase()
-        && !!p.exitDate,
-    ).length;
-  }, [isEdit, existingMatches, target.assetType, target.assetCode]);
 
   const [lastSyncedKey, setLastSyncedKey] = useState(null);
   const syncKey = entryLoading || priceTouched
@@ -281,30 +269,9 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
               <Wallet className="h-4 w-4 text-accent" />
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <h2 className="text-base font-semibold text-fg">
-                  {isEdit ? t('positionForm.titleEdit') : t('positionForm.titleAdd')}
-                </h2>
-                {previouslySoldCount > 0 && (
-                  <span
-                    className="inline-flex items-center gap-1 rounded-md bg-warning/20 text-warning text-[10px] font-bold uppercase tracking-wide px-2 py-1 border border-warning/30"
-                    title={t('positionForm.previouslySoldHint', {
-                      count: previouslySoldCount,
-                      defaultValue: 'Bu varlığı daha önce {{count}} kez sattınız',
-                    })}
-                  >
-                    <span className="text-[8px]">●</span>
-                    {previouslySoldCount > 1
-                      ? t('positionForm.previouslySoldBadgeMulti', {
-                          count: previouslySoldCount,
-                          defaultValue: '{{count}}× DAHA ÖNCE SATILDI',
-                        })
-                      : t('positionForm.previouslySoldBadge', {
-                          defaultValue: 'DAHA ÖNCE SATILDI',
-                        })}
-                  </span>
-                )}
-              </div>
+              <h2 className="text-base font-semibold text-fg">
+                {isEdit ? t('positionForm.titleEdit') : t('positionForm.titleAdd')}
+              </h2>
               <p className="text-xs text-fg-muted">{target.assetName || displayCode}</p>
             </div>
           </div>

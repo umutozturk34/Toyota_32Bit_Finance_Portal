@@ -123,12 +123,14 @@ public class PortfolioPerformanceService {
             BigDecimal realized = p.realizedPnl();
             events.add(new PerformanceEvent(PerformanceEventType.POSITION_SOLD,
                     p.getAssetType().name(), p.getAssetCode(),
+                    p.getQuantity(),
                     realized != null ? realized : BigDecimal.ZERO));
         });
         trades.derivativesClosed().forEach(d -> {
             BigDecimal realized = d.realizedOrUnrealizedPnl(d.getClosePrice());
             events.add(new PerformanceEvent(PerformanceEventType.POSITION_SOLD,
                     AssetType.VIOP.name(), d.getViopContract().getSymbol(),
+                    d.getQuantityLot(),
                     realized != null ? realized : BigDecimal.ZERO));
         });
         return events;
@@ -188,7 +190,39 @@ public class PortfolioPerformanceService {
                     p.dailyPnlTry(), p.dailyPnlPercent(), events));
             prev = p.timestamp();
         }
+        return promoteSoldEventsToZeroPoint(result);
+    }
+
+    private List<AssetSeriesPoint> promoteSoldEventsToZeroPoint(List<AssetSeriesPoint> series) {
+        if (series.size() < 2) return series;
+        List<AssetSeriesPoint> result = new ArrayList<>(series);
+        for (int i = 0; i < result.size() - 1; i++) {
+            AssetSeriesPoint pre = result.get(i);
+            AssetSeriesPoint post = result.get(i + 1);
+            if (!isSellDropPair(pre, post)) continue;
+            List<PerformanceEvent> soldEvents = pre.events().stream()
+                    .filter(e -> e.type() == PerformanceEventType.POSITION_SOLD)
+                    .toList();
+            if (soldEvents.isEmpty()) continue;
+            List<PerformanceEvent> merged = new ArrayList<>(post.events());
+            merged.addAll(soldEvents);
+            result.set(i + 1, post.withEvents(merged));
+        }
         return result;
+    }
+
+    private static boolean isSellDropPair(AssetSeriesPoint pre, AssetSeriesPoint post) {
+        return pre.timestamp().toLocalDate().equals(post.timestamp().toLocalDate())
+                && isPositive(pre.marketValueTry())
+                && isZero(post.marketValueTry());
+    }
+
+    private static boolean isPositive(BigDecimal v) {
+        return v != null && v.signum() > 0;
+    }
+
+    private static boolean isZero(BigDecimal v) {
+        return v != null && v.signum() == 0;
     }
 
     private List<PerformancePoint> getAggregatePerformance(Long portfolioId,
@@ -385,11 +419,13 @@ public class PortfolioPerformanceService {
     }
 
     private PerformanceEvent spotEvent(PortfolioPosition pos, PerformanceEventType type, BigDecimal value) {
-        return new PerformanceEvent(type, pos.getAssetType().name(), pos.getAssetCode(), value);
+        return new PerformanceEvent(type, pos.getAssetType().name(), pos.getAssetCode(),
+                pos.getQuantity(), value);
     }
 
     private PerformanceEvent derivativeEvent(DerivativePosition d, PerformanceEventType type, BigDecimal value) {
-        return new PerformanceEvent(type, AssetType.VIOP.name(), d.getViopContract().getSymbol(), value);
+        return new PerformanceEvent(type, AssetType.VIOP.name(), d.getViopContract().getSymbol(),
+                d.getQuantityLot(), value);
     }
 
     private static BigDecimal spotProceeds(PortfolioPosition p) {
@@ -432,10 +468,14 @@ public class PortfolioPerformanceService {
                                                         java.util.function.Function<PortfolioPosition, LocalDateTime> extractor,
                                                         LocalDateTime prev, LocalDateTime curr) {
             if (source == null) return List.of();
+            java.time.LocalDate prevDate = prev.toLocalDate();
+            java.time.LocalDate currDate = curr.toLocalDate();
             return source.stream()
                     .filter(p -> {
                         LocalDateTime ts = extractor.apply(p);
-                        return ts != null && ts.isAfter(prev) && !ts.isAfter(curr);
+                        if (ts == null) return false;
+                        java.time.LocalDate eventDate = ts.toLocalDate();
+                        return eventDate.isAfter(prevDate) && !eventDate.isAfter(currDate);
                     })
                     .toList();
         }
@@ -444,13 +484,13 @@ public class PortfolioPerformanceService {
                                                               java.util.function.Function<DerivativePosition, java.time.LocalDate> extractor,
                                                               LocalDateTime prev, LocalDateTime curr) {
             if (source == null) return List.of();
+            java.time.LocalDate prevDate = prev.toLocalDate();
+            java.time.LocalDate currDate = curr.toLocalDate();
             return source.stream()
                     .filter(d -> d.getViopContract() != null)
                     .filter(d -> {
                         java.time.LocalDate date = extractor.apply(d);
-                        if (date == null) return false;
-                        LocalDateTime ts = date.atStartOfDay();
-                        return ts.isAfter(prev) && !ts.isAfter(curr);
+                        return date != null && date.isAfter(prevDate) && !date.isAfter(currDate);
                     })
                     .toList();
         }

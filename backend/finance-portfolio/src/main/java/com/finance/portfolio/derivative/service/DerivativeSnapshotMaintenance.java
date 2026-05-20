@@ -81,7 +81,7 @@ public class DerivativeSnapshotMaintenance {
                 fxRate = byDay != null && byDay.signum() > 0 ? byDay : lastFxRate;
                 lastFxRate = fxRate;
             }
-            LocalDateTime ts = date.atTime(LocalTime.NOON);
+            LocalDateTime ts = date.atTime(LocalTime.MIDNIGHT);
             PortfolioAssetDailySnapshot snapshot = snapshotCalculator
                     .buildDerivativeAssetSnapshotAt(position.getPortfolio().getId(), position, ts, close, fxRate, priorInBatch);
             if (snapshot != null) {

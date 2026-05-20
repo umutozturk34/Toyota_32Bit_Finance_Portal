@@ -42,7 +42,7 @@ import java.util.Set;
 @Service
 public class PortfolioBackfillService {
 
-    private static final LocalTime SNAPSHOT_TIME = LocalTime.NOON;
+    private static final LocalTime SNAPSHOT_TIME = LocalTime.MIDNIGHT;
 
     private final PortfolioRepository portfolioRepository;
     private final PortfolioPositionRepository positionRepository;
@@ -240,7 +240,8 @@ public class PortfolioBackfillService {
         Portfolio portfolio = portfolioRepository.findById(portfolioId).orElse(null);
         if (portfolio == null) return;
 
-        LocalDate end = LocalDate.now().minusDays(1);
+        LocalDate today = LocalDate.now();
+        LocalDate end = today;
         if (from.isAfter(end)) return;
 
         List<PortfolioPosition> scopedLots = positionRepository.findByPortfolioId(portfolioId).stream()
@@ -251,7 +252,7 @@ public class PortfolioBackfillService {
 
         Map<AssetKey, Map<LocalDate, BigDecimal>> seriesByKey = loadHistoricalSeries(scopedLots, from, end);
         boolean allSeriesEmpty = seriesByKey.values().stream().allMatch(s -> s == null || s.isEmpty());
-        boolean expectsHistory = !from.equals(end.plusDays(1)) && !from.equals(LocalDate.now());
+        boolean expectsHistory = !from.equals(end.plusDays(1)) && !from.equals(today);
         if (allSeriesEmpty && expectsHistory) {
             throw new com.finance.common.exception.BusinessException("error.portfolio.backfill.upstreamUnavailable",
                     "Historical pricing unavailable for " + assetType + ":" + assetCode + " — aborting to preserve existing snapshots");
@@ -265,6 +266,7 @@ public class PortfolioBackfillService {
                 collectClosingSnapshot(portfolioId, scopedLots, day, assetBatch, priorAssetByKey);
                 continue;
             }
+            if (day.equals(today)) continue;
             Map<AssetKey, BigDecimal> dayPrices = pricesForDay(active, day, seriesByKey);
             LocalDateTime ts = day.atTime(SNAPSHOT_TIME);
             collectAssetSnapshots(portfolioId, active, ts, dayPrices, assetBatch, priorAssetByKey,
@@ -281,12 +283,20 @@ public class PortfolioBackfillService {
                 .findFirst().orElse(null);
         if (closedOnDay == null) return;
         BigDecimal exitPrice = closedOnDay.getExitPrice() != null ? closedOnDay.getExitPrice() : BigDecimal.ZERO;
-        LocalDateTime ts = day.atTime(SNAPSHOT_TIME);
+        BigDecimal qty = closedOnDay.getQuantity();
+        BigDecimal entryValue = closedOnDay.entryValue();
+        LocalDateTime preCloseTs = day.atStartOfDay();
+        LocalDateTime postCloseTs = preCloseTs.plusSeconds(1);
         PortfolioAssetDailySnapshot prior = priorAssetByKey.get(closedOnDay.toAssetKey());
+        PortfolioAssetDailySnapshot preClose = calculator.buildAggregatedAssetSnapshotWithPrior(
+                portfolioId, closedOnDay.getAssetType(), closedOnDay.getAssetCode(),
+                closedOnDay.getTrackedAsset(), preCloseTs,
+                qty, entryValue, exitPrice, prior);
+        batch.add(preClose);
         PortfolioAssetDailySnapshot zero = calculator.buildAggregatedAssetSnapshotWithPrior(
                 portfolioId, closedOnDay.getAssetType(), closedOnDay.getAssetCode(),
-                closedOnDay.getTrackedAsset(), ts,
-                BigDecimal.ZERO, BigDecimal.ZERO, exitPrice, prior);
+                closedOnDay.getTrackedAsset(), postCloseTs,
+                BigDecimal.ZERO, BigDecimal.ZERO, exitPrice, preClose);
         batch.add(zero);
         priorAssetByKey.put(closedOnDay.toAssetKey(), zero);
     }

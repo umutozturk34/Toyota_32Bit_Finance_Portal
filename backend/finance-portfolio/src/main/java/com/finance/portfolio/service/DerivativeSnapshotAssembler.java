@@ -8,12 +8,14 @@ import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.shared.service.AssetPricingPort;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
+@Log4j2
 @Component
 @RequiredArgsConstructor
 class DerivativeSnapshotAssembler {

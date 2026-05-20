@@ -5,16 +5,21 @@ import com.finance.portfolio.config.PortfolioProperties.LotLimits;
 import com.finance.portfolio.dto.request.PositionRequest;
 import com.finance.portfolio.dto.request.PositionSellRequest;
 import com.finance.portfolio.model.PortfolioPosition;
+import lombok.extern.log4j.Log4j2;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+@Log4j2
 final class PortfolioValidator {
 
     private PortfolioValidator() {
     }
 
     static void validateLot(PositionRequest request, LotLimits limits) {
+        log.debug("Validating lot: type={} code={} qty={} price={} entryDate={}",
+                request.assetType(), request.assetCode(), request.quantity(),
+                request.entryPrice(), request.entryDate());
         LocalDate entryDay = request.entryDate() != null ? request.entryDate().toLocalDate() : null;
         if (entryDay != null && limits.getMinEntryDate() != null && entryDay.isBefore(limits.getMinEntryDate())) {
             throw new BusinessException("error.portfolio.lot.entryDateTooOld", limits.getMinEntryDate());

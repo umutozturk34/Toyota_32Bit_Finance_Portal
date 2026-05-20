@@ -11,6 +11,7 @@ import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.service.SnapshotCalculationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class DerivativeSnapshotMaintenance {
@@ -42,6 +44,8 @@ public class DerivativeSnapshotMaintenance {
                 ? position.getCloseDate().minusDays(1)
                 : LocalDate.now();
         if (from == null || from.isAfter(to)) return;
+        log.debug("Backfilling viop snapshots positionId={} symbol={} range={}..{}",
+                position.getId(), symbol, from, to);
 
         Map<LocalDate, BigDecimal> closeByDate = loadCandleCloses(symbol, from, to);
         String currency = position.getViopContract().getCurrency();
@@ -87,15 +91,11 @@ public class DerivativeSnapshotMaintenance {
         }
         if (!batch.isEmpty()) {
             assetSnapshotRepository.saveAll(batch);
+            log.info("Viop snapshot backfill complete positionId={} symbol={} rows={}",
+                    position.getId(), symbol, batch.size());
         }
     }
 
-    /**
-     * Per-position backfills emit one row per position per date, so multi-position symbols
-     * (partial closes that split into a closed slice + reduced original, multiple open lots
-     * on the same contract) leave duplicate {@code (portfolio, type, code, created_at)} rows.
-     * Merges those duplicates into a single per-asset row.
-     */
     public void consolidateSymbolSnapshots(Long portfolioId, String symbol) {
         if (symbol == null) return;
         List<PortfolioAssetDailySnapshot> all = assetSnapshotRepository
@@ -117,7 +117,11 @@ public class DerivativeSnapshotMaintenance {
             toSave.add(keeper);
         }
         if (!toSave.isEmpty()) assetSnapshotRepository.saveAll(toSave);
-        if (!toDelete.isEmpty()) assetSnapshotRepository.deleteAllByIdInBatch(toDelete);
+        if (!toDelete.isEmpty()) {
+            assetSnapshotRepository.deleteAllByIdInBatch(toDelete);
+            log.info("Consolidated viop snapshots portfolioId={} symbol={} merged={} deleted={}",
+                    portfolioId, symbol, toSave.size(), toDelete.size());
+        }
     }
 
     private Map<LocalDate, BigDecimal> loadCandleCloses(String symbol, LocalDate from, LocalDate to) {

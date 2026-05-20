@@ -1,7 +1,8 @@
 app:
   macro:
-    backfill-start-date: 2018-01-01
-    batch-size: 23
+    backfill-start-date: 1995-01-01
+    batch-size: 5
+    max-days-per-window: 1000
     indicators:
       - code: TP.BISPOLFAIZ.TUR
         label: policyRate

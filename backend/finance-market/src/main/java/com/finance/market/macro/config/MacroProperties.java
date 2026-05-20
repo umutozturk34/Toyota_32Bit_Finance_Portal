@@ -13,6 +13,7 @@ import java.util.List;
 public record MacroProperties(
         LocalDate backfillStartDate,
         int batchSize,
+        int maxDaysPerWindow,
         List<IndicatorDefinition> indicators
 ) {
     public record IndicatorDefinition(

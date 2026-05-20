@@ -39,7 +39,7 @@ class MacroIndicatorRegistryServiceTest {
         IndicatorDefinition definition = new IndicatorDefinition(
                 "TP.RATE", "policyRate", MacroCategory.RATES, MacroUnit.PERCENT,
                 MacroFrequency.DAILY, null, null, true);
-        properties = new MacroProperties(java.time.LocalDate.of(2024, 1, 1), 10, List.of(definition));
+        properties = new MacroProperties(java.time.LocalDate.of(2024, 1, 1), 10, 1000, List.of(definition));
         service = new MacroIndicatorRegistryService(macroRepository, instrumentRegistry, properties);
     }
 
@@ -76,7 +76,7 @@ class MacroIndicatorRegistryServiceTest {
 
     @Test
     void should_returnEmptyList_when_propertiesHaveNoIndicators() {
-        MacroProperties empty = new MacroProperties(java.time.LocalDate.now(), 1, List.of());
+        MacroProperties empty = new MacroProperties(java.time.LocalDate.now(), 1, 1000, List.of());
         MacroIndicatorRegistryService emptyService =
                 new MacroIndicatorRegistryService(macroRepository, instrumentRegistry, empty);
 
@@ -87,7 +87,7 @@ class MacroIndicatorRegistryServiceTest {
 
     @Test
     void should_assignCorrectInstrumentType_when_categoryIsDeposit() {
-        MacroProperties depositProps = new MacroProperties(java.time.LocalDate.now(), 1, List.of(
+        MacroProperties depositProps = new MacroProperties(java.time.LocalDate.now(), 1, 1000, List.of(
                 new IndicatorDefinition("TP.DEPOSIT", "depositTry", MacroCategory.DEPOSIT,
                         MacroUnit.PERCENT, MacroFrequency.WEEKLY, "TRY", DepositMaturity.TOTAL, true)));
         MacroIndicatorRegistryService depositService =

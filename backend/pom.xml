@@ -39,7 +39,6 @@
 		<module>finance-user</module>
 		<module>finance-portfolio</module>
 		<module>finance-app</module>
-		<module>finance-coverage</module>
 	</modules>
 
 	<dependencyManagement>

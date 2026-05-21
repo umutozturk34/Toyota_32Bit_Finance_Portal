@@ -13,15 +13,6 @@ const TONE_CLASSES = {
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
 
-/**
- * @typedef {Object} SpinnerProps
- * @property {'xs'|'sm'|'md'|'lg'} [size='sm']
- * @property {'accent'|'muted'|'inherit'} [tone='accent']
- * @property {string} [className]
- * @property {string} ['aria-label']
- */
-
-/** @param {SpinnerProps} props */
 export default function Spinner({ size = 'sm', tone = 'accent', className, ...rest }) {
   return (
     <span

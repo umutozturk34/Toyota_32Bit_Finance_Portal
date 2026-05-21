@@ -3,14 +3,10 @@ import com.finance.market.core.service.MarketHistoryProvider;
 
 import com.finance.market.core.service.TrackedAssetQueryService;
 
-import com.finance.market.core.cache.MarketCacheService;
-
-
 import com.finance.market.core.dto.response.CandleResponse;
 import com.finance.market.stock.mapper.StockResponseMapper;
 import com.finance.shared.model.CandlePeriod;
 import com.finance.common.model.MarketType;
-import com.finance.market.stock.model.Stock;
 import com.finance.market.stock.model.StockCandle;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.market.stock.repository.StockCandleRepository;
@@ -30,7 +26,6 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class StockQueryService implements MarketHistoryProvider {
 
-    private final MarketCacheService<Stock> stockCacheService;
     private final StockCandleRepository stockCandleRepository;
     private final StockResponseMapper stockResponseMapper;
     private final TrackedAssetQueryService trackedAssetQueryService;

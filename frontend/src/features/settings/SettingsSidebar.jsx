@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import SideDrawer from '../../shared/components/modal/SideDrawer';
 import {
-  X, Settings as SettingsIcon, Palette, Languages, BarChart3, Bell, Shield,
+  Settings as SettingsIcon, Palette, Languages, BarChart3, Bell, Shield,
   Sun, Moon, LogOut, KeyRound, Mail, Coins,
 } from 'lucide-react';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';

@@ -11,24 +11,6 @@ const SIDES = {
   left: { initial: { x: '-100%' }, exit: { x: '-100%' }, classes: 'left-0 border-r' },
 };
 
-/**
- * @typedef {Object} SideDrawerProps
- * @property {boolean} open
- * @property {() => void} onClose
- * @property {'right'|'left'} [side='right']
- * @property {string} [width='420px']
- * @property {React.ComponentType} [icon]
- * @property {string} [iconTint='text-accent']
- * @property {React.ReactNode} title
- * @property {React.ReactNode} [subtitle]
- * @property {React.ReactNode} [headerActions]
- * @property {React.ReactNode} [footer]
- * @property {React.ReactNode} children
- * @property {string} [className]
- * @property {string} [closeLabel='close']
- */
-
-/** @param {SideDrawerProps} props */
 export default function SideDrawer({
   open,
   onClose,

@@ -1,8 +1,3 @@
-/**
- * Shared TanStack Query timing constants.
- * Single source of truth for staleTime / gcTime values across the app.
- */
-
 export const STALE = Object.freeze({
   SHORT: 30_000,
   MEDIUM: 60_000,

@@ -205,10 +205,12 @@ export default function DatePickerPopover({
                     );
                   })}
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] text-fg-subtle pt-1 border-t border-border-default">
-                  <span className={`w-1 h-1 rounded-full ${dataCount > 0 ? 'bg-success' : 'bg-fg-subtle/40'}`} />
-                  <span>{dataCount > 0 ? t('datePicker.dataDays', { count: dataCount }) : t('datePicker.noDataMonth')}</span>
-                </div>
+                {highlights && (
+                  <div className="flex items-center gap-1.5 text-[10px] text-fg-subtle pt-1 border-t border-border-default">
+                    <span className={`w-1 h-1 rounded-full ${dataCount > 0 ? 'bg-success' : 'bg-fg-subtle/40'}`} />
+                    <span>{dataCount > 0 ? t('datePicker.dataDays', { count: dataCount }) : t('datePicker.noDataMonth')}</span>
+                  </div>
+                )}
               </>
             )}
 

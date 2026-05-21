@@ -7,10 +7,6 @@ import { STALE, GC } from '../constants/query';
 
 const SUPPORTED = ['TRY', 'USD', 'EUR'];
 
-/**
- * Builds a date-sorted [isoDate, rate] series from forex history candles.
- * Forex pairs are quoted in TRY, so each candle's price IS the "1 unit = N TRY" rate.
- */
 function buildSeries(points) {
   return (points || [])
     .map((p) => {
@@ -22,7 +18,6 @@ function buildSeries(points) {
     .sort((a, b) => (a[0] < b[0] ? -1 : 1));
 }
 
-/** Nearest-prior rate lookup — mirrors HistoricalPricingAdapter.closestPriorRate. */
 function rateOn(series, dateStr) {
   if (!series || series.length === 0) return null;
   const target = String(dateStr).slice(0, 10);
@@ -41,11 +36,6 @@ function rateOn(series, dateStr) {
   return answer ?? series[0][1];
 }
 
-/**
- * Per-date currency conversion for historical chart data: each point is converted with the
- * FX rate of ITS OWN date, not today's rate (USD/TRY history goes back to 1995, EUR to 1999).
- * Falls back to the current rate if a date predates available history.
- */
 export function useRateHistory() {
   const displayCurrency = useAppStore((s) => s.displayCurrency) || 'TRY';
   const currentRates = useExchangeRates();

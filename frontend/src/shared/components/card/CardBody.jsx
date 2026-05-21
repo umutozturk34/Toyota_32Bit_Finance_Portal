@@ -7,15 +7,6 @@ const PADDINGS = {
   lg: 'p-4',
 };
 
-/**
- * @typedef {Object} CardBodyProps
- * @property {boolean} [scrollable]
- * @property {'none'|'sm'|'md'|'lg'} [padding='none']
- * @property {string} [className]
- * @property {React.ReactNode} [children]
- */
-
-/** @param {CardBodyProps} props */
 export default function CardBody({ scrollable = false, padding = 'none', className, children }) {
   return (
     <div

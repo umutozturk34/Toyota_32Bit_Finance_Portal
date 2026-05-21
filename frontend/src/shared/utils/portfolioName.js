@@ -7,11 +7,3 @@ export function portfolioName(t, portfolio) {
   }
   return raw;
 }
-
-export function localizePortfolioName(t, name) {
-  if (!name) return '';
-  if (AUTO_DEFAULT_NAMES.has(name)) {
-    return t('portfolio.onboarding.defaultName', { defaultValue: name });
-  }
-  return name;
-}

@@ -32,12 +32,6 @@ function StatusDot({ isOpen }) {
   return <span aria-hidden className="inline-block w-1.5 h-1.5 rounded-full bg-fg-subtle/40 shrink-0" />;
 }
 
-/**
- * Compact session pill — themed to match the cards (rounded, subtle gradient,
- * accent-tinted border on OPEN). Hover reveals a card-style detail panel.
- *
- * @param {{ market: string, compact?: boolean }} props
- */
 export default function MarketStatusBadge({ market, compact = false }) {
   const { t } = useTranslation();
   const { entry } = useMarketSession(market);

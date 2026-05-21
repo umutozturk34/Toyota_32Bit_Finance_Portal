@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Plus, Trash2, Eye, EyeOff, Settings2, X, ChevronDown,
+    Plus, Trash2, Eye, EyeOff, Settings2, X,
 } from 'lucide-react';
 const INDICATOR_TYPES = [
     { value: 'SMA', label: 'SMA', defaultPeriod: 20, defaultColor: '#2196f3' },

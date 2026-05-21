@@ -4,11 +4,6 @@ import { STALE, GC } from '../constants/query';
 
 const FALLBACK_RATES = { TRY: 1, USD: null, EUR: null };
 
-/**
- * Live FX rates expressed as "1 unit of currency = N TRY".
- * Sourced from the existing forex market data (USD and EUR pairs are quoted in TRY),
- * so no dedicated backend endpoint is needed.
- */
 export function useExchangeRates() {
   const { data } = useQuery({
     queryKey: ['exchangeRates'],

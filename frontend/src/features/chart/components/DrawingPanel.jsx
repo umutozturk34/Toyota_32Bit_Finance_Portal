@@ -195,5 +195,4 @@ const DrawingPanel = ({
         </div>
     );
 };
-export { ICON_OPTIONS };
 export default DrawingPanel;

@@ -27,20 +27,6 @@ const SHAPES = {
   round: 'rounded-full',
 };
 
-/**
- * @typedef {Object} IconButtonProps
- * @property {'primary'|'secondary'|'ghost'|'danger'|'accent'|'warning'} [variant='ghost']
- * @property {7|8|9|10} [size=8]
- * @property {'square'|'round'} [shape='square']
- * @property {React.ReactNode} icon
- * @property {string} 'aria-label'
- * @property {boolean} [loading]
- * @property {React.ElementType} [as]
- * @property {string} [className]
- * @property {React.CSSProperties} [style]
- */
-
-/** @type {React.ForwardRefExoticComponent<IconButtonProps>} */
 const IconButton = forwardRef(function IconButton(
   {
     variant = 'ghost',

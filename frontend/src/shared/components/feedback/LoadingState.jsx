@@ -4,15 +4,6 @@ import Spinner from './Spinner';
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
 
-/**
- * @typedef {Object} LoadingStateProps
- * @property {React.ReactNode} [message]
- * @property {boolean} [fullscreen=true]
- * @property {'xs'|'sm'|'md'|'lg'} [size='lg']
- * @property {string} [className]
- */
-
-/** @param {LoadingStateProps} props */
 export default function LoadingState({ message, fullscreen = true, size = 'lg', className }) {
     const { t } = useTranslation();
     const text = message ?? t('common.loadingData');

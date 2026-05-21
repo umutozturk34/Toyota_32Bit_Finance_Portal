@@ -46,17 +46,6 @@ export const doLogout = () => {
   const locale = encodeURIComponent(currentLocale());
   keycloak.logout({ redirectUri: `${window.location.origin}?kc_locale=${locale}` });
 };
-export const doForgotPassword = () => {
-  const locale = encodeURIComponent(currentLocale());
-  const url = `${keycloak.authServerUrl}/realms/${keycloak.realm}/login-actions/reset-credentials?client_id=${keycloak.clientId}&redirect_uri=${encodeURIComponent(window.location.origin)}&kc_locale=${locale}`;
-  window.location.href = url;
-};
-export const doChangePassword = () => {
-  gotoWithLocale({
-    action: 'UPDATE_PASSWORD',
-    redirectUri: window.location.href,
-  });
-};
 export const getToken = () => {
   return new Promise((resolve) => {
     if (!keycloak.authenticated) {

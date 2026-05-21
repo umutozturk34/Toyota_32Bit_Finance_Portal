@@ -9,22 +9,6 @@ const TONES = {
   info: { wrap: 'bg-accent/5 border-accent/20 text-accent', Icon: Info },
 };
 
-/**
- * @typedef {Object} InlineAlertAction
- * @property {string} label
- * @property {() => void} onClick
- */
-
-/**
- * @typedef {Object} InlineAlertProps
- * @property {'danger'|'warning'|'success'|'info'} [tone='danger']
- * @property {React.ComponentType} [icon]
- * @property {React.ReactNode} message
- * @property {InlineAlertAction} [action]
- * @property {string} [className]
- */
-
-/** @param {InlineAlertProps} props */
 export default function InlineAlert({ tone = 'danger', icon: IconOverride, message, action, className }) {
   const config = TONES[tone] ?? TONES.danger;
   const Icon = IconOverride ?? config.Icon;

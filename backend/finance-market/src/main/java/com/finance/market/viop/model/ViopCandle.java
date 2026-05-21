@@ -27,10 +27,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-/**
- * Daily close for a VIOP contract. İş Yatırım's {@code IndexHistoricalAll} returns close-only
- * data ({@code [ts_ms, close]}), so the table mirrors that — no OHLC, no volume.
- */
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "viop_candles",

@@ -28,22 +28,6 @@ function adjustNewsHeight(layoutItem, count) {
   return { ...layoutItem, h: desired };
 }
 
-/**
- * @typedef {Object} OverviewWidgetCanvasProps
- * @property {Array<Object>} sections
- * @property {Array<Object>} widgets
- * @property {boolean} editMode
- * @property {Set<string>} [deletingIds]
- * @property {string|null} [activePopoverSectionId]
- * @property {(id: string, anchorEl: HTMLElement) => void} [onOpenSettings]
- * @property {(next: Array) => void} onChange
- * @property {(id: string) => void} onDelete
- * @property {(id: string, config: Object) => void} onConfigChange
- * @property {(payload: {kind: string, config: Object, x: number, y: number, w: number, h: number}) => void} onDrop
- * @property {{w: number, h: number} | null} pendingDropSize
- */
-
-/** @param {OverviewWidgetCanvasProps} props */
 export default function OverviewWidgetCanvas({
   sections, widgets, editMode,
   deletingIds, activePopoverSectionId, onOpenSettings,

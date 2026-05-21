@@ -19,11 +19,6 @@ public enum AssetType {
         return marketType;
     }
 
-    /**
-     * Resolves the spot {@link AssetType} backing a market type, or {@code null} when the market
-     * type has no spot-position representation (e.g. VIOP derivatives, which live in their own
-     * {@code DerivativePosition} model rather than {@code PortfolioPosition}).
-     */
     public static AssetType fromMarketType(MarketType marketType) {
         for (AssetType type : values()) {
             if (type.marketType == marketType) {

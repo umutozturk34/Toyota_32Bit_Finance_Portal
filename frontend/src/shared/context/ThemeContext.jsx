@@ -13,7 +13,6 @@ function readStoredPreference() {
         if (stored === 'light') return 'LIGHT';
         if (stored === 'dark') return 'DARK';
     } catch {
-        /* localStorage unavailable */
     }
     return 'DARK';
 }
@@ -58,7 +57,6 @@ function persistTheme(theme) {
         localStorage.setItem('finance-theme', theme);
         document.cookie = 'finance-theme=' + theme + ';path=/;max-age=31536000;SameSite=Lax';
     } catch {
-        /* storage unavailable */
     }
 }
 

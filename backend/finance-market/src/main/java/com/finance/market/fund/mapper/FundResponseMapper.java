@@ -9,7 +9,6 @@ import com.finance.shared.dto.response.FundMetadata;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.fund.model.Fund;
 import com.finance.market.fund.model.FundCandle;
-import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;

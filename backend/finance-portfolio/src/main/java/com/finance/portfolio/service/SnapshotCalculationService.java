@@ -57,12 +57,6 @@ public class SnapshotCalculationService {
     private final PortfolioProperties portfolioProperties;
     private final DerivativeSnapshotAssembler derivativeSnapshotAssembler;
 
-    /**
-     * Snapshot row for an open VIOP derivative position. Derivatives carry no cash cost basis
-     * (margin-based), so totalCost is the entry-side notional (entryPrice × contractSize × lot)
-     * and pnl is the realized-or-unrealized P&L. Stored with assetType=VIOP, assetCode=symbol,
-     * trackedAsset=null — the new persisted columns (V90) handle this without a TrackedAsset.
-     */
     public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshot(Long portfolioId,
                                                                       com.finance.portfolio.derivative.model.DerivativePosition position,
                                                                       LocalDateTime batchTimestamp) {
@@ -75,13 +69,6 @@ public class SnapshotCalculationService {
         return buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp, currentPrice);
     }
 
-    /**
-     * Snapshot row for a VIOP derivative position at a specific point in time using a specific
-     * exit price. Used by {@code DerivativePositionService} backfill to persist one row per day
-     * between entry and today, reading the close from {@code viop_candles}; daily P&L is derived
-     * from the immediately prior persisted snapshot so the aggregate path is self-sufficient
-     * (no runtime augmentation).
-     */
     public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshotAt(Long portfolioId,
                                                                        com.finance.portfolio.derivative.model.DerivativePosition position,
                                                                        LocalDateTime batchTimestamp,
@@ -89,13 +76,6 @@ public class SnapshotCalculationService {
         return buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp, exitPrice, null);
     }
 
-    /**
-     * Variant accepting an explicit FX rate (USD/TRY or EUR/TRY) for the snapshot's date —
-     * used by {@code DerivativePositionService.backfillSnapshots} to apply per-date historical
-     * conversion so portfolio chart timestamps follow the same per-day rule that asset-detail
-     * charts use. When {@code fxRateOverride} is null, falls back to the live FX from the
-     * pricing strategy.
-     */
     public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshotAt(Long portfolioId,
                                                                        com.finance.portfolio.derivative.model.DerivativePosition position,
                                                                        LocalDateTime batchTimestamp,
@@ -104,14 +84,6 @@ public class SnapshotCalculationService {
         return buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp, exitPrice, fxRateOverride, null);
     }
 
-    /**
-     * Variant accepting a pre-resolved {@code priorOverride} snapshot to skip the per-call
-     * {@code findFirstPrior} DB lookup. Used by {@code DerivativePositionService.backfillSnapshots}
-     * which builds N consecutive snapshots in one batch: the loop tracks the previously-built
-     * row in memory and passes it here, eliminating N database roundtrips. When
-     * {@code priorOverride} is null, falls back to the original DB lookup behavior so external
-     * callers stay unaffected.
-     */
     public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshotAt(Long portfolioId,
                                                                        com.finance.portfolio.derivative.model.DerivativePosition position,
                                                                        LocalDateTime batchTimestamp,
@@ -122,12 +94,6 @@ public class SnapshotCalculationService {
                 exitPrice, fxRateOverride, priorOverride);
     }
 
-    /**
-     * Groups {@code positions} by (assetType, assetCode) and emits one snapshot per group with
-     * summed quantity and cost. Mirrors {@link PortfolioBackfillService} so a portfolio holding
-     * multiple lots of the same asset produces a single row per timestamp — performance chart
-     * dedupes by asset code and otherwise drops all but one lot's value.
-     */
     public List<PortfolioAssetDailySnapshot> buildAssetSnapshotsForPositions(Long portfolioId,
                                                                               List<PortfolioPosition> positions,
                                                                               LocalDateTime batchTimestamp) {
@@ -186,11 +152,6 @@ public class SnapshotCalculationService {
                 totalQuantity, totalCost, unitPriceTry, Optional.ofNullable(prior));
     }
 
-    /**
-     * Live path. Per-asset rows have already been persisted at {@code batchTimestamp};
-     * aggregate's daily P&L is the sum of {@code dailyPnlTry} from the latest per-asset row
-     * for each currently-held (assetType, assetCode).
-     */
     public PortfolioDailySnapshot buildAggregateSnapshot(Portfolio portfolio, LocalDateTime batchTimestamp) {
         Long pid = portfolio.getId();
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(pid);
@@ -201,10 +162,6 @@ public class SnapshotCalculationService {
         return assembleAggregateSnapshot(portfolio, batchTimestamp, positions, derivatives, prices, contributingRows);
     }
 
-    /**
-     * Backfill path. Caller has the per-asset rows for this batch in memory and passes them
-     * directly so the aggregate's daily P&L equals their {@code dailyPnlTry} sum.
-     */
     public PortfolioDailySnapshot buildAggregateSnapshotAtFromRows(Portfolio portfolio, LocalDateTime batchTimestamp,
                                                                      List<PortfolioPosition> positions,
                                                                      List<DerivativePosition> derivatives,

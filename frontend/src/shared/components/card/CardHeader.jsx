@@ -1,18 +1,5 @@
 const cx = (...parts) => parts.filter(Boolean).join(' ');
 
-/**
- * @typedef {Object} CardHeaderProps
- * @property {React.ComponentType} [icon]
- * @property {string} [iconTint]
- * @property {React.ReactNode} title
- * @property {React.ReactNode} [subtitle]
- * @property {React.ReactNode} [action]
- * @property {() => void} [onClick]
- * @property {boolean} [divider=true]
- * @property {string} [className]
- */
-
-/** @param {CardHeaderProps} props */
 export default function CardHeader({
   icon: Icon,
   iconTint = 'text-accent',

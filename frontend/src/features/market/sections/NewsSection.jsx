@@ -44,12 +44,6 @@ function NewsRow({ article, onClick }) {
   );
 }
 
-/**
- * @typedef {Object} NewsSectionProps
- * @property {{categoriesUsed: Array<string>, items: Array<Object>}|null} data
- */
-
-/** @param {NewsSectionProps} props */
 function NewsSectionImpl({ data }) {
   const navigate = useNavigate();
   const setOrigin = useNavigationStore((s) => s.setOrigin);

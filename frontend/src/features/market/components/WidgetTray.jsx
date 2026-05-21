@@ -7,18 +7,6 @@ import { Layers, TrendingUp, Bookmark, Newspaper, Check, Plus, ChevronRight } fr
 import { useWidgetDefinitions } from '../../../shared/hooks/useWidgetDefinitions';
 import { localizeWatchlistName } from '../../../shared/utils/watchlistName';
 
-/**
- * @typedef {Object} TrayTileSpec
- * @property {string} id
- * @property {string} kind
- * @property {string} label
- * @property {Object} config
- * @property {string} accent
- * @property {any} Icon
- * @property {number} w
- * @property {number} h
- */
-
 const SINGLETON_TILE_BASES = [
   { id: 'tile-movers-stock', kind: 'MOVERS', labelKey: 'widgetTray.movers.STOCK', config: { market: 'STOCK' }, accent: '#10b981', Icon: TrendingUp },
   { id: 'tile-movers-crypto', kind: 'MOVERS', labelKey: 'widgetTray.movers.CRYPTO', config: { market: 'CRYPTO' }, accent: '#f59e0b', Icon: TrendingUp },
@@ -60,16 +48,6 @@ function singletonUsed(sections, tile) {
   return sections.some((s) => s.kind === tile.kind);
 }
 
-/**
- * @typedef {Object} WidgetTrayProps
- * @property {Array<{kind: string, config?: Object}>} sections
- * @property {Array<{id: number, name: string}>} [watchlists]
- * @property {(tile: TrayTileSpec, anchorEl?: HTMLElement) => void} onAdd
- * @property {(tile: TrayTileSpec) => void} onDragStart
- * @property {() => void} onDragEnd
- */
-
-/** @param {WidgetTrayProps} props */
 export default function WidgetTray({ sections, watchlists = [], onAdd, onDragStart, onDragEnd }) {
   const { t } = useTranslation();
   const [openTab, setOpenTab] = useState(null);
@@ -181,7 +159,6 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
   );
 }
 
-/** @param {{active: boolean, accent: string, Icon: any, label: string, count?: string, disabled?: boolean, onClick: () => void}} props */
 function Tab({ active, accent, Icon, label, count, disabled = false, onClick }) {
   return (
     <button
@@ -214,7 +191,6 @@ function Tab({ active, accent, Icon, label, count, disabled = false, onClick }) 
   );
 }
 
-/** @param {{rowIndex: number, anchorRef: any, children: any}} props */
 function Dropdown({ rowIndex, anchorRef, children }) {
   const tabHeight = 44;
   const gap = 6;

@@ -48,12 +48,6 @@ function AssetRow({ asset, color, onClick }) {
   );
 }
 
-/**
- * @typedef {Object} MoversSectionProps
- * @property {{market: string, gainers: Array<Object>, losers: Array<Object>}|null} data
- */
-
-/** @param {MoversSectionProps} props */
 function MoversSectionImpl({ data }) {
   const { t } = useTranslation();
   const navigate = useNavigate();

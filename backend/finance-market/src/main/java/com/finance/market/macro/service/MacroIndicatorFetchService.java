@@ -36,18 +36,24 @@ public class MacroIndicatorFetchService {
     public FetchOutcome refreshAll() {
         List<MacroIndicator> indicators = indicatorRepository.findAll();
         if (indicators.isEmpty()) {
-            return new FetchOutcome(0, 0);
+            return new FetchOutcome(0, 0, List.of());
         }
         LocalDate today = LocalDate.now();
         LocalDate start = oldestRequiredStart(indicators, today);
         List<String> codes = indicators.stream().map(MacroIndicator::getCode).toList();
         List<EvdsDataResponse> responses = fetchAcrossWindows(codes, start, today, properties.batchSize());
         int totalPoints = 0;
+        List<String> changedCodes = new ArrayList<>();
         for (MacroIndicator indicator : indicators) {
-            totalPoints += persistObservations(indicator, responses);
+            int inserted = persistObservations(indicator, responses);
+            totalPoints += inserted;
+            if (inserted > 0) {
+                changedCodes.add(indicator.getCode());
+            }
         }
-        log.info("Macro refresh complete: {} indicators, {} new points", indicators.size(), totalPoints);
-        return new FetchOutcome(indicators.size(), totalPoints);
+        log.info("Macro refresh complete: {} indicators, {} new points, {} changed",
+                indicators.size(), totalPoints, changedCodes.size());
+        return new FetchOutcome(indicators.size(), totalPoints, List.copyOf(changedCodes));
     }
 
     @Transactional
@@ -119,5 +125,5 @@ public class MacroIndicatorFetchService {
         return inserted;
     }
 
-    public record FetchOutcome(int indicatorsTouched, int pointsInserted) { }
+    public record FetchOutcome(int indicatorsTouched, int pointsInserted, List<String> changedCodes) { }
 }

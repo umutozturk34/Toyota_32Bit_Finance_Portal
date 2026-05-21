@@ -27,5 +27,6 @@ app:
       market-updated: market.updated
       news-published: news.published
       portfolio-updated: portfolio.updated
+      macro-indicators-updated: macro.indicators.updated
       user-email-change-code: user.email-change.code-requested
       mail-dispatch: mail.dispatch

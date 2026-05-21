@@ -45,7 +45,7 @@ class MacroIndicatorFetchServiceTest {
 
     @BeforeEach
     void setUp() {
-        properties = new MacroProperties(LocalDate.of(2018, 1, 1), 25, 1000, List.of());
+        properties = new MacroProperties(LocalDate.of(2018, 1, 1), 25, 1000, null, List.of());
         service = new MacroIndicatorFetchService(indicatorRepository, pointRepository,
                 client, mapper, properties);
     }
@@ -79,6 +79,38 @@ class MacroIndicatorFetchServiceTest {
         verify(pointRepository, org.mockito.Mockito.times(2)).save(any(MacroIndicatorPoint.class));
         assertThat(indicator.getLastDate()).isEqualTo(LocalDate.of(2026, 5, 2));
         assertThat(indicator.getLastValue()).isEqualByComparingTo("40.50");
+    }
+
+    @Test
+    void should_recordChangedCode_when_indicatorGainsNewPoint() {
+        MacroIndicator indicator = buildIndicator("TP.RATE");
+        EvdsDataResponse response = new EvdsDataResponse(0, List.of());
+        when(indicatorRepository.findAll()).thenReturn(List.of(indicator));
+        when(client.fetchSeriesBatched(any(), any(), any(), anyInt()))
+                .thenReturn(List.of(response));
+        when(mapper.extract(response, "TP.RATE")).thenReturn(List.of(
+                new MacroObservation(LocalDate.of(2026, 5, 2), new BigDecimal("40.50"))));
+        when(pointRepository.existsByIndicatorAndObservedAt(eq(indicator), any())).thenReturn(false);
+
+        MacroIndicatorFetchService.FetchOutcome outcome = service.refreshAll();
+
+        assertThat(outcome.changedCodes()).containsExactly("TP.RATE");
+    }
+
+    @Test
+    void should_returnEmptyChangedCodes_when_allObservationsAreDuplicates() {
+        MacroIndicator indicator = buildIndicator("TP.RATE");
+        EvdsDataResponse response = new EvdsDataResponse(0, List.of());
+        when(indicatorRepository.findAll()).thenReturn(List.of(indicator));
+        when(client.fetchSeriesBatched(any(), any(), any(), anyInt()))
+                .thenReturn(List.of(response));
+        when(mapper.extract(response, "TP.RATE")).thenReturn(List.of(
+                new MacroObservation(LocalDate.of(2026, 5, 1), new BigDecimal("40.00"))));
+        when(pointRepository.existsByIndicatorAndObservedAt(eq(indicator), any())).thenReturn(true);
+
+        MacroIndicatorFetchService.FetchOutcome outcome = service.refreshAll();
+
+        assertThat(outcome.changedCodes()).isEmpty();
     }
 
     @Test

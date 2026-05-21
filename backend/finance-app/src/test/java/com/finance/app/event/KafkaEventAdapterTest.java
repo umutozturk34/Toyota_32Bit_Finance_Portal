@@ -31,6 +31,7 @@ class KafkaEventAdapterTest {
             "market.updated",
             "news.published",
             "portfolio.updated",
+            "macro.indicators.updated",
             "user.email-change.code-requested",
             "mail.dispatch");
 

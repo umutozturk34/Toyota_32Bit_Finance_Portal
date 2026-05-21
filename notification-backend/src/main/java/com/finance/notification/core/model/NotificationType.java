@@ -10,7 +10,8 @@ public enum NotificationType {
     MARKET_CLOSED(NotificationPreference::isEmailMarketClosed, NotificationPreference::isInappMarketClosed),
     MARKET_DATA_UPDATED(NotificationPreference::isEmailMarketDataUpdated, NotificationPreference::isInappMarketDataUpdated),
     NEWS_PUBLISHED(NotificationPreference::isEmailNewsPublished, NotificationPreference::isInappNewsPublished),
-    PORTFOLIO_UPDATED(NotificationPreference::isEmailPortfolioUpdated, NotificationPreference::isInappPortfolioUpdated);
+    PORTFOLIO_UPDATED(NotificationPreference::isEmailPortfolioUpdated, NotificationPreference::isInappPortfolioUpdated),
+    MACRO_INDICATORS_UPDATED(NotificationPreference::isEmailMacroIndicators, NotificationPreference::isInappMacroIndicators);
 
     private final Predicate<NotificationPreference> emailAccessor;
     private final Predicate<NotificationPreference> inappAccessor;

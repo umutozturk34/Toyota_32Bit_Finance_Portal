@@ -7,6 +7,7 @@ public record KafkaTopicsProperties(
         String marketUpdated,
         String newsPublished,
         String portfolioUpdated,
+        String macroIndicatorsUpdated,
         String userEmailChangeCode,
         String mailDispatch
 ) {

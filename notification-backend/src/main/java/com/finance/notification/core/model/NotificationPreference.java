@@ -34,11 +34,6 @@ public class NotificationPreference {
 
     private static final String MARKETS_DELIMITER = ",";
 
-    /**
-     * 24/7 markets that are excluded from the default opt-in set so their
-     * data-refresh notifications stay opt-in until the user explicitly
-     * enables them through the chip selector.
-     */
     private static final EnumSet<SessionMarket> DEFAULT_OPT_OUT_MARKETS = EnumSet.of(SessionMarket.CRYPTO);
 
     @Id
@@ -96,6 +91,12 @@ public class NotificationPreference {
 
     @Column(name = "inapp_portfolio_updated", nullable = false)
     private boolean inappPortfolioUpdated;
+
+    @Column(name = "email_macro_indicators", nullable = false)
+    private boolean emailMacroIndicators;
+
+    @Column(name = "inapp_macro_indicators", nullable = false)
+    private boolean inappMacroIndicators;
 
     @Column(name = "market_session_markets", nullable = false, length = 96)
     private String marketSessionMarkets;
@@ -164,6 +165,8 @@ public class NotificationPreference {
                 .inappNewsPublished(true)
                 .emailPortfolioUpdated(false)
                 .inappPortfolioUpdated(true)
+                .emailMacroIndicators(false)
+                .inappMacroIndicators(true)
                 .marketSessionMarkets(defaultMarketSessionMarkets())
                 .build();
     }

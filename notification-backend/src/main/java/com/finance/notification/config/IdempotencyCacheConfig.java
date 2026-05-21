@@ -12,14 +12,16 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class IdempotencyCacheConfig {
 
-    private static final Duration EVENT_DEDUP_TTL = Duration.ofHours(24);
-
     private final NotificationCacheProperties properties;
+
+    private Duration dedupTtl() {
+        return Duration.ofHours(properties.dedupTtlHours());
+    }
 
     @Bean("processedEventIds")
     public Cache<String, Boolean> processedEventIds() {
         return Caffeine.newBuilder()
-                .expireAfterWrite(EVENT_DEDUP_TTL)
+                .expireAfterWrite(dedupTtl())
                 .maximumSize(properties.dedupMaxEntries())
                 .build();
     }
@@ -27,7 +29,7 @@ public class IdempotencyCacheConfig {
     @Bean("dataUpdatedProcessedEventIds")
     public Cache<String, Boolean> dataUpdatedProcessedEventIds() {
         return Caffeine.newBuilder()
-                .expireAfterWrite(EVENT_DEDUP_TTL)
+                .expireAfterWrite(dedupTtl())
                 .maximumSize(properties.dedupMaxEntries())
                 .build();
     }
@@ -35,7 +37,7 @@ public class IdempotencyCacheConfig {
     @Bean("newsPublishedProcessedEventIds")
     public Cache<String, Boolean> newsPublishedProcessedEventIds() {
         return Caffeine.newBuilder()
-                .expireAfterWrite(EVENT_DEDUP_TTL)
+                .expireAfterWrite(dedupTtl())
                 .maximumSize(properties.dedupMaxEntries())
                 .build();
     }
@@ -43,7 +45,15 @@ public class IdempotencyCacheConfig {
     @Bean("portfolioUpdatedProcessedEventIds")
     public Cache<String, Boolean> portfolioUpdatedProcessedEventIds() {
         return Caffeine.newBuilder()
-                .expireAfterWrite(EVENT_DEDUP_TTL)
+                .expireAfterWrite(dedupTtl())
+                .maximumSize(properties.dedupMaxEntries())
+                .build();
+    }
+
+    @Bean("macroIndicatorsUpdatedProcessedEventIds")
+    public Cache<String, Boolean> macroIndicatorsUpdatedProcessedEventIds() {
+        return Caffeine.newBuilder()
+                .expireAfterWrite(dedupTtl())
                 .maximumSize(properties.dedupMaxEntries())
                 .build();
     }

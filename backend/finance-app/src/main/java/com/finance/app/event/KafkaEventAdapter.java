@@ -3,6 +3,7 @@ package com.finance.app.event;
 import com.finance.common.event.DomainEvent;
 import com.finance.common.event.EmailChangeCodeRequestedEvent;
 import com.finance.common.event.KafkaTopicsProperties;
+import com.finance.common.event.MacroIndicatorsUpdatedEvent;
 import com.finance.common.event.MarketUpdatedEvent;
 import com.finance.common.event.NewsPublishedEvent;
 import com.finance.common.event.PortfolioUpdatedEvent;
@@ -39,6 +40,7 @@ public class KafkaEventAdapter implements EventPublisherPort {
             case MarketUpdatedEvent ignored -> topics.marketUpdated();
             case NewsPublishedEvent ignored -> topics.newsPublished();
             case PortfolioUpdatedEvent ignored -> topics.portfolioUpdated();
+            case MacroIndicatorsUpdatedEvent ignored -> topics.macroIndicatorsUpdated();
             case EmailChangeCodeRequestedEvent ignored -> topics.userEmailChangeCode();
             default -> throw new IllegalArgumentException(
                     "Unknown event type for topic resolution: " + event.getClass().getName());

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}"
+      th:replace="~{email/_layout :: layout(eyebrow=#{appEmail.macroIndicators.eyebrow}, title=${title}, subtitle=#{appEmail.macroIndicators.subtitle}, content=~{::content})}">
+<body>
+<th:block th:fragment="content"
+          th:with="cSuccess=${dark ? '#34d399' : '#059669'},
+                   cDanger=${dark ? '#f87171' : '#dc2626'},
+                   cChipBg=${dark ? '#0a0d16' : '#f4f5f9'}">
+
+    <th:block th:if="${hasHero}" th:with="hero=${hero},
+                                          heroUp=${hero.isUp},
+                                          cHero=${heroUp ? cSuccess : cDanger},
+                                          cHeroBg=${heroUp ? (dark ? '#0e2d24' : '#d1fae5') : (dark ? '#3a0f12' : '#fee2e2')},
+                                          heroAccent=${hero.accent}">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 4px;">
+            <tr>
+                <td style="vertical-align:middle;">
+                    <span th:style="'display:inline-block;font-size:9px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;padding:4px 10px;border-radius:999px;background:' + ${heroAccent} + '22;color:' + ${heroAccent} + ';line-height:1;'"
+                          th:text="${hero.categoryLabel}">CATEGORY</span>
+                </td>
+                <td style="padding:0 0 0 8px;vertical-align:middle;">
+                    <span th:style="'font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:' + ${cSubtle} + ';'" th:text="${heroLabel}">BIGGEST MOVE</span>
+                </td>
+            </tr>
+        </table>
+
+        <p th:style="'margin:6px 0 4px;font-size:15px;font-weight:600;color:' + ${cFg} + ';line-height:1.3;'" th:text="${hero.label}">Indicator</p>
+        <p class="num" th:style="'margin:0 0 12px;font-size:10.5px;font-weight:600;letter-spacing:0.4px;color:' + ${cSubtle} + ';'" th:text="${hero.code}">CODE</p>
+
+        <p th:style="'margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:' + ${cSubtle} + ';'" th:text="#{appEmail.macroIndicators.newValueLabel}">New value</p>
+        <p class="num" th:style="'margin:0;font-size:30px;font-weight:700;letter-spacing:-0.4px;line-height:1.1;color:' + ${cFg} + ';'" th:text="${hero.newValue}">42.50%</p>
+
+        <p class="num" th:style="'margin:8px 0 0;font-size:13px;font-weight:600;color:' + ${cHero} + ';'">
+            <span th:text="${hero.arrow}">▲</span>
+            <span th:text="${hero.delta}">+0.50 pp</span>
+            <span th:style="'font-weight:500;color:' + ${cSubtle} + ';'" th:text="'· ' + ${hero.deltaPercent}">(+1.25%)</span>
+            <span th:if="${hero.previousValue != '—'}" th:style="'font-weight:400;color:' + ${cSubtle} + ';'"
+                  th:text="' · ' + #{appEmail.macroIndicators.from} + ' ' + ${hero.previousValue}">from 40.00</span>
+        </p>
+
+        <div th:style="'height:1px;background:' + ${cBorder} + ';margin:24px 0 18px;line-height:1px;font-size:0;'">&nbsp;</div>
+    </th:block>
+
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 14px;">
+        <tr>
+            <td th:style="'padding:6px 12px;background:' + ${cChipBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:999px;'">
+                <span class="num" th:style="'font-size:11px;font-weight:600;color:' + ${cFg} + ';letter-spacing:0.2px;'" th:text="${summaryTotal}">5 indicators</span>
+            </td>
+            <td th:if="${upCount > 0}" style="padding:0 0 0 6px;">
+                <span th:style="'display:inline-block;padding:6px 11px;border-radius:999px;background:' + (${dark} ? '#0e2d24' : '#d1fae5') + ';color:' + ${cSuccess} + ';font-size:11px;font-weight:700;letter-spacing:0.2px;line-height:1;'">
+                    <span>▲</span> <span class="num" th:text="${summaryUp}">3 up</span>
+                </span>
+            </td>
+            <td th:if="${downCount > 0}" style="padding:0 0 0 6px;">
+                <span th:style="'display:inline-block;padding:6px 11px;border-radius:999px;background:' + (${dark} ? '#3a0f12' : '#fee2e2') + ';color:' + ${cDanger} + ';font-size:11px;font-weight:700;letter-spacing:0.2px;line-height:1;'">
+                    <span>▼</span> <span class="num" th:text="${summaryDown}">2 down</span>
+                </span>
+            </td>
+        </tr>
+    </table>
+
+    <p th:style="'margin:0 0 14px;font-size:12.5px;color:' + ${cSubtle} + ';line-height:1.6;'" th:text="${hintLabel}">Only changed indicators are shown below.</p>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <th:block th:each="row, iter : ${rows}"
+                  th:with="isUp=${row.isUp},
+                           isDown=${row.isDown},
+                           cChange=${isUp ? cSuccess : (isDown ? cDanger : cMuted)},
+                           cChangeBg=${isUp ? (dark ? '#0e2d24' : '#d1fae5') : (isDown ? (dark ? '#3a0f12' : '#fee2e2') : cInfoBg)},
+                           rowAccent=${row.accent}">
+            <tr>
+                <td th:style="'padding:0;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-left:3px solid ' + ${rowAccent} + ';border-radius:12px;overflow:hidden;'">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                        <tr>
+                            <td style="padding:14px 16px;vertical-align:middle;">
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:4px;">
+                                    <tr>
+                                        <td style="vertical-align:middle;">
+                                            <span th:style="'display:inline-block;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:' + ${rowAccent} + '1f;color:' + ${rowAccent} + ';line-height:1.6;'"
+                                                  th:text="${row.categoryLabel}">CATEGORY</span>
+                                        </td>
+                                        <td th:if="${row.maturity != null and row.maturity != ''}" style="padding:0 0 0 6px;vertical-align:middle;">
+                                            <span class="num" th:style="'font-size:9px;font-weight:600;letter-spacing:0.6px;color:' + ${cSubtle} + ';'"
+                                                  th:text="${row.maturity}">M3</span>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <p th:style="'margin:0;font-size:14px;font-weight:600;color:' + ${cFg} + ';line-height:1.3;'" th:text="${row.label}">Label</p>
+                                <p class="num" th:style="'margin:2px 0 0;font-size:10.5px;font-weight:500;letter-spacing:0.4px;color:' + ${cSubtle} + ';'">
+                                    <span th:text="${row.code}">CODE</span>
+                                    <span th:if="${row.newDate != ''}" th:text="' · ' + ${row.newDate}"> · 20 May</span>
+                                </p>
+                            </td>
+                            <td align="right" style="padding:14px 16px;vertical-align:middle;white-space:nowrap;">
+                                <p class="num" th:style="'margin:0;font-size:15px;font-weight:700;color:' + ${cFg} + ';line-height:1.1;'" th:text="${row.newValue}">42.50%</p>
+                                <p th:if="${row.previousValue != '—'}" class="num" th:style="'margin:3px 0 0;font-size:10.5px;font-weight:500;color:' + ${cSubtle} + ';'"
+                                   th:text="#{appEmail.macroIndicators.from} + ' ' + ${row.previousValue}">from 40.00%</p>
+                                <span th:style="'display:inline-block;margin-top:6px;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:999px;background:' + ${cChangeBg} + ';color:' + ${cChange} + ';line-height:1;'">
+                                    <span th:text="${row.arrow}">▲</span>
+                                    <span class="num" th:text="${row.delta}">+0.50 pp</span>
+                                    <span th:if="${row.deltaPercent != '—'}" class="num" th:style="'font-weight:600;opacity:0.8;'" th:text="' · ' + ${row.deltaPercent}"> · +1.25%</span>
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr th:if="${!iter.last}"><td style="height:10px;line-height:0;font-size:0;">&nbsp;</td></tr>
+        </th:block>
+    </table>
+
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:22px;">
+        <tr>
+            <td th:style="'background:' + ${cAccent} + ';background-image:linear-gradient(135deg,' + ${cAccent} + ' 0%,' + ${cAccentMid} + ' 50%,' + ${cAccent2} + ' 100%);border-radius:10px;box-shadow:0 6px 22px -4px rgba(99,102,241,0.45);'">
+                <a href="http://localhost/analytics" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;line-height:1;" th:text="#{appEmail.macroIndicators.cta}">Open analytics</a>
+            </td>
+        </tr>
+    </table>
+
+    <p th:style="'margin:18px 0 0;font-size:12.5px;color:' + ${cSubtle} + ';line-height:1.65;'" th:text="#{appEmail.macroIndicators.footer}">Footer</p>
+</th:block>
+</body>
+</html>

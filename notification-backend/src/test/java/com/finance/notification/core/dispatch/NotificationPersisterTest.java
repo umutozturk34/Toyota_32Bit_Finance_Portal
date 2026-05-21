@@ -44,7 +44,7 @@ class NotificationPersisterTest {
     @BeforeEach
     void setUp() {
         KafkaTopicsProperties topics = new KafkaTopicsProperties(
-                "market", "news", "portfolio", "user", "mail.dispatch");
+                "market", "news", "portfolio", "macro", "user", "mail.dispatch");
         inline = Runnable::run;
         persister = new NotificationPersister(notificationRepository, emailOutboxRepository,
                 streamRegistry, notificationMapper, inline, kafkaTemplate, topics);

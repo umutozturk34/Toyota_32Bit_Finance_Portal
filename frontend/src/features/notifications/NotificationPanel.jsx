@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
   BellOff, Inbox, Check, CheckCheck, Trash2, AlertCircle, Zap,
-  Bell, Megaphone, Search, Newspaper, Briefcase, Sunrise, Sunset, RefreshCw, X,
+  Bell, Megaphone, Search, Newspaper, Briefcase, Sunrise, Sunset, RefreshCw, TrendingUp, X,
 } from 'lucide-react';
 import {
   useNotifications,
@@ -30,6 +30,7 @@ const TYPE_META = {
   MARKET_DATA_UPDATED: { Icon: RefreshCw, labelKey: 'notificationPanel.types.MARKET_DATA_UPDATED', tint: 'text-accent' },
   NEWS_PUBLISHED: { Icon: Newspaper, labelKey: 'notificationPanel.types.NEWS_PUBLISHED', tint: 'text-accent-secondary' },
   PORTFOLIO_UPDATED: { Icon: Briefcase, labelKey: 'notificationPanel.types.PORTFOLIO_UPDATED', tint: 'text-success' },
+  MACRO_INDICATORS_UPDATED: { Icon: TrendingUp, labelKey: 'notificationPanel.types.MACRO_INDICATORS_UPDATED', tint: 'text-warning' },
 };
 
 function useRelativeTime() {

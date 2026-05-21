@@ -77,11 +77,13 @@ class SmallCoverageBatchTest {
     void kafkaTopicsProperties_recordExposesAllFields() {
         KafkaTopicsProperties props = new KafkaTopicsProperties(
                 "market.updated", "news.published", "portfolio.updated",
+                "macro.indicators.updated",
                 "user.email-change-code", "mail.dispatch");
 
         assertThat(props.marketUpdated()).isEqualTo("market.updated");
         assertThat(props.newsPublished()).isEqualTo("news.published");
         assertThat(props.portfolioUpdated()).isEqualTo("portfolio.updated");
+        assertThat(props.macroIndicatorsUpdated()).isEqualTo("macro.indicators.updated");
         assertThat(props.userEmailChangeCode()).isEqualTo("user.email-change-code");
         assertThat(props.mailDispatch()).isEqualTo("mail.dispatch");
     }

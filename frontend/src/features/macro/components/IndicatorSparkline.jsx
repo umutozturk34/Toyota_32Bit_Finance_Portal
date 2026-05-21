@@ -1,31 +1,34 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { useMacroIndicatorHistory } from '../hooks/useMacroIndicators';
+import { SPARK_DAYS } from '../constants';
+import { computeChange } from '../utils';
 
 const SPARK_WIDTH = 100;
 const SPARK_HEIGHT = 32;
-const SPARK_DAYS = 90;
+const SUCCESS = '#10b981';
+const DANGER = '#ef4444';
 
 function toIsoDate(d) {
   return d.toISOString().slice(0, 10);
 }
 
 function buildPath(points, width, height) {
-  if (points.length < 2) return '';
+  if (points.length < 2) return { line: '', area: '', lastDot: null };
   const values = points.map((p) => Number(p.value));
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min || 1;
   const stepX = width / (points.length - 1);
-  return points
-    .map((p, i) => {
-      const x = i * stepX;
-      const y = height - ((Number(p.value) - min) / span) * height;
-      return `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(' ');
+  const coords = points.map((p, i) => ({
+    x: i * stepX,
+    y: height - ((Number(p.value) - min) / span) * height,
+  }));
+  const line = coords.map(({ x, y }, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`).join(' ');
+  const area = `${line} L${(coords[coords.length - 1].x).toFixed(2)},${height} L0,${height} Z`;
+  return { line, area, lastDot: coords[coords.length - 1] };
 }
 
-export default function IndicatorSparkline({ code, color = '#5E6AD2' }) {
+export default function IndicatorSparkline({ code, color, points: pointsProp }) {
   const today = useMemo(() => new Date(), []);
   const from = useMemo(() => {
     const d = new Date(today);
@@ -33,18 +36,16 @@ export default function IndicatorSparkline({ code, color = '#5E6AD2' }) {
     return toIsoDate(d);
   }, [today]);
   const to = useMemo(() => toIsoDate(today), [today]);
+  const enabled = !pointsProp;
+  const { data: fetched = [] } = useMacroIndicatorHistory(enabled ? code : null, { from, to });
+  const points = pointsProp || fetched;
 
-  const { data: points = [] } = useMacroIndicatorHistory(code, { from, to });
+  const change = useMemo(() => computeChange(points), [points]);
+  const baseColor = color || (change?.direction === 'down' ? DANGER : SUCCESS);
+  const gradientId = useId();
+  const { line, area, lastDot } = useMemo(() => buildPath(points, SPARK_WIDTH, SPARK_HEIGHT), [points]);
 
-  const path = useMemo(() => buildPath(points, SPARK_WIDTH, SPARK_HEIGHT), [points]);
-  const last = points[points.length - 1];
-  const first = points[0];
-  const isUp = last && first && Number(last.value) >= Number(first.value);
-  const strokeColor = isUp ? color : '#ef4444';
-
-  if (path === '') {
-    return <div className="h-8 w-full opacity-40" />;
-  }
+  if (!line) return <div className="h-8 w-full opacity-40" aria-hidden />;
 
   return (
     <svg
@@ -54,7 +55,17 @@ export default function IndicatorSparkline({ code, color = '#5E6AD2' }) {
       role="img"
       aria-label="trend"
     >
-      <path d={path} fill="none" stroke={strokeColor} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={baseColor} stopOpacity="0.32" />
+          <stop offset="100%" stopColor={baseColor} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill={`url(#${gradientId})`} stroke="none" />
+      <path d={line} fill="none" stroke={baseColor} strokeWidth={1.4} strokeLinejoin="round" strokeLinecap="round" />
+      {lastDot && (
+        <circle cx={lastDot.x} cy={lastDot.y} r={1.6} fill={baseColor} stroke="#0a0a0b" strokeWidth={0.6} />
+      )}
     </svg>
   );
 }

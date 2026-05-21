@@ -1,35 +1,41 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import Card from '../../../shared/components/card';
 import IndicatorSparkline from './IndicatorSparkline';
+import { useMacroIndicatorHistory } from '../hooks/useMacroIndicators';
+import { SPARK_DAYS } from '../constants';
+import { changeBadgeText, computeChange, formatDate, formatValue, themeFor } from '../utils';
 
-const UNIT_FORMATTERS = {
-  PERCENT: (v) => `%${Number(v).toFixed(2)}`,
-  INDEX: (v) => Number(v).toLocaleString('tr-TR', { maximumFractionDigits: 2 }),
-  NUMBER: (v) => Number(v).toLocaleString('tr-TR', { maximumFractionDigits: 2 }),
-};
+const SUCCESS = '#10b981';
+const DANGER = '#ef4444';
 
-function formatValue(value, unit) {
-  if (value == null) return '—';
-  const formatter = UNIT_FORMATTERS[unit] || UNIT_FORMATTERS.NUMBER;
-  return formatter(value);
+function toIsoDate(d) {
+  return d.toISOString().slice(0, 10);
 }
 
-function formatDate(dateIso) {
-  if (!dateIso) return null;
-  return new Date(dateIso).toLocaleDateString('tr-TR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-export default function IndicatorCard({ indicator, onOpen }) {
+export default function IndicatorCard({ indicator, onOpen, dense = false }) {
   const { t } = useTranslation();
+  const today = useMemo(() => new Date(), []);
+  const from = useMemo(() => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - SPARK_DAYS);
+    return toIsoDate(d);
+  }, [today]);
+  const to = useMemo(() => toIsoDate(today), [today]);
+
+  const { data: points = [] } = useMacroIndicatorHistory(indicator.code, { from, to });
+  const change = useMemo(() => computeChange(points), [points]);
+  const theme = themeFor(indicator.category);
+
   const label = t(`marketOverview.macro.${indicator.label}`, { defaultValue: indicator.label });
   const formattedValue = formatValue(indicator.lastValue, indicator.unit);
   const formattedDate = formatDate(indicator.lastDate);
+  const changeText = changeBadgeText(change, indicator.unit);
+  const freqLabel = t(`marketOverview.macro.freq${indicator.frequency.charAt(0)}${indicator.frequency.slice(1).toLowerCase()}`,
+    { defaultValue: indicator.frequency });
+  const isDown = change?.direction === 'down';
 
   return (
     <Card
@@ -38,45 +44,62 @@ export default function IndicatorCard({ indicator, onOpen }) {
       onClick={() => onOpen?.(indicator)}
       variant="elevated"
       radius="xl"
-      padding="md"
+      padding={dense ? 'sm' : 'md'}
       interactive
       backdropBlur
-      className="w-full text-left flex flex-col gap-3 cursor-pointer"
+      className="group/card relative w-full text-left flex flex-col gap-3 cursor-pointer overflow-hidden"
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}
+      style={{ '--accent-soft': theme.soft }}
     >
-      <div className="flex items-start justify-between gap-2">
+      <span
+        className="pointer-events-none absolute left-0 top-3 bottom-3 w-[2px] rounded-full"
+        style={{ background: `linear-gradient(180deg, ${theme.accent}, ${theme.accent}40)` }}
+      />
+      <div className="flex items-start justify-between gap-2 pl-2">
         <div className="min-w-0">
-          <p className="text-[10px] font-mono uppercase tracking-wide text-fg-muted">
-            {t(`marketOverview.macro.category${indicator.category.charAt(0)}${indicator.category.slice(1).toLowerCase()}`,
-              { defaultValue: indicator.category })}
-          </p>
-          <h3 className="text-sm font-semibold text-fg truncate">{label}</h3>
+          <div className="flex items-center gap-1.5">
+            <span
+              className="h-1.5 w-1.5 rounded-full shrink-0"
+              style={{ background: theme.accent, boxShadow: `0 0 8px ${theme.glow}` }}
+            />
+            <p className="text-[9px] font-mono uppercase tracking-[0.14em] text-fg-muted">
+              {indicator.code}
+            </p>
+          </div>
+          <h3 className={`mt-1 font-semibold text-fg truncate ${dense ? 'text-xs' : 'text-sm'}`}>{label}</h3>
         </div>
-        <TrendBadge value={indicator.lastValue} />
+        <ChangeChip text={changeText} down={isDown} theme={theme} />
       </div>
 
-      <p className="text-xl sm:text-2xl font-bold font-mono text-fg leading-none">
+      <p className={`pl-2 font-bold font-mono tabular-nums text-fg leading-none ${dense ? 'text-lg' : 'text-2xl'}`}>
         {formattedValue}
       </p>
 
-      <IndicatorSparkline code={indicator.code} />
+      <div className="pl-2">
+        <IndicatorSparkline code={indicator.code} color={theme.accent} points={points} />
+      </div>
 
-      {formattedDate && (
-        <p className="text-[10px] text-fg-muted font-mono">
-          {t('marketOverview.macro.lastUpdated')}: {formattedDate}
-        </p>
-      )}
+      <div className="pl-2 flex items-center justify-between text-[10px] font-mono text-fg-subtle">
+        <span>{formattedDate}</span>
+        <span className="uppercase tracking-[0.12em]">{freqLabel}</span>
+      </div>
     </Card>
   );
 }
 
-function TrendBadge({ value }) {
-  if (value == null) {
-    return <Minus className="h-3 w-3 text-fg-muted" />;
-  }
-  const positive = Number(value) >= 0;
-  const Icon = positive ? ArrowUpRight : ArrowDownRight;
-  const tone = positive ? 'text-success' : 'text-danger';
-  return <Icon className={`h-4 w-4 ${tone}`} />;
+function ChangeChip({ text, down, theme }) {
+  if (!text) return <Minus className="h-3 w-3 text-fg-muted" />;
+  const tone = down ? DANGER : SUCCESS;
+  const Icon = down ? ArrowDownRight : ArrowUpRight;
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-mono font-semibold tabular-nums"
+      style={{ background: `${tone}1a`, color: tone, boxShadow: `0 0 0 1px ${tone}33 inset` }}
+    >
+      <Icon className="h-2.5 w-2.5" />
+      {text}
+      <span className="sr-only">{theme.accent}</span>
+    </span>
+  );
 }

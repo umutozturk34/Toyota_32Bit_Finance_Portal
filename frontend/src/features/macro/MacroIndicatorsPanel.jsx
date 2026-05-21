@@ -1,35 +1,56 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Layers } from 'lucide-react';
+import { Activity, Banknote, Flame, Layers, Sparkles } from 'lucide-react';
 import EmptyState from '../../shared/components/feedback/EmptyState';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
-import Card from '../../shared/components/card';
 import IndicatorCard from './components/IndicatorCard';
+import DepositMatrix from './components/DepositMatrix';
 import YieldCurvePanel from './components/YieldCurvePanel';
 import IndicatorHistoryModal from './components/IndicatorHistoryModal';
 import { useMacroIndicators } from './hooks/useMacroIndicators';
+import { DEPOSIT_CURRENCIES, PROMINENT_ORDER } from './constants';
+import { themeFor } from './utils';
 
-const PROMINENT_ORDER = [
-  'policyRate', 'tlrefRate', 'cpiIndex', 'ppiIndex',
-  'depositTryTotal', 'depositUsdTotal', 'depositEurTotal',
+const TABS = [
+  { id: 'all',       icon: Sparkles, labelKey: 'tabAll',       category: null },
+  { id: 'rates',     icon: Activity, labelKey: 'tabRates',     category: 'RATES' },
+  { id: 'inflation', icon: Flame,    labelKey: 'tabInflation', category: 'INFLATION' },
+  { id: 'deposit',   icon: Banknote, labelKey: 'tabDeposit',   category: 'DEPOSIT' },
 ];
 
-function sortProminent(list) {
+function sortByProminentOrder(list) {
   const order = new Map(PROMINENT_ORDER.map((label, idx) => [label, idx]));
   return [...list].sort((a, b) => (order.get(a.label) ?? 99) - (order.get(b.label) ?? 99));
 }
 
 export default function MacroIndicatorsPanel() {
   const { t } = useTranslation();
-  const [activeSubTab, setActiveSubTab] = useState('headline');
+  const [activeTab, setActiveTab] = useState('all');
+  const [currencyFilter, setCurrencyFilter] = useState('ALL');
   const [openIndicator, setOpenIndicator] = useState(null);
 
   const { data: allIndicators = [], isLoading, isError, refetch } = useMacroIndicators();
 
+  const counts = useMemo(() => ({
+    all: allIndicators.length,
+    rates: allIndicators.filter((i) => i.category === 'RATES').length,
+    inflation: allIndicators.filter((i) => i.category === 'INFLATION').length,
+    deposit: allIndicators.filter((i) => i.category === 'DEPOSIT').length,
+  }), [allIndicators]);
+
+  const visible = useMemo(() => {
+    const activeDef = TABS.find((t) => t.id === activeTab) || TABS[0];
+    let list = activeDef.category ? allIndicators.filter((i) => i.category === activeDef.category) : allIndicators;
+    if (activeTab === 'deposit' && currencyFilter !== 'ALL') {
+      list = list.filter((i) => i.currency === currencyFilter);
+    }
+    return list;
+  }, [activeTab, currencyFilter, allIndicators]);
+
   const prominent = useMemo(
-    () => sortProminent(allIndicators.filter((i) => i.prominent)),
+    () => sortByProminentOrder(allIndicators.filter((i) => i.prominent)),
     [allIndicators]
   );
 
@@ -40,54 +61,115 @@ export default function MacroIndicatorsPanel() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="inline-flex items-center gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 self-start">
-        <SubTabButton
-          active={activeSubTab === 'headline'}
-          onClick={() => setActiveSubTab('headline')}
-          icon={<Activity className="h-3.5 w-3.5" />}
-        >
-          {t('marketOverview.macro.headlineTab')}
-        </SubTabButton>
-        <SubTabButton
-          active={activeSubTab === 'yieldCurve'}
-          onClick={() => setActiveSubTab('yieldCurve')}
-          icon={<Layers className="h-3.5 w-3.5" />}
-        >
-          {t('marketOverview.macro.yieldCurveTab')}
-        </SubTabButton>
-      </div>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      <header className="flex items-end justify-between gap-3 flex-wrap pb-2 border-b border-border-default/40">
+        <div>
+          <h2 className="font-display text-xl sm:text-2xl font-bold text-fg leading-none tracking-tight">
+            {t('marketOverview.macro.heading', { defaultValue: 'Macro Indicators' })}
+          </h2>
+          <p className="mt-1.5 text-[11px] font-mono text-fg-muted uppercase tracking-[0.18em]">
+            {t('marketOverview.macro.subheading', {
+              defaultValue: 'TCMB EVDS · weekly + monthly + daily',
+            })}
+          </p>
+        </div>
+        <div className="font-mono text-[10px] tabular-nums text-fg-subtle uppercase tracking-[0.14em]">
+          {counts.all} series
+        </div>
+      </header>
+
+      <nav className="flex items-center gap-1 flex-wrap">
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          const active = activeTab === tab.id;
+          const theme = tab.category ? themeFor(tab.category) : null;
+          const count = counts[tab.id];
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => { setActiveTab(tab.id); setCurrencyFilter('ALL'); }}
+              className={`group/tab relative flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all border-none cursor-pointer ${
+                active ? 'text-fg' : 'text-fg-muted hover:text-fg'
+              }`}
+              style={active && theme ? { background: theme.soft, boxShadow: `inset 0 0 0 1px ${theme.accent}40` } : active ? { background: 'rgba(99,102,241,0.10)', boxShadow: 'inset 0 0 0 1px rgba(99,102,241,0.40)' } : {}}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              <span>{t(`marketOverview.macro.${tab.labelKey}`, { defaultValue: tab.id })}</span>
+              <span className="font-mono text-[10px] tabular-nums opacity-70">{String(count).padStart(2, '0')}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {activeTab === 'deposit' && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted mr-1">
+            {t('marketOverview.macro.currency', { defaultValue: 'Currency' })}
+          </span>
+          {['ALL', ...DEPOSIT_CURRENCIES].map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCurrencyFilter(c)}
+              className={`text-[11px] font-mono font-semibold rounded-md px-2.5 py-1 transition-colors border-none cursor-pointer ${
+                currencyFilter === c ? 'bg-bg-elevated text-fg' : 'text-fg-muted hover:text-fg'
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
 
       <AnimatePresence mode="wait" initial={false}>
-        {activeSubTab === 'headline' && (
+        {activeTab === 'all' && (
           <motion.div
-            key="headline"
+            key="all"
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+            transition={{ duration: 0.2 }}
+            className="space-y-6"
           >
-            {prominent.map((indicator) => (
-              <IndicatorCard
-                key={indicator.code}
-                indicator={indicator}
-                onOpen={setOpenIndicator}
-              />
-            ))}
-            <YieldCurveCta onClick={() => setActiveSubTab('yieldCurve')} label={t('marketOverview.macro.yieldCurveCta')} />
+            <section>
+              <SectionTitle icon={Sparkles} text={t('marketOverview.macro.headline', { defaultValue: 'Headline' })} hint={`${prominent.length}`} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {prominent.map((indicator) => (
+                  <IndicatorCard key={indicator.code} indicator={indicator} onOpen={setOpenIndicator} />
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <SectionTitle icon={Banknote} text={t('marketOverview.macro.depositMatrixTitle', { defaultValue: 'Deposit Rate Matrix' })} />
+              <DepositMatrix indicators={allIndicators} onOpen={setOpenIndicator} />
+            </section>
+
+            <section>
+              <SectionTitle icon={Layers} text={t('marketOverview.macro.yieldCurveTab', { defaultValue: 'Yield Curve' })} />
+              <YieldCurvePanel indicators={allIndicators} />
+            </section>
           </motion.div>
         )}
 
-        {activeSubTab === 'yieldCurve' && (
+        {activeTab !== 'all' && (
           <motion.div
-            key="yieldCurve"
+            key={activeTab}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            transition={{ duration: 0.2 }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
           >
-            <YieldCurvePanel indicators={allIndicators} />
+            {visible.map((indicator) => (
+              <IndicatorCard key={indicator.code} indicator={indicator} onOpen={setOpenIndicator} />
+            ))}
           </motion.div>
         )}
       </AnimatePresence>
@@ -95,41 +177,16 @@ export default function MacroIndicatorsPanel() {
       {openIndicator && (
         <IndicatorHistoryModal indicator={openIndicator} onClose={() => setOpenIndicator(null)} />
       )}
+    </motion.div>
+  );
+}
+
+function SectionTitle({ icon: Icon, text, hint }) {
+  return (
+    <div className="flex items-center gap-2 mb-3">
+      <Icon className="h-4 w-4 text-accent" />
+      <h3 className="font-display text-xs font-bold uppercase tracking-[0.18em] text-fg">{text}</h3>
+      {hint && <span className="font-mono text-[10px] tabular-nums text-fg-subtle">{hint}</span>}
     </div>
-  );
-}
-
-function SubTabButton({ active, onClick, icon, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`relative flex items-center gap-1.5 rounded-lg px-3 sm:px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer ${
-        active ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
-      }`}
-    >
-      {icon}
-      {children}
-    </button>
-  );
-}
-
-function YieldCurveCta({ onClick, label }) {
-  return (
-    <Card
-      as={motion.button}
-      type="button"
-      onClick={onClick}
-      variant="outline"
-      radius="xl"
-      padding="md"
-      interactive
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.98 }}
-      className="w-full text-left flex flex-col items-center justify-center gap-2 border-dashed border-accent/30 cursor-pointer min-h-[140px]"
-    >
-      <Layers className="h-5 w-5 text-accent" />
-      <span className="text-sm font-semibold text-accent">{label}</span>
-    </Card>
   );
 }

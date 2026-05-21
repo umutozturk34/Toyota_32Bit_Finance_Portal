@@ -34,9 +34,6 @@ import java.util.Map;
 public class ForexUpdateService implements MarketRefresher {
 
     private static final DateTimeFormatter EVDS_DATE_FMT = AbstractEvdsClient.DATE_FMT;
-    private static final int SNAPSHOT_LOOKBACK_DAYS = 5;
-    private static final int BACKFILL_WINDOW_DAYS = 4 * 365;
-    private static final int EVDS_ROW_CAP = 1000;
 
     private final EvdsForexClient evdsClient;
     private final EvdsForexCurrencyResolver currencyResolver;
@@ -92,7 +89,7 @@ public class ForexUpdateService implements MarketRefresher {
                 log, "Forex", "snapshot", forexProperties.getBatchMinSample());
         BatchLogHelper.logSummary(log, "Forex snapshot update", snapshotResult);
 
-        LocalDate snapshotWindowStart = LocalDate.now().minusDays(SNAPSHOT_LOOKBACK_DAYS);
+        LocalDate snapshotWindowStart = LocalDate.now().minusDays(forexProperties.getSnapshotLookbackDays());
         BatchUpdateRunner.Result backfillResult = MarketBatchRunner.run(active,
                 meta -> fillGapBelowSnapshotWindow(meta, lastBeforePhaseOne.get(meta.currencyCode()), snapshotWindowStart),
                 ForexSerieMetadata::currencyCode,
@@ -133,7 +130,7 @@ public class ForexUpdateService implements MarketRefresher {
 
     private EvdsDataResponse fetchSnapshotBatch(List<ForexSerieMetadata> active) {
         LocalDate today = LocalDate.now();
-        LocalDate from = today.minusDays(SNAPSHOT_LOOKBACK_DAYS);
+        LocalDate from = today.minusDays(forexProperties.getSnapshotLookbackDays());
         List<String> allCodes = active.stream()
                 .flatMap(m -> m.seriesCodes().stream())
                 .toList();
@@ -152,13 +149,13 @@ public class ForexUpdateService implements MarketRefresher {
     }
 
     private void backfillRange(Forex forex, ForexSerieMetadata meta, LocalDate floor, LocalDate ceiling) {
-        List<WindowedFetchPlanner.DateWindow> windows = WindowedFetchPlanner.planBackward(floor, ceiling, BACKFILL_WINDOW_DAYS);
+        List<WindowedFetchPlanner.DateWindow> windows = WindowedFetchPlanner.planBackward(floor, ceiling, forexProperties.getBackfillWindowDays());
         for (WindowedFetchPlanner.DateWindow window : windows) {
             EvdsDataResponse response = fetchData(meta.seriesCodes(), window.start(), window.end());
             if (response == null) break;
             transactionTemplate.executeWithoutResult(status ->
                     entityWriter.upsertCandles(forex, evdsMapper.toCandles(forex, meta, response, entityWriter.getScale())));
-            if (response.totalCount() < EVDS_ROW_CAP) break;
+            if (response.totalCount() < forexProperties.getEvdsRowCap()) break;
             LocalDate earliest = evdsMapper.extractEarliestDate(response);
             if (earliest == null || !earliest.isAfter(floor)) break;
         }

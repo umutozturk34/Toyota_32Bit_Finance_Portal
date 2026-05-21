@@ -4,6 +4,7 @@ import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.core.service.TrackedAssetQueryService;
 import com.finance.market.fund.client.TefasClient;
+import com.finance.market.fund.config.FundProperties;
 import com.finance.market.fund.dto.external.TefasFundAllocationDto;
 import com.finance.market.fund.dto.external.TefasFundInfoDto;
 import com.finance.market.fund.dto.external.TefasFundProfileDto;
@@ -36,6 +37,7 @@ public class FundDetailEnrichmentService {
     private final FundAllocationRepository allocationRepository;
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final MarketCacheService<Fund> fundCacheService;
+    private final FundProperties fundProperties;
 
     @Transactional
     public int enrichReturnsAndRisk() {
@@ -71,8 +73,6 @@ public class FundDetailEnrichmentService {
         }
     }
 
-    private static final int ALLOCATION_WALKBACK_DAYS = 7;
-
     @Transactional
     public int enrichAllocations(LocalDate date) {
         Set<String> existingCodes = loadExistingFundCodes();
@@ -81,17 +81,18 @@ public class FundDetailEnrichmentService {
             return 0;
         }
         int updated = 0;
+        int walkbackDays = fundProperties.getAllocationWalkbackDays();
         for (FundType type : FundType.values()) {
             try {
                 LocalDate cursor = date;
                 List<TefasFundAllocationDto> rows = List.of();
-                for (int attempt = 0; attempt <= ALLOCATION_WALKBACK_DAYS; attempt++) {
+                for (int attempt = 0; attempt <= walkbackDays; attempt++) {
                     rows = tefasClient.fetchAllocations(type, cursor);
                     if (!rows.isEmpty()) break;
                     cursor = cursor.minusDays(1);
                 }
                 if (rows.isEmpty()) {
-                    log.warn("Fund allocation: no data for {} within {} days walkback ending {}", type, ALLOCATION_WALKBACK_DAYS, date);
+                    log.warn("Fund allocation: no data for {} within {} days walkback ending {}", type, walkbackDays, date);
                     continue;
                 }
                 updated += applyAllocations(rows, existingCodes, cursor);
@@ -109,16 +110,17 @@ public class FundDetailEnrichmentService {
         if (fund == null) return 0;
         FundType type = fund.getFundType() != null ? fund.getFundType() : FundType.YAT;
         Set<String> single = Set.of(fundCode);
+        int walkbackDays = fundProperties.getAllocationWalkbackDays();
         try {
             LocalDate cursor = date;
             List<TefasFundAllocationDto> rows = List.of();
-            for (int attempt = 0; attempt <= ALLOCATION_WALKBACK_DAYS; attempt++) {
+            for (int attempt = 0; attempt <= walkbackDays; attempt++) {
                 rows = tefasClient.fetchAllocations(type, cursor);
                 if (rows.stream().anyMatch(dto -> fundCode.equals(dto.fundCode()))) break;
                 cursor = cursor.minusDays(1);
             }
             if (rows.isEmpty()) {
-                log.warn("Single-fund allocation: no data for {} within {} days walkback ending {}", fundCode, ALLOCATION_WALKBACK_DAYS, date);
+                log.warn("Single-fund allocation: no data for {} within {} days walkback ending {}", fundCode, walkbackDays, date);
                 return 0;
             }
             return applyAllocations(rows, single, cursor);

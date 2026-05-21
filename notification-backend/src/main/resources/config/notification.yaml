@@ -6,8 +6,14 @@ notification:
   cache:
     dedup-max-entries: 50000
     session-tracker-max-markets: 64
+    dedup-ttl-hours: 24
+    session-tracker-ttl-hours: 24
+    keycloak-profile-max-size: 2000
+    keycloak-profile-ttl-minutes: 15
   stream:
     emitter-timeout-ms: 0
+    registry-ttl-minutes: 30
+    registry-max-users: 10000
   dispatch:
     formatting:
       fraction-digits-large: 2
@@ -17,6 +23,9 @@ notification:
       body-preview-items: 3
     fanout:
       page-size: 200
+    news-digest:
+      recent-window-minutes: 60
+      sample-title-limit: 3
   market-session:
     lookahead-days: 14
     status-read-capacity-per-minute: 240

@@ -214,6 +214,7 @@ public class AppProperties {
     @Setter
     public static class Cache {
         private int redisDefaultTtlHours = 24;
+        private long inflationBeaterTtlMillis = 15L * 60L * 1000L;
     }
 
     @Getter
@@ -224,5 +225,6 @@ public class AppProperties {
         private int apiLimit = 60;
         private int credentialActionLimit = 10;
         private int credentialReadLimit = 60;
+        private int bucketExpirationHours = 2;
     }
 }

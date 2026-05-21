@@ -53,7 +53,7 @@ class IsyatirimViopClientTest {
     @BeforeEach
     void setUp() {
         properties = new ViopProperties(null, null, null, null, null, null, null, null,
-                Duration.ofMinutes(30), Duration.ofSeconds(5));
+                Duration.ofMinutes(30), Duration.ofSeconds(5), null);
         when(sessionManager.currentCookieHeader()).thenReturn("X=1");
     }
 

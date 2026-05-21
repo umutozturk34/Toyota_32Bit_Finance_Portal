@@ -5,7 +5,6 @@ import com.finance.notification.core.dto.NotificationResponse;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -16,22 +15,26 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @Log4j2
 @Component
-@RequiredArgsConstructor
 public class NotificationStreamRegistry {
 
     private final NotificationStreamProperties streamProperties;
 
-    private final Cache<String, CopyOnWriteArrayList<SseEmitter>> emitters = Caffeine.newBuilder()
-            .expireAfterAccess(Duration.ofMinutes(30))
-            .maximumSize(10_000)
-            .removalListener((String userSub, CopyOnWriteArrayList<SseEmitter> list, RemovalCause cause) -> {
-                if (cause.wasEvicted() && list != null) {
-                    log.debug("Notification emitters evicted user={} count={} cause={}",
-                            userSub, list.size(), cause);
-                    list.forEach(SseEmitter::complete);
-                }
-            })
-            .build();
+    private final Cache<String, CopyOnWriteArrayList<SseEmitter>> emitters;
+
+    public NotificationStreamRegistry(NotificationStreamProperties streamProperties) {
+        this.streamProperties = streamProperties;
+        this.emitters = Caffeine.newBuilder()
+                .expireAfterAccess(Duration.ofMinutes(streamProperties.registryTtlMinutes()))
+                .maximumSize(streamProperties.registryMaxUsers())
+                .removalListener((String userSub, CopyOnWriteArrayList<SseEmitter> list, RemovalCause cause) -> {
+                    if (cause.wasEvicted() && list != null) {
+                        log.debug("Notification emitters evicted user={} count={} cause={}",
+                                userSub, list.size(), cause);
+                        list.forEach(SseEmitter::complete);
+                    }
+                })
+                .build();
+    }
 
     public SseEmitter register(String userSub) {
         SseEmitter emitter = new SseEmitter(streamProperties.emitterTimeoutMs());

@@ -15,7 +15,7 @@ class MarketSessionTrackerTest {
 
     @Test
     void should_returnEmpty_when_noPreviousState() {
-        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 64L));
+        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 64L, null, null, null, null));
 
         Optional<MarketSession> previous = tracker.previous(SessionMarket.STOCK);
 
@@ -24,7 +24,7 @@ class MarketSessionTrackerTest {
 
     @Test
     void should_returnLatestSession_when_updated() {
-        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 64L));
+        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 64L, null, null, null, null));
 
         tracker.update(SessionMarket.STOCK, MarketSession.OPEN);
         tracker.update(SessionMarket.STOCK, MarketSession.CLOSED);
@@ -36,7 +36,7 @@ class MarketSessionTrackerTest {
 
     @Test
     void should_isolateMarkets_when_updateOneDoesNotAffectOther() {
-        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 64L));
+        MarketSessionTracker tracker = new MarketSessionTracker(new NotificationCacheProperties(50_000L, 64L, null, null, null, null));
 
         tracker.update(SessionMarket.STOCK, MarketSession.OPEN);
 

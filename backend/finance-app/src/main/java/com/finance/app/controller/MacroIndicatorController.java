@@ -2,6 +2,7 @@ package com.finance.app.controller;
 
 import com.finance.common.dto.ApiResponse;
 import com.finance.common.i18n.Translator;
+import com.finance.market.macro.config.MacroProperties;
 import com.finance.market.macro.dto.response.MacroIndicatorPointResponse;
 import com.finance.market.macro.dto.response.MacroIndicatorResponse;
 import com.finance.market.macro.mapper.MacroIndicatorResponseMapper;
@@ -26,11 +27,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MacroIndicatorController {
 
-    private static final int DEFAULT_HISTORY_YEARS = 5;
-
     private final MacroIndicatorQueryService queryService;
     private final MacroIndicatorResponseMapper mapper;
     private final Translator translator;
+    private final MacroProperties macroProperties;
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
@@ -51,7 +51,7 @@ public class MacroIndicatorController {
         MacroIndicator indicator = queryService.findByCode(code);
         LocalDate effectiveTo = to == null ? LocalDate.now() : to;
         LocalDate effectiveFrom = from == null
-                ? effectiveTo.minusYears(DEFAULT_HISTORY_YEARS) : from;
+                ? effectiveTo.minusYears(macroProperties.defaultHistoryYears()) : from;
         return ApiResponse.success(translator.translate("api.macro.historyRetrieved"),
                 mapper.toPointResponses(queryService.history(indicator, effectiveFrom, effectiveTo)));
     }

@@ -2,6 +2,7 @@ package com.finance.market.viop.service;
 
 import com.finance.common.model.MarketType;
 import com.finance.market.core.service.MarketHistoryProvider;
+import com.finance.market.viop.config.ViopProperties;
 import com.finance.market.viop.dto.ViopHistoryPoint;
 import com.finance.market.viop.model.ViopCandle;
 import com.finance.market.viop.model.ViopContract;
@@ -33,11 +34,11 @@ import java.util.stream.Collectors;
 public class ViopHistoryProvider implements MarketHistoryProvider {
 
     private static final ZoneId ISTANBUL = ZoneId.of("Europe/Istanbul");
-    private static final int MAX_HISTORY_YEARS = 5;
 
     private final ViopMarketDataPort marketData;
     private final ViopCandleRepository candleRepository;
     private final ViopContractRepository contractRepository;
+    private final ViopProperties viopProperties;
 
     @Override
     public MarketType getMarketType() {
@@ -46,7 +47,7 @@ public class ViopHistoryProvider implements MarketHistoryProvider {
 
     @Override
     public List<ViopHistoryPoint> getHistory(String code, CandlePeriod period) {
-        LocalDate earliestAllowed = LocalDate.now().minusYears(MAX_HISTORY_YEARS);
+        LocalDate earliestAllowed = LocalDate.now().minusYears(viopProperties.maxHistoryYears());
         LocalDate requestedStart = period.toStartDate();
         LocalDate effectiveStart = requestedStart.isBefore(earliestAllowed) ? earliestAllowed : requestedStart;
         return loadOrFetchRange(code, effectiveStart, LocalDate.now());
@@ -99,7 +100,7 @@ public class ViopHistoryProvider implements MarketHistoryProvider {
         if (latestStored != null && latestStored.isAfter(to)) return 0;
         LocalDate from;
         if (latestStored == null) {
-            from = to.minusYears(MAX_HISTORY_YEARS);
+            from = to.minusYears(viopProperties.maxHistoryYears());
         } else if (latestStored.equals(to)) {
             from = to;
         } else {

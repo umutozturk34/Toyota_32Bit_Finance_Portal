@@ -15,7 +15,8 @@ public record ViopProperties(
         String chartDataPath,
         String userAgent,
         Duration sessionTtl,
-        Duration requestTimeout
+        Duration requestTimeout,
+        Integer maxHistoryYears
 ) {
 
     public ViopProperties {
@@ -46,5 +47,6 @@ public record ViopProperties(
         }
         if (sessionTtl == null) sessionTtl = Duration.ofMinutes(30);
         if (requestTimeout == null) requestTimeout = Duration.ofSeconds(20);
+        if (maxHistoryYears == null) maxHistoryYears = 5;
     }
 }

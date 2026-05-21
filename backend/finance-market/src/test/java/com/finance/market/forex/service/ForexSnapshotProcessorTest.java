@@ -46,8 +46,9 @@ class ForexSnapshotProcessorTest {
 
     @BeforeEach
     void setUp() {
+        com.finance.market.forex.config.ForexProperties forexProperties = new com.finance.market.forex.config.ForexProperties();
         processor = new ForexSnapshotProcessor(evdsClient, currencyResolver, evdsMapper,
-                entityWriter, forexCandleRepository, transactionTemplate);
+                entityWriter, forexCandleRepository, transactionTemplate, forexProperties);
         lenient().when(entityWriter.getScale()).thenReturn(4);
     }
 

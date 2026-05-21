@@ -3,6 +3,7 @@ app:
     backfill-start-date: 1995-01-01
     batch-size: 5
     max-days-per-window: 1000
+    default-history-years: 5
     indicators:
       - code: TP.BISPOLFAIZ.TUR
         label: policyRate

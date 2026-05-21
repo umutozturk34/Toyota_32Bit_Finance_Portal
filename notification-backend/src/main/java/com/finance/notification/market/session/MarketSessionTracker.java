@@ -13,13 +13,11 @@ import java.util.Optional;
 @Component
 public class MarketSessionTracker {
 
-    private static final Duration STATE_TTL = Duration.ofHours(24);
-
     private final Cache<SessionMarket, MarketSession> previous;
 
     public MarketSessionTracker(NotificationCacheProperties cacheProperties) {
         this.previous = Caffeine.newBuilder()
-                .expireAfterWrite(STATE_TTL)
+                .expireAfterWrite(Duration.ofHours(cacheProperties.sessionTrackerTtlHours()))
                 .maximumSize(cacheProperties.sessionTrackerMaxMarkets())
                 .build();
     }

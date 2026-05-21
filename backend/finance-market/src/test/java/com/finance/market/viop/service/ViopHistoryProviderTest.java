@@ -44,7 +44,9 @@ class ViopHistoryProviderTest {
 
     @BeforeEach
     void setUp() {
-        provider = new ViopHistoryProvider(marketData, candleRepository, contractRepository);
+        com.finance.market.viop.config.ViopProperties viopProperties = new com.finance.market.viop.config.ViopProperties(
+                null, null, null, null, null, null, null, null, null, null, null);
+        provider = new ViopHistoryProvider(marketData, candleRepository, contractRepository, viopProperties);
         contract = ViopContract.builder().symbol("F_USDTRY0626").active(true).build();
     }
 

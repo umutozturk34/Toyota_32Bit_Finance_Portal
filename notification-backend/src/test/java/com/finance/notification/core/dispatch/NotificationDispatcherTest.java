@@ -67,7 +67,7 @@ class NotificationDispatcherTest {
     @BeforeEach
     void setUp() {
         NotificationDispatchProperties dispatchProperties = new NotificationDispatchProperties(
-                null, null, new NotificationDispatchProperties.Fanout(200));
+                null, null, new NotificationDispatchProperties.Fanout(200), null);
         dispatcher = new NotificationDispatcher(
                 preferenceRepository, userPreferenceCacheService, userEmailLookup,
                 userStatus, objectMapper, persister, dispatchProperties, List.of(systemHandler));
@@ -255,7 +255,7 @@ class NotificationDispatcherTest {
 
     private NotificationDispatcher newDispatcherWithPageSize(int pageSize) {
         NotificationDispatchProperties props = new NotificationDispatchProperties(
-                null, null, new NotificationDispatchProperties.Fanout(pageSize));
+                null, null, new NotificationDispatchProperties.Fanout(pageSize), null);
         return new NotificationDispatcher(
                 preferenceRepository, userPreferenceCacheService, userEmailLookup,
                 userStatus, objectMapper, persister, props, List.of(systemHandler));

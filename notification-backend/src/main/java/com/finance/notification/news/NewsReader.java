@@ -1,5 +1,6 @@
 package com.finance.notification.news;
 
+import com.finance.notification.config.NotificationDispatchProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,9 +19,6 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class NewsReader {
 
-    private static final int RECENT_WINDOW_MINUTES = 60;
-    private static final int SAMPLE_TITLE_LIMIT = 3;
-
     private static final String COUNT_QUERY = """
             SELECT COUNT(*) FROM news_articles WHERE fetched_at >= ?
             """;
@@ -34,6 +32,7 @@ public class NewsReader {
             """;
 
     private final JdbcTemplate jdbcTemplate;
+    private final NotificationDispatchProperties dispatchProperties;
 
     public record RecentNews(int totalCount, List<String> categories, List<String> sampleTitles) {
         public static RecentNews empty() {
@@ -43,12 +42,13 @@ public class NewsReader {
 
     @Transactional(readOnly = true)
     public RecentNews findRecent() {
-        Timestamp cutoff = Timestamp.valueOf(LocalDateTime.now().minusMinutes(RECENT_WINDOW_MINUTES));
+        NotificationDispatchProperties.NewsDigest cfg = dispatchProperties.newsDigest();
+        Timestamp cutoff = Timestamp.valueOf(LocalDateTime.now().minusMinutes(cfg.recentWindowMinutes()));
         try {
             List<TitleCategory> rows = jdbcTemplate.query(
                     SAMPLE_QUERY,
                     (rs, n) -> new TitleCategory(rs.getString(1), rs.getString(2)),
-                    cutoff, SAMPLE_TITLE_LIMIT);
+                    cutoff, cfg.sampleTitleLimit());
             if (rows.isEmpty()) return RecentNews.empty();
 
             Integer total = jdbcTemplate.queryForObject(COUNT_QUERY, Integer.class, cutoff);

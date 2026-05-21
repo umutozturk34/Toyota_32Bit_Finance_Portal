@@ -15,11 +15,16 @@ const VALUE_CARD_DEFS = [
   { key: 'totalEntryValueTry', labelKey: 'portfolio.summary.totalCost', Icon: BarChart3, iconBg: 'bg-fg-muted/10', iconColor: 'text-fg-muted', border: 'border-t-fg-muted' },
 ];
 
-function PnlCard({ label, value, percent }) {
+function PnlCard({ label, value, percent, realValue, realPercent }) {
   const { format: money, formatCompact: moneyCompact } = useMoney();
   const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
   const cls = getChangeClass(value);
   const Icon = value >= 0 ? TrendingUp : TrendingDown;
+  const diff = realPercent != null && percent != null
+    ? Math.abs(Number(realPercent) - Number(percent))
+    : null;
+  const hasReal = realValue != null && realPercent != null && diff != null && diff >= 1;
+  const realCls = hasReal ? getChangeClass(realValue) : null;
   return (
     <Card
       as={motion.div}
@@ -45,6 +50,19 @@ function PnlCard({ label, value, percent }) {
           {formatPercent(percent)}
         </span>
       </div>
+      {hasReal && (
+        <div className="flex items-baseline justify-between gap-2 pt-1 border-t border-border-default/40">
+          <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle">reel</span>
+          <div className="flex items-baseline gap-1.5">
+            <span className={`text-xs font-mono tabular-nums ${changeColors[realCls]} truncate`} title={money(realValue)}>
+              {bigMoney(realValue)}
+            </span>
+            <span className={`shrink-0 text-[10px] font-mono font-semibold tabular-nums ${changeColors[realCls]}`}>
+              {formatPercent(realPercent)}
+            </span>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
@@ -115,7 +133,8 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
             </p>
           </Card>
         ))}
-        <PnlCard label={t('portfolio.summary.profitLoss')} value={summary?.totalPnlTry} percent={summary?.pnlPercent} />
+        <PnlCard label={t('portfolio.summary.profitLoss')} value={summary?.totalPnlTry} percent={summary?.pnlPercent}
+          realValue={summary?.realPnlTry} realPercent={summary?.realPnlPercent} />
         <PnlCard label={t('portfolio.summary.dailyPnl')} value={summary?.dailyPnlTry} percent={summary?.dailyPnlPercent} />
       </div>
     </motion.div>

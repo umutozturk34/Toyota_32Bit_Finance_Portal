@@ -20,5 +20,6 @@ public record PositionResponse(
         BigDecimal marketValueTry,
         BigDecimal pnlTry,
         BigDecimal pnlPercent,
+        BigDecimal realPnlPercent,
         DerivativeMeta derivative
 ) {}

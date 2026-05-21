@@ -55,6 +55,7 @@ class DerivativePositionFormatter {
                 f.marketValue(),
                 f.pnl(),
                 f.pnlPercent(),
+                null,
                 meta);
     }
 

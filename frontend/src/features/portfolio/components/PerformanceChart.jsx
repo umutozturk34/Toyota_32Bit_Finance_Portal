@@ -276,9 +276,6 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
   const backfill = backfillProp ?? ownBackfill;
   const backfillElapsed = useElapsedSeconds(backfill.since);
 
-  // Portfolio aggregates are TRY-canonical; for ORIGINAL preference the chart still shows TRY
-  // (mixing per-asset natural currencies in a portfolio total makes no sense). Any non-ISO code
-  // would throw a RangeError in Intl.NumberFormat — guard with a SUPPORTED fallback.
   const safeCurrency = currency === 'USD' || currency === 'EUR' ? currency : 'TRY';
   const money = useCallback((value) => {
     if (value == null) return 'N/A';

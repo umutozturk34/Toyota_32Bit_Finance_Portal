@@ -118,7 +118,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: -6 }}
             transition={PANEL_TRANSITION}
-            className="absolute right-0 z-50 mt-2 w-80 rounded-2xl border border-border-default/80 bg-bg-elevated/95 backdrop-blur-xl shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)] overflow-hidden"
+            className="absolute right-0 z-50 mt-2 w-80 rounded-2xl border border-border-default bg-bg-elevated shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)] overflow-hidden"
           >
             <div className="flex items-center justify-between px-3 pt-3 pb-2">
               <span className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-muted">

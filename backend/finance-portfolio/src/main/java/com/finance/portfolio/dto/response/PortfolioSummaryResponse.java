@@ -8,5 +8,8 @@ public record PortfolioSummaryResponse(
         BigDecimal totalPnlTry,
         BigDecimal pnlPercent,
         BigDecimal dailyPnlTry,
-        BigDecimal dailyPnlPercent
+        BigDecimal dailyPnlPercent,
+        BigDecimal realPnlTry,
+        BigDecimal realPnlPercent,
+        BigDecimal cpiGrowthPercent
 ) {}

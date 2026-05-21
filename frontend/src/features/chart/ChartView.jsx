@@ -9,7 +9,6 @@ import {
   AlertTriangle, TrendingUp, RefreshCw, Activity
 } from 'lucide-react';
 import LightweightChart from './components/LightweightChart';
-import CompareBar from '../../shared/components/layout/CompareBar';
 import Spinner from '../../shared/components/feedback/Spinner';
 import useNavigationBack from '../../shared/hooks/useNavigationBack';
 import useChartRange from '../../shared/hooks/useChartRange';
@@ -60,7 +59,6 @@ const ChartView = () => {
   });
   const [timeRange, setTimeRange] = useChartRange();
   const [customSymbol, setCustomSymbol] = useState('');
-  const [compareAsset, setCompareAsset] = useState(null);
 
   const { data: trackedCrypto = [] } = useQuery({
     queryKey: ['trackedAssets', 'CRYPTO'],
@@ -94,13 +92,6 @@ const ChartView = () => {
   });
   const fundList = fundListRaw || [];
 
-  const [compareTrackingKey, setCompareTrackingKey] = useState(`${assetType}|${symbol}`);
-  const compareKey = `${assetType}|${symbol}`;
-  if (compareKey !== compareTrackingKey) {
-    setCompareTrackingKey(compareKey);
-    setCompareAsset(null);
-  }
-
   const singleAssetType = { CRYPTO: 'CRYPTO', BIST: 'STOCK', FUND: 'FUND' }[assetType];
   const singleCode = symbol && singleAssetType
     ? (assetType === 'BIST' ? formatBistSymbol(symbol) : symbol)
@@ -116,20 +107,6 @@ const ChartView = () => {
     enabled: !!singleCode && !alreadyTracked,
     staleTime: STALE.MEDIUM,
   });
-
-  const { data: compareRaw } = useQuery({
-    queryKey: ['chartCompare', compareAsset?.type, compareAsset?.code, timeRange],
-    queryFn: () => fetchHistoryFor(compareAsset.type, compareAsset.code, timeRange),
-    enabled: !!compareAsset,
-    placeholderData: (prev) => prev,
-  });
-
-  const compareData = useMemo(() => {
-    if (!compareRaw?.length) return null;
-    return { candles: compareRaw };
-  }, [compareRaw]);
-
-  const compareSymbol = compareAsset?.code || null;
 
   const trackedBistSymbols = trackedUniverse.BIST
     .filter(item => !item.compareOnly)
@@ -329,18 +306,6 @@ const ChartView = () => {
             </>
           )}
 
-          <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wider text-fg-muted">
-              {t('chartView.compareLabel')}
-            </label>
-            <CompareBar
-              compareAssets={compareAsset ? [compareAsset] : []}
-              onAdd={setCompareAsset}
-              onRemove={() => setCompareAsset(null)}
-              maxAssets={1}
-              excludeCodes={[symbol, fetchSymbol].filter(Boolean)}
-            />
-          </div>
         </motion.div>
         {}
         <motion.div variants={itemVariants} className="flex gap-4">
@@ -393,9 +358,6 @@ const ChartView = () => {
                   data={chartData}
                   symbol={symbol}
                   assetType={assetType}
-                  compareDatas={compareData && compareSymbol
-                    ? [{ symbol: compareSymbol, data: compareData }]
-                    : []}
                   timeRange={timeRange}
                   onTimeRangeChange={setTimeRange}
                 />

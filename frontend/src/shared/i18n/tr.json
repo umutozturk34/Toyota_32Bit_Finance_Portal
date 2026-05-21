@@ -49,7 +49,12 @@
     "logout": "\u00c7\u0131k\u0131\u015f",
     "expandSidebar": "Yan men\u00fcy\u00fc a\u00e7",
     "collapseSidebar": "Yan men\u00fcy\u00fc daralt",
-    "adminBadge": "Admin"
+    "adminBadge": "Admin",
+    "overview": "Genel bak\u0131\u015f",
+    "analytics": "Analiz",
+    "groupMarkets": "Piyasalar",
+    "groupMy": "Portf\u00f6y\u00fcm",
+    "groupAdmin": "Y\u00f6netim"
   },
   "common": {
     "localeTag": "tr-TR",
@@ -71,7 +76,10 @@
     "sortDefault": "Varsay\u0131lan",
     "previous": "\u00d6nceki",
     "next": "Sonraki",
-    "searchEllipsis": "Ara..."
+    "searchEllipsis": "Ara...",
+    "collapse": "K\u00fc\u00e7\u00fclt",
+    "expand": "B\u00fcy\u00fct",
+    "settings": "Ayarlar"
   },
   "compareBar": {
     "placeholder": "Kar\u015f\u0131la\u015ft\u0131r...",
@@ -87,7 +95,11 @@
     "deleteMessage": "\u00ab{{name}}\u00bb portf\u00f6y\u00fc t\u00fcm pozisyon, snapshot ve ge\u00e7mi\u015f ile birlikte kal\u0131c\u0131 olarak silinecek. Bu i\u015flem geri al\u0131namaz.",
     "createFailed": "Olu\u015fturma ba\u015far\u0131s\u0131z",
     "renameFailed": "Yeniden adland\u0131rma ba\u015far\u0131s\u0131z",
-    "deleteFailed": "Silme ba\u015far\u0131s\u0131z"
+    "deleteFailed": "Silme ba\u015far\u0131s\u0131z",
+    "heading": "Portf\u00f6yler",
+    "totalAbbr": "toplam",
+    "enterHint": "kaydetmek i\u00e7in enter",
+    "escHint": "iptal i\u00e7in esc"
   },
   "searchSuggestions": {
     "placeholder": "Hisse, kripto, d\u00f6viz, fon ara...",
@@ -727,6 +739,10 @@
       "portfolioUpdated": {
         "label": "Portf\u00f6y g\u00fcncellendi",
         "hint": "G\u00fcnl\u00fck snapshot al\u0131nd\u0131\u011f\u0131nda (23:00)"
+      },
+      "macroIndicators": {
+        "label": "Makro g\u00f6stergeler",
+        "hint": "Enflasyon, faiz, mevduat \u2014 yaln\u0131zca de\u011fi\u015fenler"
       }
     },
     "channels": {
@@ -1057,7 +1073,12 @@
       "put": "Put",
       "future": "Vadeli",
       "dataAvailable": "Bu tarihte veri var: {{price}}",
-      "dataUnavailable": "Bu tarihte veri yok \u2014 ge\u00e7mi\u015fe en yak\u0131n fiyat kullan\u0131l\u0131r"
+      "dataUnavailable": "Bu tarihte veri yok \u2014 ge\u00e7mi\u015fe en yak\u0131n fiyat kullan\u0131l\u0131r",
+      "closePriceLabel": "Kapan\u0131\u015f fiyat\u0131 (TRY)",
+      "partialHint": "Kalan {{remaining}} lot a\u00e7\u0131k devam edecek",
+      "realizedPnl": "Realize K/Z",
+      "long": "LONG",
+      "short": "SHORT"
     }
   },
   "marketAddPosition": {
@@ -1129,7 +1150,8 @@
     "commodity": {
       "priceTry": "Fiyat (TRY)",
       "priceUsd": "Fiyat (USD)"
-    }
+    },
+    "compareAction": "Karşılaştır"
   },
   "commodity": {
     "name": {
@@ -1191,7 +1213,22 @@
       "rangeOneYear": "1Y",
       "rangeThreeYears": "3Y",
       "rangeFiveYears": "5Y",
-      "rangeAll": "T\u00fcm\u00fc"
+      "rangeAll": "T\u00fcm\u00fc",
+      "heading": "Makro G\u00f6stergeler",
+      "subheading": "TCMB EVDS \u00b7 haftal\u0131k + ayl\u0131k + g\u00fcnl\u00fck",
+      "headline": "\u00d6ne \u00e7\u0131kanlar",
+      "currency": "Para birimi",
+      "depositMatrixTitle": "Bankalara g\u00f6re mevduat oranlar\u0131",
+      "depositMatrixSub": "TCMB haftal\u0131k \u00b7 % nominal",
+      "compareCta": "Kar\u015f\u0131la\u015ft\u0131r",
+      "compareSearchPlaceholder": "G\u00f6sterge ara\u2026",
+      "noData": "Bu aral\u0131kta veri yok",
+      "indicatorInfo": "Bilgi",
+      "normalizedHint": "\u00c7oklu seri \u2014 ba\u015flang\u0131\u00e7tan % de\u011fi\u015fim olarak normalize edildi",
+      "statLast": "Son",
+      "statMin": "Min",
+      "statMax": "Maks",
+      "statAvg": "Ort"
     },
     "editMode": "D\u00fczenleme modu",
     "unsavedChanges": "Kaydedilmemi\u015f de\u011fi\u015fiklikler",
@@ -1254,8 +1291,10 @@
       "MARKET_CLOSED": "Piyasa kapand\u0131",
       "MARKET_DATA_UPDATED": "Veri g\u00fcncellendi",
       "NEWS_PUBLISHED": "Yeni haberler",
-      "PORTFOLIO_UPDATED": "Portf\u00f6y g\u00fcncellendi"
-    }
+      "PORTFOLIO_UPDATED": "Portf\u00f6y g\u00fcncellendi",
+      "MACRO_INDICATORS_UPDATED": "Makro g\u00f6stergeler"
+    },
+    "close": "Kapat"
   },
   "adminTrackedAssets": {
     "title": "Tracked Assets Y\u00f6netimi",
@@ -1859,6 +1898,88 @@
       "PAY_OPTION": "Pay Opsiyon",
       "INDEX_OPTION": "Endeks Opsiyon",
       "CURRENCY_OPTION": "D\u00f6viz Opsiyon"
+    }
+  },
+  "analytics": {
+    "amount": "Tutar",
+    "amountHint": "Ayarlardan g\u00f6r\u00fcnt\u00fc para birimini de\u011fi\u015ftirebilirsin",
+    "beaterSubtitle": "D\u00f6neme g\u00f6re reel getiri s\u0131ralamas\u0131",
+    "beaterTitle": "Enflasyonu Yenenler",
+    "beatingBenchmark": "Yenenler",
+    "beats": "Yendi",
+    "benchmark": "Kar\u015f\u0131la\u015ft\u0131rma",
+    "benchmarkDefault": "Varsay\u0131lan (T\u00dcFE)",
+    "benchmarkReturn": "Benchmark getirisi",
+    "bmDefaultHint": "Varsay\u0131lan: T\u00dcFE (se\u00e7im yap\u0131lmad\u0131)",
+    "bmGroupDepositEUR": "EUR Mevduat",
+    "bmGroupDepositTRY": "TL Mevduat",
+    "bmGroupDepositUSD": "USD Mevduat",
+    "bmGroupInflation": "Enflasyon",
+    "bmGroupRates": "Faizler",
+    "bmNoResults": "E\u015fle\u015fme yok",
+    "bmSearchPlaceholder": "Benchmark ara\u2026",
+    "clearFilters": "Temizle",
+    "compareEmpty": "Kar\u015f\u0131la\u015ft\u0131rmak i\u00e7in a\u015fa\u011f\u0131dan ara ve se\u00e7.",
+    "comparePickFirst": "En az 1 enstr\u00fcman se\u00e7",
+    "compareSearchAssets": "Hisse, kripto, fon, d\u00f6viz, emtia, bono ara\u2026",
+    "compareSearchMixed": "Asset veya makro indikat\u00f6r ara\u2026",
+    "compareSubtitle": "Farkl\u0131 varl\u0131klar\u0131 ayn\u0131 grafikte yan yana getir. Tutar/tarih gerekmez \u2014 sadece ge\u00e7mi\u015f fiyat hareketleri.",
+    "compareTitle": "Kar\u015f\u0131la\u015ft\u0131rma",
+    "cpiGrowth": "T\u00dcFE b\u00fcy\u00fcmesi (d\u00f6nemde)",
+    "endDate": "Biti\u015f",
+    "excessReturn": "Excess",
+    "finalValue": "Son De\u011fer",
+    "instrument": "Enstr\u00fcman",
+    "instruments": "Enstr\u00fcmanlar",
+    "loadError": "Y\u00fcklenirken hata olu\u015ftu",
+    "loading": "Hesaplan\u0131yor...",
+    "losers": "Altta kalan",
+    "lost": "Kaybetti",
+    "noData": "Veri yok",
+    "noInstruments": "Hi\u00e7 enstr\u00fcman se\u00e7ilmedi. A\u015fa\u011f\u0131dan ekle veya h\u0131zl\u0131 \u00f6nerilerden se\u00e7.",
+    "noMatch": "E\u015fle\u015fme yok",
+    "nominalReturn": "Nominal",
+    "normalizedHintCompare": "\u00c7oklu seri \u2014 ba\u015flang\u0131\u00e7tan % de\u011fi\u015fim olarak normalize edildi",
+    "openInCompare": "Kar\u015f\u0131la\u015ft\u0131rmada a\u00e7",
+    "period": "D\u00f6nem",
+    "quickPick": "H\u0131zl\u0131 se\u00e7",
+    "realLoss": "Excess return < 0",
+    "realReturn": "Reel",
+    "realReturnHint": "Reel getiri = nominal \u2212 T\u00dcFE etkisi",
+    "scenarioSubtitle": "Belirli bir tarihte belirli bir miktar\u0131 farkl\u0131 enstr\u00fcmanlara koysayd\u0131n bug\u00fcn ne kadar olurdu? Ger\u00e7ek ge\u00e7mi\u015f veriyle sim\u00fcle et.",
+    "scenarioTitle": "Senaryo Kar\u015f\u0131la\u015ft\u0131rmas\u0131",
+    "searchAsset": "Asset ara \u2014 ka\u00e7\u0131nc\u0131 s\u0131rada?",
+    "searchHint": "Hisse, fon, d\u00f6viz, kripto, emtia, bono, makro ara",
+    "searchInstrument": "Ara",
+    "searchPlaceholder": "ASELS, alt\u0131n, bitcoin, TP.TRYTAS, TRT...",
+    "simulate": "Sim\u00fcle Et",
+    "simulationError": "Sim\u00fclasyon ba\u015far\u0131s\u0131z",
+    "startDate": "Ba\u015flang\u0131\u00e7",
+    "typeFilter": "Tip",
+    "verdict": "Sonu\u00e7",
+    "verdictFilter": "Durum",
+    "verdict_all": "T\u00fcm\u00fc",
+    "verdict_beats": "Yendi",
+    "verdict_losers": "Kaybetti",
+    "modeAssets": "Varl\u0131klar",
+    "modeMixed": "Kar\u0131\u015f\u0131k",
+    "instrumentSpot": "BIST",
+    "instrumentForex": "D\u00f6viz",
+    "instrumentCommodity": "Emtia",
+    "instrumentCrypto": "Kripto",
+    "instrumentFund": "Fon",
+    "instrumentViop": "V\u0130OP",
+    "instrumentBond": "Bono",
+    "instrumentMacro": "Makro",
+    "instrumentDeposit": "Mevduat",
+    "periodOneMonth": "1A",
+    "periodSixMonths": "6A",
+    "periodOneYear": "1Y",
+    "periodThreeYears": "3Y",
+    "periodFiveYears": "5Y",
+    "backTo": {
+      "beaters": "Yenenler'e d\u00f6n",
+      "asset": "Varl\u0131\u011fa d\u00f6n"
     }
   }
 }

@@ -2,6 +2,7 @@ package com.finance.news.client;
 
 
 import com.finance.news.dto.internal.RssArticleData;
+import com.finance.news.port.NewsSourceFetcher;
 import com.finance.common.exception.ExternalApiException;
 import com.finance.news.mapper.RssClientMapper;
 import com.rometools.rome.feed.synd.SyndFeed;
@@ -19,7 +20,7 @@ import java.util.List;
 
 @Component
 @Log4j2
-public class RssClient {
+public class RssClient implements NewsSourceFetcher {
 
     private final WebClient webClient;
     private final RssClientMapper rssClientMapper;
@@ -30,6 +31,7 @@ public class RssClient {
         this.rssClientMapper = rssClientMapper;
     }
 
+    @Override
     @CircuitBreaker(name = "news")
     @Retry(name = "news")
     public List<RssArticleData> fetchFeed(String feedUrl) {

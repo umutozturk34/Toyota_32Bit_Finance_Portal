@@ -65,11 +65,13 @@ class PortfolioBackfillServiceTest {
         lenient().when(dailySnapshotRepository.findExistingDates(any(), any(), any())).thenReturn(List.of());
         lenient().when(assetSnapshotRepository.findExistingDates(any(), any(), any())).thenReturn(List.of());
         lenient().when(derivativePositionRepository.findByPortfolioId(any())).thenReturn(List.of());
+        PortfolioProperties props = new PortfolioProperties();
         service = new PortfolioBackfillService(
                 portfolioRepository, positionRepository, derivativePositionRepository,
                 dailySnapshotRepository, assetSnapshotRepository,
-                historicalPricingPort, assetPricingPort, calculator, new PortfolioBackfillTracker(new PortfolioProperties()),
-                transactionManager, new PortfolioProperties());
+                assetPricingPort, calculator, new PortfolioBackfillTracker(props),
+                new BackfillBatchCollector(assetSnapshotRepository, historicalPricingPort, calculator, props),
+                transactionManager, props);
     }
 
     @Test

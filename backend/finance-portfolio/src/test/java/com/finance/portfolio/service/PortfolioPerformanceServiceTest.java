@@ -57,7 +57,8 @@ class PortfolioPerformanceServiceTest {
                 assetSnapshotRepository, dailySnapshotRepository, positionRepository,
                 derivativePositionRepository,
                 trackedAssetRepository, snapshotMapper,
-                new com.finance.portfolio.config.PortfolioProperties());
+                new PerformanceEventAssembler(),
+                new PerformanceAggregationHelper(new com.finance.portfolio.config.PortfolioProperties()));
         org.mockito.Mockito.lenient().when(derivativePositionRepository.findOpenByPortfolio(org.mockito.ArgumentMatchers.anyLong()))
                 .thenReturn(java.util.List.of());
     }

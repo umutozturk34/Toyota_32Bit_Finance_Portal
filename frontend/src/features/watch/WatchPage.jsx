@@ -8,14 +8,12 @@ import {
   SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates,
   arrayMove,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Eye, AlertCircle, Plus, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown, GripVertical,
-  Inbox, Star, ListPlus, RotateCcw, Pencil,
+  Eye, AlertCircle, Plus,
+  Inbox, Star,
 } from 'lucide-react';
 import PageHeader from '../../shared/components/layout/PageHeader';
-import AssetBadge from '../../shared/components/asset/AssetBadge';
 import { watchlistName } from '../../shared/utils/watchlistName';
 import ConfirmDialog from '../../shared/components/modal/ConfirmDialog';
 import useAppStore from '../../shared/stores/useAppStore';
@@ -39,107 +37,11 @@ import EditWatchlistItemModal from './components/EditWatchlistItemModal';
 import EditPriceAlertModal from './components/EditPriceAlertModal';
 import { toast } from '../../shared/components/feedback/toastBus';
 import { extractApiError } from '../../shared/utils/apiError';
-import { WATCHLIST_SORT_OPTION_IDS, DIRECTION_META } from './lib/watchConstants';
+import { WATCHLIST_SORT_OPTION_IDS } from './lib/watchConstants';
 import WatchlistRow from './components/WatchlistRow';
 import AlertRow from './components/AlertRow';
-function ViewTabs({ view, onChange, watchCount, alertsCount }) {
-  const { t } = useTranslation();
-  const tabs = [
-    { id: 'watchlist', label: t('watch.tabs.watchlist'), Icon: Star, count: watchCount },
-    { id: 'alerts', label: t('watch.tabs.alerts'), Icon: AlertCircle, count: alertsCount },
-  ];
-  return (
-    <div className="flex gap-1 rounded-xl border border-border-default bg-bg-elevated p-1 self-start">
-      {tabs.map(({ id, label, Icon, count }) => {
-        const active = view === id;
-        return (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onChange(id)}
-            className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-colors border-none cursor-pointer ${
-              active ? 'text-accent' : 'text-fg-muted hover:text-fg'
-            } bg-transparent`}
-          >
-            {active && (
-              <motion.span
-                layoutId="watch-view-tab"
-                className="absolute inset-0 rounded-lg bg-accent/12"
-                transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              />
-            )}
-            <Icon className="relative z-10 h-3.5 w-3.5" />
-            <span className="relative z-10">{label}</span>
-            {count != null && count > 0 && (
-              <span className={`relative z-10 text-[10px] font-mono px-1.5 py-0.5 rounded-md ${
-                active ? 'bg-accent/20 text-accent' : 'bg-surface text-fg-subtle'
-              }`}>{count}</span>
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function WatchlistTabs({ lists, activeId, onSelect, onCreate, onDelete }) {
-  const { t } = useTranslation();
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      {lists.map((list) => {
-        const active = list.id === activeId;
-        return (
-          <div
-            key={list.id}
-            className={`relative inline-flex items-stretch rounded-lg border transition-colors shrink-0 overflow-hidden ${
-              active
-                ? 'border-accent/50 bg-accent/10 shadow-accent/20'
-                : 'border-border-default bg-bg-elevated hover:border-accent/40 hover:bg-accent/5'
-            }`}
-          >
-            <button
-              type="button"
-              onClick={() => onSelect(list.id)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-transparent border-none cursor-pointer min-w-0 ${
-                active ? 'text-accent' : 'text-fg-muted hover:text-fg'
-              }`}
-              title={watchlistName(t, list)}
-            >
-              {list.isDefault && <Star className="h-3 w-3 text-warning fill-warning shrink-0" />}
-              <span className="truncate max-w-[140px]">{watchlistName(t, list)}</span>
-              <span className={`text-[10px] font-mono shrink-0 ${active ? 'text-accent/70' : 'text-fg-subtle'}`}>
-                {list.itemCount}
-              </span>
-            </button>
-            {!list.isDefault && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(list);
-                }}
-                className={`flex items-center justify-center px-1.5 border-l shrink-0 bg-transparent cursor-pointer ${
-                  active ? 'border-accent/30 text-accent/70 hover:text-danger' : 'border-border-default text-fg-muted hover:text-danger hover:bg-danger/5'
-                }`}
-                title={t('watch.deleteListTitle')}
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-        );
-      })}
-      <button
-        type="button"
-        onClick={onCreate}
-        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border border-dashed border-border-default text-fg-muted hover:border-accent hover:text-accent hover:bg-accent/5 transition-colors shrink-0 cursor-pointer bg-transparent"
-      >
-        <ListPlus className="h-3.5 w-3.5" />
-        {t('watch.newListCta')}
-      </button>
-    </div>
-  );
-}
+import WatchViewTabs from './components/WatchViewTabs';
+import WatchlistTabsBar from './components/WatchlistTabsBar';
 
 export default function WatchPage() {
   const { t } = useTranslation();
@@ -257,7 +159,7 @@ export default function WatchPage() {
           : alerts.isFetching}
       />
 
-      <ViewTabs view={view} onChange={setView} watchCount={watchlists.reduce((acc, w) => acc + (w.itemCount ?? 0), 0)} alertsCount={alerts.data?.totalElements ?? alertItems.length} />
+      <WatchViewTabs view={view} onChange={setView} watchCount={watchlists.reduce((acc, w) => acc + (w.itemCount ?? 0), 0)} alertsCount={alerts.data?.totalElements ?? alertItems.length} />
 
       {isWatchlist && (
       <Card as="section" variant="elevated" radius="xl" padding="none" interactive>
@@ -285,7 +187,7 @@ export default function WatchPage() {
               {t('watch.listsLoading')}
             </div>
           ) : (
-            <WatchlistTabs
+            <WatchlistTabsBar
               lists={watchlists}
               activeId={activeListId}
               onSelect={setActiveListId}

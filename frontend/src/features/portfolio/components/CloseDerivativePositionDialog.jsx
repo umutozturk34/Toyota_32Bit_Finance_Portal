@@ -1,6 +1,4 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
 import { Calendar, RotateCcw, Tag, TrendingUp, TrendingDown, Wand2, XCircle } from 'lucide-react';
 import DatePickerPopover from '../../../shared/components/form/DatePickerPopover';
 import BaseModal from '../../../shared/components/modal/BaseModal';
@@ -11,56 +9,47 @@ import {
   useReopenDerivativePosition,
   useUpdateCloseDerivativePosition,
 } from '../hooks/useDerivativePositions';
-import { useMoney } from '../../../shared/hooks/useMoney';
-import { useRateHistory } from '../../../shared/hooks/useRateHistory';
-import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
-import { ONE_HOUR_MS, toYearMonth, buildPriceIndex } from '../lib/positionFormHelpers';
-
-const todayIso = () => new Date().toISOString().slice(0, 10);
-const yesterdayIso = () => {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
-};
-function formatDateLabel(iso, localeTag) {
-  if (!iso) return '';
-  return new Date(`${iso}T00:00:00`).toLocaleDateString(localeTag, {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
-}
+import { usePositionCloseForm, formatDateLabel } from '../hooks/usePositionCloseForm';
 
 export default function CloseDerivativePositionDialog({ portfolioId, position, onClose }) {
-  const { t } = useTranslation();
-  const { format: money, currency: displayCurrency } = useMoney();
-  const { convertAt, rateAt } = useRateHistory();
-  const localeTag = t('common.localeTag');
   const entryDateIso = position?.entryDate ? String(position.entryDate).slice(0, 10) : null;
   const isAlreadyClosed = position?.assetName && position.assetName.includes('KAPALI');
-  const [closeDate, setCloseDate] = useState(() => todayIso());
-  const [closePrice, setClosePrice] = useState(() =>
-    position?.currentPriceTry != null ? String(position.currentPriceTry) : '');
-  const [priceTouched, setPriceTouched] = useState(false);
-  const [error, setError] = useState(null);
   const closeOpen = useCloseDerivativePosition(portfolioId);
   const updateClosed = useUpdateCloseDerivativePosition(portfolioId);
   const reopen = useReopenDerivativePosition(portfolioId);
   const close = isAlreadyClosed ? updateClosed : closeOpen;
-
-  const handleReopen = async () => {
-    setError(null);
-    try {
-      await reopen.mutateAsync(position.id);
-      onClose?.();
-    } catch (err) {
-      setError(extractApiError(err, t('portfolio.derivatives.reopenFailed')));
-    }
-  };
 
   const direction = (position?.assetName && position.assetName.split(' · ')[0]) || 'LONG';
   const isLong = direction === 'LONG';
   const qty = Number(position?.quantity || position?.quantityLot || 1);
   const entryPrice = Number(position?.entryPrice || 0);
   const symbol = position?.contractSymbol || position?.assetCode;
+  const liveSuggested = position?.currentPriceTry != null ? Number(position.currentPriceTry) : null;
+
+  const form = usePositionCloseForm({
+    availabilityAssetType: 'VIOP',
+    availabilityAssetCode: symbol || position?.assetCode,
+    entryDateIso,
+    initialPrice: position?.currentPriceTry != null ? String(position.currentPriceTry) : '',
+    liveSuggestedPriceTry: liveSuggested,
+  });
+
+  const {
+    t, money, inputCurrency, localeTag,
+    today: todayDate, isToday,
+    date: closeDate, setDate: setCloseDate,
+    price: closePrice, setPrice: setClosePrice,
+    parsedPrice: parsedClosePrice, validPrice: validClosePrice, validDate: validCloseDate,
+    setPriceTouched,
+    error, setError,
+    highlightedDates, viewLoading,
+    dateSuggestedInDisplay: closeDateSuggestedInDisplay,
+    applyDatePrice,
+    handleMonthChange,
+    datePresets,
+    toTryOnDate,
+  } = form;
+
   const [closeQty, setCloseQty] = useState(() => String(qty));
   const parsedCloseQty = Number(closeQty);
   const validCloseQty = !isAlreadyClosed
@@ -69,64 +58,9 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
   const effectiveQty = !isAlreadyClosed && validCloseQty ? parsedCloseQty : qty;
   const isPartial = !isAlreadyClosed && validCloseQty && parsedCloseQty < qty;
 
-  const todayDate = todayIso();
-  const isToday = closeDate === todayDate;
-  const [viewMonth, setViewMonth] = useState(() => toYearMonth(todayIso()));
-  const availabilityCode = symbol || position?.assetCode;
-  const { data: viewAvailability, isFetching: viewLoading } = useQuery({
-    queryKey: ['marketAvailability', 'VIOP', availabilityCode, viewMonth],
-    queryFn: () => unifiedMarketService.getMonthlyAvailability('VIOP', availabilityCode, viewMonth),
-    enabled: Boolean(availabilityCode && viewMonth),
-    staleTime: ONE_HOUR_MS,
-    placeholderData: (prev) => prev,
-  });
-  const viewPrices = useMemo(() => buildPriceIndex(viewAvailability), [viewAvailability]);
-  const highlightedDates = useMemo(() => new Set(viewPrices.keys()), [viewPrices]);
-  const closeDateMonth = useMemo(() => toYearMonth(closeDate), [closeDate]);
-  const historicalPriceTry = closeDateMonth === viewMonth ? viewPrices.get(closeDate) : undefined;
-  const inputCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency ? 'TRY' : displayCurrency;
-  const historicalPriceDisplay = historicalPriceTry != null
-    ? Number(convertAt(historicalPriceTry, 'TRY', closeDate) ?? historicalPriceTry)
-    : null;
-  const liveSuggested = position?.currentPriceTry != null ? Number(position.currentPriceTry) : null;
-  const liveSuggestedInDisplay = liveSuggested != null
-    ? Number(convertAt(liveSuggested, 'TRY', todayDate) ?? liveSuggested)
-    : null;
-  const closeDateSuggestedInDisplay = useMemo(() => {
-    if (historicalPriceDisplay != null) return historicalPriceDisplay;
-    if (isToday && liveSuggestedInDisplay != null) return liveSuggestedInDisplay;
-    return null;
-  }, [historicalPriceDisplay, isToday, liveSuggestedInDisplay]);
-  const applyDatePrice = () => {
-    if (closeDateSuggestedInDisplay != null) setClosePrice(String(closeDateSuggestedInDisplay));
-  };
-  const syncKey = `${closeDate}|${closeDateSuggestedInDisplay ?? 'none'}`;
-  const [trackedKey, setTrackedKey] = useState(syncKey);
-  if (syncKey !== trackedKey) {
-    setTrackedKey(syncKey);
-    if (!priceTouched && closeDateSuggestedInDisplay != null) {
-      setClosePrice(String(closeDateSuggestedInDisplay));
-    }
-  }
-  const parsedClosePrice = Number(closePrice);
-  const validClosePrice = Number.isFinite(parsedClosePrice) && parsedClosePrice > 0;
-  const validCloseDate = closeDate && (!entryDateIso || closeDate >= entryDateIso) && closeDate <= todayDate;
   const priceDelta = validClosePrice && entryPrice > 0
     ? ((parsedClosePrice - entryPrice) / entryPrice) * 100
     : null;
-  const datePresets = [
-    { id: 'today', iso: todayDate, label: t('portfolio.sell.today', { defaultValue: 'Bugün' }) },
-    { id: 'yesterday', iso: yesterdayIso(), label: t('portfolio.sell.yesterday', { defaultValue: 'Dün' }) },
-  ];
-
-  const toTryOnDate = (value, dateStr) => {
-    const num = Number(value);
-    if (!Number.isFinite(num)) return null;
-    const from = displayCurrency === 'ORIGINAL' ? 'TRY' : displayCurrency;
-    if (from === 'TRY') return num;
-    const rate = rateAt(from, dateStr);
-    return rate != null && rate > 0 ? num * rate : num;
-  };
 
   const sizeTimesQty = useMemo(() => {
     const notional = Number(position?.entryValueTry);
@@ -149,6 +83,16 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
   }, [realizedPnl, entryPrice, sizeTimesQty]);
 
   if (!position) return null;
+
+  const handleReopen = async () => {
+    setError(null);
+    try {
+      await reopen.mutateAsync(position.id);
+      onClose?.();
+    } catch (err) {
+      setError(extractApiError(err, t('portfolio.derivatives.reopenFailed')));
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -302,7 +246,7 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
             onChange={(iso) => { setCloseDate(iso); setPriceTouched(false); }}
             minDate={entryDateIso || undefined}
             maxDate={todayDate}
-            onMonthChange={(y, m) => setViewMonth(`${y}-${String(m + 1).padStart(2, '0')}`)}
+            onMonthChange={handleMonthChange}
             highlightedDates={highlightedDates}
             loading={viewLoading}
           />

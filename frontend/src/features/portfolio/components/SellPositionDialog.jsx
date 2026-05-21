@@ -1,30 +1,12 @@
 import { useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
 import { Calendar, Tag, ShoppingBag, TrendingUp, TrendingDown, Wand2 } from 'lucide-react';
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import Button from '../../../shared/components/buttons/Button';
 import DatePickerPopover from '../../../shared/components/form/DatePickerPopover';
 import { extractApiError } from '../../../shared/utils/apiError';
 import { useSellPosition } from '../hooks/usePortfolioData';
-import { useMoney } from '../../../shared/hooks/useMoney';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
-import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
-import { ONE_HOUR_MS, toYearMonth, buildPriceIndex } from '../lib/positionFormHelpers';
-
-const todayIso = () => new Date().toISOString().slice(0, 10);
-const yesterdayIso = () => {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
-};
-
-function formatDateLabel(iso, localeTag) {
-  if (!iso) return '';
-  return new Date(`${iso}T00:00:00`).toLocaleDateString(localeTag, {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
-}
+import { usePositionCloseForm, todayIso, formatDateLabel } from '../hooks/usePositionCloseForm';
 
 const QTY_PRESETS = [
   { id: '25', factor: 0.25 },
@@ -34,56 +16,43 @@ const QTY_PRESETS = [
 ];
 
 export default function SellPositionDialog({ portfolioId, position, onClose }) {
-  const { t } = useTranslation();
-  const { format: money } = useMoney();
-  const { convertAt, rateAt, currency: displayCurrency } = useRateHistory();
-  const localeTag = t('common.localeTag');
+  const { convertAt } = useRateHistory();
   const totalQty = Number(position?.quantity || 0);
   const entryPriceTry = Number(position?.entryPrice || 0);
   const suggestedPriceTry = position?.currentPriceTry != null ? Number(position.currentPriceTry) : null;
   const entryDateIso = position?.entryDate ? String(position.entryDate).slice(0, 10) : null;
-  const inputCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency ? 'TRY' : displayCurrency;
-
-  const toTryOnDate = (value, dateStr) => {
-    const num = Number(value);
-    if (!Number.isFinite(num)) return null;
-    if (inputCurrency === 'TRY') return num;
-    const rate = rateAt(inputCurrency, dateStr);
-    return rate != null && rate > 0 ? num * rate : num;
-  };
   const suggestedPriceInDisplay = suggestedPriceTry != null
     ? Number(convertAt(suggestedPriceTry, 'TRY', todayIso()) ?? suggestedPriceTry)
     : null;
 
-  const [sellQty, setSellQty] = useState(() => String(totalQty));
-  const [sellPrice, setSellPrice] = useState(() => suggestedPriceInDisplay != null ? String(suggestedPriceInDisplay) : '');
-  const [sellDate, setSellDate] = useState(() => todayIso());
-  const [priceTouched, setPriceTouched] = useState(false);
-  const [error, setError] = useState(null);
-  const [viewMonth, setViewMonth] = useState(() => toYearMonth(todayIso()));
-
-  const { data: viewAvailability, isFetching: viewLoading } = useQuery({
-    queryKey: ['marketAvailability', position?.assetType, position?.assetCode, viewMonth],
-    queryFn: () => unifiedMarketService.getMonthlyAvailability(position.assetType, position.assetCode, viewMonth),
-    enabled: Boolean(position?.assetType && position?.assetCode && viewMonth),
-    staleTime: ONE_HOUR_MS,
-    placeholderData: (prev) => prev,
-  });
-  const viewPrices = useMemo(() => buildPriceIndex(viewAvailability), [viewAvailability]);
-  const highlightedDates = useMemo(() => new Set(viewPrices.keys()), [viewPrices]);
-  const sellDateMonth = useMemo(() => toYearMonth(sellDate), [sellDate]);
-  const historicalPriceTry = sellDateMonth === viewMonth ? viewPrices.get(sellDate) : undefined;
-  const historicalPriceDisplay = historicalPriceTry != null
-    ? Number(convertAt(historicalPriceTry, 'TRY', sellDate) ?? historicalPriceTry)
-    : null;
-
   const sell = useSellPosition(portfolioId);
 
+  const form = usePositionCloseForm({
+    availabilityAssetType: position?.assetType,
+    availabilityAssetCode: position?.assetCode,
+    entryDateIso,
+    initialPrice: suggestedPriceInDisplay != null ? String(suggestedPriceInDisplay) : '',
+    liveSuggestedPriceTry: suggestedPriceTry,
+  });
+
+  const {
+    t, money, inputCurrency, localeTag,
+    date: sellDate, setDate: setSellDate,
+    price: sellPrice, setPrice: setSellPrice,
+    parsedPrice, validPrice, validDate,
+    setPriceTouched,
+    error, setError,
+    highlightedDates, viewLoading,
+    dateSuggestedInDisplay: sellDateSuggestedInDisplay,
+    applyDatePrice: applyCurrentPrice,
+    handleMonthChange,
+    datePresets,
+    toTryOnDate,
+  } = form;
+
+  const [sellQty, setSellQty] = useState(() => String(totalQty));
   const parsedQty = Number(sellQty);
-  const parsedPrice = Number(sellPrice);
   const validQty = Number.isFinite(parsedQty) && parsedQty > 0 && parsedQty <= totalQty;
-  const validPrice = Number.isFinite(parsedPrice) && parsedPrice > 0;
-  const validDate = sellDate && (!entryDateIso || sellDate >= entryDateIso) && sellDate <= todayIso();
   const canSubmit = validQty && validPrice && validDate && !sell.isPending;
 
   const entryPriceInDisplay = useMemo(() => {
@@ -123,27 +92,6 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
     setSellQty(String(rounded));
   };
 
-  const sellDateSuggestedInDisplay = useMemo(() => {
-    if (historicalPriceDisplay != null) return historicalPriceDisplay;
-    if (sellDate === todayIso() && suggestedPriceTry != null) {
-      return Number(convertAt(suggestedPriceTry, 'TRY', sellDate) ?? suggestedPriceTry);
-    }
-    return null;
-  }, [historicalPriceDisplay, sellDate, suggestedPriceTry, convertAt]);
-
-  const applyCurrentPrice = () => {
-    if (sellDateSuggestedInDisplay != null) setSellPrice(String(sellDateSuggestedInDisplay));
-  };
-
-  const syncKey = `${sellDate}|${sellDateSuggestedInDisplay ?? 'none'}`;
-  const [trackedKey, setTrackedKey] = useState(syncKey);
-  if (syncKey !== trackedKey) {
-    setTrackedKey(syncKey);
-    if (!priceTouched && sellDateSuggestedInDisplay != null) {
-      setSellPrice(String(sellDateSuggestedInDisplay));
-    }
-  }
-
   const handleSubmit = async () => {
     setError(null);
     const exitPriceTry = toTryOnDate(parsedPrice, sellDate);
@@ -165,11 +113,6 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
       setError(extractApiError(err, t('portfolio.sell.failed')));
     }
   };
-
-  const datePresets = [
-    { id: 'today', iso: todayIso(), label: t('portfolio.sell.today', { defaultValue: 'Bugün' }) },
-    { id: 'yesterday', iso: yesterdayIso(), label: t('portfolio.sell.yesterday', { defaultValue: 'Dün' }) },
-  ];
 
   return (
     <BaseModal
@@ -325,7 +268,7 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
           <DatePickerPopover
             value={sellDate}
             onChange={(iso) => { setSellDate(iso); setPriceTouched(false); }}
-            onMonthChange={(y, m) => setViewMonth(`${y}-${String(m + 1).padStart(2, '0')}`)}
+            onMonthChange={handleMonthChange}
             minDate={entryDateIso || undefined}
             maxDate={todayIso()}
             highlightedDates={highlightedDates}

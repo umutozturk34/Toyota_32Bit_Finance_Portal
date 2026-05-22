@@ -4,6 +4,7 @@ app:
     batch-size: 5
     max-days-per-window: 1000
     default-history-years: 5
+    client-default-batch-size: 25
     indicators:
       - code: TP.BISPOLFAIZ.TUR
         label: policyRate

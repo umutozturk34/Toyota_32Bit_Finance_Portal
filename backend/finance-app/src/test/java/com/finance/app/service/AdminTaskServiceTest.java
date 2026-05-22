@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -57,12 +56,14 @@ class AdminTaskServiceTest {
                 .thenReturn(new TaskTrackingService.TaskInfo("t", "STARTED", "msg",
                         Instant.now(), null, null));
         inline = Runnable::run;
-        service = new AdminTaskService(List.of(stockRefresher), bondDataService, newsDataService,
+        TaskRefreshRegistry registry = new DefaultTaskRefreshRegistry(
+                List.of(stockRefresher), bondDataService, newsDataService,
                 macroRegistry, macroFetcher,
-                taskTracker, inline,
                 Optional.of(portfolioSnapshotPort),
                 Optional.of(marketUpdatePort),
                 Optional.of(eventPublisher));
+        AdminTaskRunner runner = new AdminTaskRunner(taskTracker, inline);
+        service = new AdminTaskService(registry, runner);
     }
 
     @Test

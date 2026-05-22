@@ -3,12 +3,15 @@ package com.finance;
 import com.finance.app.config.OverviewProperties;
 import com.finance.market.bond.config.BondProperties;
 import com.finance.common.config.AppProperties;
+import com.finance.common.event.KafkaAdminProperties;
 import com.finance.common.event.KafkaTopicsProperties;
 import com.finance.market.commodity.config.CommodityProperties;
 import com.finance.market.crypto.config.CryptoProperties;
 import com.finance.market.forex.config.ForexProperties;
+import com.finance.market.forex.config.FxProperties;
 import com.finance.market.fund.config.FundProperties;
 import com.finance.market.macro.config.MacroProperties;
+import com.finance.news.config.NewsClassifierProperties;
 import com.finance.news.config.NewsProperties;
 import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.market.stock.config.StockProperties;
@@ -36,10 +39,13 @@ import java.util.TimeZone;
         CommodityProperties.class,
         CryptoProperties.class,
         ForexProperties.class,
+        FxProperties.class,
         FundProperties.class,
+        KafkaAdminProperties.class,
         KafkaTopicsProperties.class,
         KeycloakAdminProperties.class,
         MacroProperties.class,
+        NewsClassifierProperties.class,
         NewsProperties.class,
         OverviewProperties.class,
         PortfolioProperties.class,

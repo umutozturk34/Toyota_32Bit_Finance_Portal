@@ -1,5 +1,6 @@
 package com.finance.app.config;
 
+import com.finance.common.event.KafkaAdminProperties;
 import com.finance.common.event.KafkaTopicsProperties;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.context.annotation.Bean;
@@ -9,38 +10,38 @@ import org.springframework.kafka.config.TopicBuilder;
 @Configuration
 public class KafkaTopicsConfig {
 
-    private static final String RETENTION_24H_MS = String.valueOf(24 * 60 * 60 * 1000L);
-
     private final KafkaTopicsProperties topics;
+    private final KafkaAdminProperties admin;
 
-    public KafkaTopicsConfig(KafkaTopicsProperties topics) {
+    public KafkaTopicsConfig(KafkaTopicsProperties topics, KafkaAdminProperties admin) {
         this.topics = topics;
+        this.admin = admin;
     }
 
     @Bean
     public NewTopic marketUpdatedTopic() {
         return TopicBuilder.name(topics.marketUpdated())
-                .partitions(3)
-                .replicas(1)
-                .config("retention.ms", RETENTION_24H_MS)
+                .partitions(admin.defaultPartitions())
+                .replicas(admin.defaultReplicas())
+                .config("retention.ms", String.valueOf(admin.defaultRetentionMs()))
                 .build();
     }
 
     @Bean
     public NewTopic newsPublishedTopic() {
         return TopicBuilder.name(topics.newsPublished())
-                .partitions(1)
-                .replicas(1)
-                .config("retention.ms", RETENTION_24H_MS)
+                .partitions(admin.lowVolumePartitions())
+                .replicas(admin.defaultReplicas())
+                .config("retention.ms", String.valueOf(admin.defaultRetentionMs()))
                 .build();
     }
 
     @Bean
     public NewTopic portfolioUpdatedTopic() {
         return TopicBuilder.name(topics.portfolioUpdated())
-                .partitions(3)
-                .replicas(1)
-                .config("retention.ms", RETENTION_24H_MS)
+                .partitions(admin.defaultPartitions())
+                .replicas(admin.defaultReplicas())
+                .config("retention.ms", String.valueOf(admin.defaultRetentionMs()))
                 .build();
     }
 }

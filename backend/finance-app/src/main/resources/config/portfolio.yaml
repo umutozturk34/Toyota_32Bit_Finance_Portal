@@ -15,6 +15,7 @@ app:
     backfill:
       price-lookback-days: 7
       lock-stripes: 32
+      state-cache-max-size: 1000
 
   pagination:
     market:

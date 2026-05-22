@@ -3,6 +3,7 @@ app:
     chart-range: max
     chart-interval: 1d
     batch-min-sample: 5
+    derivative-sort-order: 9999
     yahoo-symbol-overrides:
       XAUTRY: "GC=F"
       XAGTRY: "SI=F"

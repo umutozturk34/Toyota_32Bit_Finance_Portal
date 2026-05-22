@@ -18,3 +18,8 @@ app:
       macro-indicators-updated: macro.indicators.updated
       user-email-change-code: user.email-change.code-requested
       mail-dispatch: mail.dispatch
+    admin:
+      default-partitions: 3
+      low-volume-partitions: 1
+      default-replicas: 1
+      default-retention-ms: 86400000

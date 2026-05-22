@@ -100,7 +100,7 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
 
     private static CandleView toView(Object candle) {
         return switch (candle) {
-            case ForexCandleResponse fx -> new CandleView(fx.candleDate().toLocalDate(), fx.buyingPrice());
+            case ForexCandleResponse fx -> new CandleView(fx.candleDate().toLocalDate(), fx.sellingPrice());
             case CandleResponse c -> new CandleView(c.candleDate().toLocalDate(), c.close());
             case FundCandleResponse f -> new CandleView(f.candleDate().toLocalDate(), f.price());
             case ViopHistoryPoint v -> new CandleView(v.candleDate().toLocalDate(), v.close());

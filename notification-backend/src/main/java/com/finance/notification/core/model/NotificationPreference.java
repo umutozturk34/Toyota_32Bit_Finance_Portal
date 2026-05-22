@@ -1,5 +1,6 @@
 package com.finance.notification.core.model;
 
+import com.finance.notification.core.dto.NotificationPreferenceUpdateRequest;
 import com.finance.notification.market.session.SessionMarket;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -121,6 +122,30 @@ public class NotificationPreference {
     @PreUpdate
     void preUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public void applyUpdate(NotificationPreferenceUpdateRequest request) {
+        if (request == null) return;
+        if (request.emailEnabled() != null) setEmailEnabled(request.emailEnabled());
+        if (request.emailPriceAlerts() != null) setEmailPriceAlerts(request.emailPriceAlerts());
+        if (request.inappPriceAlerts() != null) setInappPriceAlerts(request.inappPriceAlerts());
+        if (request.emailWatchlist() != null) setEmailWatchlist(request.emailWatchlist());
+        if (request.inappWatchlist() != null) setInappWatchlist(request.inappWatchlist());
+        if (request.emailSystem() != null) setEmailSystem(request.emailSystem());
+        if (request.inappSystem() != null) setInappSystem(request.inappSystem());
+        if (request.emailMarketOpened() != null) setEmailMarketOpened(request.emailMarketOpened());
+        if (request.inappMarketOpened() != null) setInappMarketOpened(request.inappMarketOpened());
+        if (request.emailMarketClosed() != null) setEmailMarketClosed(request.emailMarketClosed());
+        if (request.inappMarketClosed() != null) setInappMarketClosed(request.inappMarketClosed());
+        if (request.emailMarketDataUpdated() != null) setEmailMarketDataUpdated(request.emailMarketDataUpdated());
+        if (request.inappMarketDataUpdated() != null) setInappMarketDataUpdated(request.inappMarketDataUpdated());
+        if (request.emailNewsPublished() != null) setEmailNewsPublished(request.emailNewsPublished());
+        if (request.inappNewsPublished() != null) setInappNewsPublished(request.inappNewsPublished());
+        if (request.emailPortfolioUpdated() != null) setEmailPortfolioUpdated(request.emailPortfolioUpdated());
+        if (request.inappPortfolioUpdated() != null) setInappPortfolioUpdated(request.inappPortfolioUpdated());
+        if (request.emailMacroIndicators() != null) setEmailMacroIndicators(request.emailMacroIndicators());
+        if (request.inappMacroIndicators() != null) setInappMacroIndicators(request.inappMacroIndicators());
+        if (request.marketSessionMarkets() != null) setMarketSessionMarkets(request.marketSessionMarkets());
     }
 
     public boolean wantsInApp(NotificationType type) {

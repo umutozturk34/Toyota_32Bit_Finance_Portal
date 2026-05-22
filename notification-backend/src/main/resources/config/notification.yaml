@@ -3,6 +3,9 @@ notification:
     consumer:
       retry-interval-ms: 2000
       retry-max-attempts: 3
+  keycloak:
+    search-max-cap: 200
+    token-fallback-expires-seconds: 60
   cache:
     dedup-max-entries: 50000
     session-tracker-max-markets: 64

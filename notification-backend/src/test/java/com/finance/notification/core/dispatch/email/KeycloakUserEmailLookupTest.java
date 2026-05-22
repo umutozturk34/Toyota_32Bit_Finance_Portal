@@ -22,7 +22,8 @@ class KeycloakUserEmailLookupTest {
     @BeforeEach
     void setUp() throws Exception {
         lookup = new KeycloakUserEmailLookup("http://kc", "finance", "admin", "pw",
-                new com.finance.notification.config.NotificationCacheProperties(50_000L, 64L, null, null, null, null));
+                new com.finance.notification.config.NotificationCacheProperties(50_000L, 64L, null, null, null, null),
+                new com.finance.notification.config.NotificationKeycloakProperties(null, null));
         injectWebClient(stubClient(req -> tokenAndUserResponse(req)));
     }
 

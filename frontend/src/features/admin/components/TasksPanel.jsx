@@ -4,7 +4,7 @@ import SideDrawer from '../../../shared/components/modal/SideDrawer';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import {
     Activity, Play, CheckCircle2, XCircle, Clock,
-    Loader2, Zap, Database, X,
+    Loader2, Zap, Database,
     TrendingUp, DollarSign, Bitcoin, Briefcase, Landmark, Newspaper, Gem, Layers, BarChart3,
 } from 'lucide-react';
 import { adminService } from '../services/adminService';

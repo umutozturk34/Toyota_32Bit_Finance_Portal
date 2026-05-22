@@ -28,7 +28,9 @@ class NewsReaderTest {
 
     @BeforeEach
     void setUp() {
-        reader = new NewsReader(jdbcTemplate);
+        com.finance.notification.config.NotificationDispatchProperties dispatchProperties =
+                new com.finance.notification.config.NotificationDispatchProperties(null, null, null, null);
+        reader = new NewsReader(jdbcTemplate, dispatchProperties);
     }
 
     @Test

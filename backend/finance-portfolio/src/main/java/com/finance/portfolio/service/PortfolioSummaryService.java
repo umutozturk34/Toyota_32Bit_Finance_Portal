@@ -53,13 +53,8 @@ public class PortfolioSummaryService {
     private final ViopCandleRepository viopCandleRepository;
     private final AllocationCalculator allocationCalculator;
     private final DerivativePositionFormatter derivativePositionFormatter;
+    private final RealReturnCalculator realReturnCalculator;
 
-    /**
-     * VIOP "current price" reads should mirror the persisted daily-close source the chart and
-     * snapshots feed from. {@code viop_contracts.lastPrice} is overwritten by intraday ticks and
-     * can diverge from {@code viop_candles.close}; routing reads through the latest candle keeps
-     * K/Z, P/L, allocation, and chart in lockstep with a single "as-of-the-day-close" semantic.
-     */
     private BigDecimal latestCandleClose(String symbol) {
         if (symbol == null) return null;
         return viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc(symbol)
@@ -71,8 +66,10 @@ public class PortfolioSummaryService {
     public List<PositionResponse> getPositions(Long portfolioId) {
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
         Map<AssetKey, PriceBundle> bundles = pricingPort.getExitBundles(toKeys(positions));
+        Map<Long, BigDecimal> currentValuesById = currentValuesByPositionId(positions, bundles);
+        Map<Long, BigDecimal> realPctById = realReturnCalculator.computePerPosition(positions, currentValuesById);
         List<PositionResponse> spotRows = positions.stream()
-                .map(pos -> toPositionResponse(pos, bundles.get(pos.toAssetKey())))
+                .map(pos -> toPositionResponse(pos, bundles.get(pos.toAssetKey()), realPctById.get(pos.getId())))
                 .toList();
         List<PositionResponse> derivativeRows = derivativePositionRepository.findByPortfolioId(portfolioId).stream()
                 .map(this::toDerivativePositionResponse)
@@ -85,15 +82,23 @@ public class PortfolioSummaryService {
         return combined;
     }
 
+    private Map<Long, BigDecimal> currentValuesByPositionId(List<PortfolioPosition> positions,
+                                                            Map<AssetKey, PriceBundle> bundles) {
+        Map<Long, BigDecimal> out = new java.util.HashMap<>();
+        for (PortfolioPosition pos : positions) {
+            if (pos.getId() == null) continue;
+            PriceBundle bundle = bundles.get(pos.toAssetKey());
+            BigDecimal currentPrice = bundle != null && bundle.price() != null ? bundle.price() : BigDecimal.ZERO;
+            BigDecimal effective = pos.isClosed() && pos.getExitPrice() != null ? pos.getExitPrice() : currentPrice;
+            out.put(pos.getId(), pos.currentValue(effective));
+        }
+        return out;
+    }
+
     private PositionResponse toDerivativePositionResponse(DerivativePosition position) {
         return derivativePositionFormatter.toPositionResponse(position);
     }
 
-    /**
-     * Converts the contract's live last_price from its native quote currency to TRY using the
-     * current FOREX strategy rate. TRY-quoted contracts pass through. Used at read time only —
-     * entry_price and close_price are already TRY in DB.
-     */
     private BigDecimal convertLiveToTry(BigDecimal nativePrice, String currency) {
         if (nativePrice == null) return null;
         if (currency == null || currency.isBlank() || "TRY".equalsIgnoreCase(currency)) {
@@ -143,9 +148,19 @@ public class PortfolioSummaryService {
                 ? totals.totalPnl.multiply(HUNDRED).divide(totals.capitalBase, MoneyScale.PRICE, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
         AssetType filterType = EnumParser.parseNullable(AssetType.class, assetType, "enum.field.assetType");
-        DailyPnlSummary daily = aggregateDailyPnl(portfolioId, filterType);
+        BigDecimal dailyPnlAmount = aggregateDailyPnl(portfolioId, filterType);
+        BigDecimal dailyPnlPercent = computeDailyPercent(totals.totalValue, dailyPnlAmount);
+        RealReturnCalculator.RealReturnSummary real = realReturnCalculator.compute(positions, totals.totalValue);
         return responseMapper.toSummaryResponse(totals.totalValue, totals.totalEntry, totals.totalPnl,
-                pnlPercent, daily.amount(), daily.percent());
+                pnlPercent, dailyPnlAmount, dailyPnlPercent,
+                real.realPnlTry(), real.realPnlPercent(), real.cpiGrowthPercent());
+    }
+
+    private BigDecimal computeDailyPercent(BigDecimal totalValue, BigDecimal dailyPnl) {
+        if (totalValue == null || dailyPnl == null) return null;
+        BigDecimal priorTotal = totalValue.subtract(dailyPnl);
+        if (priorTotal.signum() <= 0) return null;
+        return dailyPnl.multiply(HUNDRED).divide(priorTotal, MoneyScale.PRICE, RoundingMode.HALF_UP);
     }
 
     private SpotTotals aggregateSpotTotals(List<PortfolioPosition> positions) {
@@ -206,11 +221,6 @@ public class PortfolioSummaryService {
     private record SummaryTotals(BigDecimal totalValue, BigDecimal totalEntry,
                                   BigDecimal totalPnl, BigDecimal capitalBase) {}
 
-    /**
-     * Combined VIOP P&L: mark-to-market for open positions (live last_price), realized for
-     * closed positions (locked close_price via entity rule). Closed positions stay in the
-     * total so realized gains/losses keep contributing to the portfolio after close.
-     */
     private BigDecimal openDerivativePnl(Long portfolioId) {
         BigDecimal total = BigDecimal.ZERO;
         for (DerivativePosition position : derivativePositionRepository.findByPortfolioId(portfolioId)) {
@@ -231,11 +241,6 @@ public class PortfolioSummaryService {
         return total;
     }
 
-    /**
-     * Notional exposure (entryPrice × contractSize × lot) of every derivative position — open
-     * AND closed. Closed positions stay in the cost basis so the hypothetical-portfolio totals
-     * keep treating them as occupying capital until the user explicitly deletes them.
-     */
     private BigDecimal openDerivativeNotional(Long portfolioId) {
         BigDecimal total = BigDecimal.ZERO;
         for (DerivativePosition position : derivativePositionRepository.findByPortfolioId(portfolioId)) {
@@ -247,27 +252,17 @@ public class PortfolioSummaryService {
         return total;
     }
 
-    private DailyPnlSummary aggregateDailyPnl(Long portfolioId, AssetType assetType) {
+    private BigDecimal aggregateDailyPnl(Long portfolioId, AssetType assetType) {
         List<PortfolioAssetDailySnapshot> latestPerAsset = assetSnapshotRepository.findLatestPerAsset(portfolioId);
         BigDecimal totalAmount = BigDecimal.ZERO;
-        BigDecimal priorTotal = BigDecimal.ZERO;
         boolean any = false;
         for (PortfolioAssetDailySnapshot s : latestPerAsset) {
             if (assetType != null && s.getAssetType() != assetType) continue;
             if (s.getDailyPnlTry() == null) continue;
             totalAmount = totalAmount.add(s.getDailyPnlTry());
-            priorTotal = priorTotal.add(s.getMarketValueTry().subtract(s.getDailyPnlTry()));
             any = true;
         }
-        if (!any) return DailyPnlSummary.EMPTY;
-        BigDecimal percent = priorTotal.compareTo(BigDecimal.ZERO) > 0
-                ? totalAmount.multiply(new BigDecimal("100")).divide(priorTotal, MoneyScale.PRICE, RoundingMode.HALF_UP)
-                : null;
-        return new DailyPnlSummary(totalAmount.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP), percent);
-    }
-
-    private record DailyPnlSummary(BigDecimal amount, BigDecimal percent) {
-        static final DailyPnlSummary EMPTY = new DailyPnlSummary(null, null);
+        return any ? totalAmount.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP) : null;
     }
 
     @Transactional(readOnly = true)
@@ -346,7 +341,7 @@ public class PortfolioSummaryService {
         };
     }
 
-    private PositionResponse toPositionResponse(PortfolioPosition pos, PriceBundle bundle) {
+    private PositionResponse toPositionResponse(PortfolioPosition pos, PriceBundle bundle, BigDecimal realPnlPercent) {
         PriceBundle effective = bundle != null ? bundle : new PriceBundle(null, new AssetMeta(null, null));
         BigDecimal marketPrice = effective.price() != null ? effective.price() : BigDecimal.ZERO;
         BigDecimal effectivePrice = pos.isClosed() && pos.getExitPrice() != null
@@ -358,7 +353,7 @@ public class PortfolioSummaryService {
         BigDecimal pnl = pct.amount() != null ? pct.amount() : BigDecimal.ZERO;
         BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
         AssetMeta meta = effective.meta() != null ? effective.meta() : new AssetMeta(null, null);
-        return responseMapper.toPositionResponse(pos, effectivePrice, entryValue, marketValue, pnl, pnlPercent, meta.name(), meta.image());
+        return responseMapper.toPositionResponse(pos, effectivePrice, entryValue, marketValue, pnl, pnlPercent, realPnlPercent, meta.name(), meta.image());
     }
 
     private List<AssetKey> toKeys(List<PortfolioPosition> positions) {

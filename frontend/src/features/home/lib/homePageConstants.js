@@ -1,4 +1,4 @@
-import { Shield, BarChart3, Briefcase, LineChart, TrendingUp, Zap, Activity, Lock, Layers } from 'lucide-react';
+import { Shield, BarChart3, Briefcase, LineChart, Zap, Activity, Lock, Layers } from 'lucide-react';
 import { formatPriceTRY, formatPercent } from '../../../shared/utils/formatters';
 
 export const easeOut = [0.16, 1, 0.3, 1];

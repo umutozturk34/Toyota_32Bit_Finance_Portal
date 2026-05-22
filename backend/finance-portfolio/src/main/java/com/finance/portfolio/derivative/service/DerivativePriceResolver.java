@@ -5,6 +5,7 @@ import com.finance.market.core.service.HistoricalPricingPort;
 import com.finance.market.viop.model.ViopContract;
 import com.finance.market.viop.repository.ViopCandleRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -12,11 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-/**
- * DB-only price resolver for VIOP positions. Reads viop_candles for closest-prior close on a given
- * date and applies per-date FX from forex_candles. Never hits upstream — the schedulers are the
- * sole writers of those tables, and portfolio flows must stay offline-safe.
- */
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class DerivativePriceResolver {
@@ -41,10 +38,15 @@ public class DerivativePriceResolver {
 
     private BigDecimal resolveHistoricalPrice(ViopContract contract, LocalDate date) {
         LocalDateTime requestedEnd = date.plusDays(1).atStartOfDay();
-        return candleRepository
+        BigDecimal price = candleRepository
                 .findFirstBySymbolAndCandleDateLessThanEqualOrderByCandleDateDesc(
                         contract.getSymbol(), requestedEnd)
                 .map(c -> c.getClose())
                 .orElse(null);
+        if (price == null) {
+            log.debug("No historical viop candle found symbol={} onOrBefore={}",
+                    contract.getSymbol(), date);
+        }
+        return price;
     }
 }

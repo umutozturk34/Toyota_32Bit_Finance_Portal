@@ -34,6 +34,7 @@ public class FundCandleBulkSyncService {
     private final FundBulkFetchExecutor bulkFetchExecutor;
     private final WindowingPolicy windowing;
     private final ZoneId appZone;
+    private final FundProperties fundProperties;
 
     public FundCandleBulkSyncService(FundRepository fundRepository,
                                      FundCandleRepository fundCandleRepository,
@@ -49,6 +50,7 @@ public class FundCandleBulkSyncService {
         this.bulkFetchExecutor = bulkFetchExecutor;
         this.windowing = WindowingPolicy.from(fundProperties);
         this.appZone = ZoneId.of(appProperties.getTimezone());
+        this.fundProperties = fundProperties;
     }
 
     public void refreshAllCandles() {
@@ -92,8 +94,6 @@ public class FundCandleBulkSyncService {
         };
     }
 
-    private static final int GAP_DETECTION_LOOKBACK_DAYS = 30;
-
     private List<WindowedFetchPlanner.DateWindow> computeRequiredWindows(
             List<Fund> funds, LocalDate earliest, LocalDate today) {
         Map<String, Long> countPerFund = fundCandleRepository.countCandlesPerFund().stream()
@@ -133,7 +133,7 @@ public class FundCandleBulkSyncService {
     }
 
     private LocalDate detectGapStart(String fundCode, LocalDate today) {
-        LocalDate windowStart = today.minusDays(GAP_DETECTION_LOOKBACK_DAYS);
+        LocalDate windowStart = today.minusDays(fundProperties.getGapDetectionLookbackDays());
         java.util.Set<LocalDate> stored = fundCandleRepository
                 .findCandleDatesSince(fundCode, windowStart.atStartOfDay()).stream()
                 .map(LocalDateTime::toLocalDate)

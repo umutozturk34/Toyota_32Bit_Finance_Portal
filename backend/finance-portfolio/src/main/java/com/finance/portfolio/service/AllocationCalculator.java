@@ -13,6 +13,7 @@ import com.finance.shared.service.AssetPricingPort;
 import com.finance.shared.service.AssetPricingPort.AssetKey;
 import com.finance.shared.util.EnumParser;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -22,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Log4j2
 @Component
 @RequiredArgsConstructor
 class AllocationCalculator {
@@ -40,6 +42,8 @@ class AllocationCalculator {
     private final PortfolioResponseMapper responseMapper;
 
     List<AllocationItem> compute(Long portfolioId, String mode, String assetTypeFilter, Integer limit) {
+        log.debug("Computing allocation portfolioId={} mode={} filter={} limit={}",
+                portfolioId, mode, assetTypeFilter, limit);
         List<AllocationItem> full = computeAllocation(portfolioId, mode, assetTypeFilter);
         return applyLimit(full, limit);
     }

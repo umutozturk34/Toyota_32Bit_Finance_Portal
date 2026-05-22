@@ -46,7 +46,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
         this.translator = translator;
         this.proxyManager = Bucket4jLettuce.casBasedBuilder(connection)
                 .expirationAfterWrite(
-                        ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(Duration.ofHours(2))
+                        ExpirationAfterWriteStrategy.basedOnTimeForRefillingBucketUpToMax(
+                                Duration.ofHours(appProperties.getRateLimit().getBucketExpirationHours()))
                 )
                 .build();
     }

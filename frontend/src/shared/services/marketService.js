@@ -1,10 +1,6 @@
 import api from './api';
 import { unifiedMarketService } from './unifiedMarketService';
 
-export const getCryptoHistory = async (id, period = 'ALL') => {
-  return unifiedMarketService.getHistory('CRYPTO', id, period);
-};
-
 export const trackedAssetService = {
   getByType: async (type, includeDisabled = false) => {
     const endpoint = includeDisabled ? '/admin/tracked-assets' : '/tracked-assets';

@@ -115,7 +115,6 @@ function buildOption(data, color) {
   };
 }
 
-/** @param {{assetCode: string, changePercent: number, delayMs?: number}} props */
 export default function AssetCardChart({ assetCode, changePercent, delayMs = 0 }) {
   const normalizedChangePercent = useMemo(() => {
     const parsed = Number(changePercent);

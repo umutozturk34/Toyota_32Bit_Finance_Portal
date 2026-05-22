@@ -111,6 +111,18 @@ class PortfolioCrudServiceTest {
     }
 
     @Test
+    void shouldThrowBusinessException_whenUserAlreadyOwnsMaxPortfolios() {
+        when(portfolioRepository.countByUserSub(USER_SUB))
+                .thenReturn((long) portfolioProperties.getMaxPortfoliosPerUser());
+
+        assertThatThrownBy(() -> service.createPortfolio(USER_SUB, new PortfolioCreateRequest("Extra")))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("error.portfolio.maxCountReached");
+        verify(portfolioRepository, never()).save(any());
+        verify(portfolioRepository, never()).findByUserSubAndName(any(), any());
+    }
+
+    @Test
     void shouldPersistNewPositionWithRequestFields_whenPortfolioOwnedByUser() {
         Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
         LocalDateTime entryDate = LocalDateTime.of(2024, 1, 15, 10, 0);

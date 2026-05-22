@@ -55,3 +55,4 @@ app:
     admin-trigger-limit: 20
     admin-read-limit: 20
     api-limit: 250
+    bucket-expiration-hours: 2

@@ -5,13 +5,13 @@ import com.finance.news.service.source.NewsSourceProcessingService;
 import com.finance.news.service.article.NewsCacheService;
 
 
-import com.finance.news.client.RssClient;
 import com.finance.news.dto.external.NewsArticleDto;
 import com.finance.news.dto.internal.RssArticleData;
 import com.finance.common.exception.BusinessException;
 import com.finance.news.mapper.NewsArticleMapper;
 import com.finance.news.model.NewsArticle;
 import com.finance.news.model.NewsSource;
+import com.finance.news.port.NewsSourceFetcher;
 import com.finance.news.repository.NewsArticleRepository;
 import com.finance.shared.util.BatchFailureGuard;
 import com.finance.news.util.NewsDuplicateChecker;
@@ -27,20 +27,20 @@ import java.util.List;
 @Log4j2
 public class NewsSourceProcessingService {
 
-    private final RssClient rssClient;
+    private final NewsSourceFetcher sourceFetcher;
     private final NewsArticleMapper articleMapper;
     private final NewsArticleRepository articleRepository;
     private final NewsCacheService newsCacheService;
     private final TransactionTemplate transactionTemplate;
     private final int maxArticlesPerSource;
 
-    public NewsSourceProcessingService(RssClient rssClient,
+    public NewsSourceProcessingService(NewsSourceFetcher sourceFetcher,
                                        NewsArticleMapper articleMapper,
                                        NewsArticleRepository articleRepository,
                                        NewsCacheService newsCacheService,
                                        TransactionTemplate transactionTemplate,
                                        com.finance.news.config.NewsProperties newsProperties) {
-        this.rssClient = rssClient;
+        this.sourceFetcher = sourceFetcher;
         this.articleMapper = articleMapper;
         this.articleRepository = articleRepository;
         this.newsCacheService = newsCacheService;
@@ -49,7 +49,7 @@ public class NewsSourceProcessingService {
     }
 
     public int processSource(NewsSource source) {
-        List<RssArticleData> rawArticles = rssClient.fetchFeed(source.getUrl());
+        List<RssArticleData> rawArticles = sourceFetcher.fetchFeed(source.getUrl());
 
         if (rawArticles.isEmpty()) {
             throw new BusinessException("Source " + source.getName() + " returned no valid articles after filtering");

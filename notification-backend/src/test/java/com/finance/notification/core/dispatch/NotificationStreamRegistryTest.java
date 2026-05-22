@@ -22,7 +22,7 @@ class NotificationStreamRegistryTest {
 
     @BeforeEach
     void setUp() {
-        registry = new NotificationStreamRegistry(new NotificationStreamProperties(60_000L));
+        registry = new NotificationStreamRegistry(new NotificationStreamProperties(60_000L, null, null));
     }
 
     @Test

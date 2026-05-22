@@ -3,7 +3,6 @@ import { X, Sliders, GripVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { definitionFor } from '../sections/sectionRegistry';
 
-/** @param {{Icon: any, label: string, onClick: (e: any) => void, tone?: string, active?: boolean}} props */
 function ActionDot({ Icon, label, onClick, tone = 'default', active = false }) {
   const tones = {
     default: 'border-border-default text-fg-muted hover:text-fg hover:border-fg-subtle hover:bg-surface',
@@ -28,20 +27,6 @@ function ActionDot({ Icon, label, onClick, tone = 'default', active = false }) {
 
 const EMPTY_STYLE = Object.freeze({});
 
-/**
- * @typedef {Object} OverviewWidgetCardProps
- * @property {{sectionId: string, kind: string, config?: Object}} section
- * @property {Object|null} widgetData
- * @property {boolean} editMode
- * @property {boolean} [draggable]
- * @property {boolean} [deleting]
- * @property {boolean} [popoverActive]
- * @property {(id: string, anchorEl: HTMLElement) => void} [onOpenSettings]
- * @property {(id: string) => void} onDelete
- * @property {(id: string, config: Object) => void} onConfigChange
- */
-
-/** @param {OverviewWidgetCardProps} props */
 function OverviewWidgetCard({
   section, widgetData, editMode, draggable = true,
   deleting = false, popoverActive = false, onOpenSettings,

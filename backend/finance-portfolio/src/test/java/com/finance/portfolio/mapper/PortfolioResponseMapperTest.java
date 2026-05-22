@@ -25,7 +25,7 @@ class PortfolioResponseMapperTest {
 
         com.finance.portfolio.dto.response.PositionResponse response = mapper.toPositionResponse(
                 pos, new BigDecimal("60"), new BigDecimal("500"), new BigDecimal("600"),
-                new BigDecimal("100"), new BigDecimal("20"), "Akbank", "akbank.png");
+                new BigDecimal("100"), new BigDecimal("20"), new BigDecimal("8"), "Akbank", "akbank.png");
 
         assertThat(response.id()).isEqualTo(7L);
         assertThat(response.assetCode()).isEqualTo("AKBNK");
@@ -66,8 +66,12 @@ class PortfolioResponseMapperTest {
         BigDecimal dailyPnl = new BigDecimal("125.00");
         BigDecimal dailyPnlPct = new BigDecimal("1.00");
 
+        BigDecimal realPnl = new BigDecimal("1500.00");
+        BigDecimal realPnlPct = new BigDecimal("15.00");
+        BigDecimal cpiGrowthPct = new BigDecimal("10.00");
+
         PortfolioSummaryResponse response = mapper.toSummaryResponse(
-                total, entry, pnl, pnlPct, dailyPnl, dailyPnlPct);
+                total, entry, pnl, pnlPct, dailyPnl, dailyPnlPct, realPnl, realPnlPct, cpiGrowthPct);
 
         assertThat(response.totalValueTry()).isEqualByComparingTo(total);
         assertThat(response.totalEntryValueTry()).isEqualByComparingTo(entry);
@@ -75,15 +79,22 @@ class PortfolioResponseMapperTest {
         assertThat(response.pnlPercent()).isEqualByComparingTo(pnlPct);
         assertThat(response.dailyPnlTry()).isEqualByComparingTo(dailyPnl);
         assertThat(response.dailyPnlPercent()).isEqualByComparingTo(dailyPnlPct);
+        assertThat(response.realPnlTry()).isEqualByComparingTo(realPnl);
+        assertThat(response.realPnlPercent()).isEqualByComparingTo(realPnlPct);
+        assertThat(response.cpiGrowthPercent()).isEqualByComparingTo(cpiGrowthPct);
     }
 
     @Test
     void should_supportNullDailyPnl_when_buildingSummary() {
         PortfolioSummaryResponse response = mapper.toSummaryResponse(
-                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, null, null);
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                null, null, null, null, null);
 
         assertThat(response.dailyPnlTry()).isNull();
         assertThat(response.dailyPnlPercent()).isNull();
+        assertThat(response.realPnlTry()).isNull();
+        assertThat(response.realPnlPercent()).isNull();
+        assertThat(response.cpiGrowthPercent()).isNull();
     }
 
     @Test

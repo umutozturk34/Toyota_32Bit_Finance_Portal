@@ -7,6 +7,7 @@ import com.finance.market.core.service.MarketSnapshotProcessor;
 import com.finance.market.core.util.ApiAssetValidator;
 import com.finance.market.core.util.TrackedRefreshRunner;
 import com.finance.market.forex.client.EvdsForexClient;
+import com.finance.market.forex.config.ForexProperties;
 import com.finance.market.forex.mapper.ForexEvdsMapper;
 import com.finance.market.forex.model.Forex;
 import com.finance.market.forex.model.ForexCandle;
@@ -29,7 +30,6 @@ import java.util.Optional;
 public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
 
     private static final DateTimeFormatter EVDS_DATE_FMT = AbstractEvdsClient.DATE_FMT;
-    private static final int LATEST_LOOKBACK_DAYS = 5;
 
     private final EvdsForexClient evdsClient;
     private final EvdsForexCurrencyResolver currencyResolver;
@@ -37,6 +37,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
     private final ForexEntityWriter entityWriter;
     private final ForexCandleRepository forexCandleRepository;
     private final TransactionTemplate transactionTemplate;
+    private final ForexProperties forexProperties;
 
     public Forex applyLatestSnapshot(ForexSerieMetadata meta, EvdsDataResponse response) {
         Forex forex = entityWriter.upsertForexShell(meta);
@@ -90,7 +91,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
 
     private EvdsDataResponse fetchLatestWindow(ForexSerieMetadata meta) {
         LocalDate today = LocalDate.now();
-        LocalDate from = today.minusDays(LATEST_LOOKBACK_DAYS);
+        LocalDate from = today.minusDays(forexProperties.getLatestLookbackDays());
         try {
             return evdsClient.fetchForexData(meta.seriesCodes(),
                     from.format(EVDS_DATE_FMT), today.format(EVDS_DATE_FMT));

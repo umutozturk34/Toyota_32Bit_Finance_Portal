@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowUpRight, ArrowDownRight } from '../../shared/components/feedback/AnimatedIcons';
 import { cryptoService } from './services/cryptoService';
-import { getChangeClass, changeColors, formatCompactNumber, formatPercentAbs } from '../../shared/utils/formatters';
+import { getChangeClass, changeColors, formatCompactNumber, formatPercentAbs, formatPriceUSD, formatPriceTRY } from '../../shared/utils/formatters';
 import { useMoney } from '../../shared/hooks/useMoney';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
@@ -28,13 +28,13 @@ function CryptoHeader({ asset }) {
 
 function CryptoMetadata({ asset }) {
   const { t } = useTranslation();
-  const { format: money, formatCompact } = useMoney();
+  const { formatCompact } = useMoney();
   const meta = asset.metadata || {};
   const cls = getChangeClass(asset.changePercent);
   return (
     <MetadataTiles tiles={[
-      { label: t('marketDetail.crypto.priceUsd'), value: money(meta.currentPriceUsd, 'USD') },
-      { label: t('marketDetail.crypto.priceTry'), value: money(asset.price) },
+      { label: t('marketDetail.crypto.priceUsd'), value: formatPriceUSD(meta.currentPriceUsd) },
+      { label: t('marketDetail.crypto.priceTry'), value: formatPriceTRY(asset.price) },
       {
         label: t('marketDetail.crypto.change24h'),
         color: changeColors[cls],
@@ -45,7 +45,7 @@ function CryptoMetadata({ asset }) {
           </span>
         ),
       },
-      { label: t('marketDetail.crypto.changeAmountUsd'), value: money(asset.changeAmount, 'USD'), color: changeColors[cls] },
+      { label: t('marketDetail.crypto.changeAmountUsd'), value: formatPriceUSD(asset.changeAmount), color: changeColors[cls] },
       { label: t('market.crypto.marketCapLabel'), value: formatCompact(meta.marketCap, 'USD') },
       { label: t('marketDetail.crypto.volume24h'), value: formatCompactNumber(meta.totalVolume) },
     ]} />

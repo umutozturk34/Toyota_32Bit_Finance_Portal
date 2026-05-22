@@ -5,15 +5,6 @@ import { formatPrice, currentLocaleTag } from '../utils/formatters';
 
 const SUPPORTED = ['TRY', 'USD', 'EUR'];
 
-/**
- * Currency-aware money helper. Reads the user's chosen display currency and live FX rates,
- * converts a value from its base currency to that target and formats it.
- *
- * When the user picks 'ORIGINAL', the per-call target is the asset's natural currency
- * (passed via opts.natural), falling back to the value's own base. Portfolio call sites
- * that omit `natural` therefore stay TRY-canonical under ORIGINAL — matching the rule that
- * a multi-asset portfolio is always reported in TRY first.
- */
 export function useMoney() {
   const displayCurrency = useAppStore((s) => s.displayCurrency) || 'TRY';
   const rates = useExchangeRates();

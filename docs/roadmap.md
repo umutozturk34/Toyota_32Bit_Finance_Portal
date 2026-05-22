@@ -50,7 +50,7 @@
 ### Notifications
 
 - **Notification microservice** — port 8082, separate Spring Boot app, Kafka event-driven dispatch
-- **Notification types** — price alert, watchlist delta, system, market opened/closed, market data updated, **news published** (slot-labelled morning/midday/evening), **portfolio updated** (daily snapshot)
+- **Notification types** — price alert, watchlist delta, system, market opened/closed, market data updated, **news published** (slot-labelled morning/midday/evening), **portfolio updated** (daily snapshot), **macro indicators updated** (inflation / rates / deposit deltas with category-colored cards)
 - **Preference matrix** — every type has independent email + in-app channel toggles; per-market chip selector
 - **Channels** — in-app (bell icon, unread badge, paged list) + SSE live stream + email (Thymeleaf templates, durable outbox + Kafka relay + circuit breaker)
 - **Admin broadcast** — paginated dispatch through `NotificationFanoutService` so a single system payload reaches every user without N+1
@@ -174,6 +174,25 @@
 - Locale-aware number / date formatting (`Intl.NumberFormat` + `Intl.DateTimeFormat` via `useLocale`)
 
 ---
+
+## In Flight (post-v0.18)
+
+### Macro indicators + notifications (2026-05-21)
+
+- Daily TCMB EVDS pull for 23 macro series (policy / TLREF / CPI / PPI + TL/USD/EUR savings deposit by maturity); incremental refresh + backfill from 1995
+- New notification type **`MACRO_INDICATORS_UPDATED`** — fired by the monolith only when at least one indicator gained a new point; consumer filters out unchanged (FLAT) and no-previous rows, sorts by absolute % delta, picks a hero card, computes up/down counters
+- Category accent colors: INFLATION amber, RATES indigo, DEPOSIT TRY emerald / USD cyan / EUR violet
+- Kafka topic `macro.indicators.updated`; idempotency cache `macroIndicatorsUpdatedProcessedEventIds`
+- Preference matrix gained email + in-app toggles for the new type (V35 migration, `email_macro_indicators` default off, `inapp_macro_indicators` default on)
+- Email template `macro-indicators-updated.html` — dark/light + TR/EN aware, hero block + summary chip bar + category-colored card list with ▲/▼ change pills
+- Frontend: settings preference row, `NotificationPanel` TYPE_META entry, TR/EN i18n bundles
+- AAA tests cover: changedCodes capture, publish-on-change vs skip-on-empty, FLAT/no-prev filter, UP/DOWN rendering, hero pick, category accent
+
+### Backend service split (Faz 3a, 2026-05-21)
+
+- `PortfolioPerformanceService` 498 → **263 LOC** orchestrator only
+- Extracted helpers: `PerformanceEventAssembler` (145 LOC, trade window + event projection + spot/derivative proceeds) and `PerformanceAggregationHelper` (119 LOC, by-type / by-code aggregation with capped detail + Other bucket)
+- 385 portfolio + 231 backend tests stay green
 
 ## Pending Releases
 

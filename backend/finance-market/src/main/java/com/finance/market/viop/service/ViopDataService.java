@@ -98,14 +98,6 @@ public class ViopDataService implements MarketRefresher {
         return lastUpdated != null && lastUpdated.toLocalDate().equals(today);
     }
 
-    /**
-     * Gap-fills VIOP candles from each contract's last stored candle through yesterday via the
-     * upstream history endpoint, then syncs today's candle from the in-memory {@code lastPrice}
-     * (no extra upstream call for today). Re-fetching candles we already have is intentionally
-     * avoided — this is fill-since-last, not "refresh everything". On non-trading days
-     * (weekend/holiday) upstream still serves the previous session's snapshot; those must NOT
-     * be written under today's date, so today-sync requires the snapshot timestamp to be today.
-     */
     public int syncCandlesFromLastStored() {
         List<com.finance.market.viop.model.ViopContract> active = contractRepository.findAll(
                 (root, query, cb) -> cb.isTrue(root.get("active")));

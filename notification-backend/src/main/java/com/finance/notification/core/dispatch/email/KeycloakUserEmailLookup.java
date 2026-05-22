@@ -1,5 +1,6 @@
 package com.finance.notification.core.dispatch.email;
 
+import com.finance.notification.config.NotificationCacheProperties;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.log4j.Log4j2;
@@ -30,20 +31,22 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
     private final String realm;
     private final String adminUser;
     private final String adminPassword;
-    private final Cache<String, KeycloakUserProfile> profileCache = Caffeine.newBuilder()
-            .maximumSize(2000)
-            .expireAfterWrite(Duration.ofMinutes(15))
-            .build();
+    private final Cache<String, KeycloakUserProfile> profileCache;
     private final AtomicReference<TokenSnapshot> tokenSnapshot = new AtomicReference<>();
 
     public KeycloakUserEmailLookup(@Value("${keycloak.base-url}") String baseUrl,
                                    @Value("${keycloak.realm}") String realm,
                                    @Value("${keycloak.admin-user}") String adminUser,
-                                   @Value("${keycloak.admin-password}") String adminPassword) {
+                                   @Value("${keycloak.admin-password}") String adminPassword,
+                                   NotificationCacheProperties cacheProperties) {
         this.webClient = WebClient.builder().baseUrl(baseUrl).build();
         this.realm = realm;
         this.adminUser = adminUser;
         this.adminPassword = adminPassword;
+        this.profileCache = Caffeine.newBuilder()
+                .maximumSize(cacheProperties.keycloakProfileMaxSize())
+                .expireAfterWrite(Duration.ofMinutes(cacheProperties.keycloakProfileTtlMinutes()))
+                .build();
     }
 
     @Override

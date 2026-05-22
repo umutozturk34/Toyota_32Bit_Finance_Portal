@@ -18,5 +18,9 @@ public class ForexProperties {
     private String efektifDatagroup = "bie_dkefkytl";
     private LocalDate backfillStartDate = LocalDate.of(1995, 1, 1);
     private int batchMinSample = 5;
+    private int snapshotLookbackDays = 5;
+    private int backfillWindowDays = 4 * 365;
+    private int evdsRowCap = 1000;
+    private int latestLookbackDays = 5;
     private Map<String, String> flagEmojis = new HashMap<>();
 }

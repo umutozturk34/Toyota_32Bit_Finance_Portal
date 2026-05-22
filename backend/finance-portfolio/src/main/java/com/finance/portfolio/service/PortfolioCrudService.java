@@ -56,6 +56,11 @@ public class PortfolioCrudService {
 
     @Transactional
     public PortfolioResponse createPortfolio(String userSub, PortfolioCreateRequest request) {
+        long currentCount = portfolioRepository.countByUserSub(userSub);
+        int max = portfolioProperties.getMaxPortfoliosPerUser();
+        if (currentCount >= max) {
+            throw new BusinessException("error.portfolio.maxCountReached", max);
+        }
         portfolioRepository.findByUserSubAndName(userSub, request.name())
                 .ifPresent(p -> { throw new BusinessException("error.portfolio.duplicateName", request.name()); });
 

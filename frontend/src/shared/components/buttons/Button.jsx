@@ -34,25 +34,6 @@ const MOTION_PRESETS = {
   none: {},
 };
 
-/**
- * @typedef {Object} ButtonProps
- * @property {'primary'|'secondary'|'ghost'|'danger'|'gradient'|'segment'|'tab'|'chip'|'warning'|'warning-outline'} [variant='primary']
- * @property {'xs'|'sm'|'md'|'lg'} [size='md']
- * @property {boolean} [loading]
- * @property {React.ReactNode} [leftIcon]
- * @property {React.ReactNode} [rightIcon]
- * @property {boolean} [fullWidth]
- * @property {'tap'|'tapHover'|'none'} [motionPreset='tap']
- * @property {boolean} [segmentActive]
- * @property {string} [layoutId]
- * @property {string} [accent]
- * @property {string|number} [count]
- * @property {React.ElementType} [as]
- * @property {string} [className]
- * @property {React.CSSProperties} [style]
- */
-
-/** @type {React.ForwardRefExoticComponent<ButtonProps>} */
 const Button = forwardRef(function Button(
   {
     variant = 'primary',

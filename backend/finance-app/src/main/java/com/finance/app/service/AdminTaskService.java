@@ -1,5 +1,6 @@
 package com.finance.app.service;
 
+import com.finance.common.event.MacroIndicatorsUpdatedEvent;
 import com.finance.common.event.MarketUpdatedEvent;
 import com.finance.common.model.MarketType;
 import com.finance.market.bond.service.BondDataService;
@@ -87,8 +88,21 @@ public class AdminTaskService {
                 "Macro indicator refresh started in background",
                 () -> {
                     macroRegistry.synchronizeFromConfig();
-                    macroFetcher.refreshAll();
+                    MacroIndicatorFetchService.FetchOutcome outcome = macroFetcher.refreshAll();
+                    if (!outcome.changedCodes().isEmpty()) {
+                        publishMacroEvent(outcome.changedCodes());
+                    }
                 });
+    }
+
+    private void publishMacroEvent(List<String> changedCodes) {
+        eventPublisher.ifPresent(port -> {
+            try {
+                port.publish(MacroIndicatorsUpdatedEvent.of("admin", changedCodes));
+            } catch (Exception e) {
+                log.warn("Macro indicators event publish failed: {}", e.getMessage());
+            }
+        });
     }
 
     private TaskTriggerResponse triggerMarketRefresh(MarketType type, String suffix, String messageTail) {

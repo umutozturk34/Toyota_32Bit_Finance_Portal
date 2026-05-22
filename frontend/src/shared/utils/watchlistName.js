@@ -1,10 +1,11 @@
 const AUTO_DEFAULT_NAMES = new Set(['Favoriler', 'Favorites']);
 
 export function watchlistName(t, list) {
-  if (list?.isDefault) {
-    return t('watch.defaultListName', { defaultValue: list?.name ?? '' });
+  const raw = list?.name ?? '';
+  if (list?.isDefault || AUTO_DEFAULT_NAMES.has(raw)) {
+    return t('watch.defaultListName', { defaultValue: raw });
   }
-  return list?.name ?? '';
+  return raw;
 }
 
 export function localizeWatchlistName(t, name) {

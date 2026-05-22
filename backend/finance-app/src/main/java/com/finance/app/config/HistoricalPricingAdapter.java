@@ -93,26 +93,20 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
 
     private static Map<LocalDate, BigDecimal> indexByDate(List<?> candles) {
         return candles.stream()
-                .filter(c -> candleDate(c) != null && candleClose(c) != null)
-                .collect(Collectors.toUnmodifiableMap(
-                        HistoricalPricingAdapter::candleDate,
-                        HistoricalPricingAdapter::candleClose,
-                        (a, b) -> a));
+                .map(HistoricalPricingAdapter::toView)
+                .filter(v -> v != null && v.date() != null && v.close() != null)
+                .collect(Collectors.toUnmodifiableMap(CandleView::date, CandleView::close, (a, b) -> a));
     }
 
-    private static LocalDate candleDate(Object candle) {
-        if (candle instanceof ForexCandleResponse fx) return fx.candleDate().toLocalDate();
-        if (candle instanceof CandleResponse c) return c.candleDate().toLocalDate();
-        if (candle instanceof FundCandleResponse f) return f.candleDate().toLocalDate();
-        if (candle instanceof ViopHistoryPoint v) return v.candleDate().toLocalDate();
-        return null;
+    private static CandleView toView(Object candle) {
+        return switch (candle) {
+            case ForexCandleResponse fx -> new CandleView(fx.candleDate().toLocalDate(), fx.buyingPrice());
+            case CandleResponse c -> new CandleView(c.candleDate().toLocalDate(), c.close());
+            case FundCandleResponse f -> new CandleView(f.candleDate().toLocalDate(), f.price());
+            case ViopHistoryPoint v -> new CandleView(v.candleDate().toLocalDate(), v.close());
+            case null, default -> null;
+        };
     }
 
-    private static BigDecimal candleClose(Object candle) {
-        if (candle instanceof ForexCandleResponse fx) return fx.buyingPrice();
-        if (candle instanceof CandleResponse c) return c.close();
-        if (candle instanceof FundCandleResponse f) return f.price();
-        if (candle instanceof ViopHistoryPoint v) return v.close();
-        return null;
-    }
+    private record CandleView(LocalDate date, BigDecimal close) { }
 }

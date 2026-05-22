@@ -4,6 +4,10 @@ app:
     efektif-datagroup: bie_dkefkytl
     backfill-start-date: 1995-01-01
     batch-min-sample: 5
+    snapshot-lookback-days: 5
+    backfill-window-days: 1460
+    evds-row-cap: 1000
+    latest-lookback-days: 5
     flag-emojis:
       USD: "🇺🇸"
       EUR: "🇪🇺"

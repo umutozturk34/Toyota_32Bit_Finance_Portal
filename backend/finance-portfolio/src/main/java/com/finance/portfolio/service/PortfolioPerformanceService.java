@@ -52,7 +52,8 @@ public class PortfolioPerformanceService {
     private final DerivativePositionRepository derivativePositionRepository;
     private final TrackedAssetRepository trackedAssetRepository;
     private final PortfolioSnapshotMapper snapshotMapper;
-    private final com.finance.portfolio.config.PortfolioProperties portfolioProperties;
+    private final PerformanceEventAssembler eventAssembler;
+    private final PerformanceAggregationHelper aggregationHelper;
 
     @Transactional(readOnly = true)
     public List<PerformancePoint> getPerformance(Long portfolioId, String range, String assetType) {
@@ -68,14 +69,6 @@ public class PortfolioPerformanceService {
                 : getAggregatePerformance(portfolioId, start, end);
     }
 
-    /**
-     * Cumulative realized P&L over time. Reads from {@code PortfolioDailySnapshot.cashTry} which
-     * is persisted as cumulative realized (sum of (exit−entry)·qty for closed spot lots +
-     * realizedOrUnrealizedPnl for closed derivatives) — see assembleAggregateSnapshot.
-     * Percent = cumulative realized / cumulative closed-position cost basis × 100 (always has a
-     * non-zero denominator once anything has closed, unlike the day-over-day delta which is
-     * undefined on the first close).
-     */
     private List<PerformancePoint> getCashPerformance(Long portfolioId,
                                                        LocalDateTime start, LocalDateTime end) {
         List<PortfolioAggregateRow> aggregates = dailySnapshotRepository
@@ -105,33 +98,12 @@ public class PortfolioPerformanceService {
                     ? realized.multiply(new BigDecimal("100"))
                             .divide(closedCost, MoneyScale.PRICE, RoundingMode.HALF_UP)
                     : BigDecimal.ZERO;
-            List<PerformanceEvent> closeEvents = realizedCloseEvents(positions, derivatives, prevTime, agg.createdAt());
+            List<PerformanceEvent> closeEvents = eventAssembler.realizedCloseEvents(positions, derivatives, prevTime, agg.createdAt());
             result.add(new PerformancePoint(agg.createdAt(), realized, BigDecimal.ZERO,
                     realized, cumulativePercent, List.of(), closeEvents));
             prevTime = agg.createdAt();
         }
         return result;
-    }
-
-    private List<PerformanceEvent> realizedCloseEvents(List<PortfolioPosition> positions,
-                                                        List<DerivativePosition> derivatives,
-                                                        LocalDateTime prevTime, LocalDateTime currentTime) {
-        TradeWindow trades = TradeWindow.detect(positions, derivatives, prevTime, currentTime);
-        if (trades.spotSold().isEmpty() && trades.derivativesClosed().isEmpty()) return List.of();
-        List<PerformanceEvent> events = new ArrayList<>();
-        trades.spotSold().forEach(p -> {
-            BigDecimal realized = p.realizedPnl();
-            events.add(new PerformanceEvent(PerformanceEventType.POSITION_SOLD,
-                    p.getAssetType().name(), p.getAssetCode(),
-                    realized != null ? realized : BigDecimal.ZERO));
-        });
-        trades.derivativesClosed().forEach(d -> {
-            BigDecimal realized = d.realizedOrUnrealizedPnl(d.getClosePrice());
-            events.add(new PerformanceEvent(PerformanceEventType.POSITION_SOLD,
-                    AssetType.VIOP.name(), d.getViopContract().getSymbol(),
-                    realized != null ? realized : BigDecimal.ZERO));
-        });
-        return events;
     }
 
     @Transactional(readOnly = true)
@@ -181,14 +153,46 @@ public class PortfolioPerformanceService {
         List<AssetSeriesPoint> result = new ArrayList<>(base.size());
         LocalDateTime prev = windowStart;
         for (AssetSeriesPoint p : base) {
-            TradeWindow trades = TradeWindow.detect(positions, derivatives, prev, p.timestamp());
-            List<PerformanceEvent> events = trades.hasAny() ? tradeEvents(trades) : List.of();
+            PerformanceEventAssembler.TradeWindow trades = eventAssembler.detectTrades(positions, derivatives, prev, p.timestamp());
+            List<PerformanceEvent> events = trades.hasAny() ? eventAssembler.tradeEvents(trades) : List.of();
             result.add(new AssetSeriesPoint(
                     p.timestamp(), p.unitPriceTry(), p.marketValueTry(), p.pnlTry(),
                     p.dailyPnlTry(), p.dailyPnlPercent(), events));
             prev = p.timestamp();
         }
+        return promoteSoldEventsToZeroPoint(result);
+    }
+
+    private List<AssetSeriesPoint> promoteSoldEventsToZeroPoint(List<AssetSeriesPoint> series) {
+        if (series.size() < 2) return series;
+        List<AssetSeriesPoint> result = new ArrayList<>(series);
+        for (int i = 0; i < result.size() - 1; i++) {
+            AssetSeriesPoint pre = result.get(i);
+            AssetSeriesPoint post = result.get(i + 1);
+            if (!isSellDropPair(pre, post)) continue;
+            List<PerformanceEvent> soldEvents = pre.events().stream()
+                    .filter(e -> e.type() == PerformanceEventType.POSITION_SOLD)
+                    .toList();
+            if (soldEvents.isEmpty()) continue;
+            List<PerformanceEvent> merged = new ArrayList<>(post.events());
+            merged.addAll(soldEvents);
+            result.set(i + 1, post.withEvents(merged));
+        }
         return result;
+    }
+
+    private static boolean isSellDropPair(AssetSeriesPoint pre, AssetSeriesPoint post) {
+        return pre.timestamp().toLocalDate().equals(post.timestamp().toLocalDate())
+                && isPositive(pre.marketValueTry())
+                && isZero(post.marketValueTry());
+    }
+
+    private static boolean isPositive(BigDecimal v) {
+        return v != null && v.signum() > 0;
+    }
+
+    private static boolean isZero(BigDecimal v) {
+        return v != null && v.signum() == 0;
     }
 
     private List<PerformancePoint> getAggregatePerformance(Long portfolioId,
@@ -212,77 +216,14 @@ public class PortfolioPerformanceService {
             List<PortfolioAssetDailySnapshot> assets = assetsByCreatedAt.getOrDefault(
                     agg.createdAt(), List.of());
             Map<String, BigDecimal> currTypeValues = new LinkedHashMap<>();
-            List<PerformanceAssetDetail> details = aggregateByType(assets, currTypeValues);
-            List<PerformanceEvent> events = buildEvents(positions, derivatives, prevTime, agg.createdAt(),
-                    prevTypeValues, currTypeValues, true);
+            List<PerformanceAssetDetail> details = aggregationHelper.aggregateByType(assets, currTypeValues);
+            List<PerformanceEvent> events = eventAssembler.buildEvents(positions, derivatives, prevTime, agg.createdAt());
             result.add(new PerformancePoint(agg.createdAt(), agg.totalValueTry(), agg.cashTry(),
                     agg.totalPnlTry(), agg.pnlPercent(), details, events));
             prevTypeValues = currTypeValues;
             prevTime = agg.createdAt();
         }
         return result;
-    }
-
-    private List<PerformanceAssetDetail> aggregateByType(List<PortfolioAssetDailySnapshot> assets,
-                                                         Map<String, BigDecimal> outCurrTypeValues) {
-        List<PortfolioAssetDailySnapshot> deduped = sumByAssetCodeWithinGroup(assets);
-        Map<String, BigDecimal[]> typeAgg = new LinkedHashMap<>();
-        for (PortfolioAssetDailySnapshot a : deduped) {
-            typeAgg.merge(a.getAssetType().name(),
-                    new BigDecimal[]{a.getMarketValueTry(), a.getPnlTry()},
-                    (ex, inc) -> new BigDecimal[]{ex[0].add(inc[0]), ex[1].add(inc[1])});
-            outCurrTypeValues.merge(a.getAssetType().name(), a.getMarketValueTry(), BigDecimal::add);
-        }
-        return typeAgg.entrySet().stream()
-                .map(e -> new PerformanceAssetDetail(e.getKey(), e.getKey(), e.getValue()[0], e.getValue()[1]))
-                .sorted(Comparator.comparing(PerformanceAssetDetail::valueTry).reversed())
-                .toList();
-    }
-
-    /**
-     * Folds per-lot snapshot rows sharing the same (assetType, assetCode) inside a single
-     * timestamp group into one row with summed quantity, marketValue, cost and pnl. Required
-     * because historical data was written one row per position; after the write-side switch to
-     * aggregated writes (see {@link SnapshotCalculationService#buildAssetSnapshotsForPositions})
-     * each group has at most one row per asset, but the chart must still display correctly for
-     * pre-fix snapshots.
-     */
-    private static List<PortfolioAssetDailySnapshot> sumByAssetCodeWithinGroup(List<PortfolioAssetDailySnapshot> snaps) {
-        Map<String, PortfolioAssetDailySnapshot> summed = new LinkedHashMap<>();
-        for (PortfolioAssetDailySnapshot snap : snaps) {
-            if (snap.getAssetCode() == null || snap.getAssetType() == null) {
-                summed.put("anon-" + System.identityHashCode(snap), snap);
-                continue;
-            }
-            String key = snap.getAssetType().name() + ":" + snap.getAssetCode();
-            summed.merge(key, snap, PortfolioPerformanceService::addLotSnapshots);
-        }
-        return new ArrayList<>(summed.values());
-    }
-
-    private static PortfolioAssetDailySnapshot addLotSnapshots(PortfolioAssetDailySnapshot a,
-                                                                PortfolioAssetDailySnapshot b) {
-        return PortfolioAssetDailySnapshot.builder()
-                .portfolioId(a.getPortfolioId())
-                .assetType(a.getAssetType())
-                .assetCode(a.getAssetCode())
-                .trackedAsset(a.getTrackedAsset())
-                .snapshotDate(a.getSnapshotDate())
-                .createdAt(a.getCreatedAt())
-                .quantity(nullSafeAdd(a.getQuantity(), b.getQuantity()))
-                .unitPriceTry(a.getUnitPriceTry())
-                .marketValueTry(nullSafeAdd(a.getMarketValueTry(), b.getMarketValueTry()))
-                .totalCostTry(nullSafeAdd(a.getTotalCostTry(), b.getTotalCostTry()))
-                .pnlTry(nullSafeAdd(a.getPnlTry(), b.getPnlTry()))
-                .dailyPnlTry(nullSafeAdd(a.getDailyPnlTry(), b.getDailyPnlTry()))
-                .dailyPnlPercent(a.getDailyPnlPercent())
-                .build();
-    }
-
-    private static BigDecimal nullSafeAdd(BigDecimal x, BigDecimal y) {
-        if (x == null) return y;
-        if (y == null) return x;
-        return x.add(y);
     }
 
     private List<PerformancePoint> getAssetTypePerformance(Long portfolioId, AssetType assetType,
@@ -309,150 +250,14 @@ public class PortfolioPerformanceService {
 
         for (Map.Entry<LocalDateTime, List<PortfolioAssetDailySnapshot>> e : grouped.entrySet()) {
             Map<String, BigDecimal> currAssetValues = new LinkedHashMap<>();
-            AssetCodeAgg agg = aggregateByCode(e.getValue(), currAssetValues);
-            List<PerformanceEvent> events = buildEvents(positions, derivatives, prevTime, e.getKey(),
-                    prevAssetValues, currAssetValues, false);
-            result.add(new PerformancePoint(e.getKey(), agg.totalValue, BigDecimal.ZERO, agg.totalPnl,
-                    agg.pnlPercent, agg.details, events));
+            PerformanceAggregationHelper.AssetCodeAgg agg = aggregationHelper.aggregateByCode(e.getValue(), currAssetValues);
+            List<PerformanceEvent> events = eventAssembler.buildEvents(positions, derivatives, prevTime, e.getKey());
+            result.add(new PerformancePoint(e.getKey(), agg.totalValue(), BigDecimal.ZERO, agg.totalPnl(),
+                    agg.pnlPercent(), agg.details(), events));
             prevAssetValues = currAssetValues;
             prevTime = e.getKey();
         }
         return result;
     }
 
-    private record AssetCodeAgg(BigDecimal totalValue, BigDecimal totalPnl, BigDecimal pnlPercent,
-                                 List<PerformanceAssetDetail> details) {
-    }
-
-    private AssetCodeAgg aggregateByCode(List<PortfolioAssetDailySnapshot> snaps,
-                                          Map<String, BigDecimal> outCurrAssetValues) {
-        List<PortfolioAssetDailySnapshot> deduped = sumByAssetCodeWithinGroup(snaps);
-        BigDecimal totalValue = BigDecimal.ZERO;
-        BigDecimal totalPnl = BigDecimal.ZERO;
-        BigDecimal totalCost = BigDecimal.ZERO;
-        List<PerformanceAssetDetail> details = new ArrayList<>();
-        for (PortfolioAssetDailySnapshot snap : deduped) {
-            totalValue = totalValue.add(snap.getMarketValueTry());
-            totalPnl = totalPnl.add(snap.getPnlTry());
-            totalCost = totalCost.add(snap.getTotalCostTry());
-            details.add(new PerformanceAssetDetail(
-                    snap.getAssetCode(), snap.getAssetType().name(),
-                    snap.getMarketValueTry(), snap.getPnlTry()));
-            outCurrAssetValues.put(snap.getAssetCode(), snap.getMarketValueTry());
-        }
-        details.sort(Comparator.comparing(PerformanceAssetDetail::valueTry).reversed());
-        List<PerformanceAssetDetail> capped = capDetailsWithOther(details);
-        PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalValue, totalCost, MoneyScale.PRICE);
-        BigDecimal pnlPercent = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
-        return new AssetCodeAgg(totalValue, totalPnl, pnlPercent, capped);
-    }
-
-    private List<PerformanceAssetDetail> capDetailsWithOther(List<PerformanceAssetDetail> sortedDetails) {
-        int topN = portfolioProperties.getPerformance().getDetailTopNLimit();
-        if (sortedDetails.size() <= topN) return sortedDetails;
-        List<PerformanceAssetDetail> top = sortedDetails.subList(0, topN - 1);
-        List<PerformanceAssetDetail> rest = sortedDetails.subList(topN - 1, sortedDetails.size());
-        BigDecimal restValue = rest.stream().map(PerformanceAssetDetail::valueTry)
-                .filter(v -> v != null).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal restPnl = rest.stream().map(PerformanceAssetDetail::pnlTry)
-                .filter(v -> v != null).reduce(BigDecimal.ZERO, BigDecimal::add);
-        List<PerformanceAssetDetail> result = new ArrayList<>(top.size() + 1);
-        result.addAll(top);
-        result.add(new PerformanceAssetDetail("OTHER", "OTHER", restValue, restPnl));
-        return result;
-    }
-
-    private List<PerformanceEvent> buildEvents(List<PortfolioPosition> positions,
-                                                List<DerivativePosition> derivatives,
-                                                LocalDateTime prevTime, LocalDateTime currentTime,
-                                                Map<String, BigDecimal> prevValues,
-                                                Map<String, BigDecimal> currValues,
-                                                boolean keyByType) {
-        TradeWindow trades = TradeWindow.detect(positions, derivatives, prevTime, currentTime);
-        if (trades.hasAny()) return tradeEvents(trades);
-        return List.of();
-    }
-
-    private List<PerformanceEvent> tradeEvents(TradeWindow trades) {
-        List<PerformanceEvent> events = new ArrayList<>();
-        trades.spotAdded().forEach(p -> events.add(spotEvent(p, PerformanceEventType.POSITION_ADDED, p.entryValue())));
-        trades.spotSold().forEach(p -> events.add(spotEvent(p, PerformanceEventType.POSITION_SOLD, spotProceeds(p))));
-        trades.derivativesAdded().forEach(d -> events.add(derivativeEvent(
-                d, PerformanceEventType.POSITION_ADDED, nullSafe(d.nominalExposure()))));
-        trades.derivativesClosed().forEach(d -> events.add(derivativeEvent(
-                d, PerformanceEventType.POSITION_SOLD, derivativeProceeds(d))));
-        return events;
-    }
-
-    private PerformanceEvent spotEvent(PortfolioPosition pos, PerformanceEventType type, BigDecimal value) {
-        return new PerformanceEvent(type, pos.getAssetType().name(), pos.getAssetCode(), value);
-    }
-
-    private PerformanceEvent derivativeEvent(DerivativePosition d, PerformanceEventType type, BigDecimal value) {
-        return new PerformanceEvent(type, AssetType.VIOP.name(), d.getViopContract().getSymbol(), value);
-    }
-
-    private static BigDecimal spotProceeds(PortfolioPosition p) {
-        return p.getExitPrice() != null ? p.getExitPrice().multiply(p.getQuantity()) : BigDecimal.ZERO;
-    }
-
-    private static BigDecimal derivativeProceeds(DerivativePosition d) {
-        BigDecimal entryNotional = d.nominalExposure();
-        BigDecimal realized = d.realizedOrUnrealizedPnl(d.getClosePrice());
-        if (entryNotional != null && realized != null) return entryNotional.add(realized);
-        return entryNotional != null ? entryNotional : BigDecimal.ZERO;
-    }
-
-    private static BigDecimal nullSafe(BigDecimal v) {
-        return v != null ? v : BigDecimal.ZERO;
-    }
-
-    private record TradeWindow(
-            List<PortfolioPosition> spotAdded,
-            List<PortfolioPosition> spotSold,
-            List<DerivativePosition> derivativesAdded,
-            List<DerivativePosition> derivativesClosed) {
-
-        static TradeWindow detect(List<PortfolioPosition> positions,
-                                  List<DerivativePosition> derivatives,
-                                  LocalDateTime prevTime, LocalDateTime currentTime) {
-            return new TradeWindow(
-                    inWindow(positions, p -> p.getEntryDate(), prevTime, currentTime),
-                    inWindow(positions, p -> p.getExitDate(), prevTime, currentTime),
-                    inDateWindow(derivatives, d -> d.getEntryDate(), prevTime, currentTime),
-                    inDateWindow(derivatives, d -> d.getCloseDate(), prevTime, currentTime));
-        }
-
-        boolean hasAny() {
-            return !spotAdded.isEmpty() || !spotSold.isEmpty()
-                    || !derivativesAdded.isEmpty() || !derivativesClosed.isEmpty();
-        }
-
-        private static List<PortfolioPosition> inWindow(List<PortfolioPosition> source,
-                                                        java.util.function.Function<PortfolioPosition, LocalDateTime> extractor,
-                                                        LocalDateTime prev, LocalDateTime curr) {
-            if (source == null) return List.of();
-            return source.stream()
-                    .filter(p -> {
-                        LocalDateTime ts = extractor.apply(p);
-                        return ts != null && ts.isAfter(prev) && !ts.isAfter(curr);
-                    })
-                    .toList();
-        }
-
-        private static List<DerivativePosition> inDateWindow(List<DerivativePosition> source,
-                                                              java.util.function.Function<DerivativePosition, java.time.LocalDate> extractor,
-                                                              LocalDateTime prev, LocalDateTime curr) {
-            if (source == null) return List.of();
-            return source.stream()
-                    .filter(d -> d.getViopContract() != null)
-                    .filter(d -> {
-                        java.time.LocalDate date = extractor.apply(d);
-                        if (date == null) return false;
-                        LocalDateTime ts = date.atStartOfDay();
-                        return ts.isAfter(prev) && !ts.isAfter(curr);
-                    })
-                    .toList();
-        }
-    }
 }

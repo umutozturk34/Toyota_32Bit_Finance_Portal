@@ -1,4 +1,4 @@
-import { Mail, Bell, AlertCircle, Zap, Smartphone, Sunrise, Sunset, RefreshCw, Newspaper, Briefcase } from 'lucide-react';
+import { Mail, Bell, AlertCircle, Zap, Smartphone, Sunrise, Sunset, RefreshCw, Newspaper, Briefcase, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
@@ -18,6 +18,7 @@ const TYPE_ROWS = [
   { id: 'marketDataUpdated', Icon: RefreshCw },
   { id: 'newsPublished', Icon: Newspaper },
   { id: 'portfolioUpdated', Icon: Briefcase },
+  { id: 'macroIndicators', Icon: TrendingUp },
 ];
 
 function parseMarkets(csv) {
@@ -88,7 +89,12 @@ export default function NotificationPreferencesSection() {
   const setField = (field, value) => update.mutate({ [field]: value });
 
   return (
-    <div className="space-y-4">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-4"
+    >
       <Card variant="gradient" tone="gradient" gradientFrom="accent" gradientTo="accent-secondary" radius="xl" padding="none" className="border-accent/25 px-4 py-3.5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3 min-w-0">
@@ -166,6 +172,6 @@ export default function NotificationPreferencesSection() {
         selected={parseMarkets(preferences.marketSessionMarkets)}
         onToggle={(next) => setField('marketSessionMarkets', serializeMarkets(next))}
       />
-    </div>
+    </motion.div>
   );
 }

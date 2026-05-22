@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
 import { formatPercent, changeColors, changeBg, getChangeClass } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
-import { ASSET_TYPE_STYLES } from '../../../shared/constants/assetTypes';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
@@ -16,91 +15,14 @@ import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
 import PortfolioListShell from './PortfolioListShell';
 import FilterTabs from '../../../shared/components/form/FilterTabs';
 import PositionStatusBadge from './PositionStatusBadge';
+import PositionAssetBadge from './PositionAssetBadge';
+import PositionDerivativeChips from './PositionDerivativeChips';
 
 const SORT_OPTION_IDS = ['currentValue', 'profitPercent', 'profitAmount', 'entryDate', 'assetCode', 'quantity'];
-
-function AssetBadge({ pos }) {
-  const typeStyle = ASSET_TYPE_STYLES[pos.assetType] || ASSET_TYPE_STYLES.CRYPTO;
-  if (pos.assetImage) {
-    return /^https?:\/\//i.test(pos.assetImage)
-      ? <img src={pos.assetImage} alt={pos.assetCode} className="w-8 h-8 rounded-lg shrink-0" />
-      : <span className="flex items-center justify-center w-8 h-8 rounded-lg text-xl shrink-0">{pos.assetImage}</span>;
-  }
-  return (
-    <span className={`flex items-center justify-center w-8 h-8 rounded-lg ${typeStyle.bg} text-sm font-bold ${typeStyle.text} shrink-0`}>
-      {assetCodeLabel(pos.assetType, pos.assetCode).slice(0, 3).toUpperCase()}
-    </span>
-  );
-}
 
 function formatEntryDate(dateStr, localeTag) {
   if (!dateStr) return '';
   return new Date(dateStr).toLocaleDateString(localeTag, { day: '2-digit', month: 'short', year: '2-digit' });
-}
-
-function DerivativeChips({ meta, money, t, localeTag }) {
-  if (!meta) return null;
-  const isLong = meta.direction === 'LONG';
-  const formatExpiry = (iso) => {
-    if (!iso) return null;
-    return new Date(iso).toLocaleDateString(localeTag, { day: '2-digit', month: 'short', year: '2-digit' });
-  };
-  return (
-    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-      <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide border ${
-        isLong
-          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-          : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
-      }`}>
-        {meta.direction}
-      </span>
-      {meta.contractKind && (
-        <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-mono text-fg-muted bg-bg-elevated border border-border-default">
-          {meta.contractKind}
-        </span>
-      )}
-      {meta.contractSize != null && Number(meta.contractSize) !== 1 && (
-        <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-mono text-fg-muted bg-bg-elevated border border-border-default">
-          {Number(meta.contractSize).toLocaleString(localeTag)}×
-        </span>
-      )}
-      {meta.lockedMarginTry != null && (
-        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] text-accent bg-accent/10 border border-accent/30">
-          <span className="font-bold uppercase tracking-wide">{t('portfolio.derivatives.margin', 'Teminat')}</span>
-          <span className="font-mono">{money(meta.lockedMarginTry)}</span>
-        </span>
-      )}
-      {meta.expiryDate && (
-        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] text-fg-muted bg-bg-elevated border border-border-default">
-          <span className="font-bold uppercase tracking-wide">{t('portfolio.derivatives.expiry', 'Vade')}</span>
-          <span className="font-mono">{formatExpiry(meta.expiryDate)}</span>
-        </span>
-      )}
-      {meta.strikePrice != null && (
-        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] text-fg-muted bg-bg-elevated border border-border-default">
-          <span className="font-bold uppercase tracking-wide">{t('portfolio.derivatives.strike', 'Strike')}</span>
-          <span className="font-mono">{money(meta.strikePrice)}</span>
-        </span>
-      )}
-      {meta.maxLossTry != null && (
-        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] text-rose-400 bg-rose-500/10 border border-rose-500/30">
-          <span className="font-bold uppercase tracking-wide">{t('portfolio.derivatives.maxLoss', 'Max Kayıp')}</span>
-          <span className="font-mono">{money(meta.maxLossTry)}</span>
-        </span>
-      )}
-      {meta.maxGainTry != null && (
-        <span className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[9px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30">
-          <span className="font-bold uppercase tracking-wide">{t('portfolio.derivatives.maxGain', 'Max Kazanç')}</span>
-          <span className="font-mono">{money(meta.maxGainTry)}</span>
-        </span>
-      )}
-      {meta.currency && meta.currency !== 'TRY' && (
-        <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-mono text-fg-muted bg-bg-elevated border border-border-default">
-          {meta.currency}
-        </span>
-      )}
-    </div>
-  );
 }
 
 export default function PositionsTable({ portfolioId, backfill: backfillProp, onAssetClick: assetClickProp, onEditClick: editClickProp, onDeleteClick: deleteClickProp, onCloseClick: closeClickProp, onSellClick: sellClickProp }) {
@@ -267,7 +189,7 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
       <div className={pending ? 'pt-7 opacity-50' : ''}>
       <div className="hidden lg:grid lg:grid-cols-[minmax(220px,2.4fr)_56px_92px_92px_72px_84px_84px_104px_112px_104px_24px] gap-3 items-start p-4 min-w-0">
         <div className="flex items-center gap-2.5 cursor-pointer min-w-0" onClick={assetClick}>
-          <AssetBadge pos={pos} />
+          <PositionAssetBadge pos={pos} />
           <div className="min-w-0">
             <div className="flex items-start gap-1.5 flex-wrap">
               <p className={`font-semibold text-fg leading-tight ${isDerivative ? 'text-xs break-all' : 'text-sm truncate'}`}>
@@ -281,7 +203,7 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
               <p className="text-[11px] text-fg-muted truncate">{derivativeName}</p>
             )}
             {isDerivative && pos.derivative && (
-              <DerivativeChips meta={pos.derivative} money={money} t={t} localeTag={localeTag} />
+              <PositionDerivativeChips meta={pos.derivative} money={money} t={t} localeTag={localeTag} />
             )}
           </div>
         </div>
@@ -298,7 +220,14 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
         <p className={`text-left text-[11px] font-mono truncate ${isClosedSpot || isClosedDerivative ? 'text-fg-muted italic' : 'text-fg'}`} title={money(pos.marketValueTry)}>{bigMoney(pos.marketValueTry)}</p>
         <div className="text-left min-w-0">
           <p className={`text-[11px] font-mono font-semibold ${changeColors[pnlClass]} truncate`} title={money(pos.pnlTry)}>{bigMoney(pos.pnlTry)}</p>
-          <span className={`inline-flex items-center rounded px-1 py-0.5 text-[10px] font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>{formatPercent(pos.pnlPercent)}</span>
+          <div className="flex items-center gap-1 flex-wrap">
+            <span className={`inline-flex items-center rounded px-1 py-0.5 text-[10px] font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>{formatPercent(pos.pnlPercent)}</span>
+            {pos.realPnlPercent != null && (
+              <span className={`inline-flex items-center text-[9px] font-mono tabular-nums tracking-[0.04em] uppercase ${Number(pos.realPnlPercent) >= 0 ? 'text-emerald-500' : 'text-red-500'}`} title="Reel getiri (TÜFE etkisi düşülmüş)">
+                reel {formatPercent(pos.realPnlPercent)}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex justify-start gap-1">
           {showEdit && (
@@ -331,7 +260,7 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
       <div className="lg:hidden p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5 min-w-0 flex-1" onClick={assetClick}>
-            <AssetBadge pos={pos} />
+            <PositionAssetBadge pos={pos} />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-sm font-semibold text-fg truncate">{pos.assetCode}</p>
@@ -344,7 +273,7 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
                 <p className="text-[11px] text-fg-muted truncate">{derivativeName}</p>
               )}
               {isDerivative && pos.derivative && (
-                <DerivativeChips meta={pos.derivative} money={money} t={t} localeTag={localeTag} />
+                <PositionDerivativeChips meta={pos.derivative} money={money} t={t} localeTag={localeTag} />
               )}
             </div>
           </div>

@@ -7,15 +7,6 @@ const PADDINGS = {
   lg: 'p-4',
 };
 
-/**
- * @typedef {Object} CardFooterProps
- * @property {boolean} [divider]
- * @property {'none'|'sm'|'md'|'lg'} [padding='md']
- * @property {string} [className]
- * @property {React.ReactNode} [children]
- */
-
-/** @param {CardFooterProps} props */
 export default function CardFooter({ divider = false, padding = 'md', className, children }) {
   return (
     <div

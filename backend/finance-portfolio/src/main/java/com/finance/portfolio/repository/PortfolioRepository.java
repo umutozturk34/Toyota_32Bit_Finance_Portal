@@ -15,4 +15,6 @@ public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
     Optional<Portfolio> findByUserSubAndName(String userSub, String name);
 
     Optional<Portfolio> findByIdAndUserSub(Long id, String userSub);
+
+    long countByUserSub(String userSub);
 }

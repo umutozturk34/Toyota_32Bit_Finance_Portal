@@ -18,7 +18,6 @@ import { useMoney } from '../../shared/hooks/useMoney';
 import { assetCodeLabel } from '../../shared/utils/assetCode';
 
 const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
-const SEGMENT_IDS = ['MAIN_INDEX', 'SECONDARY_INDEX', 'EQUITY'];
 
 function StocksPage() {
     const { t } = useTranslation();

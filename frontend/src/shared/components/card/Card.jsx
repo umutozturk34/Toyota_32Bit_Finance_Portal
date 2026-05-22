@@ -67,25 +67,6 @@ const resolveAccentBar = (accentBar) => {
   return { className: 'border-t-2', style: { borderTopColor: accentBar } };
 };
 
-/**
- * @typedef {Object} CardProps
- * @property {'elevated'|'glass'|'surface'|'gradient'|'outline'|'popover'|'placeholder'} [variant='elevated']
- * @property {'default'|'success'|'danger'|'warning'|'accent'|'gradient'} [tone='default']
- * @property {'none'|'accent'|'accent-secondary'|'success'|'danger'|'warning'|string} [accentBar='none']
- * @property {'md'|'lg'|'xl'|'2xl'|'3xl'} [radius='xl']
- * @property {'none'|'sm'|'md'|'lg'|'xl'} [padding='md']
- * @property {boolean} [interactive]
- * @property {boolean} [backdropBlur]
- * @property {boolean} [pending]
- * @property {string} [gradientFrom]
- * @property {string} [gradientTo]
- * @property {React.ElementType} [as]
- * @property {string} [className]
- * @property {React.CSSProperties} [style]
- * @property {React.ReactNode} [children]
- */
-
-/** @type {React.ForwardRefExoticComponent<CardProps>} */
 const Card = forwardRef(function Card(
   {
     variant = 'elevated',

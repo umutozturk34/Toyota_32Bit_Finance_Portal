@@ -49,7 +49,12 @@
     "logout": "Log out",
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar",
-    "adminBadge": "Admin"
+    "adminBadge": "Admin",
+    "overview": "Overview",
+    "analytics": "Analytics",
+    "groupMarkets": "Markets",
+    "groupMy": "My Portfolio",
+    "groupAdmin": "Admin"
   },
   "common": {
     "localeTag": "en-US",
@@ -71,7 +76,10 @@
     "sortDefault": "Default",
     "previous": "Previous",
     "next": "Next",
-    "searchEllipsis": "Search..."
+    "searchEllipsis": "Search...",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "settings": "Settings"
   },
   "compareBar": {
     "placeholder": "Compare...",
@@ -87,7 +95,11 @@
     "deleteMessage": "Portfolio «{{name}}» will be permanently deleted along with all positions, snapshots and history. This cannot be undone.",
     "createFailed": "Creation failed",
     "renameFailed": "Rename failed",
-    "deleteFailed": "Delete failed"
+    "deleteFailed": "Delete failed",
+    "heading": "Portfolios",
+    "totalAbbr": "total",
+    "enterHint": "enter to save",
+    "escHint": "esc to cancel"
   },
   "searchSuggestions": {
     "placeholder": "Search stocks, crypto, FX, funds...",
@@ -727,6 +739,10 @@
       "portfolioUpdated": {
         "label": "Portfolio updated",
         "hint": "When daily snapshot is taken (23:00)"
+      },
+      "macroIndicators": {
+        "label": "Macro indicators",
+        "hint": "Inflation, rates, deposit — only changes"
       }
     },
     "channels": {
@@ -1057,7 +1073,12 @@
       "put": "Put",
       "future": "Future",
       "dataAvailable": "Data available on this date: {{price}}",
-      "dataUnavailable": "No data on this date \u2014 nearest prior price will be used"
+      "dataUnavailable": "No data on this date \u2014 nearest prior price will be used",
+      "closePriceLabel": "Close price (TRY)",
+      "partialHint": "Remaining {{remaining}} lots stay open",
+      "realizedPnl": "Realized P/L",
+      "long": "LONG",
+      "short": "SHORT"
     }
   },
   "marketAddPosition": {
@@ -1129,7 +1150,8 @@
     "commodity": {
       "priceTry": "Price (TRY)",
       "priceUsd": "Price (USD)"
-    }
+    },
+    "compareAction": "Compare"
   },
   "commodity": {
     "name": {
@@ -1191,7 +1213,22 @@
       "rangeOneYear": "1Y",
       "rangeThreeYears": "3Y",
       "rangeFiveYears": "5Y",
-      "rangeAll": "All"
+      "rangeAll": "All",
+      "heading": "Macro Indicators",
+      "subheading": "TCMB EVDS · weekly + monthly + daily",
+      "headline": "Headline",
+      "currency": "Currency",
+      "depositMatrixTitle": "Deposit Rate Matrix",
+      "depositMatrixSub": "TCMB weekly · % nominal",
+      "compareCta": "Compare",
+      "compareSearchPlaceholder": "Search indicator…",
+      "noData": "No data in this range",
+      "indicatorInfo": "Info",
+      "normalizedHint": "Multiple series — normalized as % change from start",
+      "statLast": "Last",
+      "statMin": "Min",
+      "statMax": "Max",
+      "statAvg": "Avg"
     },
     "editMode": "Edit mode",
     "unsavedChanges": "Unsaved changes",
@@ -1254,8 +1291,10 @@
       "MARKET_CLOSED": "Market closed",
       "MARKET_DATA_UPDATED": "Data updated",
       "NEWS_PUBLISHED": "New articles",
-      "PORTFOLIO_UPDATED": "Portfolio updated"
-    }
+      "PORTFOLIO_UPDATED": "Portfolio updated",
+      "MACRO_INDICATORS_UPDATED": "Macro indicators"
+    },
+    "close": "Close"
   },
   "adminTrackedAssets": {
     "title": "Tracked Assets Management",
@@ -1859,6 +1898,88 @@
       "PAY_OPTION": "Equity Option",
       "INDEX_OPTION": "Index Option",
       "CURRENCY_OPTION": "Currency Option"
+    }
+  },
+  "analytics": {
+    "amount": "Amount",
+    "amountHint": "You can change the display currency in settings",
+    "beaterSubtitle": "Real-return ranking by period",
+    "beaterTitle": "Inflation Beaters",
+    "beatingBenchmark": "Beating",
+    "beats": "Beats",
+    "benchmark": "Benchmark",
+    "benchmarkDefault": "Default (CPI)",
+    "benchmarkReturn": "Benchmark return",
+    "bmDefaultHint": "Default: CPI (no selection)",
+    "bmGroupDepositEUR": "EUR Deposit",
+    "bmGroupDepositTRY": "TRY Deposit",
+    "bmGroupDepositUSD": "USD Deposit",
+    "bmGroupInflation": "Inflation",
+    "bmGroupRates": "Rates",
+    "bmNoResults": "No match",
+    "bmSearchPlaceholder": "Search benchmark…",
+    "clearFilters": "Clear",
+    "compareEmpty": "Search and pick instruments below to compare.",
+    "comparePickFirst": "Pick at least 1 instrument",
+    "compareSearchAssets": "Search stocks, crypto, funds, FX, commodities, bonds…",
+    "compareSearchMixed": "Search assets or macro indicators…",
+    "compareSubtitle": "Place different assets side-by-side on the same chart. No amount or date — just historical price movements.",
+    "compareTitle": "Comparison",
+    "cpiGrowth": "CPI growth (period)",
+    "endDate": "End",
+    "excessReturn": "Excess",
+    "finalValue": "Final Value",
+    "instrument": "Instrument",
+    "instruments": "Instruments",
+    "loadError": "Failed to load",
+    "loading": "Calculating...",
+    "losers": "Losers",
+    "lost": "Lost",
+    "noData": "No data",
+    "noInstruments": "No instruments selected. Add one below or pick from quick suggestions.",
+    "noMatch": "No match",
+    "nominalReturn": "Nominal",
+    "normalizedHintCompare": "Multiple series — normalized as % change from start",
+    "openInCompare": "Open in Compare",
+    "period": "Period",
+    "quickPick": "Quick pick",
+    "realLoss": "Excess return < 0",
+    "realReturn": "Real",
+    "realReturnHint": "Real return = nominal − CPI effect",
+    "scenarioSubtitle": "If you had placed a given amount on a given date into different instruments, how much would it be today? Simulated against real historical data.",
+    "scenarioTitle": "Scenario Comparison",
+    "searchAsset": "Search asset — what's the rank?",
+    "searchHint": "Search stocks, funds, FX, crypto, commodities, bonds, macro",
+    "searchInstrument": "Search",
+    "searchPlaceholder": "ASELS, gold, bitcoin, TP.TRYTAS, TRT...",
+    "simulate": "Simulate",
+    "simulationError": "Simulation failed",
+    "startDate": "Start",
+    "typeFilter": "Type",
+    "verdict": "Verdict",
+    "verdictFilter": "Status",
+    "verdict_all": "All",
+    "verdict_beats": "Beats",
+    "verdict_losers": "Losers",
+    "modeAssets": "Assets",
+    "modeMixed": "Mixed",
+    "instrumentSpot": "BIST",
+    "instrumentForex": "FX",
+    "instrumentCommodity": "Commodity",
+    "instrumentCrypto": "Crypto",
+    "instrumentFund": "Fund",
+    "instrumentViop": "VIOP",
+    "instrumentBond": "Bond",
+    "instrumentMacro": "Macro",
+    "instrumentDeposit": "Deposit",
+    "periodOneMonth": "1M",
+    "periodSixMonths": "6M",
+    "periodOneYear": "1Y",
+    "periodThreeYears": "3Y",
+    "periodFiveYears": "5Y",
+    "backTo": {
+      "beaters": "Back to Beaters",
+      "asset": "Back to asset"
     }
   }
 }

@@ -1,259 +1,30 @@
-import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
-import { AnimatePresence } from 'framer-motion';
-import { X, Calendar, Hash, Tag, Wallet, ShieldCheck } from 'lucide-react';
-import { Check, AlertCircle, AlertTriangle } from '../../../shared/components/feedback/AnimatedIcons';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Calendar, Hash, Tag, Wallet } from 'lucide-react';
+import { Check, AlertCircle } from '../../../shared/components/feedback/AnimatedIcons';
 import DatePickerPopover from '../../../shared/components/form/DatePickerPopover';
 import ProcessingSteps from '../../../shared/components/feedback/ProcessingSteps';
-import useProcessingAnimation from '../../../shared/hooks/useProcessingAnimation';
-import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
-import { currentLocaleTag } from '../../../shared/utils/formatters';
 import { useMoney } from '../../../shared/hooks/useMoney';
-import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { assetCodeLabel } from '../../../shared/utils/assetCode';
-import { useAddPosition, usePortfolioLimits, usePortfolioPositions, useUpdatePosition } from '../hooks/usePortfolioData';
-
-import {
-  FRACTIONAL_TYPES, ONE_HOUR_MS, SUCCESS_HOLD_MS, PROCESSING_STEP_DEFS,
-  todayInputValue, dateInputToIso, isoToDateInput, buildInitialState,
-  resolveTarget, toYearMonth, buildPriceIndex,
-  preventDecimal, describeAction,
-} from '../lib/positionFormHelpers';
+import { usePositionForm } from '../hooks/usePositionForm';
+import PositionFormConfirmPanel from './PositionFormConfirmPanel';
+import PositionFormSuccessPanel from './PositionFormSuccessPanel';
+import { todayInputValue, preventDecimal, describeAction } from '../lib/positionFormHelpers';
 
 export default function PositionFormModal({ mode, portfolioId, asset, position, onClose, onComplete }) {
   const { t } = useTranslation();
   const { format: money, formatCompact } = useMoney();
-  const { rateAt, currency: displayCurrency } = useRateHistory();
-  const target = resolveTarget(mode, asset, position);
-  const isFractional = FRACTIONAL_TYPES.includes(target.assetType);
-  const isEdit = mode === 'edit';
-  const nativeCurrency = target.assetType === 'CRYPTO' ? 'USD' : 'TRY';
-  const inputCurrency = displayCurrency === 'ORIGINAL' ? nativeCurrency : displayCurrency;
-  const processingSteps = useMemo(
-    () => PROCESSING_STEP_DEFS.map((s) => ({ label: t(`positionForm.steps.${s.labelKey}`), duration: s.duration })),
-    [t],
-  );
-
-  const tryToDisplay = useCallback((tryValue, dateStr) => {
-    if (tryValue == null || tryValue === '') return null;
-    const num = Number(tryValue);
-    if (!Number.isFinite(num)) return null;
-    if (inputCurrency === 'TRY') return num;
-    const rate = rateAt(inputCurrency, dateStr);
-    return rate != null && rate > 0 ? num / rate : num;
-  }, [inputCurrency, rateAt]);
-
-  const displayToTry = useCallback((displayValue, dateStr) => {
-    if (displayValue == null || displayValue === '') return null;
-    const num = Number(displayValue);
-    if (!Number.isFinite(num)) return null;
-    if (inputCurrency === 'TRY') return num;
-    const rate = rateAt(inputCurrency, dateStr);
-    return rate != null && rate > 0 ? num * rate : num;
-  }, [inputCurrency, rateAt]);
-
-  const [form, setForm] = useState(() => ({ ...buildInitialState(mode, asset, position), entryPrice: '' }));
-  const [error, setError] = useState(null);
-  const [priceTouched, setPriceTouched] = useState(isEdit);
-  const [phase, setPhase] = useState('form');
-  const [viewMonth, setViewMonth] = useState(() => toYearMonth(buildInitialState(mode, asset, position).entryDate));
-  const [initialFilled, setInitialFilled] = useState(false);
-  const [closeEnabled, setCloseEnabled] = useState(false);
-  const [exitDate, setExitDate] = useState(todayInputValue());
-  const [exitPrice, setExitPrice] = useState('');
-  const [exitPriceTouched, setExitPriceTouched] = useState(false);
-  const [exitViewMonth, setExitViewMonth] = useState(() => toYearMonth(todayInputValue()));
-
-  const todayIso = todayInputValue();
-  const editEntryDateIso = useMemo(
-    () => (isEdit && position?.entryDate ? isoToDateInput(position.entryDate) : null),
-    [isEdit, position?.entryDate],
-  );
-  const initialSeedTry = isEdit ? position?.entryPrice : asset?.currentPrice;
-  const initialSeedDate = editEntryDateIso ?? todayIso;
-  const initialSeedDisplay = useMemo(
-    () => tryToDisplay(initialSeedTry, initialSeedDate),
-    [initialSeedTry, initialSeedDate, tryToDisplay],
-  );
-  if (!initialFilled) {
-    if (initialSeedTry == null) {
-      setInitialFilled(true);
-    } else if (initialSeedDisplay != null) {
-      setInitialFilled(true);
-      setForm((prev) => ({ ...prev, entryPrice: String(initialSeedDisplay) }));
-    }
-  }
-
-  const entryMonth = toYearMonth(form.entryDate);
-
-  const { processingStep, runAnimation, reset: resetProcessing } = useProcessingAnimation();
-  const { data: limits } = usePortfolioLimits();
-
-  const { data: viewAvailability, isFetching: viewLoading, isPending: viewInitialLoading } = useQuery({
-    queryKey: ['marketAvailability', target.assetType, target.assetCode, viewMonth],
-    queryFn: () => unifiedMarketService.getMonthlyAvailability(target.assetType, target.assetCode, viewMonth),
-    enabled: Boolean(target.assetType && target.assetCode && viewMonth),
-    staleTime: ONE_HOUR_MS,
-    placeholderData: (prev) => prev,
-  });
-
-  const entryLoading = viewLoading;
-  const viewPrices = useMemo(() => buildPriceIndex(viewAvailability), [viewAvailability]);
-  const highlightedDates = useMemo(() => new Set(viewPrices.keys()), [viewPrices]);
-  const suggestedPriceTry = entryMonth === viewMonth ? viewPrices.get(form.entryDate) : undefined;
-  const suggestedPriceDisplay = useMemo(
-    () => tryToDisplay(suggestedPriceTry, form.entryDate),
-    [suggestedPriceTry, form.entryDate, tryToDisplay],
-  );
-  const dataAvailable = suggestedPriceDisplay != null;
-
-  const { data: exitAvailability, isFetching: exitLoading } = useQuery({
-    queryKey: ['marketAvailability', target.assetType, target.assetCode, exitViewMonth],
-    queryFn: () => unifiedMarketService.getMonthlyAvailability(target.assetType, target.assetCode, exitViewMonth),
-    enabled: Boolean(closeEnabled && target.assetType && target.assetCode && exitViewMonth),
-    staleTime: ONE_HOUR_MS,
-    placeholderData: (prev) => prev,
-  });
-  const exitPrices = useMemo(() => buildPriceIndex(exitAvailability), [exitAvailability]);
-  const exitHighlights = useMemo(() => new Set(exitPrices.keys()), [exitPrices]);
-  const exitSuggestedTry = toYearMonth(exitDate) === exitViewMonth ? exitPrices.get(exitDate) : undefined;
-  const exitSuggestedDisplay = useMemo(
-    () => tryToDisplay(exitSuggestedTry, exitDate),
-    [exitSuggestedTry, exitDate, tryToDisplay],
-  );
-  const [exitSyncKey, setExitSyncKey] = useState(null);
-  const eKey = (!closeEnabled || exitPriceTouched) ? null : `${exitDate}|${exitSuggestedDisplay ?? 'none'}`;
-  if (eKey !== null && eKey !== exitSyncKey) {
-    setExitSyncKey(eKey);
-    if (exitSuggestedDisplay != null) setExitPrice(String(exitSuggestedDisplay));
-  }
-
-
-  const addMutation = useAddPosition(portfolioId);
-  const updateMutation = useUpdatePosition(portfolioId);
-
-  const { data: existingMatches } = usePortfolioPositions(
-    !isEdit && portfolioId ? portfolioId : null,
-    !isEdit ? { search: target.assetCode, size: 50 } : {},
-  );
-  const previouslySoldCount = useMemo(() => {
-    if (isEdit || !existingMatches?.content) return 0;
-    return existingMatches.content.filter(
-      (p) => p.assetType === target.assetType
-        && p.assetCode?.toUpperCase() === target.assetCode?.toUpperCase()
-        && !!p.exitDate,
-    ).length;
-  }, [isEdit, existingMatches, target.assetType, target.assetCode]);
-
-  const [lastSyncedKey, setLastSyncedKey] = useState(null);
-  const syncKey = entryLoading || priceTouched
-    ? null
-    : `${form.entryDate}|${suggestedPriceDisplay ?? 'none'}|${inputCurrency}`;
-  if (syncKey !== null && syncKey !== lastSyncedKey) {
-    setLastSyncedKey(syncKey);
-    if (suggestedPriceDisplay != null) {
-      setForm((prev) => ({ ...prev, entryPrice: String(suggestedPriceDisplay) }));
-    } else if (form.entryDate !== todayIso) {
-      setForm((prev) => prev.entryPrice ? { ...prev, entryPrice: '' } : prev);
-    }
-  }
-
-  const totalCostTry = useMemo(() => {
-    const q = Number(form.quantity);
-    const priceTry = displayToTry(form.entryPrice, form.entryDate);
-    return q > 0 && priceTry != null && priceTry > 0 ? q * priceTry : null;
-  }, [form.quantity, form.entryPrice, form.entryDate, displayToTry]);
-
-  const handleDateChange = (iso) => {
-    setForm((prev) => ({ ...prev, entryDate: iso }));
-    setPriceTouched(false);
-    setError(null);
-  };
-
-  const handlePriceChange = (e) => {
-    setForm((prev) => ({ ...prev, entryPrice: e.target.value }));
-    setPriceTouched(true);
-    setError(null);
-  };
-
-  const handleQuantityChange = (e) => {
-    const raw = e.target.value;
-    const value = isFractional ? raw : raw.replace(/[.,]/g, '');
-    setForm((prev) => ({ ...prev, quantity: value }));
-    setError(null);
-  };
-
-  const useSuggestedPrice = () => {
-    if (suggestedPriceDisplay == null) return;
-    setForm((prev) => ({ ...prev, entryPrice: String(suggestedPriceDisplay) }));
-    setPriceTouched(false);
-  };
-
-  const validate = () => {
-    if (!form.entryDate) return t('positionForm.errors.dateRequired');
-    if (!form.entryPrice || Number(form.entryPrice) <= 0) return t('positionForm.errors.priceInvalid');
-    const qty = Number(form.quantity);
-    if (!qty || qty <= 0) return t('positionForm.errors.quantityInvalid');
-    if (!isFractional && !Number.isInteger(qty)) return t('positionForm.errors.quantityInteger');
-    if (closeEnabled) {
-      if (!exitDate) return t('positionForm.errors.exitDateRequired', { defaultValue: 'Çıkış tarihi gerekli' });
-      if (!exitPrice || Number(exitPrice) <= 0) return t('positionForm.errors.exitPriceInvalid', { defaultValue: 'Çıkış fiyatı geçersiz' });
-      if (new Date(exitDate) < new Date(form.entryDate)) {
-        return t('positionForm.errors.exitBeforeEntry', { defaultValue: 'Çıkış tarihi giriş tarihinden önce olamaz' });
-      }
-    }
-    return null;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-    setPhase('confirm');
-  };
-
-  const handleConfirm = async () => {
-    setError(null);
-    setPhase('processing');
-    const entryPriceTry = displayToTry(form.entryPrice, form.entryDate);
-    if (entryPriceTry == null || entryPriceTry <= 0) {
-      setError(t('positionForm.errors.priceInvalid'));
-      setPhase('form');
-      return;
-    }
-    const exitPriceTry = closeEnabled && exitPrice ? displayToTry(exitPrice, exitDate) : null;
-    if (closeEnabled && (exitPriceTry == null || exitPriceTry <= 0)) {
-      setError(t('positionForm.errors.exitPriceInvalid', { defaultValue: 'Çıkış fiyatı geçersiz' }));
-      setPhase('form');
-      return;
-    }
-    const payload = {
-      assetType: target.assetType,
-      assetCode: target.assetCode,
-      quantity: Number(form.quantity),
-      entryDate: dateInputToIso(form.entryDate),
-      entryPrice: entryPriceTry,
-      exitDate: closeEnabled ? dateInputToIso(exitDate) : null,
-      exitPrice: closeEnabled ? exitPriceTry : null,
-    };
-    const mutate = isEdit
-      ? () => updateMutation.mutateAsync({ positionId: position.id, payload })
-      : () => addMutation.mutateAsync(payload);
-    try {
-      await Promise.all([mutate(), runAnimation(processingSteps)]);
-      setPhase('success');
-      setTimeout(() => { onComplete?.(); onClose(); }, SUCCESS_HOLD_MS);
-    } catch (err) {
-      resetProcessing();
-      setError(err?.response?.data?.message || (isEdit ? t('positionForm.errors.updateFailed') : t('positionForm.errors.addFailed')));
-      setPhase('form');
-    }
-  };
+  const f = usePositionForm({ mode, portfolioId, asset, position, onClose, onComplete });
+  const {
+    target, isFractional, isEdit, inputCurrency, processingSteps, processingStep,
+    form, error, phase, priceTouched, limits, highlightedDates, viewInitialLoading,
+    entryLoading, dataAvailable, suggestedPriceDisplay,
+    closeEnabled, exitDate, exitPrice, exitHighlights, exitLoading, totalCostTry,
+    setViewMonth, setCloseEnabled, setExitDate, setExitPrice, setExitPriceTouched,
+    setExitViewMonth, setError, setPhase,
+    handleDateChange, handlePriceChange, handleQuantityChange, useSuggestedPrice,
+    handleSubmit, handleConfirm,
+  } = f;
 
   const displayCode = assetCodeLabel(target.assetType, target.assetCode);
   const dismissable = phase === 'form' || phase === 'confirm';
@@ -281,30 +52,9 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
               <Wallet className="h-4 w-4 text-accent" />
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <h2 className="text-base font-semibold text-fg">
-                  {isEdit ? t('positionForm.titleEdit') : t('positionForm.titleAdd')}
-                </h2>
-                {previouslySoldCount > 0 && (
-                  <span
-                    className="inline-flex items-center gap-1 rounded-md bg-warning/20 text-warning text-[10px] font-bold uppercase tracking-wide px-2 py-1 border border-warning/30"
-                    title={t('positionForm.previouslySoldHint', {
-                      count: previouslySoldCount,
-                      defaultValue: 'Bu varlığı daha önce {{count}} kez sattınız',
-                    })}
-                  >
-                    <span className="text-[8px]">●</span>
-                    {previouslySoldCount > 1
-                      ? t('positionForm.previouslySoldBadgeMulti', {
-                          count: previouslySoldCount,
-                          defaultValue: '{{count}}× DAHA ÖNCE SATILDI',
-                        })
-                      : t('positionForm.previouslySoldBadge', {
-                          defaultValue: 'DAHA ÖNCE SATILDI',
-                        })}
-                  </span>
-                )}
-              </div>
+              <h2 className="text-base font-semibold text-fg">
+                {isEdit ? t('positionForm.titleEdit') : t('positionForm.titleAdd')}
+              </h2>
               <p className="text-xs text-fg-muted">{target.assetName || displayCode}</p>
             </div>
           </div>
@@ -318,7 +68,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
         </div>
 
         {phase === 'success' && (
-          <SuccessPanel
+          <PositionFormSuccessPanel
             title={isEdit ? t('positionForm.success.titleEdit') : t('positionForm.success.titleAdd')}
             subtitle={describeAction(t, isEdit, form, displayCode, isFractional)}
           />
@@ -327,7 +77,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
         {phase === 'processing' && <ProcessingSteps steps={processingSteps} currentStep={processingStep} />}
 
         {phase === 'confirm' && (
-          <ConfirmPanel
+          <PositionFormConfirmPanel
             isEdit={isEdit}
             displayCode={displayCode}
             form={form}
@@ -484,120 +234,6 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
         )}
       </motion.div>
     </div>
-  );
-}
-
-function ConfirmPanel({ isEdit, displayCode, form, isFractional, totalCostTry, inputCurrency,
-                        closeEnabled, exitDate, exitPrice, onCancel, onConfirm }) {
-  const { t } = useTranslation();
-  const { format: money, formatCompact } = useMoney();
-  const qtyDisplay = Number(form.quantity).toLocaleString(currentLocaleTag(), { maximumFractionDigits: isFractional ? 6 : 0 });
-  const priceDisplay = money(Number(form.entryPrice), inputCurrency);
-  const dateDisplay = new Date(form.entryDate).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'long', year: 'numeric' });
-  const exitDateDisplay = closeEnabled && exitDate
-    ? new Date(exitDate).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'long', year: 'numeric' })
-    : null;
-  const exitPriceDisplay = closeEnabled && exitPrice ? money(Number(exitPrice), inputCurrency) : null;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 5 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-5 py-2"
-    >
-      <div className="flex flex-col items-center gap-3">
-        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-warning/10">
-          <AlertTriangle className="h-6 w-6 text-warning" />
-        </div>
-        <div className="text-center space-y-1">
-          <p className="text-sm font-semibold text-fg">{t('positionForm.confirm.heading')}</p>
-          <p className="text-xs text-fg-muted">
-            <span dangerouslySetInnerHTML={{
-              __html: t(isEdit ? 'positionForm.confirm.subEdit' : 'positionForm.confirm.subAdd', { code: displayCode }),
-            }} />
-          </p>
-        </div>
-      </div>
-      <div className="rounded-xl border border-border-default bg-bg-base px-4 py-3 space-y-2">
-        <Row label={t('positionForm.confirm.date')} value={dateDisplay} />
-        <Row label={t('positionForm.confirm.quantity')} value={isFractional ? qtyDisplay : t('positionForm.confirm.quantityShares', { qty: qtyDisplay })} />
-        <Row label={t('positionForm.confirm.unitPrice')} value={priceDisplay} />
-        {exitDateDisplay && (
-          <div className="border-t border-border-default pt-2 space-y-2">
-            <Row label={t('positionForm.confirm.exitDate', { defaultValue: 'Çıkış tarihi' })} value={exitDateDisplay} />
-            <Row label={t('positionForm.confirm.exitPrice', { defaultValue: 'Çıkış fiyatı' })} value={exitPriceDisplay} />
-          </div>
-        )}
-        <div className="border-t border-border-default pt-2">
-          <Row label={<span className="font-semibold">{t('positionForm.totalCost')}</span>} value={
-            <span className="font-bold text-accent truncate" title={money(totalCostTry)}>
-              {formatCompact(totalCostTry, 'TRY', 1_000_000_000)}
-            </span>
-          } />
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <button
-          onClick={onCancel}
-          className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-all cursor-pointer"
-        >
-          {t('common.cancel')}
-        </button>
-        <button
-          onClick={onConfirm}
-          className="flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer"
-        >
-          <Wallet className="h-4 w-4" />
-          {t('common.confirm')}
-        </button>
-      </div>
-    </motion.div>
-  );
-}
-
-function Row({ label, value }) {
-  return (
-    <div className="flex items-center justify-between text-xs">
-      <span className="text-fg-muted">{label}</span>
-      <span className="font-mono font-medium text-fg">{value}</span>
-    </div>
-  );
-}
-
-function SuccessPanel({ title, subtitle }) {
-  const { t } = useTranslation();
-  return (
-    <motion.div
-      initial={{ scale: 0.85, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      className="flex flex-col items-center justify-center gap-3 py-10"
-    >
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-        className="flex items-center justify-center w-16 h-16 rounded-full bg-success/15"
-      >
-        <Check className="h-8 w-8 text-success" strokeWidth={2.5} />
-      </motion.div>
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="text-center space-y-1"
-      >
-        <p className="text-sm font-semibold text-fg">{title}</p>
-        <p className="text-xs text-fg-muted">{subtitle}</p>
-      </motion.div>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.35 }}
-        className="flex items-center gap-1.5 text-[11px] text-success/70"
-      >
-        <ShieldCheck className="h-3.5 w-3.5" />
-        {t('positionForm.success.completed')}
-      </motion.div>
-    </motion.div>
   );
 }
 

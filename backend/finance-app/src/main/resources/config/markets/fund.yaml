@@ -5,3 +5,5 @@ app:
     window-sizes: 28
     auto-track-sort-order: 9999
     holiday-lookback-days: 5
+    gap-detection-lookback-days: 30
+    allocation-walkback-days: 7

@@ -12,4 +12,9 @@ public record AssetSeriesPoint(
         BigDecimal dailyPnlTry,
         BigDecimal dailyPnlPercent,
         List<PerformanceEvent> events
-) {}
+) {
+    public AssetSeriesPoint withEvents(List<PerformanceEvent> newEvents) {
+        return new AssetSeriesPoint(timestamp, unitPriceTry, marketValueTry,
+                pnlTry, dailyPnlTry, dailyPnlPercent, newEvents);
+    }
+}

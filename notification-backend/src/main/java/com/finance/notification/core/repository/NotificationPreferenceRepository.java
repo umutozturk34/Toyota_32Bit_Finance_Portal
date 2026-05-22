@@ -24,6 +24,13 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
 
     @Query("""
             SELECT p FROM NotificationPreference p
+            WHERE p.inappMacroIndicators = true
+               OR (p.emailEnabled = true AND p.emailMacroIndicators = true)
+            """)
+    Page<NotificationPreference> findMacroIndicatorsSubscribed(Pageable pageable);
+
+    @Query("""
+            SELECT p FROM NotificationPreference p
             WHERE (p.inappMarketDataUpdated = true
                    OR (p.emailEnabled = true AND p.emailMarketDataUpdated = true))
               AND p.marketSessionMarkets LIKE CONCAT('%', :market, '%')

@@ -18,6 +18,8 @@ public record NotificationPreferenceResponse(
         boolean inappNewsPublished,
         boolean emailPortfolioUpdated,
         boolean inappPortfolioUpdated,
+        boolean emailMacroIndicators,
+        boolean inappMacroIndicators,
         String marketSessionMarkets
 ) {
 }

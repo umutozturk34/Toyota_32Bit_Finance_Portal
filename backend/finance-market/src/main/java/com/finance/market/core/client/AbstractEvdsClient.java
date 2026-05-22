@@ -46,6 +46,8 @@ public abstract class AbstractEvdsClient {
         } catch (ExternalApiException e) {
             throw e;
         } catch (Exception e) {
+            log.warn("EVDS serie list fetch failed: datagroup={} cause={}: {}",
+                    datagroupCode, e.getClass().getSimpleName(), e.getMessage(), e);
             throw new ExternalApiException("EVDS", "Failed to fetch serie list for datagroup=" + datagroupCode, e);
         }
     }
@@ -72,6 +74,9 @@ public abstract class AbstractEvdsClient {
         } catch (ExternalApiException e) {
             throw e;
         } catch (Exception e) {
+            log.warn("EVDS data fetch failed: codes={} period={}..{} cause={}: {}",
+                    serieCodes.size(), startDate, endDate,
+                    e.getClass().getSimpleName(), e.getMessage(), e);
             throw new ExternalApiException("EVDS", "Failed to fetch data for codes count=" + serieCodes.size(), e);
         }
     }

@@ -53,12 +53,6 @@ function ItemRow({ item, color, onClick }) {
   );
 }
 
-/**
- * @typedef {Object} WatchlistSectionProps
- * @property {{watchlistId: number|null, watchlistName: string, items: Array<Object>}|null} data
- */
-
-/** @param {WatchlistSectionProps} props */
 function WatchlistSectionImpl({ data }) {
   const { t } = useTranslation();
   const navigate = useNavigate();

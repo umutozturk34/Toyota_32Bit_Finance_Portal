@@ -23,4 +23,6 @@ public class FundProperties {
                     + "(KHTML, like Gecko) Chrome/120.0 Safari/537.36";
     private int autoTrackSortOrder = 9999;
     private int holidayLookbackDays = 5;
+    private int gapDetectionLookbackDays = 30;
+    private int allocationWalkbackDays = 7;
 }

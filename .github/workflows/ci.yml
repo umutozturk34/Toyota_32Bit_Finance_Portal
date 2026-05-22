@@ -54,12 +54,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: ./mvnw -B -ntp verify
-      - name: Upload jacoco aggregate
+      - name: Upload jacoco per-module reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: jacoco-backend-aggregate
-          path: backend/finance-coverage/target/site/jacoco-aggregate/jacoco.xml
+          name: jacoco-backend-modules
+          path: |
+            backend/finance-app/target/site/jacoco/jacoco.xml
+            backend/finance-market/target/site/jacoco/jacoco.xml
+            backend/finance-portfolio/target/site/jacoco/jacoco.xml
+            backend/finance-user/target/site/jacoco/jacoco.xml
+            backend/finance-news/target/site/jacoco/jacoco.xml
+            backend/finance-monolith-shared/target/site/jacoco/jacoco.xml
           if-no-files-found: warn
 
   notification-test:
@@ -122,11 +128,11 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Download backend jacoco
+      - name: Download backend jacoco per-module
         uses: actions/download-artifact@v4
         with:
-          name: jacoco-backend-aggregate
-          path: backend/finance-coverage/target/site/jacoco-aggregate
+          name: jacoco-backend-modules
+          path: .
       - name: Download finance-common jacoco
         uses: actions/download-artifact@v4
         with:

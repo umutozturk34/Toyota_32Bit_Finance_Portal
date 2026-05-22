@@ -38,6 +38,7 @@ class PortfolioSummaryServiceTest {
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     @Mock private DerivativePositionRepository derivativePositionRepository;
     @Mock private com.finance.market.viop.repository.ViopCandleRepository viopCandleRepository;
+    @Mock private RealReturnCalculator realReturnCalculator;
 
     private CountingAssetPricingPort counting;
     private PortfolioResponseMapper responseMapper;
@@ -53,11 +54,13 @@ class PortfolioSummaryServiceTest {
                 viopCandleRepository, counting);
         service = new PortfolioSummaryService(counting, positionRepository, responseMapper,
                 assetSnapshotRepository, derivativePositionRepository, viopCandleRepository,
-                allocationCalculator, derivativeFormatter);
+                allocationCalculator, derivativeFormatter, realReturnCalculator);
         org.mockito.Mockito.lenient().when(derivativePositionRepository.findOpenByPortfolio(org.mockito.ArgumentMatchers.anyLong()))
                 .thenReturn(java.util.List.of());
         org.mockito.Mockito.lenient().when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc(org.mockito.ArgumentMatchers.anyString()))
                 .thenReturn(java.util.Optional.empty());
+        org.mockito.Mockito.lenient().when(realReturnCalculator.compute(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(RealReturnCalculator.RealReturnSummary.EMPTY);
     }
 
     @Test

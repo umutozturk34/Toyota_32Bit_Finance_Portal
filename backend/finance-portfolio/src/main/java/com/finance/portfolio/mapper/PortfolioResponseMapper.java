@@ -21,6 +21,7 @@ public abstract class PortfolioResponseMapper {
                                                 BigDecimal marketValueTry,
                                                 BigDecimal pnlTry,
                                                 BigDecimal pnlPercent,
+                                                BigDecimal realPnlPercent,
                                                 String assetName,
                                                 String assetImage) {
         return new PositionResponse(
@@ -40,6 +41,7 @@ public abstract class PortfolioResponseMapper {
                 marketValueTry,
                 pnlTry,
                 pnlPercent,
+                realPnlPercent,
                 null
         );
     }
@@ -48,7 +50,7 @@ public abstract class PortfolioResponseMapper {
         return toPositionResponse(pos,
                 BigDecimal.ZERO, pos.entryValue(),
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                null, null);
+                null, null, null);
     }
 
     public PortfolioSummaryResponse toSummaryResponse(BigDecimal totalValueTry,
@@ -56,10 +58,14 @@ public abstract class PortfolioResponseMapper {
                                                       BigDecimal totalPnlTry,
                                                       BigDecimal pnlPercent,
                                                       BigDecimal dailyPnlTry,
-                                                      BigDecimal dailyPnlPercent) {
+                                                      BigDecimal dailyPnlPercent,
+                                                      BigDecimal realPnlTry,
+                                                      BigDecimal realPnlPercent,
+                                                      BigDecimal cpiGrowthPercent) {
         return new PortfolioSummaryResponse(
                 totalValueTry, totalEntryValueTry, totalPnlTry, pnlPercent,
-                dailyPnlTry, dailyPnlPercent
+                dailyPnlTry, dailyPnlPercent,
+                realPnlTry, realPnlPercent, cpiGrowthPercent
         );
     }
 

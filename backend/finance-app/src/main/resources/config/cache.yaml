@@ -9,3 +9,4 @@ spring:
 app:
   cache:
     redis-default-ttl-hours: 24
+    inflation-beater-ttl-millis: 900000

@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Plus, Pencil, Trash2, Check, X, Wallet } from 'lucide-react';
+import { ChevronDown, Plus, Pencil, Trash2, Check, X, Wallet, CornerDownLeft } from 'lucide-react';
 import { useCreatePortfolio, useRenamePortfolio, useDeletePortfolio } from '../hooks/usePortfolioData';
 import { extractApiError } from '../../../shared/utils/apiError';
+import { portfolioName } from '../../../shared/utils/portfolioName';
 import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
+
+const PANEL_TRANSITION = { duration: 0.18, ease: [0.16, 1, 0.3, 1] };
 
 export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect }) {
   const { t } = useTranslation();
@@ -23,20 +26,24 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
 
   const active = portfolios.find((p) => p.id === activeId) || portfolios[0];
 
+  const closePanel = useCallback(() => {
+    setOpen(false);
+    setCreating(false);
+    setRenameTarget(null);
+    setDeleteTarget(null);
+    setError(null);
+  }, []);
+
   useEffect(() => {
     if (!open) return undefined;
     const onClickOutside = (e) => {
       if (ref.current && !ref.current.contains(e.target)) {
-        setOpen(false);
-        setCreating(false);
-        setRenameTarget(null);
-        setDeleteTarget(null);
-        setError(null);
+        closePanel();
       }
     };
     document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);
-  }, [open]);
+  }, [open, closePanel]);
 
   const submitCreate = async () => {
     if (!newName.trim()) return;
@@ -82,146 +89,234 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
       <motion.button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        whileHover={{ scale: 1.02 }}
+        whileHover={{ y: -1 }}
         whileTap={{ scale: 0.98 }}
-        className={`flex items-center gap-2.5 rounded-xl border bg-bg-elevated px-3.5 py-2 transition-all cursor-pointer ${
+        className={`group relative flex items-center gap-2.5 rounded-xl border bg-bg-elevated/80 backdrop-blur-sm px-3.5 py-2 transition-colors cursor-pointer ${
           open
-            ? 'border-accent/60 shadow-lg shadow-accent/10'
-            : 'border-border-default hover:border-accent/40'
+            ? 'border-accent/50 shadow-[0_10px_24px_-12px_rgba(99,102,241,0.45)]'
+            : 'border-border-default/80 hover:border-accent/40'
         }`}
       >
-        <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-accent/15">
+        <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-accent/25 to-accent/10 ring-1 ring-inset ring-accent/30">
           <Wallet className="h-3.5 w-3.5 text-accent" />
         </span>
-        <span className="text-sm font-semibold text-fg max-w-[160px] truncate">{active?.name || t('portfolio.headerTitle')}</span>
+        <span className="text-sm font-semibold text-fg max-w-[180px] truncate tracking-tight">
+          {active ? portfolioName(t, active) : t('portfolio.headerTitle')}
+        </span>
         {portfolios.length > 1 && (
-          <span className="text-[10px] font-mono text-fg-muted bg-bg-base px-1.5 py-0.5 rounded-md border border-border-default">
-            {portfolios.length}
+          <span className="text-[10px] font-mono tabular-nums text-fg-muted bg-bg-base/80 px-1.5 py-0.5 rounded border border-border-default/60">
+            {String(portfolios.length).padStart(2, '0')}
           </span>
         )}
-        <ChevronDown className={`h-3.5 w-3.5 text-fg-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-3.5 w-3.5 text-fg-muted transition-transform duration-200 ${open ? 'rotate-180 text-accent' : ''}`} />
       </motion.button>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: -4 }}
+            initial={{ opacity: 0, scale: 0.97, y: -6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: -4 }}
-            transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-border-default bg-bg-elevated shadow-2xl shadow-black/30 backdrop-blur-md p-2 space-y-0.5"
+            exit={{ opacity: 0, scale: 0.97, y: -6 }}
+            transition={PANEL_TRANSITION}
+            className="absolute right-0 z-50 mt-2 w-80 rounded-2xl border border-border-default bg-bg-elevated shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)] overflow-hidden"
           >
-            {portfolios.map((p) => {
-              const isActive = p.id === activeId;
-              const isRenaming = renameTarget?.id === p.id;
-              return (
-                <div key={p.id} className="rounded-lg overflow-hidden">
-                  {isRenaming ? (
-                    <div className="flex items-center gap-1.5 p-2 bg-accent/10">
+            <div className="flex items-center justify-between px-3 pt-3 pb-2">
+              <span className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-muted">
+                {t('portfolioSwitcher.heading', { defaultValue: 'Portfolios' })}
+              </span>
+              <span className="text-[10px] font-mono tabular-nums text-fg-subtle">
+                {portfolios.length} {t('portfolioSwitcher.totalAbbr', { defaultValue: 'total' })}
+              </span>
+            </div>
+
+            <div className="px-2 max-h-72 overflow-y-auto">
+              {portfolios.map((p) => {
+                const isActive = p.id === activeId;
+                const isRenaming = renameTarget?.id === p.id;
+                return (
+                  <div key={p.id} className="relative">
+                    {isRenaming ? (
+                      <motion.div
+                        initial={{ opacity: 0, x: -4 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.14 }}
+                        className="px-2.5 py-2.5 rounded-lg bg-accent/8 ring-1 ring-inset ring-accent/30 my-0.5"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            autoFocus
+                            type="text"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') submitRename();
+                              if (e.key === 'Escape') { setRenameTarget(null); setError(null); }
+                            }}
+                            maxLength={64}
+                            autoComplete="off"
+                            spellCheck={false}
+                            className="flex-1 min-w-0 rounded-md bg-bg-base/80 border border-border-default px-2.5 py-1.5 text-sm text-fg outline-none focus:border-accent focus:ring-1 focus:ring-accent/40 transition-colors"
+                          />
+                          <button
+                            onClick={submitRename}
+                            disabled={!renameValue.trim() || rename.isPending}
+                            className="flex items-center justify-center w-7 h-7 rounded-md text-success bg-success/15 hover:bg-success/25 transition border-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            aria-label={t('common.save', { defaultValue: 'Kaydet' })}
+                          >
+                            <Check className="h-3.5 w-3.5 translate-x-[1px]" />
+                          </button>
+                          <button
+                            onClick={() => { setRenameTarget(null); setError(null); }}
+                            className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted bg-bg-base/80 hover:bg-surface hover:text-fg transition border-none cursor-pointer"
+                            aria-label={t('common.cancel')}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-2 px-0.5 text-[10px] text-fg-subtle font-mono">
+                          <CornerDownLeft className="h-3 w-3" />
+                          <span>{t('portfolioSwitcher.enterHint', { defaultValue: 'enter to save' })}</span>
+                          <span className="text-fg-subtle/50">·</span>
+                          <span>{t('portfolioSwitcher.escHint', { defaultValue: 'esc to cancel' })}</span>
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <div
+                        className={`group/item relative flex items-center gap-2 pl-3 pr-2 py-2 rounded-lg my-0.5 transition-colors ${
+                          isActive ? 'bg-accent/8' : 'hover:bg-surface/60'
+                        }`}
+                      >
+                        {isActive && (
+                          <span className="absolute left-0 top-2 bottom-2 w-[2px] rounded-full bg-gradient-to-b from-accent via-accent to-accent/40" />
+                        )}
+                        <button
+                          onClick={() => { onSelect?.(p.id); closePanel(); }}
+                          className="flex-1 min-w-0 text-left bg-transparent border-none cursor-pointer flex items-center gap-2.5"
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${
+                              isActive ? 'bg-accent shadow-[0_0_8px] shadow-accent/70' : 'bg-fg-muted/30 group-hover/item:bg-fg-muted/60'
+                            }`}
+                          />
+                          <span className={`text-sm truncate ${isActive ? 'font-semibold text-fg' : 'font-medium text-fg/85'}`}>
+                            {portfolioName(t, p)}
+                          </span>
+                        </button>
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setRenameTarget(p); setRenameValue(p.name); setError(null); }}
+                            className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-accent hover:bg-accent/10 transition border-none cursor-pointer bg-transparent"
+                            aria-label={t('common.edit')}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          {portfolios.length > 1 && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setDeleteTarget(p); setError(null); }}
+                              className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-danger hover:bg-danger/10 transition border-none cursor-pointer bg-transparent"
+                              aria-label={t('common.delete')}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="border-t border-border-default/60 mx-2 mt-1" />
+
+            <div className="p-2">
+              <AnimatePresence mode="wait" initial={false}>
+                {creating ? (
+                  <motion.div
+                    key="creating"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    transition={{ duration: 0.14 }}
+                    className="px-2.5 py-2.5 rounded-lg bg-accent/8 ring-1 ring-inset ring-accent/30"
+                  >
+                    <div className="flex items-center gap-1.5">
                       <input
                         autoFocus
                         type="text"
-                        value={renameValue}
-                        onChange={(e) => setRenameValue(e.target.value)}
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        placeholder={t('portfolioSwitcher.namePlaceholder', { defaultValue: 'Portföy adı' })}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') submitRename();
-                          if (e.key === 'Escape') { setRenameTarget(null); setError(null); }
+                          if (e.key === 'Enter') submitCreate();
+                          if (e.key === 'Escape') { setCreating(false); setNewName(''); setError(null); }
                         }}
-                        className="flex-1 rounded bg-bg-base border border-border-default px-2 py-1 text-sm text-fg outline-none focus:ring-1 focus:ring-accent/50"
+                        maxLength={64}
+                        className="flex-1 min-w-0 rounded-md bg-bg-base/80 border border-border-default px-2.5 py-1.5 text-sm text-fg placeholder:text-fg-subtle outline-none focus:border-accent focus:ring-1 focus:ring-accent/40 transition-colors"
                       />
                       <button
-                        onClick={submitRename}
-                        disabled={!renameValue.trim() || rename.isPending}
-                        className="flex items-center justify-center w-6 h-6 rounded text-success bg-success/15 hover:bg-success/25 transition border-none cursor-pointer disabled:opacity-40"
+                        onClick={submitCreate}
+                        disabled={!newName.trim() || create.isPending}
+                        className="flex items-center justify-center w-7 h-7 rounded-md text-success bg-success/15 hover:bg-success/25 transition border-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                         aria-label={t('common.save', { defaultValue: 'Kaydet' })}
                       >
-                        <Check className="h-3 w-3" />
+                        <Check className="h-3.5 w-3.5" />
                       </button>
                       <button
-                        onClick={() => { setRenameTarget(null); setError(null); }}
-                        className="flex items-center justify-center w-6 h-6 rounded text-fg-muted bg-bg-base hover:bg-surface transition border-none cursor-pointer"
+                        onClick={() => { setCreating(false); setNewName(''); setError(null); }}
+                        className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted bg-bg-base/80 hover:bg-surface hover:text-fg transition border-none cursor-pointer"
                         aria-label={t('common.cancel')}
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                  ) : (
-                    <div className={`flex items-center gap-1.5 px-2 py-1.5 group hover:bg-surface/60 transition-colors ${isActive ? 'bg-accent/10' : ''}`}>
-                      <button
-                        onClick={() => { onSelect?.(p.id); setOpen(false); }}
-                        className="flex-1 text-left text-sm font-medium text-fg cursor-pointer bg-transparent border-none flex items-center gap-2"
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-accent' : 'bg-fg-muted/30'}`} />
-                        <span className="truncate">{p.name}</span>
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setRenameTarget(p); setRenameValue(p.name); setError(null); }}
-                        className="flex items-center justify-center w-6 h-6 rounded text-fg-muted hover:text-accent hover:bg-accent/10 opacity-0 group-hover:opacity-100 transition border-none cursor-pointer bg-transparent"
-                        aria-label={t('common.edit')}
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </button>
-                      {portfolios.length > 1 && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setDeleteTarget(p); setError(null); }}
-                          className="flex items-center justify-center w-6 h-6 rounded text-fg-muted hover:text-danger hover:bg-danger/10 opacity-0 group-hover:opacity-100 transition border-none cursor-pointer bg-transparent"
-                          aria-label={t('common.delete')}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      )}
+                    <div className="flex items-center gap-1.5 mt-2 px-0.5 text-[10px] text-fg-subtle font-mono">
+                      <CornerDownLeft className="h-3 w-3" />
+                      <span>{t('portfolioSwitcher.enterHint', { defaultValue: 'enter to save' })}</span>
+                      <span className="text-fg-subtle/50">·</span>
+                      <span>{t('portfolioSwitcher.escHint', { defaultValue: 'esc to cancel' })}</span>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-
-            <div className="border-t border-border-default pt-1.5 mt-1.5">
-              {creating ? (
-                <div className="flex items-center gap-1.5 p-2 bg-accent/10 rounded-lg">
-                  <input
-                    autoFocus
-                    type="text"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    placeholder={t('portfolioSwitcher.namePlaceholder', { defaultValue: 'Portföy adı' })}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') submitCreate();
-                      if (e.key === 'Escape') { setCreating(false); setNewName(''); setError(null); }
-                    }}
-                    className="flex-1 rounded bg-bg-base border border-border-default px-2 py-1 text-sm text-fg outline-none focus:ring-1 focus:ring-accent/50"
-                  />
-                  <button
-                    onClick={submitCreate}
-                    disabled={!newName.trim() || create.isPending}
-                    className="flex items-center justify-center w-6 h-6 rounded text-success bg-success/15 hover:bg-success/25 transition border-none cursor-pointer disabled:opacity-40"
-                    aria-label={t('common.save', { defaultValue: 'Kaydet' })}
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    key="cta"
+                    type="button"
+                    onClick={() => { setCreating(true); setError(null); }}
+                    whileHover={{ y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.14 }}
+                    className="group/cta w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-accent bg-transparent border border-dashed border-accent/35 hover:border-accent hover:bg-accent/10 transition-all cursor-pointer"
                   >
-                    <Check className="h-3 w-3" />
-                  </button>
-                  <button
-                    onClick={() => { setCreating(false); setNewName(''); setError(null); }}
-                    className="flex items-center justify-center w-6 h-6 rounded text-fg-muted bg-bg-base hover:bg-surface transition border-none cursor-pointer"
-                    aria-label={t('common.cancel')}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => { setCreating(true); setError(null); }}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-accent hover:bg-accent/10 transition cursor-pointer bg-transparent border-none border border-dashed border-accent/30"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {t('portfolioSwitcher.newPortfolio', { defaultValue: 'Yeni portföy' })}
-                </button>
-              )}
+                    <span className="flex items-center gap-2">
+                      <span className="flex items-center justify-center w-5 h-5 rounded-md bg-accent/20 group-hover/cta:bg-accent/30 transition-colors">
+                        <Plus className="h-3 w-3" />
+                      </span>
+                      {t('portfolioSwitcher.newPortfolio', { defaultValue: 'Yeni portföy' })}
+                    </span>
+                    <span className="text-[10px] font-mono text-fg-subtle tabular-nums group-hover/cta:text-accent/70 transition-colors">
+                      N
+                    </span>
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </div>
 
-            {error && (
-              <div className="text-[10px] text-danger bg-danger/10 px-2 py-1 rounded">{error}</div>
-            )}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.18 }}
+                  className="mx-2 mb-2 text-xs text-danger bg-danger/10 border border-danger/20 px-3 py-2 rounded-lg"
+                >
+                  {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>

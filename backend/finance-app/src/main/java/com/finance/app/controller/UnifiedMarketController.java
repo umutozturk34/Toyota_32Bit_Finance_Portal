@@ -33,7 +33,7 @@ public class UnifiedMarketController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<PagedResponse<MarketAssetResponse>> getMarketAssets(
-            @Parameter(description = "Instrument types (comma-separated)", schema = @Schema(allowableValues = {"STOCK", "CRYPTO", "FOREX", "FUND", "COMMODITY"}))
+            @Parameter(description = "Instrument types (comma-separated)", schema = @Schema(allowableValues = {"STOCK", "CRYPTO", "FOREX", "FUND", "COMMODITY", "VIOP", "BOND", "MACRO_DEPOSIT", "MACRO_INFLATION", "MACRO_RATE"}))
             @RequestParam(required = false) String type,
             @Parameter(description = "Single asset code lookup", example = "THYAO.IS")
             @RequestParam(required = false) String code,

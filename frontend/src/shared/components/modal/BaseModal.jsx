@@ -8,22 +8,12 @@ const SIZE_CLASSES = {
   lg: 'max-w-lg',
   xl: 'max-w-xl',
   '2xl': 'max-w-2xl',
+  '3xl': 'max-w-3xl',
+  '4xl': 'max-w-4xl',
+  '5xl': 'max-w-5xl',
+  '6xl': 'max-w-6xl',
 };
 
-/**
- * @typedef {Object} BaseModalProps
- * @property {boolean} isOpen
- * @property {() => void} onClose
- * @property {React.ComponentType} [icon]
- * @property {React.ReactNode} title
- * @property {React.ReactNode} [subtitle]
- * @property {'sm'|'md'|'lg'|'xl'|'2xl'} [size='sm']
- * @property {React.ReactNode} [footer]
- * @property {React.ReactNode} children
- * @property {string} [closeLabel='close']
- */
-
-/** @param {BaseModalProps} props */
 export default function BaseModal({
   isOpen,
   onClose,
@@ -51,10 +41,10 @@ export default function BaseModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className={`relative w-full ${SIZE_CLASSES[size] ?? SIZE_CLASSES.sm} rounded-2xl border border-border-default modal-panel p-6 overflow-visible`}
+            className={`relative w-full ${SIZE_CLASSES[size] ?? SIZE_CLASSES.sm} max-h-[90vh] rounded-2xl border border-border-default modal-panel p-4 sm:p-6 overflow-hidden flex flex-col`}
           >
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-4 sm:mb-5 shrink-0">
               <div className="flex items-center gap-3 min-w-0">
                 {Icon && (
                   <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10 shrink-0">
@@ -75,8 +65,8 @@ export default function BaseModal({
                 onClick={onClose}
               />
             </div>
-            <div>{children}</div>
-            {footer && <div className="mt-5">{footer}</div>}
+            <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">{children}</div>
+            {footer && <div className="mt-4 sm:mt-5 shrink-0">{footer}</div>}
           </motion.div>
         </div>
       )}

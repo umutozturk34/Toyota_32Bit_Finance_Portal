@@ -18,7 +18,7 @@ class IsyatirimSessionManagerTest {
 
     private ViopProperties defaults() {
         return new ViopProperties(null, null, null, null, null, null, null, null,
-                Duration.ofMinutes(30), Duration.ofSeconds(5));
+                Duration.ofMinutes(30), Duration.ofSeconds(5), null);
     }
 
     private ExchangeFunction respondWithCookies(List<String> setCookies) {

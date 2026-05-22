@@ -36,6 +36,7 @@ import ViopPage from './features/viop/ViopPage';
 import ViopDetail from './features/viop/ViopDetail';
 import Portfolio from './features/portfolio';
 import WatchPage from './features/watch/WatchPage';
+import AnalyticsPage from './features/analytics/AnalyticsPage';
 import AdminTrackedAssetsPage from './features/admin/components/AdminTrackedAssetsPage';
 import AdminUsersPage from './features/admin/components/AdminUsersPage';
 
@@ -86,6 +87,7 @@ const router = createBrowserRouter(
         <Route path="admin/users" element={<AdminUsersPage />} />
         <Route path="portfolio" element={<Portfolio />} />
         <Route path="watch" element={<WatchPage />} />
+        <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Route>

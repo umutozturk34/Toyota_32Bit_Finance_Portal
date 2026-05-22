@@ -48,5 +48,3 @@ export const ASSET_TYPE_TABS = [
   { id: 'VIOP' },
   { id: 'CASH' },
 ];
-
-export const PORTFOLIO_RANGE_IDS = ['1M', '3M', '6M', '1Y', '5Y', 'ALL'];

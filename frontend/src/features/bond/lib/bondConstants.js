@@ -1,5 +1,3 @@
-export const BOND_TYPES = ['DISCOUNTED', 'FIXED_COUPON', 'FLOATING_TLREF', 'FLOATING_CPI', 'FLOATING_AUCTION', 'SUKUK_FIXED', 'SUKUK_CPI'];
-
 export const BOND_TYPE_COLORS = {
     DISCOUNTED: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     FIXED_COUPON: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',

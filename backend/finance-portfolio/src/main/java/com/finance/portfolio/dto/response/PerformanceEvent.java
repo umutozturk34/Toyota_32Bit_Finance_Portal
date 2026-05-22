@@ -8,5 +8,6 @@ public record PerformanceEvent(
         PerformanceEventType type,
         String assetType,
         String assetCode,
+        BigDecimal quantity,
         BigDecimal valueTry
 ) {}

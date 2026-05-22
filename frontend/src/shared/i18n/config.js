@@ -4,15 +4,14 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import tr from './tr.json';
 import en from './en.json';
 
-export const STORAGE_KEY = 'finance-language';
+const STORAGE_KEY = 'finance-language';
 
-export function persistLanguage(lang) {
+function persistLanguage(lang) {
   try {
     localStorage.setItem(STORAGE_KEY, lang);
     document.cookie = `${STORAGE_KEY}=${lang};path=/;max-age=31536000;SameSite=Lax`;
     document.cookie = `KEYCLOAK_LOCALE=${lang};path=/;max-age=31536000;SameSite=Lax`;
   } catch {
-    /* storage unavailable */
   }
 }
 

@@ -257,7 +257,7 @@ export function useInvalidatePortfolio() {
   }, [queryClient]);
 }
 
-export function useInvalidateAfterBackfill() {
+function useInvalidateAfterBackfill() {
   const queryClient = useQueryClient();
   return useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['portfolioView'] });

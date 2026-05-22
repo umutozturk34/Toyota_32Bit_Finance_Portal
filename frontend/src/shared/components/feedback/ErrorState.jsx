@@ -5,16 +5,6 @@ import Button from '../buttons/Button';
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
 
-/**
- * @typedef {Object} ErrorStateProps
- * @property {React.ReactNode} message
- * @property {() => void} [onRetry]
- * @property {boolean} [retryLoading]
- * @property {boolean} [fullscreen=true]
- * @property {string} [className]
- */
-
-/** @param {ErrorStateProps} props */
 export default function ErrorState({ message, onRetry, retryLoading = false, fullscreen = true, className }) {
     const { t } = useTranslation();
     return (

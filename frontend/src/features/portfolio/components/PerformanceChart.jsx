@@ -76,11 +76,16 @@ function buildTooltipHtml(point, palette, money) {
   const eventRows = lotEvents.map((ev) => {
     const meta = POSITION_EVENT_META[ev.type];
     const codeLabel = ev.assetCode || i18n.t(`assets.labels.${ev.assetType}`, { defaultValue: ev.assetType });
+    const qty = ev.quantity != null ? Number(ev.quantity) : null;
+    const qtyText = qty != null && qty > 0
+      ? `<span style="font-size:10px;font-family:ui-monospace,monospace;color:${muted}">×${qty.toLocaleString(localeTag, { maximumFractionDigits: 8 })}</span>`
+      : '';
     return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 0">
       <div style="display:flex;align-items:center;gap:5px">
         <span style="width:5px;height:5px;border-radius:50%;background:${meta.color};display:inline-block"></span>
         <span style="font-size:10px;font-weight:600;color:${meta.color}">${i18n.t(meta.labelKey)}</span>
         <span style="font-size:10px;color:${muted}">${codeLabel}</span>
+        ${qtyText}
       </div>
       <span style="font-size:10px;font-family:ui-monospace,monospace;color:${fg};opacity:0.8">${money(ev.valueTry)}</span>
     </div>`;
@@ -271,9 +276,6 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
   const backfill = backfillProp ?? ownBackfill;
   const backfillElapsed = useElapsedSeconds(backfill.since);
 
-  // Portfolio aggregates are TRY-canonical; for ORIGINAL preference the chart still shows TRY
-  // (mixing per-asset natural currencies in a portfolio total makes no sense). Any non-ISO code
-  // would throw a RangeError in Intl.NumberFormat — guard with a SUPPORTED fallback.
   const safeCurrency = currency === 'USD' || currency === 'EUR' ? currency : 'TRY';
   const money = useCallback((value) => {
     if (value == null) return 'N/A';

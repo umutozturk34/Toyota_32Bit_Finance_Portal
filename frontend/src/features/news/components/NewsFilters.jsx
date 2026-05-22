@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { STALE } from '../../../shared/constants/query';
 import { useTranslation } from 'react-i18next';
-import { Newspaper } from 'lucide-react';
 import { newsService } from '../services/newsService';
 import { CATEGORY_CONFIG } from '../lib/newsConfig';
 import FilterTabs from '../../../shared/components/form/FilterTabs';

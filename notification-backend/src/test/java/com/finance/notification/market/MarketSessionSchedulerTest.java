@@ -49,7 +49,7 @@ class MarketSessionSchedulerTest {
     }
 
     private MarketSessionTracker freshTracker() {
-        return new MarketSessionTracker(new NotificationCacheProperties(50_000L, 64L));
+        return new MarketSessionTracker(new NotificationCacheProperties(50_000L, 64L, null, null, null, null));
     }
 
     private void seedTracker(MarketSessionTracker tracker, MarketSession baseline) {

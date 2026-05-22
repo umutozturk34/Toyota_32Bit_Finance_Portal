@@ -9,6 +9,12 @@ const PALETTE = [
   '#facc15', '#22c55e',
 ];
 
+const VIEW = 100;
+const CENTER = VIEW / 2;
+const OUTER_RADIUS = 42;
+const HOVER_RADIUS = 44.5;
+const INNER_RADIUS = 26;
+const SLICE_GAP_DEG = 0.6;
 
 function classify(rows) {
   if (!rows || rows.length === 0) return [];
@@ -23,13 +29,25 @@ function classify(rows) {
   return top;
 }
 
+function arcPath(startDeg, endDeg, radius) {
+  const a1 = (startDeg - 90) * Math.PI / 180;
+  const a2 = (endDeg - 90) * Math.PI / 180;
+  const x1 = CENTER + radius * Math.cos(a1);
+  const y1 = CENTER + radius * Math.sin(a1);
+  const x2 = CENTER + radius * Math.cos(a2);
+  const y2 = CENTER + radius * Math.sin(a2);
+  const ix1 = CENTER + INNER_RADIUS * Math.cos(a1);
+  const iy1 = CENTER + INNER_RADIUS * Math.sin(a1);
+  const ix2 = CENTER + INNER_RADIUS * Math.cos(a2);
+  const iy2 = CENTER + INNER_RADIUS * Math.sin(a2);
+  const largeArc = endDeg - startDeg > 180 ? 1 : 0;
+  return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${INNER_RADIUS} ${INNER_RADIUS} 0 ${largeArc} 0 ${ix1} ${iy1} Z`;
+}
+
 export default function AllocationPie({ allocations }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const [hovered, setHovered] = useState(null);
-  const centerFill = isDark ? '#0a0a0b' : '#ffffff';
-  const centerSubtle = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(15,23,42,0.55)';
-  const centerLabel = isDark ? '#ffffff' : '#0f172a';
   const data = useMemo(() => classify(allocations), [allocations]);
   const arcs = useMemo(() => {
     if (data.length === 0) return [];
@@ -49,6 +67,12 @@ export default function AllocationPie({ allocations }) {
       return acc;
     }, []);
   }, [data]);
+
+  const labelFor = (assetClass) =>
+    assetClass === '__other__'
+      ? t('marketDetail.fund.allocationOther')
+      : t(`assetClass.${assetClass}`, { defaultValue: assetClass.toUpperCase() });
+
   if (arcs.length === 0) {
     return (
       <Card padding="md" radius="xl">
@@ -57,108 +81,116 @@ export default function AllocationPie({ allocations }) {
       </Card>
     );
   }
+
+  const hoveredArc = hovered != null ? arcs.find(a => a.assetClass === hovered) : null;
+
   return (
     <Card padding="md" radius="xl">
       <h3 className="text-sm font-semibold text-fg mb-3">{t('marketDetail.fund.allocationTitle')}</h3>
-      <div className="flex justify-center mb-3" onMouseLeave={() => setHovered(null)}>
-        <svg viewBox="0 0 100 100" className="w-40 h-40" style={{ filter: isDark ? 'drop-shadow(0 4px 12px rgba(94, 106, 210, 0.15))' : 'drop-shadow(0 4px 12px rgba(15, 23, 42, 0.08))' }}>
-          {arcs.length === 1 ? (() => {
-            const arc = arcs[0];
-            const isHovered = hovered === arc.assetClass;
-            const radius = isHovered ? 44 : 41;
-            return (
-              <circle
-                cx="50" cy="50" r={radius}
-                fill={arc.color}
-                stroke={centerFill}
-                strokeWidth="0.6"
-                style={{ transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', cursor: 'pointer' }}
-                onMouseEnter={() => setHovered(arc.assetClass)}
-              />
-            );
-          })() : arcs.map((arc, i) => {
-            const isHovered = hovered === arc.assetClass;
-            const isDimmed = hovered !== null && !isHovered;
-            const a1 = (arc.start - 90) * Math.PI / 180;
-            const a2 = (arc.end - 90) * Math.PI / 180;
-            const radius = isHovered ? 44 : 41;
-            const x1 = 50 + radius * Math.cos(a1);
-            const y1 = 50 + radius * Math.sin(a1);
-            const x2 = 50 + radius * Math.cos(a2);
-            const y2 = 50 + radius * Math.sin(a2);
-            const largeArc = arc.end - arc.start > 180 ? 1 : 0;
-            return (
-              <path
-                key={i}
-                d={`M 50 50 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`}
-                fill={arc.color}
-                fillOpacity={isDimmed ? 0.22 : 1}
-                stroke={centerFill}
-                strokeWidth="0.6"
-                style={{ transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', cursor: 'pointer' }}
-                onMouseEnter={() => setHovered(arc.assetClass)}
-              />
-            );
-          })}
-          <circle cx="50" cy="50" r="24" fill={centerFill} pointerEvents="none" />
-          {hovered !== null ? (() => {
-            const arc = arcs.find(a => a.assetClass === hovered);
-            if (!arc) return null;
-            return (
-              <g pointerEvents="none">
-                <text x="50" y="47" textAnchor="middle" dominantBaseline="central"
-                      fontSize="11" fontWeight="700" fill={centerLabel}>
-                  %{arc.pct}
-                </text>
-                <text x="50" y="56" textAnchor="middle" dominantBaseline="central"
-                      fontSize="3.2" fill={centerSubtle} style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {arc.assetClass === '__other__'
-                    ? t('marketDetail.fund.allocationOther')
-                    : t(`assetClass.${arc.assetClass}`, { defaultValue: arc.assetClass.toUpperCase() })}
-                </text>
-              </g>
-            );
-          })() : (
-            <g pointerEvents="none">
-              <text x="50" y="47" textAnchor="middle" dominantBaseline="central"
-                    fontSize="3.2" fill={centerSubtle} style={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                {arcs.length} {t('marketDetail.fund.allocationAssetCountLabel')}
-              </text>
-              <text x="50" y="55" textAnchor="middle" dominantBaseline="central"
-                    fontSize="8" fontWeight="600" fill={centerLabel}>
-                %100
-              </text>
-            </g>
-          )}
-        </svg>
+      <div className="flex justify-center mb-4" onMouseLeave={() => setHovered(null)}>
+        <div className="relative w-44 h-44">
+          <svg
+            viewBox={`0 0 ${VIEW} ${VIEW}`}
+            className="w-full h-full"
+            style={{ filter: isDark ? 'drop-shadow(0 6px 18px rgba(94,106,210,0.18))' : 'drop-shadow(0 6px 18px rgba(15,23,42,0.10))' }}
+          >
+            <defs>
+              {arcs.map((arc, i) => (
+                <radialGradient key={i} id={`alloc-grad-${i}`} cx="50%" cy="50%" r="55%">
+                  <stop offset="55%" stopColor={arc.color} stopOpacity="1" />
+                  <stop offset="100%" stopColor={arc.color} stopOpacity="0.78" />
+                </radialGradient>
+              ))}
+            </defs>
+            {arcs.length === 1 ? (() => {
+              const arc = arcs[0];
+              const isHovered = hovered === arc.assetClass;
+              const r = isHovered ? HOVER_RADIUS : OUTER_RADIUS;
+              return (
+                <g
+                  style={{ cursor: 'pointer' }}
+                  onMouseEnter={() => setHovered(arc.assetClass)}
+                >
+                  <circle
+                    cx={CENTER} cy={CENTER} r={r}
+                    fill={`url(#alloc-grad-0)`}
+                    style={{ transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)' }}
+                  />
+                  <circle cx={CENTER} cy={CENTER} r={INNER_RADIUS} fill={isDark ? '#0a0a0b' : '#ffffff'} />
+                </g>
+              );
+            })() : arcs.map((arc, i) => {
+              const isHovered = hovered === arc.assetClass;
+              const isDimmed = hovered !== null && !isHovered;
+              const radius = isHovered ? HOVER_RADIUS : OUTER_RADIUS;
+              const gap = arc.end - arc.start > SLICE_GAP_DEG * 2 ? SLICE_GAP_DEG : 0;
+              const d = arcPath(arc.start + gap / 2, arc.end - gap / 2, radius);
+              return (
+                <path
+                  key={i}
+                  d={d}
+                  fill={`url(#alloc-grad-${i})`}
+                  fillOpacity={isDimmed ? 0.28 : 1}
+                  style={{ transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)', cursor: 'pointer' }}
+                  onMouseEnter={() => setHovered(arc.assetClass)}
+                />
+              );
+            })}
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="flex flex-col items-center justify-center w-[55%] text-center">
+              {hoveredArc ? (
+                <>
+                  <span className="font-mono tabular-nums font-bold text-fg text-2xl leading-none">
+                    {hoveredArc.pct}<span className="text-fg-muted text-base align-top ml-0.5">%</span>
+                  </span>
+                  <span
+                    className="mt-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-fg-muted leading-tight line-clamp-2"
+                    title={labelFor(hoveredArc.assetClass)}
+                  >
+                    {labelFor(hoveredArc.assetClass)}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-fg-muted">
+                    {arcs.length} {t('marketDetail.fund.allocationAssetCountLabel')}
+                  </span>
+                  <span className="mt-1 font-mono tabular-nums font-bold text-fg text-xl leading-none">
+                    100<span className="text-fg-muted text-sm align-top ml-0.5">%</span>
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
-      <ul className="space-y-1" onMouseLeave={() => setHovered(null)}>
+      <ul className="space-y-0.5" onMouseLeave={() => setHovered(null)}>
         {arcs.map((arc, i) => {
           const isHovered = hovered === arc.assetClass;
           return (
             <li
               key={i}
-              className={`flex items-center justify-between gap-2 text-[11px] rounded-md px-1.5 py-1 transition-colors cursor-pointer ${
-                isHovered ? 'bg-bg-base/80 ring-1 ring-border-default' : ''
+              className={`group/row flex items-center justify-between gap-2 text-[11px] rounded-md px-2 py-1.5 transition-all cursor-pointer ${
+                isHovered ? 'bg-bg-base/80 ring-1 ring-inset ring-border-default/80' : 'hover:bg-bg-base/40'
               }`}
               onMouseEnter={() => setHovered(arc.assetClass)}
             >
-              <span className="flex items-center gap-1.5 min-w-0">
+              <span className="flex items-center gap-2 min-w-0">
                 <span
-                  className="h-2 w-2 rounded-sm shrink-0 transition-transform"
+                  className="h-2.5 w-2.5 rounded-sm shrink-0 transition-transform"
                   style={{
                     backgroundColor: arc.color,
-                    transform: isHovered ? 'scale(1.4)' : 'scale(1)',
+                    transform: isHovered ? 'scale(1.25)' : 'scale(1)',
+                    boxShadow: isHovered ? `0 0 6px ${arc.color}80` : 'none',
                   }}
                 />
-                <span className={`truncate transition-colors ${isHovered ? 'text-fg font-semibold' : 'text-fg-muted'}`}>
-                  {arc.assetClass === '__other__'
-                    ? t('marketDetail.fund.allocationOther')
-                    : t(`assetClass.${arc.assetClass}`, { defaultValue: arc.assetClass.toUpperCase() })}
+                <span className={`truncate transition-colors ${isHovered ? 'text-fg font-semibold' : 'text-fg-muted group-hover/row:text-fg/85'}`}>
+                  {labelFor(arc.assetClass)}
                 </span>
               </span>
-              <span className={`font-mono shrink-0 transition-colors ${isHovered ? 'text-fg font-semibold' : 'text-fg-muted'}`}>
-                %{arc.pct}
+              <span className={`font-mono tabular-nums shrink-0 transition-colors ${isHovered ? 'text-fg font-semibold' : 'text-fg-muted'}`}>
+                {arc.pct}<span className="text-fg-subtle ml-0.5">%</span>
               </span>
             </li>
           );

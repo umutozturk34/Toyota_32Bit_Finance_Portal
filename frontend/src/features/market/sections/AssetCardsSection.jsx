@@ -21,7 +21,6 @@ function typeAbbr(type) {
   return TYPE_ABBR[type] || type;
 }
 
-/** @param {{asset: Object, index?: number, onClick: (a: Object) => void, editMode: boolean, onRemove?: (a: Object) => void}} props */
 function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
   const { t } = useTranslation();
   const { format: money } = useMoney();
@@ -99,7 +98,6 @@ function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
 
 const AssetCard = memo(AssetCardImpl);
 
-/** @param {{data: {items: Array<Object>}|null, editMode?: boolean, config?: Object, onConfigChange?: (next: Object) => void}} props */
 export default function AssetCardsSection({ data, editMode = false, config = {}, onConfigChange }) {
   const { t } = useTranslation();
   const navigate = useNavigate();

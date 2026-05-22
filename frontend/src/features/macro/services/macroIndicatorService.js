@@ -1,6 +1,6 @@
 import api from '../../../shared/services/api';
 
-const BASE = '/api/v1/macro-indicators';
+const BASE = '/macro-indicators';
 
 export const macroIndicatorService = {
   list: async ({ category, prominentOnly } = {}) => {

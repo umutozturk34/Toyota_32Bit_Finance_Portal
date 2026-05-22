@@ -9,25 +9,6 @@ const SIZE_CONFIG = {
   lg: { wrap: 'gap-3 p-14', iconBox: 'w-14 h-14 rounded-2xl', iconSize: 'h-6 w-6', title: 'text-base', message: 'text-sm', hint: 'text-xs' },
 };
 
-/**
- * @typedef {Object} EmptyStateAction
- * @property {string} label
- * @property {() => void} onClick
- * @property {React.ComponentType} [icon]
- */
-
-/**
- * @typedef {Object} EmptyStateProps
- * @property {React.ReactNode} [icon]
- * @property {React.ReactNode} [title]
- * @property {React.ReactNode} message
- * @property {React.ReactNode} [hint]
- * @property {'sm'|'md'|'lg'} [size='lg']
- * @property {EmptyStateAction} [action]
- * @property {string} [className]
- */
-
-/** @param {EmptyStateProps} props */
 export default function EmptyState({ icon, title, message, hint, size = 'lg', action, className }) {
     const config = SIZE_CONFIG[size] ?? SIZE_CONFIG.lg;
     return (

@@ -33,8 +33,6 @@ export const formatPrice = (
         minimumFractionDigits: minDecimals,
         maximumFractionDigits: maxDecimals,
     };
-    // Intl.NumberFormat throws RangeError on non-ISO codes (e.g. "ORIGINAL"). Guard so a bad
-    // upstream value falls back to plain number formatting instead of crashing the page.
     if (currency && /^[A-Z]{3}$/.test(String(currency))) {
         opts.style = 'currency';
         opts.currency = currency;
@@ -50,37 +48,6 @@ export const formatPriceTRY = (price) => {
     const num = Number(price);
     const decimals = num < 10 ? 4 : num < 1000 ? 3 : 2;
     return formatPrice(num, { currency: 'TRY', minDecimals: 2, maxDecimals: decimals });
-};
-
-export const formatPriceByCurrency = (price, currency) => {
-    if (price === null || price === undefined) return 'N/A';
-    const code = String(currency).toUpperCase() === 'USD' ? 'USD' : 'TRY';
-    const num = Number(price);
-    const decimals = num < 10 ? 4 : num < 1000 ? 3 : 2;
-    return formatPrice(num, { currency: code, minDecimals: 2, maxDecimals: decimals });
-};
-
-export const formatCompactTRY = (price) => {
-    if (price === null || price === undefined) return 'N/A';
-    if (price < 100_000) return formatPriceTRY(price);
-    return new Intl.NumberFormat(currentLocaleTag(), {
-        notation: 'compact',
-        style: 'currency',
-        currency: 'TRY',
-        maximumFractionDigits: 1,
-    }).format(price);
-};
-
-export const formatPriceCompactTRY = (price) => {
-    if (price === null || price === undefined) return 'N/A';
-    const num = Number(price);
-    if (num < 10_000) return formatPriceTRY(num);
-    return new Intl.NumberFormat(currentLocaleTag(), {
-        notation: 'compact',
-        style: 'currency',
-        currency: 'TRY',
-        maximumFractionDigits: 2,
-    }).format(num);
 };
 
 export const formatCompactNumber = (number, currency = 'USD') => {

@@ -65,11 +65,13 @@ class PortfolioBackfillServiceTest {
         lenient().when(dailySnapshotRepository.findExistingDates(any(), any(), any())).thenReturn(List.of());
         lenient().when(assetSnapshotRepository.findExistingDates(any(), any(), any())).thenReturn(List.of());
         lenient().when(derivativePositionRepository.findByPortfolioId(any())).thenReturn(List.of());
+        PortfolioProperties props = new PortfolioProperties();
         service = new PortfolioBackfillService(
                 portfolioRepository, positionRepository, derivativePositionRepository,
                 dailySnapshotRepository, assetSnapshotRepository,
-                historicalPricingPort, assetPricingPort, calculator, new PortfolioBackfillTracker(new PortfolioProperties()),
-                transactionManager, new PortfolioProperties());
+                assetPricingPort, calculator, new PortfolioBackfillTracker(props),
+                new BackfillBatchCollector(assetSnapshotRepository, historicalPricingPort, calculator, props),
+                transactionManager, props);
     }
 
     @Test
@@ -357,7 +359,7 @@ class PortfolioBackfillServiceTest {
     }
 
     @Test
-    void shouldEmitZeroClosingSnapshot_whenAllLotsOfAssetClosedOnSameDay() {
+    void shouldEmitPreCloseAndZeroSnapshots_whenAllLotsOfAssetClosedOnSameDay() {
         LocalDate entryDay = LocalDate.now().minusDays(5);
         LocalDate closeDay = LocalDate.now().minusDays(2);
         PortfolioPosition closedLot = lot(AssetType.COMMODITY, "XAU.SPOT",
@@ -378,7 +380,14 @@ class PortfolioBackfillServiceTest {
 
         verify(calculator).buildAggregatedAssetSnapshotWithPrior(
                 eq(PORTFOLIO_ID), eq(AssetType.COMMODITY), eq("XAU.SPOT"), any(),
-                eq(closeDay.atTime(java.time.LocalTime.NOON)),
+                eq(closeDay.atStartOfDay()),
+                argThat(qty -> qty != null && qty.compareTo(new BigDecimal("10")) == 0),
+                argThat(cost -> cost != null && cost.compareTo(new BigDecimal("28000")) == 0),
+                argThat(price -> price != null && price.compareTo(new BigDecimal("3000")) == 0),
+                any());
+        verify(calculator).buildAggregatedAssetSnapshotWithPrior(
+                eq(PORTFOLIO_ID), eq(AssetType.COMMODITY), eq("XAU.SPOT"), any(),
+                eq(closeDay.atStartOfDay().plusSeconds(1)),
                 argThat(qty -> qty != null && qty.compareTo(BigDecimal.ZERO) == 0),
                 argThat(cost -> cost != null && cost.compareTo(BigDecimal.ZERO) == 0),
                 argThat(price -> price != null && price.compareTo(new BigDecimal("3000")) == 0),

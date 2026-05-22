@@ -20,16 +20,6 @@ function CornerBrackets() {
   );
 }
 
-/**
- * Terminal-HUD chip selector for the user's per-market opt-in to session
- * notifications.
- *
- * @typedef {Object} MarketSelectionChipsProps
- * @property {Set<string>} selected - market codes currently opted in (e.g. STOCK, FOREX)
- * @property {(next: Set<string>) => void} onToggle - called with the next selection set
- */
-
-/** @param {MarketSelectionChipsProps} props */
 export default function MarketSelectionChips({ selected, onToggle }) {
   const { t } = useTranslation();
   const flip = (id) => {

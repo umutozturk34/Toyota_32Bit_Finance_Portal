@@ -11,9 +11,13 @@ public final class NewsTextMatcher {
 
     private static final Locale TR = Locale.forLanguageTag("tr");
     private static final Pattern NON_WORD_SPLITTER = Pattern.compile("[^\\p{L}\\p{N}]+");
-    private static final int SUBSTRING_MATCH_THRESHOLD = 4;
+    private static int SUBSTRING_MATCH_THRESHOLD = 4;
 
     private NewsTextMatcher() {
+    }
+
+    static void overrideSubstringMatchThreshold(int threshold) {
+        SUBSTRING_MATCH_THRESHOLD = threshold;
     }
 
     public static String normalize(String value) {

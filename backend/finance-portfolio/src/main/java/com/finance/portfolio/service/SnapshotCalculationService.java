@@ -412,15 +412,6 @@ public class SnapshotCalculationService {
         return pickClosest(older, newer, target, PortfolioAssetDailySnapshot::getCreatedAt);
     }
 
-    private BigDecimal contractFxRate(String currency) {
-        if (currency == null || currency.isBlank() || "TRY".equalsIgnoreCase(currency)) {
-            return BigDecimal.ONE;
-        }
-        BigDecimal rate = pricingPort.getExitPriceTry(
-                com.finance.common.model.MarketType.FOREX, currency.toUpperCase());
-        return rate != null && rate.signum() > 0 ? rate : BigDecimal.ONE;
-    }
-
     private static <T> Optional<T> pickClosest(Optional<T> older, Optional<T> newer,
                                                  LocalDateTime target,
                                                  Function<T, LocalDateTime> getCreatedAt) {

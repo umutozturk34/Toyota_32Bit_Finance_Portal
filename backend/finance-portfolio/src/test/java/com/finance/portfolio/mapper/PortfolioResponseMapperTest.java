@@ -71,7 +71,8 @@ class PortfolioResponseMapperTest {
         BigDecimal cpiGrowthPct = new BigDecimal("10.00");
 
         PortfolioSummaryResponse response = mapper.toSummaryResponse(
-                total, entry, pnl, pnlPct, dailyPnl, dailyPnlPct, realPnl, realPnlPct, cpiGrowthPct);
+                total, entry, pnl, pnlPct, dailyPnl, dailyPnlPct, realPnl, realPnlPct, cpiGrowthPct,
+                java.util.Map.of());
 
         assertThat(response.totalValueTry()).isEqualByComparingTo(total);
         assertThat(response.totalEntryValueTry()).isEqualByComparingTo(entry);
@@ -88,7 +89,7 @@ class PortfolioResponseMapperTest {
     void should_supportNullDailyPnl_when_buildingSummary() {
         PortfolioSummaryResponse response = mapper.toSummaryResponse(
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
-                null, null, null, null, null);
+                null, null, null, null, null, java.util.Map.of());
 
         assertThat(response.dailyPnlTry()).isNull();
         assertThat(response.dailyPnlPercent()).isNull();

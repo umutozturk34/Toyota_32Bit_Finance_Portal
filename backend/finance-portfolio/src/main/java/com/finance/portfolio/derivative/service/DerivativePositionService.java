@@ -135,9 +135,13 @@ public class DerivativePositionService {
             throw new BadRequestException("error.derivative.closeQtyExceedsPosition", positionId);
         }
 
-        DerivativePosition primary = partial
-                ? splitForPartialClose(position, closeQty, request.closeDate(), closePrice)
-                : closeFull(position, request.closeDate(), closePrice);
+        DerivativePosition primary;
+        if (partial) {
+            primary = splitForPartialClose(position, closeQty, request.closeDate(), closePrice);
+        } else {
+            position.closeFull(request.closeDate(), closePrice);
+            primary = position;
+        }
         String symbol = position.getViopContract().getSymbol();
         rebuildPeerSnapshots(portfolioId, symbol, primary, partial ? position : null);
         publishLotChange(portfolioId, primary, primary.getEntryDate());
@@ -161,11 +165,6 @@ public class DerivativePositionService {
         position.reduceQuantity(closeQty);
         positionRepository.save(position);
         return closedSlice;
-    }
-
-    private DerivativePosition closeFull(DerivativePosition position, LocalDate closeDate, BigDecimal closePrice) {
-        position.closeWith(closeDate, closePrice, DerivativeCloseReason.USER_CLOSED);
-        return position;
     }
 
     private void rebuildPeerSnapshots(Long portfolioId, String symbol, DerivativePosition primary,

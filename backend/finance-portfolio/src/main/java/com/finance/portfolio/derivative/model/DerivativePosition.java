@@ -137,6 +137,10 @@ public class DerivativePosition {
         this.closeReason = reason;
     }
 
+    public void closeFull(LocalDate date, BigDecimal price) {
+        closeWith(date, price, DerivativeCloseReason.USER_CLOSED);
+    }
+
     public void reopenForUpdate() {
         this.closeDate = null;
         this.closePrice = null;

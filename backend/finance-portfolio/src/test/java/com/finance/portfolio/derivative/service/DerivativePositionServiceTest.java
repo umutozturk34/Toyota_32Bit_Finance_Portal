@@ -13,7 +13,6 @@ import com.finance.market.viop.service.ViopHistoryProvider;
 import com.finance.portfolio.derivative.dto.request.CloseDerivativePositionRequest;
 import com.finance.portfolio.derivative.dto.request.OpenDerivativePositionRequest;
 import com.finance.portfolio.derivative.dto.request.UpdateDerivativePositionRequest;
-import com.finance.portfolio.derivative.dto.response.DerivativePositionResponse;
 import com.finance.portfolio.derivative.mapper.DerivativePositionMapper;
 import com.finance.portfolio.derivative.model.DerivativeCloseReason;
 import com.finance.portfolio.derivative.model.DerivativeDirection;

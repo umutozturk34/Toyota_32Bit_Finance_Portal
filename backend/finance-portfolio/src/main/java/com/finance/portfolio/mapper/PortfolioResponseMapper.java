@@ -61,11 +61,13 @@ public abstract class PortfolioResponseMapper {
                                                       BigDecimal dailyPnlPercent,
                                                       BigDecimal realPnlTry,
                                                       BigDecimal realPnlPercent,
-                                                      BigDecimal cpiGrowthPercent) {
+                                                      BigDecimal cpiGrowthPercent,
+                                                      java.util.Map<String, com.finance.portfolio.dto.response.CurrencyFramePct> frames) {
         return new PortfolioSummaryResponse(
                 totalValueTry, totalEntryValueTry, totalPnlTry, pnlPercent,
                 dailyPnlTry, dailyPnlPercent,
-                realPnlTry, realPnlPercent, cpiGrowthPercent
+                realPnlTry, realPnlPercent, cpiGrowthPercent,
+                frames
         );
     }
 

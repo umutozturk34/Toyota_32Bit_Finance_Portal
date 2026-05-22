@@ -32,7 +32,7 @@ public class PortfolioBackfillTracker {
         PortfolioProperties.Backfill cfg = props.getBackfill();
         this.states = Caffeine.newBuilder()
                 .expireAfterWrite(Duration.ofHours(cfg.getStateCacheExpiryHours()))
-                .maximumSize(1_000)
+                .maximumSize(cfg.getStateCacheMaxSize())
                 .removalListener((Long id, PortfolioState state, com.github.benmanes.caffeine.cache.RemovalCause cause) -> {
                     if (cause.wasEvicted() && state != null) {
                         log.warn("Backfill state evicted portfolioId={} pending={} cause={}",

@@ -6,6 +6,8 @@ import com.finance.market.core.service.MarketAssetProvider;
 import com.finance.market.macro.model.MacroCategory;
 import com.finance.market.macro.model.MacroIndicator;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 import java.math.BigDecimal;
 import java.util.Comparator;
@@ -30,12 +32,18 @@ public abstract class MacroMarketAssetProvider implements MarketAssetProvider {
             Map.entry("deposit", "TAS")
     );
 
+    private static final String NAME_KEY_PREFIX = "marketOverview.macro.";
+
     private final MacroIndicatorQueryService queryService;
     private final MacroCategory category;
+    private final MessageSource messageSource;
 
-    protected MacroMarketAssetProvider(MacroIndicatorQueryService queryService, MacroCategory category) {
+    protected MacroMarketAssetProvider(MacroIndicatorQueryService queryService,
+                                       MacroCategory category,
+                                       MessageSource messageSource) {
         this.queryService = queryService;
         this.category = category;
+        this.messageSource = messageSource;
     }
 
     @Override
@@ -119,7 +127,7 @@ public abstract class MacroMarketAssetProvider implements MarketAssetProvider {
         BigDecimal price = m.getLastValue();
         return new MarketAssetResponse(
                 m.getCode(),
-                m.getLabel(),
+                resolveDisplayName(m.getLabel()),
                 null,
                 category.instrumentType(),
                 price,
@@ -128,5 +136,11 @@ public abstract class MacroMarketAssetProvider implements MarketAssetProvider {
                 null,
                 null
         );
+    }
+
+    private String resolveDisplayName(String label) {
+        if (label == null) return null;
+        return messageSource.getMessage(NAME_KEY_PREFIX + label, null, label,
+                LocaleContextHolder.getLocale());
     }
 }

@@ -3,7 +3,6 @@ package com.finance.market.core.service;
 import com.finance.common.exception.ResourceNotFoundException;
 import com.finance.common.model.Instrument;
 import com.finance.common.model.MarketType;
-import com.finance.common.model.StockSegment;
 import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.common.repository.TrackedAssetRepository;

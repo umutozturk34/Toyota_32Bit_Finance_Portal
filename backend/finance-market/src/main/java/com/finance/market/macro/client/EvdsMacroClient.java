@@ -3,6 +3,7 @@ package com.finance.market.macro.client;
 import com.finance.common.config.AppProperties;
 import com.finance.market.core.client.AbstractEvdsClient;
 import com.finance.market.core.dto.internal.EvdsDataResponse;
+import com.finance.market.macro.config.MacroProperties;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -17,11 +18,13 @@ import java.util.List;
 @Log4j2
 public class EvdsMacroClient extends AbstractEvdsClient {
 
-    private static final int DEFAULT_BATCH_SIZE = 25;
+    private final int defaultBatchSize;
 
     public EvdsMacroClient(@Qualifier("evdsWebClient") WebClient webClient,
-                          AppProperties appProperties) {
+                          AppProperties appProperties,
+                          MacroProperties macroProperties) {
         super(webClient, appProperties);
+        this.defaultBatchSize = macroProperties.clientDefaultBatchSize();
     }
 
     public List<EvdsDataResponse> fetchSeriesBatched(List<String> serieCodes,
@@ -31,7 +34,7 @@ public class EvdsMacroClient extends AbstractEvdsClient {
         if (serieCodes == null || serieCodes.isEmpty()) {
             return Collections.emptyList();
         }
-        int effectiveBatch = batchSize > 0 ? batchSize : DEFAULT_BATCH_SIZE;
+        int effectiveBatch = batchSize > 0 ? batchSize : defaultBatchSize;
         String start = startDate.format(DATE_FMT);
         String end = endDate.format(DATE_FMT);
         List<EvdsDataResponse> responses = new ArrayList<>();

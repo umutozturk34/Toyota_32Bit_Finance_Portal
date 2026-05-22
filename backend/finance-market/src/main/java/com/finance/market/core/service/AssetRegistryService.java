@@ -20,11 +20,4 @@ public class AssetRegistryService {
         return repository.findByMarketTypeAndAssetCodeIgnoreCase(marketType, assetCode)
                 .orElseGet(() -> repository.save(Instrument.create(marketType, assetCode)));
     }
-
-    @Transactional(readOnly = true)
-    public Instrument requireOne(MarketType marketType, String assetCode) {
-        return repository.findByMarketTypeAndAssetCodeIgnoreCase(marketType, assetCode)
-                .orElseThrow(() -> new IllegalStateException(
-                        "Instrument not registered marketType=" + marketType + " code=" + assetCode));
-    }
 }

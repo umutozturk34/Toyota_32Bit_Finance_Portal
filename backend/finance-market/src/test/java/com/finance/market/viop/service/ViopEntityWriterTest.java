@@ -1,13 +1,10 @@
 package com.finance.market.viop.service;
 
-import com.finance.common.model.MarketType;
-import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.core.service.AssetRegistryService;
 import com.finance.market.core.service.TrackedAssetCommandService;
 import com.finance.market.viop.dto.ViopContractSpec;
 import com.finance.market.viop.dto.ViopQuoteSnapshot;
-import com.finance.market.viop.model.ViopCategory;
 import com.finance.market.viop.model.ViopContract;
 import com.finance.market.viop.model.ViopContractKind;
 import com.finance.market.viop.model.ViopOptionSide;
@@ -28,9 +25,6 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;

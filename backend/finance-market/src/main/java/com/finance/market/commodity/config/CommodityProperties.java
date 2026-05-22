@@ -20,6 +20,7 @@ public class CommodityProperties {
     private String chartRange = "max";
     private String chartInterval = "1d";
     private int batchMinSample = 5;
+    private int derivativeSortOrder = 9999;
 
     private Map<String, String> yahooSymbolOverrides = new HashMap<>(Map.of(
             "XAUTRY", "GC=F",

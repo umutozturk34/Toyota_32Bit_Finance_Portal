@@ -15,11 +15,13 @@ public record MacroProperties(
         int batchSize,
         int maxDaysPerWindow,
         Integer defaultHistoryYears,
+        Integer clientDefaultBatchSize,
         List<IndicatorDefinition> indicators
 ) {
 
     public MacroProperties {
         if (defaultHistoryYears == null) defaultHistoryYears = 5;
+        if (clientDefaultBatchSize == null) clientDefaultBatchSize = 25;
     }
     public record IndicatorDefinition(
             String code,

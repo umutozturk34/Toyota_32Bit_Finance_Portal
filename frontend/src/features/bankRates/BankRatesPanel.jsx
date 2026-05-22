@@ -2,13 +2,14 @@ import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Banknote, Clock, Coins, Crown, DollarSign, Gem, RefreshCw, Search, Sparkles, X } from 'lucide-react';
+import { Banknote, Clock, Coins, DollarSign, RefreshCw, Search, X } from 'lucide-react';
 import { useBankRates, useBankRateCurrencies } from './hooks/useBankRates';
 import Card from '../../shared/components/card';
 import CurrencyMarker from '../../shared/components/currency/CurrencyMarker';
 import Spinner from '../../shared/components/feedback/Spinner';
 import { useMoney } from '../../shared/hooks/useMoney';
 import { formatDateTimeShort } from '../../shared/utils/formatters';
+import { commodityVisual } from '../../shared/icons/commodities';
 
 const DEFAULT_CURRENCY_BY_KIND = { CURRENCY: 'USD', GOLD: 'GRAM_ALTIN' };
 
@@ -26,25 +27,8 @@ function flagEmoji(currencyCode) {
   return String.fromCodePoint(...cc.split('').map(c => 0x1F1E6 + c.charCodeAt(0) - 'A'.charCodeAt(0)));
 }
 
-const GOLD_VISUAL = {
-  GRAM_ALTIN:        { Icon: Coins,    color: 'text-amber-400' },
-  CEYREK_ALTIN:      { Icon: Coins,    color: 'text-amber-400' },
-  YARIM_ALTIN:       { Icon: Coins,    color: 'text-amber-400' },
-  TAM_ALTIN:         { Icon: Coins,    color: 'text-amber-400' },
-  BESLI_ALTIN:       { Icon: Coins,    color: 'text-amber-400' },
-  CUMHURIYET_ALTINI: { Icon: Crown,    color: 'text-amber-500' },
-  HAMIT_ALTIN:       { Icon: Crown,    color: 'text-amber-500' },
-  RESAT_ALTIN:       { Icon: Crown,    color: 'text-amber-500' },
-  ATA_ALTIN:         { Icon: Crown,    color: 'text-amber-500' },
-  GRAM_HAS_ALTIN:    { Icon: Sparkles, color: 'text-yellow-400' },
-  AYAR_14:           { Icon: Gem,      color: 'text-orange-400' },
-  AYAR_18:           { Icon: Gem,      color: 'text-orange-400' },
-  AYAR_22_BILEZIK:   { Icon: Gem,      color: 'text-orange-400' },
-  GUMUS:             { Icon: Coins,    color: 'text-slate-300' },
-};
-
 function goldVisual(code) {
-  return GOLD_VISUAL[code] || { Icon: Coins, tone: 'text-warning bg-warning/15' };
+  return commodityVisual(code);
 }
 
 function BankCard({ row, t, displayCurrency, money }) {

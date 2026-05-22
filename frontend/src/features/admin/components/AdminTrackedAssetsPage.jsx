@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Database, Plus, Bitcoin, TrendingUp, Briefcase, Newspaper, Gem } from 'lucide-react';
+import { Database, Plus, Bitcoin, CandlestickChart, Wheat, Newspaper } from 'lucide-react';
+import { GiGoldBar } from 'react-icons/gi';
 import PageHeader from '../../../shared/components/layout/PageHeader';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 import { useAuth } from '../../auth/useAuth';
@@ -126,9 +127,9 @@ function TrackedAssetForm({ type, title, onSaved }) {
 
 const ADMIN_TAB_DEFS = [
     { id: 'CRYPTO', icon: Bitcoin },
-    { id: 'STOCK', icon: TrendingUp },
-    { id: 'FUND', icon: Briefcase },
-    { id: 'COMMODITY', icon: Gem },
+    { id: 'STOCK', icon: CandlestickChart },
+    { id: 'FUND', icon: Wheat },
+    { id: 'COMMODITY', icon: GiGoldBar },
     { id: 'NEWS', icon: Newspaper },
 ];
 

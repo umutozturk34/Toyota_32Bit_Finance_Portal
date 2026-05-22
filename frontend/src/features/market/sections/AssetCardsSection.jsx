@@ -139,11 +139,8 @@ export default function AssetCardsSection({ data, editMode = false, config = {},
 
   return (
     <div
-      className="h-full grid gap-2"
-      style={{
-        gridTemplateColumns: `repeat(auto-fit, minmax(110px, 1fr))`,
-        gridAutoRows: '1fr',
-      }}
+      className="h-full grid gap-2 grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(110px,1fr))]"
+      style={{ gridAutoRows: '1fr' }}
     >
       <AnimatePresence mode="popLayout" initial={false}>
         {visibleItems.map((asset, i) => {

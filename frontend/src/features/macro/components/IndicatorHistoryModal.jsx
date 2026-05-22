@@ -8,27 +8,17 @@ import { useTheme } from '../../../shared/context/useTheme';
 import useChartRange from '../../../shared/hooks/useChartRange';
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import Spinner from '../../../shared/components/feedback/Spinner';
-import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
-import { bondService } from '../../bond/services/bondService';
-import { macroIndicatorService } from '../services/macroIndicatorService';
+import {
+  backFillToWindowStart,
+  fetchSeries,
+  forwardFillDaily,
+  forwardFillToToday,
+  isMacro,
+  rangeBounds,
+} from '../../analytics/lib/compareSeriesUtils';
 import { RANGES } from '../constants';
 import { computeStats, formatDate, formatValue, themeFor } from '../utils';
 
-
-function toIso(d) {
-  return d.toISOString().slice(0, 10);
-}
-
-function rangeBounds(days) {
-  const to = new Date();
-  const from = new Date(to);
-  from.setDate(from.getDate() - days);
-  return { from: toIso(from), to: toIso(to) };
-}
-
-function isMacro(type) {
-  return type && type.startsWith('MACRO');
-}
 
 const MACRO_CATEGORY_TO_TYPE = {
   DEPOSIT: 'MACRO_DEPOSIT',
@@ -53,33 +43,6 @@ function normalizeSelected(raw, fallbackType) {
     lastValue: raw.lastValue,
     lastDate: raw.lastDate,
   };
-}
-
-async function fetchSeries(item, bounds) {
-  if (isMacro(item.type) || item.unit) {
-    const points = await macroIndicatorService.history(item.code, bounds);
-    return points.map((p) => ({ date: p.observedAt, value: Number(p.value) }));
-  }
-  if (item.type === 'BOND') {
-    const rows = await bondService.getRateHistory(item.code);
-    return (rows || [])
-      .map((r) => ({
-        date: (r.date || r.rateDate || '').slice(0, 10),
-        value: Number(r.rate ?? r.couponRate ?? r.value),
-      }))
-      .filter((p) => p.date && Number.isFinite(p.value)
-        && p.date >= bounds.from && p.date <= bounds.to);
-  }
-  const candles = await unifiedMarketService.getHistory(item.type, item.code, 'ALL');
-  return (candles || [])
-    .map((c) => {
-      const rawDate = c.candleDate || c.date || c.observedAt;
-      const date = typeof rawDate === 'string' ? rawDate.slice(0, 10) : null;
-      const value = Number(c.close ?? c.price ?? c.sellingPrice ?? c.value ?? c.rate);
-      return { date, value };
-    })
-    .filter((p) => p.date && Number.isFinite(p.value)
-      && p.date >= bounds.from && p.date <= bounds.to);
 }
 
 function colorFor(item) {
@@ -122,7 +85,16 @@ export default function IndicatorHistoryModal({ indicator, onClose }) {
     [selected, queries]
   );
 
-  const seriesData = rawSeriesData;
+  const seriesData = useMemo(() => {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    return rawSeriesData.map((s) => {
+      let pts = s.points || [];
+      pts = backFillToWindowStart(pts, bounds.from);
+      pts = forwardFillDaily(pts, bounds.from, todayIso);
+      pts = forwardFillToToday(pts);
+      return { ...s, points: pts };
+    });
+  }, [rawSeriesData, bounds.from]);
 
   const option = useMemo(
     () => buildOption(seriesData, false, isDark),
@@ -242,16 +214,26 @@ function InfoBar({ selected, t }) {
         if (ind.unit) tags.push(ind.unit);
         if (ind.currency) tags.push(ind.currency);
         if (ind.maturity) tags.push(ind.maturity);
+        const friendlyName = ind.label
+          ? t(`marketOverview.macro.${ind.label}`, { defaultValue: ind.name })
+          : ind.name;
+        const showFriendly = friendlyName && friendlyName !== ind.code;
         return (
-          <div key={`${ind.type}-${ind.code}`} className="flex items-baseline gap-2 text-[11px]">
+          <div key={`${ind.type}-${ind.code}`} className="flex items-baseline gap-2 text-[11px] flex-wrap">
             <span className="h-1.5 w-1.5 rounded-full shrink-0 mt-1" style={{ background: color }} />
             <span className="font-mono text-[10px] text-fg-muted uppercase tracking-[0.12em] shrink-0">{ind.code}</span>
-            <span className="text-fg-subtle">·</span>
-            <span className="text-fg-muted truncate">{ind.name}</span>
-            <span className="ml-auto flex items-center gap-1.5 text-[10px] font-mono text-fg-subtle uppercase tracking-[0.12em]">
+            {showFriendly && (
+              <>
+                <span className="text-fg-subtle hidden sm:inline">·</span>
+                <span className="text-fg-muted truncate min-w-0 max-w-[200px] sm:max-w-none">
+                  {friendlyName}
+                </span>
+              </>
+            )}
+            <span className="sm:ml-auto flex items-center flex-wrap gap-1.5 text-[10px] font-mono text-fg-subtle tracking-[0.04em]">
               {tags.filter(Boolean).map((tag, i) => (
                 <span key={`${tag}-${i}`}>
-                  {i > 0 && <span className="mr-1.5">·</span>}{tag}
+                  {i > 0 && <span className="mr-1.5">·</span>}{t(`marketOverview.macro.enum.${tag}`, { defaultValue: tag })}
                 </span>
               ))}
             </span>

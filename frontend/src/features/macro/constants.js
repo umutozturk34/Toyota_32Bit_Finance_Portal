@@ -7,13 +7,13 @@ export const CATEGORY_THEME = {
 export const FALLBACK_THEME = { accent: '#6366f1', glow: 'rgba(99,102,241,0.30)', soft: 'rgba(99,102,241,0.10)' };
 
 export const RANGES = [
-  { id: '1W',  days: 7,     labelKey: 'rangeOneWeek'   },
-  { id: '1M',  days: 30,    labelKey: 'rangeOneMonth'  },
-  { id: '6M',  days: 180,   labelKey: 'rangeSixMonths' },
-  { id: '1Y',  days: 365,   labelKey: 'rangeOneYear'   },
-  { id: '3Y',  days: 1095,  labelKey: 'rangeThreeYears'},
-  { id: '5Y',  days: 1825,  labelKey: 'rangeFiveYears' },
-  { id: 'ALL', days: 11000, labelKey: 'rangeAll'       },
+  { id: '1W',  days: 7,     labelKey: 'rangeOneWeek'    },
+  { id: '1M',  days: 30,    labelKey: 'rangeOneMonth'   },
+  { id: '3M',  days: 90,    labelKey: 'rangeThreeMonths'},
+  { id: '6M',  days: 180,   labelKey: 'rangeSixMonths'  },
+  { id: '1Y',  days: 365,   labelKey: 'rangeOneYear'    },
+  { id: '5Y',  days: 1825,  labelKey: 'rangeFiveYears'  },
+  { id: 'ALL', days: 11000, labelKey: 'rangeAll'        },
 ];
 
 export const SPARK_DAYS = 90;

@@ -21,11 +21,6 @@ export function formatDate(dateIso, locale = 'tr-TR', opts = { day: '2-digit', m
   return new Date(dateIso).toLocaleDateString(locale, opts);
 }
 
-export function formatYear(dateIso) {
-  if (!dateIso) return null;
-  return new Date(dateIso).getFullYear();
-}
-
 export function computeChange(points) {
   if (!points || points.length < 2) return null;
   const last = Number(points[points.length - 1].value);

@@ -33,9 +33,18 @@ const CANDLE_MONEY_FIELDS = [
   'sellingPrice', 'buyingPrice', 'effectiveBuyingPrice', 'effectiveSellingPrice', 'bulletinPrice',
 ];
 
-function naturalCurrencyFor(assetType, asset) {
-  if (assetType === 'CRYPTO') return 'USD';
+function naturalCurrencyFor(assetType, asset, assetCode) {
+  if (assetType === 'CRYPTO') {
+    if ((assetCode || '').toLowerCase() === 'tether') return 'TRY';
+    return 'USD';
+  }
   if (assetType === 'VIOP') return asset?.metadata?.currency || 'TRY';
+  if (assetType === 'COMMODITY') {
+    const upper = (assetCode || '').toUpperCase();
+    if (upper.endsWith('TRY')) return 'TRY';
+    if (upper.endsWith('EUR')) return 'EUR';
+    return 'USD';
+  }
   return 'TRY';
 }
 
@@ -116,7 +125,7 @@ export default function AssetDetailPage({
   );
 
   const transform = TRANSFORM_MAP[assetType] || transformCandles;
-  const naturalCurrency = naturalCurrencyFor(assetType, asset);
+  const naturalCurrency = naturalCurrencyFor(assetType, asset, assetCode);
   const baseCurrency = asset?.metadata?.currency || naturalCurrency;
   const chartData = useMemo(
     () => convertCandleSet(transform(filteredHistoryRaw), convertAt, baseCurrency, naturalCurrency),
@@ -175,8 +184,11 @@ export default function AssetDetailPage({
                   codes: assetCode,
                   types: assetType,
                   range: '1Y',
+                  from: 'asset',
+                  fromType: assetType,
+                  fromCode: assetCode,
                 });
-                navigate(`/analytics?${next.toString()}`, { state: { from: 'asset' } });
+                navigate(`/analytics?${next.toString()}`);
               }}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs font-semibold text-fg-muted hover:text-accent hover:border-accent/40 hover:bg-accent/10 transition-colors cursor-pointer"
               title={t('marketDetail.compareAction', { defaultValue: 'Karşılaştır' })}

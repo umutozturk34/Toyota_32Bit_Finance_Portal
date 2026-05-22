@@ -80,14 +80,6 @@ export function useCreateWatchlist() {
   });
 }
 
-export function useRenameWatchlist() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, name }) => watchlistService.rename(id, name),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: LISTS_KEY }),
-  });
-}
-
 export function useDeleteWatchlist() {
   const queryClient = useQueryClient();
   return useMutation({

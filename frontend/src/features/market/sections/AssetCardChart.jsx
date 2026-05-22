@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import ReactECharts from 'echarts-for-react';
 import useDeferredVisibility from '../../../shared/hooks/useDeferredVisibility';
 
@@ -49,7 +49,7 @@ function generateSparkline(seed, changePercent) {
   }
 
   const absChange = Math.abs(change);
-  const stepStd = Math.min(absChange * 0.08, 0.55) + 0.18;
+  const stepStd = Math.min(absChange * 0.05, 0.4) + 0.05;
 
   const walk = new Array(points);
   walk[0] = 0;
@@ -124,6 +124,35 @@ export default function AssetCardChart({ assetCode, changePercent, delayMs = 0 }
   const color = useMemo(() => lineColor(normalizedChangePercent), [normalizedChangePercent]);
   const option = useMemo(() => buildOption(data, color), [data, color]);
   const [ref, ready] = useDeferredVisibility(delayMs);
+  const instanceRef = useRef(null);
+
+  useEffect(() => {
+    if (!ready || !ref.current || typeof ResizeObserver === 'undefined') return undefined;
+    const node = ref.current;
+    let observer = null;
+    let rafId = null;
+    let lastWidth = 0;
+    const setupTimer = setTimeout(() => {
+      observer = new ResizeObserver((entries) => {
+        const width = entries[0]?.contentRect?.width ?? 0;
+        if (Math.abs(width - lastWidth) < 2) return;
+        lastWidth = width;
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          const instance = instanceRef.current;
+          if (instance && !instance.isDisposed?.()) instance.resize();
+        });
+      });
+      observer.observe(node);
+      lastWidth = node.getBoundingClientRect().width;
+    }, 1200);
+    return () => {
+      clearTimeout(setupTimer);
+      if (observer) observer.disconnect();
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [ready, ref]);
+
   return (
     <div
       ref={ref}
@@ -131,7 +160,12 @@ export default function AssetCardChart({ assetCode, changePercent, delayMs = 0 }
       aria-hidden="true"
     >
       {ready && (
-        <ReactECharts option={option} style={{ width: '100%', height: '100%' }} opts={{ renderer: 'svg' }} />
+        <ReactECharts
+          option={option}
+          style={{ width: '100%', height: '100%' }}
+          opts={{ renderer: 'svg' }}
+          onChartReady={(instance) => { instanceRef.current = instance; }}
+        />
       )}
     </div>
   );

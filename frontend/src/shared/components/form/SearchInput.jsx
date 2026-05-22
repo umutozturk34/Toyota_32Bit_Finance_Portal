@@ -114,7 +114,8 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.98 }}
               transition={{ duration: 0.15 }}
-              className="absolute z-50 w-72 mt-1.5 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-xl shadow-xl overflow-hidden"
+              style={{ background: 'var(--color-bg-deep)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+              className="absolute z-50 w-72 mt-1.5 rounded-xl border border-border-default shadow-xl overflow-hidden"
             >
               <div className="overflow-y-auto max-h-[300px]">
                 {suggestions.map((asset, i) => {

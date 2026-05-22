@@ -7,7 +7,7 @@ import NewsConfigSection from './widget-config/NewsConfigSection';
 import WatchlistConfigSection from './widget-config/WatchlistConfigSection';
 import AssetCardsConfigSection from './widget-config/AssetCardsConfigSection';
 
-const POPOVER_WIDTH = 340;
+const POPOVER_WIDTH = 400;
 const POPOVER_MAX_HEIGHT = 460;
 const GAP = 10;
 

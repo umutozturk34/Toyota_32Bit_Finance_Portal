@@ -2,17 +2,15 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/useTheme';
-import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { SERIES_COLORS } from '../constants';
 
 export default function CompareChart({ scenario, height = 380 }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { currency: displayCurrency, convertAt } = useRateHistory();
-  const targetCurrency = displayCurrency === 'ORIGINAL' ? 'TRY' : displayCurrency;
+  const scenarioCurrency = scenario?.targetCurrency || 'TRY';
   const option = useMemo(
-    () => buildOption(scenario, isDark, targetCurrency, convertAt),
-    [scenario, isDark, targetCurrency, convertAt],
+    () => buildOption(scenario, isDark, scenarioCurrency),
+    [scenario, isDark, scenarioCurrency],
   );
 
   if (!scenario || !scenario.series?.length) {
@@ -33,7 +31,7 @@ export default function CompareChart({ scenario, height = 380 }) {
   );
 }
 
-function buildOption(scenario, isDark, displayCurrency, convertAt) {
+function buildOption(scenario, isDark, displayCurrency) {
   const muted = isDark ? '#6b6b7a' : '#94a3b8';
   const grid = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
   const tooltipBg = isDark ? 'rgba(12,12,20,0.96)' : 'rgba(255,255,255,0.98)';
@@ -42,9 +40,8 @@ function buildOption(scenario, isDark, displayCurrency, convertAt) {
   const series = (scenario?.series || []).map((s, idx) => {
     const color = SERIES_COLORS[idx % SERIES_COLORS.length];
     const data = (s.points || []).map((p) => {
-      const tryValue = Number(p.value);
-      const displayValue = convertAt ? convertAt(tryValue, 'TRY', p.date) : tryValue;
-      return [new Date(p.date).getTime(), Number(displayValue ?? tryValue)];
+      const value = Number(p.value);
+      return [new Date(p.date).getTime(), value];
     });
     const label = s.instrument?.code || '';
     return {
@@ -59,10 +56,25 @@ function buildOption(scenario, isDark, displayCurrency, convertAt) {
     };
   });
 
+  const totalPoints = series.reduce((acc, s) => acc + (s.data?.length || 0), 0);
+  const showZoom = totalPoints >= 30;
+
   return {
     backgroundColor: 'transparent',
     animation: true,
-    grid: { left: 64, right: 24, top: 36, bottom: 32 },
+    grid: { left: 64, right: 24, top: 36, bottom: showZoom ? 64 : 32 },
+    dataZoom: showZoom ? [
+      { type: 'inside', filterMode: 'filter', zoomOnMouseWheel: true, moveOnMouseMove: true,
+        moveOnMouseWheel: false, preventDefaultMouseMove: true },
+      { type: 'slider', height: 18, bottom: 8, filterMode: 'filter',
+        borderColor: 'transparent', backgroundColor: 'transparent',
+        dataBackground: { lineStyle: { color: '#6366f160', width: 1 }, areaStyle: { color: '#6366f120' } },
+        selectedDataBackground: { lineStyle: { color: '#6366f1', width: 1 }, areaStyle: { color: '#6366f140' } },
+        fillerColor: 'rgba(99,102,241,0.12)',
+        handleStyle: { color: '#6366f1', borderColor: '#6366f1' },
+        moveHandleStyle: { color: '#6366f1', opacity: 0.4 },
+        showDetail: false, brushSelect: false, textStyle: { color: muted, fontSize: 9 } },
+    ] : undefined,
     legend: {
       type: 'scroll',
       top: 6,

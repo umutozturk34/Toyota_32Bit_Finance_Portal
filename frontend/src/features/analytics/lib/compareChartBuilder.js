@@ -1,10 +1,10 @@
-export function rawKind(type) {
+function rawKind(type) {
   if (type === 'MACRO_INFLATION') return 'index';
   if (type === 'BOND' || type === 'MACRO_RATE' || type === 'MACRO_DEPOSIT') return 'rate';
   return 'price';
 }
 
-export function formatRaw(kind, raw, currency) {
+function formatRaw(kind, raw, currency) {
   if (!Number.isFinite(raw)) return '—';
   if (kind === 'rate') return `%${raw.toFixed(2)}`;
   if (kind === 'index') return raw.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
@@ -32,7 +32,7 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency) {
       return [new Date(p.date).getTime(), plotted, raw, pct];
     });
     return {
-      name: ind.code,
+      name: ind.displayName || ind.code,
       type: 'line',
       smooth: data.length < 200,
       showSymbol: false,

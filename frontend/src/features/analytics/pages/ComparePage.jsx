@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import ReactECharts from 'echarts-for-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Info, BarChart3, Activity, ArrowLeft, Search, LineChart } from 'lucide-react';
+import { X, Info, BarChart3, Activity, ArrowLeft, Search, LineChart, Briefcase, ChevronDown } from 'lucide-react';
+import useSessionState from '../../../shared/hooks/useSessionState';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
 import EmptyState from '../../../shared/components/feedback/EmptyState';
 import SearchSuggestions from '../../../shared/components/form/SearchSuggestions';
+import { usePortfolioList } from '../../portfolio/hooks/usePortfolioData';
 import { useTheme } from '../../../shared/context/useTheme';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
@@ -24,11 +26,32 @@ import {
   colorFor,
   parseInitialSelection,
   forwardFillToToday,
+  forwardFillDaily,
   backFillToWindowStart,
+  displayLabel,
+  nativeCurrencyFor,
 } from '../lib/compareSeriesUtils';
 
 const MAX_COMPARE = 6;
 const MARKET_TYPES_FILTER = 'STOCK,CRYPTO,FOREX,FUND,COMMODITY,VIOP,BOND';
+
+const ASSET_ROUTE = {
+  STOCK: 'stocks',
+  CRYPTO: 'crypto',
+  FOREX: 'forex',
+  COMMODITY: 'commodities',
+  VIOP: 'viop',
+  FUND: 'funds',
+};
+
+function buildBackTarget(from, fromType, fromCode) {
+  if (from === 'beaters') return '/analytics?tab=beaters';
+  if (from === 'asset' && fromType && fromCode) {
+    const segment = ASSET_ROUTE[fromType];
+    if (segment) return `/${segment}/${encodeURIComponent(fromCode)}`;
+  }
+  return null;
+}
 
 const MODES = [
   { id: 'assets',    labelKey: 'modeAssets',    Icon: BarChart3, filterType: MARKET_TYPES_FILTER },
@@ -42,12 +65,17 @@ export default function ComparePage() {
   const { convertAt } = useRateHistory();
   const targetCurrency = displayCurrency === 'ORIGINAL' ? 'TRY' : displayCurrency;
   const [params, setParams] = useSearchParams();
-  const location = useLocation();
+  const { data: userPortfolios } = usePortfolioList();
+  const [portfolioPickerOpen, setPortfolioPickerOpen] = useState(false);
+  const portfolioPickerRef = useRef(null);
   const navigate = useNavigate();
-  const cameFromRef = useRef(location.state?.from);
-  const cameFrom = cameFromRef.current;
-  const [mode, setMode] = useState(() => params.get('mode') || 'assets');
-  const [selected, setSelected] = useState(() => parseInitialSelection(params));
+  const cameFrom = params.get('from');
+  const backTarget = useMemo(
+    () => buildBackTarget(cameFrom, params.get('fromType'), params.get('fromCode')),
+    [cameFrom, params],
+  );
+  const [mode, setMode] = useSessionState('compare:mode', params.get('mode') || 'assets');
+  const [selected, setSelected] = useSessionState('compare:selected', parseInitialSelection(params));
   const [rangeId, setRangeId] = useChartRange();
   const initialRangeRef = useRef(params.get('range'));
 
@@ -76,10 +104,30 @@ export default function ComparePage() {
   }, [selected, mode, rangeId]);
 
   useEffect(() => {
-    if (selected.some((s) => isMacro(s.type)) && mode === 'assets') {
+    if (selected.some((s) => isMacro(s.type) || s.type === 'PORTFOLIO') && mode === 'assets') {
       setMode('mixed');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, mode]);
+
+  useEffect(() => {
+    if (!portfolioPickerOpen) return undefined;
+    function handler(e) {
+      if (portfolioPickerRef.current && !portfolioPickerRef.current.contains(e.target)) {
+        setPortfolioPickerOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [portfolioPickerOpen]);
+
+  function addPortfolio(p) {
+    if (selected.length >= MAX_COMPARE) return;
+    const code = String(p.id);
+    if (selected.some((s) => s.code === code && s.type === 'PORTFOLIO')) return;
+    setSelected([...selected, { type: 'PORTFOLIO', code, name: p.name }]);
+    setPortfolioPickerOpen(false);
+  }
 
   const modeDef = MODES.find((m) => m.id === mode);
   const range = useMemo(() => RANGES.find((r) => r.id === rangeId) || RANGES[3], [rangeId]);
@@ -97,42 +145,56 @@ export default function ComparePage() {
 
   const rawSeriesData = useMemo(
     () => selected.map((ind, idx) => ({
-      indicator: ind,
+      indicator: { ...ind, displayName: displayLabel(ind) },
       points: queries[idx]?.data || [],
       color: colorFor(ind, idx),
     })),
     [selected, queries]
   );
 
+  const backfilledSeriesData = useMemo(
+    () => rawSeriesData.map((s) => ({
+      ...s,
+      points: backFillToWindowStart(s.points || [], bounds.from),
+    })),
+    [rawSeriesData, bounds.from]
+  );
+
   const commonStartDate = useMemo(() => {
-    if (rawSeriesData.length < 2) return null;
+    if (backfilledSeriesData.length < 2) return null;
     let latest = null;
-    for (const s of rawSeriesData) {
+    for (const s of backfilledSeriesData) {
       if (!s.points || s.points.length === 0) continue;
       const first = [...s.points].sort((a, b) =>
         String(a.date).localeCompare(String(b.date)))[0]?.date;
       if (first && (!latest || first > latest)) latest = first;
     }
     return latest;
-  }, [rawSeriesData]);
+  }, [backfilledSeriesData]);
 
   const convertedData = useMemo(() => {
-    return rawSeriesData.map((s) => {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    return backfilledSeriesData.map((s) => {
       let pts = s.points || [];
-      pts = backFillToWindowStart(pts, bounds.from);
       if (commonStartDate) {
         pts = pts.filter((p) => p.date >= commonStartDate);
       }
-      if (!isRateLike(s.indicator.type) && targetCurrency !== 'TRY') {
+      const native = nativeCurrencyFor(s.indicator.type, s.indicator.code);
+      const shouldConvert = !isRateLike(s.indicator.type)
+        && s.indicator.type !== 'PORTFOLIO'
+        && displayCurrency !== 'ORIGINAL'
+        && native !== targetCurrency;
+      if (shouldConvert) {
         pts = pts.map((p) => {
-          const converted = convertAt(p.value, 'TRY', p.date);
+          const converted = convertAt(p.value, native, p.date);
           return { ...p, value: converted ?? p.value };
         });
       }
+      pts = forwardFillDaily(pts, commonStartDate || bounds.from, todayIso);
       pts = forwardFillToToday(pts);
       return { ...s, points: pts };
     });
-  }, [rawSeriesData, commonStartDate, targetCurrency, convertAt, bounds.from]);
+  }, [backfilledSeriesData, commonStartDate, displayCurrency, targetCurrency, convertAt, bounds.from]);
 
   const seriesData = convertedData;
 
@@ -161,7 +223,7 @@ export default function ComparePage() {
     if (newMode === mode) return;
     setMode(newMode);
     if (newMode === 'assets') {
-      setSelected(selected.filter((s) => !isMacro(s.type)));
+      setSelected(selected.filter((s) => !isMacro(s.type) && s.type !== 'PORTFOLIO'));
     }
   }
 
@@ -173,10 +235,10 @@ export default function ComparePage() {
       className="space-y-5"
     >
       <header className="pb-3 border-b border-border-default/40">
-        {cameFrom && (
+        {backTarget && (
           <motion.button
             type="button"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(backTarget)}
             whileHover={{ x: -2 }}
             whileTap={{ scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
@@ -201,7 +263,7 @@ export default function ComparePage() {
         </p>
       </header>
 
-      <nav className="flex items-center gap-1">
+      <nav className="flex items-center gap-1 flex-wrap">
         {MODES.map(({ id, labelKey, Icon }) => {
           const active = mode === id;
           return (
@@ -209,7 +271,7 @@ export default function ComparePage() {
               key={id}
               type="button"
               onClick={() => switchMode(id)}
-              className={`relative flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg cursor-pointer border-none transition-colors ${
+              className={`relative flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-semibold rounded-lg cursor-pointer border-none transition-colors whitespace-nowrap ${
                 active ? 'bg-accent/15 text-accent shadow-[inset_0_0_0_1px_rgba(99,102,241,0.4)]' : 'text-fg-muted hover:text-fg'
               }`}
             >
@@ -233,9 +295,9 @@ export default function ComparePage() {
                 style={{ background: `${color}14`, boxShadow: `inset 0 0 0 1px ${color}40` }}
               >
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-                <span className="text-fg-muted uppercase tracking-[0.12em] text-[10px]">{ind.code}</span>
+                <span className="text-fg font-semibold tracking-tight text-[11px]">{displayLabel(ind)}</span>
                 <span className="text-fg-subtle">·</span>
-                <span className="text-fg-muted uppercase tracking-[0.12em] text-[10px]">{ind.type}</span>
+                <span className="text-fg-muted uppercase tracking-[0.12em] text-[10px]">{t(`assets.labels.${ind.type}`, { defaultValue: ind.type })}</span>
                 <button
                   type="button"
                   onClick={() => removeAsset(ind.code, ind.type)}
@@ -254,15 +316,69 @@ export default function ComparePage() {
         </div>
 
         {selected.length < MAX_COMPARE && (
-          <SearchSuggestions
-            onSelect={addAsset}
-            navigateOnSelect={false}
-            excludeCodes={selected.map((s) => s.code)}
-            filterType={modeDef.filterType}
-            placeholder={mode === 'assets'
-              ? t('analytics.compareSearchAssets', { defaultValue: 'Hisse, kripto, fon, döviz, emtia, bono ara…' })
-              : t('analytics.compareSearchMixed', { defaultValue: 'Asset veya makro indikatör ara…' })}
-          />
+          <div className="flex flex-col sm:flex-row items-stretch gap-2">
+            <div className="flex-1 min-w-0">
+              <SearchSuggestions
+                onSelect={addAsset}
+                navigateOnSelect={false}
+                excludeCodes={selected.map((s) => s.code)}
+                filterType={modeDef.filterType}
+                placeholder={mode === 'assets'
+                  ? t('analytics.compareSearchAssets', { defaultValue: 'Hisse, kripto, fon, döviz, emtia, bono ara…' })
+                  : t('analytics.compareSearchMixed', { defaultValue: 'Asset veya makro indikatör ara…' })}
+              />
+            </div>
+            {(userPortfolios?.length ?? 0) > 0 && (
+              <div ref={portfolioPickerRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setPortfolioPickerOpen((v) => !v)}
+                  className="w-full sm:w-auto h-full inline-flex items-center justify-center gap-1.5 rounded-md border border-border-default bg-bg-elevated hover:bg-accent/8 hover:border-accent/40 px-3 py-2 text-xs font-mono font-semibold text-fg-muted hover:text-accent transition-colors cursor-pointer"
+                  title={t('analytics.comparePortfolioCta', { defaultValue: 'Portföyünü ekle' })}
+                >
+                  <Briefcase className="h-3.5 w-3.5" />
+                  {t('analytics.comparePortfolioCta', { defaultValue: 'Portföyünü ekle' })}
+                  <ChevronDown className={`h-3 w-3 transition-transform ${portfolioPickerOpen ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {portfolioPickerOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                      transition={{ duration: 0.14 }}
+                      className="absolute z-30 right-0 mt-1 w-56 max-w-[calc(100vw-2rem)] rounded-lg border border-border-default bg-bg-elevated shadow-lg overflow-hidden"
+                    >
+                      <div className="px-3 py-1.5 border-b border-border-default/60 text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">
+                        {t('analytics.portfolioPickerHeading', { defaultValue: 'Portföylerim' })}
+                      </div>
+                      {userPortfolios.map((p) => {
+                        const code = String(p.id);
+                        const alreadyAdded = selected.some((s) => s.code === code && s.type === 'PORTFOLIO');
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            disabled={alreadyAdded}
+                            onClick={() => addPortfolio(p)}
+                            className={`w-full text-left px-3 py-2 text-xs flex items-center gap-2 border-none bg-transparent transition-colors ${
+                              alreadyAdded
+                                ? 'text-fg-subtle cursor-not-allowed'
+                                : 'text-fg hover:bg-accent/10 hover:text-accent cursor-pointer'
+                            }`}
+                          >
+                            <Briefcase className="h-3 w-3 shrink-0" />
+                            <span className="flex-1 truncate">{p.name}</span>
+                            {alreadyAdded && <span className="text-[9px] font-mono text-fg-subtle">✓</span>}
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+          </div>
         )}
 
         <div className="flex flex-wrap items-center gap-1 pt-1">
@@ -287,6 +403,14 @@ export default function ComparePage() {
             <Info className="h-3 w-3" />
             {t('analytics.normalizedHintCompare', {
               defaultValue: 'Çoklu seri — başlangıçtan % değişim olarak normalize edildi',
+            })}
+          </div>
+        )}
+        {selected.some((s) => s.type === 'PORTFOLIO') && (
+          <div className="flex items-center gap-2 text-[10px] font-mono text-fg-subtle italic">
+            <Info className="h-3 w-3" />
+            {t('analytics.portfolioSeriesHint', {
+              defaultValue: 'Portföy serisi nakit akışlarını içerir',
             })}
           </div>
         )}

@@ -1,5 +1,7 @@
 package com.finance.app.analytics.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.finance.app.analytics.dto.AnalyticsInstrument;
 import com.finance.app.analytics.dto.AnalyticsInstrumentType;
 import com.finance.app.analytics.dto.HistoryPoint;
@@ -8,9 +10,13 @@ import com.finance.app.analytics.dto.response.InflationBeaterResponse;
 import com.finance.app.analytics.dto.request.ScenarioRequest;
 import com.finance.app.analytics.dto.response.ScenarioResponse;
 import com.finance.app.analytics.dto.response.ScenarioSeries;
-import com.finance.common.config.AppProperties;
+import com.finance.app.analytics.model.BeaterSnapshot;
+import com.finance.app.analytics.repository.BeaterSnapshotRepository;
 import com.finance.common.exception.BadRequestException;
+import com.finance.common.model.Currency;
+import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
+import com.finance.market.core.service.AssetNativeCurrencyResolver;
 import com.finance.market.core.service.TrackedAssetQueryService;
 import com.finance.market.macro.model.MacroCategory;
 import com.finance.market.macro.model.MacroIndicator;
@@ -18,17 +24,20 @@ import com.finance.market.macro.model.MacroUnit;
 import com.finance.market.macro.service.MacroIndicatorQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
 
 @Log4j2
 @Service
@@ -60,7 +69,7 @@ public class InflationBeaterService {
     );
 
     private static final Map<String, Integer> PERIOD_MONTHS = Map.of(
-            "1M", 1, "6M", 6, "1Y", 12, "3Y", 36, "5Y", 60
+            "1M", 1, "3M", 3, "6M", 6, "1Y", 12, "5Y", 60
     );
 
     private static final Map<MacroCategory, AnalyticsInstrumentType> CATEGORY_TO_TYPE = Map.of(
@@ -69,14 +78,23 @@ public class InflationBeaterService {
             MacroCategory.INFLATION, AnalyticsInstrumentType.MACRO
     );
 
+    private static final Map<MacroCategory, MarketType> CATEGORY_TO_MARKET_TYPE = Map.of(
+            MacroCategory.DEPOSIT, MarketType.MACRO_DEPOSIT,
+            MacroCategory.RATES, MarketType.MACRO_RATE,
+            MacroCategory.INFLATION, MarketType.MACRO_INFLATION
+    );
+
     private final ScenarioService scenarioService;
     private final UnifiedHistoryService historyService;
     private final MacroIndicatorQueryService macroQueryService;
     private final TrackedAssetQueryService trackedAssetQueryService;
-    private final AppProperties appProperties;
+    private final BeaterSnapshotRepository snapshotRepository;
+    private final ObjectMapper objectMapper;
 
-    private final Map<String, CachedResult> cache = new ConcurrentHashMap<>();
+    @Autowired(required = false)
+    private AssetNativeCurrencyResolver nativeCurrencyResolver;
 
+    @Transactional
     public InflationBeaterResponse rank(String period, String benchmarkCode) {
         Integer months = PERIOD_MONTHS.get(period);
         if (months == null) {
@@ -84,17 +102,40 @@ public class InflationBeaterService {
         }
         String code = (benchmarkCode != null && !benchmarkCode.isBlank())
                 ? benchmarkCode : DEFAULT_BENCHMARK;
-        String cacheKey = period + "|" + code;
+        LocalDate today = LocalDate.now();
 
-        CachedResult cached = cache.get(cacheKey);
-        if (cached != null && cached.expiresAt > System.currentTimeMillis()) {
-            log.debug("Beaters cache hit key={}", cacheKey);
-            return cached.response;
+        Optional<BeaterSnapshot> existing = snapshotRepository
+                .findBySnapshotDateAndPeriodAndBenchmarkCode(today, period, code);
+        if (existing.isPresent()) {
+            try {
+                log.debug("Beaters snapshot hit date={} period={} benchmark={}", today, period, code);
+                return objectMapper.readValue(existing.get().getPayloadJson(), InflationBeaterResponse.class);
+            } catch (JsonProcessingException e) {
+                log.warn("Beater snapshot deserialize failed, recomputing: {}", e.getMessage());
+            }
         }
 
         InflationBeaterResponse response = compute(period, code, months);
-        cache.put(cacheKey, new CachedResult(response, System.currentTimeMillis() + appProperties.getCache().getInflationBeaterTtlMillis()));
+        persistSnapshot(today, period, code, response);
         return response;
+    }
+
+    private void persistSnapshot(LocalDate date, String period, String code, InflationBeaterResponse response) {
+        try {
+            String json = objectMapper.writeValueAsString(response);
+            snapshotRepository.save(BeaterSnapshot.builder()
+                    .snapshotDate(date)
+                    .period(period)
+                    .benchmarkCode(code)
+                    .payloadJson(json)
+                    .createdAt(LocalDateTime.now())
+                    .build());
+            log.info("Beater snapshot persisted date={} period={} benchmark={}", date, period, code);
+        } catch (JsonProcessingException e) {
+            log.warn("Beater snapshot persist failed: {}", e.getMessage());
+        } catch (RuntimeException e) {
+            log.warn("Beater snapshot save failed (likely race): {}", e.getMessage());
+        }
     }
 
     private InflationBeaterResponse compute(String period, String code, int months) {
@@ -105,9 +146,11 @@ public class InflationBeaterService {
         boolean isIndex = benchmark.getUnit() == MacroUnit.INDEX
                 || benchmark.getUnit() == MacroUnit.NUMBER;
 
+        Currency comparisonCurrency = resolveComparisonCurrency(benchmark, code);
+
         List<CuratedAsset> universe = buildUniverse();
-        log.info("Computing beaters period={} benchmark={} universeSize={}",
-                period, code, universe.size());
+        log.info("Computing beaters period={} benchmark={} currency={} universeSize={}",
+                period, code, comparisonCurrency, universe.size());
 
         List<AnalyticsInstrument> instruments = new ArrayList<>();
         for (CuratedAsset c : universe) {
@@ -120,7 +163,7 @@ public class InflationBeaterService {
         }
 
         ScenarioResponse scenario = scenarioService.simulate(
-                new ScenarioRequest(NOTIONAL_AMOUNT, startDate, endDate, instruments));
+                new ScenarioRequest(NOTIONAL_AMOUNT, startDate, endDate, instruments, comparisonCurrency));
 
         BigDecimal benchmarkReturn = isIndex
                 ? computeIndexGrowthPct(code, startDate, endDate)
@@ -131,16 +174,26 @@ public class InflationBeaterService {
                 .filter(s -> !s.instrument().code().equals(code) || isIndex)
                 .filter(s -> s.nominalReturnPct() != null)
                 .map(s -> toEntry(s, benchmarkReturn, nameLookup))
-                .sorted(Comparator.comparing(InflationBeaterEntry::realReturnPct,
+                .sorted(Comparator.comparing(InflationBeaterEntry::excessReturnPct,
                         Comparator.nullsLast(Comparator.reverseOrder())))
                 .toList();
 
-        int beating = (int) entries.stream().filter(InflationBeaterEntry::beatsInflation).count();
-        log.info("Beaters ranked period={} benchmark={} return={} total={} beating={}",
-                period, code, benchmarkReturn, entries.size(), beating);
+        int beating = (int) entries.stream().filter(InflationBeaterEntry::beatsBenchmark).count();
+        log.info("Beaters ranked period={} benchmark={} currency={} return={} total={} beating={}",
+                period, code, comparisonCurrency, benchmarkReturn, entries.size(), beating);
         return new InflationBeaterResponse(
                 startDate, endDate, code, benchmark.getLabel(),
-                benchmarkReturn, beating, entries.size(), entries);
+                benchmarkReturn, beating, entries.size(), comparisonCurrency, entries);
+    }
+
+    private Currency resolveComparisonCurrency(MacroIndicator benchmark, String code) {
+        if (nativeCurrencyResolver == null) {
+            return Currency.TRY;
+        }
+        MarketType marketType = CATEGORY_TO_MARKET_TYPE.getOrDefault(
+                benchmark.getCategory(), MarketType.MACRO_RATE);
+        Currency resolved = nativeCurrencyResolver.resolveNativeCurrency(marketType, code);
+        return resolved != null ? resolved : Currency.TRY;
     }
 
     private List<CuratedAsset> buildUniverse() {
@@ -174,9 +227,29 @@ public class InflationBeaterService {
         List<HistoryPoint> points = historyService.getMacroSeries(code,
                 start.minusMonths(2), end.plusMonths(1));
         if (points.size() < 2) return BigDecimal.ZERO;
-        BigDecimal first = points.get(0).value();
-        BigDecimal last = points.get(points.size() - 1).value();
-        if (first == null || first.signum() <= 0 || last == null) return BigDecimal.ZERO;
+        HistoryPoint baseline = null;
+        HistoryPoint latest = null;
+        for (HistoryPoint p : points) {
+            if (p.date() == null || p.value() == null) continue;
+            if (!p.date().isAfter(end) && (latest == null || p.date().isAfter(latest.date()))) {
+                latest = p;
+            }
+            if (!p.date().isAfter(start) && (baseline == null || p.date().isAfter(baseline.date()))) {
+                baseline = p;
+            }
+        }
+        if (baseline == null) {
+            for (HistoryPoint p : points) {
+                if (p.date() == null || p.value() == null) continue;
+                if (!p.date().isBefore(start) && (baseline == null || p.date().isBefore(baseline.date()))) {
+                    baseline = p;
+                }
+            }
+        }
+        if (baseline == null || latest == null) return BigDecimal.ZERO;
+        BigDecimal first = baseline.value();
+        BigDecimal last = latest.value();
+        if (first.signum() <= 0) return BigDecimal.ZERO;
         return last.subtract(first).multiply(HUNDRED).divide(first, 4, RoundingMode.HALF_UP);
     }
 
@@ -207,6 +280,4 @@ public class InflationBeaterService {
     }
 
     private record CuratedAsset(AnalyticsInstrumentType type, String code, String name) {}
-
-    private record CachedResult(InflationBeaterResponse response, long expiresAt) {}
 }

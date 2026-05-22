@@ -1,9 +1,11 @@
 package com.finance.app.analytics.controller;
 
+import com.finance.app.analytics.dto.HistoryPoint;
 import com.finance.app.analytics.dto.request.ScenarioRequest;
 import com.finance.app.analytics.dto.response.InflationBeaterResponse;
 import com.finance.app.analytics.dto.response.ScenarioResponse;
 import com.finance.app.analytics.service.InflationBeaterService;
+import com.finance.app.analytics.service.PortfolioSeriesProvider;
 import com.finance.app.analytics.service.ScenarioService;
 import com.finance.common.dto.ApiResponse;
 import com.finance.common.i18n.Translator;
@@ -11,13 +13,20 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/analytics")
@@ -26,6 +35,7 @@ public class AnalyticsController {
 
     private final ScenarioService scenarioService;
     private final InflationBeaterService inflationBeaterService;
+    private final PortfolioSeriesProvider portfolioSeriesProvider;
     private final Translator translator;
 
     @PostMapping("/scenarios")
@@ -44,5 +54,16 @@ public class AnalyticsController {
             @RequestParam(required = false) String benchmark) {
         return ApiResponse.success(translator.translate("api.analytics.inflationBeatersComputed"),
                 inflationBeaterService.rank(period, benchmark));
+    }
+
+    @GetMapping("/portfolio-series/{portfolioId}")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<List<HistoryPoint>> portfolioSeries(
+            @AuthenticationPrincipal Jwt jwt,
+            @PathVariable Long portfolioId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return ApiResponse.success(translator.translate("api.analytics.portfolioSeriesRetrieved"),
+                portfolioSeriesProvider.dailyValueSeries(portfolioId, jwt.getSubject(), from, to));
     }
 }

@@ -4,7 +4,6 @@ import com.finance.app.analytics.dto.AnalyticsInstrument;
 import com.finance.app.analytics.dto.AnalyticsInstrumentType;
 import com.finance.app.analytics.dto.HistoryPoint;
 import com.finance.app.analytics.dto.request.ScenarioRequest;
-import com.finance.app.analytics.dto.response.InflationBeaterEntry;
 import com.finance.app.analytics.dto.response.InflationBeaterResponse;
 import com.finance.app.analytics.dto.response.ScenarioPoint;
 import com.finance.app.analytics.dto.response.ScenarioResponse;
@@ -45,9 +44,11 @@ class InflationBeaterServiceTest {
     @Mock private UnifiedHistoryService historyService;
     @Mock private MacroIndicatorQueryService macroQueryService;
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
+    @Mock private com.finance.app.analytics.repository.BeaterSnapshotRepository snapshotRepository;
 
     @org.mockito.Spy
-    private com.finance.common.config.AppProperties appProperties = new com.finance.common.config.AppProperties();
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper()
+            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
     @InjectMocks
     private InflationBeaterService service;
@@ -68,14 +69,14 @@ class InflationBeaterServiceTest {
         ScenarioSeries lowReal = buildSeries(AnalyticsInstrumentType.SPOT, "C", new BigDecimal("10"));
         when(scenarioService.simulate(any())).thenReturn(new ScenarioResponse(
                 new BigDecimal("10000"), LocalDate.now().minusYears(1), LocalDate.now(),
-                new BigDecimal("25"), List.of(lowReal, highReal, midReal)));
+                new BigDecimal("25"), null, List.of(lowReal, highReal, midReal)));
 
         InflationBeaterResponse response = service.rank("1Y", null);
 
         assertThat(response.entries()).hasSize(3);
-        assertThat(response.entries().get(0).realReturnPct()).isEqualByComparingTo("75");
-        assertThat(response.entries().get(1).realReturnPct()).isEqualByComparingTo("25");
-        assertThat(response.entries().get(2).realReturnPct()).isEqualByComparingTo("-15");
+        assertThat(response.entries().get(0).excessReturnPct()).isEqualByComparingTo("75");
+        assertThat(response.entries().get(1).excessReturnPct()).isEqualByComparingTo("25");
+        assertThat(response.entries().get(2).excessReturnPct()).isEqualByComparingTo("-15");
     }
 
     @Test
@@ -86,7 +87,7 @@ class InflationBeaterServiceTest {
         ScenarioSeries loser = buildSeries(AnalyticsInstrumentType.SPOT, "Z", new BigDecimal("5"));
         when(scenarioService.simulate(any())).thenReturn(new ScenarioResponse(
                 new BigDecimal("10000"), LocalDate.now().minusYears(1), LocalDate.now(),
-                new BigDecimal("25"), List.of(beater1, loser, beater2)));
+                new BigDecimal("25"), null, List.of(beater1, loser, beater2)));
 
         InflationBeaterResponse response = service.rank("1Y", null);
 
@@ -100,7 +101,7 @@ class InflationBeaterServiceTest {
         wireInflationBenchmark(new BigDecimal("12"));
         when(scenarioService.simulate(any())).thenReturn(new ScenarioResponse(
                 new BigDecimal("10000"), LocalDate.now().minusMonths(6), LocalDate.now(),
-                BigDecimal.ZERO, List.of()));
+                BigDecimal.ZERO, null, List.of()));
 
         service.rank("6M", null);
 
@@ -123,13 +124,13 @@ class InflationBeaterServiceTest {
         ScenarioSeries benchmark = buildSeries(AnalyticsInstrumentType.MACRO, "TP.POLICY", new BigDecimal("45"));
         when(scenarioService.simulate(any())).thenReturn(new ScenarioResponse(
                 new BigDecimal("10000"), LocalDate.now().minusYears(1), LocalDate.now(),
-                null, List.of(asset, benchmark)));
+                null, null, List.of(asset, benchmark)));
 
         InflationBeaterResponse response = service.rank("1Y", "TP.POLICY");
 
         assertThat(response.benchmarkReturnPct()).isEqualByComparingTo("45");
         assertThat(response.entries()).hasSize(1);
-        assertThat(response.entries().get(0).realReturnPct()).isEqualByComparingTo("15");
+        assertThat(response.entries().get(0).excessReturnPct()).isEqualByComparingTo("15");
     }
 
     @Test
@@ -137,6 +138,33 @@ class InflationBeaterServiceTest {
         assertThatThrownBy(() -> service.rank("invalid", null))
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("error.analytics.unknownPeriod");
+    }
+
+    @Test
+    void shouldDeriveCurrencyFromBenchmarkUsingResolver() {
+        com.finance.market.core.service.AssetNativeCurrencyResolver resolver =
+                mock(com.finance.market.core.service.AssetNativeCurrencyResolver.class);
+        when(resolver.resolveNativeCurrency(any(), org.mockito.ArgumentMatchers.eq("TP.USDTAS.MT06")))
+                .thenReturn(com.finance.common.model.Currency.USD);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "nativeCurrencyResolver", resolver);
+
+        MacroIndicator usdDeposit = mock(MacroIndicator.class);
+        lenient().when(usdDeposit.getCategory()).thenReturn(MacroCategory.DEPOSIT);
+        lenient().when(usdDeposit.getUnit()).thenReturn(MacroUnit.PERCENT);
+        lenient().when(usdDeposit.getLabel()).thenReturn("usdDeposit");
+        when(macroQueryService.findByCode("TP.USDTAS.MT06")).thenReturn(usdDeposit);
+        ScenarioSeries asset = buildSeries(AnalyticsInstrumentType.SPOT, "A", new BigDecimal("20"));
+        ScenarioSeries benchmark = buildSeries(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT06", new BigDecimal("10"));
+        when(scenarioService.simulate(any())).thenReturn(new ScenarioResponse(
+                new BigDecimal("10000"), LocalDate.now().minusYears(1), LocalDate.now(),
+                null, null, List.of(asset, benchmark)));
+
+        InflationBeaterResponse response = service.rank("1Y", "TP.USDTAS.MT06");
+
+        ArgumentCaptor<ScenarioRequest> captor = ArgumentCaptor.forClass(ScenarioRequest.class);
+        verify(scenarioService).simulate(captor.capture());
+        assertThat(captor.getValue().targetCurrency()).isEqualTo(com.finance.common.model.Currency.USD);
+        assertThat(response.comparisonCurrency()).isEqualTo(com.finance.common.model.Currency.USD);
     }
 
     private void wireInflationBenchmark(BigDecimal growthPct) {
@@ -157,6 +185,6 @@ class InflationBeaterServiceTest {
         return new ScenarioSeries(
                 new AnalyticsInstrument(type, code),
                 List.of(new ScenarioPoint(LocalDate.now(), new BigDecimal("10000"))),
-                new BigDecimal("11000"), nominalPct, null, false);
+                new BigDecimal("11000"), nominalPct, null, null, false);
     }
 }

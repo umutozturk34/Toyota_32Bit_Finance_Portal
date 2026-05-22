@@ -1,6 +1,7 @@
 package com.finance.app.analytics.dto.request;
 
 import com.finance.app.analytics.dto.AnalyticsInstrument;
+import com.finance.common.model.Currency;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -15,5 +16,11 @@ public record ScenarioRequest(
         @NotNull @Positive BigDecimal amount,
         @NotNull LocalDate startDate,
         LocalDate endDate,
-        @NotEmpty @Size(max = 6) @Valid List<AnalyticsInstrument> instruments) {
+        @NotEmpty @Size(max = 6) @Valid List<AnalyticsInstrument> instruments,
+        Currency targetCurrency) {
+
+    public ScenarioRequest(BigDecimal amount, LocalDate startDate, LocalDate endDate,
+                           List<AnalyticsInstrument> instruments) {
+        this(amount, startDate, endDate, instruments, null);
+    }
 }

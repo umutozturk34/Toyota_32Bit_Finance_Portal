@@ -11,13 +11,33 @@ import {
   resolveTarget, toYearMonth, buildPriceIndex,
 } from '../lib/positionFormHelpers';
 
+const SUPPORTED_NATIVE = new Set(['TRY', 'USD', 'EUR']);
+
+function resolveNativeCurrency(target, asset) {
+  if (target.assetType === 'CRYPTO') {
+    if ((target.assetCode || '').toLowerCase() === 'tether') return 'TRY';
+    return 'USD';
+  }
+  if (target.assetType === 'VIOP') {
+    const meta = asset?.metadata?.currency || target.metadata?.currency;
+    return SUPPORTED_NATIVE.has(meta) ? meta : 'TRY';
+  }
+  if (target.assetType === 'COMMODITY') {
+    const code = (target.assetCode || '').toUpperCase();
+    if (code.endsWith('TRY')) return 'TRY';
+    if (code.endsWith('EUR')) return 'EUR';
+    return 'USD';
+  }
+  return 'TRY';
+}
+
 export function usePositionForm({ mode, portfolioId, asset, position, onClose, onComplete }) {
   const { t } = useTranslation();
   const { rateAt, currency: displayCurrency } = useRateHistory();
   const target = resolveTarget(mode, asset, position);
   const isFractional = FRACTIONAL_TYPES.includes(target.assetType);
   const isEdit = mode === 'edit';
-  const nativeCurrency = target.assetType === 'CRYPTO' ? 'USD' : 'TRY';
+  const nativeCurrency = resolveNativeCurrency(target, asset);
   const inputCurrency = displayCurrency === 'ORIGINAL' ? nativeCurrency : displayCurrency;
   const processingSteps = useMemo(
     () => PROCESSING_STEP_DEFS.map((s) => ({ label: t(`positionForm.steps.${s.labelKey}`), duration: s.duration })),

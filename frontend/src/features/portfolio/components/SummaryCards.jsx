@@ -10,12 +10,18 @@ import { usePortfolioSummary } from '../hooks/usePortfolioData';
 import { ASSET_TYPE_FILTERS as SUMMARY_FILTERS } from '../../../shared/constants/assetTypes';
 import Card from '../../../shared/components/card';
 
+function pickFrame(summary, displayCurrency) {
+  if (!summary?.frames) return null;
+  if (displayCurrency === 'TRY' || displayCurrency === 'ORIGINAL') return summary.frames.TRY;
+  return summary.frames[displayCurrency] ?? summary.frames.TRY;
+}
+
 const VALUE_CARD_DEFS = [
   { key: 'totalValueTry', labelKey: 'portfolio.summary.marketValue', Icon: Wallet, iconBg: 'bg-accent/10', iconColor: 'text-accent', border: 'border-t-accent' },
   { key: 'totalEntryValueTry', labelKey: 'portfolio.summary.totalCost', Icon: BarChart3, iconBg: 'bg-fg-muted/10', iconColor: 'text-fg-muted', border: 'border-t-fg-muted' },
 ];
 
-function PnlCard({ label, value, percent, realValue, realPercent }) {
+function PnlCard({ label, value, percent, realValue, realPercent, hideReal }) {
   const { format: money, formatCompact: moneyCompact } = useMoney();
   const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
   const cls = getChangeClass(value);
@@ -23,7 +29,7 @@ function PnlCard({ label, value, percent, realValue, realPercent }) {
   const diff = realPercent != null && percent != null
     ? Math.abs(Number(realPercent) - Number(percent))
     : null;
-  const hasReal = realValue != null && realPercent != null && diff != null && diff >= 1;
+  const hasReal = !hideReal && realValue != null && realPercent != null && diff != null && diff >= 1;
   const realCls = hasReal ? getChangeClass(realValue) : null;
   return (
     <Card
@@ -69,13 +75,18 @@ function PnlCard({ label, value, percent, realValue, realPercent }) {
 
 export default function SummaryCards({ summary: initialSummary, portfolioId }) {
   const { t } = useTranslation();
-  const { format: money, formatCompact: moneyCompact } = useMoney();
+  const { format: money, formatCompact: moneyCompact, currency: displayCurrency } = useMoney();
   const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
   const [activeFilter, setActiveFilter] = useSessionState('portfolio-summary-filter', null);
 
   const { data: filteredSummary, isFetching: loading } = usePortfolioSummary(portfolioId, activeFilter);
   const summary = activeFilter ? (filteredSummary ?? initialSummary) : initialSummary;
   const filterLabel = (id) => id ? t(`assets.labels.${id}`) : t('assets.labels.ALL');
+
+  const isNonTryFrame = displayCurrency === 'USD' || displayCurrency === 'EUR';
+  const frame = pickFrame(summary, displayCurrency);
+  const totalPnlPercent = frame?.pnlPercent ?? summary?.pnlPercent;
+  const dailyPnlPercent = frame?.dailyPnlPercent ?? summary?.dailyPnlPercent;
 
   return (
     <motion.div
@@ -84,8 +95,8 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
       animate="show"
       className="space-y-3"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex gap-0.5 rounded-lg border border-border-default bg-bg-elevated p-0.5">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex gap-0.5 rounded-lg border border-border-default bg-bg-elevated p-0.5 overflow-x-auto max-w-full">
           {SUMMARY_FILTERS.map(({ id }) => (
             <button
               key={id || 'all'}
@@ -133,9 +144,19 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
             </p>
           </Card>
         ))}
-        <PnlCard label={t('portfolio.summary.profitLoss')} value={summary?.totalPnlTry} percent={summary?.pnlPercent}
-          realValue={summary?.realPnlTry} realPercent={summary?.realPnlPercent} />
-        <PnlCard label={t('portfolio.summary.dailyPnl')} value={summary?.dailyPnlTry} percent={summary?.dailyPnlPercent} />
+        <PnlCard
+          label={t('portfolio.summary.profitLoss')}
+          value={summary?.totalPnlTry}
+          percent={totalPnlPercent}
+          realValue={summary?.realPnlTry}
+          realPercent={summary?.realPnlPercent}
+          hideReal={isNonTryFrame}
+        />
+        <PnlCard
+          label={t('portfolio.summary.dailyPnl')}
+          value={summary?.dailyPnlTry}
+          percent={dailyPnlPercent}
+        />
       </div>
     </motion.div>
   );

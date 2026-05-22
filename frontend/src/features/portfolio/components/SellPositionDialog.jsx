@@ -158,11 +158,11 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-xs text-fg-muted flex items-center gap-1.5">
               <Tag className="h-3 w-3" /> {t('portfolio.sell.quantityLabel')}
             </span>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               {QTY_PRESETS.map(({ id, factor }) => {
                 const target = factor >= 1 ? totalQty : Math.round(totalQty * factor * 1e6) / 1e6;
                 const active = validQty && Math.abs(parsedQty - target) < 1e-6;
@@ -199,7 +199,7 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-xs text-fg-muted flex items-center gap-1.5">
               <ShoppingBag className="h-3 w-3" /> {t('portfolio.sell.exitPriceLabel')}
             </span>
@@ -241,11 +241,11 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-xs text-fg-muted flex items-center gap-1.5">
               <Calendar className="h-3 w-3" /> {t('portfolio.sell.exitDateLabel')}
             </span>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               {datePresets.map(({ id, iso, label }) => {
                 const active = sellDate === iso;
                 return (
@@ -330,7 +330,7 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
           <div className="text-xs text-danger bg-danger/10 border border-danger/20 px-3 py-2 rounded-lg">{error}</div>
         )}
 
-        <div className="flex gap-2 justify-end pt-1">
+        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-1">
           <Button variant="secondary" size="md" onClick={onClose}>
             {t('common.cancel')}
           </Button>

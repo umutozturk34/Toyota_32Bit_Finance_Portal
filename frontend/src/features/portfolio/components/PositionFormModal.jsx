@@ -43,7 +43,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.97 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-sm rounded-2xl border border-border-default modal-panel p-6 overflow-visible"
+        className="relative w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-2xl border border-border-default modal-panel p-4 sm:p-6"
       >
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
         <div className="flex items-center justify-between mb-5">

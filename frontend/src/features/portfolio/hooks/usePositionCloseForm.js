@@ -8,7 +8,7 @@ import { ONE_HOUR_MS, toYearMonth, buildPriceIndex } from '../lib/positionFormHe
 
 export const todayIso = () => new Date().toISOString().slice(0, 10);
 
-export const yesterdayIso = () => {
+const yesterdayIso = () => {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   return d.toISOString().slice(0, 10);

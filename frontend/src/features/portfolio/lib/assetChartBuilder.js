@@ -20,7 +20,7 @@ export function formatChartMoney(value, currency) {
   return formatPrice(value, { currency, minDecimals: 2, maxDecimals });
 }
 
-export function buildEventMarkPoints(seriesData) {
+function buildEventMarkPoints(seriesData) {
   const data = seriesData
     .filter((d) => (d.events || []).some((e) => POSITION_EVENT_TYPES.has(e.type)))
     .map((d) => {

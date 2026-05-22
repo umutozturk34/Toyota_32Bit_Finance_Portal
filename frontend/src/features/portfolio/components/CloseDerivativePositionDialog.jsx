@@ -121,7 +121,6 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
       subtitle={symbol}
     >
       <form onSubmit={submit} className="space-y-4">
-        {/* Position info card with direction badge */}
         <div className={`rounded-lg border px-3 py-2.5 ${
           isLong
             ? 'border-emerald-500/30 bg-emerald-500/5'
@@ -162,11 +161,11 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
 
         {!isAlreadyClosed && qty > 0 && (
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <span className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
                 <Tag className="h-3 w-3" /> {t('portfolio.derivatives.closeQtyLabel', 'Kapatılacak lot')}
               </span>
-              <div className="flex gap-1">
+              <div className="flex gap-1 flex-wrap">
                 {[
                   { id: '25', factor: 0.25 },
                   { id: '50', factor: 0.5 },
@@ -215,13 +214,12 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
           </div>
         )}
 
-        {/* Date */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
               <Calendar className="h-3 w-3" /> {t('portfolio.derivatives.closeDate', 'Kapanış tarihi')}
             </span>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               {datePresets.map(({ id, iso, label }) => {
                 const active = closeDate === iso;
                 return (
@@ -257,9 +255,8 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
           )}
         </div>
 
-        {/* Close price */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
               <Tag className="h-3 w-3" /> {t('portfolio.derivatives.closePriceLabel', { defaultValue: 'Kapanış fiyatı' })}
             </span>
@@ -299,7 +296,6 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
           )}
         </div>
 
-        {/* Realized P&L preview */}
         {realizedPnl != null && (
           <div className={`rounded-lg border px-3 py-2 flex items-center justify-between text-xs ${
             realizedPnl >= 0

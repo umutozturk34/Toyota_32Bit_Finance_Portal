@@ -1,6 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { GitCompareArrows } from 'lucide-react';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import useChartRange from '../../../shared/hooks/useChartRange';
 import ReactECharts from 'echarts-for-react';
@@ -266,6 +268,7 @@ function buildEChartsOption(data, color, palette, money) {
 export default function PerformanceChart({ portfolioId, backfill: backfillProp }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
+  const navigate = useNavigate();
   const { convertAt, currency } = useRateHistory();
   const [range, setRange] = useChartRange();
   const [activeType, setActiveType] = useSessionState('portfolio-perf-type', null);
@@ -329,8 +332,8 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
           style={{ background: `radial-gradient(circle, ${mainColor}20 0%, transparent 70%)` }}
         />
 
-        <div className="flex items-center justify-between p-5 pb-0">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between p-4 sm:p-5 pb-0 gap-3 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
             <span className="flex items-center justify-center w-10 h-10 rounded-xl transition-transform duration-300 group-hover:scale-105" style={{ backgroundColor: mainColor + '15', boxShadow: `0 0 20px ${mainColor}10` }}>
               <TrendingUp className="h-4.5 w-4.5 text-accent" />
             </span>
@@ -355,14 +358,14 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             {backfill.running && (
               <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-tight text-accent/90">
                 <Spinner size="xs" tone="inherit" />
                 <span>{t('portfolio.performance.calculating')} · {String(backfillElapsed).padStart(2, '0')}s</span>
               </div>
             )}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-1.5">
                 <span className="relative w-2 h-2">
                   <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-30" />
@@ -385,13 +388,13 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-5 pt-4 pb-2 gap-2 flex-wrap">
-          <div className="inline-flex gap-0.5 rounded-xl border border-border-default bg-bg-base p-1">
+        <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-2 gap-2 flex-wrap">
+          <div className="inline-flex gap-0.5 rounded-xl border border-border-default bg-bg-base p-1 flex-wrap">
             {[...ASSET_TYPES, { id: 'CASH' }].map(({ id }) => (
               <button
                 key={id || 'all'}
                 onClick={() => setActiveType(id)}
-                className="relative rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all border-none cursor-pointer bg-transparent"
+                className="relative rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] font-semibold transition-all border-none cursor-pointer bg-transparent"
               >
                 {activeType === id && (
                   <motion.span
@@ -410,10 +413,21 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
               </button>
             ))}
           </div>
-          <RangeSelector value={range} onChange={setRange} layoutId="perf-range" size="md" />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(`/analytics?codes=${portfolioId}&types=PORTFOLIO`)}
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-mono font-semibold text-accent hover:text-fg border border-accent/40 hover:border-accent/70 bg-accent/8 hover:bg-accent/15 transition-colors cursor-pointer"
+              title={t('portfolio.performance.compareCta', { defaultValue: 'Karşılaştırmada aç' })}
+            >
+              <GitCompareArrows className="h-3 w-3" />
+              {t('portfolio.performance.compareCta', { defaultValue: 'Karşılaştır' })}
+            </button>
+            <RangeSelector value={range} onChange={setRange} layoutId="perf-range" size="md" />
+          </div>
         </div>
 
-        <div className="relative min-h-[420px] px-2">
+        <div className="relative min-h-[300px] sm:min-h-[420px] px-2">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <Spinner size="md" tone="accent" />
@@ -424,11 +438,11 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
               option={option}
               notMerge
               lazyUpdate
-              style={{ height: 420 }}
+              style={{ height: 'min(60vh, 420px)', minHeight: 300 }}
               opts={{ renderer: 'canvas' }}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center h-[420px] gap-3">
+            <div className="flex flex-col items-center justify-center h-[300px] sm:h-[420px] gap-3">
               <TrendingUp className="h-8 w-8 text-fg-subtle" />
               <p className="text-sm text-fg-muted">{t('portfolio.performance.empty')}</p>
             </div>

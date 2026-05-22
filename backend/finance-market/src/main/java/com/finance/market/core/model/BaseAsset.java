@@ -3,7 +3,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.finance.common.model.Instrument;
 import com.finance.shared.util.PercentChangeCalculator;
-import com.finance.common.dto.internal.AssetSnapshot;
 import jakarta.persistence.Column;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -81,10 +80,5 @@ public abstract class BaseAsset {
 
     public String resolvePriceCurrency() {
         return "TRY";
-    }
-
-    public final AssetSnapshot toSnapshot() {
-        return new AssetSnapshot(getCode(), resolveDisplayName(), getImage(), getPriceTry(),
-                getChangeAmount(), getChangePercent(), resolvePriceCurrency());
     }
 }

@@ -1,7 +1,7 @@
 package com.finance.app.analytics.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.finance.app.analytics.dto.AnalyticsInstrument;
 import com.finance.app.analytics.dto.AnalyticsInstrumentType;
 import com.finance.app.analytics.dto.HistoryPoint;
@@ -110,7 +110,7 @@ public class InflationBeaterService {
             try {
                 log.debug("Beaters snapshot hit date={} period={} benchmark={}", today, period, code);
                 return objectMapper.readValue(existing.get().getPayloadJson(), InflationBeaterResponse.class);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 log.warn("Beater snapshot deserialize failed, recomputing: {}", e.getMessage());
             }
         }
@@ -131,7 +131,7 @@ public class InflationBeaterService {
                     .createdAt(LocalDateTime.now())
                     .build());
             log.info("Beater snapshot persisted date={} period={} benchmark={}", date, period, code);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             log.warn("Beater snapshot persist failed: {}", e.getMessage());
         } catch (RuntimeException e) {
             log.warn("Beater snapshot save failed (likely race): {}", e.getMessage());

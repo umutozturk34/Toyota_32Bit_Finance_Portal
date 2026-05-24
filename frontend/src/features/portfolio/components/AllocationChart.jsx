@@ -147,7 +147,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
       label: {
         show: true,
         position: 'center',
-        formatter: () => `{label|${totalLabel}}\n{value|${moneyCompact(totalValue)}}`,
+        formatter: () => `{label|${totalLabel}}\n{value|${moneyCompact(totalValue, 'TRY')}}`,
         rich: {
           label: { fontSize: 11, color: labelMuted, fontWeight: 500, padding: [0, 0, 4, 0] },
           value: { fontSize: 14, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: labelFg },

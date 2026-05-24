@@ -40,13 +40,21 @@ export default function RealizedPnlChart({ portfolioId }) {
     return (source || []).filter((d) => Number(d.realizedPnlTry) !== 0);
   }, [activeTab, allData, typeData]);
 
+  const frameBase = displayCurrency === 'USD' || displayCurrency === 'EUR' ? displayCurrency : 'TRY';
+  const realizedFor = useCallback((it) => {
+    if (frameBase === 'TRY') return Number(it.realizedPnlTry || 0);
+    const byCurrency = it.realizedPnlByCurrency || {};
+    const frame = byCurrency[frameBase];
+    return frame != null ? Number(frame) : Number(it.realizedPnlTry || 0);
+  }, [frameBase]);
+
   const netPnl = useMemo(
-    () => items.reduce((sum, i) => sum + Number(i.realizedPnlTry || 0), 0),
-    [items]
+    () => items.reduce((sum, i) => sum + realizedFor(i), 0),
+    [items, realizedFor]
   );
   const absTotal = useMemo(
-    () => items.reduce((sum, i) => sum + Math.abs(Number(i.realizedPnlTry || 0)), 0),
-    [items]
+    () => items.reduce((sum, i) => sum + Math.abs(realizedFor(i)), 0),
+    [items, realizedFor]
   );
 
   const highlight = useCallback((name) => {
@@ -79,23 +87,23 @@ export default function RealizedPnlChart({ portfolioId }) {
     let pos = 0;
     let neg = 0;
     items.forEach((it) => {
-      const realized = Number(it.realizedPnlTry || 0);
+      const realized = realizedFor(it);
       if (realized >= 0) { map.set(it.label, pos); pos += 1; }
       else { map.set(it.label, neg); neg += 1; }
     });
     return map;
-  }, [items]);
+  }, [items, realizedFor]);
 
   const colorFor = useCallback((it) => {
-    const realized = Number(it.realizedPnlTry || 0);
+    const realized = realizedFor(it);
     const idx = shadeIndex.get(it.label) || 0;
     return realized >= 0
       ? GREEN_SHADES[idx % GREEN_SHADES.length]
       : RED_SHADES[idx % RED_SHADES.length];
-  }, [shadeIndex]);
+  }, [shadeIndex, realizedFor]);
 
   const seriesData = useMemo(() => items.map((it) => {
-    const realized = Number(it.realizedPnlTry || 0);
+    const realized = realizedFor(it);
     const cost = Number(it.costTry || 0);
     return {
       name: labelFor(it),
@@ -104,7 +112,7 @@ export default function RealizedPnlChart({ portfolioId }) {
       _cost: cost,
       _realized: realized,
     };
-  }), [items, labelFor, colorFor]);
+  }), [items, labelFor, colorFor, realizedFor]);
 
   const palette = chartPalette(isDark);
   const tooltipBg = palette.tooltipBg;
@@ -137,8 +145,8 @@ export default function RealizedPnlChart({ portfolioId }) {
         const pct = absTotal > 0 ? ((Math.abs(realized) / absTotal) * 100).toFixed(1) : '0.0';
         return `<div style="padding:4px 0;min-width:160px">
             <div style="font-size:11px;color:${tooltipFg};opacity:0.85;margin-bottom:4px">${params.name}</div>
-            <div style="font-size:13px;font-family:ui-monospace,monospace;font-weight:700;color:${color}">${sign} ${money(Math.abs(realized))}</div>
-            <div style="font-size:10px;color:${labelMuted};margin-top:4px">${t('portfolio.allocation.costLabel')}: ${money(cost)} · %${pct}</div>
+            <div style="font-size:13px;font-family:ui-monospace,monospace;font-weight:700;color:${color}">${sign} ${money(Math.abs(realized), frameBase)}</div>
+            <div style="font-size:10px;color:${labelMuted};margin-top:4px">${t('portfolio.allocation.costLabel')}: ${money(cost, 'TRY')} · %${pct}</div>
           </div>`;
       },
     },
@@ -150,7 +158,7 @@ export default function RealizedPnlChart({ portfolioId }) {
       label: {
         show: true,
         position: 'center',
-        formatter: () => `{label|${totalLabel}}\n{value|${(netPnl >= 0 ? '+' : '−') + moneyCompact(Math.abs(netPnl))}}`,
+        formatter: () => `{label|${totalLabel}}\n{value|${(netPnl >= 0 ? '+' : '−') + moneyCompact(Math.abs(netPnl), frameBase, 100_000)}}`,
         rich: {
           label: { fontSize: 11, color: labelMuted, fontWeight: 500, padding: [0, 0, 4, 0] },
           value: {
@@ -165,7 +173,7 @@ export default function RealizedPnlChart({ portfolioId }) {
       emphasis: { scale: false, focus: 'self', label: { show: true } },
       data: seriesData,
     }],
-  }), [seriesData, netPnl, absTotal, tooltipBg, tooltipBorder, tooltipFg, labelMuted, ringStroke, money, moneyCompact, t, totalLabel]);
+  }), [seriesData, netPnl, absTotal, tooltipBg, tooltipBorder, tooltipFg, labelMuted, ringStroke, money, moneyCompact, t, totalLabel, frameBase]);
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="show" className="space-y-4">
@@ -207,7 +215,7 @@ export default function RealizedPnlChart({ portfolioId }) {
 
             <div className="space-y-1.5">
               {items.map((it) => {
-                const realized = Number(it.realizedPnlTry || 0);
+                const realized = realizedFor(it);
                 const cost = Number(it.costTry || 0);
                 const pct = absTotal > 0 ? (Math.abs(realized) / absTotal) * 100 : 0;
                 const color = colorFor(it);
@@ -229,8 +237,8 @@ export default function RealizedPnlChart({ portfolioId }) {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-fg truncate">{displayLabel}</p>
                       <p className="text-[10px] font-mono mt-0.5">
-                        <span className="text-fg-muted">{money(cost)}</span>
-                        <span style={{ color: signColor }}> {realized >= 0 ? '+' : '−'} {money(Math.abs(realized))}</span>
+                        <span className="text-fg-muted">{money(cost, 'TRY')}</span>
+                        <span style={{ color: signColor }}> {realized >= 0 ? '+' : '−'} {money(Math.abs(realized), frameBase)}</span>
                       </p>
                     </div>
                     <span className="text-xs font-mono text-fg-muted shrink-0 tabular-nums">{pct.toFixed(1)}%</span>

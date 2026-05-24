@@ -21,9 +21,9 @@ const VALUE_CARD_DEFS = [
   { key: 'totalEntryValueTry', labelKey: 'portfolio.summary.totalCost', Icon: BarChart3, iconBg: 'bg-fg-muted/10', iconColor: 'text-fg-muted', border: 'border-t-fg-muted' },
 ];
 
-function PnlCard({ label, value, percent, realValue, realPercent, hideReal }) {
+function PnlCard({ label, value, percent, realValue, realPercent, hideReal, base = 'TRY' }) {
   const { format: money, formatCompact: moneyCompact } = useMoney();
-  const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
+  const bigMoney = (v) => moneyCompact(v, base, 100_000);
   const cls = getChangeClass(value);
   const Icon = value >= 0 ? TrendingUp : TrendingDown;
   const diff = realPercent != null && percent != null
@@ -49,7 +49,7 @@ function PnlCard({ label, value, percent, realValue, realPercent, hideReal }) {
         <span className="text-[11px] text-fg-muted font-medium">{label}</span>
       </div>
       <div className="flex items-baseline justify-between gap-2">
-        <p className={`text-base font-semibold font-mono ${changeColors[cls]} truncate`} title={money(value)}>
+        <p className={`text-base font-semibold font-mono ${changeColors[cls]} truncate`} title={money(value, base)}>
           {bigMoney(value)}
         </p>
         <span className={`shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium font-mono ${changeBg[cls]} ${changeColors[cls]}`}>
@@ -60,7 +60,7 @@ function PnlCard({ label, value, percent, realValue, realPercent, hideReal }) {
         <div className="flex items-baseline justify-between gap-2 pt-1 border-t border-border-default/40">
           <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle">reel</span>
           <div className="flex items-baseline gap-1.5">
-            <span className={`text-xs font-mono tabular-nums ${changeColors[realCls]} truncate`} title={money(realValue)}>
+            <span className={`text-xs font-mono tabular-nums ${changeColors[realCls]} truncate`} title={money(realValue, base)}>
               {bigMoney(realValue)}
             </span>
             <span className={`shrink-0 text-[10px] font-mono font-semibold tabular-nums ${changeColors[realCls]}`}>
@@ -87,6 +87,18 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
   const frame = pickFrame(summary, displayCurrency);
   const totalPnlPercent = frame?.pnlPercent ?? summary?.pnlPercent;
   const dailyPnlPercent = frame?.dailyPnlPercent ?? summary?.dailyPnlPercent;
+  const totalPnlAmount = isNonTryFrame && frame?.totalPnl != null
+    ? { value: frame.totalPnl, base: displayCurrency }
+    : { value: summary?.totalPnlTry, base: 'TRY' };
+  const dailyPnlAmount = isNonTryFrame && frame?.dailyPnl != null
+    ? { value: frame.dailyPnl, base: displayCurrency }
+    : { value: summary?.dailyPnlTry, base: 'TRY' };
+  const totalValueAmount = isNonTryFrame && frame?.totalValue != null
+    ? { value: frame.totalValue, base: displayCurrency }
+    : { value: summary?.totalValueTry, base: 'TRY' };
+  const totalEntryAmount = isNonTryFrame && frame?.totalEntry != null
+    ? { value: frame.totalEntry, base: displayCurrency }
+    : { value: summary?.totalEntryValueTry, base: 'TRY' };
 
   return (
     <motion.div
@@ -122,31 +134,36 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {VALUE_CARD_DEFS.map(({ key, labelKey, Icon, iconBg, iconColor, border }) => (
-          <Card
-            as={motion.div}
-            key={key}
-            variants={cardVariants}
-            variant="elevated"
-            radius="xl"
-            padding="sm"
-            interactive
-            className={`space-y-1.5 border-t-2 ${border}`}
-          >
-            <div className="flex items-center gap-2">
-              <div className={`flex items-center justify-center w-6 h-6 rounded-md ${iconBg}`}>
-                <Icon className={`h-3.5 w-3.5 ${iconColor}`} />
+        {VALUE_CARD_DEFS.map(({ key, labelKey, Icon, iconBg, iconColor, border }) => {
+          const amount = key === 'totalValueTry' ? totalValueAmount : totalEntryAmount;
+          const bigInBase = (v) => moneyCompact(v, amount.base, 100_000);
+          return (
+            <Card
+              as={motion.div}
+              key={key}
+              variants={cardVariants}
+              variant="elevated"
+              radius="xl"
+              padding="sm"
+              interactive
+              className={`space-y-1.5 border-t-2 ${border}`}
+            >
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center justify-center w-6 h-6 rounded-md ${iconBg}`}>
+                  <Icon className={`h-3.5 w-3.5 ${iconColor}`} />
+                </div>
+                <span className="text-[11px] text-fg-muted font-medium">{t(labelKey)}</span>
               </div>
-              <span className="text-[11px] text-fg-muted font-medium">{t(labelKey)}</span>
-            </div>
-            <p className="text-base font-semibold font-mono text-fg truncate" title={money(summary?.[key])}>
-              {bigMoney(summary?.[key])}
-            </p>
-          </Card>
-        ))}
+              <p className="text-base font-semibold font-mono text-fg truncate" title={money(amount.value, amount.base)}>
+                {bigInBase(amount.value)}
+              </p>
+            </Card>
+          );
+        })}
         <PnlCard
           label={t('portfolio.summary.profitLoss')}
-          value={summary?.totalPnlTry}
+          value={totalPnlAmount.value}
+          base={totalPnlAmount.base}
           percent={totalPnlPercent}
           realValue={summary?.realPnlTry}
           realPercent={summary?.realPnlPercent}
@@ -154,7 +171,8 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
         />
         <PnlCard
           label={t('portfolio.summary.dailyPnl')}
-          value={summary?.dailyPnlTry}
+          value={dailyPnlAmount.value}
+          base={dailyPnlAmount.base}
           percent={dailyPnlPercent}
         />
       </div>

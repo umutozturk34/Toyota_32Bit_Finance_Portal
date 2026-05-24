@@ -273,8 +273,8 @@ public class SnapshotCalculationService {
             BigDecimal entryNotional = dpos.nominalExposure();
             if (entryNotional == null) continue;
             totals.addEntry(entryNotional);
-            boolean closedBySnapDate = dpos.getCloseDate() != null && !dpos.getCloseDate().isAfter(snapDate);
-            if (closedBySnapDate) {
+            boolean closedBeforeSnapDate = dpos.getCloseDate() != null && dpos.getCloseDate().isBefore(snapDate);
+            if (closedBeforeSnapDate) {
                 BigDecimal realized = dpos.realizedOrUnrealizedPnl(dpos.getClosePrice());
                 if (realized != null) totals.addRealizedClose(realized, entryNotional.add(realized));
                 continue;

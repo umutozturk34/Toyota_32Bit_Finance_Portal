@@ -5,5 +5,6 @@ public enum WidgetKind {
     MOVERS,
     WATCHLIST,
     NEWS,
-    BENCHMARK_BEATERS
+    BENCHMARK_BEATERS,
+    SINGLE_ASSET
 }

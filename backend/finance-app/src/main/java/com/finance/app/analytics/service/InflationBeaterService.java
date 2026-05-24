@@ -1,7 +1,5 @@
 package com.finance.app.analytics.service;
 
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 import com.finance.app.analytics.dto.AnalyticsInstrument;
 import com.finance.app.analytics.dto.AnalyticsInstrumentType;
 import com.finance.app.analytics.dto.HistoryPoint;
@@ -10,9 +8,9 @@ import com.finance.app.analytics.dto.response.InflationBeaterResponse;
 import com.finance.app.analytics.dto.request.ScenarioRequest;
 import com.finance.app.analytics.dto.response.ScenarioResponse;
 import com.finance.app.analytics.dto.response.ScenarioSeries;
-import com.finance.app.analytics.model.BeaterSnapshot;
-import com.finance.app.analytics.repository.BeaterSnapshotRepository;
 import com.finance.common.exception.BadRequestException;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.finance.common.model.Currency;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
@@ -25,19 +23,21 @@ import com.finance.market.macro.service.MacroIndicatorQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Log4j2
 @Service
@@ -88,13 +88,16 @@ public class InflationBeaterService {
     private final UnifiedHistoryService historyService;
     private final MacroIndicatorQueryService macroQueryService;
     private final TrackedAssetQueryService trackedAssetQueryService;
-    private final BeaterSnapshotRepository snapshotRepository;
-    private final ObjectMapper objectMapper;
+
+    private final Cache<String, InflationBeaterResponse> cache = Caffeine.newBuilder()
+            .expireAfterWrite(Duration.ofHours(24))
+            .build();
+
+    private final Set<String> inFlight = ConcurrentHashMap.newKeySet();
 
     @Autowired(required = false)
     private AssetNativeCurrencyResolver nativeCurrencyResolver;
 
-    @Transactional
     public InflationBeaterResponse rank(String period, String benchmarkCode) {
         Integer months = PERIOD_MONTHS.get(period);
         if (months == null) {
@@ -102,40 +105,70 @@ public class InflationBeaterService {
         }
         String code = (benchmarkCode != null && !benchmarkCode.isBlank())
                 ? benchmarkCode : DEFAULT_BENCHMARK;
-        LocalDate today = LocalDate.now();
-
-        Optional<BeaterSnapshot> existing = snapshotRepository
-                .findBySnapshotDateAndPeriodAndBenchmarkCode(today, period, code);
-        if (existing.isPresent()) {
-            try {
-                log.debug("Beaters snapshot hit date={} period={} benchmark={}", today, period, code);
-                return objectMapper.readValue(existing.get().getPayloadJson(), InflationBeaterResponse.class);
-            } catch (JacksonException e) {
-                log.warn("Beater snapshot deserialize failed, recomputing: {}", e.getMessage());
-            }
+        String key = cacheKey(period, code);
+        InflationBeaterResponse response = cache.get(key, k -> compute(period, code, months));
+        if (!isWorthCaching(response)) {
+            cache.invalidate(key);
         }
-
-        InflationBeaterResponse response = compute(period, code, months);
-        persistSnapshot(today, period, code, response);
         return response;
     }
 
-    private void persistSnapshot(LocalDate date, String period, String code, InflationBeaterResponse response) {
+    private boolean isWorthCaching(InflationBeaterResponse r) {
+        return r != null && r.entries() != null && !r.entries().isEmpty();
+    }
+
+    public InflationBeaterResponse peekCache(String period, String benchmarkCode) {
+        Integer months = PERIOD_MONTHS.get(period);
+        if (months == null) return null;
+        String code = (benchmarkCode != null && !benchmarkCode.isBlank())
+                ? benchmarkCode : DEFAULT_BENCHMARK;
+        return cache.getIfPresent(cacheKey(period, code));
+    }
+
+    @Async
+    public void warmAsync(String period, String benchmarkCode) {
+        Integer months = PERIOD_MONTHS.get(period);
+        if (months == null) return;
+        String code = (benchmarkCode != null && !benchmarkCode.isBlank())
+                ? benchmarkCode : DEFAULT_BENCHMARK;
+        String key = cacheKey(period, code);
+        if (cache.getIfPresent(key) != null) return;
+        if (!inFlight.add(key)) return;
         try {
-            String json = objectMapper.writeValueAsString(response);
-            snapshotRepository.save(BeaterSnapshot.builder()
-                    .snapshotDate(date)
-                    .period(period)
-                    .benchmarkCode(code)
-                    .payloadJson(json)
-                    .createdAt(LocalDateTime.now())
-                    .build());
-            log.info("Beater snapshot persisted date={} period={} benchmark={}", date, period, code);
-        } catch (JacksonException e) {
-            log.warn("Beater snapshot persist failed: {}", e.getMessage());
+            InflationBeaterResponse result = compute(period, code, months);
+            if (isWorthCaching(result)) {
+                cache.put(key, result);
+            } else {
+                log.info("Beater async warm produced empty result, not caching period={} benchmark={}",
+                        period, code);
+            }
         } catch (RuntimeException e) {
-            log.warn("Beater snapshot save failed (likely race): {}", e.getMessage());
+            log.warn("Beater async warm failed period={} benchmark={}: {}", period, code, e.getMessage());
+        } finally {
+            inFlight.remove(key);
         }
+    }
+
+    public void refresh(String period, String benchmarkCode) {
+        Integer months = PERIOD_MONTHS.get(period);
+        if (months == null) return;
+        String code = (benchmarkCode != null && !benchmarkCode.isBlank())
+                ? benchmarkCode : DEFAULT_BENCHMARK;
+        InflationBeaterResponse result = compute(period, code, months);
+        if (isWorthCaching(result)) {
+            cache.put(cacheKey(period, code), result);
+        } else {
+            log.info("Beater refresh produced empty result, skipping cache period={} benchmark={}",
+                    period, code);
+        }
+    }
+
+    public void clearCache() {
+        cache.invalidateAll();
+    }
+
+    private String cacheKey(String period, String code) {
+        return period + "|" + code;
     }
 
     private InflationBeaterResponse compute(String period, String code, int months) {

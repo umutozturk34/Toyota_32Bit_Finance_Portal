@@ -35,22 +35,49 @@ public class OverviewLayoutReader {
     private final OverviewDefaults defaults;
 
     public List<WidgetSection> readVisibleSections(String userSub) {
+        return readVisibleSections(userSub, null);
+    }
+
+    public List<WidgetSection> readVisibleSections(String userSub, String pageId) {
         UserLayoutResponse response = userLayoutService.getOrEmpty(userSub);
         JsonNode overview = response != null ? response.overview() : null;
         if (overview == null || overview.isNull() || (overview.isObject() && overview.isEmpty())) overview = null;
-        ParseResult parsed = parse(overview);
-        if (parsed.allIds().isEmpty()) return defaults.defaultSections();
+        boolean overviewMissing = overview == null
+                || (!overview.has("pages") && !overview.has("sections"));
+        JsonNode sectionsArray = resolveSectionsArray(overview, pageId);
+        if (sectionsArray == null) {
+            return overviewMissing ? defaults.defaultSections() : List.of();
+        }
+        ParseResult parsed = parse(sectionsArray);
+        if (parsed.allIds().isEmpty() && overviewMissing) return defaults.defaultSections();
         return parsed.visible();
     }
 
-    private ParseResult parse(JsonNode overview) {
+    private JsonNode resolveSectionsArray(JsonNode overview, String pageId) {
+        if (overview == null) return null;
+        JsonNode pages = overview.get("pages");
+        if (pages != null && pages.isArray() && !pages.isEmpty()) {
+            if (pageId == null || pageId.isBlank()) {
+                JsonNode first = pages.get(0);
+                return first != null ? first.get("sections") : null;
+            }
+            for (JsonNode page : pages) {
+                String id = page.path("id").asString(null);
+                if (pageId.equals(id)) {
+                    return page.get("sections");
+                }
+            }
+            return null;
+        }
+        return overview.get("sections");
+    }
+
+    private ParseResult parse(JsonNode sectionsNode) {
         Set<String> allIds = new HashSet<>();
         Set<WidgetKind> allKinds = new HashSet<>();
         LinkedHashMap<String, WidgetSection> dedup = new LinkedHashMap<>();
         int assetCardCount = 0;
         int maxAssetCards = defaults.maxAssetCardWidgetsPerLayout();
-        if (overview == null) return new ParseResult(List.of(), allIds, allKinds);
-        JsonNode sectionsNode = overview.get("sections");
         if (sectionsNode == null || !sectionsNode.isArray()) return new ParseResult(List.of(), allIds, allKinds);
         for (JsonNode entry : sectionsNode) {
             WidgetSection section = parseEntry(entry);

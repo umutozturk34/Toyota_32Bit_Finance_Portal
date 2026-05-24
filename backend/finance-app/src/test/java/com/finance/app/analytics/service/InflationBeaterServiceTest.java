@@ -44,11 +44,6 @@ class InflationBeaterServiceTest {
     @Mock private UnifiedHistoryService historyService;
     @Mock private MacroIndicatorQueryService macroQueryService;
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
-    @Mock private com.finance.app.analytics.repository.BeaterSnapshotRepository snapshotRepository;
-
-    @org.mockito.Spy
-    private com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper()
-            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
     @InjectMocks
     private InflationBeaterService service;

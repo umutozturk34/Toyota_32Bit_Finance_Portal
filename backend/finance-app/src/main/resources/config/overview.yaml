@@ -48,3 +48,7 @@ app:
         min:      { w: 3, h: 4 }
         max:      { w: 8, h: 14 }
         max-items: 20
+      SINGLE_ASSET:
+        defaults: { w: 5, h: 7 }
+        min:      { w: 4, h: 6 }
+        max:      { w: 8, h: 12 }

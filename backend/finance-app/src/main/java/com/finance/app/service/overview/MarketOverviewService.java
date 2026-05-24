@@ -23,7 +23,11 @@ public class MarketOverviewService {
     private final WidgetProviderRegistry registry;
 
     public List<RenderedWidget> render(String userSub) {
-        List<WidgetSection> sections = layoutReader.readVisibleSections(userSub);
+        return render(userSub, null);
+    }
+
+    public List<RenderedWidget> render(String userSub, String pageId) {
+        List<WidgetSection> sections = layoutReader.readVisibleSections(userSub, pageId);
         List<RenderedWidget> rendered = new ArrayList<>(sections.size());
         for (WidgetSection section : sections) {
             rendered.add(renderOne(userSub, section));

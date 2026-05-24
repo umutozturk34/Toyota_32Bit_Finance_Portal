@@ -5,6 +5,7 @@ import java.util.List;
 
 public record BenchmarkBeatersData(
         String benchmarkCode,
+        String benchmarkLabel,
         BigDecimal benchmarkReturnPct,
         String period,
         List<BeaterRow> entries

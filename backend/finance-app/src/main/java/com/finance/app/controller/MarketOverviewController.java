@@ -12,6 +12,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -27,8 +28,10 @@ public class MarketOverviewController {
 
     @GetMapping
     @PreAuthorize("isAuthenticated()")
-    public ApiResponse<List<RenderedWidget>> getOverview(@AuthenticationPrincipal Jwt jwt) {
-        return ApiResponse.success(translator.translate("api.market.overviewRetrieved"), marketOverviewService.render(jwt.getSubject()));
+    public ApiResponse<List<RenderedWidget>> getOverview(@AuthenticationPrincipal Jwt jwt,
+                                                         @RequestParam(name = "page", required = false) String pageId) {
+        return ApiResponse.success(translator.translate("api.market.overviewRetrieved"),
+                marketOverviewService.render(jwt.getSubject(), pageId));
     }
 
     @GetMapping("/widget-definitions")

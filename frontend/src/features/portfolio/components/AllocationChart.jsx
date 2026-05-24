@@ -26,7 +26,7 @@ const COLORS = [
 export default function AllocationChart({ allocation, portfolioId }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { format: money, formatCompact: moneyCompact } = useMoney();
+  const { format: money, formatCompact: moneyCompact, currency: displayCurrency } = useMoney();
   const [activeTab, setActiveTab] = useSessionState('portfolio-alloc-tab', 'ALL');
   const assetLabel = useCallback((id) => {
     if (id === 'CASH') return t('portfolio.allocation.closedLabel');
@@ -193,7 +193,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
           <div className="space-y-4">
             <ReactECharts
               ref={chartRef}
-              key={`${isDark}-${activeTab}`}
+              key={`${isDark}-${activeTab}-${displayCurrency}`}
               option={option}
               notMerge
               style={{ height: 220 }}

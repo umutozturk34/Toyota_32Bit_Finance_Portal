@@ -20,7 +20,7 @@ const RED_SHADES = ['#ef4444', '#f87171', '#fb7185', '#f43f5e', '#fca5a5', '#e11
 export default function RealizedPnlChart({ portfolioId }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { format: money, formatCompact: moneyCompact } = useMoney();
+  const { format: money, formatCompact: moneyCompact, currency: displayCurrency } = useMoney();
   const chartRef = useRef(null);
   const [hovered, setHovered] = useState(null);
   const [activeTab, setActiveTab] = useSessionState('portfolio-realized-tab', 'ALL');
@@ -197,7 +197,7 @@ export default function RealizedPnlChart({ portfolioId }) {
           <div className="space-y-4">
             <ReactECharts
               ref={chartRef}
-              key={`${isDark}-${activeTab}`}
+              key={`${isDark}-${activeTab}-${displayCurrency}`}
               option={option}
               notMerge
               style={{ height: 220 }}

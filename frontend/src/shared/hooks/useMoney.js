@@ -51,13 +51,16 @@ export function useMoney() {
     if (converted == null) return 'N/A';
     if (Math.abs(converted) < threshold) return format(value, base, { natural });
     const target = resolveTarget(base, natural);
+    const normalizedBase = SUPPORTED.includes(base) ? base : 'TRY';
+    const ratesReady = normalizedBase === target || (rates[normalizedBase] != null && rates[target] != null);
+    const effectiveCurrency = ratesReady ? target : normalizedBase;
     return new Intl.NumberFormat(currentLocaleTag(), {
       notation: 'compact',
       style: 'currency',
-      currency: target,
+      currency: effectiveCurrency,
       maximumFractionDigits: 1,
     }).format(converted);
-  }, [convert, format, resolveTarget]);
+  }, [convert, format, resolveTarget, rates]);
 
   return useMemo(
     () => ({ currency: displayCurrency, convert, format, formatCompact, rates, resolveTarget }),

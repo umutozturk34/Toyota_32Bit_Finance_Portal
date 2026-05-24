@@ -31,7 +31,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -403,23 +402,9 @@ public class SnapshotCalculationService {
     private Optional<PortfolioAssetDailySnapshot> findClosestPriorAssetSnapshot(
             Long portfolioId, Long trackedAssetId, LocalDateTime batchTimestamp) {
         LocalDateTime target = batchTimestamp.minusHours(portfolioProperties.getSnapshot().getDailyLookbackHours());
-        Optional<PortfolioAssetDailySnapshot> older = assetSnapshotRepository
+        return assetSnapshotRepository
                 .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
                         portfolioId, trackedAssetId, target);
-        Optional<PortfolioAssetDailySnapshot> newer = assetSnapshotRepository
-                .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
-                        portfolioId, trackedAssetId, target);
-        return pickClosest(older, newer, target, PortfolioAssetDailySnapshot::getCreatedAt);
-    }
-
-    private static <T> Optional<T> pickClosest(Optional<T> older, Optional<T> newer,
-                                                 LocalDateTime target,
-                                                 Function<T, LocalDateTime> getCreatedAt) {
-        if (older.isEmpty()) return newer;
-        if (newer.isEmpty()) return older;
-        long olderDiff = Math.abs(Duration.between(getCreatedAt.apply(older.get()), target).toSeconds());
-        long newerDiff = Math.abs(Duration.between(getCreatedAt.apply(newer.get()), target).toSeconds());
-        return olderDiff <= newerDiff ? older : newer;
     }
 
     private record DailyDelta(BigDecimal amount, BigDecimal percent) {

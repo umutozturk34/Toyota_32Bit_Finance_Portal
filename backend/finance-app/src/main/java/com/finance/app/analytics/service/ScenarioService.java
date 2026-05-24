@@ -132,14 +132,19 @@ public class ScenarioService {
         List<ScenarioPoint> points = new ArrayList<>();
         points.add(new ScenarioPoint(startDate, amount));
 
-        BigDecimal compoundFactor = BigDecimal.ONE;
-        LocalDate cursor = startDate;
+        LocalDate firstObservation = raw.get(0).date();
+        if (startDate.isBefore(firstObservation)) {
+            points.add(new ScenarioPoint(firstObservation, amount));
+        }
 
-        for (int i = 0; i < raw.size(); i++) {
+        BigDecimal compoundFactor = BigDecimal.ONE;
+        LocalDate cursor = firstObservation.isAfter(startDate) ? firstObservation : startDate;
+
+        for (int i = 0; i + 1 < raw.size(); i++) {
             BigDecimal annualRatePct = raw.get(i).value();
             if (annualRatePct == null) continue;
 
-            LocalDate stepEnd = (i + 1 < raw.size()) ? raw.get(i + 1).date() : endDate;
+            LocalDate stepEnd = raw.get(i + 1).date();
             long days = ChronoUnit.DAYS.between(cursor, stepEnd);
             if (days <= 0) continue;
 

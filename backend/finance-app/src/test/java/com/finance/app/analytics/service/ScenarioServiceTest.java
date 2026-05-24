@@ -74,9 +74,13 @@ class ScenarioServiceTest {
         LocalDate end = LocalDate.of(2025, 1, 1);
         Map<LocalDate, BigDecimal> fx = new HashMap<>();
         fx.put(LocalDate.of(2024, 1, 4), BigDecimal.ONE);
+        fx.put(LocalDate.of(2024, 12, 31), BigDecimal.ONE);
         fx.put(end, BigDecimal.ONE);
         PricedSeries depositSeries = new PricedSeries(
-                List.of(new HistoryPoint(LocalDate.of(2024, 1, 4), new BigDecimal("50.00"))),
+                List.of(
+                        new HistoryPoint(LocalDate.of(2024, 1, 4), new BigDecimal("50.00")),
+                        new HistoryPoint(LocalDate.of(2024, 12, 31), new BigDecimal("50.00"))
+                ),
                 Currency.TRY, Currency.TRY, BigDecimal.ONE, fx);
         when(priceSeriesProvider.fetch(eq(deposit), eq(start), eq(end), any())).thenReturn(depositSeries);
         when(historyService.getMacroSeries(anyString(), any(), any())).thenReturn(List.of(

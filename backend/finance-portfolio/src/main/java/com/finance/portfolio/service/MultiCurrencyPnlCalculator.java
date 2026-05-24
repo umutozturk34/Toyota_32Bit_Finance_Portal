@@ -88,7 +88,7 @@ public class MultiCurrencyPnlCalculator {
                 : null;
 
         BigDecimal dailyPct = null;
-        if (dailyPnlTry != null) {
+        if (dailyPnlTry != null && fxToday.compareTo(fxYesterday) != 0) {
             BigDecimal yesterdayTry = totalValueTry.subtract(dailyPnlTry);
             BigDecimal yesterdayInTarget = yesterdayTry.divide(fxYesterday, RATE_SCALE, RoundingMode.HALF_UP);
             if (yesterdayInTarget.signum() > 0) {
@@ -111,7 +111,6 @@ public class MultiCurrencyPnlCalculator {
     private BigDecimal closestPrior(TreeMap<LocalDate, BigDecimal> series, LocalDate date) {
         if (series.isEmpty()) return null;
         Map.Entry<LocalDate, BigDecimal> entry = series.floorEntry(date);
-        if (entry != null) return entry.getValue();
-        return series.firstEntry() != null ? series.firstEntry().getValue() : null;
+        return entry != null ? entry.getValue() : null;
     }
 }

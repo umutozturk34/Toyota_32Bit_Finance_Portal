@@ -357,12 +357,6 @@ class SnapshotCalculationServiceTest {
                         org.mockito.ArgumentMatchers.eq(42L),
                         org.mockito.ArgumentMatchers.any()))
                 .thenReturn(java.util.Optional.empty());
-        when(assetSnapshotRepository
-                .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
-                        org.mockito.ArgumentMatchers.eq(1L),
-                        org.mockito.ArgumentMatchers.eq(42L),
-                        org.mockito.ArgumentMatchers.any()))
-                .thenReturn(java.util.Optional.empty());
 
         PortfolioAssetDailySnapshot snap = service.buildAggregatedAssetSnapshot(
                 1L, AssetType.STOCK, "THYAO.IS", tracked,
@@ -495,16 +489,11 @@ class SnapshotCalculationServiceTest {
     }
 
     @Test
-    void should_pickNewerPrior_when_olderEmptyButNewerPresent() {
+    void should_returnNullDailyPnl_when_priorSnapshotMissing() {
         com.finance.common.model.TrackedAsset tracked = com.finance.common.model.TrackedAsset.builder()
                 .id(42L)
                 .assetType(com.finance.common.model.TrackedAssetType.STOCK)
                 .assetCode("THYAO.IS")
-                .build();
-        PortfolioAssetDailySnapshot newer = PortfolioAssetDailySnapshot.builder()
-                .quantity(new BigDecimal("100"))
-                .unitPriceTry(new BigDecimal("48.0000"))
-                .createdAt(LocalDateTime.of(2026, 5, 1, 18, 0))
                 .build();
         when(assetSnapshotRepository
                 .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
@@ -512,23 +501,17 @@ class SnapshotCalculationServiceTest {
                         org.mockito.ArgumentMatchers.eq(42L),
                         org.mockito.ArgumentMatchers.any()))
                 .thenReturn(java.util.Optional.empty());
-        when(assetSnapshotRepository
-                .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
-                        org.mockito.ArgumentMatchers.eq(1L),
-                        org.mockito.ArgumentMatchers.eq(42L),
-                        org.mockito.ArgumentMatchers.any()))
-                .thenReturn(java.util.Optional.of(newer));
 
         PortfolioAssetDailySnapshot snap = service.buildAggregatedAssetSnapshot(
                 1L, AssetType.STOCK, "THYAO.IS", tracked,
                 LocalDateTime.of(2026, 5, 1, 18, 0),
                 new BigDecimal("100"), new BigDecimal("4000.0000"), new BigDecimal("50.0000"));
 
-        assertThat(snap.getDailyPnlTry()).isNotNull();
+        assertThat(snap.getDailyPnlTry()).isNull();
     }
 
     @Test
-    void should_pickClosestPrior_when_bothOlderAndNewerPresent() {
+    void should_useOlderAsPrior_when_olderSnapshotExists() {
         com.finance.common.model.TrackedAsset tracked = com.finance.common.model.TrackedAsset.builder()
                 .id(42L)
                 .assetType(com.finance.common.model.TrackedAssetType.STOCK)
@@ -540,23 +523,12 @@ class SnapshotCalculationServiceTest {
                 .unitPriceTry(new BigDecimal("45.0000"))
                 .createdAt(target.minusHours(24).minusHours(1))
                 .build();
-        PortfolioAssetDailySnapshot newer = PortfolioAssetDailySnapshot.builder()
-                .quantity(new BigDecimal("100"))
-                .unitPriceTry(new BigDecimal("48.0000"))
-                .createdAt(target.minusHours(24).plusHours(10))
-                .build();
         when(assetSnapshotRepository
                 .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
                         org.mockito.ArgumentMatchers.eq(1L),
                         org.mockito.ArgumentMatchers.eq(42L),
                         org.mockito.ArgumentMatchers.any()))
                 .thenReturn(java.util.Optional.of(older));
-        when(assetSnapshotRepository
-                .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
-                        org.mockito.ArgumentMatchers.eq(1L),
-                        org.mockito.ArgumentMatchers.eq(42L),
-                        org.mockito.ArgumentMatchers.any()))
-                .thenReturn(java.util.Optional.of(newer));
 
         PortfolioAssetDailySnapshot snap = service.buildAggregatedAssetSnapshot(
                 1L, AssetType.STOCK, "THYAO.IS", tracked, target,

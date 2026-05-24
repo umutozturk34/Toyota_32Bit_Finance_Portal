@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
-import { Layers, TrendingUp, Bookmark, Newspaper, Check, Plus, ChevronRight, Bitcoin, Banknote, Wheat, Trophy, Target } from 'lucide-react';
+import { Layers, TrendingUp, Bookmark, Newspaper, Check, Plus, ChevronRight, Bitcoin, Banknote, Wheat, Trophy } from 'lucide-react';
 import { GiGoldBar } from 'react-icons/gi';
 import { useWidgetDefinitions } from '../../../shared/hooks/useWidgetDefinitions';
 import { localizeWatchlistName } from '../../../shared/utils/watchlistName';
@@ -15,7 +15,6 @@ const SINGLETON_TILE_BASES = [
   { id: 'tile-movers-commodity', kind: 'MOVERS', labelKey: 'widgetTray.movers.COMMODITY', config: { market: 'COMMODITY' }, accent: '#f97316', Icon: GiGoldBar },
   { id: 'tile-news', kind: 'NEWS', labelKey: 'widgetTray.newsTile', config: {}, accent: '#06b6d4', Icon: Newspaper },
   { id: 'tile-benchmark-beaters', kind: 'BENCHMARK_BEATERS', labelKey: 'widgetTray.beatersTile', config: {}, accent: '#facc15', Icon: Trophy },
-  { id: 'tile-single-asset', kind: 'SINGLE_ASSET', labelKey: 'widgetTray.singleAssetTile', config: {}, accent: '#a855f7', Icon: Target },
 ];
 
 const ASSET_CARDS_TILE_BASE = {
@@ -47,7 +46,6 @@ function buildWatchlistTiles(watchlists, byKind, t) {
 function singletonUsed(sections, tile) {
   if (tile.kind === 'MOVERS') return sections.some((s) => s.kind === 'MOVERS' && s.config?.market === tile.config.market);
   if (tile.kind === 'WATCHLIST') return sections.some((s) => s.kind === 'WATCHLIST' && s.config?.watchlistId === tile.config.watchlistId);
-  if (tile.kind === 'SINGLE_ASSET') return false;
   return sections.some((s) => s.kind === tile.kind);
 }
 
@@ -201,7 +199,7 @@ function Dropdown({ children }) {
       exit={{ opacity: 0, y: -4 }}
       transition={{ duration: 0.12, ease: 'easeOut' }}
       onMouseDown={(e) => e.stopPropagation()}
-      className="absolute left-0 top-full mt-2 z-[60] min-w-[320px] max-w-[600px] rounded-xl border border-accent/30 bg-bg-deep/95 backdrop-blur-md shadow-2xl shadow-black/40 p-2 space-y-2"
+      className="absolute left-0 top-full mt-2 z-[60] w-[min(600px,calc(100vw-2rem))] min-w-0 rounded-xl border border-accent/30 bg-bg-deep/95 backdrop-blur-md shadow-2xl shadow-black/40 p-2 space-y-2"
     >
       {children}
     </motion.div>

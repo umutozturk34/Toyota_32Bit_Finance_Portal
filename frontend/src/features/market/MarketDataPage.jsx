@@ -191,8 +191,8 @@ export default function MarketDataPage() {
 
   const handleTrayClick = useCallback((tile, anchorEl) => {
     const newId = insertSection(tile.kind, tile.config, 0, 0, { placeAtTop: true });
-    if ((tile.kind === 'ASSET_CARDS' || tile.kind === 'SINGLE_ASSET') && anchorEl) {
-      setPopoverState({ sectionId: newId, anchorEl, autoFocusName: tile.kind === 'ASSET_CARDS' });
+    if (tile.kind === 'ASSET_CARDS' && anchorEl) {
+      setPopoverState({ sectionId: newId, anchorEl, autoFocusName: true });
     }
   }, [insertSection]);
 

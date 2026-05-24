@@ -25,22 +25,37 @@ export const initKeycloak = (onAuthenticatedCallback) => {
     })
     .catch(() => {});
 };
-async function gotoWithLocale(loginOptions) {
+function readLocalTheme() {
+  try {
+    const stored = localStorage.getItem('finance-theme');
+    if (stored === 'light') return 'LIGHT';
+    if (stored === 'dark') return 'DARK';
+  } catch { /* noop */ }
+  return 'DARK';
+}
+
+async function gotoWithLocale(loginOptions, extraParams = {}) {
   const locale = currentLocale();
   loginOptions.locale = locale;
   const url = await keycloak.createLoginUrl(loginOptions);
   const sep = url.includes('?') ? '&' : '?';
-  window.location.href = `${url}${sep}kc_locale=${encodeURIComponent(locale)}`;
+  const extras = Object.entries({ kc_locale: locale, ...extraParams })
+    .filter(([, v]) => v != null && v !== '')
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .join('&');
+  window.location.href = `${url}${sep}${extras}`;
 }
 export const doLogin = (options = {}) => {
   const loginOptions = {};
   if (options.redirectUri) {
     loginOptions.redirectUri = options.redirectUri;
   }
+  const extras = {};
   if (options.action === 'register') {
     loginOptions.action = 'register';
+    extras.themePreference = readLocalTheme();
   }
-  gotoWithLocale(loginOptions);
+  gotoWithLocale(loginOptions, extras);
 };
 export const doLogout = () => {
   const locale = encodeURIComponent(currentLocale());

@@ -46,3 +46,10 @@ createRoot(document.getElementById('root')).render(
     </QueryClientProvider>
   </StrictMode>,
 )
+
+if (typeof window !== 'undefined') {
+  requestAnimationFrame(() => {
+    const boot = document.getElementById('app-boot');
+    if (boot && boot.parentNode) boot.parentNode.removeChild(boot);
+  });
+}

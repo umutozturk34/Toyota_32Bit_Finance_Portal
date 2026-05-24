@@ -82,6 +82,8 @@
                 </div>
             </#if>
 
+            <input type="hidden" id="themePreferenceAttr" name="user.attributes.themePreference" value="DARK" />
+
             <div id="kc-form-buttons" style="margin-top: 1.5rem;">
                 <input type="submit" value="${msg("doRegister")}" />
             </div>
@@ -90,5 +92,17 @@
                 <span>${msg("register.alreadyHaveAccount")} <a href="${url.loginUrl}">${kcSanitize(msg("backToLogin"))?no_esc}</a></span>
             </div>
         </form>
+        <script>
+          (function () {
+            try {
+              var params = new URLSearchParams(window.location.search);
+              var requested = (params.get('themePreference') || '').toUpperCase();
+              if (requested === 'LIGHT' || requested === 'DARK') {
+                var input = document.getElementById('themePreferenceAttr');
+                if (input) input.value = requested;
+              }
+            } catch (e) { /* noop */ }
+          })();
+        </script>
     </#if>
 </@layout.registrationLayout>

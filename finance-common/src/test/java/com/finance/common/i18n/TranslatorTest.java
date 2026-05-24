@@ -67,4 +67,66 @@ class TranslatorTest {
         verify(messageSource).getMessage(eq("priceAlert"), args.capture(), eq(Locale.ENGLISH));
         assertThat(args.getValue()).containsExactly("BTC", 50000);
     }
+
+    @Test
+    void translateOrSelf_returnsNull_whenInputNull() {
+        String result = translator.translateOrSelf(null);
+
+        assertThat(result).isNull();
+    }
+
+    @Test
+    void translateOrSelf_returnsResolvedValue_whenKeyKnown() {
+        Locale previous = LocaleContextHolder.getLocale();
+        LocaleContextHolder.setLocale(Locale.ENGLISH);
+        try {
+            when(messageSource.getMessage(eq("greeting"), any(), eq("greeting"), eq(Locale.ENGLISH)))
+                    .thenReturn("Hello");
+
+            String result = translator.translateOrSelf("greeting");
+
+            assertThat(result).isEqualTo("Hello");
+        } finally {
+            LocaleContextHolder.setLocale(previous);
+        }
+    }
+
+    @Test
+    void translateOrSelf_resolvesStringArgumentsThatLookLikeKeys() {
+        Locale previous = LocaleContextHolder.getLocale();
+        LocaleContextHolder.setLocale(Locale.ENGLISH);
+        try {
+            when(messageSource.getMessage(eq("asset.btc"), eq(null), eq("asset.btc"), eq(Locale.ENGLISH)))
+                    .thenReturn("Bitcoin");
+            when(messageSource.getMessage(eq("priceAlert"), any(), eq("priceAlert"), eq(Locale.ENGLISH)))
+                    .thenReturn("Bitcoin > 100");
+
+            String result = translator.translateOrSelf("priceAlert", "asset.btc", 100);
+
+            assertThat(result).isEqualTo("Bitcoin > 100");
+            ArgumentCaptor<Object[]> args = ArgumentCaptor.forClass(Object[].class);
+            verify(messageSource).getMessage(eq("priceAlert"), args.capture(), eq("priceAlert"), eq(Locale.ENGLISH));
+            assertThat(args.getValue()).containsExactly("Bitcoin", 100);
+        } finally {
+            LocaleContextHolder.setLocale(previous);
+        }
+    }
+
+    @Test
+    void translateOrSelf_leavesArgumentsAlone_whenTheyDoNotLookLikeKeys() {
+        Locale previous = LocaleContextHolder.getLocale();
+        LocaleContextHolder.setLocale(Locale.ENGLISH);
+        try {
+            when(messageSource.getMessage(eq("greeting"), any(), eq("greeting"), eq(Locale.ENGLISH)))
+                    .thenReturn("Hi Alice");
+
+            translator.translateOrSelf("greeting", "Alice", "no dots either", "");
+
+            ArgumentCaptor<Object[]> args = ArgumentCaptor.forClass(Object[].class);
+            verify(messageSource).getMessage(eq("greeting"), args.capture(), eq("greeting"), eq(Locale.ENGLISH));
+            assertThat(args.getValue()).containsExactly("Alice", "no dots either", "");
+        } finally {
+            LocaleContextHolder.setLocale(previous);
+        }
+    }
 }

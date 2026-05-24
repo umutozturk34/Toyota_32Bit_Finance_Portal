@@ -36,6 +36,9 @@ public class PortfolioPdfRenderer {
             renderer.createPDF(out);
             return out.toByteArray();
         } catch (Exception e) {
+            log.error("Portfolio PDF render failed portfolioId={} theme={} locale={} cause={}",
+                    model.portfolio() != null ? model.portfolio().id() : null,
+                    model.theme(), model.locale(), e.toString(), e);
             throw new PdfRenderException("Failed to render portfolio pdf", e);
         }
     }

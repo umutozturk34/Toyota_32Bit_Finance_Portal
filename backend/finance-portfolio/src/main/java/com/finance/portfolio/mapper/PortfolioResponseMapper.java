@@ -86,4 +86,15 @@ public abstract class PortfolioResponseMapper {
                                            BigDecimal realizedPnlTry) {
         return new AllocationItem(label, assetType, valueTry, percent, costTry, realizedPnlTry);
     }
+
+    public AllocationItem toAllocationItem(String label,
+                                           String assetType,
+                                           BigDecimal valueTry,
+                                           BigDecimal percent,
+                                           BigDecimal costTry,
+                                           BigDecimal realizedPnlTry,
+                                           java.util.Map<String, BigDecimal> realizedPnlByCurrency) {
+        return new AllocationItem(label, assetType, valueTry, percent, costTry, realizedPnlTry,
+                realizedPnlByCurrency != null ? realizedPnlByCurrency : java.util.Map.of());
+    }
 }

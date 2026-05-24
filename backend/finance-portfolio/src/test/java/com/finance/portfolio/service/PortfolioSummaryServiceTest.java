@@ -49,7 +49,8 @@ class PortfolioSummaryServiceTest {
         counting = new CountingAssetPricingPort();
         responseMapper = new PortfolioResponseMapperImpl();
         AllocationCalculator allocationCalculator = new AllocationCalculator(
-                counting, positionRepository, derivativePositionRepository, responseMapper);
+                counting, positionRepository, derivativePositionRepository, responseMapper,
+                (type, code, from, to) -> java.util.Map.of());
         DerivativePositionFormatter derivativeFormatter = new DerivativePositionFormatter(
                 viopCandleRepository, counting);
         MultiCurrencyPnlCalculator multiCurrency = new MultiCurrencyPnlCalculator(

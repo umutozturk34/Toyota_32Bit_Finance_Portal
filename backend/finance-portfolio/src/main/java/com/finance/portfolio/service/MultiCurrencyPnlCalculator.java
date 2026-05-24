@@ -36,9 +36,12 @@ public class MultiCurrencyPnlCalculator {
             BigDecimal pnlPercentTry,
             BigDecimal dailyPnlPercentTry) {
         Map<String, CurrencyFramePct> frames = new LinkedHashMap<>();
-        frames.put("TRY", new CurrencyFramePct(pnlPercentTry, dailyPnlPercentTry));
+        BigDecimal totalEntryTry = sumEntryValuesTry(positions);
+        BigDecimal totalPnlTry = totalValueTry != null ? totalValueTry.subtract(totalEntryTry) : null;
+        frames.put("TRY", new CurrencyFramePct(pnlPercentTry, dailyPnlPercentTry,
+                totalValueTry, totalEntryTry, totalPnlTry, dailyPnlTry));
         if (totalValueTry == null) {
-            for (String target : TARGETS) frames.put(target, new CurrencyFramePct(null, null));
+            for (String target : TARGETS) frames.put(target, CurrencyFramePct.empty());
             return frames;
         }
 
@@ -57,6 +60,15 @@ public class MultiCurrencyPnlCalculator {
         return frames;
     }
 
+    private BigDecimal sumEntryValuesTry(List<PortfolioPosition> positions) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (PortfolioPosition pos : positions) {
+            if (pos.getEntryPrice() == null || pos.getQuantity() == null) continue;
+            total = total.add(pos.getEntryPrice().multiply(pos.getQuantity()));
+        }
+        return total;
+    }
+
     private CurrencyFramePct computeFrame(String target, List<PortfolioPosition> positions,
                                           BigDecimal totalValueTry, BigDecimal dailyPnlTry,
                                           LocalDate today, LocalDate yesterday, LocalDate oldestEntry) {
@@ -64,7 +76,7 @@ public class MultiCurrencyPnlCalculator {
         BigDecimal fxToday = closestPrior(fxSeries, today);
         BigDecimal fxYesterday = closestPrior(fxSeries, yesterday);
         if (fxToday == null || fxYesterday == null || fxToday.signum() <= 0 || fxYesterday.signum() <= 0) {
-            return new CurrencyFramePct(null, null);
+            return CurrencyFramePct.empty();
         }
 
         BigDecimal todayInTarget = totalValueTry.divide(fxToday, RATE_SCALE, RoundingMode.HALF_UP);
@@ -81,24 +93,30 @@ public class MultiCurrencyPnlCalculator {
                     posEntryTry.divide(fxEntry, RATE_SCALE, RoundingMode.HALF_UP));
         }
 
+        BigDecimal pnlInTarget = todayInTarget.subtract(entryInTarget)
+                .setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
         BigDecimal pnlPct = entryInTarget.signum() > 0
-                ? todayInTarget.subtract(entryInTarget)
-                        .multiply(HUNDRED)
+                ? pnlInTarget.multiply(HUNDRED)
                         .divide(entryInTarget, MoneyScale.PRICE, RoundingMode.HALF_UP)
                 : null;
 
         BigDecimal dailyPct = null;
+        BigDecimal dailyPnlInTarget = null;
         if (dailyPnlTry != null && fxToday.compareTo(fxYesterday) != 0) {
             BigDecimal yesterdayTry = totalValueTry.subtract(dailyPnlTry);
             BigDecimal yesterdayInTarget = yesterdayTry.divide(fxYesterday, RATE_SCALE, RoundingMode.HALF_UP);
+            dailyPnlInTarget = todayInTarget.subtract(yesterdayInTarget)
+                    .setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
             if (yesterdayInTarget.signum() > 0) {
-                dailyPct = todayInTarget.subtract(yesterdayInTarget)
-                        .multiply(HUNDRED)
+                dailyPct = dailyPnlInTarget.multiply(HUNDRED)
                         .divide(yesterdayInTarget, MoneyScale.PRICE, RoundingMode.HALF_UP);
             }
         }
 
-        return new CurrencyFramePct(pnlPct, dailyPct);
+        BigDecimal todayInTargetScaled = todayInTarget.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        BigDecimal entryInTargetScaled = entryInTarget.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        return new CurrencyFramePct(pnlPct, dailyPct, todayInTargetScaled,
+                entryInTargetScaled, pnlInTarget, dailyPnlInTarget);
     }
 
     private TreeMap<LocalDate, BigDecimal> loadSeries(String target, LocalDate from, LocalDate to) {
@@ -111,6 +129,9 @@ public class MultiCurrencyPnlCalculator {
     private BigDecimal closestPrior(TreeMap<LocalDate, BigDecimal> series, LocalDate date) {
         if (series.isEmpty()) return null;
         Map.Entry<LocalDate, BigDecimal> entry = series.floorEntry(date);
-        return entry != null ? entry.getValue() : null;
+        if (entry != null && entry.getValue() != null && entry.getValue().signum() > 0) {
+            return entry.getValue();
+        }
+        return null;
     }
 }

@@ -43,17 +43,23 @@ class AllocationCalculatorTest {
     @Mock private PortfolioPositionRepository positionRepository;
     @Mock private DerivativePositionRepository derivativePositionRepository;
     @Mock private PortfolioResponseMapper mapper;
+    @Mock private com.finance.market.core.service.HistoricalPricingPort historicalPricingPort;
 
     private AllocationCalculator calculator;
 
     @BeforeEach
     void setUp() {
         calculator = new AllocationCalculator(pricingPort, positionRepository,
-                derivativePositionRepository, mapper);
+                derivativePositionRepository, mapper, historicalPricingPort);
         lenient().when(mapper.toAllocationItem(anyString(), any(), any(), any(), any(), any()))
                 .thenAnswer(inv -> new AllocationItem(
                         inv.getArgument(0), inv.getArgument(1), inv.getArgument(2),
                         inv.getArgument(3), inv.getArgument(4), inv.getArgument(5)));
+        lenient().when(mapper.toAllocationItem(anyString(), any(), any(), any(), any(), any(), any()))
+                .thenAnswer(inv -> new AllocationItem(
+                        inv.getArgument(0), inv.getArgument(1), inv.getArgument(2),
+                        inv.getArgument(3), inv.getArgument(4), inv.getArgument(5),
+                        inv.getArgument(6)));
     }
 
     private PortfolioPosition openSpot(AssetType type, String code, String qty, String entry) {

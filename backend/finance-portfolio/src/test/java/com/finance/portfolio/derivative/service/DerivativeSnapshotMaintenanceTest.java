@@ -8,6 +8,7 @@ import com.finance.market.viop.model.ViopContractKind;
 import com.finance.market.viop.repository.ViopCandleRepository;
 import com.finance.portfolio.derivative.model.DerivativeDirection;
 import com.finance.portfolio.derivative.model.DerivativePosition;
+import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
 import com.finance.portfolio.model.Portfolio;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
@@ -42,13 +43,14 @@ class DerivativeSnapshotMaintenanceTest {
     @Mock private HistoricalPricingPort historicalPricingPort;
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     @Mock private SnapshotCalculationService snapshotCalculator;
+    @Mock private DerivativePositionRepository derivativePositionRepository;
 
     private DerivativeSnapshotMaintenance maintenance;
 
     @BeforeEach
     void setUp() {
         maintenance = new DerivativeSnapshotMaintenance(candleRepository, historicalPricingPort,
-                assetSnapshotRepository, snapshotCalculator);
+                assetSnapshotRepository, snapshotCalculator, derivativePositionRepository);
     }
 
     private ViopContract contract(String symbol, String currency) {

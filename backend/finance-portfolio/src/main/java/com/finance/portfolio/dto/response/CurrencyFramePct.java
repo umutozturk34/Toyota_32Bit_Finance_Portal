@@ -4,5 +4,18 @@ import java.math.BigDecimal;
 
 public record CurrencyFramePct(
         BigDecimal pnlPercent,
-        BigDecimal dailyPnlPercent
-) {}
+        BigDecimal dailyPnlPercent,
+        BigDecimal totalValue,
+        BigDecimal totalEntry,
+        BigDecimal totalPnl,
+        BigDecimal dailyPnl
+) {
+
+    public static CurrencyFramePct empty() {
+        return new CurrencyFramePct(null, null, null, null, null, null);
+    }
+
+    public static CurrencyFramePct ofPctOnly(BigDecimal pnlPct, BigDecimal dailyPct) {
+        return new CurrencyFramePct(pnlPct, dailyPct, null, null, null, null);
+    }
+}

@@ -157,39 +157,7 @@ public class PortfolioPerformanceService {
                     p.dailyPnlTry(), p.dailyPnlPercent(), events));
             prev = p.timestamp();
         }
-        return promoteSoldEventsToZeroPoint(result);
-    }
-
-    private List<AssetSeriesPoint> promoteSoldEventsToZeroPoint(List<AssetSeriesPoint> series) {
-        if (series.size() < 2) return series;
-        List<AssetSeriesPoint> result = new ArrayList<>(series);
-        for (int i = 0; i < result.size() - 1; i++) {
-            AssetSeriesPoint pre = result.get(i);
-            AssetSeriesPoint post = result.get(i + 1);
-            if (!isSellDropPair(pre, post)) continue;
-            List<PerformanceEvent> soldEvents = pre.events().stream()
-                    .filter(e -> e.type() == PerformanceEventType.POSITION_SOLD)
-                    .toList();
-            if (soldEvents.isEmpty()) continue;
-            List<PerformanceEvent> merged = new ArrayList<>(post.events());
-            merged.addAll(soldEvents);
-            result.set(i + 1, post.withEvents(merged));
-        }
         return result;
-    }
-
-    private static boolean isSellDropPair(AssetSeriesPoint pre, AssetSeriesPoint post) {
-        return pre.timestamp().toLocalDate().equals(post.timestamp().toLocalDate())
-                && isPositive(pre.marketValueTry())
-                && isZero(post.marketValueTry());
-    }
-
-    private static boolean isPositive(BigDecimal v) {
-        return v != null && v.signum() > 0;
-    }
-
-    private static boolean isZero(BigDecimal v) {
-        return v != null && v.signum() == 0;
     }
 
     private List<PerformancePoint> getAggregatePerformance(Long portfolioId,

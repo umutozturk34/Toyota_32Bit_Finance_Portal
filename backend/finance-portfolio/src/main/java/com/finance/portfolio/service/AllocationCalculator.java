@@ -1,6 +1,7 @@
 package com.finance.portfolio.service;
 
 import com.finance.common.model.MarketType;
+import com.finance.market.core.service.HistoricalPricingPort;
 import com.finance.portfolio.derivative.model.DerivativePosition;
 import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
 import com.finance.portfolio.dto.response.AllocationItem;
@@ -18,10 +19,13 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 @Log4j2
 @Component
@@ -36,10 +40,13 @@ class AllocationCalculator {
     private static final String OTHER_KEY = "OTHER";
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
+    private static final List<String> FRAME_CURRENCIES = List.of("USD", "EUR");
+
     private final AssetPricingPort pricingPort;
     private final PortfolioPositionRepository positionRepository;
     private final DerivativePositionRepository derivativePositionRepository;
     private final PortfolioResponseMapper responseMapper;
+    private final HistoricalPricingPort historicalPricingPort;
 
     List<AllocationItem> compute(Long portfolioId, String mode, String assetTypeFilter, Integer limit) {
         log.debug("Computing allocation portfolioId={} mode={} filter={} limit={}",
@@ -158,17 +165,74 @@ class AllocationCalculator {
         boolean groupByType = noFilter;
         Map<String, BigDecimal> costs = new LinkedHashMap<>();
         Map<String, BigDecimal> realizeds = new LinkedHashMap<>();
+        Map<String, Map<String, BigDecimal>> realizedsByCurrency = new LinkedHashMap<>();
         Map<String, String> types = new LinkedHashMap<>();
+        Map<String, TreeMap<LocalDate, BigDecimal>> fxSeries = loadFxFrameSeries(portfolioId);
         boolean includeSpot = noFilter || !AssetType.VIOP.name().equalsIgnoreCase(assetTypeFilter);
         boolean includeViop = noFilter || AssetType.VIOP.name().equalsIgnoreCase(assetTypeFilter);
-        if (includeSpot) accumulateClosedSpot(portfolioId, assetTypeFilter, noFilter, groupByType, costs, realizeds, types);
-        if (includeViop) accumulateClosedDerivatives(portfolioId, groupByType, costs, realizeds, types);
-        return toRealizedPnlItems(realizeds, costs, types);
+        if (includeSpot) accumulateClosedSpot(portfolioId, assetTypeFilter, noFilter, groupByType, costs, realizeds, realizedsByCurrency, types, fxSeries);
+        if (includeViop) accumulateClosedDerivatives(portfolioId, groupByType, costs, realizeds, realizedsByCurrency, types, fxSeries);
+        return toRealizedPnlItems(realizeds, realizedsByCurrency, costs, types);
+    }
+
+    private Map<String, TreeMap<LocalDate, BigDecimal>> loadFxFrameSeries(Long portfolioId) {
+        LocalDate today = LocalDate.now();
+        LocalDate oldest = positionRepository.findByPortfolioId(portfolioId).stream()
+                .filter(PortfolioPosition::isClosed)
+                .map(p -> p.getExitDate() != null ? p.getExitDate().toLocalDate() : null)
+                .filter(java.util.Objects::nonNull)
+                .min(LocalDate::compareTo)
+                .orElse(today);
+        Map<String, TreeMap<LocalDate, BigDecimal>> series = new LinkedHashMap<>();
+        for (String currency : FRAME_CURRENCIES) {
+            Map<LocalDate, BigDecimal> raw = historicalPricingPort.getPriceSeries(
+                    MarketType.FOREX, currency, oldest.minusDays(14), today.plusDays(1));
+            series.put(currency, raw != null && !raw.isEmpty() ? new TreeMap<>(raw) : new TreeMap<>());
+        }
+        return series;
+    }
+
+    private Map<String, BigDecimal> convertToFrames(BigDecimal realizedTry, LocalDate date,
+                                                    Map<String, TreeMap<LocalDate, BigDecimal>> fxSeries) {
+        if (realizedTry == null) return Collections.emptyMap();
+        Map<String, BigDecimal> out = new LinkedHashMap<>();
+        for (var entry : fxSeries.entrySet()) {
+            TreeMap<LocalDate, BigDecimal> series = entry.getValue();
+            if (series.isEmpty()) continue;
+            BigDecimal fxRate = null;
+            if (date != null) {
+                var floor = series.floorEntry(date);
+                if (floor != null && floor.getValue() != null && floor.getValue().signum() > 0) {
+                    fxRate = floor.getValue();
+                }
+            }
+            if (fxRate == null) {
+                var latest = series.lastEntry();
+                if (latest != null && latest.getValue() != null && latest.getValue().signum() > 0) {
+                    fxRate = latest.getValue();
+                }
+            }
+            if (fxRate == null) continue;
+            out.put(entry.getKey(), realizedTry.divide(fxRate, MoneyScale.PRICE, RoundingMode.HALF_UP));
+        }
+        return out;
+    }
+
+    private void mergeRealizedFrames(Map<String, Map<String, BigDecimal>> target, String key,
+                                      Map<String, BigDecimal> increment) {
+        if (increment.isEmpty()) return;
+        target.computeIfAbsent(key, k -> new LinkedHashMap<>());
+        Map<String, BigDecimal> bucket = target.get(key);
+        for (var e : increment.entrySet()) {
+            bucket.merge(e.getKey(), e.getValue(), BigDecimal::add);
+        }
     }
 
     private void accumulateClosedSpot(Long portfolioId, String assetTypeFilter, boolean noFilter, boolean groupByType,
                                        Map<String, BigDecimal> costs, Map<String, BigDecimal> realizeds,
-                                       Map<String, String> types) {
+                                       Map<String, Map<String, BigDecimal>> realizedsByCurrency,
+                                       Map<String, String> types,
+                                       Map<String, TreeMap<LocalDate, BigDecimal>> fxSeries) {
         for (PortfolioPosition pos : positionRepository.findByPortfolioId(portfolioId)) {
             if (!pos.isClosed() || pos.getExitPrice() == null) continue;
             if (!noFilter && !pos.getAssetType().name().equalsIgnoreCase(assetTypeFilter)) continue;
@@ -178,12 +242,16 @@ class AllocationCalculator {
             costs.merge(key, pos.entryValue(), BigDecimal::add);
             realizeds.merge(key, realized, BigDecimal::add);
             types.putIfAbsent(key, pos.getAssetType().name());
+            LocalDate exitDate = pos.getExitDate() != null ? pos.getExitDate().toLocalDate() : null;
+            mergeRealizedFrames(realizedsByCurrency, key, convertToFrames(realized, exitDate, fxSeries));
         }
     }
 
     private void accumulateClosedDerivatives(Long portfolioId, boolean groupByType,
                                               Map<String, BigDecimal> costs, Map<String, BigDecimal> realizeds,
-                                              Map<String, String> types) {
+                                              Map<String, Map<String, BigDecimal>> realizedsByCurrency,
+                                              Map<String, String> types,
+                                              Map<String, TreeMap<LocalDate, BigDecimal>> fxSeries) {
         for (DerivativePosition dpos : derivativePositionRepository.findByPortfolioId(portfolioId)) {
             if (dpos.getViopContract() == null || dpos.isOpen()) continue;
             BigDecimal entryNotional = dpos.nominalExposure();
@@ -193,10 +261,13 @@ class AllocationCalculator {
             costs.merge(key, entryNotional, BigDecimal::add);
             realizeds.merge(key, realized, BigDecimal::add);
             types.putIfAbsent(key, AssetType.VIOP.name());
+            LocalDate closeDate = dpos.getCloseDate() != null ? dpos.getCloseDate() : null;
+            mergeRealizedFrames(realizedsByCurrency, key, convertToFrames(realized, closeDate, fxSeries));
         }
     }
 
     private List<AllocationItem> toRealizedPnlItems(Map<String, BigDecimal> realizeds,
+                                                     Map<String, Map<String, BigDecimal>> realizedsByCurrency,
                                                      Map<String, BigDecimal> costs,
                                                      Map<String, String> types) {
         BigDecimal absTotal = realizeds.values().stream()
@@ -208,9 +279,11 @@ class AllocationCalculator {
                     BigDecimal pct = absTotal.signum() > 0
                             ? abs.multiply(HUNDRED).divide(absTotal, MoneyScale.PRICE, RoundingMode.HALF_UP)
                             : BigDecimal.ZERO;
+                    Map<String, BigDecimal> byCurrency = realizedsByCurrency.getOrDefault(e.getKey(), Map.of());
                     return responseMapper.toAllocationItem(e.getKey(), types.get(e.getKey()), abs, pct,
                             costs.get(e.getKey()).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP),
-                            e.getValue().setScale(MoneyScale.PRICE, RoundingMode.HALF_UP));
+                            e.getValue().setScale(MoneyScale.PRICE, RoundingMode.HALF_UP),
+                            byCurrency);
                 })
                 .toList();
     }

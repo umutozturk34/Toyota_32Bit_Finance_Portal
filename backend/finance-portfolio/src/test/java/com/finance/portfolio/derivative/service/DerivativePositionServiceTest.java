@@ -73,7 +73,8 @@ class DerivativePositionServiceTest {
     @BeforeEach
     void setUp() {
         DerivativeSnapshotMaintenance snapshotMaintenance = new DerivativeSnapshotMaintenance(
-                candleRepository, historicalPricingPort, assetSnapshotRepository, snapshotCalculator);
+                candleRepository, historicalPricingPort, assetSnapshotRepository, snapshotCalculator,
+                positionRepository);
         DerivativePriceResolver priceResolver = new DerivativePriceResolver(
                 candleRepository, historicalPricingPort);
         service = new DerivativePositionService(positionRepository, portfolioRepository,

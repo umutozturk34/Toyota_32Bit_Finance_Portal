@@ -23,6 +23,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -47,13 +49,15 @@ public class PriceAlertService {
             throw new BadRequestException("error.priceAlert.maxReached", maxPerUser);
         }
         TrackedAsset trackedAsset = requireTrackedAsset(request.marketType(), request.assetCode());
+        BigDecimal thresholdTry = toTry(request.threshold(), request.currency());
         if (repository.existsByUserSubAndTrackedAsset_IdAndDirectionAndThresholdAndActiveTrue(
-                userSub, trackedAsset.getId(), request.direction(), request.threshold())) {
+                userSub, trackedAsset.getId(), request.direction(), thresholdTry)) {
             throw new BadRequestException("error.priceAlert.duplicate",
                     request.marketType(), trackedAsset.getAssetCode(),
-                    request.direction(), request.threshold());
+                    request.direction(), thresholdTry);
         }
         PriceAlert entity = mapper.toEntity(request, userSub);
+        entity.setThreshold(thresholdTry);
         entity.setTrackedAsset(trackedAsset);
         entity.setAssetCode(trackedAsset.getAssetCode());
         PriceAlert saved = repository.save(entity);
@@ -108,7 +112,9 @@ public class PriceAlertService {
     public PriceAlertResponse update(Long id, String userSub, PriceAlertUpdateRequest request) {
         PriceAlert alert = ownedOr404(id, userSub);
         if (request.direction() != null) alert.setDirection(request.direction());
-        if (request.threshold() != null) alert.setThreshold(request.threshold());
+        if (request.threshold() != null) {
+            alert.setThreshold(toTry(request.threshold(), alert.getCurrency()));
+        }
         PriceAlert saved = repository.save(alert);
         log.info("Price alert updated alertId={} userSub={} dir={} threshold={}",
                 id, userSub, saved.getDirection(), saved.getThreshold());
@@ -140,5 +146,17 @@ public class PriceAlertService {
         return repository.findById(id)
                 .filter(a -> a.belongsTo(userSub))
                 .orElseThrow(() -> new ResourceNotFoundException("error.priceAlert.notFound", id));
+    }
+
+    private BigDecimal toTry(BigDecimal amount, String currency) {
+        if (amount == null) return null;
+        if (currency == null || currency.isBlank() || "TRY".equalsIgnoreCase(currency)) return amount;
+        AssetSnapshot fx = assetSnapshotCache
+                .findByCodes(MarketType.FOREX, Set.of(currency.toUpperCase()))
+                .get(currency.toUpperCase());
+        if (fx == null || fx.priceTry() == null || fx.priceTry().signum() <= 0) {
+            throw new BadRequestException("error.priceAlert.unknownCurrency", currency);
+        }
+        return amount.multiply(fx.priceTry()).setScale(4, RoundingMode.HALF_UP);
     }
 }

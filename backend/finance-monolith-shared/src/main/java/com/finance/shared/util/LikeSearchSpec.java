@@ -37,18 +37,13 @@ public final class LikeSearchSpec {
         if (term == null || term.isBlank() || fields == null || fields.length == 0) {
             return cb.conjunction();
         }
-        String[] tokens = term.toLowerCase(Locale.ROOT).trim().split("\\s+");
-        Predicate[] tokenPreds = new Predicate[tokens.length];
-        for (int i = 0; i < tokens.length; i++) {
-            String pattern = "%" + tokens[i] + "%";
-            Predicate[] fieldPreds = new Predicate[fields.length];
-            for (int j = 0; j < fields.length; j++) {
-                Expression<String> normalizedField = cb.function("unaccent", String.class, cb.lower(root.get(fields[j])));
-                Expression<String> normalizedPattern = cb.function("unaccent", String.class, cb.literal(pattern));
-                fieldPreds[j] = cb.like(normalizedField, normalizedPattern);
-            }
-            tokenPreds[i] = cb.or(fieldPreds);
+        String pattern = "%" + term.toLowerCase(Locale.ROOT).trim() + "%";
+        Predicate[] fieldPreds = new Predicate[fields.length];
+        for (int j = 0; j < fields.length; j++) {
+            Expression<String> normalizedField = cb.function("unaccent", String.class, cb.lower(root.get(fields[j])));
+            Expression<String> normalizedPattern = cb.function("unaccent", String.class, cb.literal(pattern));
+            fieldPreds[j] = cb.like(normalizedField, normalizedPattern);
         }
-        return cb.and(tokenPreds);
+        return cb.or(fieldPreds);
     }
 }

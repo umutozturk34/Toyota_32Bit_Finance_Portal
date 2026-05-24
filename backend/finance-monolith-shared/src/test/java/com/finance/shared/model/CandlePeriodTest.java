@@ -16,7 +16,7 @@ class CandlePeriodTest {
     private static final LocalDateTime REFERENCE_END = LocalDateTime.of(2026, 4, 19, 12, 0);
 
     @ParameterizedTest
-    @CsvSource({"ONE_MONTH, 1", "THREE_MONTHS, 3", "SIX_MONTHS, 6", "ONE_YEAR, 12", "FIVE_YEARS, 60", "ALL, 0"})
+    @CsvSource({"ONE_MONTH, 1", "THREE_MONTHS, 3", "SIX_MONTHS, 6", "ONE_YEAR, 12", "THREE_YEARS, 36", "FIVE_YEARS, 60", "ALL, 0"})
     void monthsReturnCorrectValue(CandlePeriod period, int expectedMonths) {
         assertThat(period.getMonths()).isEqualTo(expectedMonths);
     }
@@ -27,6 +27,7 @@ class CandlePeriodTest {
             "3M,  THREE_MONTHS",
             "6M,  SIX_MONTHS",
             "1Y,  ONE_YEAR",
+            "3Y,  THREE_YEARS",
             "5Y,  FIVE_YEARS",
             "ALL, ALL",
             "1m,  ONE_MONTH",
@@ -54,6 +55,7 @@ class CandlePeriodTest {
             "THREE_MONTHS, 2026-01-19T12:00",
             "SIX_MONTHS,   2025-10-19T12:00",
             "ONE_YEAR,     2025-04-19T12:00",
+            "THREE_YEARS,  2023-04-19T12:00",
             "FIVE_YEARS,   2021-04-19T12:00"
     })
     void toStartDateTimeWithEndShiftsBackByPeriod(CandlePeriod period, LocalDateTime expected) {

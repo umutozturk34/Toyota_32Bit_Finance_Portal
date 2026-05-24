@@ -14,6 +14,7 @@ public enum CandlePeriod {
     THREE_MONTHS("3M", 3, end -> end.minusMonths(3)),
     SIX_MONTHS("6M", 6, end -> end.minusMonths(6)),
     ONE_YEAR("1Y", 12, end -> end.minusYears(1)),
+    THREE_YEARS("3Y", 36, end -> end.minusYears(3)),
     FIVE_YEARS("5Y", 60, end -> end.minusYears(5)),
     ALL("ALL", 0, end -> LocalDateTime.of(1970, 1, 1, 0, 0));
 

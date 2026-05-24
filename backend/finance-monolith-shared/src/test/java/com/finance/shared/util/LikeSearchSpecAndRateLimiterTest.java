@@ -78,7 +78,7 @@ class LikeSearchSpecAndRateLimiterTest {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
-    void byFieldsContainsAllTokensUnaccent_multiToken_andsTokensOrsFieldsWrappedInUnaccent() {
+    void byFieldsContainsAllTokensUnaccent_phraseSearchOrsFieldsWrappedInUnaccent() {
         Path path = mock(Path.class);
         Expression lowerExpr = mock(Expression.class);
         Expression unaccentExpr = mock(Expression.class);
@@ -91,14 +91,11 @@ class LikeSearchSpecAndRateLimiterTest {
         when(cb.like(any(Expression.class), any(Expression.class))).thenReturn(likePredicate);
         Predicate or = mock(Predicate.class);
         when(cb.or(any(Predicate[].class))).thenReturn(or);
-        Predicate and = mock(Predicate.class);
-        when(cb.and(any(Predicate[].class))).thenReturn(and);
 
-        Predicate result = LikeSearchSpec.byFieldsContainsAllTokensUnaccent(root, cb, "Borsa İstanbul", "title", "description");
+        Predicate result = LikeSearchSpec.byFieldsContainsAllTokensUnaccent(root, cb, "Özgür Özel", "title", "description", "content");
 
-        assertThat(result).isSameAs(and);
-        verify(cb, org.mockito.Mockito.times(2)).or(any(Predicate[].class));
-        verify(cb).and(any(Predicate[].class));
+        assertThat(result).isSameAs(or);
+        verify(cb).or(any(Predicate[].class));
         verify(cb, org.mockito.Mockito.atLeast(4)).function(eq("unaccent"), any(), any(Expression.class));
     }
 

@@ -75,7 +75,7 @@ public class NewsQueryService {
 
         if (searchTerm != null && !searchTerm.isBlank()) {
             spec = spec.and((root, query, cb) ->
-                    LikeSearchSpec.byFieldsContainsAllTokensUnaccent(root, cb, searchTerm, "title", "description"));
+                    LikeSearchSpec.byFieldsContainsAllTokensUnaccent(root, cb, searchTerm, "title", "description", "content"));
         }
 
         return spec;

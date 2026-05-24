@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useInView, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -236,6 +236,7 @@ function SingleAssetSectionImpl({ data, config }) {
     const ref = useRef(null);
     const chartHostRef = useRef(null);
     const chartInstanceRef = useRef(null);
+    const [initialSize, setInitialSize] = useState(null);
     const inView = useInView(ref, { margin: '200px 0px', once: true });
     const asset = data?.asset;
 
@@ -280,49 +281,53 @@ function SingleAssetSectionImpl({ data, config }) {
         [history, chartType, accent, isDark, tooltipLabels],
     );
 
-    const resizeChartToHost = () => {
-        const instance = chartInstanceRef.current;
-        const host = chartHostRef.current;
-        if (!instance || !host || instance.isDisposed?.()) return;
-        const width = host.clientWidth;
-        const height = host.clientHeight;
-        if (width <= 0 || height <= 0) return;
-        if (instance.getWidth() === width && instance.getHeight() === height) return;
-        instance.resize({ width, height });
-    };
-
     useEffect(() => {
-        if (!inView || !chartOption || typeof ResizeObserver === 'undefined') return undefined;
+        if (!inView || initialSize) return undefined;
         const host = chartHostRef.current;
         if (!host) return undefined;
-        let rafId = null;
-        const schedule = () => {
-            if (rafId) cancelAnimationFrame(rafId);
-            rafId = requestAnimationFrame(resizeChartToHost);
+        const measure = () => {
+            const w = host.clientWidth;
+            const h = host.clientHeight;
+            if (w > 0 && h > 0) {
+                setInitialSize({ width: w, height: h });
+                return true;
+            }
+            return false;
         };
-        const observer = new ResizeObserver(schedule);
+        if (measure()) return undefined;
+        if (typeof ResizeObserver === 'undefined') return undefined;
+        const observer = new ResizeObserver(() => {
+            if (measure()) observer.disconnect();
+        });
         observer.observe(host);
-        window.addEventListener('resize', schedule);
+        return () => observer.disconnect();
+    }, [inView, initialSize]);
+
+    useEffect(() => {
+        if (!initialSize || typeof ResizeObserver === 'undefined') return undefined;
+        const host = chartHostRef.current;
+        if (!host) return undefined;
+        let observer = null;
+        const armTimer = window.setTimeout(() => {
+            observer = new ResizeObserver(() => {
+                const instance = chartInstanceRef.current;
+                if (!instance || instance.isDisposed?.()) return;
+                const w = host.clientWidth;
+                const h = host.clientHeight;
+                if (w <= 0 || h <= 0) return;
+                if (instance.getWidth() === w && instance.getHeight() === h) return;
+                instance.resize({ width: w, height: h });
+            });
+            observer.observe(host);
+        }, 1600);
         return () => {
-            observer.disconnect();
-            window.removeEventListener('resize', schedule);
-            if (rafId) cancelAnimationFrame(rafId);
+            window.clearTimeout(armTimer);
+            if (observer) observer.disconnect();
         };
-    }, [inView, chartOption]);
+    }, [initialSize]);
 
     const handleChartReady = (instance) => {
         chartInstanceRef.current = instance;
-        requestAnimationFrame(() => {
-            if (instance.isDisposed?.()) return;
-            const host = chartHostRef.current;
-            if (!host) return;
-            const width = host.clientWidth;
-            const height = host.clientHeight;
-            if (width <= 0 || height <= 0) return;
-            if (instance.getWidth() === width && instance.getHeight() === height) return;
-            instance.resize({ width, height });
-            if (chartOption) instance.setOption(chartOption, { notMerge: true });
-        });
     };
 
     const handleClick = () => {
@@ -433,15 +438,16 @@ function SingleAssetSectionImpl({ data, config }) {
                             <div className="absolute inset-0 flex items-center justify-center font-mono uppercase text-fg-subtle" style={{ fontSize: '0.7em', letterSpacing: '0.2em' }}>
                                 {t('singleAssetSection.scrollToLoad')}
                             </div>
-                        ) : !chartOption ? (
+                        ) : !chartOption || !initialSize ? (
                             <div className="absolute inset-0 rounded-lg overflow-hidden skeleton-sweep" aria-busy="true" aria-label={t('singleAssetSection.loading')} />
                         ) : (
                             <ReactECharts
                                 key={`${chartType}-${range}-${asset.type}-${asset.code}`}
                                 option={chartOption}
                                 style={{ height: '100%', width: '100%' }}
-                                opts={{ renderer: 'canvas' }}
+                                opts={{ renderer: 'canvas', width: initialSize.width, height: initialSize.height }}
                                 notMerge
+                                autoResize={false}
                                 onChartReady={handleChartReady}
                             />
                         )}

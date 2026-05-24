@@ -1,4 +1,5 @@
-import { useCallback, useMemo } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react';
+import { captureEcharts } from '../../../shared/utils/chartCapture';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -221,11 +222,15 @@ function buildEChartsOption(data, color, palette, money) {
   };
 }
 
-export default function PerformanceChart({ portfolioId, backfill: backfillProp }) {
+function PerformanceChartImpl({ portfolioId, backfill: backfillProp }, externalRef) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const { convertAt, currency } = useRateHistory();
+  const chartRef = useRef(null);
+  useImperativeHandle(externalRef, () => ({
+    capture: () => captureEcharts(chartRef.current?.getEchartsInstance?.()),
+  }), []);
   const [range, setRange] = useChartRange();
   const [activeType, setActiveType] = useSessionState('portfolio-perf-type', null);
 
@@ -390,6 +395,7 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
             </div>
           ) : option ? (
             <ReactECharts
+              ref={chartRef}
               key={`${activeType}-${range}-${isDark}-${currency}`}
               option={option}
               notMerge
@@ -408,3 +414,6 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
     </motion.div>
   );
 }
+
+const PerformanceChart = forwardRef(PerformanceChartImpl);
+export default PerformanceChart;

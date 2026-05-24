@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { captureEcharts } from '../../../shared/utils/chartCapture';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -17,12 +18,15 @@ import { ASSET_TYPE_TABS as TYPE_TABS } from '../../../shared/constants/assetTyp
 const GREEN_SHADES = ['#10b981', '#34d399', '#6ee7b7', '#5eead4', '#2dd4bf', '#86efac', '#a7f3d0'];
 const RED_SHADES = ['#ef4444', '#f87171', '#fb7185', '#f43f5e', '#fca5a5', '#e11d48', '#fecaca'];
 
-export default function RealizedPnlChart({ portfolioId }) {
+function RealizedPnlChartImpl({ portfolioId }, externalRef) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { format: money, formatCompact: moneyCompact, currency: displayCurrency } = useMoney();
   const chartRef = useRef(null);
   const [hovered, setHovered] = useState(null);
+  useImperativeHandle(externalRef, () => ({
+    capture: () => captureEcharts(chartRef.current?.getEchartsInstance?.()),
+  }), []);
   const [activeTab, setActiveTab] = useSessionState('portfolio-realized-tab', 'ALL');
 
   const { data: allData = [] } = usePortfolioAllocation(portfolioId, 'realizedPnl', undefined);
@@ -252,3 +256,6 @@ export default function RealizedPnlChart({ portfolioId }) {
     </motion.div>
   );
 }
+
+const RealizedPnlChart = forwardRef(RealizedPnlChartImpl);
+export default RealizedPnlChart;

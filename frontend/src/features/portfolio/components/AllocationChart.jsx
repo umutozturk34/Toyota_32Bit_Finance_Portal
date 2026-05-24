@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { captureEcharts } from '../../../shared/utils/chartCapture';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -23,7 +24,7 @@ const COLORS = [
   '#e879f9', '#38bdf8', '#fdba74', '#86efac', '#f9a8d4',
 ];
 
-export default function AllocationChart({ allocation, portfolioId }) {
+function AllocationChartImpl({ allocation, portfolioId }, externalRef) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { format: money, formatCompact: moneyCompact, currency: displayCurrency } = useMoney();
@@ -35,6 +36,9 @@ export default function AllocationChart({ allocation, portfolioId }) {
   }, [t]);
   const chartRef = useRef(null);
   const [hoveredSliceName, setHoveredSliceName] = useState(null);
+  useImperativeHandle(externalRef, () => ({
+    capture: () => captureEcharts(chartRef.current?.getEchartsInstance?.()),
+  }), []);
 
   const highlightSlice = useCallback((name) => {
     const inst = chartRef.current?.getEchartsInstance?.();
@@ -258,3 +262,6 @@ export default function AllocationChart({ allocation, portfolioId }) {
     </motion.div>
   );
 }
+
+const AllocationChart = forwardRef(AllocationChartImpl);
+export default AllocationChart;

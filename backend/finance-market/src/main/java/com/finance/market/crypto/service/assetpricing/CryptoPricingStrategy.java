@@ -1,6 +1,7 @@
 package com.finance.market.crypto.service.assetpricing;
 
 import com.finance.market.crypto.model.Crypto;
+import com.finance.market.crypto.repository.CryptoCandleRepository;
 import com.finance.common.model.MarketType;
 import com.finance.shared.service.AssetPricingPort;
 import com.finance.market.core.service.assetpricing.BaseAssetPricingStrategy;
@@ -13,9 +14,12 @@ import java.math.BigDecimal;
 public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
 
     private final MarketCacheService<Crypto> cacheService;
+    private final CryptoCandleRepository candleRepository;
 
-    public CryptoPricingStrategy(MarketCacheService<Crypto> cacheService) {
+    public CryptoPricingStrategy(MarketCacheService<Crypto> cacheService,
+                                 CryptoCandleRepository candleRepository) {
         this.cacheService = cacheService;
+        this.candleRepository = candleRepository;
     }
 
     @Override
@@ -26,10 +30,11 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
     @Override
     public BigDecimal getPriceTry(String assetCode) {
         Crypto crypto = cacheService.getSnapshot(assetCode);
-        if (crypto == null) {
-            return null;
-        }
-        return normalize(crypto.getCurrentPriceTry());
+        BigDecimal current = crypto != null ? normalize(crypto.getCurrentPriceTry()) : null;
+        if (current != null && current.signum() > 0) return current;
+        return candleRepository.findFirstByCryptoIdOrderByCandleDateDesc(assetCode)
+                .map(c -> normalize(c.getClose()))
+                .orElse(current);
     }
 
     @Override
@@ -48,6 +53,11 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
             return new AssetPricingPort.PriceBundle(null, EMPTY_META);
         }
         BigDecimal price = normalize(crypto.getCurrentPriceTry());
+        if (price == null || price.signum() <= 0) {
+            price = candleRepository.findFirstByCryptoIdOrderByCandleDateDesc(assetCode)
+                    .map(c -> normalize(c.getClose()))
+                    .orElse(price);
+        }
         return new AssetPricingPort.PriceBundle(
                 price,
                 new AssetPricingPort.AssetMeta(crypto.resolveDisplayName(), crypto.getImage()));

@@ -3,6 +3,7 @@ package com.finance.market.fund.service.assetpricing;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.fund.model.Fund;
+import com.finance.market.fund.repository.FundCandleRepository;
 import com.finance.shared.service.AssetPricingPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,12 +22,13 @@ class FundPricingStrategyTest {
     private static final String CODE = "TYH";
 
     @Mock private MarketCacheService<Fund> cacheService;
+    @Mock private FundCandleRepository candleRepository;
 
     private FundPricingStrategy strategy;
 
     @BeforeEach
     void setUp() {
-        strategy = new FundPricingStrategy(cacheService);
+        strategy = new FundPricingStrategy(cacheService, candleRepository);
     }
 
     @Test

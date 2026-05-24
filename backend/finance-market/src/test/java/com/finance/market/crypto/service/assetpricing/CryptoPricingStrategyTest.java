@@ -3,6 +3,7 @@ package com.finance.market.crypto.service.assetpricing;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.crypto.model.Crypto;
+import com.finance.market.crypto.repository.CryptoCandleRepository;
 import com.finance.shared.service.AssetPricingPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,12 +22,13 @@ class CryptoPricingStrategyTest {
     private static final String CODE = "bitcoin";
 
     @Mock private MarketCacheService<Crypto> cacheService;
+    @Mock private CryptoCandleRepository candleRepository;
 
     private CryptoPricingStrategy strategy;
 
     @BeforeEach
     void setUp() {
-        strategy = new CryptoPricingStrategy(cacheService);
+        strategy = new CryptoPricingStrategy(cacheService, candleRepository);
     }
 
     @Test

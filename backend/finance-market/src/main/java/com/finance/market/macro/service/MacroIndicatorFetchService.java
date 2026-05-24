@@ -6,6 +6,7 @@ import com.finance.market.macro.client.EvdsMacroClient;
 import com.finance.market.macro.config.MacroProperties;
 import com.finance.market.macro.dto.internal.MacroObservation;
 import com.finance.market.macro.mapper.EvdsMacroMapper;
+import com.finance.market.macro.model.MacroFrequency;
 import com.finance.market.macro.model.MacroIndicator;
 import com.finance.market.macro.model.MacroIndicatorPoint;
 import com.finance.market.macro.repository.MacroIndicatorPointRepository;
@@ -19,7 +20,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -40,8 +43,14 @@ public class MacroIndicatorFetchService {
         }
         LocalDate today = LocalDate.now();
         LocalDate start = oldestRequiredStart(indicators, today);
-        List<String> codes = indicators.stream().map(MacroIndicator::getCode).toList();
-        List<EvdsDataResponse> responses = fetchAcrossWindows(codes, start, today, properties.batchSize());
+        Map<MacroFrequency, List<String>> codesByFrequency = indicators.stream()
+                .collect(Collectors.groupingBy(
+                        MacroIndicator::getFrequency,
+                        Collectors.mapping(MacroIndicator::getCode, Collectors.toList())));
+        List<EvdsDataResponse> responses = new ArrayList<>();
+        for (List<String> sameFrequencyCodes : codesByFrequency.values()) {
+            responses.addAll(fetchAcrossWindows(sameFrequencyCodes, start, today, properties.batchSize()));
+        }
         int totalPoints = 0;
         List<String> changedCodes = new ArrayList<>();
         for (MacroIndicator indicator : indicators) {

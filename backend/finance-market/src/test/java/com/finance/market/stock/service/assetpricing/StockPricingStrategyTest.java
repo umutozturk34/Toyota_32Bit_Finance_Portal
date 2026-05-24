@@ -3,6 +3,8 @@ package com.finance.market.stock.service.assetpricing;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.stock.model.Stock;
+import com.finance.market.stock.model.StockCandle;
+import com.finance.market.stock.repository.StockCandleRepository;
 import com.finance.shared.service.AssetPricingPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,8 +13,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -21,12 +25,29 @@ class StockPricingStrategyTest {
     private static final String CODE = "AKBNK.IS";
 
     @Mock private MarketCacheService<Stock> cacheService;
+    @Mock private StockCandleRepository candleRepository;
 
     private StockPricingStrategy strategy;
 
     @BeforeEach
     void setUp() {
-        strategy = new StockPricingStrategy(cacheService);
+        strategy = new StockPricingStrategy(cacheService, candleRepository);
+        lenient().when(candleRepository.findFirstByStockSymbolOrderByCandleDateDesc(CODE))
+                .thenReturn(Optional.empty());
+    }
+
+    @Test
+    void getPriceTry_fallsBackToLastCandleClose_whenCurrentPriceMissing() {
+        Stock stock = Stock.builder().build();
+        when(cacheService.getSnapshot(CODE)).thenReturn(stock);
+        StockCandle candle = new StockCandle();
+        candle.setClose(new BigDecimal("12.7"));
+        when(candleRepository.findFirstByStockSymbolOrderByCandleDateDesc(CODE))
+                .thenReturn(Optional.of(candle));
+
+        BigDecimal price = strategy.getPriceTry(CODE);
+
+        assertThat(price).isEqualByComparingTo(new BigDecimal("12.7000"));
     }
 
     @Test

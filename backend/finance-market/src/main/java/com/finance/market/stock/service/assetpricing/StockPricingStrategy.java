@@ -3,6 +3,7 @@ package com.finance.market.stock.service.assetpricing;
 import com.finance.market.core.service.assetpricing.BaseAssetPricingStrategy;
 import com.finance.common.model.MarketType;
 import com.finance.market.stock.model.Stock;
+import com.finance.market.stock.repository.StockCandleRepository;
 import com.finance.shared.service.AssetPricingPort;
 import com.finance.market.core.cache.MarketCacheService;
 import org.springframework.stereotype.Component;
@@ -13,9 +14,12 @@ import java.math.BigDecimal;
 public class StockPricingStrategy extends BaseAssetPricingStrategy {
 
     private final MarketCacheService<Stock> cacheService;
+    private final StockCandleRepository candleRepository;
 
-    public StockPricingStrategy(MarketCacheService<Stock> cacheService) {
+    public StockPricingStrategy(MarketCacheService<Stock> cacheService,
+                                StockCandleRepository candleRepository) {
         this.cacheService = cacheService;
+        this.candleRepository = candleRepository;
     }
 
     @Override
@@ -26,10 +30,11 @@ public class StockPricingStrategy extends BaseAssetPricingStrategy {
     @Override
     public BigDecimal getPriceTry(String assetCode) {
         Stock stock = cacheService.getSnapshot(assetCode);
-        if (stock == null) {
-            return null;
-        }
-        return normalize(stock.getCurrentPrice());
+        BigDecimal current = stock != null ? normalize(stock.getCurrentPrice()) : null;
+        if (current != null && current.signum() > 0) return current;
+        return candleRepository.findFirstByStockSymbolOrderByCandleDateDesc(assetCode)
+                .map(c -> normalize(c.getClose()))
+                .orElse(current);
     }
 
     @Override
@@ -44,6 +49,11 @@ public class StockPricingStrategy extends BaseAssetPricingStrategy {
             return new AssetPricingPort.PriceBundle(null, EMPTY_META);
         }
         BigDecimal price = normalize(stock.getCurrentPrice());
+        if (price == null || price.signum() <= 0) {
+            price = candleRepository.findFirstByStockSymbolOrderByCandleDateDesc(assetCode)
+                    .map(c -> normalize(c.getClose()))
+                    .orElse(price);
+        }
         return new AssetPricingPort.PriceBundle(
                 price,
                 new AssetPricingPort.AssetMeta(stock.resolveDisplayName(), stock.getImage()));

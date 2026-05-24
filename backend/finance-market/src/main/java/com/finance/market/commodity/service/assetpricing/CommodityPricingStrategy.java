@@ -2,6 +2,7 @@ package com.finance.market.commodity.service.assetpricing;
 
 import com.finance.market.core.service.assetpricing.BaseAssetPricingStrategy;
 import com.finance.market.commodity.model.Commodity;
+import com.finance.market.commodity.repository.CommodityCandleRepository;
 import com.finance.common.model.MarketType;
 import com.finance.shared.service.AssetPricingPort;
 import com.finance.market.core.cache.MarketCacheService;
@@ -13,9 +14,12 @@ import java.math.BigDecimal;
 public class CommodityPricingStrategy extends BaseAssetPricingStrategy {
 
     private final MarketCacheService<Commodity> cacheService;
+    private final CommodityCandleRepository candleRepository;
 
-    public CommodityPricingStrategy(MarketCacheService<Commodity> cacheService) {
+    public CommodityPricingStrategy(MarketCacheService<Commodity> cacheService,
+                                    CommodityCandleRepository candleRepository) {
         this.cacheService = cacheService;
+        this.candleRepository = candleRepository;
     }
 
     @Override
@@ -26,8 +30,11 @@ public class CommodityPricingStrategy extends BaseAssetPricingStrategy {
     @Override
     public BigDecimal getPriceTry(String assetCode) {
         Commodity commodity = cacheService.getSnapshot(assetCode);
-        if (commodity == null) return null;
-        return normalize(commodity.getCurrentPrice());
+        BigDecimal current = commodity != null ? normalize(commodity.getCurrentPrice()) : null;
+        if (current != null && current.signum() > 0) return current;
+        return candleRepository.findFirstByCommodityCodeOrderByCandleDateDesc(assetCode)
+                .map(c -> normalize(c.getClose()))
+                .orElse(current);
     }
 
     @Override
@@ -42,6 +49,11 @@ public class CommodityPricingStrategy extends BaseAssetPricingStrategy {
             return new AssetPricingPort.PriceBundle(null, EMPTY_META);
         }
         BigDecimal price = normalize(commodity.getCurrentPrice());
+        if (price == null || price.signum() <= 0) {
+            price = candleRepository.findFirstByCommodityCodeOrderByCandleDateDesc(assetCode)
+                    .map(c -> normalize(c.getClose()))
+                    .orElse(price);
+        }
         return new AssetPricingPort.PriceBundle(
                 price,
                 new AssetPricingPort.AssetMeta(commodity.resolveDisplayName(), commodity.getImage()));

@@ -100,7 +100,10 @@ class UserChartPreferenceServiceTest {
 
         assertThatThrownBy(() -> service.getOrDefault(USER, TYPE, CODE))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining(CODE);
+                .hasMessage("error.trackedAsset.notFound")
+                .extracting(t -> ((ResourceNotFoundException) t).getMessageArgs())
+                .asInstanceOf(org.assertj.core.api.InstanceOfAssertFactories.ARRAY)
+                .containsExactly(TYPE, CODE);
     }
 
     @Test

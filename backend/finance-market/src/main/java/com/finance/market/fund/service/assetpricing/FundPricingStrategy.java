@@ -2,6 +2,7 @@ package com.finance.market.fund.service.assetpricing;
 
 import com.finance.market.core.service.assetpricing.BaseAssetPricingStrategy;
 import com.finance.market.fund.model.Fund;
+import com.finance.market.fund.repository.FundCandleRepository;
 import com.finance.common.model.MarketType;
 import com.finance.shared.service.AssetPricingPort;
 import com.finance.market.core.cache.MarketCacheService;
@@ -13,9 +14,12 @@ import java.math.BigDecimal;
 public class FundPricingStrategy extends BaseAssetPricingStrategy {
 
     private final MarketCacheService<Fund> cacheService;
+    private final FundCandleRepository candleRepository;
 
-    public FundPricingStrategy(MarketCacheService<Fund> cacheService) {
+    public FundPricingStrategy(MarketCacheService<Fund> cacheService,
+                               FundCandleRepository candleRepository) {
         this.cacheService = cacheService;
+        this.candleRepository = candleRepository;
     }
 
     @Override
@@ -26,10 +30,11 @@ public class FundPricingStrategy extends BaseAssetPricingStrategy {
     @Override
     public BigDecimal getPriceTry(String assetCode) {
         Fund fund = cacheService.getSnapshot(assetCode);
-        if (fund == null) {
-            return null;
-        }
-        return normalize(fund.getPrice());
+        BigDecimal current = fund != null ? normalize(fund.getPrice()) : null;
+        if (current != null && current.signum() > 0) return current;
+        return candleRepository.findFirstByFundCodeOrderByCandleDateDesc(assetCode)
+                .map(c -> normalize(c.getPrice()))
+                .orElse(current);
     }
 
     @Override
@@ -44,6 +49,11 @@ public class FundPricingStrategy extends BaseAssetPricingStrategy {
             return new AssetPricingPort.PriceBundle(null, EMPTY_META);
         }
         BigDecimal price = normalize(fund.getPrice());
+        if (price == null || price.signum() <= 0) {
+            price = candleRepository.findFirstByFundCodeOrderByCandleDateDesc(assetCode)
+                    .map(c -> normalize(c.getPrice()))
+                    .orElse(price);
+        }
         return new AssetPricingPort.PriceBundle(
                 price,
                 new AssetPricingPort.AssetMeta(fund.resolveDisplayName(), fund.getImage()));

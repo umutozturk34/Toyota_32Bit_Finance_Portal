@@ -260,8 +260,8 @@ public class SnapshotCalculationService {
             return;
         }
         BigDecimal price = prices.get(key);
-        BigDecimal unitPrice = price != null ? price : BigDecimal.ZERO;
-        totals.addMarket(pos.currentValue(unitPrice));
+        if (price == null) return;
+        totals.addMarket(pos.currentValue(price));
     }
 
     private void accumulateDerivativePositions(List<DerivativePosition> derivatives, java.time.LocalDate snapDate,

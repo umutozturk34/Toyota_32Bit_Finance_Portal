@@ -1,6 +1,7 @@
 package com.finance.market.commodity.service.assetpricing;
 
 import com.finance.market.commodity.model.Commodity;
+import com.finance.market.commodity.repository.CommodityCandleRepository;
 import com.finance.common.model.MarketType;
 import com.finance.shared.service.AssetPricingPort;
 import com.finance.market.core.cache.MarketCacheService;
@@ -17,11 +18,12 @@ class CommodityPricingStrategyTest {
 
     @SuppressWarnings("unchecked")
     private final MarketCacheService<Commodity> cacheService = mock(MarketCacheService.class);
+    private final CommodityCandleRepository candleRepository = mock(CommodityCandleRepository.class);
     private CommodityPricingStrategy strategy;
 
     @BeforeEach
     void setUp() {
-        strategy = new CommodityPricingStrategy(cacheService);
+        strategy = new CommodityPricingStrategy(cacheService, candleRepository);
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.finance.shared.filter.RateLimiterFilter;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -20,6 +21,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -61,6 +63,43 @@ class LikeSearchSpecAndRateLimiterTest {
         Predicate result = LikeSearchSpec.byFieldsContains(root, cb, "Foo", List.of("title"));
 
         assertThat(result).isSameAs(or);
+    }
+
+    @Test
+    void byFieldsContainsAllTokensUnaccent_blankTerm_returnsConjunction() {
+        Predicate conjunction = mock(Predicate.class);
+        when(cb.conjunction()).thenReturn(conjunction);
+
+        Predicate result = LikeSearchSpec.byFieldsContainsAllTokensUnaccent(root, cb, "   ", "title");
+
+        assertThat(result).isSameAs(conjunction);
+        verify(cb).conjunction();
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @Test
+    void byFieldsContainsAllTokensUnaccent_multiToken_andsTokensOrsFieldsWrappedInUnaccent() {
+        Path path = mock(Path.class);
+        Expression lowerExpr = mock(Expression.class);
+        Expression unaccentExpr = mock(Expression.class);
+        Expression literalExpr = mock(Expression.class);
+        when(root.get(any(String.class))).thenReturn(path);
+        when(cb.lower(any())).thenReturn(lowerExpr);
+        when(cb.literal(any(String.class))).thenReturn(literalExpr);
+        when(cb.function(any(String.class), any(), any(Expression.class))).thenReturn(unaccentExpr);
+        Predicate likePredicate = mock(Predicate.class);
+        when(cb.like(any(Expression.class), any(Expression.class))).thenReturn(likePredicate);
+        Predicate or = mock(Predicate.class);
+        when(cb.or(any(Predicate[].class))).thenReturn(or);
+        Predicate and = mock(Predicate.class);
+        when(cb.and(any(Predicate[].class))).thenReturn(and);
+
+        Predicate result = LikeSearchSpec.byFieldsContainsAllTokensUnaccent(root, cb, "Borsa İstanbul", "title", "description");
+
+        assertThat(result).isSameAs(and);
+        verify(cb, org.mockito.Mockito.times(2)).or(any(Predicate[].class));
+        verify(cb).and(any(Predicate[].class));
+        verify(cb, org.mockito.Mockito.atLeast(4)).function(eq("unaccent"), any(), any(Expression.class));
     }
 
     @Test

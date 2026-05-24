@@ -98,7 +98,7 @@ export default function ScenarioRankingTable({ scenario }) {
 
 function Th({ children, align = 'left' }) {
   return (
-    <th className={`text-[10px] font-mono uppercase tracking-[0.16em] text-fg-muted py-2.5 px-2 sm:px-3 ${align === 'right' ? 'text-right' : 'text-left'}`}>
+    <th className={`text-xs font-display font-semibold text-fg-muted py-2.5 px-2 sm:px-3 ${align === 'right' ? 'text-right' : 'text-left'}`}>
       {children}
     </th>
   );

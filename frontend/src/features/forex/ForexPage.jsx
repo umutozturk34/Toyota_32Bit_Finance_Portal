@@ -48,7 +48,7 @@ function ForexPage() {
                                 {getBaseCurrency(forex.code)} / TRY
                             </h3>
                         </div>
-                        <span className="mt-0.5 block truncate text-xs text-fg-muted">
+                        <span className="mt-0.5 block text-xs text-fg-muted leading-snug line-clamp-2 break-words">
                             {forex.name}
                         </span>
                     </div>

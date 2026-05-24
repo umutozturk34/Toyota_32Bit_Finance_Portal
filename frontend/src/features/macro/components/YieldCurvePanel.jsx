@@ -48,7 +48,7 @@ export default function YieldCurvePanel({ indicators = [] }) {
             className="flex flex-col gap-3"
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-fg">{currency} Tasarruf</h3>
+              <h3 className="text-sm font-bold text-fg">{t('marketOverview.macro.savingsCardTitle', { currency })}</h3>
               <span className="text-[10px] font-mono text-fg-muted uppercase tracking-wide">
                 {t('marketOverview.macro.categoryDeposit')}
               </span>

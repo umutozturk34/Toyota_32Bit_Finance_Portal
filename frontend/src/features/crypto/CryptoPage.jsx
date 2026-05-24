@@ -41,7 +41,7 @@ export default function CryptoPage() {
                         )}
                         <div className="min-w-0">
                             <h3 className="truncate text-sm font-semibold text-fg">{symbol}</h3>
-                            <span className="block truncate text-xs text-fg-muted">{crypto.name}</span>
+                            <span className="block text-xs text-fg-muted leading-snug line-clamp-2 break-words">{crypto.name}</span>
                         </div>
                     </div>
                     <AssetBuyButton

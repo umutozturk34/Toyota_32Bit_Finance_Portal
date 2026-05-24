@@ -83,6 +83,12 @@ export default function ComparePage() {
     if (initialRangeRef.current) {
       setRangeId(initialRangeRef.current);
     }
+    const fromUrl = parseInitialSelection(params);
+    if (fromUrl.length > 0) {
+      const sameAsCurrent = fromUrl.length === selected.length
+        && fromUrl.every((u, i) => selected[i] && u.code === selected[i].code && u.type === selected[i].type);
+      if (!sameAsCurrent) setSelected(fromUrl);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -177,7 +183,18 @@ export default function ComparePage() {
     return backfilledSeriesData.map((s) => {
       let pts = s.points || [];
       if (commonStartDate) {
-        pts = pts.filter((p) => p.date >= commonStartDate);
+        const inRange = pts.filter((p) => p.date >= commonStartDate);
+        if (inRange.length === 0 && pts.length > 0) {
+          const lastBefore = [...pts]
+            .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+            .filter((p) => p.date < commonStartDate)
+            .pop();
+          pts = lastBefore
+            ? [{ date: commonStartDate, value: lastBefore.value, _anchored: true }]
+            : [];
+        } else {
+          pts = inRange;
+        }
       }
       const native = nativeCurrencyFor(s.indicator.type, s.indicator.code);
       const shouldConvert = !isRateLike(s.indicator.type)

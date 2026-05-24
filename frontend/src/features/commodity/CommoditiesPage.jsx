@@ -49,7 +49,7 @@ function CommoditiesPage() {
             >
                 <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-sm font-semibold text-fg">{displayName}</h3>
+                        <h3 className="text-sm font-semibold text-fg leading-snug line-clamp-2 break-words">{displayName}</h3>
                         <span className="block truncate text-xs text-fg-muted">{commodity.code}</span>
                     </div>
                     <div className="flex items-center gap-2">

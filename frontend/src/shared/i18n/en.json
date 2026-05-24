@@ -5,6 +5,7 @@
     "requiredRole": "Required role:"
   },
   "nav": {
+    "market": "Market",
     "news": "News",
     "stocks": "Stocks",
     "crypto": "Crypto",
@@ -38,6 +39,7 @@
     "delete": "Delete",
     "edit": "Edit",
     "undo": "Undo",
+    "remove": "Remove",
     "all": "All",
     "loading": "Loading...",
     "loadingData": "Loading data…",
@@ -47,7 +49,11 @@
     "back": "Back",
     "addToPortfolio": "Add to portfolio",
     "sortDefault": "Default",
+    "previous": "Previous",
+    "next": "Next",
     "searchEllipsis": "Search...",
+    "collapse": "Collapse",
+    "expand": "Expand",
     "settings": "Settings"
   },
   "numberFormat": {
@@ -58,6 +64,7 @@
   "portfolioSwitcher": {
     "newPortfolio": "New portfolio",
     "namePlaceholder": "Portfolio name",
+    "confirmDelete": "Delete «{{name}}»?",
     "deleteTitle": "Delete portfolio?",
     "deleteMessage": "Portfolio «{{name}}» will be permanently deleted along with all positions, snapshots and history. This cannot be undone.",
     "createFailed": "Creation failed",
@@ -237,7 +244,34 @@
     "BENCHMARK_BEATERS": {
       "label": "Benchmark Beaters",
       "description": "Instruments ranked by how well they beat your chosen benchmark"
+    },
+    "SINGLE_ASSET": {
+      "label": "Single Asset",
+      "description": "Live price and change for a single instrument"
     }
+  },
+  "singleAssetSection": {
+    "empty": "No asset selected — pick one in widget settings.",
+    "loading": "Loading chart…",
+    "scrollToLoad": "Loads when in view",
+    "lineChart": "Line chart",
+    "candleChart": "Candle chart",
+    "open": "Open",
+    "close": "Close",
+    "high": "High",
+    "low": "Low",
+    "volume": "Volume"
+  },
+  "singleAssetConfig": {
+    "title": "Single Asset",
+    "hint": "Which asset do you want to show?",
+    "empty": "No asset selected yet",
+    "searchLabel": "Search asset",
+    "searchPlaceholder": "BTC, AKBNK, USDTRY...",
+    "clear": "Clear",
+    "showChart": "Show chart",
+    "range": "Date range",
+    "chartType": "Chart type"
   },
   "widgetSettings": {
     "newsHeader": "News categories",
@@ -265,13 +299,46 @@
       "PARITE": "FX",
       "EMTIA": "Commodities",
       "GENEL_FINANS": "General"
-    }
+    },
+    "beatersHeader": "Benchmark Beaters",
+    "beatersBenchmark": "Benchmark",
+    "beatersVerdict": "Verdict",
+    "beatersVerdictValues": {
+      "ALL": "All",
+      "WINNERS": "Winners",
+      "LOSERS": "Losers"
+    },
+    "beatersAssetType": "Asset type",
+    "beatersTypeValues": {
+      "ALL": "All",
+      "SPOT": "Stocks",
+      "CRYPTO": "Crypto",
+      "FOREX": "FX",
+      "FUND": "Funds",
+      "COMMODITY": "Commodities",
+      "VIOP": "VIOP",
+      "DEPOSIT": "Deposit",
+      "BOND": "Bonds"
+    },
+    "beatersPeriod": "Period",
+    "beatersSortDir": "Sort",
+    "beatersSortDesc": "Best → worst",
+    "beatersSortAsc": "Worst → best",
+    "beatersLimit": "List length"
+  },
+  "overviewPages": {
+    "addPage": "New page",
+    "newPageName": "New page",
+    "deletePage": "Delete page",
+    "tabRenameHint": "Click → rename"
   },
   "widgetTray": {
     "widgetGallery": "Widget gallery",
     "assetCardTab": "Asset card",
     "watchlistTab": "Watchlist",
     "newsTile": "News",
+    "beatersTile": "Benchmark Beaters",
+    "singleAssetTile": "Single Asset",
     "newAssetCard": "New asset card",
     "addNewCard": "+ New asset card",
     "queueLabel": "next: {{label}}",
@@ -881,7 +948,9 @@
       "statusSold": "Sold",
       "statusClosed": "Closed",
       "exitDateLabel": "Exit Date",
-      "statusCol": "Status"
+      "statusCol": "Status",
+      "realReturnAbbr": "real",
+      "realReturnTooltip": "Real return (CPI effect removed)"
     },
     "allocation": {
       "title": "Allocation",
@@ -901,6 +970,7 @@
       "lotAdded": "Lot Added",
       "lotSold": "Lot Sold",
       "lotSoldOrClosed": "Lot Sold / Closed",
+      "lotMixed": "Mixed Activity",
       "positionEvents": "Position Events",
       "realizedPnlLabel": "Realized P/L",
       "realizedPnlTitle": "Realized P/L Performance",
@@ -918,7 +988,8 @@
     "loading": "Loading portfolio...",
     "tabs": {
       "overview": "Overview",
-      "performance": "Performance"
+      "performance": "Performance",
+      "viop": "VIOP"
     },
     "onboarding": {
       "idleTitle": "Create Your Portfolio",
@@ -934,6 +1005,17 @@
         "creating": "Creating portfolio...",
         "preparing": "Preparing..."
       }
+    },
+    "bulk": {
+      "selectedSummary": "selected · {{total}} positions",
+      "selectAll": "Select all",
+      "clearAll": "Clear all",
+      "clear": "Clear",
+      "delete": "Delete",
+      "deleting": "Deleting…",
+      "confirmTitle": "Delete positions",
+      "confirmBody": "positions will be permanently deleted. This cannot be undone.",
+      "partialError": "{{failed}}/{{total}} positions failed. Others deleted."
     },
     "sell": {
       "title": "Sell {{code}}",
@@ -951,11 +1033,13 @@
       "invalidDateHint": "Cannot be before entry date or in the future",
       "invalidPriceHint": "Invalid price",
       "remainingOpen": "Stays open",
+      "historicalHint": "Past date — enter price manually",
       "useDatePrice": "Price on that day",
       "loadingPrice": "Loading price...",
       "noPriceForDate": "No price for this date",
       "proceedsLabel": "Proceeds",
       "realizedPnlLabel": "Realized P/L",
+      "partialHint": "Remaining {{remaining}} units stay open",
       "invalidQuantityHint": "Quantity must be between 0 and {{max}}",
       "confirm": "Confirm sale",
       "failed": "Sale failed"
@@ -964,22 +1048,31 @@
       "title": "Reopen position"
     },
     "derivatives": {
+      "title": "Derivative Positions",
+      "tabTitle": "VIOP Positions",
+      "openAction": "Open Position",
       "submitOpen": "Open",
       "openTitle": "Open Derivative Position",
       "openFailed": "Failed to open position",
+      "empty": "No derivative positions yet",
+      "emptyHint": "Open positions from the VIOP page",
+      "symbol": "Contract symbol",
       "direction": "Direction",
       "qty": "Lots",
       "entryDate": "Entry date",
       "entryPrice": "Entry price",
       "entryPriceOptional": "Entry price (optional)",
+      "premium": "Premium",
       "premiumOptional": "Premium (optional)",
       "autoFromHistory": "Leave blank → taken from history",
       "alsoClosePast": "If already closed",
       "closeDate": "Close date",
       "closePrice": "Close price",
+      "closePriceOptional": "Close price (blank → from history)",
       "closeQtyLabel": "Lots to close",
       "closeQtyHint": "Quantity must be between 0 and {{max}}",
       "closeTitle": "Close Position",
+      "closeAction": "Close position",
       "closeConfirm": "Close",
       "closeFailed": "Failed to close position",
       "editCloseTitle": "Edit Close",
@@ -989,12 +1082,25 @@
       "updateFailed": "Position could not be updated",
       "reopen": "Reopen",
       "reopenFailed": "Position could not be reopened",
+      "deleteTitle": "Delete position",
+      "confirmDelete": "This derivative position record will be deleted.",
+      "open": "Open",
+      "closed": "Closed",
+      "expired": "Expired",
+      "entry": "Entry",
+      "current": "Current",
+      "exit": "Exit",
       "expiry": "Expiry",
+      "pnl": "P&L",
       "margin": "Margin",
       "notional": "Notional value",
+      "leverage": "Leverage",
       "strike": "Strike",
       "maxLoss": "Max Loss",
       "maxGain": "Max Gain",
+      "call": "Call",
+      "put": "Put",
+      "future": "Future",
       "dataAvailable": "Data available on this date: {{price}}",
       "dataUnavailable": "No data on this date — nearest prior price will be used",
       "closePriceLabel": "Close price (TRY)",
@@ -1164,6 +1270,7 @@
       "noData": "No data in this range",
       "indicatorInfo": "Info",
       "normalizedHint": "Multiple series — normalized as % change from start",
+      "savingsCardTitle": "{{currency}} Savings",
       "statLast": "Last",
       "statMin": "Min",
       "statMax": "Max",
@@ -1267,6 +1374,7 @@
     "you": "You",
     "banAction": "Ban",
     "unbanAction": "Unban",
+    "sendMessageTitle": "Send a message to this user",
     "pageSize": "Page size:",
     "col": {
       "user": "User",
@@ -1365,6 +1473,7 @@
     "titleEdit": "Edit position",
     "continue": "Continue",
     "totalCost": "Total cost",
+    "storedAsTry": "Stored as TRY",
     "fields": {
       "entryDate": "Entry date",
       "entryPrice": "Entry price (TRY)",
@@ -1433,6 +1542,14 @@
     },
     "lots": {
       "title": "Lots",
+      "entryDate": "Entry date",
+      "entryPrice": "Entry price",
+      "quantity": "Quantity",
+      "marketValue": "Market value",
+      "pnl": "P/L",
+      "closed": "CLOSED",
+      "lotMarkerBuy": "BUY",
+      "lotMarkerSell": "SELL",
       "lotMarkerOpen": "OPEN",
       "lotMarkerClose": "CLOSE"
     }
@@ -1682,8 +1799,8 @@
     "deleteListTitle": "Delete list",
     "addAsset": "Add asset",
     "createAlert": "Create alert",
-    "loading": "Loading…",
-    "listsLoading": "Loading lists…",
+    "loading": "Loading...",
+    "listsLoading": "Loading lists...",
     "headers": {
       "asset": "Asset",
       "lastPrice": "Last price",
@@ -1804,7 +1921,8 @@
     "kind": {
       "future": "Futures",
       "option": "Option",
-      "FUTURE": "Futures"
+      "FUTURE": "Futures",
+      "OPTION": "Option"
     },
     "side": {
       "CALL": "Call",
@@ -1862,7 +1980,8 @@
     "compareTitle": "Comparison",
     "cpiGrowth": "CPI growth (period)",
     "endDate": "End",
-    "excessReturn": "Excess",
+    "excessReturn": "Excess vs Benchmark",
+    "excessReturnTooltip": "Nominal return − Benchmark return (positive means beats benchmark)",
     "finalValue": "Final Value",
     "instrument": "Instrument",
     "instruments": "Instruments",
@@ -1874,6 +1993,7 @@
     "noInstruments": "No instruments selected. Add one below or pick from quick suggestions.",
     "noMatch": "No match",
     "nominalReturn": "Nominal",
+    "nominalReturnTooltip": "Absolute percentage change (not inflation-adjusted)",
     "normalizedHintCompare": "Multiple series — normalized as % change from start",
     "openInCompare": "Open in Compare",
     "period": "Period",
@@ -1916,6 +2036,11 @@
       "beaters": "Back to Beaters",
       "asset": "Back to asset"
     },
-    "returnsInCurrency": "Returns in {{currency}}"
+    "compareInfo": {
+      "forwardFilledTooltip": "Extended to today from the last data point",
+      "backfilledTooltip": "Extended with the last known value at the start of the range"
+    },
+    "returnsInCurrency": "Returns in {{currency}}",
+    "simulationRunning": "Running simulation..."
   }
 }

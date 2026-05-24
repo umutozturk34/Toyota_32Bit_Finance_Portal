@@ -180,13 +180,13 @@ export default function ScenarioComparePage() {
           {cpiPct != null && (
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-3 flex-wrap">
               <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-xs font-mono uppercase tracking-[0.16em] text-fg-muted">
+              <span className="text-sm font-display font-semibold text-fg-muted">
                 {t('analytics.cpiGrowth', { defaultValue: 'TÜFE büyümesi (dönemde)' })}
               </span>
               <span className="font-mono font-bold tabular-nums text-amber-500 text-sm">
                 {formatPercent(cpiPct)}
               </span>
-              <span className="sm:ml-auto text-[10px] font-mono text-fg-subtle uppercase tracking-[0.14em]">
+              <span className="sm:ml-auto text-xs font-mono text-fg-subtle">
                 {t('analytics.realReturnHint', { defaultValue: 'Reel getiri = nominal − TÜFE etkisi' })}
               </span>
             </div>
@@ -202,7 +202,7 @@ export default function ScenarioComparePage() {
 function Field({ label, children }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-muted">{label}</label>
+      <label className="text-xs font-display font-semibold text-fg-muted">{label}</label>
       {children}
     </div>
   );

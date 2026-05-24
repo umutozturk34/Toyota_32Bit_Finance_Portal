@@ -4,7 +4,7 @@ import { isMacro, isRateLike } from '../lib/compareSeriesUtils';
 export default function CompareInfoBar({ selected, targetCurrency, money, t }) {
   return (
     <div className="rounded-lg border border-border-default/40 bg-bg-base/30 p-3 space-y-1.5">
-      <div className="flex items-center gap-1.5 text-[9px] font-mono uppercase tracking-[0.16em] text-fg-muted">
+      <div className="flex items-center gap-1.5 text-xs font-display font-semibold text-fg-muted">
         <Info className="h-3 w-3" />
         {t('marketOverview.macro.indicatorInfo', { defaultValue: 'Bilgi' })}
       </div>
@@ -65,10 +65,10 @@ export default function CompareInfoBar({ selected, targetCurrency, money, t }) {
                 {pctText}
               </span>
               {lastPoint?._filled && (
-                <span className="text-[9px] font-mono text-fg-subtle italic" title="Son veri noktasından bugüne uzatıldı">↗</span>
+                <span className="text-[9px] font-mono text-fg-subtle italic" title={t('analytics.compareInfo.forwardFilledTooltip')}>↗</span>
               )}
               {sorted.some((p) => p._backfilled) && (
-                <span className="text-[9px] font-mono text-fg-subtle italic" title="Aralık başına son bilinen değerle uzatıldı">↩</span>
+                <span className="text-[9px] font-mono text-fg-subtle italic" title={t('analytics.compareInfo.backfilledTooltip')}>↩</span>
               )}
             </span>
           </div>

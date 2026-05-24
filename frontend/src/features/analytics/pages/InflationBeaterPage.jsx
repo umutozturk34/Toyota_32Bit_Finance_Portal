@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import useSessionState from '../../../shared/hooks/useSessionState';
-import { TrendingUp, TrendingDown, Trophy, Search, ChevronLeft, ChevronRight, GitCompare } from 'lucide-react';
+import { TrendingUp, TrendingDown, Trophy, Search, ChevronLeft, ChevronRight, GitCompare, ArrowUp, ArrowDown } from 'lucide-react';
 import Card from '../../../shared/components/card';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
@@ -54,6 +54,8 @@ export default function InflationBeaterPage() {
   const [verdictFilter, setVerdictFilter] = useSessionState('beater:verdict', params.get('bv') || 'all');
   const [typeFilterArr, setTypeFilterArr] = useSessionState('beater:type',
     (params.get('bt') || '').split(',').filter(Boolean));
+  const [sortKey, setSortKey] = useSessionState('beater:sortKey', params.get('bsk') || 'rank');
+  const [sortDir, setSortDir] = useSessionState('beater:sortDir', params.get('bsd') || 'asc');
   const typeFilter = useMemo(() => new Set(typeFilterArr), [typeFilterArr]);
   const setTypeFilter = (updater) => {
     const next = typeof updater === 'function' ? updater(typeFilter) : updater;
@@ -69,9 +71,21 @@ export default function InflationBeaterPage() {
     if (page > 0) next.set('bpage', String(page)); else next.delete('bpage');
     if (verdictFilter && verdictFilter !== 'all') next.set('bv', verdictFilter); else next.delete('bv');
     if (typeFilter.size > 0) next.set('bt', Array.from(typeFilter).join(',')); else next.delete('bt');
+    if (sortKey && sortKey !== 'rank') next.set('bsk', sortKey); else next.delete('bsk');
+    if (sortDir && sortDir !== 'asc') next.set('bsd', sortDir); else next.delete('bsd');
     setParams(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, benchmark, search, page, verdictFilter, typeFilter]);
+  }, [period, benchmark, search, page, verdictFilter, typeFilter, sortKey, sortDir]);
+
+  const toggleSort = (key) => {
+    if (sortKey === key) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'rank' ? 'asc' : 'desc');
+    }
+    setPage(0);
+  };
 
   const { data, isLoading, isError, refetch } = useInflationBeaters(period, benchmark);
   const { data: macroList = [] } = useMacroIndicators();
@@ -132,7 +146,7 @@ export default function InflationBeaterPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-muted mr-1">
+          <span className="text-xs font-display font-semibold text-fg-muted mr-1">
             {t('analytics.period', { defaultValue: 'Dönem' })}
           </span>
           {PERIODS.map((p) => (
@@ -150,7 +164,7 @@ export default function InflationBeaterPage() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap min-w-0">
-          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-muted">
+          <span className="text-xs font-display font-semibold text-fg-muted">
             {t('analytics.benchmark', { defaultValue: 'Karşılaştırma' })}
           </span>
           <BenchmarkPicker
@@ -186,6 +200,9 @@ export default function InflationBeaterPage() {
               return next;
             });
           }}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onToggleSort={toggleSort}
           onCompare={compareWithBenchmark}
         />
       )}
@@ -194,7 +211,8 @@ export default function InflationBeaterPage() {
 }
 
 function Results({ data, period, t, search, onSearchChange, page, onPageChange, onCompare,
-                   verdictFilter, onVerdictChange, typeFilter, onTypeToggle }) {
+                   verdictFilter, onVerdictChange, typeFilter, onTypeToggle,
+                   sortKey, sortDir, onToggleSort }) {
   const indexedEntries = useMemo(
     () => (data.entries || []).map((e, idx) => ({ ...e, _rank: idx + 1 })),
     [data.entries]
@@ -221,9 +239,22 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
     });
   }, [indexedEntries, search, verdictFilter, typeFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / PAGE_SIZE));
+  const sortedEntries = useMemo(() => {
+    const arr = [...filteredEntries];
+    const num = (v) => (v == null ? -Infinity : Number(v));
+    const cmpAsc = (a, b) => {
+      if (sortKey === 'nominal') return num(a.nominalReturnPct) - num(b.nominalReturnPct);
+      if (sortKey === 'excess') return num(a.excessReturnPct) - num(b.excessReturnPct);
+      if (sortKey === 'name') return (a.name || a.code).localeCompare(b.name || b.code);
+      return a._rank - b._rank;
+    };
+    arr.sort((a, b) => (sortDir === 'asc' ? cmpAsc(a, b) : -cmpAsc(a, b)));
+    return arr;
+  }, [filteredEntries, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedEntries.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
-  const pageEntries = filteredEntries.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  const pageEntries = sortedEntries.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
   const benchmarkLabel = data.benchmarkLabel
     ? t(`marketOverview.macro.${data.benchmarkLabel}`, { defaultValue: data.benchmarkLabel })
@@ -257,7 +288,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
 
       <div className="flex flex-wrap items-center gap-3 pt-1">
         <div className="flex items-center gap-1">
-          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-muted mr-1">
+          <span className="text-xs font-display font-semibold text-fg-muted mr-1">
             {t('analytics.verdictFilter', { defaultValue: 'Durum' })}
           </span>
           {['all', 'beats', 'losers'].map((v) => (
@@ -278,7 +309,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
           ))}
         </div>
         <div className="flex items-center gap-1 flex-wrap">
-          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-muted mr-1">
+          <span className="text-xs font-display font-semibold text-fg-muted mr-1">
             {t('analytics.typeFilter', { defaultValue: 'Tip' })}
           </span>
           {availableTypes.map((tp) => {
@@ -308,7 +339,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
             <button
               type="button"
               onClick={() => availableTypes.forEach((tp) => { if (typeFilter.has(tp)) onTypeToggle(tp); })}
-              className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-subtle hover:text-fg cursor-pointer border-none bg-transparent ml-1"
+              className="text-xs font-display font-semibold text-fg-subtle hover:text-fg cursor-pointer border-none bg-transparent ml-1"
             >
               {t('analytics.clearFilters', { defaultValue: 'Temizle' })}
             </button>
@@ -339,10 +370,18 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
           <table className="w-full text-sm">
             <thead className="bg-bg-elevated/40">
               <tr>
-                <Th>#</Th>
-                <Th>{t('analytics.instrument', { defaultValue: 'Enstrüman' })}</Th>
-                <Th align="right">{t('analytics.nominalReturn', { defaultValue: 'Nominal' })}</Th>
-                <Th align="right">{t('analytics.excessReturn', { defaultValue: 'Excess' })}</Th>
+                <Th sortKey="rank" activeSort={sortKey} dir={sortDir} onToggle={onToggleSort}>#</Th>
+                <Th sortKey="name" activeSort={sortKey} dir={sortDir} onToggle={onToggleSort}>
+                  {t('analytics.instrument', { defaultValue: 'Enstrüman' })}
+                </Th>
+                <Th align="right" sortKey="nominal" activeSort={sortKey} dir={sortDir} onToggle={onToggleSort}
+                    title={t('analytics.nominalReturnTooltip', { defaultValue: 'Mutlak yüzde değişim' })}>
+                  {t('analytics.nominalReturn', { defaultValue: 'Nominal' })}
+                </Th>
+                <Th align="right" sortKey="excess" activeSort={sortKey} dir={sortDir} onToggle={onToggleSort}
+                    title={t('analytics.excessReturnTooltip', { defaultValue: 'Nominal − Gösterge' })}>
+                  {t('analytics.excessReturn', { defaultValue: 'Gösterge Üzeri' })}
+                </Th>
                 <Th align="right">{t('analytics.verdict', { defaultValue: 'Sonuç' })}</Th>
               </tr>
             </thead>
@@ -454,20 +493,27 @@ function HeroStat({ icon, label, value, sub, accent }) {
       className="rounded-xl border px-3 sm:px-4 py-3 sm:py-3.5"
       style={{ background: `${accent}0d`, borderColor: `${accent}33` }}
     >
-      <div className="flex items-center gap-2 mb-2 text-xs font-mono uppercase tracking-[0.14em]" style={{ color: accent }}>
+      <div className="flex items-center gap-2 mb-2 text-xs font-display font-semibold tracking-tight" style={{ color: accent }}>
         {icon}
         <span>{label}</span>
       </div>
       <div className="font-display text-2xl sm:text-3xl font-bold text-fg tabular-nums leading-none">{value}</div>
-      <div className="mt-1.5 text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle">{sub}</div>
+      <div className="mt-1.5 text-xs font-mono text-fg-subtle">{sub}</div>
     </div>
   );
 }
 
-function Th({ children, align = 'left' }) {
+function Th({ children, align = 'left', title, sortKey, activeSort, dir, onToggle }) {
+  const sortable = !!(sortKey && onToggle);
+  const active = sortable && activeSort === sortKey;
+  const indicator = active ? (dir === 'asc' ? <ArrowUp className="inline h-3 w-3 ml-1" /> : <ArrowDown className="inline h-3 w-3 ml-1" />) : null;
   return (
-    <th className={`text-[10px] font-mono uppercase tracking-[0.16em] text-fg-muted py-2.5 px-2 sm:px-3 ${align === 'right' ? 'text-right' : 'text-left'}`}>
-      {children}
+    <th
+      title={title}
+      onClick={sortable ? () => onToggle(sortKey) : undefined}
+      className={`text-xs font-display font-semibold py-2.5 px-2 sm:px-3 select-none ${align === 'right' ? 'text-right' : 'text-left'} ${sortable ? 'cursor-pointer' : title ? 'cursor-help' : ''} ${active ? 'text-accent' : 'text-fg-muted'} ${sortable ? 'hover:text-fg' : ''}`}
+    >
+      {children}{indicator}
     </th>
   );
 }

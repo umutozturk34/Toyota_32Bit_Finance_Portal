@@ -34,14 +34,17 @@ export function useMoney() {
     const converted = convert(value, base, natural);
     if (converted == null) return 'N/A';
     const target = resolveTarget(base, natural);
+    const normalizedBase = SUPPORTED.includes(base) ? base : 'TRY';
+    const ratesReady = normalizedBase === target || (rates[normalizedBase] != null && rates[target] != null);
+    const effectiveCurrency = ratesReady ? target : normalizedBase;
     const abs = Math.abs(converted);
     const maxDecimals = opts.maxDecimals ?? (abs < 10 ? 4 : abs < 1000 ? 3 : 2);
     return formatPrice(converted, {
-      currency: target,
+      currency: effectiveCurrency,
       minDecimals: opts.minDecimals ?? 2,
       maxDecimals,
     });
-  }, [convert, resolveTarget]);
+  }, [convert, resolveTarget, rates]);
 
   const formatCompact = useCallback((value, base = 'TRY', threshold = 100_000, natural) => {
     const converted = convert(value, base, natural);

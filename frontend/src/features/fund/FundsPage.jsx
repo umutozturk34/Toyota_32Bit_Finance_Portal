@@ -165,7 +165,7 @@ function FundsPage() {
                         </span>
                         <div className="min-w-0">
                             <h3 className="truncate text-sm font-semibold text-fg">{fund.code}</h3>
-                            <span className="block truncate text-xs text-fg-muted">{fund.name || fund.code}</span>
+                            <span className="block text-xs text-fg-muted leading-snug truncate" title={fund.name || fund.code}>{fund.name || fund.code}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">

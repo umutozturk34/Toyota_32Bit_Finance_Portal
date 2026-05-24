@@ -5,6 +5,7 @@
     "requiredRole": "Gerekli rol:"
   },
   "nav": {
+    "market": "Piyasa",
     "news": "Haberler",
     "stocks": "Hisseler",
     "crypto": "Kripto",
@@ -38,6 +39,7 @@
     "delete": "Sil",
     "edit": "Düzenle",
     "undo": "Geri Al",
+    "remove": "Kaldır",
     "all": "Tümü",
     "loading": "Yükleniyor...",
     "loadingData": "Veriler yükleniyor…",
@@ -47,7 +49,11 @@
     "back": "Geri",
     "addToPortfolio": "Portföye Ekle",
     "sortDefault": "Varsayılan",
+    "previous": "Önceki",
+    "next": "Sonraki",
     "searchEllipsis": "Ara...",
+    "collapse": "Küçült",
+    "expand": "Büyüt",
     "settings": "Ayarlar"
   },
   "numberFormat": {
@@ -58,6 +64,7 @@
   "portfolioSwitcher": {
     "newPortfolio": "Yeni portföy",
     "namePlaceholder": "Portföy adı",
+    "confirmDelete": "«{{name}}» silinsin mi?",
     "deleteTitle": "Portföyü sil?",
     "deleteMessage": "«{{name}}» portföyü tüm pozisyon, snapshot ve geçmiş ile birlikte kalıcı olarak silinecek. Bu işlem geri alınamaz.",
     "createFailed": "Oluşturma başarısız",
@@ -235,9 +242,36 @@
       "description": "Kategori bazlı son haberler"
     },
     "BENCHMARK_BEATERS": {
-      "label": "Benchmark Yenenler",
-      "description": "Seçilen benchmark'ı yenen enstrüman sıralaması"
+      "label": "Gösterge Sıralaması",
+      "description": "Seçilen göstergeyi yenen enstrümanlar"
+    },
+    "SINGLE_ASSET": {
+      "label": "Tek Varlık",
+      "description": "Tek bir varlığın anlık fiyatı ve değişimi"
     }
+  },
+  "singleAssetSection": {
+    "empty": "Varlık seçili değil — widget ayarlarından bir varlık seç.",
+    "loading": "Grafik yükleniyor…",
+    "scrollToLoad": "Görünüme gelince yüklenir",
+    "lineChart": "Çizgi grafik",
+    "candleChart": "Mum grafik",
+    "open": "Açılış",
+    "close": "Kapanış",
+    "high": "Yüksek",
+    "low": "Düşük",
+    "volume": "Hacim"
+  },
+  "singleAssetConfig": {
+    "title": "Tek Varlık",
+    "hint": "Hangi varlığı göstermek istersin?",
+    "empty": "Henüz varlık seçilmedi",
+    "searchLabel": "Varlık ara",
+    "searchPlaceholder": "BTC, AKBNK, USDTRY...",
+    "clear": "Temizle",
+    "showChart": "Grafik göster",
+    "range": "Tarih aralığı",
+    "chartType": "Grafik tipi"
   },
   "widgetSettings": {
     "newsHeader": "Haber kategorileri",
@@ -265,13 +299,46 @@
       "PARITE": "Parite",
       "EMTIA": "Emtia",
       "GENEL_FINANS": "Genel"
-    }
+    },
+    "beatersHeader": "Gösterge Sıralaması",
+    "beatersBenchmark": "Gösterge",
+    "beatersVerdict": "Sonuç",
+    "beatersVerdictValues": {
+      "ALL": "Tümü",
+      "WINNERS": "Yenenler",
+      "LOSERS": "Kaybedenler"
+    },
+    "beatersAssetType": "Varlık tipi",
+    "beatersTypeValues": {
+      "ALL": "Tümü",
+      "SPOT": "Hisse",
+      "CRYPTO": "Kripto",
+      "FOREX": "Döviz",
+      "FUND": "Fon",
+      "COMMODITY": "Emtia",
+      "VIOP": "VIOP",
+      "DEPOSIT": "Mevduat",
+      "BOND": "Tahvil"
+    },
+    "beatersPeriod": "Dönem",
+    "beatersSortDir": "Sıralama",
+    "beatersSortDesc": "En iyi → en kötü",
+    "beatersSortAsc": "En kötü → en iyi",
+    "beatersLimit": "Liste uzunluğu"
+  },
+  "overviewPages": {
+    "addPage": "Yeni sayfa",
+    "newPageName": "Yeni sayfa",
+    "deletePage": "Sayfayı sil",
+    "tabRenameHint": "Tıkla → adı düzenle"
   },
   "widgetTray": {
     "widgetGallery": "Widget Galerisi",
     "assetCardTab": "Asset Kartı",
     "watchlistTab": "Takip Listesi",
     "newsTile": "Haberler",
+    "beatersTile": "Gösterge Sıralaması",
+    "singleAssetTile": "Tek Varlık",
     "newAssetCard": "Yeni Asset Kartı",
     "addNewCard": "+ Yeni Asset Kartı",
     "queueLabel": "sırada: {{label}}",
@@ -302,11 +369,11 @@
     "empty": "Henüz takip varlığı yok"
   },
   "beatersSection": {
-    "title": "Benchmark Yenenler",
-    "benchmarkFallback": "benchmark",
+    "title": "Gösterge Sıralaması",
+    "benchmarkFallback": "gösterge",
     "empty": "Henüz veri yok",
     "viewAll": "Tümünü gör",
-    "excessTooltip": "Benchmark üstü getiri"
+    "excessTooltip": "Gösterge üzeri getiri (nominal − gösterge)"
   },
   "datePicker": {
     "placeholder": "Tarih seçin",
@@ -881,7 +948,9 @@
       "statusSold": "SATILDI",
       "statusClosed": "KAPALI",
       "exitDateLabel": "Çıkış Tarihi",
-      "statusCol": "Durum"
+      "statusCol": "Durum",
+      "realReturnAbbr": "reel",
+      "realReturnTooltip": "Reel getiri (TÜFE etkisi düşülmüş)"
     },
     "allocation": {
       "title": "Dağılım",
@@ -901,6 +970,7 @@
       "lotAdded": "Lot Eklendi",
       "lotSold": "Lot Satıldı",
       "lotSoldOrClosed": "Lot Satıldı / Kapatıldı",
+      "lotMixed": "Karma İşlem",
       "positionEvents": "Pozisyon Hareketleri",
       "realizedPnlLabel": "Gerçekleşen K/Z",
       "realizedPnlTitle": "Gerçekleşen K/Z Performansı",
@@ -918,7 +988,8 @@
     "loading": "Portföy yükleniyor...",
     "tabs": {
       "overview": "Genel Bakış",
-      "performance": "Performans"
+      "performance": "Performans",
+      "viop": "VİOP"
     },
     "onboarding": {
       "idleTitle": "Portföyünüzü Oluşturun",
@@ -934,6 +1005,17 @@
         "creating": "Portföy oluşturuluyor...",
         "preparing": "Hazırlanıyor..."
       }
+    },
+    "bulk": {
+      "selectedSummary": "seçili · {{total}} pozisyon",
+      "selectAll": "Hepsini seç",
+      "clearAll": "Tüm seçimi kaldır",
+      "clear": "Temizle",
+      "delete": "Sil",
+      "deleting": "Siliniyor…",
+      "confirmTitle": "Pozisyonları sil",
+      "confirmBody": "pozisyon kalıcı silinecek. Bu işlem geri alınamaz.",
+      "partialError": "{{failed}}/{{total}} pozisyon silinemedi. Diğerleri silindi."
     },
     "sell": {
       "title": "{{code}} pozisyonunu sat",
@@ -951,11 +1033,13 @@
       "invalidDateHint": "Giriş tarihinden önce veya gelecekte olamaz",
       "invalidPriceHint": "Geçersiz fiyat",
       "remainingOpen": "Açık kalan",
+      "historicalHint": "Geçmiş tarih — fiyatı manuel gir",
       "useDatePrice": "O günkü fiyat",
       "loadingPrice": "Fiyat yükleniyor...",
       "noPriceForDate": "Bu tarih için fiyat yok",
       "proceedsLabel": "Satış geliri",
       "realizedPnlLabel": "Realize Kâr/Zarar",
+      "partialHint": "Kalan {{remaining}} adet pozisyon açık devam edecek",
       "invalidQuantityHint": "Miktar 0 ile {{max}} arasında olmalı",
       "confirm": "Satışı Onayla",
       "failed": "Satış başarısız"
@@ -964,22 +1048,31 @@
       "title": "Pozisyonu tekrar aç"
     },
     "derivatives": {
+      "title": "Türev Pozisyonlar",
+      "tabTitle": "VİOP Pozisyonları",
+      "openAction": "Pozisyon Aç",
       "submitOpen": "Aç",
       "openTitle": "Türev Pozisyon Aç",
       "openFailed": "Pozisyon açılamadı",
+      "empty": "Henüz türev pozisyon yok",
+      "emptyHint": "VİOP sayfasından pozisyon açabilirsin",
+      "symbol": "Kontrat sembolü",
       "direction": "Yön",
       "qty": "Lot",
       "entryDate": "Giriş tarihi",
       "entryPrice": "Giriş fiyatı",
       "entryPriceOptional": "Giriş fiyatı (opsiyonel)",
+      "premium": "Prim",
       "premiumOptional": "Prim (opsiyonel)",
       "autoFromHistory": "Boş bırak → geçmişten alınır",
       "alsoClosePast": "Zaten kapadıysam",
       "closeDate": "Kapanış tarihi",
       "closePrice": "Kapanış fiyatı",
+      "closePriceOptional": "Kapanış fiyatı (boş → geçmişten)",
       "closeQtyLabel": "Kapatılacak lot",
       "closeQtyHint": "Miktar 0 ile {{max}} arasında olmalı",
       "closeTitle": "Pozisyon Kapat",
+      "closeAction": "Pozisyon kapat",
       "closeConfirm": "Kapat",
       "closeFailed": "Pozisyon kapatılamadı",
       "editCloseTitle": "Kapanışı Düzenle",
@@ -989,12 +1082,25 @@
       "updateFailed": "Pozisyon güncellenemedi",
       "reopen": "Tekrar Aç",
       "reopenFailed": "Pozisyon yeniden açılamadı",
+      "deleteTitle": "Pozisyonu sil",
+      "confirmDelete": "Bu türev pozisyon kaydı silinecek.",
+      "open": "Açık",
+      "closed": "Kapalı",
+      "expired": "Vade doldu",
+      "entry": "Giriş",
+      "current": "Güncel",
+      "exit": "Çıkış",
       "expiry": "Vade",
+      "pnl": "K/Z",
       "margin": "Teminat",
       "notional": "Nominal büyüklük",
+      "leverage": "Kaldıraç",
       "strike": "Strike",
       "maxLoss": "Max Kayıp",
       "maxGain": "Max Kazanç",
+      "call": "Call",
+      "put": "Put",
+      "future": "Vadeli",
       "dataAvailable": "Bu tarihte veri var: {{price}}",
       "dataUnavailable": "Bu tarihte veri yok — geçmişe en yakın fiyat kullanılır",
       "closePriceLabel": "Kapanış fiyatı (TRY)",
@@ -1164,6 +1270,7 @@
       "noData": "Bu aralıkta veri yok",
       "indicatorInfo": "Bilgi",
       "normalizedHint": "Çoklu seri — başlangıçtan % değişim olarak normalize edildi",
+      "savingsCardTitle": "{{currency}} Tasarruf",
       "statLast": "Son",
       "statMin": "Min",
       "statMax": "Maks",
@@ -1267,6 +1374,7 @@
     "you": "Sen",
     "banAction": "Yasakla",
     "unbanAction": "Yasağı Kaldır",
+    "sendMessageTitle": "Bu kullanıcıya mesaj gönder",
     "pageSize": "Sayfa boyutu:",
     "col": {
       "user": "Kullanıcı",
@@ -1365,6 +1473,7 @@
     "titleEdit": "Pozisyonu Düzenle",
     "continue": "Devam Et",
     "totalCost": "Toplam Maliyet",
+    "storedAsTry": "TRY olarak kaydedilir",
     "fields": {
       "entryDate": "Giriş Tarihi",
       "entryPrice": "Giriş Fiyatı (TRY)",
@@ -1433,6 +1542,14 @@
     },
     "lots": {
       "title": "Lotlar",
+      "entryDate": "Giriş tarihi",
+      "entryPrice": "Giriş fiyatı",
+      "quantity": "Miktar",
+      "marketValue": "Piyasa değeri",
+      "pnl": "K/Z",
+      "closed": "KAPALI",
+      "lotMarkerBuy": "AL",
+      "lotMarkerSell": "SAT",
       "lotMarkerOpen": "AÇ",
       "lotMarkerClose": "KAPAT"
     }
@@ -1682,8 +1799,8 @@
     "deleteListTitle": "Listeyi sil",
     "addAsset": "Asset ekle",
     "createAlert": "Alarm oluştur",
-    "loading": "Yükleniyor…",
-    "listsLoading": "Listeler yükleniyor…",
+    "loading": "Yükleniyor...",
+    "listsLoading": "Listeler yükleniyor...",
     "headers": {
       "asset": "Varlık",
       "lastPrice": "Son fiyat",
@@ -1804,7 +1921,8 @@
     "kind": {
       "future": "Vadeli",
       "option": "Opsiyon",
-      "FUTURE": "Vadeli"
+      "FUTURE": "Vadeli",
+      "OPTION": "Opsiyon"
     },
     "side": {
       "CALL": "Call",
@@ -1835,13 +1953,13 @@
     "tabCompare": "Karşılaştır",
     "tabScenario": "Senaryo",
     "tabBeaters": "Yenenler",
-    "beaterSubtitle": "Seçtiğin göstergeyi yenen enstrümanları kıyasla — TÜFE, politika faizi, USD/EUR mevduat veya başka bir benchmark.",
-    "beaterTitle": "Benchmark Yenenler",
-    "beatingBenchmark": "Yenenler",
+    "beaterSubtitle": "Seçtiğin göstergeyi yenen enstrümanları kıyasla — TÜFE, politika faizi, USD/EUR mevduat veya başka bir gösterge.",
+    "beaterTitle": "Gösterge Sıralaması",
+    "beatingBenchmark": "Göstergeyi Yenenler",
     "beats": "Yendi",
-    "benchmark": "Karşılaştırma",
+    "benchmark": "Gösterge",
     "benchmarkDefault": "Varsayılan (TÜFE)",
-    "benchmarkReturn": "Benchmark getirisi",
+    "benchmarkReturn": "Gösterge getirisi",
     "bmDefaultHint": "Varsayılan: TÜFE (seçim yapılmadı)",
     "bmGroupDepositEUR": "EUR Mevduat",
     "bmGroupDepositTRY": "TL Mevduat",
@@ -1849,7 +1967,7 @@
     "bmGroupInflation": "Enflasyon",
     "bmGroupRates": "Faizler",
     "bmNoResults": "Eşleşme yok",
-    "bmSearchPlaceholder": "Benchmark ara…",
+    "bmSearchPlaceholder": "Gösterge ara…",
     "clearFilters": "Temizle",
     "compareEmpty": "Karşılaştırmak için aşağıdan ara ve seç.",
     "comparePickFirst": "En az 1 enstrüman seç",
@@ -1862,7 +1980,8 @@
     "compareTitle": "Karşılaştırma",
     "cpiGrowth": "TÜFE büyümesi (dönemde)",
     "endDate": "Bitiş",
-    "excessReturn": "Excess",
+    "excessReturn": "Gösterge Üzeri",
+    "excessReturnTooltip": "Nominal getiri − Gösterge getirisi (pozitifse göstergeyi geçti)",
     "finalValue": "Son Değer",
     "instrument": "Enstrüman",
     "instruments": "Enstrümanlar",
@@ -1874,11 +1993,12 @@
     "noInstruments": "Hiç enstrüman seçilmedi. Aşağıdan ekle veya hızlı önerilerden seç.",
     "noMatch": "Eşleşme yok",
     "nominalReturn": "Nominal",
+    "nominalReturnTooltip": "Mutlak yüzde değişim (enflasyon/faiz ayarsız)",
     "normalizedHintCompare": "Çoklu seri — başlangıçtan % değişim olarak normalize edildi",
     "openInCompare": "Karşılaştırmada aç",
     "period": "Dönem",
     "quickPick": "Hızlı seç",
-    "realLoss": "Excess return < 0",
+    "realLoss": "Gösterge üzeri < 0",
     "realReturn": "Reel",
     "realReturnHint": "Reel getiri = nominal − TÜFE etkisi",
     "scenarioSubtitle": "Belirli bir tarihte belirli bir miktarı farklı enstrümanlara koysaydın bugün ne kadar olurdu? Gerçek geçmiş veriyle simüle et.",
@@ -1916,6 +2036,11 @@
       "beaters": "Yenenler'e dön",
       "asset": "Varlığa dön"
     },
-    "returnsInCurrency": "Getiriler {{currency}} cinsinden"
+    "compareInfo": {
+      "forwardFilledTooltip": "Son veri noktasından bugüne uzatıldı",
+      "backfilledTooltip": "Aralık başına son bilinen değerle uzatıldı"
+    },
+    "returnsInCurrency": "Getiriler {{currency}} cinsinden",
+    "simulationRunning": "Simülasyon hesaplanıyor..."
   }
 }

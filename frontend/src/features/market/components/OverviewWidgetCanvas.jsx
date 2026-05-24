@@ -1,6 +1,4 @@
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
 import GridLayout, { useContainerWidth } from 'react-grid-layout';
 import OverviewWidgetCard from './OverviewWidgetCard';
 import WidgetSkeleton from './WidgetSkeleton';
@@ -21,28 +19,13 @@ const FRONTEND_MIN = {
   WATCHLIST: { w: 3, h: 4 },
   NEWS: { w: 3, h: 6 },
   BENCHMARK_BEATERS: { w: 3, h: 4 },
-  SINGLE_ASSET: { w: 4, h: 6 },
 };
-
-function newsItemCount(widgets, sectionId) {
-  return widgets.find((w) => w.sectionId === sectionId)?.data?.items?.length ?? 0;
-}
-
-function adjustNewsHeight(layoutItem, count) {
-  if (count <= 0) return layoutItem;
-  const itemHeightPx = 68;
-  const headerPx = 50;
-  const rowUnit = 28 + 16;
-  const desired = Math.max(6, Math.min(40, Math.ceil((count * itemHeightPx + headerPx) / rowUnit)));
-  return { ...layoutItem, h: desired };
-}
 
 export default function OverviewWidgetCanvas({
   sections, widgets, editMode,
   deletingIds, activePopoverSectionId, onOpenSettings,
   onChange, onDelete, onConfigChange, onDrop, pendingDropSize,
 }) {
-  const { t } = useTranslation();
   const { containerRef, width } = useContainerWidth();
   const [mountedCount, setMountedCount] = useState(0);
   const { byKind, limits } = useWidgetDefinitions();
@@ -56,8 +39,16 @@ export default function OverviewWidgetCanvas({
   const widgetDataMap = useMemo(() => buildWidgetDataMap(widgets), [widgets]);
 
   const mountSlotBySectionId = useMemo(() => {
-    const news = sections.filter((s) => s.kind === 'NEWS');
-    const others = sections.filter((s) => s.kind !== 'NEWS');
+    const ordered = [...sections].sort((a, b) => {
+      const ay = typeof a.y === 'number' ? a.y : 0;
+      const by = typeof b.y === 'number' ? b.y : 0;
+      if (ay !== by) return ay - by;
+      const ax = typeof a.x === 'number' ? a.x : 0;
+      const bx = typeof b.x === 'number' ? b.x : 0;
+      return ax - bx;
+    });
+    const news = ordered.filter((s) => s.kind === 'NEWS');
+    const others = ordered.filter((s) => s.kind !== 'NEWS');
     const map = new Map();
     [...others, ...news].forEach((s, slot) => map.set(s.sectionId, slot));
     return map;
@@ -82,12 +73,8 @@ export default function OverviewWidgetCanvas({
       maxW: def.max.w,
       maxH: def.max.h,
     };
-    if (s.kind === 'NEWS') {
-      const count = newsItemCount(widgets, s.sectionId);
-      return adjustNewsHeight(base, count);
-    }
     return base;
-  }).filter(Boolean), [sections, widgets, byKind]);
+  }).filter(Boolean), [sections, byKind]);
 
   const deferredEditMode = useDeferredValue(editMode);
   const dragConfig = useMemo(
@@ -143,37 +130,38 @@ export default function OverviewWidgetCanvas({
       style={{ minHeight: width > 0 ? undefined : 600 }}
     >
       {isMobile && (
-        <div className="flex flex-col gap-4 pb-8">
-          <div className="flex items-center gap-2 px-1 pt-1 pb-2">
-            <span aria-hidden className="h-px w-6 bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
-            <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-subtle">{t('overviewCanvas.title')}</span>
-            <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-accent/30 via-border-default/40 to-transparent" />
-          </div>
-          {sections.map((section, i) => {
+        <div className="flex flex-col gap-4 pb-4">
+          {[...sections]
+            .sort((a, b) => {
+              const ay = typeof a.y === 'number' ? a.y : 0;
+              const by = typeof b.y === 'number' ? b.y : 0;
+              if (ay !== by) return ay - by;
+              const ax = typeof a.x === 'number' ? a.x : 0;
+              const bx = typeof b.x === 'number' ? b.x : 0;
+              return ax - bx;
+            })
+            .map((section, i) => {
             const slot = mountSlotBySectionId.get(section.sectionId) ?? i;
             return (
-              <motion.div
-                key={section.sectionId}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: Math.min(i * 0.05, 0.5), ease: [0.16, 1, 0.3, 1] }}
-                className="relative rounded-2xl overflow-hidden"
-              >
-                <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-indigo-400/40 via-fuchsia-400/15 to-transparent" />
-                {slot < mountedCount ? (
-                  <OverviewWidgetCard
-                    section={section}
-                    widgetData={widgetDataMap.get(section.sectionId) ?? null}
-                    editMode={false}
-                    draggable={false}
-                    deleting={deletingIds?.has(section.sectionId) ?? false}
-                    popoverActive={activePopoverSectionId === section.sectionId}
-                    onOpenSettings={onOpenSettings}
-                    onDelete={onDelete}
-                    onConfigChange={onConfigChange}
-                  />
-                ) : <WidgetSkeleton />}
-              </motion.div>
+              <div key={section.sectionId} className="h-full">
+                {slot < mountedCount
+                  ? (
+                    <div className="h-full widget-fade-in">
+                      <OverviewWidgetCard
+                        section={section}
+                        widgetData={widgetDataMap.get(section.sectionId) ?? null}
+                        editMode={editMode}
+                        draggable={false}
+                        deleting={deletingIds?.has(section.sectionId) ?? false}
+                        popoverActive={activePopoverSectionId === section.sectionId}
+                        onOpenSettings={onOpenSettings}
+                        onDelete={onDelete}
+                        onConfigChange={onConfigChange}
+                      />
+                    </div>
+                  )
+                  : <WidgetSkeleton />}
+              </div>
             );
           })}
         </div>

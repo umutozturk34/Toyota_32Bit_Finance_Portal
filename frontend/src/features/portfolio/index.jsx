@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import useNavigationBack from '../../shared/hooks/useNavigationBack';
-import { Wallet, LayoutDashboard, TrendingUp as TrendingUpIcon, ShieldCheck, Sparkles } from 'lucide-react';
+import { Wallet, LayoutDashboard, TrendingUp as TrendingUpIcon, ShieldCheck, Sparkles, Download } from 'lucide-react';
+import usePortfolioPdfDownload from './hooks/usePortfolioPdfDownload';
+import { useUserPreferences } from '../../shared/hooks/useUserPreferences';
 import { Check, AlertTriangle } from '../../shared/components/feedback/AnimatedIcons';
 import PageHeader from '../../shared/components/layout/PageHeader';
 import LoadingState from '../../shared/components/feedback/LoadingState';
@@ -36,6 +38,10 @@ export default function Portfolio() {
   const { t } = useTranslation();
   const goBack = useNavigationBack('/portfolio');
   const invalidatePortfolio = useInvalidatePortfolio();
+  const { preferences } = useUserPreferences();
+  const allocationChartRef = useRef(null);
+  const realizedPnlChartRef = useRef(null);
+  const performanceChartRef = useRef(null);
   const defaultPortfolioName = t('portfolio.onboarding.defaultName');
   const onboardingSteps = [
     { label: t('portfolio.onboarding.steps.verifying'), duration: 600 },
@@ -76,6 +82,21 @@ export default function Portfolio() {
 
   const loading = listLoading || (portfolio && viewLoading);
   const error = (!is404 && listError?.response?.data?.message) || viewError?.response?.data?.message || null;
+
+  const { download: downloadPdf, isPending: pdfPending } = usePortfolioPdfDownload({
+    portfolio,
+    summary,
+    positions: viewPositions,
+    allocation,
+    chartRefs: {
+      allocation: allocationChartRef,
+      realizedPnl: realizedPnlChartRef,
+      performance: performanceChartRef,
+    },
+    currency: 'TRY',
+    theme: preferences?.theme,
+    locale: preferences?.language,
+  });
 
   const setActiveTab = (tab) => {
     setSearchParams((prev) => {
@@ -402,13 +423,26 @@ export default function Portfolio() {
           onRefresh={invalidatePortfolio}
           loading={loading}
         />
-        {portfolios && portfolios.length > 0 && (
-          <PortfolioSwitcher
-            portfolios={portfolios}
-            activeId={portfolio?.id}
-            onSelect={setActivePortfolio}
-          />
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {portfolio && (
+            <button
+              type="button"
+              onClick={downloadPdf}
+              disabled={pdfPending}
+              className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-[12px] font-display font-semibold tracking-tight text-fg-muted hover:text-fg hover:border-border-hover transition-opacity duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+            >
+              <Download className={`h-3.5 w-3.5 ${pdfPending ? 'animate-pulse' : ''}`} />
+              {pdfPending ? t('portfolio.actions.downloadPdfPending') : t('portfolio.actions.downloadPdf')}
+            </button>
+          )}
+          {portfolios && portfolios.length > 0 && (
+            <PortfolioSwitcher
+              portfolios={portfolios}
+              activeId={portfolio?.id}
+              onSelect={setActivePortfolio}
+            />
+          )}
+        </div>
       </div>
 
       {summary && <SummaryCards summary={summary} portfolioId={portfolio?.id} />}
@@ -439,8 +473,8 @@ export default function Portfolio() {
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
-              <RealizedPnlChart portfolioId={portfolio?.id} />
+              <AllocationChart ref={allocationChartRef} allocation={allocation} portfolioId={portfolio?.id} />
+              <RealizedPnlChart ref={realizedPnlChartRef} portfolioId={portfolio?.id} />
             </div>
             <div className="min-w-0">
               <PositionsTable
@@ -457,7 +491,7 @@ export default function Portfolio() {
         )}
 
         {activeTab === 'performance' && portfolio && (
-          <PerformanceChart portfolioId={portfolio.id} backfill={backfill} />
+          <PerformanceChart ref={performanceChartRef} portfolioId={portfolio.id} backfill={backfill} />
         )}
       </div>
     </div>

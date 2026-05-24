@@ -895,6 +895,12 @@
     }
   },
   "portfolio": {
+    "actions": {
+      "downloadPdf": "Download PDF",
+      "downloadPdfPending": "Preparing PDF...",
+      "downloadPdfError": "PDF download failed. Please try again.",
+      "downloadPdfRateLimit": "You can download at most 2 PDFs per hour. Please try again later."
+    },
     "positions": {
       "searchPlaceholder": "Search position...",
       "empty": "No positions yet",

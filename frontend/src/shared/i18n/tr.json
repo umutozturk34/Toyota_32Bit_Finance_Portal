@@ -895,6 +895,12 @@
     }
   },
   "portfolio": {
+    "actions": {
+      "downloadPdf": "PDF İndir",
+      "downloadPdfPending": "PDF Hazırlanıyor...",
+      "downloadPdfError": "PDF indirilemedi. Lütfen tekrar deneyin.",
+      "downloadPdfRateLimit": "Saatte en fazla 2 PDF indirebilirsin. Daha sonra tekrar dene."
+    },
     "positions": {
       "searchPlaceholder": "Pozisyon ara...",
       "empty": "Henüz pozisyon bulunmuyor",

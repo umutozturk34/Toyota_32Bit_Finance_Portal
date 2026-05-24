@@ -60,12 +60,12 @@ public class BenchmarkBeatersWidgetProvider implements OverviewWidgetProvider {
                 inflationBeaterService.warmAsync(period, benchmarkCode);
                 log.debug("BenchmarkBeatersWidget cold cache, async warm triggered benchmark={} period={}",
                         benchmarkCode, period);
-                return new BenchmarkBeatersData(benchmarkCode, null, BigDecimal.ZERO, period, List.of());
+                return new BenchmarkBeatersData(benchmarkCode, null, BigDecimal.ZERO, period, null, List.of());
             }
         } catch (RuntimeException ex) {
             log.warn("BenchmarkBeatersWidget peek failed benchmark={} period={}: {}",
                     benchmarkCode, period, ex.getMessage());
-            return new BenchmarkBeatersData(benchmarkCode, null, BigDecimal.ZERO, period, List.of());
+            return new BenchmarkBeatersData(benchmarkCode, null, BigDecimal.ZERO, period, null, List.of());
         }
 
         List<BenchmarkBeatersData.BeaterRow> rows = filterAndLimit(
@@ -75,6 +75,7 @@ public class BenchmarkBeatersWidgetProvider implements OverviewWidgetProvider {
                 response.benchmarkLabel(),
                 response.benchmarkReturnPct() != null ? response.benchmarkReturnPct() : BigDecimal.ZERO,
                 period,
+                response.comparisonCurrency() != null ? response.comparisonCurrency().name() : null,
                 rows);
     }
 

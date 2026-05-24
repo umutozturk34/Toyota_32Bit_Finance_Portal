@@ -124,7 +124,10 @@ public class HistoricalFxRateAdapter implements FxRateProvider {
         SortedMap<LocalDate, BigDecimal> out = new TreeMap<>();
         for (var entry : fromTry.entrySet()) {
             BigDecimal toRate = toTry.get(entry.getKey());
-            if (toRate == null || toRate.signum() <= 0) continue;
+            if (toRate == null || toRate.signum() <= 0) {
+                toRate = closestPriorRate(toTry, entry.getKey()).orElse(null);
+                if (toRate == null || toRate.signum() <= 0) continue;
+            }
             out.put(entry.getKey(), entry.getValue().divide(toRate, RATE_SCALE, RoundingMode.HALF_UP));
         }
         return out;

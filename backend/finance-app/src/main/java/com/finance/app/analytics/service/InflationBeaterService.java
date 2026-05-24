@@ -69,7 +69,7 @@ public class InflationBeaterService {
     );
 
     private static final Map<String, Integer> PERIOD_MONTHS = Map.of(
-            "1M", 1, "3M", 3, "6M", 6, "1Y", 12, "5Y", 60
+            "1M", 1, "3M", 3, "6M", 6, "1Y", 12, "3Y", 36, "5Y", 60
     );
 
     private static final Map<MacroCategory, AnalyticsInstrumentType> CATEGORY_TO_TYPE = Map.of(

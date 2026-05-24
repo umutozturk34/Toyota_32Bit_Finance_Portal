@@ -2,6 +2,7 @@ package com.finance.market.crypto.service.assetpricing;
 
 import com.finance.common.model.MarketType;
 import com.finance.market.core.cache.MarketCacheService;
+import com.finance.market.core.service.ExchangeRateProvider;
 import com.finance.market.crypto.model.Crypto;
 import com.finance.market.crypto.repository.CryptoCandleRepository;
 import com.finance.shared.service.AssetPricingPort;
@@ -23,12 +24,13 @@ class CryptoPricingStrategyTest {
 
     @Mock private MarketCacheService<Crypto> cacheService;
     @Mock private CryptoCandleRepository candleRepository;
+    @Mock private ExchangeRateProvider exchangeRateProvider;
 
     private CryptoPricingStrategy strategy;
 
     @BeforeEach
     void setUp() {
-        strategy = new CryptoPricingStrategy(cacheService, candleRepository);
+        strategy = new CryptoPricingStrategy(cacheService, candleRepository, exchangeRateProvider);
     }
 
     @Test

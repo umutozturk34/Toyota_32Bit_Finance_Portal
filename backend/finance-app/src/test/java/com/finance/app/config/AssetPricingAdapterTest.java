@@ -38,13 +38,14 @@ class AssetPricingAdapterTest {
     @Mock private CryptoCandleRepository cryptoCandleRepository;
     @Mock private ForexCandleRepository forexCandleRepository;
     @Mock private FundCandleRepository fundCandleRepository;
+    @Mock private com.finance.market.core.service.ExchangeRateProvider exchangeRateProvider;
 
     private AssetPricingAdapter adapter;
 
     @BeforeEach
     void setUp() {
         adapter = new AssetPricingAdapter(List.of(
-            new CryptoPricingStrategy(cryptoCacheService, cryptoCandleRepository),
+            new CryptoPricingStrategy(cryptoCacheService, cryptoCandleRepository, exchangeRateProvider),
             new StockPricingStrategy(stockCacheService, stockCandleRepository),
             new ForexPricingStrategy(forexCacheService, forexCandleRepository),
             new FundPricingStrategy(fundCacheService, fundCandleRepository)

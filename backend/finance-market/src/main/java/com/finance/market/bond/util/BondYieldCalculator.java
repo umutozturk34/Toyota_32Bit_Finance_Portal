@@ -16,6 +16,7 @@ public final class BondYieldCalculator {
     private static final int INTERMEDIATE_SCALE = 10;
     private static final int OUTPUT_SCALE = 4;
     private static final BigDecimal SEMI_ANNUAL_FACTOR = new BigDecimal("2");
+    private static final BigDecimal HUNDRED = new BigDecimal("100");
 
     private BondYieldCalculator() {
     }
@@ -48,16 +49,17 @@ public final class BondYieldCalculator {
                 .divide(baseIndex, INTERMEDIATE_SCALE, RoundingMode.HALF_UP)
                 .multiply(new BigDecimal(daysInYear))
                 .divide(new BigDecimal(days), INTERMEDIATE_SCALE, RoundingMode.HALF_UP)
-                .multiply(faceValue)
+                .multiply(HUNDRED)
                 .setScale(OUTPUT_SCALE, RoundingMode.HALF_UP);
         return rawYield.compareTo(BigDecimal.ZERO) < 0 ? null : rawYield;
     }
 
     private static BigDecimal couponYield(BigDecimal couponRate, BigDecimal baseIndex, BigDecimal faceValue) {
-        BigDecimal annualCoupon = couponRate.multiply(SEMI_ANNUAL_FACTOR);
+        BigDecimal annualCoupon = couponRate.multiply(SEMI_ANNUAL_FACTOR).multiply(faceValue)
+                .divide(HUNDRED, INTERMEDIATE_SCALE, RoundingMode.HALF_UP);
         BigDecimal rawYield = annualCoupon
                 .divide(baseIndex, INTERMEDIATE_SCALE, RoundingMode.HALF_UP)
-                .multiply(faceValue)
+                .multiply(HUNDRED)
                 .setScale(OUTPUT_SCALE, RoundingMode.HALF_UP);
         return rawYield.compareTo(BigDecimal.ZERO) < 0 ? null : rawYield;
     }

@@ -18,6 +18,6 @@ public class MacroIndicatorNativeCurrencyStrategy implements NativeCurrencyStrat
 
     @Override
     public Currency resolve(String code) {
-        return null;
+        return Currency.TRY;
     }
 }

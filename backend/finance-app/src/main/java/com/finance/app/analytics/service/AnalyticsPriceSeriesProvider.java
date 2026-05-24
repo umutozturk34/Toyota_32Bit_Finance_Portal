@@ -84,7 +84,11 @@ public interface AnalyticsPriceSeriesProvider {
 
         private BigDecimal fxAt(Currency from, Currency to, LocalDate date) {
             if (from == null || to == null || from == to) return BigDecimal.ONE;
-            if (currencyConverter == null) return BigDecimal.ONE;
+            if (currencyConverter == null) {
+                log.warn("CurrencyConverter not wired; falling back to 1:1 FX for {}→{} on {} — analytics frames will be wrong",
+                        from, to, date);
+                return BigDecimal.ONE;
+            }
             try {
                 return currencyConverter.convertAtDate(BigDecimal.ONE, from, to, date);
             } catch (FxRateUnavailableException e) {

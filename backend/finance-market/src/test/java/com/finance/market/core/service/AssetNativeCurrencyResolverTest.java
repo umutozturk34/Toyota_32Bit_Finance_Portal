@@ -96,9 +96,9 @@ class AssetNativeCurrencyResolverTest {
     }
 
     @Test
-    void resolveMacroIndicatorsReturnsNull() {
-        assertThat(resolver.resolveNativeCurrency(MarketType.MACRO_INFLATION, "TP.TUFE")).isNull();
-        assertThat(resolver.resolveNativeCurrency(MarketType.MACRO_RATE, "TP.POLICY")).isNull();
+    void resolveMacroIndicatorsReturnsTry() {
+        assertThat(resolver.resolveNativeCurrency(MarketType.MACRO_INFLATION, "TP.TUFE")).isEqualTo(Currency.TRY);
+        assertThat(resolver.resolveNativeCurrency(MarketType.MACRO_RATE, "TP.POLICY")).isEqualTo(Currency.TRY);
     }
 
     @Test

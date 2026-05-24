@@ -4,22 +4,30 @@ import com.finance.market.crypto.model.Crypto;
 import com.finance.market.crypto.repository.CryptoCandleRepository;
 import com.finance.common.model.MarketType;
 import com.finance.shared.service.AssetPricingPort;
+import com.finance.market.core.service.ExchangeRateProvider;
 import com.finance.market.core.service.assetpricing.BaseAssetPricingStrategy;
 import com.finance.market.core.cache.MarketCacheService;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 @Component
 public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
 
+    private static final Set<String> TRY_QUOTED_IDS = Set.of("tether");
+    private static final Set<String> TRY_QUOTED_TICKERS = Set.of("USDT");
+
     private final MarketCacheService<Crypto> cacheService;
     private final CryptoCandleRepository candleRepository;
+    private final ExchangeRateProvider exchangeRateProvider;
 
     public CryptoPricingStrategy(MarketCacheService<Crypto> cacheService,
-                                 CryptoCandleRepository candleRepository) {
+                                 CryptoCandleRepository candleRepository,
+                                 ExchangeRateProvider exchangeRateProvider) {
         this.cacheService = cacheService;
         this.candleRepository = candleRepository;
+        this.exchangeRateProvider = exchangeRateProvider;
     }
 
     @Override
@@ -33,8 +41,20 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
         BigDecimal current = crypto != null ? normalize(crypto.getCurrentPriceTry()) : null;
         if (current != null && current.signum() > 0) return current;
         return candleRepository.findFirstByCryptoIdOrderByCandleDateDesc(assetCode)
-                .map(c -> normalize(c.getClose()))
+                .map(c -> normalize(convertCandleCloseToTry(assetCode, c.getClose())))
                 .orElse(current);
+    }
+
+    private BigDecimal convertCandleCloseToTry(String assetCode, BigDecimal close) {
+        if (close == null) return null;
+        if (assetCode == null) return close;
+        if (TRY_QUOTED_IDS.contains(assetCode.toLowerCase())
+                || TRY_QUOTED_TICKERS.contains(assetCode.toUpperCase())) {
+            return close;
+        }
+        BigDecimal usdTry = exchangeRateProvider.getCurrentUsdTry().currentRate();
+        if (usdTry == null || usdTry.signum() <= 0) return close;
+        return close.multiply(usdTry);
     }
 
     @Override
@@ -55,7 +75,7 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
         BigDecimal price = normalize(crypto.getCurrentPriceTry());
         if (price == null || price.signum() <= 0) {
             price = candleRepository.findFirstByCryptoIdOrderByCandleDateDesc(assetCode)
-                    .map(c -> normalize(c.getClose()))
+                    .map(c -> normalize(convertCandleCloseToTry(assetCode, c.getClose())))
                     .orElse(price);
         }
         return new AssetPricingPort.PriceBundle(

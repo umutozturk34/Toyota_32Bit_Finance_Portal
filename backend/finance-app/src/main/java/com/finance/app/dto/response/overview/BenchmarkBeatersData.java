@@ -8,6 +8,7 @@ public record BenchmarkBeatersData(
         String benchmarkLabel,
         BigDecimal benchmarkReturnPct,
         String period,
+        String comparisonCurrency,
         List<BeaterRow> entries
 ) implements WidgetData {
 

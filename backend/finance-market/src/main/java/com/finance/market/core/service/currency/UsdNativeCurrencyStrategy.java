@@ -11,7 +11,8 @@ import java.util.Set;
 @Component
 public class UsdNativeCurrencyStrategy implements NativeCurrencyStrategy {
 
-    private static final Set<String> TRY_QUOTED_CRYPTOS = Set.of("tether");
+    private static final Set<String> TRY_QUOTED_CRYPTO_IDS = Set.of("tether");
+    private static final Set<String> TRY_QUOTED_CRYPTO_TICKERS = Set.of("USDT");
 
     @Override
     public Set<MarketType> supports() {
@@ -20,9 +21,9 @@ public class UsdNativeCurrencyStrategy implements NativeCurrencyStrategy {
 
     @Override
     public Currency resolve(String code) {
-        if (code != null && TRY_QUOTED_CRYPTOS.contains(code.toLowerCase())) {
-            return Currency.TRY;
-        }
+        if (code == null) return Currency.USD;
+        if (TRY_QUOTED_CRYPTO_IDS.contains(code.toLowerCase())) return Currency.TRY;
+        if (TRY_QUOTED_CRYPTO_TICKERS.contains(code.toUpperCase())) return Currency.TRY;
         return Currency.USD;
     }
 }

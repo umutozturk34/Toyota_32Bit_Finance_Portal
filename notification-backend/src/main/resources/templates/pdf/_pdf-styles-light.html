@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/></head>
+<body>
+<style th:fragment="pdfStyles">
+    @page { size: A4; margin: 16mm 14mm 18mm 14mm; }
+    body { font-family: Helvetica, Arial, sans-serif; color: #0F172A; background: #FFFFFF;
+           font-size: 9pt; line-height: 1.45; margin: 0; padding: 0; }
+    h1 { font-size: 18pt; color: #0F172A; margin: 0 0 6pt 0; font-weight: 700; }
+    h2 { font-size: 12pt; color: #0F172A; margin: 14pt 0 6pt 0; font-weight: 700;
+         border-bottom: 1pt solid #99B8FF; padding-bottom: 3pt; }
+    .muted { color: #475569; }
+    .accent { color: #0052FF; }
+    .gain { color: #16A34A; }
+    .loss { color: #DC2626; }
+    table.header { width: 100%; border-collapse: collapse; margin-bottom: 8pt; }
+    table.header td { vertical-align: middle; }
+    .brand-box { width: 36pt; height: 36pt; background: #0052FF;
+                 color: #fff; text-align: center; font-weight: 700; font-size: 16pt; padding-top: 6pt; }
+    table.summary { width: 100%; border-collapse: separate; border-spacing: 8pt 0; margin-top: 6pt; }
+    table.summary td { width: 25%; border: 1pt solid #C5D5FF;
+                       padding: 8pt 10pt; background: #F8FAFC; vertical-align: top; }
+    .kpi-label { font-size: 8pt; color: #475569; margin-bottom: 3pt; text-transform: uppercase;
+                 letter-spacing: 0.5pt; }
+    .kpi-value { font-size: 12pt; font-weight: 700; color: #0F172A; }
+    .kpi-pct { font-size: 9pt; font-weight: 600; margin-left: 4pt; }
+    .chart-card { border: 1pt solid #D6E2FF; padding: 8pt; background: #FFFFFF; margin-top: 6pt; }
+    .chart-card img { width: 100%; height: auto; }
+    table.positions { width: 100%; border-collapse: collapse; margin-top: 6pt; font-size: 8.5pt; }
+    table.positions th { background: #EEF4FF; color: #0F172A; text-align: left;
+                         padding: 5pt 6pt; border-bottom: 1pt solid #B3CBFF; font-weight: 700; }
+    table.positions td { padding: 4pt 6pt; border-bottom: 1pt solid #E2E8F0; }
+    table.positions tr:nth-child(even) td { background: #F2F6FB; }
+    .num { font-family: Courier, monospace; text-align: right; }
+    .footer-disc { font-size: 7.5pt; color: #94A3B8;
+                   border-top: 0.5pt solid #CBD5E1; padding-top: 4pt; margin-top: 14pt; }
+</style>
+</body>
+</html>

@@ -110,6 +110,7 @@
       "3M": "3A",
       "6M": "6A",
       "1Y": "1Y",
+      "3Y": "3Y",
       "5Y": "5Y",
       "ALL": "Maks"
     },
@@ -244,34 +245,7 @@
     "BENCHMARK_BEATERS": {
       "label": "Gösterge Sıralaması",
       "description": "Seçilen göstergeyi yenen enstrümanlar"
-    },
-    "SINGLE_ASSET": {
-      "label": "Tek Varlık",
-      "description": "Tek bir varlığın anlık fiyatı ve değişimi"
     }
-  },
-  "singleAssetSection": {
-    "empty": "Varlık seçili değil — widget ayarlarından bir varlık seç.",
-    "loading": "Grafik yükleniyor…",
-    "scrollToLoad": "Görünüme gelince yüklenir",
-    "lineChart": "Çizgi grafik",
-    "candleChart": "Mum grafik",
-    "open": "Açılış",
-    "close": "Kapanış",
-    "high": "Yüksek",
-    "low": "Düşük",
-    "volume": "Hacim"
-  },
-  "singleAssetConfig": {
-    "title": "Tek Varlık",
-    "hint": "Hangi varlığı göstermek istersin?",
-    "empty": "Henüz varlık seçilmedi",
-    "searchLabel": "Varlık ara",
-    "searchPlaceholder": "BTC, AKBNK, USDTRY...",
-    "clear": "Temizle",
-    "showChart": "Grafik göster",
-    "range": "Tarih aralığı",
-    "chartType": "Grafik tipi"
   },
   "widgetSettings": {
     "newsHeader": "Haber kategorileri",
@@ -338,7 +312,6 @@
     "watchlistTab": "Takip Listesi",
     "newsTile": "Haberler",
     "beatersTile": "Gösterge Sıralaması",
-    "singleAssetTile": "Tek Varlık",
     "newAssetCard": "Yeni Asset Kartı",
     "addNewCard": "+ Yeni Asset Kartı",
     "queueLabel": "sırada: {{label}}",
@@ -543,6 +516,7 @@
     "3M": "3A",
     "6M": "6A",
     "1Y": "1Y",
+    "3Y": "3Y",
     "5Y": "5Y",
     "ALL": "Maks"
   },
@@ -1257,6 +1231,7 @@
       "historyTitle": "{{label}} Geçmişi",
       "rangeThreeMonths": "3A",
       "rangeOneYear": "1Y",
+      "rangeThreeYears": "3Y",
       "rangeFiveYears": "5Y",
       "rangeAll": "Tümü",
       "heading": "Makro Göstergeler",
@@ -2031,6 +2006,7 @@
     "periodThreeMonths": "3A",
     "periodSixMonths": "6A",
     "periodOneYear": "1Y",
+    "periodThreeYears": "3Y",
     "periodFiveYears": "5Y",
     "backTo": {
       "beaters": "Yenenler'e dön",

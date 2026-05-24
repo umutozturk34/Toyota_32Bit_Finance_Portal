@@ -63,8 +63,8 @@ function convertCandleSet(data, convertAt, baseCurrency, naturalCurrency) {
   };
 }
 
-const RANGE_DAYS = { '1W': 7, '1M': 31, '3M': 93, '6M': 186, '1Y': 372, '5Y': 1830 };
-const CLIENT_FILTER_RANGES = new Set(['1W', '1M', '3M', '6M', '1Y']);
+const RANGE_DAYS = { '1W': 7, '1M': 31, '3M': 93, '6M': 186, '1Y': 372, '3Y': 1098, '5Y': 1830 };
+const CLIENT_FILTER_RANGES = new Set(['1W', '1M', '3M', '6M', '1Y', '3Y']);
 
 function filterCandlesClientSide(candles, range) {
   if (!Array.isArray(candles) || candles.length === 0) return candles;

@@ -4,6 +4,7 @@ export const RANGE_OPTIONS = [
   { id: '3M', label: '3A', months: 3 },
   { id: '6M', label: '6A', months: 6 },
   { id: '1Y', label: '1Y', months: 12 },
+  { id: '3Y', label: '3Y', months: 36 },
   { id: '5Y', label: '5Y', months: 60 },
   { id: 'ALL', label: 'Maks', months: 0, alias: 'MAX' },
 ];

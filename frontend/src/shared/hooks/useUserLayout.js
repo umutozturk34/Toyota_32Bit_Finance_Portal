@@ -144,9 +144,9 @@ export function useUpdateOverviewLayout() {
     onError: (_err, _vars, context) => {
       if (context?.previous !== undefined) queryClient.setQueryData(LAYOUT_KEY, context.previous);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (data) queryClient.setQueryData(LAYOUT_KEY, data);
-      queryClient.invalidateQueries({ queryKey: ['marketOverview'] });
+      await queryClient.refetchQueries({ queryKey: ['marketOverview'] });
     },
   });
 }

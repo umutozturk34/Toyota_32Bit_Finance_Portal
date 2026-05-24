@@ -169,7 +169,6 @@ function FundsPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                        {meta.riskValue != null && <RiskBadge value={meta.riskValue} />}
                         <span className="rounded-md border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent-bright">
                             {meta.fundType ? t(`market.fund.shortType.${meta.fundType}`, { defaultValue: meta.fundType }) : t('market.fund.fallbackBadge')}
                         </span>
@@ -179,10 +178,15 @@ function FundsPage() {
                     </div>
                 </div>
 
-                {categoryLabel && (
-                    <div className="mt-2 inline-flex items-center gap-1 rounded-md border border-accent/20 bg-accent/5 px-2 py-0.5 max-w-full">
-                        <Tag className="h-3 w-3 text-accent shrink-0" />
-                        <span className="truncate text-[11px] font-medium text-accent-bright">{categoryLabel}</span>
+                {(categoryLabel || meta.riskValue != null) && (
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                        {categoryLabel && (
+                            <div className="inline-flex items-center gap-1 rounded-md border border-accent/20 bg-accent/5 px-2 py-0.5 max-w-full min-w-0">
+                                <Tag className="h-3 w-3 text-accent shrink-0" />
+                                <span className="truncate text-[11px] font-medium text-accent-bright">{categoryLabel}</span>
+                            </div>
+                        )}
+                        {meta.riskValue != null && <RiskBadge value={meta.riskValue} />}
                     </div>
                 )}
 

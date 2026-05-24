@@ -30,6 +30,7 @@ const TIME_RANGES_FULL = [
     { id: '3M', labelKey: 'chart.range.3M', months: 3 },
     { id: '6M', labelKey: 'chart.range.6M', months: 6 },
     { id: '1Y', labelKey: 'chart.range.1Y', months: 12 },
+    { id: '3Y', labelKey: 'chart.range.3Y', months: 36 },
     { id: '5Y', labelKey: 'chart.range.5Y', months: 60 },
     { id: 'ALL', labelKey: 'chart.range.ALL', months: 0 },
 ];

@@ -40,5 +40,6 @@ export const PERIODS = [
   { id: '3M', labelKey: 'periodThreeMonths' },
   { id: '6M', labelKey: 'periodSixMonths' },
   { id: '1Y', labelKey: 'periodOneYear' },
+  { id: '3Y', labelKey: 'periodThreeYears' },
   { id: '5Y', labelKey: 'periodFiveYears' },
 ];

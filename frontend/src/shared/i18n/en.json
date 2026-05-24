@@ -110,6 +110,7 @@
       "3M": "3M",
       "6M": "6M",
       "1Y": "1Y",
+      "3Y": "3Y",
       "5Y": "5Y",
       "ALL": "Max"
     },
@@ -244,34 +245,7 @@
     "BENCHMARK_BEATERS": {
       "label": "Benchmark Beaters",
       "description": "Instruments ranked by how well they beat your chosen benchmark"
-    },
-    "SINGLE_ASSET": {
-      "label": "Single Asset",
-      "description": "Live price and change for a single instrument"
     }
-  },
-  "singleAssetSection": {
-    "empty": "No asset selected — pick one in widget settings.",
-    "loading": "Loading chart…",
-    "scrollToLoad": "Loads when in view",
-    "lineChart": "Line chart",
-    "candleChart": "Candle chart",
-    "open": "Open",
-    "close": "Close",
-    "high": "High",
-    "low": "Low",
-    "volume": "Volume"
-  },
-  "singleAssetConfig": {
-    "title": "Single Asset",
-    "hint": "Which asset do you want to show?",
-    "empty": "No asset selected yet",
-    "searchLabel": "Search asset",
-    "searchPlaceholder": "BTC, AKBNK, USDTRY...",
-    "clear": "Clear",
-    "showChart": "Show chart",
-    "range": "Date range",
-    "chartType": "Chart type"
   },
   "widgetSettings": {
     "newsHeader": "News categories",
@@ -338,7 +312,6 @@
     "watchlistTab": "Watchlist",
     "newsTile": "News",
     "beatersTile": "Benchmark Beaters",
-    "singleAssetTile": "Single Asset",
     "newAssetCard": "New asset card",
     "addNewCard": "+ New asset card",
     "queueLabel": "next: {{label}}",
@@ -543,6 +516,7 @@
     "3M": "3M",
     "6M": "6M",
     "1Y": "1Y",
+    "3Y": "3Y",
     "5Y": "5Y",
     "ALL": "Max"
   },
@@ -1257,6 +1231,7 @@
       "historyTitle": "{{label}} History",
       "rangeThreeMonths": "3M",
       "rangeOneYear": "1Y",
+      "rangeThreeYears": "3Y",
       "rangeFiveYears": "5Y",
       "rangeAll": "All",
       "heading": "Macro Indicators",
@@ -2031,6 +2006,7 @@
     "periodThreeMonths": "3M",
     "periodSixMonths": "6M",
     "periodOneYear": "1Y",
+    "periodThreeYears": "3Y",
     "periodFiveYears": "5Y",
     "backTo": {
       "beaters": "Back to Beaters",

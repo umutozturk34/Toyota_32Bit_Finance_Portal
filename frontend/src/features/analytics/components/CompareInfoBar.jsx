@@ -34,7 +34,7 @@ export default function CompareInfoBar({ selected, targetCurrency, money, t }) {
         let pctColor = '#94a3b8';
         let pctText = '—';
         if (pct != null) {
-          pctColor = pct > 0.001 ? '#10b981' : pct < -0.001 ? '#ef4444' : '#94a3b8';
+          pctColor = pct > 0 ? '#10b981' : pct < 0 ? '#ef4444' : '#94a3b8';
           const sign = pct > 0 ? '+' : '';
           pctText = `${sign}${pct.toFixed(2)}%`;
         }

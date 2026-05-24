@@ -12,6 +12,7 @@ export const RANGES = [
   { id: '3M',  days: 90,    labelKey: 'rangeThreeMonths'},
   { id: '6M',  days: 180,   labelKey: 'rangeSixMonths'  },
   { id: '1Y',  days: 365,   labelKey: 'rangeOneYear'    },
+  { id: '3Y',  days: 1095,  labelKey: 'rangeThreeYears' },
   { id: '5Y',  days: 1825,  labelKey: 'rangeFiveYears'  },
   { id: 'ALL', days: 11000, labelKey: 'rangeAll'        },
 ];

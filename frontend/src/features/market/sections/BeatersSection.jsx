@@ -16,6 +16,15 @@ const ANALYTICS_TYPE_TO_MARKET = {
   VIOP: 'VIOP',
 };
 
+const TYPE_DETAIL_ROUTES = {
+  STOCK: '/stocks',
+  CRYPTO: '/crypto',
+  FOREX: '/forex',
+  FUND: '/funds',
+  COMMODITY: '/commodities',
+  VIOP: '/viop',
+};
+
 function shortLabel(code) {
   return (code || '').replace('.IS', '');
 }
@@ -30,7 +39,7 @@ function instrumentDisplayName(entry, t) {
   return fallback;
 }
 
-function BeaterRow({ entry, rank, t }) {
+function BeaterRow({ entry, rank, t, onNavigate }) {
   const marketKey = ANALYTICS_TYPE_TO_MARKET[entry.type] || 'CASH';
   const color = ASSET_TYPE_COLORS[marketKey] || '#6366f1';
   const cls = getChangeClass(entry.nominalReturnPct);
@@ -38,7 +47,10 @@ function BeaterRow({ entry, rank, t }) {
   const displayName = instrumentDisplayName(entry, t);
   const initials = shortLabel(entry.code).slice(0, 2).toUpperCase();
   return (
-    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface/60 transition-colors text-left">
+    <button
+      type="button"
+      onClick={() => onNavigate(entry)}
+      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-surface/60 transition-colors text-left bg-transparent border-none cursor-pointer">
       <span
         className="font-mono text-[10px] font-bold tabular-nums w-5 text-center shrink-0"
         style={{ color }}
@@ -53,14 +65,14 @@ function BeaterRow({ entry, rank, t }) {
         {initials}
       </span>
       <div className="flex flex-col min-w-0 flex-1">
-        <span className="font-display text-[12px] font-semibold text-fg truncate leading-tight" title={displayName}>
+        <span className="font-display text-[12px] @md:text-sm @xl:text-base font-semibold text-fg truncate leading-tight" title={displayName}>
           {displayName}
         </span>
         <span
           className="font-mono text-[9px] uppercase tracking-[0.14em] leading-tight"
           style={{ color: `${color}cc` }}
         >
-          {entry.type}
+          {t(`assets.labels.${entry.type}`, { defaultValue: entry.type })}
         </span>
       </div>
       <div className="flex flex-col items-end shrink-0 gap-0.5">
@@ -78,7 +90,7 @@ function BeaterRow({ entry, rank, t }) {
           </span>
         )}
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -92,7 +104,19 @@ function BeatersSectionImpl({ data }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const entries = useMemo(() => data?.entries ?? [], [data]);
+
+  const handleEntryClick = (entry) => {
+    const marketKey = ANALYTICS_TYPE_TO_MARKET[entry.type];
+    const route = TYPE_DETAIL_ROUTES[marketKey];
+    if (route && entry.code) {
+      navigate(`${route}/${encodeURIComponent(entry.code)}`);
+    } else {
+      const params = new URLSearchParams({ codes: entry.code || '', types: entry.type || '' });
+      navigate(`/analytics?${params.toString()}`);
+    }
+  };
   const benchmarkCode = data?.benchmarkCode ?? '';
+  const benchmarkLabel = data?.benchmarkLabel || benchmarkCode || t('beatersSection.benchmarkFallback', { defaultValue: 'gösterge' });
   const benchmarkReturn = data?.benchmarkReturnPct;
   const period = data?.period ?? '1Y';
   const benchmarkCls = getChangeClass(benchmarkReturn);
@@ -112,7 +136,7 @@ function BeatersSectionImpl({ data }) {
             {t('beatersSection.title', { defaultValue: 'Benchmark Beaters' })}
           </span>
           <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-fg-subtle leading-tight truncate">
-            {benchmarkCode || t('beatersSection.benchmarkFallback', { defaultValue: 'benchmark' })}
+            {benchmarkLabel}
             <span className="mx-1 text-fg-faint">·</span>
             <span className={changeColors[benchmarkCls]}>{formatPercent(benchmarkReturn)}</span>
             <span className="mx-1 text-fg-faint">·</span>
@@ -128,7 +152,7 @@ function BeatersSectionImpl({ data }) {
             </p>
           : <div className="space-y-0.5">
               {entries.map((entry, idx) => (
-                <BeaterRow key={`${entry.type}-${entry.code}`} entry={entry} rank={idx + 1} t={t} />
+                <BeaterRow key={`${entry.type}-${entry.code}`} entry={entry} rank={idx + 1} t={t} onNavigate={handleEntryClick} />
               ))}
             </div>
         }

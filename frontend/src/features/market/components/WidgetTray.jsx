@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
-import { Layers, TrendingUp, Bookmark, Newspaper, Check, Plus, ChevronRight, Bitcoin, Banknote, Wheat } from 'lucide-react';
+import { Layers, TrendingUp, Bookmark, Newspaper, Check, Plus, ChevronRight, Bitcoin, Banknote, Wheat, Trophy, Target } from 'lucide-react';
 import { GiGoldBar } from 'react-icons/gi';
 import { useWidgetDefinitions } from '../../../shared/hooks/useWidgetDefinitions';
 import { localizeWatchlistName } from '../../../shared/utils/watchlistName';
@@ -15,6 +14,8 @@ const SINGLETON_TILE_BASES = [
   { id: 'tile-movers-fund', kind: 'MOVERS', labelKey: 'widgetTray.movers.FUND', config: { market: 'FUND' }, accent: '#8b5cf6', Icon: Wheat },
   { id: 'tile-movers-commodity', kind: 'MOVERS', labelKey: 'widgetTray.movers.COMMODITY', config: { market: 'COMMODITY' }, accent: '#f97316', Icon: GiGoldBar },
   { id: 'tile-news', kind: 'NEWS', labelKey: 'widgetTray.newsTile', config: {}, accent: '#06b6d4', Icon: Newspaper },
+  { id: 'tile-benchmark-beaters', kind: 'BENCHMARK_BEATERS', labelKey: 'widgetTray.beatersTile', config: {}, accent: '#facc15', Icon: Trophy },
+  { id: 'tile-single-asset', kind: 'SINGLE_ASSET', labelKey: 'widgetTray.singleAssetTile', config: {}, accent: '#a855f7', Icon: Target },
 ];
 
 const ASSET_CARDS_TILE_BASE = {
@@ -46,6 +47,7 @@ function buildWatchlistTiles(watchlists, byKind, t) {
 function singletonUsed(sections, tile) {
   if (tile.kind === 'MOVERS') return sections.some((s) => s.kind === 'MOVERS' && s.config?.market === tile.config.market);
   if (tile.kind === 'WATCHLIST') return sections.some((s) => s.kind === 'WATCHLIST' && s.config?.watchlistId === tile.config.watchlistId);
+  if (tile.kind === 'SINGLE_ASSET') return false;
   return sections.some((s) => s.kind === tile.kind);
 }
 
@@ -92,9 +94,9 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
 
   const toggle = (tab) => setOpenTab((p) => (p === tab ? null : tab));
 
-  return createPortal(
-    <div ref={containerRef} className="fixed left-3 top-[120px] z-[55]" style={{ isolation: 'isolate' }}>
-      <div className="flex flex-col gap-1.5 rounded-xl border border-accent/30 bg-bg-deep/90 backdrop-blur-md shadow-2xl shadow-black/40 p-1.5">
+  return (
+    <div ref={containerRef} className="relative z-30" style={{ isolation: 'isolate' }}>
+      <div className="flex flex-row flex-wrap items-center gap-1.5 rounded-xl border border-accent/30 bg-bg-deep/90 backdrop-blur-md shadow-lg shadow-black/20 p-1.5">
         <Tab
           active={openTab === 'widget'}
           accent="#6366f1"
@@ -124,7 +126,7 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
 
       <AnimatePresence>
         {openTab === 'widget' && (
-          <Dropdown key="d-widget" rowIndex={0} anchorRef={containerRef}>
+          <Dropdown key="d-widget">
             <DropdownHint
               text={atCap ? t('widgetTray.fullHint', { max: maxWidgets }) : t('widgetTray.dragHint')}
               tone={atCap ? 'danger' : 'muted'}
@@ -137,7 +139,7 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
           </Dropdown>
         )}
         {openTab === 'asset' && (
-          <Dropdown key="d-asset" rowIndex={1} anchorRef={containerRef}>
+          <Dropdown key="d-asset">
             <DropdownHint text={t('widgetTray.addedCount', { count: assetCardCount, max: maxAssetCards })} tone={assetCardsFull ? 'danger' : 'muted'} />
             <DropdownList>
               <AssetCardAddRow tile={assetCardsTile} maxAssetCards={maxAssetCards} locked={assetCardsFull || atCap} assetCardCount={assetCardCount} onAdd={(tg, el) => { onAdd(tg, el); setOpenTab(null); }} onDragStart={onDragStart} onDragEnd={onDragEnd} />
@@ -145,7 +147,7 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
           </Dropdown>
         )}
         {openTab === 'watchlist' && watchlistItems.length > 0 && (
-          <Dropdown key="d-watchlist" rowIndex={2} anchorRef={containerRef}>
+          <Dropdown key="d-watchlist">
             <DropdownHint text={t('widgetTray.addedCount', { count: watchlistUsedCount, max: watchlistItems.length })} tone="muted" />
             <DropdownList>
               {watchlistItems.map(({ tile, used, locked }) => (
@@ -155,8 +157,7 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
           </Dropdown>
         )}
       </AnimatePresence>
-    </div>,
-    document.body
+    </div>
   );
 }
 
@@ -166,7 +167,7 @@ function Tab({ active, accent, Icon, label, count, disabled = false, onClick }) 
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-[12px] font-display font-semibold tracking-tight transition-all duration-150 cursor-pointer w-[200px] ${
+      className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-[12px] font-display font-semibold tracking-tight transition-all duration-150 cursor-pointer ${
         disabled
           ? 'border-border-default bg-bg-elevated/30 text-fg-subtle cursor-not-allowed opacity-50'
           : active
@@ -192,38 +193,18 @@ function Tab({ active, accent, Icon, label, count, disabled = false, onClick }) 
   );
 }
 
-function Dropdown({ rowIndex, anchorRef, children }) {
-  const tabHeight = 44;
-  const gap = 6;
-  const [coords, setCoords] = useState(null);
-  useEffect(() => {
-    const update = () => {
-      const rect = anchorRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      setCoords({ left: rect.right + 8, top: rect.top + rowIndex * (tabHeight + gap) });
-    };
-    update();
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
-    return () => {
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
-    };
-  }, [anchorRef, rowIndex]);
-  if (!coords) return null;
-  return createPortal(
+function Dropdown({ children }) {
+  return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -4 }}
       transition={{ duration: 0.12, ease: 'easeOut' }}
       onMouseDown={(e) => e.stopPropagation()}
-      style={{ position: 'fixed', left: coords.left, top: coords.top, isolation: 'isolate' }}
-      className="z-[60] min-w-[280px] max-w-[420px] rounded-xl border border-accent/30 bg-bg-deep/95 backdrop-blur-md shadow-2xl shadow-black/40 p-2 space-y-2"
+      className="absolute left-0 top-full mt-2 z-[60] min-w-[320px] max-w-[600px] rounded-xl border border-accent/30 bg-bg-deep/95 backdrop-blur-md shadow-2xl shadow-black/40 p-2 space-y-2"
     >
       {children}
-    </motion.div>,
-    document.body
+    </motion.div>
   );
 }
 

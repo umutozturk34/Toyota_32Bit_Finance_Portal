@@ -15,6 +15,15 @@ function buildWidgetDataMap(widgets) {
 
 const GRID_CONFIG = { cols: 12, rowHeight: 28, margin: [16, 16], containerPadding: [0, 0] };
 
+const FRONTEND_MIN = {
+  ASSET_CARDS: { w: 6, h: 3 },
+  MOVERS: { w: 3, h: 4 },
+  WATCHLIST: { w: 3, h: 4 },
+  NEWS: { w: 3, h: 6 },
+  BENCHMARK_BEATERS: { w: 3, h: 4 },
+  SINGLE_ASSET: { w: 4, h: 6 },
+};
+
 function newsItemCount(widgets, sectionId) {
   return widgets.find((w) => w.sectionId === sectionId)?.data?.items?.length ?? 0;
 }
@@ -57,14 +66,19 @@ export default function OverviewWidgetCanvas({
   const layout = useMemo(() => sections.map((s) => {
     const def = byKind.get(s.kind);
     if (!def) return null;
+    const frontMin = FRONTEND_MIN[s.kind];
+    const minW = frontMin ? Math.max(def.min.w, frontMin.w) : def.min.w;
+    const minH = frontMin ? Math.max(def.min.h, frontMin.h) : def.min.h;
+    const desiredW = typeof s.w === 'number' ? s.w : def.defaults.w;
+    const desiredH = typeof s.h === 'number' ? s.h : def.defaults.h;
     const base = {
       i: s.sectionId,
       x: typeof s.x === 'number' ? s.x : 0,
       y: typeof s.y === 'number' ? s.y : 0,
-      w: typeof s.w === 'number' ? s.w : def.defaults.w,
-      h: typeof s.h === 'number' ? s.h : def.defaults.h,
-      minW: def.min.w,
-      minH: def.min.h,
+      w: Math.max(desiredW, minW),
+      h: Math.max(desiredH, minH),
+      minW,
+      minH,
       maxW: def.max.w,
       maxH: def.max.h,
     };

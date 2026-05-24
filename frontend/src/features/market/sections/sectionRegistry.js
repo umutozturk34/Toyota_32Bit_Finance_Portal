@@ -1,9 +1,10 @@
-import { Layers, TrendingUp, Newspaper, Bookmark, Trophy } from 'lucide-react';
+import { Layers, TrendingUp, Newspaper, Bookmark, Trophy, Target } from 'lucide-react';
 import AssetCardsSection from './AssetCardsSection';
 import MoversSection from './MoversSection';
 import NewsSection from './NewsSection';
 import WatchlistSection from './WatchlistSection';
 import BeatersSection from './BeatersSection';
+import SingleAssetSection from './SingleAssetSection';
 
 export const SECTION_DEFINITIONS = Object.freeze({
   ASSET_CARDS: {
@@ -43,7 +44,15 @@ export const SECTION_DEFINITIONS = Object.freeze({
     descriptionKey: 'sectionRegistry.BENCHMARK_BEATERS.description',
     Icon: Trophy,
     Component: BeatersSection,
-    configurable: false,
+    configurable: true,
+    multiInstance: true,
+  },
+  SINGLE_ASSET: {
+    labelKey: 'sectionRegistry.SINGLE_ASSET.label',
+    descriptionKey: 'sectionRegistry.SINGLE_ASSET.description',
+    Icon: Target,
+    Component: SingleAssetSection,
+    configurable: true,
     multiInstance: true,
   },
 });

@@ -6,6 +6,8 @@ import { X, Check } from 'lucide-react';
 import NewsConfigSection from './widget-config/NewsConfigSection';
 import WatchlistConfigSection from './widget-config/WatchlistConfigSection';
 import AssetCardsConfigSection from './widget-config/AssetCardsConfigSection';
+import SingleAssetConfigSection from './widget-config/SingleAssetConfigSection';
+import BenchmarkBeatersConfigSection from './widget-config/BenchmarkBeatersConfigSection';
 
 const POPOVER_WIDTH = 400;
 const POPOVER_MAX_HEIGHT = 460;
@@ -110,6 +112,8 @@ export default function WidgetSettingsPopover({ anchorEl, kind, config, autoFocu
         {kind === 'NEWS' && <NewsConfigSection config={config} onChange={onChange} />}
         {kind === 'WATCHLIST' && <WatchlistConfigSection config={config} onChange={onChange} />}
         {kind === 'ASSET_CARDS' && <AssetCardsConfigSection config={config} onChange={onChange} autoFocusName={autoFocusName} />}
+        {kind === 'SINGLE_ASSET' && <SingleAssetConfigSection config={config} onChange={onChange} autoFocusName={autoFocusName} />}
+        {kind === 'BENCHMARK_BEATERS' && <BenchmarkBeatersConfigSection config={config} onChange={onChange} />}
       </div>
       <div className="shrink-0 flex items-center justify-end gap-2 px-3 py-2 border-t border-border-default/60 bg-bg-deep/30 rounded-b-xl">
         <button

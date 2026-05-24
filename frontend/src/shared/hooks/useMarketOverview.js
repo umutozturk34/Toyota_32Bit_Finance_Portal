@@ -3,14 +3,13 @@ import { marketOverviewService } from '../services/marketOverviewService';
 import { useAuth } from '../../features/auth/useAuth';
 import { STALE } from '../constants/query';
 
-const OVERVIEW_KEY = ['marketOverview'];
 const EMPTY_WIDGETS = Object.freeze([]);
 
-export function useMarketOverview() {
+export function useMarketOverview(pageId) {
   const { isAuthenticated, loading } = useAuth();
   const query = useQuery({
-    queryKey: OVERVIEW_KEY,
-    queryFn: marketOverviewService.get,
+    queryKey: ['marketOverview', pageId || 'default'],
+    queryFn: () => marketOverviewService.get(pageId),
     staleTime: STALE.SHORT,
     refetchOnWindowFocus: true,
     retry: false,

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef } from 'react';
 import ReactECharts from 'echarts-for-react';
 import useDeferredVisibility from '../../../shared/hooks/useDeferredVisibility';
+import { areaGradient, CHART_ACCENT } from '../../../shared/charts/echartsTheme';
 
 function lineColor(changePercent) {
   const normalized = Number(changePercent);
-  if (!Number.isFinite(normalized) || normalized === 0) return '#6366f1';
+  if (!Number.isFinite(normalized) || normalized === 0) return CHART_ACCENT;
   return normalized > 0 ? '#10b981' : '#ef4444';
 }
 
@@ -99,15 +100,7 @@ function buildOption(data, color) {
       smooth: 0.3,
       symbol: 'none',
       lineStyle: { color, width: 1.4 },
-      areaStyle: {
-        color: {
-          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [
-            { offset: 0, color: `${color}26` },
-            { offset: 1, color: `${color}00` },
-          ],
-        },
-      },
+      areaStyle: { color: areaGradient(color, 0.15) },
       animationDuration: 1100,
       animationDelay: 0,
       animationEasing: 'cubicOut',

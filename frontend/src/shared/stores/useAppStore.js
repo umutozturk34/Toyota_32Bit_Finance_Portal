@@ -9,7 +9,7 @@ const useAppStore = create(
       activeWatchlistId: null,
       chartSidebarOpen: false,
       chartActiveTab: 'indicators',
-      displayCurrency: 'TRY',
+      displayCurrency: 'ORIGINAL',
 
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
 

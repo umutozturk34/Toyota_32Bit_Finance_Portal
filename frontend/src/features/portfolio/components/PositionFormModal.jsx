@@ -10,6 +10,7 @@ import { usePositionForm } from '../hooks/usePositionForm';
 import PositionFormConfirmPanel from './PositionFormConfirmPanel';
 import PositionFormSuccessPanel from './PositionFormSuccessPanel';
 import { todayInputValue, preventDecimal, describeAction } from '../lib/positionFormHelpers';
+import { currencySymbolOf } from '../../../shared/utils/priceCurrency';
 
 export default function PositionFormModal({ mode, portfolioId, asset, position, onClose, onComplete }) {
   const { t } = useTranslation();
@@ -119,18 +120,28 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
-                <Tag className="h-3 w-3" />
-                {t('positionForm.fields.entryPrice')}
+              <label className="text-xs font-medium text-fg-muted flex items-center justify-between gap-1.5">
+                <span className="inline-flex items-center gap-1.5">
+                  <Tag className="h-3 w-3" />
+                  {t('positionForm.fields.entryPrice')}
+                </span>
+                <span className="font-mono text-[10px] uppercase tracking-wider text-accent">
+                  {inputCurrency} ({currencySymbolOf(inputCurrency)})
+                </span>
               </label>
-              <input
-                type="number"
-                step="any"
-                value={form.entryPrice}
-                onChange={handlePriceChange}
-                placeholder="0.00"
-                className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle font-mono text-sm pointer-events-none">
+                  {currencySymbolOf(inputCurrency)}
+                </span>
+                <input
+                  type="number"
+                  step="any"
+                  value={form.entryPrice}
+                  onChange={handlePriceChange}
+                  placeholder="0.00"
+                  className="w-full rounded-lg border border-border-default bg-bg-base pl-7 pr-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+                />
+              </div>
             </div>
 
             <div className="space-y-1.5">
@@ -179,18 +190,28 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
-                        <Tag className="h-3 w-3" />
-                        {t('positionForm.fields.exitPrice', { defaultValue: 'Çıkış fiyatı' })}
+                      <label className="text-xs font-medium text-fg-muted flex items-center justify-between gap-1.5">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Tag className="h-3 w-3" />
+                          {t('positionForm.fields.exitPrice', { defaultValue: 'Çıkış fiyatı' })}
+                        </span>
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-accent">
+                          {inputCurrency} ({currencySymbolOf(inputCurrency)})
+                        </span>
                       </label>
-                      <input
-                        type="number"
-                        step="any"
-                        value={exitPrice}
-                        onChange={(e) => { setExitPrice(e.target.value); setExitPriceTouched(true); setError(null); }}
-                        placeholder="0.00"
-                        className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
-                      />
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-subtle font-mono text-sm pointer-events-none">
+                          {currencySymbolOf(inputCurrency)}
+                        </span>
+                        <input
+                          type="number"
+                          step="any"
+                          value={exitPrice}
+                          onChange={(e) => { setExitPrice(e.target.value); setExitPriceTouched(true); setError(null); }}
+                          placeholder="0.00"
+                          className="w-full rounded-lg border border-border-default bg-bg-base pl-7 pr-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -199,7 +220,12 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
 
             {totalCostTry != null && (
               <div className="rounded-xl border border-accent/30 bg-gradient-to-r from-accent/5 to-transparent px-4 py-3 flex items-center justify-between gap-3 min-w-0">
-                <span className="text-xs font-semibold text-accent shrink-0">{t('positionForm.totalCost')}</span>
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className="text-xs font-semibold text-accent">{t('positionForm.totalCost')}</span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-fg-subtle">
+                    {t('positionForm.storedAsTry', { defaultValue: 'TRY olarak kaydedilir' })}
+                  </span>
+                </div>
                 <span
                   className="text-lg font-bold font-mono text-accent truncate"
                   title={money(totalCostTry)}

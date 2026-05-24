@@ -21,6 +21,13 @@ import {
   ASSET_TYPE_FILTERS as ASSET_TYPES,
   ASSET_TYPE_COLORS,
 } from '../../../shared/constants/assetTypes';
+import {
+  timeAxis,
+  valueAxis,
+  dataZoomBlock,
+  lineSeriesDefaults,
+  areaGradient,
+} from '../../../shared/charts/echartsTheme';
 
 const POSITION_EVENT_META = {
   POSITION_ADDED: { color: '#10b981', labelKey: 'portfolio.performance.lotAdded' },
@@ -150,41 +157,14 @@ function buildEChartsOption(data, color, palette, money) {
   const padding = span > 0 ? span * 0.08 : dataMax * 0.05;
 
   const showZoom = data.length >= 2;
+  const zoomBlock = dataZoomBlock(palette, { filterMode: 'none', height: 26 });
+  // PerformanceChart uses filterMode:none on the inside zoom too
+  if (zoomBlock[0]) zoomBlock[0].filterMode = 'none';
   return {
     backgroundColor: 'transparent',
     animation: data.length < 200,
     grid: { left: 70, right: 24, top: 16, bottom: showZoom ? 92 : 40, containLabel: false },
-    dataZoom: showZoom ? [
-      {
-        type: 'inside',
-        filterMode: 'none',
-        zoomOnMouseWheel: true,
-        moveOnMouseMove: true,
-        moveOnMouseWheel: false,
-        preventDefaultMouseMove: true,
-      },
-      {
-        type: 'slider',
-        height: 26,
-        bottom: 8,
-        filterMode: 'none',
-        borderColor: 'transparent',
-        backgroundColor: 'transparent',
-        dataBackground: {
-          lineStyle: { color: '#6366f160', width: 1 },
-          areaStyle: { color: '#6366f120' },
-        },
-        selectedDataBackground: {
-          lineStyle: { color: '#6366f1', width: 1 },
-          areaStyle: { color: '#6366f140' },
-        },
-        fillerColor: 'rgba(99,102,241,0.12)',
-        handleStyle: { color: '#6366f1', borderColor: '#6366f1' },
-        moveHandleStyle: { color: '#6366f1', opacity: 0.4 },
-        showDetail: false,
-        brushSelect: false,
-      },
-    ] : [],
+    dataZoom: showZoom ? zoomBlock : [],
     tooltip: {
       trigger: 'axis',
       confine: true,
@@ -197,10 +177,7 @@ function buildEChartsOption(data, color, palette, money) {
         return point ? buildTooltipHtml(point, palette, money) : '';
       },
     },
-    xAxis: {
-      type: 'time',
-      axisLine: { show: false },
-      axisTick: { show: false },
+    xAxis: timeAxis(palette, {
       axisLabel: {
         color: palette.muted, fontSize: 10,
         hideOverlap: true,
@@ -210,38 +187,17 @@ function buildEChartsOption(data, color, palette, money) {
         },
       },
       minInterval: 24 * 3600 * 1000,
-      splitLine: { show: false },
-    },
-    yAxis: {
-      type: 'value',
+    }),
+    yAxis: valueAxis(palette, {
+      scale: false,
       min: dataMin - padding,
       max: dataMax + padding,
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel: {
-        color: palette.muted,
-        fontSize: 10,
-        formatter: (val) => money(val),
-      },
-      splitLine: { lineStyle: { color: palette.grid, type: 'dashed' } },
-    },
+      axisLabel: { color: palette.muted, fontSize: 10, formatter: (val) => money(val) },
+    }),
     series: [{
-      type: 'line',
-      smooth: data.length < 200,
-      showSymbol: false,
-      sampling: 'lttb',
+      ...lineSeriesDefaults(color, data.length),
       data: seriesData,
-      itemStyle: { color },
-      lineStyle: { width: 2, color },
-      areaStyle: {
-        color: {
-          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [
-            { offset: 0, color: color + '55' },
-            { offset: 1, color: color + '00' },
-          ],
-        },
-      },
+      areaStyle: { color: areaGradient(color) },
       markPoint: {
         symbol: 'circle',
         symbolSize: 12,

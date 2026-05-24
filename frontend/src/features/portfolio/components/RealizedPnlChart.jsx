@@ -6,6 +6,7 @@ import useSessionState from '../../../shared/hooks/useSessionState';
 import { TrendingUp } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/useTheme';
+import { chartPalette } from '../../../shared/charts/echartsTheme';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { usePortfolioAllocation } from '../hooks/usePortfolioData';
 import Card from '../../../shared/components/card';
@@ -105,9 +106,10 @@ export default function RealizedPnlChart({ portfolioId }) {
     };
   }), [items, labelFor, colorFor]);
 
-  const tooltipBg = isDark ? 'rgba(12,12,20,0.95)' : 'rgba(255,255,255,0.97)';
-  const tooltipFg = isDark ? '#e2e2ea' : '#1a1a2e';
-  const tooltipBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const palette = chartPalette(isDark);
+  const tooltipBg = palette.tooltipBg;
+  const tooltipFg = palette.tooltipFg;
+  const tooltipBorder = palette.border;
   const labelMuted = isDark ? '#7d8590' : '#636c76';
   const ringStroke = isDark ? '#0d1117' : '#ffffff';
 
@@ -160,7 +162,7 @@ export default function RealizedPnlChart({ portfolioId }) {
         },
       },
       labelLine: { show: false },
-      emphasis: { scale: true, scaleSize: 4, label: { show: true } },
+      emphasis: { scale: false, focus: 'self', label: { show: true } },
       data: seriesData,
     }],
   }), [seriesData, netPnl, absTotal, tooltipBg, tooltipBorder, tooltipFg, labelMuted, ringStroke, money, moneyCompact, t, totalLabel]);

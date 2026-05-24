@@ -92,7 +92,7 @@ public class DerivativeSnapshotMaintenance {
                 batch.add(snapshot);
                 priorInBatch = snapshot;
             }
-            if (isCloseDay && !hasOtherOpenForSymbol(position)) {
+            if (isCloseDay && !hasPeerHoldingAfter(position, date)) {
                 PortfolioAssetDailySnapshot zero = buildZeroDerivativeSnapshot(
                         position, ts.plusSeconds(1), close, priorInBatch);
                 batch.add(zero);
@@ -130,16 +130,18 @@ public class DerivativeSnapshotMaintenance {
                 .build();
     }
 
-    private boolean hasOtherOpenForSymbol(DerivativePosition position) {
+    private boolean hasPeerHoldingAfter(DerivativePosition position, LocalDate thisClose) {
         Long portfolioId = position.getPortfolio().getId();
         String symbol = position.getViopContract().getSymbol();
         Long excludeId = position.getId();
         return derivativePositionRepository.findByPortfolioId(portfolioId).stream()
                 .anyMatch(p -> p.getId() != null
                         && !p.getId().equals(excludeId)
-                        && p.isOpen()
                         && p.getViopContract() != null
-                        && symbol.equals(p.getViopContract().getSymbol()));
+                        && symbol.equals(p.getViopContract().getSymbol())
+                        && p.getEntryDate() != null
+                        && !p.getEntryDate().isAfter(thisClose)
+                        && (p.getCloseDate() == null || p.getCloseDate().isAfter(thisClose)));
     }
 
     public void consolidateSymbolSnapshots(Long portfolioId, String symbol) {

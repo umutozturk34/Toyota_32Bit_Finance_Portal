@@ -257,6 +257,40 @@ class SnapshotCalculationServiceTest {
     }
 
     @Test
+    void aggregate_includesClosedViopExitValue_whenLotPartiallyClosed() {
+        // Arrange: 2 LONG VIOP lots same symbol, entry=100, size=1, qty=1 each.
+        // Lot1 closed yesterday at 110 (realized=10, exit notional=110).
+        // Lot2 still open today, latest snapshot row marketValue=110.
+        com.finance.market.viop.model.ViopContract c = derivativeContract(
+                "F_TEST0626", new BigDecimal("1"), new BigDecimal("110"));
+        com.finance.portfolio.derivative.model.DerivativePosition lot1 = derivativePosition(
+                c, new BigDecimal("100"), new BigDecimal("1"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+        lot1.closeWith(java.time.LocalDate.of(2026, 5, 1), new BigDecimal("110"),
+                com.finance.portfolio.derivative.model.DerivativeCloseReason.USER_CLOSED);
+        com.finance.portfolio.derivative.model.DerivativePosition lot2 = derivativePosition(
+                c, new BigDecimal("100"), new BigDecimal("1"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+        Portfolio portfolio = Portfolio.builder().id(1L).build();
+        PortfolioAssetDailySnapshot lot2Row = PortfolioAssetDailySnapshot.builder()
+                .portfolioId(1L).assetType(AssetType.VIOP).assetCode("F_TEST0626")
+                .snapshotDate(java.time.LocalDate.of(2026, 5, 2))
+                .createdAt(LocalDateTime.of(2026, 5, 2, 0, 0))
+                .quantity(new BigDecimal("1")).unitPriceTry(new BigDecimal("110"))
+                .marketValueTry(new BigDecimal("110")).totalCostTry(new BigDecimal("100"))
+                .pnlTry(new BigDecimal("10")).build();
+
+        // Act: build aggregate for 2026-05-02
+        PortfolioDailySnapshot snapshot = service.buildAggregateSnapshotAtFromRows(
+                portfolio, LocalDateTime.of(2026, 5, 2, 12, 0),
+                java.util.List.of(), java.util.List.of(lot1, lot2),
+                java.util.Map.of(), java.util.List.of(lot2Row));
+
+        // Assert: total = lot2 active 110 + lot1 closed exit 110 = 220 (chart stays continuous)
+        assertThat(snapshot.getTotalValueTry()).isEqualByComparingTo(new BigDecimal("220"));
+    }
+
+    @Test
     void should_returnNullSnapshot_whenContractMissingOnDerivative() {
         com.finance.portfolio.derivative.model.DerivativePosition pos = derivativePosition(
                 null, new BigDecimal("35.20"), new BigDecimal("1"),

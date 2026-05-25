@@ -5,5 +5,6 @@ import java.time.LocalDate;
 
 public record BondRateResponse(
         LocalDate date,
-        BigDecimal rate
+        BigDecimal rate,
+        BigDecimal price
 ) {}

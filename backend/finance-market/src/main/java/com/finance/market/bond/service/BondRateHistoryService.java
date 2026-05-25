@@ -5,7 +5,6 @@ import com.finance.market.core.cache.MarketCacheService;
 
 import com.finance.market.bond.config.BondProperties;
 import com.finance.market.bond.dto.external.BondSnapshotDto;
-import com.finance.common.exception.BusinessException;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.service.AssetRegistryService;
 import com.finance.market.bond.mapper.BondMapper;
@@ -21,9 +20,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -63,15 +63,61 @@ public class BondRateHistoryService {
         this.daysInYear = bondProperties.getDaysInYear();
     }
 
-    public void processSingleBond(BondSnapshotDto dto, LocalDateTime now) {
-        Bond bond = upsertSnapshot(dto, now);
-        List<BondRateHistory> newRateRecords = collectRateRecords(dto, bond);
-        if (!newRateRecords.isEmpty()) {
-            transactionTemplate.executeWithoutResult(status -> rateHistoryRepository.saveAll(newRateRecords));
+    public void processBatch(List<BondSnapshotDto> batch, LocalDateTime now) {
+        if (batch == null || batch.isEmpty()) return;
+        LocalDate today = LocalDate.now();
+
+        Map<String, Bond> bondsBySeriesCode = new LinkedHashMap<>();
+        for (BondSnapshotDto dto : batch) {
+            try {
+                bondsBySeriesCode.put(dto.seriesCode(), upsertSnapshot(dto, now));
+            } catch (Exception e) {
+                log.error("Bond upsert failed for {}: {}", dto.seriesCode(), e.getMessage(), e);
+            }
         }
-        applyClassification(bond, dto);
-        transactionTemplate.executeWithoutResult(status -> bondRepository.save(bond));
-        bondCacheService.putSnapshot(bond.getSeriesCode(), bond);
+
+        List<BondRateFetcher.BondHistoryTarget> targets = new ArrayList<>();
+        for (BondSnapshotDto dto : batch) {
+            Bond bond = bondsBySeriesCode.get(dto.seriesCode());
+            if (bond == null) continue;
+            if (bond.getCouponRate() == null || bond.getCouponRate().compareTo(BigDecimal.ZERO) == 0) continue;
+            Optional<BondRateHistory> latestOpt = rateHistoryRepository.findTopByIsinCodeOrderByRateDateDesc(dto.isinCode());
+            LocalDate startDate;
+            if (latestOpt.isEmpty()) {
+                if (dto.maturityStart() == null) {
+                    log.debug("Skipping rate fetch for {} (no maturityStart)", dto.isinCode());
+                    continue;
+                }
+                startDate = dto.maturityStart();
+            } else {
+                startDate = latestOpt.get().getRateDate().plusDays(1);
+            }
+            if (!startDate.isBefore(today)) continue;
+            targets.add(new BondRateFetcher.BondHistoryTarget(dto.isinCode(), dto.seriesCode(), bond, startDate, today));
+        }
+
+        Map<String, List<BondRateHistory>> fetched = targets.isEmpty()
+                ? Map.of()
+                : rateFetcher.fetchBatch(targets);
+
+        for (BondSnapshotDto dto : batch) {
+            Bond bond = bondsBySeriesCode.get(dto.seriesCode());
+            if (bond == null) continue;
+            try {
+                List<BondRateHistory> records = new ArrayList<>(fetched.getOrDefault(dto.isinCode(), List.of()));
+                if (bond.getCouponRate() != null && bond.getCouponRate().compareTo(BigDecimal.ZERO) != 0) {
+                    addTodayFromSnapshotIfMissing(records, dto, bond, today);
+                }
+                if (!records.isEmpty()) {
+                    transactionTemplate.executeWithoutResult(status -> rateHistoryRepository.saveAll(records));
+                }
+                applyClassification(bond, dto);
+                transactionTemplate.executeWithoutResult(status -> bondRepository.save(bond));
+                bondCacheService.putSnapshot(bond.getSeriesCode(), bond);
+            } catch (Exception e) {
+                log.error("Bond finalize failed for {}: {}", dto.seriesCode(), e.getMessage(), e);
+            }
+        }
     }
 
     private Bond upsertSnapshot(BondSnapshotDto dto, LocalDateTime now) {
@@ -90,16 +136,6 @@ public class BondRateHistoryService {
         return transactionTemplate.execute(status -> bondRepository.save(bond));
     }
 
-    private List<BondRateHistory> collectRateRecords(BondSnapshotDto dto, Bond bond) {
-        boolean zeroCoupon = bond.getCouponRate() == null
-                || bond.getCouponRate().compareTo(BigDecimal.ZERO) == 0;
-        if (zeroCoupon) {
-            log.debug("{} - zero coupon, skipping rate history", dto.isinCode());
-            return List.of();
-        }
-        return buildRateRecords(dto, bond);
-    }
-
     private void applyClassification(Bond bond, BondSnapshotDto dto) {
         List<BondRateHistory> fullHistory = rateHistoryRepository.findByIsinCodeOrderByRateDateAsc(dto.isinCode());
         bond.resolveType(fullHistory, auctionThreshold, cpiFixedThreshold);
@@ -109,39 +145,6 @@ public class BondRateHistoryService {
         }
         log.info("Bond {} processed: type={}, yield={}, rateHistory={} records",
                 dto.isinCode(), bond.getBondType(), bond.getSimpleYield(), fullHistory.size());
-    }
-
-    private List<BondRateHistory> buildRateRecords(BondSnapshotDto dto, Bond bond) {
-        String isinCode = dto.isinCode();
-        LocalDate today = LocalDate.now();
-        Optional<BondRateHistory> latestOpt = rateHistoryRepository.findTopByIsinCodeOrderByRateDateDesc(isinCode);
-
-        if (latestOpt.isEmpty()) {
-            if (dto.maturityStart() == null) {
-                throw new BusinessException("Bond " + isinCode + " has no maturityStart, cannot fetch rate history");
-            }
-            log.debug("{} - no history, full fetch from {}", isinCode, dto.maturityStart());
-            List<BondRateHistory> fetched = rateFetcher.fetch(isinCode, bond, dto.maturityStart(), today);
-            addTodayFromSnapshotIfMissing(fetched, dto, bond, today);
-            return fetched;
-        }
-
-        LocalDate lastDate = latestOpt.get().getRateDate();
-        long gapDays = ChronoUnit.DAYS.between(lastDate, today);
-
-        if (gapDays <= 1) {
-            log.debug("{} - snapshot only: lastDate={}, gapDays={}", isinCode, lastDate, gapDays);
-            List<BondRateHistory> result = new ArrayList<>();
-            addTodayFromSnapshotIfMissing(result, dto, bond, today);
-            return result;
-        }
-
-        LocalDate fetchStart = lastDate.plusDays(1);
-        log.debug("{} - incremental fetch: lastDate={}, gapDays={}, fetchStart={}",
-                isinCode, lastDate, gapDays, fetchStart);
-        List<BondRateHistory> fetched = rateFetcher.fetch(isinCode, bond, fetchStart, today);
-        addTodayFromSnapshotIfMissing(fetched, dto, bond, today);
-        return fetched;
     }
 
     private void addTodayFromSnapshotIfMissing(List<BondRateHistory> records, BondSnapshotDto dto, Bond bond,
@@ -154,6 +157,7 @@ public class BondRateHistoryService {
                 .bond(bond)
                 .rateDate(today)
                 .couponRate(dto.couponRate())
+                .price(dto.cleanPrice())
                 .build());
     }
 }

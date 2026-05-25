@@ -32,7 +32,7 @@ class StockPricingStrategyTest {
     @BeforeEach
     void setUp() {
         strategy = new StockPricingStrategy(cacheService, candleRepository);
-        lenient().when(candleRepository.findFirstByStockSymbolOrderByCandleDateDesc(CODE))
+        lenient().when(candleRepository.findFirstByStockSymbolAndCloseGreaterThanOrderByCandleDateDesc(CODE, BigDecimal.ZERO))
                 .thenReturn(Optional.empty());
     }
 
@@ -42,7 +42,7 @@ class StockPricingStrategyTest {
         when(cacheService.getSnapshot(CODE)).thenReturn(stock);
         StockCandle candle = new StockCandle();
         candle.setClose(new BigDecimal("12.7"));
-        when(candleRepository.findFirstByStockSymbolOrderByCandleDateDesc(CODE))
+        when(candleRepository.findFirstByStockSymbolAndCloseGreaterThanOrderByCandleDateDesc(CODE, BigDecimal.ZERO))
                 .thenReturn(Optional.of(candle));
 
         BigDecimal price = strategy.getPriceTry(CODE);

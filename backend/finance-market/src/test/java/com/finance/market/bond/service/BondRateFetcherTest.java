@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -55,89 +56,124 @@ class BondRateFetcherTest {
         return b;
     }
 
-    private BondRateItemDto rateItem(LocalDate date, double rate) {
-        return new BondRateItemDto(date, BigDecimal.valueOf(rate));
+    private BondRateFetcher.BondHistoryTarget target(String isin, String priceCode, LocalDate start, LocalDate end) {
+        return new BondRateFetcher.BondHistoryTarget(isin, priceCode, bond("S_" + isin), start, end);
     }
 
     @Test
-    void fetch_returnsEmpty_whenStartNotBeforeEnd() {
-        LocalDate same = LocalDate.of(2026, 5, 12);
-
-        List<BondRateHistory> result = fetcher.fetch("TRT271235T17", bond("S1"), same, same);
-
-        assertThat(result).isEmpty();
+    void fetchBatch_returnsEmpty_whenTargetsNullOrEmpty() {
+        assertThat(fetcher.fetchBatch(null)).isEmpty();
+        assertThat(fetcher.fetchBatch(List.of())).isEmpty();
         verify(evdsClient, never()).fetchBondData(any(), anyString(), anyString());
     }
 
     @Test
-    void fetch_callsEvdsForEachWindow_andMapsNewRates() {
-        when(evdsClient.fetchBondData(anyList(), anyString(), anyString()))
-                .thenReturn(new EvdsDataResponse(1, List.of()));
-        when(clientMapper.toRateItemDtos(any(), anyString()))
-                .thenReturn(List.of(rateItem(LocalDate.of(2026, 1, 5), 10.5)));
-        when(rateHistoryRepository.existsByIsinCodeAndRateDate(eq("TRT271235T17"), any()))
-                .thenReturn(false);
+    void fetchBatch_skipsTargets_whenStartNotBeforeEnd() {
+        LocalDate same = LocalDate.of(2026, 5, 12);
+        Map<String, List<BondRateHistory>> result = fetcher.fetchBatch(List.of(target("ISINA", null, same, same)));
 
-        List<BondRateHistory> result = fetcher.fetch("TRT271235T17", bond("S1"),
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 1));
-
-        assertThat(result).isNotEmpty();
+        assertThat(result.get("ISINA")).isEmpty();
+        verify(evdsClient, never()).fetchBondData(any(), anyString(), anyString());
     }
 
     @Test
-    void fetch_skipsExistingDates_andRetainsNewRecordsOnly() {
-        when(evdsClient.fetchBondData(anyList(), anyString(), anyString()))
-                .thenReturn(new EvdsDataResponse(1, List.of()));
-        when(clientMapper.toRateItemDtos(any(), anyString()))
-                .thenReturn(List.of(rateItem(LocalDate.of(2026, 1, 5), 10.5),
-                        rateItem(LocalDate.of(2026, 1, 6), 10.6)));
-        when(rateHistoryRepository.existsByIsinCodeAndRateDate(eq("TRT271235T17"), eq(LocalDate.of(2026, 1, 5))))
-                .thenReturn(true);
-        when(rateHistoryRepository.existsByIsinCodeAndRateDate(eq("TRT271235T17"), eq(LocalDate.of(2026, 1, 6))))
-                .thenReturn(false);
-
-        List<BondRateHistory> result = fetcher.fetch("TRT271235T17", bond("S1"),
+    void fetchBatch_combinesOranAndPriceCodesForAllTargets_inSingleEvdsCall() {
+        BondRateFetcher.BondHistoryTarget t1 = target("ISINA", "TP.ISINA.TL.PY",
                 LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 15));
+        BondRateFetcher.BondHistoryTarget t2 = target("ISINB", "TP.ISINB.TL.PY",
+                LocalDate.of(2026, 1, 5), LocalDate.of(2026, 1, 15));
+        when(evdsClient.fetchBondData(anyList(), anyString(), anyString()))
+                .thenReturn(new EvdsDataResponse(1, List.of()));
+        when(clientMapper.toRateItemDtos(any(), eq("TP.ISINA.ORAN"), eq("TP.ISINA.TL.PY")))
+                .thenReturn(List.of(new BondRateItemDto(LocalDate.of(2026, 1, 6), new BigDecimal("10.0"), new BigDecimal("99.50"))));
+        when(clientMapper.toRateItemDtos(any(), eq("TP.ISINB.ORAN"), eq("TP.ISINB.TL.PY")))
+                .thenReturn(List.of(new BondRateItemDto(LocalDate.of(2026, 1, 8), new BigDecimal("12.0"), new BigDecimal("98.20"))));
+        when(rateHistoryRepository.existsByIsinCodeAndRateDate(anyString(), any())).thenReturn(false);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getRateDate()).isEqualTo(LocalDate.of(2026, 1, 6));
+        Map<String, List<BondRateHistory>> result = fetcher.fetchBatch(List.of(t1, t2));
+
+        verify(evdsClient).fetchBondData(
+                eq(List.of("TP.ISINA.ORAN", "TP.ISINA.TL.PY", "TP.ISINB.ORAN", "TP.ISINB.TL.PY")),
+                anyString(), anyString());
+        assertThat(result.get("ISINA")).hasSize(1);
+        assertThat(result.get("ISINA").get(0).getPrice()).isEqualByComparingTo(new BigDecimal("99.50"));
+        assertThat(result.get("ISINB")).hasSize(1);
+        assertThat(result.get("ISINB").get(0).getCouponRate()).isEqualByComparingTo(new BigDecimal("12.0"));
     }
 
     @Test
-    void fetch_propagatesCircuitBreakerException() {
+    void fetchBatch_skipsRecordsOutsidePerTargetDateRange() {
+        BondRateFetcher.BondHistoryTarget t = target("ISINA", null,
+                LocalDate.of(2026, 1, 10), LocalDate.of(2026, 1, 20));
+        when(evdsClient.fetchBondData(anyList(), anyString(), anyString()))
+                .thenReturn(new EvdsDataResponse(1, List.of()));
+        when(clientMapper.toRateItemDtos(any(), eq("TP.ISINA.ORAN"), org.mockito.ArgumentMatchers.nullable(String.class)))
+                .thenReturn(List.of(
+                        new BondRateItemDto(LocalDate.of(2026, 1, 5), new BigDecimal("10"), null),
+                        new BondRateItemDto(LocalDate.of(2026, 1, 12), new BigDecimal("11"), null),
+                        new BondRateItemDto(LocalDate.of(2026, 1, 25), new BigDecimal("12"), null)));
+        when(rateHistoryRepository.existsByIsinCodeAndRateDate(anyString(), any())).thenReturn(false);
+
+        Map<String, List<BondRateHistory>> result = fetcher.fetchBatch(List.of(t));
+
+        assertThat(result.get("ISINA")).hasSize(1);
+        assertThat(result.get("ISINA").get(0).getRateDate()).isEqualTo(LocalDate.of(2026, 1, 12));
+    }
+
+    @Test
+    void fetchBatch_skipsExistingDates_andRetainsNewRecordsOnly() {
+        BondRateFetcher.BondHistoryTarget t = target("ISINA", null,
+                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 15));
+        when(evdsClient.fetchBondData(anyList(), anyString(), anyString()))
+                .thenReturn(new EvdsDataResponse(1, List.of()));
+        when(clientMapper.toRateItemDtos(any(), anyString(), org.mockito.ArgumentMatchers.nullable(String.class)))
+                .thenReturn(List.of(
+                        new BondRateItemDto(LocalDate.of(2026, 1, 5), new BigDecimal("10"), null),
+                        new BondRateItemDto(LocalDate.of(2026, 1, 6), new BigDecimal("11"), null)));
+        when(rateHistoryRepository.existsByIsinCodeAndRateDate(eq("ISINA"), eq(LocalDate.of(2026, 1, 5)))).thenReturn(true);
+        when(rateHistoryRepository.existsByIsinCodeAndRateDate(eq("ISINA"), eq(LocalDate.of(2026, 1, 6)))).thenReturn(false);
+
+        Map<String, List<BondRateHistory>> result = fetcher.fetchBatch(List.of(t));
+
+        assertThat(result.get("ISINA")).hasSize(1);
+        assertThat(result.get("ISINA").get(0).getRateDate()).isEqualTo(LocalDate.of(2026, 1, 6));
+    }
+
+    @Test
+    void fetchBatch_propagatesCircuitBreakerException() {
         CircuitBreaker cb = CircuitBreaker.of("evds", CircuitBreakerConfig.ofDefaults());
         when(evdsClient.fetchBondData(anyList(), anyString(), anyString()))
                 .thenThrow(CallNotPermittedException.createCallNotPermittedException(cb));
 
-        assertThatThrownBy(() -> fetcher.fetch("TRT271235T17", bond("S1"),
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 1)))
+        assertThatThrownBy(() -> fetcher.fetchBatch(List.of(
+                target("ISINA", null, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 1)))))
                 .isInstanceOf(CallNotPermittedException.class);
     }
 
     @Test
-    void fetch_raises_whenAllWindowsFail() {
+    void fetchBatch_raises_whenAllWindowsFail() {
         when(evdsClient.fetchBondData(anyList(), anyString(), anyString()))
                 .thenThrow(new RuntimeException("EVDS 500"));
 
-        assertThatThrownBy(() -> fetcher.fetch("TRT271235T17", bond("S1"),
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 1)))
+        assertThatThrownBy(() -> fetcher.fetchBatch(List.of(
+                target("ISINA", null, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 1)))))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("rate history windows failed");
+                .hasMessageContaining("batched rate history windows failed");
     }
 
     @Test
-    void fetch_continuesAfterSingleWindowFailure_whenOthersSucceed() {
+    void fetchBatch_continuesAfterSingleWindowFailure_whenOthersSucceed() {
         when(evdsClient.fetchBondData(anyList(), anyString(), anyString()))
                 .thenThrow(new RuntimeException("first window flaky"))
                 .thenReturn(new EvdsDataResponse(1, List.of()));
-        when(clientMapper.toRateItemDtos(any(), anyString()))
-                .thenReturn(List.of(rateItem(LocalDate.of(2026, 2, 1), 10.5)));
-        when(rateHistoryRepository.existsByIsinCodeAndRateDate(eq("TRT271235T17"), any())).thenReturn(false);
+        when(clientMapper.toRateItemDtos(any(), anyString(), org.mockito.ArgumentMatchers.nullable(String.class)))
+                .thenReturn(List.of(new BondRateItemDto(LocalDate.of(2026, 2, 1), new BigDecimal("10.5"), null)));
+        when(rateHistoryRepository.existsByIsinCodeAndRateDate(eq("ISINA"), any())).thenReturn(false);
 
-        List<BondRateHistory> result = fetcher.fetch("TRT271235T17", bond("S1"),
-                LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 1));
+        Map<String, List<BondRateHistory>> result = fetcher.fetchBatch(List.of(
+                target("ISINA", null, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 3, 1))));
 
-        assertThat(result).hasSize(1);
+        assertThat(result.get("ISINA")).hasSize(1);
         verify(evdsClient, times(2)).fetchBondData(anyList(), anyString(), anyString());
     }
 }

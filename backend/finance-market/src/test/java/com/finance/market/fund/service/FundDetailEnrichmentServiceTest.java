@@ -49,7 +49,7 @@ class FundDetailEnrichmentServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new FundDetailEnrichmentService(tefasClient, fundRepository, allocationRepository, trackedAssetQueryService, fundCacheService, new com.finance.market.fund.config.FundProperties());
+        service = new FundDetailEnrichmentService(tefasClient, fundRepository, allocationRepository, trackedAssetQueryService, fundCacheService, new com.finance.market.fund.config.FundProperties(), new com.finance.common.config.AppProperties());
         when(fundRepository.save(any(Fund.class))).thenAnswer(inv -> inv.getArgument(0));
         when(fundRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
     }
@@ -144,7 +144,6 @@ class FundDetailEnrichmentServiceTest {
         TefasFundAllocationDto dto = new TefasFundAllocationDto();
         dto.putUnknown("hs", 100.0);
         setField(dto, "fundCode", "AAL");
-        // Saturday (2026-05-16) empty, Friday (2026-05-15) has data
         when(tefasClient.fetchAllocations(eq(FundType.YAT), eq(LocalDate.of(2026, 5, 16)))).thenReturn(List.of());
         when(tefasClient.fetchAllocations(eq(FundType.YAT), eq(LocalDate.of(2026, 5, 15)))).thenReturn(List.of(dto));
         when(tefasClient.fetchAllocations(eq(FundType.BYF), any())).thenReturn(List.of());
@@ -255,7 +254,7 @@ class FundDetailEnrichmentServiceTest {
     void should_applyAllocationsOnlyForRequestedFund_when_enrichAllocationsForFund() {
         Fund target = Fund.builder().fundCode("AAL").fundType(FundType.YAT).build();
         when(fundRepository.findById("AAL")).thenReturn(Optional.of(target));
-        LocalDate date = LocalDate.of(2026, 5, 16);
+        LocalDate date = LocalDate.of(2026, 5, 15);
         TefasFundAllocationDto targetDto = new TefasFundAllocationDto();
         setField(targetDto, "fundCode", "AAL");
         targetDto.putUnknown("Hisse", 60.0);
@@ -281,7 +280,7 @@ class FundDetailEnrichmentServiceTest {
     void should_walkBack_when_enrichAllocationsForFund_targetMissingOnRequestedDate() {
         Fund fund = Fund.builder().fundCode("AAL").fundType(FundType.YAT).build();
         when(fundRepository.findById("AAL")).thenReturn(Optional.of(fund));
-        LocalDate date = LocalDate.of(2026, 5, 16);
+        LocalDate date = LocalDate.of(2026, 5, 15);
         TefasFundAllocationDto otherOnly = new TefasFundAllocationDto();
         setField(otherOnly, "fundCode", "BBB");
         otherOnly.putUnknown("Hisse", 10.0);

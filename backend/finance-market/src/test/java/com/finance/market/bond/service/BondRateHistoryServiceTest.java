@@ -1,6 +1,5 @@
 package com.finance.market.bond.service;
 
-import com.finance.common.exception.BusinessException;
 import com.finance.common.model.Instrument;
 import com.finance.common.model.MarketType;
 import com.finance.market.bond.config.BondProperties;
@@ -28,11 +27,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -96,7 +95,7 @@ class BondRateHistoryServiceTest {
     }
 
     @Test
-    void processSingleBond_persistsSnapshot_andSkipsRateHistory_forZeroCoupon() {
+    void processBatch_persistsSnapshot_andSkipsRateHistory_forZeroCoupon() {
         BondSnapshotDto d = dto("S1", "ISIN1", BigDecimal.ZERO, LocalDate.of(2020, 1, 1));
         Bond entity = bond("S1");
         when(bondRepository.findById("S1")).thenReturn(Optional.empty());
@@ -106,14 +105,15 @@ class BondRateHistoryServiceTest {
         when(rateHistoryRepository.findByIsinCodeOrderByRateDateAsc("ISIN1")).thenReturn(List.of());
         stubTransactionTemplate();
 
-        service.processSingleBond(d, LocalDateTime.now());
+        service.processBatch(List.of(d), LocalDateTime.now());
 
+        verify(rateFetcher, never()).fetchBatch(any());
         verify(rateHistoryRepository, never()).saveAll(any());
         verify(bondCacheService).putSnapshot("S1", entity);
     }
 
     @Test
-    void processSingleBond_updatesExistingBond_andSavesRateRecords_forCouponBond() {
+    void processBatch_updatesExistingBond_andSavesFetchedRecords_forCouponBond() {
         BondSnapshotDto d = dto("S1", "ISIN1", new BigDecimal("10"), LocalDate.of(2020, 1, 1));
         Bond existing = bond("S1");
         existing.setCouponRate(new BigDecimal("10"));
@@ -122,13 +122,13 @@ class BondRateHistoryServiceTest {
         when(bondRepository.save(existing)).thenReturn(existing);
         when(rateHistoryRepository.findTopByIsinCodeOrderByRateDateDesc("ISIN1"))
                 .thenReturn(Optional.empty());
-        when(rateFetcher.fetch(eq("ISIN1"), eq(existing), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(new java.util.ArrayList<>(List.of(rateRecord("ISIN1", LocalDate.of(2020, 1, 2), new BigDecimal("10")))));
+        when(rateFetcher.fetchBatch(any())).thenReturn(Map.of("ISIN1",
+                new java.util.ArrayList<>(List.of(rateRecord("ISIN1", LocalDate.of(2020, 1, 2), new BigDecimal("10"))))));
         when(rateHistoryRepository.existsByIsinCodeAndRateDate(eq("ISIN1"), any())).thenReturn(false);
         when(rateHistoryRepository.findByIsinCodeOrderByRateDateAsc("ISIN1")).thenReturn(List.of());
         stubTransactionTemplate();
 
-        service.processSingleBond(d, LocalDateTime.now());
+        service.processBatch(List.of(d), LocalDateTime.now());
 
         ArgumentCaptor<List<BondRateHistory>> captor = ArgumentCaptor.forClass(List.class);
         verify(rateHistoryRepository).saveAll(captor.capture());
@@ -136,7 +136,7 @@ class BondRateHistoryServiceTest {
     }
 
     @Test
-    void processSingleBond_throws_whenNoHistoryAndMaturityStartNull() {
+    void processBatch_skipsBatchFetch_whenNoHistoryAndMaturityStartNull() {
         BondSnapshotDto d = new BondSnapshotDto("S1", "ISIN1", new BigDecimal("100"),
                 new BigDecimal("10"), null, LocalDate.of(2030, 1, 1), "Bond S1");
         Bond existing = bond("S1");
@@ -146,15 +146,16 @@ class BondRateHistoryServiceTest {
         when(bondRepository.save(existing)).thenReturn(existing);
         when(rateHistoryRepository.findTopByIsinCodeOrderByRateDateDesc("ISIN1"))
                 .thenReturn(Optional.empty());
+        when(rateHistoryRepository.findByIsinCodeOrderByRateDateAsc("ISIN1")).thenReturn(List.of());
         stubTransactionTemplate();
 
-        assertThatThrownBy(() -> service.processSingleBond(d, LocalDateTime.now()))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("maturityStart");
+        service.processBatch(List.of(d), LocalDateTime.now());
+
+        verify(rateFetcher, never()).fetchBatch(any());
     }
 
     @Test
-    void processSingleBond_appendsTodaySnapshot_whenLastRateIsRecentAndCouponPresent() {
+    void processBatch_appendsTodaySnapshot_whenLastRateIsRecentAndCouponPresent() {
         LocalDate today = LocalDate.now();
         BondSnapshotDto d = dto("S1", "ISIN1", new BigDecimal("10"), LocalDate.of(2020, 1, 1));
         Bond existing = bond("S1");
@@ -168,14 +169,14 @@ class BondRateHistoryServiceTest {
         when(rateHistoryRepository.findByIsinCodeOrderByRateDateAsc("ISIN1")).thenReturn(List.of());
         stubTransactionTemplate();
 
-        service.processSingleBond(d, LocalDateTime.now());
+        service.processBatch(List.of(d), LocalDateTime.now());
 
-        verify(rateFetcher, never()).fetch(anyString(), any(), any(), any());
+        verify(rateFetcher, never()).fetchBatch(any());
         verify(rateHistoryRepository).saveAll(any());
     }
 
     @Test
-    void processSingleBond_skipsTodayAppend_whenRecordForTodayAlreadyExists() {
+    void processBatch_skipsTodayAppend_whenRecordForTodayAlreadyExists() {
         LocalDate today = LocalDate.now();
         BondSnapshotDto d = dto("S1", "ISIN1", new BigDecimal("10"), LocalDate.of(2020, 1, 1));
         Bond existing = bond("S1");
@@ -189,13 +190,13 @@ class BondRateHistoryServiceTest {
         when(rateHistoryRepository.findByIsinCodeOrderByRateDateAsc("ISIN1")).thenReturn(List.of());
         stubTransactionTemplate();
 
-        service.processSingleBond(d, LocalDateTime.now());
+        service.processBatch(List.of(d), LocalDateTime.now());
 
         verify(rateHistoryRepository, never()).saveAll(any());
     }
 
     @Test
-    void processSingleBond_performsIncrementalFetch_whenLastRateOlderThanOneDay() {
+    void processBatch_performsIncrementalFetch_whenLastRateOlderThanOneDay() {
         LocalDate today = LocalDate.now();
         BondSnapshotDto d = dto("S1", "ISIN1", new BigDecimal("10"), LocalDate.of(2020, 1, 1));
         Bond existing = bond("S1");
@@ -205,19 +206,25 @@ class BondRateHistoryServiceTest {
         when(bondRepository.save(existing)).thenReturn(existing);
         when(rateHistoryRepository.findTopByIsinCodeOrderByRateDateDesc("ISIN1"))
                 .thenReturn(Optional.of(rateRecord("ISIN1", today.minusDays(10), new BigDecimal("10"))));
-        when(rateFetcher.fetch(eq("ISIN1"), eq(existing), eq(today.minusDays(9)), eq(today)))
-                .thenReturn(new java.util.ArrayList<>(List.of(rateRecord("ISIN1", today.minusDays(5), new BigDecimal("10")))));
-        when(rateHistoryRepository.existsByIsinCodeAndRateDate("ISIN1", today)).thenReturn(false);
+        when(rateFetcher.fetchBatch(any())).thenReturn(Map.of("ISIN1",
+                new java.util.ArrayList<>(List.of(rateRecord("ISIN1", today.minusDays(5), new BigDecimal("10"))))));
+        when(rateHistoryRepository.existsByIsinCodeAndRateDate(eq("ISIN1"), any())).thenReturn(false);
         when(rateHistoryRepository.findByIsinCodeOrderByRateDateAsc("ISIN1")).thenReturn(List.of());
         stubTransactionTemplate();
 
-        service.processSingleBond(d, LocalDateTime.now());
+        service.processBatch(List.of(d), LocalDateTime.now());
 
-        verify(rateFetcher).fetch(eq("ISIN1"), eq(existing), eq(today.minusDays(9)), eq(today));
+        ArgumentCaptor<List<BondRateFetcher.BondHistoryTarget>> captor = ArgumentCaptor.forClass(List.class);
+        verify(rateFetcher).fetchBatch(captor.capture());
+        assertThat(captor.getValue()).hasSize(1);
+        BondRateFetcher.BondHistoryTarget target = captor.getValue().get(0);
+        assertThat(target.isinCode()).isEqualTo("ISIN1");
+        assertThat(target.startDate()).isEqualTo(today.minusDays(9));
+        assertThat(target.endDate()).isEqualTo(today);
     }
 
     @Test
-    void processSingleBond_skipsTodayRecord_whenCouponRateIsNull() {
+    void processBatch_skipsTodayRecord_whenCouponRateIsNull() {
         BondSnapshotDto d = dto("S1", "ISIN1", null, LocalDate.of(2020, 1, 1));
         Bond existing = bond("S1");
         existing.setCouponRate(null);
@@ -227,8 +234,32 @@ class BondRateHistoryServiceTest {
         when(rateHistoryRepository.findByIsinCodeOrderByRateDateAsc("ISIN1")).thenReturn(List.of());
         stubTransactionTemplate();
 
-        service.processSingleBond(d, LocalDateTime.now());
+        service.processBatch(List.of(d), LocalDateTime.now());
 
         verify(rateHistoryRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void processBatch_groupsMultipleBondsIntoSingleFetchCall() {
+        BondSnapshotDto d1 = dto("S1", "ISIN1", new BigDecimal("10"), LocalDate.of(2020, 1, 1));
+        BondSnapshotDto d2 = dto("S2", "ISIN2", new BigDecimal("12"), LocalDate.of(2021, 1, 1));
+        Bond e1 = bond("S1"); e1.setCouponRate(new BigDecimal("10"));
+        Bond e2 = bond("S2"); e2.setCouponRate(new BigDecimal("12"));
+        when(bondRepository.findById("S1")).thenReturn(Optional.of(e1));
+        when(bondRepository.findById("S2")).thenReturn(Optional.of(e2));
+        when(assetRegistry.upsert(eq(MarketType.BOND), anyString())).thenReturn(bondAsset("X"));
+        when(bondRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(rateHistoryRepository.findTopByIsinCodeOrderByRateDateDesc(anyString())).thenReturn(Optional.empty());
+        when(rateFetcher.fetchBatch(any())).thenReturn(Map.of("ISIN1", List.of(), "ISIN2", List.of()));
+        when(rateHistoryRepository.findByIsinCodeOrderByRateDateAsc(anyString())).thenReturn(List.of());
+        stubTransactionTemplate();
+
+        service.processBatch(List.of(d1, d2), LocalDateTime.now());
+
+        ArgumentCaptor<List<BondRateFetcher.BondHistoryTarget>> captor = ArgumentCaptor.forClass(List.class);
+        verify(rateFetcher).fetchBatch(captor.capture());
+        assertThat(captor.getValue()).hasSize(2);
+        assertThat(captor.getValue()).extracting(BondRateFetcher.BondHistoryTarget::isinCode)
+                .containsExactly("ISIN1", "ISIN2");
     }
 }

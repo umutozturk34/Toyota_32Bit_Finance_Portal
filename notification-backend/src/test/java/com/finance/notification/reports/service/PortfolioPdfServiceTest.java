@@ -6,6 +6,7 @@ import com.finance.notification.config.PdfExportProperties;
 import com.finance.notification.reports.client.PortfolioDataClient;
 import com.finance.notification.reports.dto.PortfolioPdfRequest;
 import com.finance.notification.reports.dto.PortfolioReportBundle;
+import com.finance.notification.reports.dto.ReportPosition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -81,7 +82,7 @@ class PortfolioPdfServiceTest {
         PortfolioPdfService service = buildService();
         PortfolioPdfRequest req = new PortfolioPdfRequest(42L, "DARK", "tr", "TRY");
         when(dataClient.fetch(eq(42L), anyString(), eq("jwt.token")))
-                .thenReturn(new PortfolioReportBundle(42L, null, List.of(), List.of(), List.of()));
+                .thenReturn(new PortfolioReportBundle(42L, null, List.of(), List.of(stubPosition(42L)), List.of()));
         when(svgService.performanceLineChart(any(), any(), any(Locale.class))).thenReturn("<svg/>");
         when(templateEngine.process(eq("pdf/portfolio-report"), any(Context.class)))
                 .thenReturn("<html><body>report</body></html>");
@@ -105,7 +106,7 @@ class PortfolioPdfServiceTest {
         PortfolioPdfService service = buildService();
         PortfolioPdfRequest req = new PortfolioPdfRequest(1L, "LIGHT", "en", "USD");
         when(dataClient.fetch(eq(1L), anyString(), anyString()))
-                .thenReturn(new PortfolioReportBundle(1L, null, List.of(), List.of(), List.of()));
+                .thenReturn(new PortfolioReportBundle(1L, null, List.of(), List.of(stubPosition(1L)), List.of()));
         when(svgService.performanceLineChart(any(), any(), any(Locale.class))).thenReturn("");
         when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html/>");
         queuedResponses.add(ClientResponse.create(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -121,7 +122,7 @@ class PortfolioPdfServiceTest {
         PortfolioPdfService service = buildService();
         PortfolioPdfRequest req = new PortfolioPdfRequest(1L, "LIGHT", "en", "USD");
         when(dataClient.fetch(eq(1L), anyString(), anyString()))
-                .thenReturn(new PortfolioReportBundle(1L, null, List.of(), List.of(), List.of()));
+                .thenReturn(new PortfolioReportBundle(1L, null, List.of(), List.of(stubPosition(1L)), List.of()));
         when(svgService.performanceLineChart(any(), any(), any(Locale.class))).thenReturn("");
         when(templateEngine.process(anyString(), any(Context.class))).thenReturn("<html/>");
         queuedResponses.add(pdfResponse(new byte[0]));
@@ -140,6 +141,34 @@ class PortfolioPdfServiceTest {
 
         assertThatThrownBy(() -> service.generate(req, "sub", "tok"))
                 .isInstanceOf(PdfGenerationException.class);
+    }
+
+    @Test
+    void generate_rejectsEmptyPortfolio_withBadRequest() {
+        PortfolioPdfService service = buildService();
+        PortfolioPdfRequest req = new PortfolioPdfRequest(1L, "LIGHT", "tr", "TRY");
+        when(dataClient.fetch(eq(1L), anyString(), anyString()))
+                .thenReturn(new PortfolioReportBundle(1L, null, List.of(), List.of(), List.of()));
+
+        assertThatThrownBy(() -> service.generate(req, "sub", "tok"))
+                .isInstanceOf(com.finance.common.exception.BadRequestException.class)
+                .hasMessageContaining("error.report.portfolioEmpty");
+    }
+
+    @Test
+    void generate_rejectsNullPositions_withBadRequest() {
+        PortfolioPdfService service = buildService();
+        PortfolioPdfRequest req = new PortfolioPdfRequest(2L, "LIGHT", "tr", "TRY");
+        when(dataClient.fetch(eq(2L), anyString(), anyString()))
+                .thenReturn(new PortfolioReportBundle(2L, null, List.of(), null, List.of()));
+
+        assertThatThrownBy(() -> service.generate(req, "sub", "tok"))
+                .isInstanceOf(com.finance.common.exception.BadRequestException.class);
+    }
+
+
+    private static ReportPosition stubPosition(long id) {
+        return new ReportPosition(id, "STOCK", "X", "X", null, null, null, null, null, null, null, null, null, null);
     }
 
     private ClientResponse pdfResponse(byte[] bytes) {

@@ -1,0 +1,18 @@
+{
+  "name": "pdf-service",
+  "version": "0.1.0",
+  "description": "Puppeteer-based PDF rendering microservice for finance portal",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "puppeteer": "^23.10.4"
+  }
+}

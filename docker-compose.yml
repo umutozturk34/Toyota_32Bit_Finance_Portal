@@ -99,6 +99,8 @@ services:
       OTEL_METRICS_EXPORTER: otlp
       OTEL_TRACES_EXPORTER: otlp
       SERVER_PORT: 8082
+      APP_PDF_SERVICEURL: ${PDF_SERVICE_URL:-http://pdf-service:8080}
+      APP_FRONTENDBASEURL: ${FRONTEND_BASE_URL:-http://frontend}
     env_file:
       - .env
     depends_on:
@@ -112,6 +114,27 @@ services:
         condition: service_started
       mailpit:
         condition: service_started
+      pdf-service:
+        condition: service_healthy
+    networks:
+      - finance-network
+
+  pdf-service:
+    image: ${PDF_SERVICE_IMAGE:-finance-portal-pdf-service:latest}
+    build:
+      context: ./pdf-service
+    container_name: finance-pdf-service
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Istanbul
+      NODE_ENV: production
+      PORT: 8080
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     networks:
       - finance-network
 

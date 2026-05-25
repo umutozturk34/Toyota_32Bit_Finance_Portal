@@ -55,7 +55,8 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
     if (error.response?.status === 401) {
-      if (!window.location.pathname.includes('/login')) {
+      const path = window.location.pathname;
+      if (!path.includes('/login')) {
         try {
           const { doLogin } = await import('../../features/auth/lib/keycloak');
           doLogin();

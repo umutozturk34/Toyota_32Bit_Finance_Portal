@@ -94,7 +94,6 @@ class DerivativePositionPnlTest {
         ViopContract c = ViopContract.builder().symbol("F_X").kind(ViopContractKind.FUTURE).active(true).build();
         DerivativePosition position = positionOf(DerivativeDirection.LONG, "100.00", "1", c);
 
-        // Options without enriched contract spec default to size=1 so pnl is computable.
         assertThat(position.realizedOrUnrealizedPnl(new BigDecimal("110.00")))
                 .isEqualByComparingTo(new BigDecimal("10.00"));
     }

@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -85,7 +86,7 @@ class DerivativePositionFormatterTest {
     void shouldBuildOpenLongFutureResponse_whenLatestCandleProvidesPrice() {
         ViopContract c = contract("XU030F", ViopContractKind.FUTURE, "10", null, "TRY", null, "BIST30 Future");
         DerivativePosition dp = openPosition(c, DerivativeDirection.LONG, "100", "2");
-        when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc("XU030F"))
+        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("XU030F", BigDecimal.ZERO))
                 .thenReturn(Optional.of(ViopCandle.builder().close(new BigDecimal("120")).build()));
 
         PositionResponse response = formatter.toPositionResponse(dp);
@@ -107,7 +108,7 @@ class DerivativePositionFormatterTest {
     void shouldFallbackToContractLastPrice_whenNoCandle() {
         ViopContract c = contract("XU030F", ViopContractKind.FUTURE, "1", "150", "TRY", null, null);
         DerivativePosition dp = openPosition(c, DerivativeDirection.LONG, "100", "1");
-        when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc("XU030F")).thenReturn(Optional.empty());
+        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("XU030F", BigDecimal.ZERO)).thenReturn(Optional.empty());
 
         PositionResponse response = formatter.toPositionResponse(dp);
 
@@ -121,7 +122,7 @@ class DerivativePositionFormatterTest {
         DerivativePosition dp = openPosition(c, DerivativeDirection.LONG, "100", "1");
         dp.setCloseDate(LocalDate.of(2024, 6, 1));
         dp.setClosePrice(new BigDecimal("130"));
-        lenient().when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc(anyString())).thenReturn(Optional.empty());
+        lenient().when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc(anyString(), any(BigDecimal.class))).thenReturn(Optional.empty());
 
         PositionResponse response = formatter.toPositionResponse(dp);
 
@@ -141,7 +142,7 @@ class DerivativePositionFormatterTest {
                 .entryPrice(BigDecimal.ZERO)
                 .quantityLot(new BigDecimal("1"))
                 .build();
-        when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc("XU030F")).thenReturn(Optional.empty());
+        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("XU030F", BigDecimal.ZERO)).thenReturn(Optional.empty());
 
         PositionResponse response = formatter.toPositionResponse(dp);
 
@@ -153,7 +154,7 @@ class DerivativePositionFormatterTest {
     void shouldUseDefaultContractSize_whenContractSizeIsNull() {
         ViopContract c = contract("XU030F", ViopContractKind.FUTURE, null, "150", "TRY", null, null);
         DerivativePosition dp = openPosition(c, DerivativeDirection.LONG, "100", "1");
-        when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc("XU030F")).thenReturn(Optional.empty());
+        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("XU030F", BigDecimal.ZERO)).thenReturn(Optional.empty());
 
         PositionResponse response = formatter.toPositionResponse(dp);
 
@@ -168,7 +169,7 @@ class DerivativePositionFormatterTest {
                 .entryDate(LocalDate.now())
                 .quantityLot(new BigDecimal("1"))
                 .build();
-        when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc("XU030F")).thenReturn(Optional.empty());
+        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("XU030F", BigDecimal.ZERO)).thenReturn(Optional.empty());
 
         PositionResponse response = formatter.toPositionResponse(dp);
 
@@ -179,7 +180,7 @@ class DerivativePositionFormatterTest {
     void shouldConvertNativeToTry_whenCurrencyIsForeign() {
         ViopContract c = contract("USDFUT", ViopContractKind.FUTURE, "1", "10", "USD", null, null);
         DerivativePosition dp = openPosition(c, DerivativeDirection.LONG, "9", "1");
-        when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc("USDFUT"))
+        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("USDFUT", BigDecimal.ZERO))
                 .thenReturn(Optional.of(ViopCandle.builder().close(new BigDecimal("10")).build()));
         when(pricingPort.getExitPriceTry(eq(MarketType.FOREX), eq("USD"))).thenReturn(new BigDecimal("30"));
 
@@ -192,7 +193,7 @@ class DerivativePositionFormatterTest {
     void shouldKeepNativeWhenFxRateMissing_whenCurrencyIsForeign() {
         ViopContract c = contract("USDFUT", ViopContractKind.FUTURE, "1", "10", "USD", null, null);
         DerivativePosition dp = openPosition(c, DerivativeDirection.LONG, "9", "1");
-        when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc("USDFUT")).thenReturn(Optional.empty());
+        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("USDFUT", BigDecimal.ZERO)).thenReturn(Optional.empty());
         when(pricingPort.getExitPriceTry(eq(MarketType.FOREX), eq("USD"))).thenReturn(null);
 
         PositionResponse response = formatter.toPositionResponse(dp);
@@ -209,7 +210,7 @@ class DerivativePositionFormatterTest {
                                                                 boolean maxLossSet, boolean maxGainSet) {
         ViopContract c = contract("OPT", ViopContractKind.valueOf(kind), "1", "100", "TRY", "100", null);
         DerivativePosition dp = openPosition(c, DerivativeDirection.valueOf(direction), "100", "1");
-        when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc("OPT")).thenReturn(Optional.empty());
+        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("OPT", BigDecimal.ZERO)).thenReturn(Optional.empty());
 
         PositionResponse response = formatter.toPositionResponse(dp);
 
@@ -227,7 +228,7 @@ class DerivativePositionFormatterTest {
     void shouldNotSetOptionMaxFields_whenKindIsFuture() {
         ViopContract c = contract("XU030F", ViopContractKind.FUTURE, "1", "100", "TRY", null, null);
         DerivativePosition dp = openPosition(c, DerivativeDirection.LONG, "100", "1");
-        when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc("XU030F")).thenReturn(Optional.empty());
+        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("XU030F", BigDecimal.ZERO)).thenReturn(Optional.empty());
 
         PositionResponse response = formatter.toPositionResponse(dp);
 
@@ -239,7 +240,7 @@ class DerivativePositionFormatterTest {
     void shouldKeepNativePrice_whenCurrencyIsBlank() {
         ViopContract c = contract("XU030F", ViopContractKind.FUTURE, "1", "100", "", null, null);
         DerivativePosition dp = openPosition(c, DerivativeDirection.LONG, "90", "1");
-        when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc("XU030F")).thenReturn(Optional.empty());
+        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("XU030F", BigDecimal.ZERO)).thenReturn(Optional.empty());
 
         PositionResponse response = formatter.toPositionResponse(dp);
 
@@ -250,7 +251,7 @@ class DerivativePositionFormatterTest {
     void shouldKeepNativePrice_whenLiveSourceNull() {
         ViopContract c = contract("XU030F", ViopContractKind.FUTURE, "1", null, "TRY", null, null);
         DerivativePosition dp = openPosition(c, DerivativeDirection.LONG, "90", "1");
-        when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc("XU030F")).thenReturn(Optional.empty());
+        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("XU030F", BigDecimal.ZERO)).thenReturn(Optional.empty());
 
         PositionResponse response = formatter.toPositionResponse(dp);
 

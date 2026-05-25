@@ -76,7 +76,6 @@ class TefasSessionManagerTest {
         TefasSessionManager nullFetcher = new TefasSessionManager(webClient, appProperties) {
             @Override
             protected void fetchCookie() {
-                // simulate no cookies returned
             }
         };
 

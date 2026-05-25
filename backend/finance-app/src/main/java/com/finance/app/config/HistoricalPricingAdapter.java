@@ -55,7 +55,11 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
         }
         try {
             Map<LocalDate, BigDecimal> series = indexByDate(provider.getHistoryInRange(assetCode, from, to));
-            if (type == MarketType.CRYPTO) return convertNativeSeriesToTry(series, Currency.USD, from, to);
+            if (type == MarketType.CRYPTO) {
+                Currency native_ = nativeCurrencyResolver.resolveNativeCurrency(type, assetCode);
+                if (native_ == Currency.TRY) return series;
+                return convertNativeSeriesToTry(series, Currency.USD, from, to);
+            }
             if (type == MarketType.VIOP) {
                 Currency native_ = nativeCurrencyResolver.resolveNativeCurrency(type, assetCode);
                 if (native_ != Currency.TRY) return convertNativeSeriesToTry(series, native_, from, to);

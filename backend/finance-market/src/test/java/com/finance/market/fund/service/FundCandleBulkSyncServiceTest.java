@@ -105,7 +105,6 @@ class FundCandleBulkSyncServiceTest {
                 .thenReturn(Collections.singletonList(new Object[]{"BLH", fiveYearsAgo, futureLatest}));
         when(fundCandleRepository.countCandlesPerFund())
                 .thenReturn(Collections.singletonList(new Object[]{"BLH", 1000L}));
-        // Gap detector should find nothing — fill every day in a buffer wider than lookback
         LocalDate todayDate = LocalDate.now();
         List<LocalDateTime> completeDates = new java.util.ArrayList<>();
         for (LocalDate d = todayDate.minusDays(60); !d.isAfter(todayDate); d = d.plusDays(1)) {
@@ -131,7 +130,6 @@ class FundCandleBulkSyncServiceTest {
                 .thenReturn(Collections.singletonList(new Object[]{"BLH", fiveYearsAgo, futureLatest}));
         when(fundCandleRepository.countCandlesPerFund())
                 .thenReturn(Collections.singletonList(new Object[]{"BLH", 1000L}));
-        // Gap: empty set in lookback → ALL business days missing
         when(fundCandleRepository.findCandleDatesSince(eq("BLH"), any(LocalDateTime.class)))
                 .thenReturn(List.of());
 

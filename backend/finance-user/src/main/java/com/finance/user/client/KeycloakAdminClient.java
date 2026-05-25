@@ -96,6 +96,21 @@ public class KeycloakAdminClient {
     @CircuitBreaker(name = "keycloak-admin")
     @Retry(name = "keycloak-admin")
     @SuppressWarnings("unchecked")
+    public java.util.Optional<String> getUserAttribute(String userId, String key) {
+        Map<String, Object> user = fetchUser(userId);
+        Object attrs = user.get("attributes");
+        if (!(attrs instanceof Map<?, ?> map)) return java.util.Optional.empty();
+        Object value = map.get(key);
+        if (value instanceof List<?> list && !list.isEmpty() && list.get(0) != null) {
+            return java.util.Optional.of(String.valueOf(list.get(0)));
+        }
+        if (value instanceof String s && !s.isBlank()) return java.util.Optional.of(s);
+        return java.util.Optional.empty();
+    }
+
+    @CircuitBreaker(name = "keycloak-admin")
+    @Retry(name = "keycloak-admin")
+    @SuppressWarnings("unchecked")
     public void setUserAttribute(String userId, String key, String value) {
         Map<String, Object> body = new java.util.HashMap<>(fetchUser(userId));
         Map<String, List<String>> attributes = body.get("attributes") instanceof Map<?, ?> raw

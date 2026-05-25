@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
 class UserPreferenceServiceTest {
@@ -48,18 +49,34 @@ class UserPreferenceServiceTest {
     }
 
     @Test
-    void shouldReturnTransientDefaults_whenNoPreferenceExists() {
+    void shouldPersistKeycloakAttributes_whenNoPreferenceExists() {
         when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
+        when(keycloakAdminClient.getUserAttribute(USER_SUB, "themePreference"))
+                .thenReturn(Optional.of("LIGHT"));
+        when(keycloakAdminClient.getUserAttribute(USER_SUB, "locale"))
+                .thenReturn(Optional.of("en"));
+        when(repository.save(any(UserPreference.class))).thenAnswer(i -> i.getArgument(0));
 
         UserPreferenceResponse response = service.getOrDefault(USER_SUB);
 
         assertThat(response.userSub()).isEqualTo(USER_SUB);
+        assertThat(response.theme()).isEqualTo(ThemePreference.LIGHT);
+        assertThat(response.language()).isEqualTo("en");
+        verify(repository).save(any(UserPreference.class));
+    }
+
+    @Test
+    void shouldFallBackToDefaults_whenKeycloakAttributesMissing() {
+        when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
+        when(keycloakAdminClient.getUserAttribute(eq(USER_SUB), any()))
+                .thenReturn(Optional.empty());
+        when(repository.save(any(UserPreference.class))).thenAnswer(i -> i.getArgument(0));
+
+        UserPreferenceResponse response = service.getOrDefault(USER_SUB);
+
         assertThat(response.theme()).isEqualTo(ThemePreference.DARK);
         assertThat(response.language()).isEqualTo("tr");
-        assertThat(response.timezone()).isEqualTo("Europe/Istanbul");
-        assertThat(response.defaultChartRange()).isEqualTo("1M");
-        assertThat(response.onboardingCompleted()).isFalse();
-        verify(repository, never()).save(any());
+        verify(repository).save(any(UserPreference.class));
     }
 
     @Test

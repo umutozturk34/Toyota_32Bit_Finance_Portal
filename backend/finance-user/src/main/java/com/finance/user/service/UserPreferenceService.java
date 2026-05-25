@@ -4,6 +4,7 @@ import com.finance.user.client.KeycloakAdminClient;
 import com.finance.user.config.UserSecurityProperties;
 import com.finance.user.dto.UserPreferenceResponse;
 import com.finance.user.dto.UserPreferenceUpdateRequest;
+import com.finance.user.dto.enums.ThemePreference;
 import com.finance.user.mapper.UserPreferenceMapper;
 import com.finance.user.model.UserPreference;
 import com.finance.user.repository.UserPreferenceRepository;
@@ -13,22 +14,50 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.Set;
 
 @Log4j2
 @Service
 @RequiredArgsConstructor
 public class UserPreferenceService {
 
+    private static final Set<String> SUPPORTED_LANGUAGES = Set.of("tr", "en");
+
     private final UserPreferenceRepository repository;
     private final UserPreferenceMapper mapper;
     private final KeycloakAdminClient keycloakAdminClient;
     private final UserSecurityProperties securityProperties;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public UserPreferenceResponse getOrDefault(String userSub) {
-        return repository.findById(userSub)
-                .map(mapper::toResponse)
-                .orElseGet(() -> mapper.toResponse(UserPreference.defaultsFor(userSub)));
+        Optional<UserPreference> existing = repository.findById(userSub);
+        if (existing.isPresent()) return mapper.toResponse(existing.get());
+        UserPreference seed = UserPreference.defaultsFor(userSub);
+        hydrateFromKeycloak(userSub, seed);
+        return mapper.toResponse(repository.save(seed));
+    }
+
+    private void hydrateFromKeycloak(String userSub, UserPreference target) {
+        try {
+            keycloakAdminClient.getUserAttribute(userSub, securityProperties.keycloak().themeAttribute())
+                    .map(String::toUpperCase)
+                    .flatMap(this::parseTheme)
+                    .ifPresent(target::setTheme);
+            keycloakAdminClient.getUserAttribute(userSub, securityProperties.keycloak().localeAttribute())
+                    .map(s -> s.toLowerCase(java.util.Locale.ROOT))
+                    .filter(SUPPORTED_LANGUAGES::contains)
+                    .ifPresent(target::setLanguage);
+        } catch (RuntimeException ex) {
+            log.warn("Keycloak attribute hydration failed user={}: {}", userSub, ex.getMessage());
+        }
+    }
+
+    private Optional<ThemePreference> parseTheme(String raw) {
+        try {
+            return Optional.of(ThemePreference.valueOf(raw));
+        } catch (IllegalArgumentException ex) {
+            return Optional.empty();
+        }
     }
 
     @Transactional(readOnly = true)

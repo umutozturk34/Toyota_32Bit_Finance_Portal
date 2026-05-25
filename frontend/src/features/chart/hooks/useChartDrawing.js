@@ -26,6 +26,7 @@ const useChartDrawing = ({
             if (time && price !== null) return { time, price };
         } catch { /* chart not ready */ }
         return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const chartCoordsToPixel = useCallback((time, price) => {
@@ -37,6 +38,7 @@ const useChartDrawing = ({
             if (x !== null && y !== null) return { x, y };
         } catch { /* chart not ready */ }
         return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const interaction = useDrawingInteraction({

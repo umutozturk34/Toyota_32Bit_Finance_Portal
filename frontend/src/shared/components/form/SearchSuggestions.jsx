@@ -11,12 +11,18 @@ import { getChangeClass, changeColors } from '../../utils/formatters';
 import { useMoney } from '../../hooks/useMoney';
 import { priceCurrencyOf } from '../../utils/priceCurrency';
 import useSearchSuggestions from '../../hooks/useSearchSuggestions';
+import IndicatorHistoryModal from '../../../features/macro/components/IndicatorHistoryModal';
+import { useMacroIndicators } from '../../../features/macro/hooks/useMacroIndicators';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
 const MACRO_TYPES = new Set(['MACRO_INFLATION', 'MACRO_RATE', 'MACRO_DEPOSIT']);
 
 function assetRoute(asset) {
-  const base = TYPE_ROUTES[asset.type] || '/market';
+  if (asset.type === 'BOND') {
+    return `/bonds/${encodeURIComponent(asset.code)}`;
+  }
+  const base = TYPE_ROUTES[asset.type];
+  if (!base) return '/market';
   return `${base}/${encodeURIComponent(asset.code)}`;
 }
 
@@ -42,6 +48,12 @@ export default function SearchSuggestions({
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
   const timerRef = useRef(null);
+
+  const [macroPreviewCode, setMacroPreviewCode] = useState(null);
+  const { data: macroIndicators = [] } = useMacroIndicators();
+  const macroPreview = macroPreviewCode
+    ? macroIndicators.find((i) => i.code === macroPreviewCode) ?? null
+    : null;
 
   const trimmedQuery = query.trim();
   const tooShort = trimmedQuery.length < 2;
@@ -73,9 +85,14 @@ export default function SearchSuggestions({
     setOpen(false);
     if (onSelect) {
       onSelect(asset);
-    } else if (navigateOnSelect) {
-      navigate(assetRoute(asset));
+      return;
     }
+    if (!navigateOnSelect) return;
+    if (MACRO_TYPES.has(asset.type)) {
+      setMacroPreviewCode(asset.code);
+      return;
+    }
+    navigate(assetRoute(asset));
   }, [onSelect, navigateOnSelect, navigate]);
 
   const handleEscape = useCallback(() => {
@@ -205,6 +222,8 @@ export default function SearchSuggestions({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <IndicatorHistoryModal indicator={macroPreview} onClose={() => setMacroPreviewCode(null)} />
     </div>
   );
 }

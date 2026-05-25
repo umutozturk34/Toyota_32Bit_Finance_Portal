@@ -44,6 +44,7 @@ import FundDetail from './features/fund/FundDetail';
 import CommoditiesPage from './features/commodity/CommoditiesPage';
 import CommodityDetail from './features/commodity/CommodityDetail';
 import BondsPage from './features/bond/BondsPage';
+import BondDetail from './features/bond/BondDetail';
 import ViopPage from './features/viop/ViopPage';
 import ViopDetail from './features/viop/ViopDetail';
 import Portfolio from './features/portfolio';
@@ -93,6 +94,7 @@ const router = createBrowserRouter(
         <Route path="commodities" element={<CommoditiesPage />} />
         <Route path="commodities/:code" element={<CommodityDetail />} />
         <Route path="bonds" element={<BondsPage />} />
+        <Route path="bonds/:seriesCode" element={<BondDetail />} />
         <Route path="viop" element={<ViopPage />} />
         <Route path="viop/:symbol" element={<ViopDetail />} />
         <Route path="admin/tracked-assets" element={<AdminTrackedAssetsPage />} />

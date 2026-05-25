@@ -1,4 +1,5 @@
 import { useId, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMacroIndicatorHistory } from '../hooks/useMacroIndicators';
 import { SPARK_DAYS } from '../constants';
 import { computeChange } from '../utils';
@@ -32,6 +33,7 @@ function buildPath(points, width, height) {
 }
 
 export default function IndicatorSparkline({ code, color, points: pointsProp }) {
+  const { t } = useTranslation();
   const today = useMemo(() => new Date(), []);
   const from = useMemo(() => {
     const d = new Date(today);
@@ -56,7 +58,7 @@ export default function IndicatorSparkline({ code, color, points: pointsProp }) 
       preserveAspectRatio="none"
       className="h-8 w-full"
       role="img"
-      aria-label="trend"
+      aria-label={t('marketOverview.macro.sparkline90d')}
     >
       <defs>
         <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">

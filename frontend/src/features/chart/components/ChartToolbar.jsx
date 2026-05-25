@@ -35,7 +35,7 @@ const ChartToolbar = ({
                     : 'chart.toolbar.activeInstruction.dragDraw';
     return (
     <>
-        <div className="flex items-center gap-3 px-3 py-2 border-b border-border-default bg-surface/40">
+        <div className="flex items-center gap-3 px-3 py-2 border-b border-border-default bg-surface/40 overflow-x-auto scrollbar-thin">
             <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-1.5 rounded-md border-none cursor-pointer text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent"
@@ -85,7 +85,7 @@ const ChartToolbar = ({
                 <Magnet className="w-3.5 h-3.5" />
                 {magnetMode !== 'off' && (
                     <span className="font-semibold uppercase tracking-wider text-[10px]">
-                        {magnetMode === 'weak' ? 'W' : 'S'}
+                        {magnetMode === 'weak' ? t('chart.toolbar.magnet.weakShort') : t('chart.toolbar.magnet.strongShort')}
                     </span>
                 )}
             </button>
@@ -146,10 +146,10 @@ const ChartToolbar = ({
                 if (crosshairData.open != null) {
                     return (
                         <div className="flex items-center gap-3 text-[11px] font-mono flex-wrap">
-                            <span className="text-fg-muted">O <span className="text-fg">{Number(crosshairData.open).toFixed(2)}</span></span>
-                            <span className="text-fg-muted">H <span className="text-[#10b981]">{Number(crosshairData.high).toFixed(2)}</span></span>
-                            <span className="text-fg-muted">L <span className="text-[#ef4444]">{Number(crosshairData.low).toFixed(2)}</span></span>
-                            <span className="text-fg-muted">C <span style={{ color: Number(crosshairData.close) >= Number(crosshairData.open) ? '#10b981' : '#ef4444' }}>{Number(crosshairData.close).toFixed(2)}</span></span>
+                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.open')} <span className="text-fg">{Number(crosshairData.open).toFixed(2)}</span></span>
+                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.high')} <span className="text-[#10b981]">{Number(crosshairData.high).toFixed(2)}</span></span>
+                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.low')} <span className="text-[#ef4444]">{Number(crosshairData.low).toFixed(2)}</span></span>
+                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.close')} <span style={{ color: Number(crosshairData.close) >= Number(crosshairData.open) ? '#10b981' : '#ef4444' }}>{Number(crosshairData.close).toFixed(2)}</span></span>
                             {crosshairData.compares?.map((c) => (
                                 <span key={c.symbol} className="text-fg-muted flex items-center gap-1">
                                     <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />

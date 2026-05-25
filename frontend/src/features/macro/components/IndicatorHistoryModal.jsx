@@ -96,9 +96,10 @@ export default function IndicatorHistoryModal({ indicator, onClose }) {
     });
   }, [rawSeriesData, bounds.from]);
 
+  const localeTag = t('common.localeTag');
   const option = useMemo(
-    () => buildOption(seriesData, false, isDark),
-    [seriesData, isDark]
+    () => buildOption(seriesData, false, isDark, localeTag),
+    [seriesData, isDark, localeTag]
   );
 
   const stats = useMemo(() => computeStats(seriesData[0]?.points || []), [seriesData]);
@@ -117,7 +118,7 @@ export default function IndicatorHistoryModal({ indicator, onClose }) {
   }
 
   return (
-    <BaseModal isOpen onClose={onClose} title={titleText} size="4xl">
+    <BaseModal isOpen={!!indicator} onClose={onClose} title={titleText} size="5xl">
       <div className="space-y-4">
         <div className="flex items-center gap-1.5 flex-wrap">
           {seriesData.map(({ indicator: ind, color }) => (
@@ -164,20 +165,23 @@ export default function IndicatorHistoryModal({ indicator, onClose }) {
         {stats && primary?.unit && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <StatBlock label={t('marketOverview.macro.statLast', { defaultValue: 'Last' })}
-              value={formatValue(primary?.lastValue, primary?.unit)}
-              sub={formatDate(primary?.lastDate)}
+              value={formatValue(primary?.lastValue, primary?.unit, t('common.localeTag'))}
+              sub={formatDate(primary?.lastDate, t('common.localeTag'))}
               accent={primaryAccent} highlight />
             <StatBlock label={t('marketOverview.macro.statMin', { defaultValue: 'Min' })}
-              value={formatValue(stats.min, primary?.unit)} />
+              value={formatValue(stats.min, primary?.unit, t('common.localeTag'))} />
             <StatBlock label={t('marketOverview.macro.statMax', { defaultValue: 'Max' })}
-              value={formatValue(stats.max, primary?.unit)} />
+              value={formatValue(stats.max, primary?.unit, t('common.localeTag'))} />
             <StatBlock label={t('marketOverview.macro.statAvg', { defaultValue: 'Avg' })}
-              value={formatValue(stats.avg, primary?.unit)}
-              sub={`${stats.count} pts`} />
+              value={formatValue(stats.avg, primary?.unit, t('common.localeTag'))}
+              sub={`${stats.count} ${t('marketOverview.macro.points', { defaultValue: 'puan' })}`} />
           </div>
         )}
 
-        <div className="relative rounded-xl border border-border-default/60 bg-bg-base/40 overflow-hidden h-[220px] sm:h-[360px] lg:h-[460px]">
+        <div
+          className="relative rounded-xl border border-border-default/60 bg-bg-base/40 overflow-hidden h-[200px] sm:h-[300px] lg:h-[380px]"
+          style={{ touchAction: 'pan-y' }}
+        >
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center">
               <Spinner size="md" tone="accent" />
@@ -257,7 +261,7 @@ function StatBlock({ label, value, sub, accent, highlight }) {
   );
 }
 
-function buildOption(seriesData, normalize, isDark) {
+function buildOption(seriesData, normalize, isDark, localeTag = localeTag) {
   const muted = isDark ? '#6b6b7a' : '#94a3b8';
   const grid = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)';
   const tooltipBg = isDark ? 'rgba(12,12,20,0.96)' : 'rgba(255,255,255,0.98)';
@@ -325,9 +329,8 @@ function buildOption(seriesData, normalize, isDark) {
         type: 'inside',
         filterMode: 'filter',
         zoomOnMouseWheel: true,
-        moveOnMouseMove: true,
+        moveOnMouseMove: false,
         moveOnMouseWheel: false,
-        preventDefaultMouseMove: true,
       },
       {
         type: 'slider',
@@ -359,7 +362,7 @@ function buildOption(seriesData, normalize, isDark) {
       textStyle: { color: tooltipFg, fontSize: 11 },
       formatter: (params) => {
         if (!params?.length) return '';
-        const date = new Date(params[0].value[0]).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+        const date = new Date(params[0].value[0]).toLocaleDateString(localeTag, { day: '2-digit', month: 'short', year: 'numeric' });
         const rows = params.map((p) => {
           const seriesDef = series.find((s) => s.name === p.seriesName);
           const unit = seriesDef?._unit;
@@ -367,7 +370,7 @@ function buildOption(seriesData, normalize, isDark) {
           const pct = Number(p.value[3]);
           const rawFmt = unit === 'PERCENT'
             ? `%${raw.toFixed(2)}`
-            : raw.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+            : raw.toLocaleString(localeTag, { maximumFractionDigits: 2 });
           const sign = pct > 0 ? '+' : '';
           const pctColor = pct > 0 ? '#10b981' : pct < 0 ? '#ef4444' : tooltipFg;
           const pctFmt = `${sign}${pct.toFixed(2)}%`;
@@ -408,7 +411,7 @@ function buildOption(seriesData, normalize, isDark) {
             return `${sign}${val.toFixed(0)}%`;
           }
           const unit = series[0]?._unit;
-          return unit === 'PERCENT' ? `%${val.toFixed(1)}` : val.toLocaleString('tr-TR');
+          return unit === 'PERCENT' ? `%${val.toFixed(1)}` : val.toLocaleString(localeTag);
         },
       },
       splitLine: { lineStyle: { color: grid, type: 'dashed' } },

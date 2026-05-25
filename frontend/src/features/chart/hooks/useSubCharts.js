@@ -9,7 +9,7 @@ const createSubChart = (container, isDark, height) => {
         ...opts,
         width: container.clientWidth,
         height,
-        timeScale: { ...opts.timeScale, visible: false },
+        timeScale: { ...opts.timeScale, visible: true },
     });
     const observer = new ResizeObserver(() => {
         try {
@@ -83,6 +83,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         });
         syncTimeScales(chartRef.current, rsiChart);
         return () => cleanupChart(rsiChartRef);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hasRSI, rsiIndicator, data, isFullscreen]);
 
     useEffect(() => {
@@ -125,6 +126,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         });
         syncTimeScales(chartRef.current, macdChart);
         return () => cleanupChart(macdChartRef);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hasMACD, macdIndicator, data, isFullscreen]);
 
     useEffect(() => {
@@ -142,6 +144,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         volSeries.setData(volumeDataRef.current);
         syncTimeScales(chartRef.current, volChart);
         return () => cleanupChart(volumeChartRef);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showVolume, data, isFullscreen]);
 
     useEffect(() => {
@@ -169,6 +172,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         }
         syncTimeScales(chartRef.current, chart);
         return () => cleanupChart(investorCountChartRef);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showInvestorCount, data, isFullscreen]);
 
     useEffect(() => {
@@ -196,6 +200,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         }
         syncTimeScales(chartRef.current, chart);
         return () => cleanupChart(portfolioSizeChartRef);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showPortfolioSize, data, isFullscreen]);
 
     useEffect(() => {

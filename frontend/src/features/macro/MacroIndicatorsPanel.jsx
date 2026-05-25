@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Banknote, Flame, Layers, Sparkles } from 'lucide-react';
 import EmptyState from '../../shared/components/feedback/EmptyState';
@@ -14,10 +15,10 @@ import { DEPOSIT_CURRENCIES, PROMINENT_ORDER } from './constants';
 import { themeFor } from './utils';
 
 const TABS = [
-  { id: 'all',       icon: Sparkles, labelKey: 'tabAll',       category: null },
-  { id: 'rates',     icon: Activity, labelKey: 'tabRates',     category: 'RATES' },
-  { id: 'inflation', icon: Flame,    labelKey: 'tabInflation', category: 'INFLATION' },
-  { id: 'deposit',   icon: Banknote, labelKey: 'tabDeposit',   category: 'DEPOSIT' },
+  { id: 'all',       icon: Sparkles, labelKey: 'tabAll',           category: null },
+  { id: 'rates',     icon: Activity, labelKey: 'categoryRates',    category: 'RATES' },
+  { id: 'inflation', icon: Flame,    labelKey: 'categoryInflation', category: 'INFLATION' },
+  { id: 'deposit',   icon: Banknote, labelKey: 'categoryDeposit',  category: 'DEPOSIT' },
 ];
 
 function sortByProminentOrder(list) {
@@ -29,9 +30,28 @@ export default function MacroIndicatorsPanel() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('all');
   const [currencyFilter, setCurrencyFilter] = useState('ALL');
-  const [openIndicator, setOpenIndicator] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { data: allIndicators = [], isLoading, isError, refetch } = useMacroIndicators();
+
+  const focusCode = searchParams.get('indicator');
+  const openIndicator = useMemo(
+    () => (focusCode ? allIndicators.find((i) => i.code === focusCode) ?? null : null),
+    [focusCode, allIndicators],
+  );
+
+  const openWithIndicator = useCallback((indicator) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('indicator', indicator.code);
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  const handleCloseModal = useCallback(() => {
+    if (!searchParams.has('indicator')) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete('indicator');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const counts = useMemo(() => ({
     all: allIndicators.length,
@@ -83,7 +103,7 @@ export default function MacroIndicatorsPanel() {
         </div>
       </header>
 
-      <nav className="flex items-center gap-1 flex-wrap">
+      <nav className="flex items-center gap-1 overflow-x-auto sm:flex-wrap sm:overflow-x-visible scrollbar-thin">
         {TABS.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
@@ -141,14 +161,14 @@ export default function MacroIndicatorsPanel() {
               <SectionTitle icon={Sparkles} text={t('marketOverview.macro.headline', { defaultValue: 'Headline' })} hint={`${prominent.length}`} />
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {prominent.map((indicator) => (
-                  <IndicatorCard key={indicator.code} indicator={indicator} onOpen={setOpenIndicator} />
+                  <IndicatorCard key={indicator.code} indicator={indicator} onOpen={openWithIndicator} />
                 ))}
               </div>
             </section>
 
             <section>
               <SectionTitle icon={Banknote} text={t('marketOverview.macro.depositMatrixTitle', { defaultValue: 'Deposit Rate Matrix' })} />
-              <DepositMatrix indicators={allIndicators} onOpen={setOpenIndicator} />
+              <DepositMatrix indicators={allIndicators} onOpen={openWithIndicator} />
             </section>
 
             <section>
@@ -168,14 +188,14 @@ export default function MacroIndicatorsPanel() {
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
           >
             {visible.map((indicator) => (
-              <IndicatorCard key={indicator.code} indicator={indicator} onOpen={setOpenIndicator} />
+              <IndicatorCard key={indicator.code} indicator={indicator} onOpen={openWithIndicator} />
             ))}
           </motion.div>
         )}
       </AnimatePresence>
 
       {openIndicator && (
-        <IndicatorHistoryModal indicator={openIndicator} onClose={() => setOpenIndicator(null)} />
+        <IndicatorHistoryModal indicator={openIndicator} onClose={handleCloseModal} />
       )}
     </motion.div>
   );

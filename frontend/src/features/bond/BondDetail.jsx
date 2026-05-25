@@ -1,0 +1,315 @@
+import { useMemo } from 'react';
+import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import ReactECharts from 'echarts-for-react';
+import {
+  ArrowLeft,
+  Landmark,
+  Calendar,
+  Percent,
+  TrendingUp,
+  Building2,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
+import { bondService } from './services/bondService';
+import { useTheme } from '../../shared/context/useTheme';
+import useSessionState from '../../shared/hooks/useSessionState';
+import useNavigationBack from '../../shared/hooks/useNavigationBack';
+import IconButton from '../../shared/components/buttons/IconButton';
+import LoadingState from '../../shared/components/feedback/LoadingState';
+import ErrorState from '../../shared/components/feedback/ErrorState';
+import MarketStatusBadge from '../../shared/components/layout/MarketStatusBadge';
+import { BOND_TYPE_COLORS, CHART_LINE_COLORS } from './lib/bondConstants';
+
+function formatRate(val) {
+  if (val == null) return '—';
+  return `%${Number(val).toFixed(2)}`;
+}
+
+function formatPrice(val, localeTag = 'en-US') {
+  if (val == null) return '—';
+  return new Intl.NumberFormat(localeTag, { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(val);
+}
+
+function formatDate(val, localeTag = 'en-US') {
+  if (!val) return '—';
+  return new Date(val).toLocaleDateString(localeTag, { timeZone: 'Europe/Istanbul' });
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  return Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24));
+}
+
+function isFloatingType(bondType) {
+  return ['FLOATING_TLREF', 'FLOATING_CPI', 'FLOATING_AUCTION', 'SUKUK_CPI'].includes(bondType);
+}
+
+function StatCell({ icon: Icon, label, value, mono }) {
+  return (
+    <div className="space-y-1">
+      <span className="flex items-center gap-1.5 text-xs text-fg-muted">
+        <Icon className="h-3.5 w-3.5" /> {label}
+      </span>
+      <span className={`block text-sm ${mono ? 'font-mono' : 'font-medium'} text-fg`}>{value}</span>
+    </div>
+  );
+}
+
+function buildLineOption({ history, valueKey, color, isDark, valueFormatter }) {
+  const rows = history
+    .filter((d) => d[valueKey] != null)
+    .map((d) => [new Date(d.date).getTime(), Number(d[valueKey])]);
+
+  const muted = isDark ? '#6b6b7a' : '#94a3b8';
+  const tooltipBg = isDark ? 'rgba(12,12,20,0.96)' : 'rgba(255,255,255,0.98)';
+  const tooltipFg = isDark ? '#e2e2ea' : '#1a1a2e';
+  const showZoom = rows.length >= 2;
+
+  return {
+    backgroundColor: 'transparent',
+    animation: true,
+    grid: { left: 56, right: 16, top: 16, bottom: showZoom ? 48 : 24, containLabel: false },
+    dataZoom: showZoom ? [
+      { type: 'inside', filterMode: 'filter' },
+      {
+        type: 'slider',
+        height: 16,
+        bottom: 6,
+        filterMode: 'filter',
+        borderColor: 'transparent',
+        backgroundColor: 'transparent',
+        fillerColor: 'rgba(99,102,241,0.12)',
+        handleStyle: { color: '#6366f1', borderColor: '#6366f1' },
+        showDetail: false,
+        brushSelect: false,
+        textStyle: { color: muted, fontSize: 9 },
+      },
+    ] : undefined,
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: tooltipBg,
+      borderWidth: 0,
+      textStyle: { color: tooltipFg, fontSize: 11 },
+      valueFormatter,
+    },
+    xAxis: {
+      type: 'time',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: muted, fontSize: 10 },
+      splitLine: { show: false },
+    },
+    yAxis: {
+      type: 'value',
+      scale: true,
+      axisLine: { show: false },
+      axisTick: { show: false },
+      axisLabel: { color: muted, fontSize: 10, formatter: valueFormatter },
+      splitLine: { lineStyle: { color: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' } },
+    },
+    series: [{
+      type: 'line',
+      smooth: rows.length < 200,
+      showSymbol: false,
+      sampling: 'lttb',
+      data: rows,
+      lineStyle: { color, width: 2 },
+      itemStyle: { color },
+      areaStyle: {
+        color: {
+          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: `${color}55` },
+            { offset: 1, color: `${color}00` },
+          ],
+        },
+      },
+    }],
+  };
+}
+
+export default function BondDetail() {
+  const { seriesCode } = useParams();
+  const { t } = useTranslation();
+  const { isDark } = useTheme();
+  const goBack = useNavigationBack('/bonds');
+  const localeTag = t('common.localeTag');
+  const [rateOpen, setRateOpen] = useSessionState('bond-detail-rate-open', true);
+
+  const { data: bond, isLoading: bondLoading, error: bondError, refetch } = useQuery({
+    queryKey: ['bond', seriesCode],
+    queryFn: () => bondService.getBondByCode(seriesCode),
+  });
+
+  const { data: history = [], isLoading: historyLoading } = useQuery({
+    queryKey: ['bondRateHistory', bond?.isinCode],
+    queryFn: () => bondService.getRateHistory(bond.isinCode),
+    enabled: !!bond?.isinCode,
+  });
+
+  const priceColor = bond ? (CHART_LINE_COLORS[bond.bondType] || '#8b5cf6') : '#8b5cf6';
+  const rateColor = '#f59e0b';
+  const latestPrice = useMemo(() => {
+    for (let i = history.length - 1; i >= 0; i--) {
+      if (history[i].price != null) return Number(history[i].price);
+    }
+    return bond?.baseIndex != null ? Number(bond.baseIndex) : null;
+  }, [history, bond?.baseIndex]);
+  const latestRate = useMemo(() => {
+    for (let i = history.length - 1; i >= 0; i--) {
+      if (history[i].rate != null) return Number(history[i].rate);
+    }
+    return bond?.couponRate != null ? Number(bond.couponRate) : null;
+  }, [history, bond?.couponRate]);
+  const priceOption = useMemo(
+    () => buildLineOption({
+      history, valueKey: 'price', color: priceColor, isDark,
+      valueFormatter: (v) => formatPrice(v, localeTag),
+    }),
+    [history, priceColor, isDark, localeTag],
+  );
+  const rateOption = useMemo(
+    () => buildLineOption({
+      history, valueKey: 'rate', color: rateColor, isDark,
+      valueFormatter: formatRate,
+    }),
+    [history, rateColor, isDark],
+  );
+
+  if (bondLoading) return <LoadingState message={t('market.bond.loading')} />;
+  if (bondError || !bond) {
+    return <ErrorState message={t('market.bond.error')} onRetry={refetch} />;
+  }
+
+  const typeColor = BOND_TYPE_COLORS[bond.bondType] || 'bg-accent/10 text-accent border-accent/20';
+  const maturityDays = daysUntil(bond.maturityEnd);
+  const couponDays = daysUntil(bond.nextCouponDate);
+  const hasPrice = history.some((d) => d.price != null);
+  const hasRate = history.some((d) => d.rate != null);
+
+  return (
+    <div className="space-y-6 py-6">
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex items-center justify-between gap-3 flex-wrap"
+      >
+        <div className="flex items-center gap-3 min-w-0 flex-wrap">
+          <IconButton
+            variant="secondary"
+            size={9}
+            shape="square"
+            icon={<ArrowLeft className="h-4 w-4" />}
+            aria-label={t('common.back', { defaultValue: 'back' })}
+            onClick={goBack}
+          />
+          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-accent/10 text-accent shrink-0">
+            <Landmark className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-xl font-bold text-fg leading-tight truncate">{bond.isinCode}</h1>
+            <p className="text-[10px] sm:text-xs font-mono text-fg-muted mt-0.5 truncate">{bond.seriesCode}</p>
+          </div>
+          <MarketStatusBadge market="BOND" compact />
+        </div>
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <span className={`rounded-lg border px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold tracking-wider ${typeColor}`}>
+            {t(`market.bond.types.${bond.bondType}`, { defaultValue: bond.bondType })}
+          </span>
+          <span className="font-mono text-lg sm:text-2xl font-bold text-fg">{formatPrice(bond.baseIndex, localeTag)}</span>
+        </div>
+      </motion.div>
+
+      <div className="rounded-2xl border border-border-default bg-bg-elevated p-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+          <StatCell icon={Building2} label={t('market.bond.issuerLabel')} value={bond.issuer || t('market.bond.treasuryFallback')} />
+          <StatCell icon={Percent} label={t('market.bond.couponRate')} value={formatRate(bond.couponRate)} mono />
+          <StatCell icon={TrendingUp} label={t('market.bond.simpleYield')} value={
+            isFloatingType(bond.bondType)
+              ? <span className="text-warning font-medium">{t('market.bond.floating')}</span>
+              : formatRate(bond.simpleYield)
+          } mono />
+          <StatCell icon={Calendar} label={t('market.bond.startLabel')} value={formatDate(bond.maturityStart, localeTag)} mono />
+          <StatCell icon={Calendar} label={t('market.bond.maturityLabel')} value={
+            <>{formatDate(bond.maturityEnd, localeTag)}{maturityDays != null && <span className="ml-1.5 text-fg-subtle">({maturityDays}{t('market.bond.daysSuffix')})</span>}</>
+          } mono />
+          {bond.nextCouponDate && (
+            <StatCell icon={Calendar} label={t('market.bond.couponDateLabel')} value={
+              <>{formatDate(bond.nextCouponDate, localeTag)}{couponDays != null && <span className="ml-1.5 text-fg-subtle">({couponDays}{t('market.bond.daysSuffix')})</span>}</>
+            } mono />
+          )}
+        </div>
+        <div className="mt-4 flex items-center gap-1.5 text-[11px] text-fg-subtle">
+          <Clock className="h-3 w-3" />
+          {bond.lastUpdated ? new Date(bond.lastUpdated).toLocaleString(localeTag, { timeZone: 'Europe/Istanbul' }) : '—'}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border-default bg-bg-elevated overflow-hidden">
+        <div className="px-5 pt-4 pb-2 flex items-center justify-between gap-3 flex-wrap">
+          <h2 className="text-sm font-semibold text-fg">{t('market.bond.priceChartTitle', { defaultValue: 'Fiyat geçmişi' })}</h2>
+          {latestPrice != null && (
+            <span className="font-mono text-lg sm:text-xl font-bold text-fg tabular-nums">
+              {formatPrice(latestPrice, localeTag)}
+            </span>
+          )}
+        </div>
+        <div className="px-3 pb-4">
+          {historyLoading ? (
+            <div className="h-72 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.chartLoading')}</div>
+          ) : hasPrice ? (
+            <ReactECharts option={priceOption} style={{ height: '320px', width: '100%' }} opts={{ renderer: 'canvas' }} notMerge />
+          ) : (
+            <div className="h-72 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.noPriceData', { defaultValue: 'Fiyat geçmişi yok' })}</div>
+          )}
+        </div>
+
+        <div className="border-t border-border-default">
+          <button
+            type="button"
+            onClick={() => setRateOpen((v) => !v)}
+            className="w-full px-5 py-3 flex items-center justify-between gap-3 text-sm font-semibold text-fg hover:bg-bg-base/40 transition-colors cursor-pointer bg-transparent border-none"
+          >
+            <span className="flex items-center gap-2">
+              <Percent className="h-3.5 w-3.5 text-fg-muted" />
+              {t('market.bond.rateChartTitle', { defaultValue: 'Kupon oranı geçmişi' })}
+            </span>
+            <span className="flex items-center gap-3">
+              {latestRate != null && (
+                <span className="font-mono text-base sm:text-lg font-bold text-fg tabular-nums">{formatRate(latestRate)}</span>
+              )}
+              {rateOpen ? <ChevronUp className="h-4 w-4 text-fg-muted" /> : <ChevronDown className="h-4 w-4 text-fg-muted" />}
+            </span>
+          </button>
+          <AnimatePresence initial={false}>
+            {rateOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="px-3 pb-4">
+                  {historyLoading ? (
+                    <div className="h-56 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.chartLoading')}</div>
+                  ) : hasRate ? (
+                    <ReactECharts option={rateOption} style={{ height: '260px', width: '100%' }} opts={{ renderer: 'canvas' }} notMerge />
+                  ) : (
+                    <div className="h-56 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.noRateData')}</div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+}

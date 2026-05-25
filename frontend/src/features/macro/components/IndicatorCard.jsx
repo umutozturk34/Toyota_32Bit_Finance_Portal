@@ -29,11 +29,12 @@ export default function IndicatorCard({ indicator, onOpen, dense = false }) {
   const change = useMemo(() => computeChange(points), [points]);
   const theme = themeFor(indicator.category);
 
+  const localeTag = t('common.localeTag');
   const label = t(`marketOverview.macro.${indicator.label}`, { defaultValue: indicator.label });
-  const formattedValue = formatValue(indicator.lastValue, indicator.unit);
-  const formattedDate = formatDate(indicator.lastDate);
+  const formattedValue = formatValue(indicator.lastValue, indicator.unit, localeTag);
+  const formattedDate = formatDate(indicator.lastDate, localeTag);
   const changeText = changeBadgeText(change, indicator.unit);
-  const freqLabel = t(`marketOverview.macro.freq${indicator.frequency.charAt(0)}${indicator.frequency.slice(1).toLowerCase()}`,
+  const freqLabel = t(`marketOverview.macro.enum.${indicator.frequency}`,
     { defaultValue: indicator.frequency });
   const isDown = change?.direction === 'down';
 
@@ -64,7 +65,7 @@ export default function IndicatorCard({ indicator, onOpen, dense = false }) {
               style={{ background: theme.accent, boxShadow: `0 0 8px ${theme.glow}` }}
             />
             <p className="text-[9px] font-mono uppercase tracking-[0.14em] text-fg-muted">
-              {indicator.code}
+              {t(`marketOverview.macro.enum.${indicator.category}`, { defaultValue: indicator.category })}
             </p>
           </div>
           <h3 className={`mt-1 font-semibold text-fg truncate ${dense ? 'text-xs' : 'text-sm'}`}>{label}</h3>

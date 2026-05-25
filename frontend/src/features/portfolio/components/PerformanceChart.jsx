@@ -1,5 +1,4 @@
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react';
-import { captureEcharts } from '../../../shared/utils/chartCapture';
+import { useCallback, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -118,7 +117,7 @@ function buildTooltipHtml(point, palette, money) {
   </div>`;
 }
 
-function buildEChartsOption(data, color, palette, money) {
+function buildEChartsOption(data, color, palette, money, forPrint = false) {
   const seriesData = data.map((d) => ({
     value: [d.time, d.value],
     amount: d.value,
@@ -157,16 +156,15 @@ function buildEChartsOption(data, color, palette, money) {
   const span = dataMax - dataMin;
   const padding = span > 0 ? span * 0.08 : dataMax * 0.05;
 
-  const showZoom = data.length >= 2;
+  const showZoom = !forPrint && data.length >= 2;
   const zoomBlock = dataZoomBlock(palette, { filterMode: 'none', height: 26 });
-  // PerformanceChart uses filterMode:none on the inside zoom too
   if (zoomBlock[0]) zoomBlock[0].filterMode = 'none';
   return {
     backgroundColor: 'transparent',
-    animation: data.length < 200,
+    animation: !forPrint && data.length < 200,
     grid: { left: 70, right: 24, top: 16, bottom: showZoom ? 92 : 40, containLabel: false },
     dataZoom: showZoom ? zoomBlock : [],
-    tooltip: {
+    tooltip: forPrint ? { show: false } : {
       trigger: 'axis',
       confine: true,
       backgroundColor: 'transparent',
@@ -222,15 +220,12 @@ function buildEChartsOption(data, color, palette, money) {
   };
 }
 
-function PerformanceChartImpl({ portfolioId, backfill: backfillProp }, externalRef) {
+function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = false }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const { convertAt, currency } = useRateHistory();
   const chartRef = useRef(null);
-  useImperativeHandle(externalRef, () => ({
-    capture: () => captureEcharts(chartRef.current?.getEchartsInstance?.()),
-  }), []);
   const [range, setRange] = useChartRange();
   const [activeType, setActiveType] = useSessionState('portfolio-perf-type', null);
 
@@ -275,8 +270,8 @@ function PerformanceChartImpl({ portfolioId, backfill: backfillProp }, externalR
     : (activeType ? (ASSET_TYPE_COLORS[activeType] || '#6366f1') : '#6366f1');
   const palette = useMemo(() => themePalette(isDark), [isDark]);
   const option = useMemo(
-    () => (convertedPerfData.length > 0 ? buildEChartsOption(convertedPerfData, mainColor, palette, money) : null),
-    [convertedPerfData, mainColor, palette, money]
+    () => (convertedPerfData.length > 0 ? buildEChartsOption(convertedPerfData, mainColor, palette, money, forPrint) : null),
+    [convertedPerfData, mainColor, palette, money, forPrint]
   );
 
   const totalPnl = currentValue?.pnl ?? null;
@@ -396,12 +391,14 @@ function PerformanceChartImpl({ portfolioId, backfill: backfillProp }, externalR
           ) : option ? (
             <ReactECharts
               ref={chartRef}
-              key={`${activeType}-${range}-${isDark}-${currency}`}
+              key={`${activeType}-${range}-${isDark}-${currency}-${forPrint}`}
               option={option}
               notMerge
               lazyUpdate
-              style={{ height: 'min(60vh, 420px)', minHeight: 300 }}
-              opts={{ renderer: 'canvas' }}
+              style={forPrint
+                ? { height: 360, width: '100%', minHeight: 320, pointerEvents: 'none' }
+                : { height: 'min(60vh, 420px)', minHeight: 300 }}
+              opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-[300px] sm:h-[420px] gap-3">
@@ -415,5 +412,4 @@ function PerformanceChartImpl({ portfolioId, backfill: backfillProp }, externalR
   );
 }
 
-const PerformanceChart = forwardRef(PerformanceChartImpl);
 export default PerformanceChart;

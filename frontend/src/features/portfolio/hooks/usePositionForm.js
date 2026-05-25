@@ -8,28 +8,8 @@ import { useAddPosition, usePortfolioLimits, useUpdatePosition } from './usePort
 import {
   FRACTIONAL_TYPES, ONE_HOUR_MS, SUCCESS_HOLD_MS, PROCESSING_STEP_DEFS,
   todayInputValue, dateInputToIso, isoToDateInput, buildInitialState,
-  resolveTarget, toYearMonth, buildPriceIndex,
+  resolveTarget, toYearMonth, buildPriceIndex, resolveNativeCurrency,
 } from '../lib/positionFormHelpers';
-
-const SUPPORTED_NATIVE = new Set(['TRY', 'USD', 'EUR']);
-
-function resolveNativeCurrency(target, asset) {
-  if (target.assetType === 'CRYPTO') {
-    if ((target.assetCode || '').toLowerCase() === 'tether') return 'TRY';
-    return 'USD';
-  }
-  if (target.assetType === 'VIOP') {
-    const meta = asset?.metadata?.currency || target.metadata?.currency;
-    return SUPPORTED_NATIVE.has(meta) ? meta : 'TRY';
-  }
-  if (target.assetType === 'COMMODITY') {
-    const code = (target.assetCode || '').toUpperCase();
-    if (code.endsWith('TRY')) return 'TRY';
-    if (code.endsWith('EUR')) return 'EUR';
-    return 'USD';
-  }
-  return 'TRY';
-}
 
 export function usePositionForm({ mode, portfolioId, asset, position, onClose, onComplete }) {
   const { t } = useTranslation();
@@ -214,14 +194,14 @@ export function usePositionForm({ mode, portfolioId, asset, position, onClose, o
   const handleConfirm = async () => {
     setError(null);
     setPhase('processing');
-    const entryPriceTry = displayToTry(form.entryPrice, form.entryDate);
-    if (entryPriceTry == null || entryPriceTry <= 0) {
+    const entryPriceNative = Number(form.entryPrice);
+    if (!Number.isFinite(entryPriceNative) || entryPriceNative <= 0) {
       setError(t('positionForm.errors.priceInvalid'));
       setPhase('form');
       return;
     }
-    const exitPriceTry = closeEnabled && exitPrice ? displayToTry(exitPrice, exitDate) : null;
-    if (closeEnabled && (exitPriceTry == null || exitPriceTry <= 0)) {
+    const exitPriceNative = closeEnabled && exitPrice ? Number(exitPrice) : null;
+    if (closeEnabled && (exitPriceNative == null || !Number.isFinite(exitPriceNative) || exitPriceNative <= 0)) {
       setError(t('positionForm.errors.exitPriceInvalid', { defaultValue: 'Çıkış fiyatı geçersiz' }));
       setPhase('form');
       return;
@@ -231,9 +211,10 @@ export function usePositionForm({ mode, portfolioId, asset, position, onClose, o
       assetCode: target.assetCode,
       quantity: Number(form.quantity),
       entryDate: dateInputToIso(form.entryDate),
-      entryPrice: entryPriceTry,
+      entryPrice: entryPriceNative,
       exitDate: closeEnabled ? dateInputToIso(exitDate) : null,
-      exitPrice: closeEnabled ? exitPriceTry : null,
+      exitPrice: closeEnabled ? exitPriceNative : null,
+      priceCurrency: inputCurrency,
     };
     const mutate = isEdit
       ? () => updateMutation.mutateAsync({ positionId: position.id, payload })

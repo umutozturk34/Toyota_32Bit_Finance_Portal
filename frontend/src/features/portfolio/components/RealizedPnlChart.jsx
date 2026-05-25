@@ -1,5 +1,4 @@
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { captureEcharts } from '../../../shared/utils/chartCapture';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -18,15 +17,12 @@ import { ASSET_TYPE_TABS as TYPE_TABS } from '../../../shared/constants/assetTyp
 const GREEN_SHADES = ['#10b981', '#34d399', '#6ee7b7', '#5eead4', '#2dd4bf', '#86efac', '#a7f3d0'];
 const RED_SHADES = ['#ef4444', '#f87171', '#fb7185', '#f43f5e', '#fca5a5', '#e11d48', '#fecaca'];
 
-function RealizedPnlChartImpl({ portfolioId }, externalRef) {
+function RealizedPnlChart({ portfolioId, forPrint = false }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { format: money, formatCompact: moneyCompact, currency: displayCurrency } = useMoney();
   const chartRef = useRef(null);
   const [hovered, setHovered] = useState(null);
-  useImperativeHandle(externalRef, () => ({
-    capture: () => captureEcharts(chartRef.current?.getEchartsInstance?.()),
-  }), []);
   const [activeTab, setActiveTab] = useSessionState('portfolio-realized-tab', 'ALL');
 
   const { data: allData = [] } = usePortfolioAllocation(portfolioId, 'realizedPnl', undefined);
@@ -76,7 +72,7 @@ function RealizedPnlChartImpl({ portfolioId }, externalRef) {
       : it.label;
   }, [activeTab, t]);
 
-  const chartEvents = useMemo(() => ({
+  const chartEvents = useMemo(() => (forPrint ? {} : {
     mouseover: (params) => setHovered(params?.name ?? null),
     mouseout: () => setHovered(null),
     click: (params) => {
@@ -84,7 +80,7 @@ function RealizedPnlChartImpl({ portfolioId }, externalRef) {
       const it = items.find((i) => i.label === params?.name || labelFor(i) === params?.name);
       if (it && availableTypes.has(it.label)) setActiveTab(it.label);
     },
-  }), [activeTab, items, labelFor, availableTypes, setActiveTab]);
+  }), [forPrint, activeTab, items, labelFor, availableTypes, setActiveTab]);
 
   const shadeIndex = useMemo(() => {
     const map = new Map();
@@ -131,8 +127,8 @@ function RealizedPnlChartImpl({ portfolioId }, externalRef) {
 
   const option = useMemo(() => ({
     backgroundColor: 'transparent',
-    animation: true,
-    tooltip: {
+    animation: !forPrint,
+    tooltip: forPrint ? { show: false } : {
       trigger: 'item',
       appendToBody: true,
       confine: false,
@@ -177,7 +173,7 @@ function RealizedPnlChartImpl({ portfolioId }, externalRef) {
       emphasis: { scale: false, focus: 'self', label: { show: true } },
       data: seriesData,
     }],
-  }), [seriesData, netPnl, absTotal, tooltipBg, tooltipBorder, tooltipFg, labelMuted, ringStroke, money, moneyCompact, t, totalLabel, frameBase]);
+  }), [seriesData, netPnl, absTotal, tooltipBg, tooltipBorder, tooltipFg, labelMuted, ringStroke, money, moneyCompact, t, totalLabel, frameBase, forPrint]);
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="show" className="space-y-4">
@@ -209,11 +205,11 @@ function RealizedPnlChartImpl({ portfolioId }, externalRef) {
           <div className="space-y-4">
             <ReactECharts
               ref={chartRef}
-              key={`${isDark}-${activeTab}-${displayCurrency}`}
+              key={`${isDark}-${activeTab}-${displayCurrency}-${forPrint}`}
               option={option}
               notMerge
-              style={{ height: 220 }}
-              opts={{ renderer: 'canvas' }}
+              style={forPrint ? { height: 260, width: '100%', pointerEvents: 'none' } : { height: 220 }}
+              opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
               onEvents={chartEvents}
             />
 
@@ -257,5 +253,4 @@ function RealizedPnlChartImpl({ portfolioId }, externalRef) {
   );
 }
 
-const RealizedPnlChart = forwardRef(RealizedPnlChartImpl);
 export default RealizedPnlChart;

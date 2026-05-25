@@ -10,9 +10,10 @@ export const analyticsService = {
     return res.data.data;
   },
 
-  inflationBeaters: async (period = '1Y', benchmark) => {
+  inflationBeaters: async (period = '1Y', benchmark, targetCurrency) => {
     const params = { period };
     if (benchmark) params.benchmark = benchmark;
+    if (targetCurrency) params.targetCurrency = targetCurrency;
     const res = await api.get(`${BASE}/inflation-beaters`, { params });
     return res.data.data;
   },

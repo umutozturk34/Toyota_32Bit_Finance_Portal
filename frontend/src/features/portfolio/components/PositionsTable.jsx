@@ -244,7 +244,7 @@ function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetC
         <div className="flex justify-start">
           <PositionStatusBadge closed={isClosedSpot || isClosedDerivative} isDerivative={isDerivative} />
         </div>
-        <p className="text-left text-[11px] font-mono text-fg truncate">{money(pos.entryPrice)}</p>
+        <p className="text-left text-[11px] font-mono text-fg truncate">{money(pos.entryPrice, 'TRY', { dateAt: pos.entryDate })}</p>
         <p className={`text-left text-[11px] font-mono truncate ${isClosedSpot || isClosedDerivative ? 'text-fg-muted italic' : 'text-fg'}`}>{money(pos.currentPriceTry)}</p>
         <p className={`text-left text-[11px] font-mono truncate ${isClosedSpot || isClosedDerivative ? 'text-fg-muted italic' : 'text-fg'}`} title={money(pos.marketValueTry)}>{bigMoney(pos.marketValueTry)}</p>
         <div className="text-left min-w-0">
@@ -340,7 +340,7 @@ function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetC
           {(isClosedSpot || isClosedDerivative) && (
             <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.exitDateLabel')}</p><p className="font-mono text-fg font-medium">{formatEntryDate(pos.exitDate, localeTag) || '—'}</p></div>
           )}
-          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryPriceCol')}</p><p className="font-mono text-fg font-medium">{money(pos.entryPrice)}</p></div>
+          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryPriceCol')}</p><p className="font-mono text-fg font-medium">{money(pos.entryPrice, 'TRY', { dateAt: pos.entryDate })}</p></div>
           <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.pnlCol')}</p><p className={`font-mono font-semibold ${changeColors[pnlClass]}`} title={money(pos.pnlTry)}>{bigMoney(pos.pnlTry)}</p></div>
         </div>
       </div>

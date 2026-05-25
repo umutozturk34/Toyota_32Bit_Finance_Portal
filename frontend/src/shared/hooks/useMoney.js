@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import useAppStore from '../stores/useAppStore';
 import { useExchangeRates } from './useExchangeRates';
+import { useRateHistory } from './useRateHistory';
 import { formatPrice, currentLocaleTag } from '../utils/formatters';
 
 const SUPPORTED = ['TRY', 'USD', 'EUR'];
@@ -8,6 +9,7 @@ const SUPPORTED = ['TRY', 'USD', 'EUR'];
 export function useMoney() {
   const displayCurrency = useAppStore((s) => s.displayCurrency) || 'TRY';
   const rates = useExchangeRates();
+  const { convertAt } = useRateHistory();
 
   const resolveTarget = useCallback((base, natural) => {
     if (displayCurrency !== 'ORIGINAL') return displayCurrency;
@@ -15,7 +17,8 @@ export function useMoney() {
     return SUPPORTED.includes(candidate) ? candidate : 'TRY';
   }, [displayCurrency]);
 
-  const convert = useCallback((value, base = 'TRY', natural) => {
+  const convert = useCallback((value, base = 'TRY', natural, dateAt) => {
+    if (dateAt) return convertAt(value, base, dateAt, natural);
     if (value == null) return null;
     const num = Number(value);
     if (!Number.isFinite(num)) return null;
@@ -27,11 +30,12 @@ export function useMoney() {
     if (fromRate == null || toRate == null) return num;
     const inTry = from === 'TRY' ? num : num * fromRate;
     return target === 'TRY' ? inTry : inTry / toRate;
-  }, [resolveTarget, rates]);
+  }, [resolveTarget, rates, convertAt]);
 
   const format = useCallback((value, base = 'TRY', opts = {}) => {
     const natural = opts.natural;
-    const converted = convert(value, base, natural);
+    const dateAt = opts.dateAt;
+    const converted = convert(value, base, natural, dateAt);
     if (converted == null) return 'N/A';
     const target = resolveTarget(base, natural);
     const normalizedBase = SUPPORTED.includes(base) ? base : 'TRY';

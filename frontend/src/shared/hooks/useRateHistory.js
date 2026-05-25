@@ -33,7 +33,7 @@ function rateOn(series, dateStr) {
       hi = mid - 1;
     }
   }
-  return answer ?? series[0][1];
+  return answer;
 }
 
 export function useRateHistory() {

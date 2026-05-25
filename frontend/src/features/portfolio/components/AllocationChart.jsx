@@ -1,5 +1,4 @@
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { captureEcharts } from '../../../shared/utils/chartCapture';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -24,7 +23,7 @@ const COLORS = [
   '#e879f9', '#38bdf8', '#fdba74', '#86efac', '#f9a8d4',
 ];
 
-function AllocationChartImpl({ allocation, portfolioId }, externalRef) {
+function AllocationChart({ allocation, portfolioId, forPrint = false }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { format: money, formatCompact: moneyCompact, currency: displayCurrency } = useMoney();
@@ -36,9 +35,6 @@ function AllocationChartImpl({ allocation, portfolioId }, externalRef) {
   }, [t]);
   const chartRef = useRef(null);
   const [hoveredSliceName, setHoveredSliceName] = useState(null);
-  useImperativeHandle(externalRef, () => ({
-    capture: () => captureEcharts(chartRef.current?.getEchartsInstance?.()),
-  }), []);
 
   const highlightSlice = useCallback((name) => {
     const inst = chartRef.current?.getEchartsInstance?.();
@@ -48,10 +44,10 @@ function AllocationChartImpl({ allocation, portfolioId }, externalRef) {
     const inst = chartRef.current?.getEchartsInstance?.();
     if (inst) inst.dispatchAction({ type: 'downplay', seriesIndex: 0, name });
   }, []);
-  const chartEvents = useMemo(() => ({
+  const chartEvents = useMemo(() => (forPrint ? {} : {
     mouseover: (params) => setHoveredSliceName(params?.name ?? null),
     mouseout: () => setHoveredSliceName(null),
-  }), []);
+  }), [forPrint]);
 
   const { data: assetData, isFetching: assetLoading } = usePortfolioAllocation(
     activeTab !== 'ALL' ? portfolioId : null,
@@ -114,8 +110,8 @@ function AllocationChartImpl({ allocation, portfolioId }, externalRef) {
 
   const option = useMemo(() => ({
     backgroundColor: 'transparent',
-    animation: true,
-    tooltip: {
+    animation: !forPrint,
+    tooltip: forPrint ? { show: false } : {
       trigger: 'item',
       appendToBody: true,
       confine: false,
@@ -165,7 +161,7 @@ function AllocationChartImpl({ allocation, portfolioId }, externalRef) {
       },
       data: seriesData,
     }],
-  }), [seriesData, totalValue, totalLabel, tooltipBg, tooltipBorder, tooltipFg, labelFg, labelMuted, ringStroke, money, moneyCompact]);
+  }), [seriesData, totalValue, totalLabel, tooltipBg, tooltipBorder, tooltipFg, labelFg, labelMuted, ringStroke, money, moneyCompact, forPrint]);
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="show" className="space-y-4">
@@ -197,11 +193,11 @@ function AllocationChartImpl({ allocation, portfolioId }, externalRef) {
           <div className="space-y-4">
             <ReactECharts
               ref={chartRef}
-              key={`${isDark}-${activeTab}-${displayCurrency}`}
+              key={`${isDark}-${activeTab}-${displayCurrency}-${forPrint}`}
               option={option}
               notMerge
-              style={{ height: 220 }}
-              opts={{ renderer: 'canvas' }}
+              style={forPrint ? { height: 260, width: '100%', pointerEvents: 'none' } : { height: 220 }}
+              opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
               onEvents={chartEvents}
             />
 
@@ -263,5 +259,4 @@ function AllocationChartImpl({ allocation, portfolioId }, externalRef) {
   );
 }
 
-const AllocationChart = forwardRef(AllocationChartImpl);
 export default AllocationChart;

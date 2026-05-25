@@ -18,7 +18,7 @@ export default function CryptoPage() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const listParams = useListParams();
-    const { format: money } = useMoney();
+    const { format: money, currency: displayCurrency } = useMoney();
     const sortOptions = SORT_OPTION_IDS.map(id => ({ id, label: t(`market.sort.${id}`) }));
 
     const renderCard = (crypto, { setBuyTarget }) => {
@@ -51,10 +51,11 @@ export default function CryptoPage() {
 
                 <div className="mt-3 space-y-1">
                     <span className="font-mono text-xl font-bold text-fg">{money(priceUsd, 'USD')}</span>
-                    <div className="flex items-center gap-2 text-xs text-fg-muted">
-                        <span className="font-medium">TRY</span>
-                        <span className="font-mono">{money(crypto.price)}</span>
-                    </div>
+                    {displayCurrency !== 'USD' && (
+                        <div className="flex items-center gap-2 text-xs text-fg-muted">
+                            <span className="font-mono">{money(crypto.price)}</span>
+                        </div>
+                    )}
                 </div>
 
                 <ChangePercentBadge

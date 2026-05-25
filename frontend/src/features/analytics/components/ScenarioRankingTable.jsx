@@ -6,11 +6,11 @@ import { SERIES_COLORS } from '../constants';
 import { formatPercent } from '../utils';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
+import { resolveNativeCurrency } from '../../portfolio/lib/positionFormHelpers';
 
 export default function ScenarioRankingTable({ scenario }) {
   const { t } = useTranslation();
   const { format: money } = useMoney();
-  const scenarioCurrency = scenario?.targetCurrency || 'TRY';
   const rows = useMemo(() => {
     if (!scenario?.series) return [];
     const indexed = scenario.series.map((s, idx) => ({ ...s, _color: SERIES_COLORS[idx % SERIES_COLORS.length] }));
@@ -77,7 +77,7 @@ export default function ScenarioRankingTable({ scenario }) {
                 </Td>
                 <Td align="right">
                   <span className="font-mono font-bold tabular-nums text-fg">
-                    {money(row.finalValue, scenarioCurrency)}
+                    {money(row.finalValue, scenario?.targetCurrency || row.nativeCurrency || resolveNativeCurrency({ assetType: row.instrument?.type, assetCode: row.instrument?.code }))}
                   </span>
                 </Td>
                 <Td align="right">

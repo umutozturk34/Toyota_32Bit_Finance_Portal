@@ -9,6 +9,7 @@ import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 import { useInflationBeaters } from '../hooks/useAnalytics';
 import { useMacroIndicators } from '../../macro/hooks/useMacroIndicators';
+import { useMoney } from '../../../shared/hooks/useMoney';
 import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
 import BenchmarkPicker from '../components/BenchmarkPicker';
 import { PERIODS } from '../constants';
@@ -87,7 +88,9 @@ export default function InflationBeaterPage() {
     setPage(0);
   };
 
-  const { data, isLoading, isError, refetch } = useInflationBeaters(period, benchmark);
+  const { currency: displayCurrency } = useMoney();
+  const targetCurrencyOverride = displayCurrency === 'ORIGINAL' ? null : displayCurrency;
+  const { data, isLoading, isError, refetch } = useInflationBeaters(period, benchmark, targetCurrencyOverride);
   const { data: macroList = [] } = useMacroIndicators();
 
   const benchmarkOptions = useMemo(

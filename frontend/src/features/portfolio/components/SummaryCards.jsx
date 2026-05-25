@@ -10,12 +10,6 @@ import { usePortfolioSummary } from '../hooks/usePortfolioData';
 import { ASSET_TYPE_FILTERS as SUMMARY_FILTERS } from '../../../shared/constants/assetTypes';
 import Card from '../../../shared/components/card';
 
-function pickFrame(summary, displayCurrency) {
-  if (!summary?.frames) return null;
-  if (displayCurrency === 'TRY' || displayCurrency === 'ORIGINAL') return summary.frames.TRY;
-  return summary.frames[displayCurrency] ?? summary.frames.TRY;
-}
-
 const VALUE_CARD_DEFS = [
   { key: 'totalValueTry', labelKey: 'portfolio.summary.marketValue', Icon: Wallet, iconBg: 'bg-accent/10', iconColor: 'text-accent', border: 'border-t-accent' },
   { key: 'totalEntryValueTry', labelKey: 'portfolio.summary.totalCost', Icon: BarChart3, iconBg: 'bg-fg-muted/10', iconColor: 'text-fg-muted', border: 'border-t-fg-muted' },
@@ -76,7 +70,6 @@ function PnlCard({ label, value, percent, realValue, realPercent, hideReal, base
 export default function SummaryCards({ summary: initialSummary, portfolioId }) {
   const { t } = useTranslation();
   const { format: money, formatCompact: moneyCompact, currency: displayCurrency } = useMoney();
-  const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
   const [activeFilter, setActiveFilter] = useSessionState('portfolio-summary-filter', null);
 
   const { data: filteredSummary, isFetching: loading } = usePortfolioSummary(portfolioId, activeFilter);
@@ -84,21 +77,12 @@ export default function SummaryCards({ summary: initialSummary, portfolioId }) {
   const filterLabel = (id) => id ? t(`assets.labels.${id}`) : t('assets.labels.ALL');
 
   const isNonTryFrame = displayCurrency === 'USD' || displayCurrency === 'EUR';
-  const frame = pickFrame(summary, displayCurrency);
-  const totalPnlPercent = frame?.pnlPercent ?? summary?.pnlPercent;
-  const dailyPnlPercent = frame?.dailyPnlPercent ?? summary?.dailyPnlPercent;
-  const totalPnlAmount = isNonTryFrame && frame?.totalPnl != null
-    ? { value: frame.totalPnl, base: displayCurrency }
-    : { value: summary?.totalPnlTry, base: 'TRY' };
-  const dailyPnlAmount = isNonTryFrame && frame?.dailyPnl != null
-    ? { value: frame.dailyPnl, base: displayCurrency }
-    : { value: summary?.dailyPnlTry, base: 'TRY' };
-  const totalValueAmount = isNonTryFrame && frame?.totalValue != null
-    ? { value: frame.totalValue, base: displayCurrency }
-    : { value: summary?.totalValueTry, base: 'TRY' };
-  const totalEntryAmount = isNonTryFrame && frame?.totalEntry != null
-    ? { value: frame.totalEntry, base: displayCurrency }
-    : { value: summary?.totalEntryValueTry, base: 'TRY' };
+  const totalPnlPercent = summary?.pnlPercent;
+  const dailyPnlPercent = summary?.dailyPnlPercent;
+  const totalPnlAmount = { value: summary?.totalPnlTry, base: 'TRY' };
+  const dailyPnlAmount = { value: summary?.dailyPnlTry, base: 'TRY' };
+  const totalValueAmount = { value: summary?.totalValueTry, base: 'TRY' };
+  const totalEntryAmount = { value: summary?.totalEntryValueTry, base: 'TRY' };
 
   return (
     <motion.div

@@ -28,12 +28,16 @@ export function usePositionCloseForm({
   initialDate,
   initialPrice,
   liveSuggestedPriceTry,
+  nativeCurrency,
 }) {
   const { t } = useTranslation();
   const { format: money, currency: displayCurrency } = useMoney();
   const { convertAt, rateAt } = useRateHistory();
   const localeTag = t('common.localeTag');
-  const inputCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency ? 'TRY' : displayCurrency;
+  const resolvedNative = nativeCurrency || 'TRY';
+  const inputCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency
+    ? resolvedNative
+    : displayCurrency;
 
   const [date, setDate] = useState(() => initialDate ?? todayIso());
   const [price, setPrice] = useState(() => initialPrice ?? '');

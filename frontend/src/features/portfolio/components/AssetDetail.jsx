@@ -18,6 +18,7 @@ import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
 import IconButton from '../../../shared/components/buttons/IconButton';
 import { buildAssetChartOption, formatChartMoney } from '../lib/assetChartBuilder';
+import { resolveNativeCurrency } from '../lib/positionFormHelpers';
 import { computeViopAggregate, computeClosedAggregate, computeSeriesEndTs } from '../lib/assetAggregates';
 import { LotsTable } from './LotsTable';
 
@@ -31,10 +32,10 @@ const STAT_CARD_DEFS = [
   { key: 'marketValueTry', labelKey: 'marketValue', Icon: Wallet, money: true },
 ];
 
-function AssetChart({ data, isDark, t, convertAt, displayCurrency }) {
+function AssetChart({ data, isDark, t, convertAt, displayCurrency, nativeCurrency }) {
   const option = useMemo(
-    () => buildAssetChartOption(data, isDark, t, convertAt, displayCurrency),
-    [data, isDark, t, convertAt, displayCurrency]
+    () => buildAssetChartOption(data, isDark, t, convertAt, displayCurrency, nativeCurrency),
+    [data, isDark, t, convertAt, displayCurrency, nativeCurrency]
   );
   if (!option) return null;
   return <ReactECharts option={option} notMerge lazyUpdate style={{ height: 340 }} opts={{ renderer: 'canvas' }} />;
@@ -89,7 +90,11 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
 
   const entryDateIso = aggEntryDate ? new Date(aggEntryDate).toISOString().slice(0, 10) : null;
   const todayIso = new Date().toISOString().slice(0, 10);
-  const targetCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency ? 'TRY' : displayCurrency;
+  const nativeCurrency = resolveNativeCurrency(
+    { assetType: asset?.type, assetCode: asset?.code, metadata: asset?.metadata },
+    asset,
+  );
+  const targetCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency ? nativeCurrency : displayCurrency;
   const entryPriceConverted = entryDateIso ? convertAt(aggEntryPriceTry, 'TRY', entryDateIso) : null;
   const currentPriceConverted = convertAt(aggCurrentPriceTry, 'TRY', todayIso);
   const marketValueConverted = convertAt(aggMarketValueTry, 'TRY', todayIso);
@@ -290,7 +295,7 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
               {t('assetDetail.noDataInRange')}
             </div>
           ) : series.length > 0 ? (
-            <AssetChart data={series} isDark={isDark} t={t} convertAt={convertAt} displayCurrency={displayCurrency} />
+            <AssetChart data={series} isDark={isDark} t={t} convertAt={convertAt} displayCurrency={displayCurrency} nativeCurrency={nativeCurrency} />
           ) : null}
         </div>
       </Card>

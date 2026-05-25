@@ -41,8 +41,8 @@ function naturalCurrencyFor(assetType, asset, assetCode) {
   if (assetType === 'VIOP') return asset?.metadata?.currency || 'TRY';
   if (assetType === 'COMMODITY') {
     const upper = (assetCode || '').toUpperCase();
-    if (upper.endsWith('TRY')) return 'TRY';
-    if (upper.endsWith('EUR')) return 'EUR';
+    if (upper.endsWith('TRY') || upper.endsWith('TRYG')) return 'TRY';
+    if (upper.endsWith('EUR') || upper.endsWith('EURG')) return 'EUR';
     return 'USD';
   }
   return 'TRY';

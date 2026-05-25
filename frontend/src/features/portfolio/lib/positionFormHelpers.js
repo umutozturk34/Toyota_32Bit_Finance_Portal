@@ -1,5 +1,30 @@
 export const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX', 'COMMODITY'];
+export const SUPPORTED_NATIVE = new Set(['TRY', 'USD', 'EUR']);
 export const ONE_HOUR_MS = 60 * 60 * 1000;
+
+export function resolveNativeCurrency(target, asset) {
+  if (!target) return 'TRY';
+  if (target.assetType === 'CRYPTO') {
+    if ((target.assetCode || '').toLowerCase() === 'tether') return 'TRY';
+    return 'USD';
+  }
+  if (target.assetType === 'VIOP') {
+    const meta = asset?.metadata?.currency || target.metadata?.currency;
+    if (SUPPORTED_NATIVE.has(meta)) return meta;
+    const code = (target.assetCode || '').toUpperCase();
+    if (code.endsWith('TRY')) return 'TRY';
+    if (code.endsWith('EUR')) return 'EUR';
+    if (code.endsWith('USD')) return 'USD';
+    return 'TRY';
+  }
+  if (target.assetType === 'COMMODITY') {
+    const code = (target.assetCode || '').toUpperCase();
+    if (code.endsWith('TRY') || code.endsWith('TRYG')) return 'TRY';
+    if (code.endsWith('EUR') || code.endsWith('EURG')) return 'EUR';
+    return 'USD';
+  }
+  return 'TRY';
+}
 export const SUCCESS_HOLD_MS = 1100;
 export const PROCESSING_STEP_DEFS = [
   { labelKey: 'validating', duration: 400 },

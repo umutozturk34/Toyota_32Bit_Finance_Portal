@@ -7,6 +7,7 @@ import { extractApiError } from '../../../shared/utils/apiError';
 import { useSellPosition } from '../hooks/usePortfolioData';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { usePositionCloseForm, todayIso, formatDateLabel } from '../hooks/usePositionCloseForm';
+import { resolveNativeCurrency } from '../lib/positionFormHelpers';
 
 const QTY_PRESETS = [
   { id: '25', factor: 0.25 },
@@ -27,12 +28,19 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
 
   const sell = useSellPosition(portfolioId);
 
+  const nativeCurrency = resolveNativeCurrency({
+    assetType: position?.assetType,
+    assetCode: position?.assetCode,
+    metadata: position?.metadata,
+  }, position);
+
   const form = usePositionCloseForm({
     availabilityAssetType: position?.assetType,
     availabilityAssetCode: position?.assetCode,
     entryDateIso,
     initialPrice: suggestedPriceInDisplay != null ? String(suggestedPriceInDisplay) : '',
     liveSuggestedPriceTry: suggestedPriceTry,
+    nativeCurrency,
   });
 
   const {
@@ -47,7 +55,6 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
     applyDatePrice: applyCurrentPrice,
     handleMonthChange,
     datePresets,
-    toTryOnDate,
   } = form;
 
   const [sellQty, setSellQty] = useState(() => String(totalQty));
@@ -94,8 +101,7 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
 
   const handleSubmit = async () => {
     setError(null);
-    const exitPriceTry = toTryOnDate(parsedPrice, sellDate);
-    if (exitPriceTry == null || !(exitPriceTry > 0)) {
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
       setError(t('portfolio.sell.invalidPriceHint', { defaultValue: 'Geçersiz fiyat' }));
       return;
     }
@@ -104,8 +110,9 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
         positionId: position.id,
         payload: {
           quantity: parsedQty,
-          exitPrice: exitPriceTry,
+          exitPrice: parsedPrice,
           exitDate: `${sellDate}T12:00:00`,
+          priceCurrency: inputCurrency,
         },
       });
       onClose?.();

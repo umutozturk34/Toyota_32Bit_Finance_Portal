@@ -1083,7 +1083,7 @@
       "future": "Future",
       "dataAvailable": "Data available on this date: {{price}}",
       "dataUnavailable": "No data on this date — nearest prior price will be used",
-      "closePriceLabel": "Close price (TRY)",
+      "closePriceLabel": "Close price",
       "partialHint": "Remaining {{remaining}} lots stay open",
       "realizedPnl": "Realized P/L",
       "long": "LONG",
@@ -1457,7 +1457,7 @@
     "storedAsTry": "Stored as TRY",
     "fields": {
       "entryDate": "Entry date",
-      "entryPrice": "Entry price (TRY)",
+      "entryPrice": "Entry price",
       "quantity": "Quantity",
       "quantityShares": "Quantity (shares)",
       "minOne": "min. 1 share",
@@ -1635,8 +1635,8 @@
     "quickSelect": "Quick pick (relative to current price)",
     "quickPercent": "Quick percent",
     "thresholdPctLabel": "Threshold (%)",
-    "thresholdPriceLabel": "Threshold price (TRY)",
-    "referenceLabel": "Reference (TRY)",
+    "thresholdPriceLabel": "Threshold price",
+    "referenceLabel": "Reference",
     "referencePlaceholder": "starting price",
     "distanceFromCurrent": "{{signed}}% away from current",
     "projected": "≈ TRY {{price}} when triggered",
@@ -1698,7 +1698,7 @@
     "title": "Edit alert settings",
     "directionLabel": "Direction",
     "thresholdLabel": "Threshold",
-    "thresholdPlaceholder": "e.g. 1000000 (TRY) or 5 (%)",
+    "thresholdPlaceholder": "e.g. 1000000 or 5 (%)",
     "thresholdHint": "TRY price for ABOVE/BELOW, percent value for % directions.",
     "saving": "Saving…",
     "invalidThreshold": "Invalid threshold",
@@ -2024,5 +2024,61 @@
     },
     "returnsInCurrency": "Returns in {{currency}}",
     "simulationRunning": "Running simulation..."
+  },
+  "pdf": {
+    "report": {
+      "brand": "Finance Portal",
+      "eyebrow": "PORTFOLIO REPORT",
+      "subtitle": "Snapshot view of your portfolio composition and performance",
+      "generatedOn": "Generated on {{date}}",
+      "sections": {
+        "overview": "Overview",
+        "allocation": "Asset Allocation",
+        "performance": "Portfolio Performance",
+        "realizedPnl": "Realized Profit & Loss",
+        "positions": "Positions"
+      },
+      "kpi": {
+        "marketValue": "MARKET VALUE",
+        "cost": "TOTAL COST",
+        "totalPnl": "TOTAL P&L",
+        "dailyPnl": "DAILY P&L",
+        "realPnl": "REAL P&L",
+        "cpiGrowth": "CPI GROWTH"
+      },
+      "deltaToday": "today",
+      "allocation": {
+        "shareLabel": "Share",
+        "valueLabel": "Value",
+        "empty": "No assets to allocate yet."
+      },
+      "realized": {
+        "headerAsset": "ASSET",
+        "headerCost": "COST",
+        "headerRealized": "REALIZED",
+        "winnersTitle": "Winners",
+        "losersTitle": "Losers",
+        "empty": "No realized profit/loss yet."
+      },
+      "positions": {
+        "headerAsset": "ASSET",
+        "headerStatus": "STATUS",
+        "headerQty": "QTY",
+        "headerEntryDate": "ENTRY",
+        "headerExitDate": "EXIT",
+        "headerEntryPrice": "ENTRY PRICE",
+        "headerCurrentPrice": "LAST PRICE",
+        "headerMarketValue": "MARKET",
+        "headerPnl": "P&L",
+        "open": "OPEN",
+        "closed": "CLOSED",
+        "empty": "No positions to display."
+      },
+      "sentLabel": "GENERATED",
+      "loading": "Preparing report...",
+      "errorTitle": "Unable to render report",
+      "footer": "This report is generated automatically by Finance Portal. Values reflect snapshot data at generation time and do not constitute financial advice.",
+      "page": "Page {{page}} of {{total}}"
+    }
   }
 }

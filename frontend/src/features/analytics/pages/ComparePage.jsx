@@ -63,7 +63,6 @@ export default function ComparePage() {
   const { isDark } = useTheme();
   const { currency: displayCurrency, format: money } = useMoney();
   const { convertAt } = useRateHistory();
-  const targetCurrency = displayCurrency === 'ORIGINAL' ? 'TRY' : displayCurrency;
   const [params, setParams] = useSearchParams();
   const { data: userPortfolios } = usePortfolioList();
   const [portfolioPickerOpen, setPortfolioPickerOpen] = useState(false);
@@ -76,6 +75,11 @@ export default function ComparePage() {
   );
   const [mode, setMode] = useSessionState('compare:mode', params.get('mode') || 'assets');
   const [selected, setSelected] = useSessionState('compare:selected', parseInitialSelection(params));
+  const targetCurrency = useMemo(() => {
+    if (displayCurrency !== 'ORIGINAL') return displayCurrency;
+    const first = selected.find((s) => !isMacro(s.type) && s.type !== 'PORTFOLIO');
+    return first ? nativeCurrencyFor(first.type, first.code) : 'TRY';
+  }, [displayCurrency, selected]);
   const [rangeId, setRangeId] = useChartRange();
   const initialRangeRef = useRef(params.get('range'));
 

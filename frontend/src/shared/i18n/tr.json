@@ -1083,7 +1083,7 @@
       "future": "Vadeli",
       "dataAvailable": "Bu tarihte veri var: {{price}}",
       "dataUnavailable": "Bu tarihte veri yok — geçmişe en yakın fiyat kullanılır",
-      "closePriceLabel": "Kapanış fiyatı (TRY)",
+      "closePriceLabel": "Kapanış fiyatı",
       "partialHint": "Kalan {{remaining}} lot açık devam edecek",
       "realizedPnl": "Realize K/Z",
       "long": "LONG",
@@ -1457,7 +1457,7 @@
     "storedAsTry": "TRY olarak kaydedilir",
     "fields": {
       "entryDate": "Giriş Tarihi",
-      "entryPrice": "Giriş Fiyatı (TRY)",
+      "entryPrice": "Giriş Fiyatı",
       "quantity": "Miktar",
       "quantityShares": "Miktar (adet)",
       "minOne": "min. 1 adet",
@@ -1635,8 +1635,8 @@
     "quickSelect": "Hızlı seç (güncel fiyata göre)",
     "quickPercent": "Hızlı yüzde",
     "thresholdPctLabel": "Eşik (%)",
-    "thresholdPriceLabel": "Eşik fiyat (₺)",
-    "referenceLabel": "Referans (₺)",
+    "thresholdPriceLabel": "Eşik fiyat",
+    "referenceLabel": "Referans",
     "referencePlaceholder": "başlangıç fiyatı",
     "distanceFromCurrent": "{{signed}}% güncelden uzakta",
     "projected": "≈ ₺{{price}} olduğunda tetiklenir",
@@ -1698,7 +1698,7 @@
     "title": "Alarm ayarlarını düzenle",
     "directionLabel": "Yön",
     "thresholdLabel": "Eşik",
-    "thresholdPlaceholder": "örn 1000000 (TL) ya da 5 (%)",
+    "thresholdPlaceholder": "örn 1000000 ya da 5 (%)",
     "thresholdHint": "ABOVE/BELOW için TL fiyat, % yön için yüzdelik değer.",
     "saving": "Kaydediliyor…",
     "invalidThreshold": "Geçersiz eşik",
@@ -2024,5 +2024,61 @@
     },
     "returnsInCurrency": "Getiriler {{currency}} cinsinden",
     "simulationRunning": "Simülasyon hesaplanıyor..."
+  },
+  "pdf": {
+    "report": {
+      "brand": "Finance Portal",
+      "eyebrow": "PORTFÖY RAPORU",
+      "subtitle": "Portföyünüzün anlık görünümü, dağılımı ve performans özeti",
+      "generatedOn": "{{date}} tarihinde oluşturuldu",
+      "sections": {
+        "overview": "Genel Bakış",
+        "allocation": "Varlık Dağılımı",
+        "performance": "Portföy Performansı",
+        "realizedPnl": "Gerçekleşen Kar / Zarar",
+        "positions": "Pozisyonlar"
+      },
+      "kpi": {
+        "marketValue": "PİYASA DEĞERİ",
+        "cost": "TOPLAM MALİYET",
+        "totalPnl": "TOPLAM K/Z",
+        "dailyPnl": "GÜNLÜK K/Z",
+        "realPnl": "REEL K/Z",
+        "cpiGrowth": "TÜFE BÜYÜMESİ"
+      },
+      "deltaToday": "bugün",
+      "allocation": {
+        "shareLabel": "Pay",
+        "valueLabel": "Değer",
+        "empty": "Henüz dağıtılacak varlık yok."
+      },
+      "realized": {
+        "headerAsset": "VARLIK",
+        "headerCost": "MALİYET",
+        "headerRealized": "GERÇEKLEŞEN",
+        "winnersTitle": "Kazandıranlar",
+        "losersTitle": "Kaybettirenler",
+        "empty": "Gerçekleşen kar/zarar bulunmuyor."
+      },
+      "positions": {
+        "headerAsset": "VARLIK",
+        "headerStatus": "DURUM",
+        "headerQty": "ADET",
+        "headerEntryDate": "GİRİŞ",
+        "headerExitDate": "ÇIKIŞ",
+        "headerEntryPrice": "GİRİŞ FİYATI",
+        "headerCurrentPrice": "SON FİYAT",
+        "headerMarketValue": "PİYASA",
+        "headerPnl": "K/Z",
+        "open": "AÇIK",
+        "closed": "KAPALI",
+        "empty": "Pozisyon bulunmuyor."
+      },
+      "sentLabel": "OLUŞTURULDU",
+      "loading": "Rapor hazırlanıyor...",
+      "errorTitle": "Rapor oluşturulamadı",
+      "footer": "Bu rapor Finance Portal tarafından otomatik olarak üretilmiştir. Değerler oluşturma anındaki anlık verileri yansıtır ve yatırım tavsiyesi içermez.",
+      "page": "Sayfa {{page}} / {{total}}"
+    }
   }
 }

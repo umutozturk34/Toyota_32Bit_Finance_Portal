@@ -32,7 +32,7 @@ public class StockPricingStrategy extends BaseAssetPricingStrategy {
         Stock stock = cacheService.getSnapshot(assetCode);
         BigDecimal current = stock != null ? normalize(stock.getCurrentPrice()) : null;
         if (current != null && current.signum() > 0) return current;
-        return candleRepository.findFirstByStockSymbolOrderByCandleDateDesc(assetCode)
+        return candleRepository.findFirstByStockSymbolAndCloseGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
                 .map(c -> normalize(c.getClose()))
                 .orElse(current);
     }
@@ -50,7 +50,7 @@ public class StockPricingStrategy extends BaseAssetPricingStrategy {
         }
         BigDecimal price = normalize(stock.getCurrentPrice());
         if (price == null || price.signum() <= 0) {
-            price = candleRepository.findFirstByStockSymbolOrderByCandleDateDesc(assetCode)
+            price = candleRepository.findFirstByStockSymbolAndCloseGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
                     .map(c -> normalize(c.getClose()))
                     .orElse(price);
         }

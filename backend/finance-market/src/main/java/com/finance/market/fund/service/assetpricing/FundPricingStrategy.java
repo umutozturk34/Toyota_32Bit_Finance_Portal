@@ -32,7 +32,7 @@ public class FundPricingStrategy extends BaseAssetPricingStrategy {
         Fund fund = cacheService.getSnapshot(assetCode);
         BigDecimal current = fund != null ? normalize(fund.getPrice()) : null;
         if (current != null && current.signum() > 0) return current;
-        return candleRepository.findFirstByFundCodeOrderByCandleDateDesc(assetCode)
+        return candleRepository.findFirstByFundCodeAndPriceGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
                 .map(c -> normalize(c.getPrice()))
                 .orElse(current);
     }
@@ -50,7 +50,7 @@ public class FundPricingStrategy extends BaseAssetPricingStrategy {
         }
         BigDecimal price = normalize(fund.getPrice());
         if (price == null || price.signum() <= 0) {
-            price = candleRepository.findFirstByFundCodeOrderByCandleDateDesc(assetCode)
+            price = candleRepository.findFirstByFundCodeAndPriceGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
                     .map(c -> normalize(c.getPrice()))
                     .orElse(price);
         }

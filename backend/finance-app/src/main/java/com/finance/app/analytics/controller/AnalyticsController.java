@@ -51,9 +51,11 @@ public class AnalyticsController {
             @Parameter(description = "Period window", schema = @Schema(allowableValues = {"1M", "6M", "1Y", "3Y", "5Y"}))
             @RequestParam(defaultValue = "1Y") String period,
             @Parameter(description = "Benchmark macro indicator code (default CPI)")
-            @RequestParam(required = false) String benchmark) {
+            @RequestParam(required = false) String benchmark,
+            @Parameter(description = "Override comparison currency (TRY/USD/EUR); when null, derived from benchmark")
+            @RequestParam(required = false) String targetCurrency) {
         return ApiResponse.success(translator.translate("api.analytics.inflationBeatersComputed"),
-                inflationBeaterService.rank(period, benchmark));
+                inflationBeaterService.rank(period, benchmark, targetCurrency));
     }
 
     @GetMapping("/portfolio-series/{portfolioId}")

@@ -40,7 +40,7 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
         Crypto crypto = cacheService.getSnapshot(assetCode);
         BigDecimal current = crypto != null ? normalize(crypto.getCurrentPriceTry()) : null;
         if (current != null && current.signum() > 0) return current;
-        return candleRepository.findFirstByCryptoIdOrderByCandleDateDesc(assetCode)
+        return candleRepository.findFirstByCryptoIdAndCloseGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
                 .map(c -> normalize(convertCandleCloseToTry(assetCode, c.getClose())))
                 .orElse(current);
     }
@@ -74,7 +74,7 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
         }
         BigDecimal price = normalize(crypto.getCurrentPriceTry());
         if (price == null || price.signum() <= 0) {
-            price = candleRepository.findFirstByCryptoIdOrderByCandleDateDesc(assetCode)
+            price = candleRepository.findFirstByCryptoIdAndCloseGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
                     .map(c -> normalize(convertCandleCloseToTry(assetCode, c.getClose())))
                     .orElse(price);
         }

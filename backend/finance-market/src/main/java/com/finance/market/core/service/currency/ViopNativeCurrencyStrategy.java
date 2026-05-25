@@ -25,9 +25,20 @@ public class ViopNativeCurrencyStrategy implements NativeCurrencyStrategy {
     @Override
     public Currency resolve(String code) {
         if (code == null || code.isBlank()) return Currency.TRY;
-        return viopContractRepository.findBySymbol(code)
+        Currency fromContract = viopContractRepository.findBySymbol(code)
                 .map(c -> Currency.fromCode(c.getCurrency()))
                 .filter(Objects::nonNull)
-                .orElse(Currency.TRY);
+                .orElse(null);
+        if (fromContract != null && fromContract != Currency.TRY) return fromContract;
+        Currency fromSuffix = currencyFromSuffix(code);
+        if (fromSuffix != null) return fromSuffix;
+        return fromContract != null ? fromContract : Currency.TRY;
+    }
+
+    private static Currency currencyFromSuffix(String code) {
+        String upper = code.toUpperCase();
+        if (upper.endsWith("USD")) return Currency.USD;
+        if (upper.endsWith("EUR")) return Currency.EUR;
+        return null;
     }
 }

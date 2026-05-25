@@ -32,7 +32,7 @@ public class CommodityPricingStrategy extends BaseAssetPricingStrategy {
         Commodity commodity = cacheService.getSnapshot(assetCode);
         BigDecimal current = commodity != null ? normalize(commodity.getCurrentPrice()) : null;
         if (current != null && current.signum() > 0) return current;
-        return candleRepository.findFirstByCommodityCodeOrderByCandleDateDesc(assetCode)
+        return candleRepository.findFirstByCommodityCodeAndCloseGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
                 .map(c -> normalize(c.getClose()))
                 .orElse(current);
     }
@@ -50,7 +50,7 @@ public class CommodityPricingStrategy extends BaseAssetPricingStrategy {
         }
         BigDecimal price = normalize(commodity.getCurrentPrice());
         if (price == null || price.signum() <= 0) {
-            price = candleRepository.findFirstByCommodityCodeOrderByCandleDateDesc(assetCode)
+            price = candleRepository.findFirstByCommodityCodeAndCloseGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
                     .map(c -> normalize(c.getClose()))
                     .orElse(price);
         }

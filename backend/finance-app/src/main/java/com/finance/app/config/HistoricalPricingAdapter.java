@@ -3,7 +3,9 @@ package com.finance.app.config;
 import com.finance.common.config.AppProperties;
 
 
+import com.finance.common.model.Currency;
 import com.finance.market.core.dto.response.CandleResponse;
+import com.finance.market.core.service.AssetNativeCurrencyResolver;
 import com.finance.market.forex.dto.response.ForexCandleResponse;
 import com.finance.market.fund.dto.response.FundCandleResponse;
 import com.finance.market.viop.dto.ViopHistoryPoint;
@@ -28,18 +30,19 @@ import java.util.stream.Stream;
 @Component
 public class HistoricalPricingAdapter implements HistoricalPricingPort {
 
-    private static final String USD_CURRENCY_CODE = "USD";
-
     private final int priceScale;
     private final int rateLookbackDays;
     private final Map<MarketType, MarketHistoryProvider> providers;
+    private final AssetNativeCurrencyResolver nativeCurrencyResolver;
 
     public HistoricalPricingAdapter(List<MarketHistoryProvider> providerList,
                                      AppProperties appProperties,
-                                     PortfolioProperties portfolioProperties) {
+                                     PortfolioProperties portfolioProperties,
+                                     AssetNativeCurrencyResolver nativeCurrencyResolver) {
         this.providers = EnumDispatcher.from(MarketType.class, providerList, MarketHistoryProvider::getMarketType);
         this.priceScale = appProperties.getScale();
         this.rateLookbackDays = portfolioProperties.getHistoricalRateLookbackDays();
+        this.nativeCurrencyResolver = nativeCurrencyResolver;
     }
 
     @Override
@@ -52,29 +55,36 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
         }
         try {
             Map<LocalDate, BigDecimal> series = indexByDate(provider.getHistoryInRange(assetCode, from, to));
-            return type == MarketType.CRYPTO ? convertCryptoUsdToTry(series, from, to) : series;
+            if (type == MarketType.CRYPTO) return convertNativeSeriesToTry(series, Currency.USD, from, to);
+            if (type == MarketType.VIOP) {
+                Currency native_ = nativeCurrencyResolver.resolveNativeCurrency(type, assetCode);
+                if (native_ != Currency.TRY) return convertNativeSeriesToTry(series, native_, from, to);
+            }
+            return series;
         } catch (Exception e) {
             log.warn("Failed to fetch history for {}:{} - {}", type, assetCode, e.getMessage());
             return Map.of();
         }
     }
 
-    private Map<LocalDate, BigDecimal> convertCryptoUsdToTry(Map<LocalDate, BigDecimal> usdSeries,
-                                                              LocalDate from, LocalDate to) {
-        if (usdSeries.isEmpty()) return usdSeries;
+    private Map<LocalDate, BigDecimal> convertNativeSeriesToTry(Map<LocalDate, BigDecimal> nativeSeries,
+                                                                  Currency nativeCurrency,
+                                                                  LocalDate from, LocalDate to) {
+        if (nativeSeries.isEmpty()) return nativeSeries;
         MarketHistoryProvider forexProvider = providers.get(MarketType.FOREX);
         if (forexProvider == null) {
-            log.warn("Forex provider missing — crypto series stays in USD");
-            return usdSeries;
+            log.warn("Forex provider missing — series stays in {}", nativeCurrency);
+            return nativeSeries;
         }
         Map<LocalDate, BigDecimal> rates = indexByDate(
-                forexProvider.getHistoryInRange(USD_CURRENCY_CODE, from.minusDays(rateLookbackDays), to));
+                forexProvider.getHistoryInRange(nativeCurrency.name(),
+                        from.minusDays(rateLookbackDays), to));
         if (rates.isEmpty()) {
-            log.warn("{} rates empty for {}..{} — crypto series stays in USD", USD_CURRENCY_CODE, from, to);
-            return usdSeries;
+            log.warn("{} rates empty for {}..{} — series stays in {}", nativeCurrency, from, to, nativeCurrency);
+            return nativeSeries;
         }
         Map<LocalDate, BigDecimal> result = new HashMap<>();
-        for (var entry : usdSeries.entrySet()) {
+        for (var entry : nativeSeries.entrySet()) {
             BigDecimal rate = closestPriorRate(rates, entry.getKey());
             BigDecimal tryPrice = PriceCrossCalculator.safeMultiply(entry.getValue(), rate, priceScale);
             if (tryPrice != null) result.put(entry.getKey(), tryPrice);

@@ -54,7 +54,7 @@ public class PortfolioSummaryService {
 
     private BigDecimal latestCandleClose(String symbol) {
         if (symbol == null) return null;
-        return viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc(symbol)
+        return viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc(symbol, BigDecimal.ZERO)
                 .map(ViopCandle::getClose)
                 .orElse(null);
     }
@@ -227,10 +227,10 @@ public class PortfolioSummaryService {
             if (position.getViopContract() == null) {
                 continue;
             }
-            BigDecimal latestClose = latestCandleClose(position.getViopContract().getSymbol());
-            BigDecimal liveSource = latestClose != null
-                    ? latestClose
-                    : position.getViopContract().getLastPrice();
+            BigDecimal contractLast = position.getViopContract().getLastPrice();
+            BigDecimal liveSource = contractLast != null
+                    ? contractLast
+                    : latestCandleClose(position.getViopContract().getSymbol());
             BigDecimal currentTry = convertLiveToTry(liveSource,
                     position.getViopContract().getCurrency());
             BigDecimal pnl = position.realizedOrUnrealizedPnl(currentTry);

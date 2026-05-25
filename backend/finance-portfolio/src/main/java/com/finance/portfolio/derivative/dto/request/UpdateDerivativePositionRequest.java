@@ -12,5 +12,11 @@ public record UpdateDerivativePositionRequest(
         @NotNull DerivativeDirection direction,
         @NotNull @PastOrPresent LocalDate entryDate,
         BigDecimal entryPrice,
-        @NotNull @DecimalMin(value = "0.0001") BigDecimal quantityLot
-) { }
+        @NotNull @DecimalMin(value = "0.0001") BigDecimal quantityLot,
+        String priceCurrency
+) {
+    public UpdateDerivativePositionRequest(DerivativeDirection direction, LocalDate entryDate,
+                                            BigDecimal entryPrice, BigDecimal quantityLot) {
+        this(direction, entryDate, entryPrice, quantityLot, null);
+    }
+}

@@ -219,6 +219,8 @@ public class SnapshotCalculationService {
         Map<AssetKey, PortfolioAssetDailySnapshot> latest = new java.util.HashMap<>();
         for (PortfolioAssetDailySnapshot row : rows) {
             if (row.getAssetType() == null || row.getAssetCode() == null || row.getMarketValueTry() == null) continue;
+            if (row.getAssetType() == AssetType.VIOP
+                    && row.getQuantity() != null && row.getQuantity().signum() == 0) continue;
             AssetKey key = new AssetKey(row.getAssetType().marketType(), row.getAssetCode());
             latest.merge(key, row, SnapshotCalculationService::pickLatestSnapshot);
         }
@@ -281,7 +283,15 @@ public class SnapshotCalculationService {
             }
             AssetKey key = new AssetKey(MarketType.VIOP, dpos.getViopContract().getSymbol());
             BigDecimal rowMv = rowMvByKey.get(key);
-            if (rowMv != null && countedFromRows.add(key)) totals.addMarket(rowMv);
+            if (rowMv != null) {
+                if (countedFromRows.add(key)) totals.addMarket(rowMv);
+                continue;
+            }
+            boolean closedOnSnapDate = dpos.getCloseDate() != null && dpos.getCloseDate().equals(snapDate);
+            if (closedOnSnapDate) {
+                BigDecimal realized = dpos.realizedOrUnrealizedPnl(dpos.getClosePrice());
+                if (realized != null) totals.addRealizedClose(realized, entryNotional.add(realized));
+            }
         }
     }
 

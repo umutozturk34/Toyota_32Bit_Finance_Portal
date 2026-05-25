@@ -9,9 +9,15 @@ import java.time.LocalDate;
 public record CloseDerivativePositionRequest(
         @NotNull @PastOrPresent LocalDate closeDate,
         BigDecimal closePrice,
-        BigDecimal closeQuantityLot
+        BigDecimal closeQuantityLot,
+        String priceCurrency
 ) {
     public CloseDerivativePositionRequest(LocalDate closeDate, BigDecimal closePrice) {
-        this(closeDate, closePrice, null);
+        this(closeDate, closePrice, null, null);
+    }
+
+    public CloseDerivativePositionRequest(LocalDate closeDate, BigDecimal closePrice,
+                                           BigDecimal closeQuantityLot) {
+        this(closeDate, closePrice, closeQuantityLot, null);
     }
 }

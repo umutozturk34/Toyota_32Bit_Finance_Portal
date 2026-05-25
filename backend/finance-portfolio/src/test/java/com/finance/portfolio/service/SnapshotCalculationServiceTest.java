@@ -43,7 +43,7 @@ class SnapshotCalculationServiceTest {
     void setUp() {
         service = new SnapshotCalculationService(pricingPort, positionRepository, derivativePositionRepository,
                 dailySnapshotRepository, assetSnapshotRepository, new PortfolioProperties(),
-                new DerivativeSnapshotAssembler(pricingPort, assetSnapshotRepository));
+                new DerivativeSnapshotAssembler(pricingPort, assetSnapshotRepository, org.mockito.Mockito.mock(com.finance.market.core.service.HistoricalPricingPort.class)));
         org.mockito.Mockito.lenient().when(derivativePositionRepository.findByPortfolioId(org.mockito.ArgumentMatchers.anyLong()))
                 .thenReturn(List.of());
         org.mockito.Mockito.lenient().when(assetSnapshotRepository.findLatestPerAsset(org.mockito.ArgumentMatchers.anyLong()))
@@ -144,7 +144,7 @@ class SnapshotCalculationServiceTest {
 
         SnapshotCalculationService countedService = new SnapshotCalculationService(counting, positionRepository, derivativePositionRepository,
                 dailySnapshotRepository, assetSnapshotRepository, new PortfolioProperties(),
-                new DerivativeSnapshotAssembler(counting, assetSnapshotRepository));
+                new DerivativeSnapshotAssembler(counting, assetSnapshotRepository, org.mockito.Mockito.mock(com.finance.market.core.service.HistoricalPricingPort.class)));
 
         Portfolio portfolio = Portfolio.builder().id(1L).build();
         when(positionRepository.findByPortfolioId(1L))
@@ -258,9 +258,6 @@ class SnapshotCalculationServiceTest {
 
     @Test
     void aggregate_doesNotDoubleCountViopOnCloseDay_whenLotPartiallyClosed() {
-        // Arrange: 2 LONG lots, lot1 CLOSED TODAY at 110. lot2 still open.
-        // On close day, the asset snapshot rowMv already aggregates both lots (slice + remaining).
-        // The aggregate should NOT additionally add slice's exit via addRealizedClose on the close day itself.
         com.finance.market.viop.model.ViopContract c = derivativeContract(
                 "F_TEST0626", new BigDecimal("1"), new BigDecimal("110"));
         com.finance.portfolio.derivative.model.DerivativePosition lot1 = derivativePosition(
@@ -280,21 +277,16 @@ class SnapshotCalculationServiceTest {
                 .marketValueTry(new BigDecimal("220")).totalCostTry(new BigDecimal("200"))
                 .pnlTry(new BigDecimal("20")).build();
 
-        // Act: build aggregate for 2026-05-01 (the close day)
         PortfolioDailySnapshot snapshot = service.buildAggregateSnapshotAtFromRows(
                 portfolio, LocalDateTime.of(2026, 5, 1, 18, 0),
                 java.util.List.of(), java.util.List.of(lot1, lot2),
                 java.util.Map.of(), java.util.List.of(bothRow));
 
-        // Assert: total = consolidated rowMv only (220), no double counting of slice exit
         assertThat(snapshot.getTotalValueTry()).isEqualByComparingTo(new BigDecimal("220"));
     }
 
     @Test
     void aggregate_includesClosedViopExitValue_whenLotPartiallyClosed() {
-        // Arrange: 2 LONG VIOP lots same symbol, entry=100, size=1, qty=1 each.
-        // Lot1 closed yesterday at 110 (realized=10, exit notional=110).
-        // Lot2 still open today, latest snapshot row marketValue=110.
         com.finance.market.viop.model.ViopContract c = derivativeContract(
                 "F_TEST0626", new BigDecimal("1"), new BigDecimal("110"));
         com.finance.portfolio.derivative.model.DerivativePosition lot1 = derivativePosition(
@@ -314,14 +306,39 @@ class SnapshotCalculationServiceTest {
                 .marketValueTry(new BigDecimal("110")).totalCostTry(new BigDecimal("100"))
                 .pnlTry(new BigDecimal("10")).build();
 
-        // Act: build aggregate for 2026-05-02
         PortfolioDailySnapshot snapshot = service.buildAggregateSnapshotAtFromRows(
                 portfolio, LocalDateTime.of(2026, 5, 2, 12, 0),
                 java.util.List.of(), java.util.List.of(lot1, lot2),
                 java.util.Map.of(), java.util.List.of(lot2Row));
 
-        // Assert: total = lot2 active 110 + lot1 closed exit 110 = 220 (chart stays continuous)
         assertThat(snapshot.getTotalValueTry()).isEqualByComparingTo(new BigDecimal("220"));
+    }
+
+    @Test
+    void aggregate_keepsContinuousTotalOnCloseDay_whenPeerlessViopClose() {
+        com.finance.market.viop.model.ViopContract c = derivativeContract(
+                "O_EREGLE0526C35.00", new BigDecimal("1"), new BigDecimal("1.14"));
+        com.finance.portfolio.derivative.model.DerivativePosition pos = derivativePosition(
+                c, new BigDecimal("2.19"), new BigDecimal("1"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+        pos.closeWith(java.time.LocalDate.of(2026, 5, 24), new BigDecimal("1.14"),
+                com.finance.portfolio.derivative.model.DerivativeCloseReason.USER_CLOSED);
+        Portfolio portfolio = Portfolio.builder().id(1L).build();
+        PortfolioAssetDailySnapshot zeroRow = PortfolioAssetDailySnapshot.builder()
+                .portfolioId(1L).assetType(AssetType.VIOP).assetCode("O_EREGLE0526C35.00")
+                .snapshotDate(java.time.LocalDate.of(2026, 5, 24))
+                .createdAt(LocalDateTime.of(2026, 5, 24, 0, 0, 1))
+                .quantity(BigDecimal.ZERO).unitPriceTry(new BigDecimal("1.14"))
+                .marketValueTry(BigDecimal.ZERO).totalCostTry(BigDecimal.ZERO)
+                .pnlTry(BigDecimal.ZERO).build();
+
+        PortfolioDailySnapshot snapshot = service.buildAggregateSnapshotAtFromRows(
+                portfolio, LocalDateTime.of(2026, 5, 24, 18, 0),
+                java.util.List.of(), java.util.List.of(pos),
+                java.util.Map.of(), java.util.List.of(zeroRow));
+
+        assertThat(snapshot.getTotalValueTry()).isEqualByComparingTo(new BigDecimal("1.14"));
+        assertThat(snapshot.getCashTry()).isEqualByComparingTo(new BigDecimal("-1.05"));
     }
 
     @Test

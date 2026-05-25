@@ -32,7 +32,7 @@ public class ForexPricingStrategy extends BaseAssetPricingStrategy {
         Forex forex = cacheService.getSnapshot(assetCode);
         BigDecimal current = forex != null ? normalize(forex.getSellingPrice()) : null;
         if (current != null && current.signum() > 0) return current;
-        return candleRepository.findFirstByCurrencyCodeOrderByCandleDateDesc(assetCode)
+        return candleRepository.findFirstByCurrencyCodeAndSellingPriceGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
                 .map(c -> normalize(c.getSellingPrice()))
                 .orElse(current);
     }
@@ -45,7 +45,7 @@ public class ForexPricingStrategy extends BaseAssetPricingStrategy {
             BigDecimal normalized = normalize(exit);
             if (normalized != null && normalized.signum() > 0) return normalized;
         }
-        return candleRepository.findFirstByCurrencyCodeOrderByCandleDateDesc(assetCode)
+        return candleRepository.findFirstByCurrencyCodeAndSellingPriceGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
                 .map(c -> normalize(c.getBuyingPrice() != null ? c.getBuyingPrice() : c.getSellingPrice()))
                 .orElse(null);
     }
@@ -63,7 +63,7 @@ public class ForexPricingStrategy extends BaseAssetPricingStrategy {
         }
         BigDecimal price = normalize(forex.getSellingPrice());
         if (price == null || price.signum() <= 0) {
-            price = candleRepository.findFirstByCurrencyCodeOrderByCandleDateDesc(assetCode)
+            price = candleRepository.findFirstByCurrencyCodeAndSellingPriceGreaterThanOrderByCandleDateDesc(assetCode, BigDecimal.ZERO)
                     .map(c -> normalize(c.getSellingPrice()))
                     .orElse(price);
         }

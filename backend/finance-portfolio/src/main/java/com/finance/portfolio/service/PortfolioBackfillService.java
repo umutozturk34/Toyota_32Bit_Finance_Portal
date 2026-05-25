@@ -170,6 +170,15 @@ public class PortfolioBackfillService {
             log.info("Skipping snapshotToday for portfolio {} — live prices unavailable, will retry on next market update", portfolioId);
             return;
         }
+        List<PortfolioAssetDailySnapshot> derivativeRows = new ArrayList<>();
+        for (DerivativePosition dpos : derivativesOpenedByToday) {
+            if (dpos.getCloseDate() != null) continue;
+            PortfolioAssetDailySnapshot snap = calculator.buildDerivativeAssetSnapshot(portfolioId, dpos, ts);
+            if (snap != null) {
+                assetSnapshotRepository.save(snap);
+                derivativeRows.add(snap);
+            }
+        }
         List<PortfolioAssetDailySnapshot> todayRows = assetSnapshotRepository
                 .findByPortfolioIdAndSnapshotDate(portfolio.getId(), today);
         dailySnapshotRepository.saveAll(List.of(

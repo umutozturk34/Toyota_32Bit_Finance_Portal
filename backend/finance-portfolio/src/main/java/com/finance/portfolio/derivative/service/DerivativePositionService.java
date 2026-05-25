@@ -2,6 +2,8 @@ package com.finance.portfolio.derivative.service;
 
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.common.model.Currency;
+import com.finance.market.core.service.CurrencyConverter;
 import com.finance.market.viop.model.ViopContract;
 import com.finance.market.viop.repository.ViopContractRepository;
 import com.finance.portfolio.derivative.dto.request.CloseDerivativePositionRequest;
@@ -40,6 +42,7 @@ public class DerivativePositionService {
     private final ApplicationEventPublisher eventPublisher;
     private final DerivativeSnapshotMaintenance snapshotMaintenance;
     private final DerivativePriceResolver priceResolver;
+    private final CurrencyConverter currencyConverter;
 
     private void publishLotChange(Long portfolioId, DerivativePosition position, LocalDate from) {
         if (from == null) return;
@@ -76,7 +79,7 @@ public class DerivativePositionService {
             throw new BadRequestException("error.viop.entryAfterExpiry", request.contractSymbol());
         }
         BigDecimal entryPrice = request.entryPrice() != null
-                ? request.entryPrice()
+                ? toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate())
                 : priceResolver.resolveHistoricalPriceTry(contract, request.entryDate());
         if (entryPrice == null) {
             throw new BadRequestException("error.viop.entryPriceUnavailable", request.contractSymbol());
@@ -91,7 +94,7 @@ public class DerivativePositionService {
                 .build();
         if (request.closeDate() != null) {
             BigDecimal closePrice = request.closePrice() != null
-                    ? request.closePrice()
+                    ? toTryOnDate(request.closePrice(), request.priceCurrency(), request.closeDate())
                     : priceResolver.resolveHistoricalPriceTry(contract, request.closeDate());
             if (closePrice == null) {
                 throw new BadRequestException("error.viop.closePriceUnavailable", request.contractSymbol());
@@ -120,7 +123,7 @@ public class DerivativePositionService {
             throw new BadRequestException("error.derivative.closeBeforeEntry", positionId);
         }
         BigDecimal closePrice = request.closePrice() != null
-                ? request.closePrice()
+                ? toTryOnDate(request.closePrice(), request.priceCurrency(), request.closeDate())
                 : priceResolver.resolveHistoricalPriceTry(position.getViopContract(), request.closeDate());
         if (closePrice == null) {
             throw new BadRequestException("error.viop.closePriceUnavailable",
@@ -197,7 +200,7 @@ public class DerivativePositionService {
             throw new BadRequestException("error.derivative.closeBeforeEntry", positionId);
         }
         BigDecimal closePrice = request.closePrice() != null
-                ? request.closePrice()
+                ? toTryOnDate(request.closePrice(), request.priceCurrency(), request.closeDate())
                 : priceResolver.resolveHistoricalPriceTry(position.getViopContract(), request.closeDate());
         if (closePrice == null) {
             throw new BadRequestException("error.viop.closePriceUnavailable",
@@ -225,7 +228,7 @@ public class DerivativePositionService {
             throw new BadRequestException("error.viop.entryAfterExpiry", contract.getSymbol());
         }
         BigDecimal entryPrice = request.entryPrice() != null
-                ? request.entryPrice()
+                ? toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate())
                 : priceResolver.resolveHistoricalPriceTry(contract, request.entryDate());
         if (entryPrice == null) {
             throw new BadRequestException("error.viop.entryPriceUnavailable", contract.getSymbol());
@@ -299,6 +302,17 @@ public class DerivativePositionService {
             log.info("Auto-closed {} expired derivative positions", closed);
         }
         return closed;
+    }
+
+    private BigDecimal toTryOnDate(BigDecimal price, String priceCurrency, LocalDate date) {
+        if (price == null) return null;
+        if (priceCurrency == null || priceCurrency.isBlank()) return price;
+        Currency from = Currency.fromCode(priceCurrency);
+        if (from == null) {
+            throw new BadRequestException("error.portfolio.unsupportedCurrency", priceCurrency);
+        }
+        if (from == Currency.TRY) return price;
+        return currencyConverter.convertAtDate(price, from, Currency.TRY, date);
     }
 
     private Portfolio requireOwnedPortfolio(Long portfolioId, String userSub) {

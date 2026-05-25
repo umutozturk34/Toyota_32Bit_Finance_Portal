@@ -33,12 +33,13 @@ class DerivativeSnapshotAssemblerTest {
 
     @Mock private AssetPricingPort pricingPort;
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
+    @Mock private com.finance.market.core.service.HistoricalPricingPort historicalPricingPort;
 
     private DerivativeSnapshotAssembler assembler;
 
     @BeforeEach
     void setUp() {
-        assembler = new DerivativeSnapshotAssembler(pricingPort, assetSnapshotRepository);
+        assembler = new DerivativeSnapshotAssembler(pricingPort, assetSnapshotRepository, historicalPricingPort);
     }
 
     private ViopContract contract(String symbol, String size, String currency) {

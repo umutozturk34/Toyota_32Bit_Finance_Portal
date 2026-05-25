@@ -75,13 +75,13 @@ class AnalyticsControllerTest {
                 LocalDate.now().minusYears(1), LocalDate.now(),
                 "TP.TUFE1YI.T1", "TÜFE", new BigDecimal("30"), 1, 2,
                 Currency.TRY, List.of());
-        when(inflationBeaterService.rank("1Y", "TP.TUFE1YI.T1")).thenReturn(expected);
+        when(inflationBeaterService.rank("1Y", "TP.TUFE1YI.T1", null)).thenReturn(expected);
 
-        ApiResponse<InflationBeaterResponse> response = controller.inflationBeaters("1Y", "TP.TUFE1YI.T1");
+        ApiResponse<InflationBeaterResponse> response = controller.inflationBeaters("1Y", "TP.TUFE1YI.T1", null);
 
         assertThat(response.getData()).isSameAs(expected);
         assertThat(response.getMessage()).isEqualTo("tr:api.analytics.inflationBeatersComputed");
-        verify(inflationBeaterService).rank("1Y", "TP.TUFE1YI.T1");
+        verify(inflationBeaterService).rank("1Y", "TP.TUFE1YI.T1", null);
     }
 
     @Test
@@ -90,12 +90,12 @@ class AnalyticsControllerTest {
                 LocalDate.now().minusYears(1), LocalDate.now(),
                 "TP.TUFE1YI.T1", "TÜFE", BigDecimal.ZERO, 0, 0,
                 Currency.TRY, List.of());
-        when(inflationBeaterService.rank("1M", null)).thenReturn(expected);
+        when(inflationBeaterService.rank("1M", null, null)).thenReturn(expected);
 
-        ApiResponse<InflationBeaterResponse> response = controller.inflationBeaters("1M", null);
+        ApiResponse<InflationBeaterResponse> response = controller.inflationBeaters("1M", null, null);
 
         assertThat(response.isSuccess()).isTrue();
-        verify(inflationBeaterService).rank("1M", null);
+        verify(inflationBeaterService).rank("1M", null, null);
     }
 
     @Test

@@ -20,8 +20,8 @@ public class CommodityNativeCurrencyStrategy implements NativeCurrencyStrategy {
     public Currency resolve(String code) {
         if (code == null || code.isBlank()) return Currency.USD;
         String upper = code.toUpperCase();
-        if (upper.endsWith("TRY")) return Currency.TRY;
-        if (upper.endsWith("EUR")) return Currency.EUR;
+        if (upper.endsWith("TRY") || upper.endsWith("TRYG")) return Currency.TRY;
+        if (upper.endsWith("EUR") || upper.endsWith("EURG")) return Currency.EUR;
         return Currency.USD;
     }
 }

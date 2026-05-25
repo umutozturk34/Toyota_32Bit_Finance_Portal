@@ -99,18 +99,28 @@ public class InflationBeaterService {
     private AssetNativeCurrencyResolver nativeCurrencyResolver;
 
     public InflationBeaterResponse rank(String period, String benchmarkCode) {
+        return rank(period, benchmarkCode, null);
+    }
+
+    public InflationBeaterResponse rank(String period, String benchmarkCode, String targetCurrencyOverride) {
         Integer months = PERIOD_MONTHS.get(period);
         if (months == null) {
             throw new BadRequestException("error.analytics.unknownPeriod", period);
         }
         String code = (benchmarkCode != null && !benchmarkCode.isBlank())
                 ? benchmarkCode : DEFAULT_BENCHMARK;
-        String key = cacheKey(period, code);
-        InflationBeaterResponse response = cache.get(key, k -> compute(period, code, months));
+        Currency override = parseCurrencyOverride(targetCurrencyOverride);
+        String key = cacheKey(period, code, override);
+        InflationBeaterResponse response = cache.get(key, k -> compute(period, code, months, override));
         if (!isWorthCaching(response)) {
             cache.invalidate(key);
         }
         return response;
+    }
+
+    private static Currency parseCurrencyOverride(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        return Currency.fromCode(raw);
     }
 
     private boolean isWorthCaching(InflationBeaterResponse r) {
@@ -122,7 +132,7 @@ public class InflationBeaterService {
         if (months == null) return null;
         String code = (benchmarkCode != null && !benchmarkCode.isBlank())
                 ? benchmarkCode : DEFAULT_BENCHMARK;
-        return cache.getIfPresent(cacheKey(period, code));
+        return cache.getIfPresent(cacheKey(period, code, null));
     }
 
     @Async
@@ -131,11 +141,11 @@ public class InflationBeaterService {
         if (months == null) return;
         String code = (benchmarkCode != null && !benchmarkCode.isBlank())
                 ? benchmarkCode : DEFAULT_BENCHMARK;
-        String key = cacheKey(period, code);
+        String key = cacheKey(period, code, null);
         if (cache.getIfPresent(key) != null) return;
         if (!inFlight.add(key)) return;
         try {
-            InflationBeaterResponse result = compute(period, code, months);
+            InflationBeaterResponse result = compute(period, code, months, null);
             if (isWorthCaching(result)) {
                 cache.put(key, result);
             } else {
@@ -154,9 +164,9 @@ public class InflationBeaterService {
         if (months == null) return;
         String code = (benchmarkCode != null && !benchmarkCode.isBlank())
                 ? benchmarkCode : DEFAULT_BENCHMARK;
-        InflationBeaterResponse result = compute(period, code, months);
+        InflationBeaterResponse result = compute(period, code, months, null);
         if (isWorthCaching(result)) {
-            cache.put(cacheKey(period, code), result);
+            cache.put(cacheKey(period, code, null), result);
         } else {
             log.info("Beater refresh produced empty result, skipping cache period={} benchmark={}",
                     period, code);
@@ -167,11 +177,11 @@ public class InflationBeaterService {
         cache.invalidateAll();
     }
 
-    private String cacheKey(String period, String code) {
-        return period + "|" + code;
+    private String cacheKey(String period, String code, Currency override) {
+        return period + "|" + code + "|" + (override != null ? override.name() : "AUTO");
     }
 
-    private InflationBeaterResponse compute(String period, String code, int months) {
+    private InflationBeaterResponse compute(String period, String code, int months, Currency override) {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusMonths(months);
 
@@ -179,7 +189,9 @@ public class InflationBeaterService {
         boolean isIndex = benchmark.getUnit() == MacroUnit.INDEX
                 || benchmark.getUnit() == MacroUnit.NUMBER;
 
-        Currency comparisonCurrency = resolveComparisonCurrency(benchmark, code);
+        Currency comparisonCurrency = override != null
+                ? override
+                : resolveComparisonCurrency(benchmark, code);
 
         List<CuratedAsset> universe = buildUniverse();
         log.info("Computing beaters period={} benchmark={} currency={} universeSize={}",

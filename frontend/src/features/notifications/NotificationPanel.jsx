@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import {
-  BellOff, Inbox, Check, CheckCheck, Trash2, AlertCircle, Zap,
+  BellOff, Inbox, CheckCheck, Trash2, AlertCircle, Zap,
   Bell, Megaphone, Search, Newspaper, Briefcase, Sunrise, Sunset, RefreshCw, TrendingUp, X,
 } from 'lucide-react';
 import {
@@ -50,6 +50,39 @@ function useRelativeTime() {
   };
 }
 
+const AUTO_READ_DELAY_MS = 1500;
+
+function useAutoMarkRead(ref, isUnread, onRead) {
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || !isUnread) return;
+    let root = node.parentElement;
+    while (root && root !== document.body) {
+      const style = window.getComputedStyle(root);
+      const overflowY = style.overflowY;
+      if (overflowY === 'auto' || overflowY === 'scroll') break;
+      root = root.parentElement;
+    }
+    let timer = null;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          timer = setTimeout(() => onRead(), AUTO_READ_DELAY_MS);
+        } else if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      },
+      { root: root && root !== document.body ? root : null, threshold: 0.6 },
+    );
+    observer.observe(node);
+    return () => {
+      if (timer) clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [ref, isUnread, onRead]);
+}
+
 function NotificationRow({ item, onRead, onDelete }) {
   const { t } = useTranslation();
   const relativeTime = useRelativeTime();
@@ -57,17 +90,21 @@ function NotificationRow({ item, onRead, onDelete }) {
   const { Icon, labelKey, tint } = meta;
   const label = t(labelKey);
   const isUnread = item.readAt == null;
+  const rowRef = useRef(null);
+  useAutoMarkRead(rowRef, isUnread, () => onRead(item.id));
 
   return (
     <motion.div
+      ref={rowRef}
       layout
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: 80 }}
       transition={{ duration: 0.18 }}
+      onClick={() => { if (isUnread) onRead(item.id); }}
       className={`group relative rounded-lg border px-3 py-3 transition-colors ${
         isUnread
-          ? 'border-accent/30 bg-accent/5'
+          ? 'border-accent/30 bg-accent/5 cursor-pointer hover:bg-accent/8'
           : 'border-border-default bg-bg-elevated'
       }`}
     >
@@ -88,21 +125,11 @@ function NotificationRow({ item, onRead, onDelete }) {
       </div>
 
       <div className="mt-2 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {isUnread && (
-          <Button
-            variant="ghost"
-            size="xs"
-            leftIcon={<Check className="h-3 w-3" />}
-            onClick={() => onRead(item.id)}
-          >
-            {t('notificationPanel.markRead')}
-          </Button>
-        )}
         <Button
           variant="ghost"
           size="xs"
           leftIcon={<Trash2 className="h-3 w-3" />}
-          onClick={() => onDelete(item.id)}
+          onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
           className="hover:text-danger hover:bg-danger/5"
         >
           {t('notificationPanel.deleteOne')}
@@ -146,11 +173,18 @@ export default function NotificationPanel({ isOpen, onClose }) {
   useEffect(() => {
     const node = sentinelRef.current;
     if (!node || !hasNextPage || isFetchingNextPage) return;
+    let root = node.parentElement;
+    while (root && root !== document.body) {
+      const style = window.getComputedStyle(root);
+      const overflowY = style.overflowY;
+      if (overflowY === 'auto' || overflowY === 'scroll') break;
+      root = root.parentElement;
+    }
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) fetchNextPage();
       },
-      { rootMargin: '120px' },
+      { root: root && root !== document.body ? root : null, rootMargin: '120px' },
     );
     observer.observe(node);
     return () => observer.disconnect();

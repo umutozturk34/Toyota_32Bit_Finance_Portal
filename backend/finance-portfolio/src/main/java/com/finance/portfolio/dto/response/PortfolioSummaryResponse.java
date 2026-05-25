@@ -1,6 +1,7 @@
 package com.finance.portfolio.dto.response;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 public record PortfolioSummaryResponse(
         BigDecimal totalValueTry,
@@ -11,5 +12,6 @@ public record PortfolioSummaryResponse(
         BigDecimal dailyPnlPercent,
         BigDecimal realPnlTry,
         BigDecimal realPnlPercent,
-        BigDecimal cpiGrowthPercent
+        BigDecimal cpiGrowthPercent,
+        Map<String, CurrencyFramePct> frames
 ) {}

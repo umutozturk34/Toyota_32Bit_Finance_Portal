@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { unifiedMarketService } from '../services/unifiedMarketService';
+import { useAuth } from '../../features/auth/useAuth';
 import { STALE, GC } from '../constants/query';
 
 const FALLBACK_RATES = { TRY: 1, USD: null, EUR: null };
 
 export function useExchangeRates() {
+  const { isAuthenticated, loading } = useAuth();
   const { data } = useQuery({
     queryKey: ['exchangeRates'],
     queryFn: async () => {
@@ -19,6 +21,7 @@ export function useExchangeRates() {
     },
     staleTime: STALE.MEDIUM,
     gcTime: GC.LONG,
+    enabled: isAuthenticated && !loading,
   });
   return data || FALLBACK_RATES;
 }

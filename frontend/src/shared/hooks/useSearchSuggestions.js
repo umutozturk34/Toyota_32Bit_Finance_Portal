@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { unifiedMarketService } from '../services/unifiedMarketService';
+import { resolveSynonym, categoryToMacroType } from '../utils/searchSynonyms';
+
+function buildEffective(trimmed, filterType, locale) {
+  const synonym = resolveSynonym(trimmed, locale);
+  if (!synonym) return { search: trimmed, type: filterType };
+  const search = synonym.expandedQuery ?? (synonym.category ? '' : trimmed);
+  const macroType = synonym.category ? categoryToMacroType(synonym.category) : null;
+  const type = macroType ?? synonym.type ?? filterType;
+  return { search, type };
+}
 
 export default function useSearchSuggestions({
   query,
@@ -11,6 +22,7 @@ export default function useSearchSuggestions({
   enabled = true,
   onClose,
 }) {
+  const { i18n } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef(null);
 
@@ -23,13 +35,15 @@ export default function useSearchSuggestions({
     setActiveIndex(-1);
   }
 
+  const effective = buildEffective(trimmed, filterType, i18n.language);
+
   const { data, isFetching } = useQuery({
-    queryKey: ['searchSuggestions', trimmed, filterType, !!suggestFn],
+    queryKey: ['searchSuggestions', effective.search, effective.type, !!suggestFn],
     queryFn: () => suggestFn
-      ? suggestFn(trimmed)
+      ? suggestFn(effective.search || trimmed)
       : unifiedMarketService.search({
-          search: trimmed,
-          ...(filterType && { type: filterType }),
+          search: effective.search,
+          ...(effective.type && { type: effective.type }),
           size: pageSize,
         }),
     enabled: queryEnabled,

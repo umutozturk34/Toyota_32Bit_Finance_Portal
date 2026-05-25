@@ -49,12 +49,15 @@ class PortfolioSummaryServiceTest {
         counting = new CountingAssetPricingPort();
         responseMapper = new PortfolioResponseMapperImpl();
         AllocationCalculator allocationCalculator = new AllocationCalculator(
-                counting, positionRepository, derivativePositionRepository, responseMapper);
+                counting, positionRepository, derivativePositionRepository, responseMapper,
+                (type, code, from, to) -> java.util.Map.of());
         DerivativePositionFormatter derivativeFormatter = new DerivativePositionFormatter(
                 viopCandleRepository, counting);
+        MultiCurrencyPnlCalculator multiCurrency = new MultiCurrencyPnlCalculator(
+                (type, code, from, to) -> java.util.Map.of());
         service = new PortfolioSummaryService(counting, positionRepository, responseMapper,
                 assetSnapshotRepository, derivativePositionRepository, viopCandleRepository,
-                allocationCalculator, derivativeFormatter, realReturnCalculator);
+                allocationCalculator, derivativeFormatter, realReturnCalculator, multiCurrency);
         org.mockito.Mockito.lenient().when(derivativePositionRepository.findOpenByPortfolio(org.mockito.ArgumentMatchers.anyLong()))
                 .thenReturn(java.util.List.of());
         org.mockito.Mockito.lenient().when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc(org.mockito.ArgumentMatchers.anyString()))

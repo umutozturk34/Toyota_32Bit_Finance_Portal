@@ -43,7 +43,7 @@ class SnapshotCalculationServiceTest {
     void setUp() {
         service = new SnapshotCalculationService(pricingPort, positionRepository, derivativePositionRepository,
                 dailySnapshotRepository, assetSnapshotRepository, new PortfolioProperties(),
-                new DerivativeSnapshotAssembler(pricingPort, assetSnapshotRepository));
+                new DerivativeSnapshotAssembler(pricingPort, assetSnapshotRepository, org.mockito.Mockito.mock(com.finance.market.core.service.HistoricalPricingPort.class)));
         org.mockito.Mockito.lenient().when(derivativePositionRepository.findByPortfolioId(org.mockito.ArgumentMatchers.anyLong()))
                 .thenReturn(List.of());
         org.mockito.Mockito.lenient().when(assetSnapshotRepository.findLatestPerAsset(org.mockito.ArgumentMatchers.anyLong()))
@@ -144,7 +144,7 @@ class SnapshotCalculationServiceTest {
 
         SnapshotCalculationService countedService = new SnapshotCalculationService(counting, positionRepository, derivativePositionRepository,
                 dailySnapshotRepository, assetSnapshotRepository, new PortfolioProperties(),
-                new DerivativeSnapshotAssembler(counting, assetSnapshotRepository));
+                new DerivativeSnapshotAssembler(counting, assetSnapshotRepository, org.mockito.Mockito.mock(com.finance.market.core.service.HistoricalPricingPort.class)));
 
         Portfolio portfolio = Portfolio.builder().id(1L).build();
         when(positionRepository.findByPortfolioId(1L))
@@ -257,6 +257,91 @@ class SnapshotCalculationServiceTest {
     }
 
     @Test
+    void aggregate_doesNotDoubleCountViopOnCloseDay_whenLotPartiallyClosed() {
+        com.finance.market.viop.model.ViopContract c = derivativeContract(
+                "F_TEST0626", new BigDecimal("1"), new BigDecimal("110"));
+        com.finance.portfolio.derivative.model.DerivativePosition lot1 = derivativePosition(
+                c, new BigDecimal("100"), new BigDecimal("1"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+        lot1.closeWith(java.time.LocalDate.of(2026, 5, 1), new BigDecimal("110"),
+                com.finance.portfolio.derivative.model.DerivativeCloseReason.USER_CLOSED);
+        com.finance.portfolio.derivative.model.DerivativePosition lot2 = derivativePosition(
+                c, new BigDecimal("100"), new BigDecimal("1"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+        Portfolio portfolio = Portfolio.builder().id(1L).build();
+        PortfolioAssetDailySnapshot bothRow = PortfolioAssetDailySnapshot.builder()
+                .portfolioId(1L).assetType(AssetType.VIOP).assetCode("F_TEST0626")
+                .snapshotDate(java.time.LocalDate.of(2026, 5, 1))
+                .createdAt(LocalDateTime.of(2026, 5, 1, 0, 0))
+                .quantity(new BigDecimal("2")).unitPriceTry(new BigDecimal("110"))
+                .marketValueTry(new BigDecimal("220")).totalCostTry(new BigDecimal("200"))
+                .pnlTry(new BigDecimal("20")).build();
+
+        PortfolioDailySnapshot snapshot = service.buildAggregateSnapshotAtFromRows(
+                portfolio, LocalDateTime.of(2026, 5, 1, 18, 0),
+                java.util.List.of(), java.util.List.of(lot1, lot2),
+                java.util.Map.of(), java.util.List.of(bothRow));
+
+        assertThat(snapshot.getTotalValueTry()).isEqualByComparingTo(new BigDecimal("220"));
+    }
+
+    @Test
+    void aggregate_includesClosedViopExitValue_whenLotPartiallyClosed() {
+        com.finance.market.viop.model.ViopContract c = derivativeContract(
+                "F_TEST0626", new BigDecimal("1"), new BigDecimal("110"));
+        com.finance.portfolio.derivative.model.DerivativePosition lot1 = derivativePosition(
+                c, new BigDecimal("100"), new BigDecimal("1"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+        lot1.closeWith(java.time.LocalDate.of(2026, 5, 1), new BigDecimal("110"),
+                com.finance.portfolio.derivative.model.DerivativeCloseReason.USER_CLOSED);
+        com.finance.portfolio.derivative.model.DerivativePosition lot2 = derivativePosition(
+                c, new BigDecimal("100"), new BigDecimal("1"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+        Portfolio portfolio = Portfolio.builder().id(1L).build();
+        PortfolioAssetDailySnapshot lot2Row = PortfolioAssetDailySnapshot.builder()
+                .portfolioId(1L).assetType(AssetType.VIOP).assetCode("F_TEST0626")
+                .snapshotDate(java.time.LocalDate.of(2026, 5, 2))
+                .createdAt(LocalDateTime.of(2026, 5, 2, 0, 0))
+                .quantity(new BigDecimal("1")).unitPriceTry(new BigDecimal("110"))
+                .marketValueTry(new BigDecimal("110")).totalCostTry(new BigDecimal("100"))
+                .pnlTry(new BigDecimal("10")).build();
+
+        PortfolioDailySnapshot snapshot = service.buildAggregateSnapshotAtFromRows(
+                portfolio, LocalDateTime.of(2026, 5, 2, 12, 0),
+                java.util.List.of(), java.util.List.of(lot1, lot2),
+                java.util.Map.of(), java.util.List.of(lot2Row));
+
+        assertThat(snapshot.getTotalValueTry()).isEqualByComparingTo(new BigDecimal("220"));
+    }
+
+    @Test
+    void aggregate_keepsContinuousTotalOnCloseDay_whenPeerlessViopClose() {
+        com.finance.market.viop.model.ViopContract c = derivativeContract(
+                "O_EREGLE0526C35.00", new BigDecimal("1"), new BigDecimal("1.14"));
+        com.finance.portfolio.derivative.model.DerivativePosition pos = derivativePosition(
+                c, new BigDecimal("2.19"), new BigDecimal("1"),
+                com.finance.portfolio.derivative.model.DerivativeDirection.LONG);
+        pos.closeWith(java.time.LocalDate.of(2026, 5, 24), new BigDecimal("1.14"),
+                com.finance.portfolio.derivative.model.DerivativeCloseReason.USER_CLOSED);
+        Portfolio portfolio = Portfolio.builder().id(1L).build();
+        PortfolioAssetDailySnapshot zeroRow = PortfolioAssetDailySnapshot.builder()
+                .portfolioId(1L).assetType(AssetType.VIOP).assetCode("O_EREGLE0526C35.00")
+                .snapshotDate(java.time.LocalDate.of(2026, 5, 24))
+                .createdAt(LocalDateTime.of(2026, 5, 24, 0, 0, 1))
+                .quantity(BigDecimal.ZERO).unitPriceTry(new BigDecimal("1.14"))
+                .marketValueTry(BigDecimal.ZERO).totalCostTry(BigDecimal.ZERO)
+                .pnlTry(BigDecimal.ZERO).build();
+
+        PortfolioDailySnapshot snapshot = service.buildAggregateSnapshotAtFromRows(
+                portfolio, LocalDateTime.of(2026, 5, 24, 18, 0),
+                java.util.List.of(), java.util.List.of(pos),
+                java.util.Map.of(), java.util.List.of(zeroRow));
+
+        assertThat(snapshot.getTotalValueTry()).isEqualByComparingTo(new BigDecimal("1.14"));
+        assertThat(snapshot.getCashTry()).isEqualByComparingTo(new BigDecimal("-1.05"));
+    }
+
+    @Test
     void should_returnNullSnapshot_whenContractMissingOnDerivative() {
         com.finance.portfolio.derivative.model.DerivativePosition pos = derivativePosition(
                 null, new BigDecimal("35.20"), new BigDecimal("1"),
@@ -353,12 +438,6 @@ class SnapshotCalculationServiceTest {
                 .build();
         when(assetSnapshotRepository
                 .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
-                        org.mockito.ArgumentMatchers.eq(1L),
-                        org.mockito.ArgumentMatchers.eq(42L),
-                        org.mockito.ArgumentMatchers.any()))
-                .thenReturn(java.util.Optional.empty());
-        when(assetSnapshotRepository
-                .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
                         org.mockito.ArgumentMatchers.eq(1L),
                         org.mockito.ArgumentMatchers.eq(42L),
                         org.mockito.ArgumentMatchers.any()))
@@ -495,16 +574,11 @@ class SnapshotCalculationServiceTest {
     }
 
     @Test
-    void should_pickNewerPrior_when_olderEmptyButNewerPresent() {
+    void should_returnNullDailyPnl_when_priorSnapshotMissing() {
         com.finance.common.model.TrackedAsset tracked = com.finance.common.model.TrackedAsset.builder()
                 .id(42L)
                 .assetType(com.finance.common.model.TrackedAssetType.STOCK)
                 .assetCode("THYAO.IS")
-                .build();
-        PortfolioAssetDailySnapshot newer = PortfolioAssetDailySnapshot.builder()
-                .quantity(new BigDecimal("100"))
-                .unitPriceTry(new BigDecimal("48.0000"))
-                .createdAt(LocalDateTime.of(2026, 5, 1, 18, 0))
                 .build();
         when(assetSnapshotRepository
                 .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
@@ -512,23 +586,17 @@ class SnapshotCalculationServiceTest {
                         org.mockito.ArgumentMatchers.eq(42L),
                         org.mockito.ArgumentMatchers.any()))
                 .thenReturn(java.util.Optional.empty());
-        when(assetSnapshotRepository
-                .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
-                        org.mockito.ArgumentMatchers.eq(1L),
-                        org.mockito.ArgumentMatchers.eq(42L),
-                        org.mockito.ArgumentMatchers.any()))
-                .thenReturn(java.util.Optional.of(newer));
 
         PortfolioAssetDailySnapshot snap = service.buildAggregatedAssetSnapshot(
                 1L, AssetType.STOCK, "THYAO.IS", tracked,
                 LocalDateTime.of(2026, 5, 1, 18, 0),
                 new BigDecimal("100"), new BigDecimal("4000.0000"), new BigDecimal("50.0000"));
 
-        assertThat(snap.getDailyPnlTry()).isNotNull();
+        assertThat(snap.getDailyPnlTry()).isNull();
     }
 
     @Test
-    void should_pickClosestPrior_when_bothOlderAndNewerPresent() {
+    void should_useOlderAsPrior_when_olderSnapshotExists() {
         com.finance.common.model.TrackedAsset tracked = com.finance.common.model.TrackedAsset.builder()
                 .id(42L)
                 .assetType(com.finance.common.model.TrackedAssetType.STOCK)
@@ -540,23 +608,12 @@ class SnapshotCalculationServiceTest {
                 .unitPriceTry(new BigDecimal("45.0000"))
                 .createdAt(target.minusHours(24).minusHours(1))
                 .build();
-        PortfolioAssetDailySnapshot newer = PortfolioAssetDailySnapshot.builder()
-                .quantity(new BigDecimal("100"))
-                .unitPriceTry(new BigDecimal("48.0000"))
-                .createdAt(target.minusHours(24).plusHours(10))
-                .build();
         when(assetSnapshotRepository
                 .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
                         org.mockito.ArgumentMatchers.eq(1L),
                         org.mockito.ArgumentMatchers.eq(42L),
                         org.mockito.ArgumentMatchers.any()))
                 .thenReturn(java.util.Optional.of(older));
-        when(assetSnapshotRepository
-                .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
-                        org.mockito.ArgumentMatchers.eq(1L),
-                        org.mockito.ArgumentMatchers.eq(42L),
-                        org.mockito.ArgumentMatchers.any()))
-                .thenReturn(java.util.Optional.of(newer));
 
         PortfolioAssetDailySnapshot snap = service.buildAggregatedAssetSnapshot(
                 1L, AssetType.STOCK, "THYAO.IS", tracked, target,

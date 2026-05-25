@@ -33,10 +33,15 @@ public final class NewsCategoryResolver {
     private static final List<String> DEFINITIVE_CORPORATE = CONFIG.ruleKeywords().definiteCorporate();
     private static final List<String> FOREIGN_BOND_CONTEXT = CONFIG.ruleKeywords().foreignBondContext();
     private static final List<NewsCategory> SUMMARY_DIVERSITY = CONFIG.summaryDiversityCategories();
-    private static final int MIN_SCORE_THRESHOLD = 2;
-    private static final int DEFAULT_CATEGORY_BONUS = 3;
+    private static int MIN_SCORE_THRESHOLD = 2;
+    private static int DEFAULT_CATEGORY_BONUS = 3;
 
     private NewsCategoryResolver() {
+    }
+
+    static void overrideThresholds(int minScore, int categoryBonus) {
+        MIN_SCORE_THRESHOLD = minScore;
+        DEFAULT_CATEGORY_BONUS = categoryBonus;
     }
 
     public static NewsCategory resolve(String defaultCategory, String title, String description) {

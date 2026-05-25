@@ -116,7 +116,7 @@ export default function AllocationPie({ allocations }) {
                     fill={`url(#alloc-grad-0)`}
                     style={{ transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)' }}
                   />
-                  <circle cx={CENTER} cy={CENTER} r={INNER_RADIUS} fill={isDark ? '#0a0a0b' : '#ffffff'} />
+                  <circle cx={CENTER} cy={CENTER} r={INNER_RADIUS} fill={isDark ? '#0a0a0b' : '#ffffff'} pointerEvents="none" />
                 </g>
               );
             })() : arcs.map((arc, i) => {

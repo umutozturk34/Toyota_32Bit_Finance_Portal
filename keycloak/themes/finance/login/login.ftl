@@ -12,7 +12,7 @@
         </div>
 
         <#if realm.password>
-            <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post">
+            <form id="kc-form-login" onsubmit="var b = document.getElementById('kc-login'); if (b) b.disabled = true; return true;" action="${url.loginAction}" method="post">
                 <#if !usernameHidden??>
                     <div class="form-group">
                         <label for="username">

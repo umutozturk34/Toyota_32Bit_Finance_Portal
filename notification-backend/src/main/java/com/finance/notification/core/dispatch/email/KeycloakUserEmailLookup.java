@@ -1,6 +1,7 @@
 package com.finance.notification.core.dispatch.email;
 
 import com.finance.notification.config.NotificationCacheProperties;
+import com.finance.notification.config.NotificationKeycloakProperties;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.log4j.Log4j2;
@@ -33,12 +34,15 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
     private final String adminPassword;
     private final Cache<String, KeycloakUserProfile> profileCache;
     private final AtomicReference<TokenSnapshot> tokenSnapshot = new AtomicReference<>();
+    private final int searchMaxCap;
+    private final long tokenFallbackExpiresSeconds;
 
     public KeycloakUserEmailLookup(@Value("${keycloak.base-url}") String baseUrl,
                                    @Value("${keycloak.realm}") String realm,
                                    @Value("${keycloak.admin-user}") String adminUser,
                                    @Value("${keycloak.admin-password}") String adminPassword,
-                                   NotificationCacheProperties cacheProperties) {
+                                   NotificationCacheProperties cacheProperties,
+                                   NotificationKeycloakProperties keycloakProperties) {
         this.webClient = WebClient.builder().baseUrl(baseUrl).build();
         this.realm = realm;
         this.adminUser = adminUser;
@@ -47,6 +51,8 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
                 .maximumSize(cacheProperties.keycloakProfileMaxSize())
                 .expireAfterWrite(Duration.ofMinutes(cacheProperties.keycloakProfileTtlMinutes()))
                 .build();
+        this.searchMaxCap = keycloakProperties.searchMaxCap();
+        this.tokenFallbackExpiresSeconds = keycloakProperties.tokenFallbackExpiresSeconds();
     }
 
     @Override
@@ -88,7 +94,7 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
                     .uri(uriBuilder -> uriBuilder
                             .path("/admin/realms/{realm}/users")
                             .queryParam("search", query)
-                            .queryParam("max", Math.max(1, Math.min(max, 200)))
+                            .queryParam("max", Math.max(1, Math.min(max, searchMaxCap)))
                             .build(realm))
                     .header("Authorization", "Bearer " + token)
                     .retrieve()
@@ -139,7 +145,7 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
         if (response == null || !(response.get("access_token") instanceof String token)) {
             throw new IllegalStateException("Keycloak token response missing access_token");
         }
-        long expiresIn = response.get("expires_in") instanceof Number n ? n.longValue() : 60L;
+        long expiresIn = response.get("expires_in") instanceof Number n ? n.longValue() : tokenFallbackExpiresSeconds;
         TokenSnapshot fresh = new TokenSnapshot(token, Instant.now().plusSeconds(expiresIn - 30));
         tokenSnapshot.set(fresh);
         return token;

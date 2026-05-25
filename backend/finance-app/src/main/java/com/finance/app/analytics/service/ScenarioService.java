@@ -8,6 +8,7 @@ import com.finance.app.analytics.dto.response.ScenarioPoint;
 import com.finance.app.analytics.dto.response.ScenarioResponse;
 import com.finance.app.analytics.dto.response.ScenarioSeries;
 import com.finance.common.exception.BadRequestException;
+import com.finance.common.model.Currency;
 import com.finance.market.macro.model.MacroIndicator;
 import com.finance.market.macro.model.MacroUnit;
 import com.finance.market.macro.service.MacroIndicatorQueryService;
@@ -35,6 +36,7 @@ public class ScenarioService {
 
     private final UnifiedHistoryService historyService;
     private final MacroIndicatorQueryService macroQueryService;
+    private final AnalyticsPriceSeriesProvider priceSeriesProvider;
 
     public ScenarioResponse simulate(ScenarioRequest request) {
         LocalDate startDate = request.startDate();
@@ -43,32 +45,38 @@ public class ScenarioService {
             throw new BadRequestException("error.analytics.invalidDateRange");
         }
 
-        log.debug("Simulating scenario amount={} window={}..{} instruments={}",
-                request.amount(), startDate, endDate, request.instruments().size());
+        Currency target = request.targetCurrency() != null ? request.targetCurrency() : Currency.TRY;
 
-        BigDecimal cpiGrowthRatio = computeCpiGrowthRatio(startDate, endDate);
+        log.debug("Simulating scenario amount={} window={}..{} instruments={} target={}",
+                request.amount(), startDate, endDate, request.instruments().size(), target);
+
+        BigDecimal cpiGrowthRatio = target == Currency.TRY
+                ? computeCpiGrowthRatio(startDate, endDate)
+                : null;
         BigDecimal cpiGrowthPct = cpiGrowthRatio != null
                 ? cpiGrowthRatio.subtract(BigDecimal.ONE).multiply(HUNDRED).setScale(RETURN_SCALE, RoundingMode.HALF_UP)
                 : null;
 
         List<ScenarioSeries> series = request.instruments().stream()
-                .map(instrument -> simulateOne(instrument, request.amount(), startDate, endDate, cpiGrowthRatio))
+                .map(instrument -> simulateOne(instrument, request.amount(), startDate, endDate,
+                        cpiGrowthRatio, target))
                 .toList();
 
-        log.info("Scenario computed window={}..{} cpiGrowth={}% series={}",
-                startDate, endDate, cpiGrowthPct, series.size());
-        return new ScenarioResponse(request.amount(), startDate, endDate, cpiGrowthPct, series);
+        log.info("Scenario computed window={}..{} target={} cpiGrowth={}% series={}",
+                startDate, endDate, target, cpiGrowthPct, series.size());
+        return new ScenarioResponse(request.amount(), startDate, endDate, cpiGrowthPct, target, series);
     }
 
     private ScenarioSeries simulateOne(AnalyticsInstrument instrument, BigDecimal amount,
-                                       LocalDate startDate, LocalDate endDate, BigDecimal cpiGrowthRatio) {
-        List<HistoryPoint> raw = historyService.getSeries(instrument, startDate, endDate);
-        if (raw.isEmpty()) {
+                                       LocalDate startDate, LocalDate endDate,
+                                       BigDecimal cpiGrowthRatio, Currency target) {
+        PricedSeries series = priceSeriesProvider.fetch(instrument, startDate, endDate, target);
+        if (series.isEmpty()) {
             return emptySeries(instrument);
         }
         return shouldCompound(instrument)
-                ? simulateRate(instrument, raw, amount, startDate, endDate, cpiGrowthRatio)
-                : simulateMarket(instrument, raw, amount, endDate, cpiGrowthRatio);
+                ? simulateRate(instrument, series, amount, startDate, endDate, cpiGrowthRatio, series.nativeCurrency())
+                : simulateMarket(instrument, series, amount, endDate, cpiGrowthRatio, series.nativeCurrency());
     }
 
     private boolean shouldCompound(AnalyticsInstrument instrument) {
@@ -87,45 +95,74 @@ public class ScenarioService {
         return true;
     }
 
-    private ScenarioSeries simulateMarket(AnalyticsInstrument instrument, List<HistoryPoint> raw,
-                                          BigDecimal amount, LocalDate endDate, BigDecimal cpiGrowthRatio) {
+    private ScenarioSeries simulateMarket(AnalyticsInstrument instrument, PricedSeries series,
+                                          BigDecimal amount, LocalDate endDate, BigDecimal cpiGrowthRatio,
+                                          Currency nativeCurrency) {
+        List<HistoryPoint> raw = series.rawPoints();
         BigDecimal basePrice = raw.get(0).value();
         if (basePrice == null || basePrice.signum() <= 0) return emptySeries(instrument);
 
-        List<ScenarioPoint> points = raw.stream()
-                .map(p -> new ScenarioPoint(p.date(),
-                        amount.multiply(p.value()).divide(basePrice, VALUE_SCALE, RoundingMode.HALF_UP)))
-                .toList();
+        BigDecimal baseFx = series.baseFx();
+        if (baseFx == null || baseFx.signum() <= 0) return emptySeries(instrument);
+
+        List<ScenarioPoint> points = new ArrayList<>(raw.size());
+        for (HistoryPoint p : raw) {
+            BigDecimal fxAtPoint = series.fxAt(p.date());
+            if (fxAtPoint == null) continue;
+            BigDecimal valueTarget = amount
+                    .multiply(p.value())
+                    .multiply(fxAtPoint)
+                    .divide(basePrice.multiply(baseFx), VALUE_SCALE, RoundingMode.HALF_UP);
+            points.add(new ScenarioPoint(p.date(), valueTarget));
+        }
+        if (points.isEmpty()) return emptySeries(instrument);
 
         BigDecimal finalValue = points.get(points.size() - 1).value();
         boolean partial = raw.get(raw.size() - 1).date().isBefore(endDate.minusDays(7));
-        return buildSeries(instrument, points, finalValue, amount, cpiGrowthRatio, partial);
+        return buildSeries(instrument, points, finalValue, amount, cpiGrowthRatio, nativeCurrency, partial);
     }
 
-    private ScenarioSeries simulateRate(AnalyticsInstrument instrument, List<HistoryPoint> raw,
+    private ScenarioSeries simulateRate(AnalyticsInstrument instrument, PricedSeries series,
                                         BigDecimal amount, LocalDate startDate, LocalDate endDate,
-                                        BigDecimal cpiGrowthRatio) {
+                                        BigDecimal cpiGrowthRatio, Currency nativeCurrency) {
+        List<HistoryPoint> raw = series.rawPoints();
+        BigDecimal baseFx = series.baseFx();
+        if (baseFx == null || baseFx.signum() <= 0) return emptySeries(instrument);
+
         List<ScenarioPoint> points = new ArrayList<>();
         points.add(new ScenarioPoint(startDate, amount));
 
-        BigDecimal currentValue = amount;
-        LocalDate cursor = startDate;
+        LocalDate firstObservation = raw.get(0).date();
+        if (startDate.isBefore(firstObservation)) {
+            points.add(new ScenarioPoint(firstObservation, amount));
+        }
 
-        for (int i = 0; i < raw.size(); i++) {
+        BigDecimal compoundFactor = BigDecimal.ONE;
+        LocalDate cursor = firstObservation.isAfter(startDate) ? firstObservation : startDate;
+
+        for (int i = 0; i + 1 < raw.size(); i++) {
             BigDecimal annualRatePct = raw.get(i).value();
             if (annualRatePct == null) continue;
 
-            LocalDate stepEnd = (i + 1 < raw.size()) ? raw.get(i + 1).date() : endDate;
+            LocalDate stepEnd = raw.get(i + 1).date();
             long days = ChronoUnit.DAYS.between(cursor, stepEnd);
             if (days <= 0) continue;
 
-            currentValue = applyCompound(currentValue, annualRatePct, days);
+            compoundFactor = applyCompound(compoundFactor, annualRatePct, days);
             cursor = stepEnd;
-            points.add(new ScenarioPoint(stepEnd, currentValue));
+            BigDecimal fxAtPoint = series.fxAt(stepEnd);
+            if (fxAtPoint == null) continue;
+            BigDecimal valueTarget = amount
+                    .multiply(compoundFactor)
+                    .multiply(fxAtPoint)
+                    .divide(baseFx, VALUE_SCALE, RoundingMode.HALF_UP);
+            points.add(new ScenarioPoint(stepEnd, valueTarget));
         }
 
+        if (points.size() <= 1) return emptySeries(instrument);
         boolean partial = cursor.isBefore(endDate.minusDays(7));
-        return buildSeries(instrument, points, currentValue, amount, cpiGrowthRatio, partial);
+        BigDecimal finalValue = points.get(points.size() - 1).value();
+        return buildSeries(instrument, points, finalValue, amount, cpiGrowthRatio, nativeCurrency, partial);
     }
 
     private BigDecimal applyCompound(BigDecimal value, BigDecimal annualRatePct, long days) {
@@ -137,14 +174,14 @@ public class ScenarioService {
 
     private ScenarioSeries buildSeries(AnalyticsInstrument instrument, List<ScenarioPoint> points,
                                        BigDecimal finalValue, BigDecimal amount,
-                                       BigDecimal cpiGrowthRatio, boolean partial) {
+                                       BigDecimal cpiGrowthRatio, Currency nativeCurrency, boolean partial) {
         BigDecimal nominalPct = computeNominalPct(finalValue, amount);
         BigDecimal realPct = computeRealPct(finalValue, amount, cpiGrowthRatio);
-        return new ScenarioSeries(instrument, points, finalValue, nominalPct, realPct, partial);
+        return new ScenarioSeries(instrument, points, finalValue, nominalPct, realPct, nativeCurrency, partial);
     }
 
     private ScenarioSeries emptySeries(AnalyticsInstrument instrument) {
-        return new ScenarioSeries(instrument, List.of(), null, null, null, true);
+        return new ScenarioSeries(instrument, List.of(), null, null, null, null, true);
     }
 
     private BigDecimal computeNominalPct(BigDecimal finalValue, BigDecimal amount) {
@@ -167,11 +204,33 @@ public class ScenarioService {
                     CPI_CODE, startDate, endDate, cpi.size());
             return null;
         }
-        BigDecimal cpiStart = cpi.get(0).value();
-        BigDecimal cpiEnd = cpi.get(cpi.size() - 1).value();
-        if (cpiStart == null || cpiStart.signum() <= 0 || cpiEnd == null) {
-            log.warn("CPI values invalid for window {}..{} (start={}, end={})",
-                    startDate, endDate, cpiStart, cpiEnd);
+        HistoryPoint baseline = null;
+        HistoryPoint latest = null;
+        for (HistoryPoint p : cpi) {
+            if (p.date() == null || p.value() == null) continue;
+            if (!p.date().isAfter(endDate) && (latest == null || p.date().isAfter(latest.date()))) {
+                latest = p;
+            }
+            if (!p.date().isAfter(startDate) && (baseline == null || p.date().isAfter(baseline.date()))) {
+                baseline = p;
+            }
+        }
+        if (baseline == null) {
+            for (HistoryPoint p : cpi) {
+                if (p.date() == null || p.value() == null) continue;
+                if (!p.date().isBefore(startDate) && (baseline == null || p.date().isBefore(baseline.date()))) {
+                    baseline = p;
+                }
+            }
+        }
+        if (baseline == null || latest == null) {
+            log.warn("CPI values insufficient for window {}..{}", startDate, endDate);
+            return null;
+        }
+        BigDecimal cpiStart = baseline.value();
+        BigDecimal cpiEnd = latest.value();
+        if (cpiStart.signum() <= 0) {
+            log.warn("CPI baseline non-positive for window {}..{}", startDate, endDate);
             return null;
         }
         return cpiEnd.divide(cpiStart, 10, RoundingMode.HALF_UP);

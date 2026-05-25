@@ -1,7 +1,5 @@
 package com.finance.market.core.service;
 
-import com.finance.market.core.service.AssetRegistryService;
-
 import com.finance.market.core.dto.internal.TrackedAssetUpsertCommand;
 import com.finance.market.core.dto.request.TrackedAssetOrderItemRequest;
 import com.finance.market.core.dto.response.TrackedAssetResponse;

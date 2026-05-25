@@ -2,17 +2,24 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/useTheme';
-import { useRateHistory } from '../../../shared/hooks/useRateHistory';
+import {
+  chartPalette,
+  timeAxis,
+  valueAxis,
+  dataZoomBlock,
+  tooltipBase,
+  lineSeriesDefaults,
+  legendBase,
+} from '../../../shared/charts/echartsTheme';
 import { SERIES_COLORS } from '../constants';
 
 export default function CompareChart({ scenario, height = 380 }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { currency: displayCurrency, convertAt } = useRateHistory();
-  const targetCurrency = displayCurrency === 'ORIGINAL' ? 'TRY' : displayCurrency;
+  const scenarioCurrency = scenario?.targetCurrency || 'TRY';
   const option = useMemo(
-    () => buildOption(scenario, isDark, targetCurrency, convertAt),
-    [scenario, isDark, targetCurrency, convertAt],
+    () => buildOption(scenario, isDark, scenarioCurrency),
+    [scenario, isDark, scenarioCurrency],
   );
 
   if (!scenario || !scenario.series?.length) {
@@ -33,50 +40,29 @@ export default function CompareChart({ scenario, height = 380 }) {
   );
 }
 
-function buildOption(scenario, isDark, displayCurrency, convertAt) {
-  const muted = isDark ? '#6b6b7a' : '#94a3b8';
-  const grid = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-  const tooltipBg = isDark ? 'rgba(12,12,20,0.96)' : 'rgba(255,255,255,0.98)';
-  const tooltipFg = isDark ? '#e2e2ea' : '#1a1a2e';
+function buildOption(scenario, isDark, displayCurrency) {
+  const palette = chartPalette(isDark);
 
   const series = (scenario?.series || []).map((s, idx) => {
     const color = SERIES_COLORS[idx % SERIES_COLORS.length];
-    const data = (s.points || []).map((p) => {
-      const tryValue = Number(p.value);
-      const displayValue = convertAt ? convertAt(tryValue, 'TRY', p.date) : tryValue;
-      return [new Date(p.date).getTime(), Number(displayValue ?? tryValue)];
-    });
-    const label = s.instrument?.code || '';
+    const data = (s.points || []).map((p) => [new Date(p.date).getTime(), Number(p.value)]);
     return {
-      name: label,
-      type: 'line',
-      smooth: data.length < 200,
-      showSymbol: false,
-      sampling: 'lttb',
+      ...lineSeriesDefaults(color, data.length),
+      name: s.instrument?.code || '',
       data,
-      itemStyle: { color },
-      lineStyle: { width: 2, color },
     };
   });
+
+  const totalPoints = series.reduce((acc, s) => acc + (s.data?.length || 0), 0);
+  const showZoom = totalPoints >= 30;
 
   return {
     backgroundColor: 'transparent',
     animation: true,
-    grid: { left: 64, right: 24, top: 36, bottom: 32 },
-    legend: {
-      type: 'scroll',
-      top: 6,
-      textStyle: { color: muted, fontSize: 11, fontFamily: 'ui-monospace,monospace' },
-      icon: 'circle',
-      itemWidth: 8,
-      itemHeight: 8,
-    },
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: tooltipBg,
-      borderWidth: 0,
-      textStyle: { color: tooltipFg, fontSize: 11 },
-      axisPointer: { type: 'cross', label: { backgroundColor: muted } },
+    grid: { left: 64, right: 24, top: 36, bottom: showZoom ? 64 : 32 },
+    dataZoom: showZoom ? dataZoomBlock(palette) : undefined,
+    legend: legendBase(palette),
+    tooltip: tooltipBase(palette, {
       formatter: (params) => {
         if (!params?.length) return '';
         const date = new Date(params[0].value[0]).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -90,29 +76,18 @@ function buildOption(scenario, isDark, displayCurrency, convertAt) {
             </div>`;
           }).join('');
         return `<div style="padding:6px 4px;min-width:200px">
-          <div style="font-size:10px;color:${tooltipFg};opacity:0.7;margin-bottom:6px">${date}</div>
+          <div style="font-size:10px;color:${palette.tooltipFg};opacity:0.7;margin-bottom:6px">${date}</div>
           ${rows}
         </div>`;
       },
-    },
-    xAxis: {
-      type: 'time',
-      axisLine: { lineStyle: { color: grid } },
-      axisTick: { show: false },
-      axisLabel: { color: muted, fontSize: 10 },
-      splitLine: { show: false },
-    },
-    yAxis: {
-      type: 'value',
-      scale: true,
-      axisLine: { show: false },
-      axisTick: { show: false },
+    }),
+    xAxis: timeAxis(palette, { axisLine: { lineStyle: { color: palette.grid } } }),
+    yAxis: valueAxis(palette, {
       axisLabel: {
-        color: muted, fontSize: 10,
+        color: palette.muted, fontSize: 10,
         formatter: (val) => Number(val).toLocaleString('tr-TR', { maximumFractionDigits: 0 }),
       },
-      splitLine: { lineStyle: { color: grid, type: 'dashed' } },
-    },
+    }),
     series,
   };
 }

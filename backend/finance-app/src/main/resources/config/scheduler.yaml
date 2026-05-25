@@ -27,6 +27,10 @@ app:
       evening-cron: "0 0 23 * * *"
     macro:
       daily-cron: "0 30 17 * * *"
+    beater:
+      daily-cron: "0 0 3 * * *"
+      periods: "1Y,5Y,6M,3M,1M"
+      benchmarks: "TP.TUFE1YI.T1,TP.TUFE1.S00,TP.TG1.Y01"
 
   task:
     max-history: 50

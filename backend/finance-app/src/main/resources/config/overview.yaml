@@ -43,3 +43,8 @@ app:
         min:      { w: 3, h: 6 }
         max:      { w: 12, h: 24 }
         max-items: 12
+      BENCHMARK_BEATERS:
+        defaults: { w: 4, h: 6 }
+        min:      { w: 3, h: 4 }
+        max:      { w: 8, h: 14 }
+        max-items: 20

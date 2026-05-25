@@ -57,4 +57,23 @@ class DomainEventsTest {
 
         assertThat(a.eventId()).isNotEqualTo(b.eventId());
     }
+
+    @Test
+    void macroIndicatorsUpdatedEvent_of_copiesChangedCodes() {
+        MacroIndicatorsUpdatedEvent event = MacroIndicatorsUpdatedEvent.of(
+                "scheduler", java.util.List.of("CPI", "PPI"));
+
+        assertThat(event.eventId()).isNotBlank();
+        assertThat(event.source()).isEqualTo("scheduler");
+        assertThat(event.changedCodes()).containsExactly("CPI", "PPI");
+        assertThat(event.partitionKey()).isEqualTo(event.eventId());
+        assertThat(event.occurredAt()).isNotNull();
+    }
+
+    @Test
+    void macroIndicatorsUpdatedEvent_of_replacesNullCodesWithEmptyList() {
+        MacroIndicatorsUpdatedEvent event = MacroIndicatorsUpdatedEvent.of("scheduler", null);
+
+        assertThat(event.changedCodes()).isEmpty();
+    }
 }

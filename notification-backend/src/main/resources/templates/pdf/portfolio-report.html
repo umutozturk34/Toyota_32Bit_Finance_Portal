@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${locale}">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="#{pdf.report.title}">Portfolio Report</title>
+    <style th:inline="text">
+        @page { size: A4; margin: 0; }
+        html, body {
+            margin: 0; padding: 0;
+            background: [[${palette.bg}]];
+            color: [[${palette.fg}]];
+            font-family: 'Noto Sans', 'DejaVu Sans', 'Liberation Sans', 'Segoe UI', Helvetica, Arial, sans-serif;
+            font-size: 11px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .num { font-family: 'DejaVu Sans Mono', 'Liberation Mono', monospace; }
+        .page {
+            box-sizing: border-box;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 8mm 9mm;
+            background: [[${palette.bg}]];
+            page-break-after: always;
+            break-after: page;
+        }
+        .page:last-child { page-break-after: auto; break-after: auto; }
+        .keep { page-break-inside: avoid; break-inside: avoid; }
+
+        .brand-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 4px 18px;
+        }
+        .brand-mark {
+            width: 44px; height: 44px; border-radius: 12px; color: #fff;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 22px; font-weight: 800;
+            box-shadow: 0 6px 18px -4px rgba(99,102,241,0.5);
+        }
+        .brand-name { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; line-height: 1.1; color: [[${palette.fg}]]; }
+        .brand-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: 1.8px; text-transform: uppercase; margin-top: 5px; color: [[${palette.muted}]]; }
+        .brand-meta { font-size: 10px; color: [[${palette.subtle}]]; letter-spacing: 0.4px; }
+
+        .card {
+            background: [[${palette.card}]];
+            border: 1px solid [[${palette.border}]];
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .card-bar {
+            height: 2px;
+            background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+        }
+        .card-head { padding: 10px 14px 1px; }
+        .card-body { padding: 7px 14px 12px; }
+        .card-title { margin: 0; font-size: 11.5px; font-weight: 700; letter-spacing: -0.2px; color: [[${palette.fg}]]; }
+        .card-subtitle { margin: 3px 0 0; font-size: 10px; color: [[${palette.muted}]]; line-height: 1.4; }
+        .eyebrow { font-size: 8px; font-weight: 700; letter-spacing: 2px; color: #a78bfa; text-transform: uppercase; margin: 0 0 4px; }
+
+        .hero-value {
+            font-size: 22px; font-weight: 700; color: [[${palette.fg}]];
+            line-height: 1.05; letter-spacing: -0.3px;
+        }
+        .hero-label { font-size: 8.5px; font-weight: 700; letter-spacing: 1.3px; color: [[${palette.subtle}]]; text-transform: uppercase; margin-bottom: 4px; }
+        .hero-pill {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 9px; border-radius: 999px;
+            font-weight: 700; font-size: 10px;
+        }
+        .hero-daily { font-size: 9px; color: [[${palette.subtle}]]; margin-top: 4px; }
+
+        .info-panel {
+            background: [[${palette.infoBg}]];
+            border: 1px solid [[${palette.border}]];
+            border-radius: 8px;
+            padding: 6px 12px;
+            margin-top: 9px;
+        }
+        .info-panel table { width: 100%; border-collapse: collapse; }
+        .info-panel td { padding: 2px 0; font-size: 9.5px; }
+        .info-panel td.label { color: [[${palette.muted}]]; }
+        .info-panel td.value { text-align: right; font-weight: 600; font-size: 10px; color: [[${palette.fg}]]; }
+
+        .gain { color: [[${palette.successFg}]] !important; }
+        .loss { color: [[${palette.dangerFg}]] !important; }
+        .pill-gain { background: [[${palette.successBg}]]; color: [[${palette.successFg}]]; }
+        .pill-loss { background: [[${palette.dangerBg}]]; color: [[${palette.dangerFg}]]; }
+
+        .alloc-bar {
+            display: flex; width: 100%; height: 14px; border-radius: 7px;
+            overflow: hidden; background: [[${palette.infoBg}]];
+            border: 1px solid [[${palette.border}]];
+        }
+        .alloc-bar div { height: 100%; }
+        .alloc-table { width: 100%; border-collapse: collapse; margin-top: 0; }
+        .alloc-table th { text-align: left; padding: 0 4px 4px; font-size: 7.5px; font-weight: 700; letter-spacing: 0.5px; color: [[${palette.subtle}]]; text-transform: uppercase; }
+        .alloc-table th.r, .alloc-table td.r { text-align: right; }
+        .alloc-table td { padding: 3px 4px; font-size: 9.5px; color: [[${palette.fg}]]; }
+        .alloc-table td.share { color: [[${palette.muted}]]; }
+        .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; }
+
+        .realized-grid { display: table; width: 100%; border-spacing: 14px 0; margin-left: -7px; margin-right: -7px; }
+        .realized-row { margin-bottom: 6px; }
+        .realized-line { font-size: 10px; }
+        .realized-bar-bg { margin-top: 3px; height: 3px; }
+        .realized-cost { margin-top: 2px; font-size: 8.5px; }
+        .realized-col-title { font-size: 8.5px; margin: 0 0 6px; }
+
+        .realized-grid { display: table; width: 100%; border-spacing: 24px 0; margin-left: -12px; margin-right: -12px; }
+        .realized-col { display: table-cell; width: 50%; vertical-align: top; }
+        .realized-col-title { font-size: 10px; font-weight: 700; letter-spacing: 1.4px; color: [[${palette.subtle}]]; text-transform: uppercase; margin: 0 0 10px; }
+        .realized-row { margin-bottom: 12px; }
+        .realized-line { display: flex; justify-content: space-between; font-size: 11.5px; }
+        .realized-name { color: [[${palette.fg}]]; font-weight: 600; }
+        .realized-bar-bg { margin-top: 5px; height: 4px; border-radius: 2px; background: [[${palette.infoBg}]]; overflow: hidden; }
+        .realized-bar-fill { height: 100%; opacity: 0.85; }
+        .realized-cost { margin-top: 4px; font-size: 9.5px; color: [[${palette.subtle}]]; }
+
+        .pos-table { width: 100%; border-collapse: collapse; }
+        .pos-table th {
+            font-size: 8.5px; font-weight: 700; letter-spacing: 0.6px;
+            color: [[${palette.subtle}]]; text-transform: uppercase;
+            padding: 0 6px 10px; text-align: left;
+            border-bottom: 1px solid [[${palette.border}]];
+            white-space: nowrap;
+        }
+        .pos-table th.r { text-align: right; }
+        .pos-table td {
+            font-size: 10.5px; color: [[${palette.fg}]];
+            padding: 7px 6px; border-bottom: 1px solid [[${palette.border}]];
+            white-space: nowrap;
+        }
+        .pos-table td.r { text-align: right; }
+        .pos-table td.asset { white-space: normal; }
+        .pos-table tr.keep { page-break-inside: avoid; break-inside: avoid; }
+        .pos-table thead { display: table-header-group; }
+        .pos-asset-code { font-weight: 700; color: [[${palette.fg}]]; }
+        .pos-asset-name { font-size: 9.5px; color: [[${palette.muted}]]; margin-top: 2px; }
+        .pos-status {
+            font-size: 8.5px; font-weight: 700; letter-spacing: 0.9px;
+            padding: 2px 8px; border-radius: 4px; display: inline-block;
+        }
+        .pos-status.open { background: [[${palette.successBg}]]; color: [[${palette.successFg}]]; }
+        .pos-status.closed { background: [[${palette.infoBg}]]; color: [[${palette.subtle}]]; }
+
+        footer.report-footer {
+            margin-top: 18px;
+            padding-top: 12px;
+            border-top: 1px solid [[${palette.border}]];
+            font-size: 10px; color: [[${palette.subtle}]];
+            line-height: 1.55;
+        }
+        footer.report-footer .sent-tag {
+            font-weight: 700; letter-spacing: 1.2px; color: [[${palette.muted}]];
+        }
+    </style>
+</head>
+<body>
+
+<div class="page">
+
+<header class="brand-header keep">
+    <div style="display:flex;align-items:center;gap:14px;">
+        <span class="brand-mark">↗</span>
+        <div>
+            <div class="brand-name" th:text="#{pdf.brand}">Finance Portal</div>
+            <div class="brand-eyebrow" th:text="#{pdf.brand.eyebrow}">PORTFOLIO REPORT</div>
+        </div>
+    </div>
+    <div class="brand-meta num" th:text="${generatedAt}">2026-05-25 10:30</div>
+</header>
+
+<section class="card keep">
+    <div class="card-bar"></div>
+    <div class="card-body">
+        <div style="display:flex;justify-content:space-between;gap:24px;align-items:flex-start;">
+            <div>
+                <div class="hero-label" th:text="#{pdf.summary.marketValue}">MARKET VALUE</div>
+                <div class="hero-value num"
+                     th:text="${summary != null and summary.totalValueTry() != null}
+                         ? ${currencySymbol} + ' ' + ${#numbers.formatDecimal(summary.totalValueTry(), 1, decimalGroupSep, 2, decimalSep)}
+                         : '—'">—</div>
+                <div style="margin-top:8px;font-size:11.5px;color:[[${palette.muted}]];font-weight:500;"
+                     th:text="${portfolioName}">Portfolio</div>
+            </div>
+            <div style="text-align:right;" th:if="${summary != null and summary.totalPnlTry() != null}">
+                <span class="hero-pill num"
+                      th:classappend="${summary.totalPnlTry().signum() >= 0} ? 'pill-gain' : 'pill-loss'">
+                    <span style="font-size:9px;" th:text="${summary.totalPnlTry().signum() >= 0} ? '▲' : '▼'">▲</span>
+                    <span th:text="${(summary.totalPnlTry().signum() >= 0 ? '+' : '') + currencySymbol + ' ' + #numbers.formatDecimal(summary.totalPnlTry(), 1, decimalGroupSep, 2, decimalSep)}">+₺ 0,00</span>
+                    <span th:if="${summary.pnlPercent() != null}" style="opacity:0.85;font-weight:600;"
+                          th:text="'(' + (${summary.totalPnlTry().signum() >= 0} ? '+' : '') + ${#numbers.formatDecimal(summary.pnlPercent(), 1, decimalGroupSep, 2, decimalSep)} + '%)'">(0,00%)</span>
+                </span>
+                <div class="hero-daily num" th:if="${summary.dailyPnlTry() != null}">
+                    <span th:text="${summary.dailyPnlTry().signum() >= 0} ? '▲' : '▼'">▲</span>
+                    <span th:text="${(summary.dailyPnlTry().signum() >= 0 ? '+' : '') + currencySymbol + ' ' + #numbers.formatDecimal(summary.dailyPnlTry(), 1, decimalGroupSep, 2, decimalSep)}">+₺ 0,00</span>
+                    <span th:if="${summary.dailyPnlPercent() != null}"
+                          th:text="'(' + (${summary.dailyPnlTry().signum() >= 0} ? '+' : '') + ${#numbers.formatDecimal(summary.dailyPnlPercent(), 1, decimalGroupSep, 2, decimalSep)} + '%)'">(0,00%)</span>
+                    <span style="opacity:0.8;" th:text="#{pdf.summary.deltaToday}">today</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <table>
+                <tbody>
+                    <tr>
+                        <td class="label" th:text="#{pdf.summary.totalCost}">TOTAL COST</td>
+                        <td class="value num"
+                            th:text="${summary != null and summary.totalEntryValueTry() != null}
+                                ? ${currencySymbol} + ' ' + ${#numbers.formatDecimal(summary.totalEntryValueTry(), 1, decimalGroupSep, 2, decimalSep)}
+                                : '—'">—</td>
+                    </tr>
+                    <tr th:if="${summary != null and summary.totalPnlTry() != null}">
+                        <td class="label" th:text="#{pdf.summary.profitLoss}">TOTAL P&L</td>
+                        <td class="value num"
+                            th:classappend="${summary.totalPnlTry().signum() >= 0} ? 'gain' : 'loss'"
+                            th:text="${(summary.totalPnlTry().signum() >= 0 ? '+' : '') + currencySymbol + ' ' + #numbers.formatDecimal(summary.totalPnlTry(), 1, decimalGroupSep, 2, decimalSep)}">—</td>
+                    </tr>
+                    <tr th:if="${summary != null and summary.dailyPnlTry() != null}">
+                        <td class="label" th:text="#{pdf.summary.dailyPnl}">DAILY P&L</td>
+                        <td class="value num"
+                            th:classappend="${summary.dailyPnlTry().signum() >= 0} ? 'gain' : 'loss'"
+                            th:text="${(summary.dailyPnlTry().signum() >= 0 ? '+' : '') + currencySymbol + ' ' + #numbers.formatDecimal(summary.dailyPnlTry(), 1, decimalGroupSep, 2, decimalSep)}">—</td>
+                    </tr>
+                    <tr th:if="${summary != null and summary.realPnlTry() != null}">
+                        <td class="label" th:text="#{pdf.summary.realPnl}">REAL P&L</td>
+                        <td class="value num"
+                            th:classappend="${summary.realPnlTry().signum() >= 0} ? 'gain' : 'loss'"
+                            th:text="${(summary.realPnlTry().signum() >= 0 ? '+' : '') + currencySymbol + ' ' + #numbers.formatDecimal(summary.realPnlTry(), 1, decimalGroupSep, 2, decimalSep)}">—</td>
+                    </tr>
+                    <tr th:if="${summary != null and summary.cpiGrowthPercent() != null}">
+                        <td class="label" th:text="#{pdf.summary.cpiGrowth}">CPI GROWTH</td>
+                        <td class="value num"
+                            th:text="${#numbers.formatDecimal(summary.cpiGrowthPercent(), 1, decimalGroupSep, 2, decimalSep)} + '%'">—</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="card keep">
+    <div class="card-bar"></div>
+    <div class="card-head">
+        <p class="eyebrow" th:text="#{pdf.section.allocation}">ALLOCATION</p>
+        <h2 class="card-title" th:text="#{pdf.section.allocation}">Asset Allocation</h2>
+    </div>
+    <div class="card-body">
+        <p th:if="${allocationItems == null or allocationItems.isEmpty()}"
+           style="font-size:12px;color:[[${palette.muted}]];margin:0;"
+           th:text="#{pdf.allocation.empty}">No assets to allocate.</p>
+
+        <div th:if="${allocationItems != null and not allocationItems.isEmpty()}"
+             style="display:flex;gap:24px;align-items:center;">
+            <div style="flex:0 0 240px;" th:utext="${allocationSvg}">SVG</div>
+            <div style="flex:1 1 auto;">
+            <table class="alloc-table">
+                <thead>
+                    <tr>
+                        <th style="width:14px;"></th>
+                        <th th:text="#{pdf.col.code}">ASSET</th>
+                        <th class="r" th:text="#{pdf.allocation.share}">SHARE</th>
+                        <th class="r" th:text="#{pdf.allocation.value}">VALUE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="it : ${allocationItems}">
+                        <td>
+                            <span class="swatch" th:style="'background:' + ${it.color}"></span>
+                        </td>
+                        <td th:text="${it.label}">Label</td>
+                        <td class="r share num" th:text="${#numbers.formatDecimal(it.sharePct, 1, decimalGroupSep, 1, decimalSep)} + '%'">0%</td>
+                        <td class="r num" th:text="${currencySymbol} + ' ' + ${#numbers.formatDecimal(it.value, 1, decimalGroupSep, 2, decimalSep)}">—</td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card keep">
+    <div class="card-bar"></div>
+    <div class="card-head">
+        <p class="eyebrow" th:text="#{pdf.section.performance}">PERFORMANCE</p>
+        <h2 class="card-title" th:text="#{pdf.section.performance}">Portfolio Performance</h2>
+    </div>
+    <div class="card-body" style="padding-top:8px;">
+        <div th:utext="${performanceSvg}">SVG</div>
+    </div>
+</section>
+
+<section class="card keep">
+    <div class="card-bar"></div>
+    <div class="card-head">
+        <p class="eyebrow" th:text="#{pdf.section.realizedPnl}">REALIZED P&L</p>
+        <h2 class="card-title" th:text="#{pdf.section.realizedPnl}">Realized Profit & Loss</h2>
+    </div>
+    <div class="card-body">
+        <p th:if="${winners.isEmpty() and losers.isEmpty()}"
+           style="font-size:12px;color:[[${palette.muted}]];margin:0;"
+           th:text="#{pdf.realized.empty}">No realized P&L</p>
+
+        <div class="realized-grid" th:if="${not winners.isEmpty() or not losers.isEmpty()}">
+            <div class="realized-col">
+                <p class="realized-col-title" th:text="#{pdf.realized.winnersTitle}">WINNERS</p>
+                <p th:if="${winners.isEmpty()}" style="font-size:10.5px;color:[[${palette.subtle}]];">—</p>
+                <div class="realized-row" th:each="w : ${winners}">
+                    <div class="realized-line">
+                        <span class="realized-name" th:text="${w.label}">Label</span>
+                        <span class="num gain"
+                              th:text="'+ ' + ${currencySymbol} + ' ' + ${#numbers.formatDecimal(w.realized, 1, decimalGroupSep, 2, decimalSep)}">+₺ 0</span>
+                    </div>
+                    <div class="realized-bar-bg">
+                        <div class="realized-bar-fill" th:style="'width:' + ${w.barPct} + '%;background:' + ${palette.successFg}"></div>
+                    </div>
+                    <div class="realized-cost num"
+                         th:text="#{pdf.realized.cost} + ': ' + ${currencySymbol} + ' ' + ${#numbers.formatDecimal(w.cost, 1, decimalGroupSep, 2, decimalSep)}">cost</div>
+                </div>
+            </div>
+            <div class="realized-col">
+                <p class="realized-col-title" th:text="#{pdf.realized.losersTitle}">LOSERS</p>
+                <p th:if="${losers.isEmpty()}" style="font-size:10.5px;color:[[${palette.subtle}]];">—</p>
+                <div class="realized-row" th:each="l : ${losers}">
+                    <div class="realized-line">
+                        <span class="realized-name" th:text="${l.label}">Label</span>
+                        <span class="num loss"
+                              th:text="'− ' + ${currencySymbol} + ' ' + ${#numbers.formatDecimal(l.realized, 1, decimalGroupSep, 2, decimalSep)}">−₺ 0</span>
+                    </div>
+                    <div class="realized-bar-bg">
+                        <div class="realized-bar-fill" th:style="'width:' + ${l.barPct} + '%;background:' + ${palette.dangerFg}"></div>
+                    </div>
+                    <div class="realized-cost num"
+                         th:text="#{pdf.realized.cost} + ': ' + ${currencySymbol} + ' ' + ${#numbers.formatDecimal(l.cost, 1, decimalGroupSep, 2, decimalSep)}">cost</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+</div>
+
+<div class="page">
+
+<section class="card">
+    <div class="card-bar"></div>
+    <div class="card-head">
+        <p class="eyebrow" th:text="#{pdf.section.positions}">POSITIONS</p>
+        <h2 class="card-title" th:text="#{pdf.section.positions}">Positions</h2>
+    </div>
+    <div class="card-body">
+        <p th:if="${positions == null or positions.isEmpty()}"
+           style="font-size:12px;color:[[${palette.muted}]];margin:0;"
+           th:text="#{pdf.positions.empty}">No positions</p>
+
+        <table class="pos-table" th:if="${positions != null and not positions.isEmpty()}">
+            <thead>
+                <tr>
+                    <th th:text="#{pdf.col.code}">ASSET</th>
+                    <th th:text="#{pdf.col.status}">STATUS</th>
+                    <th class="r" th:text="#{pdf.col.qty}">QTY</th>
+                    <th th:text="#{pdf.col.entryDate}">ENTRY</th>
+                    <th th:text="#{pdf.col.exitDate}">EXIT</th>
+                    <th class="r" th:text="#{pdf.col.entryPrice}">ENTRY PRICE</th>
+                    <th class="r" th:text="#{pdf.col.currentPrice}">CURRENT</th>
+                    <th class="r" th:text="#{pdf.col.marketValue}">MARKET</th>
+                    <th class="r" th:text="#{pdf.col.pnl}">P&L</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="keep" th:each="p : ${positions}">
+                    <td class="asset">
+                        <div class="pos-asset-code" th:text="${p.assetCode}">CODE</div>
+                        <div class="pos-asset-name" th:if="${p.displayName() != null}" th:text="${p.displayName()}">Name</div>
+                    </td>
+                    <td>
+                        <span class="pos-status" th:classappend="${p.isClosed()} ? 'closed' : 'open'"
+                              th:text="${p.isClosed()} ? #{pdf.positions.statusClosed} : #{pdf.positions.statusOpen}">OPEN</span>
+                    </td>
+                    <td class="r num" th:text="${p.displayQuantity()}">0</td>
+                    <td class="num" style="font-size:9.5px;color:[[${palette.muted}]];"
+                        th:text="${p.entryDate() != null ? #temporals.format(p.entryDate(), 'dd MMM yy') : '—'}">—</td>
+                    <td class="num" style="font-size:9.5px;color:[[${palette.muted}]];"
+                        th:text="${p.isClosed() and p.exitDate() != null ? #temporals.format(p.exitDate(), 'dd MMM yy') : '—'}">—</td>
+                    <td class="r num"
+                        th:text="${p.entryPrice() != null ? currencySymbol + ' ' + #numbers.formatDecimal(p.entryPrice(), 1, decimalGroupSep, 2, decimalSep) : '—'}">—</td>
+                    <td class="r num"
+                        th:text="${p.currentPriceTry() != null ? currencySymbol + ' ' + #numbers.formatDecimal(p.currentPriceTry(), 1, decimalGroupSep, 2, decimalSep) : '—'}">—</td>
+                    <td class="r num" style="font-weight:600;"
+                        th:text="${p.marketValueTry() != null ? currencySymbol + ' ' + #numbers.formatDecimal(p.marketValueTry(), 1, decimalGroupSep, 2, decimalSep) : '—'}">—</td>
+                    <td class="r num" style="font-weight:700;"
+                        th:classappend="${p.pnlTry() != null and p.pnlTry().signum() >= 0} ? 'gain' : 'loss'"
+                        th:text="${p.pnlTry() != null ? (p.pnlTry().signum() >= 0 ? '+' : '') + currencySymbol + ' ' + #numbers.formatDecimal(p.pnlTry(), 1, decimalGroupSep, 2, decimalSep) : '—'}">—</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<footer class="report-footer">
+    <div>
+        <span class="sent-tag" th:text="#{pdf.sentLabel}">GENERATED</span>
+        <span class="num" th:text="' ' + ${generatedAt}"> 2026-05-25</span>
+    </div>
+    <p style="margin:10px 0 0;" th:text="#{pdf.footer.disclaimer}">Disclaimer</p>
+</footer>
+
+</div>
+
+</body>
+</html>

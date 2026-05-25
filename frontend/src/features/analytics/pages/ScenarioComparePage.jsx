@@ -1,10 +1,9 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Play, AlertCircle, Sparkles } from 'lucide-react';
+import { Play, AlertCircle } from 'lucide-react';
+import useSessionState from '../../../shared/hooks/useSessionState';
 import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
-import EmptyState from '../../../shared/components/feedback/EmptyState';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 import DatePickerPopover from '../../../shared/components/form/DatePickerPopover';
@@ -17,13 +16,29 @@ import { useMoney } from '../../../shared/hooks/useMoney';
 
 const QUICK_AMOUNTS = [10000, 50000, 100000, 500000];
 
+const CURRENCY_SYMBOL = { TRY: '₺', USD: '$', EUR: '€' };
+
+function trimDecimal(n) {
+  return n % 1 === 0 ? String(n) : n.toFixed(1).replace(/\.0$/, '');
+}
+
+function humanizeAmount(value, locale, t) {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num === 0) return '';
+  const abs = Math.abs(num);
+  if (abs >= 1e9) return `${trimDecimal(num / 1e9)}${t('numberFormat.billion')}`;
+  if (abs >= 1e6) return `${trimDecimal(num / 1e6)}${t('numberFormat.million')}`;
+  if (abs >= 1e3) return `${trimDecimal(num / 1e3)}${t('numberFormat.thousand')}`;
+  return num.toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US');
+}
+
 export default function ScenarioComparePage() {
-  const { t } = useTranslation();
-  const { currency: displayCurrency, rates } = useMoney();
-  const [amount, setAmount] = useState(100000);
-  const [startDate, setStartDate] = useState(dateOffsetIso(12));
-  const [endDate, setEndDate] = useState(todayIso());
-  const [instruments, setInstruments] = useState([
+  const { t, i18n } = useTranslation();
+  const { currency: displayCurrency } = useMoney();
+  const [amount, setAmount] = useSessionState('scenario:amount', 100000);
+  const [startDate, setStartDate] = useSessionState('scenario:startDate', dateOffsetIso(12));
+  const [endDate, setEndDate] = useSessionState('scenario:endDate', todayIso());
+  const [instruments, setInstruments] = useSessionState('scenario:instruments', [
     { type: 'DEPOSIT', code: 'TP.TRYTAS.MT06', name: 'TRY 3M Mevduat' },
     { type: 'FOREX', code: 'USD', name: 'USD/TRY' },
     { type: 'COMMODITY', code: 'XAUTRY', name: 'Altın' },
@@ -35,13 +50,12 @@ export default function ScenarioComparePage() {
   function run() {
     if (instruments.length === 0 || !amount || !startDate) return;
     const numericAmount = Number(amount);
-    const fxRate = rates?.[inputCurrency];
-    const amountTry = inputCurrency === 'TRY' || !fxRate ? numericAmount : numericAmount * fxRate;
     simulation.mutate({
-      amount: amountTry,
+      amount: numericAmount,
       startDate,
       endDate: endDate || null,
       instruments: instruments.map(({ type, code }) => ({ type, code })),
+      targetCurrency: inputCurrency,
     });
   }
 
@@ -65,16 +79,26 @@ export default function ScenarioComparePage() {
       </header>
 
       <Card variant="elevated" radius="xl" padding="lg" backdropBlur className="space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Field label={`${t('analytics.amount', { defaultValue: 'Tutar' })} (${inputCurrency})`}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+          <Field label={t('analytics.amount', { defaultValue: 'Tutar' })}>
             <div className="flex flex-col gap-1.5">
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="text-lg font-mono font-bold tabular-nums bg-bg-base border border-border-default/60 rounded-lg px-3 py-2 text-fg focus:border-accent outline-none"
-              />
-              <div className="flex gap-1.5">
+              <div className="relative flex items-center">
+                <span className="absolute left-3 text-fg-muted font-mono font-bold text-lg pointer-events-none select-none">
+                  {CURRENCY_SYMBOL[inputCurrency] || inputCurrency}
+                </span>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="w-full text-lg font-mono font-bold tabular-nums bg-bg-base border border-border-default/60 rounded-lg pl-9 pr-20 py-2 text-fg focus:border-accent outline-none"
+                />
+                {humanizeAmount(amount, i18n.language?.startsWith("tr") ? "tr" : "en", t) && (
+                  <span className="absolute right-3 text-[11px] font-mono font-semibold text-fg-muted pointer-events-none select-none uppercase tracking-wider">
+                    {humanizeAmount(amount, i18n.language?.startsWith("tr") ? "tr" : "en", t)}
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
                 {QUICK_AMOUNTS.map((q) => (
                   <button
                     key={q}
@@ -84,7 +108,7 @@ export default function ScenarioComparePage() {
                       Number(amount) === q ? 'bg-accent/20 text-accent' : 'bg-bg-elevated text-fg-muted hover:text-fg'
                     }`}
                   >
-                    {q.toLocaleString('tr-TR')}
+                    {humanizeAmount(q, i18n.language?.startsWith("tr") ? "tr" : "en", t)}
                   </button>
                 ))}
               </div>
@@ -151,27 +175,18 @@ export default function ScenarioComparePage() {
         />
       )}
 
-      {!scenario && !simulation.isPending && !simulation.isError && (
-        <EmptyState
-          size="md"
-          icon={<Sparkles className="h-5 w-5 text-accent" />}
-          title={t('analytics.scenarioEmptyTitle', { defaultValue: 'Henüz simülasyon yok' })}
-          message={t('analytics.scenarioEmptyMessage', { defaultValue: 'Tutar, tarih ve enstrümanları seç, ardından "Simüle Et"e bas.' })}
-        />
-      )}
-
       {scenario && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
           {cpiPct != null && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-center gap-3">
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-3 flex-wrap">
               <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-xs font-mono uppercase tracking-[0.16em] text-fg-muted">
+              <span className="text-sm font-display font-semibold text-fg-muted">
                 {t('analytics.cpiGrowth', { defaultValue: 'TÜFE büyümesi (dönemde)' })}
               </span>
               <span className="font-mono font-bold tabular-nums text-amber-500 text-sm">
                 {formatPercent(cpiPct)}
               </span>
-              <span className="ml-auto text-[10px] font-mono text-fg-subtle uppercase tracking-[0.14em]">
+              <span className="sm:ml-auto text-xs font-mono text-fg-subtle">
                 {t('analytics.realReturnHint', { defaultValue: 'Reel getiri = nominal − TÜFE etkisi' })}
               </span>
             </div>
@@ -187,7 +202,7 @@ export default function ScenarioComparePage() {
 function Field({ label, children }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-muted">{label}</label>
+      <label className="text-xs font-display font-semibold text-fg-muted">{label}</label>
       {children}
     </div>
   );

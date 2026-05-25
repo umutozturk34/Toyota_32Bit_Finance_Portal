@@ -58,7 +58,7 @@ export function LotsTable({ lots, t, money, bigMoney, onEditLot, onSellLot, onRe
                 {Number(lot.quantity).toLocaleString(currentLocaleTag(), { maximumFractionDigits: 6 })}
               </span>
               <span className="text-[11px] font-mono text-fg text-left truncate">
-                {money(lot.entryPrice)}
+                {money(lot.entryPrice, 'TRY', { dateAt: lot.entryDate })}
               </span>
               <span className="text-[11px] font-mono text-fg text-left truncate" title={money(lot.marketValueTry)}>
                 {bigMoney(lot.marketValueTry)}

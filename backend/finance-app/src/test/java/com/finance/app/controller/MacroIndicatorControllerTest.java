@@ -46,7 +46,7 @@ class MacroIndicatorControllerTest {
     void setUp() {
         com.finance.market.macro.config.MacroProperties macroProperties =
                 new com.finance.market.macro.config.MacroProperties(
-                        java.time.LocalDate.of(1995, 1, 1), 25, 1000, null, java.util.List.of());
+                        java.time.LocalDate.of(1995, 1, 1), 25, 1000, null, null, java.util.List.of());
         controller = new MacroIndicatorController(queryService, mapper, translator, macroProperties);
         when(translator.translate(anyString())).thenAnswer(inv -> inv.getArgument(0));
     }

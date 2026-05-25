@@ -63,8 +63,8 @@ export default function DepositMatrix({ indicators, onOpen }) {
         </span>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs border-separate border-spacing-1">
+      <div className="overflow-x-auto -mx-1">
+        <table className="w-full text-xs border-separate border-spacing-1 min-w-[520px]">
           <thead>
             <tr>
               <th className="text-left text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted py-1.5 pr-3">

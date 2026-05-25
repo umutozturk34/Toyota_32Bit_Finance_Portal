@@ -31,8 +31,6 @@ import java.util.stream.Collectors;
 @Log4j2
 public class PreciousMetalDerivativeCalculator {
 
-    private static final int DERIVATIVE_SORT_ORDER = 9999;
-
     private final CommodityRepository commodityRepository;
     private final CommodityCandleRepository commodityCandleRepository;
     private final MarketCacheService<Commodity> commodityCacheService;
@@ -40,6 +38,7 @@ public class PreciousMetalDerivativeCalculator {
     private final AssetRegistryService assetRegistry;
     private final TrackedAssetCommandService trackedAssetCommandService;
     private final int scale;
+    private final int derivativeSortOrder;
     private final List<DerivativeRule> rules;
 
     public PreciousMetalDerivativeCalculator(CommodityRepository commodityRepository,
@@ -57,6 +56,7 @@ public class PreciousMetalDerivativeCalculator {
         this.assetRegistry = assetRegistry;
         this.trackedAssetCommandService = trackedAssetCommandService;
         this.scale = appProperties.getScale();
+        this.derivativeSortOrder = commodityProperties.getDerivativeSortOrder();
         this.rules = List.copyOf(commodityProperties.getDerivatives());
     }
 
@@ -191,7 +191,7 @@ public class PreciousMetalDerivativeCalculator {
         commodityCacheService.putSnapshot(code, derivative);
         String displayName = rule.getNameTr() != null && !rule.getNameTr().isBlank()
                 ? rule.getNameTr() : rule.getName();
-        trackedAssetCommandService.autoTrack(TrackedAssetType.COMMODITY, code, displayName, DERIVATIVE_SORT_ORDER);
+        trackedAssetCommandService.autoTrack(TrackedAssetType.COMMODITY, code, displayName, derivativeSortOrder);
     }
 
     private BigDecimal divide(BigDecimal value, BigDecimal divisor) {

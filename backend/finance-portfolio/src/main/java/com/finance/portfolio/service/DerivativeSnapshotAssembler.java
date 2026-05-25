@@ -1,6 +1,7 @@
 package com.finance.portfolio.service;
 
 import com.finance.common.model.MarketType;
+import com.finance.market.core.service.HistoricalPricingPort;
 import com.finance.portfolio.derivative.model.DerivativePosition;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.MoneyScale;
@@ -13,7 +14,9 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Log4j2
 @Component
@@ -21,15 +24,17 @@ import java.time.LocalDateTime;
 class DerivativeSnapshotAssembler {
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
+    private static final int FX_LOOKBACK_DAYS = 7;
 
     private final AssetPricingPort pricingPort;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
+    private final HistoricalPricingPort historicalPricingPort;
 
     PortfolioAssetDailySnapshot buildAt(Long portfolioId, DerivativePosition position,
                                          LocalDateTime batchTimestamp, BigDecimal exitPrice,
                                          BigDecimal fxRateOverride, PortfolioAssetDailySnapshot priorOverride) {
         if (position.getViopContract() == null) return null;
-        DerivativeMetrics m = computeMetrics(position, exitPrice, fxRateOverride);
+        DerivativeMetrics m = computeMetrics(position, exitPrice, fxRateOverride, batchTimestamp.toLocalDate());
         DailyDelta delta = resolveDailyDelta(portfolioId, position, m, batchTimestamp, priorOverride);
         return PortfolioAssetDailySnapshot.builder()
                 .portfolioId(portfolioId)
@@ -49,13 +54,13 @@ class DerivativeSnapshotAssembler {
     }
 
     private DerivativeMetrics computeMetrics(DerivativePosition position, BigDecimal exitPrice,
-                                              BigDecimal fxRateOverride) {
+                                              BigDecimal fxRateOverride, LocalDate snapDate) {
         BigDecimal contractSize = position.getViopContract().getContractSize() != null
                 ? position.getViopContract().getContractSize() : BigDecimal.ONE;
         BigDecimal qty = position.getQuantityLot() != null ? position.getQuantityLot() : BigDecimal.ZERO;
         BigDecimal fxRate = fxRateOverride != null && fxRateOverride.signum() > 0
                 ? fxRateOverride
-                : contractFxRate(position.getViopContract().getCurrency());
+                : contractFxRate(position.getViopContract().getCurrency(), snapDate);
         BigDecimal unitPrice = (exitPrice != null ? exitPrice : BigDecimal.ZERO)
                 .multiply(fxRate).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
         BigDecimal marketValue = unitPrice.multiply(contractSize).multiply(qty)
@@ -95,12 +100,30 @@ class DerivativeSnapshotAssembler {
         return new DailyDelta(dailyPnl, dailyPercent);
     }
 
-    private BigDecimal contractFxRate(String currency) {
+    private BigDecimal contractFxRate(String currency, LocalDate snapDate) {
         if (currency == null || currency.isBlank() || "TRY".equalsIgnoreCase(currency)) {
             return BigDecimal.ONE;
         }
-        BigDecimal rate = pricingPort.getExitPriceTry(MarketType.FOREX, currency.toUpperCase());
-        return rate != null && rate.signum() > 0 ? rate : BigDecimal.ONE;
+        String upper = currency.toUpperCase();
+        if (snapDate != null) {
+            Map<LocalDate, BigDecimal> fxSeries = historicalPricingPort.getPriceSeries(
+                    MarketType.FOREX, upper, snapDate.minusDays(FX_LOOKBACK_DAYS), snapDate);
+            BigDecimal historicalRate = closestPriorRate(fxSeries, snapDate);
+            if (historicalRate != null && historicalRate.signum() > 0) return historicalRate;
+        }
+        BigDecimal liveRate = pricingPort.getExitPriceTry(MarketType.FOREX, upper);
+        return liveRate != null && liveRate.signum() > 0 ? liveRate : BigDecimal.ONE;
+    }
+
+    private static BigDecimal closestPriorRate(Map<LocalDate, BigDecimal> series, LocalDate target) {
+        if (series == null || series.isEmpty()) return null;
+        LocalDate cursor = target;
+        for (int i = 0; i <= FX_LOOKBACK_DAYS; i++) {
+            BigDecimal rate = series.get(cursor);
+            if (rate != null) return rate;
+            cursor = cursor.minusDays(1);
+        }
+        return null;
     }
 
     private record DerivativeMetrics(BigDecimal qty, BigDecimal contractSize, BigDecimal unitPrice,

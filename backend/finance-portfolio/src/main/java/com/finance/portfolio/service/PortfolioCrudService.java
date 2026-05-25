@@ -1,11 +1,14 @@
 package com.finance.portfolio.service;
 
 
+import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.exception.ResourceNotFoundException;
+import com.finance.common.model.Currency;
 import com.finance.common.model.TrackedAsset;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.common.repository.TrackedAssetRepository;
+import com.finance.market.core.service.CurrencyConverter;
 import com.finance.portfolio.config.PortfolioProperties;
 import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
 import com.finance.portfolio.dto.request.PortfolioCreateRequest;
@@ -46,6 +49,7 @@ public class PortfolioCrudService {
     private final PortfolioResponseMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
     private final PortfolioProperties portfolioProperties;
+    private final CurrencyConverter currencyConverter;
 
     @Transactional(readOnly = true)
     public List<PortfolioResponse> listPortfolios(String userSub) {
@@ -98,17 +102,19 @@ public class PortfolioCrudService {
         AssetType assetType = EnumParser.parseOrBadRequest(AssetType.class,
                 request.assetType().toUpperCase(), "enum.field.assetType");
         TrackedAsset trackedAsset = requireTrackedAsset(assetType, request.assetCode());
+        BigDecimal entryPriceTry = toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate());
         PortfolioPosition position = PortfolioPosition.builder()
                 .portfolio(portfolio)
                 .assetType(assetType)
                 .assetCode(trackedAsset.getAssetCode())
                 .quantity(request.quantity())
                 .entryDate(request.entryDate())
-                .entryPrice(request.entryPrice())
+                .entryPrice(entryPriceTry)
                 .build();
         position.setTrackedAsset(trackedAsset);
         if (request.exitDate() != null && request.exitPrice() != null) {
-            position.closeWith(request.exitDate(), request.exitPrice());
+            BigDecimal exitPriceTry = toTryOnDate(request.exitPrice(), request.priceCurrency(), request.exitDate());
+            position.closeWith(request.exitDate(), exitPriceTry);
         }
         PortfolioPosition saved = positionRepository.save(position);
 
@@ -156,9 +162,10 @@ public class PortfolioCrudService {
         PortfolioValidator.validateSell(position, request);
 
         BigDecimal sellQty = request.quantity();
+        BigDecimal exitPriceTry = toTryOnDate(request.exitPrice(), request.priceCurrency(), request.exitDate());
         PortfolioPosition resulting;
         if (sellQty.compareTo(position.getQuantity()) == 0) {
-            position.closeWith(request.exitDate(), request.exitPrice());
+            position.closeWith(request.exitDate(), exitPriceTry);
             resulting = positionRepository.save(position);
         } else {
             PortfolioPosition closedSlice = PortfolioPosition.builder()
@@ -169,7 +176,7 @@ public class PortfolioCrudService {
                     .entryDate(position.getEntryDate())
                     .entryPrice(position.getEntryPrice())
                     .exitDate(request.exitDate())
-                    .exitPrice(request.exitPrice())
+                    .exitPrice(exitPriceTry)
                     .build();
             closedSlice.setTrackedAsset(position.getTrackedAsset());
             positionRepository.save(closedSlice);
@@ -214,6 +221,17 @@ public class PortfolioCrudService {
         if (a == null) return b;
         if (b == null) return a;
         return a.isBefore(b) ? a : b;
+    }
+
+    private BigDecimal toTryOnDate(BigDecimal price, String priceCurrency, LocalDateTime date) {
+        if (price == null) return null;
+        if (priceCurrency == null || priceCurrency.isBlank()) return price;
+        Currency from = Currency.fromCode(priceCurrency);
+        if (from == null) {
+            throw new BadRequestException("error.portfolio.unsupportedCurrency", priceCurrency);
+        }
+        if (from == Currency.TRY) return price;
+        return currencyConverter.convertAtDate(price, from, Currency.TRY, date.toLocalDate());
     }
 
     private TrackedAsset requireTrackedAsset(AssetType assetType, String rawCode) {

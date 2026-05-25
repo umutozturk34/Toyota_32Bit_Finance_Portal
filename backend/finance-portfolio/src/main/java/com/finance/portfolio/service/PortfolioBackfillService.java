@@ -27,7 +27,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -170,6 +169,15 @@ public class PortfolioBackfillService {
         if (!active.isEmpty() && dayPrices.isEmpty()) {
             log.info("Skipping snapshotToday for portfolio {} — live prices unavailable, will retry on next market update", portfolioId);
             return;
+        }
+        List<PortfolioAssetDailySnapshot> derivativeRows = new ArrayList<>();
+        for (DerivativePosition dpos : derivativesOpenedByToday) {
+            if (dpos.getCloseDate() != null) continue;
+            PortfolioAssetDailySnapshot snap = calculator.buildDerivativeAssetSnapshot(portfolioId, dpos, ts);
+            if (snap != null) {
+                assetSnapshotRepository.save(snap);
+                derivativeRows.add(snap);
+            }
         }
         List<PortfolioAssetDailySnapshot> todayRows = assetSnapshotRepository
                 .findByPortfolioIdAndSnapshotDate(portfolio.getId(), today);

@@ -4,6 +4,7 @@ import com.finance.market.viop.model.ViopCandle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -18,6 +19,8 @@ public interface ViopCandleRepository extends JpaRepository<ViopCandle, Long> {
             String symbol, LocalDateTime start, LocalDateTime end);
 
     Optional<ViopCandle> findFirstBySymbolOrderByCandleDateDesc(String symbol);
+
+    Optional<ViopCandle> findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc(String symbol, BigDecimal close);
 
     Optional<ViopCandle> findFirstBySymbolAndCandleDateLessThanEqualOrderByCandleDateDesc(
             String symbol, LocalDateTime cutoff);

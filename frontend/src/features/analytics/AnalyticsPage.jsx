@@ -32,7 +32,7 @@ export default function AnalyticsPage() {
       transition={{ duration: 0.3 }}
       className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5"
     >
-      <nav className="flex items-center gap-1 border-b border-border-default/40 pb-0.5">
+      <nav className="flex items-center gap-1 flex-wrap border-b border-border-default/40 pb-0.5 overflow-x-auto">
         {TABS.map(({ id, labelKey, Icon }) => {
           const isActive = active === id;
           return (
@@ -40,7 +40,7 @@ export default function AnalyticsPage() {
               key={id}
               type="button"
               onClick={() => setActive(id)}
-              className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-semibold cursor-pointer border-none transition-colors ${
+              className={`relative flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-semibold cursor-pointer border-none transition-colors whitespace-nowrap ${
                 isActive ? 'text-fg' : 'text-fg-muted hover:text-fg'
               }`}
             >

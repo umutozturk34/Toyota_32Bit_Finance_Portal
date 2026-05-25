@@ -53,7 +53,7 @@ class MarketOverviewServiceTest {
         NewsData newsData = new NewsData(List.of(), List.of());
         OverviewWidgetProvider cardsProvider = providerThatReturns(WidgetKind.ASSET_CARDS, cardsData);
         OverviewWidgetProvider newsProvider = providerThatReturns(WidgetKind.NEWS, newsData);
-        when(layoutReader.readVisibleSections("user-1")).thenReturn(List.of(cards, news));
+        when(layoutReader.readVisibleSections("user-1", null)).thenReturn(List.of(cards, news));
         when(registry.providerFor(WidgetKind.ASSET_CARDS)).thenReturn(Optional.of(cardsProvider));
         when(registry.providerFor(WidgetKind.NEWS)).thenReturn(Optional.of(newsProvider));
 
@@ -69,7 +69,7 @@ class MarketOverviewServiceTest {
     @Test
     void should_emitEmptyRenderedWidget_when_kindHasNoProvider() {
         WidgetSection orphan = section("ghost", WidgetKind.WATCHLIST, 0);
-        when(layoutReader.readVisibleSections("user-1")).thenReturn(List.of(orphan));
+        when(layoutReader.readVisibleSections("user-1", null)).thenReturn(List.of(orphan));
         when(registry.providerFor(WidgetKind.WATCHLIST)).thenReturn(Optional.empty());
 
         List<RenderedWidget> rendered = service.render("user-1");
@@ -85,7 +85,7 @@ class MarketOverviewServiceTest {
         OverviewWidgetProvider provider = mock(OverviewWidgetProvider.class);
         when(provider.kind()).thenReturn(WidgetKind.MOVERS);
         when(provider.fetch(any(), any())).thenThrow(new DataAccessResourceFailureException("redis down"));
-        when(layoutReader.readVisibleSections("user-1")).thenReturn(List.of(unstable));
+        when(layoutReader.readVisibleSections("user-1", null)).thenReturn(List.of(unstable));
         when(registry.providerFor(WidgetKind.MOVERS)).thenReturn(Optional.of(provider));
 
         List<RenderedWidget> rendered = service.render("user-1");
@@ -100,7 +100,7 @@ class MarketOverviewServiceTest {
         OverviewWidgetProvider provider = mock(OverviewWidgetProvider.class);
         when(provider.kind()).thenReturn(WidgetKind.MOVERS);
         when(provider.fetch(any(), any())).thenThrow(new BusinessException("invalid"));
-        when(layoutReader.readVisibleSections("user-1")).thenReturn(List.of(any));
+        when(layoutReader.readVisibleSections("user-1", null)).thenReturn(List.of(any));
         when(registry.providerFor(WidgetKind.MOVERS)).thenReturn(Optional.of(provider));
 
         assertThatThrownBy(() -> service.render("user-1"))
@@ -110,7 +110,7 @@ class MarketOverviewServiceTest {
 
     @Test
     void should_returnEmptyList_when_layoutHasNoSections() {
-        when(layoutReader.readVisibleSections("user-1")).thenReturn(List.of());
+        when(layoutReader.readVisibleSections("user-1", null)).thenReturn(List.of());
 
         List<RenderedWidget> rendered = service.render("user-1");
 

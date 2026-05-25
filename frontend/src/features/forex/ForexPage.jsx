@@ -48,7 +48,7 @@ function ForexPage() {
                                 {getBaseCurrency(forex.code)} / TRY
                             </h3>
                         </div>
-                        <span className="mt-0.5 block truncate text-xs text-fg-muted">
+                        <span className="mt-0.5 block text-xs text-fg-muted leading-snug line-clamp-2 break-words">
                             {forex.name}
                         </span>
                     </div>
@@ -73,7 +73,7 @@ function ForexPage() {
                 {(forex.changeAmount != null && forex.changePercent != null) && (
                     <div className={`mt-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium ${changeBg[cls]} ${changeColors[cls]}`}>
                         {forex.changeAmount > 0 ? <ArrowUpRight className="h-3.5 w-3.5" /> : forex.changeAmount < 0 ? <ArrowDownRight className="h-3.5 w-3.5" /> : null}
-                        <span>{formatChange(forex.changeAmount)} TRY</span>
+                        <span>{formatChange(forex.changeAmount)}</span>
                         <span className="opacity-75">({formatPercent(forex.changePercent)})</span>
                     </div>
                 )}

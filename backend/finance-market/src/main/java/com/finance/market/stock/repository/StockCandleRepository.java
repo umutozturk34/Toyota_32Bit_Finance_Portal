@@ -2,6 +2,7 @@ package com.finance.market.stock.repository;
 import com.finance.market.stock.model.StockCandle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -16,6 +17,7 @@ public interface StockCandleRepository extends JpaRepository<StockCandle, Long> 
         LocalDateTime endDate
     );
     Optional<StockCandle> findFirstByStockSymbolOrderByCandleDateDesc(String stockSymbol);
+    Optional<StockCandle> findFirstByStockSymbolAndCloseGreaterThanOrderByCandleDateDesc(String stockSymbol, BigDecimal close);
     List<StockCandle> findTop2ByStockSymbolOrderByCandleDateDesc(String stockSymbol);
     Optional<StockCandle> findByStockSymbolAndCandleDate(String stockSymbol, LocalDateTime candleDate);
 

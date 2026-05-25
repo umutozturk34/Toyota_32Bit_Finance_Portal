@@ -160,7 +160,7 @@ export default function BenchmarkPicker({ value, onChange, options, t, defaultLa
       <button
         type="button"
         onClick={() => setOpen((s) => !s)}
-        className="group inline-flex items-center gap-2.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs hover:border-accent/40 transition-colors cursor-pointer min-w-[240px] max-w-[320px]"
+        className="group inline-flex items-center gap-2.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs hover:border-accent/40 transition-colors cursor-pointer w-full sm:w-auto sm:min-w-[240px] max-w-full sm:max-w-[320px]"
         style={{ borderColor: open ? `${activeAccent}66` : undefined }}
       >
         <span
@@ -196,8 +196,11 @@ export default function BenchmarkPicker({ value, onChange, options, t, defaultLa
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute z-[80] mt-2 left-0 w-[360px] max-w-[calc(100vw-32px)] max-h-[480px] rounded-2xl border border-border-default bg-bg-elevated overflow-hidden flex flex-col"
+            className="absolute z-[80] mt-2 left-0 w-[360px] max-w-[calc(100vw-32px)] max-h-[480px] rounded-2xl border border-border-default overflow-hidden flex flex-col"
             style={{
+              background: 'var(--color-bg-deep)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
               boxShadow: '0 24px 60px -16px rgba(0,0,0,0.65), 0 0 0 1px rgba(99,102,241,0.12), 0 0 80px -12px rgba(99,102,241,0.18)',
             }}
           >

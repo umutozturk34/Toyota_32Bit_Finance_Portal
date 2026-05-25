@@ -195,8 +195,11 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
               top: pos.top,
               left: pos.left,
               boxShadow: '0 20px 60px -15px rgba(0,0,0,0.65), 0 0 0 1px rgba(99,102,241,0.12), 0 0 80px -10px rgba(99,102,241,0.15)',
+              background: 'var(--color-bg-deep)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
             }}
-            className="z-[80] rounded-2xl border border-border-default bg-bg-elevated min-w-[260px] overflow-hidden"
+            className="z-[80] rounded-2xl border border-border-default min-w-[260px] overflow-hidden"
           >
             <div className="h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
             <div className="px-4 pt-3 pb-2.5 flex items-center gap-2 border-b border-border-default/40">

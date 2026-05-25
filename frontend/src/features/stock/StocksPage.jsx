@@ -87,7 +87,7 @@ function StocksPage() {
             <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
                     <h3 className="truncate text-sm font-semibold text-fg">{assetCodeLabel('STOCK', stock.code)}</h3>
-                    <span className="block truncate text-xs text-fg-muted">{stock.name}</span>
+                    <span className="block text-xs text-fg-muted leading-snug line-clamp-2 break-words">{stock.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="rounded-md border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent-bright">

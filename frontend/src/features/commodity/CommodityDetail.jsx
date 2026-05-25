@@ -28,15 +28,23 @@ function CommodityHeader({ asset }) {
 
 function CommodityMetadata({ asset }) {
   const { t } = useTranslation();
-  const { format: money } = useMoney();
+  const { format: money, currency: displayCurrency } = useMoney();
   const meta = asset.metadata || {};
   const cls = getChangeClass(asset.changePercent);
   const usd = meta.currentPriceUsd;
   const localeTag = t('common.localeTag');
+  const nativeCurrency = 'TRY';
+  const primaryTarget = displayCurrency === 'ORIGINAL' || !displayCurrency ? nativeCurrency : displayCurrency;
+  const primaryLabel = primaryTarget === 'TRY'
+    ? t('marketDetail.commodity.priceTry')
+    : t('marketDetail.commodity.price', { currency: primaryTarget, defaultValue: `Price (${primaryTarget})` });
+  const usdTile = primaryTarget !== 'USD' && usd != null
+    ? { label: t('marketDetail.commodity.priceUsd'), value: money(usd, 'USD') }
+    : null;
   return (
     <MetadataTiles tiles={[
-      { label: t('marketDetail.commodity.priceTry'), value: money(asset.price) },
-      { label: t('marketDetail.commodity.priceUsd'), value: usd != null ? money(usd, 'USD') : '—' },
+      { label: primaryLabel, value: money(asset.price, 'TRY') },
+      usdTile,
       {
         label: t('marketDetail.forex.delta24h'),
         color: changeColors[cls],

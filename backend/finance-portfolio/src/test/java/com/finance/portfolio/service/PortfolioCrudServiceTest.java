@@ -52,6 +52,7 @@ class PortfolioCrudServiceTest {
     @Mock private TrackedAssetRepository trackedAssetRepository;
     @Mock private PortfolioResponseMapper mapper;
     @Mock private ApplicationEventPublisher eventPublisher;
+    @Mock private com.finance.market.core.service.CurrencyConverter currencyConverter;
 
     private final PortfolioProperties portfolioProperties = new PortfolioProperties();
     private PortfolioCrudService service;
@@ -60,7 +61,7 @@ class PortfolioCrudServiceTest {
     void setUp() {
         service = new PortfolioCrudService(portfolioRepository, positionRepository,
                 dailySnapshotRepository, assetSnapshotRepository, derivativePositionRepository,
-                trackedAssetRepository, mapper, eventPublisher, portfolioProperties);
+                trackedAssetRepository, mapper, eventPublisher, portfolioProperties, currencyConverter);
     }
 
     private TrackedAsset stubTrackedAsset(TrackedAssetType type, String code) {
@@ -410,6 +411,50 @@ class PortfolioCrudServiceTest {
                 ArgumentCaptor.forClass(PortfolioBackfillService.LotChangedEvent.class);
         verify(eventPublisher).publishEvent(captor.capture());
         assertThat(captor.getValue().fromDate()).isEqualTo(earlier.toLocalDate());
+    }
+
+    @Test
+    void addPosition_convertsEntryPriceToTry_whenPriceCurrencyIsUsd() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        LocalDateTime entryDate = LocalDateTime.of(2024, 1, 15, 10, 0);
+        PositionRequest request = new PositionRequest(
+                "CRYPTO", "bitcoin", new BigDecimal("0.5"), entryDate,
+                new BigDecimal("61299"), null, null, "USD");
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
+        stubTrackedAsset(TrackedAssetType.CRYPTO, "bitcoin");
+        when(currencyConverter.convertAtDate(new BigDecimal("61299"),
+                com.finance.common.model.Currency.USD, com.finance.common.model.Currency.TRY,
+                entryDate.toLocalDate())).thenReturn(new BigDecimal("2023867.0000"));
+
+        service.addPosition(PORTFOLIO_ID, USER_SUB, request);
+
+        ArgumentCaptor<PortfolioPosition> captor = ArgumentCaptor.forClass(PortfolioPosition.class);
+        verify(positionRepository).save(captor.capture());
+        assertThat(captor.getValue().getEntryPrice()).isEqualByComparingTo(new BigDecimal("2023867.0000"));
+    }
+
+    @Test
+    void sellPosition_convertsExitPriceToTry_whenPriceCurrencyIsUsd() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        PortfolioPosition existing = stubPosition(PORTFOLIO_ID, AssetType.CRYPTO, "bitcoin",
+                new BigDecimal("0.5"), new BigDecimal("2023867"));
+        existing.setTrackedAsset(TrackedAsset.builder().id(1L)
+                .assetType(TrackedAssetType.CRYPTO).assetCode("bitcoin").build());
+        existing.updateLot(LocalDateTime.of(2024, 1, 1, 9, 0), null, null);
+        LocalDateTime exitDate = LocalDateTime.of(2024, 6, 1, 12, 0);
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.findById(33L)).thenReturn(Optional.of(existing));
+        when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(currencyConverter.convertAtDate(new BigDecimal("70000"),
+                com.finance.common.model.Currency.USD, com.finance.common.model.Currency.TRY,
+                exitDate.toLocalDate())).thenReturn(new BigDecimal("2310000.0000"));
+        PositionSellRequest req = new PositionSellRequest(
+                new BigDecimal("0.5"), new BigDecimal("70000"), exitDate, "USD");
+
+        service.sellPosition(PORTFOLIO_ID, 33L, USER_SUB, req);
+
+        assertThat(existing.getExitPrice()).isEqualByComparingTo(new BigDecimal("2310000.0000"));
     }
 
     private PortfolioPosition stubPosition(Long portfolioId, AssetType type, String code,

@@ -13,11 +13,6 @@ export const watchlistService = {
     return response.data.data;
   },
 
-  rename: async (id, name) => {
-    const response = await api.patch(`${PATH}/${id}`, { name });
-    return response.data.data;
-  },
-
   remove: async (id) => {
     await api.delete(`${PATH}/${id}`);
   },

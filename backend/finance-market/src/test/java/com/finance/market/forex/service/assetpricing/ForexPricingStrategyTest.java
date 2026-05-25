@@ -3,6 +3,7 @@ package com.finance.market.forex.service.assetpricing;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.forex.model.Forex;
+import com.finance.market.forex.repository.ForexCandleRepository;
 import com.finance.shared.service.AssetPricingPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,12 +18,13 @@ class ForexPricingStrategyTest {
 
     @SuppressWarnings("unchecked")
     private final MarketCacheService<Forex> cacheService = mock(MarketCacheService.class);
+    private final ForexCandleRepository candleRepository = mock(ForexCandleRepository.class);
 
     private ForexPricingStrategy strategy;
 
     @BeforeEach
     void setUp() {
-        strategy = new ForexPricingStrategy(cacheService);
+        strategy = new ForexPricingStrategy(cacheService, candleRepository);
     }
 
     @Test

@@ -43,9 +43,9 @@ class MarketOverviewControllerTest {
     @Test
     void should_returnOverviewWrappedInApiResponse_when_userAuthenticated() {
         RenderedWidget cards = RenderedWidget.of("asset-cards", 0, new AssetCardsData(List.of()));
-        when(marketOverviewService.render("user-1")).thenReturn(List.of(cards));
+        when(marketOverviewService.render("user-1", null)).thenReturn(List.of(cards));
 
-        ApiResponse<List<RenderedWidget>> response = controller.getOverview(jwt);
+        ApiResponse<List<RenderedWidget>> response = controller.getOverview(jwt, null);
 
         assertThat(response.isSuccess()).isTrue();
         assertThat(response.getData()).hasSize(1);
@@ -55,9 +55,9 @@ class MarketOverviewControllerTest {
 
     @Test
     void should_returnEmptyList_when_serviceProducesNoSections() {
-        when(marketOverviewService.render("user-1")).thenReturn(List.of());
+        when(marketOverviewService.render("user-1", null)).thenReturn(List.of());
 
-        ApiResponse<List<RenderedWidget>> response = controller.getOverview(jwt);
+        ApiResponse<List<RenderedWidget>> response = controller.getOverview(jwt, null);
 
         assertThat(response.isSuccess()).isTrue();
         assertThat(response.getData()).isEmpty();
@@ -71,9 +71,9 @@ class MarketOverviewControllerTest {
                 .issuedAt(Instant.now())
                 .expiresAt(Instant.now().plusSeconds(60))
                 .build();
-        when(marketOverviewService.render("kc-uuid-42")).thenReturn(List.of());
+        when(marketOverviewService.render("kc-uuid-42", null)).thenReturn(List.of());
 
-        ApiResponse<List<RenderedWidget>> response = controller.getOverview(scopedJwt);
+        ApiResponse<List<RenderedWidget>> response = controller.getOverview(scopedJwt, null);
 
         assertThat(response.isSuccess()).isTrue();
     }

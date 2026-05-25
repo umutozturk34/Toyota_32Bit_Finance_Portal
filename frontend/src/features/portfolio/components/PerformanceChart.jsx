@@ -1,6 +1,8 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { GitCompareArrows } from 'lucide-react';
 import useSessionState from '../../../shared/hooks/useSessionState';
 import useChartRange from '../../../shared/hooks/useChartRange';
 import ReactECharts from 'echarts-for-react';
@@ -19,6 +21,13 @@ import {
   ASSET_TYPE_FILTERS as ASSET_TYPES,
   ASSET_TYPE_COLORS,
 } from '../../../shared/constants/assetTypes';
+import {
+  timeAxis,
+  valueAxis,
+  dataZoomBlock,
+  lineSeriesDefaults,
+  areaGradient,
+} from '../../../shared/charts/echartsTheme';
 
 const POSITION_EVENT_META = {
   POSITION_ADDED: { color: '#10b981', labelKey: 'portfolio.performance.lotAdded' },
@@ -108,7 +117,7 @@ function buildTooltipHtml(point, palette, money) {
   </div>`;
 }
 
-function buildEChartsOption(data, color, palette, money) {
+function buildEChartsOption(data, color, palette, money, forPrint = false) {
   const seriesData = data.map((d) => ({
     value: [d.time, d.value],
     amount: d.value,
@@ -147,43 +156,15 @@ function buildEChartsOption(data, color, palette, money) {
   const span = dataMax - dataMin;
   const padding = span > 0 ? span * 0.08 : dataMax * 0.05;
 
-  const showZoom = data.length >= 2;
+  const showZoom = !forPrint && data.length >= 2;
+  const zoomBlock = dataZoomBlock(palette, { filterMode: 'none', height: 26 });
+  if (zoomBlock[0]) zoomBlock[0].filterMode = 'none';
   return {
     backgroundColor: 'transparent',
-    animation: data.length < 200,
+    animation: !forPrint && data.length < 200,
     grid: { left: 70, right: 24, top: 16, bottom: showZoom ? 92 : 40, containLabel: false },
-    dataZoom: showZoom ? [
-      {
-        type: 'inside',
-        filterMode: 'none',
-        zoomOnMouseWheel: true,
-        moveOnMouseMove: true,
-        moveOnMouseWheel: false,
-        preventDefaultMouseMove: true,
-      },
-      {
-        type: 'slider',
-        height: 26,
-        bottom: 8,
-        filterMode: 'none',
-        borderColor: 'transparent',
-        backgroundColor: 'transparent',
-        dataBackground: {
-          lineStyle: { color: '#6366f160', width: 1 },
-          areaStyle: { color: '#6366f120' },
-        },
-        selectedDataBackground: {
-          lineStyle: { color: '#6366f1', width: 1 },
-          areaStyle: { color: '#6366f140' },
-        },
-        fillerColor: 'rgba(99,102,241,0.12)',
-        handleStyle: { color: '#6366f1', borderColor: '#6366f1' },
-        moveHandleStyle: { color: '#6366f1', opacity: 0.4 },
-        showDetail: false,
-        brushSelect: false,
-      },
-    ] : [],
-    tooltip: {
+    dataZoom: showZoom ? zoomBlock : [],
+    tooltip: forPrint ? { show: false } : {
       trigger: 'axis',
       confine: true,
       backgroundColor: 'transparent',
@@ -195,10 +176,7 @@ function buildEChartsOption(data, color, palette, money) {
         return point ? buildTooltipHtml(point, palette, money) : '';
       },
     },
-    xAxis: {
-      type: 'time',
-      axisLine: { show: false },
-      axisTick: { show: false },
+    xAxis: timeAxis(palette, {
       axisLabel: {
         color: palette.muted, fontSize: 10,
         hideOverlap: true,
@@ -208,38 +186,17 @@ function buildEChartsOption(data, color, palette, money) {
         },
       },
       minInterval: 24 * 3600 * 1000,
-      splitLine: { show: false },
-    },
-    yAxis: {
-      type: 'value',
+    }),
+    yAxis: valueAxis(palette, {
+      scale: false,
       min: dataMin - padding,
       max: dataMax + padding,
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel: {
-        color: palette.muted,
-        fontSize: 10,
-        formatter: (val) => money(val),
-      },
-      splitLine: { lineStyle: { color: palette.grid, type: 'dashed' } },
-    },
+      axisLabel: { color: palette.muted, fontSize: 10, formatter: (val) => money(val) },
+    }),
     series: [{
-      type: 'line',
-      smooth: data.length < 200,
-      showSymbol: false,
-      sampling: 'lttb',
+      ...lineSeriesDefaults(color, data.length),
       data: seriesData,
-      itemStyle: { color },
-      lineStyle: { width: 2, color },
-      areaStyle: {
-        color: {
-          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [
-            { offset: 0, color: color + '55' },
-            { offset: 1, color: color + '00' },
-          ],
-        },
-      },
+      areaStyle: { color: areaGradient(color) },
       markPoint: {
         symbol: 'circle',
         symbolSize: 12,
@@ -263,10 +220,12 @@ function buildEChartsOption(data, color, palette, money) {
   };
 }
 
-export default function PerformanceChart({ portfolioId, backfill: backfillProp }) {
+function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = false }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
+  const navigate = useNavigate();
   const { convertAt, currency } = useRateHistory();
+  const chartRef = useRef(null);
   const [range, setRange] = useChartRange();
   const [activeType, setActiveType] = useSessionState('portfolio-perf-type', null);
 
@@ -311,8 +270,8 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
     : (activeType ? (ASSET_TYPE_COLORS[activeType] || '#6366f1') : '#6366f1');
   const palette = useMemo(() => themePalette(isDark), [isDark]);
   const option = useMemo(
-    () => (convertedPerfData.length > 0 ? buildEChartsOption(convertedPerfData, mainColor, palette, money) : null),
-    [convertedPerfData, mainColor, palette, money]
+    () => (convertedPerfData.length > 0 ? buildEChartsOption(convertedPerfData, mainColor, palette, money, forPrint) : null),
+    [convertedPerfData, mainColor, palette, money, forPrint]
   );
 
   const totalPnl = currentValue?.pnl ?? null;
@@ -329,8 +288,8 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
           style={{ background: `radial-gradient(circle, ${mainColor}20 0%, transparent 70%)` }}
         />
 
-        <div className="flex items-center justify-between p-5 pb-0">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between p-4 sm:p-5 pb-0 gap-3 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
             <span className="flex items-center justify-center w-10 h-10 rounded-xl transition-transform duration-300 group-hover:scale-105" style={{ backgroundColor: mainColor + '15', boxShadow: `0 0 20px ${mainColor}10` }}>
               <TrendingUp className="h-4.5 w-4.5 text-accent" />
             </span>
@@ -355,14 +314,14 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             {backfill.running && (
               <div className="flex items-center gap-1.5 text-[10px] font-mono tracking-tight text-accent/90">
                 <Spinner size="xs" tone="inherit" />
                 <span>{t('portfolio.performance.calculating')} · {String(backfillElapsed).padStart(2, '0')}s</span>
               </div>
             )}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-1.5">
                 <span className="relative w-2 h-2">
                   <span className="absolute inset-0 rounded-full bg-success animate-ping opacity-30" />
@@ -385,13 +344,13 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-5 pt-4 pb-2 gap-2 flex-wrap">
-          <div className="inline-flex gap-0.5 rounded-xl border border-border-default bg-bg-base p-1">
+        <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-2 gap-2 flex-wrap">
+          <div className="inline-flex gap-0.5 rounded-xl border border-border-default bg-bg-base p-1 flex-wrap">
             {[...ASSET_TYPES, { id: 'CASH' }].map(({ id }) => (
               <button
                 key={id || 'all'}
                 onClick={() => setActiveType(id)}
-                className="relative rounded-lg px-3 py-1.5 text-[11px] font-semibold transition-all border-none cursor-pointer bg-transparent"
+                className="relative rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] font-semibold transition-all border-none cursor-pointer bg-transparent"
               >
                 {activeType === id && (
                   <motion.span
@@ -410,25 +369,39 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
               </button>
             ))}
           </div>
-          <RangeSelector value={range} onChange={setRange} layoutId="perf-range" size="md" />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(`/analytics?codes=${portfolioId}&types=PORTFOLIO`)}
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-mono font-semibold text-accent hover:text-fg border border-accent/40 hover:border-accent/70 bg-accent/8 hover:bg-accent/15 transition-colors cursor-pointer"
+              title={t('portfolio.performance.compareCta', { defaultValue: 'Karşılaştırmada aç' })}
+            >
+              <GitCompareArrows className="h-3 w-3" />
+              {t('portfolio.performance.compareCta', { defaultValue: 'Karşılaştır' })}
+            </button>
+            <RangeSelector value={range} onChange={setRange} layoutId="perf-range" size="md" />
+          </div>
         </div>
 
-        <div className="relative min-h-[420px] px-2">
+        <div className="relative min-h-[300px] sm:min-h-[420px] px-2">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <Spinner size="md" tone="accent" />
             </div>
           ) : option ? (
             <ReactECharts
-              key={`${activeType}-${range}-${isDark}-${currency}`}
+              ref={chartRef}
+              key={`${activeType}-${range}-${isDark}-${currency}-${forPrint}`}
               option={option}
               notMerge
               lazyUpdate
-              style={{ height: 420 }}
-              opts={{ renderer: 'canvas' }}
+              style={forPrint
+                ? { height: 360, width: '100%', minHeight: 320, pointerEvents: 'none' }
+                : { height: 'min(60vh, 420px)', minHeight: 300 }}
+              opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center h-[420px] gap-3">
+            <div className="flex flex-col items-center justify-center h-[300px] sm:h-[420px] gap-3">
               <TrendingUp className="h-8 w-8 text-fg-subtle" />
               <p className="text-sm text-fg-muted">{t('portfolio.performance.empty')}</p>
             </div>
@@ -438,3 +411,5 @@ export default function PerformanceChart({ portfolioId, backfill: backfillProp }
     </motion.div>
   );
 }
+
+export default PerformanceChart;

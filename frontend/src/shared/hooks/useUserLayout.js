@@ -5,19 +5,23 @@ import { useAuth } from '../../features/auth/useAuth';
 import { STALE, GC } from '../constants/query';
 
 const LAYOUT_KEY = ['userLayout'];
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
+const DEFAULT_PAGE_ID = 'page-1';
+const MAX_PAGES = 5;
+
+const DEFAULT_SECTIONS = Object.freeze([
+  { sectionId: 'asset-cards-default', kind: 'ASSET_CARDS', x: 0, y: 0,  w: 8, h: 3, config: {} },
+  { sectionId: 'news-default',        kind: 'NEWS',        x: 8, y: 0,  w: 4, h: 21, config: {} },
+  { sectionId: 'movers-stock',        kind: 'MOVERS',      x: 0, y: 3,  w: 4, h: 6, config: { market: 'STOCK' } },
+  { sectionId: 'movers-crypto',       kind: 'MOVERS',      x: 0, y: 9,  w: 4, h: 6, config: { market: 'CRYPTO' } },
+  { sectionId: 'movers-forex',        kind: 'MOVERS',      x: 4, y: 3,  w: 4, h: 6, config: { market: 'FOREX' } },
+  { sectionId: 'movers-fund',         kind: 'MOVERS',      x: 4, y: 9,  w: 4, h: 6, config: { market: 'FUND' } },
+  { sectionId: 'movers-commodity',    kind: 'MOVERS',      x: 0, y: 15, w: 4, h: 6, config: { market: 'COMMODITY' } },
+]);
 
 export const DEFAULT_OVERVIEW_LAYOUT = Object.freeze({
   schemaVersion: SCHEMA_VERSION,
-  sections: [
-    { sectionId: 'asset-cards-default', kind: 'ASSET_CARDS', x: 0, y: 0,  w: 8, h: 3, config: {} },
-    { sectionId: 'news-default',        kind: 'NEWS',        x: 8, y: 0,  w: 4, h: 21, config: {} },
-    { sectionId: 'movers-stock',        kind: 'MOVERS',      x: 0, y: 3,  w: 4, h: 6, config: { market: 'STOCK' } },
-    { sectionId: 'movers-crypto',       kind: 'MOVERS',      x: 4, y: 3,  w: 4, h: 6, config: { market: 'CRYPTO' } },
-    { sectionId: 'movers-forex',        kind: 'MOVERS',      x: 0, y: 9,  w: 4, h: 6, config: { market: 'FOREX' } },
-    { sectionId: 'movers-fund',         kind: 'MOVERS',      x: 4, y: 9,  w: 4, h: 6, config: { market: 'FUND' } },
-    { sectionId: 'movers-commodity',    kind: 'MOVERS',      x: 0, y: 15, w: 4, h: 6, config: { market: 'COMMODITY' } },
-  ],
+  pages: [{ id: DEFAULT_PAGE_ID, name: 'Anasayfa', sections: DEFAULT_SECTIONS.map((s) => ({ ...s })) }],
 });
 
 const LEGACY_KIND_BY_PREFIX = {
@@ -40,6 +44,7 @@ const DEFAULT_SIZES = {
   MOVERS: { w: 4, h: 6 },
   WATCHLIST: { w: 4, h: 6 },
   NEWS: { w: 4, h: 14 },
+  BENCHMARK_BEATERS: { w: 4, h: 10 },
 };
 
 function migrate(section, fallbackIndex) {
@@ -66,13 +71,11 @@ function dedupKey(section) {
   return section.kind;
 }
 
-function normalize(layout) {
-  if (!layout || !Array.isArray(layout.sections)) {
-    return DEFAULT_OVERVIEW_LAYOUT;
-  }
+function normalizeSections(rawSections) {
+  if (!Array.isArray(rawSections)) return [];
   const seen = new Map();
   let assetCardCount = 0;
-  layout.sections
+  rawSections
     .filter((s) => s.visible !== false)
     .map((s, i) => migrate(s, i))
     .filter(Boolean)
@@ -84,7 +87,31 @@ function normalize(layout) {
       const key = dedupKey(s);
       if (!seen.has(key)) seen.set(key, s);
     });
-  return { schemaVersion: SCHEMA_VERSION, sections: [...seen.values()] };
+  return [...seen.values()];
+}
+
+function normalizePage(rawPage, fallbackIndex) {
+  const id = (rawPage?.id && typeof rawPage.id === 'string') ? rawPage.id : `page-${fallbackIndex + 1}`;
+  const name = (rawPage?.name && typeof rawPage.name === 'string') ? rawPage.name : `Sayfa ${fallbackIndex + 1}`;
+  return { id, name, sections: normalizeSections(rawPage?.sections) };
+}
+
+function normalize(layout) {
+  if (!layout || typeof layout !== 'object') return DEFAULT_OVERVIEW_LAYOUT;
+  if (Array.isArray(layout.pages) && layout.pages.length > 0) {
+    const pages = layout.pages.slice(0, MAX_PAGES).map((p, i) => normalizePage(p, i));
+    if (pages.length === 0) return DEFAULT_OVERVIEW_LAYOUT;
+    return { schemaVersion: SCHEMA_VERSION, pages };
+  }
+  if (Array.isArray(layout.sections)) {
+    const sections = normalizeSections(layout.sections);
+    if (sections.length === 0) return DEFAULT_OVERVIEW_LAYOUT;
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      pages: [{ id: DEFAULT_PAGE_ID, name: 'Anasayfa', sections }],
+    };
+  }
+  return DEFAULT_OVERVIEW_LAYOUT;
 }
 
 export function useUserLayout() {
@@ -117,9 +144,11 @@ export function useUpdateOverviewLayout() {
     onError: (_err, _vars, context) => {
       if (context?.previous !== undefined) queryClient.setQueryData(LAYOUT_KEY, context.previous);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (data) queryClient.setQueryData(LAYOUT_KEY, data);
-      queryClient.invalidateQueries({ queryKey: ['marketOverview'] });
+      await queryClient.refetchQueries({ queryKey: ['marketOverview'] });
     },
   });
 }
+
+export { MAX_PAGES, DEFAULT_PAGE_ID, SCHEMA_VERSION };

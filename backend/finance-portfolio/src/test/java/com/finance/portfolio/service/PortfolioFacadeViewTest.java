@@ -54,7 +54,7 @@ class PortfolioFacadeViewTest {
     private PortfolioSummaryResponse summary() {
         return new PortfolioSummaryResponse(
                 BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ZERO, BigDecimal.ZERO,
-                null, null, null, null, null);
+                null, null, null, null, null, java.util.Map.of());
     }
 
     @Test

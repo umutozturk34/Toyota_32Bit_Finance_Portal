@@ -8,6 +8,21 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700;6..12,800;6..12,900&display=swap" rel="stylesheet" />
     <title>Finance Portal</title>
+    <style>
+      html, body { margin: 0; padding: 0; background: #0e0e14; }
+      html[data-theme="light"], html[data-theme="light"] body { background: #F2F6FB; }
+      #app-boot {
+        position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+        background: #0e0e14; z-index: 9999;
+      }
+      html[data-theme="light"] #app-boot { background: #F2F6FB; }
+      #app-boot .spinner {
+        width: 36px; height: 36px; border-radius: 50%;
+        border: 2px solid rgba(99,102,241,0.18); border-top-color: #6366f1;
+        animation: app-boot-spin 0.9s linear infinite;
+      }
+      @keyframes app-boot-spin { to { transform: rotate(360deg); } }
+    </style>
     <script>
       (function () {
         try {
@@ -34,6 +49,7 @@
     </script>
   </head>
   <body>
+    <div id="app-boot" aria-hidden="true"><div class="spinner"></div></div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

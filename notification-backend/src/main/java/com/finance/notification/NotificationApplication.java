@@ -8,8 +8,10 @@ import com.finance.notification.config.NotificationCacheProperties;
 import com.finance.notification.config.NotificationDispatchProperties;
 import com.finance.common.event.KafkaTopicsProperties;
 import com.finance.notification.config.NotificationKafkaProperties;
+import com.finance.notification.config.NotificationKeycloakProperties;
 import com.finance.notification.config.NotificationOutboxProperties;
 import com.finance.notification.config.NotificationStreamProperties;
+import com.finance.notification.config.PdfExportProperties;
 import com.finance.notification.config.PriceAlertProperties;
 import com.finance.notification.config.WatchlistManagementProperties;
 import com.finance.notification.core.dispatch.slot.SlotProperties;
@@ -53,8 +55,10 @@ import java.util.TimeZone;
         NotificationCacheProperties.class,
         NotificationDispatchProperties.class,
         NotificationKafkaProperties.class,
+        NotificationKeycloakProperties.class,
         NotificationOutboxProperties.class,
         NotificationStreamProperties.class,
+        PdfExportProperties.class,
         SlotProperties.class,
         PriceAlertProperties.class,
         WatchlistManagementProperties.class

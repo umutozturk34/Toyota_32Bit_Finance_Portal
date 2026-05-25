@@ -10,6 +10,18 @@ import { AuthProvider } from './features/auth/AuthContext';
 import { useAuth } from './features/auth/useAuth';
 import { ThemeProvider } from './shared/context/ThemeContext';
 import LanguageSyncBridge from './shared/i18n/useLanguageSync';
+import useOnboardingSync from './shared/hooks/useOnboardingSync';
+import usePrefetchOnAuth from './shared/hooks/usePrefetchOnAuth';
+
+function OnboardingBridge() {
+  useOnboardingSync();
+  return null;
+}
+
+function PrefetchBridge() {
+  usePrefetchOnAuth();
+  return null;
+}
 import ToastContainer from './shared/components/feedback/Toast';
 import ProtectedRoute from './shared/components/auth/ProtectedRoute';
 import ErrorBoundary from './shared/components/feedback/ErrorBoundary';
@@ -99,6 +111,8 @@ function App() {
     <AuthProvider>
       <ThemeProvider>
         <LanguageSyncBridge />
+        <OnboardingBridge />
+        <PrefetchBridge />
         <ToastContainer />
         <RouterProvider router={router} />
       </ThemeProvider>

@@ -4,6 +4,7 @@ import com.finance.market.forex.model.ForexCandle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -18,6 +19,8 @@ public interface ForexCandleRepository extends JpaRepository<ForexCandle, Long> 
             String currencyCode, LocalDateTime start, LocalDateTime end);
 
     Optional<ForexCandle> findFirstByCurrencyCodeOrderByCandleDateDesc(String currencyCode);
+
+    Optional<ForexCandle> findFirstByCurrencyCodeAndSellingPriceGreaterThanOrderByCandleDateDesc(String currencyCode, BigDecimal sellingPrice);
 
     List<ForexCandle> findByCurrencyCodeAndCandleDateIn(String currencyCode, Collection<LocalDateTime> candleDates);
 

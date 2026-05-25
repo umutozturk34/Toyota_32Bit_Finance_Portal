@@ -13,10 +13,16 @@ import { priceCurrencyOf } from '../../utils/priceCurrency';
 import useSearchSuggestions from '../../hooks/useSearchSuggestions';
 
 const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
+const MACRO_TYPES = new Set(['MACRO_INFLATION', 'MACRO_RATE', 'MACRO_DEPOSIT']);
 
 function assetRoute(asset) {
   const base = TYPE_ROUTES[asset.type] || '/market';
   return `${base}/${encodeURIComponent(asset.code)}`;
+}
+
+function friendlyName(asset) {
+  if (!asset?.name) return null;
+  return asset.name;
 }
 
 export default function SearchSuggestions({
@@ -126,7 +132,12 @@ export default function SearchSuggestions({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className={`absolute z-[100] w-full mt-1.5 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-xl shadow-xl overflow-hidden ${isHero ? 'max-h-[400px]' : 'max-h-[320px]'}`}
+            style={{
+              background: 'var(--color-bg-deep)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+            }}
+            className={`absolute z-[100] w-full mt-1.5 rounded-xl border border-border-default shadow-xl overflow-hidden ${isHero ? 'max-h-[400px]' : 'max-h-[320px]'}`}
           >
             {suggestions.length === 0 && !isFetching ? (
               <div className="px-4 py-6 text-center text-sm text-fg-muted">
@@ -162,7 +173,9 @@ export default function SearchSuggestions({
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-fg truncate">{assetCodeLabel(asset.type, asset.code)}</span>
+                          <span className="text-sm font-semibold text-fg truncate">
+                            {friendlyName(asset) || assetCodeLabel(asset.type, asset.code)}
+                          </span>
                           <span
                             className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
                             style={{ backgroundColor: typeColor + '18', color: typeColor }}
@@ -170,8 +183,8 @@ export default function SearchSuggestions({
                             {t(`assets.labels.${asset.type}`, { defaultValue: asset.type })}
                           </span>
                         </div>
-                        {asset.name && (
-                          <p className="text-xs text-fg-muted truncate">{asset.name}</p>
+                        {asset.name && asset.code !== asset.name && !MACRO_TYPES.has(asset.type) && (
+                          <p className="text-[11px] text-fg-subtle font-mono truncate">{assetCodeLabel(asset.type, asset.code)}</p>
                         )}
                       </div>
 

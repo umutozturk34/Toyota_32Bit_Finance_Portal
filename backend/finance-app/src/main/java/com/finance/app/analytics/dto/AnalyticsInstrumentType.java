@@ -11,7 +11,8 @@ public enum AnalyticsInstrumentType {
     COMMODITY(MarketType.COMMODITY, Kind.PRICE),
     BOND(null, Kind.RATE),
     MACRO(null, Kind.RATE),
-    DEPOSIT(null, Kind.RATE);
+    DEPOSIT(null, Kind.RATE),
+    PORTFOLIO(null, Kind.PRICE);
 
     public enum Kind {
         PRICE,

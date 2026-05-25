@@ -1,29 +1,4 @@
 {
-  "about": {
-    "heading": {
-      "prefix": "About",
-      "subtitle": "A comprehensive financial management system with real-time market data, enterprise-grade security, and advanced charting."
-    },
-    "overview": {
-      "title": "Project Overview",
-      "body": "Toyota Finance Portal is a comprehensive financial management system designed for Toyota dealerships and financial services. This application provides secure authentication, real-time market data, and portfolio management capabilities."
-    },
-    "stack": {
-      "title": "Technology Stack"
-    },
-    "tech": {
-      "frontend": "Frontend",
-      "backend": "Backend",
-      "database": "Database",
-      "authentication": "Authentication",
-      "deployment": "Deployment"
-    },
-    "version": {
-      "title": "Version",
-      "current": "Current Version:",
-      "status": "(In Development)"
-    }
-  },
   "protectedRoute": {
     "unauthorized": "Unauthorized",
     "unauthorizedBody": "You don't have permission to access this page.",
@@ -67,7 +42,7 @@
     "remove": "Remove",
     "all": "All",
     "loading": "Loading...",
-    "loadingData": "Loading data\u2026",
+    "loadingData": "Loading data…",
     "search": "Search",
     "close": "Close",
     "retry": "Retry",
@@ -81,11 +56,10 @@
     "expand": "Expand",
     "settings": "Settings"
   },
-  "compareBar": {
-    "placeholder": "Compare...",
-    "title": "Compare",
-    "searchPlaceholder": "Search symbol...",
-    "addMore": "+ Add"
+  "numberFormat": {
+    "thousand": "K",
+    "million": "M",
+    "billion": "B"
   },
   "portfolioSwitcher": {
     "newPortfolio": "New portfolio",
@@ -118,13 +92,6 @@
     "body": "It may have been moved, removed, or never existed.",
     "home": "Home"
   },
-  "chartView": {
-    "compareLabel": "Compare",
-    "fundGroup": {
-      "BYF": "Exchange-Traded Funds",
-      "YAT": "Mutual Funds"
-    }
-  },
   "chart": {
     "tabs": {
       "indicators": "Indicators",
@@ -143,36 +110,11 @@
       "3M": "3M",
       "6M": "6M",
       "1Y": "1Y",
+      "3Y": "3Y",
       "5Y": "5Y",
       "ALL": "Max"
     },
-    "historicalAnalysis": "Historical Analysis",
-    "detailDescription": "{{type}} - {{symbol}} detail chart and technical analysis",
-    "detailMode": "Detail Mode",
-    "detailLockMessage": "This page is locked to <span class=\"font-semibold\">{{type}}</span> / <span class=\"font-semibold\">{{symbol}}</span>.",
-    "assetTypeLabel": "Asset Type",
-    "symbolLabel": "Symbol",
-    "customSymbolPlaceholder": "Custom symbol...",
-    "go": "Go",
-    "loading": "Loading historical data...",
     "waitingForData": "Waiting for chart data...",
-    "retry": "Retry",
-    "selectSymbol": "Select a symbol to view chart data",
-    "aboutIndicators": {
-      "title": "About Technical Indicators",
-      "sma": {
-        "title": "SMA 20 (Simple Moving Average)",
-        "desc": "20-day average price. Short-term trend indicator. Price above SMA20 suggests uptrend."
-      },
-      "ema": {
-        "title": "EMA 50 (Exponential Moving Average)",
-        "desc": "50-day weighted average. Reacts faster to recent price changes than SMA."
-      },
-      "tools": {
-        "title": "Drawing Tools",
-        "desc": "Use trend lines, Fibonacci retracements, and freehand drawings for custom analysis."
-      }
-    },
     "indicators": {
       "period": "Period",
       "color": "Color",
@@ -216,7 +158,6 @@
       "undo": "Undo",
       "clearAll": "Clear All",
       "instructions": {
-        "trendline": "Click 2 points",
         "horizontal": "Click 1 point",
         "vertical": "Click 1 point",
         "freehand": "Drag to draw",
@@ -276,11 +217,11 @@
       "active": "Active",
       "cancel": "Cancel",
       "activeInstruction": {
-        "freehand": "\u2014 Click & drag to draw",
-        "click": "\u2014 Click to place",
-        "threePoint": "\u2014 Click 3 points",
-        "twoPoint": "\u2014 Click 2 points",
-        "dragDraw": "\u2014 Click & drag"
+        "freehand": "— Click & drag to draw",
+        "click": "— Click to place",
+        "threePoint": "— Click 3 points",
+        "twoPoint": "— Click 2 points",
+        "dragDraw": "— Click & drag"
       }
     }
   },
@@ -300,6 +241,10 @@
     "NEWS": {
       "label": "News",
       "description": "Latest news by category"
+    },
+    "BENCHMARK_BEATERS": {
+      "label": "Benchmark Beaters",
+      "description": "Instruments ranked by how well they beat your chosen benchmark"
     }
   },
   "widgetSettings": {
@@ -314,8 +259,8 @@
     "panelNameLabel": "Panel name",
     "panelNamePlaceholder": "Asset cards",
     "pinnedAssets": "Pinned assets",
-    "emptyHint": "Empty \u2014 search and add below. Leaving it empty loads the default list.",
-    "searchHint": "Search \u00b7 pick \u00b7 added instantly",
+    "emptyHint": "Empty — search and add below. Leaving it empty loads the default list.",
+    "searchHint": "Search · pick · added instantly",
     "searchPlaceholder": "BTC, AKBNK, USDTRY...",
     "maxAssets": "Max assets reached",
     "closeTooltip": "Close (Esc)",
@@ -328,18 +273,50 @@
       "PARITE": "FX",
       "EMTIA": "Commodities",
       "GENEL_FINANS": "General"
-    }
+    },
+    "beatersHeader": "Benchmark Beaters",
+    "beatersBenchmark": "Benchmark",
+    "beatersVerdict": "Verdict",
+    "beatersVerdictValues": {
+      "ALL": "All",
+      "WINNERS": "Winners",
+      "LOSERS": "Losers"
+    },
+    "beatersAssetType": "Asset type",
+    "beatersTypeValues": {
+      "ALL": "All",
+      "SPOT": "Stocks",
+      "CRYPTO": "Crypto",
+      "FOREX": "FX",
+      "FUND": "Funds",
+      "COMMODITY": "Commodities",
+      "VIOP": "VIOP",
+      "DEPOSIT": "Deposit",
+      "BOND": "Bonds"
+    },
+    "beatersPeriod": "Period",
+    "beatersSortDir": "Sort",
+    "beatersSortDesc": "Best → worst",
+    "beatersSortAsc": "Worst → best",
+    "beatersLimit": "List length"
+  },
+  "overviewPages": {
+    "addPage": "New page",
+    "newPageName": "New page",
+    "deletePage": "Delete page",
+    "tabRenameHint": "Click → rename"
   },
   "widgetTray": {
     "widgetGallery": "Widget gallery",
     "assetCardTab": "Asset card",
     "watchlistTab": "Watchlist",
     "newsTile": "News",
+    "beatersTile": "Benchmark Beaters",
     "newAssetCard": "New asset card",
     "addNewCard": "+ New asset card",
     "queueLabel": "next: {{label}}",
     "watchlistFallback": "Watchlist {{id}}",
-    "fullHint": "{{max}}/{{max}} filled \u2014 remove one to add more",
+    "fullHint": "{{max}}/{{max}} filled — remove one to add more",
     "dragHint": "Drag or click",
     "addedCount": "{{count}} / {{max}} added",
     "alreadyAdded": "Already added",
@@ -348,11 +325,11 @@
     "addPanelHint": "Add new panel: {{label}}",
     "assetCardsN": "Asset cards {{n}}",
     "movers": {
-      "STOCK": "Stocks \u00b7 Up/Down",
-      "CRYPTO": "Crypto \u00b7 Up/Down",
-      "FOREX": "Forex \u00b7 Up/Down",
-      "FUND": "Funds \u00b7 Up/Down",
-      "COMMODITY": "Commodities \u00b7 Up/Down"
+      "STOCK": "Stocks · Up/Down",
+      "CRYPTO": "Crypto · Up/Down",
+      "FOREX": "Forex · Up/Down",
+      "FUND": "Funds · Up/Down",
+      "COMMODITY": "Commodities · Up/Down"
     }
   },
   "assetCards": {
@@ -363,6 +340,13 @@
   "watchlistSection": {
     "fallbackName": "Watchlist",
     "empty": "No tracked assets yet"
+  },
+  "beatersSection": {
+    "title": "Benchmark Beaters",
+    "benchmarkFallback": "benchmark",
+    "empty": "No data yet",
+    "viewAll": "View all",
+    "excessTooltip": "Excess over benchmark"
   },
   "datePicker": {
     "placeholder": "Pick a date",
@@ -435,7 +419,7 @@
       "part1": "Markets, decoded.",
       "part2": "In real time."
     },
-    "heroDescription": "One portal for stocks, crypto, forex & metals \u2014 with institutional-grade charts, enterprise SSO, and zero config.",
+    "heroDescription": "One portal for stocks, crypto, forex & metals — with institutional-grade charts, enterprise SSO, and zero config.",
     "cta": {
       "createAccount": "Create free account",
       "signIn": "Sign in"
@@ -454,7 +438,7 @@
     "features": {
       "security": {
         "title": "Bank-Grade Security",
-        "description": "Keycloak SSO, LDAP federation, 2FA/TOTP \u2014 your credentials never touch our servers."
+        "description": "Keycloak SSO, LDAP federation, 2FA/TOTP — your credentials never touch our servers."
       },
       "marketData": {
         "title": "Live Market Data",
@@ -472,9 +456,9 @@
     "getStartedTag": "Get Started",
     "ctaSection": {
       "heading": "Ready to trade smarter?",
-      "body": "Join in seconds \u2014 no credit card, no commitment."
+      "body": "Join in seconds — no credit card, no commitment."
     },
-    "footer": "\u00a9 2026 Finance Portal"
+    "footer": "© 2026 Finance Portal"
   },
   "register": {
     "subtitle": "Create your account",
@@ -519,7 +503,11 @@
       "COMMODITY": "Commodity",
       "CASH": "Cash",
       "ALL": "All",
-      "VIOP": "VIOP"
+      "VIOP": "VIOP",
+      "BOND": "Bond",
+      "DEPOSIT": "Deposit",
+      "MACRO": "Macro",
+      "SPOT": "Stock"
     }
   },
   "ranges": {
@@ -528,6 +516,7 @@
     "3M": "3M",
     "6M": "6M",
     "1Y": "1Y",
+    "3Y": "3Y",
     "5Y": "5Y",
     "ALL": "Max"
   },
@@ -686,8 +675,8 @@
     "password": {
       "title": "Password",
       "change": "Change Password",
-      "sending": "\u2026",
-      "emailLink": "Email \u2192",
+      "sending": "…",
+      "emailLink": "Email →",
       "hint": "Click the link in your email to set a new password.",
       "success": "Email sent",
       "successDesc": "Click the link in your inbox to change your password",
@@ -778,7 +767,7 @@
       "highLabel": "High",
       "lowLabel": "Low",
       "volumeLabel": "Volume",
-      "loading": "Loading stock data\u2026",
+      "loading": "Loading stock data…",
       "error": "Failed to load stock data",
       "empty": "No stock data yet."
     },
@@ -789,7 +778,7 @@
       "changeLabel": "Change",
       "volumeLabel": "Volume",
       "marketCapLabel": "Market Cap",
-      "loading": "Loading crypto data\u2026",
+      "loading": "Loading crypto data…",
       "error": "Failed to load crypto data",
       "empty": "No crypto data yet."
     },
@@ -802,7 +791,7 @@
       "banknoteRates": "Banknote Rates",
       "banknoteBuy": "Banknote Buy:",
       "banknoteSell": "Banknote Sell:",
-      "loading": "Loading forex rates\u2026",
+      "loading": "Loading forex rates…",
       "error": "Failed to load forex data",
       "empty": "No forex data yet."
     },
@@ -815,7 +804,7 @@
       "investorLabel": "Investors",
       "portfolioLabel": "Portfolio",
       "shareCountLabel": "Shares",
-      "loading": "Loading fund data\u2026",
+      "loading": "Loading fund data…",
       "error": "Failed to load fund data",
       "empty": "No fund data yet",
       "types": {
@@ -840,7 +829,7 @@
       "countLabel": "commodities",
       "usdPriceLabel": "USD Price",
       "contractsSuffix": "contracts",
-      "loading": "Loading commodity data\u2026",
+      "loading": "Loading commodity data…",
       "error": "Failed to load commodity data",
       "empty": "No commodity data yet.",
       "segments": {
@@ -852,11 +841,11 @@
       "title": "Bonds & Bills",
       "searchPlaceholder": "Search ISIN or series code...",
       "countLabel": "bonds",
-      "loading": "Loading bond data\u2026",
+      "loading": "Loading bond data…",
       "error": "Failed to load bond data",
       "empty": "No bond data yet.",
       "noSearchResults": "No bonds match the search.",
-      "chartLoading": "Loading chart\u2026",
+      "chartLoading": "Loading chart…",
       "noRateData": "No rate data",
       "couponRate": "Coupon Rate",
       "simpleYield": "Simple Yield",
@@ -906,6 +895,12 @@
     }
   },
   "portfolio": {
+    "actions": {
+      "downloadPdf": "Download PDF",
+      "downloadPdfPending": "Preparing PDF...",
+      "downloadPdfError": "PDF download failed. Please try again.",
+      "downloadPdfRateLimit": "You can download at most 2 PDFs per hour. Please try again later."
+    },
     "positions": {
       "searchPlaceholder": "Search position...",
       "empty": "No positions yet",
@@ -933,7 +928,9 @@
       "statusSold": "Sold",
       "statusClosed": "Closed",
       "exitDateLabel": "Exit Date",
-      "statusCol": "Status"
+      "statusCol": "Status",
+      "realReturnAbbr": "real",
+      "realReturnTooltip": "Real return (CPI effect removed)"
     },
     "allocation": {
       "title": "Allocation",
@@ -957,7 +954,8 @@
       "positionEvents": "Position Events",
       "realizedPnlLabel": "Realized P/L",
       "realizedPnlTitle": "Realized P/L Performance",
-      "empty": "No data in this range"
+      "empty": "No data in this range",
+      "compareCta": "Compare"
     },
     "summary": {
       "marketValue": "Market Value",
@@ -987,6 +985,17 @@
         "creating": "Creating portfolio...",
         "preparing": "Preparing..."
       }
+    },
+    "bulk": {
+      "selectedSummary": "selected · {{total}} positions",
+      "selectAll": "Select all",
+      "clearAll": "Clear all",
+      "clear": "Clear",
+      "delete": "Delete",
+      "deleting": "Deleting…",
+      "confirmTitle": "Delete positions",
+      "confirmBody": "positions will be permanently deleted. This cannot be undone.",
+      "partialError": "{{failed}}/{{total}} positions failed. Others deleted."
     },
     "sell": {
       "title": "Sell {{code}}",
@@ -1035,11 +1044,11 @@
       "entryPriceOptional": "Entry price (optional)",
       "premium": "Premium",
       "premiumOptional": "Premium (optional)",
-      "autoFromHistory": "Leave blank \u2192 taken from history",
+      "autoFromHistory": "Leave blank → taken from history",
       "alsoClosePast": "If already closed",
       "closeDate": "Close date",
       "closePrice": "Close price",
-      "closePriceOptional": "Close price (blank \u2192 from history)",
+      "closePriceOptional": "Close price (blank → from history)",
       "closeQtyLabel": "Lots to close",
       "closeQtyHint": "Quantity must be between 0 and {{max}}",
       "closeTitle": "Close Position",
@@ -1073,8 +1082,8 @@
       "put": "Put",
       "future": "Future",
       "dataAvailable": "Data available on this date: {{price}}",
-      "dataUnavailable": "No data on this date \u2014 nearest prior price will be used",
-      "closePriceLabel": "Close price (TRY)",
+      "dataUnavailable": "No data on this date — nearest prior price will be used",
+      "closePriceLabel": "Close price",
       "partialHint": "Remaining {{remaining}} lots stay open",
       "realizedPnl": "Realized P/L",
       "long": "LONG",
@@ -1114,14 +1123,14 @@
       "priceUsd": "Price (USD)",
       "priceTry": "Price (TRY)",
       "change24h": "24h Change",
-      "changeAmountUsd": "24h \u0394 (USD)",
+      "changeAmountUsd": "24h Δ (USD)",
       "volume24h": "Volume (24h)"
     },
     "forex": {
       "buy": "Buy",
       "sell": "Sell",
-      "delta24h": "24h \u0394",
-      "deltaTL": "\u0394 (TRY)",
+      "delta24h": "24h Δ",
+      "deltaTL": "Δ (TRY)",
       "banknoteBuy": "Banknote Buy",
       "banknoteSell": "Banknote Sell"
     },
@@ -1207,9 +1216,26 @@
       "categoryRates": "Rates",
       "categoryInflation": "Inflation",
       "categoryDeposit": "Deposit",
+      "enum": {
+        "MACRO_RATE": "Macro Rate",
+        "MACRO_INFLATION": "Macro Inflation",
+        "MACRO_DEPOSIT": "Macro Deposit",
+        "RATES": "Rates",
+        "INFLATION": "Inflation",
+        "DEPOSIT": "Deposit",
+        "DAILY": "Daily",
+        "WEEKLY": "Weekly",
+        "MONTHLY": "Monthly",
+        "QUARTERLY": "Quarterly",
+        "YEARLY": "Yearly",
+        "PERCENT": "Rate",
+        "INDEX": "Index",
+        "NUMBER": "Number"
+      },
       "lastUpdated": "Last updated",
       "sparkline90d": "Last 90 days",
       "historyTitle": "{{label}} History",
+      "rangeThreeMonths": "3M",
       "rangeOneYear": "1Y",
       "rangeThreeYears": "3Y",
       "rangeFiveYears": "5Y",
@@ -1225,6 +1251,7 @@
       "noData": "No data in this range",
       "indicatorInfo": "Info",
       "normalizedHint": "Multiple series — normalized as % change from start",
+      "savingsCardTitle": "{{currency}} Savings",
       "statLast": "Last",
       "statMin": "Min",
       "statMax": "Max",
@@ -1267,7 +1294,7 @@
     "title": "Notifications",
     "broadcastTitle": "Broadcast a system message to all users",
     "broadcastLabel": "Broadcast",
-    "searchPlaceholder": "Search notifications\u2026",
+    "searchPlaceholder": "Search notifications…",
     "filterAll": "All",
     "filterUnread": "Unread",
     "markRead": "read",
@@ -1348,7 +1375,7 @@
   "twoFactor": {
     "active": "2FA active",
     "inactive": "2FA off",
-    "statusLoading": "Checking status\u2026",
+    "statusLoading": "Checking status…",
     "descActive": "Your account is protected with two-factor authentication. Use the options below to re-set up or disable.",
     "descInactive": "Protect your account with an extra layer using Google/Microsoft Authenticator.",
     "reSetup": "Re-setup",
@@ -1362,7 +1389,7 @@
     "disabledBody": "Two-factor authentication has been removed from your account",
     "confirm": {
       "title": "Disable 2FA?",
-      "message": "Your account will be protected by single-factor sign-in. This is reversible \u2014 you can set it up again any time."
+      "message": "Your account will be protected by single-factor sign-in. This is reversible — you can set it up again any time."
     }
   },
   "keycloakAction": {
@@ -1389,7 +1416,7 @@
     "welcomeTitle": "Welcome to Finance Portal",
     "welcomeSubtitle": "A finance dashboard combining market data, portfolio tracking and notifications in one interface.",
     "startCta": "Let's Start",
-    "dismissHint": "You won't see this window again \u2014 manage all options from Settings.",
+    "dismissHint": "You won't see this window again — manage all options from Settings.",
     "highlights": {
       "multiMarket": {
         "title": "Multi Market",
@@ -1427,9 +1454,10 @@
     "titleEdit": "Edit position",
     "continue": "Continue",
     "totalCost": "Total cost",
+    "storedAsTry": "Stored as TRY",
     "fields": {
       "entryDate": "Entry date",
-      "entryPrice": "Entry price (TRY)",
+      "entryPrice": "Entry price",
       "quantity": "Quantity",
       "quantityShares": "Quantity (shares)",
       "minOne": "min. 1 share",
@@ -1474,7 +1502,7 @@
     "availability": {
       "has": "Data available for this date: <span class=\"font-mono font-semibold\">{{price}}</span>",
       "apply": "Apply",
-      "none": "No price data for this date \u2014 enter manually."
+      "none": "No price data for this date — enter manually."
     }
   },
   "assetDetail": {
@@ -1607,13 +1635,13 @@
     "quickSelect": "Quick pick (relative to current price)",
     "quickPercent": "Quick percent",
     "thresholdPctLabel": "Threshold (%)",
-    "thresholdPriceLabel": "Threshold price (TRY)",
-    "referenceLabel": "Reference (TRY)",
+    "thresholdPriceLabel": "Threshold price",
+    "referenceLabel": "Reference",
     "referencePlaceholder": "starting price",
     "distanceFromCurrent": "{{signed}}% away from current",
-    "projected": "\u2248 TRY {{price}} when triggered",
+    "projected": "≈ TRY {{price}} when triggered",
     "createCta": "Create alert",
-    "creating": "Creating\u2026",
+    "creating": "Creating…",
     "errorAsset": "Pick an asset",
     "errorThreshold": "Threshold must be a valid number",
     "errorReference": "Percent alert requires a reference price",
@@ -1656,13 +1684,13 @@
     "duplicateWarn": "<strong>{{code}}</strong> already exists in this list. Saving will overwrite its note and threshold.",
     "addCta": "Add to list",
     "updateCta": "Update",
-    "adding": "Adding\u2026",
-    "updating": "Updating\u2026",
+    "adding": "Adding…",
+    "updating": "Updating…",
     "errorAsset": "Pick an asset",
     "errorList": "Pick a list",
     "errorThreshold": "% threshold must be a positive number",
-    "added": "{{code}} \u2192 {{list}} added",
-    "updated": "{{code}} \u2192 {{list}} updated",
+    "added": "{{code}} → {{list}} added",
+    "updated": "{{code}} → {{list}} updated",
     "fallbackListName": "list",
     "failed": "Add failed"
   },
@@ -1670,9 +1698,9 @@
     "title": "Edit alert settings",
     "directionLabel": "Direction",
     "thresholdLabel": "Threshold",
-    "thresholdPlaceholder": "e.g. 1000000 (TRY) or 5 (%)",
+    "thresholdPlaceholder": "e.g. 1000000 or 5 (%)",
     "thresholdHint": "TRY price for ABOVE/BELOW, percent value for % directions.",
-    "saving": "Saving\u2026",
+    "saving": "Saving…",
     "invalidThreshold": "Invalid threshold",
     "invalidThresholdHint": "Enter a numeric value",
     "updated": "Updated",
@@ -1706,7 +1734,7 @@
     "titleLabel": "Title",
     "bodyLabel": "Message",
     "publishCta": "Publish",
-    "sending": "Sending\u2026",
+    "sending": "Sending…",
     "successTitle": "Broadcast sent",
     "successBody": "Delivered to {{dispatched}}/{{total}} users",
     "failed": "Failed to send broadcast"
@@ -1728,7 +1756,7 @@
     "listNameLabel": "List Name",
     "namePlaceholder": "Crypto Investments",
     "createCta": "Create",
-    "creating": "Creating\u2026",
+    "creating": "Creating…",
     "nameRequired": "List name is required",
     "successToast": "\"{{name}}\" created",
     "createFailed": "Failed to create list"
@@ -1752,8 +1780,8 @@
     "deleteListTitle": "Delete list",
     "addAsset": "Add asset",
     "createAlert": "Create alert",
-    "loading": "Loading\u2026",
-    "listsLoading": "Loading lists\u2026",
+    "loading": "Loading...",
+    "listsLoading": "Loading lists...",
     "headers": {
       "asset": "Asset",
       "lastPrice": "Last price",
@@ -1796,7 +1824,7 @@
     "sourceLanguageNote": "Articles are published in Turkish as they are pulled directly from the source.",
     "countLabel": "articles",
     "searchPlaceholder": "Search news...",
-    "loading": "Loading news\u2026",
+    "loading": "Loading news…",
     "error": "Failed to load news",
     "refresh": "Refresh",
     "cooldown": "Cooldown",
@@ -1826,15 +1854,15 @@
     "currentLabel": "Current",
     "placeholder": "new@email.com",
     "sendCode": "Send code to current address",
-    "sending": "sending\u2026",
-    "codeArrow": "Code \u2192",
+    "sending": "sending…",
+    "codeArrow": "Code →",
     "sendHintBefore": "A 6-digit code is sent to",
     "sendHintAfter": "; once you enter it below the new address becomes active.",
     "awaitingConfirmation": "Awaiting Confirmation",
     "expiresPrefix": "Valid until",
     "expiresSuffix": "",
     "cancel": "Cancel",
-    "verifying": "Verifying\u2026",
+    "verifying": "Verifying…",
     "confirm": "Confirm",
     "toast": {
       "sameAddress": "Same address",
@@ -1854,7 +1882,7 @@
     }
   },
   "viop": {
-    "title": "VIOP \u2014 Futures & Options",
+    "title": "VIOP — Futures & Options",
     "searchPlaceholder": "Search contracts (F_USDTRY...)",
     "countLabel": "contracts",
     "loading": "Loading VIOP contracts",
@@ -1903,8 +1931,11 @@
   "analytics": {
     "amount": "Amount",
     "amountHint": "You can change the display currency in settings",
-    "beaterSubtitle": "Real-return ranking by period",
-    "beaterTitle": "Inflation Beaters",
+    "tabCompare": "Compare",
+    "tabScenario": "Scenario",
+    "tabBeaters": "Beaters",
+    "beaterSubtitle": "Instruments that outperform your chosen benchmark — CPI, policy rate, USD/EUR deposits, or any other indicator.",
+    "beaterTitle": "Benchmark Beaters",
     "beatingBenchmark": "Beating",
     "beats": "Beats",
     "benchmark": "Benchmark",
@@ -1921,13 +1952,17 @@
     "clearFilters": "Clear",
     "compareEmpty": "Search and pick instruments below to compare.",
     "comparePickFirst": "Pick at least 1 instrument",
+    "comparePortfolioCta": "Add portfolio",
     "compareSearchAssets": "Search stocks, crypto, funds, FX, commodities, bonds…",
     "compareSearchMixed": "Search assets or macro indicators…",
+    "portfolioPickerHeading": "My portfolios",
+    "portfolioSeriesHint": "Portfolio series reflects cash flows over time",
     "compareSubtitle": "Place different assets side-by-side on the same chart. No amount or date — just historical price movements.",
     "compareTitle": "Comparison",
     "cpiGrowth": "CPI growth (period)",
     "endDate": "End",
-    "excessReturn": "Excess",
+    "excessReturn": "Excess vs Benchmark",
+    "excessReturnTooltip": "Nominal return − Benchmark return (positive means beats benchmark)",
     "finalValue": "Final Value",
     "instrument": "Instrument",
     "instruments": "Instruments",
@@ -1939,6 +1974,7 @@
     "noInstruments": "No instruments selected. Add one below or pick from quick suggestions.",
     "noMatch": "No match",
     "nominalReturn": "Nominal",
+    "nominalReturnTooltip": "Absolute percentage change (not inflation-adjusted)",
     "normalizedHintCompare": "Multiple series — normalized as % change from start",
     "openInCompare": "Open in Compare",
     "period": "Period",
@@ -1973,6 +2009,7 @@
     "instrumentMacro": "Macro",
     "instrumentDeposit": "Deposit",
     "periodOneMonth": "1M",
+    "periodThreeMonths": "3M",
     "periodSixMonths": "6M",
     "periodOneYear": "1Y",
     "periodThreeYears": "3Y",
@@ -1980,6 +2017,68 @@
     "backTo": {
       "beaters": "Back to Beaters",
       "asset": "Back to asset"
+    },
+    "compareInfo": {
+      "forwardFilledTooltip": "Extended to today from the last data point",
+      "backfilledTooltip": "Extended with the last known value at the start of the range"
+    },
+    "returnsInCurrency": "Returns in {{currency}}",
+    "simulationRunning": "Running simulation..."
+  },
+  "pdf": {
+    "report": {
+      "brand": "Finance Portal",
+      "eyebrow": "PORTFOLIO REPORT",
+      "subtitle": "Snapshot view of your portfolio composition and performance",
+      "generatedOn": "Generated on {{date}}",
+      "sections": {
+        "overview": "Overview",
+        "allocation": "Asset Allocation",
+        "performance": "Portfolio Performance",
+        "realizedPnl": "Realized Profit & Loss",
+        "positions": "Positions"
+      },
+      "kpi": {
+        "marketValue": "MARKET VALUE",
+        "cost": "TOTAL COST",
+        "totalPnl": "TOTAL P&L",
+        "dailyPnl": "DAILY P&L",
+        "realPnl": "REAL P&L",
+        "cpiGrowth": "CPI GROWTH"
+      },
+      "deltaToday": "today",
+      "allocation": {
+        "shareLabel": "Share",
+        "valueLabel": "Value",
+        "empty": "No assets to allocate yet."
+      },
+      "realized": {
+        "headerAsset": "ASSET",
+        "headerCost": "COST",
+        "headerRealized": "REALIZED",
+        "winnersTitle": "Winners",
+        "losersTitle": "Losers",
+        "empty": "No realized profit/loss yet."
+      },
+      "positions": {
+        "headerAsset": "ASSET",
+        "headerStatus": "STATUS",
+        "headerQty": "QTY",
+        "headerEntryDate": "ENTRY",
+        "headerExitDate": "EXIT",
+        "headerEntryPrice": "ENTRY PRICE",
+        "headerCurrentPrice": "LAST PRICE",
+        "headerMarketValue": "MARKET",
+        "headerPnl": "P&L",
+        "open": "OPEN",
+        "closed": "CLOSED",
+        "empty": "No positions to display."
+      },
+      "sentLabel": "GENERATED",
+      "loading": "Preparing report...",
+      "errorTitle": "Unable to render report",
+      "footer": "This report is generated automatically by Finance Portal. Values reflect snapshot data at generation time and do not constitute financial advice.",
+      "page": "Page {{page}} of {{total}}"
     }
   }
 }

@@ -16,5 +16,12 @@ public record OpenDerivativePositionRequest(
         BigDecimal entryPrice,
         @NotNull @DecimalMin(value = "0.0001") BigDecimal quantityLot,
         @PastOrPresent LocalDate closeDate,
-        BigDecimal closePrice
-) { }
+        BigDecimal closePrice,
+        String priceCurrency
+) {
+    public OpenDerivativePositionRequest(String contractSymbol, DerivativeDirection direction,
+                                          LocalDate entryDate, BigDecimal entryPrice,
+                                          BigDecimal quantityLot, LocalDate closeDate, BigDecimal closePrice) {
+        this(contractSymbol, direction, entryDate, entryPrice, quantityLot, closeDate, closePrice, null);
+    }
+}

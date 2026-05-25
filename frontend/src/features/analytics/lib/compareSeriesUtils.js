@@ -1,5 +1,6 @@
 import { bondService } from '../../bond/services/bondService';
 import { macroIndicatorService } from '../../macro/services/macroIndicatorService';
+import { analyticsService } from '../services/analyticsService';
 import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
 
 const PALETTE = ['#5E6AD2', '#10b981', '#f59e0b', '#06b6d4', '#ef4444', '#8b5cf6'];
@@ -10,6 +11,30 @@ export function isMacro(type) {
 
 export function isRateLike(type) {
   return isMacro(type) || type === 'BOND';
+}
+
+export function nativeCurrencyFor(type, code) {
+  if (type === 'CRYPTO') {
+    if ((code || '').toLowerCase() === 'tether') return 'TRY';
+    return 'USD';
+  }
+  if (type === 'COMMODITY') {
+    const upper = (code || '').toUpperCase();
+    if (upper.endsWith('TRY')) return 'TRY';
+    if (upper.endsWith('EUR')) return 'EUR';
+    return 'USD';
+  }
+  return 'TRY';
+}
+
+export function displayLabel(indicator) {
+  if (!indicator) return '';
+  const { type, code, name } = indicator;
+  if (isMacro(type)) {
+    if (name && name !== code) return name;
+    return code.replace(/^TP\./i, '').replace(/\.D$/i, '');
+  }
+  return name || code;
 }
 
 export function toIso(d) {
@@ -23,15 +48,21 @@ export function rangeBounds(days) {
   return { from: toIso(from), to: toIso(to) };
 }
 
-export function widenBounds(bounds, months) {
+function widenBounds(bounds, months) {
   const from = new Date(bounds.from);
   from.setMonth(from.getMonth() - months);
   return { from: from.toISOString().slice(0, 10), to: bounds.to };
 }
 
 export async function fetchSeries(item, bounds) {
-  if (isMacro(item.type)) {
-    const wide = widenBounds(bounds, 3);
+  if (item.type === 'PORTFOLIO') {
+    const points = await analyticsService.portfolioSeries(item.code, bounds);
+    return (points || [])
+      .map((p) => ({ date: p.date, value: Number(p.value) }))
+      .filter((p) => p.date && Number.isFinite(p.value));
+  }
+  if (isMacro(item.type) || item.unit) {
+    const wide = widenBounds(bounds, 18);
     const points = await macroIndicatorService.history(item.code, wide);
     return points.map((p) => ({ date: p.observedAt, value: Number(p.value) }));
   }
@@ -42,8 +73,7 @@ export async function fetchSeries(item, bounds) {
         date: (r.date || r.rateDate || '').slice(0, 10),
         value: Number(r.rate ?? r.couponRate ?? r.value),
       }))
-      .filter((p) => p.date && Number.isFinite(p.value)
-        && p.date >= bounds.from && p.date <= bounds.to);
+      .filter((p) => p.date && Number.isFinite(p.value) && p.date <= bounds.to);
   }
   const candles = await unifiedMarketService.getHistory(item.type, item.code, 'ALL');
   return (candles || [])
@@ -100,4 +130,39 @@ export function backFillToWindowStart(points, windowStart) {
   const firstInWindow = inWindow[0];
   if (firstInWindow && firstInWindow.date === windowStart) return inWindow;
   return [{ date: windowStart, value: anchor.value, _backfilled: true }, ...inWindow];
+}
+
+export function forwardFillDaily(points, fromIso, toIso) {
+  if (!points || points.length === 0) return points;
+  const sorted = [...points].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  if (sorted.length > 1) {
+    let maxGap = 0;
+    for (let i = 1; i < sorted.length; i += 1) {
+      const prev = new Date(sorted[i - 1].date);
+      const curr = new Date(sorted[i].date);
+      const gap = Math.round((curr - prev) / 86400000);
+      if (gap > maxGap) maxGap = gap;
+    }
+    if (maxGap < 4) return sorted;
+  }
+  const result = [];
+  let cursor = new Date(fromIso);
+  const end = new Date(toIso);
+  let idx = 0;
+  let currentValue = null;
+  while (cursor <= end) {
+    const cursorIso = cursor.toISOString().slice(0, 10);
+    while (idx < sorted.length && sorted[idx].date <= cursorIso) {
+      currentValue = sorted[idx].value;
+      idx += 1;
+    }
+    const exact = sorted.find((p) => p.date === cursorIso);
+    if (exact) {
+      result.push(exact);
+    } else if (currentValue !== null) {
+      result.push({ date: cursorIso, value: currentValue, _filled: true });
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return result;
 }

@@ -37,6 +37,7 @@ export const PRESET_INSTRUMENTS = [
 
 export const PERIODS = [
   { id: '1M', labelKey: 'periodOneMonth' },
+  { id: '3M', labelKey: 'periodThreeMonths' },
   { id: '6M', labelKey: 'periodSixMonths' },
   { id: '1Y', labelKey: 'periodOneYear' },
   { id: '3Y', labelKey: 'periodThreeYears' },

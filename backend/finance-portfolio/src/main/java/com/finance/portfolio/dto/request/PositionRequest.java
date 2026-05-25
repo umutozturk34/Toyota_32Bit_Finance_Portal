@@ -14,10 +14,17 @@ public record PositionRequest(
         @NotNull LocalDateTime entryDate,
         @NotNull @Positive BigDecimal entryPrice,
         LocalDateTime exitDate,
-        @Positive BigDecimal exitPrice
+        @Positive BigDecimal exitPrice,
+        String priceCurrency
 ) {
     public PositionRequest(String assetType, String assetCode, BigDecimal quantity,
                            LocalDateTime entryDate, BigDecimal entryPrice) {
-        this(assetType, assetCode, quantity, entryDate, entryPrice, null, null);
+        this(assetType, assetCode, quantity, entryDate, entryPrice, null, null, null);
+    }
+
+    public PositionRequest(String assetType, String assetCode, BigDecimal quantity,
+                           LocalDateTime entryDate, BigDecimal entryPrice,
+                           LocalDateTime exitDate, BigDecimal exitPrice) {
+        this(assetType, assetCode, quantity, entryDate, entryPrice, exitDate, exitPrice, null);
     }
 }

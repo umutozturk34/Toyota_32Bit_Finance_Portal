@@ -13,7 +13,6 @@ import com.finance.market.viop.service.ViopHistoryProvider;
 import com.finance.portfolio.derivative.dto.request.CloseDerivativePositionRequest;
 import com.finance.portfolio.derivative.dto.request.OpenDerivativePositionRequest;
 import com.finance.portfolio.derivative.dto.request.UpdateDerivativePositionRequest;
-import com.finance.portfolio.derivative.dto.response.DerivativePositionResponse;
 import com.finance.portfolio.derivative.mapper.DerivativePositionMapper;
 import com.finance.portfolio.derivative.model.DerivativeCloseReason;
 import com.finance.portfolio.derivative.model.DerivativeDirection;
@@ -66,6 +65,7 @@ class DerivativePositionServiceTest {
     @Mock private ViopMarketDataPort viopMarketData;
     @Mock private DerivativePositionMapper mapper;
     @Mock private org.springframework.context.ApplicationEventPublisher eventPublisher;
+    @Mock private com.finance.market.core.service.CurrencyConverter currencyConverter;
 
     private DerivativePositionService service;
     private Portfolio portfolio;
@@ -74,12 +74,13 @@ class DerivativePositionServiceTest {
     @BeforeEach
     void setUp() {
         DerivativeSnapshotMaintenance snapshotMaintenance = new DerivativeSnapshotMaintenance(
-                candleRepository, historicalPricingPort, assetSnapshotRepository, snapshotCalculator);
+                candleRepository, historicalPricingPort, assetSnapshotRepository, snapshotCalculator,
+                positionRepository);
         DerivativePriceResolver priceResolver = new DerivativePriceResolver(
                 candleRepository, historicalPricingPort);
         service = new DerivativePositionService(positionRepository, portfolioRepository,
                 contractRepository, assetSnapshotRepository, mapper, eventPublisher,
-                snapshotMaintenance, priceResolver);
+                snapshotMaintenance, priceResolver, currencyConverter);
 
         portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).name("test").build();
 
@@ -694,5 +695,45 @@ class DerivativePositionServiceTest {
 
         verify(assetSnapshotRepository).saveAll(org.mockito.ArgumentMatchers.argThat(
                 c -> ((java.util.Collection<?>) c).size() >= 1));
+    }
+
+    @Test
+    void open_convertsEntryPriceToTry_whenPriceCurrencyIsUsd() {
+        OpenDerivativePositionRequest req = new OpenDerivativePositionRequest(
+                "F_USDTRY0626", DerivativeDirection.LONG, LocalDate.of(2026, 4, 1),
+                new BigDecimal("100"), new BigDecimal("1"), null, null, "USD");
+        when(contractRepository.findBySymbol("F_USDTRY0626")).thenReturn(Optional.of(contract));
+        when(positionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(currencyConverter.convertAtDate(new BigDecimal("100"),
+                com.finance.common.model.Currency.USD, com.finance.common.model.Currency.TRY,
+                LocalDate.of(2026, 4, 1))).thenReturn(new BigDecimal("3320.0000"));
+        when(snapshotCalculator.buildDerivativeAssetSnapshotAt(any(), any(), any(), any(), any(), any()))
+                .thenReturn(com.finance.portfolio.model.PortfolioAssetDailySnapshot.builder().build());
+
+        service.open(PORTFOLIO_ID, USER_SUB, req);
+
+        org.mockito.ArgumentCaptor<DerivativePosition> captor =
+                org.mockito.ArgumentCaptor.forClass(DerivativePosition.class);
+        verify(positionRepository).save(captor.capture());
+        assertThat(captor.getValue().getEntryPrice()).isEqualByComparingTo(new BigDecimal("3320.0000"));
+    }
+
+    @Test
+    void close_convertsClosePriceToTry_whenPriceCurrencyIsUsd() {
+        DerivativePosition position = openPosition();
+        LocalDate closeDate = LocalDate.of(2026, 5, 1);
+        CloseDerivativePositionRequest req = new CloseDerivativePositionRequest(
+                closeDate, new BigDecimal("105"), null, "USD");
+        when(positionRepository.findByIdAndPortfolioId(POSITION_ID, PORTFOLIO_ID))
+                .thenReturn(Optional.of(position));
+        when(positionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(positionRepository.findOpenByPortfolio(PORTFOLIO_ID)).thenReturn(List.of());
+        when(currencyConverter.convertAtDate(new BigDecimal("105"),
+                com.finance.common.model.Currency.USD, com.finance.common.model.Currency.TRY,
+                closeDate)).thenReturn(new BigDecimal("3486.0000"));
+
+        service.close(POSITION_ID, PORTFOLIO_ID, USER_SUB, req);
+
+        assertThat(position.getClosePrice()).isEqualByComparingTo(new BigDecimal("3486.0000"));
     }
 }

@@ -5,6 +5,7 @@ import { computeChange } from '../utils';
 
 const SPARK_WIDTH = 100;
 const SPARK_HEIGHT = 32;
+const SPARK_PAD = 2;
 const SUCCESS = '#10b981';
 const DANGER = '#ef4444';
 
@@ -18,13 +19,15 @@ function buildPath(points, width, height) {
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min || 1;
-  const stepX = width / (points.length - 1);
+  const innerW = width - 2 * SPARK_PAD;
+  const innerH = height - 2 * SPARK_PAD;
+  const stepX = innerW / (points.length - 1);
   const coords = points.map((p, i) => ({
-    x: i * stepX,
-    y: height - ((Number(p.value) - min) / span) * height,
+    x: SPARK_PAD + i * stepX,
+    y: SPARK_PAD + innerH - ((Number(p.value) - min) / span) * innerH,
   }));
   const line = coords.map(({ x, y }, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`).join(' ');
-  const area = `${line} L${(coords[coords.length - 1].x).toFixed(2)},${height} L0,${height} Z`;
+  const area = `${line} L${(coords[coords.length - 1].x).toFixed(2)},${height} L${SPARK_PAD.toFixed(2)},${height} Z`;
   return { line, area, lastDot: coords[coords.length - 1] };
 }
 

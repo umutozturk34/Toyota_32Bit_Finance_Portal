@@ -7,9 +7,13 @@ import com.finance.market.crypto.model.Crypto;
 import com.finance.common.model.MarketType;
 import com.finance.shared.service.AssetPricingPort.AssetMeta;
 import com.finance.market.core.cache.MarketCacheService;
+import com.finance.market.crypto.repository.CryptoCandleRepository;
 import com.finance.market.crypto.service.assetpricing.CryptoPricingStrategy;
+import com.finance.market.forex.repository.ForexCandleRepository;
 import com.finance.market.forex.service.assetpricing.ForexPricingStrategy;
+import com.finance.market.fund.repository.FundCandleRepository;
 import com.finance.market.fund.service.assetpricing.FundPricingStrategy;
+import com.finance.market.stock.repository.StockCandleRepository;
 import com.finance.market.stock.service.assetpricing.StockPricingStrategy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,16 +34,21 @@ class AssetPricingAdapterTest {
     @Mock private MarketCacheService<Stock> stockCacheService;
     @Mock private MarketCacheService<Forex> forexCacheService;
     @Mock private MarketCacheService<Fund> fundCacheService;
+    @Mock private StockCandleRepository stockCandleRepository;
+    @Mock private CryptoCandleRepository cryptoCandleRepository;
+    @Mock private ForexCandleRepository forexCandleRepository;
+    @Mock private FundCandleRepository fundCandleRepository;
+    @Mock private com.finance.market.core.service.ExchangeRateProvider exchangeRateProvider;
 
     private AssetPricingAdapter adapter;
 
     @BeforeEach
     void setUp() {
         adapter = new AssetPricingAdapter(List.of(
-            new CryptoPricingStrategy(cryptoCacheService),
-            new StockPricingStrategy(stockCacheService),
-            new ForexPricingStrategy(forexCacheService),
-            new FundPricingStrategy(fundCacheService)
+            new CryptoPricingStrategy(cryptoCacheService, cryptoCandleRepository, exchangeRateProvider),
+            new StockPricingStrategy(stockCacheService, stockCandleRepository),
+            new ForexPricingStrategy(forexCacheService, forexCandleRepository),
+            new FundPricingStrategy(fundCacheService, fundCandleRepository)
         ));
     }
 

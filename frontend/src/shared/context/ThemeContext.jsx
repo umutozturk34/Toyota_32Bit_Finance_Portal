@@ -17,6 +17,19 @@ function readStoredPreference() {
     return 'DARK';
 }
 
+function bootstrapSynced() {
+    try { return localStorage.getItem('finance-prefs-bootstrap-synced') === '1'; } catch { return false; }
+}
+
+function hasExplicitLocalTheme() {
+    try {
+        const stored = localStorage.getItem('finance-theme');
+        return stored === 'light' || stored === 'dark';
+    } catch {
+        return false;
+    }
+}
+
 function BootSplash() {
     const stored = (() => {
         try { return localStorage.getItem('finance-theme') === 'light' ? 'light' : 'dark'; }
@@ -68,7 +81,9 @@ export function ThemeProvider({ children }) {
     const [trackedServerTheme, setTrackedServerTheme] = useState(null);
 
     const serverTheme = isAuthenticated && hasResolvedPreferences ? preferences.theme : null;
-    if (serverTheme && serverTheme !== trackedServerTheme) {
+    const localExplicit = hasExplicitLocalTheme();
+    const acceptServerTheme = serverTheme && (bootstrapSynced() || !localExplicit);
+    if (acceptServerTheme && serverTheme !== trackedServerTheme) {
         setTrackedServerTheme(serverTheme);
         if (serverTheme !== storedPreference) {
             setStoredPreferenceState(serverTheme);

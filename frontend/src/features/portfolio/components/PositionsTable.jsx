@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronRight, Package, Pencil, Trash2, XCircle, ShoppingBag, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -10,6 +11,7 @@ import Card from '../../../shared/components/card';
 import Spinner from '../../../shared/components/feedback/Spinner';
 import { isLotPending, useBackfillStatus, usePortfolioPositions, useReopenPosition } from '../hooks/usePortfolioData';
 import { useReopenDerivativePosition } from '../hooks/useDerivativePositions';
+import { usePositionSelection } from '../hooks/usePositionSelection';
 import useListParams from '../../../shared/hooks/useListParams';
 import useElapsedSeconds from '../../../shared/hooks/useElapsedSeconds';
 import PortfolioListShell from './PortfolioListShell';
@@ -17,6 +19,9 @@ import FilterTabs from '../../../shared/components/form/FilterTabs';
 import PositionStatusBadge from './PositionStatusBadge';
 import PositionAssetBadge from './PositionAssetBadge';
 import PositionDerivativeChips from './PositionDerivativeChips';
+import SelectableCheckbox from './SelectableCheckbox';
+import BulkSelectionBar from './BulkSelectionBar';
+import BulkDeleteDialog from './BulkDeleteDialog';
 
 const SORT_OPTION_IDS = ['currentValue', 'profitPercent', 'profitAmount', 'entryDate', 'assetCode', 'quantity'];
 
@@ -44,6 +49,7 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
 
   const reopenMutation = useReopenPosition(portfolioId);
   const reopenDerivativeMutation = useReopenDerivativePosition(portfolioId);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const statusFilter = searchParams.get('status') || 'all';
@@ -63,6 +69,8 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
     const closed = isPositionClosed(pos);
     return statusFilter === 'closed' ? closed : !closed;
   });
+
+  const selection = usePositionSelection(positions);
 
   if (!portfolioId) return null;
 
@@ -94,7 +102,17 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
       secondaryFilters={statusFilterBar}
     >
       <div className="space-y-3">
-      <div className="hidden lg:grid lg:grid-cols-[minmax(220px,2.4fr)_56px_92px_92px_72px_84px_84px_104px_112px_104px_24px] gap-3 px-4 py-2 text-[10px] text-fg-muted font-medium uppercase tracking-wider whitespace-nowrap">
+      <BulkSelectionBar
+        count={selection.count}
+        total={positions.length}
+        allSelected={selection.allSelected}
+        onClear={selection.clear}
+        onToggleAll={selection.toggleAll}
+        onDeleteClick={() => setBulkDeleteOpen(true)}
+        isDeleting={false}
+      />
+      <div className="hidden lg:grid lg:grid-cols-[28px_minmax(220px,2.4fr)_56px_92px_92px_72px_84px_84px_104px_112px_104px_24px] gap-3 px-4 py-2 text-[10px] text-fg-muted font-medium uppercase tracking-wider whitespace-nowrap">
+        <span />
         <span>{t('portfolio.positions.assetCol')}</span>
         <span>{t('portfolio.positions.quantityCol')}</span>
         <span>{t('portfolio.positions.entryDateCol')}</span>
@@ -114,6 +132,8 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
           pos={pos}
           pending={isLotPending(backfill, pos.assetType, pos.assetCode)}
           elapsed={elapsed}
+          selected={selection.isSelected(pos.id)}
+          onToggleSelect={(e) => selection.toggle(pos.id, e)}
           onAssetClick={assetClickProp}
           onEditClick={editClickProp}
           onDeleteClick={deleteClickProp}
@@ -123,11 +143,17 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
         />
       ))}
       </div>
+      <BulkDeleteDialog
+        portfolioId={portfolioId}
+        positions={bulkDeleteOpen ? selection.selectedArray : []}
+        onClose={() => setBulkDeleteOpen(false)}
+        onComplete={() => selection.clear()}
+      />
     </PortfolioListShell>
   );
 }
 
-function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDeleteClick, onCloseClick, onSellClick, onReopenClick }) {
+function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetClick, onEditClick, onDeleteClick, onCloseClick, onSellClick, onReopenClick }) {
   const { t } = useTranslation();
   const { format: money, formatCompact: moneyCompact } = useMoney();
   const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
@@ -187,7 +213,10 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
         </>
       )}
       <div className={pending ? 'pt-7 opacity-50' : ''}>
-      <div className="hidden lg:grid lg:grid-cols-[minmax(220px,2.4fr)_56px_92px_92px_72px_84px_84px_104px_112px_104px_24px] gap-3 items-start p-4 min-w-0">
+      <div className="hidden lg:grid lg:grid-cols-[28px_minmax(220px,2.4fr)_56px_92px_92px_72px_84px_84px_104px_112px_104px_24px] gap-3 items-start p-4 min-w-0">
+        <div className="flex items-center justify-center pt-1">
+          {!pending && <SelectableCheckbox checked={!!selected} onClick={onToggleSelect} label={pos.assetCode} />}
+        </div>
         <div className="flex items-center gap-2.5 cursor-pointer min-w-0" onClick={assetClick}>
           <PositionAssetBadge pos={pos} />
           <div className="min-w-0">
@@ -215,7 +244,7 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
         <div className="flex justify-start">
           <PositionStatusBadge closed={isClosedSpot || isClosedDerivative} isDerivative={isDerivative} />
         </div>
-        <p className="text-left text-[11px] font-mono text-fg truncate">{money(pos.entryPrice)}</p>
+        <p className="text-left text-[11px] font-mono text-fg truncate">{money(pos.entryPrice, 'TRY', { dateAt: pos.entryDate })}</p>
         <p className={`text-left text-[11px] font-mono truncate ${isClosedSpot || isClosedDerivative ? 'text-fg-muted italic' : 'text-fg'}`}>{money(pos.currentPriceTry)}</p>
         <p className={`text-left text-[11px] font-mono truncate ${isClosedSpot || isClosedDerivative ? 'text-fg-muted italic' : 'text-fg'}`} title={money(pos.marketValueTry)}>{bigMoney(pos.marketValueTry)}</p>
         <div className="text-left min-w-0">
@@ -223,8 +252,8 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
           <div className="flex items-center gap-1 flex-wrap">
             <span className={`inline-flex items-center rounded px-1 py-0.5 text-[10px] font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>{formatPercent(pos.pnlPercent)}</span>
             {pos.realPnlPercent != null && (
-              <span className={`inline-flex items-center text-[9px] font-mono tabular-nums tracking-[0.04em] uppercase ${Number(pos.realPnlPercent) >= 0 ? 'text-emerald-500' : 'text-red-500'}`} title="Reel getiri (TÜFE etkisi düşülmüş)">
-                reel {formatPercent(pos.realPnlPercent)}
+              <span className={`inline-flex items-center text-[9px] font-mono tabular-nums tracking-[0.04em] uppercase ${Number(pos.realPnlPercent) >= 0 ? 'text-emerald-500' : 'text-red-500'}`} title={t('portfolio.positions.realReturnTooltip')}>
+                {t('portfolio.positions.realReturnAbbr')} {formatPercent(pos.realPnlPercent)}
               </span>
             )}
           </div>
@@ -258,8 +287,9 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
       </div>
 
       <div className="lg:hidden p-4 space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0 flex-1" onClick={assetClick}>
+            {!pending && <SelectableCheckbox checked={!!selected} onClick={onToggleSelect} label={pos.assetCode} />}
             <PositionAssetBadge pos={pos} />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
@@ -310,7 +340,7 @@ function PositionRow({ pos, pending, elapsed, onAssetClick, onEditClick, onDelet
           {(isClosedSpot || isClosedDerivative) && (
             <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.exitDateLabel')}</p><p className="font-mono text-fg font-medium">{formatEntryDate(pos.exitDate, localeTag) || '—'}</p></div>
           )}
-          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryPriceCol')}</p><p className="font-mono text-fg font-medium">{money(pos.entryPrice)}</p></div>
+          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryPriceCol')}</p><p className="font-mono text-fg font-medium">{money(pos.entryPrice, 'TRY', { dateAt: pos.entryDate })}</p></div>
           <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.pnlCol')}</p><p className={`font-mono font-semibold ${changeColors[pnlClass]}`} title={money(pos.pnlTry)}>{bigMoney(pos.pnlTry)}</p></div>
         </div>
       </div>

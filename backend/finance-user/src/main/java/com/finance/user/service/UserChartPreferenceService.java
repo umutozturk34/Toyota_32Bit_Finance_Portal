@@ -75,6 +75,6 @@ public class UserChartPreferenceService {
         return trackedAssetRepository
                 .findByAssetTypeAndAssetCodeIgnoreCase(type, normalized)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Tracked asset not found: " + type + " / " + normalized));
+                        "error.trackedAsset.notFound", type, normalized));
     }
 }

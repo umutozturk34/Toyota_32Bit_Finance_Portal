@@ -33,9 +33,18 @@ const CANDLE_MONEY_FIELDS = [
   'sellingPrice', 'buyingPrice', 'effectiveBuyingPrice', 'effectiveSellingPrice', 'bulletinPrice',
 ];
 
-function naturalCurrencyFor(assetType, asset) {
-  if (assetType === 'CRYPTO') return 'USD';
+function naturalCurrencyFor(assetType, asset, assetCode) {
+  if (assetType === 'CRYPTO') {
+    if ((assetCode || '').toLowerCase() === 'tether') return 'TRY';
+    return 'USD';
+  }
   if (assetType === 'VIOP') return asset?.metadata?.currency || 'TRY';
+  if (assetType === 'COMMODITY') {
+    const upper = (assetCode || '').toUpperCase();
+    if (upper.endsWith('TRY') || upper.endsWith('TRYG')) return 'TRY';
+    if (upper.endsWith('EUR') || upper.endsWith('EURG')) return 'EUR';
+    return 'USD';
+  }
   return 'TRY';
 }
 
@@ -54,8 +63,8 @@ function convertCandleSet(data, convertAt, baseCurrency, naturalCurrency) {
   };
 }
 
-const RANGE_DAYS = { '1W': 7, '1M': 31, '3M': 93, '6M': 186, '1Y': 372, '5Y': 1830 };
-const CLIENT_FILTER_RANGES = new Set(['1W', '1M', '3M', '6M', '1Y']);
+const RANGE_DAYS = { '1W': 7, '1M': 31, '3M': 93, '6M': 186, '1Y': 372, '3Y': 1098, '5Y': 1830 };
+const CLIENT_FILTER_RANGES = new Set(['1W', '1M', '3M', '6M', '1Y', '3Y']);
 
 function filterCandlesClientSide(candles, range) {
   if (!Array.isArray(candles) || candles.length === 0) return candles;
@@ -116,7 +125,7 @@ export default function AssetDetailPage({
   );
 
   const transform = TRANSFORM_MAP[assetType] || transformCandles;
-  const naturalCurrency = naturalCurrencyFor(assetType, asset);
+  const naturalCurrency = naturalCurrencyFor(assetType, asset, assetCode);
   const baseCurrency = asset?.metadata?.currency || naturalCurrency;
   const chartData = useMemo(
     () => convertCandleSet(transform(filteredHistoryRaw), convertAt, baseCurrency, naturalCurrency),
@@ -175,8 +184,11 @@ export default function AssetDetailPage({
                   codes: assetCode,
                   types: assetType,
                   range: '1Y',
+                  from: 'asset',
+                  fromType: assetType,
+                  fromCode: assetCode,
                 });
-                navigate(`/analytics?${next.toString()}`, { state: { from: 'asset' } });
+                navigate(`/analytics?${next.toString()}`);
               }}
               className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs font-semibold text-fg-muted hover:text-accent hover:border-accent/40 hover:bg-accent/10 transition-colors cursor-pointer"
               title={t('marketDetail.compareAction', { defaultValue: 'Karşılaştır' })}

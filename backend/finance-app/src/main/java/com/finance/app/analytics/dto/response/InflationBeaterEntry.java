@@ -9,6 +9,6 @@ public record InflationBeaterEntry(
         String code,
         String name,
         BigDecimal nominalReturnPct,
-        BigDecimal realReturnPct,
-        boolean beatsInflation) {
+        BigDecimal excessReturnPct,
+        boolean beatsBenchmark) {
 }

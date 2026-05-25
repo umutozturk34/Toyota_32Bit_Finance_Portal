@@ -27,7 +27,7 @@ const LANGUAGE_OPTIONS = [
   { value: 'en', labelKey: 'settings.language.en' },
 ];
 
-const CHART_RANGE_VALUES = ['1W', '1M', '3M', '6M', '1Y', '5Y', 'ALL'];
+const CHART_RANGE_VALUES = ['1W', '1M', '3M', '6M', '1Y', '3Y', '5Y', 'ALL'];
 
 const CURRENCY_OPTIONS = [
   { value: 'TRY', label: '₺ TRY' },

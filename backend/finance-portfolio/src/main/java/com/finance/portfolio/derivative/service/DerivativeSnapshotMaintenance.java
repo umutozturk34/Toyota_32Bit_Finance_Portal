@@ -5,6 +5,7 @@ import com.finance.market.core.service.HistoricalPricingPort;
 import com.finance.market.viop.model.ViopCandle;
 import com.finance.market.viop.repository.ViopCandleRepository;
 import com.finance.portfolio.derivative.model.DerivativePosition;
+import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.MoneyScale;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
@@ -35,6 +36,7 @@ public class DerivativeSnapshotMaintenance {
     private final HistoricalPricingPort historicalPricingPort;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     private final SnapshotCalculationService snapshotCalculator;
+    private final DerivativePositionRepository derivativePositionRepository;
 
     public void backfillSnapshots(DerivativePosition position) {
         if (position.getViopContract() == null) return;
@@ -90,7 +92,7 @@ public class DerivativeSnapshotMaintenance {
                 batch.add(snapshot);
                 priorInBatch = snapshot;
             }
-            if (isCloseDay) {
+            if (isCloseDay && !hasPeerHoldingAfter(position, date)) {
                 PortfolioAssetDailySnapshot zero = buildZeroDerivativeSnapshot(
                         position, ts.plusSeconds(1), close, priorInBatch);
                 batch.add(zero);
@@ -126,6 +128,20 @@ public class DerivativeSnapshotMaintenance {
                 .dailyPnlTry(dailyPnl)
                 .dailyPnlPercent(BigDecimal.ZERO)
                 .build();
+    }
+
+    private boolean hasPeerHoldingAfter(DerivativePosition position, LocalDate thisClose) {
+        Long portfolioId = position.getPortfolio().getId();
+        String symbol = position.getViopContract().getSymbol();
+        Long excludeId = position.getId();
+        return derivativePositionRepository.findByPortfolioId(portfolioId).stream()
+                .anyMatch(p -> p.getId() != null
+                        && !p.getId().equals(excludeId)
+                        && p.getViopContract() != null
+                        && symbol.equals(p.getViopContract().getSymbol())
+                        && p.getEntryDate() != null
+                        && !p.getEntryDate().isAfter(thisClose)
+                        && (p.getCloseDate() == null || p.getCloseDate().isAfter(thisClose)));
     }
 
     public void consolidateSymbolSnapshots(Long portfolioId, String symbol) {

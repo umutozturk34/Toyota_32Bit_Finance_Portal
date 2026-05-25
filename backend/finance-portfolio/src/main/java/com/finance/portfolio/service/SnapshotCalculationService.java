@@ -31,7 +31,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -220,6 +219,8 @@ public class SnapshotCalculationService {
         Map<AssetKey, PortfolioAssetDailySnapshot> latest = new java.util.HashMap<>();
         for (PortfolioAssetDailySnapshot row : rows) {
             if (row.getAssetType() == null || row.getAssetCode() == null || row.getMarketValueTry() == null) continue;
+            if (row.getAssetType() == AssetType.VIOP
+                    && row.getQuantity() != null && row.getQuantity().signum() == 0) continue;
             AssetKey key = new AssetKey(row.getAssetType().marketType(), row.getAssetCode());
             latest.merge(key, row, SnapshotCalculationService::pickLatestSnapshot);
         }
@@ -260,8 +261,8 @@ public class SnapshotCalculationService {
             return;
         }
         BigDecimal price = prices.get(key);
-        BigDecimal unitPrice = price != null ? price : BigDecimal.ZERO;
-        totals.addMarket(pos.currentValue(unitPrice));
+        if (price == null) return;
+        totals.addMarket(pos.currentValue(price));
     }
 
     private void accumulateDerivativePositions(List<DerivativePosition> derivatives, java.time.LocalDate snapDate,
@@ -274,15 +275,23 @@ public class SnapshotCalculationService {
             BigDecimal entryNotional = dpos.nominalExposure();
             if (entryNotional == null) continue;
             totals.addEntry(entryNotional);
-            boolean closedBySnapDate = dpos.getCloseDate() != null && !dpos.getCloseDate().isAfter(snapDate);
-            if (closedBySnapDate) {
+            boolean closedBeforeSnapDate = dpos.getCloseDate() != null && dpos.getCloseDate().isBefore(snapDate);
+            if (closedBeforeSnapDate) {
                 BigDecimal realized = dpos.realizedOrUnrealizedPnl(dpos.getClosePrice());
                 if (realized != null) totals.addRealizedClose(realized, entryNotional.add(realized));
                 continue;
             }
             AssetKey key = new AssetKey(MarketType.VIOP, dpos.getViopContract().getSymbol());
             BigDecimal rowMv = rowMvByKey.get(key);
-            if (rowMv != null && countedFromRows.add(key)) totals.addMarket(rowMv);
+            if (rowMv != null) {
+                if (countedFromRows.add(key)) totals.addMarket(rowMv);
+                continue;
+            }
+            boolean closedOnSnapDate = dpos.getCloseDate() != null && dpos.getCloseDate().equals(snapDate);
+            if (closedOnSnapDate) {
+                BigDecimal realized = dpos.realizedOrUnrealizedPnl(dpos.getClosePrice());
+                if (realized != null) totals.addRealizedClose(realized, entryNotional.add(realized));
+            }
         }
     }
 
@@ -403,32 +412,9 @@ public class SnapshotCalculationService {
     private Optional<PortfolioAssetDailySnapshot> findClosestPriorAssetSnapshot(
             Long portfolioId, Long trackedAssetId, LocalDateTime batchTimestamp) {
         LocalDateTime target = batchTimestamp.minusHours(portfolioProperties.getSnapshot().getDailyLookbackHours());
-        Optional<PortfolioAssetDailySnapshot> older = assetSnapshotRepository
+        return assetSnapshotRepository
                 .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
                         portfolioId, trackedAssetId, target);
-        Optional<PortfolioAssetDailySnapshot> newer = assetSnapshotRepository
-                .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
-                        portfolioId, trackedAssetId, target);
-        return pickClosest(older, newer, target, PortfolioAssetDailySnapshot::getCreatedAt);
-    }
-
-    private BigDecimal contractFxRate(String currency) {
-        if (currency == null || currency.isBlank() || "TRY".equalsIgnoreCase(currency)) {
-            return BigDecimal.ONE;
-        }
-        BigDecimal rate = pricingPort.getExitPriceTry(
-                com.finance.common.model.MarketType.FOREX, currency.toUpperCase());
-        return rate != null && rate.signum() > 0 ? rate : BigDecimal.ONE;
-    }
-
-    private static <T> Optional<T> pickClosest(Optional<T> older, Optional<T> newer,
-                                                 LocalDateTime target,
-                                                 Function<T, LocalDateTime> getCreatedAt) {
-        if (older.isEmpty()) return newer;
-        if (newer.isEmpty()) return older;
-        long olderDiff = Math.abs(Duration.between(getCreatedAt.apply(older.get()), target).toSeconds());
-        long newerDiff = Math.abs(Duration.between(getCreatedAt.apply(newer.get()), target).toSeconds());
-        return olderDiff <= newerDiff ? older : newer;
     }
 
     private record DailyDelta(BigDecimal amount, BigDecimal percent) {

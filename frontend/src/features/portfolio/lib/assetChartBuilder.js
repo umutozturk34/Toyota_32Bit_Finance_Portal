@@ -20,7 +20,7 @@ export function formatChartMoney(value, currency) {
   return formatPrice(value, { currency, minDecimals: 2, maxDecimals });
 }
 
-export function buildEventMarkPoints(seriesData) {
+function buildEventMarkPoints(seriesData) {
   const data = seriesData
     .filter((d) => (d.events || []).some((e) => POSITION_EVENT_TYPES.has(e.type)))
     .map((d) => {
@@ -45,7 +45,7 @@ export function buildEventMarkPoints(seriesData) {
   };
 }
 
-export function buildAssetChartOption(data, isDark, t, convertAt, displayCurrency) {
+export function buildAssetChartOption(data, isDark, t, convertAt, displayCurrency, nativeCurrency) {
   if (!data || data.length === 0) return null;
 
   const muted = isDark ? '#6b6b7a' : '#94a3b8';
@@ -53,7 +53,7 @@ export function buildAssetChartOption(data, isDark, t, convertAt, displayCurrenc
   const tooltipBg = isDark ? 'rgba(12,12,20,0.95)' : 'rgba(255,255,255,0.97)';
   const tooltipFg = isDark ? '#e2e2ea' : '#1a1a2e';
   const tooltipBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-  const targetCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency ? 'TRY' : displayCurrency;
+  const targetCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency ? (nativeCurrency || 'TRY') : displayCurrency;
 
   const seriesData = data.map((d) => {
     const dateStr = new Date(d.timestamp).toISOString().slice(0, 10);

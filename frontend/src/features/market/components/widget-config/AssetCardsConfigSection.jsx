@@ -76,22 +76,22 @@ export default function AssetCardsConfigSection({ config, onChange, autoFocusNam
     <div className="flex flex-col h-full min-h-0">
       <PopoverHeader Icon={Layers} title={t('widgetSettings.assetCardHeader')} />
       <div className="shrink-0 mb-3">
-        <label className="block font-mono text-[9px] tracking-[0.18em] uppercase text-fg-subtle mb-1">{t('widgetSettings.panelNameLabel')}</label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => onChange({ ...config, name: e.target.value })}
-          placeholder={t('widgetSettings.panelNamePlaceholder')}
-          maxLength={40}
-          autoFocus={autoFocusName}
-          className="w-full font-display text-[13px] font-semibold px-2.5 py-1.5 rounded-md border border-border-default bg-bg-base/60 text-fg placeholder:text-fg-subtle focus:border-accent focus:bg-bg-base focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all"
-        />
+        <div className={`rounded-lg border bg-bg-base/50 px-3 py-2 transition-opacity ${full ? 'opacity-50 pointer-events-none border-border-default' : 'border-border-default'}`}>
+          <div className="flex items-center gap-1.5 mb-2 px-1">
+            <Search className="h-3.5 w-3.5 text-fg-subtle" />
+            <span className="font-mono text-[10px] tracking-[0.16em] uppercase text-fg-subtle">{t('widgetSettings.searchHint')}</span>
+          </div>
+          <SearchSuggestions placeholder={t('widgetSettings.searchPlaceholder')} navigateOnSelect={false} onSelect={add} />
+        </div>
+        {full && (
+          <p className="font-mono text-[9px] tracking-[0.14em] text-warning uppercase mt-1.5">{t('widgetSettings.maxAssets')}</p>
+        )}
       </div>
       <div className="shrink-0 flex items-center justify-between mb-1.5">
         <span className="font-mono text-[9px] tracking-[0.18em] uppercase text-fg-subtle">{t('widgetSettings.pinnedAssets')}</span>
         <span className={`font-mono text-[9px] tabular-nums ${full ? 'text-warning' : 'text-fg-subtle'}`}>{codes.length}/{MAX_ASSET_CHIPS}</span>
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto pr-1 -mr-1 mb-2 scrollbar-auto-hide">
+      <div className="flex-1 min-h-0 overflow-y-auto pr-1 -mr-1 mb-3 scrollbar-auto-hide">
         {codes.length === 0
           ? <p className="text-[11px] text-fg-subtle leading-relaxed">
               {t('widgetSettings.emptyHint')}
@@ -112,17 +112,17 @@ export default function AssetCardsConfigSection({ config, onChange, autoFocusNam
               </SortableContext>
             </DndContext>}
       </div>
-      <div className="shrink-0 space-y-1.5">
-        <div className={`rounded-lg border bg-bg-base/50 px-2 py-1.5 transition-opacity ${full ? 'opacity-50 pointer-events-none border-border-default' : 'border-border-default'}`}>
-          <div className="flex items-center gap-1.5 mb-1.5 px-1">
-            <Search className="h-3 w-3 text-fg-subtle" />
-            <span className="font-mono text-[9px] tracking-[0.16em] uppercase text-fg-subtle">{t('widgetSettings.searchHint')}</span>
-          </div>
-          <SearchSuggestions placeholder={t('widgetSettings.searchPlaceholder')} navigateOnSelect={false} onSelect={add} />
-        </div>
-        {full && (
-          <p className="font-mono text-[9px] tracking-[0.14em] text-warning uppercase">{t('widgetSettings.maxAssets')}</p>
-        )}
+      <div className="shrink-0">
+        <label className="block font-mono text-[9px] tracking-[0.18em] uppercase text-fg-subtle mb-1">{t('widgetSettings.panelNameLabel')}</label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => onChange({ ...config, name: e.target.value })}
+          placeholder={t('widgetSettings.panelNamePlaceholder')}
+          maxLength={40}
+          autoFocus={autoFocusName}
+          className="w-full font-display text-[13px] font-semibold px-2.5 py-1.5 rounded-md border border-border-default bg-bg-base/60 text-fg placeholder:text-fg-subtle focus:border-accent focus:bg-bg-base focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all"
+        />
       </div>
     </div>
   );

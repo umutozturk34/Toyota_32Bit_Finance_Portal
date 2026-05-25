@@ -112,7 +112,7 @@ class DerivativePositionFormatter {
     }
 
     private BigDecimal latestCandleClose(String symbol) {
-        return viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc(symbol)
+        return viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc(symbol, BigDecimal.ZERO)
                 .map(ViopCandle::getClose)
                 .orElse(null);
     }

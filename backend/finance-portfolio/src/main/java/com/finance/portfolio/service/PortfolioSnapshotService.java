@@ -66,17 +66,16 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
                 portfolio -> transactionTemplate.executeWithoutResult(status -> {
                     if (type == AssetType.VIOP) {
                         snapshotDerivativePositions(portfolio, batchTimestamp);
-                        insertAggregateSnapshot(portfolio, batchTimestamp);
-                        return;
+                    } else {
+                        boolean hasPositions = !positionRepository
+                                .findByPortfolioIdAndTrackedAsset_AssetTypeAndQuantityGreaterThan(
+                                        portfolio.getId(), TrackedAssetType.valueOf(type.name()), BigDecimal.ZERO)
+                                .isEmpty();
+                        if (hasPositions) {
+                            insertAssetSnapshots(portfolio, type, batchTimestamp);
+                        }
                     }
-                    boolean hasPositions = !positionRepository
-                            .findByPortfolioIdAndTrackedAsset_AssetTypeAndQuantityGreaterThan(
-                                    portfolio.getId(), TrackedAssetType.valueOf(type.name()), BigDecimal.ZERO)
-                            .isEmpty();
-                    if (hasPositions) {
-                        insertAssetSnapshots(portfolio, type, batchTimestamp);
-                        insertAggregateSnapshot(portfolio, batchTimestamp);
-                    }
+                    insertAggregateSnapshot(portfolio, batchTimestamp);
                 }),
                 p -> String.valueOf(p.getId()),
                 "portfolio-" + type + "-snapshot",
@@ -111,9 +110,7 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
         BatchUpdateRunner.Result result = BatchUpdateRunner.run(
                 portfolios,
                 portfolio -> transactionTemplate.executeWithoutResult(status -> {
-                    if (!dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(portfolio.getId(), today)) {
-                        generateFullSnapshot(portfolio);
-                    }
+                    generateFullSnapshot(portfolio);
                 }),
                 p -> String.valueOf(p.getId()),
                 "daily-snapshot",
@@ -142,6 +139,7 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
     }
 
     private PortfolioDailySnapshot insertAggregateSnapshot(Portfolio portfolio, LocalDateTime batchTimestamp) {
+        dailySnapshotRepository.deleteByPortfolioIdAndSnapshotDate(portfolio.getId(), batchTimestamp.toLocalDate());
         return dailySnapshotRepository.save(calculator.buildAggregateSnapshot(portfolio, batchTimestamp));
     }
 

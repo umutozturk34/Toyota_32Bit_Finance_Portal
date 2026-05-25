@@ -4,12 +4,15 @@ import DatePickerPopover from '../../../shared/components/form/DatePickerPopover
 import BaseModal from '../../../shared/components/modal/BaseModal';
 import Button from '../../../shared/components/buttons/Button';
 import { extractApiError } from '../../../shared/utils/apiError';
+import { useRateHistory } from '../../../shared/hooks/useRateHistory';
+import { currencySymbolOf } from '../../../shared/utils/priceCurrency';
 import {
   useCloseDerivativePosition,
   useReopenDerivativePosition,
   useUpdateCloseDerivativePosition,
 } from '../hooks/useDerivativePositions';
-import { usePositionCloseForm, formatDateLabel } from '../hooks/usePositionCloseForm';
+import { usePositionCloseForm, formatDateLabel, todayIso } from '../hooks/usePositionCloseForm';
+import { resolveNativeCurrency } from '../lib/positionFormHelpers';
 
 export default function CloseDerivativePositionDialog({ portfolioId, position, onClose }) {
   const entryDateIso = position?.entryDate ? String(position.entryDate).slice(0, 10) : null;
@@ -26,12 +29,24 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
   const symbol = position?.contractSymbol || position?.assetCode;
   const liveSuggested = position?.currentPriceTry != null ? Number(position.currentPriceTry) : null;
 
+  const nativeCurrency = resolveNativeCurrency({
+    assetType: 'VIOP',
+    assetCode: symbol || position?.assetCode,
+    metadata: position?.metadata,
+  }, position);
+
+  const { convertAt } = useRateHistory();
+  const suggestedPriceInDisplay = liveSuggested != null
+    ? Number(convertAt(liveSuggested, 'TRY', todayIso()) ?? liveSuggested)
+    : null;
+
   const form = usePositionCloseForm({
     availabilityAssetType: 'VIOP',
     availabilityAssetCode: symbol || position?.assetCode,
     entryDateIso,
-    initialPrice: position?.currentPriceTry != null ? String(position.currentPriceTry) : '',
+    initialPrice: suggestedPriceInDisplay != null ? String(suggestedPriceInDisplay) : '',
     liveSuggestedPriceTry: liveSuggested,
+    nativeCurrency,
   });
 
   const {
@@ -47,7 +62,6 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
     applyDatePrice,
     handleMonthChange,
     datePresets,
-    toTryOnDate,
   } = form;
 
   const [closeQty, setCloseQty] = useState(() => String(qty));
@@ -101,8 +115,9 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
       await close.mutateAsync({
         positionId: position.id,
         closeDate,
-        closePrice: closePrice ? toTryOnDate(closePrice, closeDate) : null,
+        closePrice: closePrice ? Number(closePrice) : null,
         closeQuantityLot: !isAlreadyClosed && isPartial ? parsedCloseQty : null,
+        priceCurrency: inputCurrency,
       });
       onClose?.();
     } catch (err) {
@@ -121,7 +136,6 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
       subtitle={symbol}
     >
       <form onSubmit={submit} className="space-y-4">
-        {/* Position info card with direction badge */}
         <div className={`rounded-lg border px-3 py-2.5 ${
           isLong
             ? 'border-emerald-500/30 bg-emerald-500/5'
@@ -162,11 +176,11 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
 
         {!isAlreadyClosed && qty > 0 && (
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <span className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
                 <Tag className="h-3 w-3" /> {t('portfolio.derivatives.closeQtyLabel', 'Kapatılacak lot')}
               </span>
-              <div className="flex gap-1">
+              <div className="flex gap-1 flex-wrap">
                 {[
                   { id: '25', factor: 0.25 },
                   { id: '50', factor: 0.5 },
@@ -215,13 +229,12 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
           </div>
         )}
 
-        {/* Date */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
               <Calendar className="h-3 w-3" /> {t('portfolio.derivatives.closeDate', 'Kapanış tarihi')}
             </span>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               {datePresets.map(({ id, iso, label }) => {
                 const active = closeDate === iso;
                 return (
@@ -257,11 +270,13 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
           )}
         </div>
 
-        {/* Close price */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-xs font-medium text-fg-muted flex items-center gap-1.5">
               <Tag className="h-3 w-3" /> {t('portfolio.derivatives.closePriceLabel', { defaultValue: 'Kapanış fiyatı' })}
+              <span className="font-mono text-[10px] uppercase tracking-wider text-accent">
+                {inputCurrency} ({currencySymbolOf(inputCurrency)})
+              </span>
             </span>
             {closeDateSuggestedInDisplay != null && (
               <button
@@ -299,7 +314,6 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
           )}
         </div>
 
-        {/* Realized P&L preview */}
         {realizedPnl != null && (
           <div className={`rounded-lg border px-3 py-2 flex items-center justify-between text-xs ${
             realizedPnl >= 0

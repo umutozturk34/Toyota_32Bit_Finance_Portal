@@ -7,6 +7,7 @@ import { extractApiError } from '../../../shared/utils/apiError';
 import { useSellPosition } from '../hooks/usePortfolioData';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { usePositionCloseForm, todayIso, formatDateLabel } from '../hooks/usePositionCloseForm';
+import { resolveNativeCurrency } from '../lib/positionFormHelpers';
 
 const QTY_PRESETS = [
   { id: '25', factor: 0.25 },
@@ -27,12 +28,19 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
 
   const sell = useSellPosition(portfolioId);
 
+  const nativeCurrency = resolveNativeCurrency({
+    assetType: position?.assetType,
+    assetCode: position?.assetCode,
+    metadata: position?.metadata,
+  }, position);
+
   const form = usePositionCloseForm({
     availabilityAssetType: position?.assetType,
     availabilityAssetCode: position?.assetCode,
     entryDateIso,
     initialPrice: suggestedPriceInDisplay != null ? String(suggestedPriceInDisplay) : '',
     liveSuggestedPriceTry: suggestedPriceTry,
+    nativeCurrency,
   });
 
   const {
@@ -47,7 +55,6 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
     applyDatePrice: applyCurrentPrice,
     handleMonthChange,
     datePresets,
-    toTryOnDate,
   } = form;
 
   const [sellQty, setSellQty] = useState(() => String(totalQty));
@@ -94,8 +101,7 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
 
   const handleSubmit = async () => {
     setError(null);
-    const exitPriceTry = toTryOnDate(parsedPrice, sellDate);
-    if (exitPriceTry == null || !(exitPriceTry > 0)) {
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
       setError(t('portfolio.sell.invalidPriceHint', { defaultValue: 'Geçersiz fiyat' }));
       return;
     }
@@ -104,8 +110,9 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
         positionId: position.id,
         payload: {
           quantity: parsedQty,
-          exitPrice: exitPriceTry,
+          exitPrice: parsedPrice,
           exitDate: `${sellDate}T12:00:00`,
+          priceCurrency: inputCurrency,
         },
       });
       onClose?.();
@@ -158,11 +165,11 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-xs text-fg-muted flex items-center gap-1.5">
               <Tag className="h-3 w-3" /> {t('portfolio.sell.quantityLabel')}
             </span>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               {QTY_PRESETS.map(({ id, factor }) => {
                 const target = factor >= 1 ? totalQty : Math.round(totalQty * factor * 1e6) / 1e6;
                 const active = validQty && Math.abs(parsedQty - target) < 1e-6;
@@ -199,7 +206,7 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-xs text-fg-muted flex items-center gap-1.5">
               <ShoppingBag className="h-3 w-3" /> {t('portfolio.sell.exitPriceLabel')}
             </span>
@@ -241,11 +248,11 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
         </div>
 
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-xs text-fg-muted flex items-center gap-1.5">
               <Calendar className="h-3 w-3" /> {t('portfolio.sell.exitDateLabel')}
             </span>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               {datePresets.map(({ id, iso, label }) => {
                 const active = sellDate === iso;
                 return (
@@ -330,7 +337,7 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
           <div className="text-xs text-danger bg-danger/10 border border-danger/20 px-3 py-2 rounded-lg">{error}</div>
         )}
 
-        <div className="flex gap-2 justify-end pt-1">
+        <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-1">
           <Button variant="secondary" size="md" onClick={onClose}>
             {t('common.cancel')}
           </Button>

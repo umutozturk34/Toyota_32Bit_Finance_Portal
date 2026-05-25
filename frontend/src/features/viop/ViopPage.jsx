@@ -111,7 +111,7 @@ export default function ViopPage() {
           <div className="min-w-0 flex-1">
             <h3 className="truncate text-sm font-semibold text-fg">{contract.code}</h3>
             {displayName && displayName !== contract.code && (
-              <span className="block truncate text-xs text-fg-muted">{displayName}</span>
+              <span className="block text-xs text-fg-muted leading-snug line-clamp-2 break-words">{displayName}</span>
             )}
           </div>
           {tradeable && (

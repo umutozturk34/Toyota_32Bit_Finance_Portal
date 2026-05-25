@@ -5,6 +5,8 @@ import { Crown, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { SERIES_COLORS } from '../constants';
 import { formatPercent } from '../utils';
 import { useMoney } from '../../../shared/hooks/useMoney';
+import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
+import { resolveNativeCurrency } from '../../portfolio/lib/positionFormHelpers';
 
 export default function ScenarioRankingTable({ scenario }) {
   const { t } = useTranslation();
@@ -23,7 +25,8 @@ export default function ScenarioRankingTable({ scenario }) {
 
   return (
     <div className="rounded-xl border border-border-default/60 bg-bg-base/40 overflow-hidden">
-      <table className="w-full text-sm">
+      <div className="overflow-x-auto">
+      <table className="w-full text-sm min-w-[480px]">
         <thead className="bg-bg-elevated/40">
           <tr>
             <Th>#</Th>
@@ -58,14 +61,23 @@ export default function ScenarioRankingTable({ scenario }) {
                   <div className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full shrink-0" style={{ background: row._color }} />
                     <div>
-                      <div className="text-fg font-semibold">{row.instrument.code}</div>
-                      <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle">{row.instrument.type}</div>
+                      <div className="text-fg font-semibold">
+                        {instrumentDisplayName(t, row.instrument.type, row.instrument.code)}
+                      </div>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle flex items-center gap-1.5">
+                        <span>{row.instrument.type}</span>
+                        {row.nativeCurrency && row.nativeCurrency !== 'TRY' && (
+                          <span className="px-1 py-0.5 rounded bg-accent/10 text-accent">
+                            {row.nativeCurrency}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Td>
                 <Td align="right">
                   <span className="font-mono font-bold tabular-nums text-fg">
-                    {money(row.finalValue, 'TRY')}
+                    {money(row.finalValue, scenario?.targetCurrency || row.nativeCurrency || resolveNativeCurrency({ assetType: row.instrument?.type, assetCode: row.instrument?.code }))}
                   </span>
                 </Td>
                 <Td align="right">
@@ -79,20 +91,21 @@ export default function ScenarioRankingTable({ scenario }) {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
 
 function Th({ children, align = 'left' }) {
   return (
-    <th className={`text-[10px] font-mono uppercase tracking-[0.16em] text-fg-muted py-2.5 px-3 ${align === 'right' ? 'text-right' : 'text-left'}`}>
+    <th className={`text-xs font-display font-semibold text-fg-muted py-2.5 px-2 sm:px-3 ${align === 'right' ? 'text-right' : 'text-left'}`}>
       {children}
     </th>
   );
 }
 
 function Td({ children, align = 'left' }) {
-  return <td className={`py-3 px-3 ${align === 'right' ? 'text-right' : 'text-left'}`}>{children}</td>;
+  return <td className={`py-3 px-2 sm:px-3 ${align === 'right' ? 'text-right' : 'text-left'}`}>{children}</td>;
 }
 
 function ReturnChip({ value, down }) {

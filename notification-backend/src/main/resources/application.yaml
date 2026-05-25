@@ -12,3 +12,9 @@ spring:
       - classpath:config/market-hours.yaml
       - classpath:config/slot.yaml
       - classpath:config/api.yaml
+
+app:
+  pdf:
+    serviceUrl: ${PDF_SERVICE_URL:http://pdf-service:8080}
+    requestTimeoutMs: ${PDF_REQUEST_TIMEOUT_MS:30000}
+  frontendBaseUrl: ${FRONTEND_BASE_URL:http://localhost:5173}

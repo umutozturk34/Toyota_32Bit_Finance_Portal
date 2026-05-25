@@ -1,8 +1,6 @@
 package com.finance.portfolio.service;
+
 import com.finance.shared.service.AssetPricingPort;
-
-
-
 import com.finance.portfolio.dto.response.AllocationItem;
 import com.finance.portfolio.dto.response.AssetAggregateResponse;
 import com.finance.common.dto.response.PagedResponse;
@@ -32,9 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -54,10 +50,11 @@ public class PortfolioSummaryService {
     private final AllocationCalculator allocationCalculator;
     private final DerivativePositionFormatter derivativePositionFormatter;
     private final RealReturnCalculator realReturnCalculator;
+    private final MultiCurrencyPnlCalculator multiCurrencyPnlCalculator;
 
     private BigDecimal latestCandleClose(String symbol) {
         if (symbol == null) return null;
-        return viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc(symbol)
+        return viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc(symbol, BigDecimal.ZERO)
                 .map(ViopCandle::getClose)
                 .orElse(null);
     }
@@ -151,9 +148,12 @@ public class PortfolioSummaryService {
         BigDecimal dailyPnlAmount = aggregateDailyPnl(portfolioId, filterType);
         BigDecimal dailyPnlPercent = computeDailyPercent(totals.totalValue, dailyPnlAmount);
         RealReturnCalculator.RealReturnSummary real = realReturnCalculator.compute(positions, totals.totalValue);
+        Map<String, com.finance.portfolio.dto.response.CurrencyFramePct> frames =
+                multiCurrencyPnlCalculator.compute(positions, totals.totalValue, dailyPnlAmount,
+                        pnlPercent, dailyPnlPercent);
         return responseMapper.toSummaryResponse(totals.totalValue, totals.totalEntry, totals.totalPnl,
                 pnlPercent, dailyPnlAmount, dailyPnlPercent,
-                real.realPnlTry(), real.realPnlPercent(), real.cpiGrowthPercent());
+                real.realPnlTry(), real.realPnlPercent(), real.cpiGrowthPercent(), frames);
     }
 
     private BigDecimal computeDailyPercent(BigDecimal totalValue, BigDecimal dailyPnl) {
@@ -227,10 +227,10 @@ public class PortfolioSummaryService {
             if (position.getViopContract() == null) {
                 continue;
             }
-            BigDecimal latestClose = latestCandleClose(position.getViopContract().getSymbol());
-            BigDecimal liveSource = latestClose != null
-                    ? latestClose
-                    : position.getViopContract().getLastPrice();
+            BigDecimal contractLast = position.getViopContract().getLastPrice();
+            BigDecimal liveSource = contractLast != null
+                    ? contractLast
+                    : latestCandleClose(position.getViopContract().getSymbol());
             BigDecimal currentTry = convertLiveToTry(liveSource,
                     position.getViopContract().getCurrency());
             BigDecimal pnl = position.realizedOrUnrealizedPnl(currentTry);
@@ -302,7 +302,7 @@ public class PortfolioSummaryService {
                 closedEntryValue = closedEntryValue.add(lot.entryValue());
             }
         }
-        java.time.LocalDateTime earliest = null;
+        LocalDateTime earliest = null;
         for (PortfolioPosition lot : allLots) {
             if (earliest == null || (lot.getEntryDate() != null && lot.getEntryDate().isBefore(earliest))) {
                 earliest = lot.getEntryDate();

@@ -47,6 +47,7 @@ public class PortfolioProperties {
         private int priceLookbackDays = 7;
         private int lockStripes = 32;
         private int stateCacheExpiryHours = 2;
+        private int stateCacheMaxSize = 1_000;
         private int emitterCacheExpiryMinutes = 30;
         private int emittersCacheMaxSize = 10_000;
         private int snapshotTimeHour = 12;

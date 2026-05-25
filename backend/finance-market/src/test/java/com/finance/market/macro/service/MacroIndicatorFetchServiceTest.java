@@ -45,7 +45,7 @@ class MacroIndicatorFetchServiceTest {
 
     @BeforeEach
     void setUp() {
-        properties = new MacroProperties(LocalDate.of(2018, 1, 1), 25, 1000, null, List.of());
+        properties = new MacroProperties(LocalDate.of(2018, 1, 1), 25, 1000, null, null, List.of());
         service = new MacroIndicatorFetchService(indicatorRepository, pointRepository,
                 client, mapper, properties);
     }

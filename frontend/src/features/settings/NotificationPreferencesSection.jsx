@@ -141,7 +141,7 @@ export default function NotificationPreferencesSection() {
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-fg">{t(`notificationPreferences.types.${id}.label`)}</div>
-                    <div className="text-[10px] text-fg-subtle truncate">{t(`notificationPreferences.types.${id}.hint`)}</div>
+                    <div className="text-[10px] text-fg-subtle leading-snug line-clamp-2">{t(`notificationPreferences.types.${id}.hint`)}</div>
                   </div>
                 </div>
                 <ChannelDot

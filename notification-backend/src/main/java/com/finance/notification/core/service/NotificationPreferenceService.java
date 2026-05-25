@@ -29,7 +29,7 @@ public class NotificationPreferenceService {
     public NotificationPreferenceResponse upsert(String userSub, NotificationPreferenceUpdateRequest request) {
         NotificationPreference preference = repository.findById(userSub)
                 .orElseGet(() -> NotificationPreference.defaultsFor(userSub));
-        mapper.apply(request, preference);
+        preference.applyUpdate(request);
         NotificationPreference saved = repository.save(preference);
         log.info("Notification preferences upserted userSub={}", userSub);
         return mapper.toResponse(saved);

@@ -225,6 +225,7 @@ public class AppProperties {
         private int apiLimit = 60;
         private int credentialActionLimit = 10;
         private int credentialReadLimit = 60;
+        private int pdfExportLimit = 2;
         private int bucketExpirationHours = 2;
     }
 }

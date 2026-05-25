@@ -9,4 +9,7 @@ spring:
 app:
   cache:
     redis-default-ttl-hours: 24
-    inflation-beater-ttl-millis: 900000
+  fx:
+    cache-ttl-minutes: 60
+    cache-max-entries: 1000
+    lookback-days: 14

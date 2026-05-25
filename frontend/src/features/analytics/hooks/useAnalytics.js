@@ -7,10 +7,10 @@ export function useScenarioSimulation() {
   });
 }
 
-export function useInflationBeaters(period, benchmark) {
+export function useInflationBeaters(period, benchmark, targetCurrency) {
   return useQuery({
-    queryKey: ['analytics', 'inflation-beaters', period, benchmark || 'default'],
-    queryFn: () => analyticsService.inflationBeaters(period, benchmark),
+    queryKey: ['analytics', 'inflation-beaters', period, benchmark || 'default', targetCurrency || 'auto'],
+    queryFn: () => analyticsService.inflationBeaters(period, benchmark, targetCurrency),
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });

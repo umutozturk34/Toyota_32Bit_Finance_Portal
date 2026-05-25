@@ -6,6 +6,7 @@ import useSessionState from '../../../shared/hooks/useSessionState';
 import { PieChart } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/useTheme';
+import { chartPalette } from '../../../shared/charts/echartsTheme';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { usePortfolioAllocation } from '../hooks/usePortfolioData';
 import Card from '../../../shared/components/card';
@@ -22,10 +23,10 @@ const COLORS = [
   '#e879f9', '#38bdf8', '#fdba74', '#86efac', '#f9a8d4',
 ];
 
-export default function AllocationChart({ allocation, portfolioId }) {
+function AllocationChart({ allocation, portfolioId, forPrint = false }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { format: money, formatCompact: moneyCompact } = useMoney();
+  const { format: money, formatCompact: moneyCompact, currency: displayCurrency } = useMoney();
   const [activeTab, setActiveTab] = useSessionState('portfolio-alloc-tab', 'ALL');
   const assetLabel = useCallback((id) => {
     if (id === 'CASH') return t('portfolio.allocation.closedLabel');
@@ -43,10 +44,10 @@ export default function AllocationChart({ allocation, portfolioId }) {
     const inst = chartRef.current?.getEchartsInstance?.();
     if (inst) inst.dispatchAction({ type: 'downplay', seriesIndex: 0, name });
   }, []);
-  const chartEvents = useMemo(() => ({
+  const chartEvents = useMemo(() => (forPrint ? {} : {
     mouseover: (params) => setHoveredSliceName(params?.name ?? null),
     mouseout: () => setHoveredSliceName(null),
-  }), []);
+  }), [forPrint]);
 
   const { data: assetData, isFetching: assetLoading } = usePortfolioAllocation(
     activeTab !== 'ALL' ? portfolioId : null,
@@ -99,17 +100,18 @@ export default function AllocationChart({ allocation, portfolioId }) {
   }), [finalData, activeTab, assetLabel]);
 
   const totalLabel = activeTab === 'ALL' ? t('portfolio.allocation.total') : assetLabel(activeTab);
-  const tooltipBg = isDark ? 'rgba(12,12,20,0.95)' : 'rgba(255,255,255,0.97)';
-  const tooltipFg = isDark ? '#e2e2ea' : '#1a1a2e';
-  const tooltipBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const palette = chartPalette(isDark);
+  const tooltipBg = palette.tooltipBg;
+  const tooltipFg = palette.tooltipFg;
+  const tooltipBorder = palette.border;
   const labelFg = isDark ? '#e6edf3' : '#1b1f24';
   const labelMuted = isDark ? '#7d8590' : '#636c76';
   const ringStroke = isDark ? '#0d1117' : '#ffffff';
 
   const option = useMemo(() => ({
     backgroundColor: 'transparent',
-    animation: true,
-    tooltip: {
+    animation: !forPrint,
+    tooltip: forPrint ? { show: false } : {
       trigger: 'item',
       appendToBody: true,
       confine: false,
@@ -145,7 +147,7 @@ export default function AllocationChart({ allocation, portfolioId }) {
       label: {
         show: true,
         position: 'center',
-        formatter: () => `{label|${totalLabel}}\n{value|${moneyCompact(totalValue)}}`,
+        formatter: () => `{label|${totalLabel}}\n{value|${moneyCompact(totalValue, 'TRY')}}`,
         rich: {
           label: { fontSize: 11, color: labelMuted, fontWeight: 500, padding: [0, 0, 4, 0] },
           value: { fontSize: 14, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: labelFg },
@@ -153,13 +155,13 @@ export default function AllocationChart({ allocation, portfolioId }) {
       },
       labelLine: { show: false },
       emphasis: {
-        scale: true,
-        scaleSize: 4,
+        scale: false,
+        focus: 'self',
         label: { show: true },
       },
       data: seriesData,
     }],
-  }), [seriesData, totalValue, totalLabel, tooltipBg, tooltipBorder, tooltipFg, labelFg, labelMuted, ringStroke, money, moneyCompact]);
+  }), [seriesData, totalValue, totalLabel, tooltipBg, tooltipBorder, tooltipFg, labelFg, labelMuted, ringStroke, money, moneyCompact, forPrint]);
 
   return (
     <motion.div variants={cardVariants} initial="hidden" animate="show" className="space-y-4">
@@ -191,11 +193,11 @@ export default function AllocationChart({ allocation, portfolioId }) {
           <div className="space-y-4">
             <ReactECharts
               ref={chartRef}
-              key={`${isDark}-${activeTab}`}
+              key={`${isDark}-${activeTab}-${displayCurrency}-${forPrint}`}
               option={option}
               notMerge
-              style={{ height: 220 }}
-              opts={{ renderer: 'canvas' }}
+              style={forPrint ? { height: 260, width: '100%', pointerEvents: 'none' } : { height: 220 }}
+              opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
               onEvents={chartEvents}
             />
 
@@ -256,3 +258,5 @@ export default function AllocationChart({ allocation, portfolioId }) {
     </motion.div>
   );
 }
+
+export default AllocationChart;

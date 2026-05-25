@@ -1,13 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Trophy, Search, ChevronLeft, ChevronRight, GitCompare } from 'lucide-react';
+import useSessionState from '../../../shared/hooks/useSessionState';
+import { TrendingUp, TrendingDown, Trophy, Search, ChevronLeft, ChevronRight, GitCompare, ArrowUp, ArrowDown } from 'lucide-react';
 import Card from '../../../shared/components/card';
 import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 import { useInflationBeaters } from '../hooks/useAnalytics';
 import { useMacroIndicators } from '../../macro/hooks/useMacroIndicators';
+import { useMoney } from '../../../shared/hooks/useMoney';
+import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
 import BenchmarkPicker from '../components/BenchmarkPicker';
 import { PERIODS } from '../constants';
 import { formatPercent } from '../utils';
@@ -45,15 +48,20 @@ export default function InflationBeaterPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const [period, setPeriod] = useState(() => params.get('bp') || '1Y');
-  const [benchmark, setBenchmark] = useState(() => params.get('bb') || '');
-  const [search, setSearch] = useState(() => params.get('bs') || '');
-  const [page, setPage] = useState(() => Number(params.get('bpage')) || 0);
-  const [verdictFilter, setVerdictFilter] = useState(() => params.get('bv') || 'all');
-  const [typeFilter, setTypeFilter] = useState(() => {
-    const raw = params.get('bt');
-    return raw ? new Set(raw.split(',').filter(Boolean)) : new Set();
-  });
+  const [period, setPeriod] = useSessionState('beater:period', params.get('bp') || '1Y');
+  const [benchmark, setBenchmark] = useSessionState('beater:benchmark', params.get('bb') || '');
+  const [search, setSearch] = useSessionState('beater:search', params.get('bs') || '');
+  const [page, setPage] = useSessionState('beater:page', Number(params.get('bpage')) || 0);
+  const [verdictFilter, setVerdictFilter] = useSessionState('beater:verdict', params.get('bv') || 'all');
+  const [typeFilterArr, setTypeFilterArr] = useSessionState('beater:type',
+    (params.get('bt') || '').split(',').filter(Boolean));
+  const [sortKey, setSortKey] = useSessionState('beater:sortKey', params.get('bsk') || 'rank');
+  const [sortDir, setSortDir] = useSessionState('beater:sortDir', params.get('bsd') || 'asc');
+  const typeFilter = useMemo(() => new Set(typeFilterArr), [typeFilterArr]);
+  const setTypeFilter = (updater) => {
+    const next = typeof updater === 'function' ? updater(typeFilter) : updater;
+    setTypeFilterArr(Array.from(next instanceof Set ? next : new Set(next)));
+  };
 
   useEffect(() => {
     const next = new URLSearchParams(params);
@@ -64,11 +72,25 @@ export default function InflationBeaterPage() {
     if (page > 0) next.set('bpage', String(page)); else next.delete('bpage');
     if (verdictFilter && verdictFilter !== 'all') next.set('bv', verdictFilter); else next.delete('bv');
     if (typeFilter.size > 0) next.set('bt', Array.from(typeFilter).join(',')); else next.delete('bt');
+    if (sortKey && sortKey !== 'rank') next.set('bsk', sortKey); else next.delete('bsk');
+    if (sortDir && sortDir !== 'asc') next.set('bsd', sortDir); else next.delete('bsd');
     setParams(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, benchmark, search, page, verdictFilter, typeFilter]);
+  }, [period, benchmark, search, page, verdictFilter, typeFilter, sortKey, sortDir]);
 
-  const { data, isLoading, isError, refetch } = useInflationBeaters(period, benchmark);
+  const toggleSort = (key) => {
+    if (sortKey === key) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'rank' ? 'asc' : 'desc');
+    }
+    setPage(0);
+  };
+
+  const { currency: displayCurrency } = useMoney();
+  const targetCurrencyOverride = displayCurrency === 'ORIGINAL' ? null : displayCurrency;
+  const { data, isLoading, isError, refetch } = useInflationBeaters(period, benchmark, targetCurrencyOverride);
   const { data: macroList = [] } = useMacroIndicators();
 
   const benchmarkOptions = useMemo(
@@ -102,8 +124,9 @@ export default function InflationBeaterPage() {
       codes: codes.join(','),
       types: types.join(','),
       range: period,
+      from: 'beaters',
     });
-    navigate({ search: `?${next.toString()}` }, { state: { from: 'beaters' } });
+    navigate({ search: `?${next.toString()}` });
   }
 
   return (
@@ -125,8 +148,8 @@ export default function InflationBeaterPage() {
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-muted mr-1">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs font-display font-semibold text-fg-muted mr-1">
             {t('analytics.period', { defaultValue: 'Dönem' })}
           </span>
           {PERIODS.map((p) => (
@@ -143,8 +166,8 @@ export default function InflationBeaterPage() {
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-muted">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <span className="text-xs font-display font-semibold text-fg-muted">
             {t('analytics.benchmark', { defaultValue: 'Karşılaştırma' })}
           </span>
           <BenchmarkPicker
@@ -180,6 +203,9 @@ export default function InflationBeaterPage() {
               return next;
             });
           }}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onToggleSort={toggleSort}
           onCompare={compareWithBenchmark}
         />
       )}
@@ -188,7 +214,8 @@ export default function InflationBeaterPage() {
 }
 
 function Results({ data, period, t, search, onSearchChange, page, onPageChange, onCompare,
-                   verdictFilter, onVerdictChange, typeFilter, onTypeToggle }) {
+                   verdictFilter, onVerdictChange, typeFilter, onTypeToggle,
+                   sortKey, sortDir, onToggleSort }) {
   const indexedEntries = useMemo(
     () => (data.entries || []).map((e, idx) => ({ ...e, _rank: idx + 1 })),
     [data.entries]
@@ -205,8 +232,8 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
   const filteredEntries = useMemo(() => {
     const q = search.trim().toLowerCase();
     return indexedEntries.filter((e) => {
-      if (verdictFilter === 'beats' && !e.beatsInflation) return false;
-      if (verdictFilter === 'losers' && e.beatsInflation) return false;
+      if (verdictFilter === 'beats' && !e.beatsBenchmark) return false;
+      if (verdictFilter === 'losers' && e.beatsBenchmark) return false;
       if (typeFilter.size > 0 && !typeFilter.has(e.type)) return false;
       if (!q) return true;
       return e.code.toLowerCase().includes(q)
@@ -215,9 +242,22 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
     });
   }, [indexedEntries, search, verdictFilter, typeFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredEntries.length / PAGE_SIZE));
+  const sortedEntries = useMemo(() => {
+    const arr = [...filteredEntries];
+    const num = (v) => (v == null ? -Infinity : Number(v));
+    const cmpAsc = (a, b) => {
+      if (sortKey === 'nominal') return num(a.nominalReturnPct) - num(b.nominalReturnPct);
+      if (sortKey === 'excess') return num(a.excessReturnPct) - num(b.excessReturnPct);
+      if (sortKey === 'name') return (a.name || a.code).localeCompare(b.name || b.code);
+      return a._rank - b._rank;
+    };
+    arr.sort((a, b) => (sortDir === 'asc' ? cmpAsc(a, b) : -cmpAsc(a, b)));
+    return arr;
+  }, [filteredEntries, sortKey, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedEntries.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
-  const pageEntries = filteredEntries.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  const pageEntries = sortedEntries.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
   const benchmarkLabel = data.benchmarkLabel
     ? t(`marketOverview.macro.${data.benchmarkLabel}`, { defaultValue: data.benchmarkLabel })
@@ -237,7 +277,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
           icon={<TrendingUp className="h-4 w-4" />}
           label={t('analytics.benchmarkReturn', { defaultValue: 'Benchmark getirisi' })}
           value={data.benchmarkReturnPct != null ? formatPercent(data.benchmarkReturnPct) : '—'}
-          sub={`${benchmarkLabel} · ${period}`}
+          sub={`${benchmarkLabel} · ${period}${data.comparisonCurrency ? ` · ${data.comparisonCurrency}` : ''}`}
           accent="#f59e0b"
         />
         <HeroStat
@@ -251,7 +291,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
 
       <div className="flex flex-wrap items-center gap-3 pt-1">
         <div className="flex items-center gap-1">
-          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-muted mr-1">
+          <span className="text-xs font-display font-semibold text-fg-muted mr-1">
             {t('analytics.verdictFilter', { defaultValue: 'Durum' })}
           </span>
           {['all', 'beats', 'losers'].map((v) => (
@@ -272,7 +312,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
           ))}
         </div>
         <div className="flex items-center gap-1 flex-wrap">
-          <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-muted mr-1">
+          <span className="text-xs font-display font-semibold text-fg-muted mr-1">
             {t('analytics.typeFilter', { defaultValue: 'Tip' })}
           </span>
           {availableTypes.map((tp) => {
@@ -283,7 +323,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
                 key={tp}
                 type="button"
                 onClick={() => onTypeToggle(tp)}
-                className="text-[10px] font-mono font-bold uppercase tracking-[0.14em] rounded-md px-2 py-1 cursor-pointer border-none transition-all"
+                className="text-[11px] font-mono font-semibold tracking-[0.04em] rounded-md px-2 py-1 cursor-pointer border-none transition-all"
                 style={active ? {
                   background: `${badge.color}26`,
                   color: badge.color,
@@ -294,7 +334,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
                   boxShadow: `inset 0 0 0 1px var(--color-border-default)`,
                 }}
               >
-                {badge.label}
+                {t(`assets.labels.${tp}`, { defaultValue: badge.label })}
               </button>
             );
           })}
@@ -302,7 +342,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
             <button
               type="button"
               onClick={() => availableTypes.forEach((tp) => { if (typeFilter.has(tp)) onTypeToggle(tp); })}
-              className="text-[10px] font-mono uppercase tracking-[0.14em] text-fg-subtle hover:text-fg cursor-pointer border-none bg-transparent ml-1"
+              className="text-xs font-display font-semibold text-fg-subtle hover:text-fg cursor-pointer border-none bg-transparent ml-1"
             >
               {t('analytics.clearFilters', { defaultValue: 'Temizle' })}
             </button>
@@ -310,8 +350,8 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-0 sm:min-w-[200px] max-w-md">
           <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
             <Search className="h-3.5 w-3.5 text-fg-muted" />
           </span>
@@ -333,10 +373,18 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
           <table className="w-full text-sm">
             <thead className="bg-bg-elevated/40">
               <tr>
-                <Th>#</Th>
-                <Th>{t('analytics.instrument', { defaultValue: 'Enstrüman' })}</Th>
-                <Th align="right">{t('analytics.nominalReturn', { defaultValue: 'Nominal' })}</Th>
-                <Th align="right">{t('analytics.excessReturn', { defaultValue: 'Excess' })}</Th>
+                <Th sortKey="rank" activeSort={sortKey} dir={sortDir} onToggle={onToggleSort}>#</Th>
+                <Th sortKey="name" activeSort={sortKey} dir={sortDir} onToggle={onToggleSort}>
+                  {t('analytics.instrument', { defaultValue: 'Enstrüman' })}
+                </Th>
+                <Th align="right" sortKey="nominal" activeSort={sortKey} dir={sortDir} onToggle={onToggleSort}
+                    title={t('analytics.nominalReturnTooltip', { defaultValue: 'Mutlak yüzde değişim' })}>
+                  {t('analytics.nominalReturn', { defaultValue: 'Nominal' })}
+                </Th>
+                <Th align="right" sortKey="excess" activeSort={sortKey} dir={sortDir} onToggle={onToggleSort}
+                    title={t('analytics.excessReturnTooltip', { defaultValue: 'Nominal − Gösterge' })}>
+                  {t('analytics.excessReturn', { defaultValue: 'Gösterge Üzeri' })}
+                </Th>
                 <Th align="right">{t('analytics.verdict', { defaultValue: 'Sonuç' })}</Th>
               </tr>
             </thead>
@@ -351,22 +399,22 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
                   className="group border-t border-border-default/40 hover:bg-bg-elevated/40 transition-colors cursor-pointer"
                   title={t('analytics.openInCompare', { defaultValue: 'Compare’de aç' })}
                 >
-                  <td className="py-3 px-3 font-mono text-xs tabular-nums">
+                  <td className="py-3 px-2 sm:px-3 font-mono text-xs tabular-nums">
                     <span className={entry._rank <= 3 ? 'text-amber-500 font-bold' : 'text-fg-muted'}>
                       {entry._rank}
                     </span>
                   </td>
-                  <td className="py-3 px-3">
+                  <td className="py-3 px-2 sm:px-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-fg font-semibold">{entry.name}</span>
+                      <span className="text-fg font-semibold">{instrumentDisplayName(t, entry.type, entry.code, entry.name)}</span>
                       {(() => {
                         const badge = TYPE_BADGE[entry.type] || { label: entry.type, color: '#6366f1' };
                         return (
                           <span
-                            className="inline-flex items-center text-[9px] font-mono font-bold uppercase tracking-[0.14em] rounded px-1.5 py-0.5"
+                            className="inline-flex items-center text-[10px] font-mono font-semibold tracking-[0.04em] rounded px-1.5 py-0.5"
                             style={{ background: `${badge.color}1f`, color: badge.color, boxShadow: `inset 0 0 0 1px ${badge.color}40` }}
                           >
-                            {badge.label}
+                            {t(`assets.labels.${entry.type}`, { defaultValue: badge.label })}
                           </span>
                         );
                       })()}
@@ -376,18 +424,18 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
                       {entry.code}
                     </div>
                   </td>
-                  <td className="py-3 px-3 text-right font-mono tabular-nums">
+                  <td className="py-3 px-2 sm:px-3 text-right font-mono tabular-nums">
                     <span className={Number(entry.nominalReturnPct) >= 0 ? 'text-emerald-500' : 'text-red-500'}>
                       {formatPercent(entry.nominalReturnPct)}
                     </span>
                   </td>
-                  <td className="py-3 px-3 text-right font-mono font-bold tabular-nums">
-                    <span className={Number(entry.realReturnPct) >= 0 ? 'text-emerald-500' : 'text-red-500'}>
-                      {formatPercent(entry.realReturnPct)}
+                  <td className="py-3 px-2 sm:px-3 text-right font-mono font-bold tabular-nums">
+                    <span className={Number(entry.excessReturnPct) >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                      {formatPercent(entry.excessReturnPct)}
                     </span>
                   </td>
-                  <td className="py-3 px-3 text-right">
-                    {entry.beatsInflation ? (
+                  <td className="py-3 px-2 sm:px-3 text-right">
+                    {entry.beatsBenchmark ? (
                       <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.14em] rounded-md px-2 py-0.5 bg-emerald-500/15 text-emerald-500">
                         <Trophy className="h-3 w-3" />
                         {t('analytics.beats', { defaultValue: 'Yendi' })}
@@ -445,23 +493,30 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
 function HeroStat({ icon, label, value, sub, accent }) {
   return (
     <div
-      className="rounded-xl border px-4 py-3.5"
+      className="rounded-xl border px-3 sm:px-4 py-3 sm:py-3.5"
       style={{ background: `${accent}0d`, borderColor: `${accent}33` }}
     >
-      <div className="flex items-center gap-2 mb-2 text-xs font-mono uppercase tracking-[0.14em]" style={{ color: accent }}>
+      <div className="flex items-center gap-2 mb-2 text-xs font-display font-semibold tracking-tight" style={{ color: accent }}>
         {icon}
         <span>{label}</span>
       </div>
-      <div className="font-display text-3xl font-bold text-fg tabular-nums leading-none">{value}</div>
-      <div className="mt-1.5 text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle">{sub}</div>
+      <div className="font-display text-2xl sm:text-3xl font-bold text-fg tabular-nums leading-none">{value}</div>
+      <div className="mt-1.5 text-xs font-mono text-fg-subtle">{sub}</div>
     </div>
   );
 }
 
-function Th({ children, align = 'left' }) {
+function Th({ children, align = 'left', title, sortKey, activeSort, dir, onToggle }) {
+  const sortable = !!(sortKey && onToggle);
+  const active = sortable && activeSort === sortKey;
+  const indicator = active ? (dir === 'asc' ? <ArrowUp className="inline h-3 w-3 ml-1" /> : <ArrowDown className="inline h-3 w-3 ml-1" />) : null;
   return (
-    <th className={`text-[10px] font-mono uppercase tracking-[0.16em] text-fg-muted py-2.5 px-3 ${align === 'right' ? 'text-right' : 'text-left'}`}>
-      {children}
+    <th
+      title={title}
+      onClick={sortable ? () => onToggle(sortKey) : undefined}
+      className={`text-xs font-display font-semibold py-2.5 px-2 sm:px-3 select-none ${align === 'right' ? 'text-right' : 'text-left'} ${sortable ? 'cursor-pointer' : title ? 'cursor-help' : ''} ${active ? 'text-accent' : 'text-fg-muted'} ${sortable ? 'hover:text-fg' : ''}`}
+    >
+      {children}{indicator}
     </th>
   );
 }

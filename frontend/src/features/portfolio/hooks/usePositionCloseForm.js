@@ -8,7 +8,7 @@ import { ONE_HOUR_MS, toYearMonth, buildPriceIndex } from '../lib/positionFormHe
 
 export const todayIso = () => new Date().toISOString().slice(0, 10);
 
-export const yesterdayIso = () => {
+const yesterdayIso = () => {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   return d.toISOString().slice(0, 10);
@@ -28,12 +28,16 @@ export function usePositionCloseForm({
   initialDate,
   initialPrice,
   liveSuggestedPriceTry,
+  nativeCurrency,
 }) {
   const { t } = useTranslation();
   const { format: money, currency: displayCurrency } = useMoney();
   const { convertAt, rateAt } = useRateHistory();
   const localeTag = t('common.localeTag');
-  const inputCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency ? 'TRY' : displayCurrency;
+  const resolvedNative = nativeCurrency || 'TRY';
+  const inputCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency
+    ? resolvedNative
+    : displayCurrency;
 
   const [date, setDate] = useState(() => initialDate ?? todayIso());
   const [price, setPrice] = useState(() => initialPrice ?? '');

@@ -72,8 +72,8 @@ class NotificationPreferenceServiceTest {
 
         ArgumentCaptor<NotificationPreference> captor = ArgumentCaptor.forClass(NotificationPreference.class);
         verify(repository).save(captor.capture());
-        verify(mapper).apply(eqRequest(request), any(NotificationPreference.class));
         assertThat(captor.getValue().getUserSub()).isEqualTo("user-1");
+        assertThat(captor.getValue().isEmailWatchlist()).isTrue();
     }
 
     private NotificationPreferenceResponse stubResponseFrom(NotificationPreference p) {
@@ -91,7 +91,4 @@ class NotificationPreferenceServiceTest {
                 p.getMarketSessionMarkets());
     }
 
-    private static NotificationPreferenceUpdateRequest eqRequest(NotificationPreferenceUpdateRequest expected) {
-        return org.mockito.ArgumentMatchers.argThat(actual -> actual == expected);
-    }
 }

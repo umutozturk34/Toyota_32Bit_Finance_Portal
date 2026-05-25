@@ -14,3 +14,7 @@ app:
     mapping:
       rich-html-min-length: 150
       short-description-threshold: 80
+    classifier:
+      min-score: 2
+      category-bonus: 3
+      substring-match-threshold: 4

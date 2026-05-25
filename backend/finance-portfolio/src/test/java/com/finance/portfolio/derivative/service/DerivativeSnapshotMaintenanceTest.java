@@ -8,7 +8,7 @@ import com.finance.market.viop.model.ViopContractKind;
 import com.finance.market.viop.repository.ViopCandleRepository;
 import com.finance.portfolio.derivative.model.DerivativeDirection;
 import com.finance.portfolio.derivative.model.DerivativePosition;
-import com.finance.portfolio.model.AssetType;
+import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
 import com.finance.portfolio.model.Portfolio;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
@@ -30,9 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,13 +43,14 @@ class DerivativeSnapshotMaintenanceTest {
     @Mock private HistoricalPricingPort historicalPricingPort;
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     @Mock private SnapshotCalculationService snapshotCalculator;
+    @Mock private DerivativePositionRepository derivativePositionRepository;
 
     private DerivativeSnapshotMaintenance maintenance;
 
     @BeforeEach
     void setUp() {
         maintenance = new DerivativeSnapshotMaintenance(candleRepository, historicalPricingPort,
-                assetSnapshotRepository, snapshotCalculator);
+                assetSnapshotRepository, snapshotCalculator, derivativePositionRepository);
     }
 
     private ViopContract contract(String symbol, String currency) {

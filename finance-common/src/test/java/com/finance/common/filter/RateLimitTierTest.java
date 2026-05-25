@@ -60,6 +60,27 @@ class RateLimitTierTest {
     }
 
     @Test
+    void shouldRouteCredentialAction_whenMethodIsPut() {
+        RateLimitTier matched = firstMatch("/api/v1/user/credentials/email", "PUT");
+
+        assertThat(matched.name()).isEqualTo("CREDENTIAL_ACTION");
+    }
+
+    @Test
+    void shouldRouteCredentialAction_whenMethodIsPatch() {
+        RateLimitTier matched = firstMatch("/api/v1/user/credentials/2fa", "PATCH");
+
+        assertThat(matched.name()).isEqualTo("CREDENTIAL_ACTION");
+    }
+
+    @Test
+    void shouldRouteCredentialAction_whenMethodIsDelete() {
+        RateLimitTier matched = firstMatch("/api/v1/user/credentials/2fa", "DELETE");
+
+        assertThat(matched.name()).isEqualTo("CREDENTIAL_ACTION");
+    }
+
+    @Test
     void shouldRouteCredentialRead_whenUserCredentialsGet() {
         RateLimitTier matched = firstMatch("/api/v1/user/credentials/2fa", "GET");
 

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Calendar, Hash, Tag, TrendingUp, TrendingDown, Check, AlertCircle } from 'lucide-react';
@@ -9,7 +9,7 @@ import { unifiedMarketService } from '../../../shared/services/unifiedMarketServ
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { useRateHistory } from '../../../shared/hooks/useRateHistory';
 import { extractApiError } from '../../../shared/utils/apiError';
-import { ONE_HOUR_MS, toYearMonth, buildPriceIndex } from '../lib/positionFormHelpers';
+import { ONE_HOUR_MS, toYearMonth, buildPriceIndex, resolveNativeCurrency } from '../lib/positionFormHelpers';
 import { useOpenDerivativePosition, useUpdateDerivativePosition } from '../hooks/useDerivativePositions';
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -42,17 +42,9 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
   const symbol = (lockedContract?.symbol || lockedContract?.code || '').toUpperCase();
   const meta = lockedContract?.metadata || {};
   const isOption = meta.kind === 'OPTION';
-  const currency = meta.currency || 'TRY';
-
-  const toTryOnDate = useCallback((displayValue, dateStr) => {
-    if (displayValue == null) return null;
-    const num = Number(displayValue);
-    if (!Number.isFinite(num)) return null;
-    const from = displayCurrency === 'ORIGINAL' ? currency : displayCurrency;
-    if (from === 'TRY') return num;
-    const rate = rateAt(from, dateStr);
-    return rate != null && rate > 0 ? num * rate : num;
-  }, [displayCurrency, currency, rateAt]);
+  const currency = meta.currency
+    || resolveNativeCurrency({ assetType: 'VIOP', assetCode: symbol, metadata: meta }, lockedContract);
+  const inputCurrency = displayCurrency === 'ORIGINAL' ? currency : displayCurrency;
 
   const isEditing = Boolean(editPosition);
   const editInitialEntryPriceDisplay = useMemo(() => {
@@ -121,24 +113,28 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
   const closeHighlights = useMemo(() => new Set(closeViewPrices.keys()), [closeViewPrices]);
 
   const todayIso = today();
+  const liveTodayInTry = useMemo(() => {
+    if (lockedContract?.currentPrice == null) return null;
+    const native = Number(lockedContract.currentPrice);
+    if (!Number.isFinite(native)) return null;
+    if (currency === 'TRY') return native;
+    const rate = rateAt(currency, todayIso);
+    return rate != null && rate > 0 ? native * rate : native;
+  }, [lockedContract?.currentPrice, currency, rateAt, todayIso]);
   const entryNative = useMemo(() => {
-    if (entryDate === todayIso && lockedContract?.currentPrice != null) {
-      return Number(lockedContract.currentPrice);
-    }
+    if (entryDate === todayIso && liveTodayInTry != null) return liveTodayInTry;
     return entryDatePrices.get(entryDate);
-  }, [entryDate, todayIso, lockedContract?.currentPrice, entryDatePrices]);
+  }, [entryDate, todayIso, liveTodayInTry, entryDatePrices]);
   const closeNative = useMemo(() => {
-    if (closeDate === todayIso && lockedContract?.currentPrice != null) {
-      return Number(lockedContract.currentPrice);
-    }
+    if (closeDate === todayIso && liveTodayInTry != null) return liveTodayInTry;
     return closeDatePrices.get(closeDate);
-  }, [closeDate, todayIso, lockedContract?.currentPrice, closeDatePrices]);
+  }, [closeDate, todayIso, liveTodayInTry, closeDatePrices]);
   const entrySuggestedDisplay = useMemo(
-    () => (entryNative != null ? convertAt(entryNative, currency, entryDate) : null),
+    () => (entryNative != null ? convertAt(entryNative, 'TRY', entryDate, currency) : null),
     [entryNative, entryDate, convertAt, currency],
   );
   const closeSuggestedDisplay = useMemo(
-    () => (closeNative != null ? convertAt(closeNative, currency, closeDate) : null),
+    () => (closeNative != null ? convertAt(closeNative, 'TRY', closeDate, currency) : null),
     [closeNative, closeDate, convertAt, currency],
   );
 
@@ -170,8 +166,9 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
         positionId: editPosition.id,
         direction,
         entryDate,
-        entryPrice: entryPrice ? toTryOnDate(entryPrice, entryDate) : null,
+        entryPrice: entryPrice ? Number(entryPrice) : null,
         quantityLot: Number(quantityLot),
+        priceCurrency: inputCurrency,
       };
       try {
         await update.mutateAsync(payload);
@@ -185,10 +182,11 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
       contractSymbol: symbol.trim(),
       direction,
       entryDate,
-      entryPrice: entryPrice ? toTryOnDate(entryPrice, entryDate) : null,
+      entryPrice: entryPrice ? Number(entryPrice) : null,
       quantityLot: Number(quantityLot),
       closeDate: closeEnabled ? (closeDate || null) : null,
-      closePrice: closeEnabled && closePrice ? toTryOnDate(closePrice, closeDate) : null,
+      closePrice: closeEnabled && closePrice ? Number(closePrice) : null,
+      priceCurrency: inputCurrency,
     };
     try {
       await open.mutateAsync(payload);
@@ -263,7 +261,7 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
             highlightedDates={entryHighlights}
             loading={entryLoading}
           />
-          <AvailabilityHint loading={entryLoading} price={entrySuggestedDisplay} currency={displayCurrency} t={t} />
+          <AvailabilityHint loading={entryLoading} price={entrySuggestedDisplay} currency={inputCurrency} t={t} />
         </div>
 
         <label className="space-y-1.5 block">
@@ -281,7 +279,7 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
         {notional != null && (
           <div className="rounded-lg border border-accent/25 bg-accent/5 px-3 py-2 flex items-center justify-between text-xs">
             <span className="font-semibold text-accent">{t('portfolio.derivatives.notional')}</span>
-            <span className="font-mono font-bold text-accent">{money(notional, displayCurrency)}</span>
+            <span className="font-mono font-bold text-accent">{money(notional, inputCurrency)}</span>
           </div>
         )}
 
@@ -308,7 +306,7 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
                   highlightedDates={closeHighlights}
                   loading={closeLoading}
                 />
-                <AvailabilityHint loading={closeLoading} price={closeSuggestedDisplay} currency={displayCurrency} t={t} />
+                <AvailabilityHint loading={closeLoading} price={closeSuggestedDisplay} currency={inputCurrency} t={t} />
               </div>
               <label className="space-y-1.5 block">
                 <span className="text-xs font-medium text-fg-muted">{t('portfolio.derivatives.closePrice')}</span>
@@ -331,7 +329,7 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
           </div>
         )}
 
-        <div className="flex justify-end gap-2 pt-1">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-1">
           <Button type="button" variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
           <Button type="submit" disabled={submitting}>
             {submitting ? '...' : submitLabel}

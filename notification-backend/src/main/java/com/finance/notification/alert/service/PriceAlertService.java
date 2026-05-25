@@ -49,21 +49,23 @@ public class PriceAlertService {
             throw new BadRequestException("error.priceAlert.maxReached", maxPerUser);
         }
         TrackedAsset trackedAsset = requireTrackedAsset(request.marketType(), request.assetCode());
-        BigDecimal thresholdTry = toTry(request.threshold(), request.currency());
+        String nativeCurrency = resolveAssetCurrency(request.marketType(), trackedAsset.getAssetCode());
+        BigDecimal thresholdNative = convertToCurrency(request.threshold(), request.currency(), nativeCurrency);
         if (repository.existsByUserSubAndTrackedAsset_IdAndDirectionAndThresholdAndActiveTrue(
-                userSub, trackedAsset.getId(), request.direction(), thresholdTry)) {
+                userSub, trackedAsset.getId(), request.direction(), thresholdNative)) {
             throw new BadRequestException("error.priceAlert.duplicate",
                     request.marketType(), trackedAsset.getAssetCode(),
-                    request.direction(), thresholdTry);
+                    request.direction(), thresholdNative);
         }
         PriceAlert entity = mapper.toEntity(request, userSub);
-        entity.setThreshold(thresholdTry);
+        entity.setThreshold(thresholdNative);
+        entity.setCurrency(nativeCurrency);
         entity.setTrackedAsset(trackedAsset);
         entity.setAssetCode(trackedAsset.getAssetCode());
         PriceAlert saved = repository.save(entity);
-        log.info("Price alert created userSub={} alertId={} market={} code={} dir={} threshold={}",
+        log.info("Price alert created userSub={} alertId={} market={} code={} dir={} threshold={} currency={}",
                 userSub, saved.getId(), saved.getMarketType(), saved.getAssetCode(),
-                saved.getDirection(), saved.getThreshold());
+                saved.getDirection(), saved.getThreshold(), saved.getCurrency());
         return mapper.toResponse(saved);
     }
 
@@ -113,7 +115,8 @@ public class PriceAlertService {
         PriceAlert alert = ownedOr404(id, userSub);
         if (request.direction() != null) alert.setDirection(request.direction());
         if (request.threshold() != null) {
-            alert.setThreshold(toTry(request.threshold(), alert.getCurrency()));
+            String nativeCurrency = alert.getCurrency() != null ? alert.getCurrency() : "TRY";
+            alert.setThreshold(convertToCurrency(request.threshold(), nativeCurrency, nativeCurrency));
         }
         PriceAlert saved = repository.save(alert);
         log.info("Price alert updated alertId={} userSub={} dir={} threshold={}",
@@ -148,15 +151,31 @@ public class PriceAlertService {
                 .orElseThrow(() -> new ResourceNotFoundException("error.priceAlert.notFound", id));
     }
 
-    private BigDecimal toTry(BigDecimal amount, String currency) {
+    private String resolveAssetCurrency(MarketType marketType, String assetCode) {
+        AssetSnapshot snapshot = assetSnapshotCache.findByCode(marketType, assetCode).orElse(null);
+        if (snapshot == null || snapshot.currency() == null || snapshot.currency().isBlank()) {
+            return "TRY";
+        }
+        return snapshot.currency().toUpperCase();
+    }
+
+    private BigDecimal convertToCurrency(BigDecimal amount, String fromCurrency, String toCurrency) {
         if (amount == null) return null;
-        if (currency == null || currency.isBlank() || "TRY".equalsIgnoreCase(currency)) return amount;
+        String from = fromCurrency == null || fromCurrency.isBlank() ? "TRY" : fromCurrency.toUpperCase();
+        String to = toCurrency == null || toCurrency.isBlank() ? "TRY" : toCurrency.toUpperCase();
+        if (from.equals(to)) return amount;
+        BigDecimal amountInTry = from.equals("TRY") ? amount : amount.multiply(fxRate(from));
+        BigDecimal result = to.equals("TRY") ? amountInTry : amountInTry.divide(fxRate(to), 8, RoundingMode.HALF_UP);
+        return result.setScale(4, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal fxRate(String currency) {
         AssetSnapshot fx = assetSnapshotCache
-                .findByCodes(MarketType.FOREX, Set.of(currency.toUpperCase()))
-                .get(currency.toUpperCase());
+                .findByCodes(MarketType.FOREX, Set.of(currency))
+                .get(currency);
         if (fx == null || fx.priceTry() == null || fx.priceTry().signum() <= 0) {
             throw new BadRequestException("error.priceAlert.unknownCurrency", currency);
         }
-        return amount.multiply(fx.priceTry()).setScale(4, RoundingMode.HALF_UP);
+        return fx.priceTry();
     }
 }

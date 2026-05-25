@@ -22,6 +22,7 @@ public class ReportSvgService {
     private static final int Y_TICKS = 4;
     private static final int X_TICKS = 6;
     private static final DateTimeFormatter X_LABEL_FMT = DateTimeFormatter.ofPattern("dd MMM");
+    private static final DateTimeFormatter X_LABEL_MULTI_YEAR_FMT = DateTimeFormatter.ofPattern("MMM yy");
 
     public String performanceLineChart(List<PerformanceSeriesPoint> points, ReportPalette palette, Locale locale) {
         if (points == null || points.size() < 2) {
@@ -95,11 +96,15 @@ public class ReportSvgService {
         }
 
         long tRange = maxT - minT;
+        LocalDateTime first = LocalDateTime.ofEpochSecond(minT, 0, ZoneOffset.UTC);
+        LocalDateTime last = LocalDateTime.ofEpochSecond(maxT, 0, ZoneOffset.UTC);
+        boolean multiYear = first.getYear() != last.getYear();
+        DateTimeFormatter xFmt = (multiYear ? X_LABEL_MULTI_YEAR_FMT : X_LABEL_FMT).withLocale(locale);
         for (int i = 0; i < X_TICKS; i++) {
             double tT = minT + (tRange) * (i / (double) (X_TICKS - 1));
             double x = PAD_LEFT + ((tT - minT) / (double) tRange) * plotW;
             LocalDateTime dt = LocalDateTime.ofEpochSecond((long) tT, 0, ZoneOffset.UTC);
-            String label = X_LABEL_FMT.withLocale(locale).format(dt);
+            String label = xFmt.format(dt);
             svg.append("<text x=\"").append(fmt(x)).append("\" y=\"").append(H - PAD_BOTTOM + 18)
                     .append("\" text-anchor=\"middle\" fill=\"").append(palette.subtle())
                     .append("\" font-size=\"9\" font-family=\"-apple-system,monospace\">")
@@ -132,6 +137,7 @@ public class ReportSvgService {
                 .append("\" preserveAspectRatio=\"xMidYMid meet\" style=\"display:block;width:100%;max-width:180px;height:auto\">");
 
         long nonZero = items.stream().filter(i -> i.value() != null && i.value().doubleValue() > 0).count();
+        double labelRadius = (rOuter + rInner) / 2.0;
         if (nonZero == 1) {
             var only = items.stream().filter(i -> i.value() != null && i.value().doubleValue() > 0).findFirst().get();
             svg.append("<circle cx=\"").append(cx).append("\" cy=\"").append(cy)
@@ -139,6 +145,9 @@ public class ReportSvgService {
                     .append("\" stroke=\"").append(palette.card()).append("\" stroke-width=\"1.5\"/>");
             svg.append("<circle cx=\"").append(cx).append("\" cy=\"").append(cy)
                     .append("\" r=\"").append(rInner).append("\" fill=\"").append(palette.card()).append("\"/>");
+            svg.append("<text x=\"").append(fmt(cx)).append("\" y=\"").append(fmt(cy - rOuter - 6))
+                    .append("\" text-anchor=\"middle\" fill=\"").append(palette.fg())
+                    .append("\" font-size=\"10\" font-weight=\"700\" font-family=\"-apple-system,sans-serif\">100%</text>");
         } else {
             double angle = -Math.PI / 2.0;
             for (var it : items) {
@@ -164,6 +173,23 @@ public class ReportSvgService {
                         .append(fmt(x1i)).append(",").append(fmt(y1i))
                         .append(" Z\" fill=\"").append(it.color())
                         .append("\" stroke=\"").append(palette.card()).append("\" stroke-width=\"1.5\"/>");
+                angle = next;
+            }
+            angle = -Math.PI / 2.0;
+            for (var it : items) {
+                double frac = (it.value() == null ? 0d : it.value().doubleValue()) / total;
+                if (frac <= 0) continue;
+                double next = angle + frac * 2 * Math.PI;
+                if (frac >= 0.06) {
+                    double mid = (angle + next) / 2.0;
+                    double tx = cx + labelRadius * Math.cos(mid);
+                    double ty = cy + labelRadius * Math.sin(mid);
+                    String pct = String.format(Locale.ROOT, "%.0f%%", frac * 100);
+                    svg.append("<text x=\"").append(fmt(tx)).append("\" y=\"").append(fmt(ty + 3))
+                            .append("\" text-anchor=\"middle\" fill=\"#ffffff\"")
+                            .append(" font-size=\"9\" font-weight=\"700\" font-family=\"-apple-system,sans-serif\">")
+                            .append(pct).append("</text>");
+                }
                 angle = next;
             }
         }

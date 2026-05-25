@@ -38,7 +38,7 @@ function AssetChart({ data, isDark, t, convertAt, displayCurrency, nativeCurrenc
     [data, isDark, t, convertAt, displayCurrency, nativeCurrency]
   );
   if (!option) return null;
-  return <ReactECharts option={option} notMerge lazyUpdate style={{ height: 340 }} opts={{ renderer: 'canvas' }} />;
+  return <ReactECharts option={option} notMerge lazyUpdate className="h-[260px] sm:h-[300px] lg:h-[340px]" opts={{ renderer: 'canvas' }} />;
 }
 
 export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onEditLot, onDeleteLot, onSellLot, onReopenLot, hasActiveDialog = false }) {
@@ -134,7 +134,7 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
             size={9}
             shape="square"
             icon={<ArrowLeft className="h-4 w-4" />}
-            aria-label="back"
+            aria-label={t('common.back')}
             onClick={onBack}
             className="hover:-translate-x-0.5"
           />
@@ -174,7 +174,7 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
         variants={cardVariants}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-2 sm:grid-cols-5 gap-3"
+        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"
       >
         {STAT_CARD_DEFS.map(({ key, labelKey, Icon, format, money: isMoney }) => (
           <Card key={key} variant="elevated" radius="xl" padding="sm" interactive className="space-y-2">

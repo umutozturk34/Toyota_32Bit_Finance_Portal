@@ -120,7 +120,7 @@ export default function News() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-                <div className="w-48">
+                <div className="w-full sm:w-48">
                     <SearchInput value={listParams.search} onChange={listParams.setSearch} placeholder={t('news.searchPlaceholder')} />
                 </div>
             </div>

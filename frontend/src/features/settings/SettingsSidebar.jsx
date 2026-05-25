@@ -16,6 +16,13 @@ import { toast } from '../../shared/components/feedback/toastBus';
 import TwoFactorPanel from '../auth/components/TwoFactorPanel';
 import NotificationPreferencesSection from './NotificationPreferencesSection';
 import EmailChangeSection from './EmailChangeSection';
+import { SUPPORTED_DISPLAY_CURRENCIES } from '../../shared/constants/currencies';
+
+const CURRENCY_LABELS = {
+  TRY: '₺ TRY',
+  USD: '$ USD',
+  EUR: '€ EUR',
+};
 
 const THEME_OPTIONS = [
   { value: 'DARK', Icon: Moon, labelKey: 'theme.DARK' },
@@ -30,9 +37,7 @@ const LANGUAGE_OPTIONS = [
 const CHART_RANGE_VALUES = ['1W', '1M', '3M', '6M', '1Y', '3Y', '5Y', 'ALL'];
 
 const CURRENCY_OPTIONS = [
-  { value: 'TRY', label: '₺ TRY' },
-  { value: 'USD', label: '$ USD' },
-  { value: 'EUR', label: '€ EUR' },
+  ...SUPPORTED_DISPLAY_CURRENCIES.map((code) => ({ value: code, label: CURRENCY_LABELS[code] })),
   { value: 'ORIGINAL', labelKey: 'settings.currencyOriginal' },
 ];
 
@@ -136,7 +141,7 @@ export default function SettingsSidebar({ isOpen, onClose }) {
     <SideDrawer
       open={isOpen}
       onClose={onClose}
-      width="380px"
+      width="min(380px, 100vw)"
       icon={SettingsIcon}
       iconTint="text-accent"
       title={t('settings.title')}

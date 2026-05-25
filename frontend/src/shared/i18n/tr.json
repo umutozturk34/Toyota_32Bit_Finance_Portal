@@ -33,6 +33,10 @@
   },
   "common": {
     "localeTag": "tr-TR",
+    "notAvailable": "—",
+    "live": "Canlı",
+    "clear": "Temizle",
+    "period24h": "24s",
     "save": "Kaydet",
     "cancel": "Vazgeç",
     "confirm": "Onayla",
@@ -192,7 +196,9 @@
       "magnet": {
         "off": "Kapalı",
         "weak": "Zayıf (Yüksek/Düşük)",
-        "strong": "Güçlü (OHLC)"
+        "strong": "Güçlü (OHLC)",
+        "weakShort": "Z",
+        "strongShort": "G"
       },
       "crosshair": {
         "price": "Fiyat",
@@ -200,7 +206,11 @@
         "sell": "Satış",
         "buy": "Alış",
         "effBuy": "Ef. Alış",
-        "effSell": "Ef. Satış"
+        "effSell": "Ef. Satış",
+        "open": "A",
+        "high": "Y",
+        "low": "D",
+        "close": "K"
       },
       "vs": "vs",
       "trend": {
@@ -898,6 +908,7 @@
     "actions": {
       "downloadPdf": "PDF İndir",
       "downloadPdfPending": "PDF Hazırlanıyor...",
+      "downloadPdfEmpty": "PDF için en az bir pozisyon gerekli",
       "downloadPdfError": "PDF indirilemedi. Lütfen tekrar deneyin.",
       "downloadPdfRateLimit": "Saatte en fazla 2 PDF indirebilirsin. Daha sonra tekrar dene."
     },
@@ -1255,7 +1266,9 @@
       "statLast": "Son",
       "statMin": "Min",
       "statMax": "Maks",
-      "statAvg": "Ort"
+      "statAvg": "Ort",
+      "tabAll": "Tümü",
+      "points": "puan"
     },
     "editMode": "Düzenleme modu",
     "unsavedChanges": "Kaydedilmemiş değişiklikler",
@@ -1273,7 +1286,7 @@
     "editToggleOff": "Düzenleme modunu aç",
     "editToggleClean": "Düzenleme modunu kapat",
     "editToggleDirty": "Düzenleme modunu kapat (kaydedilmemiş değişiklikler kaybolur)",
-    "searchPlaceholder": "Hisse, kripto, döviz, fon ara...",
+    "searchPlaceholder": "Hisse, kripto, döviz, fon, gösterge ara...",
     "emptyCanvas": "Boş tuval",
     "emptyDragHint": "Yukardaki galeriden widget sürükle",
     "emptyEditHint": "Düzenle ile widget ekle",

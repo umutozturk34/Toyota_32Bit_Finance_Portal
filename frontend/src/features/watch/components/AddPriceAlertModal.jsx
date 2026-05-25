@@ -267,7 +267,7 @@ export default function AddPriceAlertModal({
               <Hash className="h-3 w-3" />
               {t('addPriceAlert.quickSelect')}
             </label>
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               {QUICK_DELTAS.map(({ label, value }) => (
                 <button
                   key={label}
@@ -290,7 +290,7 @@ export default function AddPriceAlertModal({
               <Hash className="h-3 w-3" />
               {t('addPriceAlert.quickPercent')}
             </label>
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               {PCT_PRESETS.map((p) => (
                 <button
                   key={p}

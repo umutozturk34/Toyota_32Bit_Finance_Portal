@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { initKeycloak, getUserInfo, doLogin, doLogout, hasRole, forceRefreshToken } from './lib/keycloak';
 import { AuthContext } from './useAuth';
+import { AUTH_REFRESH_INTERVAL_MS } from '../../shared/constants/timings';
 
 export const AuthProvider = ({ children }) => {
   const queryClient = useQueryClient();
@@ -11,7 +12,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setLoading(false);
-    }, 5000);
+    }, AUTH_REFRESH_INTERVAL_MS);
     initKeycloak((auth) => {
       clearTimeout(timeoutId);
       setAuthenticated(auth);

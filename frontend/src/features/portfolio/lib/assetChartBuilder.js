@@ -6,7 +6,7 @@ const UNIT_COLOR = '#f59e0b';
 const POSITION_EVENT_TYPES = new Set(['POSITION_ADDED', 'POSITION_SOLD']);
 
 export function formatChartMoney(value, currency) {
-  if (value == null || !Number.isFinite(value)) return 'N/A';
+  if (value == null || !Number.isFinite(value)) return '—';
   const abs = Math.abs(value);
   if (abs >= 100_000) {
     return new Intl.NumberFormat(currentLocaleTag(), {

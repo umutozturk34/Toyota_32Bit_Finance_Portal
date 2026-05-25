@@ -112,7 +112,7 @@ function CommoditiesPage() {
 
                 <div className="mt-2 flex items-center gap-1 text-[11px] text-fg-subtle">
                     <Clock className="h-3 w-3" />
-                    {commodity.lastUpdated ? new Date(commodity.lastUpdated).toLocaleString(localeTag, { timeZone: 'Europe/Istanbul' }) : 'N/A'}
+                    {commodity.lastUpdated ? new Date(commodity.lastUpdated).toLocaleString(localeTag, { timeZone: 'Europe/Istanbul' }) : '—'}
                 </div>
             </AssetCard>
         );

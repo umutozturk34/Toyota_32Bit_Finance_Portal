@@ -112,7 +112,7 @@ export default function AdminUsersPage() {
       </form>
 
       <div className="rounded-xl border border-border-default bg-bg-elevated overflow-hidden">
-        <div className="grid grid-cols-[2fr_2fr_1fr_1fr_140px] gap-3 px-4 py-3 border-b border-border-default text-[11px] font-semibold text-fg-muted uppercase tracking-wide">
+        <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_1fr_140px] gap-3 px-4 py-3 border-b border-border-default text-[11px] font-semibold text-fg-muted uppercase tracking-wide">
           <span>{t('adminUsers.col.user')}</span>
           <span>{t('adminUsers.col.email')}</span>
           <span>{t('adminUsers.col.signupDate')}</span>
@@ -136,7 +136,7 @@ export default function AdminUsersPage() {
             key={user.id}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-[2fr_2fr_1fr_1fr_140px] gap-3 items-center px-4 py-3 border-b border-border-default last:border-b-0 text-sm hover:bg-surface transition-colors"
+            className="grid grid-cols-1 md:grid-cols-[2fr_2fr_1fr_1fr_140px] gap-2 md:gap-3 items-start md:items-center px-4 py-3 border-b border-border-default last:border-b-0 text-sm hover:bg-surface transition-colors"
           >
             <div className="min-w-0">
               <div className="font-medium text-fg truncate">{user.username}</div>

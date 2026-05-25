@@ -139,6 +139,8 @@ const MainLayout = () => {
 
   const isActive = (path) => location.pathname === path;
   const sidebarWidth = collapsed ? 64 : 224;
+  const overviewOverlayMode = location.pathname === '/market';
+  const spacerWidth = overviewOverlayMode ? 64 : sidebarWidth;
 
   const sidebarProps = {
     collapsed,
@@ -186,7 +188,7 @@ const MainLayout = () => {
           <SidebarContent {...sidebarProps} />
         </div>
       </motion.aside>
-      <div className="hidden lg:block shrink-0" style={{ width: sidebarWidth }} />
+      <div className="hidden lg:block shrink-0" style={{ width: spacerWidth }} />
 
       <div
         className={`lg:hidden fixed top-0 left-0 right-0 z-40 h-12 flex items-center justify-between px-3 border-b border-border-default ${blurCls}`}

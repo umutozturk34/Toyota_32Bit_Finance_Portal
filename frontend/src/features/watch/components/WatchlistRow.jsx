@@ -108,7 +108,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
           );
         })()}
       </div>
-      <div className="flex items-center gap-0.5 min-w-[64px] justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-0.5 min-w-[64px] justify-end sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <button
           type="button"
           onClick={(e) => {

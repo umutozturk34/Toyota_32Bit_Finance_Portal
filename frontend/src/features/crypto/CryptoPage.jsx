@@ -65,7 +65,7 @@ export default function CryptoPage() {
                     size="sm"
                     className="mt-2"
                 >
-                    <span className="ml-1 opacity-75">24h</span>
+                    <span className="ml-1 opacity-75">{t('common.period24h')}</span>
                 </ChangePercentBadge>
 
                 <div className="mt-3 space-y-1 border-t border-border-default pt-3">
@@ -85,7 +85,7 @@ export default function CryptoPage() {
 
                 <div className="mt-2 flex items-center gap-1 text-[11px] text-fg-subtle">
                     <Clock className="h-3 w-3" />
-                    {crypto.lastUpdated ? new Date(crypto.lastUpdated).toLocaleString(t('common.localeTag'), { timeZone: 'Europe/Istanbul' }) : 'N/A'}
+                    {crypto.lastUpdated ? new Date(crypto.lastUpdated).toLocaleString(t('common.localeTag'), { timeZone: 'Europe/Istanbul' }) : '—'}
                 </div>
             </AssetCard>
         );

@@ -203,7 +203,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
                             {portfolioName(t, p)}
                           </span>
                         </button>
-                        <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-0.5 sm:opacity-0 sm:group-hover/item:opacity-100 transition-opacity">
                           <button
                             onClick={(e) => { e.stopPropagation(); setRenameTarget(p); setRenameValue(p.name); setError(null); }}
                             className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-accent hover:bg-accent/10 transition border-none cursor-pointer bg-transparent"

@@ -20,8 +20,8 @@ export function nativeCurrencyFor(type, code) {
   }
   if (type === 'COMMODITY') {
     const upper = (code || '').toUpperCase();
-    if (upper.endsWith('TRY')) return 'TRY';
-    if (upper.endsWith('EUR')) return 'EUR';
+    if (upper.endsWith('TRYG') || upper.endsWith('TRY')) return 'TRY';
+    if (upper.endsWith('EURG') || upper.endsWith('EUR')) return 'EUR';
     return 'USD';
   }
   return 'TRY';

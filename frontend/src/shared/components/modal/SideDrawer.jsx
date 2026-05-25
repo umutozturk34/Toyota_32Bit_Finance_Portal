@@ -15,7 +15,7 @@ export default function SideDrawer({
   open,
   onClose,
   side = 'right',
-  width = '420px',
+  width = 'min(420px, 100vw)',
   icon: Icon,
   iconTint = 'text-accent',
   title,

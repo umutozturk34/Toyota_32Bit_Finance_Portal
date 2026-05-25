@@ -139,7 +139,7 @@ function StocksPage() {
 
             <div className="mt-2 flex items-center gap-1 text-[11px] text-fg-subtle">
                 <Clock className="h-3 w-3" />
-                {stock.lastUpdated ? new Date(stock.lastUpdated).toLocaleString(t('common.localeTag'), { timeZone: 'Europe/Istanbul' }) : 'N/A'}
+                {stock.lastUpdated ? new Date(stock.lastUpdated).toLocaleString(t('common.localeTag'), { timeZone: 'Europe/Istanbul' }) : '—'}
             </div>
         </AssetCard>
     );

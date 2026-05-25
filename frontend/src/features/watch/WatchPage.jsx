@@ -215,7 +215,7 @@ export default function WatchPage() {
             hideDirection={sortBy === 'CUSTOM'}
           />
         </div>
-        <div className="grid grid-cols-[auto_auto_1fr_auto_auto] gap-3 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
+        <div className="hidden sm:grid grid-cols-[auto_auto_1fr_auto_auto] gap-3 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
           <span className="w-6" />
           <span className="w-9">&nbsp;</span>
           <span>{t('watch.headers.asset')}</span>
@@ -284,7 +284,7 @@ export default function WatchPage() {
             {t('watch.createAlert')}
           </motion.button>
         </header>
-        <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
+        <div className="hidden md:grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">
           <span className="w-9">&nbsp;</span>
           <span>{t('watch.headers.asset')}</span>
           <span>{t('watch.headers.direction')}</span>

@@ -12,8 +12,7 @@ function readStoredPreference() {
         const stored = localStorage.getItem('finance-theme');
         if (stored === 'light') return 'LIGHT';
         if (stored === 'dark') return 'DARK';
-    } catch {
-    }
+    } catch { void 0; }
     return 'DARK';
 }
 
@@ -69,8 +68,7 @@ function persistTheme(theme) {
     try {
         localStorage.setItem('finance-theme', theme);
         document.cookie = 'finance-theme=' + theme + ';path=/;max-age=31536000;SameSite=Lax';
-    } catch {
-    }
+    } catch { void 0; }
 }
 
 export function ThemeProvider({ children }) {

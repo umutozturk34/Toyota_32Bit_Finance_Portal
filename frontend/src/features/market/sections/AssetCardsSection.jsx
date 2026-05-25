@@ -102,7 +102,7 @@ export default function AssetCardsSection({ data, editMode = false, config = {},
   const { t } = useTranslation();
   const navigate = useNavigate();
   const setOrigin = useNavigationStore((s) => s.setOrigin);
-  const items = data?.items ?? [];
+  const items = useMemo(() => data?.items ?? [], [data]);
 
   const visibleItems = useMemo(() => {
     if (!Array.isArray(config?.assetCodes)) return items;

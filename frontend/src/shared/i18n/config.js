@@ -11,8 +11,7 @@ function persistLanguage(lang) {
     localStorage.setItem(STORAGE_KEY, lang);
     document.cookie = `${STORAGE_KEY}=${lang};path=/;max-age=31536000;SameSite=Lax`;
     document.cookie = `KEYCLOAK_LOCALE=${lang};path=/;max-age=31536000;SameSite=Lax`;
-  } catch {
-  }
+  } catch { void 0; }
 }
 
 i18n

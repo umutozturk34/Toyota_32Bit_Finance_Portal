@@ -124,7 +124,7 @@ function NotificationRow({ item, onRead, onDelete }) {
         </div>
       </div>
 
-      <div className="mt-2 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="mt-2 flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <Button
           variant="ghost"
           size="xs"
@@ -235,7 +235,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
                   size={7}
                   shape="square"
                   icon={<X className="h-3 w-3" />}
-                  aria-label="clear search"
+                  aria-label={t('common.clear')}
                   onClick={() => setSearchInput('')}
                   className="w-5 h-5"
                 />

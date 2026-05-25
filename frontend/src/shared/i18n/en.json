@@ -33,6 +33,10 @@
   },
   "common": {
     "localeTag": "en-US",
+    "notAvailable": "—",
+    "live": "Live",
+    "clear": "Clear",
+    "period24h": "24h",
     "save": "Save",
     "cancel": "Cancel",
     "confirm": "Confirm",
@@ -192,7 +196,9 @@
       "magnet": {
         "off": "Off",
         "weak": "Weak (High/Low)",
-        "strong": "Strong (OHLC)"
+        "strong": "Strong (OHLC)",
+        "weakShort": "W",
+        "strongShort": "S"
       },
       "crosshair": {
         "price": "Price",
@@ -200,7 +206,11 @@
         "sell": "Sell",
         "buy": "Buy",
         "effBuy": "Banknote Buy",
-        "effSell": "Banknote Sell"
+        "effSell": "Banknote Sell",
+        "open": "O",
+        "high": "H",
+        "low": "L",
+        "close": "C"
       },
       "vs": "vs",
       "trend": {
@@ -898,6 +908,7 @@
     "actions": {
       "downloadPdf": "Download PDF",
       "downloadPdfPending": "Preparing PDF...",
+      "downloadPdfEmpty": "Need at least one position to export PDF",
       "downloadPdfError": "PDF download failed. Please try again.",
       "downloadPdfRateLimit": "You can download at most 2 PDFs per hour. Please try again later."
     },
@@ -1255,7 +1266,9 @@
       "statLast": "Last",
       "statMin": "Min",
       "statMax": "Max",
-      "statAvg": "Avg"
+      "statAvg": "Avg",
+      "tabAll": "All",
+      "points": "pts"
     },
     "editMode": "Edit mode",
     "unsavedChanges": "Unsaved changes",
@@ -1273,7 +1286,7 @@
     "editToggleOff": "Enter edit mode",
     "editToggleClean": "Exit edit mode",
     "editToggleDirty": "Exit edit mode (unsaved changes will be lost)",
-    "searchPlaceholder": "Search stock, crypto, forex, fund...",
+    "searchPlaceholder": "Search stock, crypto, forex, fund, indicator...",
     "emptyCanvas": "Empty canvas",
     "emptyDragHint": "Drag a widget from the gallery above",
     "emptyEditHint": "Add widgets via Edit",

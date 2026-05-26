@@ -128,12 +128,21 @@ export default function IndicatorHistoryModal({ indicator, onClose }) {
               style={{ background: `${color}14`, boxShadow: `inset 0 0 0 1px ${color}40` }}
             >
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-              <span className="text-fg-muted uppercase tracking-[0.12em]">{ind.code}</span>
+              <span className="text-fg-muted uppercase tracking-[0.12em]">
+                {ind.label ? t(`marketOverview.macro.${ind.label}`, { defaultValue: ind.name || ind.code }) : (ind.name || ind.code)}
+              </span>
               <span className="text-fg-subtle">·</span>
-              <span className="text-fg-muted uppercase tracking-[0.12em]">{ind.type}</span>
+              <span className="text-fg-muted uppercase tracking-[0.12em]">
+                {t(`marketOverview.macro.enum.${ind.type}`, { defaultValue: ind.type })}
+              </span>
             </span>
           ))}
         </div>
+
+        {primary?.label && (() => {
+          const desc = t(`marketOverview.macro.descriptions.${primary.label}`, { defaultValue: '' });
+          return desc ? <p className="text-[11px] text-fg-muted leading-relaxed px-0.5">{desc}</p> : null;
+        })()}
 
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex flex-wrap items-center gap-1">

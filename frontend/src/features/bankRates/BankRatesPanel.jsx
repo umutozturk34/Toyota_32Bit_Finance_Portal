@@ -203,13 +203,13 @@ export default function BankRatesPanel() {
   const isLoading = ratesLoading && rates.length === 0;
 
   return (
-    <div className="flex gap-4 items-start">
+    <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-start">
       <Card
         variant="elevated"
         radius="xl"
         padding="sm"
         backdropBlur
-        className="w-60 shrink-0 flex flex-col gap-3 sticky top-4 self-start max-h-[calc(100vh-2rem)] overflow-hidden"
+        className="w-full lg:w-60 lg:shrink-0 flex flex-col gap-3 lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] overflow-hidden"
       >
         <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-bg-base">
           <button
@@ -262,7 +262,7 @@ export default function BankRatesPanel() {
           )}
         </div>
 
-        <div className="flex flex-col gap-1 overflow-y-auto">
+        <div className="flex flex-col gap-1 overflow-y-auto max-h-64 lg:max-h-none">
           {currenciesLoading && filteredCurrencies.length === 0 && (
             <div className="flex justify-center py-6"><Spinner size="sm" /></div>
           )}
@@ -285,9 +285,9 @@ export default function BankRatesPanel() {
         </div>
       </Card>
 
-      <div className="flex-1 flex flex-col gap-4 min-w-0">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+      <div className="flex-1 flex flex-col gap-4 min-w-0 w-full">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
             {kind === 'GOLD' ? (
               (() => {
                 const gv = goldVisual(currency);
@@ -323,7 +323,7 @@ export default function BankRatesPanel() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-muted pointer-events-none" />
               <input
@@ -331,7 +331,7 @@ export default function BankRatesPanel() {
                 value={bankQuery}
                 onChange={(e) => setBankQuery(e.target.value)}
                 placeholder={t('bankRates.searchBank')}
-                className="w-44 pl-8 pr-7 py-2 rounded-lg bg-bg-elevated border border-border-default text-xs text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent/60"
+                className="w-full sm:w-44 pl-8 pr-7 py-2 rounded-lg bg-bg-elevated border border-border-default text-xs text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent/60"
               />
               {bankQuery && (
                 <button

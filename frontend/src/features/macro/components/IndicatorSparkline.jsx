@@ -69,7 +69,7 @@ export default function IndicatorSparkline({ code, color, points: pointsProp }) 
       <path d={area} fill={`url(#${gradientId})`} stroke="none" />
       <path d={line} fill="none" stroke={baseColor} strokeWidth={1.4} strokeLinejoin="round" strokeLinecap="round" />
       {lastDot && (
-        <circle cx={lastDot.x} cy={lastDot.y} r={1.6} fill={baseColor} stroke="#0a0a0b" strokeWidth={0.6} />
+        <circle cx={lastDot.x} cy={lastDot.y} r={1.6} fill={baseColor} stroke="var(--color-bg-base)" strokeWidth={0.6} />
       )}
     </svg>
   );

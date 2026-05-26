@@ -69,6 +69,10 @@ export default function IndicatorCard({ indicator, onOpen, dense = false }) {
             </p>
           </div>
           <h3 className={`mt-1 font-semibold text-fg truncate ${dense ? 'text-xs' : 'text-sm'}`}>{label}</h3>
+          {!dense && (() => {
+            const desc = t(`marketOverview.macro.descriptions.${indicator.label}`, { defaultValue: '' });
+            return desc ? <p className="mt-0.5 text-[10px] text-fg-subtle leading-snug line-clamp-2">{desc}</p> : null;
+          })()}
         </div>
         <ChangeChip text={changeText} down={isDown} theme={theme} />
       </div>

@@ -35,7 +35,7 @@ const ChartToolbar = ({
                     : 'chart.toolbar.activeInstruction.dragDraw';
     return (
     <>
-        <div className="flex items-center gap-3 px-3 py-2 border-b border-border-default bg-surface/40 overflow-x-auto scrollbar-thin">
+        <div className="flex items-center gap-3 px-3 py-2 border-b border-border-default bg-surface/40 overflow-x-auto scrollbar-thin min-h-[42px]">
             <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="p-1.5 rounded-md border-none cursor-pointer text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent"
@@ -49,7 +49,7 @@ const ChartToolbar = ({
                     className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium border-none cursor-pointer transition-all duration-150"
                     style={{
                         background: chartType === 'line' ? 'rgba(94,106,210,0.15)' : 'transparent',
-                        color: chartType === 'line' ? '#6872D9' : 'var(--color-fg-muted)',
+                        color: chartType === 'line' ? 'var(--color-accent)' : 'var(--color-fg-muted)',
                     }}
                     title={t('chart.toolbar.lineChart')}
                 >
@@ -62,7 +62,7 @@ const ChartToolbar = ({
                         className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium border-none cursor-pointer transition-all duration-150 border-l"
                         style={{
                             background: chartType === 'candle' ? 'rgba(94,106,210,0.15)' : 'transparent',
-                            color: chartType === 'candle' ? '#6872D9' : 'var(--color-fg-muted)',
+                            color: chartType === 'candle' ? 'var(--color-accent)' : 'var(--color-fg-muted)',
                             borderLeftColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
                         }}
                         title={t('chart.toolbar.candleChart')}
@@ -78,7 +78,7 @@ const ChartToolbar = ({
                 style={{
                     background: magnetMode !== 'off' ? 'rgba(94,106,210,0.12)' : 'transparent',
                     borderColor: magnetMode !== 'off' ? 'rgba(94,106,210,0.3)' : 'var(--color-border-default)',
-                    color: magnetMode !== 'off' ? '#5E6AD2' : 'var(--color-fg-muted)',
+                    color: magnetMode !== 'off' ? 'var(--color-accent)' : 'var(--color-fg-muted)',
                 }}
                 title={`${t('chart.toolbar.magnetLabel')}: ${magnetLabel}`}
             >
@@ -145,7 +145,7 @@ const ChartToolbar = ({
                 }
                 if (crosshairData.open != null) {
                     return (
-                        <div className="flex items-center gap-3 text-[11px] font-mono flex-wrap">
+                        <div className="flex items-center gap-3 text-[11px] font-mono whitespace-nowrap shrink-0">
                             <span className="text-fg-muted">{t('chart.toolbar.crosshair.open')} <span className="text-fg">{Number(crosshairData.open).toFixed(2)}</span></span>
                             <span className="text-fg-muted">{t('chart.toolbar.crosshair.high')} <span className="text-[#10b981]">{Number(crosshairData.high).toFixed(2)}</span></span>
                             <span className="text-fg-muted">{t('chart.toolbar.crosshair.low')} <span className="text-[#ef4444]">{Number(crosshairData.low).toFixed(2)}</span></span>
@@ -161,7 +161,7 @@ const ChartToolbar = ({
                 }
                 if (crosshairData.compares?.length > 0) {
                     return (
-                        <div className="flex items-center gap-3 text-[11px] font-mono flex-wrap">
+                        <div className="flex items-center gap-3 text-[11px] font-mono whitespace-nowrap shrink-0">
                             {crosshairData.compares.map((c) => (
                                 <span key={c.symbol} className="text-fg-muted flex items-center gap-1">
                                     <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
@@ -210,9 +210,9 @@ const ChartToolbar = ({
             </div>
         </div>
         {isAnyToolActive && (
-            <div className="flex items-center justify-between px-3 py-1.5 bg-[rgba(94,106,210,0.08)] border-b border-[rgba(94,106,210,0.15)]">
-                <span className="flex items-center gap-1.5 text-[11px] text-[#6872D9]">
-                    <Crosshair className="w-3.5 h-3.5 text-[#5E6AD2]" />
+            <div className="flex items-center justify-between px-3 py-1.5 bg-accent/10 border-b border-[rgba(94,106,210,0.15)]">
+                <span className="flex items-center gap-1.5 text-[11px] text-accent">
+                    <Crosshair className="w-3.5 h-3.5 text-accent" />
                     {t('chart.toolbar.active')}: <strong className="text-fg">{activeTool || activeFibTool}</strong>
                     <span className="text-fg-subtle">
                         {t(activeInstructionKey)}

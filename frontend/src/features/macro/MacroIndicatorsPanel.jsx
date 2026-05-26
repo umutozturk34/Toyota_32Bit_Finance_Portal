@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Banknote, Flame, Layers, Sparkles } from 'lucide-react';
+import { Activity, Banknote, Flame, Layers, Sparkles, Search, X } from 'lucide-react';
 import EmptyState from '../../shared/components/feedback/EmptyState';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
@@ -30,6 +30,7 @@ export default function MacroIndicatorsPanel() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('all');
   const [currencyFilter, setCurrencyFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { data: allIndicators = [], isLoading, isError, refetch } = useMacroIndicators();
@@ -61,13 +62,26 @@ export default function MacroIndicatorsPanel() {
   }), [allIndicators]);
 
   const visible = useMemo(() => {
-    const activeDef = TABS.find((t) => t.id === activeTab) || TABS[0];
+    const activeDef = TABS.find((tab) => tab.id === activeTab) || TABS[0];
     let list = activeDef.category ? allIndicators.filter((i) => i.category === activeDef.category) : allIndicators;
     if (activeTab === 'deposit' && currencyFilter !== 'ALL') {
       list = list.filter((i) => i.currency === currencyFilter);
     }
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter((i) => {
+        const friendlyLabel = i.label
+          ? t(`marketOverview.macro.${i.label}`, { defaultValue: i.label })
+          : (i.name || '');
+        return friendlyLabel.toLowerCase().includes(q)
+          || (i.name || '').toLowerCase().includes(q)
+          || (i.code || '').toLowerCase().includes(q)
+          || (i.label || '').toLowerCase().includes(q);
+      });
+    }
     return list;
-  }, [activeTab, currencyFilter, allIndicators]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, currencyFilter, allIndicators, searchQuery]);
 
   const prominent = useMemo(
     () => sortByProminentOrder(allIndicators.filter((i) => i.prominent)),
@@ -103,8 +117,9 @@ export default function MacroIndicatorsPanel() {
         </div>
       </header>
 
-      <nav className="flex items-center gap-1 overflow-x-auto sm:flex-wrap sm:overflow-x-visible scrollbar-thin">
-        {TABS.map((tab) => {
+      <div className="flex items-center gap-2 flex-wrap">
+        <nav className="flex items-center gap-1 overflow-x-auto sm:flex-wrap sm:overflow-x-visible scrollbar-thin flex-1 min-w-0">
+          {TABS.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
           const theme = tab.category ? themeFor(tab.category) : null;
@@ -125,7 +140,27 @@ export default function MacroIndicatorsPanel() {
             </button>
           );
         })}
-      </nav>
+        </nav>
+        <div className="relative w-full sm:w-56">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-muted pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t('marketOverview.macro.searchPlaceholder', { defaultValue: 'Gösterge ara…' })}
+            className="w-full pl-8 pr-7 py-1.5 rounded-lg bg-bg-elevated border border-border-default text-xs text-fg placeholder:text-fg-muted focus:outline-none focus:border-accent/60"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-fg-muted hover:text-fg p-0.5 bg-transparent border-none cursor-pointer"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+      </div>
 
       {activeTab === 'deposit' && (
         <div className="flex items-center gap-1.5">

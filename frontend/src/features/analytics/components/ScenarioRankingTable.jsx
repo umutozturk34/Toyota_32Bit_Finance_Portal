@@ -6,7 +6,6 @@ import { SERIES_COLORS } from '../constants';
 import { formatPercent } from '../utils';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
-import { resolveNativeCurrency } from '../../portfolio/lib/positionFormHelpers';
 
 export default function ScenarioRankingTable({ scenario }) {
   const { t } = useTranslation();
@@ -43,10 +42,6 @@ export default function ScenarioRankingTable({ scenario }) {
             const isWinner = idx === 0;
             const nominalDown = nominal < 0;
             const realDown = real != null && real < 0;
-            const assetNative = resolveNativeCurrency({
-              assetType: row.instrument?.type,
-              assetCode: row.instrument?.code,
-            });
             return (
               <motion.tr
                 key={`${row.instrument.type}|${row.instrument.code}`}
@@ -68,20 +63,15 @@ export default function ScenarioRankingTable({ scenario }) {
                       <div className="text-fg font-semibold">
                         {instrumentDisplayName(t, row.instrument.type, row.instrument.code)}
                       </div>
-                      <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle flex items-center gap-1.5">
-                        <span>{row.instrument.type}</span>
-                        {assetNative !== 'TRY' && (
-                          <span className="px-1 py-0.5 rounded bg-accent/10 text-accent">
-                            {assetNative}
-                          </span>
-                        )}
+                      <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle">
+                        {row.instrument.type}
                       </div>
                     </div>
                   </div>
                 </Td>
                 <Td align="right">
                   <span className="font-mono font-bold tabular-nums text-fg">
-                    {money(row.finalValue, scenario?.targetCurrency || assetNative)}
+                    {money(row.finalValue, scenario?.targetCurrency || 'TRY')}
                   </span>
                 </Td>
                 <Td align="right">

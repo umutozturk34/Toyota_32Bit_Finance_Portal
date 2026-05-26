@@ -303,6 +303,65 @@ class KeycloakAdminClientTest {
                 .hasMessageContaining("net2");
     }
 
+    @Test
+    void getUser_returnsFetchedMap() {
+        Map<String, Object> user = Map.of("id", USER_ID, "username", "ali", "email", "ali@x.com");
+        stubFetchUser(user);
+
+        Map<String, Object> result = client.getUser(USER_ID);
+
+        assertThat(result).isEqualTo(user);
+    }
+
+    @Test
+    void updateBasics_putsMergedBodyWithRenamedFields() {
+        stubFetchUser(Map.of(
+                "id", USER_ID,
+                "username", "old",
+                "firstName", "Old",
+                "lastName", "Name",
+                "email", "x@y.com"));
+
+        client.updateBasics(USER_ID, "newuser", "New", "User");
+
+        Map<String, Object> body = capturePutBody();
+        assertThat(body.get("username")).isEqualTo("newuser");
+        assertThat(body.get("firstName")).isEqualTo("New");
+        assertThat(body.get("lastName")).isEqualTo("User");
+        assertThat(body.get("email")).isEqualTo("x@y.com");
+    }
+
+    @Test
+    void ensureRealmFlag_skipsPut_whenValueAlreadyMatches() {
+        when(getResponseSpec.bodyToMono(Map.class))
+                .thenReturn(Mono.just(Map.of("editUsernameAllowed", true)));
+
+        client.ensureRealmFlag("editUsernameAllowed", true);
+
+        verify(putBodySpec, times(0)).bodyValue(any());
+    }
+
+    @Test
+    void ensureRealmFlag_putsRealmBody_whenValueDiffers() {
+        when(getResponseSpec.bodyToMono(Map.class))
+                .thenReturn(Mono.just(Map.of("editUsernameAllowed", false, "realm", "finance-realm")));
+
+        client.ensureRealmFlag("editUsernameAllowed", true);
+
+        Map<String, Object> body = capturePutBody();
+        assertThat(body.get("editUsernameAllowed")).isEqualTo(true);
+        assertThat(body.get("realm")).isEqualTo("finance-realm");
+    }
+
+    @Test
+    void ensureRealmFlag_throwsExternalApiException_whenRealmFetchReturnsNull() {
+        when(getResponseSpec.bodyToMono(Map.class)).thenReturn(Mono.empty());
+
+        assertThatThrownBy(() -> client.ensureRealmFlag("editUsernameAllowed", true))
+                .isInstanceOf(ExternalApiException.class)
+                .hasMessageContaining("fetchRealm returned null");
+    }
+
     private void stubFetchUser(Map<String, Object> user) {
         when(getResponseSpec.bodyToMono(Map.class)).thenReturn(Mono.just(user));
     }

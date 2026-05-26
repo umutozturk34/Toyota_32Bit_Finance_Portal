@@ -43,6 +43,10 @@ export default function ScenarioRankingTable({ scenario }) {
             const isWinner = idx === 0;
             const nominalDown = nominal < 0;
             const realDown = real != null && real < 0;
+            const assetNative = resolveNativeCurrency({
+              assetType: row.instrument?.type,
+              assetCode: row.instrument?.code,
+            });
             return (
               <motion.tr
                 key={`${row.instrument.type}|${row.instrument.code}`}
@@ -66,9 +70,9 @@ export default function ScenarioRankingTable({ scenario }) {
                       </div>
                       <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle flex items-center gap-1.5">
                         <span>{row.instrument.type}</span>
-                        {row.nativeCurrency && row.nativeCurrency !== 'TRY' && (
+                        {assetNative !== 'TRY' && (
                           <span className="px-1 py-0.5 rounded bg-accent/10 text-accent">
-                            {row.nativeCurrency}
+                            {assetNative}
                           </span>
                         )}
                       </div>
@@ -77,7 +81,7 @@ export default function ScenarioRankingTable({ scenario }) {
                 </Td>
                 <Td align="right">
                   <span className="font-mono font-bold tabular-nums text-fg">
-                    {money(row.finalValue, scenario?.targetCurrency || row.nativeCurrency || resolveNativeCurrency({ assetType: row.instrument?.type, assetCode: row.instrument?.code }))}
+                    {money(row.finalValue, scenario?.targetCurrency || assetNative)}
                   </span>
                 </Td>
                 <Td align="right">

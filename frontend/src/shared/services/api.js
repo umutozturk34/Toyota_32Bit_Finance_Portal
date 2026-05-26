@@ -64,6 +64,22 @@ api.interceptors.response.use(
       }
       return Promise.reject(error);
     }
+    const status = error.response?.status;
+    const backendMessage = error.response?.data?.message;
+    let messageKey = null;
+    if (!error.response) {
+      messageKey = 'error.networkError';
+    } else if (status === 502 || status === 503) {
+      messageKey = 'error.serverUnavailable';
+    } else if (status === 504) {
+      messageKey = 'error.gatewayTimeout';
+    } else if (status >= 500) {
+      messageKey = 'error.serverError';
+    }
+    if (messageKey) {
+      const fallback = i18n.t(messageKey);
+      toast.error(i18n.t('error.actionFailed'), backendMessage || fallback);
+    }
     return Promise.reject(error);
   }
 );

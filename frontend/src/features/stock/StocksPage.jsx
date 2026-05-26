@@ -17,7 +17,7 @@ import useListParams from '../../shared/hooks/useListParams';
 import { useMoney } from '../../shared/hooks/useMoney';
 import { assetCodeLabel } from '../../shared/utils/assetCode';
 
-const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
+const SORT_OPTION_IDS = ['changePercent', 'price', 'volume', 'name'];
 
 function StocksPage() {
     const { t } = useTranslation();

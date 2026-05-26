@@ -77,6 +77,45 @@ public class KeycloakAdminClient {
 
     @CircuitBreaker(name = "keycloak-admin")
     @Retry(name = "keycloak-admin")
+    @SuppressWarnings("unchecked")
+    public void ensureClientRedirectUris(String clientId, List<String> requiredUris) {
+        if (requiredUris == null || requiredUris.isEmpty()) return;
+        List<Map<String, Object>> clients = executeWithRetry("listClients", token -> webClient.get()
+                .uri(uri -> uri.path("/admin/realms/{realm}/clients")
+                        .queryParam("clientId", clientId)
+                        .build(properties.getRealm()))
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .bodyToMono(List.class)
+                .block());
+        if (clients == null || clients.isEmpty()) {
+            log.warn("Keycloak client not found for redirect URI sync: {}", clientId);
+            return;
+        }
+        Map<String, Object> client = clients.get(0);
+        String uuid = String.valueOf(client.get("id"));
+        Object existingRaw = client.get("redirectUris");
+        List<String> existing = existingRaw instanceof List<?> list
+                ? list.stream().map(String::valueOf).toList()
+                : List.of();
+        java.util.LinkedHashSet<String> merged = new java.util.LinkedHashSet<>(existing);
+        boolean changed = merged.addAll(requiredUris);
+        if (!changed) return;
+        Map<String, Object> body = new java.util.HashMap<>(client);
+        body.put("redirectUris", new java.util.ArrayList<>(merged));
+        executeWithRetry("updateClient", token -> webClient.put()
+                .uri("/admin/realms/{realm}/clients/{uuid}", properties.getRealm(), uuid)
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(body)
+                .retrieve()
+                .toBodilessEntity()
+                .block());
+        log.info("Keycloak client redirect URIs synced clientId={} added={}", clientId, requiredUris);
+    }
+
+    @CircuitBreaker(name = "keycloak-admin")
+    @Retry(name = "keycloak-admin")
     public void ensureRealmFlag(String flag, Object value) {
         Map<String, Object> realm = executeWithRetry("fetchRealm", token -> webClient.get()
                 .uri("/admin/realms/{realm}", properties.getRealm())

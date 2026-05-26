@@ -13,11 +13,22 @@ function readLocalTheme() {
   } catch {
     // localStorage unavailable; fall through
   }
-  return null;
+  try {
+    if (window.matchMedia('(prefers-color-scheme: light)').matches) return 'LIGHT';
+    return 'DARK';
+  } catch {
+    return null;
+  }
 }
 
 function normalizeLanguage(lang) {
-  if (!lang) return null;
+  if (!lang) {
+    try {
+      const stored = localStorage.getItem('finance-language');
+      if (stored === 'tr' || stored === 'en') return stored;
+    } catch { /* noop */ }
+    return null;
+  }
   const short = String(lang).slice(0, 2).toLowerCase();
   return short === 'tr' || short === 'en' ? short : null;
 }

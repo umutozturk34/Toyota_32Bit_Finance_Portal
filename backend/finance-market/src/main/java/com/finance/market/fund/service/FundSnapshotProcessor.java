@@ -25,7 +25,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Predicate;
 
 @Log4j2
@@ -63,14 +62,12 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
         LocalDate cursor = today();
         log.info("Starting bulk fund snapshot update for {}", cursor);
 
-        Set<String> trackedCodes = Set.copyOf(
-                trackedAssetQueryService.getCodes(TrackedAssetType.FUND));
         int byfSaved = -1;
         int yatSaved = -1;
 
         for (int attempt = 0; attempt <= holidayLookbackDays; attempt++) {
             byfSaved = bulkUpdateAndAutoTrackBYF(cursor);
-            yatSaved = bulkUpdateForTrackedYAT(cursor, trackedCodes);
+            yatSaved = bulkUpdateAndAutoTrackYAT(cursor);
             if (byfSaved > 0 || yatSaved > 0) break;
             if (attempt == holidayLookbackDays) break;
             log.info("No fund data for {}, walking back one day (TEFAS likely closed for holiday)", cursor);
@@ -118,13 +115,12 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
         return executeBulk(FundType.BYF, today, dto -> true, this::persistByf);
     }
 
-    private int bulkUpdateForTrackedYAT(LocalDate today, Set<String> trackedCodes) {
-        return executeBulk(FundType.YAT, today,
-                dto -> trackedCodes.contains(dto.fundCode()),
-                this::persistYat);
+    private int bulkUpdateAndAutoTrackYAT(LocalDate today) {
+        return executeBulk(FundType.YAT, today, dto -> true, this::persistYat);
     }
 
     private boolean persistByf(TefasFundDto dto) {
+        if (!hasValidPrice(dto)) return false;
         Fund persisted = transactionTemplate.execute(s -> {
             Fund f = entityWriter.saveSnapshot(dto, FundType.BYF);
             entityWriter.upsertCandleFromDto(f, FundType.BYF, dto);
@@ -137,14 +133,20 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
     }
 
     private boolean persistYat(TefasFundDto dto) {
+        if (!hasValidPrice(dto)) return false;
         Fund persisted = transactionTemplate.execute(s -> {
             Fund f = entityWriter.saveSnapshot(dto, FundType.YAT);
             entityWriter.upsertCandleFromDto(f, FundType.YAT, dto);
             return f;
         });
         if (persisted == null) return false;
+        entityWriter.ensureYatTracked(persisted.getFundCode(), persisted.getName());
         fundCacheService.putSnapshot(persisted.getFundCode(), persisted);
         return true;
+    }
+
+    private static boolean hasValidPrice(TefasFundDto dto) {
+        return dto != null && dto.price() != null && dto.price().signum() != 0;
     }
 
     private int executeBulk(FundType fundType, LocalDate today,

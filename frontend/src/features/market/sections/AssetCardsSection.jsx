@@ -31,7 +31,6 @@ function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
   const isUp = (asset.changePercent ?? 0) > 0;
   const accent = !hasChange ? '#6366f1' : (isUp ? '#10b981' : '#ef4444');
   const isPending = asset._pending === true || asset.price == null;
-  const seedKey = `${asset.type}-${asset.code}`;
   return (
     <div className="group/card relative h-full">
       <button
@@ -43,7 +42,8 @@ function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
       >
         {!isPending && (
           <AssetCardChart
-            assetCode={seedKey}
+            assetType={asset.type}
+            assetCode={asset.code}
             changePercent={asset.changePercent ?? 0}
             color={accent}
             delayMs={index * 70}

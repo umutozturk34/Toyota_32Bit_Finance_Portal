@@ -16,6 +16,7 @@ import { PERIODS } from '../constants';
 import { formatPercent } from '../utils';
 
 const PAGE_SIZE = 10;
+const FIXED_TYPE_ORDER = ['SPOT', 'CRYPTO', 'FUND', 'FOREX', 'COMMODITY', 'DEPOSIT', 'MACRO'];
 const BENCHMARK_CATEGORIES = ['INFLATION', 'RATES', 'DEPOSIT'];
 const MACRO_CATEGORY_TO_MARKET_TYPE = {
   DEPOSIT: 'MACRO_DEPOSIT',
@@ -203,6 +204,10 @@ export default function InflationBeaterPage() {
               return next;
             });
           }}
+          onClearTypes={() => {
+            setPage(0);
+            setTypeFilter(new Set());
+          }}
           sortKey={sortKey}
           sortDir={sortDir}
           onToggleSort={toggleSort}
@@ -214,7 +219,7 @@ export default function InflationBeaterPage() {
 }
 
 function Results({ data, period, t, search, onSearchChange, page, onPageChange, onCompare,
-                   verdictFilter, onVerdictChange, typeFilter, onTypeToggle,
+                   verdictFilter, onVerdictChange, typeFilter, onTypeToggle, onClearTypes,
                    sortKey, sortDir, onToggleSort }) {
   const indexedEntries = useMemo(
     () => (data.entries || []).map((e, idx) => ({ ...e, _rank: idx + 1 })),
@@ -224,9 +229,11 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
   const winRate = totalCount > 0 ? Math.round((data.beatingCount / totalCount) * 100) : 0;
 
   const availableTypes = useMemo(() => {
-    const set = new Set();
-    indexedEntries.forEach((e) => set.add(e.type));
-    return Array.from(set);
+    const presentSet = new Set();
+    indexedEntries.forEach((e) => presentSet.add(e.type));
+    const ordered = FIXED_TYPE_ORDER.filter((tp) => presentSet.has(tp));
+    presentSet.forEach((tp) => { if (!FIXED_TYPE_ORDER.includes(tp)) ordered.push(tp); });
+    return ordered;
   }, [indexedEntries]);
 
   const filteredEntries = useMemo(() => {
@@ -341,7 +348,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
           {typeFilter.size > 0 && (
             <button
               type="button"
-              onClick={() => availableTypes.forEach((tp) => { if (typeFilter.has(tp)) onTypeToggle(tp); })}
+              onClick={() => onClearTypes()}
               className="text-xs font-display font-semibold text-fg-subtle hover:text-fg cursor-pointer border-none bg-transparent ml-1"
             >
               {t('analytics.clearFilters', { defaultValue: 'Temizle' })}

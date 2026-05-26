@@ -156,12 +156,6 @@ public class NotificationPreference {
         return emailEnabled && type.isEmailWantedBy(this);
     }
 
-    public boolean subscribesToMarket(SessionMarket market) {
-        if (marketSessionMarkets == null || marketSessionMarkets.isBlank()) return false;
-        Set<String> selected = Set.copyOf(Arrays.asList(marketSessionMarkets.split(MARKETS_DELIMITER)));
-        return selected.contains(market.name());
-    }
-
     private static String defaultMarketSessionMarkets() {
         return Arrays.stream(SessionMarket.values())
                 .filter(m -> !DEFAULT_OPT_OUT_MARKETS.contains(m))

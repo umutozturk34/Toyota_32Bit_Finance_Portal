@@ -83,6 +83,7 @@
             </#if>
 
             <input type="hidden" id="themePreferenceAttr" name="user.attributes.themePreference" value="DARK" />
+            <input type="hidden" id="localeAttr" name="user.attributes.locale" value="${locale.currentLanguageTag!'en'}" />
 
             <div id="kc-form-buttons" style="margin-top: 1.5rem;">
                 <input type="submit" value="${msg("doRegister")}" />
@@ -94,12 +95,52 @@
         </form>
         <script>
           (function () {
+            function getCookie(name) {
+              var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+              return match ? decodeURIComponent(match[1]) : null;
+            }
+            function readParams() {
+              var hash = window.location.hash || '';
+              if (hash.startsWith('#')) hash = hash.slice(1);
+              try { return new URLSearchParams(window.location.search + '&' + hash); }
+              catch (e) { return new URLSearchParams(window.location.search); }
+            }
+            function readTheme() {
+              try {
+                var p = readParams().get('themePreference');
+                if (p) return p.toUpperCase();
+              } catch (e) { /* noop */ }
+              var c = (getCookie('finance-theme') || '').toLowerCase();
+              if (c === 'light' || c === 'dark') return c.toUpperCase();
+              try {
+                var ls = (localStorage.getItem('finance-theme') || '').toLowerCase();
+                if (ls === 'light' || ls === 'dark') return ls.toUpperCase();
+              } catch (e) { /* noop */ }
+              return null;
+            }
+            function readLocale() {
+              try {
+                var p = readParams().get('kc_locale');
+                if (p === 'tr' || p === 'en') return p;
+              } catch (e) { /* noop */ }
+              var c = (getCookie('KEYCLOAK_LOCALE') || getCookie('finance-language') || '').toLowerCase();
+              if (c === 'tr' || c === 'en') return c;
+              try {
+                var ls = (localStorage.getItem('finance-language') || '').toLowerCase();
+                if (ls === 'tr' || ls === 'en') return ls;
+              } catch (e) { /* noop */ }
+              return null;
+            }
             try {
-              var params = new URLSearchParams(window.location.search);
-              var requested = (params.get('themePreference') || '').toUpperCase();
-              if (requested === 'LIGHT' || requested === 'DARK') {
+              var theme = readTheme();
+              if (theme) {
                 var input = document.getElementById('themePreferenceAttr');
-                if (input) input.value = requested;
+                if (input) input.value = theme;
+              }
+              var locale = readLocale();
+              if (locale) {
+                var localeInput = document.getElementById('localeAttr');
+                if (localeInput) localeInput.value = locale;
               }
             } catch (e) { /* noop */ }
           })();

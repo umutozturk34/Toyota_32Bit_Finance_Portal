@@ -36,12 +36,13 @@ class ViopMarketAssetProviderTest {
 
     @Mock private ViopContractRepository repository;
     @Mock private ViopMarketResponseMapper mapper;
+    @Mock private com.finance.market.core.service.TrackedAssetQueryService trackedAssetQueryService;
 
     private ViopMarketAssetProvider provider;
 
     @BeforeEach
     void setUp() {
-        provider = new ViopMarketAssetProvider(repository, mapper);
+        provider = new ViopMarketAssetProvider(repository, mapper, trackedAssetQueryService);
     }
 
     private ViopContract sampleContract() {

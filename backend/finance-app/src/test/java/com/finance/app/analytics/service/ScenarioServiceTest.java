@@ -6,13 +6,17 @@ import com.finance.app.analytics.dto.HistoryPoint;
 import com.finance.app.analytics.dto.request.ScenarioRequest;
 import com.finance.app.analytics.dto.response.ScenarioResponse;
 import com.finance.app.analytics.dto.response.ScenarioSeries;
+import com.finance.app.config.AnalyticsProperties;
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.model.Currency;
+import com.finance.market.macro.service.MacroIndicatorQueryService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.quality.Strictness;
+import org.mockito.junit.jupiter.MockitoSettings;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -29,13 +33,21 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ScenarioServiceTest {
 
     @Mock private UnifiedHistoryService historyService;
+    @Mock private MacroIndicatorQueryService macroQueryService;
     @Mock private AnalyticsPriceSeriesProvider priceSeriesProvider;
+    @Mock private AnalyticsProperties analyticsProperties;
 
-    @InjectMocks
     private ScenarioService service;
+
+    @BeforeEach
+    void setUp() {
+        when(analyticsProperties.scenario()).thenReturn(new AnalyticsProperties.Scenario(7));
+        service = new ScenarioService(historyService, macroQueryService, priceSeriesProvider, analyticsProperties);
+    }
 
     private static PricedSeries pricedTry(List<HistoryPoint> points) {
         Map<LocalDate, BigDecimal> fx = new HashMap<>();

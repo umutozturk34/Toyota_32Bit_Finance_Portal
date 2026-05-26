@@ -1,5 +1,6 @@
 package com.finance;
 
+import com.finance.app.config.AnalyticsProperties;
 import com.finance.app.config.OverviewProperties;
 import com.finance.market.bond.config.BondProperties;
 import com.finance.common.config.AppProperties;
@@ -33,6 +34,7 @@ import java.util.TimeZone;
 @EnableAsync
 @EnableJpaAuditing
 @EnableConfigurationProperties({
+        AnalyticsProperties.class,
         AppProperties.class,
         BondProperties.class,
         ChartDefaultsProperties.class,

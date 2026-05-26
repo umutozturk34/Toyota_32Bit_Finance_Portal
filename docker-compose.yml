@@ -183,7 +183,7 @@ services:
     container_name: finance-keycloak
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8180:8080"
+      - "8180:8080"
     environment:
       TZ: Europe/Istanbul
       KEYCLOAK_ADMIN: admin
@@ -194,12 +194,11 @@ services:
       KC_DB_URL: jdbc:postgresql://db:5432/keycloak_db
       KC_DB_USERNAME: finance_user
       KC_DB_PASSWORD: ${DB_PASSWORD}
-      KC_HOSTNAME: localhost
       KC_PROXY: edge
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_PORT: "8180"
+      KC_HOSTNAME_STRICT_BACKCHANNEL: "false"
       KC_SPI_REALM_DEFAULT_SSL_REQUIRED: NONE
     command:
       - start-dev

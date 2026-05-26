@@ -74,7 +74,24 @@
                 var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
                 return match ? match[1] : null;
             }
-            var theme = getCookie('finance-theme') || localStorage.getItem('finance-theme');
+            function readParams() {
+                var hash = window.location.hash || '';
+                if (hash.startsWith('#')) hash = hash.slice(1);
+                try { return new URLSearchParams(window.location.search + '&' + hash); }
+                catch (e) { return new URLSearchParams(window.location.search); }
+            }
+            try {
+                var params = readParams();
+                var requested = (params.get('themePreference') || '').toLowerCase();
+                if (requested === 'light' || requested === 'dark') {
+                    localStorage.setItem('finance-theme', requested);
+                }
+                var locale = (params.get('kc_locale') || '').toLowerCase();
+                if (locale === 'tr' || locale === 'en') {
+                    localStorage.setItem('finance-language', locale);
+                }
+            } catch (e) { /* noop */ }
+            var theme = localStorage.getItem('finance-theme') || getCookie('finance-theme');
             theme = (theme === 'light') ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', theme);
         })();

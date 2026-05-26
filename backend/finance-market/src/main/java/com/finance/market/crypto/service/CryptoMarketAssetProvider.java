@@ -16,6 +16,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @Service
@@ -63,6 +64,18 @@ public class CryptoMarketAssetProvider extends BaseTrackedMarketAssetProvider<Cr
     @Override
     protected String priceField() {
         return "currentPriceTry";
+    }
+
+    @Override
+    protected Map<String, String> sortFields() {
+        return Map.of(
+                "price", "currentPriceTry",
+                "changePercent", "changePercent",
+                "name", "name",
+                "volume", "totalVolume",
+                "marketCap", "marketCap",
+                "default", "changePercent"
+        );
     }
 
     @Override

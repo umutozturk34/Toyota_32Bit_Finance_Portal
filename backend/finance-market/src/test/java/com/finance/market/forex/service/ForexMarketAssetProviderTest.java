@@ -33,12 +33,13 @@ class ForexMarketAssetProviderTest {
     @SuppressWarnings("unchecked")
     @Mock private MarketCacheService<Forex> cacheService;
     @Mock private ForexResponseMapper mapper;
+    @Mock private com.finance.market.core.service.TrackedAssetQueryService trackedAssetQueryService;
 
     private ForexMarketAssetProvider provider;
 
     @BeforeEach
     void setUp() {
-        provider = new ForexMarketAssetProvider(forexRepository, cacheService, mapper);
+        provider = new ForexMarketAssetProvider(forexRepository, cacheService, mapper, trackedAssetQueryService);
     }
 
     @Test
@@ -119,9 +120,10 @@ class ForexMarketAssetProviderTest {
         assertThat(sort.getOrderFor("changePercent").getDirection()).isEqualTo(Sort.Direction.ASC);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     void count_delegatesToRepository() {
-        when(forexRepository.count()).thenReturn(22L);
+        when(forexRepository.count(any(Specification.class))).thenReturn(22L);
 
         long count = provider.count(null);
 

@@ -70,7 +70,7 @@ class StockMarketAssetProviderTest {
     @SuppressWarnings("unchecked")
     @Test
     void search_appliesSegmentFilter_whenSegmentProvided() {
-        when(trackedAssetQueryService.getCodes(TrackedAssetType.STOCK)).thenReturn(List.of("AKBNK"));
+        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.STOCK)).thenReturn(List.of("AKBNK"));
         Page<Stock> page = new PageImpl<>(List.of());
         when(stockRepository.findAll(any(Specification.class), any(PageRequest.class))).thenReturn(page);
         when(mapper.toMarketAssetResponses(any())).thenReturn(List.of());
@@ -84,7 +84,7 @@ class StockMarketAssetProviderTest {
     @SuppressWarnings("unchecked")
     @Test
     void getTopMovers_excludesMainIndexSegment() {
-        when(trackedAssetQueryService.getCodes(TrackedAssetType.STOCK)).thenReturn(List.of("AKBNK"));
+        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.STOCK)).thenReturn(List.of("AKBNK"));
         Page<Stock> page = new PageImpl<>(List.of());
         when(stockRepository.findAll(any(Specification.class), any(PageRequest.class))).thenReturn(page);
         when(mapper.toMarketAssetResponses(any())).thenReturn(List.of());

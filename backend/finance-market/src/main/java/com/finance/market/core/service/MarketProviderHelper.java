@@ -14,7 +14,8 @@ public final class MarketProviderHelper {
         if (sortBy == null || sortBy.isBlank()) return Sort.unsorted();
         String field = fieldMapping.getOrDefault(sortBy, sortBy);
         Sort.Direction dir = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
-        return Sort.by(dir, field);
+        Sort.Order order = new Sort.Order(dir, field, Sort.NullHandling.NULLS_LAST);
+        return Sort.by(order);
     }
 
     public static List<MarketAssetResponse> applyDisplayNames(

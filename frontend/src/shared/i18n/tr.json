@@ -762,7 +762,14 @@
     "sort": {
       "changePercent": "Değişim %",
       "price": "Fiyat",
-      "name": "İsim"
+      "name": "İsim",
+      "volume": "Hacim",
+      "marketCap": "Piyasa Değeri",
+      "bulletinPrice": "Bülten Fiyatı",
+      "portfolioSize": "Portföy Büyüklüğü",
+      "investorCount": "Yatırımcı Sayısı",
+      "expiryDate": "Vade",
+      "initialMargin": "Marj"
     },
     "stockSegments": {
       "MAIN_INDEX": "Ana Endeksler",

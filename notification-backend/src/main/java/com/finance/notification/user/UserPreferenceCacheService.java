@@ -59,16 +59,6 @@ public class UserPreferenceCacheService {
     }
 
     @Transactional(readOnly = true)
-    public ZoneId resolveZone(String userSub) {
-        return loadSingle(userSub).map(UserPreferenceSnapshot::zone).orElse(DEFAULT_ZONE);
-    }
-
-    @Transactional(readOnly = true)
-    public String resolveTheme(String userSub) {
-        return loadSingle(userSub).map(UserPreferenceSnapshot::theme).orElse("DARK");
-    }
-
-    @Transactional(readOnly = true)
     public Locale resolveLocale(String userSub) {
         return loadSingle(userSub).map(UserPreferenceSnapshot::locale).orElse(DEFAULT_LOCALE);
     }

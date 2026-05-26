@@ -16,7 +16,7 @@ import RiskBadge from '../../shared/components/asset/RiskBadge';
 import useListParams from '../../shared/hooks/useListParams';
 import { useMoney } from '../../shared/hooks/useMoney';
 
-const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
+const SORT_OPTION_IDS = ['changePercent', 'price', 'bulletinPrice', 'portfolioSize', 'investorCount', 'name'];
 const FUND_TYPE_IDS = ['BYF', 'YAT'];
 
 function FundsPage() {

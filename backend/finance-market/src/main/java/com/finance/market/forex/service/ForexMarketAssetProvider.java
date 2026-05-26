@@ -3,9 +3,11 @@ package com.finance.market.forex.service;
 import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.core.service.MarketAssetProvider;
+import com.finance.market.core.service.TrackedAssetQueryService;
 import com.finance.market.forex.mapper.ForexResponseMapper;
 import com.finance.market.forex.model.Forex;
 import com.finance.common.model.MarketType;
+import com.finance.common.model.TrackedAssetType;
 import com.finance.market.forex.repository.ForexRepository;
 import com.finance.shared.util.LikeSearchSpec;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
     private final ForexRepository forexRepository;
     private final MarketCacheService<Forex> forexCacheService;
     private final ForexResponseMapper forexResponseMapper;
+    private final TrackedAssetQueryService trackedAssetQueryService;
 
     @Override
     public MarketType getType() {
@@ -68,7 +71,7 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
 
     @Override
     public long count(MarketAssetFilters filters) {
-        return forexRepository.count();
+        return forexRepository.count(enabledSpec());
     }
 
     @Override
@@ -77,12 +80,18 @@ public class ForexMarketAssetProvider implements MarketAssetProvider {
     }
 
     private Specification<Forex> buildSpecification(String searchTerm) {
-        Specification<Forex> spec = (root, query, cb) -> cb.conjunction();
+        Specification<Forex> spec = enabledSpec();
         if (searchTerm != null && !searchTerm.isBlank()) {
             spec = spec.and((root, query, cb) ->
                     LikeSearchSpec.byFieldsContains(root, cb, searchTerm, "currencyCode", "name"));
         }
         return spec;
+    }
+
+    private Specification<Forex> enabledSpec() {
+        java.util.Set<String> enabled = new java.util.HashSet<>(
+                trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FOREX));
+        return (root, query, cb) -> root.get("currencyCode").in(enabled);
     }
 
     private Specification<Forex> nonNullChangePercent() {

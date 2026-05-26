@@ -6,7 +6,6 @@ import { SERIES_COLORS } from '../constants';
 import { formatPercent } from '../utils';
 import { useMoney } from '../../../shared/hooks/useMoney';
 import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
-import { resolveNativeCurrency } from '../../portfolio/lib/positionFormHelpers';
 
 export default function ScenarioRankingTable({ scenario }) {
   const { t } = useTranslation();
@@ -64,20 +63,15 @@ export default function ScenarioRankingTable({ scenario }) {
                       <div className="text-fg font-semibold">
                         {instrumentDisplayName(t, row.instrument.type, row.instrument.code)}
                       </div>
-                      <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle flex items-center gap-1.5">
-                        <span>{row.instrument.type}</span>
-                        {row.nativeCurrency && row.nativeCurrency !== 'TRY' && (
-                          <span className="px-1 py-0.5 rounded bg-accent/10 text-accent">
-                            {row.nativeCurrency}
-                          </span>
-                        )}
+                      <div className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle">
+                        {row.instrument.type}
                       </div>
                     </div>
                   </div>
                 </Td>
                 <Td align="right">
                   <span className="font-mono font-bold tabular-nums text-fg">
-                    {money(row.finalValue, scenario?.targetCurrency || row.nativeCurrency || resolveNativeCurrency({ assetType: row.instrument?.type, assetCode: row.instrument?.code }))}
+                    {money(row.finalValue, scenario?.targetCurrency || 'TRY')}
                   </span>
                 </Td>
                 <Td align="right">

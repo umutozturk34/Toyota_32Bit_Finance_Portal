@@ -11,5 +11,5 @@ public class FxProperties {
 
     private int cacheTtlMinutes = 60;
     private long cacheMaxEntries = 1000;
-    private int lookbackDays = 14;
+    private int lookbackDays = 30;
 }

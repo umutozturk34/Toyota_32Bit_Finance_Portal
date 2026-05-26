@@ -85,7 +85,10 @@ public class PortfolioPdfService {
             String currencySymbol = currencySymbol(request.currency());
 
             Context ctx = new Context(locale);
-            ctx.setVariable("portfolioName", "Portfolio #" + request.portfolioId());
+            String displayName = (request.portfolioName() == null || request.portfolioName().isBlank())
+                    ? "Portfolio #" + request.portfolioId()
+                    : request.portfolioName();
+            ctx.setVariable("portfolioName", displayName);
             ctx.setVariable("currency", request.currency());
             ctx.setVariable("currencySymbol", currencySymbol);
             ctx.setVariable("palette", palette);

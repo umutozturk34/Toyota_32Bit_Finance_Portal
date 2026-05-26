@@ -21,6 +21,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @Service
@@ -70,6 +71,19 @@ public class FundMarketAssetProvider extends BaseTrackedMarketAssetProvider<Fund
     @Override
     protected String priceField() {
         return "price";
+    }
+
+    @Override
+    protected Map<String, String> sortFields() {
+        return Map.ofEntries(
+                Map.entry("price", "price"),
+                Map.entry("changePercent", "changePercent"),
+                Map.entry("name", "name"),
+                Map.entry("bulletinPrice", "bulletinPrice"),
+                Map.entry("portfolioSize", "portfolioSize"),
+                Map.entry("investorCount", "investorCount"),
+                Map.entry("default", "changePercent")
+        );
     }
 
     @Override

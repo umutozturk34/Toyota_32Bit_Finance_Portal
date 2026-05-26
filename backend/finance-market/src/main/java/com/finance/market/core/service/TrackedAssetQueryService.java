@@ -97,6 +97,10 @@ public class TrackedAssetQueryService {
         return codeCache.get(type);
     }
 
+    public List<String> getEnabledCodes(TrackedAssetType type) {
+        return codeCache.getEnabled(type);
+    }
+
     public Map<String, String> getDisplayNameMap(TrackedAssetType type) {
         return trackedAssetRepository.findByAssetTypeOrderBySortOrderAscAssetCodeAsc(type)
                 .stream()

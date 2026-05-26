@@ -3,7 +3,9 @@ package com.finance.market.stock.service;
 import com.finance.common.exception.BusinessException;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
+import com.finance.market.core.service.TrackedAssetCommandService;
 import com.finance.market.core.service.TrackedAssetQueryService;
+import com.finance.market.stock.client.IsYatirimStockListProvider;
 import com.finance.market.stock.config.StockProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,8 @@ class StockUpdateServiceTest {
 
     @Mock private StockSnapshotProcessor snapshotProcessor;
     @Mock private TrackedAssetQueryService trackedAssetQueryService;
+    @Mock private TrackedAssetCommandService trackedAssetCommandService;
+    @Mock private IsYatirimStockListProvider stockListProvider;
     @Mock private StockProperties stockProperties;
 
     private StockUpdateService service;
@@ -32,7 +36,13 @@ class StockUpdateServiceTest {
     @BeforeEach
     void setUp() {
         when(stockProperties.getBatchMinSample()).thenReturn(10);
-        service = new StockUpdateService(snapshotProcessor, trackedAssetQueryService, stockProperties);
+        when(stockProperties.getDiscovery()).thenReturn(new StockProperties.Discovery());
+        service = new StockUpdateService(
+                snapshotProcessor,
+                trackedAssetQueryService,
+                trackedAssetCommandService,
+                stockListProvider,
+                stockProperties);
     }
 
     @Test
@@ -88,5 +98,32 @@ class StockUpdateServiceTest {
         when(snapshotProcessor.exists("AKBNK.IS")).thenReturn(true);
 
         assertThat(service.exists("AKBNK.IS")).isTrue();
+    }
+
+    @Test
+    void refreshAll_autoTracksDiscoveredTickersWithIsSuffix() {
+        when(stockListProvider.fetchTickers()).thenReturn(List.of("AKBNK", "GARAN"));
+        when(trackedAssetQueryService.getCodes(TrackedAssetType.STOCK))
+                .thenReturn(List.of(), List.of("AKBNK.IS", "GARAN.IS"));
+        when(snapshotProcessor.updateOne(any())).thenReturn(1);
+
+        service.refreshAll();
+
+        verify(trackedAssetCommandService).autoTrack(TrackedAssetType.STOCK, "AKBNK.IS", null, 9999);
+        verify(trackedAssetCommandService).autoTrack(TrackedAssetType.STOCK, "GARAN.IS", null, 9999);
+    }
+
+    @Test
+    void refreshAll_skipsAlreadyTrackedTickers() {
+        when(stockListProvider.fetchTickers()).thenReturn(List.of("AKBNK", "GARAN"));
+        when(trackedAssetQueryService.getCodes(TrackedAssetType.STOCK))
+                .thenReturn(List.of("AKBNK.IS"), List.of("AKBNK.IS", "GARAN.IS"));
+        when(snapshotProcessor.updateOne(any())).thenReturn(0);
+
+        service.refreshAll();
+
+        verify(trackedAssetCommandService, never())
+                .autoTrack(TrackedAssetType.STOCK, "AKBNK.IS", null, 9999);
+        verify(trackedAssetCommandService).autoTrack(TrackedAssetType.STOCK, "GARAN.IS", null, 9999);
     }
 }

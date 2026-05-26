@@ -54,6 +54,10 @@ public class TrackedAsset {
     @Column(name = "compare_only", nullable = false)
     private boolean compareOnly;
 
+    @Column(name = "enabled", nullable = false)
+    @lombok.Builder.Default
+    private boolean enabled = true;
+
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder;
 

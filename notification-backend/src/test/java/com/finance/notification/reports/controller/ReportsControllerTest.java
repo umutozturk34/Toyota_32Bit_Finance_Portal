@@ -100,7 +100,7 @@ class ReportsControllerTest {
 
     @Test
     void post_returns400WhenLocaleInvalid() throws Exception {
-        PortfolioPdfRequest bad = new PortfolioPdfRequest(1L, "LIGHT", "fr", "TRY");
+        PortfolioPdfRequest bad = new PortfolioPdfRequest(1L, null, "LIGHT", "fr", "TRY");
         String body = mapper.writeValueAsString(bad);
 
         mockMvc.perform(post("/api/v1/reports/portfolio-pdf")
@@ -111,7 +111,7 @@ class ReportsControllerTest {
 
     @Test
     void post_returns400WhenCurrencyInvalid() throws Exception {
-        PortfolioPdfRequest bad = new PortfolioPdfRequest(1L, "LIGHT", "tr", "GBP");
+        PortfolioPdfRequest bad = new PortfolioPdfRequest(1L, null, "LIGHT", "tr", "GBP");
         String body = mapper.writeValueAsString(bad);
 
         mockMvc.perform(post("/api/v1/reports/portfolio-pdf")
@@ -132,7 +132,7 @@ class ReportsControllerTest {
     }
 
     private PortfolioPdfRequest valid() {
-        return new PortfolioPdfRequest(1L, "LIGHT", "tr", "TRY");
+        return new PortfolioPdfRequest(1L, null, "LIGHT", "tr", "TRY");
     }
 
 }

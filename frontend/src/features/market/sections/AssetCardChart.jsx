@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import ReactECharts from 'echarts-for-react';
 import useDeferredVisibility from '../../../shared/hooks/useDeferredVisibility';
 import { areaGradient, CHART_ACCENT } from '../../../shared/charts/echartsTheme';
+import { unifiedMarketService } from '../../../shared/services/unifiedMarketService';
 
 function lineColor(changePercent) {
   const normalized = Number(changePercent);
@@ -9,64 +11,29 @@ function lineColor(changePercent) {
   return normalized > 0 ? '#10b981' : '#ef4444';
 }
 
-function fnvHash(str) {
-  let h = 2166136261;
-  for (let i = 0; i < str.length; i += 1) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619);
+function pickClose(point) {
+  const candidates = [point?.close, point?.price, point?.value, point?.sellingPrice, point?.rate];
+  for (const c of candidates) {
+    const n = Number(c);
+    if (Number.isFinite(n) && n !== 0) return n;
   }
-  return h >>> 0;
+  return null;
 }
 
-function mulberry32(seedInit) {
-  let seed = seedInit | 0;
-  return () => {
-    seed = (seed + 0x6D2B79F5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function generateSparkline(seed, changePercent) {
-  const points = 36;
-  const seedHash = fnvHash(seed);
-  const rand = mulberry32(seedHash);
-  const normalized = Number(changePercent);
-  const change = Number.isFinite(normalized) ? normalized : 0;
-  const start = 100;
-  const end = start * (1 + change / 100);
-
-  if (change === 0) {
-    const flat = new Array(points);
-    const drift = (rand() - 0.5) * 0.4;
-    const vol = 0.35;
-    let walk = 0;
-    for (let i = 0; i < points; i += 1) {
-      walk += (rand() - 0.5) * vol + drift / points;
-      flat[i] = Number((start + walk).toFixed(3));
-    }
-    return flat;
-  }
-
-  const absChange = Math.abs(change);
-  const stepStd = Math.min(absChange * 0.05, 0.4) + 0.05;
-
-  const walk = new Array(points);
-  walk[0] = 0;
-  for (let i = 1; i < points; i += 1) {
-    const u1 = Math.max(rand(), 1e-9);
-    const u2 = rand();
-    const gauss = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-    walk[i] = walk[i - 1] + gauss * stepStd;
-  }
-  const wEnd = walk[points - 1];
-
-  const out = new Array(points);
-  for (let i = 0; i < points; i += 1) {
-    const t = i / (points - 1);
-    const bridge = walk[i] - t * wEnd;
-    out[i] = Number((start + (end - start) * t + bridge).toFixed(3));
+function toSparkSeries(history, maxPoints = 60) {
+  if (!Array.isArray(history) || history.length === 0) return [];
+  const sorted = [...history].sort((a, b) => {
+    const da = a?.candleDate || a?.date || a?.observedAt || '';
+    const db = b?.candleDate || b?.date || b?.observedAt || '';
+    return String(da).localeCompare(String(db));
+  });
+  const values = sorted.map(pickClose).filter((v) => Number.isFinite(v));
+  if (values.length === 0) return [];
+  if (values.length <= maxPoints) return values;
+  const step = values.length / maxPoints;
+  const out = [];
+  for (let i = 0; i < maxPoints; i += 1) {
+    out.push(values[Math.floor(i * step)]);
   }
   return out;
 }
@@ -108,16 +75,26 @@ function buildOption(data, color) {
   };
 }
 
-export default function AssetCardChart({ assetCode, changePercent, delayMs = 0 }) {
+export default function AssetCardChart({ assetType, assetCode, changePercent, delayMs = 0 }) {
   const normalizedChangePercent = useMemo(() => {
     const parsed = Number(changePercent);
     return Number.isFinite(parsed) ? parsed : 0;
   }, [changePercent]);
-  const data = useMemo(() => generateSparkline(assetCode, normalizedChangePercent), [assetCode, normalizedChangePercent]);
   const color = useMemo(() => lineColor(normalizedChangePercent), [normalizedChangePercent]);
-  const option = useMemo(() => buildOption(data, color), [data, color]);
   const [ref, ready] = useDeferredVisibility(delayMs);
   const instanceRef = useRef(null);
+
+  const { data: history } = useQuery({
+    queryKey: ['assetCardChart', assetType, assetCode, '1Y'],
+    queryFn: () => unifiedMarketService.getHistory(assetType, assetCode, '1Y'),
+    enabled: ready && Boolean(assetType) && Boolean(assetCode),
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
+    retry: 1,
+  });
+
+  const data = useMemo(() => toSparkSeries(history), [history]);
+  const option = useMemo(() => (data.length > 0 ? buildOption(data, color) : null), [data, color]);
 
   useEffect(() => {
     if (!ready || !ref.current || typeof ResizeObserver === 'undefined') return undefined;
@@ -152,7 +129,7 @@ export default function AssetCardChart({ assetCode, changePercent, delayMs = 0 }
       className="absolute inset-0 pointer-events-none opacity-[0.42]"
       aria-hidden="true"
     >
-      {ready && (
+      {ready && option && (
         <ReactECharts
           option={option}
           style={{ width: '100%', height: '100%' }}

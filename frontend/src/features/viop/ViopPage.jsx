@@ -14,7 +14,7 @@ import MarketOpenDerivativeModal from '../portfolio/components/MarketOpenDerivat
 import useListParams from '../../shared/hooks/useListParams';
 import { useMoney } from '../../shared/hooks/useMoney';
 
-const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
+const SORT_OPTION_IDS = ['changePercent', 'price', 'volume', 'expiryDate', 'initialMargin', 'name'];
 
 const UNDERLYING_CLASS_IDS = ['PAY', 'INDEX', 'CURRENCY', 'METAL'];
 

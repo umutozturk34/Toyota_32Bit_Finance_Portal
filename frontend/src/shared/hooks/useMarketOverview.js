@@ -18,7 +18,3 @@ export function useMarketOverview(pageId) {
   const widgets = query.data ?? EMPTY_WIDGETS;
   return { ...query, widgets };
 }
-
-export function useWidgetData(widgets, sectionId) {
-  return widgets.find((w) => w.sectionId === sectionId) ?? null;
-}

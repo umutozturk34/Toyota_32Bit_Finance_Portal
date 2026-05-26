@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -58,30 +59,18 @@ class UserPreferenceCacheServiceTest {
     }
 
     @Test
-    void resolveZone_returnsDefault_whenUserSubBlank() {
-        ZoneId zone = service.resolveZone("   ");
-
-        assertThat(zone).isEqualTo(ZoneId.of("Europe/Istanbul"));
+    void resolveLocale_returnsEnglishFallback_whenSubBlank() {
+        assertThat(service.resolveLocale("   ")).isEqualTo(Locale.ENGLISH);
     }
 
     @Test
-    void resolveZone_returnsDefault_whenRowNotFound() {
+    void resolveLocale_returnsEnglish_whenRowNotFound() {
         when(jdbcTemplate.queryForObject(anyString(), any(RowMapper.class), eq("missing")))
                 .thenThrow(new EmptyResultDataAccessException(1));
 
-        ZoneId zone = service.resolveZone("missing");
+        Locale locale = service.resolveLocale("missing");
 
-        assertThat(zone).isEqualTo(ZoneId.of("Europe/Istanbul"));
-    }
-
-    @Test
-    void resolveTheme_returnsDarkFallback_whenSubBlank() {
-        assertThat(service.resolveTheme(null)).isEqualTo("DARK");
-    }
-
-    @Test
-    void resolveLocale_returnsEnglishFallback_whenSubBlank() {
-        assertThat(service.resolveLocale("   ")).isEqualTo(Locale.ENGLISH);
+        assertThat(locale).isEqualTo(Locale.ENGLISH);
     }
 
     @Test
@@ -92,72 +81,6 @@ class UserPreferenceCacheServiceTest {
         assertThat(snap.theme()).isEqualTo("DARK");
         assertThat(snap.locale()).isEqualTo(Locale.ENGLISH);
         assertThat(snap.zone()).isEqualTo(ZoneId.of("Europe/Istanbul"));
-    }
-
-    @Test
-    void resolveZone_returnsParsedZone_whenRowFound() throws Exception {
-        ResultSet rs = rs("en", "DARK", "America/New_York");
-        when(jdbcTemplate.queryForObject(anyString(), any(RowMapper.class), eq("user-1")))
-                .thenAnswer(inv -> ((RowMapper<?>) inv.getArgument(1)).mapRow(rs, 0));
-
-        ZoneId zone = service.resolveZone("user-1");
-
-        assertThat(zone).isEqualTo(ZoneId.of("America/New_York"));
-    }
-
-    @Test
-    void resolveZone_fallsBackToDefault_whenZoneInvalid() throws Exception {
-        ResultSet rs = rs("en", "DARK", "Bogus/Zone");
-        when(jdbcTemplate.queryForObject(anyString(), any(RowMapper.class), eq("user-1")))
-                .thenAnswer(inv -> ((RowMapper<?>) inv.getArgument(1)).mapRow(rs, 0));
-
-        ZoneId zone = service.resolveZone("user-1");
-
-        assertThat(zone).isEqualTo(ZoneId.of("Europe/Istanbul"));
-    }
-
-    @Test
-    void resolveZone_fallsBackToDefault_whenZoneBlank() throws Exception {
-        ResultSet rs = rs("en", "DARK", "   ");
-        when(jdbcTemplate.queryForObject(anyString(), any(RowMapper.class), eq("user-1")))
-                .thenAnswer(inv -> ((RowMapper<?>) inv.getArgument(1)).mapRow(rs, 0));
-
-        ZoneId zone = service.resolveZone("user-1");
-
-        assertThat(zone).isEqualTo(ZoneId.of("Europe/Istanbul"));
-    }
-
-    @Test
-    void resolveTheme_returnsLight_whenStoredValueLight() throws Exception {
-        ResultSet rs = rs("en", "LIGHT", "Europe/Istanbul");
-        when(jdbcTemplate.queryForObject(anyString(), any(RowMapper.class), eq("user-1")))
-                .thenAnswer(inv -> ((RowMapper<?>) inv.getArgument(1)).mapRow(rs, 0));
-
-        String theme = service.resolveTheme("user-1");
-
-        assertThat(theme).isEqualTo("LIGHT");
-    }
-
-    @Test
-    void resolveTheme_returnsDark_whenStoredValueUnknown() throws Exception {
-        ResultSet rs = rs("en", "SOLAR", "Europe/Istanbul");
-        when(jdbcTemplate.queryForObject(anyString(), any(RowMapper.class), eq("user-1")))
-                .thenAnswer(inv -> ((RowMapper<?>) inv.getArgument(1)).mapRow(rs, 0));
-
-        String theme = service.resolveTheme("user-1");
-
-        assertThat(theme).isEqualTo("DARK");
-    }
-
-    @Test
-    void resolveTheme_returnsDark_whenStoredValueBlank() throws Exception {
-        ResultSet rs = rs("en", "  ", "Europe/Istanbul");
-        when(jdbcTemplate.queryForObject(anyString(), any(RowMapper.class), eq("user-1")))
-                .thenAnswer(inv -> ((RowMapper<?>) inv.getArgument(1)).mapRow(rs, 0));
-
-        String theme = service.resolveTheme("user-1");
-
-        assertThat(theme).isEqualTo("DARK");
     }
 
     @Test

@@ -61,12 +61,17 @@ public class TrackedAssetCommandService {
             return;
         }
         Instrument asset = assetRegistry.upsert(type.marketType(), normalizedCode);
+        StockSegment segment = type.resolveSegment(null, null);
         TrackedAsset entity = TrackedAsset.builder()
                 .assetType(type)
                 .assetCode(normalizedCode)
                 .asset(asset)
                 .displayName(defaultDisplayName)
                 .sortOrder(sortOrder)
+                .stockSegment(segment)
+                .indexAsset(type.resolveIndexAsset(segment, null, false))
+                .compareOnly(type.resolveCompareOnly(segment, null, false))
+                .enabled(true)
                 .build();
         trackedAssetRepository.save(entity);
         codeCache.invalidate(type);

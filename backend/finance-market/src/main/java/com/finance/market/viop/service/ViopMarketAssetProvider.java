@@ -1,8 +1,10 @@
 package com.finance.market.viop.service;
 
 import com.finance.common.model.MarketType;
+import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.dto.response.MarketAssetResponse;
 import com.finance.market.core.service.MarketAssetProvider;
+import com.finance.market.core.service.TrackedAssetQueryService;
 import com.finance.market.viop.mapper.ViopMarketResponseMapper;
 import com.finance.market.viop.model.ViopCategory;
 import com.finance.market.viop.model.ViopContract;
@@ -34,11 +36,15 @@ public class ViopMarketAssetProvider implements MarketAssetProvider {
             "price", "lastPrice",
             "changePercent", "changePercent",
             "name", "name",
+            "volume", "volumeLot",
+            "expiryDate", "expiryDate",
+            "initialMargin", "initialMargin",
             "default", "changePercent"
     );
 
     private final ViopContractRepository repository;
     private final ViopMarketResponseMapper responseMapper;
+    private final TrackedAssetQueryService trackedAssetQueryService;
 
     @Override
     public MarketType getType() {
@@ -98,7 +104,7 @@ public class ViopMarketAssetProvider implements MarketAssetProvider {
     }
 
     private Specification<ViopContract> buildSearchSpec(String searchTerm, MarketAssetFilters filters) {
-        Specification<ViopContract> spec = activeNonExpired();
+        Specification<ViopContract> spec = activeNonExpired().and(enabledSpec());
         if (filters != null && filters.hasSegment()) {
             spec = spec.and(kindSpec(filters.segment()));
         }
@@ -110,6 +116,12 @@ public class ViopMarketAssetProvider implements MarketAssetProvider {
                     LikeSearchSpec.byFieldsContains(root, cb, searchTerm, "symbol", "name", "underlying", "displayName"));
         }
         return spec;
+    }
+
+    private Specification<ViopContract> enabledSpec() {
+        java.util.Set<String> enabled = new java.util.HashSet<>(
+                trackedAssetQueryService.getEnabledCodes(TrackedAssetType.VIOP));
+        return (root, query, cb) -> root.get("symbol").in(enabled);
     }
 
     private Specification<ViopContract> activeNonExpired() {

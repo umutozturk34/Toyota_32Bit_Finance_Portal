@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { STALE } from '../../shared/constants/query';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../../shared/context/useTheme';
 import Card from '../../shared/components/card';
@@ -20,9 +19,10 @@ const LANGS = ['tr', 'en'];
 
 const HomePage = () => {
   const { t, i18n: i18nInstance } = useTranslation();
-  const navigate = useNavigate();
   const { isDark, toggleTheme } = useTheme();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, login } = useAuth();
+  const handleLogin = () => login();
+  const handleRegister = () => login({ action: 'register' });
   const activeLang = (i18nInstance.language || 'en').slice(0, 2);
   const handleLangChange = (lang) => {
     if (lang !== activeLang) i18n.changeLanguage(lang);
@@ -144,7 +144,7 @@ const HomePage = () => {
                 className="flex flex-wrap items-center gap-3 justify-center lg:justify-start"
               >
                 <button
-                  onClick={() => navigate('/register')}
+                  onClick={handleRegister}
                   className="group relative flex items-center gap-2 px-7 py-3 text-sm font-semibold border-none rounded-xl cursor-pointer bg-gradient-accent text-white transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
                   style={{
                     boxShadow: isDark
@@ -157,7 +157,7 @@ const HomePage = () => {
                   <ArrowRight size={14} strokeWidth={2} className="ml-0.5 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
                 </button>
                 <button
-                  onClick={() => navigate('/login')}
+                  onClick={handleLogin}
                   className="group flex items-center gap-2 px-6 py-3 text-sm font-semibold rounded-xl cursor-pointer bg-transparent text-fg border border-border-default hover:bg-surface hover:border-border-hover transition-all duration-200 hover:-translate-y-0.5"
                 >
                   <LogIn size={15} strokeWidth={1.6} />
@@ -284,7 +284,7 @@ const HomePage = () => {
 
             <div className="flex flex-wrap items-center gap-3 justify-center">
               <button
-                onClick={() => navigate('/register')}
+                onClick={handleRegister}
                 className="group relative inline-flex items-center gap-2 px-8 py-3.5 text-sm font-semibold border-none rounded-xl cursor-pointer bg-white text-[#0F172A] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.98]"
               >
                 <UserPlus size={15} strokeWidth={1.6} />
@@ -292,7 +292,7 @@ const HomePage = () => {
                 <ArrowRight size={15} strokeWidth={2} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" />
               </button>
               <button
-                onClick={() => navigate('/login')}
+                onClick={handleLogin}
                 className="group inline-flex items-center gap-2 px-6 py-3.5 text-sm font-semibold rounded-xl cursor-pointer bg-transparent text-white/80 border border-white/15 hover:bg-white/5 hover:border-white/25 hover:text-white transition-all duration-200 hover:-translate-y-0.5"
               >
                 <LogIn size={15} strokeWidth={1.6} />

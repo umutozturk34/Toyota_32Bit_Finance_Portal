@@ -13,7 +13,7 @@ public record AnalyticsProperties(
     public record Beater(int cacheTtlHours) {}
 
     public AnalyticsProperties {
-        if (scenario == null) scenario = new Scenario(7);
+        if (scenario == null) scenario = new Scenario(30);
         if (beater == null) beater = new Beater(24);
     }
 }

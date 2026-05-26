@@ -204,7 +204,7 @@ public class InflationBeaterService {
             TrackedAssetType trackedType = entry.getKey();
             AnalyticsInstrumentType analyticsType = entry.getValue();
             try {
-                List<String> codes = trackedAssetQueryService.getCodes(trackedType);
+                List<String> codes = trackedAssetQueryService.getEnabledCodes(trackedType);
                 Map<String, String> names = trackedAssetQueryService.getDisplayNameMap(trackedType);
                 for (String c : codes) {
                     universe.add(new CuratedAsset(analyticsType, c, names.getOrDefault(c, c)));

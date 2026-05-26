@@ -59,10 +59,9 @@ export const doLogin = (options = {}) => {
   if (options.redirectUri) {
     loginOptions.redirectUri = options.redirectUri;
   }
-  const extras = {};
+  const extras = { themePreference: readLocalTheme() };
   if (options.action === 'register') {
     loginOptions.action = 'register';
-    extras.themePreference = readLocalTheme();
   }
   gotoWithLocale(loginOptions, extras);
 };

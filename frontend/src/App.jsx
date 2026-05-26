@@ -28,8 +28,6 @@ import ErrorBoundary from './shared/components/feedback/ErrorBoundary';
 import NotFound from './shared/components/feedback/NotFound';
 import MainLayout from './shared/layouts/MainLayout';
 import HomePage from './features/home/HomePage';
-import Login from './features/auth/components/Login';
-import Register from './features/auth/components/Register';
 import News from './features/news';
 import NewsDetail from './features/news/components/NewsDetail';
 import MarketDataPage from './features/market/MarketDataPage';
@@ -59,12 +57,6 @@ function LandingRedirect() {
   return <HomePage />;
 }
 
-function PublicOnly({ children }) {
-  const { isAuthenticated } = useAuth();
-  if (isAuthenticated) return <Navigate to="/market" replace />;
-  return children;
-}
-
 function RootLayout() {
   return (
     <ErrorBoundary>
@@ -77,8 +69,8 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <Route element={<RootLayout />}>
       <Route index element={<LandingRedirect />} />
-      <Route path="login" element={<PublicOnly><Login /></PublicOnly>} />
-      <Route path="register" element={<PublicOnly><Register /></PublicOnly>} />
+      <Route path="login" element={<Navigate to="/" replace />} />
+      <Route path="register" element={<Navigate to="/" replace />} />
       <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route path="news" element={<News />} />
         <Route path="news/:id" element={<NewsDetail />} />

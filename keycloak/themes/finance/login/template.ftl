@@ -74,8 +74,14 @@
                 var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
                 return match ? match[1] : null;
             }
+            function readParams() {
+                var hash = window.location.hash || '';
+                if (hash.startsWith('#')) hash = hash.slice(1);
+                try { return new URLSearchParams(window.location.search + '&' + hash); }
+                catch (e) { return new URLSearchParams(window.location.search); }
+            }
             try {
-                var params = new URLSearchParams(window.location.search);
+                var params = readParams();
                 var requested = (params.get('themePreference') || '').toLowerCase();
                 if (requested === 'light' || requested === 'dark') {
                     localStorage.setItem('finance-theme', requested);

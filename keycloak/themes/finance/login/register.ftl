@@ -99,9 +99,15 @@
               var match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
               return match ? decodeURIComponent(match[1]) : null;
             }
+            function readParams() {
+              var hash = window.location.hash || '';
+              if (hash.startsWith('#')) hash = hash.slice(1);
+              try { return new URLSearchParams(window.location.search + '&' + hash); }
+              catch (e) { return new URLSearchParams(window.location.search); }
+            }
             function readTheme() {
               try {
-                var p = new URLSearchParams(window.location.search).get('themePreference');
+                var p = readParams().get('themePreference');
                 if (p) return p.toUpperCase();
               } catch (e) { /* noop */ }
               var c = (getCookie('finance-theme') || '').toLowerCase();
@@ -114,7 +120,7 @@
             }
             function readLocale() {
               try {
-                var p = new URLSearchParams(window.location.search).get('kc_locale');
+                var p = readParams().get('kc_locale');
                 if (p === 'tr' || p === 'en') return p;
               } catch (e) { /* noop */ }
               var c = (getCookie('KEYCLOAK_LOCALE') || getCookie('finance-language') || '').toLowerCase();

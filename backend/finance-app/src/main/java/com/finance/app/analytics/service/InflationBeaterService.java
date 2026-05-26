@@ -174,6 +174,7 @@ public class InflationBeaterService {
         List<InflationBeaterEntry> entries = scenario.series().stream()
                 .filter(s -> !s.instrument().code().equals(code) || isIndex)
                 .filter(s -> s.nominalReturnPct() != null)
+                .filter(s -> !s.partial())
                 .map(s -> toEntry(s, benchmarkReturn, nameLookup))
                 .sorted(Comparator.comparing(InflationBeaterEntry::excessReturnPct,
                         Comparator.nullsLast(Comparator.reverseOrder())))

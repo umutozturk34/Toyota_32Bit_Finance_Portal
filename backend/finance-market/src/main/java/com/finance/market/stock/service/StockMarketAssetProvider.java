@@ -22,6 +22,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Log4j2
 @Service
@@ -71,6 +72,17 @@ public class StockMarketAssetProvider extends BaseTrackedMarketAssetProvider<Sto
     @Override
     protected String priceField() {
         return "currentPrice";
+    }
+
+    @Override
+    protected Map<String, String> sortFields() {
+        return Map.of(
+                "price", "currentPrice",
+                "changePercent", "changePercent",
+                "name", "name",
+                "volume", "volume",
+                "default", "changePercent"
+        );
     }
 
     @Override

@@ -17,5 +17,7 @@ public interface TrackedAssetRepository extends JpaRepository<TrackedAsset, Long
 
     List<TrackedAsset> findByAssetTypeOrderBySortOrderAscAssetCodeAsc(TrackedAssetType assetType);
 
+    List<TrackedAsset> findByAssetTypeAndEnabledTrueOrderBySortOrderAscAssetCodeAsc(TrackedAssetType assetType);
+
     Optional<TrackedAsset> findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType assetType, String assetCode);
 }

@@ -17,3 +17,15 @@ export const CHART_LINE_COLORS = {
     SUKUK_FIXED: '#06b6d4',
     SUKUK_CPI: '#ec4899',
 };
+
+export const CHART_RATE_COLORS = {
+    DISCOUNTED: '#f59e0b',
+    FIXED_COUPON: '#f43f5e',
+    FLOATING_TLREF: '#06b6d4',
+    FLOATING_CPI: '#10b981',
+    FLOATING_AUCTION: '#8b5cf6',
+    SUKUK_FIXED: '#f59e0b',
+    SUKUK_CPI: '#06b6d4',
+};
+
+export const DEFAULT_RATE_COLOR = '#f59e0b';

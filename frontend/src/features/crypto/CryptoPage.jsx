@@ -12,7 +12,7 @@ import ChangePercentBadge from '../../shared/components/asset/ChangePercentBadge
 import useListParams from '../../shared/hooks/useListParams';
 import { useMoney } from '../../shared/hooks/useMoney';
 
-const SORT_OPTION_IDS = ['changePercent', 'price', 'name'];
+const SORT_OPTION_IDS = ['changePercent', 'price', 'volume', 'marketCap', 'name'];
 
 export default function CryptoPage() {
     const { t } = useTranslation();

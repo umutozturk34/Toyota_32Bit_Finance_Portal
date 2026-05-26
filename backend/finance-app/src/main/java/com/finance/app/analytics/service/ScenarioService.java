@@ -7,6 +7,7 @@ import com.finance.app.analytics.dto.request.ScenarioRequest;
 import com.finance.app.analytics.dto.response.ScenarioPoint;
 import com.finance.app.analytics.dto.response.ScenarioResponse;
 import com.finance.app.analytics.dto.response.ScenarioSeries;
+import com.finance.app.config.AnalyticsProperties;
 import com.finance.common.exception.BadRequestException;
 import com.finance.common.model.Currency;
 import com.finance.market.macro.model.MacroIndicator;
@@ -37,6 +38,7 @@ public class ScenarioService {
     private final UnifiedHistoryService historyService;
     private final MacroIndicatorQueryService macroQueryService;
     private final AnalyticsPriceSeriesProvider priceSeriesProvider;
+    private final AnalyticsProperties analyticsProperties;
 
     public ScenarioResponse simulate(ScenarioRequest request) {
         LocalDate startDate = request.startDate();
@@ -76,7 +78,7 @@ public class ScenarioService {
         }
         return shouldCompound(instrument)
                 ? simulateRate(instrument, series, amount, startDate, endDate, cpiGrowthRatio, series.nativeCurrency())
-                : simulateMarket(instrument, series, amount, endDate, cpiGrowthRatio, series.nativeCurrency());
+                : simulateMarket(instrument, series, amount, startDate, endDate, cpiGrowthRatio, series.nativeCurrency());
     }
 
     private boolean shouldCompound(AnalyticsInstrument instrument) {
@@ -96,8 +98,8 @@ public class ScenarioService {
     }
 
     private ScenarioSeries simulateMarket(AnalyticsInstrument instrument, PricedSeries series,
-                                          BigDecimal amount, LocalDate endDate, BigDecimal cpiGrowthRatio,
-                                          Currency nativeCurrency) {
+                                          BigDecimal amount, LocalDate startDate, LocalDate endDate,
+                                          BigDecimal cpiGrowthRatio, Currency nativeCurrency) {
         List<HistoryPoint> raw = series.rawPoints();
         BigDecimal basePrice = raw.get(0).value();
         if (basePrice == null || basePrice.signum() <= 0) return emptySeries(instrument);
@@ -118,8 +120,11 @@ public class ScenarioService {
         if (points.isEmpty()) return emptySeries(instrument);
 
         BigDecimal finalValue = points.get(points.size() - 1).value();
-        boolean partial = raw.get(raw.size() - 1).date().isBefore(endDate.minusDays(7));
-        return buildSeries(instrument, points, finalValue, amount, cpiGrowthRatio, nativeCurrency, partial);
+        int threshold = analyticsProperties.scenario().partialThresholdDays();
+        boolean endsLate = raw.get(raw.size() - 1).date().isBefore(endDate.minusDays(threshold));
+        boolean startsLate = raw.get(0).date().isAfter(startDate.plusDays(threshold));
+        return buildSeries(instrument, points, finalValue, amount, cpiGrowthRatio, nativeCurrency,
+                endsLate || startsLate);
     }
 
     private ScenarioSeries simulateRate(AnalyticsInstrument instrument, PricedSeries series,
@@ -160,9 +165,12 @@ public class ScenarioService {
         }
 
         if (points.size() <= 1) return emptySeries(instrument);
-        boolean partial = cursor.isBefore(endDate.minusDays(7));
+        int threshold = analyticsProperties.scenario().partialThresholdDays();
+        boolean endsLate = cursor.isBefore(endDate.minusDays(threshold));
+        boolean startsLate = firstObservation.isAfter(startDate.plusDays(threshold));
         BigDecimal finalValue = points.get(points.size() - 1).value();
-        return buildSeries(instrument, points, finalValue, amount, cpiGrowthRatio, nativeCurrency, partial);
+        return buildSeries(instrument, points, finalValue, amount, cpiGrowthRatio, nativeCurrency,
+                endsLate || startsLate);
     }
 
     private BigDecimal applyCompound(BigDecimal value, BigDecimal annualRatePct, long days) {

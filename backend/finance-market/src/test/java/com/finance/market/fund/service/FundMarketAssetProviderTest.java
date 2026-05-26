@@ -71,7 +71,7 @@ class FundMarketAssetProviderTest {
     @SuppressWarnings("unchecked")
     @Test
     void search_appliesFundTypeFilter_whenSubTypeProvided() {
-        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of("TYH"));
+        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND)).thenReturn(List.of("TYH"));
         when(fundRepository.findAll(any(Specification.class), any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of()));
         when(mapper.toMarketAssetResponses(any())).thenReturn(List.of());
@@ -84,7 +84,7 @@ class FundMarketAssetProviderTest {
     @SuppressWarnings("unchecked")
     @Test
     void search_skipsCustomFilter_whenFiltersHaveNoSubType() {
-        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of("TYH"));
+        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND)).thenReturn(List.of("TYH"));
         Page<Fund> page = new PageImpl<>(List.of());
         when(fundRepository.findAll(any(Specification.class), any(PageRequest.class))).thenReturn(page);
         when(mapper.toMarketAssetResponses(any())).thenReturn(List.of());
@@ -122,7 +122,7 @@ class FundMarketAssetProviderTest {
     @SuppressWarnings("unchecked")
     @Test
     void search_appliesSubCategoryFilter_whenFiltersHaveSubCategories() {
-        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of("TYH"));
+        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND)).thenReturn(List.of("TYH"));
         when(fundRepository.findAll(any(Specification.class), any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of()));
         when(mapper.toMarketAssetResponses(any())).thenReturn(List.of());
@@ -137,7 +137,7 @@ class FundMarketAssetProviderTest {
     @SuppressWarnings("unchecked")
     @Test
     void search_appliesRiskValueFilter_whenFiltersHaveRiskValues() {
-        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of("TYH"));
+        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND)).thenReturn(List.of("TYH"));
         when(fundRepository.findAll(any(Specification.class), any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of()));
         when(mapper.toMarketAssetResponses(any())).thenReturn(List.of());
@@ -152,7 +152,7 @@ class FundMarketAssetProviderTest {
     @SuppressWarnings("unchecked")
     @Test
     void search_combinedFiltersApplyTogether() {
-        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of("TYH"));
+        when(trackedAssetQueryService.getEnabledCodes(TrackedAssetType.FUND)).thenReturn(List.of("TYH"));
         when(fundRepository.findAll(any(Specification.class), any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(List.of()));
         when(mapper.toMarketAssetResponses(any())).thenReturn(List.of());

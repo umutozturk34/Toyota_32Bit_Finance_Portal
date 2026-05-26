@@ -23,7 +23,7 @@ import IconButton from '../../shared/components/buttons/IconButton';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import MarketStatusBadge from '../../shared/components/layout/MarketStatusBadge';
-import { BOND_TYPE_COLORS, CHART_LINE_COLORS } from './lib/bondConstants';
+import { BOND_TYPE_COLORS, CHART_LINE_COLORS, CHART_RATE_COLORS, DEFAULT_RATE_COLOR } from './lib/bondConstants';
 
 function formatRate(val) {
   if (val == null) return '—';
@@ -153,7 +153,7 @@ export default function BondDetail() {
   });
 
   const priceColor = bond ? (CHART_LINE_COLORS[bond.bondType] || '#8b5cf6') : '#8b5cf6';
-  const rateColor = '#f59e0b';
+  const rateColor = bond ? (CHART_RATE_COLORS[bond.bondType] || DEFAULT_RATE_COLOR) : DEFAULT_RATE_COLOR;
   const latestPrice = useMemo(() => {
     for (let i = history.length - 1; i >= 0; i--) {
       if (history[i].price != null) return Number(history[i].price);

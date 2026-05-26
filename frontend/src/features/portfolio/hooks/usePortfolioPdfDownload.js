@@ -44,6 +44,7 @@ export default function usePortfolioPdfDownload(args) {
         '/reports/portfolio-pdf',
         {
           portfolioId,
+          portfolioName: portfolio?.name || null,
           theme: resolvedTheme,
           locale: resolvedLocale,
           currency: resolvedCurrency,

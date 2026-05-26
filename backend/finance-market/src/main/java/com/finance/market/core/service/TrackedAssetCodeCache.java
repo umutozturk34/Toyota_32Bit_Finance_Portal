@@ -15,27 +15,41 @@ import java.util.List;
 public class TrackedAssetCodeCache {
 
     private final TrackedAssetRepository repository;
-    private final Cache<TrackedAssetType, List<String>> cache;
+    private final Cache<TrackedAssetType, List<String>> allCache;
+    private final Cache<TrackedAssetType, List<String>> enabledCache;
 
     public TrackedAssetCodeCache(TrackedAssetRepository repository, AppProperties appProperties) {
         this.repository = repository;
-        this.cache = Caffeine.newBuilder()
-                .expireAfterWrite(Duration.ofSeconds(
-                        appProperties.getTrackedAsset().getCodeCacheTtlSeconds()))
-                .build();
+        Duration ttl = Duration.ofSeconds(
+                appProperties.getTrackedAsset().getCodeCacheTtlSeconds());
+        this.allCache = Caffeine.newBuilder().expireAfterWrite(ttl).build();
+        this.enabledCache = Caffeine.newBuilder().expireAfterWrite(ttl).build();
     }
 
     public List<String> get(TrackedAssetType type) {
-        return cache.get(type, this::loadFromRepository);
+        return allCache.get(type, this::loadAllFromRepository);
+    }
+
+    public List<String> getEnabled(TrackedAssetType type) {
+        return enabledCache.get(type, this::loadEnabledFromRepository);
     }
 
     public void invalidate(TrackedAssetType type) {
-        cache.invalidate(type);
+        allCache.invalidate(type);
+        enabledCache.invalidate(type);
     }
 
-    private List<String> loadFromRepository(TrackedAssetType type) {
+    private List<String> loadAllFromRepository(TrackedAssetType type) {
         return repository
                 .findByAssetTypeOrderBySortOrderAscAssetCodeAsc(type)
+                .stream()
+                .map(TrackedAsset::getAssetCode)
+                .toList();
+    }
+
+    private List<String> loadEnabledFromRepository(TrackedAssetType type) {
+        return repository
+                .findByAssetTypeAndEnabledTrueOrderBySortOrderAscAssetCodeAsc(type)
                 .stream()
                 .map(TrackedAsset::getAssetCode)
                 .toList();

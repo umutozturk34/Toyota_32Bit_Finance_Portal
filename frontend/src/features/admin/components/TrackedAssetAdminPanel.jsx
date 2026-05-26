@@ -3,15 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Reorder, useDragControls } from 'framer-motion';
-import { GripVertical, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { GripVertical, ArrowUp, ArrowDown } from 'lucide-react';
 import { RefreshCw } from '../../../shared/components/feedback/AnimatedIcons';
 import { adminService, trackedAssetService } from '../services/adminService';
 import { toast } from '../../../shared/components/feedback/toastBus';
 import SearchInput from '../../../shared/components/form/SearchInput';
 import Card from '../../../shared/components/card';
-import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 
-function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onDelete, highlighted }) {
+function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, highlighted }) {
     const { t } = useTranslation();
     const dragControls = useDragControls();
 
@@ -78,13 +77,6 @@ function ReorderItem({ item, index, total, type, onMoveUp, onMoveDown, onDelete,
                 >
                     <GripVertical className="h-3.5 w-3.5" />
                 </motion.span>
-                <button
-                    onClick={() => onDelete(item)}
-                    title={t('common.delete')}
-                    className="flex h-7 w-7 items-center justify-center rounded-md border border-danger/30 bg-danger/5 text-danger hover:bg-danger/15 transition-colors"
-                >
-                    <Trash2 className="h-3.5 w-3.5" />
-                </button>
             </div>
         </Reorder.Item>
     );
@@ -99,8 +91,6 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
     const [savedSignature, setSavedSignature] = useState('');
     const [savedItems, setSavedItems] = useState([]);
     const [highlightedCode, setHighlightedCode] = useState(null);
-    const [deleteTarget, setDeleteTarget] = useState(null);
-    const [deleting, setDeleting] = useState(false);
 
     const computeSignature = useCallback((list) => {
         return (list || []).map(item => `${item.assetCode}:${item.sortOrder ?? 0}`).join('|');
@@ -131,26 +121,6 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
             (item.displayName && item.displayName.toLowerCase().includes(q))
         );
     }, [items, search]);
-
-    const handleDeleteClick = (item) => {
-        setDeleteTarget(item);
-    };
-
-    const handleDeleteConfirm = async () => {
-        if (!deleteTarget) return;
-        setDeleting(true);
-        try {
-            await adminService.deleteTrackedAsset(type, deleteTarget.assetCode);
-            setDeleteTarget(null);
-            invalidate();
-            onChanged?.();
-            toast.success(t('trackedAssetAdmin.deleted'), t('trackedAssetAdmin.deletedBody', { code: deleteTarget.assetCode }));
-        } catch (err) {
-            toast.error(t('trackedAssetAdmin.deleteFailed'), err.response?.data?.message || err.message);
-        } finally {
-            setDeleting(false);
-        }
-    };
 
     const handleReorder = useCallback((newItems) => {
         setItems(newItems.map((entry, i) => ({ ...entry, sortOrder: i })));
@@ -286,7 +256,6 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
                                     type={type}
                                     onMoveUp={(code) => moveItemByStep(code, -1)}
                                     onMoveDown={(code) => moveItemByStep(code, 1)}
-                                    onDelete={handleDeleteClick}
                                     highlighted={highlightedCode === item.assetCode}
                                 />
                             ))}
@@ -295,17 +264,6 @@ export default function TrackedAssetAdminPanel({ type, title, onChanged, refresh
                 )}
             </Card>
 
-            <ConfirmDialog
-                open={!!deleteTarget}
-                title={t('trackedAssetAdmin.deletePromptTitle', { code: deleteTarget?.assetCode ?? '' })}
-                message={t('trackedAssetAdmin.deletePromptBody')}
-                confirmLabel={t('common.delete')}
-                cancelLabel={t('common.cancel')}
-                variant="danger"
-                loading={deleting}
-                onConfirm={handleDeleteConfirm}
-                onCancel={() => setDeleteTarget(null)}
-            />
         </>
     );
 }

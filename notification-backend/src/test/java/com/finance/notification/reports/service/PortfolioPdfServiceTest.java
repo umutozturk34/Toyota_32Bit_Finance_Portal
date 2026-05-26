@@ -80,7 +80,7 @@ class PortfolioPdfServiceTest {
     @Test
     void generate_sendsHtmlContentToPdfServiceAndReturnsBytes() throws Exception {
         PortfolioPdfService service = buildService();
-        PortfolioPdfRequest req = new PortfolioPdfRequest(42L, "DARK", "tr", "TRY");
+        PortfolioPdfRequest req = new PortfolioPdfRequest(42L, null, "DARK", "tr", "TRY");
         when(dataClient.fetch(eq(42L), anyString(), eq("jwt.token")))
                 .thenReturn(new PortfolioReportBundle(42L, null, List.of(), List.of(stubPosition(42L)), List.of()));
         when(svgService.performanceLineChart(any(), any(), any(Locale.class))).thenReturn("<svg/>");
@@ -104,7 +104,7 @@ class PortfolioPdfServiceTest {
     @Test
     void generate_throwsWhenPdfServiceReturnsError() {
         PortfolioPdfService service = buildService();
-        PortfolioPdfRequest req = new PortfolioPdfRequest(1L, "LIGHT", "en", "USD");
+        PortfolioPdfRequest req = new PortfolioPdfRequest(1L, null, "LIGHT", "en", "USD");
         when(dataClient.fetch(eq(1L), anyString(), anyString()))
                 .thenReturn(new PortfolioReportBundle(1L, null, List.of(), List.of(stubPosition(1L)), List.of()));
         when(svgService.performanceLineChart(any(), any(), any(Locale.class))).thenReturn("");
@@ -120,7 +120,7 @@ class PortfolioPdfServiceTest {
     @Test
     void generate_throwsWhenPdfServiceReturnsEmptyBody() {
         PortfolioPdfService service = buildService();
-        PortfolioPdfRequest req = new PortfolioPdfRequest(1L, "LIGHT", "en", "USD");
+        PortfolioPdfRequest req = new PortfolioPdfRequest(1L, null, "LIGHT", "en", "USD");
         when(dataClient.fetch(eq(1L), anyString(), anyString()))
                 .thenReturn(new PortfolioReportBundle(1L, null, List.of(), List.of(stubPosition(1L)), List.of()));
         when(svgService.performanceLineChart(any(), any(), any(Locale.class))).thenReturn("");
@@ -135,7 +135,7 @@ class PortfolioPdfServiceTest {
     @Test
     void generate_wrapsDataClientFailure() {
         PortfolioPdfService service = buildService();
-        PortfolioPdfRequest req = new PortfolioPdfRequest(1L, "LIGHT", "tr", "TRY");
+        PortfolioPdfRequest req = new PortfolioPdfRequest(1L, null, "LIGHT", "tr", "TRY");
         when(dataClient.fetch(eq(1L), anyString(), anyString()))
                 .thenThrow(new IllegalStateException("upstream down"));
 
@@ -146,7 +146,7 @@ class PortfolioPdfServiceTest {
     @Test
     void generate_rejectsEmptyPortfolio_withBadRequest() {
         PortfolioPdfService service = buildService();
-        PortfolioPdfRequest req = new PortfolioPdfRequest(1L, "LIGHT", "tr", "TRY");
+        PortfolioPdfRequest req = new PortfolioPdfRequest(1L, null, "LIGHT", "tr", "TRY");
         when(dataClient.fetch(eq(1L), anyString(), anyString()))
                 .thenReturn(new PortfolioReportBundle(1L, null, List.of(), List.of(), List.of()));
 
@@ -158,7 +158,7 @@ class PortfolioPdfServiceTest {
     @Test
     void generate_rejectsNullPositions_withBadRequest() {
         PortfolioPdfService service = buildService();
-        PortfolioPdfRequest req = new PortfolioPdfRequest(2L, "LIGHT", "tr", "TRY");
+        PortfolioPdfRequest req = new PortfolioPdfRequest(2L, null, "LIGHT", "tr", "TRY");
         when(dataClient.fetch(eq(2L), anyString(), anyString()))
                 .thenReturn(new PortfolioReportBundle(2L, null, List.of(), null, List.of()));
 

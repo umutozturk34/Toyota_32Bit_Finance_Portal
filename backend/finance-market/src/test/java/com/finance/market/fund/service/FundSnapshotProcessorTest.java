@@ -77,7 +77,6 @@ class FundSnapshotProcessorTest {
         Fund savedByf = fund("BTC1");
         when(tefasClient.bulkFetch(eq(FundType.BYF), any(), any())).thenReturn(List.of(byfDto));
         when(tefasClient.bulkFetch(eq(FundType.YAT), any(), any())).thenReturn(List.of());
-        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of());
         stubTransactionTemplate();
         when(entityWriter.saveSnapshot(byfDto, FundType.BYF)).thenReturn(savedByf);
 
@@ -90,21 +89,23 @@ class FundSnapshotProcessorTest {
     }
 
     @Test
-    void refreshAll_filtersYatByTrackedCodes_andSkipsExtraneousFunds() {
-        TefasFundDto tracked = dto("TI2");
-        TefasFundDto untracked = dto("OTHER");
-        Fund saved = fund("TI2");
+    void refreshAll_autoTracksAllYat_fromTefasBulk() {
+        TefasFundDto first = dto("TI2");
+        TefasFundDto second = dto("OTHER");
+        Fund savedFirst = fund("TI2");
+        Fund savedSecond = fund("OTHER");
         when(tefasClient.bulkFetch(eq(FundType.BYF), any(), any())).thenReturn(List.of());
-        when(tefasClient.bulkFetch(eq(FundType.YAT), any(), any())).thenReturn(List.of(tracked, untracked));
-        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of("TI2"));
+        when(tefasClient.bulkFetch(eq(FundType.YAT), any(), any())).thenReturn(List.of(first, second));
         stubTransactionTemplate();
-        when(entityWriter.saveSnapshot(tracked, FundType.YAT)).thenReturn(saved);
+        when(entityWriter.saveSnapshot(first, FundType.YAT)).thenReturn(savedFirst);
+        when(entityWriter.saveSnapshot(second, FundType.YAT)).thenReturn(savedSecond);
 
         processor.refreshAll();
 
-        verify(entityWriter).saveSnapshot(tracked, FundType.YAT);
-        verify(entityWriter, never()).saveSnapshot(eq(untracked), any());
-        verify(fundCacheService).putSnapshot("TI2", saved);
+        verify(entityWriter).saveSnapshot(first, FundType.YAT);
+        verify(entityWriter).saveSnapshot(second, FundType.YAT);
+        verify(entityWriter).ensureYatTracked("TI2", "name TI2");
+        verify(entityWriter).ensureYatTracked("OTHER", "name OTHER");
     }
 
     @Test
@@ -113,7 +114,6 @@ class FundSnapshotProcessorTest {
                 .thenReturn(List.of())
                 .thenReturn(List.of(dto("BTC1")));
         when(tefasClient.bulkFetch(eq(FundType.YAT), any(), any())).thenReturn(List.of());
-        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of());
         stubTransactionTemplate();
         when(entityWriter.saveSnapshot(any(), eq(FundType.BYF))).thenReturn(fund("BTC1"));
 
@@ -130,7 +130,6 @@ class FundSnapshotProcessorTest {
                 .thenThrow(CallNotPermittedException.createCallNotPermittedException(cb));
         when(tefasClient.bulkFetch(eq(FundType.YAT), any(), any()))
                 .thenThrow(CallNotPermittedException.createCallNotPermittedException(cb));
-        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of());
 
         processor.refreshAll();
 
@@ -143,7 +142,6 @@ class FundSnapshotProcessorTest {
         TefasFundDto byfDto = dto("BTC1");
         when(tefasClient.bulkFetch(eq(FundType.BYF), any(), any())).thenReturn(List.of(byfDto));
         when(tefasClient.bulkFetch(eq(FundType.YAT), any(), any())).thenReturn(List.of());
-        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of());
         stubTransactionTemplate();
         when(entityWriter.saveSnapshot(byfDto, FundType.BYF)).thenReturn(null);
 
@@ -160,7 +158,6 @@ class FundSnapshotProcessorTest {
         Fund saved = fund("OK");
         when(tefasClient.bulkFetch(eq(FundType.BYF), any(), any())).thenReturn(List.of(first, second));
         when(tefasClient.bulkFetch(eq(FundType.YAT), any(), any())).thenReturn(List.of());
-        when(trackedAssetQueryService.getCodes(TrackedAssetType.FUND)).thenReturn(List.of());
         stubTransactionTemplate();
         when(entityWriter.saveSnapshot(first, FundType.BYF)).thenThrow(new RuntimeException("boom"));
         when(entityWriter.saveSnapshot(second, FundType.BYF)).thenReturn(saved);

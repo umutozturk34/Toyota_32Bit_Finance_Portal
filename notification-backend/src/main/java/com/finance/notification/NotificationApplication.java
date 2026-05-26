@@ -49,6 +49,7 @@ import java.util.TimeZone;
         AppProperties.class,
         BroadcastProperties.class,
         KafkaTopicsProperties.class,
+        com.finance.common.event.KafkaAdminProperties.class,
         MarketHoursProperties.class,
         MarketSessionProperties.class,
         NotificationAsyncProperties.class,

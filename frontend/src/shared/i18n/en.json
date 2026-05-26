@@ -762,7 +762,14 @@
     "sort": {
       "changePercent": "Change %",
       "price": "Price",
-      "name": "Name"
+      "name": "Name",
+      "volume": "Volume",
+      "marketCap": "Market Cap",
+      "bulletinPrice": "Bulletin Price",
+      "portfolioSize": "Portfolio Size",
+      "investorCount": "Investor Count",
+      "expiryDate": "Expiry",
+      "initialMargin": "Initial Margin"
     },
     "stockSegments": {
       "MAIN_INDEX": "Main Indices",

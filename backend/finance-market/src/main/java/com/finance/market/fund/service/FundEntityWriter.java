@@ -88,8 +88,9 @@ public class FundEntityWriter implements MarketEntityWriter {
     }
 
     public int saveCandleBatch(Fund fund, FundType fundType, List<TefasFundDto> dtos) {
+        List<TefasFundDto> priced = dtos.stream().filter(FundEntityWriter::hasValidPrice).toList();
         CandleBatchUpsertTemplate.UpsertResult<FundCandle> upsertResult = CandleBatchUpsertTemplate.upsert(
-                dtos,
+                priced,
                 TefasFundDto::date,
                 keys -> fundCandleRepository.findByFundCodeAndCandleDateIn(fund.getFundCode(), keys),
                 FundCandle::getCandleDate,
@@ -102,6 +103,7 @@ public class FundEntityWriter implements MarketEntityWriter {
     }
 
     public void upsertCandleFromDto(Fund fund, FundType fundType, TefasFundDto dto) {
+        if (!hasValidPrice(dto)) return;
         FundCandle existing = fundCandleRepository
                 .findByFundCodeAndCandleDate(fund.getFundCode(), dto.date())
                 .orElse(null);
@@ -114,7 +116,17 @@ public class FundEntityWriter implements MarketEntityWriter {
         }
     }
 
+    private static boolean hasValidPrice(TefasFundDto dto) {
+        return dto != null
+                && dto.price() != null
+                && dto.price().signum() != 0;
+    }
+
     public void ensureByfTracked(String fundCode, String tefasName) {
+        trackedAssetCommandService.autoTrack(TrackedAssetType.FUND, fundCode, tefasName, autoTrackSortOrder);
+    }
+
+    public void ensureYatTracked(String fundCode, String tefasName) {
         trackedAssetCommandService.autoTrack(TrackedAssetType.FUND, fundCode, tefasName, autoTrackSortOrder);
     }
 }

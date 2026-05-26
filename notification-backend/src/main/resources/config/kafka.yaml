@@ -19,7 +19,7 @@ spring:
       retries: 5
     listener:
       ack-mode: MANUAL_IMMEDIATE
-      concurrency: ${KAFKA_LISTENER_CONCURRENCY:1}
+      concurrency: ${KAFKA_LISTENER_CONCURRENCY:3}
 
 app:
   kafka:

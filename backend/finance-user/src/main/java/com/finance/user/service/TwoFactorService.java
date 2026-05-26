@@ -35,12 +35,39 @@ public class TwoFactorService {
         return removed;
     }
 
+    public List<TwoFactorDevice> devices(String userSub) {
+        return client.listCredentials(userSub).stream()
+                .filter(c -> OTP_CREDENTIAL_TYPE.equals(c.get("type")))
+                .map(c -> new TwoFactorDevice(
+                        asString(c.get("id")),
+                        asString(c.get("userLabel")),
+                        asLong(c.get("createdDate"))))
+                .toList();
+    }
+
+    public void removeDevice(String userSub, String credentialId) {
+        client.deleteCredential(userSub, credentialId);
+        log.info("2FA device removed user={} credentialId={}", userSub, credentialId);
+    }
+
     private long countOtpCredentials(String userSub) {
         return client.listCredentials(userSub).stream()
                 .filter(c -> OTP_CREDENTIAL_TYPE.equals(c.get("type")))
                 .count();
     }
 
+    private static String asString(Object value) {
+        return value == null ? null : value.toString();
+    }
+
+    private static Long asLong(Object value) {
+        if (value instanceof Number n) return n.longValue();
+        return null;
+    }
+
     public record TwoFactorStatus(boolean configured) {
+    }
+
+    public record TwoFactorDevice(String id, String label, Long createdAt) {
     }
 }

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import {
-  TrendingUp, LogOut, Activity, Settings, Bell,
+  TrendingUp, LogOut, Activity, Settings, Bell, User as UserIcon,
   ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import SidebarNav from './SidebarNav';
@@ -18,6 +18,7 @@ const SidebarContent = ({
   setTasksOpen,
   setNotificationsOpen,
   setSettingsOpen,
+  setProfileOpen,
   unreadCount,
   user,
   logout,
@@ -93,6 +94,16 @@ const SidebarContent = ({
         )}
       </button>
       <button
+        onClick={() => setProfileOpen(true)}
+        title={collapsed && !isMobile ? t('nav.profile') : undefined}
+        className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
+          collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
+        }`}
+      >
+        <UserIcon size={16} strokeWidth={1.6} className="shrink-0 group-hover:text-accent transition-colors" />
+        {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.profile')}</span>}
+      </button>
+      <button
         onClick={() => setSettingsOpen(true)}
         title={collapsed && !isMobile ? t('nav.settings') : undefined}
         className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
@@ -103,17 +114,21 @@ const SidebarContent = ({
         {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.settings')}</span>}
       </button>
       {(!collapsed || isMobile) && (
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border-default">
+        <button
+          type="button"
+          onClick={() => setProfileOpen(true)}
+          className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border-default hover:border-accent/40 hover:bg-accent/5 transition-colors cursor-pointer text-left"
+        >
           <span className="w-6 h-6 rounded-full bg-gradient-accent text-white flex items-center justify-center text-[11px] font-bold shrink-0">
             {user?.username?.charAt(0).toUpperCase() || '?'}
           </span>
-          <span className="text-[12px] font-medium text-fg truncate">{user?.username}</span>
+          <span className="text-[12px] font-medium text-fg truncate flex-1">{user?.username}</span>
           {hasRole('ADMIN') && (
             <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-accent/10 text-accent tracking-wide shrink-0">
               {t('nav.adminBadge')}
             </span>
           )}
-        </div>
+        </button>
       )}
       <button
         onClick={logout}

@@ -21,6 +21,7 @@
     "tasks": "Tasks",
     "notifications": "Notifications",
     "settings": "Settings",
+    "profile": "Profile",
     "logout": "Log out",
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar",
@@ -1206,6 +1207,31 @@
       "depositTryTotal": "TRY Deposit",
       "depositUsdTotal": "USD Deposit",
       "depositEurTotal": "EUR Deposit",
+      "descriptions": {
+        "policyRate": "CBRT one-week repo rate — main monetary policy rate",
+        "tlrefRate": "Turkish Lira Overnight Reference Rate — short-term interbank rate",
+        "tlrefIndex": "Compound index of TLREF — measures cumulative return",
+        "cpiIndex": "Consumer Price Index — change in household basket prices",
+        "ppiIndex": "Domestic Producer Price Index — change in producer-level prices",
+        "depositTryTotal": "Average TRY time deposit rate across banks",
+        "depositUsdTotal": "Average USD time deposit rate across banks",
+        "depositEurTotal": "Average EUR time deposit rate across banks",
+        "depositTry1m": "TRY deposit average rate, 1 month maturity",
+        "depositTry3m": "TRY deposit average rate, 3 month maturity",
+        "depositTry6m": "TRY deposit average rate, 6 month maturity",
+        "depositTry1y": "TRY deposit average rate, 1 year maturity",
+        "depositTry1yPlus": "TRY deposit average rate, over 1 year maturity",
+        "depositUsd1m": "USD deposit average rate, 1 month maturity",
+        "depositUsd3m": "USD deposit average rate, 3 month maturity",
+        "depositUsd6m": "USD deposit average rate, 6 month maturity",
+        "depositUsd1y": "USD deposit average rate, 1 year maturity",
+        "depositUsd1yPlus": "USD deposit average rate, over 1 year maturity",
+        "depositEur1m": "EUR deposit average rate, 1 month maturity",
+        "depositEur3m": "EUR deposit average rate, 3 month maturity",
+        "depositEur6m": "EUR deposit average rate, 6 month maturity",
+        "depositEur1y": "EUR deposit average rate, 1 year maturity",
+        "depositEur1yPlus": "EUR deposit average rate, over 1 year maturity"
+      },
       "depositTry1m": "TRY 1M",
       "depositTry3m": "TRY 3M",
       "depositTry6m": "TRY 6M",
@@ -1268,7 +1294,8 @@
       "statMax": "Max",
       "statAvg": "Avg",
       "tabAll": "All",
-      "points": "pts"
+      "points": "pts",
+      "searchPlaceholder": "Search indicator…"
     },
     "editMode": "Edit mode",
     "unsavedChanges": "Unsaved changes",
@@ -1403,6 +1430,27 @@
     "confirm": {
       "title": "Disable 2FA?",
       "message": "Your account will be protected by single-factor sign-in. This is reversible — you can set it up again any time."
+    },
+    "addDevice": "Add new device",
+    "deviceFallbackName": "Unnamed device",
+    "deviceRemoveAction": "Remove device",
+    "deviceRemovedTitle": "Device removed",
+    "deviceRemovedBody": "Selected 2FA device has been removed from your account",
+    "deviceRemoveConfirmTitle": "Remove device?",
+    "deviceRemoveConfirmBody": "{{name}} will be deleted from your 2FA devices. To use it again you must enroll it from scratch."
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Account identity and security",
+    "identity": {
+      "title": "Identity",
+      "username": "Username",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "editAction": "Edit",
+      "savedTitle": "Profile updated",
+      "savedBody": "Your new identity details have been saved",
+      "usernameHint": "3-32 characters; letters, digits, dot, underscore or hyphen."
     }
   },
   "keycloakAction": {

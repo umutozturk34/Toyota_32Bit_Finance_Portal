@@ -1,21 +1,16 @@
-import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import SideDrawer from '../../shared/components/modal/SideDrawer';
 import {
-  Settings as SettingsIcon, Palette, Languages, BarChart3, Bell, Shield,
-  Sun, Moon, LogOut, KeyRound, Mail, Coins,
+  Settings as SettingsIcon, Palette, Languages, BarChart3, Bell,
+  Sun, Moon, LogOut, Coins,
 } from 'lucide-react';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';
 import useAppStore from '../../shared/stores/useAppStore';
 import { useTheme } from '../../shared/context/useTheme';
 import { useAuth } from '../auth/useAuth';
-import { userCredentialService } from '../../shared/services/userCredentialService';
-import { toast } from '../../shared/components/feedback/toastBus';
-import TwoFactorPanel from '../auth/components/TwoFactorPanel';
 import NotificationPreferencesSection from './NotificationPreferencesSection';
-import EmailChangeSection from './EmailChangeSection';
 import { SUPPORTED_DISPLAY_CURRENCIES } from '../../shared/constants/currencies';
 
 const CURRENCY_LABELS = {
@@ -95,7 +90,6 @@ export default function SettingsSidebar({ isOpen, onClose }) {
   const { logout } = useAuth();
   const displayCurrency = useAppStore((s) => s.displayCurrency);
   const setDisplayCurrency = useAppStore((s) => s.setDisplayCurrency);
-  const [passwordSending, setPasswordSending] = useState(false);
 
   const chartRangeOptions = CHART_RANGE_VALUES.map((v) => ({ value: v, label: t(`ranges.${v}`) }));
 
@@ -110,19 +104,6 @@ export default function SettingsSidebar({ isOpen, onClose }) {
   const handleLogout = () => {
     onClose();
     logout();
-  };
-
-  const handleChangePassword = async () => {
-    setPasswordSending(true);
-    try {
-      await userCredentialService.initiatePasswordChange(`${window.location.origin}/`);
-      toast.success(t('settings.password.success'), t('settings.password.successDesc'));
-      onClose();
-    } catch (err) {
-      toast.error(t('settings.password.error'), err?.response?.data?.message || t('settings.password.errorDesc'));
-    } finally {
-      setPasswordSending(false);
-    }
   };
 
   const footer = (
@@ -189,31 +170,6 @@ export default function SettingsSidebar({ isOpen, onClose }) {
 
               <Section icon={Bell} title={t('settings.notifications')}>
                 <NotificationPreferencesSection />
-              </Section>
-
-              <Section icon={Shield} title={t('settings.twoFactor')}>
-                <TwoFactorPanel />
-              </Section>
-
-              <Section icon={KeyRound} title={t('settings.password.title')}>
-                <button
-                  onClick={handleChangePassword}
-                  disabled={passwordSending}
-                  className="w-full flex items-center justify-between gap-2 rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-xs font-medium text-fg hover:bg-surface transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <span className="flex items-center gap-2">
-                    <KeyRound className="h-3.5 w-3.5 text-accent" />
-                    {t('settings.password.change')}
-                  </span>
-                  <span className="text-[10px] text-fg-muted">{passwordSending ? t('settings.password.sending') : t('settings.password.emailLink')}</span>
-                </button>
-                <p className="text-[10px] text-fg-subtle leading-relaxed px-1 mt-1.5">
-                  {t('settings.password.hint')}
-                </p>
-              </Section>
-
-              <Section icon={Mail} title={t('settings.email')}>
-                <EmailChangeSection />
               </Section>
 
               <div className="rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-[11px] text-fg-muted">

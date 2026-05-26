@@ -1,5 +1,6 @@
 package com.finance.user.client;
 
+import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.ExternalApiException;
 import com.finance.common.exception.ResourceNotFoundException;
 import lombok.extern.log4j.Log4j2;
@@ -17,6 +18,14 @@ public class KeycloakAdminExceptionTranslator {
     public RuntimeException translate(String operation, WebClientResponseException ex) {
         if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
             return new ResourceNotFoundException("Keycloak resource not found for " + operation);
+        }
+        if (ex.getStatusCode() == HttpStatus.CONFLICT) {
+            log.warn("Keycloak {} conflict: body={}", operation, ex.getResponseBodyAsString());
+            return new BadRequestException("error.keycloak.conflict");
+        }
+        if (ex.getStatusCode().is4xxClientError()) {
+            log.warn("Keycloak {} rejected: status={} body={}", operation, ex.getStatusCode(), ex.getResponseBodyAsString());
+            return new BadRequestException("error.keycloak.rejected");
         }
         log.error("Keycloak {} failed: status={} body={}", operation, ex.getStatusCode(), ex.getResponseBodyAsString());
         return new ExternalApiException(SERVICE, operation + " failed with status " + ex.getStatusCode().value());

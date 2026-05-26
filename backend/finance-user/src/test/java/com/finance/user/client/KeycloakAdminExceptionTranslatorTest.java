@@ -1,5 +1,6 @@
 package com.finance.user.client;
 
+import com.finance.common.exception.BadRequestException;
 import com.finance.common.exception.ExternalApiException;
 import com.finance.common.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,8 +39,8 @@ class KeycloakAdminExceptionTranslatorTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"400, 400", "401, 401", "403, 403", "500, 500", "503, 503"})
-    void translate_returnsExternalApiException_whenStatusIsNot404(int status, int expectedStatus) {
+    @CsvSource({"500, 500", "502, 502", "503, 503"})
+    void translate_returnsExternalApiException_when5xxFailure(int status, int expectedStatus) {
         WebClientResponseException ex = WebClientResponseException.create(
                 status, "Err", null, "{}".getBytes(), null);
 
@@ -50,6 +51,30 @@ class KeycloakAdminExceptionTranslatorTest {
                 .contains("updateEmail")
                 .contains(String.valueOf(expectedStatus));
         assertThat(((ExternalApiException) result).getServiceName()).isEqualTo("KEYCLOAK");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"400", "401", "403"})
+    void translate_returnsBadRequest_when4xxClientFailure(int status) {
+        WebClientResponseException ex = WebClientResponseException.create(
+                status, "Err", null, "{\"errorMessage\":\"invalid\"}".getBytes(), null);
+
+        RuntimeException result = translator.translate("updateBasics", ex);
+
+        assertThat(result).isInstanceOf(BadRequestException.class);
+        assertThat(result.getMessage()).isEqualTo("error.keycloak.rejected");
+    }
+
+    @Test
+    void translate_returnsBadRequestWithConflictKey_when409() {
+        WebClientResponseException ex = WebClientResponseException.create(
+                HttpStatus.CONFLICT.value(), "Conflict", null,
+                "{\"errorMessage\":\"User exists with same username\"}".getBytes(), null);
+
+        RuntimeException result = translator.translate("updateBasics", ex);
+
+        assertThat(result).isInstanceOf(BadRequestException.class);
+        assertThat(result.getMessage()).isEqualTo("error.keycloak.conflict");
     }
 
     @Test

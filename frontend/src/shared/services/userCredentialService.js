@@ -33,4 +33,13 @@ export const userCredentialService = {
     const response = await api.delete(`${PATH}/2fa`);
     return response.data.data;
   },
+
+  listTwoFactorDevices: async () => {
+    const response = await api.get(`${PATH}/2fa/devices`);
+    return response.data.data;
+  },
+
+  removeTwoFactorDevice: async (credentialId) => {
+    await api.delete(`${PATH}/2fa/devices/${credentialId}`);
+  },
 };

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import TasksPanel from '../../features/admin/components/TasksPanel';
 import SettingsSidebar from '../../features/settings/SettingsSidebar';
+import ProfileDrawer from '../../features/profile/ProfileDrawer';
 import NotificationPanel from '../../features/notifications/NotificationPanel';
 import { useUnreadNotificationCount } from '../hooks/useNotifications';
 import useNotificationStream from '../hooks/useNotificationStream';
@@ -77,6 +78,7 @@ const MainLayout = () => {
     return params.get('settings') === 'open';
   });
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
   useNotificationStream();
   useScrollRestoration();
@@ -134,7 +136,7 @@ const MainLayout = () => {
     });
   };
 
-  const anyOverlayOpen = settingsOpen || notificationsOpen || tasksOpen || mobileOpen;
+  const anyOverlayOpen = settingsOpen || notificationsOpen || tasksOpen || mobileOpen || profileOpen;
   const blurCls = anyOverlayOpen ? 'blur-sm pointer-events-none select-none' : '';
 
   const isActive = (path) => location.pathname === path;
@@ -154,6 +156,7 @@ const MainLayout = () => {
     setTasksOpen,
     setNotificationsOpen,
     setSettingsOpen,
+    setProfileOpen,
     unreadCount,
     user,
     logout,
@@ -260,6 +263,7 @@ const MainLayout = () => {
         <TasksPanel open={tasksOpen} onClose={() => setTasksOpen(false)} />
       )}
       <SettingsSidebar isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <ProfileDrawer isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
       <NotificationPanel isOpen={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
       <OnboardingGate />
       <KeycloakActionToast />

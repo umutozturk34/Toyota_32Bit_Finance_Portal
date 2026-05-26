@@ -103,6 +103,20 @@ class RateLimitTierTest {
     }
 
     @Test
+    void shouldRouteCredentialAction_whenUserProfilePut() {
+        RateLimitTier matched = firstMatch("/api/v1/user/profile", "PUT");
+
+        assertThat(matched.name()).isEqualTo("CREDENTIAL_ACTION");
+    }
+
+    @Test
+    void shouldRouteCredentialRead_whenUserProfileGet() {
+        RateLimitTier matched = firstMatch("/api/v1/user/profile", "GET");
+
+        assertThat(matched.name()).isEqualTo("CREDENTIAL_READ");
+    }
+
+    @Test
     void shouldExposeUniqueErrorCodes() {
         assertThat(tiers.stream().map(RateLimitTier::errorCode).distinct().count())
                 .isEqualTo(tiers.size());

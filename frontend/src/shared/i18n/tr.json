@@ -21,6 +21,7 @@
     "tasks": "Görevler",
     "notifications": "Bildirimler",
     "settings": "Ayarlar",
+    "profile": "Profil",
     "logout": "Çıkış",
     "expandSidebar": "Yan menüyü aç",
     "collapseSidebar": "Yan menüyü daralt",
@@ -1206,6 +1207,31 @@
       "depositTryTotal": "TL Mevduat",
       "depositUsdTotal": "USD Mevduat",
       "depositEurTotal": "EUR Mevduat",
+      "descriptions": {
+        "policyRate": "TCMB tek hafta repo faizi — para politikasının temel oranı",
+        "tlrefRate": "Türk Lirası Gecelik Referans Faiz — bankalararası kısa vadeli oran",
+        "tlrefIndex": "TLREF'in bileşik endeksi — kümülatif getiri ölçer",
+        "cpiIndex": "Tüketici Fiyat Endeksi — hane tüketim sepetinin fiyat değişimi",
+        "ppiIndex": "Yurt İçi Üretici Fiyat Endeksi — üretici düzeyinde fiyat değişimi",
+        "depositTryTotal": "Bankalardaki TL vadeli mevduat ortalama faizi",
+        "depositUsdTotal": "Bankalardaki USD vadeli mevduat ortalama faizi",
+        "depositEurTotal": "Bankalardaki EUR vadeli mevduat ortalama faizi",
+        "depositTry1m": "TL mevduat 1 ay vade ortalama faizi",
+        "depositTry3m": "TL mevduat 3 ay vade ortalama faizi",
+        "depositTry6m": "TL mevduat 6 ay vade ortalama faizi",
+        "depositTry1y": "TL mevduat 1 yıl vade ortalama faizi",
+        "depositTry1yPlus": "TL mevduat 1 yıl üzeri vade ortalama faizi",
+        "depositUsd1m": "USD mevduat 1 ay vade ortalama faizi",
+        "depositUsd3m": "USD mevduat 3 ay vade ortalama faizi",
+        "depositUsd6m": "USD mevduat 6 ay vade ortalama faizi",
+        "depositUsd1y": "USD mevduat 1 yıl vade ortalama faizi",
+        "depositUsd1yPlus": "USD mevduat 1 yıl üzeri vade ortalama faizi",
+        "depositEur1m": "EUR mevduat 1 ay vade ortalama faizi",
+        "depositEur3m": "EUR mevduat 3 ay vade ortalama faizi",
+        "depositEur6m": "EUR mevduat 6 ay vade ortalama faizi",
+        "depositEur1y": "EUR mevduat 1 yıl vade ortalama faizi",
+        "depositEur1yPlus": "EUR mevduat 1 yıl üzeri vade ortalama faizi"
+      },
       "depositTry1m": "TL 1 Ay",
       "depositTry3m": "TL 3 Ay",
       "depositTry6m": "TL 6 Ay",
@@ -1268,7 +1294,8 @@
       "statMax": "Maks",
       "statAvg": "Ort",
       "tabAll": "Tümü",
-      "points": "puan"
+      "points": "puan",
+      "searchPlaceholder": "Gösterge ara…"
     },
     "editMode": "Düzenleme modu",
     "unsavedChanges": "Kaydedilmemiş değişiklikler",
@@ -1403,6 +1430,27 @@
     "confirm": {
       "title": "2FA devre dışı bırakılsın mı?",
       "message": "Hesabın artık tek faktörlü oturum açma ile korunacak. Bu işlem geri alınabilir — istediğin zaman tekrar kurabilirsin."
+    },
+    "addDevice": "Yeni cihaz ekle",
+    "deviceFallbackName": "Adsız cihaz",
+    "deviceRemoveAction": "Cihazı kaldır",
+    "deviceRemovedTitle": "Cihaz kaldırıldı",
+    "deviceRemovedBody": "Seçilen 2FA cihazı hesabından silindi",
+    "deviceRemoveConfirmTitle": "Cihaz kaldırılsın mı?",
+    "deviceRemoveConfirmBody": "{{name}} cihazı 2FA listenden silinecek. Geri eklemek için yeniden tarama yapman gerekir."
+  },
+  "profile": {
+    "title": "Profil",
+    "subtitle": "Hesap kimliği ve güvenlik",
+    "identity": {
+      "title": "Kimlik",
+      "username": "Kullanıcı adı",
+      "firstName": "Ad",
+      "lastName": "Soyad",
+      "editAction": "Düzenle",
+      "savedTitle": "Profil güncellendi",
+      "savedBody": "Yeni kimlik bilgilerin kaydedildi",
+      "usernameHint": "3-32 karakter; harf, rakam, nokta, alt çizgi veya tire kullanabilirsin."
     }
   },
   "keycloakAction": {

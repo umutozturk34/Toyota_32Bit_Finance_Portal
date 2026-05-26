@@ -154,9 +154,11 @@ public class UnifiedMarketService implements MarketUpdatePort {
                     Comparator.nullsLast(Comparator.naturalOrder()));
             case "name" -> Comparator.comparing(MarketAssetResponse::name,
                     Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            default -> Comparator.comparing(MarketAssetResponse::changePercent,
+            case "changePercent" -> Comparator.comparing(MarketAssetResponse::changePercent,
                     Comparator.nullsLast(Comparator.naturalOrder()));
+            default -> null;
         };
+        if (comparator == null) return items;
         if ("asc".equalsIgnoreCase(direction)) {
             return items.stream().sorted(comparator).toList();
         }

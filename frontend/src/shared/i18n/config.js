@@ -26,10 +26,10 @@ i18n
     supportedLngs: ['tr', 'en'],
     interpolation: { escapeValue: false },
     detection: {
-      order: ['cookie', 'localStorage'],
+      order: ['cookie', 'localStorage', 'navigator', 'htmlTag'],
       lookupCookie: STORAGE_KEY,
       lookupLocalStorage: STORAGE_KEY,
-      caches: ['localStorage'],
+      caches: [],
     },
     returnNull: false,
   });

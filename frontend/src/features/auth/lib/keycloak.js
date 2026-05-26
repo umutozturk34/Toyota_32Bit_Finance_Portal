@@ -7,7 +7,13 @@ const keycloak = new Keycloak({
 });
 
 function currentLocale() {
-  return i18n.language || i18n.options.fallbackLng || 'en';
+  try {
+    const stored = localStorage.getItem('finance-language');
+    if (stored === 'tr' || stored === 'en') return stored;
+  } catch { /* noop */ }
+  const lang = i18n.language || i18n.options.fallbackLng || 'en';
+  const short = String(lang).slice(0, 2).toLowerCase();
+  return short === 'tr' || short === 'en' ? short : 'en';
 }
 export const initKeycloak = (onAuthenticatedCallback) => {
   keycloak
@@ -30,6 +36,9 @@ function readLocalTheme() {
     const stored = localStorage.getItem('finance-theme');
     if (stored === 'light') return 'LIGHT';
     if (stored === 'dark') return 'DARK';
+  } catch { /* noop */ }
+  try {
+    if (window.matchMedia('(prefers-color-scheme: light)').matches) return 'LIGHT';
   } catch { /* noop */ }
   return 'DARK';
 }

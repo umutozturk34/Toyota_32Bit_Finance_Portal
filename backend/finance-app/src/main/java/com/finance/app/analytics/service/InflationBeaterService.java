@@ -138,7 +138,7 @@ public class InflationBeaterService {
     }
 
     private InflationBeaterResponse compute(String period, String code, int months, Currency override) {
-        LocalDate endDate = LocalDate.now();
+        LocalDate endDate = resolveStableEndDate(code);
         LocalDate startDate = endDate.minusMonths(months);
 
         MacroIndicator benchmark = macroQueryService.findByCode(code);
@@ -222,6 +222,18 @@ public class InflationBeaterService {
             out.put(c.type + "|" + c.code, c.name);
         }
         return out;
+    }
+
+    private LocalDate resolveStableEndDate(String code) {
+        LocalDate today = LocalDate.now();
+        List<HistoryPoint> recent = historyService.getMacroSeries(code,
+                today.minusMonths(3), today);
+        LocalDate latest = null;
+        for (HistoryPoint p : recent) {
+            if (p == null || p.date() == null || p.value() == null) continue;
+            if (latest == null || p.date().isAfter(latest)) latest = p.date();
+        }
+        return latest != null ? latest : today;
     }
 
     private BigDecimal computeIndexGrowthPct(String code, LocalDate start, LocalDate end) {

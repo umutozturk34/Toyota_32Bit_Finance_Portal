@@ -123,12 +123,11 @@ export function forwardFillToToday(points) {
 export function backFillToWindowStart(points, windowStart) {
   if (!points || points.length === 0) return points;
   const sorted = [...points].sort((a, b) => String(a.date).localeCompare(String(b.date)));
-  const beforeWindow = sorted.filter((p) => p.date < windowStart);
-  const inWindow = sorted.filter((p) => p.date >= windowStart);
-  if (beforeWindow.length === 0) return inWindow;
-  const anchor = beforeWindow[beforeWindow.length - 1];
-  const firstInWindow = inWindow[0];
-  if (firstInWindow && firstInWindow.date === windowStart) return inWindow;
+  const beforeOrAt = sorted.filter((p) => p.date <= windowStart);
+  const inWindow = sorted.filter((p) => p.date > windowStart);
+  if (beforeOrAt.length === 0) return inWindow;
+  const anchor = beforeOrAt[beforeOrAt.length - 1];
+  if (anchor.date === windowStart) return [anchor, ...inWindow];
   return [{ date: windowStart, value: anchor.value, _backfilled: true }, ...inWindow];
 }
 

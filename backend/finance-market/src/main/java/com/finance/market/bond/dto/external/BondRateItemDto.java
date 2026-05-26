@@ -5,5 +5,6 @@ import java.time.LocalDate;
 
 public record BondRateItemDto(
         LocalDate rateDate,
-        BigDecimal couponRate
+        BigDecimal couponRate,
+        BigDecimal price
 ) {}

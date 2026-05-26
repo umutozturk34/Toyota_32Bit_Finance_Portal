@@ -62,21 +62,23 @@ public class EvdsBondClientMapper {
         return snapshots;
     }
 
-    public List<BondRateItemDto> toRateItemDtos(EvdsDataResponse response, String oranCode) {
+    public List<BondRateItemDto> toRateItemDtos(EvdsDataResponse response, String oranCode, String priceCode) {
         if (response.items() == null || response.items().isEmpty()) {
             log.debug("No items in EVDS response for rate extraction (code={})", oranCode);
             return List.of();
         }
 
         String oranKey = oranCode.replace(".", "_");
+        String priceKey = priceCode != null ? priceCode.replace(".", "_") : null;
         List<BondRateItemDto> rates = new ArrayList<>();
 
         for (Map<String, Object> item : response.items()) {
             BigDecimal rate = extractBigDecimal(item, oranKey);
             LocalDate date = extractDate(item);
             if (rate == null || date == null) continue;
+            BigDecimal price = priceKey != null ? extractBigDecimal(item, priceKey) : null;
 
-            rates.add(new BondRateItemDto(date, rate));
+            rates.add(new BondRateItemDto(date, rate, price));
         }
 
         log.debug("Extracted {} rate items from {} EVDS items (code={})", rates.size(), response.items().size(), oranCode);

@@ -15,7 +15,7 @@ export default function SideDrawer({
   open,
   onClose,
   side = 'right',
-  width = '420px',
+  width = 'min(420px, 100vw)',
   icon: Icon,
   iconTint = 'text-accent',
   title,
@@ -71,7 +71,7 @@ export default function SideDrawer({
                 />
               </div>
             </header>
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-auto-hide">{children}</div>
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-auto-hide">{children}</div>
             {footer && <div className="border-t border-border-default shrink-0">{footer}</div>}
           </motion.aside>
         </>

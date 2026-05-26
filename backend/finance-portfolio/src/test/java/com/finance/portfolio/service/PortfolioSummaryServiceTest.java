@@ -60,7 +60,7 @@ class PortfolioSummaryServiceTest {
                 allocationCalculator, derivativeFormatter, realReturnCalculator, multiCurrency);
         org.mockito.Mockito.lenient().when(derivativePositionRepository.findOpenByPortfolio(org.mockito.ArgumentMatchers.anyLong()))
                 .thenReturn(java.util.List.of());
-        org.mockito.Mockito.lenient().when(viopCandleRepository.findFirstBySymbolOrderByCandleDateDesc(org.mockito.ArgumentMatchers.anyString()))
+        org.mockito.Mockito.lenient().when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(java.math.BigDecimal.class)))
                 .thenReturn(java.util.Optional.empty());
         org.mockito.Mockito.lenient().when(realReturnCalculator.compute(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(RealReturnCalculator.RealReturnSummary.EMPTY);

@@ -19,7 +19,9 @@ public class CredentialActionTier implements RateLimitTier {
 
     @Override
     public boolean matches(String path, String method) {
-        if (!path.startsWith("/api/v1/user/credentials")) return false;
+        boolean credentialOrProfile = path.startsWith("/api/v1/user/credentials")
+                || path.startsWith("/api/v1/user/profile");
+        if (!credentialOrProfile) return false;
         return "POST".equalsIgnoreCase(method)
                 || "PUT".equalsIgnoreCase(method)
                 || "PATCH".equalsIgnoreCase(method)

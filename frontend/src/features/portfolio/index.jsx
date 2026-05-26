@@ -1,50 +1,34 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
+import { LayoutDashboard, TrendingUp as TrendingUpIcon } from 'lucide-react';
 import useNavigationBack from '../../shared/hooks/useNavigationBack';
-import { Wallet, LayoutDashboard, TrendingUp as TrendingUpIcon, ShieldCheck, Sparkles, Download } from 'lucide-react';
-import usePortfolioPdfDownload from './hooks/usePortfolioPdfDownload';
 import { useUserPreferences } from '../../shared/hooks/useUserPreferences';
-import { Check, AlertTriangle } from '../../shared/components/feedback/AnimatedIcons';
-import PageHeader from '../../shared/components/layout/PageHeader';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
-import ProcessingSteps from '../../shared/components/feedback/ProcessingSteps';
-import Card from '../../shared/components/card';
-import useProcessingAnimation from '../../shared/hooks/useProcessingAnimation';
 import SummaryCards from './components/SummaryCards';
 import PositionsTable from './components/PositionsTable';
 import AllocationChart from './components/AllocationChart';
 import RealizedPnlChart from './components/RealizedPnlChart';
 import PerformanceChart from './components/PerformanceChart';
-import PositionFormModal from './components/PositionFormModal';
-import PositionDeleteDialog from './components/PositionDeleteDialog';
-import CloseDerivativePositionDialog from './components/CloseDerivativePositionDialog';
-import SellPositionDialog from './components/SellPositionDialog';
-import PortfolioSwitcher from './components/PortfolioSwitcher';
-import EditDerivativePositionModal from './components/EditDerivativePositionModal';
 import AssetDetail from './components/AssetDetail';
+import PortfolioActions from './components/PortfolioActions';
+import PortfolioModalsHost from './components/PortfolioModalsHost';
+import PortfolioOnboardingHost from './components/PortfolioOnboardingHost';
+import usePortfolioPageState from './hooks/usePortfolioPageState';
+import usePortfolioPdfDownload from './hooks/usePortfolioPdfDownload';
 import {
   usePortfolioList, usePortfolioView, usePortfolioPositions,
-  useCreatePortfolio, useInvalidatePortfolio, useBackfillStatus,
-  useReopenPosition,
+  useInvalidatePortfolio, useBackfillStatus, useReopenPosition,
 } from './hooks/usePortfolioData';
 import { useReopenDerivativePosition } from './hooks/useDerivativePositions';
-
-const ONBOARDING_SUCCESS_HOLD_MS = 900;
 
 export default function Portfolio() {
   const { t } = useTranslation();
   const goBack = useNavigationBack('/portfolio');
   const invalidatePortfolio = useInvalidatePortfolio();
   const { preferences } = useUserPreferences();
-  const defaultPortfolioName = t('portfolio.onboarding.defaultName');
-  const onboardingSteps = [
-    { label: t('portfolio.onboarding.steps.verifying'), duration: 600 },
-    { label: t('portfolio.onboarding.steps.creating'), duration: 700 },
-    { label: t('portfolio.onboarding.steps.preparing'), duration: 600 },
-  ];
+
   const tabs = [
     { id: 'overview', label: t('portfolio.tabs.overview'), Icon: LayoutDashboard },
     { id: 'performance', label: t('portfolio.tabs.performance'), Icon: TrendingUpIcon },
@@ -101,277 +85,39 @@ export default function Portfolio() {
     selectedAssetCode ? portfolio?.id : null,
     selectedAssetCode ? { search: selectedAssetCode, size: 1 } : {}
   );
-  const [pendingAsset, setPendingAsset] = useState(null);
-  const [trackedAssetCode, setTrackedAssetCode] = useState(selectedAssetCode);
 
-  if (selectedAssetCode !== trackedAssetCode) {
-    setTrackedAssetCode(selectedAssetCode);
-    if (!selectedAssetCode) setPendingAsset(null);
-  }
+  const pageState = usePortfolioPageState({ selectedAssetCode, goBack, setSearchParams });
+  const {
+    pendingAsset,
+    editTarget, setEditTarget,
+    deleteTarget, setDeleteTarget,
+    closeTarget, setCloseTarget,
+    sellTarget, setSellTarget,
+    onboardingPhase, setOnboardingPhase,
+    onboardingName, setOnboardingName,
+    selectAsset,
+    hasActiveDialog,
+  } = pageState;
 
   const selectedAsset = (pendingAsset && pendingAsset.assetCode === selectedAssetCode ? pendingAsset : null)
     || (selectedAssetCode
       ? (viewPositions.find(p => p.assetCode === selectedAssetCode) || searchedPositions?.content?.[0] || null)
       : null);
 
-  const setSelectedAsset = (asset) => {
-    if (asset) {
-      setPendingAsset(asset);
-      setSearchParams((prev) => {
-        const next = new URLSearchParams(prev);
-        next.set('asset', asset.assetCode);
-        return next;
-      }, { replace: false });
-    } else {
-      setPendingAsset(null);
-      goBack();
-    }
-  };
-
-  const [editTarget, setEditTarget] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [closeTarget, setCloseTarget] = useState(null);
-  const [sellTarget, setSellTarget] = useState(null);
-  const [onboardingPhase, setOnboardingPhase] = useState('idle');
-  const [onboardingName, setOnboardingName] = useState('');
-  const createPortfolio = useCreatePortfolio();
   const reopenSpot = useReopenPosition(portfolio?.id);
   const reopenViop = useReopenDerivativePosition(portfolio?.id);
-  const { processingStep, runAnimation, reset: resetOnboarding } = useProcessingAnimation();
-
-  const handleStartOnboarding = () => {
-    setOnboardingName(defaultPortfolioName);
-    setOnboardingPhase('confirm');
-  };
-  const handleCancelOnboarding = () => setOnboardingPhase('idle');
-
-  const handleCreatePortfolio = async () => {
-    const trimmedName = onboardingName.trim() || defaultPortfolioName;
-    setOnboardingPhase('processing');
-    try {
-      await Promise.all([
-        createPortfolio.mutateAsync(trimmedName),
-        runAnimation(onboardingSteps),
-      ]);
-      setOnboardingPhase('success');
-      setTimeout(() => {
-        invalidatePortfolio();
-        setOnboardingPhase('idle');
-      }, ONBOARDING_SUCCESS_HOLD_MS);
-    } catch {
-      resetOnboarding();
-      setOnboardingPhase('idle');
-    }
-  };
 
   if (loading) return <LoadingState message={t('portfolio.loading')} />;
   if (error) return <ErrorState message={error} onRetry={invalidatePortfolio} />;
 
   if (needsOnboarding) {
     return (
-      <div className="space-y-6">
-        <PageHeader icon={<Wallet className="h-5 w-5" />} title={t('portfolio.headerTitle')} />
-        <Card
-          as={motion.div}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          variant="elevated"
-          radius="xl"
-          padding="xl"
-          backdropBlur
-          className="flex flex-col items-center justify-center gap-5 min-h-[320px]"
-        >
-          <AnimatePresence mode="wait">
-            {onboardingPhase === 'success' && (
-              <motion.div
-                key="success"
-                initial={{ scale: 0.92, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.92, opacity: 0 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col items-center gap-3 relative"
-              >
-                <motion.div
-                  className="absolute top-0 w-32 h-32 rounded-full bg-success/20 blur-3xl pointer-events-none"
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: [0, 1.4, 1], opacity: [0, 0.9, 0.5] }}
-                  transition={{ duration: 1, ease: 'easeOut' }}
-                />
-                <div className="relative">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    className="flex items-center justify-center w-16 h-16 rounded-full bg-success/15"
-                  >
-                    <Check className="h-8 w-8 text-success" strokeWidth={2.5} />
-                  </motion.div>
-                  {[0, 1, 2, 3, 4, 5].map((i) => {
-                    const angle = (i / 6) * Math.PI * 2;
-                    return (
-                      <motion.span
-                        key={i}
-                        className="absolute top-1/2 left-1/2 w-1.5 h-1.5 rounded-full bg-success/60"
-                        initial={{ x: 0, y: 0, opacity: 0, scale: 0 }}
-                        animate={{
-                          x: Math.cos(angle) * 38,
-                          y: Math.sin(angle) * 38,
-                          opacity: [0, 1, 0],
-                          scale: [0, 1, 0.4],
-                        }}
-                        transition={{ duration: 0.7, delay: 0.18 + i * 0.04, ease: 'easeOut' }}
-                      />
-                    );
-                  })}
-                </div>
-                <motion.p
-                  className="text-base font-semibold text-fg"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.18, duration: 0.25 }}
-                >
-                  {t('portfolio.onboarding.successTitle')}
-                </motion.p>
-                <motion.div
-                  className="flex items-center gap-1.5 text-[11px] text-success/70"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.28, duration: 0.25 }}
-                >
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  {t('portfolio.onboarding.successHint')}
-                </motion.div>
-              </motion.div>
-            )}
-            {onboardingPhase === 'processing' && (
-              <motion.div
-                key="processing"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-                className="w-full"
-              >
-                <ProcessingSteps steps={onboardingSteps} currentStep={processingStep} />
-              </motion.div>
-            )}
-            {onboardingPhase === 'confirm' && (
-              <motion.div
-                key="confirm"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                className="w-full max-w-sm space-y-5"
-              >
-                <div className="flex flex-col items-center gap-3">
-                  <motion.div
-                    className="flex items-center justify-center w-12 h-12 rounded-full bg-warning/10"
-                    animate={{ scale: [1, 1.08, 1] }}
-                    transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <AlertTriangle className="h-6 w-6 text-warning" />
-                  </motion.div>
-                  <motion.div
-                    className="text-center space-y-1"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.1, duration: 0.25 }}
-                  >
-                    <p className="text-sm font-semibold text-fg">{t('portfolio.onboarding.confirmTitle')}</p>
-                    <p className="text-xs text-fg-muted">{t('portfolio.onboarding.confirmHint')}</p>
-                  </motion.div>
-                </div>
-                <input
-                  type="text"
-                  value={onboardingName}
-                  onChange={(e) => setOnboardingName(e.target.value)}
-                  placeholder={defaultPortfolioName}
-                  maxLength={64}
-                  className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg placeholder:text-fg-subtle focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
-                />
-                <motion.div
-                  className="flex gap-2"
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.18, duration: 0.25 }}
-                >
-                  <motion.button
-                    onClick={handleCancelOnboarding}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-colors cursor-pointer"
-                  >
-                    {t('common.cancel')}
-                  </motion.button>
-                  <motion.button
-                    onClick={handleCreatePortfolio}
-                    whileHover={{ scale: 1.02, y: -1 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold text-white bg-accent shadow-md shadow-accent/20 hover:bg-accent-bright transition-colors border-none cursor-pointer"
-                  >
-                    <Wallet className="h-4 w-4" />
-                    {t('common.confirm')}
-                  </motion.button>
-                </motion.div>
-              </motion.div>
-            )}
-            {onboardingPhase === 'idle' && (
-              <motion.div
-                key="idle"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col items-center gap-5 relative"
-              >
-                <motion.div
-                  className="absolute -top-4 w-32 h-32 rounded-full bg-accent/15 blur-3xl pointer-events-none"
-                  animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0.85, 0.6] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                <motion.div
-                  className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-accent/10"
-                  animate={{ y: [0, -4, 0] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                >
-                  <Wallet className="w-8 h-8 text-accent" />
-                  <motion.span
-                    className="absolute -top-1 -right-1"
-                    animate={{ rotate: [0, 12, -8, 0], scale: [1, 1.15, 0.95, 1] }}
-                    transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-warning" />
-                  </motion.span>
-                </motion.div>
-                <motion.div
-                  className="text-center space-y-2"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.12, duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <h2 className="text-xl font-semibold text-fg">{t('portfolio.onboarding.idleTitle')}</h2>
-                  <p className="text-sm text-fg-muted max-w-md">
-                    {t('portfolio.onboarding.idleSubtitle')}
-                  </p>
-                </motion.div>
-                <motion.button
-                  onClick={handleStartOnboarding}
-                  whileHover={{ scale: 1.04, y: -1 }}
-                  whileTap={{ scale: 0.96 }}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.22, duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex items-center gap-2 rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent/20 hover:bg-accent-bright transition-colors border-none cursor-pointer"
-                >
-                  <Wallet className="h-4 w-4" />
-                  {t('portfolio.onboarding.startCta')}
-                </motion.button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Card>
-      </div>
+      <PortfolioOnboardingHost
+        phase={onboardingPhase}
+        setPhase={setOnboardingPhase}
+        name={onboardingName}
+        setName={setOnboardingName}
+      />
     );
   }
 
@@ -396,176 +142,91 @@ export default function Portfolio() {
           portfolioId={portfolio.id}
           asset={selectedAsset}
           lots={selectedLots}
-          onBack={() => setSelectedAsset(null)}
+          onBack={() => selectAsset(null)}
           onEditLot={setEditTarget}
           onDeleteLot={setDeleteTarget}
           onSellLot={handleSellOrClose}
           onReopenLot={handleReopen}
-          hasActiveDialog={Boolean(deleteTarget || editTarget || sellTarget || closeTarget)}
+          hasActiveDialog={hasActiveDialog}
         />
       ) : (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <PageHeader
-          icon={<Wallet className="h-5 w-5" />}
-          title={t('portfolio.headerTitle')}
-          onRefresh={invalidatePortfolio}
-          loading={loading}
-        />
-        <div className="flex items-center gap-2 flex-wrap">
-          {portfolio && (
-            <button
-              type="button"
-              onClick={downloadPdf}
-              disabled={pdfPending}
-              className={`group relative flex items-center gap-2 overflow-hidden rounded-lg border px-3 py-1.5 text-[12px] font-display font-semibold tracking-tight transition-all duration-200 cursor-pointer disabled:cursor-wait ${
-                pdfPending
-                  ? 'border-accent/40 bg-accent/5 text-fg'
-                  : 'border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:border-border-hover'
-              }`}
-            >
-              {pdfPending && (
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,transparent,rgba(139,92,246,0.18),transparent)] bg-[length:200%_100%] animate-[pdfShimmer_1.4s_linear_infinite]"
-                  style={{
-                    animation: 'pdfShimmer 1.4s linear infinite',
-                  }}
-                />
-              )}
-              {pdfPending ? (
-                <span className="relative inline-flex h-3.5 w-3.5 items-center justify-center">
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      background:
-                        'conic-gradient(from 0deg, #6366f1, #8b5cf6, #a78bfa, #6366f1)',
-                      animation: 'pdfSpin 0.9s linear infinite',
-                      WebkitMask:
-                        'radial-gradient(circle, transparent 38%, #000 41%)',
-                      mask: 'radial-gradient(circle, transparent 38%, #000 41%)',
-                    }}
-                  />
-                </span>
-              ) : (
-                <Download className="h-3.5 w-3.5" />
-              )}
-              <span className="relative tabular-nums">
-                {pdfPending
-                  ? `${(pdfElapsedMs / 1000).toFixed(1)}s · ${t('portfolio.actions.downloadPdfPending')}`
-                  : t('portfolio.actions.downloadPdf')}
-              </span>
-              <style>{`
-                @keyframes pdfSpin { to { transform: rotate(360deg); } }
-                @keyframes pdfShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-              `}</style>
-            </button>
-          )}
-          {portfolios && portfolios.length > 0 && (
-            <PortfolioSwitcher
-              portfolios={portfolios}
-              activeId={portfolio?.id}
-              onSelect={setActivePortfolio}
-            />
-          )}
-        </div>
-      </div>
-
-      {summary && <SummaryCards summary={summary} portfolioId={portfolio?.id} />}
-
-      <div className="flex gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 w-fit">
-        {tabs.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            onClick={() => setActiveTab(id)}
-            className="relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer bg-transparent"
-          >
-            {activeTab === id && (
-              <motion.span
-                layoutId="portfolio-tab"
-                className="absolute inset-0 rounded-lg bg-accent/15"
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              />
-            )}
-            <Icon className={`relative z-10 h-3.5 w-3.5 ${activeTab === id ? 'text-accent' : 'text-fg-muted'}`} />
-            <span className={`relative z-10 ${activeTab === id ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
-              {label}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
         <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
-            <RealizedPnlChart portfolioId={portfolio?.id} />
+          <PortfolioActions
+            portfolio={portfolio}
+            portfolios={portfolios}
+            loading={loading}
+            onRefresh={invalidatePortfolio}
+            onSelectPortfolio={setActivePortfolio}
+            onDownloadPdf={downloadPdf}
+            pdfPending={pdfPending}
+            pdfElapsedMs={pdfElapsedMs}
+            hasPositions={viewPositions.length > 0}
+          />
+
+          {summary && <SummaryCards summary={summary} portfolioId={portfolio?.id} />}
+
+          <div className="flex gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 w-fit">
+            {tabs.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className="relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer bg-transparent"
+              >
+                {activeTab === id && (
+                  <motion.span
+                    layoutId="portfolio-tab"
+                    className="absolute inset-0 rounded-lg bg-accent/15"
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  />
+                )}
+                <Icon className={`relative z-10 h-3.5 w-3.5 ${activeTab === id ? 'text-accent' : 'text-fg-muted'}`} />
+                <span className={`relative z-10 ${activeTab === id ? 'text-accent' : 'text-fg-muted hover:text-fg'}`}>
+                  {label}
+                </span>
+              </button>
+            ))}
           </div>
-          <div className="min-w-0">
-            <PositionsTable
-              portfolioId={portfolio?.id}
-              backfill={backfill}
-              onAssetClick={setSelectedAsset}
-              onEditClick={setEditTarget}
-              onDeleteClick={setDeleteTarget}
-              onCloseClick={setCloseTarget}
-              onSellClick={setSellTarget}
-            />
+
+          <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
+                <RealizedPnlChart portfolioId={portfolio?.id} />
+              </div>
+              <div className="min-w-0">
+                <PositionsTable
+                  portfolioId={portfolio?.id}
+                  backfill={backfill}
+                  onAssetClick={selectAsset}
+                  onEditClick={setEditTarget}
+                  onDeleteClick={setDeleteTarget}
+                  onCloseClick={setCloseTarget}
+                  onSellClick={setSellTarget}
+                />
+              </div>
+            </div>
           </div>
+
+          {portfolio && (
+            <div style={{ display: activeTab === 'performance' ? 'block' : 'none' }}>
+              <PerformanceChart portfolioId={portfolio.id} backfill={backfill} />
+            </div>
+          )}
         </div>
-      </div>
-
-      {portfolio && (
-        <div style={{ display: activeTab === 'performance' ? 'block' : 'none' }}>
-          <PerformanceChart portfolioId={portfolio.id} backfill={backfill} />
-        </div>
-      )}
-    </div>
       )}
 
-      {editTarget && portfolio && editTarget.assetType === 'VIOP' && (
-        <EditDerivativePositionModal
-          portfolioId={portfolio.id}
-          position={editTarget}
-          onClose={() => { setEditTarget(null); invalidatePortfolio(); }}
-        />
-      )}
-
-      {editTarget && portfolio && editTarget.assetType !== 'VIOP' && (
-        <PositionFormModal
-          mode="edit"
-          portfolioId={portfolio.id}
-          position={editTarget}
-          onClose={() => setEditTarget(null)}
-          onComplete={invalidatePortfolio}
-        />
-      )}
-
-      {closeTarget && portfolio && (
-        <CloseDerivativePositionDialog
-          portfolioId={portfolio.id}
-          position={closeTarget}
-          onClose={() => { setCloseTarget(null); invalidatePortfolio(); }}
-        />
-      )}
-
-      {sellTarget && portfolio && (
-        <SellPositionDialog
-          portfolioId={portfolio.id}
-          position={sellTarget}
-          onClose={() => setSellTarget(null)}
-        />
-      )}
-
-      {deleteTarget && portfolio && (
-        <PositionDeleteDialog
-          portfolioId={portfolio.id}
-          position={deleteTarget}
-          onClose={() => setDeleteTarget(null)}
-          onComplete={invalidatePortfolio}
-        />
-      )}
+      <PortfolioModalsHost
+        portfolio={portfolio}
+        editTarget={editTarget}
+        setEditTarget={setEditTarget}
+        closeTarget={closeTarget}
+        setCloseTarget={setCloseTarget}
+        sellTarget={sellTarget}
+        setSellTarget={setSellTarget}
+        deleteTarget={deleteTarget}
+        setDeleteTarget={setDeleteTarget}
+        invalidatePortfolio={invalidatePortfolio}
+      />
     </>
   );
 }

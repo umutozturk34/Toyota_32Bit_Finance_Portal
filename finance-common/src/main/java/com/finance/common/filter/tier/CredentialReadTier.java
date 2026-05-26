@@ -19,7 +19,9 @@ public class CredentialReadTier implements RateLimitTier {
 
     @Override
     public boolean matches(String path, String method) {
-        return path.startsWith("/api/v1/user/credentials") && "GET".equalsIgnoreCase(method);
+        if (!"GET".equalsIgnoreCase(method)) return false;
+        return path.startsWith("/api/v1/user/credentials")
+                || path.startsWith("/api/v1/user/profile");
     }
 
     @Override

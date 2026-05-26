@@ -78,7 +78,7 @@ const DrawingPanel = ({
             </div>
             { }
             {activeTool === 'ICON' && (
-                <div className="p-2 rounded-lg border space-y-2" style={{ background: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc', borderColor: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0' }}>
+                <div className="p-2 rounded-lg border border-border-default bg-bg-elevated/40 space-y-2">
                     <div>
                         <label className="block text-[10px] text-fg-muted uppercase tracking-wider font-medium mb-1.5">{t('chart.drawingPanel.selectIcon')}</label>
                         <div className="grid grid-cols-5 gap-1">
@@ -120,8 +120,8 @@ const DrawingPanel = ({
             )}
             { }
             {activeTool && (
-                <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-[rgba(94,106,210,0.08)] border border-[rgba(94,106,210,0.15)]">
-                    <span className="text-[11px] text-[#6872D9]">
+                <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-accent/10 border border-[rgba(94,106,210,0.15)]">
+                    <span className="text-[11px] text-accent">
                         {activeTool === 'FREEHAND' ? t('chart.drawingPanel.instructions.freehand') :
                             activeTool === 'TEXT' ? t('chart.drawingPanel.instructions.text') :
                                 activeTool === 'ICON' ? t('chart.drawingPanel.instructions.emoji') :

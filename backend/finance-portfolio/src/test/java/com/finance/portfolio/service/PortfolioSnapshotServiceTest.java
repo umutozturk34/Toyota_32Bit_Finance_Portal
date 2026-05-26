@@ -65,16 +65,17 @@ class PortfolioSnapshotServiceTest {
     }
 
     @Test
-    void onMarketUpdate_skipsPortfolio_whenNoMatchingPositions() {
+    void onMarketUpdate_skipsAssetSnapshots_butStillSavesAggregate_whenNoMatchingPositions() {
         Portfolio portfolio = portfolio(1L);
         when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
         when(positionRepository.findByPortfolioIdAndTrackedAsset_AssetTypeAndQuantityGreaterThan(
                 1L, TrackedAssetType.STOCK, BigDecimal.ZERO)).thenReturn(List.of());
+        when(calculator.buildAggregateSnapshot(any(), any())).thenReturn(mock(PortfolioDailySnapshot.class));
 
         service.onMarketUpdate(MarketType.STOCK);
 
         verify(assetSnapshotRepository, never()).save(any());
-        verify(dailySnapshotRepository, never()).save(any());
+        verify(dailySnapshotRepository).save(any());
     }
 
     @Test
@@ -96,21 +97,25 @@ class PortfolioSnapshotServiceTest {
     }
 
     @Test
-    void generateDailySnapshots_skipsPortfolioWithExistingDailyRow() {
+    void generateDailySnapshots_rewritesExistingDailyRow_byDeletingThenSaving() {
         Portfolio portfolio = portfolio(1L);
         when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
-        when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(1L, LocalDate.now())).thenReturn(true);
+        when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
+                .thenReturn(List.of(position()));
+        when(calculator.buildAssetSnapshotsForPositions(any(), any(), any()))
+                .thenReturn(List.of(mock(PortfolioAssetDailySnapshot.class)));
+        when(calculator.buildAggregateSnapshot(any(), any())).thenReturn(mock(PortfolioDailySnapshot.class));
 
         service.generateDailySnapshots("scheduler");
 
-        verify(positionRepository, never()).findByPortfolioIdAndQuantityGreaterThan(any(), any());
+        verify(dailySnapshotRepository).deleteByPortfolioIdAndSnapshotDate(1L, LocalDate.now());
+        verify(dailySnapshotRepository).save(any());
     }
 
     @Test
-    void generateDailySnapshots_buildsFullSnapshot_whenNotYetGeneratedAndPositionsExist() {
+    void generateDailySnapshots_buildsFullSnapshot_whenPositionsExist() {
         Portfolio portfolio = portfolio(1L);
         when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
-        when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(1L, LocalDate.now())).thenReturn(false);
         when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
                 .thenReturn(List.of(position()));
         when(calculator.buildAssetSnapshotsForPositions(any(), any(), any()))
@@ -127,7 +132,6 @@ class PortfolioSnapshotServiceTest {
     void generateDailySnapshots_skipsBuild_whenNoPositions() {
         Portfolio portfolio = portfolio(1L);
         when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
-        when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(1L, LocalDate.now())).thenReturn(false);
         when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
                 .thenReturn(List.of());
 
@@ -141,7 +145,8 @@ class PortfolioSnapshotServiceTest {
     @Test
     void generateDailySnapshots_publishesEvent_whenAtLeastOnePortfolioExistsAndPublisherAvailable() {
         when(portfolioRepository.findAll()).thenReturn(List.of(portfolio(1L)));
-        when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(1L, LocalDate.now())).thenReturn(true);
+        when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
+                .thenReturn(List.of());
         doAnswer(inv -> {
             ((Consumer<EventPublisherPort>) inv.getArgument(0)).accept(eventPublisher);
             return null;
@@ -221,7 +226,6 @@ class PortfolioSnapshotServiceTest {
         com.finance.portfolio.derivative.model.DerivativePosition deriv =
                 org.mockito.Mockito.mock(com.finance.portfolio.derivative.model.DerivativePosition.class);
         when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
-        when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(1L, LocalDate.now())).thenReturn(false);
         when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
                 .thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(1L)).thenReturn(List.of(deriv));
@@ -240,7 +244,6 @@ class PortfolioSnapshotServiceTest {
         com.finance.portfolio.derivative.model.DerivativePosition deriv =
                 org.mockito.Mockito.mock(com.finance.portfolio.derivative.model.DerivativePosition.class);
         when(portfolioRepository.findAll()).thenReturn(List.of(portfolio));
-        when(dailySnapshotRepository.existsByPortfolioIdAndSnapshotDate(1L, LocalDate.now())).thenReturn(false);
         when(positionRepository.findByPortfolioIdAndQuantityGreaterThan(1L, BigDecimal.ZERO))
                 .thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(1L)).thenReturn(List.of(deriv));

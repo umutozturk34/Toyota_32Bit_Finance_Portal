@@ -20,11 +20,17 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @Log4j2
 public class BondRateFetcher {
+
+    public record BondHistoryTarget(String isinCode, String priceCode, Bond bond,
+                                     LocalDate startDate, LocalDate endDate) {}
 
     private static final DateTimeFormatter EVDS_DATE_FMT = AbstractEvdsClient.DATE_FMT;
 
@@ -43,61 +49,71 @@ public class BondRateFetcher {
         this.maxDaysPerRequest = bondProperties.getMaxDaysPerRequest();
     }
 
-    public List<BondRateHistory> fetch(String isinCode, Bond bond, LocalDate startDate, LocalDate endDate) {
-        if (!startDate.isBefore(endDate)) {
-            log.debug("Rate history for {} is up to date (start={} >= end={}), skipping", isinCode, startDate, endDate);
-            return new ArrayList<>();
+    public Map<String, List<BondRateHistory>> fetchBatch(List<BondHistoryTarget> targets) {
+        Map<String, List<BondRateHistory>> byIsin = new HashMap<>();
+        if (targets == null || targets.isEmpty()) return byIsin;
+
+        List<BondHistoryTarget> active = new ArrayList<>();
+        for (BondHistoryTarget t : targets) {
+            byIsin.put(t.isinCode(), new ArrayList<>());
+            if (t.startDate().isBefore(t.endDate())) active.add(t);
+        }
+        if (active.isEmpty()) return byIsin;
+
+        LocalDate batchStart = active.stream().map(BondHistoryTarget::startDate).min(Comparator.naturalOrder()).orElseThrow();
+        LocalDate batchEnd = active.stream().map(BondHistoryTarget::endDate).max(Comparator.naturalOrder()).orElseThrow();
+
+        List<String> codes = new ArrayList<>(active.size() * 2);
+        for (BondHistoryTarget t : active) {
+            codes.add(BondSerieFilterUtil.toOranCode(t.isinCode()));
+            if (t.priceCode() != null) codes.add(t.priceCode());
         }
 
-        String oranCode = BondSerieFilterUtil.toOranCode(isinCode);
         List<WindowedFetchPlanner.DateWindow> windows = WindowedFetchPlanner
-                .planForward(startDate, endDate, maxDaysPerRequest);
-        log.debug("Fetching rate history for {}: {} to {} ({} windows)", isinCode, startDate, endDate, windows.size());
+                .planForward(batchStart, batchEnd, maxDaysPerRequest);
+        log.debug("Fetching batched rate history: {} bonds, {} codes, {} windows ({} → {})",
+                active.size(), codes.size(), windows.size(), batchStart, batchEnd);
 
-        List<BondRateHistory> allRecords = new ArrayList<>();
         int successWindows = 0;
         int failedWindows = 0;
         for (int i = 0; i < windows.size(); i++) {
             try {
-                allRecords.addAll(fetchWindow(windows.get(i), oranCode, isinCode, bond));
+                WindowedFetchPlanner.DateWindow w = windows.get(i);
+                String start = w.start().format(EVDS_DATE_FMT);
+                String end = w.end().format(EVDS_DATE_FMT);
+                EvdsDataResponse response = evdsClient.fetchBondData(codes, start, end);
+                for (BondHistoryTarget t : active) {
+                    String oranCode = BondSerieFilterUtil.toOranCode(t.isinCode());
+                    List<BondRateItemDto> items = clientMapper.toRateItemDtos(response, oranCode, t.priceCode());
+                    List<BondRateHistory> bucket = byIsin.get(t.isinCode());
+                    for (BondRateItemDto item : items) {
+                        if (item.rateDate().isBefore(t.startDate()) || item.rateDate().isAfter(t.endDate())) continue;
+                        if (rateHistoryRepository.existsByIsinCodeAndRateDate(t.isinCode(), item.rateDate())) continue;
+                        bucket.add(BondRateHistory.builder()
+                                .bond(t.bond())
+                                .rateDate(item.rateDate())
+                                .couponRate(item.couponRate())
+                                .price(item.price())
+                                .build());
+                    }
+                }
                 successWindows++;
             } catch (CallNotPermittedException e) {
-                log.error("EVDS circuit breaker OPEN during rate fetch for {} at window {}/{}",
-                        isinCode, i + 1, windows.size());
+                log.error("EVDS circuit breaker OPEN during batch rate fetch at window {}/{}",
+                        i + 1, windows.size());
                 throw e;
             } catch (Exception e) {
                 failedWindows++;
-                log.error("Rate history window {}/{} failed for {}: {}",
-                        i + 1, windows.size(), isinCode, e.getMessage());
+                log.error("Batch rate history window {}/{} failed: {}",
+                        i + 1, windows.size(), e.getMessage());
             }
         }
 
         if (successWindows == 0 && failedWindows > 0) {
             throw new BusinessException(
-                    "All " + failedWindows + " rate history windows failed for " + isinCode);
+                    "All " + failedWindows + " batched rate history windows failed");
         }
-        log.debug("Rate history for {}: {} windows OK, {} failed, {} records prepared",
-                isinCode, successWindows, failedWindows, allRecords.size());
-        return allRecords;
+        return byIsin;
     }
 
-    private List<BondRateHistory> fetchWindow(WindowedFetchPlanner.DateWindow window, String oranCode,
-                                               String isinCode, Bond bond) {
-        String start = window.start().format(EVDS_DATE_FMT);
-        String end = window.end().format(EVDS_DATE_FMT);
-        EvdsDataResponse response = evdsClient.fetchBondData(List.of(oranCode), start, end);
-        List<BondRateItemDto> rateItems = clientMapper.toRateItemDtos(response, oranCode);
-
-        List<BondRateHistory> records = new ArrayList<>(rateItems.size());
-        for (BondRateItemDto rateItem : rateItems) {
-            if (!rateHistoryRepository.existsByIsinCodeAndRateDate(isinCode, rateItem.rateDate())) {
-                records.add(BondRateHistory.builder()
-                        .bond(bond)
-                        .rateDate(rateItem.rateDate())
-                        .couponRate(rateItem.couponRate())
-                        .build());
-            }
-        }
-        return records;
-    }
 }

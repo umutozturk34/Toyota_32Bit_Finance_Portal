@@ -142,6 +142,7 @@ function NavGroupExpanded({ group, t, expanded, onToggle, isActive, hasActive, i
 
 function NavGroupCollapsed({ group, t, isActive, hasActive }) {
   const buttonRef = useRef(null);
+  const closeTimerRef = useRef(null);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const Icon = group.Icon;
@@ -153,16 +154,29 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
     }
   }, [open]);
 
+  const openNow = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    setOpen(true);
+  };
+
+  const scheduleClose = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = setTimeout(() => setOpen(false), 140);
+  };
+
   return (
     <>
       <button
         ref={buttonRef}
         type="button"
         title={t(group.labelKey)}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
+        onMouseEnter={openNow}
+        onMouseLeave={scheduleClose}
+        onFocus={openNow}
+        onBlur={scheduleClose}
         className={`group relative w-full flex items-center justify-center px-0 py-2 rounded-lg transition-all border-none cursor-pointer bg-transparent ${
           hasActive ? 'text-fg' : 'text-fg-muted hover:text-fg'
         }`}
@@ -188,12 +202,13 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: -10, scale: 0.96 }}
             transition={{ duration: 0.18, ease: [0.32, 0.72, 0, 1] }}
-            onMouseEnter={() => setOpen(true)}
-            onMouseLeave={() => setOpen(false)}
+            onMouseEnter={openNow}
+            onMouseLeave={scheduleClose}
             style={{
               position: 'fixed',
               top: pos.top,
-              left: pos.left,
+              left: pos.left - 8,
+              paddingLeft: 8,
               boxShadow: '0 20px 60px -15px rgba(0,0,0,0.65), 0 0 0 1px rgba(99,102,241,0.12), 0 0 80px -10px rgba(99,102,241,0.15)',
               background: 'var(--color-bg-deep)',
               backdropFilter: 'blur(20px)',

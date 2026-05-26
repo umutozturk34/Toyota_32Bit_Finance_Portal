@@ -306,6 +306,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             } catch { void 0; }
             if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, symbol, chartType, timeRange, i18n.language, showSecondaryLines, hasCompare]);
 
     useEffect(() => {

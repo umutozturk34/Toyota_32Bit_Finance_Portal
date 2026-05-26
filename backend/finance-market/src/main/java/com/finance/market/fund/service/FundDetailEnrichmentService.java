@@ -1,5 +1,6 @@
 package com.finance.market.fund.service;
 
+import com.finance.common.config.AppProperties;
 import com.finance.common.model.TrackedAssetType;
 import com.finance.market.core.cache.MarketCacheService;
 import com.finance.market.core.service.TrackedAssetQueryService;
@@ -14,13 +15,14 @@ import com.finance.market.fund.model.FundAllocation;
 import com.finance.market.fund.model.FundType;
 import com.finance.market.fund.repository.FundAllocationRepository;
 import com.finance.market.fund.repository.FundRepository;
-import lombok.RequiredArgsConstructor;
+import com.finance.market.fund.util.TefasHelper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +31,6 @@ import java.util.Set;
 
 @Log4j2
 @Service
-@RequiredArgsConstructor
 public class FundDetailEnrichmentService {
 
     private final TefasClient tefasClient;
@@ -38,6 +39,29 @@ public class FundDetailEnrichmentService {
     private final TrackedAssetQueryService trackedAssetQueryService;
     private final MarketCacheService<Fund> fundCacheService;
     private final FundProperties fundProperties;
+    private final ZoneId appZone;
+    private final int eodCutoverHour;
+
+    public FundDetailEnrichmentService(TefasClient tefasClient,
+                                       FundRepository fundRepository,
+                                       FundAllocationRepository allocationRepository,
+                                       TrackedAssetQueryService trackedAssetQueryService,
+                                       MarketCacheService<Fund> fundCacheService,
+                                       FundProperties fundProperties,
+                                       AppProperties appProperties) {
+        this.tefasClient = tefasClient;
+        this.fundRepository = fundRepository;
+        this.allocationRepository = allocationRepository;
+        this.trackedAssetQueryService = trackedAssetQueryService;
+        this.fundCacheService = fundCacheService;
+        this.fundProperties = fundProperties;
+        this.appZone = ZoneId.of(appProperties.getTimezone());
+        this.eodCutoverHour = fundProperties.getTefasEodCutoverHour();
+    }
+
+    private LocalDate effectiveDate(LocalDate requested) {
+        return TefasHelper.findLastBusinessDay(requested, appZone, eodCutoverHour);
+    }
 
     @Transactional
     public int enrichReturnsAndRisk() {
@@ -82,9 +106,10 @@ public class FundDetailEnrichmentService {
         }
         int updated = 0;
         int walkbackDays = fundProperties.getAllocationWalkbackDays();
+        LocalDate startDate = effectiveDate(date);
         for (FundType type : FundType.values()) {
             try {
-                LocalDate cursor = date;
+                LocalDate cursor = startDate;
                 List<TefasFundAllocationDto> rows = List.of();
                 for (int attempt = 0; attempt <= walkbackDays; attempt++) {
                     rows = tefasClient.fetchAllocations(type, cursor);
@@ -112,7 +137,7 @@ public class FundDetailEnrichmentService {
         Set<String> single = Set.of(fundCode);
         int walkbackDays = fundProperties.getAllocationWalkbackDays();
         try {
-            LocalDate cursor = date;
+            LocalDate cursor = effectiveDate(date);
             List<TefasFundAllocationDto> rows = List.of();
             for (int attempt = 0; attempt <= walkbackDays; attempt++) {
                 rows = tefasClient.fetchAllocations(type, cursor);

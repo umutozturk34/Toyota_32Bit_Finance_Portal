@@ -15,6 +15,7 @@
   "verifyEmail": true,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
+  "editUsernameAllowed": true,
   "sslRequired": "none",
   "smtpServer": {
     "host": "mailpit",

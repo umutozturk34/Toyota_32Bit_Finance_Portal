@@ -9,8 +9,6 @@ import com.finance.app.analytics.dto.request.ScenarioRequest;
 import com.finance.app.analytics.dto.response.ScenarioResponse;
 import com.finance.app.analytics.dto.response.ScenarioSeries;
 import com.finance.common.exception.BadRequestException;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.finance.common.model.Currency;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.TrackedAssetType;
@@ -23,15 +21,10 @@ import com.finance.market.macro.service.MacroIndicatorQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Set;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -88,12 +81,7 @@ public class InflationBeaterService {
     private final UnifiedHistoryService historyService;
     private final MacroIndicatorQueryService macroQueryService;
     private final TrackedAssetQueryService trackedAssetQueryService;
-
-    private final Cache<String, InflationBeaterResponse> cache = Caffeine.newBuilder()
-            .expireAfterWrite(Duration.ofHours(24))
-            .build();
-
-    private final Set<String> inFlight = ConcurrentHashMap.newKeySet();
+    private final BeaterCacheManager cacheManager;
 
     @Autowired(required = false)
     private AssetNativeCurrencyResolver nativeCurrencyResolver;
@@ -107,15 +95,41 @@ public class InflationBeaterService {
         if (months == null) {
             throw new BadRequestException("error.analytics.unknownPeriod", period);
         }
-        String code = (benchmarkCode != null && !benchmarkCode.isBlank())
-                ? benchmarkCode : DEFAULT_BENCHMARK;
+        String code = resolveBenchmarkCode(benchmarkCode);
         Currency override = parseCurrencyOverride(targetCurrencyOverride);
-        String key = cacheKey(period, code, override);
-        InflationBeaterResponse response = cache.get(key, k -> compute(period, code, months, override));
-        if (!isWorthCaching(response)) {
-            cache.invalidate(key);
-        }
-        return response;
+        String key = cacheManager.buildKey(period, code, override);
+        return cacheManager.getOrCompute(key, () -> compute(period, code, months, override));
+    }
+
+    public InflationBeaterResponse peekCache(String period, String benchmarkCode) {
+        Integer months = PERIOD_MONTHS.get(period);
+        if (months == null) return null;
+        String code = resolveBenchmarkCode(benchmarkCode);
+        return cacheManager.peek(cacheManager.buildKey(period, code, null));
+    }
+
+    public void warmAsync(String period, String benchmarkCode) {
+        Integer months = PERIOD_MONTHS.get(period);
+        if (months == null) return;
+        String code = resolveBenchmarkCode(benchmarkCode);
+        String key = cacheManager.buildKey(period, code, null);
+        cacheManager.warmAsync(key, period, code, () -> compute(period, code, months, null));
+    }
+
+    public void refresh(String period, String benchmarkCode) {
+        Integer months = PERIOD_MONTHS.get(period);
+        if (months == null) return;
+        String code = resolveBenchmarkCode(benchmarkCode);
+        String key = cacheManager.buildKey(period, code, null);
+        cacheManager.refresh(key, period, code, () -> compute(period, code, months, null));
+    }
+
+    public void clearCache() {
+        cacheManager.clear();
+    }
+
+    private static String resolveBenchmarkCode(String benchmarkCode) {
+        return (benchmarkCode != null && !benchmarkCode.isBlank()) ? benchmarkCode : DEFAULT_BENCHMARK;
     }
 
     private static Currency parseCurrencyOverride(String raw) {
@@ -123,66 +137,8 @@ public class InflationBeaterService {
         return Currency.fromCode(raw);
     }
 
-    private boolean isWorthCaching(InflationBeaterResponse r) {
-        return r != null && r.entries() != null && !r.entries().isEmpty();
-    }
-
-    public InflationBeaterResponse peekCache(String period, String benchmarkCode) {
-        Integer months = PERIOD_MONTHS.get(period);
-        if (months == null) return null;
-        String code = (benchmarkCode != null && !benchmarkCode.isBlank())
-                ? benchmarkCode : DEFAULT_BENCHMARK;
-        return cache.getIfPresent(cacheKey(period, code, null));
-    }
-
-    @Async
-    public void warmAsync(String period, String benchmarkCode) {
-        Integer months = PERIOD_MONTHS.get(period);
-        if (months == null) return;
-        String code = (benchmarkCode != null && !benchmarkCode.isBlank())
-                ? benchmarkCode : DEFAULT_BENCHMARK;
-        String key = cacheKey(period, code, null);
-        if (cache.getIfPresent(key) != null) return;
-        if (!inFlight.add(key)) return;
-        try {
-            InflationBeaterResponse result = compute(period, code, months, null);
-            if (isWorthCaching(result)) {
-                cache.put(key, result);
-            } else {
-                log.info("Beater async warm produced empty result, not caching period={} benchmark={}",
-                        period, code);
-            }
-        } catch (RuntimeException e) {
-            log.warn("Beater async warm failed period={} benchmark={}: {}", period, code, e.getMessage());
-        } finally {
-            inFlight.remove(key);
-        }
-    }
-
-    public void refresh(String period, String benchmarkCode) {
-        Integer months = PERIOD_MONTHS.get(period);
-        if (months == null) return;
-        String code = (benchmarkCode != null && !benchmarkCode.isBlank())
-                ? benchmarkCode : DEFAULT_BENCHMARK;
-        InflationBeaterResponse result = compute(period, code, months, null);
-        if (isWorthCaching(result)) {
-            cache.put(cacheKey(period, code, null), result);
-        } else {
-            log.info("Beater refresh produced empty result, skipping cache period={} benchmark={}",
-                    period, code);
-        }
-    }
-
-    public void clearCache() {
-        cache.invalidateAll();
-    }
-
-    private String cacheKey(String period, String code, Currency override) {
-        return period + "|" + code + "|" + (override != null ? override.name() : "AUTO");
-    }
-
     private InflationBeaterResponse compute(String period, String code, int months, Currency override) {
-        LocalDate endDate = LocalDate.now();
+        LocalDate endDate = resolveStableEndDate(code);
         LocalDate startDate = endDate.minusMonths(months);
 
         MacroIndicator benchmark = macroQueryService.findByCode(code);
@@ -266,6 +222,18 @@ public class InflationBeaterService {
             out.put(c.type + "|" + c.code, c.name);
         }
         return out;
+    }
+
+    private LocalDate resolveStableEndDate(String code) {
+        LocalDate today = LocalDate.now();
+        List<HistoryPoint> recent = historyService.getMacroSeries(code,
+                today.minusMonths(3), today);
+        LocalDate latest = null;
+        for (HistoryPoint p : recent) {
+            if (p == null || p.date() == null || p.value() == null) continue;
+            if (latest == null || p.date().isAfter(latest)) latest = p.date();
+        }
+        return latest != null ? latest : today;
     }
 
     private BigDecimal computeIndexGrowthPct(String code, LocalDate start, LocalDate end) {

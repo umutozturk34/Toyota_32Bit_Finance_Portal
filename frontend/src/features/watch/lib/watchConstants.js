@@ -16,7 +16,7 @@ const ROUTE_BY_TYPE = {
   FUND: (code) => `/funds/${encodeURIComponent(code)}`,
   COMMODITY: (code) => `/commodities/${encodeURIComponent(code)}`,
   VIOP: (code) => `/viop/${encodeURIComponent(code)}`,
-  BOND: () => '/bonds',
+  BOND: (code) => `/bonds/${encodeURIComponent(code)}`,
 };
 
 export function assetRoute(marketType, assetCode) {

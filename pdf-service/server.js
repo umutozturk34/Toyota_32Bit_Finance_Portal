@@ -6,7 +6,8 @@ const puppeteer = require('puppeteer');
 
 const PORT = Number(process.env.PORT) || 8080;
 const IDLE_CLOSE_MS = Number(process.env.PDF_IDLE_CLOSE_MS) || 5 * 60 * 1000;
-const DEFAULT_TIMEOUT_MS = 20000;
+const DEFAULT_TIMEOUT_MS = Number(process.env.PDF_RENDER_TIMEOUT_MS) || 20000;
+const BODY_LIMIT = process.env.PDF_BODY_LIMIT || '1mb';
 
 const LAUNCH_ARGS = [
   '--no-sandbox',
@@ -16,9 +17,14 @@ const LAUNCH_ARGS = [
 ];
 
 const DEFAULT_PDF_OPTIONS = {
-  format: 'A4',
+  format: process.env.PDF_PAGE_FORMAT || 'A4',
   printBackground: true,
-  margin: { top: '14mm', right: '12mm', bottom: '16mm', left: '12mm' },
+  margin: {
+    top: process.env.PDF_MARGIN_TOP || '14mm',
+    right: process.env.PDF_MARGIN_RIGHT || '12mm',
+    bottom: process.env.PDF_MARGIN_BOTTOM || '16mm',
+    left: process.env.PDF_MARGIN_LEFT || '12mm',
+  },
 };
 
 let browserPromise = null;
@@ -105,7 +111,7 @@ function classifyError(err) {
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: BODY_LIMIT }));
 
 app.use((req, res, next) => {
   const start = Date.now();

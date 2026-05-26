@@ -107,7 +107,7 @@ class EvdsBondClientMapperTest {
     void toRateItemDtos_returnsEmpty_whenItemsNull() {
         EvdsDataResponse response = new EvdsDataResponse(0, null);
 
-        List<BondRateItemDto> result = mapper.toRateItemDtos(response, "TP.TRT271235T17.ORAN");
+        List<BondRateItemDto> result = mapper.toRateItemDtos(response, "TP.TRT271235T17.ORAN", null);
 
         assertThat(result).isEmpty();
     }
@@ -118,7 +118,7 @@ class EvdsBondClientMapperTest {
         Map<String, Object> b = itemWith("TP_TRT271235T17_ORAN", "10.7", "02-05-2026");
         EvdsDataResponse response = new EvdsDataResponse(2, List.of(a, b));
 
-        List<BondRateItemDto> result = mapper.toRateItemDtos(response, "TP.TRT271235T17.ORAN");
+        List<BondRateItemDto> result = mapper.toRateItemDtos(response, "TP.TRT271235T17.ORAN", null);
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).couponRate()).isEqualByComparingTo(new BigDecimal("10.5"));
@@ -133,7 +133,7 @@ class EvdsBondClientMapperTest {
         Map<String, Object> valid = itemWith("TP_TRT271235T17_ORAN", "10.7", "02-05-2026");
         EvdsDataResponse response = new EvdsDataResponse(3, List.of(withDateNoRate, withRateNoDate, valid));
 
-        List<BondRateItemDto> result = mapper.toRateItemDtos(response, "TP.TRT271235T17.ORAN");
+        List<BondRateItemDto> result = mapper.toRateItemDtos(response, "TP.TRT271235T17.ORAN", null);
 
         assertThat(result).hasSize(1);
     }
@@ -143,9 +143,37 @@ class EvdsBondClientMapperTest {
         Map<String, Object> bad = itemWith("TP_TRT271235T17_ORAN", "10.5", "not-a-date");
         EvdsDataResponse response = new EvdsDataResponse(1, List.of(bad));
 
-        List<BondRateItemDto> result = mapper.toRateItemDtos(response, "TP.TRT271235T17.ORAN");
+        List<BondRateItemDto> result = mapper.toRateItemDtos(response, "TP.TRT271235T17.ORAN", null);
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void toRateItemDtos_extractsPrice_whenPriceCodeProvided() {
+        Map<String, Object> item = new HashMap<>();
+        item.put("TP_TRT271235T17_ORAN", "10.5");
+        item.put("TP_TRT271235T17_TL_PY", "98.7500");
+        item.put("Tarih", "01-05-2026");
+        EvdsDataResponse response = new EvdsDataResponse(1, List.of(item));
+
+        List<BondRateItemDto> result = mapper.toRateItemDtos(response,
+                "TP.TRT271235T17.ORAN", "TP.TRT271235T17.TL.PY");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).couponRate()).isEqualByComparingTo(new BigDecimal("10.5"));
+        assertThat(result.get(0).price()).isEqualByComparingTo(new BigDecimal("98.7500"));
+    }
+
+    @Test
+    void toRateItemDtos_leavesPriceNull_whenPriceCodeProvidedButValueMissing() {
+        Map<String, Object> item = itemWith("TP_TRT271235T17_ORAN", "10.5", "01-05-2026");
+        EvdsDataResponse response = new EvdsDataResponse(1, List.of(item));
+
+        List<BondRateItemDto> result = mapper.toRateItemDtos(response,
+                "TP.TRT271235T17.ORAN", "TP.TRT271235T17.TL.PY");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).price()).isNull();
     }
 
     @Test

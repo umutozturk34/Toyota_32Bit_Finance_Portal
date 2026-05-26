@@ -179,9 +179,7 @@
             <div>
                 <div class="hero-label" th:text="#{pdf.summary.marketValue}">MARKET VALUE</div>
                 <div class="hero-value num"
-                     th:text="${summary != null and summary.totalValueTry() != null}
-                         ? ${currencySymbol} + ' ' + ${#numbers.formatDecimal(summary.totalValueTry(), 1, decimalGroupSep, 2, decimalSep)}
-                         : '—'">—</div>
+                     th:text="${summary != null ? money.of(summary.totalValueTry()) : '—'}">—</div>
                 <div style="margin-top:8px;font-size:11.5px;color:[[${palette.muted}]];font-weight:500;"
                      th:text="${portfolioName}">Portfolio</div>
             </div>
@@ -189,13 +187,13 @@
                 <span class="hero-pill num"
                       th:classappend="${summary.totalPnlTry().signum() >= 0} ? 'pill-gain' : 'pill-loss'">
                     <span style="font-size:9px;" th:text="${summary.totalPnlTry().signum() >= 0} ? '▲' : '▼'">▲</span>
-                    <span th:text="${(summary.totalPnlTry().signum() >= 0 ? '+' : '') + currencySymbol + ' ' + #numbers.formatDecimal(summary.totalPnlTry(), 1, decimalGroupSep, 2, decimalSep)}">+₺ 0,00</span>
+                    <span th:text="${money.signed(summary.totalPnlTry())}">+₺ 0,00</span>
                     <span th:if="${summary.pnlPercent() != null}" style="opacity:0.85;font-weight:600;"
                           th:text="'(' + (${summary.totalPnlTry().signum() >= 0} ? '+' : '') + ${#numbers.formatDecimal(summary.pnlPercent(), 1, decimalGroupSep, 2, decimalSep)} + '%)'">(0,00%)</span>
                 </span>
                 <div class="hero-daily num" th:if="${summary.dailyPnlTry() != null}">
                     <span th:text="${summary.dailyPnlTry().signum() >= 0} ? '▲' : '▼'">▲</span>
-                    <span th:text="${(summary.dailyPnlTry().signum() >= 0 ? '+' : '') + currencySymbol + ' ' + #numbers.formatDecimal(summary.dailyPnlTry(), 1, decimalGroupSep, 2, decimalSep)}">+₺ 0,00</span>
+                    <span th:text="${money.signed(summary.dailyPnlTry())}">+₺ 0,00</span>
                     <span th:if="${summary.dailyPnlPercent() != null}"
                           th:text="'(' + (${summary.dailyPnlTry().signum() >= 0} ? '+' : '') + ${#numbers.formatDecimal(summary.dailyPnlPercent(), 1, decimalGroupSep, 2, decimalSep)} + '%)'">(0,00%)</span>
                     <span style="opacity:0.8;" th:text="#{pdf.summary.deltaToday}">today</span>
@@ -208,28 +206,25 @@
                 <tbody>
                     <tr>
                         <td class="label" th:text="#{pdf.summary.totalCost}">TOTAL COST</td>
-                        <td class="value num"
-                            th:text="${summary != null and summary.totalEntryValueTry() != null}
-                                ? ${currencySymbol} + ' ' + ${#numbers.formatDecimal(summary.totalEntryValueTry(), 1, decimalGroupSep, 2, decimalSep)}
-                                : '—'">—</td>
+                        <td class="value num" th:text="${summary != null ? money.of(summary.totalEntryValueTry()) : '—'}">—</td>
                     </tr>
                     <tr th:if="${summary != null and summary.totalPnlTry() != null}">
                         <td class="label" th:text="#{pdf.summary.profitLoss}">TOTAL P&L</td>
                         <td class="value num"
                             th:classappend="${summary.totalPnlTry().signum() >= 0} ? 'gain' : 'loss'"
-                            th:text="${(summary.totalPnlTry().signum() >= 0 ? '+' : '') + currencySymbol + ' ' + #numbers.formatDecimal(summary.totalPnlTry(), 1, decimalGroupSep, 2, decimalSep)}">—</td>
+                            th:text="${money.signed(summary.totalPnlTry())}">—</td>
                     </tr>
                     <tr th:if="${summary != null and summary.dailyPnlTry() != null}">
                         <td class="label" th:text="#{pdf.summary.dailyPnl}">DAILY P&L</td>
                         <td class="value num"
                             th:classappend="${summary.dailyPnlTry().signum() >= 0} ? 'gain' : 'loss'"
-                            th:text="${(summary.dailyPnlTry().signum() >= 0 ? '+' : '') + currencySymbol + ' ' + #numbers.formatDecimal(summary.dailyPnlTry(), 1, decimalGroupSep, 2, decimalSep)}">—</td>
+                            th:text="${money.signed(summary.dailyPnlTry())}">—</td>
                     </tr>
                     <tr th:if="${summary != null and summary.realPnlTry() != null}">
                         <td class="label" th:text="#{pdf.summary.realPnl}">REAL P&L</td>
                         <td class="value num"
                             th:classappend="${summary.realPnlTry().signum() >= 0} ? 'gain' : 'loss'"
-                            th:text="${(summary.realPnlTry().signum() >= 0 ? '+' : '') + currencySymbol + ' ' + #numbers.formatDecimal(summary.realPnlTry(), 1, decimalGroupSep, 2, decimalSep)}">—</td>
+                            th:text="${money.signed(summary.realPnlTry())}">—</td>
                     </tr>
                     <tr th:if="${summary != null and summary.cpiGrowthPercent() != null}">
                         <td class="label" th:text="#{pdf.summary.cpiGrowth}">CPI GROWTH</td>
@@ -273,7 +268,7 @@
                         </td>
                         <td th:text="${it.label}">Label</td>
                         <td class="r share num" th:text="${#numbers.formatDecimal(it.sharePct, 1, decimalGroupSep, 1, decimalSep)} + '%'">0%</td>
-                        <td class="r num" th:text="${currencySymbol} + ' ' + ${#numbers.formatDecimal(it.value, 1, decimalGroupSep, 2, decimalSep)}">—</td>
+                        <td class="r num" th:text="${money.of(it.value)}">—</td>
                     </tr>
                 </tbody>
             </table>
@@ -311,14 +306,13 @@
                 <div class="realized-row" th:each="w : ${winners}">
                     <div class="realized-line">
                         <span class="realized-name" th:text="${w.label}">Label</span>
-                        <span class="num gain"
-                              th:text="'+ ' + ${currencySymbol} + ' ' + ${#numbers.formatDecimal(w.realized, 1, decimalGroupSep, 2, decimalSep)}">+₺ 0</span>
+                        <span class="num gain" th:text="'+ ' + ${moneyTry.of(w.realized)}">+₺ 0</span>
                     </div>
                     <div class="realized-bar-bg">
                         <div class="realized-bar-fill" th:style="'width:' + ${w.barPct} + '%;background:' + ${palette.successFg}"></div>
                     </div>
                     <div class="realized-cost num"
-                         th:text="#{pdf.realized.cost} + ': ' + ${currencySymbol} + ' ' + ${#numbers.formatDecimal(w.cost, 1, decimalGroupSep, 2, decimalSep)}">cost</div>
+                         th:text="#{pdf.realized.cost} + ': ' + ${moneyTry.of(w.cost)}">cost</div>
                 </div>
             </div>
             <div class="realized-col">
@@ -327,14 +321,13 @@
                 <div class="realized-row" th:each="l : ${losers}">
                     <div class="realized-line">
                         <span class="realized-name" th:text="${l.label}">Label</span>
-                        <span class="num loss"
-                              th:text="'− ' + ${currencySymbol} + ' ' + ${#numbers.formatDecimal(l.realized, 1, decimalGroupSep, 2, decimalSep)}">−₺ 0</span>
+                        <span class="num loss" th:text="'− ' + ${moneyTry.of(l.realized)}">−₺ 0</span>
                     </div>
                     <div class="realized-bar-bg">
                         <div class="realized-bar-fill" th:style="'width:' + ${l.barPct} + '%;background:' + ${palette.dangerFg}"></div>
                     </div>
                     <div class="realized-cost num"
-                         th:text="#{pdf.realized.cost} + ': ' + ${currencySymbol} + ' ' + ${#numbers.formatDecimal(l.cost, 1, decimalGroupSep, 2, decimalSep)}">cost</div>
+                         th:text="#{pdf.realized.cost} + ': ' + ${moneyTry.of(l.cost)}">cost</div>
                 </div>
             </div>
         </div>
@@ -385,15 +378,12 @@
                         th:text="${p.entryDate() != null ? #temporals.format(p.entryDate(), 'dd MMM yy') : '—'}">—</td>
                     <td class="num" style="font-size:9.5px;color:[[${palette.muted}]];"
                         th:text="${p.isClosed() and p.exitDate() != null ? #temporals.format(p.exitDate(), 'dd MMM yy') : '—'}">—</td>
-                    <td class="r num"
-                        th:text="${p.entryPrice() != null ? currencySymbol + ' ' + #numbers.formatDecimal(p.entryPrice(), 1, decimalGroupSep, 2, decimalSep) : '—'}">—</td>
-                    <td class="r num"
-                        th:text="${p.currentPriceTry() != null ? currencySymbol + ' ' + #numbers.formatDecimal(p.currentPriceTry(), 1, decimalGroupSep, 2, decimalSep) : '—'}">—</td>
-                    <td class="r num" style="font-weight:600;"
-                        th:text="${p.marketValueTry() != null ? currencySymbol + ' ' + #numbers.formatDecimal(p.marketValueTry(), 1, decimalGroupSep, 2, decimalSep) : '—'}">—</td>
+                    <td class="r num" th:text="${money.of(p.entryPrice())}">—</td>
+                    <td class="r num" th:text="${money.of(p.currentPriceTry())}">—</td>
+                    <td class="r num" style="font-weight:600;" th:text="${money.of(p.marketValueTry())}">—</td>
                     <td class="r num" style="font-weight:700;"
                         th:classappend="${p.pnlTry() != null and p.pnlTry().signum() >= 0} ? 'gain' : 'loss'"
-                        th:text="${p.pnlTry() != null ? (p.pnlTry().signum() >= 0 ? '+' : '') + currencySymbol + ' ' + #numbers.formatDecimal(p.pnlTry(), 1, decimalGroupSep, 2, decimalSep) : '—'}">—</td>
+                        th:text="${money.signed(p.pnlTry())}">—</td>
                 </tr>
             </tbody>
         </table>

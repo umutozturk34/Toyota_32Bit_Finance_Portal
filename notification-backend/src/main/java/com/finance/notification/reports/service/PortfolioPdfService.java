@@ -1,14 +1,14 @@
 package com.finance.notification.reports.service;
 
+import com.finance.common.exception.BadRequestException;
 import com.finance.notification.config.PdfExportProperties;
 import com.finance.notification.reports.client.PortfolioDataClient;
-import com.finance.notification.reports.dto.PerformanceSeriesPoint;
 import com.finance.notification.reports.dto.PortfolioPdfRequest;
 import com.finance.notification.reports.dto.PortfolioReportBundle;
 import com.finance.notification.reports.dto.ReportAllocation;
-import com.finance.notification.reports.dto.ReportPosition;
 import com.finance.notification.reports.model.ReportPalette;
 import com.finance.notification.reports.view.AllocationViewItem;
+import com.finance.notification.reports.view.MoneyFormat;
 import com.finance.notification.reports.view.RealizedViewItem;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.MessageSource;
@@ -53,6 +53,7 @@ public class PortfolioPdfService {
     private final MessageSource messageSource;
     private final ReportSvgService svgService;
     private final Duration requestTimeout;
+    private final long requestTimeoutMs;
 
     public PortfolioPdfService(WebClient.Builder webClientBuilder,
                                PortfolioDataClient dataClient,
@@ -68,13 +69,17 @@ public class PortfolioPdfService {
                 .baseUrl(properties.pdf().serviceUrl())
                 .codecs(c -> c.defaultCodecs().maxInMemorySize(MAX_PDF_BYTES))
                 .build();
-        this.requestTimeout = Duration.ofMillis(properties.pdf().requestTimeoutMs());
+        this.requestTimeoutMs = properties.pdf().requestTimeoutMs();
+        this.requestTimeout = Duration.ofMillis(this.requestTimeoutMs);
     }
 
     public byte[] generate(PortfolioPdfRequest request, String userSub, String accessToken) {
         long start = System.currentTimeMillis();
         try {
             PortfolioReportBundle bundle = dataClient.fetch(request.portfolioId(), "ALL", accessToken);
+            if (bundle.positions() == null || bundle.positions().isEmpty()) {
+                throw new BadRequestException("error.report.portfolioEmpty");
+            }
             Locale locale = "en".equalsIgnoreCase(request.locale()) ? Locale.ENGLISH : new Locale("tr", "TR");
             ReportPalette palette = ReportPalette.of(request.theme());
             String currencySymbol = currencySymbol(request.currency());
@@ -87,6 +92,8 @@ public class PortfolioPdfService {
             ctx.setVariable("locale", locale.getLanguage());
             ctx.setVariable("decimalGroupSep", "tr".equalsIgnoreCase(locale.getLanguage()) ? "POINT" : "COMMA");
             ctx.setVariable("decimalSep", "tr".equalsIgnoreCase(locale.getLanguage()) ? "COMMA" : "POINT");
+            ctx.setVariable("money", new MoneyFormat(currencySymbol, locale));
+            ctx.setVariable("moneyTry", new MoneyFormat("₺", locale));
             ctx.setVariable("generatedAt", LocalDateTime.now().format(GENERATED_FMT.withLocale(locale)));
             ctx.setVariable("summary", bundle.summary());
             ctx.setVariable("positions", bundle.positions());
@@ -110,6 +117,9 @@ public class PortfolioPdfService {
             log.error("Portfolio PDF generation failed portfolioId={} durationMs={} cause={}",
                     request.portfolioId(), System.currentTimeMillis() - start, e.toString());
             throw e;
+        } catch (BadRequestException e) {
+            log.info("Portfolio PDF rejected portfolioId={} reason={}", request.portfolioId(), e.getMessage());
+            throw e;
         } catch (WebClientResponseException e) {
             log.error("Portfolio PDF http failure portfolioId={} status={} body={} durationMs={}",
                     request.portfolioId(), e.getStatusCode(),
@@ -130,7 +140,7 @@ public class PortfolioPdfService {
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("htmlContent", html);
-        body.put("timeout", 25000);
+        body.put("timeout", requestTimeoutMs);
         body.put("pdfOptions", pdfOptions);
 
         byte[] pdf = pdfClient.post()

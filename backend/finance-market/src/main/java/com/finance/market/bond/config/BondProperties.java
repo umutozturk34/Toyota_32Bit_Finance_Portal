@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 public class BondProperties {
 
     private int batchSize = 200;
+    private int historyBatchSize = 8;
     private String datagroupCode = "bie_pydibs";
     private int maxDaysPerRequest = 1000;
     private BigDecimal rateThreshold = new BigDecimal("0.5");

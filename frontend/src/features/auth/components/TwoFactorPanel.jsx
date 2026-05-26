@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { STALE } from '../../../shared/constants/query';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Shield, ShieldOff, RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Shield, ShieldOff, RefreshCw, AlertTriangle, CheckCircle, Smartphone, Trash2, Plus } from 'lucide-react';
 import keycloak from '../lib/keycloak';
 import { userCredentialService } from '../../../shared/services/userCredentialService';
 import { toast } from '../../../shared/components/feedback/toastBus';
@@ -10,6 +10,7 @@ import ConfirmDialog from '../../../shared/components/modal/ConfirmDialog';
 import Spinner from '../../../shared/components/feedback/Spinner';
 
 const STATUS_KEY = ['twoFactor', 'status'];
+const DEVICES_KEY = ['twoFactor', 'devices'];
 
 function useTwoFactorStatus() {
     return useQuery({
@@ -20,19 +21,53 @@ function useTwoFactorStatus() {
     });
 }
 
+function useTwoFactorDevices(enabled) {
+    return useQuery({
+        queryKey: DEVICES_KEY,
+        queryFn: userCredentialService.listTwoFactorDevices,
+        staleTime: STALE.MEDIUM,
+        refetchOnWindowFocus: false,
+        enabled,
+    });
+}
+
 function useDisableTwoFactor() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: userCredentialService.disableTwoFactor,
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: STATUS_KEY }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: STATUS_KEY });
+            queryClient.invalidateQueries({ queryKey: DEVICES_KEY });
+        },
     });
+}
+
+function useRemoveTwoFactorDevice() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (credentialId) => userCredentialService.removeTwoFactorDevice(credentialId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: STATUS_KEY });
+            queryClient.invalidateQueries({ queryKey: DEVICES_KEY });
+        },
+    });
+}
+
+function formatDeviceDate(ms, localeTag) {
+    if (!ms) return null;
+    return new Date(ms).toLocaleDateString(localeTag, { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 export default function TwoFactorPanel() {
     const { t } = useTranslation();
+    const localeTag = t('common.localeTag');
     const { data: status, isLoading } = useTwoFactorStatus();
+    const enabledStatus = !!status?.configured;
+    const { data: devices = [], isLoading: devicesLoading } = useTwoFactorDevices(enabledStatus);
     const disable = useDisableTwoFactor();
+    const removeDevice = useRemoveTwoFactorDevice();
     const [confirmOpen, setConfirmOpen] = useState(false);
+    const [removeTarget, setRemoveTarget] = useState(null);
 
     const handleSetup = () => {
         toast.info(t('twoFactor.redirecting'), t('twoFactor.redirectingHint'));
@@ -47,6 +82,17 @@ export default function TwoFactorPanel() {
             await disable.mutateAsync();
             toast.success(t('twoFactor.disabledTitle'), t('twoFactor.disabledBody'));
             setConfirmOpen(false);
+        } catch (err) {
+            toast.error(t('error.actionFailed'), err?.response?.data?.message || t('common.retry'));
+        }
+    };
+
+    const handleRemoveDevice = async () => {
+        if (!removeTarget) return;
+        try {
+            await removeDevice.mutateAsync(removeTarget.id);
+            toast.success(t('twoFactor.deviceRemovedTitle'), t('twoFactor.deviceRemovedBody'));
+            setRemoveTarget(null);
         } catch (err) {
             toast.error(t('error.actionFailed'), err?.response?.data?.message || t('common.retry'));
         }
@@ -80,23 +126,53 @@ export default function TwoFactorPanel() {
             </p>
 
             {enabled ? (
-                <div className="flex gap-2">
-                    <button
-                        onClick={handleSetup}
-                        className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated hover:bg-surface text-fg py-2.5 text-xs font-semibold transition-colors cursor-pointer"
-                    >
-                        <RefreshCw className="h-3.5 w-3.5 text-accent" />
-                        {t('twoFactor.reSetup')}
-                    </button>
-                    <button
-                        onClick={() => setConfirmOpen(true)}
-                        disabled={disable.isPending}
-                        className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-danger/30 bg-danger/5 hover:bg-danger/10 text-danger py-2.5 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                        <ShieldOff className="h-3.5 w-3.5" />
-                        {t('twoFactor.disable')}
-                    </button>
-                </div>
+                <>
+                    {!devicesLoading && devices.length > 0 && (
+                        <ul className="space-y-1.5 rounded-lg border border-border-default bg-bg-elevated/40 p-1.5">
+                            {devices.map((device) => (
+                                <li key={device.id} className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-surface/60 transition-colors">
+                                    <Smartphone className="h-3.5 w-3.5 text-accent shrink-0" />
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-medium text-fg truncate">
+                                            {device.label || t('twoFactor.deviceFallbackName')}
+                                        </p>
+                                        {device.createdAt && (
+                                            <p className="text-[10px] text-fg-subtle font-mono">
+                                                {formatDeviceDate(device.createdAt, localeTag)}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setRemoveTarget(device)}
+                                        disabled={removeDevice.isPending}
+                                        title={t('twoFactor.deviceRemoveAction')}
+                                        className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-danger hover:bg-danger/10 bg-transparent border-none cursor-pointer transition-colors disabled:opacity-50"
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleSetup}
+                            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated hover:bg-surface text-fg py-2.5 text-xs font-semibold transition-colors cursor-pointer"
+                        >
+                            <Plus className="h-3.5 w-3.5 text-accent" />
+                            {t('twoFactor.addDevice')}
+                        </button>
+                        <button
+                            onClick={() => setConfirmOpen(true)}
+                            disabled={disable.isPending}
+                            className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-danger/30 bg-danger/5 hover:bg-danger/10 text-danger py-2.5 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                            <ShieldOff className="h-3.5 w-3.5" />
+                            {t('twoFactor.disable')}
+                        </button>
+                    </div>
+                </>
             ) : (
                 <button
                     onClick={handleSetup}
@@ -121,6 +197,18 @@ export default function TwoFactorPanel() {
                 loading={disable.isPending}
                 onConfirm={handleDisable}
                 onCancel={() => setConfirmOpen(false)}
+            />
+
+            <ConfirmDialog
+                open={!!removeTarget}
+                title={t('twoFactor.deviceRemoveConfirmTitle')}
+                message={t('twoFactor.deviceRemoveConfirmBody', { name: removeTarget?.label || t('twoFactor.deviceFallbackName') })}
+                confirmLabel={t('common.delete')}
+                cancelLabel={t('common.cancel')}
+                variant="danger"
+                loading={removeDevice.isPending}
+                onConfirm={handleRemoveDevice}
+                onCancel={() => setRemoveTarget(null)}
             />
         </div>
     );

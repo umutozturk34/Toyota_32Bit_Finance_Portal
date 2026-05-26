@@ -16,8 +16,9 @@ export const bondService = {
     }
   },
 
-  getRateHistory: async (isinCode) => {
-    const response = await api.get(`/bonds/rate-history/${isinCode}`);
+  getRateHistory: async (isinCode, period) => {
+    const params = period ? { period } : {};
+    const response = await api.get(`/bonds/rate-history/${isinCode}`, { params });
     return response.data.data;
   },
 

@@ -63,7 +63,7 @@ export default function DepositMatrix({ indicators, onOpen }) {
         </span>
       </div>
 
-      <div className="overflow-x-auto -mx-1">
+      <div className="overflow-x-auto">
         <table className="w-full text-xs border-separate border-spacing-1 min-w-[520px]">
           <thead>
             <tr>

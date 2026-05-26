@@ -1,0 +1,1 @@
+export const SUPPORTED_DISPLAY_CURRENCIES = ['TRY', 'USD', 'EUR'];

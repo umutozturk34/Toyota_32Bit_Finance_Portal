@@ -79,6 +79,7 @@ const useDrawingInteraction = ({
             magnetManagerRef.current.destroy();
             magnetManagerRef.current = null;
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -97,6 +98,7 @@ const useDrawingInteraction = ({
         const mgr = magnetManagerRef.current;
         if (!mgr) return;
         mgr.setCandles(candleDataRef.current || []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, symbol]);
 
     useEffect(() => {

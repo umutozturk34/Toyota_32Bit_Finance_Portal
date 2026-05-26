@@ -91,6 +91,30 @@ class TwoFactorServiceTest {
     }
 
     @Test
+    void devices_returnsOnlyOtpEntries_withLabelAndCreatedAt() {
+        when(client.listCredentials(USER)).thenReturn(List.of(
+                Map.of("type", "otp", "id", "otp-1", "userLabel", "Phone", "createdDate", 1700000000000L),
+                Map.of("type", "password", "id", "pw-1"),
+                Map.of("type", "otp", "id", "otp-2")
+        ));
+
+        List<TwoFactorService.TwoFactorDevice> devices = service.devices(USER);
+
+        assertThat(devices).hasSize(2);
+        assertThat(devices.get(0).id()).isEqualTo("otp-1");
+        assertThat(devices.get(0).label()).isEqualTo("Phone");
+        assertThat(devices.get(0).createdAt()).isEqualTo(1700000000000L);
+        assertThat(devices.get(1).label()).isNull();
+    }
+
+    @Test
+    void removeDevice_delegatesToClient() {
+        service.removeDevice(USER, "otp-1");
+
+        verify(client).deleteCredential(USER, "otp-1");
+    }
+
+    @Test
     void disable_skipsOtpCredentialsMissingId() {
         when(client.listCredentials(USER)).thenReturn(List.of(
                 Map.of("type", "otp", "label", "missing-id")

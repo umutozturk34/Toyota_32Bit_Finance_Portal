@@ -131,4 +131,29 @@ class UserCredentialControllerTest {
         assertThat(response.getMessage()).isEqualTo("disabled");
         assertThat(response.getData()).isEqualTo(2);
     }
+
+    @Test
+    void listTwoFactorDevices_returnsDeviceList() {
+        java.util.List<com.finance.user.service.TwoFactorService.TwoFactorDevice> devices =
+                java.util.List.of(new com.finance.user.service.TwoFactorService.TwoFactorDevice(
+                        "c-1", "Authenticator", 1700000000000L));
+        when(twoFactorService.devices(USER)).thenReturn(devices);
+        when(translator.translate("api.credential.twoFactorDevicesListed")).thenReturn("listed");
+
+        ApiResponse<java.util.List<com.finance.user.service.TwoFactorService.TwoFactorDevice>> response =
+                controller.listTwoFactorDevices(jwt);
+
+        assertThat(response.getMessage()).isEqualTo("listed");
+        assertThat(response.getData()).isSameAs(devices);
+    }
+
+    @Test
+    void removeTwoFactorDevice_delegatesToServiceAndReturnsMessage() {
+        when(translator.translate("api.credential.twoFactorDeviceRemoved")).thenReturn("removed");
+
+        ApiResponse<Void> response = controller.removeTwoFactorDevice(jwt, "cred-99");
+
+        assertThat(response.getMessage()).isEqualTo("removed");
+        verify(twoFactorService).removeDevice(USER, "cred-99");
+    }
 }

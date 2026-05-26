@@ -236,6 +236,7 @@ const useDrawingRenderer = ({
         if (mgr) {
             drawSnapIndicator(ctx, mgr.getSnap(), { width: rect.width, height: rect.height });
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [drawings, fibTools, isDrawing, startPoint, currentPoint, activeTool, activeFibTool, chartCoordsToPixel, pixelToChartCoords, isDark, highlight]);
 
     return { renderDrawings };

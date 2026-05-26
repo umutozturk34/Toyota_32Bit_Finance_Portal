@@ -93,7 +93,6 @@ class BondQueryServiceTest {
 
         service.search(null, "DISCOUNTED", null, null, 0, null);
 
-        // assertion implicit via successful run with bondType filter applied
         assertThat(service).isNotNull();
     }
 
@@ -142,7 +141,7 @@ class BondQueryServiceTest {
                 .build();
         when(bondRateHistoryRepository.findByIsinCodeAndRateDateAfterOrderByRateDateAsc(
                 eqStr("ISIN1"), any(LocalDate.class))).thenReturn(List.of(entry));
-        BondRateResponse mapped = new BondRateResponse(LocalDate.of(2026, 1, 1), new BigDecimal("10"));
+        BondRateResponse mapped = new BondRateResponse(LocalDate.of(2026, 1, 1), new BigDecimal("10"), null);
         when(bondResponseMapper.toRateResponses(List.of(entry))).thenReturn(List.of(mapped));
 
         List<BondRateResponse> result = service.getRateHistory("ISIN1", CandlePeriod.ONE_YEAR);

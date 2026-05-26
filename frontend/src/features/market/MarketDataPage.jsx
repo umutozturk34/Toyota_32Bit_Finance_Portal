@@ -1,8 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, LayoutGrid, Save, RotateCcw, ToggleRight, ToggleLeft, ChevronUp, ChevronDown, Banknote, BarChart3 } from 'lucide-react';
 import BankRatesPanel from '../bankRates/BankRatesPanel';
 import MacroIndicatorsPanel from '../macro/MacroIndicatorsPanel';
@@ -11,246 +8,34 @@ import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import Spinner from '../../shared/components/feedback/Spinner';
 import SearchSuggestions from '../../shared/components/form/SearchSuggestions';
-import {
-  useUserLayout,
-  useUpdateOverviewLayout,
-  DEFAULT_OVERVIEW_LAYOUT,
-  MAX_PAGES,
-  SCHEMA_VERSION,
-} from '../../shared/hooks/useUserLayout';
+import { MAX_PAGES } from '../../shared/hooks/useUserLayout';
 import { useMarketOverview } from '../../shared/hooks/useMarketOverview';
-import { useWidgetDefinitions } from '../../shared/hooks/useWidgetDefinitions';
 import { useWatchlists } from '../../shared/hooks/useWatchlist';
-import { newSectionId } from './sections/sectionRegistry';
 import OverviewLayout from './components/OverviewLayout';
-import OverviewWidgetCanvas from './components/OverviewWidgetCanvas';
-import WidgetTray from './components/WidgetTray';
 import WidgetSettingsPopover from './components/WidgetSettingsPopover';
 import OverviewPageTabs from './components/OverviewPageTabs';
-
-const REMOVAL_ANIMATION_MS = 200;
-
-function newPageId() {
-  return `page-${Math.random().toString(36).slice(2, 8)}`;
-}
+import MarketCanvas from './MarketCanvas';
+import MarketWidgetGallery from './MarketWidgetGallery';
+import { useMarketTabs } from './hooks/useMarketTabs';
+import { useMarketLayout } from './hooks/useMarketLayout';
 
 export default function MarketDataPage() {
   const { t } = useTranslation();
-  const [editMode, setEditMode] = useState(false);
-  const [pendingTile, setPendingTile] = useState(null);
-  const [localPages, setLocalPages] = useState(null);
-  const [userPickedPageId, setUserPickedPageId] = useState(null);
-  const [deletingIds, setDeletingIds] = useState(() => new Set());
-  const [popoverState, setPopoverState] = useState(null);
-  const [galleryOpen, setGalleryOpen] = useState(true);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get('tab');
-  const activeTab = tabParam === 'rates' ? 'rates' : tabParam === 'macro' ? 'macro' : 'overview';
-  const setActiveTab = useCallback((next) => {
-    const params = new URLSearchParams(searchParams);
-    if (next === 'overview') params.delete('tab');
-    else params.set('tab', next);
-    setSearchParams(params, { replace: true });
-  }, [searchParams, setSearchParams]);
-
-  const { isLoading: layoutLoading, overview: layout, error: layoutError, refetch: refetchLayout } = useUserLayout();
-  const persistedPages = layout?.pages ?? null;
-
-  const pages = editMode && localPages ? localPages : persistedPages;
-  const activePageId = useMemo(() => {
-    if (!pages || pages.length === 0) return null;
-    if (userPickedPageId && pages.some((p) => p.id === userPickedPageId)) return userPickedPageId;
-    return pages[0].id;
-  }, [pages, userPickedPageId]);
-  const activePage = useMemo(
-    () => (pages && activePageId ? pages.find((p) => p.id === activePageId) : null),
-    [pages, activePageId],
-  );
-  const persistedActivePage = useMemo(
-    () => (persistedPages && activePageId ? persistedPages.find((p) => p.id === activePageId) : null),
-    [persistedPages, activePageId],
-  );
+  const { activeTab, setActiveTab } = useMarketTabs();
+  const {
+    editMode, isDirty, pages, activePageId, sections, persistedActivePage,
+    pendingTile, deletingIds, popoverState, galleryOpen,
+    updateLayout, layoutLoading, defsLoading, layoutError, defsError, layout, widgetDefsByKind,
+    refetchLayout, refetchDefs,
+    enterEditMode, saveAndExit, discardAndExit, revertChanges, resetToDefaults,
+    handleDelete, handleConfigChange, handleCanvasChange, handleOpenSettings,
+    handleTrayClick, handleTrayDragStart, handleTrayDragEnd, handleCanvasDrop,
+    handleAddPage, handleRenamePage, handleDeletePage, handleSelectPage,
+    toggleGallery, closePopover,
+  } = useMarketLayout();
 
   const { isLoading: dataLoading, error, refetch, isFetching, widgets } = useMarketOverview(activePageId);
-  const { byKind: widgetDefsByKind, isLoading: defsLoading, error: defsError, refetch: refetchDefs } = useWidgetDefinitions();
   const { data: watchlists = [] } = useWatchlists({ enabled: editMode });
-  const updateLayout = useUpdateOverviewLayout();
-
-  const sections = activePage?.sections ?? [];
-  const isDirty = editMode && localPages !== null && localPages !== persistedPages;
-
-  const persistedRef = useRef(persistedPages);
-  useEffect(() => { persistedRef.current = persistedPages; }, [persistedPages]);
-  const updateLayoutRef = useRef(updateLayout);
-  useEffect(() => { updateLayoutRef.current = updateLayout; }, [updateLayout]);
-
-  const closePopover = useCallback(() => setPopoverState(null), []);
-
-  const enterEditMode = useCallback(() => {
-    setLocalPages(persistedRef.current ? persistedRef.current.map((p) => ({ ...p, sections: p.sections.map((s) => ({ ...s })) })) : null);
-    setGalleryOpen(false);
-    setEditMode(true);
-  }, []);
-
-  const saveAndExit = useCallback(() => {
-    setLocalPages((prev) => {
-      if (prev) updateLayoutRef.current.mutate({ schemaVersion: SCHEMA_VERSION, pages: prev });
-      return null;
-    });
-    setEditMode(false);
-    setPopoverState(null);
-  }, []);
-
-  const discardAndExit = useCallback(() => {
-    setLocalPages(null);
-    setPopoverState(null);
-    setEditMode(false);
-  }, []);
-
-  const revertChanges = useCallback(() => {
-    setLocalPages(persistedRef.current ? persistedRef.current.map((p) => ({ ...p, sections: p.sections.map((s) => ({ ...s })) })) : null);
-  }, []);
-
-  const updateActivePageSections = useCallback((mapper) => {
-    setLocalPages((prev) => {
-      if (!prev) return prev;
-      return prev.map((p) => (p.id === activePageId ? { ...p, sections: mapper(p.sections) } : p));
-    });
-  }, [activePageId]);
-
-  const handleDelete = useCallback((id) => {
-    setDeletingIds((prev) => new Set(prev).add(id));
-    setPopoverState((prev) => (prev?.sectionId === id ? null : prev));
-    setTimeout(() => {
-      updateActivePageSections((prev) => prev.filter((s) => s.sectionId !== id));
-      setDeletingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    }, REMOVAL_ANIMATION_MS);
-  }, [updateActivePageSections]);
-
-  const handleConfigChange = useCallback((id, config) => {
-    if (editMode) {
-      updateActivePageSections((prev) => prev.map((s) => (s.sectionId === id ? { ...s, config } : s)));
-      return;
-    }
-    const base = persistedRef.current;
-    if (!base || !activePageId) return;
-    const next = base.map((p) => (p.id === activePageId
-      ? { ...p, sections: p.sections.map((s) => (s.sectionId === id ? { ...s, config } : s)) }
-      : p));
-    updateLayoutRef.current.mutate({ schemaVersion: SCHEMA_VERSION, pages: next });
-  }, [editMode, activePageId, updateActivePageSections]);
-
-
-
-  const handleCanvasChange = useCallback((next) => {
-    updateActivePageSections(() => next);
-  }, [updateActivePageSections]);
-
-  const handleOpenSettings = useCallback((sectionId, anchorEl) => {
-    setPopoverState({ sectionId, anchorEl, autoFocusName: false });
-  }, []);
-
-  const insertSection = useCallback((kind, config, x, y, opts = {}) => {
-    const def = widgetDefsByKind.get(kind);
-    const size = def ? { w: def.defaults.w, h: def.defaults.h } : { w: 4, h: 6 };
-    const finalConfig = { ...config };
-    const newId = newSectionId(kind);
-    const newEntry = { sectionId: newId, kind, w: size.w, h: size.h, config: finalConfig };
-    setLocalPages((prev) => {
-      const base = prev ?? persistedRef.current;
-      if (!base) return prev;
-      return base.map((p) => {
-        if (p.id !== activePageId) return p;
-        const existing = p.sections;
-        if (kind === 'ASSET_CARDS' && !finalConfig.name) {
-          finalConfig.name = t('widgetTray.assetCardsN', { n: existing.filter((s) => s.kind === 'ASSET_CARDS').length + 1 });
-        }
-        if (opts.placeAtTop) {
-          const shifted = existing.map((s) => ({ ...s, y: (s.y ?? 0) + size.h }));
-          return { ...p, sections: [{ ...newEntry, x: 0, y: 0 }, ...shifted] };
-        }
-        return {
-          ...p,
-          sections: [
-            ...existing,
-            {
-              ...newEntry,
-              x: Math.max(0, Math.min(12 - size.w, Math.round(x ?? 0))),
-              y: Math.max(0, Math.round(y ?? 0)),
-            },
-          ],
-        };
-      });
-    });
-    return newId;
-  }, [widgetDefsByKind, t, activePageId]);
-
-  const handleTrayClick = useCallback((tile, anchorEl) => {
-    const newId = insertSection(tile.kind, tile.config, 0, 0, { placeAtTop: true });
-    if (tile.kind === 'ASSET_CARDS' && anchorEl) {
-      setPopoverState({ sectionId: newId, anchorEl, autoFocusName: true });
-    }
-  }, [insertSection]);
-
-  const handleTrayDragStart = useCallback((tile) => setPendingTile(tile), []);
-  const handleTrayDragEnd = useCallback(() => setPendingTile(null), []);
-
-  const handleCanvasDrop = useCallback(({ x, y }) => {
-    setPendingTile((tile) => {
-      if (tile) insertSection(tile.kind, tile.config, x, y);
-      return null;
-    });
-  }, [insertSection]);
-
-  const resetToDefaults = useCallback(() => {
-    const defaults = DEFAULT_OVERVIEW_LAYOUT.pages.map((p) => ({
-      ...p,
-      sections: p.sections.map((s) => ({ ...s, config: { ...s.config } })),
-    }));
-    setLocalPages(defaults);
-    setUserPickedPageId(defaults[0].id);
-  }, []);
-
-  const handleAddPage = useCallback(() => {
-    setLocalPages((prev) => {
-      const base = prev ?? persistedRef.current ?? [];
-      if (base.length >= MAX_PAGES) return prev;
-      const next = [
-        ...base,
-        { id: newPageId(), name: t('overviewPages.newPageName', { defaultValue: 'Yeni sayfa' }), sections: [] },
-      ];
-      setUserPickedPageId(next[next.length - 1].id);
-      return next;
-    });
-  }, [t]);
-
-  const handleRenamePage = useCallback((pageId, name) => {
-    setLocalPages((prev) => {
-      if (!prev) return prev;
-      return prev.map((p) => (p.id === pageId ? { ...p, name } : p));
-    });
-  }, []);
-
-  const handleDeletePage = useCallback((pageId) => {
-    setLocalPages((prev) => {
-      const base = prev ?? persistedRef.current ?? [];
-      if (base.length <= 1) return prev;
-      const next = base.filter((p) => p.id !== pageId);
-      if (pageId === activePageId) setUserPickedPageId(next[0].id);
-      return next;
-    });
-  }, [activePageId]);
-
-  const handleSelectPage = useCallback((pageId) => {
-    setUserPickedPageId(pageId);
-    setPopoverState(null);
-  }, []);
-
-  const toggleGallery = useCallback(() => setGalleryOpen((o) => !o), []);
 
   if (layoutLoading || defsLoading) return <LoadingState message={t('marketOverview.loading')} />;
   if (defsError || layoutError || !layout || widgetDefsByKind.size === 0) {
@@ -267,7 +52,7 @@ export default function MarketDataPage() {
         </span>
         <div className="min-w-0">
           <h1 className="font-display text-xl font-bold tracking-tight text-fg leading-none">{t('marketOverview.title')}</h1>
-          <div className="relative flex items-center gap-2 mt-1 min-h-[18px] min-w-[180px]">
+          <div className="relative flex items-center gap-2 mt-1 min-h-[18px] sm:min-w-[180px]">
             <AnimatePresence mode="wait" initial={false}>
               {editMode
                 ? (
@@ -297,7 +82,7 @@ export default function MarketDataPage() {
                         <span className="absolute inset-0 rounded-full bg-danger opacity-60 animate-ping" />
                         <span className="relative block w-1.5 h-1.5 rounded-full bg-danger shadow-[0_0_6px_rgba(248,113,113,0.8)]" />
                       </span>
-                      <span className="font-mono text-[9px] tracking-[0.18em] uppercase font-bold text-danger">Live</span>
+                      <span className="font-mono text-[9px] tracking-[0.18em] uppercase font-bold text-danger">{t('common.live')}</span>
                     </span>
                   </motion.div>
                 )}
@@ -305,7 +90,7 @@ export default function MarketDataPage() {
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-1.5 flex-nowrap">
+      <div className="flex items-center gap-1.5 flex-wrap">
         {updateLayout.isPending && (
           <span className="flex items-center gap-1 font-mono text-[10px] tracking-wider uppercase text-accent/80">
             <Spinner size="xs" tone="inherit" />
@@ -460,62 +245,40 @@ export default function MarketDataPage() {
     : null;
 
   const tray = (
-    <AnimatePresence initial={false}>
-      {editMode && galleryOpen && (
-        <motion.div
-          key="gallery-sidebar"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
-        >
-          <WidgetTray sections={sections} watchlists={watchlists} onAdd={handleTrayClick} onDragStart={handleTrayDragStart} onDragEnd={handleTrayDragEnd} />
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <MarketWidgetGallery
+      visible={editMode && galleryOpen}
+      sections={sections}
+      watchlists={watchlists}
+      onAdd={handleTrayClick}
+      onDragStart={handleTrayDragStart}
+      onDragEnd={handleTrayDragEnd}
+    />
   );
-
-  const isPageInPersisted = persistedActivePage != null;
 
   const grid = activeTab === 'rates'
     ? <BankRatesPanel />
     : activeTab === 'macro'
     ? <MacroIndicatorsPanel />
-    : sections.length === 0
-    ? (
-      <div className="rounded-xl border-2 border-dashed border-accent/30 bg-bg-elevated/40 px-6 py-16 text-center">
-        <p className="font-display text-base font-bold text-fg mb-1">{t('marketOverview.emptyCanvas')}</p>
-        <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-fg-muted mb-5">
-          {editMode ? t('marketOverview.emptyDragHint') : t('marketOverview.emptyEditHint')}
-        </p>
-        {!editMode && (
-          <button
-            onClick={enterEditMode}
-            className="inline-flex items-center gap-2 rounded-lg border-2 border-accent bg-accent text-white px-4 py-2 text-xs font-mono font-bold tracking-[0.14em] uppercase hover:bg-accent-bright transition-all cursor-pointer shadow-lg shadow-accent/30"
-          >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            {t('marketOverview.startEdit')}
-          </button>
-        )}
-      </div>
-    )
-    : (dataLoading && isPageInPersisted)
-    ? <LoadingState message={t('marketOverview.loading')} />
-    : error
-    ? <ErrorState message={t('marketOverview.error')} onRetry={() => { refetch(); }} />
-    : <OverviewWidgetCanvas
+    : (
+      <MarketCanvas
         sections={sections}
         widgets={widgets}
         editMode={editMode}
         deletingIds={deletingIds}
-        activePopoverSectionId={popoverState?.sectionId ?? null}
+        popoverState={popoverState}
+        pendingTile={pendingTile}
+        dataLoading={dataLoading}
+        isPageInPersisted={persistedActivePage != null}
+        error={error}
+        onEnterEditMode={enterEditMode}
         onOpenSettings={handleOpenSettings}
-        onChange={handleCanvasChange}
+        onCanvasChange={handleCanvasChange}
         onDelete={handleDelete}
         onConfigChange={handleConfigChange}
-        onDrop={handleCanvasDrop}
-        pendingDropSize={pendingTile ? { w: pendingTile.w, h: pendingTile.h } : null}
-      />;
+        onCanvasDrop={handleCanvasDrop}
+        onRefetch={refetch}
+      />
+    );
 
   return (
     <>

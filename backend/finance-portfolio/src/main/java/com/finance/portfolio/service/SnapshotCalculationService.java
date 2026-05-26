@@ -18,15 +18,13 @@ import com.finance.shared.service.AssetPricingPort;
 import com.finance.portfolio.model.MoneyScale;
 import com.finance.portfolio.derivative.model.DerivativePosition;
 import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
-import com.finance.common.model.MarketType;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import com.finance.shared.service.AssetPricingPort.AssetKey;
-import com.finance.shared.util.PercentChangeCalculator;
 import com.finance.portfolio.config.PortfolioProperties;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -43,7 +41,6 @@ import java.util.function.Function;
 
 @Log4j2
 @Service
-@RequiredArgsConstructor
 public class SnapshotCalculationService {
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
@@ -54,25 +51,48 @@ public class SnapshotCalculationService {
     private final PortfolioDailySnapshotRepository dailySnapshotRepository;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
     private final PortfolioProperties portfolioProperties;
-    private final DerivativeSnapshotAssembler derivativeSnapshotAssembler;
+    private final DerivativeSnapshotCalculator derivativeCalculator;
+
+    @Autowired
+    public SnapshotCalculationService(AssetPricingPort pricingPort,
+                                       PortfolioPositionRepository positionRepository,
+                                       DerivativePositionRepository derivativePositionRepository,
+                                       PortfolioDailySnapshotRepository dailySnapshotRepository,
+                                       PortfolioAssetDailySnapshotRepository assetSnapshotRepository,
+                                       PortfolioProperties portfolioProperties,
+                                       DerivativeSnapshotAssembler derivativeSnapshotAssembler) {
+        this(pricingPort, positionRepository, derivativePositionRepository, dailySnapshotRepository,
+                assetSnapshotRepository, portfolioProperties,
+                new DerivativeSnapshotCalculator(derivativeSnapshotAssembler));
+    }
+
+    SnapshotCalculationService(AssetPricingPort pricingPort,
+                                PortfolioPositionRepository positionRepository,
+                                DerivativePositionRepository derivativePositionRepository,
+                                PortfolioDailySnapshotRepository dailySnapshotRepository,
+                                PortfolioAssetDailySnapshotRepository assetSnapshotRepository,
+                                PortfolioProperties portfolioProperties,
+                                DerivativeSnapshotCalculator derivativeCalculator) {
+        this.pricingPort = pricingPort;
+        this.positionRepository = positionRepository;
+        this.derivativePositionRepository = derivativePositionRepository;
+        this.dailySnapshotRepository = dailySnapshotRepository;
+        this.assetSnapshotRepository = assetSnapshotRepository;
+        this.portfolioProperties = portfolioProperties;
+        this.derivativeCalculator = derivativeCalculator;
+    }
 
     public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshot(Long portfolioId,
                                                                       com.finance.portfolio.derivative.model.DerivativePosition position,
                                                                       LocalDateTime batchTimestamp) {
-        if (position.getViopContract() == null) return null;
-        if (!position.isOpen() && position.getClosePrice() != null) {
-            return buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp,
-                    position.getClosePrice(), BigDecimal.ONE);
-        }
-        BigDecimal currentPrice = position.getViopContract().getLastPrice();
-        return buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp, currentPrice);
+        return derivativeCalculator.buildDerivativeAssetSnapshot(portfolioId, position, batchTimestamp);
     }
 
     public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshotAt(Long portfolioId,
                                                                        com.finance.portfolio.derivative.model.DerivativePosition position,
                                                                        LocalDateTime batchTimestamp,
                                                                        BigDecimal exitPrice) {
-        return buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp, exitPrice, null);
+        return derivativeCalculator.buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp, exitPrice);
     }
 
     public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshotAt(Long portfolioId,
@@ -80,7 +100,8 @@ public class SnapshotCalculationService {
                                                                        LocalDateTime batchTimestamp,
                                                                        BigDecimal exitPrice,
                                                                        BigDecimal fxRateOverride) {
-        return buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp, exitPrice, fxRateOverride, null);
+        return derivativeCalculator.buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp,
+                exitPrice, fxRateOverride);
     }
 
     public PortfolioAssetDailySnapshot buildDerivativeAssetSnapshotAt(Long portfolioId,
@@ -89,7 +110,7 @@ public class SnapshotCalculationService {
                                                                        BigDecimal exitPrice,
                                                                        BigDecimal fxRateOverride,
                                                                        PortfolioAssetDailySnapshot priorOverride) {
-        return derivativeSnapshotAssembler.buildAt(portfolioId, position, batchTimestamp,
+        return derivativeCalculator.buildDerivativeAssetSnapshotAt(portfolioId, position, batchTimestamp,
                 exitPrice, fxRateOverride, priorOverride);
     }
 
@@ -211,7 +232,7 @@ public class SnapshotCalculationService {
         SnapshotTotals totals = new SnapshotTotals();
         Set<AssetKey> countedFromRows = new HashSet<>();
         accumulateSpotPositions(positions, snapDate, rowMvByKey, prices, totals, countedFromRows);
-        accumulateDerivativePositions(derivatives, snapDate, rowMvByKey, totals, countedFromRows);
+        derivativeCalculator.accumulateDerivativePositions(derivatives, snapDate, rowMvByKey, totals, countedFromRows);
         return totals.toAggregateSnapshot(portfolio.getId(), snapDate, batchTimestamp, sumAssetDailies(contributingRows));
     }
 
@@ -219,8 +240,7 @@ public class SnapshotCalculationService {
         Map<AssetKey, PortfolioAssetDailySnapshot> latest = new java.util.HashMap<>();
         for (PortfolioAssetDailySnapshot row : rows) {
             if (row.getAssetType() == null || row.getAssetCode() == null || row.getMarketValueTry() == null) continue;
-            if (row.getAssetType() == AssetType.VIOP
-                    && row.getQuantity() != null && row.getQuantity().signum() == 0) continue;
+            if (!DerivativeSnapshotCalculator.isCountableViopRow(row)) continue;
             AssetKey key = new AssetKey(row.getAssetType().marketType(), row.getAssetCode());
             latest.merge(key, row, SnapshotCalculationService::pickLatestSnapshot);
         }
@@ -263,74 +283,6 @@ public class SnapshotCalculationService {
         BigDecimal price = prices.get(key);
         if (price == null) return;
         totals.addMarket(pos.currentValue(price));
-    }
-
-    private void accumulateDerivativePositions(List<DerivativePosition> derivatives, java.time.LocalDate snapDate,
-                                                 Map<AssetKey, BigDecimal> rowMvByKey,
-                                                 SnapshotTotals totals,
-                                                 Set<AssetKey> countedFromRows) {
-        for (DerivativePosition dpos : derivatives) {
-            if (dpos.getEntryDate() == null || dpos.getEntryDate().isAfter(snapDate)) continue;
-            if (dpos.getViopContract() == null) continue;
-            BigDecimal entryNotional = dpos.nominalExposure();
-            if (entryNotional == null) continue;
-            totals.addEntry(entryNotional);
-            boolean closedBeforeSnapDate = dpos.getCloseDate() != null && dpos.getCloseDate().isBefore(snapDate);
-            if (closedBeforeSnapDate) {
-                BigDecimal realized = dpos.realizedOrUnrealizedPnl(dpos.getClosePrice());
-                if (realized != null) totals.addRealizedClose(realized, entryNotional.add(realized));
-                continue;
-            }
-            AssetKey key = new AssetKey(MarketType.VIOP, dpos.getViopContract().getSymbol());
-            BigDecimal rowMv = rowMvByKey.get(key);
-            if (rowMv != null) {
-                if (countedFromRows.add(key)) totals.addMarket(rowMv);
-                continue;
-            }
-            boolean closedOnSnapDate = dpos.getCloseDate() != null && dpos.getCloseDate().equals(snapDate);
-            if (closedOnSnapDate) {
-                BigDecimal realized = dpos.realizedOrUnrealizedPnl(dpos.getClosePrice());
-                if (realized != null) totals.addRealizedClose(realized, entryNotional.add(realized));
-            }
-        }
-    }
-
-    private static final class SnapshotTotals {
-        BigDecimal totalMarketValue = BigDecimal.ZERO;
-        BigDecimal cumulativeRealized = BigDecimal.ZERO;
-        BigDecimal closedExitValue = BigDecimal.ZERO;
-        BigDecimal totalEntryValue = BigDecimal.ZERO;
-
-        void addEntry(BigDecimal v) { totalEntryValue = totalEntryValue.add(v); }
-        void addMarket(BigDecimal v) { totalMarketValue = totalMarketValue.add(v); }
-        void addRealizedClose(BigDecimal realized, BigDecimal exitValue) {
-            cumulativeRealized = cumulativeRealized.add(realized);
-            closedExitValue = closedExitValue.add(exitValue);
-        }
-
-        PortfolioDailySnapshot toAggregateSnapshot(Long portfolioId, java.time.LocalDate snapDate,
-                                                    LocalDateTime batchTimestamp, DailyDelta daily) {
-            BigDecimal mv = totalMarketValue.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
-            BigDecimal realized = cumulativeRealized.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
-            BigDecimal closed = closedExitValue.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
-            BigDecimal entry = totalEntryValue.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
-            BigDecimal totalValue = mv.add(closed).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
-            PercentChangeCalculator.Result pct = PercentChangeCalculator.compute(totalValue, entry, MoneyScale.PRICE);
-            BigDecimal pnl = pct.amount() != null ? pct.amount() : BigDecimal.ZERO;
-            BigDecimal pnlPct = pct.percent() != null ? pct.percent() : BigDecimal.ZERO;
-            return PortfolioDailySnapshot.builder()
-                    .portfolioId(portfolioId)
-                    .snapshotDate(snapDate)
-                    .createdAt(batchTimestamp)
-                    .totalValueTry(totalValue)
-                    .cashTry(realized)
-                    .totalCostTry(entry)
-                    .totalPnlTry(pnl)
-                    .pnlPercent(pnlPct)
-                    .dailyPnlTry(daily.amount())
-                    .dailyPnlPercent(daily.percent())
-                    .build();
-        }
     }
 
     private DailyDelta computeAssetDelta(BigDecimal currentUnitPrice,
@@ -405,7 +357,7 @@ public class SnapshotCalculationService {
         return assetSnapshotRepository.findLatestPerAsset(portfolioId).stream()
                 .filter(r -> r.getAssetType() != null && r.getAssetCode() != null
                         && (heldKeys.contains(r.getAssetType().name() + "|" + r.getAssetCode())
-                            || r.getAssetType() == AssetType.VIOP))
+                            || DerivativeSnapshotCalculator.isViopAssetType(r.getAssetType())))
                 .toList();
     }
 
@@ -415,9 +367,5 @@ public class SnapshotCalculationService {
         return assetSnapshotRepository
                 .findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtLessThanEqualOrderByCreatedAtDesc(
                         portfolioId, trackedAssetId, target);
-    }
-
-    private record DailyDelta(BigDecimal amount, BigDecimal percent) {
-        static final DailyDelta EMPTY = new DailyDelta(null, null);
     }
 }

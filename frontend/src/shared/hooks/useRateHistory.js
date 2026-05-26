@@ -11,14 +11,24 @@ function buildSeries(points) {
   return (points || [])
     .map((p) => {
       const date = String(p.candleDate || p.date || '').slice(0, 10);
-      const rate = Number(p.sellingPrice ?? p.close ?? p.price);
-      return date && Number.isFinite(rate) && rate > 0 ? [date, rate] : null;
+      const selling = Number(p.sellingPrice ?? p.close ?? p.price);
+      if (!date || !Number.isFinite(selling) || selling <= 0) return null;
+      const buying = Number(p.buyingPrice);
+      const effBuying = Number(p.effectiveBuyingPrice);
+      const effSelling = Number(p.effectiveSellingPrice);
+      return {
+        date,
+        sellingPrice: selling,
+        buyingPrice: Number.isFinite(buying) && buying > 0 ? buying : selling,
+        effectiveBuyingPrice: Number.isFinite(effBuying) && effBuying > 0 ? effBuying : selling,
+        effectiveSellingPrice: Number.isFinite(effSelling) && effSelling > 0 ? effSelling : selling,
+      };
     })
     .filter(Boolean)
-    .sort((a, b) => (a[0] < b[0] ? -1 : 1));
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
-function rateOn(series, dateStr) {
+function rateOn(series, dateStr, field = 'sellingPrice') {
   if (!series || series.length === 0) return null;
   const target = String(dateStr).slice(0, 10);
   let lo = 0;
@@ -26,8 +36,8 @@ function rateOn(series, dateStr) {
   let answer = null;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
-    if (series[mid][0] <= target) {
-      answer = series[mid][1];
+    if (series[mid].date <= target) {
+      answer = series[mid][field] ?? series[mid].sellingPrice;
       lo = mid + 1;
     } else {
       hi = mid - 1;
@@ -53,9 +63,9 @@ export function useRateHistory() {
     gcTime: GC.LONG,
   });
 
-  const rateAt = useCallback((currency, dateStr) => {
+  const rateAt = useCallback((currency, dateStr, field = 'sellingPrice') => {
     if (currency === 'TRY') return 1;
-    const historical = rateOn(data?.[currency], dateStr);
+    const historical = rateOn(data?.[currency], dateStr, field);
     return historical ?? currentRates[currency] ?? null;
   }, [data, currentRates]);
 
@@ -65,15 +75,15 @@ export function useRateHistory() {
     return SUPPORTED.includes(candidate) ? candidate : 'TRY';
   }, [displayCurrency]);
 
-  const convertAt = useCallback((value, base = 'TRY', dateStr, natural) => {
+  const convertAt = useCallback((value, base = 'TRY', dateStr, natural, rateField) => {
     if (value == null) return null;
     const num = Number(value);
     if (!Number.isFinite(num)) return null;
     const from = SUPPORTED.includes(base) ? base : 'TRY';
     const target = resolveTarget(from, natural);
     if (from === target) return num;
-    const baseRate = rateAt(from, dateStr);
-    const displayRate = rateAt(target, dateStr);
+    const baseRate = rateAt(from, dateStr, rateField);
+    const displayRate = rateAt(target, dateStr, rateField);
     if (baseRate == null || displayRate == null) return num;
     const inTry = from === 'TRY' ? num : num * baseRate;
     return target === 'TRY' ? inTry : inTry / displayRate;

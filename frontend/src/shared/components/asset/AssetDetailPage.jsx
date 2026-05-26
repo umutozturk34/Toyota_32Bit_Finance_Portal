@@ -48,6 +48,8 @@ function naturalCurrencyFor(assetType, asset, assetCode) {
   return 'TRY';
 }
 
+const FOREX_PRICE_FIELDS = new Set(['sellingPrice', 'buyingPrice', 'effectiveBuyingPrice', 'effectiveSellingPrice']);
+
 function convertCandleSet(data, convertAt, baseCurrency, naturalCurrency) {
   if (!data?.candles) return data;
   return {
@@ -56,7 +58,10 @@ function convertCandleSet(data, convertAt, baseCurrency, naturalCurrency) {
       const date = candle.candleDate || candle.date;
       const next = { ...candle };
       for (const field of CANDLE_MONEY_FIELDS) {
-        if (next[field] != null) next[field] = convertAt(next[field], baseCurrency, date, naturalCurrency);
+        if (next[field] != null) {
+          const rateField = FOREX_PRICE_FIELDS.has(field) ? field : undefined;
+          next[field] = convertAt(next[field], baseCurrency, date, naturalCurrency, rateField);
+        }
       }
       return next;
     }),
@@ -151,9 +156,9 @@ export default function AssetDetailPage({
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="flex items-center justify-between"
+        className="flex items-center justify-between gap-2 flex-wrap"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-wrap">
           <IconButton
             variant="secondary"
             size={9}
@@ -166,7 +171,7 @@ export default function AssetDetailPage({
           {renderHeader(asset)}
           <MarketStatusBadge market={(assetType || '').toUpperCase()} />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {asset && (
             <AssetActionsBar
               marketType={assetType}
@@ -214,7 +219,7 @@ export default function AssetDetailPage({
       {renderMetadata(asset)}
 
       {renderSidebar ? (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
           <LightweightChart
             data={chartData}
             symbol={assetCode}
@@ -224,7 +229,7 @@ export default function AssetDetailPage({
             showSecondaryLines={showSecondaryLines}
             onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
           />
-          <aside className="xl:sticky xl:top-4 xl:self-start space-y-3">
+          <aside className="lg:sticky lg:top-4 lg:self-start space-y-3">
             {renderSidebar(asset)}
           </aside>
         </div>

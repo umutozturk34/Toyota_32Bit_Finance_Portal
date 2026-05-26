@@ -178,7 +178,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
     }
 
     return (
-        <Card ref={wrapperRef} variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className={`flex ${isFullscreen ? 'h-screen !rounded-none' : ''}`} style={isFullscreen ? {} : { minHeight: 560 }}>
+        <Card ref={wrapperRef} variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className={`flex !overflow-x-hidden !overflow-y-visible ${isFullscreen ? 'h-screen !rounded-none !overflow-y-auto' : 'min-h-[360px] sm:min-h-[440px] lg:min-h-[560px]'}`}>
             {sidebarOpen && (
                 <ChartSidebar
                     tabs={TABS}
@@ -263,7 +263,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                         );
                     })}
                 </div>
-                <div className={`relative flex-1 ${isFullscreen ? 'min-h-0' : 'min-h-[400px]'}`}>
+                <div className={`relative flex-1 ${isFullscreen ? 'min-h-0' : 'min-h-[260px] sm:min-h-[320px] lg:min-h-[400px]'}`}>
                     <div ref={chartContainerRef} className="w-full h-full" />
                     <canvas
                         ref={canvasOverlayRef}

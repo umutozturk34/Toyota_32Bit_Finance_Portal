@@ -25,7 +25,7 @@ export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
       onClick={route ? () => navigate(route) : undefined}
       onMouseEnter={triggerPrefetch}
       onFocus={triggerPrefetch}
-      className={`group grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 items-center px-4 py-3 transition-colors ${
+      className={`group grid grid-cols-[auto_1fr_auto] md:grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 md:gap-4 items-center px-3 sm:px-4 py-3 transition-colors ${
         route ? 'cursor-pointer hover:bg-accent/5' : ''
       } ${isFired ? 'opacity-60' : ''}`}
     >
@@ -41,19 +41,19 @@ export default function AlertRow({ alert, onDelete, onReactivate, onEdit }) {
         </div>
         <div className="text-[11px] text-fg-muted font-mono">{alert.assetCode}</div>
       </div>
-      <div className={`flex items-center gap-1 text-[11px] font-medium ${tint}`}>
+      <div className={`hidden md:flex items-center gap-1 text-[11px] font-medium ${tint}`}>
         <Icon className="h-3.5 w-3.5" />
         <span>{t(dir.labelKey)}</span>
       </div>
-      <span className="text-sm font-mono font-semibold text-fg tabular-nums min-w-[90px] text-right">
+      <span className="hidden md:inline text-sm font-mono font-semibold text-fg tabular-nums min-w-[90px] text-right">
         {isPercent ? `${thresholdValue}${thresholdSymbol}` : `${thresholdSymbol}${thresholdValue}`}
       </span>
-      <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded shrink-0 min-w-[80px] text-center ${
+      <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded shrink-0 md:min-w-[80px] text-center ${
         isFired ? 'bg-fg-subtle/10 text-fg-subtle' : 'bg-success/10 text-success'
       }`}>
         {isFired ? t('alertRow.fired') : t('alertRow.active')}
       </span>
-      <div className="flex items-center gap-1 min-w-[110px] justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 md:min-w-[110px] justify-end md:opacity-0 md:group-hover:opacity-100 transition-opacity">
         {isFired && (
           <button
             type="button"

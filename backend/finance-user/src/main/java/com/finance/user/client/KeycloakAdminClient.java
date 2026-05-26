@@ -71,6 +71,48 @@ public class KeycloakAdminClient {
 
     @CircuitBreaker(name = "keycloak-admin")
     @Retry(name = "keycloak-admin")
+    public Map<String, Object> getUser(String userId) {
+        return fetchUser(userId);
+    }
+
+    @CircuitBreaker(name = "keycloak-admin")
+    @Retry(name = "keycloak-admin")
+    public void ensureRealmFlag(String flag, Object value) {
+        Map<String, Object> realm = executeWithRetry("fetchRealm", token -> webClient.get()
+                .uri("/admin/realms/{realm}", properties.getRealm())
+                .header("Authorization", "Bearer " + token)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .block());
+        if (realm == null) {
+            throw new com.finance.common.exception.ExternalApiException("KEYCLOAK", "fetchRealm returned null");
+        }
+        if (value.equals(realm.get(flag))) return;
+        Map<String, Object> body = new java.util.HashMap<>(realm);
+        body.put(flag, value);
+        executeWithRetry("updateRealm", token -> webClient.put()
+                .uri("/admin/realms/{realm}", properties.getRealm())
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(body)
+                .retrieve()
+                .toBodilessEntity()
+                .block());
+        log.info("Keycloak realm flag synced: {}={}", flag, value);
+    }
+
+    @CircuitBreaker(name = "keycloak-admin")
+    @Retry(name = "keycloak-admin")
+    public void updateBasics(String userId, String username, String firstName, String lastName) {
+        Map<String, Object> body = new java.util.HashMap<>(fetchUser(userId));
+        if (username != null) body.put("username", username);
+        if (firstName != null) body.put("firstName", firstName);
+        if (lastName != null) body.put("lastName", lastName);
+        putFullUser("updateBasics", userId, body);
+    }
+
+    @CircuitBreaker(name = "keycloak-admin")
+    @Retry(name = "keycloak-admin")
     public void setEnabled(String userId, boolean enabled) {
         Map<String, Object> body = new java.util.HashMap<>(fetchUser(userId));
         body.put("enabled", enabled);
@@ -91,6 +133,21 @@ public class KeycloakAdminClient {
     public String getEmail(String userId) {
         Object email = fetchUser(userId).get("email");
         return email == null ? null : email.toString();
+    }
+
+    @CircuitBreaker(name = "keycloak-admin")
+    @Retry(name = "keycloak-admin")
+    @SuppressWarnings("unchecked")
+    public java.util.Optional<String> getUserAttribute(String userId, String key) {
+        Map<String, Object> user = fetchUser(userId);
+        Object attrs = user.get("attributes");
+        if (!(attrs instanceof Map<?, ?> map)) return java.util.Optional.empty();
+        Object value = map.get(key);
+        if (value instanceof List<?> list && !list.isEmpty() && list.get(0) != null) {
+            return java.util.Optional.of(String.valueOf(list.get(0)));
+        }
+        if (value instanceof String s && !s.isBlank()) return java.util.Optional.of(s);
+        return java.util.Optional.empty();
     }
 
     @CircuitBreaker(name = "keycloak-admin")

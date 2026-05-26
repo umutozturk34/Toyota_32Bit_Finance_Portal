@@ -46,6 +46,9 @@ public class BondRateHistory {
     @Column(name = "coupon_rate", precision = 10, scale = 4)
     private BigDecimal couponRate;
 
+    @Column(name = "price", precision = 14, scale = 4)
+    private BigDecimal price;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

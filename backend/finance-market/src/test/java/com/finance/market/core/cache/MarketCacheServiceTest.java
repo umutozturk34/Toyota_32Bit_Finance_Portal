@@ -45,7 +45,6 @@ class MarketCacheServiceTest {
 
         @Override
         public void scaleFields(int scale) {
-            // no-op for the test stub
         }
     }
 

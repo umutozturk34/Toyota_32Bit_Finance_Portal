@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { STALE } from '../../shared/constants/query';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import useSessionState from "../../shared/hooks/useSessionState";
-import { AnimatePresence } from 'framer-motion';
-import ReactECharts from 'echarts-for-react';
+import { useNavigate } from 'react-router-dom';
+import useSessionState from '../../shared/hooks/useSessionState';
 import { useTranslation } from 'react-i18next';
 import {
     Landmark,
@@ -13,9 +12,8 @@ import {
     Percent,
     TrendingUp,
     Building2,
-    ChevronDown,
-    ChevronUp,
-    BarChart3,
+    ChevronRight,
+    Filter,
 } from 'lucide-react';
 import { bondService } from './services/bondService';
 import { adminService } from '../admin/services/adminService';
@@ -32,77 +30,11 @@ import Pagination from '../../shared/components/form/Pagination';
 import { toast } from '../../shared/components/feedback/toastBus';
 import FilterTabs from '../../shared/components/form/FilterTabs';
 import useListParams from '../../shared/hooks/useListParams';
-import { useTheme } from '../../shared/context/useTheme';
-import { BOND_TYPE_COLORS, CHART_LINE_COLORS } from './lib/bondConstants';
+import { BOND_TYPE_COLORS } from './lib/bondConstants';
 
 const SORT_OPTION_IDS = ['simpleYield', 'couponRate', 'baseIndex', 'maturityEnd', 'seriesCode'];
 
-function RateHistoryChart({ isinCode, bondType }) {
-    const { t } = useTranslation();
-    const { isDark } = useTheme();
-    const { data: rateData, isLoading } = useQuery({
-        queryKey: ['bondRateHistory', isinCode],
-        queryFn: () => bondService.getRateHistory(isinCode),
-    });
-
-    if (isLoading) return <div className="h-48 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.chartLoading')}</div>;
-    if (!rateData || rateData.length === 0) return <div className="h-48 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.noRateData')}</div>;
-
-    const lineColor = CHART_LINE_COLORS[bondType] || '#8b5cf6';
-
-    const option = {
-        grid: { top: 12, right: 12, bottom: 24, left: 40, containLabel: true },
-        xAxis: {
-            type: 'category',
-            data: rateData.map(d => d.date),
-            boundaryGap: false,
-            axisLabel: { 
-                color: isDark ? '#9ca3af' : '#6b7280',
-                fontSize: 12,
-            },
-            axisLine: { lineStyle: { color: isDark ? '#374151' : '#e5e7eb' } },
-        },
-        yAxis: {
-            type: 'value',
-            axisLabel: {
-                color: isDark ? '#9ca3af' : '#6b7280',
-                fontSize: 12,
-                formatter: (val) => `%${val.toFixed(2)}`,
-            },
-            axisLine: { lineStyle: { color: isDark ? '#374151' : '#e5e7eb' } },
-            splitLine: { lineStyle: { color: isDark ? '#1f2937' : '#f3f4f6' } },
-        },
-        tooltip: {
-            trigger: 'axis',
-            backgroundColor: isDark ? '#1f2937' : '#fff',
-            borderColor: isDark ? '#374151' : '#e5e7eb',
-            textStyle: { color: isDark ? '#f3f4f6' : '#1f2937' },
-            formatter: (params) => {
-                if (!params.length) return '';
-                const p = params[0];
-                return `${p.axisValue}<br/>${p.marker}${p.seriesName}: ${Number(p.value).toFixed(4)}%`;
-            },
-        },
-        series: [{
-            name: t('market.bond.couponRate'),
-            type: 'line',
-            data: rateData.map(d => Number(d.rate)),
-            smooth: true,
-            lineStyle: { width: 2, color: lineColor },
-            itemStyle: { color: lineColor },
-            areaStyle: { color: `${lineColor}20` },
-            symbol: 'none',
-        }],
-    };
-
-    return (
-        <div className="h-48">
-            <ReactECharts option={option} style={{ height: '100%' }} />
-        </div>
-    );
-}
-
-function BondCard({ bond, isExpanded, onToggleChart }) {
+function BondCard({ bond, onClick }) {
     const { t } = useTranslation();
     const localeTag = t('common.localeTag');
     const maturityDays = daysUntil(bond.maturityEnd);
@@ -113,26 +45,31 @@ function BondCard({ bond, isExpanded, onToggleChart }) {
         <motion.div
             variants={cardVariants}
             layout
-            className="rounded-2xl border border-border-default bg-bg-elevated card-hover transition-all duration-200 hover:border-border-hover overflow-hidden"
+            role="button"
+            tabIndex={0}
+            onClick={onClick}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
+            className="rounded-2xl border border-border-default bg-bg-elevated card-hover transition-all duration-200 hover:border-accent/40 overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent/40"
         >
-            <div className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-4 min-w-0 flex-1">
-                        <span className="flex items-center justify-center w-12 h-12 rounded-xl bg-accent/10 text-accent shrink-0">
-                            <Landmark className="w-6 h-6" />
+            <div className="p-4 sm:p-6">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                        <span className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-accent/10 text-accent shrink-0">
+                            <Landmark className="w-5 h-5 sm:w-6 sm:h-6" />
                         </span>
                         <div className="min-w-0">
-                            <h3 className="text-lg font-bold text-fg">{bond.isinCode}</h3>
-                            <span className="block text-sm text-fg-muted">{bond.seriesCode}</span>
+                            <h3 className="text-base sm:text-lg font-bold text-fg truncate">{bond.isinCode}</h3>
+                            <span className="block text-xs sm:text-sm text-fg-muted truncate">{bond.seriesCode}</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                        <span className={`rounded-lg border px-3 py-1 text-xs font-semibold tracking-wider ${typeColor}`}>
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap">
+                        <span className={`rounded-lg border px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold tracking-wider ${typeColor}`}>
                             {t(`market.bond.types.${bond.bondType}`, { defaultValue: bond.bondType })}
                         </span>
-                        <span className="font-mono text-2xl font-bold text-fg">
+                        <span className="font-mono text-lg sm:text-2xl font-bold text-fg">
                             {formatPrice(bond.baseIndex, localeTag)}
                         </span>
+                        <ChevronRight className="h-4 w-4 text-fg-subtle" />
                     </div>
                 </div>
 
@@ -155,39 +92,11 @@ function BondCard({ bond, isExpanded, onToggleChart }) {
                     )}
                 </div>
 
-                <div className="mt-4 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-[11px] text-fg-subtle">
-                        <Clock className="h-3 w-3" />
-                        {bond.lastUpdated ? new Date(bond.lastUpdated).toLocaleString(localeTag, { timeZone: 'Europe/Istanbul' }) : 'N/A'}
-                    </div>
-                    {bond.couponRate != null && Number(bond.couponRate) > 0 && (
-                        <button
-                            onClick={() => onToggleChart(bond.seriesCode)}
-                            className="flex items-center gap-1.5 text-xs text-fg-muted hover:text-accent transition-colors cursor-pointer bg-transparent border-none"
-                        >
-                            <BarChart3 className="h-3.5 w-3.5" />
-                            {t('market.bond.rateChangeButton')}
-                            {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                        </button>
-                    )}
+                <div className="mt-4 flex items-center gap-1.5 text-[11px] text-fg-subtle">
+                    <Clock className="h-3 w-3" />
+                    {bond.lastUpdated ? new Date(bond.lastUpdated).toLocaleString(localeTag, { timeZone: 'Europe/Istanbul' }) : '—'}
                 </div>
             </div>
-
-            <AnimatePresence>
-                {isExpanded && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25 }}
-                        className="overflow-hidden border-t border-border-default"
-                    >
-                        <div className="p-4">
-                            <RateHistoryChart isinCode={bond.isinCode} bondType={bond.bondType} />
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </motion.div>
     );
 }
@@ -204,17 +113,17 @@ function StatCell({ icon: Icon, label, value, mono }) {
 }
 
 function formatRate(val) {
-    if (val == null) return 'N/A';
+    if (val == null) return '—';
     return `%${Number(val).toFixed(2)}`;
 }
 
 function formatPrice(val, localeTag = 'en-US') {
-    if (val == null) return 'N/A';
+    if (val == null) return '—';
     return new Intl.NumberFormat(localeTag, { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(val);
 }
 
 function formatDate(val, localeTag = 'en-US') {
-    if (!val) return 'N/A';
+    if (!val) return '—';
     return new Date(val).toLocaleDateString(localeTag, { timeZone: 'Europe/Istanbul' });
 }
 
@@ -230,8 +139,9 @@ function isFloatingType(bondType) {
 export default function BondsPage() {
     const { t } = useTranslation();
     const { hasRole } = useAuth();
+    const navigate = useNavigate();
     const [updating, setUpdating] = useState({});
-    const [expandedBond, setExpandedBond] = useSessionState('bonds-expanded', null);
+    const [activeOnly, setActiveOnly] = useSessionState('bonds-active-only', true);
     const isAdmin = hasRole('ADMIN');
     const listParams = useListParams();
     const typeFilter = listParams.filter || 'ALL';
@@ -254,9 +164,16 @@ export default function BondsPage() {
         placeholderData: (prev) => prev,
     });
 
-    const bonds = data?.content || [];
+    const allBonds = useMemo(() => data?.content || [], [data]);
     const totalPages = data?.totalPages || 0;
     const totalElements = data?.totalElements || 0;
+
+    const todayIso = useMemo(() => new Date().toISOString().slice(0, 10), []);
+    const visibleBonds = useMemo(() => {
+        if (!activeOnly) return allBonds;
+        return allBonds.filter((b) => !b.maturityEnd || b.maturityEnd >= todayIso);
+    }, [allBonds, activeOnly, todayIso]);
+    const hiddenCount = allBonds.length - visibleBonds.length;
 
     const handleBondUpdate = async () => {
         setUpdating(prev => ({ ...prev, full: true }));
@@ -279,7 +196,7 @@ export default function BondsPage() {
         listParams.setFilter(id);
     };
 
-    if (loading && bonds.length === 0) return <LoadingState message={t('market.bond.loading')} />;
+    if (loading && allBonds.length === 0) return <LoadingState message={t('market.bond.loading')} />;
     if (error) return <ErrorState message={t('market.bond.error')} onRetry={refetch} />;
 
     return (
@@ -320,6 +237,24 @@ export default function BondsPage() {
                     onSortChange={listParams.setSort}
                     onDirectionChange={listParams.setDirection}
                 />
+                <button
+                    type="button"
+                    onClick={() => setActiveOnly((v) => !v)}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                        activeOnly
+                            ? 'border-accent/40 bg-accent/10 text-accent'
+                            : 'border-border-default bg-bg-elevated text-fg-muted hover:text-fg'
+                    }`}
+                    title={t('market.bond.activeOnlyTooltip', { defaultValue: 'Vade dolmamış bonolar' })}
+                >
+                    <Filter className="h-3.5 w-3.5" />
+                    {t('market.bond.activeOnlyLabel', { defaultValue: 'Açık bonolar' })}
+                    {activeOnly && hiddenCount > 0 && (
+                        <span className="ml-1 rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-mono">
+                            +{hiddenCount}
+                        </span>
+                    )}
+                </button>
             </div>
 
             {bondTypes.length > 0 && (
@@ -333,19 +268,18 @@ export default function BondsPage() {
             )}
 
             <AnimatePresence>
-                {bonds.length > 0 ? (
+                {visibleBonds.length > 0 ? (
                     <motion.div
                         variants={containerVariants(0.06)}
                         initial="hidden"
                         animate="show"
                         className="flex flex-col gap-4 min-h-[600px]"
                     >
-                        {bonds.map((bond) => (
+                        {visibleBonds.map((bond) => (
                             <BondCard
                                 key={bond.seriesCode}
                                 bond={bond}
-                                isExpanded={expandedBond === bond.seriesCode}
-                                onToggleChart={(code) => setExpandedBond(prev => prev === code ? null : code)}
+                                onClick={() => navigate(`/bonds/${encodeURIComponent(bond.seriesCode)}`)}
                             />
                         ))}
                     </motion.div>

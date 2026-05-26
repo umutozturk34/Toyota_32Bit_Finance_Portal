@@ -84,7 +84,7 @@ export default function InstrumentPicker({ value, onChange, max = 6 }) {
                   type="button"
                   onClick={() => remove(idx)}
                   className="ml-1 h-5 w-5 rounded-md flex items-center justify-center text-fg-muted hover:text-fg hover:bg-bg-elevated cursor-pointer border-none"
-                  aria-label="remove"
+                  aria-label={t('common.remove')}
                 >
                   <X className="h-3 w-3" />
                 </button>

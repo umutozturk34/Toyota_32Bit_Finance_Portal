@@ -66,8 +66,11 @@ public interface AnalyticsPriceSeriesProvider {
         }
 
         private Currency resolveNative(AnalyticsInstrument instrument) {
-            if (nativeCurrencyResolver == null) return Currency.TRY;
             MarketType marketType = mapToMarketType(instrument.type());
+            if (marketType == MarketType.CRYPTO || marketType == MarketType.VIOP) {
+                return Currency.TRY;
+            }
+            if (nativeCurrencyResolver == null) return Currency.TRY;
             Currency resolved = nativeCurrencyResolver.resolveNativeCurrency(marketType, instrument.code());
             return resolved != null ? resolved : Currency.TRY;
         }

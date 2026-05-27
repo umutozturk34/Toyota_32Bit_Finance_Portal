@@ -21,6 +21,25 @@ services:
     networks:
       - finance-network
 
+  db-migrator:
+    image: flyway/flyway:11-alpine
+    container_name: finance-db-migrator
+    restart: "no"
+    command:
+      - "-url=jdbc:postgresql://db:5432/finance_db"
+      - "-user=finance_user"
+      - "-password=${DB_PASSWORD}"
+      - "-connectRetries=10"
+      - "-locations=filesystem:/flyway/sql"
+      - "migrate"
+    volumes:
+      - ./db/migration:/flyway/sql:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - finance-network
+
   # Spring Boot Backend
   backend:
     image: ${BACKEND_IMAGE:-ghcr.io/umutozturk34/finance-portal-backend:latest}
@@ -54,6 +73,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db-migrator:
+        condition: service_completed_successfully
       otel-collector:
         condition: service_started
       kafka:
@@ -106,6 +127,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db-migrator:
+        condition: service_completed_successfully
       kafka:
         condition: service_healthy
       redis:

@@ -178,7 +178,10 @@ public class FundDetailEnrichmentService {
     }
 
     private Set<String> loadExistingFundCodes() {
-        return new HashSet<>(trackedAssetQueryService.getCodes(TrackedAssetType.FUND));
+        Set<String> tracked = new HashSet<>(trackedAssetQueryService.getCodes(TrackedAssetType.FUND));
+        Set<String> persisted = new HashSet<>(fundRepository.findAllFundCodes());
+        tracked.retainAll(persisted);
+        return tracked;
     }
 
     private int applyReturns(List<TefasFundReturnsDto> rows, Set<String> existingCodes) {

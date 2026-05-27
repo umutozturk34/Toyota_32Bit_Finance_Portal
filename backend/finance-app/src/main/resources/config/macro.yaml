@@ -10,7 +10,7 @@ app:
         label: policyRate
         category: RATES
         unit: PERCENT
-        frequency: DAILY
+        frequency: MONTHLY
         prominent: true
 
       - code: TP.BISTTLREF.ORAN

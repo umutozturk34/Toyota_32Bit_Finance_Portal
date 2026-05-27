@@ -19,6 +19,7 @@ function ActionDot({ Icon, label, onClick, tone = 'default', active = false }) {
       title={label}
       aria-label={label}
       className={`widget-no-drag flex items-center justify-center w-7 h-7 rounded-lg border bg-bg-deep/85 backdrop-blur-md transition-colors duration-150 cursor-pointer shadow-lg shadow-black/40 ${tones[tone]}`}
+      style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}
     >
       <Icon className="h-3.5 w-3.5" />
     </button>

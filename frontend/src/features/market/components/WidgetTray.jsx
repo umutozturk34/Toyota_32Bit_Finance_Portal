@@ -94,7 +94,7 @@ export default function WidgetTray({ sections, watchlists = [], onAdd, onDragSta
 
   return (
     <div ref={containerRef} className="relative z-30" style={{ isolation: 'isolate' }}>
-      <div className="flex flex-row flex-wrap items-center gap-1.5 rounded-xl border border-accent/30 bg-bg-deep/90 backdrop-blur-md shadow-lg shadow-black/20 p-1.5">
+      <div className="flex flex-row flex-wrap items-center gap-1.5 rounded-xl border border-accent/30 bg-bg-deep/90 backdrop-blur-md shadow-lg shadow-black/20 p-1.5" style={{ willChange: 'backdrop-filter', transform: 'translateZ(0)' }}>
         <Tab
           active={openTab === 'widget'}
           accent="#6366f1"

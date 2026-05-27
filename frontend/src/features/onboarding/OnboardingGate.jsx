@@ -1,7 +1,7 @@
 import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, BarChart3, Wallet, Bell, Shield, ArrowRight } from 'lucide-react';
+import { Rocket, BarChart3, Wallet, Bell, Shield, ArrowRight } from 'lucide-react';
 import { useUserPreferences, useUpdateUserPreferences } from '../../shared/hooks/useUserPreferences';
 
 const HIGHLIGHT_DEFS = [
@@ -55,7 +55,7 @@ export default function OnboardingGate() {
                 transition={{ type: 'spring', stiffness: 280, damping: 18, delay: 0.1 }}
                 className="mx-auto flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-accent text-white shadow-lg shadow-accent/30"
               >
-                <Sparkles className="h-6 w-6" />
+                <Rocket className="h-6 w-6" />
               </motion.div>
               <motion.h2
                 initial={{ opacity: 0, y: 8 }}

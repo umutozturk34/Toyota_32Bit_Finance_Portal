@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import useChartRange from '../../../shared/hooks/useChartRange';
-import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, Plus } from 'lucide-react';
+import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, ExternalLink, Plus } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/AnimatedIcons';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/useTheme';
@@ -24,6 +25,9 @@ import { LotsTable } from './LotsTable';
 
 const formatEntryDate = (v) => v ? new Date(v).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
+const marketHref = (type, code) => `${TYPE_ROUTES[type] ?? '/market'}/${encodeURIComponent(code)}`;
+
 const STAT_CARD_DEFS = [
   { key: 'quantity', labelKey: 'quantity', Icon: Hash, format: (v) => Number(v).toLocaleString(currentLocaleTag(), { maximumFractionDigits: 6 }) },
   { key: 'entryDate', labelKey: 'entryDate', Icon: Calendar, format: formatEntryDate },
@@ -43,6 +47,7 @@ function AssetChart({ data, isDark, t, convertAt, displayCurrency, nativeCurrenc
 
 export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onEditLot, onDeleteLot, onSellLot, onReopenLot, hasActiveDialog = false }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { isDark } = useTheme();
   const { format: money, formatCompact: moneyCompact } = useMoney();
   const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
@@ -161,13 +166,24 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
             </div>
           </div>
         </div>
-        <button
-          onClick={() => setAddLotOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-bright transition-all border-none cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          {t('assetDetail.newLot')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(marketHref(asset.assetType, asset.assetCode))}
+            className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-xs font-semibold text-fg-muted hover:text-accent hover:border-accent/40 hover:bg-accent/5 transition-all backdrop-blur-sm cursor-pointer"
+            title={t('portfolio.positions.viewOnMarket', { defaultValue: 'Pazar detayı' })}
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            {t('portfolio.positions.viewOnMarket', { defaultValue: 'Pazar detayı' })}
+          </button>
+          <button
+            onClick={() => setAddLotOpen(true)}
+            className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-bright transition-all border-none cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            {t('assetDetail.newLot')}
+          </button>
+        </div>
       </motion.div>
 
       <motion.div

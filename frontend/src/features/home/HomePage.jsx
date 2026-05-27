@@ -68,32 +68,28 @@ const HomePage = () => {
       </div>
 
       {isDark && (
-        <>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ isolation: 'isolate', transform: 'translate3d(0,0,0)' }}>
           <div
             className="pointer-events-none absolute top-[-120px] left-[20%] w-[600px] h-[500px] rounded-full blur-[180px]"
-            style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)' }}
-            aria-hidden="true"
+            style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)', willChange: 'transform', transform: 'translate3d(0,0,0)' }}
           />
           <div
             className="pointer-events-none absolute bottom-[-80px] right-[15%] w-[400px] h-[350px] rounded-full blur-[140px]"
-            style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 70%)' }}
-            aria-hidden="true"
+            style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 70%)', willChange: 'transform', transform: 'translate3d(0,0,0)' }}
           />
-        </>
+        </div>
       )}
       {!isDark && (
-        <>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ isolation: 'isolate', transform: 'translate3d(0,0,0)' }}>
           <div
             className="pointer-events-none absolute top-[-80px] right-[20%] w-[500px] h-[450px] rounded-full blur-[160px]"
-            style={{ background: 'radial-gradient(circle, rgba(0,82,255,0.06) 0%, transparent 70%)' }}
-            aria-hidden="true"
+            style={{ background: 'radial-gradient(circle, rgba(0,82,255,0.06) 0%, transparent 70%)', willChange: 'transform', transform: 'translate3d(0,0,0)' }}
           />
           <div
             className="pointer-events-none absolute bottom-[20%] left-[10%] w-[300px] h-[300px] rounded-full blur-[120px]"
-            style={{ background: 'radial-gradient(circle, rgba(0,82,255,0.04) 0%, transparent 70%)' }}
-            aria-hidden="true"
+            style={{ background: 'radial-gradient(circle, rgba(0,82,255,0.04) 0%, transparent 70%)', willChange: 'transform', transform: 'translate3d(0,0,0)' }}
           />
-        </>
+        </div>
       )}
 
       <div className="max-w-6xl mx-auto px-6 sm:px-8">
@@ -246,6 +242,8 @@ const HomePage = () => {
                     style={{
                       ...GLOW_POSITIONS[f.glowPos],
                       background: `radial-gradient(circle, ${isDark ? f.glowColor.dark : f.glowColor.light} 0%, transparent 70%)`,
+                      willChange: 'opacity',
+                      transform: 'translate3d(0,0,0)',
                     }}
                     aria-hidden="true"
                   />

@@ -8,6 +8,7 @@ import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import SummaryCards from './components/SummaryCards';
 import PositionsTable from './components/PositionsTable';
+import PositionSearchBar from './components/PositionSearchBar';
 import AllocationChart from './components/AllocationChart';
 import RealizedPnlChart from './components/RealizedPnlChart';
 import PerformanceChart from './components/PerformanceChart';
@@ -193,6 +194,7 @@ export default function Portfolio() {
                 <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
                 <RealizedPnlChart portfolioId={portfolio?.id} />
               </div>
+              <PositionSearchBar />
               <div className="min-w-0">
                 <PositionsTable
                   portfolioId={portfolio?.id}

@@ -36,6 +36,7 @@ export default function SearchSuggestions({
   placeholder,
   navigateOnSelect = true,
   excludeCodes = [],
+  excludeTypes = [],
   filterType,
   variant = 'default',
 }) {
@@ -76,6 +77,7 @@ export default function SearchSuggestions({
     query: debouncedQuery,
     filterType,
     excludeCodes,
+    excludeTypes,
     onClose: () => setOpen(false),
   });
 

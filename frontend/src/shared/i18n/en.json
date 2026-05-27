@@ -949,7 +949,13 @@
       "exitDateLabel": "Exit Date",
       "statusCol": "Status",
       "realReturnAbbr": "real",
-      "realReturnTooltip": "Real return (CPI effect removed)"
+      "realReturnTooltip": "Real return (CPI effect removed)",
+      "viewOnMarket": "Market detail"
+    },
+    "search": {
+      "title": "Add Position",
+      "subtitle": "Discover an asset and open a position from its market detail page",
+      "placeholder": "Search to add new position..."
     },
     "allocation": {
       "title": "Allocation",

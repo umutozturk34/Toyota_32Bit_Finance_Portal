@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Search } from 'lucide-react';
+import { X, Lightbulb, Search } from 'lucide-react';
 import SearchSuggestions from '../../../shared/components/form/SearchSuggestions';
 import { INSTRUMENT_TYPES, PRESET_INSTRUMENTS, SERIES_COLORS } from '../constants';
 
@@ -122,7 +122,7 @@ export default function InstrumentPicker({ value, onChange, max = 6 }) {
 
       <div className="relative z-0 rounded-xl border border-border-default/60 bg-bg-elevated/30 p-3 space-y-2.5">
         <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.18em] text-fg-muted">
-          <Sparkles className="h-3 w-3" />
+          <Lightbulb className="h-3 w-3" />
           {t('analytics.quickPick', { defaultValue: 'Hızlı seç' })}
         </div>
         <div className="flex flex-wrap gap-1.5">

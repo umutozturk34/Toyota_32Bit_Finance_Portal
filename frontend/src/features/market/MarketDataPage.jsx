@@ -197,7 +197,7 @@ export default function MarketDataPage() {
         </button>
       </div>
       <div className="w-full max-w-md"><SearchSuggestions variant="hero" placeholder={t('marketOverview.searchPlaceholder')} /></div>
-      <div className="inline-flex items-center gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 self-start">
+      <div className="inline-flex items-center gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 self-start" style={{ willChange: 'backdrop-filter', transform: 'translate3d(0,0,0)' }}>
         <button
           onClick={() => setActiveTab('overview')}
           className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer ${

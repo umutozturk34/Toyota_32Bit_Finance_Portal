@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { ChevronRight, Package, Pencil, Trash2, XCircle, ShoppingBag, RotateCcw } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ChevronRight, ExternalLink, Package, Pencil, Trash2, XCircle, ShoppingBag, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -24,6 +24,9 @@ import BulkSelectionBar from './BulkSelectionBar';
 import BulkDeleteDialog from './BulkDeleteDialog';
 
 const SORT_OPTION_IDS = ['currentValue', 'profitPercent', 'profitAmount', 'entryDate', 'assetCode', 'quantity'];
+
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
+const marketHref = (type, code) => `${TYPE_ROUTES[type] ?? '/market'}/${encodeURIComponent(code)}`;
 
 function formatEntryDate(dateStr, localeTag) {
   if (!dateStr) return '';
@@ -155,6 +158,7 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
 
 function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetClick, onEditClick, onDeleteClick, onCloseClick, onSellClick, onReopenClick }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { format: money, formatCompact: moneyCompact } = useMoney();
   const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
   const pnlClass = getChangeClass(pos.pnlTry);
@@ -174,6 +178,12 @@ function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetC
 
   const guard = (fn) => () => { if (!pending && fn) fn(pos); };
   const assetClick = guard(onAssetClick);
+  const marketDetailClick = (e) => {
+    e.stopPropagation();
+    if (pending) return;
+    navigate(marketHref(pos.assetType, pos.assetCode));
+  };
+  const marketLinkLabel = t('portfolio.positions.viewOnMarket', { defaultValue: 'Pazar detayı' });
   const editClick = isClosedDerivative ? guard(onCloseClick) : guard(onEditClick);
   const deleteClick = guard(onDeleteClick);
   const closeClick = guard(onCloseClick);
@@ -224,6 +234,15 @@ function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetC
               <p className={`font-semibold text-fg leading-tight ${isDerivative ? 'text-xs break-all' : 'text-sm truncate'}`}>
                 {assetCodeLabel(pos.assetType, pos.assetCode)}
               </p>
+              <button
+                type="button"
+                onClick={marketDetailClick}
+                title={marketLinkLabel}
+                aria-label={marketLinkLabel}
+                className="inline-flex items-center justify-center rounded-md p-0.5 text-accent/80 hover:text-accent hover:bg-accent/10 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 outline-none border-none bg-transparent cursor-pointer"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </button>
             </div>
             {!isDerivative && (
               <p className="text-[11px] text-fg-muted truncate">{displayName}</p>
@@ -294,6 +313,15 @@ function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetC
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-sm font-semibold text-fg truncate">{pos.assetCode}</p>
+                <button
+                  type="button"
+                  onClick={marketDetailClick}
+                  title={marketLinkLabel}
+                  aria-label={marketLinkLabel}
+                  className="inline-flex items-center justify-center rounded-md p-0.5 text-accent/80 hover:text-accent hover:bg-accent/10 transition-all outline-none border-none bg-transparent cursor-pointer"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </button>
                 <PositionStatusBadge closed={isClosedSpot || isClosedDerivative} isDerivative={isDerivative} />
               </div>
               {!isDerivative && (

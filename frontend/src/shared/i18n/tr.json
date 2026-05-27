@@ -949,7 +949,13 @@
       "exitDateLabel": "Çıkış Tarihi",
       "statusCol": "Durum",
       "realReturnAbbr": "reel",
-      "realReturnTooltip": "Reel getiri (TÜFE etkisi düşülmüş)"
+      "realReturnTooltip": "Reel getiri (TÜFE etkisi düşülmüş)",
+      "viewOnMarket": "Pazar detayı"
+    },
+    "search": {
+      "title": "Pozisyon Ekle",
+      "subtitle": "Yeni bir varlık keşfedip detay sayfasından pozisyon ekleyebilirsin",
+      "placeholder": "Yeni pozisyon için ara..."
     },
     "allocation": {
       "title": "Dağılım",

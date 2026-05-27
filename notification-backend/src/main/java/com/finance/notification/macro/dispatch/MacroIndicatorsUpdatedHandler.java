@@ -50,11 +50,11 @@ public class MacroIndicatorsUpdatedHandler implements NotificationHandler {
         String title = count > 0
                 ? translator.translate("notif.macroIndicators.titleWithCount", locale, count)
                 : translator.translate("notif.macroIndicators.title", locale);
+        List<Map<String, Object>> rows = renderRows(sorted, locale);
         String body = count > 0
-                ? translator.translate("notif.macroIndicators.bodyWithCount", locale, count)
+                ? translator.translate("notif.macroIndicators.bodyWithCount", locale, count, buildBodySummary(rows, locale))
                 : translator.translate("notif.macroIndicators.body", locale);
         String emailSubject = translator.translate("notif.email.subject", locale, title);
-        List<Map<String, Object>> rows = renderRows(sorted, locale);
 
         Map<String, Object> templateData = new HashMap<>();
         templateData.put("title", title);
@@ -77,6 +77,28 @@ public class MacroIndicatorsUpdatedHandler implements NotificationHandler {
         templateData.put("summaryTotal", translator.translate("notif.macroIndicators.summary.total", locale, count));
         templateData.put("heroLabel", translator.translate("notif.macroIndicators.heroLabel", locale));
         return new RenderedNotification(title, body, emailSubject, EMAIL_TEMPLATE, templateData);
+    }
+
+    private static final int BODY_PREVIEW_LIMIT = 2;
+
+    private String buildBodySummary(List<Map<String, Object>> rows, Locale locale) {
+        int preview = Math.min(BODY_PREVIEW_LIMIT, rows.size());
+        List<String> items = new ArrayList<>(preview);
+        for (int i = 0; i < preview; i++) {
+            Map<String, Object> row = rows.get(i);
+            items.add(translator.translate(
+                    "notif.macroIndicators.bodyItem",
+                    locale,
+                    row.get("label"),
+                    row.get("newValue"),
+                    row.get("deltaPercent")));
+        }
+        String joined = String.join(", ", items);
+        int remaining = rows.size() - preview;
+        if (remaining > 0) {
+            joined = joined + " " + translator.translate("notif.macroIndicators.bodyMore", locale, remaining);
+        }
+        return joined;
     }
 
     private static List<IndicatorChange> sortBySignificance(List<IndicatorChange> changes) {

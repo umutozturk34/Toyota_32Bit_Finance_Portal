@@ -8,6 +8,10 @@ const PORT = Number(process.env.PORT) || 8080;
 const IDLE_CLOSE_MS = Number(process.env.PDF_IDLE_CLOSE_MS) || 5 * 60 * 1000;
 const DEFAULT_TIMEOUT_MS = Number(process.env.PDF_RENDER_TIMEOUT_MS) || 20000;
 const BODY_LIMIT = process.env.PDF_BODY_LIMIT || '1mb';
+const MAX_CONCURRENT = Math.max(1, Number(process.env.PDF_MAX_CONCURRENT) || 4);
+const MAX_QUEUE = Math.max(0, Number(process.env.PDF_MAX_QUEUE) || 20);
+const WAIT_UNTIL = process.env.PDF_WAIT_UNTIL || 'domcontentloaded';
+const DISABLE_JS = String(process.env.PDF_DISABLE_JS ?? 'true').toLowerCase() !== 'false';
 
 const LAUNCH_ARGS = [
   '--no-sandbox',
@@ -30,6 +34,30 @@ const DEFAULT_PDF_OPTIONS = {
 let browserPromise = null;
 let idleTimer = null;
 let inFlightRequests = 0;
+let activeRenders = 0;
+const waiters = [];
+
+function acquireSlot() {
+  if (activeRenders < MAX_CONCURRENT) {
+    activeRenders += 1;
+    return Promise.resolve(true);
+  }
+  if (waiters.length >= MAX_QUEUE) {
+    return Promise.resolve(false);
+  }
+  return new Promise((resolve) => {
+    waiters.push(() => {
+      activeRenders += 1;
+      resolve(true);
+    });
+  });
+}
+
+function releaseSlot() {
+  activeRenders = Math.max(0, activeRenders - 1);
+  const next = waiters.shift();
+  if (next) next();
+}
 
 function log(level, message, meta) {
   const entry = { ts: new Date().toISOString(), level, message, ...meta };
@@ -146,6 +174,12 @@ app.post('/render', async (req, res) => {
     return res.status(400).json({ error: 'invalid_request', message: 'url or htmlContent is required' });
   }
 
+  const acquired = await acquireSlot();
+  if (!acquired) {
+    res.setHeader('Retry-After', '5');
+    return res.status(503).json({ error: 'queue_full', message: 'render queue saturated, retry shortly' });
+  }
+
   inFlightRequests += 1;
   if (idleTimer) {
     clearTimeout(idleTimer);
@@ -156,13 +190,16 @@ app.post('/render', async (req, res) => {
   try {
     const browser = await getBrowser();
     page = await browser.newPage();
+    if (DISABLE_JS) {
+      await page.setJavaScriptEnabled(false);
+    }
     if (extraHeaders && typeof extraHeaders === 'object') {
       await page.setExtraHTTPHeaders(extraHeaders);
     }
     if (htmlContent) {
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0', timeout });
+      await page.setContent(htmlContent, { waitUntil: WAIT_UNTIL, timeout });
     } else {
-      await page.goto(url, { waitUntil: 'networkidle0', timeout });
+      await page.goto(url, { waitUntil: WAIT_UNTIL, timeout });
     }
 
     if (waitFor) {
@@ -195,6 +232,7 @@ app.post('/render', async (req, res) => {
       }
     }
     inFlightRequests -= 1;
+    releaseSlot();
     if (inFlightRequests <= 0) {
       scheduleIdleClose();
     }

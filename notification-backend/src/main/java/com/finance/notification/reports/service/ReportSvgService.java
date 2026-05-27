@@ -145,9 +145,9 @@ public class ReportSvgService {
                     .append("\" stroke=\"").append(palette.card()).append("\" stroke-width=\"1.5\"/>");
             svg.append("<circle cx=\"").append(cx).append("\" cy=\"").append(cy)
                     .append("\" r=\"").append(rInner).append("\" fill=\"").append(palette.card()).append("\"/>");
-            svg.append("<text x=\"").append(fmt(cx)).append("\" y=\"").append(fmt(cy - rOuter - 6))
+            svg.append("<text x=\"").append(fmt(cx)).append("\" y=\"").append(fmt(cy + 5))
                     .append("\" text-anchor=\"middle\" fill=\"").append(palette.fg())
-                    .append("\" font-size=\"10\" font-weight=\"700\" font-family=\"-apple-system,sans-serif\">100%</text>");
+                    .append("\" font-size=\"18\" font-weight=\"700\" font-family=\"-apple-system,sans-serif\">100%</text>");
         } else {
             double angle = -Math.PI / 2.0;
             for (var it : items) {

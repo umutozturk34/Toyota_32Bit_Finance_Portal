@@ -29,4 +29,5 @@ app:
       portfolio-updated: portfolio.updated
       macro-indicators-updated: macro.indicators.updated
       user-email-change-code: user.email-change.code-requested
+      user-registered: user.registered
       mail-dispatch: mail.dispatch

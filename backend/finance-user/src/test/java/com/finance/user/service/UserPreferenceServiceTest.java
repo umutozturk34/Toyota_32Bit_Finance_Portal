@@ -1,6 +1,7 @@
 package com.finance.user.service;
 
 
+import com.finance.shared.event.EventPublisherPort;
 import com.finance.user.client.KeycloakAdminClient;
 import com.finance.user.config.UserSecurityProperties;
 import com.finance.user.dto.UserPreferenceResponse;
@@ -33,6 +34,7 @@ class UserPreferenceServiceTest {
 
     @Mock private UserPreferenceRepository repository;
     @Mock private KeycloakAdminClient keycloakAdminClient;
+    @Mock private EventPublisherPort eventPublisher;
 
     private UserPreferenceMapper mapper;
     private UserSecurityProperties securityProperties;
@@ -45,7 +47,7 @@ class UserPreferenceServiceTest {
                 new UserSecurityProperties.EmailChange(5, 6, Duration.ofMinutes(5)),
                 new UserSecurityProperties.PasswordReset(300L),
                 new UserSecurityProperties.Keycloak("finance-frontend", "themePreference", "locale"));
-        service = new UserPreferenceService(repository, mapper, keycloakAdminClient, securityProperties);
+        service = new UserPreferenceService(repository, mapper, keycloakAdminClient, securityProperties, eventPublisher);
     }
 
     @Test

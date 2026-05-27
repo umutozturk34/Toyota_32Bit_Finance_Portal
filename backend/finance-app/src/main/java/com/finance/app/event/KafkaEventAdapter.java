@@ -7,6 +7,7 @@ import com.finance.common.event.MacroIndicatorsUpdatedEvent;
 import com.finance.common.event.MarketUpdatedEvent;
 import com.finance.common.event.NewsPublishedEvent;
 import com.finance.common.event.PortfolioUpdatedEvent;
+import com.finance.common.event.UserRegisteredEvent;
 import com.finance.shared.event.EventPublisherPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -42,6 +43,7 @@ public class KafkaEventAdapter implements EventPublisherPort {
             case PortfolioUpdatedEvent ignored -> topics.portfolioUpdated();
             case MacroIndicatorsUpdatedEvent ignored -> topics.macroIndicatorsUpdated();
             case EmailChangeCodeRequestedEvent ignored -> topics.userEmailChangeCode();
+            case UserRegisteredEvent ignored -> topics.userRegistered();
             default -> throw new IllegalArgumentException(
                     "Unknown event type for topic resolution: " + event.getClass().getName());
         };

@@ -1,5 +1,7 @@
 package com.finance.user.service;
 
+import com.finance.common.event.UserRegisteredEvent;
+import com.finance.shared.event.EventPublisherPort;
 import com.finance.user.client.KeycloakAdminClient;
 import com.finance.user.config.UserSecurityProperties;
 import com.finance.user.dto.UserPreferenceResponse;
@@ -13,8 +15,10 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @Log4j2
 @Service
@@ -27,6 +31,7 @@ public class UserPreferenceService {
     private final UserPreferenceMapper mapper;
     private final KeycloakAdminClient keycloakAdminClient;
     private final UserSecurityProperties securityProperties;
+    private final EventPublisherPort eventPublisher;
 
     @Transactional
     public UserPreferenceResponse getOrDefault(String userSub) {
@@ -34,7 +39,10 @@ public class UserPreferenceService {
         if (existing.isPresent()) return mapper.toResponse(existing.get());
         UserPreference seed = UserPreference.defaultsFor(userSub);
         hydrateFromKeycloak(userSub, seed);
-        return mapper.toResponse(repository.save(seed));
+        UserPreference saved = repository.save(seed);
+        eventPublisher.publish(new UserRegisteredEvent(
+                UUID.randomUUID().toString(), userSub, OffsetDateTime.now()));
+        return mapper.toResponse(saved);
     }
 
     private void hydrateFromKeycloak(String userSub, UserPreference target) {

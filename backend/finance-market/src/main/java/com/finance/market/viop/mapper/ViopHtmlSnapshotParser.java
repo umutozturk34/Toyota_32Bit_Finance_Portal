@@ -1,6 +1,7 @@
 package com.finance.market.viop.mapper;
 
 import com.finance.market.viop.dto.ViopQuoteSnapshot;
+import lombok.extern.log4j.Log4j2;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -12,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+@Log4j2
 @Component
 public class ViopHtmlSnapshotParser {
 
@@ -53,6 +55,7 @@ public class ViopHtmlSnapshotParser {
         try {
             return new BigDecimal(cleaned);
         } catch (NumberFormatException e) {
+            log.debug("Skipping unparseable VIOP cell raw={}", raw);
             return null;
         }
     }

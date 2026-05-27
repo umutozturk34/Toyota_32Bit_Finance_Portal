@@ -48,7 +48,7 @@ public class BondSnapshotService {
         log.info("Filtered to {} unique active bonds (from {} raw series)", filtered.size(), allSeries.size());
 
         if (filtered.isEmpty()) {
-            throw new BusinessException("No valid bond series found after filtering");
+            throw new BusinessException("error.market.bondNoSeriesFiltered");
         }
         return filtered;
     }

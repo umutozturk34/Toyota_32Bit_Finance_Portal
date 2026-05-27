@@ -54,7 +54,7 @@ public class StockUpdateService implements MarketRefresher {
         List<String> bistStocks = trackedAssetQueryService.getCodes(TrackedAssetType.STOCK);
         if (bistStocks.isEmpty()) {
             log.error("No BIST stocks configured for tracking");
-            throw new BusinessException("No BIST stocks configured for tracking");
+            throw new BusinessException("error.market.stockNoneTracked");
         }
         log.info("Starting Yahoo stock sync for {} BIST stocks", bistStocks.size());
         final int[] totalCandles = {0};

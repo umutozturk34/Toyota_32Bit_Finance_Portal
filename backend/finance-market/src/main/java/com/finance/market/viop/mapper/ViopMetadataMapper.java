@@ -4,6 +4,7 @@ import com.finance.market.viop.dto.ViopContractSpec;
 import com.finance.market.viop.dto.external.ViopFutureMetadataDto;
 import com.finance.market.viop.dto.external.ViopOptionMetadataDto;
 import com.finance.market.viop.model.ViopOptionSide;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -11,6 +12,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
+@Log4j2
 @Component
 public class ViopMetadataMapper {
 
@@ -55,6 +57,7 @@ public class ViopMetadataMapper {
         try {
             return LocalDate.parse(raw, EXPIRY_FMT);
         } catch (Exception e) {
+            log.debug("Unparseable VIOP expiry raw={}", raw);
             return null;
         }
     }
@@ -64,6 +67,7 @@ public class ViopMetadataMapper {
         try {
             return new BigDecimal(raw.replace(".", "").replace(",", "."));
         } catch (NumberFormatException e) {
+            log.debug("Unparseable VIOP metadata decimal raw={}", raw);
             return null;
         }
     }

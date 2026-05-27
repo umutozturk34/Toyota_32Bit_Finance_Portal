@@ -28,7 +28,7 @@ public class BondDataService {
         List<BondSnapshotDto> allSnapshots = bondSnapshotService.fetchSnapshotData(bondSeries);
 
         if (allSnapshots.isEmpty()) {
-            throw new BusinessException("No bond snapshot data returned from EVDS");
+            throw new BusinessException("error.market.bondNoSnapshotData");
         }
 
         LocalDateTime now = LocalDateTime.now();

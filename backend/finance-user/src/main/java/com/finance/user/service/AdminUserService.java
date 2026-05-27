@@ -7,10 +7,12 @@ import com.finance.user.dto.AdminUserResponse;
 import com.finance.user.dto.KeycloakUser;
 import com.finance.user.mapper.KeycloakUserMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class AdminUserService {
@@ -43,5 +45,6 @@ public class AdminUserService {
     private void applyStatusChange(String userId, boolean enabled) {
         client.setEnabled(userId, enabled);
         userStatusRepository.upsertEnabled(userId, enabled);
+        log.info("Admin user status changed userId={} enabled={}", userId, enabled);
     }
 }

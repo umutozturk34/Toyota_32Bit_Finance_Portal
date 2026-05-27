@@ -1,6 +1,7 @@
 package com.finance.portfolio.repository;
 
 import com.finance.portfolio.model.PortfolioDailySnapshot;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,6 +24,9 @@ public interface PortfolioDailySnapshotRepository extends JpaRepository<Portfoli
             Long portfolioId, LocalDateTime cutoff);
 
     Optional<PortfolioDailySnapshot> findFirstByPortfolioIdOrderByCreatedAtDesc(Long portfolioId);
+
+    @Query("SELECT s FROM PortfolioDailySnapshot s WHERE s.portfolioId = :pid ORDER BY s.createdAt DESC")
+    List<PortfolioDailySnapshot> findRecentByPortfolioId(@Param("pid") Long portfolioId, Pageable pageable);
 
     @Query("SELECT s.snapshotDate FROM PortfolioDailySnapshot s WHERE s.portfolioId = :pid AND s.snapshotDate BETWEEN :from AND :to")
     List<LocalDate> findExistingDates(@Param("pid") Long portfolioId,

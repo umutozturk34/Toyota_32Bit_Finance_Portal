@@ -9,6 +9,7 @@ import com.finance.portfolio.dto.response.PositionResponse;
 import com.finance.portfolio.mapper.PortfolioResponseMapper;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.PortfolioAssetDailySnapshot;
+import com.finance.portfolio.model.PortfolioDailySnapshot;
 import com.finance.portfolio.model.PortfolioPosition;
 import com.finance.portfolio.model.MoneyScale;
 import com.finance.market.viop.model.ViopCandle;
@@ -16,6 +17,7 @@ import com.finance.market.viop.repository.ViopCandleRepository;
 import com.finance.portfolio.derivative.model.DerivativePosition;
 import com.finance.portfolio.derivative.repository.DerivativePositionRepository;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
+import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import com.finance.shared.service.AssetPricingPort.AssetKey;
 import com.finance.shared.service.AssetPricingPort.AssetMeta;
@@ -24,6 +26,7 @@ import com.finance.shared.util.EnumParser;
 import com.finance.shared.util.PercentChangeCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +48,7 @@ public class PortfolioSummaryService {
     private final PortfolioPositionRepository positionRepository;
     private final PortfolioResponseMapper responseMapper;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
+    private final PortfolioDailySnapshotRepository portfolioSnapshotRepository;
     private final DerivativePositionRepository derivativePositionRepository;
     private final ViopCandleRepository viopCandleRepository;
     private final AllocationCalculator allocationCalculator;
@@ -262,7 +266,19 @@ public class PortfolioSummaryService {
             totalAmount = totalAmount.add(s.getDailyPnlTry());
             any = true;
         }
-        return any ? totalAmount.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP) : null;
+        if (any) return totalAmount.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
+        return portfolioSnapshotDailyDelta(portfolioId, assetType);
+    }
+
+    private BigDecimal portfolioSnapshotDailyDelta(Long portfolioId, AssetType assetType) {
+        if (assetType != null) return null;
+        List<PortfolioDailySnapshot> recent = portfolioSnapshotRepository
+                .findRecentByPortfolioId(portfolioId, PageRequest.of(0, 2));
+        if (recent.size() < 2) return null;
+        BigDecimal latest = recent.get(0).getTotalValueTry();
+        BigDecimal prior = recent.get(1).getTotalValueTry();
+        if (latest == null || prior == null) return null;
+        return latest.subtract(prior).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
     }
 
     @Transactional(readOnly = true)

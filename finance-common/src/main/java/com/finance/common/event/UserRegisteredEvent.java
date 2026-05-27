@@ -12,4 +12,9 @@ public record UserRegisteredEvent(
     public String partitionKey() {
         return userSub;
     }
+
+    @Override
+    public EventTopic topic() {
+        return EventTopic.USER_REGISTERED;
+    }
 }

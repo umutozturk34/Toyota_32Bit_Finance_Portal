@@ -57,12 +57,4 @@ public class IdempotencyCacheConfig {
                 .maximumSize(properties.dedupMaxEntries())
                 .build();
     }
-
-    @Bean("userRegisteredProcessedEventIds")
-    public Cache<String, Boolean> userRegisteredProcessedEventIds() {
-        return Caffeine.newBuilder()
-                .expireAfterWrite(dedupTtl())
-                .maximumSize(properties.dedupMaxEntries())
-                .build();
-    }
 }

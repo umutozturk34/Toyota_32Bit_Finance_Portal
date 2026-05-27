@@ -17,4 +17,9 @@ public record EmailChangeCodeRequestedEvent(
     public String partitionKey() {
         return userSub;
     }
+
+    @Override
+    public EventTopic topic() {
+        return EventTopic.USER_EMAIL_CHANGE_CODE;
+    }
 }

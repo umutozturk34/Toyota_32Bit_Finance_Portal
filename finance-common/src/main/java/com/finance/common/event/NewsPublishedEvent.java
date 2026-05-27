@@ -21,4 +21,9 @@ public record NewsPublishedEvent(
     public String partitionKey() {
         return eventId;
     }
+
+    @Override
+    public EventTopic topic() {
+        return EventTopic.NEWS_PUBLISHED;
+    }
 }

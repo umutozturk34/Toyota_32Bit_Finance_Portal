@@ -1,6 +1,8 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function Pagination({ page, totalPages, onPageChange }) {
+  const { t } = useTranslation();
   if (totalPages <= 1) return null;
 
   const pages = buildPageNumbers(page, totalPages);
@@ -10,6 +12,7 @@ export default function Pagination({ page, totalPages, onPageChange }) {
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page === 0}
+        aria-label={t('common.previousPage')}
         className="flex items-center justify-center w-8 h-8 rounded-lg border border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:bg-surface disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer"
       >
         <ChevronLeft className="h-3.5 w-3.5" />
@@ -36,6 +39,7 @@ export default function Pagination({ page, totalPages, onPageChange }) {
       <button
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages - 1}
+        aria-label={t('common.nextPage')}
         className="flex items-center justify-center w-8 h-8 rounded-lg border border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:bg-surface disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer"
       >
         <ChevronRight className="h-3.5 w-3.5" />

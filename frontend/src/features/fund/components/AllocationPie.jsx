@@ -75,7 +75,7 @@ export default function AllocationPie({ allocations }) {
 
   if (arcs.length === 0) {
     return (
-      <Card padding="md" radius="xl">
+      <Card padding="md" radius="xl" data-tour="fund-allocation">
         <h3 className="text-sm font-semibold text-fg mb-2">{t('marketDetail.fund.allocationTitle')}</h3>
         <p className="text-xs text-fg-muted">{t('marketDetail.fund.allocationEmpty')}</p>
       </Card>
@@ -85,7 +85,7 @@ export default function AllocationPie({ allocations }) {
   const hoveredArc = hovered != null ? arcs.find(a => a.assetClass === hovered) : null;
 
   return (
-    <Card padding="md" radius="xl">
+    <Card padding="md" radius="xl" data-tour="fund-allocation">
       <h3 className="text-sm font-semibold text-fg mb-3">{t('marketDetail.fund.allocationTitle')}</h3>
       <div className="flex justify-center mb-4" onMouseLeave={() => setHovered(null)}>
         <div className="relative w-44 h-44">

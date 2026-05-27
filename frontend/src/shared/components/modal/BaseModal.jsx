@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import IconButton from '../buttons/IconButton';
 
 const SIZE_CLASSES = {
@@ -23,8 +24,10 @@ export default function BaseModal({
   size = 'sm',
   footer,
   children,
-  closeLabel = 'close',
+  closeLabel,
 }) {
+  const { t } = useTranslation();
+  const closeText = closeLabel ?? t('common.close');
   return (
     <AnimatePresence>
       {isOpen && (
@@ -61,7 +64,7 @@ export default function BaseModal({
                 size={8}
                 shape="square"
                 icon={<X className="h-4 w-4" />}
-                aria-label={closeLabel}
+                aria-label={closeText}
                 onClick={onClose}
               />
             </div>

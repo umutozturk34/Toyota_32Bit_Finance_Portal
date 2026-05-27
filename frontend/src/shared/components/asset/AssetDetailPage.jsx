@@ -100,6 +100,7 @@ export default function AssetDetailPage({
   showBuyButton = true,
   buyModalComponent: BuyModalComponent = MarketAddPositionModal,
   clientSideRangeFilter = false,
+  dataTour,
 }) {
   const { t } = useTranslation();
   const { convertAt } = useRateHistory();
@@ -151,7 +152,7 @@ export default function AssetDetailPage({
   const buyProps = getBuyProps ? getBuyProps(asset) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour={dataTour}>
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -220,6 +221,23 @@ export default function AssetDetailPage({
 
       {renderSidebar ? (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div data-tour="detail-chart" className="min-w-0">
+            <LightweightChart
+              data={chartData}
+              symbol={assetCode}
+              assetType={chartAssetType || assetType}
+              timeRange={effectiveRange}
+              onTimeRangeChange={setTimeRange}
+              showSecondaryLines={showSecondaryLines}
+              onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
+            />
+          </div>
+          <aside className="lg:sticky lg:top-4 lg:self-start space-y-3">
+            {renderSidebar(asset)}
+          </aside>
+        </div>
+      ) : (
+        <div data-tour="detail-chart">
           <LightweightChart
             data={chartData}
             symbol={assetCode}
@@ -229,20 +247,7 @@ export default function AssetDetailPage({
             showSecondaryLines={showSecondaryLines}
             onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
           />
-          <aside className="lg:sticky lg:top-4 lg:self-start space-y-3">
-            {renderSidebar(asset)}
-          </aside>
         </div>
-      ) : (
-        <LightweightChart
-          data={chartData}
-          symbol={assetCode}
-          assetType={chartAssetType || assetType}
-          timeRange={effectiveRange}
-          onTimeRangeChange={setTimeRange}
-          showSecondaryLines={showSecondaryLines}
-          onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
-        />
       )}
 
       {buyOpen && buyProps && (

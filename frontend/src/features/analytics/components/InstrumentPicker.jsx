@@ -79,7 +79,7 @@ export default function InstrumentPicker({ value, onChange, max = 6 }) {
                 <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-fg-subtle">
                   {typeDef?.labelKey ? t(`analytics.${typeDef.labelKey}`, { defaultValue: inst.type }) : inst.type}
                 </span>
-                <span className="text-fg">{inst.name || inst.code}</span>
+                <span className="text-fg">{inst.labelKey ? t(inst.labelKey, { defaultValue: inst.name || inst.code }) : (inst.name || inst.code)}</span>
                 <button
                   type="button"
                   onClick={() => remove(idx)}
@@ -142,7 +142,7 @@ export default function InstrumentPicker({ value, onChange, max = 6 }) {
                       : 'bg-bg-base/60 hover:bg-accent/10 hover:text-accent text-fg'
                 }`}
               >
-                {p.name}
+                {p.labelKey ? t(p.labelKey, { defaultValue: p.name }) : p.name}
               </button>
             );
           })}

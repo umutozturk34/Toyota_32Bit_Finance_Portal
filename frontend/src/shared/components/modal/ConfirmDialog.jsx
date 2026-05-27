@@ -65,6 +65,7 @@ export default function ConfirmDialog({
             <button
               onClick={onCancel}
               disabled={loading}
+              aria-label={t('common.close')}
               className="absolute top-3 right-3 flex items-center justify-center w-7 h-7 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer disabled:opacity-30"
             >
               <X className="h-3.5 w-3.5" />

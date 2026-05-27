@@ -148,6 +148,7 @@ export default function News() {
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={`${activeTab}-${listParams.page}`}
+                        data-tour="news-list"
                         variants={containerVariants}
                         initial="hidden"
                         animate="show"

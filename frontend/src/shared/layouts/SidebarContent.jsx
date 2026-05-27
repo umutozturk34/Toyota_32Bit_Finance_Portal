@@ -77,6 +77,7 @@ const SidebarContent = ({
     <div className="border-t border-border-default px-2 py-2 space-y-1 shrink-0">
       <button
         onClick={() => setNotificationsOpen(true)}
+        data-tour="notifications-bell"
         title={collapsed && !isMobile ? t('nav.notifications') : undefined}
         className={`w-full group relative flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
           collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
@@ -85,7 +86,7 @@ const SidebarContent = ({
         <span className="relative shrink-0">
           <Bell size={16} strokeWidth={1.6} className="group-hover:text-accent transition-colors" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent ring-2 ring-bg-base" aria-label={`${unreadCount} unread`} />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent ring-2 ring-bg-base" aria-label={t('common.unreadNotifications', { count: unreadCount })} />
           )}
         </span>
         {(!collapsed || isMobile) && <span className="text-[13px] font-medium">{t('nav.notifications')}</span>}
@@ -95,6 +96,7 @@ const SidebarContent = ({
       </button>
       <button
         onClick={() => setProfileOpen(true)}
+        data-tour="profile-menu"
         title={collapsed && !isMobile ? t('nav.profile') : undefined}
         className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
           collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'
@@ -105,6 +107,7 @@ const SidebarContent = ({
       </button>
       <button
         onClick={() => setSettingsOpen(true)}
+        data-tour="settings-menu"
         title={collapsed && !isMobile ? t('nav.settings') : undefined}
         className={`w-full group flex items-center gap-2.5 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-all duration-150 bg-transparent border-none cursor-pointer ${
           collapsed && !isMobile ? 'justify-center px-0 py-2' : 'px-3 py-2'

@@ -21,13 +21,13 @@ export const SERIES_COLORS = [
 ];
 
 export const PRESET_INSTRUMENTS = [
-  { type: 'DEPOSIT', code: 'TP.TRYTAS.MT06', name: 'TRY 3M Mevduat' },
-  { type: 'DEPOSIT', code: 'TP.USDTAS.MT06', name: 'USD 3M Mevduat' },
-  { type: 'DEPOSIT', code: 'TP.EURTAS.MT06', name: 'EUR 3M Mevduat' },
-  { type: 'FOREX',   code: 'USD',            name: 'USD/TRY' },
-  { type: 'FOREX',   code: 'EUR',            name: 'EUR/TRY' },
-  { type: 'COMMODITY', code: 'XAUTRY',       name: 'Altın' },
-  { type: 'COMMODITY', code: 'XAGTRY',       name: 'Gümüş' },
+  { type: 'DEPOSIT', code: 'TP.TRYTAS.MT06', name: 'TRY 3M Mevduat', labelKey: 'analytics.preset.depositTry3m' },
+  { type: 'DEPOSIT', code: 'TP.USDTAS.MT06', name: 'USD 3M Mevduat', labelKey: 'analytics.preset.depositUsd3m' },
+  { type: 'DEPOSIT', code: 'TP.EURTAS.MT06', name: 'EUR 3M Mevduat', labelKey: 'analytics.preset.depositEur3m' },
+  { type: 'FOREX',   code: 'USD',            name: 'USD/TRY',         labelKey: 'analytics.preset.usdTry' },
+  { type: 'FOREX',   code: 'EUR',            name: 'EUR/TRY',         labelKey: 'analytics.preset.eurTry' },
+  { type: 'COMMODITY', code: 'XAUTRY',       name: 'Altın',           labelKey: 'analytics.preset.gold' },
+  { type: 'COMMODITY', code: 'XAGTRY',       name: 'Gümüş',           labelKey: 'analytics.preset.silver' },
   { type: 'CRYPTO',  code: 'bitcoin',        name: 'Bitcoin' },
   { type: 'CRYPTO',  code: 'ethereum',       name: 'Ethereum' },
   { type: 'SPOT',    code: 'THYAO.IS',       name: 'THYAO' },

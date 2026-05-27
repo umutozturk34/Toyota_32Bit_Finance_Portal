@@ -74,6 +74,7 @@ export default function SortSelect({ value, direction, options, onSortChange, on
       {value && !hideDirection && <motion.button
         onClick={() => onDirectionChange(isDesc ? 'asc' : 'desc')}
         whileTap={{ scale: 0.9 }}
+        aria-label={t('common.toggleSortDirection')}
         className="flex items-center justify-center w-9 h-9 rounded-2xl border border-border-default bg-bg-elevated backdrop-blur-md text-accent hover:border-accent/30 hover:shadow-sm hover:shadow-accent/10 transition-all cursor-pointer overflow-hidden"
       >
         <AnimatePresence mode="wait">

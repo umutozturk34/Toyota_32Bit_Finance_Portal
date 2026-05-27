@@ -193,7 +193,7 @@ export default function BondDetail() {
   const hasRate = history.some((d) => d.rate != null);
 
   return (
-    <div className="space-y-6 py-6">
+    <div className="space-y-6 py-6" data-tour="bond-detail-card">
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -273,6 +273,7 @@ export default function BondDetail() {
         <div className="border-t border-border-default">
           <button
             type="button"
+            data-tour="bond-coupon-toggle"
             onClick={() => setRateOpen((v) => !v)}
             className="w-full px-5 py-3 flex items-center justify-between gap-3 text-sm font-semibold text-fg hover:bg-bg-base/40 transition-colors cursor-pointer bg-transparent border-none"
           >
@@ -296,7 +297,7 @@ export default function BondDetail() {
                 transition={{ duration: 0.25 }}
                 className="overflow-hidden"
               >
-                <div className="px-3 pb-4">
+                <div className="px-3 pb-4" data-tour="bond-coupon-chart">
                   {historyLoading ? (
                     <div className="h-56 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.chartLoading')}</div>
                   ) : hasRate ? (

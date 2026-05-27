@@ -52,6 +52,7 @@ export default function WatchlistTabsBar({ lists, activeId, onSelect, onCreate, 
       <button
         type="button"
         onClick={onCreate}
+        data-tour="watchlist-create"
         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold border border-dashed border-border-default text-fg-muted hover:border-accent hover:text-accent hover:bg-accent/5 transition-colors shrink-0 cursor-pointer bg-transparent"
       >
         <ListPlus className="h-3.5 w-3.5" />

@@ -146,7 +146,7 @@ export default function WatchPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" data-tour="watchlist-main">
       <PageHeader
         icon={<Eye className="h-5 w-5" />}
         title={t('watch.headerTitle')}

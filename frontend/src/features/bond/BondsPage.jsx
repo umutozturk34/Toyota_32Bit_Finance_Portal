@@ -34,7 +34,7 @@ import { BOND_TYPE_COLORS } from './lib/bondConstants';
 
 const SORT_OPTION_IDS = ['simpleYield', 'couponRate', 'baseIndex', 'maturityEnd', 'seriesCode'];
 
-function BondCard({ bond, onClick }) {
+function BondCard({ bond, onClick, dataTour }) {
     const { t } = useTranslation();
     const localeTag = t('common.localeTag');
     const maturityDays = daysUntil(bond.maturityEnd);
@@ -47,6 +47,7 @@ function BondCard({ bond, onClick }) {
             layout
             role="button"
             tabIndex={0}
+            data-tour={dataTour}
             onClick={onClick}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
             className="rounded-2xl border border-border-default bg-bg-elevated card-hover transition-all duration-200 hover:border-accent/40 overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent/40"
@@ -200,7 +201,7 @@ export default function BondsPage() {
     if (error) return <ErrorState message={t('market.bond.error')} onRetry={refetch} />;
 
     return (
-        <div className="space-y-6 py-6">
+        <div className="space-y-6 py-6" data-tour="bond-page-main">
             <PageHeader
                 icon={<Landmark className="h-5 w-5" />}
                 title={
@@ -275,10 +276,11 @@ export default function BondsPage() {
                         animate="show"
                         className="flex flex-col gap-4 min-h-[600px]"
                     >
-                        {visibleBonds.map((bond) => (
+                        {visibleBonds.map((bond, i) => (
                             <BondCard
                                 key={bond.seriesCode}
                                 bond={bond}
+                                dataTour={i === 0 ? 'bond-list-first' : undefined}
                                 onClick={() => navigate(`/bonds/${encodeURIComponent(bond.seriesCode)}`)}
                             />
                         ))}

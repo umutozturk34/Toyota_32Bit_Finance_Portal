@@ -43,6 +43,7 @@ export default function MarketListPage({
   filterShowAll = true,
   animatePresence = false,
   buyModalComponent: BuyModalComponent = MarketAddPositionModal,
+  dataTour,
 }) {
   const { t } = useTranslation();
   const { hasRole } = useAuth();
@@ -93,7 +94,7 @@ export default function MarketListPage({
   );
 
   return (
-    <div className="space-y-6 py-6">
+    <div className="space-y-6 py-6" data-tour={dataTour}>
       <PageHeader
         icon={icon}
         title={

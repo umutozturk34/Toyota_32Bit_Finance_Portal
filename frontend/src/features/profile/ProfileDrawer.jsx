@@ -28,7 +28,7 @@ function Section({ icon: Icon, title, children, accent = 'text-accent' }) {
 function IdentityHeader({ profile }) {
   const initial = (profile?.firstName || profile?.username || '?').charAt(0).toUpperCase();
   return (
-    <div className="relative px-5 pt-6 pb-5 border-b border-border-default/60 overflow-hidden">
+    <div className="relative px-5 pt-6 pb-5 border-b border-border-default/60 overflow-hidden" data-tour="profile-main">
       <div className="absolute inset-0 pointer-events-none opacity-60">
         <div className="absolute -top-12 -left-12 w-48 h-48 rounded-full bg-accent/20 blur-3xl" />
         <div className="absolute -bottom-8 -right-8 w-40 h-40 rounded-full bg-violet-500/15 blur-3xl" />
@@ -220,6 +220,7 @@ export default function ProfileDrawer({ isOpen, onClose }) {
       iconTint="text-accent"
       title={t('profile.title')}
       subtitle={t('profile.subtitle')}
+      closeAttr="profile"
     >
       <IdentityHeader profile={profile} />
       <div className="px-5 py-5 space-y-6">

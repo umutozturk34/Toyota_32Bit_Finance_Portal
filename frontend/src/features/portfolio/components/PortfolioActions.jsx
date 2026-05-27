@@ -38,6 +38,7 @@ export default function PortfolioActions({
             disabled={pdfDisabled}
             title={pdfTitle}
             aria-disabled={pdfDisabled}
+            data-tour="portfolio-pdf"
             className={`group relative flex items-center gap-2 overflow-hidden rounded-lg border px-3 py-1.5 text-[12px] font-display font-semibold tracking-tight transition-all duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
               pdfPending
                 ? 'border-accent/40 bg-accent/5 text-fg'

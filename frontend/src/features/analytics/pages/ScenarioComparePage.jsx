@@ -39,9 +39,9 @@ export default function ScenarioComparePage() {
   const [startDate, setStartDate] = useSessionState('scenario:startDate', dateOffsetIso(12));
   const [endDate, setEndDate] = useSessionState('scenario:endDate', todayIso());
   const [instruments, setInstruments] = useSessionState('scenario:instruments', [
-    { type: 'DEPOSIT', code: 'TP.TRYTAS.MT06', name: 'TRY 3M Mevduat' },
-    { type: 'FOREX', code: 'USD', name: 'USD/TRY' },
-    { type: 'COMMODITY', code: 'XAUTRY', name: 'Altın' },
+    { type: 'DEPOSIT', code: 'TP.TRYTAS.MT06', name: 'TRY 3M Mevduat', labelKey: 'analytics.preset.depositTry3m' },
+    { type: 'FOREX', code: 'USD', name: 'USD/TRY', labelKey: 'analytics.preset.usdTry' },
+    { type: 'COMMODITY', code: 'XAUTRY', name: 'Altın', labelKey: 'analytics.preset.gold' },
   ]);
 
   const inputCurrency = displayCurrency === 'ORIGINAL' ? 'TRY' : displayCurrency;

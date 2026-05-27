@@ -179,6 +179,22 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
 
     return (
         <Card ref={wrapperRef} variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className={`flex !overflow-x-hidden !overflow-y-visible ${isFullscreen ? 'h-screen !rounded-none !overflow-y-auto' : 'min-h-[360px] sm:min-h-[440px] lg:min-h-[560px]'}`}>
+            <button
+                type="button"
+                data-tour="chart-drawing-open"
+                aria-hidden="true"
+                tabIndex={-1}
+                onClick={() => { setSidebarOpen(true); setActiveTab('drawings'); }}
+                style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}
+            />
+            <button
+                type="button"
+                data-tour-close="chart-drawing"
+                aria-hidden="true"
+                tabIndex={-1}
+                onClick={() => { setSidebarOpen(false); }}
+                style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}
+            />
             {sidebarOpen && (
                 <ChartSidebar
                     tabs={TABS}

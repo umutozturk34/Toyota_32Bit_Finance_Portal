@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 const RISK_COLORS = [
   'bg-emerald-500',
   'bg-emerald-400',
@@ -19,6 +21,7 @@ const TEXT_COLORS = [
 ];
 
 export default function RiskBadge({ value, label = 'R', size = 'sm', className = '' }) {
+  const { t } = useTranslation();
   if (value == null) return null;
   const clamped = Math.max(1, Math.min(7, Number(value)));
   const dotSize = size === 'lg' ? 'h-1.5 w-1.5' : 'h-1 w-1';
@@ -27,7 +30,7 @@ export default function RiskBadge({ value, label = 'R', size = 'sm', className =
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-md border border-border-default/60 bg-bg-base/40 px-1.5 py-0.5 ${className}`}
-      title={`Risk ${clamped}/7`}
+      title={t('common.riskLevel', { value: clamped, max: 7 })}
     >
       <span className={`${textSize} font-semibold tracking-wide ${accent}`}>{label}:{clamped}</span>
       <span className="flex items-center gap-[2px]">

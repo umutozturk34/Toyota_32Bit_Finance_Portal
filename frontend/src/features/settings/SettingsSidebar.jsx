@@ -128,8 +128,9 @@ export default function SettingsSidebar({ isOpen, onClose }) {
       title={t('settings.title')}
       subtitle={t('settings.subtitle')}
       footer={footer}
+      closeAttr="settings"
     >
-            <div className="px-5 py-5 space-y-6">
+            <div className="px-5 py-5 space-y-6" data-tour="settings-main">
               <div className="grid grid-cols-[1fr_auto] gap-4 items-start">
                 <Section icon={Palette} title={t('settings.theme')}>
                   <SegmentedControl

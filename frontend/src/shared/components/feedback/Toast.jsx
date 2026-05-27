@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
 import { CheckCircle, Info, X, ShieldAlert } from 'lucide-react';
@@ -65,6 +66,7 @@ export default function ToastContainer() {
 }
 
 function ToastItem({ item, onDismiss }) {
+  const { t } = useTranslation();
   const { id, type = 'info', title, message, retryAfter } = item;
   const [countdown, setCountdown] = useState(retryAfter ? Number(retryAfter) : 0);
   const color = COLORS[type] || COLORS.info;
@@ -122,6 +124,7 @@ function ToastItem({ item, onDismiss }) {
         </div>
         <button
           onClick={() => onDismiss(id)}
+          aria-label={t('common.close')}
           className="relative flex items-center justify-center w-6 h-6 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer shrink-0"
         >
           <X className="h-3.5 w-3.5" />

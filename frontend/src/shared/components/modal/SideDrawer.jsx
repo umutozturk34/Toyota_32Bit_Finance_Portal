@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import IconButton from '../buttons/IconButton';
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
@@ -24,8 +25,11 @@ export default function SideDrawer({
   footer,
   children,
   className,
-  closeLabel = 'close',
+  closeLabel,
+  closeAttr,
 }) {
+  const { t } = useTranslation();
+  const closeText = closeLabel ?? t('common.close');
   const sideConfig = SIDES[side] ?? SIDES.right;
   return (
     <AnimatePresence>
@@ -66,8 +70,9 @@ export default function SideDrawer({
                   size={7}
                   shape="square"
                   icon={<X className="h-4 w-4" />}
-                  aria-label={closeLabel}
+                  aria-label={closeText}
                   onClick={onClose}
+                  {...(closeAttr ? { 'data-tour-close': closeAttr } : {})}
                 />
               </div>
             </header>

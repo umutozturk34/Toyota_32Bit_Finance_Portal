@@ -49,7 +49,7 @@ const DrawingPanel = ({
     return (
         <div className="space-y-2">
             { }
-            <div className="grid grid-cols-3 gap-1">
+            <div data-tour="chart-drawing-tools" className="grid grid-cols-3 gap-1">
                 {DRAWING_TOOLS.map(({ id, labelKey, Icon, color }) => {
                     const isActive = activeTool === id;
                     return (

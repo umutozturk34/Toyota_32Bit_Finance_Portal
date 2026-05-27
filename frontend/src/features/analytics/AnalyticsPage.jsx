@@ -35,11 +35,13 @@ export default function AnalyticsPage() {
       <nav className="flex items-center gap-1 flex-wrap border-b border-border-default/40 pb-0.5 overflow-x-auto">
         {TABS.map(({ id, labelKey, Icon }) => {
           const isActive = active === id;
+          const tourId = id === 'scenario' ? 'analytics-scenario' : id === 'beaters' ? 'analytics-beater' : undefined;
           return (
             <button
               key={id}
               type="button"
               onClick={() => setActive(id)}
+              data-tour={tourId}
               className={`relative flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm font-semibold cursor-pointer border-none transition-colors whitespace-nowrap ${
                 isActive ? 'text-fg' : 'text-fg-muted hover:text-fg'
               }`}

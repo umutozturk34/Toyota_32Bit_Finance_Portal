@@ -100,6 +100,7 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
       {local && (
         <button
           onClick={handleClear}
+          aria-label={t('common.clearSearch')}
           className="absolute right-2.5 inset-y-0 z-10 flex items-center text-fg-muted hover:text-fg transition-colors cursor-pointer bg-transparent border-none p-0"
         >
           <X className="h-3.5 w-3.5" />

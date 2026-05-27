@@ -203,6 +203,8 @@ const MainLayout = () => {
       >
         <button
           onClick={() => setMobileOpen(true)}
+          data-tour="mobile-burger-open"
+          aria-label={t('common.openMenu')}
           className="flex items-center justify-center w-8 h-8 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
         >
           <Menu size={18} />
@@ -225,6 +227,7 @@ const MainLayout = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
               className="lg:hidden fixed inset-0 z-[45] bg-black/40"
+              data-tour="mobile-burger-close"
               onClick={() => setMobileOpen(false)}
             />
             <motion.aside

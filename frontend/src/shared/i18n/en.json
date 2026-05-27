@@ -59,7 +59,14 @@
     "searchEllipsis": "Search...",
     "collapse": "Collapse",
     "expand": "Expand",
-    "settings": "Settings"
+    "settings": "Settings",
+    "clearSearch": "Clear search",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "openMenu": "Open menu",
+    "toggleSortDirection": "Toggle sort direction",
+    "unreadNotifications": "{{count}} unread",
+    "riskLevel": "Risk {{value}}/{{max}}"
   },
   "numberFormat": {
     "thousand": "K",
@@ -880,6 +887,11 @@
       "updateStartedTitle": "Update Started",
       "updateStarted": "Bond update started",
       "updateErrorTitle": "Update Error",
+      "activeOnlyLabel": "Active bonds",
+      "activeOnlyTooltip": "Bonds not yet matured",
+      "priceChartTitle": "Price history",
+      "noPriceData": "No price history",
+      "rateChartTitle": "Coupon rate history",
       "sort": {
         "simpleYield": "Simple Yield",
         "couponRate": "Coupon Rate",
@@ -1491,6 +1503,142 @@
     "welcomeSubtitle": "A finance dashboard combining market data, portfolio tracking and notifications in one interface.",
     "startCta": "Let's Start",
     "dismissHint": "You won't see this window again — manage all options from Settings.",
+    "skip": "Skip tour",
+    "continue": "Continue",
+    "back": "Back",
+    "next": "Next",
+    "step": {
+      "preferences": {
+        "title": "Make it yours",
+        "subtitle": "Pick your theme and language now — you can change them anytime.",
+        "theme": "Theme",
+        "themeLight": "Light",
+        "themeDark": "Dark",
+        "language": "Language"
+      }
+    },
+    "tour": {
+      "phaseLabel": "Step 1 / 2 · Preferences",
+      "finish": "Finish",
+      "welcome": {
+        "title": "All markets in one place",
+        "desc": "Track stocks, crypto, funds, forex, commodities and bonds from a single interface. Let's take a short tour together — press ESC to exit anytime."
+      },
+      "marketTabs": {
+        "title": "Market tabs",
+        "desc": "Overview shows featured assets, Rates lists forex and commodity prices, Indicators covers indices and macro data, Bank Rates compares deposit yields."
+      },
+      "marketSearch": {
+        "title": "One search box",
+        "desc": "Type a symbol or full name for stocks, crypto, funds, forex, commodities or derivatives, pick a suggestion from the autocomplete list or press Enter to open detail."
+      },
+      "widgetEdit": {
+        "title": "Customise the home page",
+        "desc": "Open edit mode from the top right, drag and drop widgets to reorder them, add or remove tiles; build multiple pages and save each layout permanently for next time."
+      },
+      "detailChart": {
+        "title": "Detail chart and drawings",
+        "desc": "Pick a timeframe from 1M to MAX, switch between candle, line or area. Use Trendline, Fibonacci and other drawing tools — your drawings are saved."
+      },
+      "chartDrawing": {
+        "title": "Draw on the chart",
+        "desc": "Sketch direction with trendlines, mark retracement levels using Fibonacci, and add parallel channels or horizontal support and resistance lines."
+      },
+      "fundDetail": {
+        "title": "Fund detail card",
+        "desc": "For mixed and diversified funds like ACD - İSTANBUL PORTFÖY İKİNCİ DEĞİŞKEN FON you see allocation, period returns, risk level, category and the KAP link in one view."
+      },
+      "fundAllocation": {
+        "title": "Allocation pie chart",
+        "desc": "Donut chart showing the fund's class-level weights — hover a slice to see the percentage and class name in the center, the matching row in the legend highlights too."
+      },
+      "bondDetail": {
+        "title": "Bonds and bills",
+        "desc": "Browse fixed-coupon government bonds, sukuk lease certificates and floating-rate bonds in the list; open one for full coupon history, maturity date and issue details."
+      },
+      "bondDetailPage": {
+        "title": "Bond detail page",
+        "desc": "Base price, coupon rate, simple yield, maturity date and the next coupon payment all live on this card, with the price history chart on top."
+      },
+      "bondCoupon": {
+        "title": "Coupon rate chart",
+        "desc": "The coupon rate has its own chart below the price one — toggle it open or closed from the section header; it opens by default."
+      },
+      "news": {
+        "title": "Market news",
+        "desc": "Filter RSS-sourced headlines by Borsa İstanbul, Crypto and General Finance categories so you can jump straight to the stories that matter to you."
+      },
+      "analyticsScenario": {
+        "title": "Compare scenarios",
+        "desc": "Place different assets or portfolios side by side over the historical window you choose and inspect return and volatility gaps from here."
+      },
+      "analyticsBeater": {
+        "title": "Inflation Beaters",
+        "desc": "Automatically detect assets that outpaced TÜFE in the period you pick and list those delivering real returns against inflation from this panel."
+      },
+      "portfolio": {
+        "title": "Build your portfolio",
+        "desc": "No portfolio yet? Create one from here. Already have one? Pick a stock, fund or crypto from the search and add backdated lot-based positions with entry date and price."
+      },
+      "portfolioPdf": {
+        "title": "Download portfolio as PDF",
+        "desc": "Allocation pie chart, time-series performance chart, realised profit-and-loss breakdown and the full open position list are packaged into one PDF in your chosen theme and language."
+      },
+      "watchlist": {
+        "title": "Watchlists and alerts",
+        "desc": "Create multiple lists, set an above and below price threshold on each row to trigger email alerts when crossed, and drag and drop rows to reorder them as you wish."
+      },
+      "customLists": {
+        "title": "Custom lists",
+        "desc": "Use the new list shortcut to build themed collections like Short Term, Risky or Dividend; set a price threshold on any row to trigger an email when crossed."
+      },
+      "notifications": {
+        "title": "Notification center",
+        "desc": "Tap the bell to see the last 20 notifications with unread/all tabs; in-app and email run as separate channels, with per-category preferences (price, macro, news, portfolio) managed in settings."
+      },
+      "settings": {
+        "title": "Settings panel",
+        "desc": "Pick theme, language, default chart range (1M/3M/1Y/MAX), display currency (TRY/USD/EUR) and time zone; toggle notifications per category (price, macro, news, portfolio) by email and in-app separately."
+      },
+      "profile": {
+        "title": "Profile panel",
+        "desc": "Update name and email (old and new address verified by code), change password via Keycloak, set up TOTP 2FA with QR and recovery codes, and review or revoke active device sessions."
+      },
+      "outro": {
+        "title": "Tour complete",
+        "desc": "Every preference can be changed anytime from the top-right menu. Happy investing."
+      },
+      "farewell": {
+        "title": "Welcome aboard",
+        "subtitle": "Happy investing — we're with you every step of the way."
+      },
+      "summary": {
+        "title": "You're ready",
+        "desc": "You've seen markets, portfolio, watchlists and notifications. Every preference can be revisited from the settings and profile panels at any time.",
+        "closing": "That's it — you can start using the platform comfortably now.",
+        "cta": "Get started",
+        "features": {
+          "markets": "Markets",
+          "portfolio": "Portfolio",
+          "watchlist": "Watchlist",
+          "notifications": "Notifications",
+          "settings": "Settings",
+          "profile": "Profile",
+          "drawing": "Drawing tools",
+          "pdf": "PDF summary",
+          "scenarios": "Scenarios"
+        }
+      },
+      "stepLabel": "Step {{num}} / {{total}}",
+      "marketRates": {
+        "title": "Rates",
+        "desc": "Forex pairs like USD/EUR/GBP, gold and silver commodities, CBRT effective rates and bank deposit yields can all be monitored in a single daily-update screen."
+      },
+      "marketMacro": {
+        "title": "Indicators",
+        "desc": "CPI, PPI, policy rate, TLREF, average deposit rates together with BIST 100 and BIST 30 index levels and yearly changes — every macro figure at a single glance."
+      }
+    },
     "highlights": {
       "multiMarket": {
         "title": "Multi Market",
@@ -2097,7 +2245,16 @@
       "backfilledTooltip": "Extended with the last known value at the start of the range"
     },
     "returnsInCurrency": "Returns in {{currency}}",
-    "simulationRunning": "Running simulation..."
+    "simulationRunning": "Running simulation...",
+    "preset": {
+      "depositTry3m": "TRY 3M Deposit",
+      "depositUsd3m": "USD 3M Deposit",
+      "depositEur3m": "EUR 3M Deposit",
+      "usdTry": "USD/TRY",
+      "eurTry": "EUR/TRY",
+      "gold": "Gold",
+      "silver": "Silver"
+    }
   },
   "pdf": {
     "report": {

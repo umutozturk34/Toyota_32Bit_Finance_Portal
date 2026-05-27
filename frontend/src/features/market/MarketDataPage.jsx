@@ -99,6 +99,7 @@ export default function MarketDataPage() {
         )}
         <button
           onClick={editMode ? discardAndExit : enterEditMode}
+          data-tour="widget-edit"
           className={`relative flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-display font-semibold tracking-tight transition-colors duration-200 cursor-pointer w-[112px] shrink-0 ${
             editMode
               ? 'border-accent bg-accent text-white hover:bg-accent-bright shadow-lg shadow-accent/30'
@@ -196,10 +197,11 @@ export default function MarketDataPage() {
           {t('marketOverview.gallery')}
         </button>
       </div>
-      <div className="w-full max-w-md"><SearchSuggestions variant="hero" placeholder={t('marketOverview.searchPlaceholder')} /></div>
-      <div className="inline-flex items-center gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 self-start" style={{ willChange: 'backdrop-filter', transform: 'translate3d(0,0,0)' }}>
+      <div data-tour="market-search" className="w-full max-w-md"><SearchSuggestions variant="hero" placeholder={t('marketOverview.searchPlaceholder')} /></div>
+      <div data-tour="market-tabs" className="inline-flex items-center gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 self-start" style={{ willChange: 'backdrop-filter', transform: 'translate3d(0,0,0)' }}>
         <button
           onClick={() => setActiveTab('overview')}
+          data-tour="market-overview-tab"
           className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer ${
             activeTab === 'overview' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
           }`}
@@ -209,6 +211,7 @@ export default function MarketDataPage() {
         </button>
         <button
           onClick={() => setActiveTab('rates')}
+          data-tour="market-rates-tab"
           className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer ${
             activeTab === 'rates' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
           }`}
@@ -218,6 +221,7 @@ export default function MarketDataPage() {
         </button>
         <button
           onClick={() => setActiveTab('macro')}
+          data-tour="market-macro-tab"
           className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer ${
             activeTab === 'macro' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
           }`}
@@ -256,9 +260,9 @@ export default function MarketDataPage() {
   );
 
   const grid = activeTab === 'rates'
-    ? <BankRatesPanel />
+    ? <div data-tour="market-rates-content"><BankRatesPanel /></div>
     : activeTab === 'macro'
-    ? <MacroIndicatorsPanel />
+    ? <div data-tour="market-macro-content"><MacroIndicatorsPanel /></div>
     : (
       <MarketCanvas
         sections={sections}

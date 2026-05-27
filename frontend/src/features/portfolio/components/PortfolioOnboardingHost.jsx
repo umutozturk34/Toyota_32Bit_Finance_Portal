@@ -241,6 +241,7 @@ export default function PortfolioOnboardingHost({
               </motion.div>
               <motion.button
                 onClick={handleStart}
+                data-tour="portfolio-create"
                 whileHover={{ scale: 1.04, y: -1 }}
                 whileTap={{ scale: 0.96 }}
                 initial={{ opacity: 0, y: 6 }}

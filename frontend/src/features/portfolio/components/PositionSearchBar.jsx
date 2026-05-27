@@ -9,6 +9,7 @@ export default function PositionSearchBar() {
   return (
     <Card
       as={motion.div}
+      data-tour="position-search"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}

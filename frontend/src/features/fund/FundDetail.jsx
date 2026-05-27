@@ -97,6 +97,7 @@ export default function FundDetail() {
       fetchAsset={() => fundService.getByCode(code)}
       fetchHistory={(_, range) => fundService.getHistory(code, range)}
       backRoute="/funds"
+      dataTour="fund-detail-card"
       renderHeader={(asset) => <FundHeader asset={asset} />}
       renderMetadata={(asset) => <FundMetadata asset={asset} />}
       renderSidebar={(asset) => <FundSidebar asset={asset} />}

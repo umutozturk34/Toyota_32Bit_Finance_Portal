@@ -132,6 +132,7 @@ export default function SearchSuggestions({
         {query && (
           <button
             onClick={() => { setQuery(''); setDebouncedQuery(''); setOpen(false); }}
+            aria-label={t('common.clearSearch')}
             className={`absolute inset-y-0 z-10 flex items-center text-fg-muted hover:text-fg transition-colors cursor-pointer bg-transparent border-none p-0 ${isHero ? 'right-4' : 'right-2.5'}`}
           >
             <X className={isHero ? 'h-5 w-5' : 'h-3.5 w-3.5'} />

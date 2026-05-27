@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.util.UriBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -28,9 +30,12 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -360,6 +365,356 @@ class KeycloakAdminClientTest {
         assertThatThrownBy(() -> client.ensureRealmFlag("editUsernameAllowed", true))
                 .isInstanceOf(ExternalApiException.class)
                 .hasMessageContaining("fetchRealm returned null");
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void listUsers_buildsUriWithSearchParam_whenSearchProvided() {
+        // Arrange
+        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
+        ArgumentCaptor<Function<UriBuilder, URI>> captor = ArgumentCaptor.forClass(Function.class);
+        doAnswer(inv -> {
+            Function<UriBuilder, URI> fn = inv.getArgument(0);
+            fn.apply(factory.builder());
+            return getHeadersSpec;
+        }).when(getUriSpec).uri(captor.capture());
+        when(getResponseSpec.bodyToFlux(KeycloakUser.class)).thenReturn(Flux.empty());
+
+        // Act
+        List<KeycloakUser> result = client.listUsers(10, 50, "ali");
+
+        // Assert
+        URI uri = captor.getValue().apply(factory.builder());
+        assertThat(uri.toString()).contains("/admin/realms/finance-realm/users")
+                .contains("first=10").contains("max=50").contains("search=ali");
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void countUsers_buildsUriWithSearchParam_whenSearchProvided() {
+        // Arrange
+        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
+        ArgumentCaptor<Function<UriBuilder, URI>> captor = ArgumentCaptor.forClass(Function.class);
+        doAnswer(inv -> {
+            Function<UriBuilder, URI> fn = inv.getArgument(0);
+            fn.apply(factory.builder());
+            return getHeadersSpec;
+        }).when(getUriSpec).uri(captor.capture());
+        when(getResponseSpec.bodyToMono(Long.class)).thenReturn(Mono.just(7L));
+
+        // Act
+        long total = client.countUsers("ali");
+
+        // Assert
+        URI uri = captor.getValue().apply(factory.builder());
+        assertThat(uri.toString()).contains("/admin/realms/finance-realm/users/count")
+                .contains("search=ali");
+        assertThat(total).isEqualTo(7L);
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void countUsers_buildsUriWithoutSearchParam_whenSearchBlank() {
+        // Arrange
+        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
+        ArgumentCaptor<Function<UriBuilder, URI>> captor = ArgumentCaptor.forClass(Function.class);
+        doAnswer(inv -> {
+            Function<UriBuilder, URI> fn = inv.getArgument(0);
+            fn.apply(factory.builder());
+            return getHeadersSpec;
+        }).when(getUriSpec).uri(captor.capture());
+        when(getResponseSpec.bodyToMono(Long.class)).thenReturn(Mono.just(0L));
+
+        // Act
+        long total = client.countUsers("   ");
+
+        // Assert
+        URI uri = captor.getValue().apply(factory.builder());
+        assertThat(uri.toString()).doesNotContain("search=");
+        assertThat(total).isZero();
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void sendActionsEmail_buildsUriWithQueryParams() {
+        // Arrange
+        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
+        ArgumentCaptor<Function<UriBuilder, URI>> captor = ArgumentCaptor.forClass(Function.class);
+        doAnswer(inv -> {
+            Function<UriBuilder, URI> fn = inv.getArgument(0);
+            fn.apply(factory.builder());
+            return putBodySpec;
+        }).when(putUriSpec).uri(captor.capture());
+
+        // Act
+        client.sendActionsEmail(USER_ID, List.of("UPDATE_PASSWORD"), "client-x", "https://app/cb", 900L);
+
+        // Assert
+        URI uri = captor.getValue().apply(factory.builder());
+        assertThat(uri.toString())
+                .contains("/admin/realms/finance-realm/users/" + USER_ID + "/execute-actions-email")
+                .contains("client_id=client-x")
+                .contains("redirect_uri=https://app/cb")
+                .contains("lifespan=900");
+    }
+
+    @Test
+    void ensureClientRedirectUris_doesNothing_whenRequiredUrisNull() {
+        // Arrange / Act
+        client.ensureClientRedirectUris("finance-frontend", null);
+
+        // Assert
+        verifyNoInteractions(webClient);
+    }
+
+    @Test
+    void ensureClientRedirectUris_doesNothing_whenRequiredUrisEmpty() {
+        // Arrange / Act
+        client.ensureClientRedirectUris("finance-frontend", List.of());
+
+        // Assert
+        verifyNoInteractions(webClient);
+    }
+
+    @Test
+    void ensureClientRedirectUris_logsAndReturns_whenClientNotFound() {
+        // Arrange
+        when(getResponseSpec.bodyToMono(List.class)).thenReturn(Mono.just(List.of()));
+
+        // Act
+        client.ensureClientRedirectUris("finance-frontend", List.of("https://app/cb"));
+
+        // Assert
+        verify(webClient, never()).put();
+    }
+
+    @Test
+    void ensureClientRedirectUris_logsAndReturns_whenClientListNull() {
+        // Arrange
+        when(getResponseSpec.bodyToMono(List.class)).thenReturn(Mono.empty());
+
+        // Act
+        client.ensureClientRedirectUris("finance-frontend", List.of("https://app/cb"));
+
+        // Assert
+        verify(webClient, never()).put();
+    }
+
+    @Test
+    void ensureClientRedirectUris_skipsUpdate_whenAllRequiredUrisAlreadyPresent() {
+        // Arrange
+        Map<String, Object> existingClient = Map.of(
+                "id", "client-uuid-1",
+                "redirectUris", List.of("https://app/cb"));
+        when(getResponseSpec.bodyToMono(List.class)).thenReturn(Mono.just(List.of(existingClient)));
+
+        // Act
+        client.ensureClientRedirectUris("finance-frontend", List.of("https://app/cb"));
+
+        // Assert
+        verify(webClient, never()).put();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void ensureClientRedirectUris_mergesAndUpdates_whenNewUriMissing() {
+        // Arrange
+        Map<String, Object> existingClient = Map.of(
+                "id", "client-uuid-2",
+                "redirectUris", List.of("https://app/old"));
+        when(getResponseSpec.bodyToMono(List.class)).thenReturn(Mono.just(List.of(existingClient)));
+
+        // Act
+        client.ensureClientRedirectUris("finance-frontend", List.of("https://app/new"));
+
+        // Assert
+        Map<String, Object> body = capturePutBody();
+        List<String> merged = (List<String>) body.get("redirectUris");
+        assertThat(merged).containsExactlyInAnyOrder("https://app/old", "https://app/new");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void ensureClientRedirectUris_seedsListFromEmpty_whenRedirectUrisAttributeMissing() {
+        // Arrange
+        Map<String, Object> existingClient = Map.of("id", "client-uuid-3");
+        when(getResponseSpec.bodyToMono(List.class)).thenReturn(Mono.just(List.of(existingClient)));
+
+        // Act
+        client.ensureClientRedirectUris("finance-frontend", List.of("https://app/first"));
+
+        // Assert
+        Map<String, Object> body = capturePutBody();
+        List<String> merged = (List<String>) body.get("redirectUris");
+        assertThat(merged).containsExactly("https://app/first");
+    }
+
+    @Test
+    void getUserAttribute_returnsEmpty_whenAttributesMissing() {
+        // Arrange
+        stubFetchUser(Map.of("id", USER_ID));
+
+        // Act
+        java.util.Optional<String> result = client.getUserAttribute(USER_ID, "locale");
+
+        // Assert
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getUserAttribute_returnsEmpty_whenAttributesNotAMap() {
+        // Arrange
+        stubFetchUser(Map.of("id", USER_ID, "attributes", "not-a-map"));
+
+        // Act
+        java.util.Optional<String> result = client.getUserAttribute(USER_ID, "locale");
+
+        // Assert
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getUserAttribute_returnsFirstListElement_whenValueIsList() {
+        // Arrange
+        stubFetchUser(Map.of(
+                "id", USER_ID,
+                "attributes", Map.of("locale", List.of("tr", "extra"))));
+
+        // Act
+        java.util.Optional<String> result = client.getUserAttribute(USER_ID, "locale");
+
+        // Assert
+        assertThat(result).contains("tr");
+    }
+
+    @Test
+    void getUserAttribute_returnsEmpty_whenValueIsEmptyList() {
+        // Arrange
+        stubFetchUser(Map.of(
+                "id", USER_ID,
+                "attributes", Map.of("locale", List.of())));
+
+        // Act
+        java.util.Optional<String> result = client.getUserAttribute(USER_ID, "locale");
+
+        // Assert
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getUserAttribute_returnsString_whenValueIsPlainString() {
+        // Arrange
+        stubFetchUser(Map.of(
+                "id", USER_ID,
+                "attributes", Map.of("locale", "en")));
+
+        // Act
+        java.util.Optional<String> result = client.getUserAttribute(USER_ID, "locale");
+
+        // Assert
+        assertThat(result).contains("en");
+    }
+
+    @Test
+    void getUserAttribute_returnsEmpty_whenValueIsBlankString() {
+        // Arrange
+        stubFetchUser(Map.of(
+                "id", USER_ID,
+                "attributes", Map.of("locale", "   ")));
+
+        // Act
+        java.util.Optional<String> result = client.getUserAttribute(USER_ID, "locale");
+
+        // Assert
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void getUserAttribute_returnsEmpty_whenKeyAbsent() {
+        // Arrange
+        stubFetchUser(Map.of(
+                "id", USER_ID,
+                "attributes", Map.of("themePreference", List.of("DARK"))));
+
+        // Act
+        java.util.Optional<String> result = client.getUserAttribute(USER_ID, "locale");
+
+        // Assert
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void updateBasics_skipsNullFields_whenOnlySomeProvided() {
+        // Arrange
+        stubFetchUser(new java.util.HashMap<>(Map.of(
+                "id", USER_ID,
+                "username", "old",
+                "firstName", "Old",
+                "lastName", "Name")));
+
+        // Act
+        client.updateBasics(USER_ID, "newuser", null, null);
+
+        // Assert
+        Map<String, Object> body = capturePutBody();
+        assertThat(body.get("username")).isEqualTo("newuser");
+        assertThat(body.get("firstName")).isEqualTo("Old");
+        assertThat(body.get("lastName")).isEqualTo("Name");
+    }
+
+    @Test
+    void updateBasics_keepsAllOriginal_whenAllFieldsNull() {
+        // Arrange
+        stubFetchUser(new java.util.HashMap<>(Map.of(
+                "id", USER_ID,
+                "username", "old",
+                "firstName", "Old",
+                "lastName", "Name")));
+
+        // Act
+        client.updateBasics(USER_ID, null, null, null);
+
+        // Assert
+        Map<String, Object> body = capturePutBody();
+        assertThat(body.get("username")).isEqualTo("old");
+        assertThat(body.get("firstName")).isEqualTo("Old");
+        assertThat(body.get("lastName")).isEqualTo("Name");
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void ensureClientRedirectUris_buildsUriWithClientIdQueryParam() {
+        // Arrange
+        DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory();
+        ArgumentCaptor<Function<UriBuilder, URI>> captor = ArgumentCaptor.forClass(Function.class);
+        doAnswer(inv -> {
+            Function<UriBuilder, URI> fn = inv.getArgument(0);
+            fn.apply(factory.builder());
+            return getHeadersSpec;
+        }).when(getUriSpec).uri(captor.capture());
+        when(getResponseSpec.bodyToMono(List.class)).thenReturn(Mono.just(List.of()));
+
+        // Act
+        client.ensureClientRedirectUris("finance-frontend", List.of("https://app/cb"));
+
+        // Assert
+        URI uri = captor.getValue().apply(factory.builder());
+        assertThat(uri.toString())
+                .contains("/admin/realms/finance-realm/clients")
+                .contains("clientId=finance-frontend");
+    }
+
+    @Test
+    void listCredentials_returnsEmptyList_whenBodyIsNull() {
+        // Arrange
+        when(getResponseSpec.bodyToFlux(Map.class)).thenReturn(Flux.empty());
+
+        // Act
+        List<Map<String, Object>> result = client.listCredentials(USER_ID);
+
+        // Assert
+        assertThat(result).isEmpty();
     }
 
     private void stubFetchUser(Map<String, Object> user) {

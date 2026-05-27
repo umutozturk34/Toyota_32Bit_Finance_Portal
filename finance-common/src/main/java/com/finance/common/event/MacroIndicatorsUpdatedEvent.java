@@ -24,4 +24,9 @@ public record MacroIndicatorsUpdatedEvent(
     public String partitionKey() {
         return eventId;
     }
+
+    @Override
+    public EventTopic topic() {
+        return EventTopic.MACRO_INDICATORS_UPDATED;
+    }
 }

@@ -43,7 +43,7 @@ class OutboxRelayWorkerTest {
                 Duration.ofSeconds(30), Duration.ofMinutes(1),
                 "0 0 * * *");
         KafkaTopicsProperties topics = new KafkaTopicsProperties(
-                "market", "news", "portfolio", "macro", "user", "mail.dispatch");
+                "market", "news", "portfolio", "macro", "user", "user.registered", "mail.dispatch");
         worker = new OutboxRelayWorker(repository, kafkaTemplate, jdbcTemplate, props, topics);
         TransactionSynchronizationManager.initSynchronization();
     }

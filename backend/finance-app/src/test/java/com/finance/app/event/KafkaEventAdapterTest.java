@@ -33,6 +33,7 @@ class KafkaEventAdapterTest {
             "portfolio.updated",
             "macro.indicators.updated",
             "user.email-change.code-requested",
+            "user.registered",
             "mail.dispatch");
 
     @Mock private KafkaTemplate<String, Object> kafkaTemplate;

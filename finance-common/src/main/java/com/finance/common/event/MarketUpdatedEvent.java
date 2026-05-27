@@ -25,4 +25,9 @@ public record MarketUpdatedEvent(
     public String partitionKey() {
         return marketType.name();
     }
+
+    @Override
+    public EventTopic topic() {
+        return EventTopic.MARKET_UPDATED;
+    }
 }

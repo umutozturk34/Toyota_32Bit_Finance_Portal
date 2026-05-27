@@ -5,4 +5,6 @@ public interface DomainEvent {
     String eventId();
 
     String partitionKey();
+
+    EventTopic topic();
 }

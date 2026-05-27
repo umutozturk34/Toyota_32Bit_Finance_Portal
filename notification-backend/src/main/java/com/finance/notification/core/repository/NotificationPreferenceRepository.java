@@ -12,6 +12,7 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
             SELECT p FROM NotificationPreference p
             WHERE p.inappPortfolioUpdated = true
                OR (p.emailEnabled = true AND p.emailPortfolioUpdated = true)
+            ORDER BY p.userSub ASC
             """)
     Page<NotificationPreference> findPortfolioSubscribed(Pageable pageable);
 
@@ -19,6 +20,7 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
             SELECT p FROM NotificationPreference p
             WHERE p.inappNewsPublished = true
                OR (p.emailEnabled = true AND p.emailNewsPublished = true)
+            ORDER BY p.userSub ASC
             """)
     Page<NotificationPreference> findNewsSubscribed(Pageable pageable);
 
@@ -26,6 +28,7 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
             SELECT p FROM NotificationPreference p
             WHERE p.inappMacroIndicators = true
                OR (p.emailEnabled = true AND p.emailMacroIndicators = true)
+            ORDER BY p.userSub ASC
             """)
     Page<NotificationPreference> findMacroIndicatorsSubscribed(Pageable pageable);
 
@@ -34,6 +37,7 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
             WHERE (p.inappMarketDataUpdated = true
                    OR (p.emailEnabled = true AND p.emailMarketDataUpdated = true))
               AND p.marketSessionMarkets LIKE CONCAT('%', :market, '%')
+            ORDER BY p.userSub ASC
             """)
     Page<NotificationPreference> findMarketDataSubscribed(String market, Pageable pageable);
 
@@ -42,6 +46,7 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
             WHERE (p.inappMarketOpened = true
                    OR (p.emailEnabled = true AND p.emailMarketOpened = true))
               AND p.marketSessionMarkets LIKE CONCAT('%', :market, '%')
+            ORDER BY p.userSub ASC
             """)
     Page<NotificationPreference> findMarketOpenedSubscribed(String market, Pageable pageable);
 
@@ -50,6 +55,7 @@ public interface NotificationPreferenceRepository extends JpaRepository<Notifica
             WHERE (p.inappMarketClosed = true
                    OR (p.emailEnabled = true AND p.emailMarketClosed = true))
               AND p.marketSessionMarkets LIKE CONCAT('%', :market, '%')
+            ORDER BY p.userSub ASC
             """)
     Page<NotificationPreference> findMarketClosedSubscribed(String market, Pageable pageable);
 }

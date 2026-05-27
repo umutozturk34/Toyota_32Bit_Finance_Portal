@@ -44,4 +44,13 @@ public class KafkaTopicsConfig {
                 .config("retention.ms", String.valueOf(admin.defaultRetentionMs()))
                 .build();
     }
+
+    @Bean
+    public NewTopic userRegisteredTopic() {
+        return TopicBuilder.name(topics.userRegistered())
+                .partitions(admin.lowVolumePartitions())
+                .replicas(admin.defaultReplicas())
+                .config("retention.ms", String.valueOf(admin.defaultRetentionMs()))
+                .build();
+    }
 }

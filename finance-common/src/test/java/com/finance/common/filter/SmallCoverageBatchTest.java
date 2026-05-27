@@ -78,7 +78,7 @@ class SmallCoverageBatchTest {
         KafkaTopicsProperties props = new KafkaTopicsProperties(
                 "market.updated", "news.published", "portfolio.updated",
                 "macro.indicators.updated",
-                "user.email-change-code", "mail.dispatch");
+                "user.email-change-code", "user.registered", "mail.dispatch");
 
         assertThat(props.marketUpdated()).isEqualTo("market.updated");
         assertThat(props.newsPublished()).isEqualTo("news.published");

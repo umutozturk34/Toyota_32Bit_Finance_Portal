@@ -34,4 +34,12 @@ public class NotificationPreferenceService {
         log.info("Notification preferences upserted userSub={}", userSub);
         return mapper.toResponse(saved);
     }
+
+    @Transactional
+    public boolean ensureDefaultsExist(String userSub) {
+        if (repository.existsById(userSub)) return false;
+        repository.save(NotificationPreference.defaultsFor(userSub));
+        log.info("Notification preferences seeded userSub={}", userSub);
+        return true;
+    }
 }

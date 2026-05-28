@@ -95,10 +95,10 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
 
   const entryDateIso = aggEntryDate ? new Date(aggEntryDate).toISOString().slice(0, 10) : null;
   const todayIso = new Date().toISOString().slice(0, 10);
-  const nativeCurrency = resolveNativeCurrency(
-    { assetType: asset?.type, assetCode: asset?.code, metadata: asset?.metadata },
-    asset,
-  );
+  const nativeCurrency = resolveNativeCurrency({
+    assetType: asset?.assetType,
+    assetCode: asset?.assetCode,
+  });
   const targetCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency ? nativeCurrency : displayCurrency;
   const entryPriceConverted = entryDateIso ? convertAt(aggEntryPriceTry, 'TRY', entryDateIso) : null;
   const currentPriceConverted = convertAt(aggCurrentPriceTry, 'TRY', todayIso);

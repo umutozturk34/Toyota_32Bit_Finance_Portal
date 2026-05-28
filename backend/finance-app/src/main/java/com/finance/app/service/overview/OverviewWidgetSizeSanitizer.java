@@ -12,6 +12,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+/**
+ * Save-time sanitizer (runs after dedup) that validates each section's width/height and vertical placement
+ * against the per-kind size bounds and max layout rows, writing back resolved defaults. Out-of-bounds sizes
+ * or rows are rejected.
+ */
 @Component
 @Order(20)
 @RequiredArgsConstructor

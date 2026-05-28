@@ -18,6 +18,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Reads a user's stored overview layout JSON and resolves the ordered, visible widget sections to render,
+ * tolerating both the legacy single-page ({@code sections}) and multi-page ({@code pages}) shapes. Maps
+ * legacy section ids/kinds, dedupes per kind, caps asset-card widgets, and falls back to defaults only when
+ * the user has no layout at all.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -53,6 +59,10 @@ public class OverviewLayoutReader {
         return parsed.visible();
     }
 
+    /**
+     * Locates the sections array for the requested page: for multi-page layouts returns the named page (or
+     * the first when {@code pageId} is blank, null if not found); for legacy layouts the top-level sections.
+     */
     private JsonNode resolveSectionsArray(JsonNode overview, String pageId) {
         if (overview == null) return null;
         JsonNode pages = overview.get("pages");
@@ -134,6 +144,7 @@ public class OverviewLayoutReader {
         }
     }
 
+    /** Infers a kind from a legacy section id by matching a known prefix when no explicit kind is present. */
     private WidgetKind inferLegacyKind(String sectionId) {
         return LEGACY_KIND_BY_PREFIX.entrySet().stream()
                 .filter(e -> sectionId.equals(e.getKey()) || sectionId.startsWith(e.getKey() + "-"))

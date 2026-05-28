@@ -14,6 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Runs a single market type's refresh and fans out the follow-ups: portfolio snapshot, market-cache
+ * write-through, and a market-updated event. Each follow-up is best-effort, with failures logged and
+ * isolated so one broken downstream doesn't abort the others.
+ */
 @Log4j2
 @Component
 class MarketRefreshOrchestrator {

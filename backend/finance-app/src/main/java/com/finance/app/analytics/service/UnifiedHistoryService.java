@@ -19,6 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+/**
+ * Single entry point for analytics history, routing by instrument type to the right source: market
+ * price series (via {@link HistoricalPricingPort}), macro/deposit indicator points, or bond coupon-rate
+ * history. Always returns a date-ascending list and degrades to an empty list on source failure.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

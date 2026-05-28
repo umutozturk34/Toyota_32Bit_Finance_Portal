@@ -12,6 +12,10 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Builds the catalog of widget definitions (size defaults/min/max and max items per kind, plus layout
+ * limits) that the client uses to render and validate the overview customization UI.
+ */
 @Service
 @RequiredArgsConstructor
 public class WidgetDefinitionService {

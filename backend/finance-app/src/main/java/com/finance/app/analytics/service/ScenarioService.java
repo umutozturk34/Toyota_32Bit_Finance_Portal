@@ -24,6 +24,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * "Invest {@code amount} at {@code startDate}, track its value over time" engine for each requested
+ * instrument, in a chosen target currency. Price-backed instruments follow the price path
+ * (value = amount × price(t) × fx(t) / (basePrice × baseFx)); rate-backed ones (deposits/macro rates)
+ * grow by daily compounding in their own currency and are re-converted to target at each day's FX.
+ * Real returns are deflated by CPI growth over the window (TRY target only).
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -43,6 +50,11 @@ public class ScenarioService {
     private final AnalyticsPriceSeriesProvider priceSeriesProvider;
     private final AnalyticsProperties analyticsProperties;
 
+    /**
+     * Simulates every requested instrument over {@code [startDate, endDate]} (end defaults to today).
+     *
+     * @throws BadRequestException if the date range is non-positive
+     */
     public ScenarioResponse simulate(ScenarioRequest request) {
         LocalDate startDate = request.startDate();
         LocalDate endDate = request.endDate() != null ? request.endDate() : LocalDate.now();
@@ -84,6 +96,11 @@ public class ScenarioService {
                 : simulateMarket(instrument, series, amount, startDate, endDate, cpiGrowthRatio, series.nativeCurrency());
     }
 
+    /**
+     * Rate-backed instruments compound; macro/deposit codes only compound when expressed as a PERCENT
+     * unit (otherwise they are index-like and follow the price path). Defaults to compounding if the
+     * unit can't be resolved.
+     */
     private boolean shouldCompound(AnalyticsInstrument instrument) {
         if (!instrument.type().isRateBacked()) return false;
         if (instrument.type() == AnalyticsInstrumentType.MACRO
@@ -136,6 +153,11 @@ public class ScenarioService {
                 endsLate || startsLate);
     }
 
+    /**
+     * Finds the baseline (start) index for the price path, skipping past any early stock-split-like
+     * jump (ratio &gt;5 or &lt;0.2 within the leading probe window) so the simulation isn't distorted by
+     * an unadjusted split. Returns the index after the last such jump, else 0.
+     */
     private static int pickBaselineIndex(List<HistoryPoint> raw) {
         if (raw == null || raw.isEmpty()) return -1;
         if (raw.size() < 3) return 0;
@@ -154,6 +176,11 @@ public class ScenarioService {
         return jumpIdx >= 0 ? jumpIdx : 0;
     }
 
+    /**
+     * Deposit/rate path: converts the principal to the deposit's own currency at entry, compounds it
+     * piecewise over each observation interval (applying that interval's earlier-endpoint annual rate
+     * for its day count), and re-converts to the target currency at each day's FX.
+     */
     private ScenarioSeries simulateRate(AnalyticsInstrument instrument, PricedSeries series,
                                         BigDecimal amount, LocalDate startDate, LocalDate endDate,
                                         BigDecimal cpiGrowthRatio, Currency nativeCurrency) {
@@ -200,6 +227,7 @@ public class ScenarioService {
                 endsLate || startsLate);
     }
 
+    /** Grows {@code value} by daily compounding: factor × (1 + annualRate/100/365)^days. */
     private BigDecimal applyCompound(BigDecimal value, BigDecimal annualRatePct, long days) {
         BigDecimal dailyRate = annualRatePct.divide(HUNDRED, 10, RoundingMode.HALF_UP)
                 .divide(DAYS_PER_YEAR, 12, RoundingMode.HALF_UP);
@@ -225,6 +253,7 @@ public class ScenarioService {
                 .divide(amount, RETURN_SCALE, RoundingMode.HALF_UP);
     }
 
+    /** Real return: deflates the final value by CPI growth before computing the percentage gain. */
     private BigDecimal computeRealPct(BigDecimal finalValue, BigDecimal amount, BigDecimal cpiGrowthRatio) {
         if (finalValue == null || amount == null || amount.signum() == 0 || cpiGrowthRatio == null) return null;
         BigDecimal realFinal = finalValue.divide(cpiGrowthRatio, VALUE_SCALE, RoundingMode.HALF_UP);
@@ -232,6 +261,11 @@ public class ScenarioService {
                 .divide(amount, RETURN_SCALE, RoundingMode.HALF_UP);
     }
 
+    /**
+     * CPI growth ratio (cpiEnd/cpiStart) across the window, using the closest CPI observation at or
+     * before each endpoint (probing a couple of months earlier since CPI is monthly). Null when the
+     * series is too sparse to compute.
+     */
     private BigDecimal computeCpiGrowthRatio(LocalDate startDate, LocalDate endDate) {
         List<HistoryPoint> cpi = historyService.getMacroSeries(CPI_CODE, startDate.minusMonths(2), endDate.plusMonths(1));
         if (cpi.size() < 2) {

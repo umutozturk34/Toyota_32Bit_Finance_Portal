@@ -12,6 +12,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Scenario request: invest {@code amount} at {@code startDate} across up to six instruments, valued in
+ * {@code targetCurrency} (TRY when null). {@code endDate} defaults to today.
+ */
 public record ScenarioRequest(
         @NotNull @Positive BigDecimal amount,
         @NotNull LocalDate startDate,

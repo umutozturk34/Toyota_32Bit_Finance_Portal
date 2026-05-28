@@ -25,6 +25,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Duration;
 
+/**
+ * Wires a per-asset-class Redis snapshot cache bean for each market type, all sharing the configured
+ * default TTL and a key prefix derived from the asset name, with a repository loader for cache misses.
+ */
 @Configuration
 public class MarketCacheConfig {
 

@@ -5,6 +5,11 @@ import com.finance.shared.dto.response.TaskTriggerResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/**
+ * Entry point for admin-triggered data refreshes (market snapshot/candles/full, bonds, news, macro). Each
+ * call kicks off the work asynchronously via {@link AdminTaskRunner} and returns immediately with a
+ * started-task response; progress is observed through task tracking.
+ */
 @Service
 @RequiredArgsConstructor
 public class AdminTaskService {

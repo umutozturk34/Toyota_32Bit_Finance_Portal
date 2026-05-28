@@ -16,6 +16,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+/**
+ * Admin-only API to manually trigger background data refreshes (per-market snapshot/candles/full, bonds,
+ * news, macro) and to stream live task status over SSE. Trigger endpoints return 202 Accepted immediately
+ * while the work runs asynchronously.
+ */
 @RestController
 @RequestMapping("/api/v1/admin")
 @RequiredArgsConstructor

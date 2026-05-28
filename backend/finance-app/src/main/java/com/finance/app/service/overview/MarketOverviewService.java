@@ -14,6 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Renders a user's overview dashboard: reads their visible widget sections and asks the matching provider
+ * to fetch each widget's data. A missing provider or a downstream IO failure yields an empty widget (so the
+ * rest of the dashboard still renders), while business-rule violations are propagated.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

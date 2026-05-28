@@ -28,6 +28,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * REST API for analytics: scenario simulation, inflation-beater rankings, and a portfolio's daily value
+ * series. All endpoints require authentication; the portfolio series is scoped to the JWT subject.
+ */
 @RestController
 @RequestMapping("/api/v1/analytics")
 @RequiredArgsConstructor

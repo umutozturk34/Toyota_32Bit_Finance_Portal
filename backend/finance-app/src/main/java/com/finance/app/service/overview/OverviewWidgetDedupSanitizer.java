@@ -14,6 +14,11 @@ import org.springframework.stereotype.Component;
 import java.util.LinkedHashMap;
 import java.util.UUID;
 
+/**
+ * Save-time sanitizer (runs first) that enforces the per-layout widget and asset-card counts, then drops
+ * duplicate visible sections keyed by kind (with watchlist/movers keyed by their config target). Rejects
+ * layouts that exceed the configured maximums.
+ */
 @Component
 @Order(10)
 @RequiredArgsConstructor

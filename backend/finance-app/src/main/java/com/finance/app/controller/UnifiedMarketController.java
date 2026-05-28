@@ -21,6 +21,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Authenticated unified market API spanning all asset classes: paged search/filter, single-asset history,
+ * per-type group counts, and monthly price-data availability. Instrument types are passed comma-separated.
+ */
 @RestController
 @RequestMapping("/api/v1/market")
 @RequiredArgsConstructor

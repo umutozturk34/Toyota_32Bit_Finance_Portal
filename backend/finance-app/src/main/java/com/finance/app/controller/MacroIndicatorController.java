@@ -21,6 +21,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Authenticated read API for macro indicators: list (optionally by category or prominent-only) and fetch an
+ * indicator's history by code. History defaults to a configured number of trailing years when no range given.
+ */
 @Log4j2
 @RestController
 @RequestMapping("/api/v1/macro-indicators")

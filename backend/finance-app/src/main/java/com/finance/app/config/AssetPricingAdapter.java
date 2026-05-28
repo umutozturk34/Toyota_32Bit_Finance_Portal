@@ -12,6 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Wires the cross-module {@link AssetPricingPort} to per-{@link MarketType} pricing strategies, dispatching
+ * spot/exit price, metadata and bundle lookups by type. Unknown types and downstream failures degrade to a
+ * null/empty fallback (logged) rather than propagating, so portfolio valuation stays resilient.
+ */
 @Log4j2
 @Component
 public class AssetPricingAdapter implements AssetPricingPort {

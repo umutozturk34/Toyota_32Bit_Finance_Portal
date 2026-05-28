@@ -8,6 +8,10 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Indexes the available {@link OverviewWidgetProvider}s by {@link WidgetKind} for lookup during rendering,
+ * rejecting two providers claiming the same kind at startup to keep dispatch unambiguous.
+ */
 @Component
 public class WidgetProviderRegistry {
 

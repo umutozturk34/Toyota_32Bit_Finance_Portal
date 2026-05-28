@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/** Admin-only API to list, upsert, reorder and delete tracked-asset registry entries. */
 @RestController
 @RequestMapping("/api/v1/admin/tracked-assets")
 @RequiredArgsConstructor

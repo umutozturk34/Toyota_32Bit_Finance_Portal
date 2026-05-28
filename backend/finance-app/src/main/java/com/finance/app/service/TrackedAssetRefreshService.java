@@ -12,6 +12,11 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Dispatches per-{@link TrackedAssetType} data-service operations (existence validation, async refresh,
+ * async cache clear). Async work runs on the shared task executor and logs (rather than throws) on failure
+ * so a background refresh can't break the triggering request.
+ */
 @Service
 @Log4j2
 public class TrackedAssetRefreshService {

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/** Admin-only CRUD and enable/disable API for news source configurations. */
 @RestController
 @RequestMapping("/api/v1/admin/news-sources")
 @RequiredArgsConstructor

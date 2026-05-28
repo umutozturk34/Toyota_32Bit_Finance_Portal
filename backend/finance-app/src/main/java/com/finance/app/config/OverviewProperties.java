@@ -7,6 +7,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Configuration for the market-overview dashboard ({@code app.overview}): layout limits, per-user
+ * defaults, and per-widget-kind size/item settings used to validate and clamp saved layouts.
+ */
 @ConfigurationProperties("app.overview")
 public record OverviewProperties(
         Limits limits,
@@ -50,6 +54,11 @@ public record OverviewProperties(
 
     public record DefaultSectionConfig(String sectionId, WidgetKind kind, int order, MarketType marketType) {}
 
+    /**
+     * Settings for a widget kind.
+     *
+     * @throws IllegalStateException if no settings are configured for the kind (misconfiguration)
+     */
     public WidgetSettings settingsFor(WidgetKind kind) {
         WidgetSettings s = widgets.get(kind);
         if (s == null) {

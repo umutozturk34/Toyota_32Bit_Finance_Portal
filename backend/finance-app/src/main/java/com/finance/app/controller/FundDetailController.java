@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/** Read API for fund-specific reference data (e.g. the distinct fund sub-categories used as filters). */
 @RestController
 @RequestMapping("/api/v1/markets/funds")
 @RequiredArgsConstructor

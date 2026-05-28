@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/** Authenticated read API for bank exchange/asset rates, filterable by currency or by rate asset kind. */
 @RestController
 @RequestMapping("/api/v1/bank-rates")
 @RequiredArgsConstructor

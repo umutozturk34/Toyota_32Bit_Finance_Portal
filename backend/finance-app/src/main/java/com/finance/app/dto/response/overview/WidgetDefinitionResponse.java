@@ -2,6 +2,7 @@ package com.finance.app.dto.response.overview;
 
 import java.util.List;
 
+/** Catalog of widget definitions (size/item bounds per kind) and global layout limits for the client UI. */
 public record WidgetDefinitionResponse(
         List<WidgetDefinition> widgets,
         Limits limits

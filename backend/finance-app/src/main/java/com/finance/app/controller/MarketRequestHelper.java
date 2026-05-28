@@ -7,6 +7,10 @@ import com.finance.shared.util.EnumParser;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Static helpers for market controller request parsing: turns a comma-separated type string into the
+ * matching enum list (all values when blank, bad-request on an invalid token) and clamps page sizes.
+ */
 public final class MarketRequestHelper {
 
     private MarketRequestHelper() {}

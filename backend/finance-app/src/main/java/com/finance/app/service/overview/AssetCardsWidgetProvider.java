@@ -17,6 +17,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Provides the ASSET_CARDS widget: resolves the section's configured asset references (or the defaults) to
+ * live market snapshots, capped at the configured max items. Unknown types and not-found codes are skipped
+ * so a partial config still renders.
+ */
 @Log4j2
 @Component
 public class AssetCardsWidgetProvider implements OverviewWidgetProvider {
@@ -61,6 +66,10 @@ public class AssetCardsWidgetProvider implements OverviewWidgetProvider {
         }
     }
 
+    /**
+     * Parses the configured asset references. Returns null when none are configured (caller substitutes
+     * defaults) versus an empty list when explicitly configured empty; malformed entries are dropped.
+     */
     private List<AssetReference> readReferences(WidgetSection section) {
         JsonNode node = section.config().get("assetCodes");
         if (node == null) return null;

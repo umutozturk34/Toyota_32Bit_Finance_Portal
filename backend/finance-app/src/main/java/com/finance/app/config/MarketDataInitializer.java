@@ -66,6 +66,11 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+/**
+ * On startup, seeds market data for each asset class only when its tables are empty (idempotent
+ * cold-start fetch), running fetches asynchronously. Forex is fetched before stocks/commodities since
+ * those depend on FX rates; after each fetch it notifies the portfolio and market-cache ports.
+ */
 @Log4j2
 @Component
 @Order(1)
@@ -132,6 +137,10 @@ public class MarketDataInitializer implements CommandLineRunner {
                 commodityDataService::refreshAll);
     }
 
+    /**
+     * Runs {@code action} asynchronously only if either snapshot or candle data is missing, optionally
+     * waiting on a {@code prerequisite} fetch first; tracks the task and notifies dependent ports on success.
+     */
     private CompletableFuture<Void> init(String name, MarketType type, long snapshotCount, long candleCount,
                                          CompletableFuture<?> prerequisite, Runnable action) {
         if (snapshotCount > 0 && candleCount > 0) {

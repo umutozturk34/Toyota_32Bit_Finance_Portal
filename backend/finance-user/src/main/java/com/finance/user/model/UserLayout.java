@@ -20,6 +20,10 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 
+/**
+ * A user's persisted dashboard layout (the configurable overview page), keyed by Keycloak subject
+ * and stored as opaque JSON whose structure is owned by the frontend. One row per user.
+ */
 @Getter
 @Setter
 @Builder
@@ -58,6 +62,7 @@ public class UserLayout {
         updatedAt = Instant.now();
     }
 
+    /** Builds an empty layout row (no widgets placed) for a user who has not yet customized their overview. */
     public static UserLayout emptyFor(String userSub) {
         return UserLayout.builder()
                 .userSub(userSub)

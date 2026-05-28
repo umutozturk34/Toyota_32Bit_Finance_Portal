@@ -9,6 +9,11 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
+/**
+ * Startup bootstrap that idempotently reconciles required Keycloak realm/client settings (editable
+ * username, mobile deep-link redirect URIs). Each runner swallows failures and logs a warning so a
+ * temporarily unreachable Keycloak never blocks application startup.
+ */
 @Log4j2
 @Configuration
 @RequiredArgsConstructor

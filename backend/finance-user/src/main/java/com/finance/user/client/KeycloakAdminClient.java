@@ -16,6 +16,12 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Thin wrapper over the Keycloak Admin REST API used for user administration and realm/client
+ * bootstrapping. Calls are circuit-broken and retried; on a 401 the cached admin token is
+ * invalidated and the call retried once. Read-modify-write user updates fetch the full
+ * representation first so a PUT never drops existing fields.
+ */
 @Log4j2
 @Component
 public class KeycloakAdminClient {
@@ -75,6 +81,10 @@ public class KeycloakAdminClient {
         return fetchUser(userId);
     }
 
+    /**
+     * Idempotently ensures the named client allows the given redirect URIs, merging them into the
+     * existing set (preserving order) and PUTting back only when something actually changed.
+     */
     @CircuitBreaker(name = "keycloak-admin")
     @Retry(name = "keycloak-admin")
     @SuppressWarnings("unchecked")
@@ -114,6 +124,7 @@ public class KeycloakAdminClient {
         log.info("Keycloak client redirect URIs synced clientId={} added={}", clientId, requiredUris);
     }
 
+    /** Idempotently sets a top-level realm flag to {@code value}, skipping the write when it already matches. */
     @CircuitBreaker(name = "keycloak-admin")
     @Retry(name = "keycloak-admin")
     public void ensureRealmFlag(String flag, Object value) {
@@ -158,6 +169,7 @@ public class KeycloakAdminClient {
         putFullUser("setEnabled", userId, body);
     }
 
+    /** Updates the user's email and marks it verified, since the change already passed the app's own code-verification flow. */
     @CircuitBreaker(name = "keycloak-admin")
     @Retry(name = "keycloak-admin")
     public void setEmail(String userId, String newEmail) {
@@ -174,6 +186,7 @@ public class KeycloakAdminClient {
         return email == null ? null : email.toString();
     }
 
+    /** Reads a single user attribute, returning empty when absent or blank; Keycloak stores attributes as string lists, so the first element is used. */
     @CircuitBreaker(name = "keycloak-admin")
     @Retry(name = "keycloak-admin")
     @SuppressWarnings("unchecked")
@@ -189,6 +202,7 @@ public class KeycloakAdminClient {
         return java.util.Optional.empty();
     }
 
+    /** Sets a single user attribute, preserving any other existing attributes on the user. */
     @CircuitBreaker(name = "keycloak-admin")
     @Retry(name = "keycloak-admin")
     @SuppressWarnings("unchecked")
@@ -202,6 +216,7 @@ public class KeycloakAdminClient {
         putFullUser("setUserAttribute", userId, body);
     }
 
+    /** PUTs the complete (fetch-merged) user representation back to Keycloak; callers must include all preserved fields. */
     private void putFullUser(String operation, String userId, Map<String, Object> body) {
         executeWithRetry(operation, token -> webClient.put()
                 .uri("/admin/realms/{realm}/users/{id}", properties.getRealm(), userId)
@@ -213,6 +228,7 @@ public class KeycloakAdminClient {
                 .block());
     }
 
+    /** Fetches the full user representation, throwing {@code ResourceNotFoundException} if Keycloak has no such user. */
     @SuppressWarnings("unchecked")
     private Map<String, Object> fetchUser(String userId) {
         Map<String, Object> user = executeWithRetry("fetchUser", token -> webClient.get()
@@ -254,6 +270,7 @@ public class KeycloakAdminClient {
                 .block());
     }
 
+    /** Triggers Keycloak to email the user a link executing the given required actions (e.g. UPDATE_PASSWORD), valid for {@code lifespanSeconds}. */
     @CircuitBreaker(name = "keycloak-admin")
     @Retry(name = "keycloak-admin")
     public void sendActionsEmail(String userId, List<String> actions, String clientId, String redirectUri, long lifespanSeconds) {
@@ -272,6 +289,7 @@ public class KeycloakAdminClient {
                 .block());
     }
 
+    /** Runs a token-bearing call; on 401 it refreshes the admin token and retries once, otherwise translates the error to a domain exception. */
     private <T> T executeWithRetry(String operation, java.util.function.Function<String, T> call) {
         try {
             return call.apply(tokenManager.getToken());

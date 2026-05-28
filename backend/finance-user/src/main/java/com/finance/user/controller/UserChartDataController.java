@@ -22,6 +22,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST API for the current user's per-asset chart state: reads the combined config+drawings bundle
+ * and upserts either side. All endpoints are authenticated and scoped to the JWT subject.
+ */
 @RestController
 @RequestMapping("/api/v1/user/chart-data")
 @PreAuthorize("isAuthenticated()")

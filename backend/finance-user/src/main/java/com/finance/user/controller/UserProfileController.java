@@ -16,6 +16,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST API for the current user's profile (identity fields backed by Keycloak): read and update.
+ * All endpoints are authenticated and scoped to the JWT subject.
+ */
 @RestController
 @RequestMapping("/api/v1/user/profile")
 @PreAuthorize("isAuthenticated()")

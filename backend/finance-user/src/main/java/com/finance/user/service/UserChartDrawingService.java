@@ -17,6 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
+/**
+ * Reads and upserts a user's chart drawings for a tracked asset. Reads fall back to an empty array
+ * when nothing is saved; the asset is resolved from its (type, code) and must exist.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -48,6 +52,7 @@ public class UserChartDrawingService {
         return mapper.toResponse(saved);
     }
 
+    /** Resolves the tracked asset by normalized (type, code), throwing not-found if it is not tracked. */
     private TrackedAsset resolveTracked(TrackedAssetType type, String code) {
         String normalized = type.normalizeCode(code);
         return trackedAssetRepository

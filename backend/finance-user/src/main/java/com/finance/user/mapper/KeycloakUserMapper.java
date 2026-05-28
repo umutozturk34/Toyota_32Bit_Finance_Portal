@@ -7,6 +7,10 @@ import org.mapstruct.Mapping;
 
 import java.time.Instant;
 
+/**
+ * MapStruct mapper from the raw Keycloak user representation to the admin response DTO, normalizing
+ * a null {@code enabled} to {@code false} and converting the epoch-millis timestamp to an {@link Instant}.
+ */
 @Mapper(componentModel = "spring", imports = {Instant.class})
 public interface KeycloakUserMapper {
 

@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
+/** Defines the dedicated {@code keycloakWebClient} bean pre-configured with the Keycloak base URL. */
 @Configuration
 public class KeycloakWebClientConfig {
 

@@ -12,6 +12,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST API for the current user's preferences: reads them (falling back to defaults if none exist)
+ * and applies a partial update. All endpoints are authenticated and scoped to the JWT subject.
+ */
 @RestController
 @RequestMapping("/api/v1/user/preferences")
 @PreAuthorize("isAuthenticated()")

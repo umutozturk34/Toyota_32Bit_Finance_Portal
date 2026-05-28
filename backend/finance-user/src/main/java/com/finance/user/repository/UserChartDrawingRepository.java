@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+/** Persistence for {@link UserChartDrawing}, looked up by the (user, tracked asset) pair. */
 @Repository
 public interface UserChartDrawingRepository extends JpaRepository<UserChartDrawing, Long> {
 

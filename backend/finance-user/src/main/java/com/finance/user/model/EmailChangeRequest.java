@@ -14,6 +14,11 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.OffsetDateTime;
 
+/**
+ * A pending email-change verification, one per user (keyed by Keycloak subject). Holds the target
+ * address, a hashed confirmation code, the attempt counter (for rate limiting) and an expiry; the
+ * change is applied only once the user confirms a matching, non-expired code.
+ */
 @Entity
 @Table(name = "email_change_request")
 @Getter

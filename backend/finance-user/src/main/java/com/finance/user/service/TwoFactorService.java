@@ -8,6 +8,11 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Manages a user's TOTP two-factor credentials through Keycloak. Two-factor is considered configured
+ * when the user has at least one OTP credential; disabling removes them all, and individual devices
+ * can be listed or removed by credential id.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -21,6 +26,7 @@ public class TwoFactorService {
         return new TwoFactorStatus(countOtpCredentials(userSub) > 0);
     }
 
+    /** Removes every OTP credential for the user, returning how many were deleted. */
     public int disable(String userSub) {
         List<Map<String, Object>> credentials = client.listCredentials(userSub);
         int removed = 0;
@@ -65,9 +71,11 @@ public class TwoFactorService {
         return null;
     }
 
+    /** Whether the user has at least one OTP credential configured. */
     public record TwoFactorStatus(boolean configured) {
     }
 
+    /** A single registered OTP device: Keycloak credential id, user-assigned label, and creation epoch-millis. */
     public record TwoFactorDevice(String id, String label, Long createdAt) {
     }
 }

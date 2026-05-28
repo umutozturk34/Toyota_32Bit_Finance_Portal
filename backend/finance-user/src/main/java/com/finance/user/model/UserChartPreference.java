@@ -28,6 +28,11 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 
+/**
+ * A user's saved chart configuration (indicators, study settings, display options) for one tracked
+ * asset, stored as opaque JSON. Unique per (user, tracked asset); the config schema is owned by the
+ * frontend.
+ */
 @Getter
 @Setter
 @Builder

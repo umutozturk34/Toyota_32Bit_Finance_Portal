@@ -20,6 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
+/**
+ * Reads and upserts a user's chart preferences for a tracked asset. When none are saved it returns
+ * config built from the configured defaults (with fund-specific overrides for {@code FUND} assets);
+ * the asset is resolved from its (type, code) and must exist.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -53,6 +58,7 @@ public class UserChartPreferenceService {
         return mapper.toResponse(saved);
     }
 
+    /** Assembles the default chart config for an asset type, applying fund-only fields when the type is {@code FUND}. */
     private JsonNode buildDefaults(TrackedAssetType type) {
         boolean isFund = type == TrackedAssetType.FUND;
         ObjectNode node = JsonNodeFactory.instance.objectNode();
@@ -70,6 +76,7 @@ public class UserChartPreferenceService {
         return node;
     }
 
+    /** Resolves the tracked asset by normalized (type, code), throwing not-found if it is not tracked. */
     private TrackedAsset resolveTracked(TrackedAssetType type, String code) {
         String normalized = type.normalizeCode(code);
         return trackedAssetRepository

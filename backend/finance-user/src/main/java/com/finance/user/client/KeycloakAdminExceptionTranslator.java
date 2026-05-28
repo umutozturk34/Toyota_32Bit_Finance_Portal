@@ -9,12 +9,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+/**
+ * Maps WebClient errors from the Keycloak Admin API onto the app's domain exceptions: 404 to
+ * not-found, 409/other 4xx to bad-request, and 5xx or network failures to external-API errors.
+ */
 @Log4j2
 @Component
 public class KeycloakAdminExceptionTranslator {
 
     private static final String SERVICE = "KEYCLOAK";
 
+    /** Translates an HTTP error response; 401 is handled by the caller's retry path and never reaches here. */
     public RuntimeException translate(String operation, WebClientResponseException ex) {
         if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
             return new ResourceNotFoundException("Keycloak resource not found for " + operation);

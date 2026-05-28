@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
+/** Reads and updates the user's profile (username, name, email) directly against Keycloak as the source of truth. */
 @Log4j2
 @Service
 @RequiredArgsConstructor

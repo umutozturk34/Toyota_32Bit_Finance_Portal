@@ -7,6 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Bound {@code app.chart.*} configuration defining server-side chart defaults, per-asset-type
+ * allow-rules, and limits. Seeds a new user's chart preferences and guards what indicators, drawing
+ * tools, and chart types each {@link TrackedAssetType} may use.
+ */
 @ConfigurationProperties("app.chart")
 public record ChartDefaultsProperties(
         Defaults defaults,

@@ -7,7 +7,7 @@ export const INSTRUMENT_TYPES = [
   { id: 'VIOP',      labelKey: 'instrumentViop',      placeholder: '',         accent: '#ef4444' },
   { id: 'BOND',      labelKey: 'instrumentBond',      placeholder: 'TRTXXX',   accent: '#d946ef' },
   { id: 'MACRO',     labelKey: 'instrumentMacro',     placeholder: 'TP.FE...', accent: '#0ea5e9' },
-  { id: 'DEPOSIT',   labelKey: 'instrumentDeposit',   placeholder: 'TP.TRYTAS.MT06', accent: '#10b981' },
+  { id: 'DEPOSIT',   labelKey: 'instrumentDeposit',   placeholder: 'TP.TRYTAS.MT02', accent: '#10b981' },
 ];
 
 export const SERIES_COLORS = [
@@ -21,9 +21,9 @@ export const SERIES_COLORS = [
 ];
 
 export const PRESET_INSTRUMENTS = [
-  { type: 'DEPOSIT', code: 'TP.TRYTAS.MT06', name: 'TRY 3M Mevduat', labelKey: 'analytics.preset.depositTry3m' },
-  { type: 'DEPOSIT', code: 'TP.USDTAS.MT06', name: 'USD 3M Mevduat', labelKey: 'analytics.preset.depositUsd3m' },
-  { type: 'DEPOSIT', code: 'TP.EURTAS.MT06', name: 'EUR 3M Mevduat', labelKey: 'analytics.preset.depositEur3m' },
+  { type: 'DEPOSIT', code: 'TP.TRYTAS.MT02', name: 'TRY 3M Mevduat', labelKey: 'analytics.preset.depositTry3m' },
+  { type: 'DEPOSIT', code: 'TP.USDTAS.MT02', name: 'USD 3M Mevduat', labelKey: 'analytics.preset.depositUsd3m' },
+  { type: 'DEPOSIT', code: 'TP.EURTAS.MT02', name: 'EUR 3M Mevduat', labelKey: 'analytics.preset.depositEur3m' },
   { type: 'FOREX',   code: 'USD',            name: 'USD/TRY',         labelKey: 'analytics.preset.usdTry' },
   { type: 'FOREX',   code: 'EUR',            name: 'EUR/TRY',         labelKey: 'analytics.preset.eurTry' },
   { type: 'COMMODITY', code: 'XAUTRY',       name: 'Altın',           labelKey: 'analytics.preset.gold' },

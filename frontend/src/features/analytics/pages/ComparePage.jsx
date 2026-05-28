@@ -63,7 +63,7 @@ export default function ComparePage() {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const { currency: displayCurrency, format: money } = useMoney();
-  const { convertAt } = useRateHistory();
+  const { convertBetween } = useRateHistory();
   const [params, setParams] = useSearchParams();
   const { data: userPortfolios } = usePortfolioList();
   const [portfolioPickerOpen, setPortfolioPickerOpen] = useState(false);
@@ -84,16 +84,29 @@ export default function ComparePage() {
   const [useExplicitBounds, setUseExplicitBounds] = useState(
     !!(initialStartRef.current && initialEndRef.current),
   );
+  // Comparing against a USD/EUR deposit frames the whole chart in that deposit's currency
+  // (single non-TRY deposit only; mixed/none → no override).
+  const depositFrameCurrency = useMemo(() => {
+    const set = new Set(
+      selected
+        .filter((s) => s.type === 'MACRO_DEPOSIT')
+        .map((s) => nativeCurrencyFor(s.type, s.code))
+        .filter((c) => c !== 'TRY'),
+    );
+    return set.size === 1 ? [...set][0] : null;
+  }, [selected]);
   const targetCurrency = useMemo(() => {
     if (useExplicitBounds && initialCurrencyRef.current) return initialCurrencyRef.current;
+    if (depositFrameCurrency) return depositFrameCurrency;
     if (displayCurrency !== 'ORIGINAL') return displayCurrency;
     const first = selected.find((s) => !isMacro(s.type) && s.type !== 'PORTFOLIO');
     return first ? nativeCurrencyFor(first.type, first.code) : 'TRY';
-  }, [displayCurrency, selected, useExplicitBounds]);
-  // "Original" view (each series in its own native) only when no explicit currency is in effect.
-  // A currency from the URL (e.g. arriving from a USD/EUR beater) forces conversion to it.
+  }, [displayCurrency, selected, useExplicitBounds, depositFrameCurrency]);
+  // "Original" view (each series in its own native) only when no explicit currency is in effect:
+  // a URL currency (USD/EUR beater) or a selected non-TRY deposit forces conversion to that currency.
   const originalView = displayCurrency === 'ORIGINAL'
-    && !(useExplicitBounds && initialCurrencyRef.current);
+    && !(useExplicitBounds && initialCurrencyRef.current)
+    && !depositFrameCurrency;
 
   useEffect(() => {
     if (initialRangeRef.current) {
@@ -246,7 +259,7 @@ export default function ComparePage() {
         && native !== targetCurrency;
       if (shouldConvert) {
         pts = pts.map((p) => {
-          const converted = convertAt(p.value, native, p.date);
+          const converted = convertBetween(p.value, native, targetCurrency, p.date);
           return { ...p, value: converted ?? p.value };
         });
       }
@@ -254,7 +267,7 @@ export default function ComparePage() {
       pts = forwardFillToToday(pts);
       return { ...s, points: pts };
     });
-  }, [backfilledSeriesData, commonStartDate, originalView, targetCurrency, convertAt, bounds.from]);
+  }, [backfilledSeriesData, commonStartDate, originalView, targetCurrency, convertBetween, bounds.from]);
 
   const seriesData = convertedData;
 

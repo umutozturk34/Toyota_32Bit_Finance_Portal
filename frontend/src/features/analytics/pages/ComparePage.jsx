@@ -90,6 +90,10 @@ export default function ComparePage() {
     const first = selected.find((s) => !isMacro(s.type) && s.type !== 'PORTFOLIO');
     return first ? nativeCurrencyFor(first.type, first.code) : 'TRY';
   }, [displayCurrency, selected, useExplicitBounds]);
+  // "Original" view (each series in its own native) only when no explicit currency is in effect.
+  // A currency from the URL (e.g. arriving from a USD/EUR beater) forces conversion to it.
+  const originalView = displayCurrency === 'ORIGINAL'
+    && !(useExplicitBounds && initialCurrencyRef.current);
 
   useEffect(() => {
     if (initialRangeRef.current) {
@@ -238,7 +242,7 @@ export default function ComparePage() {
       }
       const native = nativeCurrencyFor(s.indicator.type, s.indicator.code);
       const shouldConvert = !isRateLike(s.indicator.type)
-        && displayCurrency !== 'ORIGINAL'
+        && !originalView
         && native !== targetCurrency;
       if (shouldConvert) {
         pts = pts.map((p) => {
@@ -250,7 +254,7 @@ export default function ComparePage() {
       pts = forwardFillToToday(pts);
       return { ...s, points: pts };
     });
-  }, [backfilledSeriesData, commonStartDate, displayCurrency, targetCurrency, convertAt, bounds.from]);
+  }, [backfilledSeriesData, commonStartDate, originalView, targetCurrency, convertAt, bounds.from]);
 
   const seriesData = convertedData;
 

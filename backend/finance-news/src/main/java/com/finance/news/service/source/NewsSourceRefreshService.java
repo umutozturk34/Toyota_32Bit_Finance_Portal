@@ -9,6 +9,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+/** Runs a source's first ingest off-thread after creation so the admin request returns immediately; failures are logged, not propagated. */
 @Log4j2
 @Service
 @RequiredArgsConstructor

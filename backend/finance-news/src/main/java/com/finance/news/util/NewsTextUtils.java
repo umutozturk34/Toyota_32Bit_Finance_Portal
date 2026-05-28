@@ -6,6 +6,10 @@ import org.springframework.web.util.HtmlUtils;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * HTML cleanup helpers for feed content: unescape entities, strip tags, extract the first inline image
+ * URL, and remove a duplicate cover image (and any resulting empty leading blocks) from article bodies.
+ */
 public final class NewsTextUtils {
 
     private static final Pattern HTML_TAG_PATTERN = Pattern.compile("<[^>]+>");
@@ -49,6 +53,7 @@ public final class NewsTextUtils {
         return null;
     }
 
+    /** Removes figures/img tags matching the cover image from the body so it isn't shown twice, then trims empty leading blocks. */
     public static String stripCoverImageFromContent(String content, String coverImageUrl) {
         if (content == null || content.isEmpty() || coverImageUrl == null || coverImageUrl.isEmpty()) {
             return content;
@@ -95,6 +100,7 @@ public final class NewsTextUtils {
         return m.find() ? m.group(1).trim() : null;
     }
 
+    /** Fuzzy image-identity check tolerating CDN/resize variants by comparing URLs, containment, and filename stems. */
     private static boolean isSameImage(String a, String b) {
         if (a.equals(b)) return true;
         if (a.contains(b) || b.contains(a)) return true;
@@ -109,6 +115,7 @@ public final class NewsTextUtils {
         return query > 0 ? url.substring(0, query) : url;
     }
 
+    /** Reduces a URL to its filename without extension or trailing {@code -WxH} resize suffix for comparison. */
     private static String extractStem(String url) {
         int slash = url.lastIndexOf('/');
         String filename = slash >= 0 && slash < url.length() - 1 ? url.substring(slash + 1) : url;

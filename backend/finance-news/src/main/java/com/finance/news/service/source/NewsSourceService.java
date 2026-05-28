@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/** Read-side access to news sources (enabled list for ingest, full list and single lookups for admin). */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -40,6 +41,7 @@ public class NewsSourceService {
         return newsSourceMapper.toResponse(findOrThrow(id));
     }
 
+    /** Loads a source by id or throws {@link ResourceNotFoundException}; entity-returning for write-path callers. */
     public NewsSource findOrThrow(Long id) {
         return newsSourceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("error.news.sourceNotFound", id));

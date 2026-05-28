@@ -8,6 +8,7 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
+/** MapStruct mapper from article entities to list/detail API responses; the category enum is exposed as its name. */
 @Mapper(componentModel = "spring")
 public abstract class NewsResponseMapper {
 

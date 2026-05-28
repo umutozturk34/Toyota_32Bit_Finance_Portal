@@ -6,6 +6,10 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * A configurable news feed (unique name, URL, type). {@code defaultCategory} seeds the classifier and
+ * {@code enabled}/{@code sortOrder} control which sources are polled and in what order.
+ */
 @Getter
 @Setter
 @Builder

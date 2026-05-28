@@ -18,6 +18,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * Orchestrates a full news refresh across all enabled sources, processing each in batch. Tolerates
+ * per-source failures but aborts early when the RSS circuit breaker opens; fails the run only when no
+ * source succeeds. Returns the total number of newly saved articles.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -26,6 +31,7 @@ public class NewsDataService {
     private final NewsSourceProcessingService newsSourceProcessingService;
     private final NewsSourceService newsSourceService;
 
+    /** Refreshes all enabled sources; throws if none are configured or every source fails, else returns articles saved. */
     public int updateNews() {
         List<NewsSource> sources = newsSourceService.getEnabledSources();
         log.info("Starting news update from {} sources", sources.size());

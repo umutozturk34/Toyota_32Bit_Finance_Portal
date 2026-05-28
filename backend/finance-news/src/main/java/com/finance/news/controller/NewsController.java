@@ -14,6 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
+/** Authenticated read API for news: paged/filtered article list, per-category counts, and single-article detail. */
 @RestController
 @RequestMapping("/api/v1/news")
 @RequiredArgsConstructor
@@ -23,6 +24,7 @@ public class NewsController {
     private final NewsQueryService newsQueryService;
     private final Translator translator;
 
+    /** Lists articles filtered by category/search and sorted; page size defaults and is clamped to the configured max. */
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ApiResponse<PagedResponse<NewsArticleResponse>> getNews(

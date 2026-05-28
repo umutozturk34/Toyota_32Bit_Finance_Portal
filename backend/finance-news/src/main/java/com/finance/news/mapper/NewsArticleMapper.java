@@ -13,12 +13,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDateTime;
 
+/**
+ * Builds persistable article DTOs from raw feed data: runs the classifier and drops articles that
+ * cannot be categorized or carry no description/content.
+ */
 @Mapper(componentModel = "spring")
 public abstract class NewsArticleMapper {
 
     @Autowired
     protected NewsProperties newsProperties;
 
+    /** Classifies and attributes a raw feed article; returns {@code null} to skip uncategorizable or empty articles. */
     public NewsArticleDto toDto(RssArticleData data, String sourceName, String sourceUrl, String defaultCategory) {
         String resolverDescription = buildResolverDescription(data.description(), data.content());
 
@@ -55,6 +60,7 @@ public abstract class NewsArticleMapper {
         return value == null || value.isBlank();
     }
 
+    /** Picks the richest text for classification: a long-enough description, else stripped content (optionally appended). */
     private String buildResolverDescription(String description, String content) {
         if (description != null && description.length() >= newsProperties.getMapping().getShortDescriptionThreshold()) {
             return description;

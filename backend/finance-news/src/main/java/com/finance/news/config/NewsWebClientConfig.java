@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
 
+/** Defines a dedicated {@code newsWebClient} whose in-memory buffer is enlarged to hold full RSS payloads. */
 @Configuration
 @RequiredArgsConstructor
 public class NewsWebClientConfig {

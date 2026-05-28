@@ -23,6 +23,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Ingests one source: fetches its feed, caps articles per source, skips duplicates (by guid/link),
+ * classifies and persists each new article in its own transaction, and caches it. Aborts if a feed
+ * yields nothing usable or if every new article fails to save.
+ */
 @Service
 @Log4j2
 public class NewsSourceProcessingService {
@@ -48,6 +53,7 @@ public class NewsSourceProcessingService {
         this.maxArticlesPerSource = newsProperties.getMaxArticlesPerSource();
     }
 
+    /** Fetches, dedups, classifies, and persists new articles for one source; returns the count saved. */
     public int processSource(NewsSource source) {
         List<RssArticleData> rawArticles = sourceFetcher.fetchFeed(source.getUrl());
 

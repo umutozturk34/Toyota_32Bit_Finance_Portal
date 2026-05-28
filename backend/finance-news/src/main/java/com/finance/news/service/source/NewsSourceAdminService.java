@@ -17,6 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+/**
+ * Admin write operations for news sources (create/update/enable/delete). Enforces unique names and a
+ * reachable URL before persisting; a newly created source is ingested asynchronously after commit, and
+ * deleting a source first purges its articles.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -29,6 +34,7 @@ public class NewsSourceAdminService {
     private final NewsSourceRefreshService newsSourceRefreshService;
     private final RssClient rssClient;
 
+    /** Validates uniqueness and reachability, persists the source, and schedules a first ingest after commit. */
     @Transactional
     public NewsSourceResponse create(UpsertNewsSourceRequest request) {
         validateNameUniqueness(request.getName(), null);
@@ -46,6 +52,7 @@ public class NewsSourceAdminService {
         return newsSourceMapper.toResponse(saved);
     }
 
+    /** Updates a source, re-checking name uniqueness and re-validating the URL only when it changed. */
     @Transactional
     public NewsSourceResponse update(Long id, UpsertNewsSourceRequest request) {
         NewsSource entity = newsSourceService.findOrThrow(id);
@@ -64,6 +71,7 @@ public class NewsSourceAdminService {
         newsSourceRepository.save(entity);
     }
 
+    /** Deletes a source after purging all of its articles. */
     @Transactional
     public void delete(Long id) {
         NewsSource entity = newsSourceService.findOrThrow(id);
@@ -80,6 +88,7 @@ public class NewsSourceAdminService {
                 });
     }
 
+    /** Confirms the feed can be fetched; rejects the request as a business error when it cannot. */
     private void validateUrlReachable(String url) {
         try {
             rssClient.fetchFeed(url);

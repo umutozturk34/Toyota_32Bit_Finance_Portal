@@ -12,6 +12,10 @@ import org.mapstruct.Named;
 
 import java.util.List;
 
+/**
+ * MapStruct mapper between news source entities, API responses, and upsert requests; trims name/URL,
+ * applies enabled/sortOrder defaults, and parses the source type leniently.
+ */
 @Mapper(componentModel = "spring")
 public abstract class NewsSourceMapper {
 
@@ -40,6 +44,7 @@ public abstract class NewsSourceMapper {
     @Mapping(target = "sortOrder", expression = "java(request.getSortOrder() != null ? request.getSortOrder() : 0)")
     public abstract void updateEntity(UpsertNewsSourceRequest request, @MappingTarget NewsSource entity);
 
+    /** Parses a source-type name (case-insensitive), defaulting blank/null to {@link NewsSourceType#RSS}. */
     @Named("toSourceType")
     protected NewsSourceType toSourceType(String type) {
         if (type == null || type.isBlank()) {

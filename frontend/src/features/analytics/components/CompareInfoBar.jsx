@@ -1,7 +1,8 @@
 import { Info } from 'lucide-react';
 import { isMacro, isRateLike } from '../lib/compareSeriesUtils';
+import { formatPrice } from '../../../shared/utils/formatters';
 
-export default function CompareInfoBar({ selected, targetCurrency, money, t }) {
+export default function CompareInfoBar({ selected, targetCurrency, t }) {
   return (
     <div className="rounded-lg border border-border-default/40 bg-bg-base/30 p-3 space-y-1.5">
       <div className="flex items-center gap-1.5 text-xs font-display font-semibold text-fg-muted">
@@ -30,7 +31,9 @@ export default function CompareInfoBar({ selected, targetCurrency, money, t }) {
               ? `%${Number(lastValue).toFixed(2)}`
               : Number(lastValue).toLocaleString('tr-TR', { maximumFractionDigits: 2 });
           } else {
-            formattedLast = money(lastValue, targetCurrency);
+            // lastValue is already in targetCurrency (converted by ComparePage); format it directly
+            // without re-converting through displayCurrency.
+            formattedLast = formatPrice(lastValue, { currency: targetCurrency });
           }
         }
 

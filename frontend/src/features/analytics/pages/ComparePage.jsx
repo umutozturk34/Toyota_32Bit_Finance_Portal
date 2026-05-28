@@ -62,7 +62,7 @@ const MODES = [
 export default function ComparePage() {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { currency: displayCurrency, format: money } = useMoney();
+  const { currency: displayCurrency } = useMoney();
   const { convertBetween } = useRateHistory();
   const [params, setParams] = useSearchParams();
   const { data: userPortfolios } = usePortfolioList();
@@ -514,7 +514,7 @@ export default function ComparePage() {
           )}
         </div>
 
-        {seriesData.length > 0 && <CompareInfoBar selected={seriesData} targetCurrency={targetCurrency} money={money} t={t} />}
+        {seriesData.length > 0 && <CompareInfoBar selected={seriesData} targetCurrency={targetCurrency} t={t} />}
       </Card>
     </motion.div>
   );

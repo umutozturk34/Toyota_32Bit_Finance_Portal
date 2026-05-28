@@ -34,6 +34,9 @@ public class ScenarioService {
     private static final int VALUE_SCALE = 6;
     private static final BigDecimal HUNDRED = new BigDecimal("100");
     private static final BigDecimal DAYS_PER_YEAR = new BigDecimal("365");
+    private static final BigDecimal SPLIT_DETECTION_HIGH = new BigDecimal("5");
+    private static final BigDecimal SPLIT_DETECTION_LOW = new BigDecimal("0.2");
+    private static final int BASELINE_PROBE_WINDOW = 10;
 
     private final UnifiedHistoryService historyService;
     private final MacroIndicatorQueryService macroQueryService;
@@ -101,14 +104,20 @@ public class ScenarioService {
                                           BigDecimal amount, LocalDate startDate, LocalDate endDate,
                                           BigDecimal cpiGrowthRatio, Currency nativeCurrency) {
         List<HistoryPoint> raw = series.rawPoints();
-        BigDecimal basePrice = raw.get(0).value();
+        int baselineIdx = pickBaselineIndex(raw);
+        if (baselineIdx < 0) return emptySeries(instrument);
+        HistoryPoint baseline = raw.get(baselineIdx);
+        BigDecimal basePrice = baseline.value();
         if (basePrice == null || basePrice.signum() <= 0) return emptySeries(instrument);
 
-        BigDecimal baseFx = series.baseFx();
+        BigDecimal baseFx = series.fxAt(baseline.date());
+        if (baseFx == null) baseFx = series.baseFx();
         if (baseFx == null || baseFx.signum() <= 0) return emptySeries(instrument);
 
-        List<ScenarioPoint> points = new ArrayList<>(raw.size());
-        for (HistoryPoint p : raw) {
+        List<ScenarioPoint> points = new ArrayList<>(raw.size() - baselineIdx);
+        for (int i = baselineIdx; i < raw.size(); i++) {
+            HistoryPoint p = raw.get(i);
+            if (p.value() == null) continue;
             BigDecimal fxAtPoint = series.fxAt(p.date());
             if (fxAtPoint == null) continue;
             BigDecimal valueTarget = amount
@@ -122,9 +131,27 @@ public class ScenarioService {
         BigDecimal finalValue = points.get(points.size() - 1).value();
         int threshold = analyticsProperties.scenario().partialThresholdDays();
         boolean endsLate = raw.get(raw.size() - 1).date().isBefore(endDate.minusDays(threshold));
-        boolean startsLate = raw.get(0).date().isAfter(startDate.plusDays(threshold));
+        boolean startsLate = baseline.date().isAfter(startDate.plusDays(threshold));
         return buildSeries(instrument, points, finalValue, amount, cpiGrowthRatio, nativeCurrency,
                 endsLate || startsLate);
+    }
+
+    private static int pickBaselineIndex(List<HistoryPoint> raw) {
+        if (raw == null || raw.isEmpty()) return -1;
+        if (raw.size() < 3) return 0;
+        int scanLimit = Math.min(raw.size() - 1, Math.max(BASELINE_PROBE_WINDOW, raw.size() / 3));
+        int jumpIdx = -1;
+        for (int i = 0; i < scanLimit; i++) {
+            BigDecimal cur = raw.get(i).value();
+            BigDecimal next = raw.get(i + 1).value();
+            if (cur == null || next == null || cur.signum() <= 0 || next.signum() <= 0) continue;
+            BigDecimal ratio = next.divide(cur, 6, RoundingMode.HALF_UP);
+            if (ratio.compareTo(SPLIT_DETECTION_HIGH) > 0
+                    || ratio.compareTo(SPLIT_DETECTION_LOW) < 0) {
+                jumpIdx = i + 1;
+            }
+        }
+        return jumpIdx >= 0 ? jumpIdx : 0;
     }
 
     private ScenarioSeries simulateRate(AnalyticsInstrument instrument, PricedSeries series,

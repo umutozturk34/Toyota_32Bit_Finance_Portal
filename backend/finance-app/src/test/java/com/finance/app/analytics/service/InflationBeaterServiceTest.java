@@ -54,6 +54,7 @@ class InflationBeaterServiceTest {
     void wireTrackedDefaults() {
         for (TrackedAssetType t : TrackedAssetType.values()) {
             lenient().when(trackedAssetQueryService.getCodes(t)).thenReturn(List.of());
+            lenient().when(trackedAssetQueryService.getEnabledCodes(t)).thenReturn(List.of());
             lenient().when(trackedAssetQueryService.getDisplayNameMap(t)).thenReturn(Map.of());
         }
     }
@@ -128,6 +129,67 @@ class InflationBeaterServiceTest {
         assertThat(response.benchmarkReturnPct()).isEqualByComparingTo("45");
         assertThat(response.entries()).hasSize(1);
         assertThat(response.entries().get(0).excessReturnPct()).isEqualByComparingTo("15");
+    }
+
+    @Test
+    void shouldComputeUsdBasisReturnWhenBenchmarkIsUsdDeposit() {
+        com.finance.market.core.service.AssetNativeCurrencyResolver resolver =
+                mock(com.finance.market.core.service.AssetNativeCurrencyResolver.class);
+        when(resolver.resolveNativeCurrency(any(), org.mockito.ArgumentMatchers.eq("TP.USDTAS.MT03")))
+                .thenReturn(com.finance.common.model.Currency.USD);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "nativeCurrencyResolver", resolver);
+
+        MacroIndicator usdDeposit = mock(MacroIndicator.class);
+        lenient().when(usdDeposit.getCategory()).thenReturn(MacroCategory.DEPOSIT);
+        lenient().when(usdDeposit.getUnit()).thenReturn(MacroUnit.PERCENT);
+        lenient().when(usdDeposit.getLabel()).thenReturn("usdDeposit3m");
+        when(macroQueryService.findByCode("TP.USDTAS.MT03")).thenReturn(usdDeposit);
+
+        ScenarioSeries stockFlatInUsd = buildSeries(AnalyticsInstrumentType.SPOT, "BIST.XYZ", BigDecimal.ZERO);
+        ScenarioSeries usdDepositReturn = buildSeries(
+                AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT03", new BigDecimal("5"));
+        when(scenarioService.simulate(any())).thenReturn(new ScenarioResponse(
+                new BigDecimal("10000"), LocalDate.now().minusYears(1), LocalDate.now(),
+                null, com.finance.common.model.Currency.USD, List.of(stockFlatInUsd, usdDepositReturn)));
+
+        InflationBeaterResponse response = service.rank("1Y", "TP.USDTAS.MT03");
+
+        ArgumentCaptor<ScenarioRequest> captor = ArgumentCaptor.forClass(ScenarioRequest.class);
+        verify(scenarioService).simulate(captor.capture());
+        assertThat(captor.getValue().targetCurrency()).isEqualTo(com.finance.common.model.Currency.USD);
+        assertThat(response.comparisonCurrency()).isEqualTo(com.finance.common.model.Currency.USD);
+        assertThat(response.benchmarkReturnPct()).isEqualByComparingTo("5");
+
+        assertThat(response.entries()).hasSize(1);
+        assertThat(response.entries().get(0).code()).isEqualTo("BIST.XYZ");
+        assertThat(response.entries().get(0).nominalReturnPct()).isEqualByComparingTo("0");
+        assertThat(response.entries().get(0).excessReturnPct()).isEqualByComparingTo("-5");
+        assertThat(response.entries().get(0).beatsBenchmark()).isFalse();
+    }
+
+    @Test
+    void shouldMatchCompareScenarioReturnInBeater() {
+        wireInflationBenchmark(new BigDecimal("25"));
+        BigDecimal fundReturn = new BigDecimal("48.86");
+        ScenarioSeries pteSeries = buildSeries(AnalyticsInstrumentType.FUND, "PTE", fundReturn);
+        when(scenarioService.simulate(any())).thenReturn(new ScenarioResponse(
+                new BigDecimal("10000"), LocalDate.now().minusYears(1), LocalDate.now(),
+                new BigDecimal("25"), null, List.of(pteSeries)));
+
+        InflationBeaterResponse response = service.rank("1Y", null);
+
+        ArgumentCaptor<ScenarioRequest> captor = ArgumentCaptor.forClass(ScenarioRequest.class);
+        verify(scenarioService).simulate(captor.capture());
+        ScenarioRequest beaterRequest = captor.getValue();
+
+        ScenarioResponse direct = new ScenarioResponse(
+                beaterRequest.amount(), beaterRequest.startDate(), beaterRequest.endDate(),
+                new BigDecimal("25"), beaterRequest.targetCurrency(), List.of(pteSeries));
+        BigDecimal directReturn = direct.series().get(0).nominalReturnPct();
+
+        assertThat(response.entries()).hasSize(1);
+        assertThat(response.entries().get(0).nominalReturnPct()).isEqualByComparingTo(directReturn);
+        assertThat(response.entries().get(0).code()).isEqualTo("PTE");
     }
 
     @Test

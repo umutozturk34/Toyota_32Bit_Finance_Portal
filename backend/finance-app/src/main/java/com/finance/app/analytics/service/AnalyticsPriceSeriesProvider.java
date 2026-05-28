@@ -67,7 +67,9 @@ public interface AnalyticsPriceSeriesProvider {
 
         private Currency resolveNative(AnalyticsInstrument instrument) {
             MarketType marketType = mapToMarketType(instrument.type());
-            if (marketType == MarketType.CRYPTO || marketType == MarketType.VIOP) {
+            if (marketType == MarketType.CRYPTO
+                    || marketType == MarketType.VIOP
+                    || marketType == MarketType.COMMODITY) {
                 return Currency.TRY;
             }
             if (nativeCurrencyResolver == null) return Currency.TRY;

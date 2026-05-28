@@ -153,11 +153,6 @@
   border-bottom: 2px solid var(--color-accent);
 }
 
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
 html {
   font-family: var(--font-sans);
   font-synthesis: none;
@@ -587,7 +582,7 @@ button {
 }
 
 [data-theme="light"] .modal-overlay {
-  background: rgba(15, 23, 42, 0.2);
+  background: rgba(15, 23, 42, 0.55);
 }
 
 [data-theme="light"] .modal-panel {
@@ -599,6 +594,52 @@ button {
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
+}
+
+/* Rich theme cross-fade — only triggered on the landing page (light DOM) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.45s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+  animation-name: theme-cross-out;
+  z-index: 1;
+}
+::view-transition-new(root) {
+  animation-name: theme-cross-in;
+  z-index: 2;
+}
+@keyframes theme-cross-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.992); }
+}
+@keyframes theme-cross-in {
+  from { opacity: 0; transform: scale(1.008); filter: blur(2px); }
+  to   { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+/* CSS fallback (homepage, browsers without View Transitions API) */
+.theme-switching :is(
+  html,
+  body,
+  [class*="bg-bg"],
+  [class*="bg-surface"],
+  [class*="bg-elevated"],
+  [class*="text-fg"],
+  [class*="border-border"]
+) {
+  transition:
+    background-color 0.4s ease,
+    color 0.4s ease,
+    border-color 0.4s ease !important;
+}
+
+.theme-switching canvas,
+.theme-switching svg,
+.theme-switching img {
+  transition: none !important;
 }
 
 [data-theme="light"] select {

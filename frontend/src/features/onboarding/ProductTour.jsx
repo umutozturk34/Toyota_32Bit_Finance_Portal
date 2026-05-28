@@ -37,7 +37,6 @@ export default function ProductTour({ open, onFinish, onSkip }) {
   const location = useLocation();
 
   const [stepIndex, setStepIndex] = useState(0);
-  const [farewellOpen, setFarewellOpen] = useState(false);
   const [tooltipSize, setTooltipSize] = useState({ width: 320, height: 200 });
   const [viewport, setViewport] = useState(() => ({
     w: typeof window !== 'undefined' ? window.innerWidth : 0,
@@ -174,9 +173,7 @@ export default function ProductTour({ open, onFinish, onSkip }) {
 
   const handleNext = useCallback(() => {
     if (isLast) {
-      setFarewellOpen(true);
-      window.setTimeout(() => setFarewellOpen(false), 2600);
-      window.setTimeout(() => onFinish?.(), 3800);
+      onFinish?.();
       return;
     }
     directionRef.current = 'forward';
@@ -204,13 +201,17 @@ export default function ProductTour({ open, onFinish, onSkip }) {
     });
   }, [isMobileLayout]);
 
+  const handleSkip = useCallback(() => {
+    onSkip?.();
+  }, [onSkip]);
+
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
-        onSkip?.();
+        handleSkip();
       } else if (e.key === 'ArrowRight') {
         handleNext();
       } else if (e.key === 'ArrowLeft') {
@@ -219,7 +220,7 @@ export default function ProductTour({ open, onFinish, onSkip }) {
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [open, onSkip, handleNext, handleBack]);
+  }, [open, handleSkip, handleNext, handleBack]);
 
   if (!open) return null;
 
@@ -237,8 +238,6 @@ export default function ProductTour({ open, onFinish, onSkip }) {
   const overlay = (
     <motion.div
       className="fixed inset-0"
-      animate={{ opacity: farewellOpen ? 0 : 1 }}
-      transition={{ duration: 0.55, ease: EASE_OUT_EXPO }}
       style={{ zIndex: Z_OVERLAY, isolation: 'isolate' }}
       role="dialog"
       aria-modal="true"
@@ -279,12 +278,13 @@ export default function ProductTour({ open, onFinish, onSkip }) {
 
       <button
         type="button"
-        onClick={onSkip}
-        className="fixed top-3 right-3 sm:top-5 sm:right-5 inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated/95 px-3 sm:px-2.5 py-2 sm:py-1.5 min-h-[40px] sm:min-h-0 text-[11px] text-fg-muted backdrop-blur-md transition-colors hover:text-fg hover:border-accent/40 cursor-pointer"
+        onClick={handleSkip}
+        aria-label={t('onboarding.skip')}
+        className="fixed top-3 right-3 sm:top-5 sm:right-5 inline-flex items-center justify-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated/95 min-w-[40px] min-h-[40px] sm:min-w-0 sm:min-h-0 sm:px-2.5 sm:py-1.5 text-[11px] text-fg-muted backdrop-blur-md transition-colors hover:text-fg hover:border-accent/40 cursor-pointer"
         style={{ zIndex: Z_TOP_SKIP }}
       >
-        <X className="h-3 w-3" />
-        {t('onboarding.skip')}
+        <X className="h-4 w-4 sm:h-3 sm:w-3" />
+        <span className="hidden sm:inline">{t('onboarding.skip')}</span>
       </button>
 
       <AnimatePresence mode="wait">
@@ -304,23 +304,25 @@ export default function ProductTour({ open, onFinish, onSkip }) {
           style={{
             position: 'fixed',
             top: tooltipPos.top,
-            left: tooltipPos.left,
-            width: tooltipPos.width,
+            left: `max(12px, min(${tooltipPos.left}px, calc(100vw - ${tooltipPos.width}px - 12px)))`,
+            width: `min(${tooltipPos.width}px, calc(100vw - 24px))`,
+            maxWidth: 'calc(100vw - 24px)',
+            maxHeight: 'calc(100dvh - 24px)',
             zIndex: Z_TOOLTIP,
           }}
         >
           <div
-            className="relative rounded-2xl border-2 border-accent/30 p-5 shadow-2xl shadow-black/40 ring-1 ring-accent/20"
-            style={{ backgroundColor: tooltipTheme.bg }}
+            className="relative rounded-2xl border-2 border-accent/30 p-4 landscape:p-3 sm:p-5 sm:landscape:p-4 shadow-2xl shadow-black/40 ring-1 ring-accent/20 overflow-y-auto overflow-x-hidden"
+            style={{ backgroundColor: tooltipTheme.bg, maxHeight: 'calc(100dvh - 24px)' }}
           >
             <TooltipPointer placement={resolvedPlacement} bg={tooltipTheme.pointerBg} />
             <span aria-hidden="true" className="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-accent/50 to-transparent rounded-t-2xl" />
 
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] text-accent font-medium">
+            <div className="flex items-center justify-between gap-2 mb-3 landscape:mb-2">
+              <span className="text-[10px] sm:text-[11px] text-accent font-medium whitespace-nowrap shrink-0">
                 {counterLabel}
               </span>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 min-w-0 flex-wrap justify-end">
                 {visibleSteps.map((s, i) => {
                   const active = i === visibleIndex;
                   const done = i < visibleIndex;
@@ -402,7 +404,7 @@ export default function ProductTour({ open, onFinish, onSkip }) {
                     scale: { duration: 0.55, ease: EASE_OUT_EXPO },
                     backgroundPosition: { delay: 0.6, duration: 3.6, repeat: Infinity, ease: 'linear' },
                   }}
-                  className="font-display text-2xl sm:text-3xl font-bold leading-tight tracking-tight text-center bg-gradient-to-r from-accent via-accent-bright via-fuchsia-400 via-accent-bright to-accent bg-clip-text text-transparent"
+                  className="font-display text-2xl landscape:text-xl sm:text-3xl sm:landscape:text-2xl font-bold leading-tight tracking-tight text-center bg-gradient-to-r from-accent via-fuchsia-400 to-accent-bright bg-clip-text text-transparent"
                   style={{ backgroundSize: '200% 100%' }}
                 >
                   {t(step?.titleKey ?? '')}
@@ -418,12 +420,12 @@ export default function ProductTour({ open, onFinish, onSkip }) {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.14, duration: 0.4, ease: EASE_OUT_EXPO }}
-                className="mt-3 text-[13px] text-fg-muted leading-[1.6] text-center"
+                className="mt-3 landscape:mt-2 text-[13px] landscape:text-[12px] text-fg-muted leading-[1.6] landscape:leading-[1.45] text-center"
               >
                 {t(step?.descKey ?? '')}
               </motion.p>
             ) : (
-              <p className="mt-2 text-[13px] text-fg-muted leading-[1.55]">
+              <p className="mt-2 landscape:mt-1.5 text-[13px] landscape:text-[12px] text-fg-muted leading-[1.55] landscape:leading-[1.4]">
                 {t(step?.descKey ?? '')}
               </p>
             )}
@@ -434,7 +436,7 @@ export default function ProductTour({ open, onFinish, onSkip }) {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7, duration: 0.45, ease: EASE_OUT_EXPO }}
-                className="mt-4 text-[12px] text-fg-muted leading-[1.55] text-center"
+                className="mt-4 landscape:mt-2.5 text-[12px] landscape:text-[11px] text-fg-muted leading-[1.55] landscape:leading-[1.4] text-center"
               >
                 {t('onboarding.tour.summary.closing', {
                   defaultValue: 'Hepsi bu! Artık platformu rahatça kullanmaya başlayabilirsin.',
@@ -442,7 +444,7 @@ export default function ProductTour({ open, onFinish, onSkip }) {
               </motion.p>
             )}
 
-            <div className="mt-5 flex items-center justify-between gap-3">
+            <div className="mt-5 landscape:mt-3 flex items-center justify-between gap-3">
               <button
                 type="button"
                 onClick={handleBack}
@@ -512,64 +514,6 @@ export default function ProductTour({ open, onFinish, onSkip }) {
             </div>
           </div>
         </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {farewellOpen && (
-          <motion.div
-            key="tour-farewell"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 1.1, ease: [0.4, 0, 0.4, 1] } }}
-            transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}
-            className="fixed inset-0 flex items-center justify-center"
-            style={{ zIndex: Z_TOP_SKIP + 1, backgroundColor: tooltipTheme.summaryBackdrop }}
-            aria-hidden="true"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85, y: 24 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 1.02, y: -8, transition: { duration: 1.1, ease: [0.4, 0, 0.4, 1] } }}
-              transition={{ duration: 1.0, ease: EASE_OUT_EXPO }}
-              className="relative flex flex-col items-center gap-3 px-8"
-            >
-              <motion.span
-                aria-hidden="true"
-                className="absolute -top-8 text-3xl"
-                initial={{ scale: 0, rotate: 0, opacity: 0 }}
-                animate={{ scale: [0, 1.3, 1], rotate: [0, 180, 360], opacity: [0, 1, 1] }}
-                transition={{ duration: 1.2, ease: 'easeOut', delay: 0.2 }}
-              >
-                ✨
-              </motion.span>
-              <motion.h2
-                className="text-4xl sm:text-6xl font-display font-bold tracking-tight text-center bg-gradient-to-r from-accent via-accent-bright via-fuchsia-400 via-accent-bright to-accent bg-clip-text text-transparent"
-                style={{ backgroundSize: '200% 100%' }}
-                animate={{ backgroundPosition: ['0% 50%', '200% 50%'] }}
-                transition={{ duration: 3.2, repeat: Infinity, ease: 'linear' }}
-              >
-                {t('onboarding.tour.farewell.title', { defaultValue: 'Hoş geldin' })}
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6, duration: 0.8, ease: EASE_OUT_EXPO }}
-                className="text-base sm:text-lg text-fg-muted text-center max-w-md leading-relaxed"
-              >
-                {t('onboarding.tour.farewell.subtitle', {
-                  defaultValue: 'Keyifli takipler dileriz, hep yanındayız.',
-                })}
-              </motion.p>
-              <motion.div
-                aria-hidden="true"
-                className="mt-4 h-[2px] w-32 rounded-full bg-gradient-to-r from-transparent via-accent to-transparent"
-                initial={{ scaleX: 0, opacity: 0 }}
-                animate={{ scaleX: 1, opacity: 1 }}
-                transition={{ delay: 1.1, duration: 0.9, ease: EASE_OUT_EXPO }}
-              />
-            </motion.div>
-          </motion.div>
         )}
       </AnimatePresence>
     </motion.div>

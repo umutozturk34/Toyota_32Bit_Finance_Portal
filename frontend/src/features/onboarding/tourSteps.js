@@ -209,6 +209,7 @@ const tourSteps = [
     id: 'notifications',
     path: '/market',
     clickSelector: '[data-tour="mobile-burger-open"]',
+    closeSelector: '[data-tour="mobile-burger-close"]',
     selector: '[data-tour="notifications-bell"]',
     titleKey: 'onboarding.tour.notifications.title',
     descKey: 'onboarding.tour.notifications.desc',
@@ -218,7 +219,7 @@ const tourSteps = [
   {
     id: 'settings',
     path: '/market',
-    clickSelector: ['[data-tour="mobile-burger-open"]', '[data-tour="settings-menu"]'],
+    clickSelector: '[data-tour="settings-menu"]',
     closeSelector: ['[data-tour-close="settings"]', '[data-tour="mobile-burger-close"]'],
     selector: '[data-tour="settings-main"]',
     titleKey: 'onboarding.tour.settings.title',
@@ -229,7 +230,7 @@ const tourSteps = [
   {
     id: 'profile',
     path: '/market',
-    clickSelector: ['[data-tour="mobile-burger-open"]', '[data-tour="profile-menu"]'],
+    clickSelector: '[data-tour="profile-menu"]',
     closeSelector: ['[data-tour-close="profile"]', '[data-tour="mobile-burger-close"]'],
     selector: '[data-tour="profile-main"]',
     titleKey: 'onboarding.tour.profile.title',

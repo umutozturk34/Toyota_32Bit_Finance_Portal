@@ -12,7 +12,6 @@ export const ACTION_SETTLE_MS = 240;
 export const CLOSE_SETTLE_MS = 180;
 export const MOBILE_BREAKPOINT = 640;
 export const TABLET_BREAKPOINT = 1024;
-export const SIDEBAR_PLACEMENTS = Object.freeze(['right', 'left']);
 export const Z_OVERLAY = 2147483640;
 export const Z_MASK = 1;
 export const Z_RING = 2;

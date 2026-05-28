@@ -85,9 +85,8 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
 
     const closePrev = prevCloseSelectorRef.current;
     prevCloseSelectorRef.current = step.closeSelector ?? null;
-    const direction = directionRef?.current ?? 'forward';
 
-    if (closePrev && direction !== 'back') {
+    if (closePrev) {
       clickSelectors(closePrev);
     }
 
@@ -187,16 +186,29 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
           return;
         }
         const viewportH = window.innerHeight || document.documentElement.clientHeight || 0;
+        const viewportW = window.innerWidth || document.documentElement.clientWidth || 0;
         const fixedAncestor = isInFixedAncestor(el);
         const fullyVisible = r.top >= 0 && r.bottom <= viewportH;
+        const isSmallViewport = viewportW < 1024;
         const tallerThanViewport = r.height > viewportH - 80;
+        const preferStartBlock = tallerThanViewport || (isSmallViewport && r.height > viewportH * 0.4);
         const needsScroll = !fullyVisible
           && !fixedAncestor
           && typeof el.scrollIntoView === 'function';
+        const scheduleResizeCatch = () => {
+          actionTimer = window.setTimeout(() => {
+            if (cancelled) return;
+            const finalR = el.getBoundingClientRect();
+            if (finalR.width > 0 && finalR.height > 0) {
+              setRectInfo({ rect: cushionRect(finalR), stepId: step.id, status: 'found' });
+            }
+          }, 360);
+        };
         if (needsScroll) {
-          el.scrollIntoView({ block: tallerThanViewport ? 'start' : 'center', behavior: 'instant' });
+          el.scrollIntoView({ block: preferStartBlock ? 'start' : 'center', behavior: 'instant' });
           const settled = el.getBoundingClientRect();
           setRectInfo({ rect: cushionRect(settled), stepId: step.id, status: 'found' });
+          scheduleResizeCatch();
           return;
         }
         if (fixedAncestor) {
@@ -215,6 +227,7 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
           return;
         }
         setRectInfo({ rect: cushionRect(r), stepId: step.id, status: 'found' });
+        scheduleResizeCatch();
         return;
       }
       frames += 1;

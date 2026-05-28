@@ -1,6 +1,5 @@
 import {
   MOBILE_BREAKPOINT,
-  SIDEBAR_PLACEMENTS,
   TABLET_BREAKPOINT,
   TOOLTIP_MAX_WIDTH,
   TOOLTIP_MIN_WIDTH,
@@ -41,7 +40,6 @@ export function computeTooltipPosition(rect, placement, viewportW, viewportH, is
   const width = resolveTooltipWidth(viewportW, isSummary);
   const isMobile = viewportW < MOBILE_BREAKPOINT;
   const isTablet = viewportW < TABLET_BREAKPOINT;
-  const isSidebarPlacement = SIDEBAR_PLACEMENTS.includes(placement);
   const h = Math.max(160, tooltipH || 180);
 
   if (isSummary) {
@@ -53,20 +51,35 @@ export function computeTooltipPosition(rect, placement, viewportW, viewportH, is
     };
   }
 
-  if (isTablet && isSidebarPlacement) {
+  if (isTablet && rect) {
+    const belowFits = viewportH - rect.bottom >= h + TOOLTIP_OFFSET + 12;
+    const aboveFits = rect.top >= h + TOOLTIP_OFFSET + 12;
+    const targetIsTall = rect.height > viewportH * 0.4;
+    if (targetIsTall || (!belowFits && !aboveFits)) {
+      return {
+        left: TOOLTIP_SIDE_MARGIN,
+        top: viewportH - h - 16,
+        placement: 'mobile',
+        width,
+      };
+    }
+    if (belowFits) {
+      return {
+        left: TOOLTIP_SIDE_MARGIN,
+        top: rect.bottom + TOOLTIP_OFFSET,
+        placement: 'mobile',
+        width,
+      };
+    }
     return {
-      left: viewportW / 2 - width / 2,
-      top: Math.max(TOOLTIP_SIDE_MARGIN, viewportH / 2 - h / 2),
-      placement: 'center',
+      left: TOOLTIP_SIDE_MARGIN,
+      top: rect.top - TOOLTIP_OFFSET - h,
+      placement: 'mobile',
       width,
     };
   }
 
   if (!rect || placement === 'center' || isMobile) {
-    if (isMobile && rect) {
-      const belowTop = Math.min(rect.bottom + TOOLTIP_OFFSET, viewportH - h - 20);
-      return { left: TOOLTIP_SIDE_MARGIN, top: Math.max(TOOLTIP_SIDE_MARGIN, belowTop), placement: 'mobile', width };
-    }
     return {
       left: viewportW / 2 - width / 2,
       top: Math.max(TOOLTIP_SIDE_MARGIN, viewportH / 2 - h / 2),

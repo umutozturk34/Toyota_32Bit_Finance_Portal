@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { STALE } from '../../shared/constants/query';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../../shared/context/useTheme';
 import Card from '../../shared/components/card';
@@ -21,6 +21,12 @@ const HomePage = () => {
   const { t, i18n: i18nInstance } = useTranslation();
   const { isDark, toggleTheme } = useTheme();
   const { isAuthenticated, login } = useAuth();
+
+  useEffect(() => {
+    document.documentElement.dataset.themeFade = '1';
+    return () => { delete document.documentElement.dataset.themeFade; };
+  }, []);
+
   const handleLogin = () => login();
   const handleRegister = () => login({ action: 'register' });
   const activeLang = (i18nInstance.language || 'en').slice(0, 2);
@@ -59,12 +65,35 @@ const HomePage = () => {
             );
           })}
         </div>
-        <button
+        <motion.button
           onClick={toggleTheme}
-          className="flex items-center justify-center w-9 h-9 rounded-lg border border-border-default bg-bg-elevated backdrop-blur-md text-fg-muted hover:text-fg hover:bg-surface transition-all cursor-pointer"
+          whileTap={{ scale: 0.9 }}
+          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          className="relative overflow-hidden flex items-center justify-center w-9 h-9 rounded-lg border border-border-default bg-bg-elevated backdrop-blur-md text-fg-muted hover:text-fg hover:bg-surface transition-colors cursor-pointer"
         >
-          {isDark ? <Sun size={15} /> : <Moon size={15} />}
-        </button>
+          <span
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-0 rounded-lg transition-opacity duration-500 ${isDark ? 'opacity-0' : 'opacity-100'}`}
+            style={{ background: 'radial-gradient(circle at center, rgba(251,191,36,0.18), transparent 65%)' }}
+          />
+          <span
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-0 rounded-lg transition-opacity duration-500 ${isDark ? 'opacity-100' : 'opacity-0'}`}
+            style={{ background: 'radial-gradient(circle at center, rgba(129,140,248,0.18), transparent 65%)' }}
+          />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={isDark ? 'sun' : 'moon'}
+              initial={{ rotate: -120, scale: 0.4, opacity: 0 }}
+              animate={{ rotate: 0, scale: 1, opacity: 1 }}
+              exit={{ rotate: 120, scale: 0.4, opacity: 0 }}
+              transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+              className="relative inline-flex"
+            >
+              {isDark ? <Sun size={15} /> : <Moon size={15} />}
+            </motion.span>
+          </AnimatePresence>
+        </motion.button>
       </div>
 
       {isDark && (

@@ -44,7 +44,7 @@ export function TooltipPointer({ placement, bg }) {
 
 export function SummaryGrid({ t }) {
   return (
-    <div className="mt-5 grid grid-cols-3 gap-2.5">
+    <div className="mt-5 landscape:mt-3 grid grid-cols-3 gap-1.5 landscape:gap-1 sm:gap-2.5 sm:landscape:gap-2">
       {SUMMARY_FEATURES.map(({ key, Icon, labelKey, fallback }, i) => (
         <motion.div
           key={key}
@@ -52,7 +52,7 @@ export function SummaryGrid({ t }) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ delay: 0.18 + i * 0.055, type: 'spring', stiffness: 280, damping: 20 }}
           whileHover={{ y: -4, scale: 1.06 }}
-          className="flex flex-col items-center justify-center gap-1.5 rounded-xl border border-accent/25 bg-accent/10 px-2 py-3 text-center"
+          className="flex flex-col items-center justify-start gap-1 landscape:gap-0.5 sm:gap-1.5 sm:landscape:gap-1 rounded-xl border border-accent/25 bg-accent/10 px-1.5 py-2.5 landscape:px-1.5 landscape:py-1.5 sm:px-2 sm:py-3 sm:landscape:px-2 sm:landscape:py-2 text-center min-h-[72px] landscape:min-h-[52px] sm:min-h-[84px] sm:landscape:min-h-[60px]"
           style={{ backgroundColor: 'rgba(99,102,241,0.08)' }}
         >
           <motion.div
@@ -68,9 +68,9 @@ export function SummaryGrid({ t }) {
               y: { delay: 1 + i * 0.16, duration: 2.2 + (i % 3) * 0.3, repeat: Infinity, ease: 'easeInOut' },
             }}
           >
-            <Icon className="h-5 w-5 text-accent" />
+            <Icon className="h-4 w-4 landscape:h-3.5 landscape:w-3.5 sm:h-5 sm:w-5 sm:landscape:h-4 sm:landscape:w-4 text-accent" />
           </motion.div>
-          <span className="text-[11px] font-medium text-fg leading-tight">
+          <span className="text-[10px] landscape:text-[9px] sm:text-[11px] sm:landscape:text-[10px] font-medium text-fg leading-tight landscape:leading-[1.1] break-words hyphens-auto">
             {t(labelKey, { defaultValue: fallback })}
           </span>
         </motion.div>

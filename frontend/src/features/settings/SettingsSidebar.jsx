@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import SideDrawer from '../../shared/components/modal/SideDrawer';
 import {
   Settings as SettingsIcon, Palette, Languages, BarChart3, Bell,
@@ -18,11 +18,6 @@ const CURRENCY_LABELS = {
   USD: '$ USD',
   EUR: '€ EUR',
 };
-
-const THEME_OPTIONS = [
-  { value: 'DARK', Icon: Moon, labelKey: 'theme.DARK' },
-  { value: 'LIGHT', Icon: Sun, labelKey: 'theme.LIGHT' },
-];
 
 const LANGUAGE_OPTIONS = [
   { value: 'tr', labelKey: 'settings.language.tr' },
@@ -67,6 +62,45 @@ function SegmentedControl({ options, value, onChange, layoutId, compact = false 
         );
       })}
     </div>
+  );
+}
+
+function ThemeMorphToggle({ value, onChange, t }) {
+  const isDark = value === 'DARK';
+  const handleClick = () => onChange(isDark ? 'LIGHT' : 'DARK');
+  const label = t(isDark ? 'theme.LIGHT' : 'theme.DARK');
+  return (
+    <motion.button
+      type="button"
+      onClick={handleClick}
+      whileTap={{ scale: 0.9 }}
+      aria-label={label}
+      title={label}
+      className="relative overflow-hidden flex items-center justify-center w-9 h-9 rounded-lg border border-border-default bg-bg-elevated backdrop-blur-md text-fg-muted hover:text-fg hover:bg-surface transition-colors cursor-pointer"
+    >
+      <span
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 rounded-lg transition-opacity duration-500 ${isDark ? 'opacity-100' : 'opacity-0'}`}
+        style={{ background: 'radial-gradient(circle at center, rgba(129,140,248,0.18), transparent 65%)' }}
+      />
+      <span
+        aria-hidden="true"
+        className={`pointer-events-none absolute inset-0 rounded-lg transition-opacity duration-500 ${isDark ? 'opacity-0' : 'opacity-100'}`}
+        style={{ background: 'radial-gradient(circle at center, rgba(251,191,36,0.18), transparent 65%)' }}
+      />
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={isDark ? 'sun' : 'moon'}
+          initial={{ rotate: -120, scale: 0.4, opacity: 0 }}
+          animate={{ rotate: 0, scale: 1, opacity: 1 }}
+          exit={{ rotate: 120, scale: 0.4, opacity: 0 }}
+          transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+          className="relative inline-flex"
+        >
+          {isDark ? <Sun size={15} /> : <Moon size={15} />}
+        </motion.span>
+      </AnimatePresence>
+    </motion.button>
   );
 }
 
@@ -130,14 +164,13 @@ export default function SettingsSidebar({ isOpen, onClose }) {
       footer={footer}
       closeAttr="settings"
     >
-            <div className="px-5 py-5 space-y-6" data-tour="settings-main">
-              <div className="grid grid-cols-[1fr_auto] gap-4 items-start">
+            <div className="px-4 sm:px-5 py-5 space-y-6" data-tour="settings-main">
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4 items-start">
                 <Section icon={Palette} title={t('settings.theme')}>
-                  <SegmentedControl
-                    options={THEME_OPTIONS}
+                  <ThemeMorphToggle
                     value={themePreference}
                     onChange={handleChange('theme')}
-                    layoutId="settings-theme"
+                    t={t}
                   />
                 </Section>
                 <Section icon={Languages} title={t('settings.language.title')}>

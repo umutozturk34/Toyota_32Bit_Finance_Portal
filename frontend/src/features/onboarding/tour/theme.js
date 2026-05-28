@@ -22,7 +22,7 @@ const TOOLTIP_THEME_LIGHT = Object.freeze({
   bg: '#ffffff',
   pointerBg: '#ffffff',
   maskFill: MASK_FILL_LIGHT,
-  summaryBackdrop: SUMMARY_BACKDROP_LIGHT,
+  summaryBackdrop: SUMMARY_BACKDROP_DARK,
   arrowStroke: ARROW_STROKE_LIGHT,
   arrowHalo: ARROW_HALO_LIGHT,
 });

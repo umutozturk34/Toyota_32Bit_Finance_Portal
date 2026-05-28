@@ -30,6 +30,7 @@ import {
   backFillToWindowStart,
   displayLabel,
   nativeCurrencyFor,
+  compoundRateSeries,
 } from '../lib/compareSeriesUtils';
 
 const MAX_COMPARE = 6;
@@ -183,11 +184,17 @@ export default function ComparePage() {
   const isLoading = queries.some((q) => q.isLoading);
 
   const rawSeriesData = useMemo(
-    () => selected.map((ind, idx) => ({
-      indicator: { ...ind, displayName: displayLabel(ind) },
-      points: queries[idx]?.data || [],
-      color: colorFor(ind, idx),
-    })),
+    () => selected.map((ind, idx) => {
+      const raw = queries[idx]?.data || [];
+      // In comparison, a deposit's interest-rate series is compounded into a cumulative growth
+      // curve so it ranks against assets' returns (its own detail page keeps the raw rate).
+      const points = ind.type === 'MACRO_DEPOSIT' ? compoundRateSeries(raw) : raw;
+      return {
+        indicator: { ...ind, displayName: displayLabel(ind) },
+        points,
+        color: colorFor(ind, idx),
+      };
+    }),
     [selected, queries]
   );
 

@@ -98,10 +98,7 @@ export async function fetchSeries(item, bounds) {
   if (isMacro(item.type) || item.unit) {
     const wide = widenBounds(bounds, 18);
     const points = await macroIndicatorService.history(item.code, wide);
-    const mapped = points.map((p) => ({ date: p.observedAt, value: Number(p.value) }));
-    // Deposits are interest-rate observations → compound into a cumulative growth curve so they
-    // are comparable to assets' returns instead of being plotted as a raw rate line.
-    return item.type === 'MACRO_DEPOSIT' ? compoundRateSeries(mapped) : mapped;
+    return points.map((p) => ({ date: p.observedAt, value: Number(p.value) }));
   }
   if (item.type === 'BOND') {
     const rows = await bondService.getRateHistory(item.code);

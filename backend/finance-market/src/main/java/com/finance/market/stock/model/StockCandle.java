@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import java.util.Objects;
+/**
+ * Daily OHLC candle for a stock, unique per (symbol, date). The {@code stockSymbol} column is
+ * read-only; the {@code stock} association owns the foreign key.
+ */
 @Getter
 @Setter
 @SuperBuilder

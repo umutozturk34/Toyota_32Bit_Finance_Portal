@@ -14,6 +14,10 @@ import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+/**
+ * Converts amounts between currencies using date-accurate FX rates from {@link FxRateProvider}.
+ * Same-currency conversions are pass-through; results are rounded to a fixed output scale.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -23,6 +27,11 @@ public class CurrencyConverter {
 
     private final FxRateProvider fxRateProvider;
 
+    /**
+     * Converts a single amount at the given date.
+     *
+     * @throws FxRateUnavailableException when no rate exists for the pair on/before that date
+     */
     public BigDecimal convertAtDate(BigDecimal amount, Currency from, Currency to, LocalDate date) {
         if (amount == null) {
             return null;
@@ -37,6 +46,10 @@ public class CurrencyConverter {
         return amount.multiply(rate.get()).setScale(OUTPUT_SCALE, RoundingMode.HALF_UP);
     }
 
+    /**
+     * Converts each dated value at its own date; dates with no available rate are skipped (logged)
+     * rather than failing the whole series.
+     */
     public SortedMap<LocalDate, BigDecimal> convertSeries(Map<LocalDate, BigDecimal> series,
                                                           Currency from, Currency to) {
         SortedMap<LocalDate, BigDecimal> out = new TreeMap<>();
@@ -61,6 +74,11 @@ public class CurrencyConverter {
         return out;
     }
 
+    /**
+     * Re-denominates a {@link Money} into the target currency at the given date.
+     *
+     * @throws FxRateUnavailableException when no rate exists for the pair on/before that date
+     */
     public Money convertMoney(Money source, Currency target, LocalDate date) {
         if (source == null) {
             return null;

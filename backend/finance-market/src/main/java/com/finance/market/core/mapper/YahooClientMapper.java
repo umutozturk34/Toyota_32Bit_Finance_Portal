@@ -17,6 +17,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Maps Yahoo chart results into quote and candle DTOs in the app timezone. Candles fill gaps
+ * pragmatically: a null close falls back to the regular-market price, and missing open/high/low
+ * default to that close; fully-empty bars are dropped. Optionally truncates timestamps to day.
+ */
 @Component
 public class YahooClientMapper {
 

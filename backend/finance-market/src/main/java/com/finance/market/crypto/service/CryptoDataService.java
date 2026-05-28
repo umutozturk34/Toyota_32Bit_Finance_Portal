@@ -14,6 +14,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+/**
+ * Crypto {@link TrackedAssetDataService}: validates a coin (via CoinGecko id and Binance symbol)
+ * before tracking and delegates refresh/cache work to the update service and cache.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

@@ -13,6 +13,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+/**
+ * Base EVDS (Turkish central bank) WebClient: serie-list and data fetches guarded by
+ * circuit-breaker/retry, wrapping any failure in {@link ExternalApiException}. Subclasses bind
+ * specific datagroups. {@link #DATE_FMT} is the EVDS date format ({@code dd-MM-yyyy}).
+ */
 @Log4j2
 public abstract class AbstractEvdsClient {
 
@@ -52,6 +57,7 @@ public abstract class AbstractEvdsClient {
         }
     }
 
+    /** Fetches data for the given serie codes over a date range; codes are dash-joined per the EVDS API. */
     @CircuitBreaker(name = "evds")
     @Retry(name = "evds")
     protected EvdsDataResponse fetchDataRaw(List<String> serieCodes, String startDate, String endDate) {

@@ -18,6 +18,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Filters and parses EVDS bond series into tradable bonds: keeps TRT/TRD/TRB ISINs with a valid
+ * {@code T<nn>} suffix and an unexpired maturity (de-duplicated by base ISIN), parsing maturity
+ * dates from the serie name. Also derives ISIN/ORAN codes and sanitizes bad coupon-rate values.
+ */
 @Log4j2
 public final class BondSerieFilterUtil {
 
@@ -29,6 +34,7 @@ public final class BondSerieFilterUtil {
     private BondSerieFilterUtil() {
     }
 
+    /** Zeroes a spurious coupon rate: always for TRB (discounted) bonds, or when it equals days-to-maturity. */
     public static void sanitizeCouponRate(Bond bond, BondSnapshotDto dto) {
         if (dto.isinCode() != null && dto.isinCode().startsWith("TRB")) {
             log.debug("{} — TRB prefix, setting couponRate to 0", dto.isinCode());
@@ -50,6 +56,7 @@ public final class BondSerieFilterUtil {
         }
     }
 
+    /** Keeps one tradable bond per base ISIN: government/sukuk/discount prefixes, valid suffix, unexpired. */
     public static List<BondSerieDto> filter(List<EvdsSerieResponse> series) {
         LocalDate today = LocalDate.now();
         Map<String, BondSerieDto> unique = new LinkedHashMap<>();
@@ -91,6 +98,7 @@ public final class BondSerieFilterUtil {
         return dotIdx > 0 ? withoutPrefix.substring(0, dotIdx) : withoutPrefix;
     }
 
+    /** EVDS rate (.ORAN) serie code for an ISIN. */
     public static String toOranCode(String isin) {
         return "TP." + isin + ".ORAN";
     }

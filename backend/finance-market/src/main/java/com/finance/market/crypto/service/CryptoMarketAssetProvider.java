@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 
+/** Read-side provider for crypto; single-code lookups read the live cache, search/movers use the base. */
 @Log4j2
 @Service
 public class CryptoMarketAssetProvider extends BaseTrackedMarketAssetProvider<Crypto> {

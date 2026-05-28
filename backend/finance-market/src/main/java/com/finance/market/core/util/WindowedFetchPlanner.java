@@ -4,14 +4,20 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Splits a date range into contiguous, non-overlapping windows of at most a given size, used to
+ * page external fetches that cap the span per request.
+ */
 public final class WindowedFetchPlanner {
 
     private WindowedFetchPlanner() {
     }
 
+    /** A single inclusive fetch window. */
     public record DateWindow(LocalDate start, LocalDate end) {
     }
 
+    /** Windows from oldest to newest, each up to {@code maxDays} long, covering {@code [startDate, endDate]}. */
     public static List<DateWindow> planForward(LocalDate startDate, LocalDate endDate, int maxDays) {
         List<DateWindow> windows = new ArrayList<>();
         LocalDate windowStart = startDate;
@@ -26,6 +32,7 @@ public final class WindowedFetchPlanner {
         return windows;
     }
 
+    /** Windows from newest back to {@code limitDate}, for back-fills that walk earlier in time. */
     public static List<DateWindow> planBackward(LocalDate limitDate, LocalDate endDate, int windowSize) {
         List<DateWindow> windows = new ArrayList<>();
         LocalDate currentWindowEnd = endDate;

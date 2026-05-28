@@ -8,6 +8,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 
+/**
+ * Holds the TEFAS session cookie, lazily warming it up on first use (double-checked under a lock)
+ * and supporting forced refresh/invalidate. Warm-up failures are logged and leave the cookie unset.
+ */
 @Log4j2
 @Component
 public class TefasSessionManager {

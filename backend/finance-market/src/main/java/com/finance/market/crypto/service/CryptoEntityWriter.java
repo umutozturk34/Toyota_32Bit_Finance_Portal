@@ -20,6 +20,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Persists crypto snapshots (carrying both native and TRY price) and candle history: full replace
+ * for a reload, or idempotent batch upsert for incremental updates.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -45,6 +49,7 @@ public class CryptoEntityWriter implements MarketEntityWriter {
         return toPersist;
     }
 
+    /** Deletes all stored candles for the coin and replaces them with the given set (full reload). */
     public void replaceCandleHistory(String coinId, List<CryptoCandle> candles) {
         cryptoCandleRepository.deleteByCryptoId(coinId);
         cryptoCandleRepository.saveAll(candles);

@@ -9,10 +9,19 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Resolves the currency an asset's native price is quoted in by dispatching to the
+ * {@link NativeCurrencyStrategy} registered for its {@link MarketType}.
+ */
 public interface AssetNativeCurrencyResolver {
 
+    /** Returns the asset's native quote currency, defaulting to TRY when the type is unknown. */
     Currency resolveNativeCurrency(MarketType type, String code);
 
+    /**
+     * Builds a {@link MarketType}-to-strategy registry lazily from the injected strategies, so
+     * each market type maps to the single strategy that declares support for it.
+     */
     @Component
     @RequiredArgsConstructor
     class Default implements AssetNativeCurrencyResolver {

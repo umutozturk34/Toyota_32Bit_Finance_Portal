@@ -9,6 +9,10 @@ import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+/**
+ * Shared persistent base for OHLC candles across markets (date plus open/high/low/close),
+ * with helpers to scale values and repair high/low bounds.
+ */
 @Getter
 @Setter
 @SuperBuilder
@@ -34,11 +38,13 @@ public abstract class BaseCandle {
         this.close = scaleValue(this.close, scale);
     }
 
+    /** Scales OHLC then ensures high/low actually bound open/close. */
     public void scaleAndNormalizeOhlc(int scale) {
         scaleFields(scale);
         normalizeHighLow();
     }
 
+    /** Widens high/low so they never fall inside the open-close range (guards bad source data). */
     private void normalizeHighLow() {
         if (open != null && close != null && high != null && low != null) {
             BigDecimal maxOC = open.max(close);

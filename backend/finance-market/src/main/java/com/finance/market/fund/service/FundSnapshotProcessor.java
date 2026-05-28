@@ -27,6 +27,11 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.function.Predicate;
 
+/**
+ * Refreshes fund snapshots from TEFAS for both BYF and YAT types, auto-tracking newly seen funds.
+ * The effective date walks back day-by-day (bounded by a holiday lookback) until data is found,
+ * skipping TEFAS holidays. An open circuit breaker aborts the type with a sentinel result.
+ */
 @Log4j2
 @Component
 public class FundSnapshotProcessor implements MarketSnapshotProcessor {
@@ -149,6 +154,7 @@ public class FundSnapshotProcessor implements MarketSnapshotProcessor {
         return dto != null && dto.price() != null && dto.price().signum() != 0;
     }
 
+    /** Bulk-fetches and persists one fund type for a date; returns saved count, or -1 if the breaker is open. */
     private int executeBulk(FundType fundType, LocalDate today,
                             Predicate<TefasFundDto> include,
                             Predicate<TefasFundDto> persist) {

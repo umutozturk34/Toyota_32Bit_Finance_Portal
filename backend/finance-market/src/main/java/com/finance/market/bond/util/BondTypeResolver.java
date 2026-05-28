@@ -9,6 +9,11 @@ import lombok.extern.log4j.Log4j2;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * Classifies a bond into a {@link BondType} from its ISIN prefix (TRB=discounted, TRD=sukuk), base
+ * index, coupon rate, and rate-change history, applying the auction/CPI thresholds. A high base index
+ * or sub-threshold coupon implies CPI-linked floating; rate changes split auction vs. TLREF floating.
+ */
 @Log4j2
 public final class BondTypeResolver {
 

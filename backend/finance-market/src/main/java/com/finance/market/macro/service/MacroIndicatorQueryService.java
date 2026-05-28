@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
+/** Read API for macro indicators and their observation history (by category, prominence, or code). */
 @Service
 @RequiredArgsConstructor
 public class MacroIndicatorQueryService {

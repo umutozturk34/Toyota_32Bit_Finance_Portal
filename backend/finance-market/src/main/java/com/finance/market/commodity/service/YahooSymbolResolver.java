@@ -9,6 +9,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Maps a commodity code to its Yahoo ticker (and back): configured overrides take priority, codes
+ * already carrying the Yahoo futures suffix map to themselves, others have no Yahoo symbol.
+ */
 @Component
 public class YahooSymbolResolver {
 

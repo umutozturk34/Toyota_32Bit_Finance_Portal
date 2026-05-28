@@ -23,6 +23,11 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 
+/**
+ * Refreshes a single fund's candles: full history when under-populated, otherwise just the tail
+ * since the last stored candle, then recomputes change percent on the latest. Bootstraps the fund
+ * snapshot if it is not yet stored.
+ */
 @Log4j2
 @Service
 public class FundCandleIncrementalRefreshService {

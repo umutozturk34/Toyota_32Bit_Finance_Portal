@@ -10,6 +10,7 @@ import com.finance.shared.service.TaskTrackingService;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/** Triggers commodity refreshes three times daily (morning/afternoon/evening) on configurable crons. */
 @Component
 public class CommodityScheduler extends AbstractMarketScheduler {
 

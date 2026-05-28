@@ -27,6 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Refreshes crypto snapshots from CoinGecko, fetching the same coins in both USD and TRY so each
+ * entity stores its native USD price and a TRY price. Existence checks validate both the CoinGecko
+ * id and (when given) a Binance symbol.
+ */
 @Log4j2
 @Component
 public class CryptoSnapshotProcessor implements MarketSnapshotProcessor {
@@ -98,6 +103,7 @@ public class CryptoSnapshotProcessor implements MarketSnapshotProcessor {
         return exists(coinId, null);
     }
 
+    /** Coin exists if CoinGecko knows the id and, when a Binance symbol is given, klines are available. */
     public boolean exists(String coinId, String binanceSymbol) {
         boolean coinGeckoExists = ApiAssetValidator.validate(coinId, false, cid -> {
             List<CoinGeckoSnapshotDto> result = coinGeckoClient.fetchMarkets(vsUsd, List.of(cid));

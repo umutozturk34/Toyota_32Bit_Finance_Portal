@@ -10,6 +10,10 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
+/**
+ * Prices commodities in TRY from the cached snapshot (already TRY-denominated), falling back to the
+ * latest candle close; no FX conversion is needed since commodities are stored in TRY.
+ */
 @Component
 public class CommodityPricingStrategy extends BaseAssetPricingStrategy {
 

@@ -24,6 +24,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Applies a single forex currency's latest EVDS window: upserts the recent candles, sets the latest
+ * snapshot price (unit-normalized), and computes change from the two most recent stored candles.
+ * Also backs single-currency refresh and existence validation.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -39,6 +44,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
     private final TransactionTemplate transactionTemplate;
     private final ForexProperties forexProperties;
 
+    /** Persists candles from the window then the latest-row snapshot with computed change; cache-backed. */
     public Forex applyLatestSnapshot(ForexSerieMetadata meta, EvdsDataResponse response) {
         Forex forex = entityWriter.upsertForexShell(meta);
         List<ForexCandle> windowCandles = evdsMapper.toCandles(forex, meta, response, entityWriter.getScale());
@@ -101,6 +107,7 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
         }
     }
 
+    /** Sets day change from the latest two stored candles' selling prices (no-op if fewer than two). */
     private void applyChangeFromCandles(Forex forex) {
         if (forex.getSellingPrice() == null) return;
         List<ForexCandle> topTwo = forexCandleRepository

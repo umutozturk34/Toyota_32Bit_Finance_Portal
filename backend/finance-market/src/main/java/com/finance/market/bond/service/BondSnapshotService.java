@@ -21,6 +21,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fetches the bond universe from EVDS: lists and filters the serie catalogue into tradable bonds,
+ * then pulls today's snapshot data in batches (per-batch failure isolated, aborting only on an open
+ * circuit breaker).
+ */
 @Service
 @Log4j2
 public class BondSnapshotService {

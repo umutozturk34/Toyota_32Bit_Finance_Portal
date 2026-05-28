@@ -10,6 +10,13 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * Redis read-through snapshot cache for one market's asset type: serves the cached entity, loads
+ * and caches it via {@code snapshotFinder} on a miss (throwing if unknown), and supports explicit
+ * put/evict. Keys are {@code snapshotPrefix + code}; entries expire after {@code ttl}.
+ *
+ * @param <T> the market's {@link BaseAsset} entity
+ */
 @Log4j2
 public class MarketCacheService<T extends BaseAsset> {
     private final RedisTemplate<String, Object> redisTemplate;
@@ -36,6 +43,11 @@ public class MarketCacheService<T extends BaseAsset> {
         this.snapshotFinder = snapshotFinder;
     }
 
+    /**
+     * Returns the cached snapshot, loading and caching it on a miss.
+     *
+     * @throws ResourceNotFoundException when neither cache nor loader has the asset
+     */
     public T getSnapshot(String key) {
         String cacheKey = snapshotPrefix + key;
         Object cached = redisTemplate.opsForValue().get(cacheKey);

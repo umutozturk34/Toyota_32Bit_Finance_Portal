@@ -11,6 +11,11 @@ import org.mapstruct.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * MapStruct mapper building {@link Crypto} entities/candles from CoinGecko/Binance DTOs. The TRY
+ * price is injected separately (native currency is USD), and entities/candles are scaled after
+ * mapping.
+ */
 @Mapper(componentModel = "spring")
 public abstract class CryptoMapper extends BaseMarketMapper {
 

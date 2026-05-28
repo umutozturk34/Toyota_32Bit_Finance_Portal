@@ -11,6 +11,11 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.util.List;
 
+/**
+ * Caffeine cache of tracked asset codes per {@link TrackedAssetType} (all vs. enabled-only) with a
+ * configurable TTL, sparing hot query paths repeated repository hits. Invalidated on tracked-asset
+ * mutations.
+ */
 @Component
 public class TrackedAssetCodeCache {
 

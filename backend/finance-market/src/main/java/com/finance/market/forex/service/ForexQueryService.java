@@ -19,6 +19,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
+/**
+ * Serves forex candle history (native TRY rates) for a currency over a preset period or explicit
+ * range, validating that the currency exists before querying.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

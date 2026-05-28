@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+/** Persistence for VIOP daily candles, keyed and queried by contract symbol and date. */
 @Repository
 public interface ViopCandleRepository extends JpaRepository<ViopCandle, Long> {
 

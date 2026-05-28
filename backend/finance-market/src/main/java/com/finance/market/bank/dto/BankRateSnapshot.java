@@ -4,6 +4,7 @@ import com.finance.market.bank.model.BankRateAssetKind;
 
 import java.math.BigDecimal;
 
+/** Immutable scraped bank rate (one bank, one currency/gold product) before persistence. */
 public record BankRateSnapshot(
         String source,
         String bankCode,

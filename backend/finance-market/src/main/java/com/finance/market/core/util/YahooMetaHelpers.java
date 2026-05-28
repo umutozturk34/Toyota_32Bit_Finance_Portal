@@ -5,11 +5,13 @@ import com.finance.market.core.dto.internal.YahooChartResponse.Quote;
 import java.math.BigDecimal;
 import java.util.List;
 
+/** Helpers for extracting prices from Yahoo chart payloads, tolerating gaps (null bars). */
 public final class YahooMetaHelpers {
 
     private YahooMetaHelpers() {
     }
 
+    /** Previous close from meta if present, else the second-to-last non-null close in the series. */
     public static BigDecimal resolvePreviousClose(Quote quote, BigDecimal metaPreviousClose) {
         if (metaPreviousClose != null) return metaPreviousClose;
         if (quote == null || quote.close() == null) return null;
@@ -20,6 +22,7 @@ public final class YahooMetaHelpers {
         return null;
     }
 
+    /** Last non-null value in the series (most recent valid bar), or null if none. */
     public static BigDecimal latestNonNull(List<BigDecimal> values) {
         if (values == null || values.isEmpty()) return null;
         for (int i = values.size() - 1; i >= 0; i--) {

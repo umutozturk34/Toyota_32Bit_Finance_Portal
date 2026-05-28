@@ -16,6 +16,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Discovers BIST tickers by scraping the İş Yatırım stock-list page for {@code hisse=<TICKER>}
+ * links; returns an empty list (logged) on any HTTP/parse failure so discovery never breaks refresh.
+ */
 @Log4j2
 @Component
 public class IsYatirimStockListProvider {
@@ -53,6 +57,7 @@ public class IsYatirimStockListProvider {
         }
     }
 
+    /** Extracts distinct tickers (insertion order) from the page HTML. */
     List<String> extractTickers(String html) {
         if (html == null || html.isBlank()) return List.of();
         Set<String> seen = new LinkedHashSet<>();

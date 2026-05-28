@@ -9,6 +9,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/** Triggers the daily forex refresh on a configurable cron/timezone (after the EVDS publish time). */
 @Log4j2
 @Component
 public class ForexScheduler extends AbstractMarketScheduler {

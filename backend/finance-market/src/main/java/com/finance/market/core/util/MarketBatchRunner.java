@@ -6,11 +6,16 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.function.Function;
 
+/**
+ * Runs a per-item market batch operation with shared error handling: logs each item failure and
+ * aborts early (logging partial results) when the resilience circuit breaker is open.
+ */
 public final class MarketBatchRunner {
 
     private MarketBatchRunner() {
     }
 
+    /** Processes each item, isolating per-item failures and stopping early on an open circuit breaker. */
     public static <T> BatchUpdateRunner.Result run(
             Iterable<T> items,
             BatchUpdateRunner.ThrowingConsumer<T> processor,

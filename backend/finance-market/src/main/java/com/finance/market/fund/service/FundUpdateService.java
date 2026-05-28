@@ -18,6 +18,11 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Orchestrates the full fund refresh: snapshots, bulk candle sync, change-percent recompute, then
+ * returns/risk and allocation enrichment. Single-fund refresh runs the same steps for one code with
+ * each enrichment isolated so a failure does not block the others.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

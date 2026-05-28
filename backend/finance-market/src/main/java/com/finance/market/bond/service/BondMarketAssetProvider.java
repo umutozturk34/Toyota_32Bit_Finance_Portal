@@ -20,6 +20,11 @@ import java.util.Map;
 
 import static com.finance.market.core.service.MarketProviderHelper.buildSort;
 
+/**
+ * Read-side {@link MarketAssetProvider} for bonds. Since bonds have no TRY price, the response
+ * "price" is the simple yield (falling back to coupon rate), and movers/sort use yield. Lookups
+ * accept either series code or ISIN; faceting is by bond type.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

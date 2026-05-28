@@ -14,6 +14,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * A government/sukuk/discount bond keyed by series code, with coupon/yield/maturity terms and a
+ * derived {@link BondType}. Bonds are not directly priced ({@code getPriceTry()} is null); they are
+ * valued via yield/rate rather than a TRY price.
+ */
 @Log4j2
 @Entity
 @Getter
@@ -77,6 +82,7 @@ public class Bond extends BaseAsset {
         return bondType != null && bondType.isFloating();
     }
 
+    /** Sets the next semi-annual coupon date after today (clamped to maturity), or null if matured. */
     public void resolveNextCouponDate() {
         if (maturityStart == null) {
             this.nextCouponDate = null;

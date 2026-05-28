@@ -6,6 +6,10 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * A fund's percentage allocation to one asset class on a given date; unique per
+ * (fund, asset class, date).
+ */
 @Getter
 @Setter
 @Builder

@@ -13,6 +13,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Maintains the İş Yatırım session cookie used for VIOP requests: warms it up from the analysis
+ * page, serves a header string, and refreshes when stale (TTL-based) or forced after an auth
+ * rejection. Warm-up failures degrade gracefully to a cookieless state.
+ */
 @Log4j2
 @Component
 public class IsyatirimSessionManager {
@@ -27,6 +32,7 @@ public class IsyatirimSessionManager {
         this.properties = properties;
     }
 
+    /** Current cookie header, transparently refreshing the session if it has gone stale. */
     public String currentCookieHeader() {
         CookieState s = state.get();
         if (s.isStale(properties.sessionTtl())) {
@@ -36,6 +42,7 @@ public class IsyatirimSessionManager {
         return s.cookieHeader;
     }
 
+    /** Discards the current cookies and re-warms the session (called after an auth rejection). */
     public void forceRefresh() {
         log.info("Force-refreshing İş Yatırım VIOP session cookies");
         state.set(CookieState.empty());

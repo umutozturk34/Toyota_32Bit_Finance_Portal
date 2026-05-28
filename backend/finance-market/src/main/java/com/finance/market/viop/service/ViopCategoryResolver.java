@@ -6,6 +6,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.Set;
 
+/**
+ * Classifies a VIOP contract into a {@link ViopCategory} from its kind, underlying and currency
+ * (index/currency/metal/pay), splitting currency and metal futures into TRY- vs USD-quoted
+ * variants so they group and price correctly.
+ */
 @Component
 public class ViopCategoryResolver {
 
@@ -35,6 +40,7 @@ public class ViopCategoryResolver {
         return ViopCategory.PAY_FUTURE;
     }
 
+    /** Strips the {@code D_} prefix and any {@code .}-suffix so underlyings match the known sets. */
     private String normalize(String underlying) {
         if (underlying == null || underlying.isBlank()) return null;
         String u = underlying.trim().toUpperCase();

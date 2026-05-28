@@ -5,6 +5,11 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
+/**
+ * A cryptocurrency keyed by its CoinGecko id, holding both the native price ({@code currentPrice},
+ * usually USD) and the TRY-converted price ({@code currentPriceTry}); {@code getPriceTry()} returns
+ * the latter.
+ */
 @Getter
 @Setter
 @SuperBuilder

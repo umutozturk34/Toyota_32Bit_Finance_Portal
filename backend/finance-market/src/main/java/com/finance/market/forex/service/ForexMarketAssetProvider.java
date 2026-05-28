@@ -23,6 +23,10 @@ import java.util.Map;
 
 import static com.finance.market.core.service.MarketProviderHelper.buildSort;
 
+/**
+ * Read-side {@link MarketAssetProvider} for forex, scoped to tracked-enabled currencies; single-code
+ * lookups read the live cache while search/movers query the repository.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

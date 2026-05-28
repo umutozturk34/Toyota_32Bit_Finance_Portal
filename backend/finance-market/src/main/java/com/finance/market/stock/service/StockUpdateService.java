@@ -18,6 +18,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Refreshes BIST stocks: first discovers and auto-tracks any new tickers from İş Yatırım, then
+ * updates every tracked stock's snapshot/candles from Yahoo (per-symbol failures isolated).
+ */
 @Log4j2
 @Service
 public class StockUpdateService implements MarketRefresher {
@@ -82,6 +86,7 @@ public class StockUpdateService implements MarketRefresher {
         return snapshotProcessor.exists(code);
     }
 
+    /** Auto-tracks any İş Yatırım ticker (with the configured suffix) not already tracked. */
     private void discoverAndTrack() {
         List<String> tickers = stockListProvider.fetchTickers();
         if (tickers.isEmpty()) {

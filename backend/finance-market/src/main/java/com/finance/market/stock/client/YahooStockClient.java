@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+/** Yahoo client for BIST stocks: fetches a quote or a full quote+candles chart for a symbol. */
 @Log4j2
 @Component
 public class YahooStockClient extends AbstractYahooClient {

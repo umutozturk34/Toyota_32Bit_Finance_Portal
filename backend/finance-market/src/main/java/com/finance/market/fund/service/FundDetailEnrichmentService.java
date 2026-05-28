@@ -29,6 +29,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Enriches stored funds with TEFAS detail data: trailing returns/risk, asset allocations, and
+ * profile/info. Allocation fetches walk back day-by-day to skip non-publishing days, bounded by a
+ * configured walkback. Enrichment failures are logged and skipped, never aborting the whole pass.
+ */
 @Log4j2
 @Service
 public class FundDetailEnrichmentService {
@@ -177,6 +182,7 @@ public class FundDetailEnrichmentService {
         return saved;
     }
 
+    /** Tracked fund codes that also exist in the DB (intersection), so enrichment targets only real rows. */
     private Set<String> loadExistingFundCodes() {
         Set<String> tracked = new HashSet<>(trackedAssetQueryService.getCodes(TrackedAssetType.FUND));
         Set<String> persisted = new HashSet<>(fundRepository.findAllFundCodes());

@@ -8,6 +8,10 @@ import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 
+/**
+ * A TEFAS investment fund keyed by its code, holding the unit price ({@code getPriceTry()}),
+ * profile/category info, and trailing returns. The unit price is stored at scale 6.
+ */
 @Getter
 @Setter
 @SuperBuilder
@@ -93,6 +97,7 @@ public class Fund extends BaseAsset {
     @Column(name = "return_5y", precision = 12, scale = 4)
     private BigDecimal return5y;
 
+    /** Scales numeric fields per fund type; some types omit bulletin price/investor count. */
     public void applyScaling(FundType fundType) {
         this.price = scaleValue(this.price, 6);
         this.bulletinPrice = fundType != null && fundType.scalesBulletinPrice() ? scaleValue(this.bulletinPrice, 4) : null;

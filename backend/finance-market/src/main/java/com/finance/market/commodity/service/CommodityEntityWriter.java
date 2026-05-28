@@ -23,6 +23,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Persists commodity snapshots and TRY candles. Candles are de-duplicated and keyed by day (dates
+ * normalized to start-of-day) before an idempotent batch upsert; change percent is back-filled from
+ * candles only when missing.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -82,6 +87,7 @@ public class CommodityEntityWriter implements MarketEntityWriter {
         }
     }
 
+    /** Scales/normalizes OHLC and collapses the candle date to start-of-day for one-per-day storage. */
     private void normalize(CommodityCandle candle, int scale) {
         candle.scaleAndNormalizeOhlc(scale);
         LocalDateTime candleDate = candle.getCandleDate();

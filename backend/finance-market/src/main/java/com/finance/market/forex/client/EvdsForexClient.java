@@ -12,6 +12,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 
+/**
+ * EVDS (Turkish central bank) client for forex: lists the döviz and efektif serie catalogues and
+ * fetches rate data over a date range, using the datagroups from configuration.
+ */
 @Component
 @Log4j2
 public class EvdsForexClient extends AbstractEvdsClient {

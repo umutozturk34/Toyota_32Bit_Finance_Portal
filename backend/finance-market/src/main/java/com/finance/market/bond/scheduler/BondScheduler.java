@@ -11,6 +11,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/** Daily bond refresh (snapshot + rate history), publishing a market-updated event on completion. */
 @Log4j2
 @Component
 @RequiredArgsConstructor

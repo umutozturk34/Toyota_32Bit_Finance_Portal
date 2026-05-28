@@ -23,6 +23,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Read-side provider for TEFAS funds: supports fund-type/sub-category/risk faceting and groups
+ * counts by fund type.
+ */
 @Log4j2
 @Service
 public class FundMarketAssetProvider extends BaseTrackedMarketAssetProvider<Fund> {

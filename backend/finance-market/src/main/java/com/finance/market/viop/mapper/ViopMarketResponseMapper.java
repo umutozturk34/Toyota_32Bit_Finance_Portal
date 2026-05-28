@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/** Maps {@link ViopContract} entities to API {@link MarketAssetResponse}s with VIOP-specific metadata. */
 @Component
 public class ViopMarketResponseMapper {
 

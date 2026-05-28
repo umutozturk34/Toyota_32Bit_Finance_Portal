@@ -17,6 +17,10 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+/**
+ * Executes bulk TEFAS fetches window-by-window, matching each returned row to a tracked fund and
+ * persisting per-fund batches in their own transaction so one fund's failure does not abort the rest.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -84,6 +88,7 @@ public class FundBulkFetchExecutor {
         return saved;
     }
 
+    /** Totals from a bulk run: candles saved and windows processed. */
     public record BulkRunResult(int totalSaved, int windowsProcessed) {
         public static BulkRunResult empty() { return new BulkRunResult(0, 0); }
     }

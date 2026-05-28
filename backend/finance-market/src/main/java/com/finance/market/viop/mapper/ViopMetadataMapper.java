@@ -12,6 +12,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
+/**
+ * Converts İş Yatırım future/option metadata DTOs into {@link ViopContractSpec}s, parsing
+ * Turkish-formatted dates and decimals leniently (null on failure).
+ */
 @Log4j2
 @Component
 public class ViopMetadataMapper {
@@ -72,6 +76,7 @@ public class ViopMetadataMapper {
         }
     }
 
+    /** Extracts the leading numeric token from a free-text contract-size description. */
     private BigDecimal parseContractSizeFromDescription(String desc) {
         if (desc == null) return null;
         StringBuilder digits = new StringBuilder();

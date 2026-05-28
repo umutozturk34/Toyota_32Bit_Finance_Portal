@@ -18,6 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Write side for the tracked-asset catalogue (which instruments the platform actively follows).
+ * Every mutation normalizes the code, links/creates the shared {@link Instrument}, applies
+ * per-type resolution rules, persists, and invalidates the code cache.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -28,6 +33,7 @@ public class TrackedAssetCommandService {
     private final TrackedAssetCodeCache codeCache;
     private final AssetRegistryService assetRegistry;
 
+    /** Creates or updates a tracked asset, delegating field defaults to the type's resolve rules. */
     public TrackedAssetResponse upsert(TrackedAssetUpsertCommand command) {
         TrackedAssetType type = command.getAssetType();
         String normalizedCode = type.normalizeCode(command.getAssetCode());
@@ -55,6 +61,7 @@ public class TrackedAssetCommandService {
         return trackedAssetMapper.toResponse(saved);
     }
 
+    /** Auto-registers a newly discovered asset as enabled; no-op if it is already tracked. */
     public void autoTrack(TrackedAssetType type, String assetCode, String defaultDisplayName, int sortOrder) {
         String normalizedCode = type.normalizeCode(assetCode);
         if (trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode).isPresent()) {
@@ -105,6 +112,7 @@ public class TrackedAssetCommandService {
         codeCache.invalidate(type);
     }
 
+    /** Keeps the existing name when none is requested, clears it on blank, otherwise trims the request. */
     private String resolveDisplayName(String requestedDisplayName, String existingDisplayName) {
         if (requestedDisplayName == null) {
             return existingDisplayName;

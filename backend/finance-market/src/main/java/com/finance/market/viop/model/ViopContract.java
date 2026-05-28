@@ -22,6 +22,12 @@ import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * A VIOP (Turkish derivatives exchange) futures or options contract with its live quote and
+ * day stats. The {@code symbol} encodes underlying, expiry and (for options) strike/side, and is
+ * the source of truth for the quote currency: the stored {@code currency} (exchange PARA_BIRIMI)
+ * is the underlying currency and must not be used for FX.
+ */
 @Getter
 @Setter
 @SuperBuilder
@@ -147,11 +153,13 @@ public class ViopContract extends BaseAsset {
         return symbol;
     }
 
+    /** Price in quote currency: last traded price, falling back to the day's close. */
     @Override
     public BigDecimal getPriceTry() {
         return lastPrice != null ? lastPrice : dayClose;
     }
 
+    /** Quote currency derived from the symbol (not the stored exchange currency). */
     @Override
     public String resolvePriceCurrency() {
         return quoteCurrencyOf(symbol);

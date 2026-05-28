@@ -3,6 +3,11 @@ package com.finance.market.viop.model;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Fine-grained VIOP contract classification (kind × underlying class, with TRY/USD splits for
+ * currency and metal futures) used for grouping and filtering. Each category maps to a broader
+ * {@link ViopUnderlyingClass}.
+ */
 public enum ViopCategory {
     PAY_FUTURE(ViopUnderlyingClass.PAY),
     INDEX_FUTURE(ViopUnderlyingClass.INDEX),
@@ -25,6 +30,10 @@ public enum ViopCategory {
         return underlyingClass;
     }
 
+    /**
+     * Resolves a filter token to matching categories: an exact category name yields that one,
+     * otherwise an underlying-class name expands to all its categories; unknown tokens yield empty.
+     */
     public static List<ViopCategory> resolveFilter(String raw) {
         if (raw == null || raw.isBlank()) {
             return List.of();

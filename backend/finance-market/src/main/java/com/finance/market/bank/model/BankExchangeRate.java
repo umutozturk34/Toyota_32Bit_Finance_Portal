@@ -22,6 +22,10 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_bank_rate_bank", columnList = "bank_code"),
                 @Index(name = "idx_bank_rate_asset_kind", columnList = "asset_kind")
         })
+/**
+ * One bank's buy/sell rate for a currency or gold product, unique per (source, bank, currency) and
+ * overwritten in place on each refresh ({@code capturedAt} marks the latest read).
+ */
 @Getter
 @Setter
 @NoArgsConstructor

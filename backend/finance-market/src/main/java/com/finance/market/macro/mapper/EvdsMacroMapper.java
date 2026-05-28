@@ -13,6 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Extracts dated macro observations from an EVDS response for one serie code, handling both monthly
+ * ({@code yyyy-M}, mapped to month-end) and daily ({@code d-M-yyyy}) date formats and skipping
+ * unparseable/null values.
+ */
 @Component
 @Log4j2
 public class EvdsMacroMapper {

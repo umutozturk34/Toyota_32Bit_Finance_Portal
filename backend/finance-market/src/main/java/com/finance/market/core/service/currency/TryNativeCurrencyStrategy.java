@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 import java.util.EnumSet;
 import java.util.Set;
 
+/**
+ * Native currency for TRY-quoted markets (stocks, funds, bonds): always TRY.
+ */
 @Component
 public class TryNativeCurrencyStrategy implements NativeCurrencyStrategy {
 

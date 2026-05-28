@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 
+/** EVDS client for bonds: lists the bond serie catalogue and fetches rate/price data over a range. */
 @Component
 @Log4j2
 public class EvdsBondClient extends AbstractEvdsClient {

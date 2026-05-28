@@ -26,6 +26,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Persists a batch of bond snapshots: upserts each bond, fetches missing rate history (from the last
+ * stored date or maturity start), adds today's rate from the snapshot, then classifies the bond type
+ * and computes its yield. Per-bond failures are logged and skipped. Saved bonds are cached.
+ */
 @Service
 @Log4j2
 public class BondRateHistoryService {
@@ -136,6 +141,7 @@ public class BondRateHistoryService {
         return transactionTemplate.execute(status -> bondRepository.save(bond));
     }
 
+    /** Resolves bond type and simple yield from full rate history; clears coupon date for discount bonds. */
     private void applyClassification(Bond bond, BondSnapshotDto dto) {
         List<BondRateHistory> fullHistory = rateHistoryRepository.findByIsinCodeOrderByRateDateAsc(dto.isinCode());
         bond.resolveType(fullHistory, auctionThreshold, cpiFixedThreshold);

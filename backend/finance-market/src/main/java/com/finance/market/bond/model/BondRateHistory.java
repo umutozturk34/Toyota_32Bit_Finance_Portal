@@ -10,6 +10,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Objects;
 
+/**
+ * A bond's coupon rate and price on a date, unique per (ISIN, date); the series drives bond-type
+ * classification and rate-change detection. The {@code isinCode} column is read-only (the {@code bond}
+ * association owns the FK).
+ */
 @Getter
 @Setter
 @Builder

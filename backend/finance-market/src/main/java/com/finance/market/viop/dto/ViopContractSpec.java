@@ -6,6 +6,10 @@ import com.finance.market.viop.model.ViopOptionSide;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Static contract definition (terms/metadata) for a VIOP future or option, independent of live
+ * price. Use {@link #future} / {@link #option} to construct kind-appropriate instances.
+ */
 public record ViopContractSpec(
         String symbol,
         String displayName,

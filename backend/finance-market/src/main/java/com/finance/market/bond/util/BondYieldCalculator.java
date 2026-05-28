@@ -10,6 +10,11 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
+/**
+ * Computes a bond's simple annual yield. Discounted bonds use the gain to face value annualized over
+ * days to maturity; fixed-coupon bonds use the annualized coupon over the base index. Floating bonds
+ * and missing/non-positive inputs yield {@code null}; negative results are suppressed to {@code null}.
+ */
 @Log4j2
 public final class BondYieldCalculator {
 

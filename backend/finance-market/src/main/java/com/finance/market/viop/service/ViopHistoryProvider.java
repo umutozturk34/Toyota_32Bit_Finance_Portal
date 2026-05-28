@@ -25,6 +25,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Serves VIOP candle history from the local store and keeps it current. Reads are clamped to the
+ * configured max-history window; writes fetch only the missing tail since the last stored candle.
+ * All timestamps use the Istanbul exchange zone.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -65,6 +70,7 @@ public class ViopHistoryProvider implements MarketHistoryProvider {
                 .toList();
     }
 
+    /** Upserts today's candle close, returning 0 when the value is null or already stored unchanged. */
     @Transactional
     public int upsertTodayCandle(String code, java.math.BigDecimal close) {
         if (close == null) return 0;
@@ -90,6 +96,10 @@ public class ViopHistoryProvider implements MarketHistoryProvider {
         return 1;
     }
 
+    /**
+     * Fetches and persists only the gap from the day after the last stored candle up to {@code to};
+     * back-fills the full max-history window when nothing is stored, and no-ops when already current.
+     */
     @Transactional
     public int refreshCandlesUpTo(String code, LocalDate to) {
         Optional<ViopCandle> latest = candleRepository.findFirstBySymbolOrderByCandleDateDesc(code);
@@ -106,6 +116,7 @@ public class ViopHistoryProvider implements MarketHistoryProvider {
         return fetchAndPersist(code, from, to);
     }
 
+    /** Fetches the range upstream and upserts changed/new daily closes; returns rows written. */
     @Transactional
     public int fetchAndPersist(String code, LocalDate from, LocalDate to) {
         Instant fromInstant = from.atStartOfDay(ISTANBUL).toInstant();

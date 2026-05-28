@@ -11,6 +11,10 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * {@link ExchangeRateProvider} backed by stored forex data: USD/TRY spot from the cached snapshot
+ * (previous rate derived as current minus change), and history from USD forex candles' selling price.
+ */
 @Component
 public class ForexExchangeRateProvider implements ExchangeRateProvider {
 

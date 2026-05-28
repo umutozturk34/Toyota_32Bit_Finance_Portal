@@ -34,6 +34,12 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Fetches a commodity's USD chart from Yahoo and converts every candle to TRY at its own date's
+ * USD/TRY rate ({@link PriceCrossCalculator}); commodities are stored in TRY. Persists the snapshot
+ * and candles, recomputes change, and regenerates any precious-metal derivatives. Only fetches the
+ * tail since the last stored candle.
+ */
 @Log4j2
 @Component
 public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
@@ -87,6 +93,10 @@ public class CommoditySnapshotProcessor implements MarketSnapshotProcessor {
         this.chartInterval = commodityProperties.getChartInterval();
     }
 
+    /**
+     * Refreshes one commodity: TRY-converts the fetched USD candles, persists snapshot/candles, and
+     * cascades to derivatives. Throws when the price, USD/TRY rate, or aligned candles are missing.
+     */
     public void updateOne(String commodityCode, Map<String, java.math.BigDecimal> usdtryRateMap,
                           ExchangeRateSnapshot usdTry) {
         String yahooSymbol = yahooSymbolResolver.resolve(commodityCode);

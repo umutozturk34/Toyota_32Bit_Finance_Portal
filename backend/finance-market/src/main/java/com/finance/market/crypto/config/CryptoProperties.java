@@ -4,6 +4,10 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Crypto ingest settings: history window, healthy-candle threshold (below which history is fully
+ * reloaded), Binance page size/interval, batch sampling, and the CoinGecko vs-currencies (usd/try).
+ */
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "app.crypto")

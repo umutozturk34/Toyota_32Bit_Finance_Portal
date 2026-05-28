@@ -7,11 +7,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/** Reorders items to match a curated tracked-code ordering, appending unknown codes at the end. */
 public final class TrackedOrderUtil {
 
     private TrackedOrderUtil() {
     }
 
+    /** Stable-sorts {@code items} by their position in {@code orderedCodes}; unlisted codes go last. */
     public static <T> List<T> sortByTrackedCodes(List<T> items,
                                                  List<String> orderedCodes,
                                                  Function<T, String> codeExtractor) {

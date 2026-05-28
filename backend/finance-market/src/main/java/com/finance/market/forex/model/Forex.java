@@ -16,6 +16,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
+/**
+ * A foreign currency's TRY exchange rates (döviz and efektif buying/selling), keyed by currency
+ * code. Price quoted in TRY: {@code getPriceTry()} returns the selling rate.
+ */
 @Entity
 @Table(name = "forex")
 @Getter
@@ -43,6 +47,7 @@ public class Forex extends BaseAsset {
     @Column(name = "effective_selling_price", precision = 19, scale = 4)
     private BigDecimal effectiveSellingPrice;
 
+    /** Applies EVDS prices, dividing by {@code unit} so all rates are normalized to a single unit. */
     public void applyEvdsSnapshot(LocalDateTime dataTimestamp,
                                   BigDecimal rawBuying, BigDecimal rawSelling,
                                   BigDecimal rawEffectiveBuying, BigDecimal rawEffectiveSelling,
@@ -73,6 +78,7 @@ public class Forex extends BaseAsset {
         return sellingPrice;
     }
 
+    /** Tradable only when both buying and selling rates are known. */
     public boolean isTradable() {
         return buyingPrice != null && sellingPrice != null;
     }

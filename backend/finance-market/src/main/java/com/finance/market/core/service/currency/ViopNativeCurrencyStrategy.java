@@ -9,6 +9,10 @@ import org.springframework.stereotype.Component;
 import java.util.EnumSet;
 import java.util.Set;
 
+/**
+ * VIOP native currency: derived from the contract symbol via {@link ViopContract#quoteCurrencyOf}
+ * (options TRY; futures may be USD/EUR), never from the stored exchange-currency field.
+ */
 @Component
 public class ViopNativeCurrencyStrategy implements NativeCurrencyStrategy {
 
@@ -17,6 +21,7 @@ public class ViopNativeCurrencyStrategy implements NativeCurrencyStrategy {
         return EnumSet.of(MarketType.VIOP);
     }
 
+    /** Resolves the symbol-derived quote currency, falling back to TRY when unparseable. */
     @Override
     public Currency resolve(String code) {
         Currency quote = Currency.fromCode(ViopContract.quoteCurrencyOf(code));

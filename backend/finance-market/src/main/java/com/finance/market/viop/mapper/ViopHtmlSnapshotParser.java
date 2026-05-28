@@ -13,6 +13,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Scrapes the İş Yatırım VIOP analysis page HTML into quote snapshots, reading the symbol from each
+ * row's title attribute and Turkish-formatted numbers from its cells. Unparseable rows/cells are
+ * skipped rather than failing the batch.
+ */
 @Log4j2
 @Component
 public class ViopHtmlSnapshotParser {
@@ -23,6 +28,7 @@ public class ViopHtmlSnapshotParser {
         this.snapshotMapper = snapshotMapper;
     }
 
+    /** Parses all recognizable contract rows from the page HTML into snapshots. */
     public List<ViopQuoteSnapshot> parse(String html) {
         Document doc = Jsoup.parse(html);
         Instant capturedAt = Instant.now();
@@ -48,6 +54,7 @@ public class ViopHtmlSnapshotParser {
         return out;
     }
 
+    /** Parses Turkish-locale numbers (thousands '.', decimal ',') to {@link BigDecimal}, null on failure. */
     private BigDecimal parseTurkishDecimal(String raw) {
         if (raw == null) return null;
         String cleaned = raw.trim().replace(".", "").replace(",", ".");

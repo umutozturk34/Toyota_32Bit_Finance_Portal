@@ -14,6 +14,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * A commodity priced in TRY ({@code currentPrice}) with its source USD price retained for derivative
+ * math; {@code getPriceTry()} returns the TRY price. Owns its candle history.
+ */
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "commodities")
@@ -82,6 +86,7 @@ public class Commodity extends BaseAsset {
     @JsonIgnore
     private List<CommodityCandle> candles;
 
+    /** Applies a TRY price snapshot (with USD prices retained), preferring Yahoo's change percent. */
     public void applyPriceSnapshot(CommoditySnapshotInput snapshot, int scale) {
         if (snapshot == null || snapshot.tryPrice() == null) return;
         this.currentPrice = scaleValue(snapshot.tryPrice(), scale);

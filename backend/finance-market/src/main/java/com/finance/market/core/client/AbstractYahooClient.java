@@ -17,6 +17,11 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.util.List;
 
+/**
+ * Base Yahoo Finance chart WebClient: fetches candles (and optionally the quote) for a symbol over
+ * a range/interval, guarded by circuit-breaker/retry. A 404 maps to {@link SymbolNotFoundException};
+ * the {@code max} range is translated to a full {@code period1=0..now} query.
+ */
 @Log4j2
 public abstract class AbstractYahooClient {
 
@@ -49,6 +54,7 @@ public abstract class AbstractYahooClient {
         return yahooClientMapper.toFullResult(result, truncateToDays);
     }
 
+    /** Fetches the first chart result, throwing {@link SymbolNotFoundException} when the symbol has no data. */
     protected Result fetchChart(String symbol, String range, String interval) {
         YahooChartResponse response;
         try {

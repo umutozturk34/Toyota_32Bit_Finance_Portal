@@ -28,6 +28,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Drives the full forex refresh: resolve active currencies from EVDS, smoke-filter dead ones, auto-track,
+ * batch-update snapshots, then back-fill the candle gap below the snapshot window. Piggybacks a bank-rate
+ * refresh at the end. Failures in any phase are logged and degrade gracefully.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -137,6 +142,7 @@ public class ForexUpdateService implements MarketRefresher {
         return fetchData(allCodes, from, today);
     }
 
+    /** Back-fills candles from after the pre-refresh last candle (or configured start) up to just below the snapshot window. */
     private void fillGapBelowSnapshotWindow(ForexSerieMetadata meta, LocalDate lastBefore, LocalDate snapshotWindowStart) {
         Forex forex = forexRepository.findById(meta.currencyCode()).orElse(null);
         if (forex == null) return;
@@ -148,6 +154,7 @@ public class ForexUpdateService implements MarketRefresher {
         backfillRange(forex, meta, gapStart, gapEnd);
     }
 
+    /** Fetches the range in backward windows, stopping early once EVDS rows fall below the cap or pass the floor. */
     private void backfillRange(Forex forex, ForexSerieMetadata meta, LocalDate floor, LocalDate ceiling) {
         List<WindowedFetchPlanner.DateWindow> windows = WindowedFetchPlanner.planBackward(floor, ceiling, forexProperties.getBackfillWindowDays());
         for (WindowedFetchPlanner.DateWindow window : windows) {

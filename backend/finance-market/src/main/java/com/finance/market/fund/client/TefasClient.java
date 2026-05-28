@@ -32,6 +32,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * TEFAS client for fund prices, returns, allocations, info and profile. All calls are guarded by
+ * circuit-breaker/retry and carry the session cookie; WAF blocks (HTML body) and empty bodies are
+ * detected and surfaced as external errors (invalidating the session), and TEFAS error codes throw.
+ */
 @Log4j2
 @Component
 public class TefasClient {
@@ -77,6 +82,7 @@ public class TefasClient {
         return executeRequest(fundType, fundCode, startDate, endDate, defaultPageSize);
     }
 
+    /** Fetches all funds of a type over a range (no fund code), paged at the bulk page size. */
     @CircuitBreaker(name = "tefas")
     @Retry(name = "tefas-bulk")
     public List<TefasFundDto> bulkFetch(FundType fundType, LocalDate startDate, LocalDate endDate) {

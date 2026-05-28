@@ -14,6 +14,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * EVDS client for macro indicators: fetches series data over a range, chunking the serie codes into
+ * batches so requests stay within EVDS limits and returning one response per batch.
+ */
 @Component
 @Log4j2
 public class EvdsMacroClient extends AbstractEvdsClient {

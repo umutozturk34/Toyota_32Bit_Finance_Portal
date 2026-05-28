@@ -8,10 +8,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Cross-rate arithmetic for converting native-currency candles to TRY at ingest time.
+ * Each candle is multiplied by the USD/TRY rate of its own date; days with no rate are dropped
+ * rather than carried forward, so the resulting series only spans dates with a known rate.
+ */
 public final class PriceCrossCalculator {
 
     private PriceCrossCalculator() {}
 
+    /**
+     * Projects USD-quoted candles into TRY using the per-date rate map, skipping any candle whose
+     * date has no rate or whose conversion overflows/underflows to null.
+     */
     public static List<YahooCandleDto> buildTryCandles(List<YahooCandleDto> pairCandles,
                                                        Map<String, BigDecimal> usdTryRateByDate,
                                                        int scale) {
@@ -30,6 +39,10 @@ public final class PriceCrossCalculator {
         return result;
     }
 
+    /**
+     * Divides at the given scale, returning {@code null} on null operands or zero denominator
+     * instead of throwing.
+     */
     public static BigDecimal safeDivide(BigDecimal numerator, BigDecimal denominator, int scale) {
         if (numerator == null || denominator == null || denominator.signum() == 0) {
             return null;
@@ -37,6 +50,7 @@ public final class PriceCrossCalculator {
         return numerator.divide(denominator, scale, RoundingMode.HALF_UP);
     }
 
+    /** Multiplies at the given scale, returning {@code null} on null operands. */
     public static BigDecimal safeMultiply(BigDecimal a, BigDecimal b, int scale) {
         if (a == null || b == null) {
             return null;

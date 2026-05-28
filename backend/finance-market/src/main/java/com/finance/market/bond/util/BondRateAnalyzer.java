@@ -6,10 +6,12 @@ import com.finance.market.bond.model.BondRateHistory;
 import java.math.BigDecimal;
 import java.util.List;
 
+/** Detects whether a bond's coupon rate varied over its rate history (signal of a floating bond). */
 public final class BondRateAnalyzer {
 
     private BondRateAnalyzer() {}
 
+    /** True if any historical coupon rate differs from the first (non-null rates compared). */
     public static boolean hasRateChanges(List<BondRateHistory> history) {
         if (history == null || history.size() < 2) return false;
 

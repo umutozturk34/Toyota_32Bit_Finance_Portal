@@ -6,6 +6,7 @@ import com.finance.market.core.dto.response.TrackedAssetResponse;
 import com.finance.common.model.TrackedAsset;
 import org.mapstruct.Mapper;
 
+/** MapStruct mapper between tracked-asset entities, upsert commands, and API responses. */
 @Mapper(componentModel = "spring")
 public interface TrackedAssetMapper {
 

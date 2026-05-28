@@ -10,6 +10,10 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
+/**
+ * Prices forex in TRY from the cached snapshot, falling back to the latest stored candle with a
+ * positive price. Entry valuation uses the selling rate; exit valuation prefers the buying rate.
+ */
 @Component
 public class ForexPricingStrategy extends BaseAssetPricingStrategy {
 
@@ -37,6 +41,7 @@ public class ForexPricingStrategy extends BaseAssetPricingStrategy {
                 .orElse(current);
     }
 
+    /** Exit value uses the buying (bid) rate, falling back to selling then to the latest candle. */
     @Override
     public BigDecimal getExitPriceTry(String assetCode) {
         Forex forex = cacheService.getSnapshot(assetCode);

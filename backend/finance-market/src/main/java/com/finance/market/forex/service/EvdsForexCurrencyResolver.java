@@ -15,6 +15,11 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Discovers the active forex currencies from EVDS serie metadata: keeps döviz buying series whose
+ * end date is recent, parses currency code/name/unit from the serie name, and flags which also
+ * have an "efektif" (cash) series. A currency is "active" unless its series ended over 6 months ago.
+ */
 @Log4j2
 @Component
 public class EvdsForexCurrencyResolver {
@@ -25,6 +30,7 @@ public class EvdsForexCurrencyResolver {
     private static final String DOVIZ_BUYING_SUFFIX = ".A.YTL";
     private static final String EFEKTIF_BUYING_SUFFIX = ".A.EF.YTL";
 
+    /** Returns one {@link ForexSerieMetadata} per active currency, de-duplicated by currency code. */
     public List<ForexSerieMetadata> resolveActive(List<EvdsSerieResponse> dovizSeries,
                                                   List<EvdsSerieResponse> efektifSeries) {
         Set<String> efektifCurrencies = extractActiveCurrencyCodes(efektifSeries, EFEKTIF_BUYING_SUFFIX);
@@ -77,6 +83,7 @@ public class EvdsForexCurrencyResolver {
         return result;
     }
 
+    /** A serie is active when it has no end date or ended within the last 6 months. */
     private boolean isActive(EvdsSerieResponse serie, LocalDate today) {
         String endDate = serie.endDate();
         if (endDate == null || endDate.isBlank()) return true;
@@ -94,6 +101,7 @@ public class EvdsForexCurrencyResolver {
         return parts.length >= 5 ? parts[2] : null;
     }
 
+    /** Extracts currency code, optional unit multiplier, and display name from an EVDS serie name. */
     private ParsedName parseName(String serieName) {
         if (serieName == null) return null;
         String cleaned = serieName.replaceAll("\\s+", " ").trim();

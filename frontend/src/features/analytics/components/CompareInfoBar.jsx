@@ -22,7 +22,10 @@ export default function CompareInfoBar({ selected, targetCurrency, money, t }) {
 
         let formattedLast = '—';
         if (lastValue != null) {
-          if (isRateLike(ind.type)) {
+          if (ind.type === 'MACRO_DEPOSIT') {
+            // Deposit is a growth index; its meaningful headline is the cumulative return.
+            formattedLast = pct != null ? `${pct > 0 ? '+' : ''}${pct.toFixed(2)}%` : '—';
+          } else if (isRateLike(ind.type)) {
             formattedLast = ind.type === 'BOND' || isMacro(ind.type)
               ? `%${Number(lastValue).toFixed(2)}`
               : Number(lastValue).toLocaleString('tr-TR', { maximumFractionDigits: 2 });

@@ -13,6 +13,7 @@ import ScenarioRankingTable from '../components/ScenarioRankingTable';
 import { useScenarioSimulation } from '../hooks/useAnalytics';
 import { dateOffsetIso, formatPercent, todayIso } from '../utils';
 import { useMoney } from '../../../shared/hooks/useMoney';
+import { depositCurrencyFor } from '../lib/compareSeriesUtils';
 
 const QUICK_AMOUNTS = [10000, 50000, 100000, 500000];
 
@@ -44,7 +45,13 @@ export default function ScenarioComparePage() {
     { type: 'COMMODITY', code: 'XAUTRY', name: 'Altın', labelKey: 'analytics.preset.gold' },
   ]);
 
-  const inputCurrency = displayCurrency === 'ORIGINAL' ? 'TRY' : displayCurrency;
+  // When framing is left to ORIGINAL, anchor it to a selected deposit's currency (a EUR deposit
+  // frames the whole comparison in EUR). Ambiguous (mixed deposit currencies) falls back to TRY.
+  const depositCurrencies = [...new Set(
+    instruments.filter((i) => i.type === 'DEPOSIT').map((i) => depositCurrencyFor(i.code)),
+  )];
+  const autoCurrency = depositCurrencies.length === 1 ? depositCurrencies[0] : 'TRY';
+  const inputCurrency = displayCurrency === 'ORIGINAL' ? autoCurrency : displayCurrency;
   const simulation = useScenarioSimulation();
 
   function run() {

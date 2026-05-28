@@ -1,6 +1,7 @@
 function rawKind(type) {
-  if (type === 'MACRO_INFLATION') return 'index';
-  if (type === 'BOND' || type === 'MACRO_RATE' || type === 'MACRO_DEPOSIT') return 'rate';
+  // Deposits are shown as a compounded growth index (a multiplier), not a rate or a currency value.
+  if (type === 'MACRO_INFLATION' || type === 'MACRO_DEPOSIT') return 'index';
+  if (type === 'BOND' || type === 'MACRO_RATE') return 'rate';
   return 'price';
 }
 

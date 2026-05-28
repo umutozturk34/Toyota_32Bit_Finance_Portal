@@ -6,6 +6,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+/**
+ * Persistence for {@link NotificationPreference}, keyed by user subject. The paged finders select
+ * the recipients subscribed (via in-app or enabled-email) to a given event type, with the market
+ * variants further filtered to users opted into that session market, for use during fanout.
+ */
 public interface NotificationPreferenceRepository extends JpaRepository<NotificationPreference, String> {
 
     @Query("""

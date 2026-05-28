@@ -16,6 +16,11 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Kafka consumer for macro-indicators-updated events. Deduplicates by event id, re-reads the actual
+ * indicator deltas (skipping fanout when nothing materially changed), then fans the digest out to
+ * users subscribed to macro notifications.
+ */
 @Log4j2
 @Component
 public class MacroIndicatorsUpdatedListener {

@@ -10,6 +10,10 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
+/**
+ * Request to add an asset to a watchlist with an optional note and per-item delta threshold; a zero
+ * threshold means notify on any move, and bonds are not watchable.
+ */
 public record WatchlistItemCreateRequest(
         @NotNull(message = "{validation.watchlist.marketType.required}") MarketType marketType,
         @NotBlank(message = "{validation.watchlist.assetCode.required}") @Size(max = 32, message = "{validation.watchlist.assetCode.maxLen}") String assetCode,

@@ -15,6 +15,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+/**
+ * Read/update operations on a user's notifications: listing (with optional unread filter and
+ * text search over title/body), unread count, marking read and deletion. All mutations enforce
+ * ownership, returning 404 when a notification does not belong to the caller.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

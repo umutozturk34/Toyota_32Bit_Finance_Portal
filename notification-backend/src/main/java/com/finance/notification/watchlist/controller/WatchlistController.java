@@ -30,6 +30,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * REST API for the authenticated user's watchlists and their items: managing lists (list/create/
+ * rename/delete) and items (list/add/update/remove/reorder), plus a shortcut to add to the default
+ * "favorites" list. All operations are scoped to the caller.
+ */
 @RestController
 @RequestMapping("/api/v1/watchlists")
 @PreAuthorize("isAuthenticated()")

@@ -15,6 +15,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Admin-only endpoint for broadcasting a system notification to all users. Restricted to the ADMIN
+ * role; the issuing admin's subject is recorded on the broadcast.
+ */
 @RestController
 @RequestMapping("/api/v1/admin/notifications")
 @PreAuthorize("hasRole('ADMIN')")

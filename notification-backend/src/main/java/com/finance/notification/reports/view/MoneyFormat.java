@@ -4,6 +4,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Locale;
 
+/**
+ * Locale-aware currency formatter used in PDF templates. Large values are abbreviated (K/M/B) and
+ * grouping/decimal separators follow the locale (Turkish uses {@code .}/{@code ,}); a real minus
+ * sign is used for negatives.
+ */
 public final class MoneyFormat {
 
     private static final BigDecimal THOUSAND = new BigDecimal("1000");
@@ -38,6 +43,7 @@ public final class MoneyFormat {
         return sign + symbol + " " + body;
     }
 
+    /** Like {@link #of} but prefixes a {@code +} for non-negative values, for signed P/L display. */
     public String signed(BigDecimal value) {
         if (value == null) return "—";
         String prefix = value.signum() >= 0 ? "+" : "";

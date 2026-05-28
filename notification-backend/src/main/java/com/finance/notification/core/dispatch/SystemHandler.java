@@ -9,6 +9,10 @@ import org.springframework.stereotype.Component;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Renders {@link NotificationType#SYSTEM} notifications (e.g. broadcasts), falling back to a
+ * localized default title when the payload omits one.
+ */
 @Component
 @RequiredArgsConstructor
 public class SystemHandler implements NotificationHandler {

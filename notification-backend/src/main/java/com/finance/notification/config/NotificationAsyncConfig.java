@@ -9,6 +9,11 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
+/**
+ * Provides the bounded thread pool used to push SSE notifications off the request/transaction
+ * thread. Uses a caller-runs rejection policy so bursts apply back-pressure rather than dropping
+ * pushes, and drains in-flight tasks on shutdown.
+ */
 @Log4j2
 @Configuration
 @RequiredArgsConstructor

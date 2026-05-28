@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
+/** Persistence for {@link Watchlist}: per-user lookups, default-list lookup and uniqueness checks. */
 public interface WatchlistRepository extends JpaRepository<Watchlist, Long> {
 
     List<Watchlist> findByUserSubOrderByIsDefaultDescCreatedAtAsc(String userSub);

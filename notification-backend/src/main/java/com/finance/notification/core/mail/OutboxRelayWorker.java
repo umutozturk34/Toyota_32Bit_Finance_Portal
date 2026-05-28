@@ -18,6 +18,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Background relay that polls the outbox for due PENDING rows, flips them to RELAYED and publishes a
+ * Kafka dispatch event per row after commit (so events are only emitted for committed state). A
+ * second schedule reclaims rows stuck in RELAYED/PROCESSING past the timeout back to PENDING, which
+ * recovers emails whose consumer crashed before completing.
+ */
 @Log4j2
 @Component
 public class OutboxRelayWorker {

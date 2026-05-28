@@ -11,6 +11,10 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
+/**
+ * Request to create a price alert. The threshold may be supplied in any currency (defaulting to TRY)
+ * and is converted server-side; bond markets are not alertable and percent thresholds are capped.
+ */
 public record PriceAlertCreateRequest(
         @NotNull(message = "{validation.alert.marketType.required}") MarketType marketType,
         @NotBlank(message = "{validation.alert.assetCode.required}") @Size(max = 32, message = "{validation.alert.assetCode.maxLen}") String assetCode,

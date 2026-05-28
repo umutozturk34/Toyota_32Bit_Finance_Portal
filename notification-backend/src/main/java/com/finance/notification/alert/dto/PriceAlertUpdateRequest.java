@@ -7,6 +7,10 @@ import jakarta.validation.constraints.DecimalMin;
 
 import java.math.BigDecimal;
 
+/**
+ * Partial update for a price alert; null fields are left unchanged. The threshold is interpreted in
+ * the alert's existing native currency.
+ */
 public record PriceAlertUpdateRequest(
         AlertDirection direction,
         @DecimalMin(value = "0", inclusive = false, message = "{validation.alert.threshold.positive}")

@@ -11,6 +11,10 @@ import org.mapstruct.MappingConstants;
 
 import java.math.BigDecimal;
 
+/**
+ * MapStruct mapper between watchlist item entities, request DTOs, snapshot-enriched responses and the
+ * delta notification item.
+ */
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface WatchlistItemMapper {
 

@@ -1,5 +1,6 @@
 package com.finance.notification.core.dto;
 
+/** Full snapshot of a user's notification preferences (email/in-app per type plus session markets). */
 public record NotificationPreferenceResponse(
         boolean emailEnabled,
         boolean emailPriceAlerts,

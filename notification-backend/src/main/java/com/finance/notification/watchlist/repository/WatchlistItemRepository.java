@@ -9,6 +9,10 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Persistence for {@link WatchlistItem}: per-list/per-user/per-market lookups, dedup by tracked
+ * asset, item counts and the next display-order helper for appending items.
+ */
 public interface WatchlistItemRepository extends JpaRepository<WatchlistItem, Long> {
 
     List<WatchlistItem> findByUserSubOrderByCreatedAtDesc(String userSub);

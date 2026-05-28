@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/** Payload summarizing a batch of newly published news, with sample titles and categories. */
 public record NewsPublishedPayload(
         int articleCount,
         List<String> categories,

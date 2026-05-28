@@ -10,6 +10,10 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Reads and upserts a user's notification preferences, synthesizing defaults for users with no
+ * persisted row so reads and partial updates always have a baseline to work from.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -35,6 +39,7 @@ public class NotificationPreferenceService {
         return mapper.toResponse(saved);
     }
 
+    /** Seeds default preferences for a new user if absent; returns whether a row was created. */
     @Transactional
     public boolean ensureDefaultsExist(String userSub) {
         if (repository.existsById(userSub)) return false;

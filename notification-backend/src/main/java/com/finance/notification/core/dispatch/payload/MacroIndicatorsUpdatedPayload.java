@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/** Payload listing the macro indicators that changed; metadata records only the changed count. */
 public record MacroIndicatorsUpdatedPayload(
         List<IndicatorChange> changes,
         String source

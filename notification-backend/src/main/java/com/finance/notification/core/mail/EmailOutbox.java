@@ -22,6 +22,11 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
+/**
+ * Transactional-outbox row for an outbound email. The rendered model/theme/locale are stored so the
+ * email can be (re)built at send time, and {@code attempts}/{@code nextAttemptAt} drive retry with
+ * backoff. The optimistic {@code version} lets competing relay/send workers detect lost races.
+ */
 @Getter
 @Setter
 @Builder
@@ -31,6 +36,7 @@ import java.time.LocalDateTime;
 @Table(name = "email_outbox")
 public class EmailOutbox {
 
+    /** Lifecycle: PENDING -> RELAYED -> PROCESSING -> SENT, or FAILED once retries are exhausted. */
     public enum Status { PENDING, RELAYED, PROCESSING, SENT, FAILED }
 
     @Id

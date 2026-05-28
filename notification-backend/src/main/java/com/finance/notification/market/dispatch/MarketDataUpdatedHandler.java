@@ -14,6 +14,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Renders {@link NotificationType#MARKET_DATA_UPDATED} notifications, enriching the title/body with a
+ * resolved content slot derived from the event source when one matches.
+ */
 @Component
 @RequiredArgsConstructor
 public class MarketDataUpdatedHandler implements NotificationHandler {

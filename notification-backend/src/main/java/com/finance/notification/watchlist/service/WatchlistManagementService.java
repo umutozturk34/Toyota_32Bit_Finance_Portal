@@ -18,6 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Manages watchlists themselves (create/rename/delete/list) and ownership checks. Every user has a
+ * locale-named default list that is lazily created on first access and cannot be deleted; list names
+ * must be unique per user and the per-user count is capped.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -33,6 +38,7 @@ public class WatchlistManagementService {
         return translator.translate("watchlist.defaultName", userPreferenceCacheService.resolveLocale(userSub));
     }
 
+    /** Returns the user's default list, creating it on first use. */
     @Transactional
     public Watchlist ensureDefault(String userSub) {
         return repository.findByUserSubAndIsDefaultTrue(userSub)
@@ -100,6 +106,7 @@ public class WatchlistManagementService {
         log.info("Watchlist deleted watchlistId={} userSub={}", id, userSub);
     }
 
+    /** Loads a watchlist owned by the user or throws 404; the ownership guard for item operations. */
     @Transactional(readOnly = true)
     public Watchlist requireOwned(Long id, String userSub) {
         return ownedOr404(id, userSub);

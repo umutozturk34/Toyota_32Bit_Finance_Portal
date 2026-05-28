@@ -16,6 +16,11 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Sends a system notification to the whole user base. Rejects when the recipient count exceeds the
+ * configured cap, then pages through recipients dispatching in batches and skips the issuing admin
+ * so they don't notify themselves. Honours each recipient's notification preferences via the dispatcher.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

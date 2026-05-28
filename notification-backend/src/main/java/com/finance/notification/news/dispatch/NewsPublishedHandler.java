@@ -14,6 +14,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Renders {@link NotificationType#NEWS_PUBLISHED} notifications, varying the localized title/body by
+ * article count and an optional content slot resolved from the event source.
+ */
 @Component
 @RequiredArgsConstructor
 public class NewsPublishedHandler implements NotificationHandler {

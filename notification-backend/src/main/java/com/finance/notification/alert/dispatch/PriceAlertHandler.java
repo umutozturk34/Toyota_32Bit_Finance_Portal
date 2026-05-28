@@ -19,6 +19,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Renders a {@link NotificationType#PRICE_ALERT_FIRED} into localized title/body/email subject and
+ * a template model for the {@code price-alert} view, formatting thresholds as a percentage for
+ * percent-based directions and as a TRY price otherwise.
+ */
 @Component
 @RequiredArgsConstructor
 public class PriceAlertHandler implements NotificationHandler {

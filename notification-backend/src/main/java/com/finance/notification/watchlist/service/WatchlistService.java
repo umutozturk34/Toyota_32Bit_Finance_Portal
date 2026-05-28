@@ -33,6 +33,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Manages watchlist items: add (upserting if the asset is already on the list), update, remove,
+ * reorder and listing. Listings are enriched with live snapshot data, and sorts that depend on that
+ * data are applied after enrichment. Adding an item records a price baseline used for delta alerts.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -47,6 +52,7 @@ public class WatchlistService {
     private final TrackedAssetRepository trackedAssetRepository;
     private final WatchlistManagementProperties managementProperties;
 
+    /** Adds the asset to the list, or updates note/threshold if it is already present (idempotent add). */
     @Transactional
     public WatchlistItemResponse addToList(Long watchlistId, String userSub,
                                            WatchlistItemCreateRequest request) {
@@ -85,6 +91,7 @@ public class WatchlistService {
         return enrich(repository.findByUserSubOrderByCreatedAtDesc(userSub));
     }
 
+    /** Reassigns display order from the given id sequence; rejects if the ids don't exactly match the list. */
     @Transactional
     public List<WatchlistItemResponse> reorder(Long watchlistId, String userSub, List<Long> itemIds) {
         managementService.requireOwned(watchlistId, userSub);
@@ -122,6 +129,7 @@ public class WatchlistService {
         return enrich(List.of(saved)).get(0);
     }
 
+    /** All items across users for a market, used by the evaluator to check delta thresholds. */
     @Transactional(readOnly = true)
     public List<WatchlistItem> itemsForMarket(MarketType marketType) {
         return repository.findByTrackedAsset_AssetType(

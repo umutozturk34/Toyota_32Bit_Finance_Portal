@@ -10,6 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * {@link RecipientDirectory} backed by the replicated {@code user_preferences} table, treating every
+ * known user as a potential broadcast recipient.
+ */
 @Component
 @RequiredArgsConstructor
 public class UserPreferenceCacheRecipientDirectory implements RecipientDirectory {

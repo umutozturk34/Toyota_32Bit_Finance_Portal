@@ -7,6 +7,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 
+/**
+ * Declares the Kafka topics this service owns (mail dispatch, macro-indicators, email-change code)
+ * so they are auto-created with the cluster's default partitions/replicas/retention.
+ */
 @Configuration
 public class NotificationKafkaTopicsConfig {
 

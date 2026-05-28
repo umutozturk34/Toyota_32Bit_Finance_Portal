@@ -19,6 +19,13 @@ import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Kafka consumer that sends one outbox email per {@link MailDispatchEvent}. It first atomically
+ * claims the row (RELAYED to PROCESSING) so duplicate/redelivered events are ignored, then sends and
+ * marks SENT, or on error increments attempts and reschedules with backoff until the max is hit
+ * (then FAILED). Optimistic-lock conflicts mean another worker won and are skipped; metrics track
+ * sent/retried/failed counts.
+ */
 @Log4j2
 @Component
 public class MailSendConsumer {

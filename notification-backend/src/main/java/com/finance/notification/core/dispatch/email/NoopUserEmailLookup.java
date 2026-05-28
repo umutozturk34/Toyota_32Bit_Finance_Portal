@@ -6,6 +6,10 @@ import org.springframework.context.annotation.Bean;
 
 import java.util.Optional;
 
+/**
+ * Fallback {@link UserEmailLookup} that resolves no addresses, registered only when no other
+ * implementation (e.g. the Keycloak one) is present, so the email channel simply stays disabled.
+ */
 @Configuration
 public class NoopUserEmailLookup {
 

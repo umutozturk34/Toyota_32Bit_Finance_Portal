@@ -20,6 +20,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Kafka consumer for portfolio-updated events. Deduplicates by event id and, per page of subscribed
+ * users, bulk-reads each user's aggregated daily snapshot, notifying only users with a positive
+ * portfolio value so empty/zero portfolios are skipped.
+ */
 @Log4j2
 @Component
 public class PortfolioUpdatedListener {

@@ -31,6 +31,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * CRUD and lifecycle operations for price alerts. Thresholds are entered in any tradable currency
+ * but stored in the asset's native quote currency (converted via live FOREX snapshots), and alert
+ * targets are resolved to a tracked asset so only watched instruments can be alerted on.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -42,6 +47,10 @@ public class PriceAlertService {
     private final TrackedAssetRepository trackedAssetRepository;
     private final PriceAlertProperties properties;
 
+    /**
+     * Creates an alert after enforcing the per-user cap, resolving the asset against the tracked
+     * universe, converting the threshold to the asset's native currency and rejecting duplicates.
+     */
     @Transactional
     public PriceAlertResponse create(String userSub, PriceAlertCreateRequest request) {
         int maxPerUser = properties.maxPerUser();
@@ -78,6 +87,10 @@ public class PriceAlertService {
                         "error.priceAlert.assetNotTracked", marketType, normalizedCode));
     }
 
+    /**
+     * Lists the user's alerts enriched with live snapshot data (current price, change, image),
+     * batching snapshot lookups per market type.
+     */
     @Transactional(readOnly = true)
     public Page<PriceAlertResponse> list(String userSub, int page, int size) {
         Page<PriceAlert> alerts = repository.findByUserSubOrderByCreatedAtDesc(userSub, PageRequest.of(page, size));
@@ -124,6 +137,7 @@ public class PriceAlertService {
         return mapper.toResponse(saved);
     }
 
+    /** Active, not-yet-triggered alerts for the given market, used by the evaluator each cycle. */
     @Transactional(readOnly = true)
     public List<PriceAlert> activeAlerts(MarketType marketType) {
         return repository.findByActiveTrueAndTrackedAsset_AssetType(
@@ -159,6 +173,7 @@ public class PriceAlertService {
         return snapshot.currency().toUpperCase();
     }
 
+    /** Converts an amount between currencies by routing through TRY using live FOREX snapshots. */
     private BigDecimal convertToCurrency(BigDecimal amount, String fromCurrency, String toCurrency) {
         if (amount == null) return null;
         String from = fromCurrency == null || fromCurrency.isBlank() ? "TRY" : fromCurrency.toUpperCase();

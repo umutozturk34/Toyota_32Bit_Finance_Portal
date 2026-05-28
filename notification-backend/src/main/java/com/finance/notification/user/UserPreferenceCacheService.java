@@ -16,6 +16,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Reads users' locale/theme/timezone from the replicated {@code user_preferences} table to localize
+ * and theme outbound notifications. Values are canonicalized to supported locales/themes and a valid
+ * zone, falling back to defaults (English, DARK, Europe/Istanbul) for missing or invalid data.
+ */
 @Log4j2
 @Service
 public class UserPreferenceCacheService {
@@ -32,12 +37,14 @@ public class UserPreferenceCacheService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /** A user's resolved presentation preferences (locale, theme, zone) with built-in defaults. */
     public record UserPreferenceSnapshot(Locale locale, String theme, ZoneId zone) {
         public static UserPreferenceSnapshot defaults() {
             return new UserPreferenceSnapshot(DEFAULT_LOCALE, "DARK", DEFAULT_ZONE);
         }
     }
 
+    /** Bulk-loads preferences for the given subjects; every requested sub maps to a value (defaults if absent). */
     @Transactional(readOnly = true)
     public Map<String, UserPreferenceSnapshot> loadAll(Collection<String> userSubs) {
         Set<String> subs = new HashSet<>();

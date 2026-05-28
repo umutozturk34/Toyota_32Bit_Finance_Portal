@@ -19,6 +19,11 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Kafka consumer that, on an email-change-code request, enqueues a verification-code email to the
+ * user's OLD address (where they can still receive mail). Deduplicates by event id, suppresses
+ * inactive users, and uses the user's preferred locale; the row goes through the outbox for delivery.
+ */
 @Log4j2
 @Component
 public class EmailChangeCodeListener {

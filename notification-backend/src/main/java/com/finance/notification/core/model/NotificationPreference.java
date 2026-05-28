@@ -22,6 +22,11 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Set;
 
+/**
+ * Per-user notification preferences: a master email switch plus independent in-app/email toggles per
+ * {@link NotificationType}, and the set of markets the user wants session open/close alerts for.
+ * Email delivery additionally requires the master {@code emailEnabled} flag.
+ */
 @Getter
 @Setter
 @Builder
@@ -124,6 +129,7 @@ public class NotificationPreference {
         updatedAt = LocalDateTime.now();
     }
 
+    /** Applies a partial update in place; only non-null request fields overwrite current values. */
     public void applyUpdate(NotificationPreferenceUpdateRequest request) {
         if (request == null) return;
         if (request.emailEnabled() != null) setEmailEnabled(request.emailEnabled());
@@ -152,6 +158,7 @@ public class NotificationPreference {
         return type.isInAppWantedBy(this);
     }
 
+    /** Email is wanted only when the master switch is on and the per-type email toggle is set. */
     public boolean wantsEmail(NotificationType type) {
         return emailEnabled && type.isEmailWantedBy(this);
     }
@@ -164,6 +171,7 @@ public class NotificationPreference {
                 .orElse("");
     }
 
+    /** Sensible default preferences for a user with no persisted row (all in-app on, most email off). */
     public static NotificationPreference defaultsFor(String userSub) {
         return NotificationPreference.builder()
                 .userSub(userSub)

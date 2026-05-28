@@ -20,6 +20,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Evaluates active price alerts for a market against the latest snapshot cache and dispatches a
+ * notification for each one that crosses its threshold. A fired alert is marked triggered (and
+ * deactivated) so it does not re-fire until reactivated. Snapshot prices are compared in TRY.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -30,6 +35,12 @@ public class PriceAlertEvaluator {
     private final AssetSnapshotCache assetSnapshotCache;
     private final PriceAlertMapper priceAlertMapper;
 
+    /**
+     * Loads active alerts for the market, fires those whose threshold is crossed and dispatches
+     * them in a single batch.
+     *
+     * @return the number of notifications successfully dispatched
+     */
     @Transactional
     public int evaluate(MarketType marketType) {
         List<PriceAlert> alerts = priceAlertService.activeAlerts(marketType);

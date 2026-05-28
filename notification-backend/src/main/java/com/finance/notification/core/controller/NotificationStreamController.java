@@ -14,6 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+/**
+ * Server-Sent Events endpoint that streams live notifications to the authenticated user. Inactive
+ * users are rejected with 403; otherwise an emitter is registered for real-time push.
+ */
 @RestController
 @RequestMapping("/api/v1/notifications")
 @PreAuthorize("isAuthenticated()")

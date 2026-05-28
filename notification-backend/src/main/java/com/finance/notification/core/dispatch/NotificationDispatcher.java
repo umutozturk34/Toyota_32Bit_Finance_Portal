@@ -28,6 +28,13 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Central entry point that turns a {@link NotificationRequest} into persisted in-app and/or email
+ * outbox rows. It routes to the {@link NotificationHandler} registered for the payload type,
+ * suppresses delivery for inactive users, and honours each user's per-type in-app/email preferences.
+ * Single dispatches run in their own transaction; batched dispatch pages through requests and
+ * bulk-loads preferences, locale/theme snapshots and active status to minimize round-trips.
+ */
 @Log4j2
 @Service
 public class NotificationDispatcher {
@@ -72,6 +79,10 @@ public class NotificationDispatcher {
         prepare(request, prefs).ifPresent(prep -> persister.persistBatch(List.of(prep)));
     }
 
+    /**
+     * Dispatches many requests, chunked by the configured fanout page size; per-request prepare
+     * failures are isolated and counted rather than aborting the batch.
+     */
     public BatchResult dispatchBatched(List<NotificationRequest> requests) {
         if (requests.isEmpty()) return new BatchResult(0, 0);
         int pageSize = dispatchProperties.fanout().pageSize();
@@ -126,6 +137,7 @@ public class NotificationDispatcher {
         return result;
     }
 
+    /** Outcome of a batched dispatch: rows that became deliverable versus prepare failures. */
     public record BatchResult(int dispatched, int failed) {}
 
     private record ChunkOutcome(int dispatched, int failed) {}
@@ -137,6 +149,10 @@ public class NotificationDispatcher {
         return prepare(request, prefs, snapshot, active);
     }
 
+    /**
+     * Renders and builds the deliverable artifacts for one request without persisting them. Returns
+     * empty when there is no handler, the user is inactive, or neither in-app nor email is wanted.
+     */
     public Optional<Prepared> prepare(NotificationRequest request,
                                       NotificationPreference prefs,
                                       UserPreferenceSnapshot snapshot,

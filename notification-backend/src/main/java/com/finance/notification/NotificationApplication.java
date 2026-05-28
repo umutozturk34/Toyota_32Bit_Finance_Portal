@@ -28,6 +28,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import java.time.Clock;
 import java.util.TimeZone;
 
+/**
+ * Spring Boot entry point for the standalone notification microservice. Component-scans this module
+ * plus the shared finance-common infrastructure, enables async and scheduled execution, and pins the
+ * default time zone to Europe/Istanbul so market sessions and outbox cadences use exchange-local time.
+ */
 @SpringBootApplication(scanBasePackages = {
         "com.finance.notification",
         "com.finance.common.cache",

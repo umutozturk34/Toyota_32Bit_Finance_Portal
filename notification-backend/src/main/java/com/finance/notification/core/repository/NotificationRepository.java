@@ -10,6 +10,10 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 
+/**
+ * Persistence for {@link Notification}, with paged listing/search (all or unread-only), unread
+ * counts, bulk mark-all-read, per-user purge and expired-row cleanup.
+ */
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
     Page<Notification> findByUserSubOrderByCreatedAtDesc(String userSub, Pageable pageable);

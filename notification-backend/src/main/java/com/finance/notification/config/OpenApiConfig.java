@@ -11,6 +11,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * OpenAPI/Swagger setup for the notification API, wiring the Keycloak OAuth2 authorization-code flow
+ * so the docs UI can obtain a token against the externally reachable realm.
+ */
 @Configuration
 public class OpenApiConfig {
 

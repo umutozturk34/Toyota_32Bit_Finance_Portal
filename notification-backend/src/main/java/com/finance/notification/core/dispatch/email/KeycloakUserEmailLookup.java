@@ -20,6 +20,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Resolves user profiles and emails via the Keycloak admin REST API. Profiles are cached
+ * (Caffeine, TTL-bounded) and an admin access token is obtained on demand and reused until it
+ * nears expiry. All lookup failures degrade to empty results rather than propagating.
+ */
 @Log4j2
 @Component
 @Primary
@@ -86,6 +91,10 @@ public class KeycloakUserEmailLookup implements UserEmailLookup {
         }
     }
 
+    /**
+     * Searches Keycloak users by free-text query for broadcast targeting; results are cached and the
+     * requested count is clamped to the configured cap.
+     */
     public java.util.List<KeycloakUserProfile> search(String query, int max) {
         if (query == null || query.isBlank()) return java.util.List.of();
         try {

@@ -2,6 +2,10 @@ package com.finance.notification.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Dispatch-time tuning: number/price formatting, watchlist-delta body preview size, fanout page size
+ * and news-digest windowing.
+ */
 @ConfigurationProperties("notification.dispatch")
 public record NotificationDispatchProperties(
         Formatting formatting,

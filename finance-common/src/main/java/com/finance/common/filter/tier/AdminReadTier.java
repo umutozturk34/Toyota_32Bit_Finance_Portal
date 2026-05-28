@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
+/**
+ * Per-minute cap for general {@code /api/v1/admin} traffic, applied after the stricter trigger tier.
+ */
 @Component
 @Order(20)
 public class AdminReadTier implements RateLimitTier {

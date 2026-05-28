@@ -4,6 +4,11 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Signals that one or more macroeconomic indicator series changed, listing the affected
+ * {@code changedCodes}. Build via {@link #of(String, java.util.List)}, which assigns a random
+ * event id and defensively copies the codes (treating null as empty).
+ */
 public record MacroIndicatorsUpdatedEvent(
         String eventId,
         OffsetDateTime occurredAt,

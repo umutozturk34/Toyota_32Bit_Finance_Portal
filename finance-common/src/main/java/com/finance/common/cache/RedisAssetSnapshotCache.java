@@ -19,6 +19,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Redis-backed {@link AssetSnapshotCache} that reads market snapshots written under the
+ * {@code market:<label>:snapshot:<code>} key scheme. Per-market JSON field names are taken from
+ * {@link MarketType}, and the primary price field falls back to the secondary one when absent.
+ * For VIOP entries the quote currency is derived from the symbol via
+ * {@link Currency#viopQuoteCurrencyOf(String)} rather than the stored exchange-currency field,
+ * which is not the FX quote currency. All read/parse failures are logged and degrade to an empty
+ * result instead of propagating.
+ */
 @Log4j2
 @Component
 public class RedisAssetSnapshotCache implements AssetSnapshotCache {
@@ -90,6 +99,10 @@ public class RedisAssetSnapshotCache implements AssetSnapshotCache {
         }
     }
 
+    /**
+     * Unwraps a Jackson default-typing envelope ({@code ["type", value]}) to the underlying value,
+     * so snapshots serialized with polymorphic type tags can be read transparently.
+     */
     private static JsonNode unwrapTypeTagged(JsonNode node) {
         if (node != null && node.isArray() && node.size() == 2 && node.get(0).isString()) {
             return node.get(1);

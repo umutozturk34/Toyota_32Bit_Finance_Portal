@@ -15,6 +15,13 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.stream.Collectors;
 import java.util.Map;
+/**
+ * Application-wide REST exception handler that converts thrown exceptions into a uniform
+ * {@link ErrorResponse} with a localized message (via {@link Translator}), a stable error code and
+ * the matching HTTP status. Domain exceptions map to their semantic statuses (422/404/400/409/503);
+ * framework validation/parse errors map to 400; and the catch-all {@code RuntimeException}/
+ * {@code Exception} handlers return 500 without leaking internal detail.
+ */
 @Log4j2
 @RestControllerAdvice
 @RequiredArgsConstructor

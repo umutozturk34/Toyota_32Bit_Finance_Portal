@@ -2,6 +2,10 @@ package com.finance.common.event;
 
 import java.time.OffsetDateTime;
 
+/**
+ * Signals that a new user (identified by {@code userSub}) registered; partitioned by subject so
+ * downstream consumers process a user's events in order.
+ */
 public record UserRegisteredEvent(
         String eventId,
         String userSub,

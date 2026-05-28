@@ -7,6 +7,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Central, strongly-typed binding of the {@code app.*} configuration tree shared by all backend
+ * modules: external-provider endpoints, HTTP/async pool tuning, scheduler cron expressions,
+ * pagination caps, cache TTLs, CORS, and per-tier rate limits. Nested static classes group related
+ * settings and carry sensible defaults so most properties are optional.
+ */
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "app")

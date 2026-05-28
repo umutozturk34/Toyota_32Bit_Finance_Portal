@@ -1,4 +1,8 @@
 package com.finance.common.exception;
+/**
+ * Signals invalid client input; the message is an i18n key resolved with {@link #getMessageArgs()}
+ * and mapped to HTTP 400 by {@link GlobalExceptionHandler}.
+ */
 public class BadRequestException extends RuntimeException {
     private final Object[] messageArgs;
     public BadRequestException(String message) {

@@ -5,6 +5,13 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * Curated, admin-managed entry on a market watchlist, unique per ({@link TrackedAssetType},
+ * asset code). Beyond display metadata it carries presentation flags: {@code indexAsset} (shown as
+ * an index member), {@code compareOnly} (available for comparison but not listed as a tracked
+ * holding) and {@code enabled} (soft on/off). {@code sortOrder} controls listing order and defaults
+ * to {@code 0} on persist if unset.
+ */
 @Getter
 @Setter
 @Builder

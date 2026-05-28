@@ -7,6 +7,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.Locale;
 
+/**
+ * Thin facade over Spring's {@link MessageSource} that resolves messages against the current
+ * request locale. String arguments that themselves look like message keys are recursively
+ * translated before interpolation, so nested keys can be passed as parameters.
+ */
 @Component
 @RequiredArgsConstructor
 public class Translator {
@@ -22,6 +27,10 @@ public class Translator {
         return messageSource.getMessage(key, resolveArgs(args, locale), locale);
     }
 
+    /**
+     * Resolves {@code keyOrText} as a message key, returning the input itself (not an error) when no
+     * such key exists; lets callers pass either an i18n key or an already-literal message.
+     */
     public String translateOrSelf(String keyOrText, Object... args) {
         if (keyOrText == null) return null;
         Locale locale = LocaleContextHolder.getLocale();
@@ -43,6 +52,10 @@ public class Translator {
         return messageSource.getMessage(s, null, s, locale);
     }
 
+    /**
+     * Heuristic: a message key is lowercase-initial, dot-separated and space-free, so ordinary
+     * sentence arguments are not mistaken for keys.
+     */
     private boolean looksLikeMessageKey(String s) {
         if (s.isEmpty() || s.indexOf('.') < 0 || s.indexOf(' ') >= 0) return false;
         char first = s.charAt(0);

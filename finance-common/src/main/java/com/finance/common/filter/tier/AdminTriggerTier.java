@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
+/**
+ * Strictest tier (highest precedence): caps {@code POST /api/v1/admin/trigger} requests per hour to
+ * throttle expensive manual job triggers.
+ */
 @Component
 @Order(10)
 public class AdminTriggerTier implements RateLimitTier {

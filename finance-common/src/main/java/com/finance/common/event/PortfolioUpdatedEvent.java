@@ -3,6 +3,9 @@ package com.finance.common.event;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * Signals that portfolio valuations/snapshots were recomputed. Build via {@link #of(String)}.
+ */
 public record PortfolioUpdatedEvent(
         String eventId,
         OffsetDateTime occurredAt,

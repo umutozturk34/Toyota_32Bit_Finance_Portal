@@ -11,6 +11,10 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Database-backed {@link UserStatusPort} reading the local {@code user_status} mirror. Blank/unknown
+ * subjects and absent rows resolve to active (fail-open), so a not-yet-synced user is not blocked.
+ */
 @Component
 public class DbUserStatusAdapter implements UserStatusPort {
 

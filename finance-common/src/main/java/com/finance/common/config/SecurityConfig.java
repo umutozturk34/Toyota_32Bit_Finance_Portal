@@ -32,6 +32,14 @@
     import java.util.List;
     import java.util.Map;
     import java.util.stream.Collectors;
+    /**
+     * Stateless OAuth2 resource-server security shared by all modules. Validates Keycloak JWTs
+     * against the configured JWK set, permits health/error/auth/swagger and CORS preflight while
+     * requiring authentication elsewhere and the {@code ADMIN} role for {@code /api/v1/admin/**},
+     * and emits localized JSON 401 bodies via {@link com.finance.common.i18n.Translator}. The
+     * {@link RateLimitFilter} is installed right after bearer-token authentication so limits apply
+     * per authenticated subject, and Keycloak realm roles are mapped to {@code ROLE_*} authorities.
+     */
     @Configuration
     @EnableWebSecurity
     @EnableMethodSecurity(prePostEnabled = true)
@@ -82,6 +90,11 @@
             http.addFilterAfter(rateLimitFilter, BearerTokenAuthenticationFilter.class);
             return http.build();
         }
+        /**
+         * Builds the {@link RateLimitFilter}, unwrapping the Lettuce native client to open a
+         * dedicated connection with a {@code String} key / {@code byte[]} value codec as required by
+         * the Bucket4j Redis backend.
+         */
         @Bean
         public RateLimitFilter rateLimitFilterFactory(ObjectMapper objectMapper, AppProperties appProperties, RedisConnectionFactory redisConnectionFactory, List<RateLimitTier> tiers, com.finance.common.i18n.Translator translator) {
             LettuceConnectionFactory lettuceFactory = (LettuceConnectionFactory) redisConnectionFactory;

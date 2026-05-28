@@ -9,6 +9,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Data access for {@link TrackedAsset} watchlist entries. Listing queries order by
+ * {@code sortOrder} then code, and an enabled-only variant excludes soft-disabled entries.
+ */
 @Repository
 public interface TrackedAssetRepository extends JpaRepository<TrackedAsset, Long>,
         JpaSpecificationExecutor<TrackedAsset> {

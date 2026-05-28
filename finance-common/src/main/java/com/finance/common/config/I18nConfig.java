@@ -12,6 +12,12 @@ import org.springframework.web.servlet.LocaleResolver;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Wires the i18n stack: a UTF-8 {@code messages}/{@code validation-messages} bundle that does not
+ * fall back to the system locale or echo the code on a miss, a {@link JwtLocaleResolver} honoring
+ * the configured supported/default locales, and a bean-validation factory bound to the same
+ * message source so constraint messages are localized.
+ */
 @Configuration
 @EnableConfigurationProperties(I18nProperties.class)
 @RequiredArgsConstructor

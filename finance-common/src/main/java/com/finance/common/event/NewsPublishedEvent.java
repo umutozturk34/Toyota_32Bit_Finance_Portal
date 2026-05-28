@@ -3,6 +3,9 @@ package com.finance.common.event;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * Signals that fresh news items were published. Build via {@link #of(String)}.
+ */
 public record NewsPublishedEvent(
         String eventId,
         OffsetDateTime occurredAt,

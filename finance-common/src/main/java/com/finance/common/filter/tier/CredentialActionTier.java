@@ -8,6 +8,11 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
+/**
+ * Hourly cap on mutating credential/profile operations (POST/PUT/PATCH/DELETE under
+ * {@code /api/v1/user/credentials} or {@code /api/v1/user/profile}) to curb abuse of sensitive
+ * account changes.
+ */
 @Component
 @Order(30)
 public class CredentialActionTier implements RateLimitTier {

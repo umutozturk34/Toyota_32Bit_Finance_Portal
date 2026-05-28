@@ -1,4 +1,9 @@
 package com.finance.common.exception;
+/**
+ * Unchecked exception for domain rule violations. The message is treated as an i18n key:
+ * {@link GlobalExceptionHandler} resolves it with {@link #getMessageArgs()} and returns HTTP 422
+ * carrying {@link #getErrorCode()} (default {@code BUSINESS_ERROR}).
+ */
 public class BusinessException extends RuntimeException {
     private final String errorCode;
     private final Object[] messageArgs;

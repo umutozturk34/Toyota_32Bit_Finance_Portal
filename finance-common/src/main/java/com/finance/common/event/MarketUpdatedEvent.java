@@ -5,6 +5,10 @@ import com.finance.common.model.MarketType;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * Signals that snapshots for a given {@link MarketType} were refreshed. Partitioned by market type
+ * so updates for the same market stay ordered. Build via {@link #of(MarketType, String)}.
+ */
 public record MarketUpdatedEvent(
         String eventId,
         MarketType marketType,

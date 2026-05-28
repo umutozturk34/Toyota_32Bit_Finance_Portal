@@ -16,6 +16,12 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 
+/**
+ * Redis serialization setup. Keys/hash-keys are stored as plain strings, while values use a JSON
+ * serializer backed by an {@link ObjectMapper} with default typing enabled, so polymorphic values
+ * round-trip with their concrete type preserved. Type validation is restricted to subtypes of
+ * {@code Object} via a permissive polymorphic type validator.
+ */
 @Configuration
 @RequiredArgsConstructor
 public class RedisConfig {

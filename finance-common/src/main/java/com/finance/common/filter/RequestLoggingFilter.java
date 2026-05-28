@@ -12,6 +12,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Highest-precedence access log that records method, path, status and elapsed time for every
+ * request, choosing the log level by response status (5xx error, 4xx warn, else info). Actuator and
+ * health endpoints are skipped to avoid noise.
+ */
 @Log4j2
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)

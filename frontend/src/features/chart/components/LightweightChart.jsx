@@ -178,7 +178,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
     }
 
     return (
-        <Card ref={wrapperRef} variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className={`flex !overflow-x-hidden !overflow-y-visible ${isFullscreen ? 'h-screen !rounded-none !overflow-y-auto' : 'min-h-[360px] sm:min-h-[440px] lg:min-h-[560px]'}`}>
+        <Card ref={wrapperRef} variant="elevated" radius="xl" padding="none" backdropBlur interactive={false} className={`flex flex-col lg:flex-row !overflow-x-hidden !overflow-y-visible ${isFullscreen ? 'h-screen !rounded-none !overflow-y-auto' : 'min-h-[320px] sm:min-h-[440px] lg:min-h-[560px]'}`}>
             <button
                 type="button"
                 data-tour="chart-drawing-open"
@@ -264,22 +264,22 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                     isFullscreen={isFullscreen}
                     onToggleFullscreen={toggleFullscreen}
                 />
-                <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border-default bg-surface/40">
-                    <Calendar className="w-3 h-3 mr-1 text-fg-subtle" />
+                <div className="flex items-center gap-1 px-2 sm:px-3 py-1.5 border-b border-border-default bg-surface/40 overflow-x-auto scrollbar-thin">
+                    <Calendar className="w-3 h-3 mr-1 text-fg-subtle shrink-0" />
                     {TIME_RANGES.map(({ id, labelKey }) => {
                         const isActive = timeRange === id;
                         return (
                             <button
                                 key={id}
                                 onClick={() => onTimeRangeChange?.(id)}
-                                className={`px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide border-none cursor-pointer transition-all duration-200 ${isActive ? 'bg-indigo-400/15 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.18)]' : 'bg-transparent text-fg-muted hover:text-fg hover:bg-surface'}`}
+                                className={`shrink-0 min-h-[32px] px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide border-none cursor-pointer transition-all duration-200 ${isActive ? 'bg-indigo-400/15 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.18)]' : 'bg-transparent text-fg-muted hover:text-fg hover:bg-surface'}`}
                             >
                                 {t(labelKey)}
                             </button>
                         );
                     })}
                 </div>
-                <div className={`relative flex-1 ${isFullscreen ? 'min-h-0' : 'min-h-[260px] sm:min-h-[320px] lg:min-h-[400px]'}`}>
+                <div className={`relative flex-1 ${isFullscreen ? 'min-h-0' : 'min-h-[55vh] sm:min-h-[400px] lg:min-h-[420px]'}`}>
                     <div ref={chartContainerRef} className="w-full h-full" />
                     <canvas
                         ref={canvasOverlayRef}

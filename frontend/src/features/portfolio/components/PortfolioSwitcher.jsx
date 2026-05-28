@@ -100,7 +100,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
         <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-accent/25 to-accent/10 ring-1 ring-inset ring-accent/30">
           <Wallet className="h-3.5 w-3.5 text-accent" />
         </span>
-        <span className="text-sm font-semibold text-fg max-w-[180px] truncate tracking-tight">
+        <span className="text-sm font-semibold text-fg max-w-[120px] sm:max-w-[180px] truncate tracking-tight">
           {active ? portfolioName(t, active) : t('portfolio.headerTitle')}
         </span>
         {portfolios.length > 1 && (
@@ -119,7 +119,7 @@ export default function PortfolioSwitcher({ portfolios = [], activeId, onSelect 
             exit={{ opacity: 0, scale: 0.97, y: -6 }}
             transition={PANEL_TRANSITION}
             style={{ background: 'var(--color-bg-deep)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
-            className="absolute right-0 z-50 mt-2 w-80 rounded-2xl border border-border-default shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)] overflow-hidden"
+            className="absolute right-0 z-50 mt-2 w-[calc(100vw-2rem)] max-w-[20rem] sm:w-80 rounded-2xl border border-border-default shadow-[0_30px_60px_-20px_rgba(0,0,0,0.5)] overflow-hidden"
           >
             <div className="flex items-center justify-between px-3 pt-3 pb-2">
               <span className="text-[10px] uppercase tracking-[0.18em] font-semibold text-fg-muted">

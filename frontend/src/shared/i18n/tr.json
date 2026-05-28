@@ -322,7 +322,8 @@
     "addPage": "Yeni sayfa",
     "newPageName": "Yeni sayfa",
     "deletePage": "Sayfayı sil",
-    "tabRenameHint": "Tıkla → adı düzenle"
+    "tabRenameHint": "Tıkla → adı düzenle",
+    "defaultName": "Anasayfa"
   },
   "widgetTray": {
     "widgetGallery": "Widget Galerisi",
@@ -791,6 +792,7 @@
       "openLabel": "Açılış",
       "highLabel": "En Yüksek",
       "lowLabel": "En Düşük",
+      "closeLabel": "Önceki Kapanış",
       "volumeLabel": "Hacim",
       "loading": "Hisse verileri yükleniyor…",
       "error": "Hisse senedi verileri yüklenirken hata oluştu",
@@ -1499,6 +1501,10 @@
     }
   },
   "onboarding": {
+    "landing": {
+      "title": "Finance Portal",
+      "subtitle": "Hoş geldin — birkaç ayar sonra hazırsın."
+    },
     "welcomeTitle": "Finance Portal'a Hoş Geldin",
     "welcomeSubtitle": "Piyasa verisi, portföy takibi ve bildirimleri tek arayüzde toplayan finans paneli.",
     "startCta": "Başlayalım",

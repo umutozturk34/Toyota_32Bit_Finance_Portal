@@ -72,18 +72,18 @@ export default function InstrumentPicker({ value, onChange, max = 6 }) {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="group/chip inline-flex items-center gap-2 rounded-xl pl-2 pr-1.5 py-1.5 text-xs font-semibold"
+                className="group/chip inline-flex items-center gap-1.5 sm:gap-2 rounded-xl pl-2 pr-1 sm:pr-1.5 py-1 sm:py-1.5 text-[11px] sm:text-xs font-semibold max-w-full"
                 style={{ background: `${color}1a`, boxShadow: `inset 0 0 0 1px ${color}40` }}
               >
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: color }} />
-                <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-fg-subtle">
+                <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: color }} />
+                <span className="hidden sm:inline font-mono text-[10px] uppercase tracking-[0.12em] text-fg-subtle">
                   {typeDef?.labelKey ? t(`analytics.${typeDef.labelKey}`, { defaultValue: inst.type }) : inst.type}
                 </span>
-                <span className="text-fg">{inst.labelKey ? t(inst.labelKey, { defaultValue: inst.name || inst.code }) : (inst.name || inst.code)}</span>
+                <span className="text-fg truncate max-w-[140px] sm:max-w-[200px]">{inst.labelKey ? t(inst.labelKey, { defaultValue: inst.name || inst.code }) : (inst.name || inst.code)}</span>
                 <button
                   type="button"
                   onClick={() => remove(idx)}
-                  className="ml-1 h-5 w-5 rounded-md flex items-center justify-center text-fg-muted hover:text-fg hover:bg-bg-elevated cursor-pointer border-none"
+                  className="ml-0.5 sm:ml-1 h-5 w-5 rounded-md flex items-center justify-center text-fg-muted hover:text-fg hover:bg-bg-elevated cursor-pointer border-none shrink-0"
                   aria-label={t('common.remove')}
                 >
                   <X className="h-3 w-3" />
@@ -108,13 +108,14 @@ export default function InstrumentPicker({ value, onChange, max = 6 }) {
             className="relative z-50 rounded-xl border border-border-default/60 bg-bg-elevated p-3 space-y-2"
           >
             <div className="text-[10px] font-mono uppercase tracking-[0.18em] text-fg-muted">
-              {t('analytics.searchHint', { defaultValue: 'Hisse, fon, döviz, kripto, emtia, bono, makro ara' })}
+              {t('analytics.searchHint', { defaultValue: 'Hisse, fon, döviz, kripto, emtia, makro ara' })}
             </div>
             <SearchSuggestions
               onSelect={handleSearchSelect}
               navigateOnSelect={false}
               excludeCodes={excludedCodes}
-              placeholder={t('analytics.searchPlaceholder', { defaultValue: 'ASELS, altın, bitcoin, TP.TRYTAS, TRT...' })}
+              excludeTypes={['BOND']}
+              placeholder={t('analytics.searchPlaceholder', { defaultValue: 'ASELS, altın, bitcoin, TP.TRYTAS...' })}
             />
           </motion.div>
         )}

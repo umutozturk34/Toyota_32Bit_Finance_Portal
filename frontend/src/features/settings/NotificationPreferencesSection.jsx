@@ -63,7 +63,8 @@ function ChannelDot({ active, disabled = false, Icon, onClick, title }) {
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-all cursor-pointer ${
+      aria-label={title}
+      className={`flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-lg border transition-all cursor-pointer ${
         disabled
           ? 'border-border-default/30 bg-transparent text-fg-subtle/50 cursor-not-allowed'
           : active
@@ -117,7 +118,7 @@ export default function NotificationPreferencesSection() {
       </Card>
 
       <Card variant="elevated" radius="xl" padding="none" interactive={false}>
-        <div className="grid grid-cols-[1fr_2rem_2rem] gap-4 px-4 py-2.5 border-b border-border-default items-center">
+        <div className="grid grid-cols-[1fr_2.25rem_2.25rem] sm:grid-cols-[1fr_2rem_2rem] gap-2 sm:gap-4 px-3 sm:px-4 py-2.5 border-b border-border-default items-center">
           <h3 className="text-[11px] font-semibold uppercase tracking-wider text-fg-muted">{t('notificationPreferences.types.title')}</h3>
           <div className="flex items-center justify-center" title={t('notificationPreferences.channels.email')}>
             <Mail className="h-3.5 w-3.5 text-fg-subtle" />
@@ -134,7 +135,7 @@ export default function NotificationPreferencesSection() {
             const inappActive = !!preferences[inappField];
             const masterOff = !preferences.emailEnabled;
             return (
-              <div key={id} className="grid grid-cols-[1fr_2rem_2rem] gap-4 px-4 py-3 items-center group hover:bg-accent/3 transition-colors">
+              <div key={id} className="grid grid-cols-[1fr_2.25rem_2.25rem] sm:grid-cols-[1fr_2rem_2rem] gap-2 sm:gap-4 px-3 sm:px-4 py-3 items-center group hover:bg-accent/3 transition-colors">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="flex items-center justify-center w-7 h-7 rounded-md bg-surface group-hover:bg-accent/10 transition-colors shrink-0">
                     <Icon className="h-3.5 w-3.5 text-fg-muted group-hover:text-accent transition-colors" />

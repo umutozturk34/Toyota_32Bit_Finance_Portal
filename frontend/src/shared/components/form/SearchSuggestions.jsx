@@ -39,6 +39,7 @@ export default function SearchSuggestions({
   excludeTypes = [],
   filterType,
   variant = 'default',
+  secondaryAction,
 }) {
   const { t } = useTranslation();
   const { format: money } = useMoney();
@@ -169,55 +170,72 @@ export default function SearchSuggestions({
                   const cls = getChangeClass(asset.changePercent);
                   const isActive = i === activeIndex;
                   const typeColor = ASSET_TYPE_COLORS[asset.type] || '#8b5cf6';
+                  const showSecondary = secondaryAction
+                    && (!secondaryAction.shouldShow || secondaryAction.shouldShow(asset));
+                  const SecondaryIcon = secondaryAction?.icon;
                   return (
-                    <button
+                    <div
                       key={`${asset.type}-${asset.code}`}
-                      onClick={() => handleSelect(asset)}
                       onMouseEnter={() => setActiveIndex(i)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer border-none ${
+                      className={`w-full flex items-center transition-colors ${
                         isActive ? 'bg-surface' : 'bg-transparent hover:bg-surface/50'
                       }`}
                     >
-                      {asset.image
-                        ? (/^https?:\/\//i.test(asset.image)
-                            ? <img src={asset.image} alt={asset.code} className="w-8 h-8 rounded-lg shrink-0" />
-                            : <span className="flex items-center justify-center w-8 h-8 rounded-lg text-xl shrink-0">{asset.image}</span>)
-                        : (
-                          <span
-                            className="flex items-center justify-center w-8 h-8 rounded-lg text-[10px] font-bold shrink-0"
-                            style={{ backgroundColor: typeColor + '18', color: typeColor }}
-                          >
-                            {assetCodeLabel(asset.type, asset.code).slice(0, 3).toUpperCase()}
-                          </span>
-                        )}
+                      <button
+                        onClick={() => handleSelect(asset)}
+                        className="flex-1 min-w-0 flex items-center gap-3 px-4 py-3 text-left bg-transparent border-none cursor-pointer"
+                      >
+                        {asset.image
+                          ? (/^https?:\/\//i.test(asset.image)
+                              ? <img src={asset.image} alt={asset.code} className="w-8 h-8 rounded-lg shrink-0" />
+                              : <span className="flex items-center justify-center w-8 h-8 rounded-lg text-xl shrink-0">{asset.image}</span>)
+                          : (
+                            <span
+                              className="flex items-center justify-center w-8 h-8 rounded-lg text-[10px] font-bold shrink-0"
+                              style={{ backgroundColor: typeColor + '18', color: typeColor }}
+                            >
+                              {assetCodeLabel(asset.type, asset.code).slice(0, 3).toUpperCase()}
+                            </span>
+                          )}
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-fg truncate">
-                            {friendlyName(asset) || assetCodeLabel(asset.type, asset.code)}
-                          </span>
-                          <span
-                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                            style={{ backgroundColor: typeColor + '18', color: typeColor }}
-                          >
-                            {t(`assets.labels.${asset.type}`, { defaultValue: asset.type })}
-                          </span>
-                        </div>
-                        {asset.name && asset.code !== asset.name && !MACRO_TYPES.has(asset.type) && (
-                          <p className="text-[11px] text-fg-subtle font-mono truncate">{assetCodeLabel(asset.type, asset.code)}</p>
-                        )}
-                      </div>
-
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-mono font-semibold text-fg">{money(asset.price, priceCurrencyOf(asset))}</p>
-                        {asset.changePercent != null && (
-                          <div className={`flex items-center justify-end gap-0.5 text-[11px] font-mono font-medium ${changeColors[cls]}`}>
-                            {asset.changePercent > 0 ? <TrendingUp className="h-3 w-3" /> : asset.changePercent < 0 ? <TrendingDown className="h-3 w-3" /> : null}
-                            {asset.changePercent > 0 ? '+' : ''}{asset.changePercent?.toFixed(2)}%
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-fg truncate">
+                              {friendlyName(asset) || assetCodeLabel(asset.type, asset.code)}
+                            </span>
+                            <span
+                              className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+                              style={{ backgroundColor: typeColor + '18', color: typeColor }}
+                            >
+                              {t(`assets.labels.${asset.type}`, { defaultValue: asset.type })}
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    </button>
+                          {asset.name && asset.code !== asset.name && !MACRO_TYPES.has(asset.type) && (
+                            <p className="text-[11px] text-fg-subtle font-mono truncate">{assetCodeLabel(asset.type, asset.code)}</p>
+                          )}
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-mono font-semibold text-fg">{money(asset.price, priceCurrencyOf(asset))}</p>
+                          {asset.changePercent != null && (
+                            <div className={`flex items-center justify-end gap-0.5 text-[11px] font-mono font-medium ${changeColors[cls]}`}>
+                              {asset.changePercent > 0 ? <TrendingUp className="h-3 w-3" /> : asset.changePercent < 0 ? <TrendingDown className="h-3 w-3" /> : null}
+                              {asset.changePercent > 0 ? '+' : ''}{asset.changePercent?.toFixed(2)}%
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                      {showSecondary && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); secondaryAction.onClick(asset); setQuery(''); setDebouncedQuery(''); setOpen(false); }}
+                          title={secondaryAction.label}
+                          aria-label={secondaryAction.label}
+                          className="shrink-0 mr-2 flex items-center justify-center h-8 w-8 rounded-lg bg-accent/10 text-accent hover:bg-accent/20 transition-colors cursor-pointer border-none"
+                        >
+                          {SecondaryIcon && <SecondaryIcon className="h-4 w-4" />}
+                        </button>
+                      )}
+                    </div>
                   );
                 })}
               </div>

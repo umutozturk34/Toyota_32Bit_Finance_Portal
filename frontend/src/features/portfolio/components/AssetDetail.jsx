@@ -131,9 +131,9 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="flex items-center justify-between gap-3"
+        className="flex items-center justify-between gap-3 flex-wrap"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <IconButton
             variant="secondary"
             size={9}
@@ -141,9 +141,9 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
             icon={<ArrowLeft className="h-4 w-4" />}
             aria-label={t('common.back')}
             onClick={onBack}
-            className="hover:-translate-x-0.5"
+            className="hover:-translate-x-0.5 shrink-0"
           />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             {displayBadge ? (
               /^https?:\/\//i.test(displayBadge)
                 ? <img src={displayBadge} alt={displayLabel} className="w-10 h-10 rounded-xl" />
@@ -153,32 +153,32 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
                 {displayBadgeText}
               </span>
             )}
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-fg">{displayLabel}</h1>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg sm:text-xl font-bold text-fg truncate max-w-[180px] sm:max-w-none">{displayLabel}</h1>
                 {lotCount > 1 && (
-                  <span className="inline-flex items-center rounded-md bg-accent/10 text-accent text-[10px] font-bold px-1.5 py-0.5">
+                  <span className="inline-flex items-center rounded-md bg-accent/10 text-accent text-[10px] font-bold px-1.5 py-0.5 shrink-0">
                     {t('assetDetail.lotCount', { count: lotCount, defaultValue: '{{count}} lot' })}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-fg-muted">{displaySub}</p>
+              <p className="text-xs text-fg-muted truncate">{displaySub}</p>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
           <button
             type="button"
             onClick={() => navigate(marketHref(asset.assetType, asset.assetCode))}
-            className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-2 text-xs font-semibold text-fg-muted hover:text-accent hover:border-accent/40 hover:bg-accent/5 transition-all backdrop-blur-sm cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-2.5 sm:px-3 py-2 text-xs font-semibold text-fg-muted hover:text-accent hover:border-accent/40 hover:bg-accent/5 transition-all backdrop-blur-sm cursor-pointer"
             title={t('portfolio.positions.viewOnMarket', { defaultValue: 'Pazar detayı' })}
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            {t('portfolio.positions.viewOnMarket', { defaultValue: 'Pazar detayı' })}
+            <span className="hidden sm:inline">{t('portfolio.positions.viewOnMarket', { defaultValue: 'Pazar detayı' })}</span>
           </button>
           <button
             onClick={() => setAddLotOpen(true)}
-            className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-bright transition-all border-none cursor-pointer"
+            className="flex items-center gap-2 rounded-lg bg-accent px-3 sm:px-4 py-2 text-sm font-semibold text-white hover:bg-accent-bright transition-all border-none cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             {t('assetDetail.newLot')}

@@ -10,7 +10,7 @@ export default function RangeSelector({ value, onChange, layoutId, size = 'sm', 
   const sz = SIZES[size];
   const resolved = idMap ? options.map((o) => ({ ...o, id: idMap[o.id] ?? o.id })) : options;
   return (
-    <div className={`inline-flex items-center border border-border-default bg-bg-base ${sz.container}`}>
+    <div className={`inline-flex max-w-full items-center overflow-x-auto border border-border-default bg-bg-base ${sz.container}`}>
       {resolved.map(({ id, label }) => {
         const active = value === id;
         return (
@@ -18,7 +18,7 @@ export default function RangeSelector({ value, onChange, layoutId, size = 'sm', 
             key={id}
             type="button"
             onClick={() => onChange(id)}
-            className={`relative ${sz.item} transition-all border-none cursor-pointer bg-transparent`}
+            className={`relative shrink-0 ${sz.item} transition-all border-none cursor-pointer bg-transparent`}
           >
             {active && (
               <motion.span

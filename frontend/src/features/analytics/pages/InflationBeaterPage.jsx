@@ -9,7 +9,6 @@ import LoadingState from '../../../shared/components/feedback/LoadingState';
 import ErrorState from '../../../shared/components/feedback/ErrorState';
 import { useInflationBeaters } from '../hooks/useAnalytics';
 import { useMacroIndicators } from '../../macro/hooks/useMacroIndicators';
-import { useMoney } from '../../../shared/hooks/useMoney';
 import { instrumentDisplayName } from '../../../shared/utils/instrumentLabel';
 import BenchmarkPicker from '../components/BenchmarkPicker';
 import { PERIODS } from '../constants';
@@ -76,7 +75,7 @@ export default function InflationBeaterPage() {
     if (sortKey && sortKey !== 'rank') next.set('bsk', sortKey); else next.delete('bsk');
     if (sortDir && sortDir !== 'asc') next.set('bsd', sortDir); else next.delete('bsd');
     setParams(next, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- params/setParams omitted on purpose: setParams is unstable in react-router v7, adding it self-triggers an infinite URL-write loop
   }, [period, benchmark, search, page, verdictFilter, typeFilter, sortKey, sortDir]);
 
   const toggleSort = (key) => {
@@ -89,9 +88,7 @@ export default function InflationBeaterPage() {
     setPage(0);
   };
 
-  const { currency: displayCurrency } = useMoney();
-  const targetCurrencyOverride = displayCurrency === 'ORIGINAL' ? null : displayCurrency;
-  const { data, isLoading, isError, refetch } = useInflationBeaters(period, benchmark, targetCurrencyOverride);
+  const { data, isLoading, isError, refetch } = useInflationBeaters(period, benchmark);
   const { data: macroList = [] } = useMacroIndicators();
 
   const benchmarkOptions = useMemo(
@@ -127,6 +124,9 @@ export default function InflationBeaterPage() {
       range: period,
       from: 'beaters',
     });
+    if (data?.startDate) next.set('start', data.startDate);
+    if (data?.endDate) next.set('end', data.endDate);
+    if (data?.comparisonCurrency) next.set('currency', data.comparisonCurrency);
     navigate({ search: `?${next.toString()}` });
   }
 
@@ -377,7 +377,7 @@ function Results({ data, period, t, search, onSearchChange, page, onPageChange, 
 
       <Card variant="elevated" radius="xl" padding="none" backdropBlur className="overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-xs sm:text-sm min-w-[560px]">
             <thead className="bg-bg-elevated/40">
               <tr>
                 <Th sortKey="rank" activeSort={sortKey} dir={sortDir} onToggle={onToggleSort}>#</Th>

@@ -9,7 +9,7 @@
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
         <th:block th:each="item, iter : ${items}">
             <tr>
-                <td th:style="'padding:14px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;'">
+                <td class="row-card-pad" th:style="'padding:14px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;'">
                     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                         <tr>
                             <td th:if="${item.image != null}" width="54" style="padding:0 14px 0 0;vertical-align:middle;">
@@ -20,7 +20,7 @@
                                 <p th:style="'margin:0;font-size:14px;font-weight:600;color:' + ${cFg} + ';'" th:text="${item.assetName}">Bitcoin</p>
                                 <p class="num" th:style="'margin:2px 0 0;font-size:11px;color:' + ${cMuted} + ';'" th:text="${item.assetCodeUpper}">BTC</p>
                             </td>
-                            <td align="right" style="vertical-align:middle;">
+                            <td align="right" style="vertical-align:middle;white-space:nowrap;">
                                 <p class="num" th:style="'margin:0;font-size:14px;font-weight:700;color:' + ${cFg} + ';'" th:text="${item.priceFormatted}">₺3.674.497,00</p>
                                 <p class="num" th:style="'margin:3px 0 0;font-size:12px;font-weight:600;color:' + (${item.isUp} ? ${cSuccess} : ${cDanger}) + ';'">
                                     <span th:text="${item.isUp ? '▲' : '▼'}">▲</span>
@@ -35,10 +35,10 @@
         </th:block>
     </table>
 
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:22px;">
+    <table role="presentation" class="cta-wrap-table" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:22px;">
         <tr>
-            <td th:style="'background:' + ${cAccent} + ';background-image:linear-gradient(135deg,' + ${cAccent} + ' 0%,' + ${cAccentMid} + ' 50%,' + ${cAccent2} + ' 100%);border-radius:10px;box-shadow:0 6px 22px -4px rgba(99,102,241,0.45);'">
-                <a href="http://localhost/watch" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;line-height:1;" th:text="#{appEmail.watchlistDelta.cta}">Open watchlist</a>
+            <td class="cta-cell" th:style="'background:' + ${cAccent} + ';background-image:linear-gradient(135deg,' + ${cAccent} + ' 0%,' + ${cAccentMid} + ' 50%,' + ${cAccent2} + ' 100%);border-radius:10px;box-shadow:0 6px 22px -4px rgba(99,102,241,0.45);'">
+                <a href="http://localhost/watch" class="email-cta-link" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;line-height:1;" th:text="#{appEmail.watchlistDelta.cta}">Open watchlist</a>
             </td>
         </tr>
     </table>

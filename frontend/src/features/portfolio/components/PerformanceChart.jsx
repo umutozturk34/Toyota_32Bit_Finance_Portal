@@ -162,11 +162,15 @@ function buildEChartsOption(data, color, palette, money, forPrint = false) {
   return {
     backgroundColor: 'transparent',
     animation: !forPrint && data.length < 200,
-    grid: { left: 70, right: 24, top: 16, bottom: showZoom ? 92 : 40, containLabel: false },
+    grid: { left: 8, right: 12, top: 16, bottom: showZoom ? 92 : 40, containLabel: true },
     dataZoom: showZoom ? zoomBlock : [],
     tooltip: forPrint ? { show: false } : {
       trigger: 'axis',
       confine: true,
+      position: (point, _params, _dom, _rect, size) => {
+        const x = Math.max(8, Math.min(point[0] - size.contentSize[0] / 2, size.viewSize[0] - size.contentSize[0] - 8));
+        return [x, 8];
+      },
       backgroundColor: 'transparent',
       borderWidth: 0,
       padding: 0,
@@ -345,12 +349,12 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
         </div>
 
         <div className="flex items-center justify-between px-4 sm:px-5 pt-4 pb-2 gap-2 flex-wrap">
-          <div className="inline-flex gap-0.5 rounded-xl border border-border-default bg-bg-base p-1 flex-wrap">
+          <div className="flex max-w-full gap-0.5 overflow-x-auto rounded-xl border border-border-default bg-bg-base p-1 sm:inline-flex sm:max-w-none sm:flex-wrap">
             {[...ASSET_TYPES, { id: 'CASH' }].map(({ id }) => (
               <button
                 key={id || 'all'}
                 onClick={() => setActiveType(id)}
-                className="relative rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] font-semibold transition-all border-none cursor-pointer bg-transparent"
+                className="relative shrink-0 rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] font-semibold transition-all border-none cursor-pointer bg-transparent"
               >
                 {activeType === id && (
                   <motion.span
@@ -369,21 +373,23 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap max-w-full">
             <button
               type="button"
               onClick={() => navigate(`/analytics?codes=${portfolioId}&types=PORTFOLIO`)}
-              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-mono font-semibold text-accent hover:text-fg border border-accent/40 hover:border-accent/70 bg-accent/8 hover:bg-accent/15 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-mono font-semibold text-accent hover:text-fg border border-accent/40 hover:border-accent/70 bg-accent/8 hover:bg-accent/15 transition-colors cursor-pointer shrink-0"
               title={t('portfolio.performance.compareCta', { defaultValue: 'Karşılaştırmada aç' })}
             >
               <GitCompareArrows className="h-3 w-3" />
-              {t('portfolio.performance.compareCta', { defaultValue: 'Karşılaştır' })}
+              <span className="hidden sm:inline">{t('portfolio.performance.compareCta', { defaultValue: 'Karşılaştır' })}</span>
             </button>
-            <RangeSelector value={range} onChange={setRange} layoutId="perf-range" size="md" />
+            <div className="max-w-full overflow-x-auto">
+              <RangeSelector value={range} onChange={setRange} layoutId="perf-range" size="md" />
+            </div>
           </div>
         </div>
 
-        <div className="relative min-h-[300px] sm:min-h-[420px] px-2">
+        <div className="relative min-h-[260px] sm:min-h-[420px] px-2">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <Spinner size="md" tone="accent" />
@@ -397,11 +403,11 @@ function PerformanceChart({ portfolioId, backfill: backfillProp, forPrint = fals
               lazyUpdate
               style={forPrint
                 ? { height: 360, width: '100%', minHeight: 320, pointerEvents: 'none' }
-                : { height: 'min(60vh, 420px)', minHeight: 300 }}
+                : { height: 'min(60vh, 420px)', minHeight: 260, width: '100%' }}
               opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center h-[300px] sm:h-[420px] gap-3">
+            <div className="flex flex-col items-center justify-center h-[260px] sm:h-[420px] gap-3">
               <TrendingUp className="h-8 w-8 text-fg-subtle" />
               <p className="text-sm text-fg-muted">{t('portfolio.performance.empty')}</p>
             </div>

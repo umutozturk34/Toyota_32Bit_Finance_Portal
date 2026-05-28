@@ -43,7 +43,7 @@ export default function NewsDetail() {
     const hasContent = article.content && article.content.trim().length > 0;
 
     return (
-        <div className="max-w-4xl mx-auto py-6 space-y-6">
+        <div className="max-w-4xl mx-auto py-6 space-y-6 min-w-0">
             <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -65,7 +65,7 @@ export default function NewsDetail() {
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 className="rounded-xl overflow-hidden bg-bg-elevated card-hover backdrop-blur-md border border-border-default"
             >
-                <div className="relative w-full h-64 sm:h-80 overflow-hidden bg-surface">
+                <div className="relative w-full h-56 sm:h-72 md:h-80 overflow-hidden bg-surface">
                     <img
                         src={imgSrc}
                         alt={article.title}
@@ -74,37 +74,38 @@ export default function NewsDetail() {
                     <div className="absolute inset-0 bg-gradient-to-t from-bg-elevated via-bg-elevated/20 to-transparent" />
                 </div>
 
-                <div className="p-6 sm:p-8 space-y-5">
-                    <div className="flex items-center gap-3 flex-wrap">
+                <div className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-5 min-w-0">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
                         <CategoryBadge category={article.category} />
                         {article.sourceName && (
-                            <div className="flex items-center gap-1.5 text-fg-subtle text-xs">
-                                <Building2 size={12} strokeWidth={1.6} />
-                                <span>{article.sourceName}</span>
+                            <div className="flex items-center gap-1.5 text-fg-subtle text-xs min-w-0">
+                                <Building2 size={12} strokeWidth={1.6} className="shrink-0" />
+                                <span className="truncate max-w-[160px] sm:max-w-none">{article.sourceName}</span>
                             </div>
                         )}
                         <div className="flex items-center gap-1.5 text-fg-subtle text-xs">
-                            <Calendar size={12} strokeWidth={1.6} />
+                            <Calendar size={12} strokeWidth={1.6} className="shrink-0" />
                             <span>{formatDateTimeFull(article.publishedAt)}</span>
                         </div>
                     </div>
 
-                    <h1 className="text-fg text-2xl sm:text-3xl font-bold leading-tight tracking-[-0.02em]">
+                    <h1 className="text-fg text-xl sm:text-2xl md:text-3xl font-bold leading-tight tracking-[-0.02em] break-words">
                         {article.title}
                     </h1>
 
                     {article.description && !hasContent && (
-                        <p className="text-fg-muted text-base leading-relaxed">
+                        <p className="text-fg-muted text-sm sm:text-base leading-relaxed break-words">
                             {article.description}
                         </p>
                     )}
 
                     {hasContent && (
                         <div
-                            className="prose prose-invert prose-sm max-w-none text-fg-muted leading-relaxed
+                            className="prose prose-invert prose-sm max-w-none text-fg-muted leading-relaxed break-words
                                        prose-headings:text-fg prose-a:text-accent prose-a:no-underline hover:prose-a:underline
-                                       prose-img:rounded-lg prose-img:max-h-96 prose-img:object-cover
-                                       prose-p:mb-4 prose-li:mb-1"
+                                       prose-img:rounded-lg prose-img:w-full prose-img:h-auto prose-img:max-h-96 prose-img:object-cover
+                                       prose-p:mb-4 prose-li:mb-1
+                                       prose-pre:overflow-x-auto prose-pre:whitespace-pre"
                             dangerouslySetInnerHTML={{ __html: article.content }}
                         />
                     )}

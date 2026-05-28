@@ -322,7 +322,8 @@
     "addPage": "New page",
     "newPageName": "New page",
     "deletePage": "Delete page",
-    "tabRenameHint": "Click → rename"
+    "tabRenameHint": "Click → rename",
+    "defaultName": "Home"
   },
   "widgetTray": {
     "widgetGallery": "Widget gallery",
@@ -791,6 +792,7 @@
       "openLabel": "Open",
       "highLabel": "High",
       "lowLabel": "Low",
+      "closeLabel": "Prev Close",
       "volumeLabel": "Volume",
       "loading": "Loading stock data…",
       "error": "Failed to load stock data",
@@ -1499,6 +1501,10 @@
     }
   },
   "onboarding": {
+    "landing": {
+      "title": "Finance Portal",
+      "subtitle": "Welcome — a few quick settings and you're set."
+    },
     "welcomeTitle": "Welcome to Finance Portal",
     "welcomeSubtitle": "A finance dashboard combining market data, portfolio tracking and notifications in one interface.",
     "startCta": "Let's Start",

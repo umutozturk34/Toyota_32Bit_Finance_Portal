@@ -94,8 +94,8 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
         hoveredOverlayRef.current = null;
         const chart = createChart(chartContainerRef.current, {
             ...getChartOptions(isDark),
-            width: chartContainerRef.current.clientWidth,
-            height: chartContainerRef.current.clientHeight || 500,
+            width: chartContainerRef.current.clientWidth || 300,
+            height: chartContainerRef.current.clientHeight || 400,
         });
         chartRef.current = chart;
         const candleData = data.candles.map(c => {
@@ -306,7 +306,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             } catch { void 0; }
             if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- imperative lightweight-charts create/subscribe/destroy; isDark and refs omitted on purpose so a separate [isDark] effect retints without tearing down the chart
     }, [data, symbol, chartType, timeRange, i18n.language, showSecondaryLines, hasCompare]);
 
     useEffect(() => {
@@ -504,7 +504,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 try { mainSeries.applyOptions({ visible: true }); } catch { void 0; }
             }
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- compare-series lifecycle keyed by a serialized symbol:length string to avoid array-identity rebuilds; compareDatas intentionally not a raw dep
     }, [compareDatas.map(c => `${c.symbol}:${c.data?.candles?.length ?? 0}`).join('|'), hasCompare, data, isDark, symbol, chartType, showSecondaryLines]);
 
     useEffect(() => {

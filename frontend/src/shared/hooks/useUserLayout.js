@@ -7,6 +7,7 @@ import { STALE, GC } from '../constants/query';
 const LAYOUT_KEY = ['userLayout'];
 const SCHEMA_VERSION = 4;
 const DEFAULT_PAGE_ID = 'page-1';
+export const DEFAULT_PAGE_NAME_SEED = 'Anasayfa';
 const MAX_PAGES = 5;
 
 const DEFAULT_SECTIONS = Object.freeze([

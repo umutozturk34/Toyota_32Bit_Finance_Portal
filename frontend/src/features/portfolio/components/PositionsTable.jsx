@@ -305,14 +305,14 @@ function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetC
         <ChevronRight onClick={assetClick} className="h-4 w-4 text-fg-muted group-hover:text-accent group-hover:translate-x-1 transition-all cursor-pointer" />
       </div>
 
-      <div className="lg:hidden p-4 space-y-3">
-        <div className="flex items-center justify-between gap-2">
+      <div className="lg:hidden p-3 sm:p-4 space-y-3">
+        <div className="flex items-start justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2.5 min-w-0 flex-1" onClick={assetClick}>
             {!pending && <SelectableCheckbox checked={!!selected} onClick={onToggleSelect} label={pos.assetCode} />}
             <PositionAssetBadge pos={pos} />
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <p className="text-sm font-semibold text-fg truncate">{pos.assetCode}</p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="text-sm font-semibold text-fg truncate max-w-[120px]">{pos.assetCode}</p>
                 <button
                   type="button"
                   onClick={marketDetailClick}
@@ -335,7 +335,7 @@ function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetC
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
             <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>{formatPercent(pos.pnlPercent)}</span>
             {showEdit && (
               <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
@@ -363,13 +363,13 @@ function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetC
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.quantityCol')}</p><p className="font-mono text-fg font-medium">{Number(pos.quantity).toLocaleString(localeTag, { maximumFractionDigits: 6 })}</p></div>
-          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryDateCol')}</p><p className="font-mono text-fg font-medium">{formatEntryDate(pos.entryDate, localeTag)}</p></div>
+          <div className="rounded-lg bg-bg-base px-2.5 py-2 min-w-0"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.quantityCol')}</p><p className="font-mono text-fg font-medium truncate">{Number(pos.quantity).toLocaleString(localeTag, { maximumFractionDigits: 6 })}</p></div>
+          <div className="rounded-lg bg-bg-base px-2.5 py-2 min-w-0"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryDateCol')}</p><p className="font-mono text-fg font-medium truncate">{formatEntryDate(pos.entryDate, localeTag)}</p></div>
           {(isClosedSpot || isClosedDerivative) && (
-            <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.exitDateLabel')}</p><p className="font-mono text-fg font-medium">{formatEntryDate(pos.exitDate, localeTag) || '—'}</p></div>
+            <div className="rounded-lg bg-bg-base px-2.5 py-2 min-w-0"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.exitDateLabel')}</p><p className="font-mono text-fg font-medium truncate">{formatEntryDate(pos.exitDate, localeTag) || '—'}</p></div>
           )}
-          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryPriceCol')}</p><p className="font-mono text-fg font-medium">{money(pos.entryPrice, 'TRY', { dateAt: pos.entryDate })}</p></div>
-          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.pnlCol')}</p><p className={`font-mono font-semibold ${changeColors[pnlClass]}`} title={money(pos.pnlTry)}>{bigMoney(pos.pnlTry)}</p></div>
+          <div className="rounded-lg bg-bg-base px-2.5 py-2 min-w-0"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryPriceCol')}</p><p className="font-mono text-fg font-medium truncate" title={money(pos.entryPrice, 'TRY', { dateAt: pos.entryDate })}>{money(pos.entryPrice, 'TRY', { dateAt: pos.entryDate })}</p></div>
+          <div className="rounded-lg bg-bg-base px-2.5 py-2 min-w-0"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.pnlCol')}</p><p className={`font-mono font-semibold truncate ${changeColors[pnlClass]}`} title={money(pos.pnlTry)}>{bigMoney(pos.pnlTry)}</p></div>
         </div>
       </div>
       </div>

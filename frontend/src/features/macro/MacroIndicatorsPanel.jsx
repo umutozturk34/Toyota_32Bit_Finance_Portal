@@ -80,8 +80,7 @@ export default function MacroIndicatorsPanel() {
       });
     }
     return list;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, currencyFilter, allIndicators, searchQuery]);
+  }, [activeTab, currencyFilter, allIndicators, searchQuery, t]);
 
   const prominent = useMemo(
     () => sortByProminentOrder(allIndicators.filter((i) => i.prominent)),

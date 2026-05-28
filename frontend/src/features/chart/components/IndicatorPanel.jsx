@@ -41,7 +41,7 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                     {indicators.map(ind => (
                         <div
                             key={ind.id}
-                            className="group flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-surface/50 hover:bg-surface transition-colors duration-150 min-w-0"
+                            className="group flex items-center gap-2 px-2.5 py-2 min-h-[40px] rounded-lg bg-surface/50 hover:bg-surface transition-colors duration-150 min-w-0"
                         >
                             <button
                                 onClick={() => toggleIndicator(ind.id)}
@@ -120,12 +120,12 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
             {}
             {showAddForm ? (
                 <div className="p-2.5 rounded-lg bg-surface/50 border border-border-default space-y-2.5">
-                    <div className="flex gap-1">
+                    <div className="flex flex-wrap gap-1">
                         {availableTypes.map(t => (
                             <button
                                 key={t.value}
                                 onClick={() => handleAddType(t.value)}
-                                className={`flex-1 px-2 py-1.5 rounded-md text-xs font-semibold border transition-all duration-150 cursor-pointer ${newType === t.value
+                                className={`flex-1 min-w-[48px] px-2 py-2 min-h-[36px] rounded-md text-xs font-semibold border transition-all duration-150 cursor-pointer ${newType === t.value
                                     ? 'bg-accent text-white border-accent'
                                     : 'bg-transparent text-fg-muted border-border-default hover:text-fg hover:border-fg-subtle'
                                     }`}
@@ -145,13 +145,13 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                             className="w-16 px-2 py-1 rounded-md bg-bg-base border border-border-default text-xs text-fg outline-none focus:border-accent"
                         />
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center flex-wrap gap-1.5">
                         <label className="text-[10px] text-fg-muted uppercase tracking-wider font-medium mr-1">{t('chart.indicators.color')}</label>
                         {COLOR_PRESETS.map(c => (
                             <button
                                 key={c}
                                 onClick={() => setNewColor(c)}
-                                className="w-5 h-5 rounded-full border-none cursor-pointer hover:scale-110 transition-transform"
+                                className="w-6 h-6 rounded-full border-none cursor-pointer hover:scale-110 transition-transform"
                                 style={{
                                     background: c,
                                     outline: newColor === c ? '2px solid var(--color-accent)' : 'none',
@@ -163,13 +163,13 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
                     <div className="flex gap-1.5">
                         <button
                             onClick={handleAdd}
-                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md bg-accent text-white text-xs font-semibold border-none cursor-pointer hover:bg-accent-bright transition-colors"
+                            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 min-h-[40px] rounded-md bg-accent text-white text-xs font-semibold border-none cursor-pointer hover:bg-accent-bright transition-colors"
                         >
                             <Plus className="w-3 h-3" /> {t('chart.indicators.add')}
                         </button>
                         <button
                             onClick={() => setShowAddForm(false)}
-                            className="px-3 py-1.5 rounded-md bg-transparent text-fg-muted text-xs font-medium border border-border-default cursor-pointer hover:text-fg hover:border-fg-subtle transition-colors"
+                            className="px-3 py-2 min-h-[40px] rounded-md bg-transparent text-fg-muted text-xs font-medium border border-border-default cursor-pointer hover:text-fg hover:border-fg-subtle transition-colors"
                         >
                             {t('chart.indicators.cancel')}
                         </button>
@@ -178,7 +178,7 @@ const IndicatorPanel = ({ indicators, addIndicator, removeIndicator, updateIndic
             ) : (
                 <button
                     onClick={() => setShowAddForm(true)}
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-fg-muted bg-transparent border border-dashed border-border-default cursor-pointer hover:text-fg hover:border-fg-subtle hover:bg-surface/50 transition-all duration-150"
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 min-h-[40px] rounded-lg text-xs font-medium text-fg-muted bg-transparent border border-dashed border-border-default cursor-pointer hover:text-fg hover:border-fg-subtle hover:bg-surface/50 transition-all duration-150"
                 >
                     <Plus className="w-3 h-3" /> {t('chart.indicators.addIndicator')}
                 </button>

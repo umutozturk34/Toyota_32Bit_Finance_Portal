@@ -38,7 +38,7 @@ export default class ErrorBoundary extends Component {
     const message = error?.message || i18n.t('errorBoundary.fallbackMessage');
 
     return (
-      <div className="flex items-center justify-center min-h-[70vh] p-6">
+      <div className="flex items-center justify-center min-h-[70vh] p-3 sm:p-6">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -67,7 +67,7 @@ export default class ErrorBoundary extends Component {
               </span>
             </div>
 
-            <div className="flex flex-col items-center text-center gap-4 px-8 py-9">
+            <div className="flex flex-col items-center text-center gap-4 px-5 sm:px-8 py-7 sm:py-9">
               <motion.div
                 initial={{ scale: 0.7, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -90,11 +90,11 @@ export default class ErrorBoundary extends Component {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                 <button
                   type="button"
                   onClick={this.handleRetry}
-                  className="flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-accent-bright transition-colors border-none cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 min-h-[36px] text-xs font-semibold text-white hover:bg-accent-bright transition-colors border-none cursor-pointer"
                 >
                   <RefreshCw className="h-3 w-3" strokeWidth={2.2} />
                   {i18n.t('errorBoundary.retry')}
@@ -102,7 +102,7 @@ export default class ErrorBoundary extends Component {
                 <button
                   type="button"
                   onClick={this.handleHome}
-                  className="flex items-center gap-1.5 rounded-lg border border-border-default bg-transparent px-3.5 py-1.5 text-xs font-medium text-fg-muted hover:text-fg hover:bg-surface transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-lg border border-border-default bg-transparent px-3.5 py-2 min-h-[36px] text-xs font-medium text-fg-muted hover:text-fg hover:bg-surface transition-colors cursor-pointer"
                 >
                   <Home className="h-3 w-3" strokeWidth={2.2} />
                   {i18n.t('errorBoundary.home')}

@@ -49,21 +49,31 @@ function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
             delayMs={index * 70}
           />
         )}
-        <div className="relative z-10 flex items-center justify-between gap-1.5">
-          <div className="flex items-center gap-1.5 min-w-0">
-            {asset.image
-              ? (/^https?:\/\//i.test(asset.image)
-                  ? <img src={asset.image} alt="" loading="lazy" decoding="async" width="16" height="16" className="w-4 h-4 rounded-full ring-1 ring-border-default shrink-0" />
-                  : <span className="w-4 h-4 rounded-full shrink-0 flex items-center justify-center text-xs leading-none">{asset.image}</span>)
-              : <span className="w-4 h-4 rounded-full shrink-0 flex items-center justify-center text-[7px] font-bold text-white" style={{ background: accent }}>{shortLabel(asset).slice(0, 2)}</span>}
-            <span className="font-display text-[12px] font-bold text-fg leading-none truncate">{shortLabel(asset)}</span>
+        <div className="relative z-10 space-y-1">
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1.5 min-w-0">
+              {asset.image
+                ? (/^https?:\/\//i.test(asset.image)
+                    ? <img src={asset.image} alt="" loading="lazy" decoding="async" width="16" height="16" className="w-4 h-4 rounded-full ring-1 ring-border-default shrink-0" />
+                    : <span className="w-4 h-4 rounded-full shrink-0 flex items-center justify-center text-xs leading-none">{asset.image}</span>)
+                : <span className="w-4 h-4 rounded-full shrink-0 flex items-center justify-center text-[7px] font-bold text-white" style={{ background: accent }}>{shortLabel(asset).slice(0, 2)}</span>}
+              <span className="font-display text-[12px] font-bold text-fg leading-none truncate">{shortLabel(asset)}</span>
+            </div>
+            <span className="font-mono text-[8px] font-semibold tracking-wider uppercase leading-none px-1 py-0.5 rounded-[3px] bg-surface text-fg-muted shrink-0">
+              {typeAbbr(asset.type)}
+            </span>
           </div>
-          <span className="font-mono text-[8px] font-semibold tracking-wider uppercase leading-none px-1 py-0.5 rounded-[3px] bg-surface text-fg-muted shrink-0">
-            {typeAbbr(asset.type)}
-          </span>
+          {hasChange && (
+            <div>
+              <span className={`inline-flex items-center gap-0.5 rounded-md px-1 py-0.5 text-[9px] sm:text-[10px] font-mono font-semibold tabular-nums ${changeBg[cls]} ${changeColors[cls]}`}>
+                {isUp ? <ArrowUpRight className="h-2.5 w-2.5" /> : <ArrowDownRight className="h-2.5 w-2.5" />}
+                {formatPercentAbs(asset.changePercent)}
+              </span>
+            </div>
+          )}
         </div>
-        <div className="relative z-10 flex items-end justify-between gap-1.5 min-w-0">
-          <p className="font-mono text-[14px] font-bold tracking-tight tabular-nums leading-none truncate min-w-0 flex-1">
+        <div className="relative z-10 min-w-0">
+          <p className="font-mono text-[12px] min-[480px]:text-[13px] sm:text-[15px] font-bold tracking-tight tabular-nums leading-none truncate">
             {isPending
               ? <span className="text-fg-subtle inline-flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
@@ -71,12 +81,6 @@ function AssetCardImpl({ asset, index = 0, onClick, editMode, onRemove }) {
                 </span>
               : <span className="text-fg">{money(asset.price, priceCurrencyOf(asset))}</span>}
           </p>
-          {hasChange && (
-            <div className={`shrink-0 inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-mono font-semibold tabular-nums ${changeBg[cls]} ${changeColors[cls]}`}>
-              {isUp ? <ArrowUpRight className="h-2.5 w-2.5" /> : <ArrowDownRight className="h-2.5 w-2.5" />}
-              {formatPercentAbs(asset.changePercent)}
-            </div>
-          )}
         </div>
       </button>
       {editMode && onRemove && (
@@ -142,13 +146,12 @@ export default function AssetCardsSection({ data, editMode = false, config = {},
       className="h-full grid gap-2 grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(110px,1fr))]"
       style={{ gridAutoRows: '1fr' }}
     >
-      <AnimatePresence mode="popLayout" initial={false}>
+      <AnimatePresence initial={false}>
         {visibleItems.map((asset, i) => {
           const key = `${asset.type}-${asset.code}`;
           return (
             <motion.div
               key={key}
-              layout
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.92 }}

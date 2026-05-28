@@ -25,7 +25,7 @@ export default function SortSelect({ value, direction, options, onSortChange, on
       <div ref={ref} className="relative">
         <button
           onClick={() => setOpen(!open)}
-          className={`flex items-center gap-2 rounded-2xl border bg-bg-elevated backdrop-blur-md px-3.5 py-2 cursor-pointer transition-all ${
+          className={`flex items-center gap-2 rounded-2xl border bg-bg-elevated backdrop-blur-md px-3.5 py-2 min-h-10 cursor-pointer transition-all ${
             open ? 'border-accent/40 shadow-sm shadow-accent/10' : 'border-border-default hover:border-border-hover'
           }`}
         >
@@ -40,7 +40,7 @@ export default function SortSelect({ value, direction, options, onSortChange, on
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 6, scale: 0.96 }}
               transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-              className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-2 z-50 min-w-[180px] rounded-2xl border border-border-default p-1.5 shadow-xl`}
+              className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} top-full mt-2 z-50 min-w-[180px] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-border-default p-1.5 shadow-xl`}
               style={{
                 background: 'var(--color-bg-base)',
                 boxShadow: '0 12px 40px rgba(0,0,0,0.18), 0 0 0 1px rgba(99,102,241,0.08)',
@@ -75,7 +75,7 @@ export default function SortSelect({ value, direction, options, onSortChange, on
         onClick={() => onDirectionChange(isDesc ? 'asc' : 'desc')}
         whileTap={{ scale: 0.9 }}
         aria-label={t('common.toggleSortDirection')}
-        className="flex items-center justify-center w-9 h-9 rounded-2xl border border-border-default bg-bg-elevated backdrop-blur-md text-accent hover:border-accent/30 hover:shadow-sm hover:shadow-accent/10 transition-all cursor-pointer overflow-hidden"
+        className="flex items-center justify-center w-10 h-10 sm:w-9 sm:h-9 rounded-2xl border border-border-default bg-bg-elevated backdrop-blur-md text-accent hover:border-accent/30 hover:shadow-sm hover:shadow-accent/10 transition-all cursor-pointer overflow-hidden"
       >
         <AnimatePresence mode="wait">
           <motion.div

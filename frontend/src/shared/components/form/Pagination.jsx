@@ -8,12 +8,12 @@ export default function Pagination({ page, totalPages, onPageChange }) {
   const pages = buildPageNumbers(page, totalPages);
 
   return (
-    <div className="flex items-center justify-center gap-1.5 pt-2">
+    <div className="flex flex-wrap items-center justify-center gap-1.5 pt-2">
       <button
         onClick={() => onPageChange(page - 1)}
         disabled={page === 0}
         aria-label={t('common.previousPage')}
-        className="flex items-center justify-center w-8 h-8 rounded-lg border border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:bg-surface disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer"
+        className="flex items-center justify-center w-10 h-10 sm:w-8 sm:h-8 rounded-lg border border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:bg-surface disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer"
       >
         <ChevronLeft className="h-3.5 w-3.5" />
       </button>
@@ -25,7 +25,7 @@ export default function Pagination({ page, totalPages, onPageChange }) {
           <button
             key={p}
             onClick={() => onPageChange(p)}
-            className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer border ${
+            className={`w-10 h-10 sm:w-8 sm:h-8 rounded-lg text-xs font-semibold transition-colors cursor-pointer border ${
               p === page
                 ? 'bg-accent/15 text-accent border-accent/30'
                 : 'border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:bg-surface'
@@ -40,7 +40,7 @@ export default function Pagination({ page, totalPages, onPageChange }) {
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages - 1}
         aria-label={t('common.nextPage')}
-        className="flex items-center justify-center w-8 h-8 rounded-lg border border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:bg-surface disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer"
+        className="flex items-center justify-center w-10 h-10 sm:w-8 sm:h-8 rounded-lg border border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:bg-surface disabled:opacity-30 disabled:cursor-default transition-colors cursor-pointer"
       >
         <ChevronRight className="h-3.5 w-3.5" />
       </button>

@@ -30,7 +30,7 @@
 
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:22px;">
         <tr>
-            <td th:style="'padding:14px 18px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;'">
+            <td class="info-cell" th:style="'padding:14px 18px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;'">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                     <tr th:if="${totalValue != null}">
                         <td style="padding:5px 0;"><span th:style="'font-size:12.5px;color:' + ${cMuted} + ';'" th:text="#{appEmail.portfolioUpdated.totalValueLabel}">Total value</span></td>
@@ -52,10 +52,10 @@
         </tr>
     </table>
 
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:20px;">
+    <table role="presentation" class="cta-wrap-table" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:20px;">
         <tr>
-            <td th:style="'background:' + ${cAccent} + ';background-image:linear-gradient(135deg,' + ${cAccent} + ' 0%,' + ${cAccentMid} + ' 50%,' + ${cAccent2} + ' 100%);border-radius:10px;box-shadow:0 6px 22px -4px rgba(99,102,241,0.45);'">
-                <a href="http://localhost/portfolio" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;line-height:1;" th:text="#{appEmail.portfolioUpdated.cta}">Open portfolio</a>
+            <td class="cta-cell" th:style="'background:' + ${cAccent} + ';background-image:linear-gradient(135deg,' + ${cAccent} + ' 0%,' + ${cAccentMid} + ' 50%,' + ${cAccent2} + ' 100%);border-radius:10px;box-shadow:0 6px 22px -4px rgba(99,102,241,0.45);'">
+                <a href="http://localhost/portfolio" class="email-cta-link" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;line-height:1;" th:text="#{appEmail.portfolioUpdated.cta}">Open portfolio</a>
             </td>
         </tr>
     </table>

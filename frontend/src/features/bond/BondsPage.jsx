@@ -58,16 +58,16 @@ function BondCard({ bond, onClick, dataTour }) {
                         <span className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-accent/10 text-accent shrink-0">
                             <Landmark className="w-5 h-5 sm:w-6 sm:h-6" />
                         </span>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                             <h3 className="text-base sm:text-lg font-bold text-fg truncate">{bond.isinCode}</h3>
                             <span className="block text-xs sm:text-sm text-fg-muted truncate">{bond.seriesCode}</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap">
-                        <span className={`rounded-lg border px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold tracking-wider ${typeColor}`}>
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap justify-end">
+                        <span className={`rounded-lg border px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold tracking-wider whitespace-nowrap ${typeColor}`}>
                             {t(`market.bond.types.${bond.bondType}`, { defaultValue: bond.bondType })}
                         </span>
-                        <span className="font-mono text-lg sm:text-2xl font-bold text-fg">
+                        <span className="font-mono text-base sm:text-2xl font-bold text-fg tabular-nums">
                             {formatPrice(bond.baseIndex, localeTag)}
                         </span>
                         <ChevronRight className="h-4 w-4 text-fg-subtle" />
@@ -218,7 +218,7 @@ export default function BondsPage() {
             />
 
             <div className="flex flex-wrap items-center gap-3">
-                <div className="w-48">
+                <div className="w-full sm:w-48">
                     <SearchInput
                         value={listParams.search}
                         onChange={listParams.setSearch}
@@ -259,13 +259,15 @@ export default function BondsPage() {
             </div>
 
             {bondTypes.length > 0 && (
-                <FilterTabs
-                    items={bondTypes.map(b => ({ type: b.type, count: b.count, label: t(`market.bond.types.${b.type}`, { defaultValue: b.type }) }))}
-                    activeId={typeFilter}
-                    onSelect={handleTypeFilter}
-                    allCount={bondTypes.reduce((sum, b) => sum + Number(b.count), 0)}
-                    layoutId="bond-type"
-                />
+                <div className="w-full min-w-0">
+                    <FilterTabs
+                        items={bondTypes.map(b => ({ type: b.type, count: b.count, label: t(`market.bond.types.${b.type}`, { defaultValue: b.type }) }))}
+                        activeId={typeFilter}
+                        onSelect={handleTypeFilter}
+                        allCount={bondTypes.reduce((sum, b) => sum + Number(b.count), 0)}
+                        layoutId="bond-type"
+                    />
+                </div>
             )}
 
             <AnimatePresence>

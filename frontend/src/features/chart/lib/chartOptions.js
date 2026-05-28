@@ -1,6 +1,7 @@
 import { CrosshairMode, LineStyle } from 'lightweight-charts';
 
 export const getChartOptions = (isDark) => ({
+    autoSize: true,
     layout: {
         background: { color: isDark ? '#050506' : '#ffffff' },
         textColor: isDark ? '#7a7a85' : '#6b7280',

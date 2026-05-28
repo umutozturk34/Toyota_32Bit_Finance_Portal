@@ -35,13 +35,57 @@ export function LotsTable({ lots, t, money, bigMoney, onEditLot, onSellLot, onRe
         {lots.map((lot) => {
           const lotPnlClass = getChangeClass(lot.pnlTry);
           const isLotClosed = !!lot.exitDate;
+          const actions = (
+            <div className="flex items-center justify-start gap-1">
+              {!isLotClosed && onEditLot && (
+                <button
+                  onClick={() => onEditLot(lot)}
+                  className="flex items-center justify-center w-7 h-7 md:w-6 md:h-6 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer"
+                  aria-label={t('common.edit')}
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              )}
+              {!isLotClosed && onSellLot && (
+                <button
+                  onClick={() => onSellLot(lot)}
+                  className="flex items-center justify-center w-7 h-7 md:w-6 md:h-6 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer"
+                  aria-label={lot.assetType === 'VIOP'
+                    ? t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')
+                    : t('portfolio.sell.title', { code: lot.assetCode })}
+                >
+                  {lot.assetType === 'VIOP'
+                    ? <XCircle className="h-3 w-3" />
+                    : <ShoppingBag className="h-3 w-3" />}
+                </button>
+              )}
+              {isLotClosed && onReopenLot && (
+                <button
+                  onClick={() => onReopenLot(lot)}
+                  className="flex items-center justify-center w-7 h-7 md:w-6 md:h-6 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer"
+                  aria-label={t('portfolio.reopen.title', 'Tekrar aç')}
+                >
+                  <RotateCcw className="h-3 w-3" />
+                </button>
+              )}
+              {onDeleteLot && (
+                <button
+                  onClick={() => onDeleteLot(lot)}
+                  className="flex items-center justify-center w-7 h-7 md:w-6 md:h-6 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer"
+                  aria-label={t('common.delete')}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          );
           return (
             <motion.div
               key={lot.id}
               layout
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`grid grid-cols-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_72px_minmax(0,0.7fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-3 items-center px-3 py-2 rounded-lg border border-border-default min-w-0 ${
+              className={`hidden md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_72px_minmax(0,0.7fr)_minmax(0,1fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)] gap-3 items-center px-3 py-2 rounded-lg border border-border-default min-w-0 ${
                 isLotClosed ? 'bg-bg-elevated/50 opacity-70' : 'bg-bg-elevated hover:border-accent/40'
               } transition-colors`}
             >
@@ -71,47 +115,93 @@ export function LotsTable({ lots, t, money, bigMoney, onEditLot, onSellLot, onRe
                   {formatPercent(lot.pnlPercent)}
                 </span>
               </div>
-              <div className="flex justify-start gap-1">
-                {!isLotClosed && onEditLot && (
-                  <button
-                    onClick={() => onEditLot(lot)}
-                    className="flex items-center justify-center w-6 h-6 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer"
-                    aria-label={t('common.edit')}
-                  >
-                    <Pencil className="h-3 w-3" />
-                  </button>
-                )}
-                {!isLotClosed && onSellLot && (
-                  <button
-                    onClick={() => onSellLot(lot)}
-                    className="flex items-center justify-center w-6 h-6 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer"
-                    aria-label={lot.assetType === 'VIOP'
-                      ? t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')
-                      : t('portfolio.sell.title', { code: lot.assetCode })}
-                  >
-                    {lot.assetType === 'VIOP'
-                      ? <XCircle className="h-3 w-3" />
-                      : <ShoppingBag className="h-3 w-3" />}
-                  </button>
-                )}
-                {isLotClosed && onReopenLot && (
-                  <button
-                    onClick={() => onReopenLot(lot)}
-                    className="flex items-center justify-center w-6 h-6 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer"
-                    aria-label={t('portfolio.reopen.title', 'Tekrar aç')}
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                  </button>
-                )}
-                {onDeleteLot && (
-                  <button
-                    onClick={() => onDeleteLot(lot)}
-                    className="flex items-center justify-center w-6 h-6 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer"
-                    aria-label={t('common.delete')}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                )}
+              {actions}
+            </motion.div>
+          );
+        })}
+        {lots.map((lot) => {
+          const lotPnlClass = getChangeClass(lot.pnlTry);
+          const isLotClosed = !!lot.exitDate;
+          return (
+            <motion.div
+              key={`m-${lot.id}`}
+              layout
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`md:hidden p-3 rounded-lg border border-border-default min-w-0 space-y-2 ${
+                isLotClosed ? 'bg-bg-elevated/50 opacity-70' : 'bg-bg-elevated'
+              } transition-colors`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <PositionStatusBadge closed={isLotClosed} isDerivative={lot.assetType === 'VIOP'} />
+                  <span className="text-[11px] font-mono text-fg-muted truncate">
+                    {formatEntryDate(lot.entryDate)}
+                    {lot.exitDate ? ` → ${formatEntryDate(lot.exitDate)}` : ''}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {!isLotClosed && onEditLot && (
+                    <button
+                      onClick={() => onEditLot(lot)}
+                      className="flex items-center justify-center w-7 h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer"
+                      aria-label={t('common.edit')}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </button>
+                  )}
+                  {!isLotClosed && onSellLot && (
+                    <button
+                      onClick={() => onSellLot(lot)}
+                      className="flex items-center justify-center w-7 h-7 rounded-md text-warning bg-warning/10 hover:bg-warning/20 transition-colors border-none cursor-pointer"
+                      aria-label={lot.assetType === 'VIOP'
+                        ? t('portfolio.derivatives.closeTitle', 'Pozisyon Kapat')
+                        : t('portfolio.sell.title', { code: lot.assetCode })}
+                    >
+                      {lot.assetType === 'VIOP'
+                        ? <XCircle className="h-3 w-3" />
+                        : <ShoppingBag className="h-3 w-3" />}
+                    </button>
+                  )}
+                  {isLotClosed && onReopenLot && (
+                    <button
+                      onClick={() => onReopenLot(lot)}
+                      className="flex items-center justify-center w-7 h-7 rounded-md text-success bg-success/10 hover:bg-success/20 transition-colors border-none cursor-pointer"
+                      aria-label={t('portfolio.reopen.title', 'Tekrar aç')}
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                    </button>
+                  )}
+                  {onDeleteLot && (
+                    <button
+                      onClick={() => onDeleteLot(lot)}
+                      className="flex items-center justify-center w-7 h-7 rounded-md text-danger bg-danger/10 hover:bg-danger/20 transition-colors border-none cursor-pointer"
+                      aria-label={t('common.delete')}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div className="rounded-md bg-bg-base/60 px-2 py-1.5">
+                  <p className="text-fg-muted text-[10px]">{t('portfolio.positions.quantityCol')}</p>
+                  <p className="font-mono text-fg truncate">{Number(lot.quantity).toLocaleString(currentLocaleTag(), { maximumFractionDigits: 6 })}</p>
+                </div>
+                <div className="rounded-md bg-bg-base/60 px-2 py-1.5">
+                  <p className="text-fg-muted text-[10px]">{t('portfolio.positions.entryPriceCol')}</p>
+                  <p className="font-mono text-fg truncate">{money(lot.entryPrice, 'TRY', { dateAt: lot.entryDate })}</p>
+                </div>
+                <div className="rounded-md bg-bg-base/60 px-2 py-1.5">
+                  <p className="text-fg-muted text-[10px]">{t('portfolio.positions.marketValueCol')}</p>
+                  <p className="font-mono text-fg truncate" title={money(lot.marketValueTry)}>{bigMoney(lot.marketValueTry)}</p>
+                </div>
+                <div className="rounded-md bg-bg-base/60 px-2 py-1.5">
+                  <p className="text-fg-muted text-[10px]">{t('portfolio.positions.pnlCol')}</p>
+                  <p className={`font-mono font-semibold ${changeColors[lotPnlClass]} truncate`} title={money(lot.pnlTry)}>
+                    {bigMoney(lot.pnlTry)} <span className="text-[10px]">({formatPercent(lot.pnlPercent)})</span>
+                  </p>
+                </div>
               </div>
             </motion.div>
           );

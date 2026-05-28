@@ -13,12 +13,12 @@ import ReturnsList from './components/ReturnsList';
 function FundHeader({ asset }) {
   return (
     <>
-      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-violet-400/10 text-violet-400">
+      <span className="flex items-center justify-center w-8 h-8 shrink-0 rounded-full bg-violet-400/10 text-violet-400">
         <LineChart className="h-4 w-4" />
       </span>
-      <div>
-        <h1 className="text-xl font-bold text-fg">{asset.code}</h1>
-        <p className="text-xs text-fg-muted">{asset.name || asset.code}</p>
+      <div className="min-w-0">
+        <h1 className="text-xl font-bold text-fg truncate">{asset.code}</h1>
+        <p className="text-xs text-fg-muted truncate max-w-[12rem] sm:max-w-[18rem]">{asset.name || asset.code}</p>
       </div>
     </>
   );

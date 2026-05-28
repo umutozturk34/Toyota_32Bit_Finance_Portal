@@ -1,11 +1,42 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PlusCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import SearchSuggestions from '../../../shared/components/form/SearchSuggestions';
 import Card from '../../../shared/components/card';
+import MarketAddPositionModal from './MarketAddPositionModal';
+import MarketOpenDerivativeModal from './MarketOpenDerivativeModal';
+import { viopService } from '../../viop/services/viopService';
+
+function ViopAddFromSearch({ asset, onClose }) {
+  const { data: viop, isLoading, isError } = useQuery({
+    queryKey: ['viop-detail-search', asset.code],
+    queryFn: () => viopService.getByCode(asset.code),
+    staleTime: 30_000,
+  });
+  if (isLoading) return null;
+  if (isError || !viop || viop.price == null) {
+    onClose();
+    return null;
+  }
+  return (
+    <MarketOpenDerivativeModal
+      assetCode={viop.code || asset.code}
+      assetName={viop.name || asset.name || asset.code}
+      currentPrice={viop.price}
+      metadata={viop.metadata}
+      onClose={onClose}
+      onComplete={onClose}
+    />
+  );
+}
 
 export default function PositionSearchBar() {
   const { t } = useTranslation();
+  const [selected, setSelected] = useState(null);
+  const closeModal = () => setSelected(null);
+
   return (
     <Card
       as={motion.div}
@@ -37,7 +68,26 @@ export default function PositionSearchBar() {
       <SearchSuggestions
         placeholder={t('portfolio.search.placeholder')}
         excludeTypes={['MACRO', 'BOND']}
+        secondaryAction={{
+          icon: PlusCircle,
+          label: t('portfolio.search.addLabel', { defaultValue: 'Portföye ekle' }),
+          onClick: setSelected,
+        }}
       />
+      {selected && selected.type === 'VIOP' && (
+        <ViopAddFromSearch asset={selected} onClose={closeModal} />
+      )}
+      {selected && selected.type !== 'VIOP' && (
+        <MarketAddPositionModal
+          assetType={selected.type}
+          assetCode={selected.code}
+          assetName={selected.name || selected.code}
+          assetImage={selected.image}
+          currentPrice={selected.price}
+          onClose={closeModal}
+          onComplete={closeModal}
+        />
+      )}
     </Card>
   );
 }

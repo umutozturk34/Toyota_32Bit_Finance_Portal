@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import {
   useUserLayout,
   useUpdateOverviewLayout,
@@ -17,10 +18,19 @@ function newPageId() {
 
 export function useMarketLayout() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [editMode, setEditMode] = useState(false);
   const [pendingTile, setPendingTile] = useState(null);
   const [localPages, setLocalPages] = useState(null);
-  const [userPickedPageId, setUserPickedPageId] = useState(null);
+  const userPickedPageId = searchParams.get('page');
+  const setUserPickedPageId = useCallback((pageId) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (pageId) next.set('page', pageId);
+      else next.delete('page');
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
   const [deletingIds, setDeletingIds] = useState(() => new Set());
   const [popoverState, setPopoverState] = useState(null);
   const [galleryOpen, setGalleryOpen] = useState(true);
@@ -181,7 +191,7 @@ export function useMarketLayout() {
     }));
     setLocalPages(defaults);
     setUserPickedPageId(defaults[0].id);
-  }, []);
+  }, [setUserPickedPageId]);
 
   const handleAddPage = useCallback(() => {
     setLocalPages((prev) => {
@@ -194,7 +204,7 @@ export function useMarketLayout() {
       setUserPickedPageId(next[next.length - 1].id);
       return next;
     });
-  }, [t]);
+  }, [t, setUserPickedPageId]);
 
   const handleRenamePage = useCallback((pageId, name) => {
     setLocalPages((prev) => {
@@ -211,12 +221,12 @@ export function useMarketLayout() {
       if (pageId === activePageId) setUserPickedPageId(next[0].id);
       return next;
     });
-  }, [activePageId]);
+  }, [activePageId, setUserPickedPageId]);
 
   const handleSelectPage = useCallback((pageId) => {
     setUserPickedPageId(pageId);
     setPopoverState(null);
-  }, []);
+  }, [setUserPickedPageId]);
 
   const toggleGallery = useCallback(() => setGalleryOpen((o) => !o), []);
 

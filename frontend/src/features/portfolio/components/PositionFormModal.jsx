@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Hash, Tag, Wallet } from 'lucide-react';
@@ -30,8 +31,8 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
   const displayCode = assetCodeLabel(target.assetType, target.assetCode);
   const dismissable = phase === 'form' || phase === 'confirm';
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -136,6 +137,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
                 <input
                   type="number"
                   step="any"
+                  inputMode="decimal"
                   value={form.entryPrice}
                   onChange={handlePriceChange}
                   placeholder="0.00"
@@ -206,6 +208,7 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
                         <input
                           type="number"
                           step="any"
+                          inputMode="decimal"
                           value={exitPrice}
                           onChange={(e) => { setExitPrice(e.target.value); setExitPriceTouched(true); setError(null); }}
                           placeholder="0.00"
@@ -259,7 +262,8 @@ export default function PositionFormModal({ mode, portfolioId, asset, position, 
           </form>
         )}
       </motion.div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

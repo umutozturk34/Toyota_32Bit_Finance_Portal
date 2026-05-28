@@ -113,7 +113,7 @@ function FundsPage() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-semibold text-fg-muted uppercase tracking-wider">{t('market.fund.filterRiskLabel')}</span>
-                <div className="flex gap-1">
+                <div className="flex flex-wrap gap-1">
                     {[1, 2, 3, 4, 5, 6, 7].map(r => {
                         const active = selectedRisks.includes(r);
                         return (

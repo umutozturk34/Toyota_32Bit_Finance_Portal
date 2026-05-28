@@ -179,8 +179,8 @@ export default function AdminUsersPage() {
         ))}
       </div>
 
-      <div className="flex items-center justify-between gap-3 text-xs text-fg-muted">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-3 text-xs text-fg-muted flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <span>{t('adminUsers.pageSize')}</span>
           <div className="flex gap-0.5 rounded-md border border-border-default bg-bg-elevated p-0.5">
             {PAGE_SIZE_OPTIONS.map((size) => (

@@ -196,7 +196,7 @@ export default function AssetDetailPage({
                 });
                 navigate(`/analytics?${next.toString()}`);
               }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs font-semibold text-fg-muted hover:text-accent hover:border-accent/40 hover:bg-accent/10 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-2 min-h-10 text-xs font-semibold text-fg-muted hover:text-accent hover:border-accent/40 hover:bg-accent/10 transition-colors cursor-pointer"
               title={t('marketDetail.compareAction', { defaultValue: 'Karşılaştır' })}
             >
               <GitCompare className="h-3.5 w-3.5" />

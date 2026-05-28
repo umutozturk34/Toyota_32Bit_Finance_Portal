@@ -44,22 +44,22 @@ export default function CompareInfoBar({ selected, targetCurrency, money, t }) {
           : (ind.name || ind.code);
         const showFriendly = friendlyName && friendlyName !== ind.code;
         return (
-          <div key={`${ind.type}-${ind.code}`} className="flex items-baseline gap-2 text-[11px] flex-wrap">
+          <div key={`${ind.type}-${ind.code}`} className="flex items-baseline gap-1.5 sm:gap-2 text-[11px] flex-wrap min-w-0">
             <span className="h-1.5 w-1.5 rounded-full shrink-0 mt-1" style={{ background: color }} />
             <span className="font-mono text-[10px] text-fg-muted uppercase tracking-[0.12em] shrink-0">{ind.code}</span>
             {showFriendly && (
               <>
                 <span className="text-fg-subtle hidden sm:inline">·</span>
-                <span className="text-fg-muted truncate min-w-0 max-w-[200px] sm:max-w-none">
+                <span className="text-fg-muted truncate min-w-0 max-w-[140px] sm:max-w-[200px] md:max-w-none">
                   {friendlyName}
                 </span>
               </>
             )}
-            <span className="text-[10px] font-mono text-fg-subtle tracking-[0.04em]">{t(`marketOverview.macro.enum.${ind.type}`, { defaultValue: ind.type })}</span>
-            <span className="ml-auto flex items-baseline gap-2 flex-wrap justify-end">
-              <span className="font-mono tabular-nums text-xs font-semibold text-fg">{formattedLast}</span>
+            <span className="text-[10px] font-mono text-fg-subtle tracking-[0.04em] hidden sm:inline">{t(`marketOverview.macro.enum.${ind.type}`, { defaultValue: ind.type })}</span>
+            <span className="ml-auto flex items-baseline gap-1.5 sm:gap-2 flex-wrap justify-end shrink-0">
+              <span className="font-mono tabular-nums text-xs font-semibold text-fg whitespace-nowrap">{formattedLast}</span>
               <span
-                className="font-mono tabular-nums text-[11px] font-bold tracking-tight"
+                className="font-mono tabular-nums text-[11px] font-bold tracking-tight whitespace-nowrap"
                 style={{ color: pctColor }}
               >
                 {pctText}

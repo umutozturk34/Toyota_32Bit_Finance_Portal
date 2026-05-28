@@ -27,7 +27,7 @@ export default function PortfolioListShell({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="w-48">
+        <div className="w-full sm:w-48">
           <SearchInput
             value={listParams.search}
             onChange={listParams.setSearch}

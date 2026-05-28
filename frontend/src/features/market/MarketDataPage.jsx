@@ -198,11 +198,11 @@ export default function MarketDataPage() {
         </button>
       </div>
       <div data-tour="market-search" className="w-full max-w-md"><SearchSuggestions variant="hero" placeholder={t('marketOverview.searchPlaceholder')} /></div>
-      <div data-tour="market-tabs" className="inline-flex items-center gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 self-start" style={{ willChange: 'backdrop-filter', transform: 'translate3d(0,0,0)' }}>
+      <div data-tour="market-tabs" className="inline-flex items-center gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 self-start max-w-full overflow-x-auto" style={{ willChange: 'backdrop-filter', transform: 'translate3d(0,0,0)' }}>
         <button
           onClick={() => setActiveTab('overview')}
           data-tour="market-overview-tab"
-          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer ${
+          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'overview' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
           }`}
         >
@@ -212,7 +212,7 @@ export default function MarketDataPage() {
         <button
           onClick={() => setActiveTab('rates')}
           data-tour="market-rates-tab"
-          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer ${
+          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'rates' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
           }`}
         >
@@ -222,7 +222,7 @@ export default function MarketDataPage() {
         <button
           onClick={() => setActiveTab('macro')}
           data-tour="market-macro-tab"
-          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer ${
+          className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'macro' ? 'bg-accent/15 text-accent' : 'bg-transparent text-fg-muted hover:text-fg'
           }`}
         >

@@ -75,13 +75,20 @@ export default function ComparePage() {
   );
   const [mode, setMode] = useSessionState('compare:mode', params.get('mode') || 'assets');
   const [selected, setSelected] = useSessionState('compare:selected', parseInitialSelection(params));
+  const [rangeId, setRangeId] = useChartRange();
+  const initialRangeRef = useRef(params.get('range'));
+  const initialStartRef = useRef(params.get('start'));
+  const initialEndRef = useRef(params.get('end'));
+  const initialCurrencyRef = useRef(params.get('currency'));
+  const [useExplicitBounds, setUseExplicitBounds] = useState(
+    !!(initialStartRef.current && initialEndRef.current),
+  );
   const targetCurrency = useMemo(() => {
+    if (useExplicitBounds && initialCurrencyRef.current) return initialCurrencyRef.current;
     if (displayCurrency !== 'ORIGINAL') return displayCurrency;
     const first = selected.find((s) => !isMacro(s.type) && s.type !== 'PORTFOLIO');
     return first ? nativeCurrencyFor(first.type, first.code) : 'TRY';
-  }, [displayCurrency, selected]);
-  const [rangeId, setRangeId] = useChartRange();
-  const initialRangeRef = useRef(params.get('range'));
+  }, [displayCurrency, selected, useExplicitBounds]);
 
   useEffect(() => {
     if (initialRangeRef.current) {
@@ -93,8 +100,21 @@ export default function ComparePage() {
         && fromUrl.every((u, i) => selected[i] && u.code === selected[i].code && u.type === selected[i].type);
       if (!sameAsCurrent) setSelected(fromUrl);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once URL->state hydration; re-running would clobber the user's later selection/range edits
   }, []);
+
+  const rangeUserChangedRef = useRef(false);
+  useEffect(() => {
+    if (!rangeUserChangedRef.current) {
+      if (rangeId === initialRangeRef.current) {
+        rangeUserChangedRef.current = true;
+      }
+      return;
+    }
+    if (useExplicitBounds && rangeId && rangeId !== initialRangeRef.current) {
+      setUseExplicitBounds(false);
+    }
+  }, [rangeId, useExplicitBounds]);
 
   useEffect(() => {
     const next = new URLSearchParams(params);
@@ -109,16 +129,20 @@ export default function ComparePage() {
     if (mode !== 'assets') next.set('mode', mode);
     else next.delete('mode');
     if (rangeId) next.set('range', rangeId);
+    if (!useExplicitBounds) {
+      next.delete('start');
+      next.delete('end');
+      next.delete('currency');
+    }
     setParams(next, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, mode, rangeId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- params/setParams omitted on purpose: setParams is unstable in react-router v7, adding it self-triggers an infinite URL-write loop
+  }, [selected, mode, rangeId, useExplicitBounds]);
 
   useEffect(() => {
     if (selected.some((s) => isMacro(s.type) || s.type === 'PORTFOLIO') && mode === 'assets') {
       setMode('mixed');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, mode]);
+  }, [selected, mode, setMode]);
 
   useEffect(() => {
     if (!portfolioPickerOpen) return undefined;
@@ -141,7 +165,12 @@ export default function ComparePage() {
 
   const modeDef = MODES.find((m) => m.id === mode);
   const range = useMemo(() => RANGES.find((r) => r.id === rangeId) || RANGES[3], [rangeId]);
-  const bounds = useMemo(() => rangeBounds(range.days), [range]);
+  const bounds = useMemo(() => {
+    if (useExplicitBounds && initialStartRef.current && initialEndRef.current) {
+      return { from: initialStartRef.current, to: initialEndRef.current };
+    }
+    return rangeBounds(range.days);
+  }, [range, useExplicitBounds]);
 
   const queries = useQueries({
     queries: selected.map((s) => ({
@@ -343,9 +372,10 @@ export default function ComparePage() {
                 onSelect={addAsset}
                 navigateOnSelect={false}
                 excludeCodes={selected.map((s) => s.code)}
+                excludeTypes={['BOND']}
                 filterType={modeDef.filterType}
                 placeholder={mode === 'assets'
-                  ? t('analytics.compareSearchAssets', { defaultValue: 'Hisse, kripto, fon, döviz, emtia, bono ara…' })
+                  ? t('analytics.compareSearchAssets', { defaultValue: 'Hisse, kripto, fon, döviz, emtia ara…' })
                   : t('analytics.compareSearchMixed', { defaultValue: 'Asset veya makro indikatör ara…' })}
               />
             </div>

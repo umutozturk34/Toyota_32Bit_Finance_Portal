@@ -13,7 +13,7 @@ import {
 } from '../../../shared/charts/echartsTheme';
 import { SERIES_COLORS } from '../constants';
 
-export default function CompareChart({ scenario, height = 380 }) {
+export default function CompareChart({ scenario }) {
   const { t } = useTranslation();
   const { isDark } = useTheme();
   const scenarioCurrency = scenario?.targetCurrency || 'TRY';
@@ -24,17 +24,14 @@ export default function CompareChart({ scenario, height = 380 }) {
 
   if (!scenario || !scenario.series?.length) {
     return (
-      <div
-        className="flex items-center justify-center rounded-xl border border-border-default/60 bg-bg-base/40 text-xs text-fg-muted font-mono"
-        style={{ height }}
-      >
+      <div className="flex items-center justify-center rounded-xl border border-border-default/60 bg-bg-base/40 text-xs text-fg-muted font-mono h-[280px] sm:h-[380px] lg:h-[440px]">
         {t('analytics.noData', { defaultValue: 'Veri yok' })}
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border-default/60 bg-bg-base/40 overflow-hidden" style={{ height }}>
+    <div className="rounded-xl border border-border-default/60 bg-bg-base/40 overflow-hidden h-[280px] sm:h-[380px] lg:h-[440px] w-full">
       <ReactECharts option={option} style={{ height: '100%', width: '100%' }} opts={{ renderer: 'canvas' }} notMerge />
     </div>
   );
@@ -59,10 +56,11 @@ function buildOption(scenario, isDark, displayCurrency) {
   return {
     backgroundColor: 'transparent',
     animation: true,
-    grid: { left: 64, right: 24, top: 36, bottom: showZoom ? 64 : 32 },
+    grid: { left: 8, right: 12, top: 36, bottom: showZoom ? 64 : 32, containLabel: true },
     dataZoom: showZoom ? dataZoomBlock(palette) : undefined,
     legend: legendBase(palette),
     tooltip: tooltipBase(palette, {
+      confine: true,
       formatter: (params) => {
         if (!params?.length) return '';
         const date = new Date(params[0].value[0]).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });

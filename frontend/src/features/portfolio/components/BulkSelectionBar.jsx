@@ -29,8 +29,11 @@ export default function BulkSelectionBar({ count, total, allSelected, onClear, o
                                     {count}
                                 </motion.span>
                             </AnimatePresence>
-                            <span className="font-mono text-[10px] uppercase tracking-wider text-fg-muted whitespace-nowrap">
+                            <span className="font-mono text-[10px] uppercase tracking-wider text-fg-muted whitespace-nowrap truncate hidden sm:inline">
                                 {t('portfolio.bulk.selectedSummary', { count, total })}
+                            </span>
+                            <span className="font-mono text-[10px] uppercase tracking-wider text-fg-muted whitespace-nowrap sm:hidden">
+                                / {total}
                             </span>
                             <button
                                 type="button"

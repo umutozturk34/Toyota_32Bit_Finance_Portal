@@ -176,7 +176,7 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
   }), [seriesData, netPnl, absTotal, tooltipBg, tooltipBorder, tooltipFg, labelMuted, ringStroke, money, moneyCompact, t, totalLabel, frameBase, forPrint]);
 
   return (
-    <motion.div variants={cardVariants} initial="hidden" animate="show" className="space-y-4">
+    <motion.div variants={cardVariants} initial="hidden" animate="show" className="space-y-4 min-w-0">
       <div className="flex items-center gap-2">
         <TrendingUp className="h-4 w-4 text-accent" />
         <span className="text-sm font-semibold text-fg">{t('portfolio.allocation.realizedTitle')}</span>
@@ -213,7 +213,7 @@ function RealizedPnlChart({ portfolioId, forPrint = false }) {
               onEvents={chartEvents}
             />
 
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 max-h-[260px] sm:max-h-none overflow-y-auto">
               {items.map((it) => {
                 const realized = realizedFor(it);
                 const cost = Number(it.costTry || 0);

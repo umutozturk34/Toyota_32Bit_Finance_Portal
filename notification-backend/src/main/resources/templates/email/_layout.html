@@ -7,19 +7,51 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="color-scheme" content="dark light">
     <meta name="supported-color-schemes" content="dark light">
+    <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
+    <meta name="x-apple-disable-message-reformatting">
     <title th:text="${title} ?: 'Finance Portal'">Finance Portal</title>
     <style>
         body { margin:0; padding:0; width:100%; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; background:#070912; color:#dde3ee; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; }
         table { border-spacing:0; mso-table-lspace:0pt; mso-table-rspace:0pt; }
-        img { border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic; display:block; }
+        img { border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic; display:block; max-width:100%; height:auto; }
         a { color:inherit; text-decoration:none; }
-        @media (max-width:620px) {
-            .container { width:100% !important; padding-left:18px !important; padding-right:18px !important; }
-            .hero-title { font-size:22px !important; }
-            .hero-pad { padding-left:24px !important; padding-right:24px !important; }
-            .body-pad { padding-left:24px !important; padding-right:24px !important; }
-        }
         .num { font-family:'SFMono-Regular','Menlo','Consolas',monospace; }
+        .email-cta-link { display:inline-block; }
+
+        @media only screen and (max-width:600px) {
+            .container { width:100% !important; max-width:100% !important; padding-left:16px !important; padding-right:16px !important; box-sizing:border-box !important; }
+            .card-shell { width:100% !important; max-width:100% !important; border-radius:14px !important; }
+            .wrapper-pad { padding:24px 0 32px !important; }
+
+            .hero-pad { padding:24px 20px 8px !important; }
+            .hero-title { font-size:22px !important; line-height:1.3 !important; }
+            .body-pad { padding:14px 20px 4px !important; font-size:15px !important; line-height:1.6 !important; }
+
+            .divider-pad { margin:0 20px !important; }
+            .meta-pad { padding:14px 20px 18px !important; }
+            .footer-pad { padding:18px 20px 0 !important; }
+            .brand-row { padding:0 16px 18px !important; }
+
+            .email-cta-link { display:block !important; width:100% !important; padding:16px 24px !important; font-size:15px !important; min-height:44px !important; line-height:1.2 !important; box-sizing:border-box !important; text-align:center !important; }
+            .cta-cell { display:block !important; width:100% !important; box-sizing:border-box !important; }
+            .cta-wrap-table { width:100% !important; }
+
+            .code-cell { padding:18px 12px !important; border-radius:12px !important; }
+            .code-value { font-size:26px !important; letter-spacing:5px !important; padding-left:5px !important; word-break:break-all !important; }
+
+            .info-cell { padding:12px 14px !important; }
+            .info-cell p, .info-cell span { font-size:13.5px !important; line-height:1.6 !important; }
+
+            .stack-col { display:block !important; width:100% !important; padding-left:0 !important; padding-right:0 !important; text-align:left !important; }
+            .stack-col-right { text-align:left !important; padding-top:6px !important; }
+            .stack-col-img { padding:0 0 12px 0 !important; }
+            .stack-table { width:100% !important; }
+
+            .hero-number { font-size:24px !important; }
+            .row-card-pad { padding:12px 14px !important; }
+
+            .meta-pad span { font-size:11px !important; }
+        }
     </style>
 </head>
 <body th:with="dark=${theme != 'LIGHT'},
@@ -35,13 +67,13 @@
                cAccentMid='#8b5cf6',
                cAccent2='#a78bfa'"
       th:style="'margin:0;padding:0;background:' + ${cBg} + ';color:' + ${cFg} + ';font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;'">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" th:style="'background:' + ${cBg} + ';padding:40px 0 56px;'">
+<table role="presentation" class="wrapper-pad" width="100%" cellspacing="0" cellpadding="0" border="0" th:style="'background:' + ${cBg} + ';padding:40px 0 56px;'">
     <tr>
         <td align="center">
 
             <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;">
                 <tr>
-                    <td style="padding:0 0 22px 0;">
+                    <td class="brand-row" style="padding:0 0 22px 0;">
                         <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                             <tr>
                                 <td style="width:42px;height:42px;vertical-align:middle;">
@@ -57,7 +89,7 @@
                 </tr>
             </table>
 
-            <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0"
+            <table role="presentation" class="container card-shell" width="600" cellspacing="0" cellpadding="0" border="0"
                    th:style="'width:600px;max-width:600px;background:' + ${cCard} + ';border:1px solid ' + ${cBorder} + ';border-radius:18px;overflow:hidden;'">
                 <tr>
                     <td style="height:2px;line-height:2px;font-size:0;background:#6366f1;background-image:linear-gradient(90deg,#6366f1 0%,#8b5cf6 50%,#a78bfa 100%);">&nbsp;</td>
@@ -74,9 +106,9 @@
                         <th:block th:replace="${content}"></th:block>
                     </td>
                 </tr>
-                <tr><td><div th:style="'height:1px;background:' + ${cBorder} + ';margin:0 40px;line-height:1px;font-size:0;'">&nbsp;</div></td></tr>
+                <tr><td><div class="divider-pad" th:style="'height:1px;background:' + ${cBorder} + ';margin:0 40px;line-height:1px;font-size:0;'">&nbsp;</div></td></tr>
                 <tr>
-                    <td style="padding:18px 40px 22px;">
+                    <td class="meta-pad" style="padding:18px 40px 22px;">
                         <span th:style="'font-size:10.5px;font-weight:600;letter-spacing:1.4px;color:' + ${cSubtle} + ';text-transform:uppercase;'">
                             <strong th:style="'color:' + ${cMuted} + ';font-weight:700;'" th:text="#{appEmail.sentLabel}">SENT</strong>
                             &nbsp; <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}">05.05.2026</span>
@@ -88,7 +120,7 @@
 
             <table role="presentation" class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="width:600px;max-width:600px;">
                 <tr>
-                    <td style="padding:22px 4px 0;">
+                    <td class="footer-pad" style="padding:22px 4px 0;">
                         <p th:style="'margin:0 0 6px;font-size:11.5px;line-height:1.6;color:' + ${cSubtle} + ';'" th:text="#{appEmail.footer.line1}">Footer</p>
                         <p th:style="'margin:0;font-size:10.5px;color:' + ${cSubtle} + ';'">
                             <span th:text="#{appEmail.footer.settingsPrefix}">Manage email preferences in</span>

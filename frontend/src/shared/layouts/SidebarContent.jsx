@@ -24,7 +24,7 @@ const SidebarContent = ({
   logout,
 }) => (
   <div className="flex flex-col h-full">
-    <div className={`flex items-center ${collapsed && !isMobile ? 'justify-center' : 'justify-between'} h-14 px-3 border-b border-border-default shrink-0`}>
+    <div className={`flex items-center ${collapsed && !isMobile ? 'justify-center' : 'justify-between'} h-14 landscape:h-12 lg:landscape:h-14 px-3 border-b border-border-default shrink-0`}>
       {(!collapsed || isMobile) && (
         <Link to="/" className="flex items-center gap-2.5 no-underline group">
           <span className="flex items-center justify-center w-8 h-8 rounded-xl logo-gradient text-white shadow-lg shadow-accent/25 group-hover:shadow-accent/50 group-hover:scale-105 transition-all duration-300">

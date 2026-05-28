@@ -8,13 +8,13 @@
                    cChange=${isUp ? cSuccess : cDanger},
                    cChangeBg=${isUp ? (dark ? '#0e2d24' : '#d1fae5') : (dark ? '#3a0f12' : '#fee2e2')}">
 
-    <table th:if="${image != null}" role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 18px;">
+    <table th:if="${image != null}" role="presentation" class="stack-table" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 18px;">
         <tr>
-            <td width="56" style="padding:0;vertical-align:middle;">
+            <td class="stack-col stack-col-img" width="56" style="padding:0;vertical-align:middle;">
                 <img th:src="${image}" alt="" width="48" height="48"
                      th:style="'display:block;width:48px;height:48px;border-radius:14px;border:1px solid ' + ${cBorder} + ';background:' + ${cInfoBg} + ';'" />
             </td>
-            <td style="padding:0 0 0 14px;vertical-align:middle;">
+            <td class="stack-col" style="padding:0 0 0 14px;vertical-align:middle;">
                 <p th:style="'margin:0;font-size:13px;font-weight:600;color:' + ${cFg} + ';line-height:1.3;'" th:text="${assetName}">Bitcoin</p>
                 <p class="num" th:style="'margin:2px 0 0;font-size:11px;font-weight:600;letter-spacing:0.4px;color:' + ${cMuted} + ';'" th:text="${assetCodeUpper + ' · ' + marketLabel}">BTC · Kripto</p>
             </td>
@@ -33,7 +33,7 @@
 
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:22px;">
         <tr>
-            <td th:style="'padding:14px 18px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;'">
+            <td class="info-cell" th:style="'padding:14px 18px;background:' + ${cInfoBg} + ';border:1px solid ' + ${cBorder} + ';border-radius:12px;'">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                     <tr>
                         <td style="padding:5px 0;"><span th:style="'font-size:12.5px;color:' + ${cMuted} + ';'" th:text="#{appEmail.priceAlert.thresholdLabel}">Threshold</span></td>
@@ -52,10 +52,10 @@
         </tr>
     </table>
 
-    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:20px;">
+    <table role="presentation" class="cta-wrap-table" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-top:20px;">
         <tr>
-            <td th:style="'background:' + ${cAccent} + ';background-image:linear-gradient(135deg,' + ${cAccent} + ' 0%,' + ${cAccentMid} + ' 50%,' + ${cAccent2} + ' 100%);border-radius:10px;box-shadow:0 6px 22px -4px rgba(99,102,241,0.45);'">
-                <a href="http://localhost/watch" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;line-height:1;" th:text="#{appEmail.priceAlert.cta}">Open watchlist</a>
+            <td class="cta-cell" th:style="'background:' + ${cAccent} + ';background-image:linear-gradient(135deg,' + ${cAccent} + ' 0%,' + ${cAccentMid} + ' 50%,' + ${cAccent2} + ' 100%);border-radius:10px;box-shadow:0 6px 22px -4px rgba(99,102,241,0.45);'">
+                <a href="http://localhost/watch" class="email-cta-link" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;letter-spacing:0.2px;line-height:1;" th:text="#{appEmail.priceAlert.cta}">Open watchlist</a>
             </td>
         </tr>
     </table>

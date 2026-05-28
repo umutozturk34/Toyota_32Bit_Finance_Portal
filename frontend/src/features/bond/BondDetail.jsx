@@ -92,6 +92,11 @@ function buildLineOption({ history, valueKey, color, isDark, valueFormatter }) {
     ] : undefined,
     tooltip: {
       trigger: 'axis',
+      confine: true,
+      position: (point, _params, _dom, _rect, size) => {
+        const x = Math.max(8, Math.min(point[0] - size.contentSize[0] / 2, size.viewSize[0] - size.contentSize[0] - 8));
+        return [x, 8];
+      },
       backgroundColor: tooltipBg,
       borderWidth: 0,
       textStyle: { color: tooltipFg, fontSize: 11 },

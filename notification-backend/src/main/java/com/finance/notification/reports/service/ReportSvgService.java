@@ -170,6 +170,17 @@ public class ReportSvgService {
             double frac = displayFracs[i];
             if (frac <= 0) continue;
             double next = angle + frac * 2 * Math.PI;
+            if (frac >= 0.9999) {
+                // A 360° arc is degenerate (start point == end point) and renders nothing, so draw
+                // the full donut ring as a thick-stroked circle instead.
+                double rMid = (rOuter + rInner) / 2.0;
+                svg.append("<circle cx=\"").append(fmt(cx)).append("\" cy=\"").append(fmt(cy))
+                        .append("\" r=\"").append(fmt(rMid)).append("\" fill=\"none\" stroke=\"")
+                        .append(items.get(i).color()).append("\" stroke-width=\"")
+                        .append(fmt(rOuter - rInner)).append("\"/>");
+                angle = next;
+                continue;
+            }
             int largeArc = frac > 0.5 ? 1 : 0;
             double x1o = cx + rOuter * Math.cos(angle);
             double y1o = cy + rOuter * Math.sin(angle);

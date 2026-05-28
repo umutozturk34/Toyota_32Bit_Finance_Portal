@@ -56,7 +56,7 @@ class StockUpdateServiceTest {
 
         assertThatThrownBy(() -> service.refreshAll())
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("BIST stocks");
+                .hasMessageContaining("error.market.stockNoneTracked");
         verify(snapshotProcessor, never()).updateOne(any());
     }
 

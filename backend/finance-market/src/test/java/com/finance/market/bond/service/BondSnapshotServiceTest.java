@@ -74,7 +74,7 @@ class BondSnapshotServiceTest {
 
         assertThatThrownBy(() -> service.fetchAndFilterSeries())
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("No valid bond series");
+                .hasMessageContaining("error.market.bondNoSeriesFiltered");
     }
 
     @Test

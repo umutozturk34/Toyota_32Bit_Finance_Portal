@@ -10,6 +10,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Criteria-API helpers for case-insensitive substring search across multiple entity fields,
+ * OR-combined into a single predicate for use in JPA {@code Specification}s.
+ */
 public final class LikeSearchSpec {
 
     private LikeSearchSpec() {
@@ -20,6 +24,7 @@ public final class LikeSearchSpec {
         return byFieldsContains(root, cb, term, Arrays.asList(fields));
     }
 
+    /** OR of {@code lower(field) LIKE %term%} across the given fields. */
     public static <T> Predicate byFieldsContains(Root<T> root, CriteriaBuilder cb,
                                                   String term, List<String> fields) {
         String pattern = "%" + term.toLowerCase() + "%";
@@ -32,6 +37,10 @@ public final class LikeSearchSpec {
         return cb.or(predicates);
     }
 
+    /**
+     * Accent-insensitive substring search via the Postgres {@code unaccent} function so e.g. "is"
+     * matches "İş"; returns an always-true predicate when the term or fields are empty.
+     */
     public static <T> Predicate byFieldsContainsAllTokensUnaccent(Root<T> root, CriteriaBuilder cb,
                                                                    String term, String... fields) {
         if (term == null || term.isBlank() || fields == null || fields.length == 0) {

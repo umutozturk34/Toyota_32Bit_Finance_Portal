@@ -6,6 +6,11 @@ import java.util.function.UnaryOperator;
 
 import lombok.Getter;
 
+/**
+ * Selectable time ranges for candle/chart queries. Each constant carries its UI {@code code}
+ * (e.g. {@code "1M"}) and a resolver that derives the range start from a given end instant;
+ * {@code ALL} resolves to the Unix epoch.
+ */
 @Getter
 public enum CandlePeriod {
 
@@ -34,6 +39,7 @@ public enum CandlePeriod {
         return startResolver.apply(end);
     }
 
+    /** Range start measured back from now, truncated to start-of-day. */
     public LocalDateTime toStartDateTime() {
         return toStartDateTime(LocalDateTime.now()).toLocalDate().atStartOfDay();
     }
@@ -44,6 +50,7 @@ public enum CandlePeriod {
         return LocalDate.now().minusMonths(months);
     }
 
+    /** Resolves a UI code to its period; defaults to {@code ONE_MONTH} for null or unknown codes. */
     public static CandlePeriod fromCode(String code) {
         if (code == null) return ONE_MONTH;
         for (CandlePeriod value : values()) {

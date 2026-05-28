@@ -17,4 +17,22 @@ public enum Currency {
         }
         return null;
     }
+
+    public static Currency viopQuoteCurrencyOf(String symbol) {
+        if (symbol == null || symbol.isBlank()) {
+            return TRY;
+        }
+        String upper = symbol.trim().toUpperCase();
+        if (upper.startsWith("O_")) {
+            return TRY;
+        }
+        String base = upper.replaceAll("\\d{4}$", "");
+        if (base.endsWith("USD")) {
+            return USD;
+        }
+        if (base.endsWith("EUR")) {
+            return EUR;
+        }
+        return TRY;
+    }
 }

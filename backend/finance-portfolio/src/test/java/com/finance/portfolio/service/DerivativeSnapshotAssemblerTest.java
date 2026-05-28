@@ -149,7 +149,7 @@ class DerivativeSnapshotAssemblerTest {
 
     @Test
     void shouldApplyFxRateOverride_whenProvided() {
-        ViopContract c = contract("USDFUT", "1", "USD");
+        ViopContract c = contract("F_XAUUSD0625", "1", "USD");
         DerivativePosition dp = position(c, DerivativeDirection.LONG, "10", "1");
         when(assetSnapshotRepository.findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanOrderByCreatedAtDesc(
                 any(), any(), any(), any())).thenReturn(Optional.empty());
@@ -162,7 +162,7 @@ class DerivativeSnapshotAssemblerTest {
 
     @Test
     void shouldFallbackToContractFxRate_whenFxOverrideMissing() {
-        ViopContract c = contract("USDFUT", "1", "USD");
+        ViopContract c = contract("F_XAUUSD0625", "1", "USD");
         DerivativePosition dp = position(c, DerivativeDirection.LONG, "10", "1");
         when(assetSnapshotRepository.findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanOrderByCreatedAtDesc(
                 any(), any(), any(), any())).thenReturn(Optional.empty());
@@ -189,7 +189,7 @@ class DerivativeSnapshotAssemblerTest {
 
     @Test
     void shouldFallbackFxToOne_whenForexRateMissingOrZero() {
-        ViopContract c = contract("USDFUT", "1", "USD");
+        ViopContract c = contract("F_XAUUSD0625", "1", "USD");
         DerivativePosition dp = position(c, DerivativeDirection.LONG, "10", "1");
         when(assetSnapshotRepository.findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanOrderByCreatedAtDesc(
                 any(), any(), any(), any())).thenReturn(Optional.empty());

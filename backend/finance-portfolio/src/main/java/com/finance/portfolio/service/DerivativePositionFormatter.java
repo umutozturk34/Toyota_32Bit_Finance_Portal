@@ -85,7 +85,7 @@ class DerivativePositionFormatter {
         if (closed) return position.getClosePrice();
         BigDecimal latestClose = latestCandleClose(position.getViopContract().getSymbol());
         BigDecimal liveSource = latestClose != null ? latestClose : position.getViopContract().getLastPrice();
-        return convertLiveToTry(liveSource, position.getViopContract().getCurrency());
+        return convertLiveToTry(liveSource, position.getViopContract().resolvePriceCurrency());
     }
 
     private DerivativeMeta buildMeta(DerivativePosition position, DerivativeFigures f) {
@@ -103,7 +103,7 @@ class DerivativePositionFormatter {
                 position.getViopContract().getContractSize(),
                 position.lockedMargin(),
                 position.getViopContract().getExpiryDate(),
-                position.getViopContract().getCurrency(),
+                position.getViopContract().resolvePriceCurrency(),
                 f.closed(),
                 position.getViopContract().getStrikePrice(),
                 maxLoss,

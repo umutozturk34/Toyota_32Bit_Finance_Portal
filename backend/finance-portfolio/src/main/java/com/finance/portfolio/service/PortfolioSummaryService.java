@@ -236,7 +236,7 @@ public class PortfolioSummaryService {
                     ? contractLast
                     : latestCandleClose(position.getViopContract().getSymbol());
             BigDecimal currentTry = convertLiveToTry(liveSource,
-                    position.getViopContract().getCurrency());
+                    position.getViopContract().resolvePriceCurrency());
             BigDecimal pnl = position.realizedOrUnrealizedPnl(currentTry);
             if (pnl != null) {
                 total = total.add(pnl);

@@ -24,7 +24,7 @@ import java.util.Map;
 class DerivativeSnapshotAssembler {
 
     private static final BigDecimal HUNDRED = new BigDecimal("100");
-    private static final int FX_LOOKBACK_DAYS = 7;
+    private static final int FX_LOOKBACK_DAYS = 30;
 
     private final AssetPricingPort pricingPort;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
@@ -60,7 +60,7 @@ class DerivativeSnapshotAssembler {
         BigDecimal qty = position.getQuantityLot() != null ? position.getQuantityLot() : BigDecimal.ZERO;
         BigDecimal fxRate = fxRateOverride != null && fxRateOverride.signum() > 0
                 ? fxRateOverride
-                : contractFxRate(position.getViopContract().getCurrency(), snapDate);
+                : contractFxRate(position.getViopContract().resolvePriceCurrency(), snapDate);
         BigDecimal unitPrice = (exitPrice != null ? exitPrice : BigDecimal.ZERO)
                 .multiply(fxRate).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
         BigDecimal marketValue = unitPrice.multiply(contractSize).multiply(qty)

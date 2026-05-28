@@ -293,7 +293,7 @@ public class DerivativePositionService {
                     : contract.getLastPrice();
             if (settlementNative == null) continue;
             BigDecimal settlementTry = priceResolver.nativeToTryOnDate(settlementNative,
-                    contract.getCurrency(), contract.getExpiryDate());
+                    contract.resolvePriceCurrency(), contract.getExpiryDate());
             pos.closeWith(contract.getExpiryDate(), settlementTry, DerivativeCloseReason.EXPIRED);
             rebuildPeerSnapshots(pos.getPortfolio().getId(), contract.getSymbol(), pos, null);
             closed++;

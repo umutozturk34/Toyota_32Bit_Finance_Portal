@@ -130,7 +130,7 @@ class AllocationCalculator {
     private void addOpenDerivative(DerivativePosition dpos, BigDecimal entryNotional,
                                    AllocationContext ctx, AllocationAcc acc) {
         BigDecimal currentPriceTry = convertLiveToTry(
-                dpos.getViopContract().getLastPrice(), dpos.getViopContract().getCurrency());
+                dpos.getViopContract().getLastPrice(), dpos.getViopContract().resolvePriceCurrency());
         BigDecimal pnl = dpos.realizedOrUnrealizedPnl(currentPriceTry);
         BigDecimal marketValue = (pnl != null ? entryNotional.add(pnl) : entryNotional)
                 .abs().setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);

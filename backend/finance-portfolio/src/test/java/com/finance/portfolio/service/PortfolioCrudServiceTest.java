@@ -435,6 +435,34 @@ class PortfolioCrudServiceTest {
     }
 
     @Test
+    void updatePosition_convertsEntryPriceToTry_whenPriceCurrencyIsUsd() {
+        Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
+        PortfolioPosition existing = PortfolioPosition.builder()
+                .portfolioId(PORTFOLIO_ID)
+                .assetType(AssetType.CRYPTO).assetCode("bitcoin")
+                .quantity(new BigDecimal("1"))
+                .entryDate(LocalDateTime.of(2024, 1, 1, 9, 0))
+                .entryPrice(new BigDecimal("1000000"))
+                .build();
+        LocalDateTime entryDate = LocalDateTime.of(2024, 1, 15, 10, 0);
+        PositionRequest request = new PositionRequest(
+                "CRYPTO", "bitcoin", new BigDecimal("0.5"), entryDate,
+                new BigDecimal("61299"), null, null, "USD");
+        when(portfolioRepository.findByIdAndUserSub(PORTFOLIO_ID, USER_SUB)).thenReturn(Optional.of(portfolio));
+        when(positionRepository.findById(33L)).thenReturn(Optional.of(existing));
+        when(positionRepository.save(any(PortfolioPosition.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(currencyConverter.convertAtDate(new BigDecimal("61299"),
+                com.finance.common.model.Currency.USD, com.finance.common.model.Currency.TRY,
+                entryDate.toLocalDate())).thenReturn(new BigDecimal("2023867.0000"));
+
+        service.updatePosition(PORTFOLIO_ID, 33L, USER_SUB, request);
+
+        ArgumentCaptor<PortfolioPosition> captor = ArgumentCaptor.forClass(PortfolioPosition.class);
+        verify(positionRepository).save(captor.capture());
+        assertThat(captor.getValue().getEntryPrice()).isEqualByComparingTo(new BigDecimal("2023867.0000"));
+    }
+
+    @Test
     void sellPosition_convertsExitPriceToTry_whenPriceCurrencyIsUsd() {
         Portfolio portfolio = Portfolio.builder().id(PORTFOLIO_ID).userSub(USER_SUB).build();
         PortfolioPosition existing = stubPosition(PORTFOLIO_ID, AssetType.CRYPTO, "bitcoin",

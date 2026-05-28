@@ -127,7 +127,8 @@ public class PortfolioCrudService {
         PortfolioValidator.validateLot(request, portfolioProperties.getLotLimits());
         PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
         LocalDateTime previousEntry = position.getEntryDate();
-        position.updateLot(request.entryDate(), request.entryPrice(), request.quantity());
+        BigDecimal entryPriceTry = toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate());
+        position.updateLot(request.entryDate(), entryPriceTry, request.quantity());
         PortfolioPosition saved = positionRepository.save(position);
 
         publishLotChange(portfolioId, saved, earliestOf(previousEntry, saved.getEntryDate()), true);

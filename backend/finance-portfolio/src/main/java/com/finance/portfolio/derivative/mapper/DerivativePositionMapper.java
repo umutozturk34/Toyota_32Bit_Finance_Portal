@@ -25,7 +25,7 @@ public class DerivativePositionMapper {
                 contract != null ? contract.getExpiryDate() : null,
                 contract != null ? contract.getContractSize() : null,
                 contract != null ? contract.getInitialMargin() : null,
-                contract != null ? contract.getCurrency() : null,
+                contract != null ? contract.resolvePriceCurrency() : null,
                 position.getDirection(),
                 position.getEntryDate(),
                 position.getEntryPrice(),

@@ -38,4 +38,39 @@ class CurrencyTest {
     void fromCodeHandlesNullAndEmpty(String input) {
         assertThat(Currency.fromCode(input)).isNull();
     }
+
+    @ParameterizedTest
+    @CsvSource({
+            "F_USDTRY0626, TRY",
+            "F_EURTRY0626, TRY",
+            "F_EURUSD0626, USD",
+            "F_GBPUSD0626, USD",
+            "F_XAUUSD0626, USD",
+            "F_XAGUSD0626, USD",
+            "F_XAUTRYM0626, TRY",
+            "F_XU0300626, TRY",
+            "F_AKBNK0626, TRY",
+            "f_eurusd0626, USD"
+    })
+    void viopFutureQuoteCurrencyDerivesCurrencyTokenBeforeExpiry(String symbol, Currency expected) {
+        assertThat(Currency.viopQuoteCurrencyOf(symbol)).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "O_AKBNKE0626C72.00",
+            "O_XU030E0826P17250.00",
+            "O_USDTRYKE0626C47000",
+            "O_THYAOE0626P310.00"
+    })
+    void viopOptionsAlwaysQuoteInTry(String symbol) {
+        assertThat(Currency.viopQuoteCurrencyOf(symbol)).isEqualTo(Currency.TRY);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   "})
+    void viopQuoteCurrencyDefaultsToTryForBlank(String symbol) {
+        assertThat(Currency.viopQuoteCurrencyOf(symbol)).isEqualTo(Currency.TRY);
+    }
 }

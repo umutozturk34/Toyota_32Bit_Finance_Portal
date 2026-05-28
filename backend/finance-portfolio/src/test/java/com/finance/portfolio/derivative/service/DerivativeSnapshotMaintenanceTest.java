@@ -194,7 +194,7 @@ class DerivativeSnapshotMaintenanceTest {
 
     @Test
     void shouldFetchFxSeries_whenContractIsForeign() {
-        ViopContract c = contract("USDFUT", "USD");
+        ViopContract c = contract("F_XAUUSD0625", "USD");
         LocalDate from = LocalDate.of(2024, 6, 1);
         DerivativePosition dp = DerivativePosition.builder()
                 .viopContract(c)
@@ -220,7 +220,7 @@ class DerivativeSnapshotMaintenanceTest {
 
     @Test
     void shouldFallbackToLastFxRate_whenDailyFxIsMissing() {
-        ViopContract c = contract("USDFUT", "USD");
+        ViopContract c = contract("F_XAUUSD0625", "USD");
         LocalDate from = LocalDate.of(2024, 6, 1);
         LocalDate to = LocalDate.of(2024, 6, 2);
         DerivativePosition dp = DerivativePosition.builder()

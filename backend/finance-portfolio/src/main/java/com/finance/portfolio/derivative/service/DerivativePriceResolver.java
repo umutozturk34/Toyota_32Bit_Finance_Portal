@@ -24,14 +24,15 @@ public class DerivativePriceResolver {
     public BigDecimal resolveHistoricalPriceTry(ViopContract contract, LocalDate date) {
         BigDecimal nativePrice = resolveHistoricalPrice(contract, date);
         if (nativePrice == null) return null;
-        return nativeToTryOnDate(nativePrice, contract.getCurrency(), date);
+        return nativeToTryOnDate(nativePrice, contract.resolvePriceCurrency(), date);
     }
 
     public BigDecimal nativeToTryOnDate(BigDecimal nativePrice, String currency, LocalDate date) {
         if (nativePrice == null) return null;
         if (currency == null || currency.isBlank() || "TRY".equalsIgnoreCase(currency)) return nativePrice;
         Map<LocalDate, BigDecimal> fxSeries = historicalPricingPort.getPriceSeries(
-                MarketType.FOREX, currency.toUpperCase(), date.minusDays(7), date);
+                MarketType.FOREX, currency.toUpperCase(),
+                date.minusDays(DerivativeSnapshotMaintenance.FX_LOOKBACK_DAYS), date);
         BigDecimal rate = DerivativeSnapshotMaintenance.closestPriorRate(fxSeries, date);
         return rate != null && rate.signum() > 0 ? nativePrice.multiply(rate) : nativePrice;
     }

@@ -32,6 +32,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class DerivativeSnapshotMaintenance {
 
+    static final int FX_LOOKBACK_DAYS = 30;
+
     private final ViopCandleRepository candleRepository;
     private final HistoricalPricingPort historicalPricingPort;
     private final PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
@@ -50,11 +52,11 @@ public class DerivativeSnapshotMaintenance {
                 position.getId(), symbol, from, to);
 
         Map<LocalDate, BigDecimal> closeByDate = loadCandleCloses(symbol, from, to);
-        String currency = position.getViopContract().getCurrency();
+        String currency = position.getViopContract().resolvePriceCurrency();
         boolean needsFxConversion = currency != null && !"TRY".equalsIgnoreCase(currency);
         Map<LocalDate, BigDecimal> fxByDate = needsFxConversion
                 ? historicalPricingPort.getPriceSeries(MarketType.FOREX, currency.toUpperCase(),
-                        from.minusDays(7), to)
+                        from.minusDays(FX_LOOKBACK_DAYS), to)
                 : Map.of();
 
         BigDecimal entryFxAtOpen = needsFxConversion
@@ -232,7 +234,7 @@ public class DerivativeSnapshotMaintenance {
     static BigDecimal closestPriorRate(Map<LocalDate, BigDecimal> series, LocalDate target) {
         if (series == null || series.isEmpty()) return null;
         LocalDate cursor = target;
-        for (int i = 0; i <= 30; i++) {
+        for (int i = 0; i <= FX_LOOKBACK_DAYS; i++) {
             BigDecimal rate = series.get(cursor);
             if (rate != null) return rate;
             cursor = cursor.minusDays(1);

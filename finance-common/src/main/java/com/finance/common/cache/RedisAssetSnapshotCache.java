@@ -5,6 +5,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import com.finance.common.dto.internal.AssetSnapshot;
+import com.finance.common.model.Currency;
 import com.finance.common.model.MarketType;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -80,7 +81,7 @@ public class RedisAssetSnapshotCache implements AssetSnapshotCache {
             BigDecimal changeAmount = numericField(root, "changeAmount");
             BigDecimal changePercent = numericField(root, "changePercent");
             if (code == null) return Optional.empty();
-            String currency = type == MarketType.VIOP ? textField(root, "currency") : null;
+            String currency = type == MarketType.VIOP ? Currency.viopQuoteCurrencyOf(code).name() : null;
             if (currency == null || currency.isBlank()) currency = "TRY";
             return Optional.of(new AssetSnapshot(code, name, image, price, changeAmount, changePercent, currency));
         } catch (Exception e) {

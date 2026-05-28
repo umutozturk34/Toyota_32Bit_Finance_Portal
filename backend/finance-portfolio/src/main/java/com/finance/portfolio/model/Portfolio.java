@@ -5,6 +5,11 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * A user-owned portfolio: the aggregate root that groups spot {@link PortfolioPosition} lots and
+ * derivative positions. Holds no cash and no value of its own; all monetary figures are derived
+ * from its positions and stored in TRY. Scoped to an owner via {@code userSub} (Keycloak subject).
+ */
 @Getter
 @Builder
 @NoArgsConstructor

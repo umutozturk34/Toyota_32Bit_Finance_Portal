@@ -39,6 +39,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+/**
+ * Pure-ish builder of snapshot entities (no persistence) in TRY: per-asset rows (spot lots grouped
+ * and summed per asset key; derivatives delegated to {@link DerivativeSnapshotCalculator}) and the
+ * portfolio-level aggregate. Aggregation prefers each asset's latest contributing row market value,
+ * sums realized PnL/exit value for closed positions, and derives day-over-day deltas against the
+ * closest prior snapshot.
+ */
 @Log4j2
 @Service
 public class SnapshotCalculationService {
@@ -114,6 +121,7 @@ public class SnapshotCalculationService {
                 exitPrice, fxRateOverride, priorOverride);
     }
 
+    /** One per-asset snapshot per distinct asset, summing lot quantities/costs and valuing at the live exit price in TRY. */
     public List<PortfolioAssetDailySnapshot> buildAssetSnapshotsForPositions(Long portfolioId,
                                                                               List<PortfolioPosition> positions,
                                                                               LocalDateTime batchTimestamp) {
@@ -144,6 +152,7 @@ public class SnapshotCalculationService {
         return total;
     }
 
+    /** Aggregated per-asset row; resolves the day-over-day delta from the closest prior snapshot of that tracked asset. */
     public PortfolioAssetDailySnapshot buildAggregatedAssetSnapshot(Long portfolioId,
                                                                       AssetType assetType,
                                                                       String assetCode,
@@ -159,6 +168,7 @@ public class SnapshotCalculationService {
                 totalQuantity, totalCost, unitPriceTry, prior);
     }
 
+    /** As {@link #buildAggregatedAssetSnapshot} but with the prior snapshot supplied directly, for batched backfill that chains days. */
     public PortfolioAssetDailySnapshot buildAggregatedAssetSnapshotWithPrior(Long portfolioId,
                                                                                 AssetType assetType,
                                                                                 String assetCode,
@@ -172,6 +182,7 @@ public class SnapshotCalculationService {
                 totalQuantity, totalCost, unitPriceTry, Optional.ofNullable(prior));
     }
 
+    /** Portfolio-level aggregate "as of now": loads positions, prices and latest held rows, then folds them into one snapshot. */
     public PortfolioDailySnapshot buildAggregateSnapshot(Portfolio portfolio, LocalDateTime batchTimestamp) {
         Long pid = portfolio.getId();
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(pid);
@@ -182,6 +193,7 @@ public class SnapshotCalculationService {
         return assembleAggregateSnapshot(portfolio, batchTimestamp, positions, derivatives, prices, contributingRows);
     }
 
+    /** Aggregate for a specific day built from already-computed per-asset rows (and prices), used by backfill where rows are known. */
     public PortfolioDailySnapshot buildAggregateSnapshotAtFromRows(Portfolio portfolio, LocalDateTime batchTimestamp,
                                                                      List<PortfolioPosition> positions,
                                                                      List<DerivativePosition> derivatives,

@@ -8,6 +8,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Per-asset daily valuation row (one asset code on one day) in TRY: aggregated quantity, unit price,
+ * market value, cost, total PnL and the day-over-day delta. Spot rows are keyed by {@link TrackedAsset};
+ * derivative (VIOP) rows carry a null tracked asset and identify the contract by {@code assetCode}.
+ * These rows are summed up into the portfolio-level {@link PortfolioDailySnapshot}.
+ */
 @Getter
 @Setter
 @Builder

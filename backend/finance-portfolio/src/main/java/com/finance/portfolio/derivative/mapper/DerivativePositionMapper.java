@@ -8,9 +8,11 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.List;
 
+/** Maps a {@link DerivativePosition} to its dedicated API response, flattening contract fields and computing live PnL/exposure/margin. */
 @Component
 public class DerivativePositionMapper {
 
+    /** Builds the response; PnL is realized when closed, else unrealized against the contract's last price. */
     public DerivativePositionResponse toResponse(DerivativePosition position) {
         ViopContract contract = position.getViopContract();
         BigDecimal currentPrice = contract != null ? contract.getLastPrice() : null;

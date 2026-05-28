@@ -37,6 +37,13 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Read-side queries that value a portfolio live and in TRY: position lists (spot + derivatives,
+ * filterable/sortable/paged), the headline summary (total value/cost/PnL, daily PnL, real return,
+ * multi-currency frames), per-asset aggregates across lots, and allocation. Spot uses current prices
+ * from the pricing port; derivatives add live-to-TRY notional and unrealized PnL. Daily PnL prefers
+ * the latest per-asset snapshot deltas, falling back to the portfolio snapshot day-over-day diff.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -63,6 +70,7 @@ public class PortfolioSummaryService {
                 .orElse(null);
     }
 
+    /** All position rows (spot lots valued at live prices, plus formatted derivative rows) for the portfolio. */
     @Transactional(readOnly = true)
     public List<PositionResponse> getPositions(Long portfolioId) {
         List<PortfolioPosition> positions = positionRepository.findByPortfolioId(portfolioId);
@@ -139,6 +147,11 @@ public class PortfolioSummaryService {
         return PagedResponse.of(all.subList(from, to), page, size, total);
     }
 
+    /**
+     * Headline figures in TRY, optionally scoped to one asset type. A null/blank type covers the whole
+     * portfolio and folds open-derivative notional+PnL into the totals; a {@code VIOP} filter reports
+     * derivatives only; any other type reports spot for that type alone.
+     */
     @Transactional(readOnly = true)
     public PortfolioSummaryResponse getSummary(Long portfolioId, String assetType) {
         List<PortfolioPosition> positions = filterByType(
@@ -281,6 +294,10 @@ public class PortfolioSummaryService {
         return latest.subtract(prior).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
     }
 
+    /**
+     * Aggregates all lots of one asset (spot) into a single view: open quantity, weighted-average
+     * entry, current price/market value, plus realized PnL from closed lots; empty figures when no lot exists.
+     */
     @Transactional(readOnly = true)
     public AssetAggregateResponse getAssetAggregate(Long portfolioId, String assetTypeRaw, String assetCode) {
         AssetType assetType = EnumParser.parseOrBadRequest(AssetType.class, assetTypeRaw, "enum.field.assetType");

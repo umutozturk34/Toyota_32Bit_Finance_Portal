@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/** Detailed derivative position view: flattened contract attributes plus entry/close, live PnL, notional exposure and locked margin. */
 public record DerivativePositionResponse(
         Long id,
         String contractSymbol,

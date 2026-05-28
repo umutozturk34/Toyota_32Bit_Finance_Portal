@@ -31,6 +31,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Recomputes historical snapshots when a lot changes. On a committed {@link LotChangedEvent} it
+ * (per-portfolio, striped-lock serialized, in a fresh transaction) wipes affected daily and asset
+ * snapshots from the change date, rebuilds per-asset rows (spot only; VIOP rows are maintained by
+ * the derivative services) and daily aggregates, then writes today's snapshot. Also exposes manual
+ * backfill helpers used to fill gaps in a portfolio's history.
+ */
 @Log4j2
 @Service
 public class PortfolioBackfillService {
@@ -79,10 +86,16 @@ public class PortfolioBackfillService {
         return portfolioLocks[Math.floorMod(portfolioId.hashCode(), lockStripes)];
     }
 
+    /**
+     * Signals that a lot of {@code assetCode} changed and history must be recomputed from
+     * {@code fromDate}. {@code visibleToUi} drives the backfill progress tracker so the UI can show a
+     * pending indicator for user-initiated changes.
+     */
     public record LotChangedEvent(Long portfolioId, AssetType assetType,
                                   String assetCode, LocalDate fromDate, boolean visibleToUi) {
     }
 
+    /** Recomputes affected snapshots after a lot change commits; serialized per portfolio, failures are logged not propagated. */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onLotChanged(LotChangedEvent event) {
@@ -127,6 +140,11 @@ public class PortfolioBackfillService {
                 portfolioId, assetType, assetCode, from, today);
     }
 
+    /**
+     * Writes today's per-asset and aggregate snapshot using live prices (falling back to the last
+     * known snapshot price), covering active spot lots and derivatives opened by today. Skips when
+     * live prices are unavailable so the next market update can retry rather than persist zeros.
+     */
     public void snapshotToday(Long portfolioId) {
         LocalDate today = LocalDate.now();
         Portfolio portfolio = portfolioRepository.findById(portfolioId).orElse(null);
@@ -185,6 +203,11 @@ public class PortfolioBackfillService {
                 calculator.buildAggregateSnapshotAtFromRows(portfolio, ts, openedByToday, derivativesOpenedByToday, dayPrices, todayRows)));
     }
 
+    /**
+     * Fills missing per-asset and daily snapshots for every position from {@code from} through
+     * yesterday, using historical price series and pre-loaded prior snapshots; days that already have
+     * both row types are skipped.
+     */
     public void backfillSinceDate(Long portfolioId, LocalDate from) {
         Portfolio portfolio = portfolioRepository.findById(portfolioId).orElse(null);
         if (portfolio == null) return;
@@ -212,6 +235,13 @@ public class PortfolioBackfillService {
         if (!dailyBatch.isEmpty()) dailySnapshotRepository.saveAll(dailyBatch);
     }
 
+    /**
+     * Rebuilds per-asset snapshots for a single spot asset from {@code from} through today, including
+     * a closing (zero) row on the lot's exit day. Aborts (without deleting existing rows) if upstream
+     * historical pricing is entirely unavailable for a range that should have history.
+     *
+     * @throws com.finance.common.exception.BusinessException when upstream pricing is unavailable for an expected-history range
+     */
     public void backfillAssetSinceDate(Long portfolioId, AssetType assetType,
                                        String assetCode, LocalDate from) {
         if (from == null || assetCode == null) return;
@@ -253,6 +283,7 @@ public class PortfolioBackfillService {
         if (!assetBatch.isEmpty()) assetSnapshotRepository.saveAll(assetBatch);
     }
 
+    /** Recomputes daily aggregate snapshots from {@code from} through yesterday off the existing per-asset rows (no price fetch). */
     public void rebuildDailyAggregatesFrom(Long portfolioId, LocalDate from) {
         if (from == null) return;
         Portfolio portfolio = portfolioRepository.findById(portfolioId).orElse(null);

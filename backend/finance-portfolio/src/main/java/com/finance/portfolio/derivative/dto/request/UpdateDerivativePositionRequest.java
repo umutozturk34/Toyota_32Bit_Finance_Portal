@@ -8,6 +8,7 @@ import jakarta.validation.constraints.PastOrPresent;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/** Request to edit an open derivative's entry; {@code entryPrice} (in {@code priceCurrency}) converts to TRY, or is resolved from history when null. */
 public record UpdateDerivativePositionRequest(
         @NotNull DerivativeDirection direction,
         @NotNull @PastOrPresent LocalDate entryDate,

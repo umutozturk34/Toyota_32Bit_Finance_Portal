@@ -10,12 +10,14 @@ import lombok.extern.log4j.Log4j2;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/** Stateless guards for position commands: enforces configured lot limits and sell constraints, throwing localized business errors on violation. */
 @Log4j2
 final class PortfolioValidator {
 
     private PortfolioValidator() {
     }
 
+    /** Validates a new/updated lot against entry-date, price and quantity bounds (entry must not be in the future). */
     static void validateLot(PositionRequest request, LotLimits limits) {
         log.debug("Validating lot: type={} code={} qty={} price={} entryDate={}",
                 request.assetType(), request.assetCode(), request.quantity(),
@@ -43,6 +45,7 @@ final class PortfolioValidator {
         }
     }
 
+    /** Validates a sell: quantity not above the held amount, exit date not before entry and not in the future. */
     static void validateSell(PortfolioPosition position, PositionSellRequest request) {
         if (request.quantity().compareTo(position.getQuantity()) > 0) {
             throw new BusinessException("error.portfolio.sell.quantityExceedsPosition");

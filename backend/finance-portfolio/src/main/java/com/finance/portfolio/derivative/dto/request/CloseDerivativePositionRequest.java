@@ -6,6 +6,11 @@ import jakarta.validation.constraints.PastOrPresent;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Request to close a derivative position. {@code closeQuantityLot} below the held amount triggers a
+ * partial close; {@code closePrice} (when given, in {@code priceCurrency}) is converted to TRY at
+ * {@code closeDate}, otherwise resolved from history.
+ */
 public record CloseDerivativePositionRequest(
         @NotNull @PastOrPresent LocalDate closeDate,
         BigDecimal closePrice,

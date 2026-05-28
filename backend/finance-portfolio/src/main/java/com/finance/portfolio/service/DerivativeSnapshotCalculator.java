@@ -16,6 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Thin façade over {@link DerivativeSnapshotAssembler} plus the aggregation logic that folds
+ * derivative positions into a portfolio's daily totals. Closed positions use their stored close
+ * price (already TRY); open ones use the contract's live last price.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -23,6 +28,7 @@ class DerivativeSnapshotCalculator {
 
     private final DerivativeSnapshotAssembler derivativeSnapshotAssembler;
 
+    /** Snapshot for the position "as of now": stored close price when closed, else live last price. */
     PortfolioAssetDailySnapshot buildDerivativeAssetSnapshot(Long portfolioId,
                                                               DerivativePosition position,
                                                               LocalDateTime batchTimestamp) {
@@ -60,6 +66,12 @@ class DerivativeSnapshotCalculator {
                 exitPrice, fxRateOverride, priorOverride);
     }
 
+    /**
+     * Folds each derivative into the day's {@link SnapshotTotals}, skipping lots not yet opened on
+     * {@code snapDate}. Positions closed before the date contribute realized PnL; on the close day the
+     * value already lives in the consolidated row (so realized is only added strictly after the close
+     * day). Open lots prefer the precomputed per-symbol row market value to avoid double counting.
+     */
     void accumulateDerivativePositions(List<DerivativePosition> derivatives, LocalDate snapDate,
                                         Map<AssetKey, BigDecimal> rowMvByKey,
                                         SnapshotTotals totals,
@@ -90,6 +102,7 @@ class DerivativeSnapshotCalculator {
         }
     }
 
+    /** Whether a row should count toward totals: non-VIOP always, VIOP only when its quantity is non-zero (excludes post-close zero rows). */
     static boolean isCountableViopRow(PortfolioAssetDailySnapshot row) {
         if (row.getAssetType() != AssetType.VIOP) return true;
         return row.getQuantity() == null || row.getQuantity().signum() != 0;

@@ -37,6 +37,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Builds time-series for the performance/history charts from stored snapshots over a range. Supports
+ * the portfolio aggregate series, a per-asset-type series, a single-asset series, and a CASH series
+ * (cumulative realized proceeds vs. closed cost). Each point is annotated with trade events
+ * (positions added/sold) detected in the window between consecutive points.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -52,6 +58,7 @@ public class PortfolioPerformanceService {
     private final PerformanceEventAssembler eventAssembler;
     private final PerformanceAggregationHelper aggregationHelper;
 
+    /** Performance series for the range: CASH, a specific asset type, or (null type) the portfolio aggregate. */
     @Transactional(readOnly = true)
     public List<PerformancePoint> getPerformance(Long portfolioId, String range, String assetType) {
         LocalDateTime end = LocalDateTime.now();
@@ -103,6 +110,7 @@ public class PortfolioPerformanceService {
         return result;
     }
 
+    /** Single-asset value/PnL series over the range (VIOP by symbol, otherwise by tracked asset), with per-point trade events. */
     @Transactional(readOnly = true)
     public List<AssetSeriesPoint> getAssetSeries(Long portfolioId,
                                                   String assetType, String assetCode, String range) {

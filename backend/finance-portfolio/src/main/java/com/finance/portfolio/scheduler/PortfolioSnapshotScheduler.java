@@ -8,6 +8,10 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/**
+ * Cron-driven daily portfolio snapshots: a morning run and an evening run (the latter also auto-closes
+ * expired derivative positions). Each run is wrapped in task tracking for observability.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor

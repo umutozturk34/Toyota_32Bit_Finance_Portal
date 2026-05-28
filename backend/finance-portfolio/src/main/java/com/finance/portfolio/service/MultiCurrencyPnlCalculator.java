@@ -17,6 +17,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+/**
+ * Restates portfolio value and PnL in alternative currency frames (USD, EUR) alongside TRY, so the
+ * UI can show "how did this do in dollars". Today's TRY value is divided by today's FX rate, while
+ * each lot's entry cost is divided by its own entry-date rate, isolating real performance from FX
+ * drift. Frames yield empty when the required rates are unavailable.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -29,6 +35,7 @@ public class MultiCurrencyPnlCalculator {
 
     private final HistoricalPricingPort historicalPricingPort;
 
+    /** Returns the value/PnL frame per currency (always TRY, plus USD/EUR when rates allow), keyed by currency code. */
     public Map<String, CurrencyFramePct> compute(
             List<PortfolioPosition> positions,
             BigDecimal totalValueTry,

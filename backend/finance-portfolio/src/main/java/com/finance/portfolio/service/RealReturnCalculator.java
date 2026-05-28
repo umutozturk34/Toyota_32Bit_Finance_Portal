@@ -19,6 +19,12 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
+/**
+ * Computes inflation-adjusted (real) returns by deflating each lot's entry cost to today's purchasing
+ * power using the TÜİK CPI macro indicator. Each entry cost is scaled by {@code cpiLatest / cpiAtEntry}
+ * to form a "real capital base"; the real PnL/percent is the current value measured against that base.
+ * Returns {@link RealReturnSummary#EMPTY} when CPI data is insufficient.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -30,6 +36,7 @@ public class RealReturnCalculator {
 
     private final MacroIndicatorQueryService macroQueryService;
 
+    /** Portfolio-level real return: inflation-adjusted PnL and percent, plus CPI growth since the earliest entry. */
     public record RealReturnSummary(
             BigDecimal realPnlTry,
             BigDecimal realPnlPercent,
@@ -37,6 +44,7 @@ public class RealReturnCalculator {
         public static final RealReturnSummary EMPTY = new RealReturnSummary(null, null, null);
     }
 
+    /** Per-position real-return percent keyed by position id; empty map when CPI data is missing or inputs are empty. */
     @Transactional(readOnly = true)
     public Map<Long, BigDecimal> computePerPosition(List<PortfolioPosition> positions,
                                                     Map<Long, BigDecimal> currentValues) {
@@ -67,6 +75,7 @@ public class RealReturnCalculator {
         return result;
     }
 
+    /** Portfolio real return: {@code totalValueTry} measured against the CPI-deflated capital base of all lots. */
     @Transactional(readOnly = true)
     public RealReturnSummary compute(List<PortfolioPosition> positions, BigDecimal totalValueTry) {
         if (positions == null || positions.isEmpty() || totalValueTry == null) {

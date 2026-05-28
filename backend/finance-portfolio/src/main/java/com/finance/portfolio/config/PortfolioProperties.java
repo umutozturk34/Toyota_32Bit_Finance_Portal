@@ -8,6 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/** Externalized portfolio tuning under {@code app.portfolio}: per-user caps, lot input limits, and snapshot/backfill/view/performance knobs. */
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "app.portfolio")

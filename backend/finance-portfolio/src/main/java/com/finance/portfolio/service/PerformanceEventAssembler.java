@@ -14,9 +14,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Detects trades (spot/derivative opens and closes) that fall in the window between two performance
+ * points and turns them into {@link PerformanceEvent} markers for the chart. Add events carry the
+ * entry value/notional; sell events carry the exit proceeds or realized PnL.
+ */
 @Component
 public class PerformanceEventAssembler {
 
+    /** Events for positions closed within the window only (sell markers), used by the CASH series. */
     public List<PerformanceEvent> realizedCloseEvents(List<PortfolioPosition> positions,
                                                       List<DerivativePosition> derivatives,
                                                       LocalDateTime prevTime, LocalDateTime currentTime) {
@@ -40,6 +46,7 @@ public class PerformanceEventAssembler {
         return events;
     }
 
+    /** All add and sell events within the window; empty when nothing traded. */
     public List<PerformanceEvent> buildEvents(List<PortfolioPosition> positions,
                                                List<DerivativePosition> derivatives,
                                                LocalDateTime prevTime, LocalDateTime currentTime) {
@@ -90,12 +97,14 @@ public class PerformanceEventAssembler {
         return v != null ? v : BigDecimal.ZERO;
     }
 
+    /** Spot/derivative opens and closes whose entry/exit date falls in {@code (prev, current]} for one chart interval. */
     public record TradeWindow(
             List<PortfolioPosition> spotAdded,
             List<PortfolioPosition> spotSold,
             List<DerivativePosition> derivativesAdded,
             List<DerivativePosition> derivativesClosed) {
 
+        /** Buckets positions by whether their entry/exit date lands in the half-open window {@code (prev, current]}. */
         public static TradeWindow detect(List<PortfolioPosition> positions,
                                           List<DerivativePosition> derivatives,
                                           LocalDateTime prevTime, LocalDateTime currentTime) {

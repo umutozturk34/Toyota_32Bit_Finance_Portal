@@ -18,6 +18,13 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+/**
+ * Maps a {@link DerivativePosition} into the unified {@link PositionResponse} shown in the positions
+ * grid. Values it live in TRY (notional, market value, PnL%), builds a display name, and packs
+ * derivative-specific facts (kind, margin, expiry, strike, option max loss/gain) into {@link DerivativeMeta}.
+ * Current price comes from the latest candle close (or contract last price) converted to TRY; closed
+ * positions use the stored close price.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor

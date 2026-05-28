@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.util.List;
 
+/** Persistence for spot {@link PortfolioPosition} lots, with portfolio- and tracked-asset-scoped queries. */
 @Repository
 public interface PortfolioPositionRepository extends JpaRepository<PortfolioPosition, Long> {
 

@@ -7,6 +7,7 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
+/** MapStruct mapper converting stored per-asset snapshots into chart {@link AssetSeriesPoint}s; trade events are attached later by the service. */
 @Mapper(componentModel = "spring")
 public abstract class PortfolioSnapshotMapper {
 

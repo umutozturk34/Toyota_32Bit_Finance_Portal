@@ -40,6 +40,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * REST API for portfolios and their spot positions: list/create/rename/delete portfolios,
+ * add/update/sell/reopen/delete positions, and read summary/positions/allocation/view/chart plus the
+ * SSE backfill-status stream. All endpoints are authenticated and scoped to the JWT subject.
+ */
 @RestController
 @RequestMapping("/api/v1/portfolios")
 @PreAuthorize("isAuthenticated()")

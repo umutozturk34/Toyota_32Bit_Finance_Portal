@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/** Persistence for portfolio-level {@link PortfolioDailySnapshot} rows: range reads for charts and date-based deletes for backfill. */
 @Repository
 public interface PortfolioDailySnapshotRepository extends JpaRepository<PortfolioDailySnapshot, Long> {
 

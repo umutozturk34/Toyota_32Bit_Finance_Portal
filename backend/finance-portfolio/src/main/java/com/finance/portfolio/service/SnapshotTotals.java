@@ -9,6 +9,11 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Mutable accumulator that sums a portfolio's open market value, closed exit/realized value and cost
+ * basis across positions for one day, then folds them into a {@link PortfolioDailySnapshot}. Total
+ * value is open market value plus closed exit value; realized proceeds are surfaced as {@code cashTry}.
+ */
 final class SnapshotTotals {
 
     BigDecimal totalMarketValue = BigDecimal.ZERO;
@@ -18,11 +23,13 @@ final class SnapshotTotals {
 
     void addEntry(BigDecimal v) { totalEntryValue = totalEntryValue.add(v); }
     void addMarket(BigDecimal v) { totalMarketValue = totalMarketValue.add(v); }
+    /** Folds a closed position: accumulates its realized PnL and its exit value (entry + realized). */
     void addRealizedClose(BigDecimal realized, BigDecimal exitValue) {
         cumulativeRealized = cumulativeRealized.add(realized);
         closedExitValue = closedExitValue.add(exitValue);
     }
 
+    /** Builds the day's aggregate snapshot from the accumulated totals and the supplied daily delta. */
     PortfolioDailySnapshot toAggregateSnapshot(Long portfolioId, LocalDate snapDate,
                                                 LocalDateTime batchTimestamp, DailyDelta daily) {
         BigDecimal mv = totalMarketValue.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);

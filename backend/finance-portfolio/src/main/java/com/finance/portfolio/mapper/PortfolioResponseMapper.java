@@ -10,6 +10,10 @@ import org.mapstruct.Mapper;
 
 import java.math.BigDecimal;
 
+/**
+ * MapStruct mapper assembling the portfolio API response DTOs (portfolio, position, summary,
+ * allocation) from entities plus pre-computed valuation figures supplied by the services.
+ */
 @Mapper(componentModel = "spring")
 public abstract class PortfolioResponseMapper {
 
@@ -46,6 +50,7 @@ public abstract class PortfolioResponseMapper {
         );
     }
 
+    /** Minimal response for write endpoints (no live valuation): only entry value is populated, the rest zeroed. */
     public PositionResponse toPositionResponseShell(PortfolioPosition pos) {
         return toPositionResponse(pos,
                 BigDecimal.ZERO, pos.entryValue(),

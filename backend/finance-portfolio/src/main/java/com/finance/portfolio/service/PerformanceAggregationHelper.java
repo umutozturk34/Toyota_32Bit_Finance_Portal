@@ -15,12 +15,18 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Groups a single timestamp's per-asset snapshot rows into the breakdown detail shown on each
+ * performance point: either by asset type or by asset code. Lot rows of the same asset are summed
+ * first, results are sorted by value desc, and the by-code view caps to a top-N with an OTHER bucket.
+ */
 @Component
 @RequiredArgsConstructor
 public class PerformanceAggregationHelper {
 
     private final PortfolioProperties portfolioProperties;
 
+    /** Detail rows grouped by asset type; also populates {@code outCurrTypeValues} with per-type market values for delta tracking. */
     public List<PerformanceAssetDetail> aggregateByType(List<PortfolioAssetDailySnapshot> assets,
                                                         Map<String, BigDecimal> outCurrTypeValues) {
         List<PortfolioAssetDailySnapshot> deduped = sumByAssetCodeWithinGroup(assets);
@@ -37,6 +43,7 @@ public class PerformanceAggregationHelper {
                 .toList();
     }
 
+    /** Totals and capped detail rows grouped by asset code, returning value/PnL/percent for one performance point. */
     public AssetCodeAgg aggregateByCode(List<PortfolioAssetDailySnapshot> snaps,
                                         Map<String, BigDecimal> outCurrAssetValues) {
         List<PortfolioAssetDailySnapshot> deduped = sumByAssetCodeWithinGroup(snaps);
@@ -60,6 +67,7 @@ public class PerformanceAggregationHelper {
         return new AssetCodeAgg(totalValue, totalPnl, pnlPercent, capped);
     }
 
+    /** Keeps the top-N details and folds the rest into a single OTHER row; input must be pre-sorted by value desc. */
     public List<PerformanceAssetDetail> capDetailsWithOther(List<PerformanceAssetDetail> sortedDetails) {
         int topN = portfolioProperties.getPerformance().getDetailTopNLimit();
         if (sortedDetails.size() <= topN) return sortedDetails;

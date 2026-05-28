@@ -18,6 +18,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+/**
+ * Assembles a single derivative {@link PortfolioAssetDailySnapshot} in TRY for one position at a
+ * timestamp. Market value = exitPrice × fxRate × contractSize × lots, where fxRate is the override
+ * (when supplied), else the day's historical FOREX rate (30-day lookback + closest-prior), else the
+ * live rate as a last resort. PnL uses {@link com.finance.portfolio.derivative.model.DerivativeDirection};
+ * the daily delta is computed against the prior snapshot's unit price.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -100,6 +107,7 @@ class DerivativeSnapshotAssembler {
         return new DailyDelta(dailyPnl, dailyPercent);
     }
 
+    /** FX rate to TRY for the price currency on {@code snapDate}: historical first (30-day lookback), live rate as last resort, else 1. */
     private BigDecimal contractFxRate(String currency, LocalDate snapDate) {
         if (currency == null || currency.isBlank() || "TRY".equalsIgnoreCase(currency)) {
             return BigDecimal.ONE;

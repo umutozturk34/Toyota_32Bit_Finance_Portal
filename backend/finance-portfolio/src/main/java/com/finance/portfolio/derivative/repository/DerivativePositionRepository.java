@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/** Persistence for {@link DerivativePosition}, including open-only and expired-contract lookups for auto-close. */
 public interface DerivativePositionRepository extends JpaRepository<DerivativePosition, Long> {
 
     List<DerivativePosition> findByPortfolioId(Long portfolioId);
@@ -16,6 +17,7 @@ public interface DerivativePositionRepository extends JpaRepository<DerivativePo
     @Query("select dp from DerivativePosition dp where dp.portfolio.id = :portfolioId and dp.closeDate is null")
     List<DerivativePosition> findOpenByPortfolio(@Param("portfolioId") Long portfolioId);
 
+    /** Open positions whose contract has already expired before {@code today} (candidates for auto-close). */
     @Query("select dp from DerivativePosition dp " +
             "where dp.closeDate is null and dp.viopContract.expiryDate < :today")
     List<DerivativePosition> findOpenWithExpiredContract(@Param("today") LocalDate today);

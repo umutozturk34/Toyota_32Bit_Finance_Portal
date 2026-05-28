@@ -27,6 +27,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+/**
+ * Computes portfolio allocation breakdowns in TRY for the pie/donut charts. Supports grouping by
+ * asset code or asset type, optional filtering (asset type, kind FUTURE/OPTION, or the synthetic
+ * CASH bucket of closed-position proceeds), a {@code realizedPnl} mode that buckets realized gains
+ * (with USD/EUR frame conversions at each close's FX rate), and a top-N cap that folds the tail into
+ * an OTHER bucket. Open spot uses live prices; open derivatives use live-to-TRY notional+PnL.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -48,6 +55,7 @@ class AllocationCalculator {
     private final PortfolioResponseMapper responseMapper;
     private final HistoricalPricingPort historicalPricingPort;
 
+    /** Entry point: builds the allocation (by mode/filter) and applies the optional top-N cap. */
     List<AllocationItem> compute(Long portfolioId, String mode, String assetTypeFilter, Integer limit) {
         log.debug("Computing allocation portfolioId={} mode={} filter={} limit={}",
                 portfolioId, mode, assetTypeFilter, limit);
@@ -327,6 +335,7 @@ class AllocationCalculator {
         return positions.stream().map(PortfolioPosition::toAssetKey).distinct().toList();
     }
 
+    /** Resolved request flags driving which positions and buckets the allocation includes. */
     private record AllocationContext(
             String assetTypeFilter,
             boolean byType,
@@ -357,6 +366,7 @@ class AllocationCalculator {
         }
     }
 
+    /** Mutable accumulator of bucket values/types plus the separate cash (closed-proceeds) tallies and running total. */
     private static final class AllocationAcc {
         final Map<String, BigDecimal> buckets = new LinkedHashMap<>();
         final Map<String, String> bucketTypes = new LinkedHashMap<>();

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/** Persistence for {@link Portfolio}, with owner-scoped lookups by {@code userSub}. */
 @Repository
 public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
 

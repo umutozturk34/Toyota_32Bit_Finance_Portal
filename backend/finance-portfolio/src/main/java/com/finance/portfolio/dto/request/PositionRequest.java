@@ -7,6 +7,11 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Request to add or update a spot lot. {@code priceCurrency} is the currency of the supplied
+ * entry/exit prices; the server converts them to TRY at the respective dates before persisting
+ * (null/blank means the prices are already TRY).
+ */
 public record PositionRequest(
         @NotBlank String assetType,
         @NotBlank String assetCode,

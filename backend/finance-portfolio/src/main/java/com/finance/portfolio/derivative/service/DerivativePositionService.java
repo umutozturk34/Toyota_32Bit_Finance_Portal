@@ -29,6 +29,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Write-side commands for VIOP derivative positions: open, close (full or partial), edit close/entry,
+ * reopen, delete and auto-close at expiry. Entry/close prices supplied by the user are converted to
+ * TRY at their date ({@link #toTryOnDate}); when omitted, they are resolved from historical candles
+ * via {@link DerivativePriceResolver}. After any mutation the symbol's daily snapshots are rebuilt
+ * and consolidated, and a backfill event is published. Note: closing always rebuilds peer snapshots
+ * so lots sharing the symbol stay consistent.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -64,6 +72,14 @@ public class DerivativePositionService {
         return mapper.toResponses(positionRepository.findOpenByPortfolio(portfolioId));
     }
 
+    /**
+     * Opens a position on an active, tradeable contract whose entry date is on or before expiry. Entry
+     * price is taken from the request (converted to TRY) or resolved from history; an optional close in
+     * the same request creates the position already closed. Backfills and consolidates the symbol's snapshots.
+     *
+     * @throws BadRequestException if the contract is inactive/not tradeable, entry is after expiry,
+     *                             or a required price cannot be resolved
+     */
     @Transactional
     public DerivativePositionResponse open(Long portfolioId, String userSub, OpenDerivativePositionRequest request) {
         Portfolio portfolio = requireOwnedPortfolio(portfolioId, userSub);
@@ -110,6 +126,14 @@ public class DerivativePositionService {
         return mapper.toResponse(saved);
     }
 
+    /**
+     * Closes an open position. A {@code closeQuantityLot} below the held quantity is a partial close
+     * (splits off a closed slice, keeps the rest open); otherwise the whole position is closed. Close
+     * price is from the request (to TRY) or resolved from history.
+     *
+     * @throws BadRequestException if already closed, close date precedes entry, close qty exceeds the
+     *                             position, or the price cannot be resolved
+     */
     @Transactional
     public DerivativePositionResponse close(Long positionId, Long portfolioId, String userSub,
                                             CloseDerivativePositionRequest request) {
@@ -170,6 +194,12 @@ public class DerivativePositionService {
         return closedSlice;
     }
 
+    /**
+     * Wipes and rebuilds all daily snapshots for the symbol so figures across every lot of that
+     * contract stay consistent after a mutation, then re-consolidates duplicate same-timestamp rows.
+     * {@code primary} is the just-changed lot; {@code reduced} is the surviving open remainder of a
+     * partial close (null otherwise).
+     */
     private void rebuildPeerSnapshots(Long portfolioId, String symbol, DerivativePosition primary,
                                        DerivativePosition reduced) {
         assetSnapshotRepository.deleteByPortfolioIdAndAssetTypeAndAssetCode(
@@ -187,6 +217,7 @@ public class DerivativePositionService {
         snapshotMaintenance.consolidateSymbolSnapshots(portfolioId, symbol);
     }
 
+    /** Re-closes an already-closed position with a new close date/price (reopen then close again). */
     @Transactional
     public DerivativePositionResponse updateClose(Long positionId, Long portfolioId, String userSub,
                                                    CloseDerivativePositionRequest request) {
@@ -214,6 +245,7 @@ public class DerivativePositionService {
         return mapper.toResponse(position);
     }
 
+    /** Edits an open position's direction/entry date/price/lots, re-validating against contract expiry. */
     @Transactional
     public DerivativePositionResponse updateOpen(Long positionId, Long portfolioId, String userSub,
                                                   UpdateDerivativePositionRequest request) {
@@ -282,6 +314,12 @@ public class DerivativePositionService {
         log.info("DerivativePosition deleted id={} portfolio={}", positionId, portfolioId);
     }
 
+    /**
+     * Force-closes any still-open positions whose contract has expired, using the contract's settlement
+     * price (falling back to last price), converted to TRY at expiry. Skips positions with no price.
+     *
+     * @return the number of positions auto-closed
+     */
     @Transactional
     public int autoCloseExpired() {
         List<DerivativePosition> orphaned = positionRepository.findOpenWithExpiredContract(LocalDate.now());

@@ -4,6 +4,7 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import { viopService } from './services/viopService';
 import { getChangeClass, changeColors, formatPrice, formatPercentAbs } from '../../shared/utils/formatters';
 import { useMoney } from '../../shared/hooks/useMoney';
+import { viopQuoteCurrency } from '../../shared/utils/priceCurrency';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
 import MarketOpenDerivativeModal from '../portfolio/components/MarketOpenDerivativeModal';
@@ -38,7 +39,7 @@ function ViopMetadata({ asset }) {
   const cls = getChangeClass(asset.changePercent);
   const localeTag = t('common.localeTag');
   const isOption = meta.kind === 'OPTION';
-  const currency = meta.currency || 'TRY';
+  const currency = viopQuoteCurrency(asset.code);
   return (
     <MetadataTiles tiles={[
       { label: t('viop.lastPrice'), value: asset.price != null ? money(asset.price, currency) : t('viop.noPrice') },

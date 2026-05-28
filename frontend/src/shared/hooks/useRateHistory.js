@@ -65,8 +65,12 @@ export function useRateHistory() {
 
   const rateAt = useCallback((currency, dateStr, field = 'sellingPrice') => {
     if (currency === 'TRY') return 1;
-    const historical = rateOn(data?.[currency], dateStr, field);
-    return historical ?? currentRates[currency] ?? null;
+    const series = data?.[currency];
+    const historical = rateOn(series, dateStr, field);
+    if (historical != null) return historical;
+    // Date precedes loaded history → use the earliest historical rate, never today's spot.
+    if (series && series.length > 0) return series[0][field] ?? series[0].sellingPrice;
+    return currentRates[currency] ?? null;
   }, [data, currentRates]);
 
   const resolveTarget = useCallback((base, natural) => {

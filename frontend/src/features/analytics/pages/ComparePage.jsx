@@ -231,7 +231,6 @@ export default function ComparePage() {
       }
       const native = nativeCurrencyFor(s.indicator.type, s.indicator.code);
       const shouldConvert = !isRateLike(s.indicator.type)
-        && s.indicator.type !== 'PORTFOLIO'
         && displayCurrency !== 'ORIGINAL'
         && native !== targetCurrency;
       if (shouldConvert) {

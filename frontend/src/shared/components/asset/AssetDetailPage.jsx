@@ -17,7 +17,7 @@ import AssetActionsBar from '../../../features/watch/components/AssetActionsBar'
 import MarketStatusBadge from '../layout/MarketStatusBadge';
 import { transformCandles, transformFundCandles } from '../../utils/candleTransform';
 import { useRateHistory } from '../../hooks/useRateHistory';
-import { priceCurrencyOf } from '../../utils/priceCurrency';
+import { priceCurrencyOf, viopQuoteCurrency } from '../../utils/priceCurrency';
 
 function extractCurrentPrice(asset) {
   if (!asset) return null;
@@ -38,13 +38,9 @@ function naturalCurrencyFor(assetType, asset, assetCode) {
     if ((assetCode || '').toLowerCase() === 'tether') return 'TRY';
     return 'USD';
   }
-  if (assetType === 'VIOP') return asset?.metadata?.currency || 'TRY';
-  if (assetType === 'COMMODITY') {
-    const upper = (assetCode || '').toUpperCase();
-    if (upper.endsWith('TRY') || upper.endsWith('TRYG')) return 'TRY';
-    if (upper.endsWith('EUR') || upper.endsWith('EURG')) return 'EUR';
-    return 'USD';
-  }
+  if (assetType === 'VIOP') return viopQuoteCurrency(assetCode);
+  // Commodities are cross-converted to TRY at ingest, so candles are always TRY.
+  if (assetType === 'COMMODITY') return 'TRY';
   return 'TRY';
 }
 
@@ -132,7 +128,7 @@ export default function AssetDetailPage({
 
   const transform = TRANSFORM_MAP[assetType] || transformCandles;
   const naturalCurrency = naturalCurrencyFor(assetType, asset, assetCode);
-  const baseCurrency = asset?.metadata?.currency || naturalCurrency;
+  const baseCurrency = naturalCurrency;
   const chartData = useMemo(
     () => convertCandleSet(transform(filteredHistoryRaw), convertAt, baseCurrency, naturalCurrency),
     [filteredHistoryRaw, transform, convertAt, baseCurrency, naturalCurrency],

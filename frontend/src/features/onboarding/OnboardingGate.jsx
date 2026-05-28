@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { UserCog, Sun, Moon, ArrowRight, X, TrendingUp } from 'lucide-react';
@@ -151,17 +151,29 @@ export default function OnboardingGate() {
 
   const show = !isLoading && preferences && preferences.userSub && preferences.onboardingCompleted === false;
 
-  const handleComplete = useCallback(() => {
+  const closingRef = useRef(false);
+  const farewellStartedRef = useRef(false);
+
+  // Single farewell for every exit path (tour finish, skip, escape, mobile, preferences-skip):
+  // fade in → hold → advance to 'closing' so AnimatePresence plays the exit fade. The
+  // onboardingCompleted mutation is deferred to onExitComplete so its optimistic cache write
+  // can't flip `show` and unmount the gate mid fade-out (which made skip/esc cut abruptly).
+  const showFarewell = useCallback(() => {
+    if (farewellStartedRef.current) return;
+    farewellStartedRef.current = true;
+    setPhase('farewell');
+    window.setTimeout(() => {
+      closingRef.current = true;
+      setPhase('closing');
+    }, 2600);
+  }, []);
+
+  const handleFarewellExitComplete = useCallback(() => {
+    if (!closingRef.current) return;
+    closingRef.current = false;
     setPhase('done');
     updatePreferences.mutate({ onboardingCompleted: true });
   }, [updatePreferences]);
-
-  // Single farewell for every exit path (tour finish, skip, escape, mobile, preferences-skip):
-  // stays visible a beat, then handleComplete flips phase → AnimatePresence fades it out.
-  const showFarewell = useCallback(() => {
-    setPhase('farewell');
-    window.setTimeout(() => handleComplete(), 2600);
-  }, [handleComplete]);
 
   const handleLanguageChange = useCallback((lang) => {
     if (i18nInstance.language?.slice(0, 2) !== lang) {
@@ -210,7 +222,7 @@ export default function OnboardingGate() {
 
   return (
     <>
-      <AnimatePresence>
+      <AnimatePresence onExitComplete={handleFarewellExitComplete}>
         {phase === 'landing' && (
           <motion.div
             key="landing"

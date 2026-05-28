@@ -42,8 +42,7 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
   const symbol = (lockedContract?.symbol || lockedContract?.code || '').toUpperCase();
   const meta = lockedContract?.metadata || {};
   const isOption = meta.kind === 'OPTION';
-  const currency = meta.currency
-    || resolveNativeCurrency({ assetType: 'VIOP', assetCode: symbol, metadata: meta }, lockedContract);
+  const currency = resolveNativeCurrency({ assetType: 'VIOP', assetCode: symbol });
   const inputCurrency = displayCurrency === 'ORIGINAL' ? currency : displayCurrency;
 
   const isEditing = Boolean(editPosition);

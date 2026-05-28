@@ -50,7 +50,7 @@ const ChartSidebar = ({
 }) => {
     const { t } = useTranslation();
     return (
-        <div className="w-60 shrink-0 border-r border-border-default flex flex-col bg-surface/40 backdrop-blur-md relative">
+        <div className="w-full lg:w-60 shrink-0 border-b lg:border-b-0 lg:border-r border-border-default flex flex-col bg-surface/40 backdrop-blur-md relative z-20 min-h-[260px] max-h-[60vh] landscape:max-h-[85vh] sm:max-h-[55vh] sm:landscape:max-h-[80vh] lg:min-h-0 lg:max-h-none">
             <div className="pointer-events-none absolute inset-y-0 left-0 w-px bg-gradient-to-b from-indigo-400/40 via-fuchsia-400/20 to-transparent" />
             <div className="pointer-events-none absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-indigo-400/20 to-transparent" />
             <div className="flex border-b border-border-default">
@@ -116,7 +116,7 @@ const ChartSidebar = ({
                 {(isFund || isForex) && onToggleSecondaryLines && (
                     <button
                         onClick={onToggleSecondaryLines}
-                        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 cursor-pointer ${showSecondaryLines ? 'border-violet-400/40 bg-violet-400/10 text-violet-400 shadow-[0_0_12px_rgba(167,139,250,0.15)]' : 'border-border-default bg-transparent text-fg-muted hover:text-fg hover:border-border-hover'}`}
+                        className={`w-full flex items-center gap-2 px-2.5 py-2 min-h-[40px] rounded-lg text-xs font-medium border transition-all duration-200 cursor-pointer ${showSecondaryLines ? 'border-violet-400/40 bg-violet-400/10 text-violet-400 shadow-[0_0_12px_rgba(167,139,250,0.15)]' : 'border-border-default bg-transparent text-fg-muted hover:text-fg hover:border-border-hover'}`}
                         title={isFund ? t('lightweightChart.toggleBulletinPrice', { defaultValue: 'Borsa Fiyatı' }) : t('lightweightChart.toggleBuyingPrice', { defaultValue: 'Alış Fiyatı' })}
                     >
                         <BarChart2 className="w-3.5 h-3.5" />
@@ -126,7 +126,7 @@ const ChartSidebar = ({
                 {showVolumeToggle && (
                     <button
                         onClick={() => setShowVolume(!showVolume)}
-                        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 cursor-pointer ${showVolume ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.15)]' : 'border-border-default bg-transparent text-fg-muted hover:text-fg hover:border-border-hover'}`}
+                        className={`w-full flex items-center gap-2 px-2.5 py-2 min-h-[40px] rounded-lg text-xs font-medium border transition-all duration-200 cursor-pointer ${showVolume ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.15)]' : 'border-border-default bg-transparent text-fg-muted hover:text-fg hover:border-border-hover'}`}
                     >
                         <BarChart2 className="w-3.5 h-3.5" />
                         {t('chart.volume')}
@@ -137,7 +137,7 @@ const ChartSidebar = ({
                         <button
                             onClick={() => hasInvestorCountData && setShowInvestorCount(!showInvestorCount)}
                             disabled={!hasInvestorCountData}
-                            className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${!hasInvestorCountData ? 'opacity-45 cursor-not-allowed border-border-default text-fg-subtle' : showInvestorCount ? 'cursor-pointer border-indigo-400/40 bg-indigo-400/10 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.15)]' : 'cursor-pointer border-border-default text-fg-muted hover:text-fg hover:border-border-hover'}`}
+                            className={`w-full flex items-center gap-2 px-2.5 py-2 min-h-[40px] rounded-lg text-xs font-medium border transition-all duration-200 ${!hasInvestorCountData ? 'opacity-45 cursor-not-allowed border-border-default text-fg-subtle' : showInvestorCount ? 'cursor-pointer border-indigo-400/40 bg-indigo-400/10 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.15)]' : 'cursor-pointer border-border-default text-fg-muted hover:text-fg hover:border-border-hover'}`}
                             title={hasInvestorCountData ? t('lightweightChart.investorCount') : t('lightweightChart.noInvestorCountData')}
                         >
                             <Activity className="w-3.5 h-3.5" />
@@ -146,7 +146,7 @@ const ChartSidebar = ({
                         <button
                             onClick={() => hasPortfolioSizeData && setShowPortfolioSize(!showPortfolioSize)}
                             disabled={!hasPortfolioSizeData}
-                            className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 ${!hasPortfolioSizeData ? 'opacity-45 cursor-not-allowed border-border-default text-fg-subtle' : showPortfolioSize ? 'cursor-pointer border-emerald-500/40 bg-emerald-500/10 text-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.15)]' : 'cursor-pointer border-border-default text-fg-muted hover:text-fg hover:border-border-hover'}`}
+                            className={`w-full flex items-center gap-2 px-2.5 py-2 min-h-[40px] rounded-lg text-xs font-medium border transition-all duration-200 ${!hasPortfolioSizeData ? 'opacity-45 cursor-not-allowed border-border-default text-fg-subtle' : showPortfolioSize ? 'cursor-pointer border-emerald-500/40 bg-emerald-500/10 text-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.15)]' : 'cursor-pointer border-border-default text-fg-muted hover:text-fg hover:border-border-hover'}`}
                             title={hasPortfolioSizeData ? t('lightweightChart.portfolioSize') : t('lightweightChart.noPortfolioSizeData')}
                         >
                             <BarChart2 className="w-3.5 h-3.5" />

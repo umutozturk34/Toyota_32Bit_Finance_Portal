@@ -29,6 +29,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Bond-specific read API: paged search with type filtering, single-bond lookup (cache-backed),
+ * coupon-rate history over a period, and per-type counts.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

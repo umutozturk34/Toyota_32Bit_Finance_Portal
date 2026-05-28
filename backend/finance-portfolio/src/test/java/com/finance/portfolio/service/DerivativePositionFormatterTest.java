@@ -178,9 +178,9 @@ class DerivativePositionFormatterTest {
 
 @Test
     void shouldConvertNativeToTry_whenCurrencyIsForeign() {
-        ViopContract c = contract("USDFUT", ViopContractKind.FUTURE, "1", "10", "USD", null, null);
+        ViopContract c = contract("F_XAUUSD0625", ViopContractKind.FUTURE, "1", "10", "USD", null, null);
         DerivativePosition dp = openPosition(c, DerivativeDirection.LONG, "9", "1");
-        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("USDFUT", BigDecimal.ZERO))
+        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("F_XAUUSD0625", BigDecimal.ZERO))
                 .thenReturn(Optional.of(ViopCandle.builder().close(new BigDecimal("10")).build()));
         when(pricingPort.getExitPriceTry(eq(MarketType.FOREX), eq("USD"))).thenReturn(new BigDecimal("30"));
 
@@ -191,9 +191,9 @@ class DerivativePositionFormatterTest {
 
     @Test
     void shouldKeepNativeWhenFxRateMissing_whenCurrencyIsForeign() {
-        ViopContract c = contract("USDFUT", ViopContractKind.FUTURE, "1", "10", "USD", null, null);
+        ViopContract c = contract("F_XAUUSD0625", ViopContractKind.FUTURE, "1", "10", "USD", null, null);
         DerivativePosition dp = openPosition(c, DerivativeDirection.LONG, "9", "1");
-        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("USDFUT", BigDecimal.ZERO)).thenReturn(Optional.empty());
+        when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc("F_XAUUSD0625", BigDecimal.ZERO)).thenReturn(Optional.empty());
         when(pricingPort.getExitPriceTry(eq(MarketType.FOREX), eq("USD"))).thenReturn(null);
 
         PositionResponse response = formatter.toPositionResponse(dp);

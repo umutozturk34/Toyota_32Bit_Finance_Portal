@@ -24,6 +24,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Fetches macro indicator observations from EVDS and appends new points. Fetches start from each
+ * indicator's last stored date (or the configured back-fill start), grouping by frequency and
+ * paging by date window, and skips points already stored. Updates each indicator's last value/date.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -97,6 +102,7 @@ public class MacroIndicatorFetchService {
                 .orElse(properties.backfillStartDate());
     }
 
+    /** Fetch start for an indicator: day after its last point, or the back-fill start if none. */
     private LocalDate startFor(MacroIndicator indicator, LocalDate today) {
         LocalDate lastDate = indicator.getLastDate();
         if (lastDate == null) {
@@ -134,5 +140,6 @@ public class MacroIndicatorFetchService {
         return inserted;
     }
 
+    /** Summary of a refresh: indicators seen, new points inserted, and which codes changed. */
     public record FetchOutcome(int indicatorsTouched, int pointsInserted, List<String> changedCodes) { }
 }

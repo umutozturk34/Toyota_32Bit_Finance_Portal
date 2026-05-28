@@ -17,6 +17,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Maps EVDS bond data into snapshot and rate-history DTOs. EVDS dots in serie codes become
+ * underscores to match response columns; snapshots use the latest row carrying any series value.
+ */
 @Component
 @Log4j2
 public class EvdsBondClientMapper {
@@ -85,6 +89,7 @@ public class EvdsBondClientMapper {
         return rates;
     }
 
+    /** Scans from newest for the first item carrying any series value, falling back to the last item. */
     private Map<String, Object> findLatestNonNullItem(
             List<Map<String, Object>> items,
             List<BondSerieDto> bondSeries) {

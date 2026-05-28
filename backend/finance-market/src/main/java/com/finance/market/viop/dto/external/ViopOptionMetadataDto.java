@@ -2,6 +2,7 @@ package com.finance.market.viop.dto.external;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/** Raw OpsiyonSozlesmeleri option-template metadata row (one per underlying/option family). */
 public record ViopOptionMetadataDto(
         @JsonProperty("Title") String underlying,
         @JsonProperty("GRUP") String group,

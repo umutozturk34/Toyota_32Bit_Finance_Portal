@@ -228,7 +228,7 @@ export default function TasksPanel({ open, onClose }) {
             headerActions={headerActions}
         >
                         <div className="p-3 space-y-3">
-                            <div className="grid gap-2 grid-cols-2">
+                            <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
                                 {TASK_GROUPS.map(({ categoryKey, icon: CatIcon, color, bg, tasks }) => (
                                     <div key={categoryKey} className="rounded-lg border border-border-default bg-bg-elevated card-hover backdrop-blur-md p-3 space-y-2">
                                         <div className="flex items-center gap-2">
@@ -288,13 +288,13 @@ export default function TasksPanel({ open, onClose }) {
                                         {taskData.history.map((row, i) => (
                                             <div
                                                 key={`${row.type}-${row.startedAt}-${i}`}
-                                                className="flex items-center justify-between rounded-md border border-border-default bg-bg-elevated px-3 py-2"
+                                                className="flex items-center justify-between gap-2 rounded-md border border-border-default bg-bg-elevated px-3 py-2 flex-wrap"
                                             >
                                                 <div className="flex items-center gap-2 min-w-0">
                                                     <StatusBadge status={row.status} />
                                                     <span className="text-xs font-medium text-fg truncate">{row.type}</span>
                                                 </div>
-                                                <div className="flex items-center gap-2 shrink-0 text-[10px] text-fg-muted">
+                                                <div className="flex items-center gap-2 shrink-0 text-[10px] text-fg-muted ml-auto">
                                                     <span>{formatDuration(row.durationMs)}</span>
                                                     <span>{formatTime(row.startedAt)}</span>
                                                 </div>

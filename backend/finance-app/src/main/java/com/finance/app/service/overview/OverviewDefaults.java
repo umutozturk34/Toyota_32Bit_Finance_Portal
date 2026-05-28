@@ -10,6 +10,11 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Read-friendly accessor over {@link OverviewProperties} exposing the overview defaults and limits (default
+ * item counts, per-widget max items, default sections/asset references) that widget providers and the layout
+ * reader consult.
+ */
 @Component
 @RequiredArgsConstructor
 public class OverviewDefaults {

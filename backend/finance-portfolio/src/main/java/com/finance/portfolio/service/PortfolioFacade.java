@@ -23,6 +23,11 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Single entry point for the portfolio controller: enforces owner access on each call and delegates
+ * to the CRUD, summary and performance services. Also assembles the combined {@code view} (summary +
+ * positions + allocation) and routes chart requests.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -113,6 +118,7 @@ public class PortfolioFacade {
         return summaryService.getAllocation(portfolioId, mode, assetType, limit);
     }
 
+    /** Builds the composite portfolio view, computing only the sections named in {@code includes} (summary/positions/allocation). */
     public PortfolioViewResponse getPortfolioView(String userSub, Long portfolioId, Set<String> includes) {
         validateOwner(userSub, portfolioId);
 
@@ -129,6 +135,7 @@ public class PortfolioFacade {
         return new PortfolioViewResponse(summary, positions, allocation);
     }
 
+    /** Routes a chart request: {@code asset-series} returns a single asset's series, otherwise the portfolio performance series. */
     public Object getChart(String userSub, Long portfolioId, String type,
                            String range, String assetType, String assetCode) {
         validateOwner(userSub, portfolioId);

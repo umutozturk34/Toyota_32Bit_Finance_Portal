@@ -79,6 +79,55 @@ class UserLayoutServiceTest {
     }
 
     @Test
+    void should_useEmptyObjectNode_when_overviewIsNull() {
+        // Arrange
+        when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
+        when(repository.saveAndFlush(any(UserLayout.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        UserLayoutResponse result = service.saveOverview(USER_SUB, null);
+
+        // Assert
+        ArgumentCaptor<UserLayout> captor = ArgumentCaptor.forClass(UserLayout.class);
+        verify(repository).saveAndFlush(captor.capture());
+        assertThat(captor.getValue().getOverview()).isNotNull();
+        assertThat(captor.getValue().getOverview().isEmpty()).isTrue();
+        assertThat(result.updatedAt()).isNotNull();
+    }
+
+    @Test
+    void should_applySanitizersInOrder_when_sanitizersConfigured() throws Exception {
+        // Arrange
+        JsonNode rawOverview = objectMapper.readTree("""
+                {"sections":[{"id":"x"}]}""");
+        JsonNode afterFirst = objectMapper.readTree("""
+                {"sections":[{"id":"first"}]}""");
+        JsonNode afterSecond = objectMapper.readTree("""
+                {"sections":[{"id":"second"}]}""");
+        OverviewSaveSanitizer firstSanitizer = node -> afterFirst;
+        OverviewSaveSanitizer secondSanitizer = node -> {
+            assertThat(node).isSameAs(afterFirst);
+            return afterSecond;
+        };
+        UserLayoutService chainedService = new UserLayoutService(
+                repository, new UserLayoutMapperImpl(),
+                java.util.List.of(firstSanitizer, secondSanitizer));
+        when(repository.findById(USER_SUB)).thenReturn(Optional.empty());
+        when(repository.saveAndFlush(any(UserLayout.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Act
+        UserLayoutResponse result = chainedService.saveOverview(USER_SUB, rawOverview);
+
+        // Assert
+        ArgumentCaptor<UserLayout> captor = ArgumentCaptor.forClass(UserLayout.class);
+        verify(repository).saveAndFlush(captor.capture());
+        assertThat(captor.getValue().getOverview().get("sections").get(0).get("id").asString())
+                .isEqualTo("second");
+        assertThat(result.overview().get("sections").get(0).get("id").asString())
+                .isEqualTo("second");
+    }
+
+    @Test
     void shouldOverrideExistingOverview_whenSavingNewLayout() throws Exception {
         JsonNode oldOverview = objectMapper.readTree("""
                 {"sections":[{"id":"indices"}]}""");

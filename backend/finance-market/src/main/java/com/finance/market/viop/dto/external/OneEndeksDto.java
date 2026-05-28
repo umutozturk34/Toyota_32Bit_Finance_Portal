@@ -3,6 +3,7 @@ package com.finance.market.viop.dto.external;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
+/** Raw İş Yatırım OneEndeks per-symbol quote payload (full day/week/month/year stats). */
 public record OneEndeksDto(
         OffsetDateTime updateDate,
         BigDecimal bid,

@@ -27,10 +27,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Builds and reconciles the daily VIOP snapshot history for a derivative position. Walks each day
+ * from entry to close (or today, exclusive of an open today), valuing the position at that day's
+ * candle close converted to TRY via each day's historical FX rate (30-day lookback + closest-prior
+ * walk), with a synthetic zero row emitted on the close day when no peer lot keeps the symbol open.
+ * Also consolidates duplicate same-timestamp rows (summing values) so each instant has one row.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
 public class DerivativeSnapshotMaintenance {
+
+    static final int FX_LOOKBACK_DAYS = 30;
 
     private final ViopCandleRepository candleRepository;
     private final HistoricalPricingPort historicalPricingPort;
@@ -38,6 +47,11 @@ public class DerivativeSnapshotMaintenance {
     private final SnapshotCalculationService snapshotCalculator;
     private final DerivativePositionRepository derivativePositionRepository;
 
+    /**
+     * Rebuilds the position's per-day asset snapshots over its lifetime. On the close day the stored
+     * close price is used verbatim (FX rate 1, since it is already TRY); other days use the candle
+     * close at that day's FX rate, carrying forward the last known close/rate when a day is missing.
+     */
     public void backfillSnapshots(DerivativePosition position) {
         if (position.getViopContract() == null) return;
         String symbol = position.getViopContract().getSymbol();
@@ -50,11 +64,11 @@ public class DerivativeSnapshotMaintenance {
                 position.getId(), symbol, from, to);
 
         Map<LocalDate, BigDecimal> closeByDate = loadCandleCloses(symbol, from, to);
-        String currency = position.getViopContract().getCurrency();
+        String currency = position.getViopContract().resolvePriceCurrency();
         boolean needsFxConversion = currency != null && !"TRY".equalsIgnoreCase(currency);
         Map<LocalDate, BigDecimal> fxByDate = needsFxConversion
                 ? historicalPricingPort.getPriceSeries(MarketType.FOREX, currency.toUpperCase(),
-                        from.minusDays(7), to)
+                        from.minusDays(FX_LOOKBACK_DAYS), to)
                 : Map.of();
 
         BigDecimal entryFxAtOpen = needsFxConversion
@@ -106,6 +120,7 @@ public class DerivativeSnapshotMaintenance {
         }
     }
 
+    /** Synthetic post-close row marking the holding dropping to zero, with a daily PnL that backs out the prior market value. */
     private PortfolioAssetDailySnapshot buildZeroDerivativeSnapshot(DerivativePosition position,
                                                                      LocalDateTime ts,
                                                                      BigDecimal unitPrice,
@@ -130,6 +145,7 @@ public class DerivativeSnapshotMaintenance {
                 .build();
     }
 
+    /** True if another lot of the same symbol is still held past this close date (so no zero row should be emitted). */
     private boolean hasPeerHoldingAfter(DerivativePosition position, LocalDate thisClose) {
         Long portfolioId = position.getPortfolio().getId();
         String symbol = position.getViopContract().getSymbol();
@@ -144,6 +160,7 @@ public class DerivativeSnapshotMaintenance {
                         && (p.getCloseDate() == null || p.getCloseDate().isAfter(thisClose)));
     }
 
+    /** Merges rows that share an exact {@code createdAt} for the symbol into a single summed row, deleting the duplicates. */
     public void consolidateSymbolSnapshots(Long portfolioId, String symbol) {
         if (symbol == null) return;
         List<PortfolioAssetDailySnapshot> all = assetSnapshotRepository
@@ -229,10 +246,11 @@ public class DerivativeSnapshotMaintenance {
         return keeper;
     }
 
+    /** FX rate on {@code target} or the nearest earlier day within the 30-day lookback; null if none. */
     static BigDecimal closestPriorRate(Map<LocalDate, BigDecimal> series, LocalDate target) {
         if (series == null || series.isEmpty()) return null;
         LocalDate cursor = target;
-        for (int i = 0; i <= 30; i++) {
+        for (int i = 0; i <= FX_LOOKBACK_DAYS; i++) {
             BigDecimal rate = series.get(cursor);
             if (rate != null) return rate;
             cursor = cursor.minusDays(1);

@@ -8,6 +8,10 @@ import org.springframework.web.reactive.function.client.ExchangeFunction;
 
 import reactor.core.publisher.Mono;
 
+/**
+ * WebClient filter that attaches the current TEFAS session cookie to every request, except the
+ * session-warm-up request itself (which establishes that cookie).
+ */
 @Log4j2
 public class TefasSessionFilter implements ExchangeFilterFunction {
 

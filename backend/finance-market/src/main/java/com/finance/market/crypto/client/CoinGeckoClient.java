@@ -16,6 +16,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 
+/**
+ * Crypto data client: market snapshots from CoinGecko (per vs-currency) and OHLC klines from
+ * Binance, each guarded by its own circuit-breaker/retry. Failures wrap in {@link ExternalApiException}.
+ */
 @Component
 @Log4j2
 public class CoinGeckoClient {

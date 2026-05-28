@@ -6,10 +6,18 @@ import com.finance.market.core.model.BaseCandle;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * Fills in an asset's day change from its candle history only when the source did not already
+ * provide one, so source-supplied change values are never overwritten.
+ */
 public final class ChangeFromCandlesUpdater {
 
     private ChangeFromCandlesUpdater() {}
 
+    /**
+     * Computes change from current price vs. the previous candle's close, but only when the asset's
+     * change percent is currently absent/zero. Returns whether a value was applied.
+     */
     public static boolean applyFromTopTwoDescIfMissing(BaseAsset asset,
                                                        BigDecimal currentPrice,
                                                        List<? extends BaseCandle> topTwoDesc,

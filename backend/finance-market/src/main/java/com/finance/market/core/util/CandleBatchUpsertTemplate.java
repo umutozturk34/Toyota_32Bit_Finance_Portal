@@ -7,17 +7,27 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Generic batch upsert by date/key: loads existing entities for the incoming keys in one query,
+ * mutates matches in place via the {@code updater}, and collects the rest as new entities to insert.
+ * Returns the new entities and insert/update counts; the caller persists the new entities.
+ */
 public final class CandleBatchUpsertTemplate {
 
     private CandleBatchUpsertTemplate() {
     }
 
+    /** Outcome of an upsert: entities to insert plus insert/update counts. */
     public record UpsertResult<E>(List<E> newEntities, int insertCount, int updateCount) {
         public int totalChanged() {
             return insertCount + updateCount;
         }
     }
 
+    /**
+     * Upserts {@code dtos} against existing entities keyed by {@code K}: existing keys are updated,
+     * unseen keys are created. Existing entities are mutated in place (managed by the caller's tx).
+     */
     public static <D, E, K>UpsertResult<E> upsert(
             List<D> dtos,
             Function<D, K> dtoKeyExtractor,

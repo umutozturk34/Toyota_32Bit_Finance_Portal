@@ -9,6 +9,14 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
+/**
+ * A single hypothetical spot lot: a buy of {@code quantity} at {@code entryPrice} on {@code entryDate},
+ * optionally closed by an exit. Multiple lots may exist per asset; they are not netted.
+ * <p>All prices ({@code entryPrice}/{@code exitPrice}) are stored already converted to TRY at the
+ * respective date's FX rate, so PnL math stays currency-agnostic. The asset identity lives on the
+ * linked {@link TrackedAsset}; {@code assetType}/{@code assetCode} are transient mirrors hydrated
+ * on load for convenience.
+ */
 @Getter
 @Builder
 @NoArgsConstructor
@@ -87,24 +95,29 @@ public class PortfolioPosition {
         updatedAt = LocalDateTime.now();
     }
 
+    /** Pricing-lookup key (market type + code) used to fetch live/historical prices for this lot. */
     public AssetPricingPort.AssetKey toAssetKey() {
         return new AssetPricingPort.AssetKey(assetType.marketType(), assetCode);
     }
 
+    /** Cost basis in TRY (entry price × quantity). */
     public BigDecimal entryValue() {
         return entryPrice.multiply(quantity).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
     }
 
+    /** Market value in TRY at the given unit price; zero when price is unknown. */
     public BigDecimal currentValue(BigDecimal currentPrice) {
         if (currentPrice == null) return BigDecimal.ZERO;
         return currentPrice.multiply(quantity).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
     }
 
+    /** Unrealized PnL in TRY against the given current price; zero when price is unknown. */
     public BigDecimal unrealizedPnl(BigDecimal currentPrice) {
         if (currentPrice == null) return BigDecimal.ZERO;
         return currentPrice.subtract(entryPrice).multiply(quantity).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
     }
 
+    /** Mutates entry attributes in place; null arguments leave the corresponding field unchanged. */
     public void updateLot(LocalDateTime newEntryDate, BigDecimal newEntryPrice, BigDecimal newQuantity) {
         if (newEntryDate != null) this.entryDate = newEntryDate;
         if (newEntryPrice != null) this.entryPrice = newEntryPrice;
@@ -115,16 +128,19 @@ public class PortfolioPosition {
         return exitDate != null;
     }
 
+    /** Records an exit; {@code price} must already be in TRY (converted at the exit date's FX rate). */
     public void closeWith(LocalDateTime when, BigDecimal price) {
         this.exitDate = when;
         this.exitPrice = price;
     }
 
+    /** Clears the exit, returning the lot to open/held state. */
     public void reopen() {
         this.exitDate = null;
         this.exitPrice = null;
     }
 
+    /** Realized PnL in TRY for a closed lot; zero while still open. */
     public BigDecimal realizedPnl() {
         if (exitPrice == null) return BigDecimal.ZERO;
         return exitPrice.subtract(entryPrice).multiply(quantity).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);

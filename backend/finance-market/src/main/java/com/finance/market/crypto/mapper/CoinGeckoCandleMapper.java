@@ -15,6 +15,10 @@ import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * MapStruct mapper for crypto external payloads: CoinGecko market rows to snapshot DTOs and Binance
+ * klines to candle DTOs (epoch-millis open time converted to the app timezone, volume rounded to long).
+ */
 @Mapper(componentModel = "spring")
 public abstract class CoinGeckoCandleMapper {
 

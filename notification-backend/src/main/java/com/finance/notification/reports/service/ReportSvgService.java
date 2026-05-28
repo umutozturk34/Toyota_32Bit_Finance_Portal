@@ -136,58 +136,95 @@ public class ReportSvgService {
         svg.append("<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 ").append(size).append(" ").append(size)
                 .append("\" preserveAspectRatio=\"xMidYMid meet\" style=\"display:block;width:100%;max-width:180px;height:auto\">");
 
-        long nonZero = items.stream().filter(i -> i.value() != null && i.value().doubleValue() > 0).count();
+        final double MIN_VISIBLE_FRAC = 0.012;
+        long nonZeroCount = items.stream().filter(i -> i.value() != null && i.value().doubleValue() > 0).count();
         double labelRadius = (rOuter + rInner) / 2.0;
-        if (nonZero == 1) {
-            var only = items.stream().filter(i -> i.value() != null && i.value().doubleValue() > 0).findFirst().get();
-            svg.append("<circle cx=\"").append(cx).append("\" cy=\"").append(cy)
-                    .append("\" r=\"").append(rOuter).append("\" fill=\"").append(only.color())
-                    .append("\" stroke=\"").append(palette.card()).append("\" stroke-width=\"1.5\"/>");
-            svg.append("<circle cx=\"").append(cx).append("\" cy=\"").append(cy)
-                    .append("\" r=\"").append(rInner).append("\" fill=\"").append(palette.card()).append("\"/>");
-            svg.append("<text x=\"").append(fmt(cx)).append("\" y=\"").append(fmt(cy - rOuter - 6))
-                    .append("\" text-anchor=\"middle\" fill=\"").append(palette.fg())
-                    .append("\" font-size=\"10\" font-weight=\"700\" font-family=\"-apple-system,sans-serif\">100%</text>");
-        } else {
-            double angle = -Math.PI / 2.0;
-            for (var it : items) {
-                double frac = (it.value() == null ? 0d : it.value().doubleValue()) / total;
-                if (frac <= 0) continue;
-                double next = angle + frac * 2 * Math.PI;
-                int largeArc = frac > 0.5 ? 1 : 0;
-                double x1o = cx + rOuter * Math.cos(angle);
-                double y1o = cy + rOuter * Math.sin(angle);
-                double x2o = cx + rOuter * Math.cos(next);
-                double y2o = cy + rOuter * Math.sin(next);
-                double x1i = cx + rInner * Math.cos(angle);
-                double y1i = cy + rInner * Math.sin(angle);
-                double x2i = cx + rInner * Math.cos(next);
-                double y2i = cy + rInner * Math.sin(next);
-
-                svg.append("<path d=\"")
-                        .append("M ").append(fmt(x1o)).append(",").append(fmt(y1o))
-                        .append(" A ").append(rOuter).append(",").append(rOuter).append(" 0 ").append(largeArc).append(" 1 ")
-                        .append(fmt(x2o)).append(",").append(fmt(y2o))
-                        .append(" L ").append(fmt(x2i)).append(",").append(fmt(y2i))
-                        .append(" A ").append(rInner).append(",").append(rInner).append(" 0 ").append(largeArc).append(" 0 ")
-                        .append(fmt(x1i)).append(",").append(fmt(y1i))
-                        .append(" Z\" fill=\"").append(it.color())
-                        .append("\" stroke=\"").append(palette.card()).append("\" stroke-width=\"1.5\"/>");
-                angle = next;
+        double[] displayFracs = new double[items.size()];
+        double[] realFracs = new double[items.size()];
+        double excessFromFloor = 0d;
+        double bigPool = 0d;
+        for (int i = 0; i < items.size(); i++) {
+            double v = items.get(i).value() == null ? 0d : items.get(i).value().doubleValue();
+            double f = v / total;
+            realFracs[i] = f;
+            if (f <= 0) {
+                displayFracs[i] = 0d;
+            } else if (f < MIN_VISIBLE_FRAC) {
+                displayFracs[i] = MIN_VISIBLE_FRAC;
+                excessFromFloor += MIN_VISIBLE_FRAC - f;
+            } else {
+                displayFracs[i] = f;
+                bigPool += f;
             }
+        }
+        if (excessFromFloor > 0 && bigPool > 0) {
+            double shrinkFactor = (bigPool - excessFromFloor) / bigPool;
+            for (int i = 0; i < items.size(); i++) {
+                if (realFracs[i] >= MIN_VISIBLE_FRAC) {
+                    displayFracs[i] = realFracs[i] * shrinkFactor;
+                }
+            }
+        }
+        double angle = -Math.PI / 2.0;
+        for (int i = 0; i < items.size(); i++) {
+            double frac = displayFracs[i];
+            if (frac <= 0) continue;
+            double next = angle + frac * 2 * Math.PI;
+            int largeArc = frac > 0.5 ? 1 : 0;
+            double x1o = cx + rOuter * Math.cos(angle);
+            double y1o = cy + rOuter * Math.sin(angle);
+            double x2o = cx + rOuter * Math.cos(next);
+            double y2o = cy + rOuter * Math.sin(next);
+            double x1i = cx + rInner * Math.cos(angle);
+            double y1i = cy + rInner * Math.sin(angle);
+            double x2i = cx + rInner * Math.cos(next);
+            double y2i = cy + rInner * Math.sin(next);
+
+            svg.append("<path d=\"")
+                    .append("M ").append(fmt(x1o)).append(",").append(fmt(y1o))
+                    .append(" A ").append(rOuter).append(",").append(rOuter).append(" 0 ").append(largeArc).append(" 1 ")
+                    .append(fmt(x2o)).append(",").append(fmt(y2o))
+                    .append(" L ").append(fmt(x2i)).append(",").append(fmt(y2i))
+                    .append(" A ").append(rInner).append(",").append(rInner).append(" 0 ").append(largeArc).append(" 0 ")
+                    .append(fmt(x1i)).append(",").append(fmt(y1i))
+                    .append(" Z\" fill=\"").append(items.get(i).color())
+                    .append("\" stroke=\"").append(palette.card()).append("\" stroke-width=\"1.5\"/>");
+            angle = next;
+        }
+        if (nonZeroCount == 1) {
+            svg.append("<text x=\"").append(fmt(cx)).append("\" y=\"").append(fmt(cy + 5))
+                    .append("\" text-anchor=\"middle\" fill=\"").append(palette.fg())
+                    .append("\" font-size=\"18\" font-weight=\"700\" font-family=\"-apple-system,sans-serif\">100%</text>");
+        } else {
             angle = -Math.PI / 2.0;
-            for (var it : items) {
-                double frac = (it.value() == null ? 0d : it.value().doubleValue()) / total;
-                if (frac <= 0) continue;
-                double next = angle + frac * 2 * Math.PI;
-                if (frac >= 0.06) {
-                    double mid = (angle + next) / 2.0;
+            for (int i = 0; i < items.size(); i++) {
+                double displayFrac = displayFracs[i];
+                if (displayFrac <= 0) { continue; }
+                double next = angle + displayFrac * 2 * Math.PI;
+                String pct = String.format(Locale.ROOT, "%.1f%%", realFracs[i] * 100).replace('.', ',');
+                double mid = (angle + next) / 2.0;
+                if (realFracs[i] >= 0.06) {
                     double tx = cx + labelRadius * Math.cos(mid);
                     double ty = cy + labelRadius * Math.sin(mid);
-                    String pct = String.format(Locale.ROOT, "%.0f%%", frac * 100);
                     svg.append("<text x=\"").append(fmt(tx)).append("\" y=\"").append(fmt(ty + 3))
                             .append("\" text-anchor=\"middle\" fill=\"#ffffff\"")
                             .append(" font-size=\"9\" font-weight=\"700\" font-family=\"-apple-system,sans-serif\">")
+                            .append(pct).append("</text>");
+                } else if (realFracs[i] > 0) {
+                    double leaderInnerX = cx + (rOuter - 1) * Math.cos(mid);
+                    double leaderInnerY = cy + (rOuter - 1) * Math.sin(mid);
+                    double leaderOuterX = cx + (rOuter + 10) * Math.cos(mid);
+                    double leaderOuterY = cy + (rOuter + 10) * Math.sin(mid);
+                    boolean rightSide = Math.cos(mid) >= 0;
+                    double textX = leaderOuterX + (rightSide ? 2 : -2);
+                    double textY = leaderOuterY + 3;
+                    String anchor = rightSide ? "start" : "end";
+                    svg.append("<line x1=\"").append(fmt(leaderInnerX)).append("\" y1=\"").append(fmt(leaderInnerY))
+                            .append("\" x2=\"").append(fmt(leaderOuterX)).append("\" y2=\"").append(fmt(leaderOuterY))
+                            .append("\" stroke=\"").append(palette.muted()).append("\" stroke-width=\"0.6\"/>");
+                    svg.append("<text x=\"").append(fmt(textX)).append("\" y=\"").append(fmt(textY))
+                            .append("\" text-anchor=\"").append(anchor).append("\" fill=\"").append(palette.fg())
+                            .append("\" font-size=\"8\" font-weight=\"600\" font-family=\"-apple-system,sans-serif\">")
                             .append(pct).append("</text>");
                 }
                 angle = next;

@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
+/**
+ * Per-minute cap on GET reads of credential/profile endpoints; ordered just ahead of the action
+ * tier so reads are classified before the broader mutation matcher.
+ */
 @Component
 @Order(29)
 public class CredentialReadTier implements RateLimitTier {

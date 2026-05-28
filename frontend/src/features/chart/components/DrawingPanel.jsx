@@ -49,14 +49,14 @@ const DrawingPanel = ({
     return (
         <div className="space-y-2">
             { }
-            <div className="grid grid-cols-3 gap-1">
+            <div data-tour="chart-drawing-tools" className="grid grid-cols-3 gap-1.5">
                 {DRAWING_TOOLS.map(({ id, labelKey, Icon, color }) => {
                     const isActive = activeTool === id;
                     return (
                         <button
                             key={id}
                             onClick={() => selectTool(id)}
-                            className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg text-[11px] font-medium border transition-all duration-150 cursor-pointer group"
+                            className="flex flex-col items-center gap-1 px-2 py-2.5 min-h-[56px] rounded-lg text-[11px] font-medium border transition-all duration-150 cursor-pointer group"
                             style={{
                                 background: isActive ? `${color}18` : 'transparent',
                                 borderColor: isActive ? `${color}50` : 'var(--color-border-default)',
@@ -81,12 +81,12 @@ const DrawingPanel = ({
                 <div className="p-2 rounded-lg border border-border-default bg-bg-elevated/40 space-y-2">
                     <div>
                         <label className="block text-[10px] text-fg-muted uppercase tracking-wider font-medium mb-1.5">{t('chart.drawingPanel.selectIcon')}</label>
-                        <div className="grid grid-cols-5 gap-1">
+                        <div className="grid grid-cols-5 gap-1.5">
                             {ICON_OPTIONS.map(({ id, emoji, labelKey }) => (
                                 <button
                                     key={id}
                                     onClick={() => setSelectedIcon(id)}
-                                    className="w-8 h-8 flex items-center justify-center rounded-md border cursor-pointer group transition-all duration-150"
+                                    className="w-full min-w-[40px] min-h-[40px] flex items-center justify-center rounded-md border cursor-pointer group transition-all duration-150"
                                     style={{
                                         background: selectedIcon === id ? 'rgba(94,106,210,0.2)' : 'transparent',
                                         borderColor: selectedIcon === id ? 'rgba(94,106,210,0.4)' : (isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'),

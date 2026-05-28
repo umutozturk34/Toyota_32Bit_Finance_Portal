@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { ChevronRight, Package, Pencil, Trash2, XCircle, ShoppingBag, RotateCcw } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { ChevronRight, ExternalLink, Package, Pencil, Trash2, XCircle, ShoppingBag, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cardVariants } from '../../../shared/utils/animations';
@@ -24,6 +24,9 @@ import BulkSelectionBar from './BulkSelectionBar';
 import BulkDeleteDialog from './BulkDeleteDialog';
 
 const SORT_OPTION_IDS = ['currentValue', 'profitPercent', 'profitAmount', 'entryDate', 'assetCode', 'quantity'];
+
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
+const marketHref = (type, code) => `${TYPE_ROUTES[type] ?? '/market'}/${encodeURIComponent(code)}`;
 
 function formatEntryDate(dateStr, localeTag) {
   if (!dateStr) return '';
@@ -155,6 +158,7 @@ export default function PositionsTable({ portfolioId, backfill: backfillProp, on
 
 function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetClick, onEditClick, onDeleteClick, onCloseClick, onSellClick, onReopenClick }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { format: money, formatCompact: moneyCompact } = useMoney();
   const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
   const pnlClass = getChangeClass(pos.pnlTry);
@@ -174,6 +178,12 @@ function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetC
 
   const guard = (fn) => () => { if (!pending && fn) fn(pos); };
   const assetClick = guard(onAssetClick);
+  const marketDetailClick = (e) => {
+    e.stopPropagation();
+    if (pending) return;
+    navigate(marketHref(pos.assetType, pos.assetCode));
+  };
+  const marketLinkLabel = t('portfolio.positions.viewOnMarket', { defaultValue: 'Pazar detayı' });
   const editClick = isClosedDerivative ? guard(onCloseClick) : guard(onEditClick);
   const deleteClick = guard(onDeleteClick);
   const closeClick = guard(onCloseClick);
@@ -224,6 +234,15 @@ function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetC
               <p className={`font-semibold text-fg leading-tight ${isDerivative ? 'text-xs break-all' : 'text-sm truncate'}`}>
                 {assetCodeLabel(pos.assetType, pos.assetCode)}
               </p>
+              <button
+                type="button"
+                onClick={marketDetailClick}
+                title={marketLinkLabel}
+                aria-label={marketLinkLabel}
+                className="inline-flex items-center justify-center rounded-md p-0.5 text-accent/80 hover:text-accent hover:bg-accent/10 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 outline-none border-none bg-transparent cursor-pointer"
+              >
+                <ExternalLink className="h-3 w-3" />
+              </button>
             </div>
             {!isDerivative && (
               <p className="text-[11px] text-fg-muted truncate">{displayName}</p>
@@ -286,14 +305,23 @@ function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetC
         <ChevronRight onClick={assetClick} className="h-4 w-4 text-fg-muted group-hover:text-accent group-hover:translate-x-1 transition-all cursor-pointer" />
       </div>
 
-      <div className="lg:hidden p-4 space-y-3">
-        <div className="flex items-center justify-between gap-2">
+      <div className="lg:hidden p-3 sm:p-4 space-y-3">
+        <div className="flex items-start justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2.5 min-w-0 flex-1" onClick={assetClick}>
             {!pending && <SelectableCheckbox checked={!!selected} onClick={onToggleSelect} label={pos.assetCode} />}
             <PositionAssetBadge pos={pos} />
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <p className="text-sm font-semibold text-fg truncate">{pos.assetCode}</p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="text-sm font-semibold text-fg truncate max-w-[120px]">{pos.assetCode}</p>
+                <button
+                  type="button"
+                  onClick={marketDetailClick}
+                  title={marketLinkLabel}
+                  aria-label={marketLinkLabel}
+                  className="inline-flex items-center justify-center rounded-md p-0.5 text-accent/80 hover:text-accent hover:bg-accent/10 transition-all outline-none border-none bg-transparent cursor-pointer"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </button>
                 <PositionStatusBadge closed={isClosedSpot || isClosedDerivative} isDerivative={isDerivative} />
               </div>
               {!isDerivative && (
@@ -307,7 +335,7 @@ function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetC
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
             <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-mono font-medium ${changeBg[pnlClass]} ${changeColors[pnlClass]}`}>{formatPercent(pos.pnlPercent)}</span>
             {showEdit && (
               <button onClick={(e) => { e.stopPropagation(); editClick(); }} className="flex items-center justify-center w-7 h-7 rounded-md text-accent bg-accent/10 hover:bg-accent/20 transition-colors border-none cursor-pointer" aria-label={t('common.edit')}>
@@ -335,13 +363,13 @@ function PositionRow({ pos, pending, elapsed, selected, onToggleSelect, onAssetC
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.quantityCol')}</p><p className="font-mono text-fg font-medium">{Number(pos.quantity).toLocaleString(localeTag, { maximumFractionDigits: 6 })}</p></div>
-          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryDateCol')}</p><p className="font-mono text-fg font-medium">{formatEntryDate(pos.entryDate, localeTag)}</p></div>
+          <div className="rounded-lg bg-bg-base px-2.5 py-2 min-w-0"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.quantityCol')}</p><p className="font-mono text-fg font-medium truncate">{Number(pos.quantity).toLocaleString(localeTag, { maximumFractionDigits: 6 })}</p></div>
+          <div className="rounded-lg bg-bg-base px-2.5 py-2 min-w-0"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryDateCol')}</p><p className="font-mono text-fg font-medium truncate">{formatEntryDate(pos.entryDate, localeTag)}</p></div>
           {(isClosedSpot || isClosedDerivative) && (
-            <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.exitDateLabel')}</p><p className="font-mono text-fg font-medium">{formatEntryDate(pos.exitDate, localeTag) || '—'}</p></div>
+            <div className="rounded-lg bg-bg-base px-2.5 py-2 min-w-0"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.exitDateLabel')}</p><p className="font-mono text-fg font-medium truncate">{formatEntryDate(pos.exitDate, localeTag) || '—'}</p></div>
           )}
-          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryPriceCol')}</p><p className="font-mono text-fg font-medium">{money(pos.entryPrice, 'TRY', { dateAt: pos.entryDate })}</p></div>
-          <div className="rounded-lg bg-bg-base px-2.5 py-2"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.pnlCol')}</p><p className={`font-mono font-semibold ${changeColors[pnlClass]}`} title={money(pos.pnlTry)}>{bigMoney(pos.pnlTry)}</p></div>
+          <div className="rounded-lg bg-bg-base px-2.5 py-2 min-w-0"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.entryPriceCol')}</p><p className="font-mono text-fg font-medium truncate" title={money(pos.entryPrice, 'TRY', { dateAt: pos.entryDate })}>{money(pos.entryPrice, 'TRY', { dateAt: pos.entryDate })}</p></div>
+          <div className="rounded-lg bg-bg-base px-2.5 py-2 min-w-0"><p className="text-fg-muted mb-0.5">{t('portfolio.positions.pnlCol')}</p><p className={`font-mono font-semibold truncate ${changeColors[pnlClass]}`} title={money(pos.pnlTry)}>{bigMoney(pos.pnlTry)}</p></div>
         </div>
       </div>
       </div>

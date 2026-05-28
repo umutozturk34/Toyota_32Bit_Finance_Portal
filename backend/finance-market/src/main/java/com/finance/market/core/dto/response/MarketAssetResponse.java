@@ -6,6 +6,7 @@ import com.finance.common.model.MarketType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/** Unified API view of any market asset: identity, price/change, and a market-specific metadata block. */
 public record MarketAssetResponse(
         String code,
         String name,

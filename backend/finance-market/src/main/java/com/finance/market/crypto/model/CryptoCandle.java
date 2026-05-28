@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import java.util.Objects;
+/**
+ * Daily OHLC candle for a crypto coin (native-currency, from Binance klines), unique per
+ * (crypto, date). The {@code cryptoId} column is read-only; the {@code crypto} association owns the FK.
+ */
 @Getter
 @Setter
 @SuperBuilder

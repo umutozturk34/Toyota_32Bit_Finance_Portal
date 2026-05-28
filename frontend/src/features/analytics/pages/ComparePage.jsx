@@ -30,6 +30,7 @@ import {
   backFillToWindowStart,
   displayLabel,
   nativeCurrencyFor,
+  compoundRateSeries,
 } from '../lib/compareSeriesUtils';
 
 const MAX_COMPARE = 6;
@@ -61,8 +62,8 @@ const MODES = [
 export default function ComparePage() {
   const { t } = useTranslation();
   const { isDark } = useTheme();
-  const { currency: displayCurrency, format: money } = useMoney();
-  const { convertAt } = useRateHistory();
+  const { currency: displayCurrency } = useMoney();
+  const { convertBetween } = useRateHistory();
   const [params, setParams] = useSearchParams();
   const { data: userPortfolios } = usePortfolioList();
   const [portfolioPickerOpen, setPortfolioPickerOpen] = useState(false);
@@ -75,13 +76,37 @@ export default function ComparePage() {
   );
   const [mode, setMode] = useSessionState('compare:mode', params.get('mode') || 'assets');
   const [selected, setSelected] = useSessionState('compare:selected', parseInitialSelection(params));
+  const [rangeId, setRangeId] = useChartRange();
+  const initialRangeRef = useRef(params.get('range'));
+  const initialStartRef = useRef(params.get('start'));
+  const initialEndRef = useRef(params.get('end'));
+  const initialCurrencyRef = useRef(params.get('currency'));
+  const [useExplicitBounds, setUseExplicitBounds] = useState(
+    !!(initialStartRef.current && initialEndRef.current),
+  );
+  // Comparing against a USD/EUR deposit frames the whole chart in that deposit's currency
+  // (single non-TRY deposit only; mixed/none → no override).
+  const depositFrameCurrency = useMemo(() => {
+    const set = new Set(
+      selected
+        .filter((s) => s.type === 'MACRO_DEPOSIT')
+        .map((s) => nativeCurrencyFor(s.type, s.code))
+        .filter((c) => c !== 'TRY'),
+    );
+    return set.size === 1 ? [...set][0] : null;
+  }, [selected]);
   const targetCurrency = useMemo(() => {
+    if (useExplicitBounds && initialCurrencyRef.current) return initialCurrencyRef.current;
+    if (depositFrameCurrency) return depositFrameCurrency;
     if (displayCurrency !== 'ORIGINAL') return displayCurrency;
     const first = selected.find((s) => !isMacro(s.type) && s.type !== 'PORTFOLIO');
     return first ? nativeCurrencyFor(first.type, first.code) : 'TRY';
-  }, [displayCurrency, selected]);
-  const [rangeId, setRangeId] = useChartRange();
-  const initialRangeRef = useRef(params.get('range'));
+  }, [displayCurrency, selected, useExplicitBounds, depositFrameCurrency]);
+  // "Original" view (each series in its own native) only when no explicit currency is in effect:
+  // a URL currency (USD/EUR beater) or a selected non-TRY deposit forces conversion to that currency.
+  const originalView = displayCurrency === 'ORIGINAL'
+    && !(useExplicitBounds && initialCurrencyRef.current)
+    && !depositFrameCurrency;
 
   useEffect(() => {
     if (initialRangeRef.current) {
@@ -93,8 +118,21 @@ export default function ComparePage() {
         && fromUrl.every((u, i) => selected[i] && u.code === selected[i].code && u.type === selected[i].type);
       if (!sameAsCurrent) setSelected(fromUrl);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once URL->state hydration; re-running would clobber the user's later selection/range edits
   }, []);
+
+  const rangeUserChangedRef = useRef(false);
+  useEffect(() => {
+    if (!rangeUserChangedRef.current) {
+      if (rangeId === initialRangeRef.current) {
+        rangeUserChangedRef.current = true;
+      }
+      return;
+    }
+    if (useExplicitBounds && rangeId && rangeId !== initialRangeRef.current) {
+      setUseExplicitBounds(false);
+    }
+  }, [rangeId, useExplicitBounds]);
 
   useEffect(() => {
     const next = new URLSearchParams(params);
@@ -109,16 +147,20 @@ export default function ComparePage() {
     if (mode !== 'assets') next.set('mode', mode);
     else next.delete('mode');
     if (rangeId) next.set('range', rangeId);
+    if (!useExplicitBounds) {
+      next.delete('start');
+      next.delete('end');
+      next.delete('currency');
+    }
     setParams(next, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, mode, rangeId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- params/setParams omitted on purpose: setParams is unstable in react-router v7, adding it self-triggers an infinite URL-write loop
+  }, [selected, mode, rangeId, useExplicitBounds]);
 
   useEffect(() => {
     if (selected.some((s) => isMacro(s.type) || s.type === 'PORTFOLIO') && mode === 'assets') {
       setMode('mixed');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, mode]);
+  }, [selected, mode, setMode]);
 
   useEffect(() => {
     if (!portfolioPickerOpen) return undefined;
@@ -141,7 +183,12 @@ export default function ComparePage() {
 
   const modeDef = MODES.find((m) => m.id === mode);
   const range = useMemo(() => RANGES.find((r) => r.id === rangeId) || RANGES[3], [rangeId]);
-  const bounds = useMemo(() => rangeBounds(range.days), [range]);
+  const bounds = useMemo(() => {
+    if (useExplicitBounds && initialStartRef.current && initialEndRef.current) {
+      return { from: initialStartRef.current, to: initialEndRef.current };
+    }
+    return rangeBounds(range.days);
+  }, [range, useExplicitBounds]);
 
   const queries = useQueries({
     queries: selected.map((s) => ({
@@ -154,11 +201,17 @@ export default function ComparePage() {
   const isLoading = queries.some((q) => q.isLoading);
 
   const rawSeriesData = useMemo(
-    () => selected.map((ind, idx) => ({
-      indicator: { ...ind, displayName: displayLabel(ind) },
-      points: queries[idx]?.data || [],
-      color: colorFor(ind, idx),
-    })),
+    () => selected.map((ind, idx) => {
+      const raw = queries[idx]?.data || [];
+      // In comparison, a deposit's interest-rate series is compounded into a cumulative growth
+      // curve so it ranks against assets' returns (its own detail page keeps the raw rate).
+      const points = ind.type === 'MACRO_DEPOSIT' ? compoundRateSeries(raw) : raw;
+      return {
+        indicator: { ...ind, displayName: displayLabel(ind) },
+        points,
+        color: colorFor(ind, idx),
+      };
+    }),
     [selected, queries]
   );
 
@@ -202,12 +255,11 @@ export default function ComparePage() {
       }
       const native = nativeCurrencyFor(s.indicator.type, s.indicator.code);
       const shouldConvert = !isRateLike(s.indicator.type)
-        && s.indicator.type !== 'PORTFOLIO'
-        && displayCurrency !== 'ORIGINAL'
+        && !originalView
         && native !== targetCurrency;
       if (shouldConvert) {
         pts = pts.map((p) => {
-          const converted = convertAt(p.value, native, p.date);
+          const converted = convertBetween(p.value, native, targetCurrency, p.date);
           return { ...p, value: converted ?? p.value };
         });
       }
@@ -215,7 +267,7 @@ export default function ComparePage() {
       pts = forwardFillToToday(pts);
       return { ...s, points: pts };
     });
-  }, [backfilledSeriesData, commonStartDate, displayCurrency, targetCurrency, convertAt, bounds.from]);
+  }, [backfilledSeriesData, commonStartDate, originalView, targetCurrency, convertBetween, bounds.from]);
 
   const seriesData = convertedData;
 
@@ -343,9 +395,10 @@ export default function ComparePage() {
                 onSelect={addAsset}
                 navigateOnSelect={false}
                 excludeCodes={selected.map((s) => s.code)}
+                excludeTypes={['BOND']}
                 filterType={modeDef.filterType}
                 placeholder={mode === 'assets'
-                  ? t('analytics.compareSearchAssets', { defaultValue: 'Hisse, kripto, fon, döviz, emtia, bono ara…' })
+                  ? t('analytics.compareSearchAssets', { defaultValue: 'Hisse, kripto, fon, döviz, emtia ara…' })
                   : t('analytics.compareSearchMixed', { defaultValue: 'Asset veya makro indikatör ara…' })}
               />
             </div>
@@ -461,7 +514,7 @@ export default function ComparePage() {
           )}
         </div>
 
-        {seriesData.length > 0 && <CompareInfoBar selected={seriesData} targetCurrency={targetCurrency} money={money} t={t} />}
+        {seriesData.length > 0 && <CompareInfoBar selected={seriesData} targetCurrency={targetCurrency} t={t} />}
       </Card>
     </motion.div>
   );

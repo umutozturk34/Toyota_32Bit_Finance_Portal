@@ -17,6 +17,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * Persists forex entities and candles. Provides a shell-upsert (identity + display/flag metadata),
+ * snapshot save (also pushing to cache), and idempotent batch candle upsert that updates changed
+ * rows and inserts new ones.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -29,6 +34,7 @@ public class ForexEntityWriter implements MarketEntityWriter {
     private final ForexProperties forexProperties;
     private final AppProperties appProperties;
 
+    /** Creates or updates the forex identity row (name, flag emoji, instrument link) without prices. */
     public Forex upsertForexShell(ForexSerieMetadata meta) {
         Forex forex = forexRepository.findById(meta.currencyCode())
                 .orElseGet(() -> Forex.builder().currencyCode(meta.currencyCode()).build());

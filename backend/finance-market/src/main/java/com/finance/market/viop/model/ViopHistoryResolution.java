@@ -2,6 +2,7 @@ package com.finance.market.viop.model;
 
 import java.util.Map;
 
+/** Candle bar interval for VIOP history, identified by its period in minutes. */
 public enum ViopHistoryResolution {
     M5(5),
     M15(15),
@@ -27,6 +28,7 @@ public enum ViopHistoryResolution {
         return periodMinutes;
     }
 
+    /** Maps a minute count to its resolution, throwing for unsupported intervals. */
     public static ViopHistoryResolution fromPeriodMinutes(int minutes) {
         ViopHistoryResolution r = BY_MINUTES.get(minutes);
         if (r == null) {

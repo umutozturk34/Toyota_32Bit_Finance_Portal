@@ -59,11 +59,11 @@ export default function PageHeader({
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
         >
-            <h1 className="flex items-center gap-3 text-2xl font-display tracking-normal text-fg sm:text-3xl">
-                <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-accent text-white shadow-sm shadow-accent/20">
+            <h1 className="flex items-center gap-2 sm:gap-3 text-xl font-display tracking-normal text-fg sm:text-3xl min-w-0">
+                <span className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-accent text-white shadow-sm shadow-accent/20 shrink-0">
                     {icon}
                 </span>
-                {title}
+                <span className="min-w-0 break-words">{title}</span>
             </h1>
             <div className="flex flex-wrap items-center gap-2">
                 <Button

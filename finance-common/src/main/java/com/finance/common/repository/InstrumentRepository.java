@@ -8,6 +8,10 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Data access for {@link Instrument}, keyed in practice by the ({@link MarketType}, asset code)
+ * pair using case-insensitive code matching.
+ */
 @Repository
 public interface InstrumentRepository extends JpaRepository<Instrument, Long> {
 

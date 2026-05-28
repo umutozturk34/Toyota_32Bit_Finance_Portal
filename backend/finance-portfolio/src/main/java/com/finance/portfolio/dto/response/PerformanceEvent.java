@@ -4,6 +4,7 @@ import com.finance.portfolio.model.PerformanceEventType;
 
 import java.math.BigDecimal;
 
+/** A trade marker on a chart point: kind (added/sold), the asset, quantity and TRY value involved. */
 public record PerformanceEvent(
         PerformanceEventType type,
         String assetType,

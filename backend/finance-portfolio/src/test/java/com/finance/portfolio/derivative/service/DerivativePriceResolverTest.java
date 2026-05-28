@@ -74,11 +74,11 @@ class DerivativePriceResolverTest {
 
     @Test
     void shouldConvertToTry_whenCurrencyIsForeignAndFxAvailable() {
-        ViopContract c = contract("USDFUT", "USD");
+        ViopContract c = contract("F_XAUUSD0625", "USD");
         when(candleRepository.findFirstBySymbolAndCandleDateLessThanEqualOrderByCandleDateDesc(any(), any()))
                 .thenReturn(Optional.of(ViopCandle.builder().close(new BigDecimal("10")).build()));
         when(historicalPricingPort.getPriceSeries(eq(MarketType.FOREX), eq("USD"),
-                eq(TARGET.minusDays(7)), eq(TARGET)))
+                eq(TARGET.minusDays(30)), eq(TARGET)))
                 .thenReturn(Map.of(TARGET, new BigDecimal("30")));
 
         BigDecimal result = resolver.resolveHistoricalPriceTry(c, TARGET);
@@ -88,7 +88,7 @@ class DerivativePriceResolverTest {
 
     @Test
     void shouldFallbackToNativeWhenNoFxRate_whenCurrencyForeign() {
-        ViopContract c = contract("USDFUT", "USD");
+        ViopContract c = contract("F_XAUUSD0625", "USD");
         when(candleRepository.findFirstBySymbolAndCandleDateLessThanEqualOrderByCandleDateDesc(any(), any()))
                 .thenReturn(Optional.of(ViopCandle.builder().close(new BigDecimal("10")).build()));
         when(historicalPricingPort.getPriceSeries(any(), any(), any(), any()))

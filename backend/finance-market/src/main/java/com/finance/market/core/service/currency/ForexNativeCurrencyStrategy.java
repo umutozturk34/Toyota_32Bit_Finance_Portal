@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 import java.util.EnumSet;
 import java.util.Set;
 
+/**
+ * Forex native currency: TRY, since forex assets are stored as X/TRY rates quoted in TRY.
+ */
 @Component
 public class ForexNativeCurrencyStrategy implements NativeCurrencyStrategy {
 

@@ -203,6 +203,8 @@ const MainLayout = () => {
       >
         <button
           onClick={() => setMobileOpen(true)}
+          data-tour="mobile-burger-open"
+          aria-label={t('common.openMenu')}
           className="flex items-center justify-center w-8 h-8 rounded-md text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer"
         >
           <Menu size={18} />
@@ -225,6 +227,7 @@ const MainLayout = () => {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
               className="lg:hidden fixed inset-0 z-[45] bg-black/40"
+              data-tour="mobile-burger-close"
               onClick={() => setMobileOpen(false)}
             />
             <motion.aside
@@ -232,7 +235,7 @@ const MainLayout = () => {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
-              className="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-64 border-r border-border-default"
+              className="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-[82vw] max-w-[16rem] border-r border-border-default"
               style={{
                 background: 'var(--sidebar-bg)',
                 backdropFilter: 'var(--sidebar-blur)',
@@ -252,9 +255,9 @@ const MainLayout = () => {
           </div>
         </main>
         <footer className="border-t border-border-default">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-            <p className="text-xs text-fg-subtle">{t('home.footer')}</p>
-            <p className="text-xs text-fg-subtle font-mono">v0.18.0</p>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[11px] sm:text-xs text-fg-subtle">{t('home.footer')}</p>
+            <p className="text-[11px] sm:text-xs text-fg-subtle font-mono">v0.18.0</p>
           </div>
         </footer>
       </div>

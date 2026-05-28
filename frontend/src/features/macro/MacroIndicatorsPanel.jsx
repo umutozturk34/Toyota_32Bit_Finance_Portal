@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Banknote, Flame, Layers, Sparkles, Search, X } from 'lucide-react';
+import { Activity, Banknote, Flame, Layers, LayoutGrid, Star, Search, X } from 'lucide-react';
 import EmptyState from '../../shared/components/feedback/EmptyState';
 import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
@@ -15,7 +15,7 @@ import { DEPOSIT_CURRENCIES, PROMINENT_ORDER } from './constants';
 import { themeFor } from './utils';
 
 const TABS = [
-  { id: 'all',       icon: Sparkles, labelKey: 'tabAll',           category: null },
+  { id: 'all',       icon: LayoutGrid, labelKey: 'tabAll',         category: null },
   { id: 'rates',     icon: Activity, labelKey: 'categoryRates',    category: 'RATES' },
   { id: 'inflation', icon: Flame,    labelKey: 'categoryInflation', category: 'INFLATION' },
   { id: 'deposit',   icon: Banknote, labelKey: 'categoryDeposit',  category: 'DEPOSIT' },
@@ -80,8 +80,7 @@ export default function MacroIndicatorsPanel() {
       });
     }
     return list;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, currencyFilter, allIndicators, searchQuery]);
+  }, [activeTab, currencyFilter, allIndicators, searchQuery, t]);
 
   const prominent = useMemo(
     () => sortByProminentOrder(allIndicators.filter((i) => i.prominent)),
@@ -193,7 +192,7 @@ export default function MacroIndicatorsPanel() {
             className="space-y-6"
           >
             <section>
-              <SectionTitle icon={Sparkles} text={t('marketOverview.macro.headline', { defaultValue: 'Headline' })} hint={`${prominent.length}`} />
+              <SectionTitle icon={Star} text={t('marketOverview.macro.headline', { defaultValue: 'Headline' })} hint={`${prominent.length}`} />
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 {prominent.map((indicator) => (
                   <IndicatorCard key={indicator.code} indicator={indicator} onOpen={openWithIndicator} />

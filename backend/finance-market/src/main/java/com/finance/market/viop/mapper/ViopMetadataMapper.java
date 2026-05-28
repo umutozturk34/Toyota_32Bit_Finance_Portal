@@ -4,6 +4,7 @@ import com.finance.market.viop.dto.ViopContractSpec;
 import com.finance.market.viop.dto.external.ViopFutureMetadataDto;
 import com.finance.market.viop.dto.external.ViopOptionMetadataDto;
 import com.finance.market.viop.model.ViopOptionSide;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -11,6 +12,11 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
+/**
+ * Converts İş Yatırım future/option metadata DTOs into {@link ViopContractSpec}s, parsing
+ * Turkish-formatted dates and decimals leniently (null on failure).
+ */
+@Log4j2
 @Component
 public class ViopMetadataMapper {
 
@@ -55,6 +61,7 @@ public class ViopMetadataMapper {
         try {
             return LocalDate.parse(raw, EXPIRY_FMT);
         } catch (Exception e) {
+            log.debug("Unparseable VIOP expiry raw={}", raw);
             return null;
         }
     }
@@ -64,10 +71,12 @@ public class ViopMetadataMapper {
         try {
             return new BigDecimal(raw.replace(".", "").replace(",", "."));
         } catch (NumberFormatException e) {
+            log.debug("Unparseable VIOP metadata decimal raw={}", raw);
             return null;
         }
     }
 
+    /** Extracts the leading numeric token from a free-text contract-size description. */
     private BigDecimal parseContractSizeFromDescription(String desc) {
         if (desc == null) return null;
         StringBuilder digits = new StringBuilder();

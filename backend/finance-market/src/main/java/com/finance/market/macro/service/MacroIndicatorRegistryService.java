@@ -13,6 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Reconciles the macro indicator catalogue with the configured definitions: upserting each by code
+ * (creating the cross-module {@link Instrument} for new ones) so config is the source of truth.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

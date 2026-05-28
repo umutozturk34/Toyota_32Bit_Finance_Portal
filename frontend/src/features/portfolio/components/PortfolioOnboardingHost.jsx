@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Wallet, ShieldCheck, Sparkles } from 'lucide-react';
+import { Wallet, ShieldCheck, Star } from 'lucide-react';
 import { Check, AlertTriangle } from '../../../shared/components/feedback/AnimatedIcons';
 import PageHeader from '../../../shared/components/layout/PageHeader';
 import ProcessingSteps from '../../../shared/components/feedback/ProcessingSteps';
@@ -225,7 +225,7 @@ export default function PortfolioOnboardingHost({
                   animate={{ rotate: [0, 12, -8, 0], scale: [1, 1.15, 0.95, 1] }}
                   transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-warning" />
+                  <Star className="w-3.5 h-3.5 text-warning" />
                 </motion.span>
               </motion.div>
               <motion.div
@@ -241,6 +241,7 @@ export default function PortfolioOnboardingHost({
               </motion.div>
               <motion.button
                 onClick={handleStart}
+                data-tour="portfolio-create"
                 whileHover={{ scale: 1.04, y: -1 }}
                 whileTap={{ scale: 0.96 }}
                 initial={{ opacity: 0, y: 6 }}

@@ -15,6 +15,11 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Stores precomputed top gainers/losers per market and the index list in a single Redis hash
+ * ({@code field = <TYPE><suffix>}), serialized as JSON. All reads degrade to an empty list on
+ * failure so the API never breaks on cache issues.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -82,6 +87,7 @@ public class TopMoversRedisService {
         }
     }
 
+    /** Reads all hash fields ending in {@code suffix}, keying results by the parsed market type. */
     private Map<MarketType, List<MarketAssetResponse>> readAllByType(String suffix) {
         Map<MarketType, List<MarketAssetResponse>> result = new EnumMap<>(MarketType.class);
         try {

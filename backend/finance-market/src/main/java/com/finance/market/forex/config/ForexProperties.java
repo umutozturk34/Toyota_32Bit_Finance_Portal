@@ -9,6 +9,10 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Forex ingest settings: EVDS datagroups, back-fill start/window, snapshot/latest lookbacks, EVDS
+ * row cap (for pagination cut-off), batch sampling threshold, and per-currency flag emojis.
+ */
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "app.forex")

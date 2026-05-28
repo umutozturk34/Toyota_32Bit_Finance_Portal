@@ -38,6 +38,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Produces the periodic portfolio snapshots. Reacts to market-data updates (per asset type, VIOP
+ * routed to derivative valuation) by writing per-asset rows and refreshing the day's aggregate, and
+ * runs scheduled full daily snapshots over all portfolios. Each portfolio is processed in its own
+ * transaction so one failure does not abort the batch; a {@code PortfolioUpdatedEvent} is published
+ * after a daily run.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -103,6 +110,7 @@ public class PortfolioSnapshotService implements PortfolioSnapshotPort {
         }
     }
 
+    /** Writes a full per-asset + aggregate snapshot for every portfolio; {@code source} labels the trigger (e.g. morning/evening). */
     public void generateDailySnapshots(String source) {
         LocalDate today = LocalDate.now();
         List<Portfolio> portfolios = portfolioRepository.findAll();

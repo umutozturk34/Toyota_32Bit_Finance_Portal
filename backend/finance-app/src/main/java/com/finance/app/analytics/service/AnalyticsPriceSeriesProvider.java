@@ -18,10 +18,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Loads an instrument's raw history together with the FX rates needed to express it in a target
+ * currency, producing the {@link PricedSeries} that the scenario engine multiplies through. Keeps the
+ * native (price) series and per-date FX separate so price and currency effects can be combined per day.
+ */
 public interface AnalyticsPriceSeriesProvider {
 
     PricedSeries fetch(AnalyticsInstrument instrument, LocalDate from, LocalDate to, Currency target);
 
+    /** Default implementation backed by {@link UnifiedHistoryService} and the FX currency converter. */
     @Component
     @Log4j2
     class Default implements AnalyticsPriceSeriesProvider {
@@ -65,9 +71,15 @@ public interface AnalyticsPriceSeriesProvider {
             return new PricedSeries(raw, nativeCurrency, effectiveTarget, baseFx, fxMap);
         }
 
+        /**
+         * Native currency of the price series. CRYPTO/VIOP/COMMODITY series arrive already converted to
+         * TRY upstream, so they are treated as TRY here; others are resolved per instrument.
+         */
         private Currency resolveNative(AnalyticsInstrument instrument) {
             MarketType marketType = mapToMarketType(instrument.type());
-            if (marketType == MarketType.CRYPTO || marketType == MarketType.VIOP) {
+            if (marketType == MarketType.CRYPTO
+                    || marketType == MarketType.VIOP
+                    || marketType == MarketType.COMMODITY) {
                 return Currency.TRY;
             }
             if (nativeCurrencyResolver == null) return Currency.TRY;
@@ -85,6 +97,11 @@ public interface AnalyticsPriceSeriesProvider {
             };
         }
 
+        /**
+         * Per-date FX factor for {@code from→to} (1 when equal). Returns null when no rate is available
+         * for that date so callers can skip the point rather than fabricate a value; only falls back to
+         * 1:1 if the converter bean is entirely absent.
+         */
         private BigDecimal fxAt(Currency from, Currency to, LocalDate date) {
             if (from == null || to == null || from == to) return BigDecimal.ONE;
             if (currencyConverter == null) {

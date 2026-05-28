@@ -86,7 +86,8 @@ public class PortfolioPdfService {
 
             Context ctx = new Context(locale);
             String displayName = (request.portfolioName() == null || request.portfolioName().isBlank())
-                    ? "Portfolio #" + request.portfolioId()
+                    ? messageSource.getMessage("pdf.portfolio.untitled",
+                            new Object[]{request.portfolioId()}, locale)
                     : request.portfolioName();
             ctx.setVariable("portfolioName", displayName);
             ctx.setVariable("currency", request.currency());

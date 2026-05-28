@@ -18,6 +18,13 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+/**
+ * Maps a {@link DerivativePosition} into the unified {@link PositionResponse} shown in the positions
+ * grid. Values it live in TRY (notional, market value, PnL%), builds a display name, and packs
+ * derivative-specific facts (kind, margin, expiry, strike, option max loss/gain) into {@link DerivativeMeta}.
+ * Current price comes from the latest candle close (or contract last price) converted to TRY; closed
+ * positions use the stored close price.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -85,7 +92,7 @@ class DerivativePositionFormatter {
         if (closed) return position.getClosePrice();
         BigDecimal latestClose = latestCandleClose(position.getViopContract().getSymbol());
         BigDecimal liveSource = latestClose != null ? latestClose : position.getViopContract().getLastPrice();
-        return convertLiveToTry(liveSource, position.getViopContract().getCurrency());
+        return convertLiveToTry(liveSource, position.getViopContract().resolvePriceCurrency());
     }
 
     private DerivativeMeta buildMeta(DerivativePosition position, DerivativeFigures f) {
@@ -103,7 +110,7 @@ class DerivativePositionFormatter {
                 position.getViopContract().getContractSize(),
                 position.lockedMargin(),
                 position.getViopContract().getExpiryDate(),
-                position.getViopContract().getCurrency(),
+                position.getViopContract().resolvePriceCurrency(),
                 f.closed(),
                 position.getViopContract().getStrikePrice(),
                 maxLoss,

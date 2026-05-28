@@ -211,6 +211,7 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
               min="0"
               max={qty}
               step="any"
+              inputMode="decimal"
               value={closeQty}
               onChange={(e) => setCloseQty(e.target.value)}
               placeholder="0.00"
@@ -302,6 +303,7 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
           <input
             type="number"
             step="0.0001"
+            inputMode="decimal"
             value={closePrice}
             onChange={(e) => { setClosePrice(e.target.value); setPriceTouched(true); }}
             placeholder="0.00"
@@ -315,16 +317,16 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
         </div>
 
         {realizedPnl != null && (
-          <div className={`rounded-lg border px-3 py-2 flex items-center justify-between text-xs ${
+          <div className={`rounded-lg border px-3 py-2 flex items-center justify-between gap-2 text-xs ${
             realizedPnl >= 0
               ? 'border-emerald-500/30 bg-emerald-500/10'
               : 'border-rose-500/30 bg-rose-500/10'
           }`}>
-            <span className={`font-semibold ${realizedPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <span className={`font-semibold shrink-0 ${realizedPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
               {t('portfolio.derivatives.realizedPnl', 'Realize K/Z')}
             </span>
-            <div className="text-right">
-              <div className={`font-mono font-bold ${realizedPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <div className="text-right min-w-0">
+              <div className={`font-mono font-bold break-all ${realizedPnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {realizedPnl >= 0 ? '+' : ''}{money(realizedPnl)}
               </div>
               {realizedPnlPercent != null && (
@@ -342,7 +344,7 @@ export default function CloseDerivativePositionDialog({ portfolioId, position, o
           </div>
         )}
 
-        <div className="flex justify-end gap-2 pt-1 flex-wrap">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-1">
           <Button type="button" variant="ghost" onClick={onClose}>
             {t('common.cancel', 'İptal')}
           </Button>

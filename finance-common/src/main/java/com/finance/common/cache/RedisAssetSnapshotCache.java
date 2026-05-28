@@ -5,6 +5,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 import com.finance.common.dto.internal.AssetSnapshot;
+import com.finance.common.model.Currency;
 import com.finance.common.model.MarketType;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -18,6 +19,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * Redis-backed {@link AssetSnapshotCache} that reads market snapshots written under the
+ * {@code market:<label>:snapshot:<code>} key scheme. Per-market JSON field names are taken from
+ * {@link MarketType}, and the primary price field falls back to the secondary one when absent.
+ * For VIOP entries the quote currency is derived from the symbol via
+ * {@link Currency#viopQuoteCurrencyOf(String)} rather than the stored exchange-currency field,
+ * which is not the FX quote currency. All read/parse failures are logged and degrade to an empty
+ * result instead of propagating.
+ */
 @Log4j2
 @Component
 public class RedisAssetSnapshotCache implements AssetSnapshotCache {
@@ -80,7 +90,7 @@ public class RedisAssetSnapshotCache implements AssetSnapshotCache {
             BigDecimal changeAmount = numericField(root, "changeAmount");
             BigDecimal changePercent = numericField(root, "changePercent");
             if (code == null) return Optional.empty();
-            String currency = type == MarketType.VIOP ? textField(root, "currency") : null;
+            String currency = type == MarketType.VIOP ? Currency.viopQuoteCurrencyOf(code).name() : null;
             if (currency == null || currency.isBlank()) currency = "TRY";
             return Optional.of(new AssetSnapshot(code, name, image, price, changeAmount, changePercent, currency));
         } catch (Exception e) {
@@ -89,6 +99,10 @@ public class RedisAssetSnapshotCache implements AssetSnapshotCache {
         }
     }
 
+    /**
+     * Unwraps a Jackson default-typing envelope ({@code ["type", value]}) to the underlying value,
+     * so snapshots serialized with polymorphic type tags can be read transparently.
+     */
     private static JsonNode unwrapTypeTagged(JsonNode node) {
         if (node != null && node.isArray() && node.size() == 2 && node.get(0).isString()) {
             return node.get(1);

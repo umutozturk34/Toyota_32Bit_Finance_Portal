@@ -17,6 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Authenticated API for the customizable market-overview dashboard: renders a user's (optionally
+ * page-scoped) widgets, plus the widget-definition catalog the client uses to configure layouts.
+ */
 @RestController
 @RequestMapping("/api/v1/market/overview")
 @RequiredArgsConstructor

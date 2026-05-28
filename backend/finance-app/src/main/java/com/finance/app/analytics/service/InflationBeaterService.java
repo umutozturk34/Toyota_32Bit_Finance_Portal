@@ -32,6 +32,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Ranks a curated universe of instruments (tracked stocks/crypto/forex/funds/commodities plus standard
+ * deposits) by their notional return over a period against a benchmark macro indicator, flagging which
+ * "beat" it. Each ranking is computed via {@link ScenarioService} in a single comparison currency and
+ * cached (see {@link BeaterCacheManager}); results power the inflation-beater view and overview widget.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -41,16 +47,17 @@ public class InflationBeaterService {
     private static final BigDecimal NOTIONAL_AMOUNT = new BigDecimal("10000");
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
+    // Codes and labels follow macro.yaml: MT02=3M (M3), MT03=6M (M6), MT04=1Y (M12). MT12 does not
+    // exist in the config and must not be referenced.
     private static final List<CuratedAsset> CURATED_DEPOSITS = List.of(
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT01", "TRY 1H Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT03", "TRY 1M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT06", "TRY 3M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT12", "TRY 6M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT03", "USD 1M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT06", "USD 3M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT12", "USD 6M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.EURTAS.MT06", "EUR 3M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.EURTAS.MT12", "EUR 6M Mevduat")
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT02", "TRY 3M Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT03", "TRY 6M Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT04", "TRY 1Y Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT02", "USD 3M Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT03", "USD 6M Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT04", "USD 1Y Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.EURTAS.MT02", "EUR 3M Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.EURTAS.MT03", "EUR 6M Mevduat")
     );
 
     private static final Map<TrackedAssetType, AnalyticsInstrumentType> TYPE_MAP = Map.of(
@@ -90,6 +97,12 @@ public class InflationBeaterService {
         return rank(period, benchmarkCode, null);
     }
 
+    /**
+     * Cache-first ranking for the period (1M..5Y); {@code targetCurrencyOverride} forces the comparison
+     * currency, otherwise it is derived from the benchmark.
+     *
+     * @throws BadRequestException if the period token is unknown
+     */
     public InflationBeaterResponse rank(String period, String benchmarkCode, String targetCurrencyOverride) {
         Integer months = PERIOD_MONTHS.get(period);
         if (months == null) {
@@ -101,6 +114,7 @@ public class InflationBeaterService {
         return cacheManager.getOrCompute(key, () -> compute(period, code, months, override));
     }
 
+    /** Returns a cached ranking without computing; null on a cold cache (caller may {@link #warmAsync}). */
     public InflationBeaterResponse peekCache(String period, String benchmarkCode) {
         Integer months = PERIOD_MONTHS.get(period);
         if (months == null) return null;
@@ -137,6 +151,11 @@ public class InflationBeaterService {
         return Currency.fromCode(raw);
     }
 
+    /**
+     * Builds the full ranking: simulates the universe (and the benchmark itself when it is rate-backed)
+     * in the comparison currency, derives the benchmark return (index growth for index-unit benchmarks),
+     * then sorts entries by excess return descending. Partial/incomplete series are dropped.
+     */
     private InflationBeaterResponse compute(String period, String code, int months, Currency override) {
         LocalDate endDate = resolveStableEndDate(code);
         LocalDate startDate = endDate.minusMonths(months);
@@ -188,6 +207,10 @@ public class InflationBeaterService {
                 benchmarkReturn, beating, entries.size(), comparisonCurrency, entries);
     }
 
+    /**
+     * Frames the comparison in the benchmark's own currency, e.g. a USD/EUR deposit benchmark is
+     * compared in USD/EUR. Falls back to TRY when no native-currency resolver is wired or none resolves.
+     */
     private Currency resolveComparisonCurrency(MacroIndicator benchmark, String code) {
         if (nativeCurrencyResolver == null) {
             return Currency.TRY;
@@ -225,6 +248,10 @@ public class InflationBeaterService {
         return out;
     }
 
+    /**
+     * Anchors the window end to the benchmark's latest actual observation (not today), so a lagging
+     * monthly indicator doesn't yield a window with no benchmark data point near the end.
+     */
     private LocalDate resolveStableEndDate(String code) {
         LocalDate today = LocalDate.now();
         List<HistoryPoint> recent = historyService.getMacroSeries(code,
@@ -237,6 +264,10 @@ public class InflationBeaterService {
         return latest != null ? latest : today;
     }
 
+    /**
+     * Percentage growth of an index-unit benchmark (e.g. CPI) between the observations closest to the
+     * window endpoints; used instead of a compounding simulation for index benchmarks.
+     */
     private BigDecimal computeIndexGrowthPct(String code, LocalDate start, LocalDate end) {
         List<HistoryPoint> points = historyService.getMacroSeries(code,
                 start.minusMonths(2), end.plusMonths(1));

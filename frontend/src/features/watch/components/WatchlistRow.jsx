@@ -37,7 +37,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
       onClick={route ? () => navigate(route) : undefined}
       onMouseEnter={triggerPrefetch}
       onFocus={triggerPrefetch}
-      className={`relative group grid grid-cols-[auto_auto_1fr_auto_auto] gap-3 items-center px-4 py-3 border-b border-border-default last:border-b-0 transition-colors duration-150 ${
+      className={`relative group grid grid-cols-[auto_auto_1fr_auto_auto] gap-2 sm:gap-3 items-center px-3 sm:px-4 py-3 border-b border-border-default last:border-b-0 transition-colors duration-150 ${
         route ? 'cursor-pointer hover:bg-accent/5' : ''
       } ${isDragging
         ? 'bg-accent/8 shadow-[0_18px_40px_-18px_rgba(99,102,241,0.55),inset_0_0_0_1px_rgba(99,102,241,0.4)] rounded-lg border-b-transparent'
@@ -49,7 +49,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
-          className={`flex items-center justify-center w-6 h-6 cursor-grab active:cursor-grabbing bg-transparent border-none touch-none transition-colors ${
+          className={`hidden sm:flex items-center justify-center w-6 h-6 cursor-grab active:cursor-grabbing bg-transparent border-none touch-none transition-colors ${
             isDragging ? 'text-accent' : 'text-fg-subtle hover:text-fg'
           }`}
           title={t('watchlistRow.dragToReorder')}
@@ -57,7 +57,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
           <GripVertical className="h-4 w-4" />
         </button>
       ) : (
-        <span className="w-6" />
+        <span className="hidden sm:block w-6" />
       )}
       <AssetBadge
         assetType={item.marketType}
@@ -108,7 +108,7 @@ export default function WatchlistRow({ item, onRemove, onEdit, draggable }) {
           );
         })()}
       </div>
-      <div className="flex items-center gap-0.5 min-w-[64px] justify-end sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-0.5 min-w-[56px] sm:min-w-[64px] justify-end sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <button
           type="button"
           onClick={(e) => {

@@ -11,6 +11,10 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
+/**
+ * Daily fund data point (unit price plus share/investor/portfolio figures), unique per (fund, date).
+ * The {@code fundCode} column is read-only; the {@code fund} association owns the foreign key.
+ */
 @Getter
 @Setter
 @SuperBuilder
@@ -77,6 +81,7 @@ public class FundCandle {
         return getClass().hashCode();
     }
 
+    /** Scales numeric fields per fund type; some types omit bulletin price/investor count. */
     public void applyScaling(FundType fundType) {
         this.price = scaleValue(this.price, 6);
         this.bulletinPrice = fundType != null && fundType.scalesBulletinPrice() ? scaleValue(this.bulletinPrice, 4) : null;

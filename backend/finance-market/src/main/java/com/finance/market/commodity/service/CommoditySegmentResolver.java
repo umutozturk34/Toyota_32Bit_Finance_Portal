@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Classifies a commodity into a {@link CommoditySegment}: codes with Yahoo overrides or derivative
+ * rules are precious metals, plain Yahoo futures are OTHER, everything else is unclassified.
+ */
 @Component
 public class CommoditySegmentResolver {
 

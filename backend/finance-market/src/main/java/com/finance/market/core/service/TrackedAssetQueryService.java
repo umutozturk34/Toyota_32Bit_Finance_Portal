@@ -21,6 +21,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Read side for the tracked-asset catalogue: listing, search/sort, code lookups (cache-backed),
+ * and display-name resolution used to label market responses.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -84,6 +88,11 @@ public class TrackedAssetQueryService {
                 .map(trackedAssetMapper::toResponse);
     }
 
+    /**
+     * Normalizes the code and confirms it is tracked, returning the canonical form.
+     *
+     * @throws ResourceNotFoundException when the asset is not tracked
+     */
     public String resolveCodeOrThrow(TrackedAssetType type, String assetCode) {
         String normalizedCode = type.normalizeCode(assetCode);
         boolean exists = trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(type, normalizedCode).isPresent();
@@ -101,6 +110,7 @@ public class TrackedAssetQueryService {
         return codeCache.getEnabled(type);
     }
 
+    /** Code-to-curated-display-name map (insertion-ordered) for assets that have a non-blank name. */
     public Map<String, String> getDisplayNameMap(TrackedAssetType type) {
         return trackedAssetRepository.findByAssetTypeOrderBySortOrderAscAssetCodeAsc(type)
                 .stream()
@@ -113,6 +123,7 @@ public class TrackedAssetQueryService {
                 ));
     }
 
+    /** Binance trading symbol mapped to a CoinGecko id, used to fetch klines for that coin. */
     public Optional<String> getCryptoBinanceSymbol(String coinGeckoId) {
         String normalizedCode = TrackedAssetType.CRYPTO.normalizeCode(coinGeckoId);
         return trackedAssetRepository.findByAssetTypeAndAssetCodeIgnoreCase(TrackedAssetType.CRYPTO, normalizedCode)

@@ -4,6 +4,7 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import { viopService } from './services/viopService';
 import { getChangeClass, changeColors, formatPrice, formatPercentAbs } from '../../shared/utils/formatters';
 import { useMoney } from '../../shared/hooks/useMoney';
+import { viopQuoteCurrency } from '../../shared/utils/priceCurrency';
 import AssetDetailPage from '../../shared/components/asset/AssetDetailPage';
 import MetadataTiles from '../../shared/components/asset/MetadataTiles';
 import MarketOpenDerivativeModal from '../portfolio/components/MarketOpenDerivativeModal';
@@ -20,12 +21,12 @@ function ViopHeader({ asset }) {
   const subtitle = [meta.kind, meta.underlying].filter(Boolean).join(' · ');
   return (
     <>
-      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-400/10 text-indigo-400 text-xs font-bold">
+      <span className="flex items-center justify-center w-8 h-8 shrink-0 rounded-full bg-indigo-400/10 text-indigo-400 text-xs font-bold">
         {meta.kind === 'OPTION' ? 'OPT' : 'FUT'}
       </span>
-      <div>
-        <h1 className="text-xl font-bold text-fg">{asset.code}</h1>
-        {subtitle && <p className="text-xs text-fg-muted">{subtitle}</p>}
+      <div className="min-w-0">
+        <h1 className="text-xl font-bold text-fg truncate">{asset.code}</h1>
+        {subtitle && <p className="text-xs text-fg-muted truncate max-w-[12rem] sm:max-w-[18rem]">{subtitle}</p>}
       </div>
     </>
   );
@@ -38,7 +39,7 @@ function ViopMetadata({ asset }) {
   const cls = getChangeClass(asset.changePercent);
   const localeTag = t('common.localeTag');
   const isOption = meta.kind === 'OPTION';
-  const currency = meta.currency || 'TRY';
+  const currency = viopQuoteCurrency(asset.code);
   return (
     <MetadataTiles tiles={[
       { label: t('viop.lastPrice'), value: asset.price != null ? money(asset.price, currency) : t('viop.noPrice') },

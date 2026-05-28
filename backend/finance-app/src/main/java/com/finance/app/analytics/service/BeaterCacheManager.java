@@ -13,6 +13,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
+/**
+ * Caffeine-backed cache for inflation-beater rankings (24h TTL), keyed by period/benchmark/currency.
+ * Only non-empty rankings are cached; an in-flight set prevents duplicate concurrent async warm-ups.
+ */
 @Log4j2
 @Component
 public class BeaterCacheManager {
@@ -23,6 +27,7 @@ public class BeaterCacheManager {
 
     private final Set<String> inFlight = ConcurrentHashMap.newKeySet();
 
+    /** Returns the cached value or computes it; an empty result is returned but not retained. */
     public InflationBeaterResponse getOrCompute(String key, Supplier<InflationBeaterResponse> loader) {
         InflationBeaterResponse response = cache.get(key, k -> loader.get());
         if (!isWorthCaching(response)) {
@@ -35,6 +40,7 @@ public class BeaterCacheManager {
         return cache.getIfPresent(key);
     }
 
+    /** Computes and caches off-thread on a cold cache, skipping if already present or already in flight. */
     @Async
     public void warmAsync(String key, String period, String code, Supplier<InflationBeaterResponse> loader) {
         if (cache.getIfPresent(key) != null) return;

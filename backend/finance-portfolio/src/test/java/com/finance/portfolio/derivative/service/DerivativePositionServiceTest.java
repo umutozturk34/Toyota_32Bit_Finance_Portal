@@ -627,6 +627,7 @@ class DerivativePositionServiceTest {
 
     @Test
     void should_handleForeignCurrencyAutoClose_when_contractCurrencyIsUsd() {
+        contract.setSymbol("F_XAUUSD0625");
         contract.setCurrency("USD");
         contract.setSettlementPrice(new BigDecimal("3.5"));
         contract.setExpiryDate(LocalDate.of(2026, 6, 30));
@@ -644,6 +645,7 @@ class DerivativePositionServiceTest {
 
     @Test
     void should_fallbackToNativePriceOnAutoClose_when_noFxSeriesAvailable() {
+        contract.setSymbol("F_XAUUSD0625");
         contract.setCurrency("USD");
         contract.setSettlementPrice(new BigDecimal("3.5"));
         contract.setExpiryDate(LocalDate.of(2026, 6, 30));

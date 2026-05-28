@@ -113,7 +113,7 @@ function FundsPage() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-semibold text-fg-muted uppercase tracking-wider">{t('market.fund.filterRiskLabel')}</span>
-                <div className="flex gap-1">
+                <div className="flex flex-wrap gap-1">
                     {[1, 2, 3, 4, 5, 6, 7].map(r => {
                         const active = selectedRisks.includes(r);
                         return (
@@ -286,6 +286,7 @@ function FundsPage() {
             emptyHint={t('market.empty.adminHint')}
             gridClass="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-[600px] content-start"
             animatePresence
+            dataTour="fund-page-main"
         />
     );
 }

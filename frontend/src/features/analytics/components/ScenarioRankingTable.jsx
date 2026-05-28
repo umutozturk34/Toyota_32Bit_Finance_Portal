@@ -25,7 +25,7 @@ export default function ScenarioRankingTable({ scenario }) {
   return (
     <div className="rounded-xl border border-border-default/60 bg-bg-base/40 overflow-hidden">
       <div className="overflow-x-auto">
-      <table className="w-full text-sm min-w-[480px]">
+      <table className="w-full text-xs sm:text-sm min-w-[520px]">
         <thead className="bg-bg-elevated/40">
           <tr>
             <Th>#</Th>

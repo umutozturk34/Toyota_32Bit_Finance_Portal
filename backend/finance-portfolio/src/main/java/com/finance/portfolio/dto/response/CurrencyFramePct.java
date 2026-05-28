@@ -2,6 +2,7 @@ package com.finance.portfolio.dto.response;
 
 import java.math.BigDecimal;
 
+/** Portfolio value and PnL expressed in one currency frame (e.g. USD/EUR/TRY); {@link #empty()} when rates were unavailable. */
 public record CurrencyFramePct(
         BigDecimal pnlPercent,
         BigDecimal dailyPnlPercent,

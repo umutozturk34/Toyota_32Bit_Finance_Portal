@@ -10,6 +10,10 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
+/**
+ * Prices TEFAS funds in TRY from the cached snapshot's unit price, falling back to the latest stored
+ * candle with a positive price; funds are TRY-denominated so no FX conversion is applied.
+ */
 @Component
 public class FundPricingStrategy extends BaseAssetPricingStrategy {
 

@@ -11,6 +11,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/** Triggers the daily fund refresh (snapshots then candles/enrichment) on a configurable cron. */
 @Log4j2
 @Component
 public class FundScheduler extends AbstractMarketScheduler {

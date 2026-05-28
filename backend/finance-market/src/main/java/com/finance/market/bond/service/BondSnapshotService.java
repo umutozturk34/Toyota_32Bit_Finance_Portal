@@ -21,6 +21,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fetches the bond universe from EVDS: lists and filters the serie catalogue into tradable bonds,
+ * then pulls today's snapshot data in batches (per-batch failure isolated, aborting only on an open
+ * circuit breaker).
+ */
 @Service
 @Log4j2
 public class BondSnapshotService {
@@ -48,7 +53,7 @@ public class BondSnapshotService {
         log.info("Filtered to {} unique active bonds (from {} raw series)", filtered.size(), allSeries.size());
 
         if (filtered.isEmpty()) {
-            throw new BusinessException("No valid bond series found after filtering");
+            throw new BusinessException("error.market.bondNoSeriesFiltered");
         }
         return filtered;
     }

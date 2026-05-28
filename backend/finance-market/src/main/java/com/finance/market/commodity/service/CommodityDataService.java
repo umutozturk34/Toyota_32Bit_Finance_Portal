@@ -15,6 +15,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+/**
+ * Commodity {@link TrackedAssetDataService}: validates a code (known derivatives skip the upstream
+ * check) before tracking, and delegates refresh/cache work.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

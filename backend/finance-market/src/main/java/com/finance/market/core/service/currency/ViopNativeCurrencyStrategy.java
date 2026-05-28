@@ -3,42 +3,28 @@ package com.finance.market.core.service.currency;
 import com.finance.common.model.Currency;
 import com.finance.common.model.MarketType;
 import com.finance.market.core.service.NativeCurrencyStrategy;
-import com.finance.market.viop.repository.ViopContractRepository;
-import lombok.RequiredArgsConstructor;
+import com.finance.market.viop.model.ViopContract;
 import org.springframework.stereotype.Component;
 
 import java.util.EnumSet;
-import java.util.Objects;
 import java.util.Set;
 
+/**
+ * VIOP native currency: derived from the contract symbol via {@link ViopContract#quoteCurrencyOf}
+ * (options TRY; futures may be USD/EUR), never from the stored exchange-currency field.
+ */
 @Component
-@RequiredArgsConstructor
 public class ViopNativeCurrencyStrategy implements NativeCurrencyStrategy {
-
-    private final ViopContractRepository viopContractRepository;
 
     @Override
     public Set<MarketType> supports() {
         return EnumSet.of(MarketType.VIOP);
     }
 
+    /** Resolves the symbol-derived quote currency, falling back to TRY when unparseable. */
     @Override
     public Currency resolve(String code) {
-        if (code == null || code.isBlank()) return Currency.TRY;
-        Currency fromContract = viopContractRepository.findBySymbol(code)
-                .map(c -> Currency.fromCode(c.getCurrency()))
-                .filter(Objects::nonNull)
-                .orElse(null);
-        if (fromContract != null && fromContract != Currency.TRY) return fromContract;
-        Currency fromSuffix = currencyFromSuffix(code);
-        if (fromSuffix != null) return fromSuffix;
-        return fromContract != null ? fromContract : Currency.TRY;
-    }
-
-    private static Currency currencyFromSuffix(String code) {
-        String upper = code.toUpperCase();
-        if (upper.endsWith("USD")) return Currency.USD;
-        if (upper.endsWith("EUR")) return Currency.EUR;
-        return null;
+        Currency quote = Currency.fromCode(ViopContract.quoteCurrencyOf(code));
+        return quote != null ? quote : Currency.TRY;
     }
 }

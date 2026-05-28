@@ -23,6 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Bulk candle sync across all tracked funds, run per {@link FundType}. Computes the minimal set of
+ * date windows to fetch (full back-fill if any fund is under-populated, otherwise forward from the
+ * earliest gap/last candle) so one bulk call covers many funds. No-op when all funds are current.
+ */
 @Log4j2
 @Service
 public class FundCandleBulkSyncService {
@@ -94,6 +99,10 @@ public class FundCandleBulkSyncService {
         };
     }
 
+    /**
+     * Plans the windows to fetch: full backward back-fill if any fund lacks enough candles,
+     * otherwise a single forward range from the earliest detected gap/stale date; empty if current.
+     */
     private List<WindowedFetchPlanner.DateWindow> computeRequiredWindows(
             List<Fund> funds, LocalDate earliest, LocalDate today) {
         Map<String, Long> countPerFund = fundCandleRepository.countCandlesPerFund().stream()
@@ -132,6 +141,7 @@ public class FundCandleBulkSyncService {
         return List.of();
     }
 
+    /** Earliest missing weekday within the recent lookback window for a fund, or null if none. */
     private LocalDate detectGapStart(String fundCode, LocalDate today) {
         LocalDate windowStart = today.minusDays(fundProperties.getGapDetectionLookbackDays());
         java.util.Set<LocalDate> stored = fundCandleRepository

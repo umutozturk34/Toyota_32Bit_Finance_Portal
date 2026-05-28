@@ -10,6 +10,10 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
+/**
+ * Prices BIST stocks in TRY from the cached snapshot, falling back to the latest stored candle with
+ * a positive close; stocks are already TRY-quoted so no FX conversion is applied.
+ */
 @Component
 public class StockPricingStrategy extends BaseAssetPricingStrategy {
 

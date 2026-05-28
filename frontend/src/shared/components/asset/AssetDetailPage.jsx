@@ -17,7 +17,7 @@ import AssetActionsBar from '../../../features/watch/components/AssetActionsBar'
 import MarketStatusBadge from '../layout/MarketStatusBadge';
 import { transformCandles, transformFundCandles } from '../../utils/candleTransform';
 import { useRateHistory } from '../../hooks/useRateHistory';
-import { priceCurrencyOf } from '../../utils/priceCurrency';
+import { priceCurrencyOf, viopQuoteCurrency } from '../../utils/priceCurrency';
 
 function extractCurrentPrice(asset) {
   if (!asset) return null;
@@ -38,13 +38,9 @@ function naturalCurrencyFor(assetType, asset, assetCode) {
     if ((assetCode || '').toLowerCase() === 'tether') return 'TRY';
     return 'USD';
   }
-  if (assetType === 'VIOP') return asset?.metadata?.currency || 'TRY';
-  if (assetType === 'COMMODITY') {
-    const upper = (assetCode || '').toUpperCase();
-    if (upper.endsWith('TRY') || upper.endsWith('TRYG')) return 'TRY';
-    if (upper.endsWith('EUR') || upper.endsWith('EURG')) return 'EUR';
-    return 'USD';
-  }
+  if (assetType === 'VIOP') return viopQuoteCurrency(assetCode);
+  // Commodities are cross-converted to TRY at ingest, so candles are always TRY.
+  if (assetType === 'COMMODITY') return 'TRY';
   return 'TRY';
 }
 
@@ -100,6 +96,7 @@ export default function AssetDetailPage({
   showBuyButton = true,
   buyModalComponent: BuyModalComponent = MarketAddPositionModal,
   clientSideRangeFilter = false,
+  dataTour,
 }) {
   const { t } = useTranslation();
   const { convertAt } = useRateHistory();
@@ -131,7 +128,7 @@ export default function AssetDetailPage({
 
   const transform = TRANSFORM_MAP[assetType] || transformCandles;
   const naturalCurrency = naturalCurrencyFor(assetType, asset, assetCode);
-  const baseCurrency = asset?.metadata?.currency || naturalCurrency;
+  const baseCurrency = naturalCurrency;
   const chartData = useMemo(
     () => convertCandleSet(transform(filteredHistoryRaw), convertAt, baseCurrency, naturalCurrency),
     [filteredHistoryRaw, transform, convertAt, baseCurrency, naturalCurrency],
@@ -151,7 +148,7 @@ export default function AssetDetailPage({
   const buyProps = getBuyProps ? getBuyProps(asset) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour={dataTour}>
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -195,7 +192,7 @@ export default function AssetDetailPage({
                 });
                 navigate(`/analytics?${next.toString()}`);
               }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-1.5 text-xs font-semibold text-fg-muted hover:text-accent hover:border-accent/40 hover:bg-accent/10 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-3 py-2 min-h-10 text-xs font-semibold text-fg-muted hover:text-accent hover:border-accent/40 hover:bg-accent/10 transition-colors cursor-pointer"
               title={t('marketDetail.compareAction', { defaultValue: 'Karşılaştır' })}
             >
               <GitCompare className="h-3.5 w-3.5" />
@@ -220,6 +217,23 @@ export default function AssetDetailPage({
 
       {renderSidebar ? (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div data-tour="detail-chart" className="min-w-0">
+            <LightweightChart
+              data={chartData}
+              symbol={assetCode}
+              assetType={chartAssetType || assetType}
+              timeRange={effectiveRange}
+              onTimeRangeChange={setTimeRange}
+              showSecondaryLines={showSecondaryLines}
+              onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
+            />
+          </div>
+          <aside className="lg:sticky lg:top-4 lg:self-start space-y-3">
+            {renderSidebar(asset)}
+          </aside>
+        </div>
+      ) : (
+        <div data-tour="detail-chart">
           <LightweightChart
             data={chartData}
             symbol={assetCode}
@@ -229,20 +243,7 @@ export default function AssetDetailPage({
             showSecondaryLines={showSecondaryLines}
             onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
           />
-          <aside className="lg:sticky lg:top-4 lg:self-start space-y-3">
-            {renderSidebar(asset)}
-          </aside>
         </div>
-      ) : (
-        <LightweightChart
-          data={chartData}
-          symbol={assetCode}
-          assetType={chartAssetType || assetType}
-          timeRange={effectiveRange}
-          onTimeRangeChange={setTimeRange}
-          showSecondaryLines={showSecondaryLines}
-          onToggleSecondaryLines={() => setShowSecondaryLines((v) => !v)}
-        />
       )}
 
       {buyOpen && buyProps && (

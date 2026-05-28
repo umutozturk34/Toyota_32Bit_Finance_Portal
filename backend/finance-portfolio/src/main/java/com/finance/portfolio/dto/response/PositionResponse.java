@@ -3,6 +3,7 @@ package com.finance.portfolio.dto.response;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/** Unified position row for the UI grid (spot or derivative): identity, entry/exit, live valuation in TRY, and optional {@link DerivativeMeta}. */
 public record PositionResponse(
         Long id,
         String assetType,

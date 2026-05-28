@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+/** Persistence for forex identity/snapshot rows, keyed by currency code. */
 @Repository
 public interface ForexRepository extends JpaRepository<Forex, String>, JpaSpecificationExecutor<Forex> {
     List<Forex> findAllByOrderByCurrencyCodeAsc();

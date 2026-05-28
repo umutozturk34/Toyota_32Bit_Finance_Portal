@@ -12,6 +12,11 @@ import org.mapstruct.Named;
 
 import java.util.List;
 
+/**
+ * MapStruct mapper from forex entities/candles to API responses. Forex has no true OHLC, so every
+ * candle's open/high/low/close are mapped from the selling price; buying/effective rates ride along
+ * as extra fields and in the asset metadata.
+ */
 @Mapper(componentModel = "spring")
 public abstract class ForexResponseMapper implements MarketMetadataBuilder<Forex, ForexMetadata> {
 

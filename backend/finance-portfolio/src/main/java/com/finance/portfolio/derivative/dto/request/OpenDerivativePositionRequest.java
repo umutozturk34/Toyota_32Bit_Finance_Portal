@@ -9,6 +9,11 @@ import jakarta.validation.constraints.PastOrPresent;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Request to open a derivative position. Prices are optional: when omitted the server resolves the
+ * historical price; when given (in {@code priceCurrency}) they are converted to TRY at their date.
+ * Supplying close fields opens the position already closed.
+ */
 public record OpenDerivativePositionRequest(
         @NotBlank String contractSymbol,
         @NotNull DerivativeDirection direction,

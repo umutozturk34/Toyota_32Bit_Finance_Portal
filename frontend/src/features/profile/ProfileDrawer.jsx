@@ -28,7 +28,7 @@ function Section({ icon: Icon, title, children, accent = 'text-accent' }) {
 function IdentityHeader({ profile }) {
   const initial = (profile?.firstName || profile?.username || '?').charAt(0).toUpperCase();
   return (
-    <div className="relative px-5 pt-6 pb-5 border-b border-border-default/60 overflow-hidden">
+    <div className="relative px-4 sm:px-5 pt-6 pb-5 border-b border-border-default/60 overflow-hidden" data-tour="profile-main">
       <div className="absolute inset-0 pointer-events-none opacity-60">
         <div className="absolute -top-12 -left-12 w-48 h-48 rounded-full bg-accent/20 blur-3xl" />
         <div className="absolute -bottom-8 -right-8 w-40 h-40 rounded-full bg-violet-500/15 blur-3xl" />
@@ -99,7 +99,7 @@ function IdentityForm({ profile, onSaved }) {
   if (!editing) {
     return (
       <div className="space-y-2">
-        <div className="grid grid-cols-2 gap-2 min-w-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 min-w-0">
           <ReadField label={t('profile.identity.firstName')} value={profile?.firstName} />
           <ReadField label={t('profile.identity.lastName')} value={profile?.lastName} />
         </div>
@@ -107,7 +107,7 @@ function IdentityForm({ profile, onSaved }) {
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated hover:bg-surface text-fg py-2 text-xs font-semibold transition-colors cursor-pointer"
+          className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated hover:bg-surface text-fg py-2.5 min-h-[40px] text-xs font-semibold transition-colors cursor-pointer"
         >
           <Pencil className="h-3.5 w-3.5 text-accent" />
           {t('profile.identity.editAction')}
@@ -131,7 +131,7 @@ function IdentityForm({ profile, onSaved }) {
 
   return (
     <form className="space-y-2" onSubmit={handleSubmit}>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <FormField label={t('profile.identity.firstName')} value={firstName} onChange={setFirstName} />
         <FormField label={t('profile.identity.lastName')} value={lastName} onChange={setLastName} />
       </div>
@@ -143,7 +143,7 @@ function IdentityForm({ profile, onSaved }) {
         <button
           type="submit"
           disabled={!dirty || update.isPending}
-          className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2.5 min-h-[40px] text-xs font-semibold text-white bg-accent hover:bg-accent-bright transition-all border-none cursor-pointer disabled:opacity-50"
         >
           <Check className="h-3.5 w-3.5" />
           {update.isPending ? t('common.loading') : t('common.save')}
@@ -152,7 +152,7 @@ function IdentityForm({ profile, onSaved }) {
           type="button"
           onClick={() => setEditing(false)}
           disabled={update.isPending}
-          className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated hover:bg-surface text-fg-muted py-2 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated hover:bg-surface text-fg-muted py-2.5 min-h-[40px] text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
         >
           <X className="h-3.5 w-3.5" />
           {t('common.cancel')}
@@ -220,9 +220,10 @@ export default function ProfileDrawer({ isOpen, onClose }) {
       iconTint="text-accent"
       title={t('profile.title')}
       subtitle={t('profile.subtitle')}
+      closeAttr="profile"
     >
       <IdentityHeader profile={profile} />
-      <div className="px-5 py-5 space-y-6">
+      <div className="px-4 sm:px-5 py-5 space-y-6">
         <Section icon={User} title={t('profile.identity.title')}>
           {isLoading ? (
             <div className="flex items-center gap-2 text-xs text-fg-muted">
@@ -242,13 +243,13 @@ export default function ProfileDrawer({ isOpen, onClose }) {
           <button
             onClick={handleChangePassword}
             disabled={passwordSending}
-            className="w-full flex items-center justify-between gap-2 rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 text-xs font-medium text-fg hover:bg-surface transition-colors cursor-pointer disabled:opacity-50"
+            className="w-full flex items-center justify-between gap-2 rounded-lg border border-border-default bg-bg-elevated px-3 py-2.5 min-h-[40px] text-xs font-medium text-fg hover:bg-surface transition-colors cursor-pointer disabled:opacity-50"
           >
-            <span className="flex items-center gap-2">
-              <KeyRound className="h-3.5 w-3.5 text-accent" />
-              {t('settings.password.change')}
+            <span className="flex items-center gap-2 min-w-0">
+              <KeyRound className="h-3.5 w-3.5 text-accent shrink-0" />
+              <span className="truncate">{t('settings.password.change')}</span>
             </span>
-            <span className="text-[10px] text-fg-muted">
+            <span className="text-[10px] text-fg-muted shrink-0 hidden sm:inline">
               {passwordSending ? t('settings.password.sending') : t('settings.password.emailLink')}
             </span>
           </button>

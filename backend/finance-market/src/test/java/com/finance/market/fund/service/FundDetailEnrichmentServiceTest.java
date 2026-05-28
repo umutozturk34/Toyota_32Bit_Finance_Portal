@@ -52,6 +52,7 @@ class FundDetailEnrichmentServiceTest {
         service = new FundDetailEnrichmentService(tefasClient, fundRepository, allocationRepository, trackedAssetQueryService, fundCacheService, new com.finance.market.fund.config.FundProperties(), new com.finance.common.config.AppProperties());
         when(fundRepository.save(any(Fund.class))).thenAnswer(inv -> inv.getArgument(0));
         when(fundRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(fundRepository.findAllFundCodes()).thenReturn(List.of("AAL"));
     }
 
     @Test

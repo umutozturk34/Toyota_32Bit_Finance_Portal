@@ -2,6 +2,11 @@ package com.finance.market.forex.service;
 
 import java.util.List;
 
+/**
+ * Resolved description of one forex currency and the EVDS serie codes to fetch for it: döviz
+ * buying/selling always, plus efektif (cash) buying/selling when {@code hasEfektif}. {@code unit}
+ * is the quote multiplier (e.g. per 100 units) applied when normalizing prices.
+ */
 public record ForexSerieMetadata(
         String currencyCode,
         String displayNameEn,
@@ -32,6 +37,7 @@ public record ForexSerieMetadata(
         return CODE_PREFIX + currencyCode + EFEKTIF_SELLING_SUFFIX;
     }
 
+    /** All EVDS serie codes to fetch for this currency (4 when efektif is available, else 2). */
     public List<String> seriesCodes() {
         if (hasEfektif) {
             return List.of(dovizBuyingCode(), dovizSellingCode(), efektifBuyingCode(), efektifSellingCode());

@@ -2,6 +2,7 @@ package com.finance.market.viop.dto.external;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/** Raw VadeliIslemler future metadata row (Turkish-named fields) for one listed future. */
 public record ViopFutureMetadataDto(
         @JsonProperty("Title") String symbol,
         @JsonProperty("DAYANAK_VARLIK") String underlying,

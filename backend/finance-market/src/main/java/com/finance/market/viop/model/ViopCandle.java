@@ -40,6 +40,10 @@ import java.util.Objects;
                 @Index(name = "idx_viop_candle_symbol_date", columnList = "symbol, candle_date")
         }
 )
+/**
+ * Daily close candle for a VIOP contract, unique per (symbol, date). The {@code symbol} column is
+ * read-only and shared with the {@code contract} association, which owns the foreign key.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

@@ -1,5 +1,6 @@
 package com.finance.market.viop.model;
 
+import com.finance.common.model.Currency;
 import com.finance.market.core.model.BaseAsset;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -21,6 +22,12 @@ import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * A VIOP (Turkish derivatives exchange) futures or options contract with its live quote and
+ * day stats. The {@code symbol} encodes underlying, expiry and (for options) strike/side, and is
+ * the source of truth for the quote currency: the stored {@code currency} (exchange PARA_BIRIMI)
+ * is the underlying currency and must not be used for FX.
+ */
 @Getter
 @Setter
 @SuperBuilder
@@ -146,14 +153,28 @@ public class ViopContract extends BaseAsset {
         return symbol;
     }
 
+    /** Price in quote currency: last traded price, falling back to the day's close. */
     @Override
     public BigDecimal getPriceTry() {
         return lastPrice != null ? lastPrice : dayClose;
     }
 
+    /** Quote currency derived from the symbol (not the stored exchange currency). */
     @Override
     public String resolvePriceCurrency() {
-        return currency != null && !currency.isBlank() ? currency : "TRY";
+        return quoteCurrencyOf(symbol);
+    }
+
+    /**
+     * Quote currency a VIOP contract's price is denominated in, derived from the symbol.
+     * Symbols carry a trailing expiry (futures: MMYY) or strike (options); the pair's quote
+     * currency is the last currency token before that. e.g. F_USDTRY0625 -> TRY (price is TRY
+     * per USD), F_EURUSD0625 -> USD, stock/index futures and options -> TRY.
+     * The stored {@code currency} field (exchange PARA_BIRIMI) is the underlying currency, not
+     * the quote currency, so it must not be used for FX conversion.
+     */
+    public static String quoteCurrencyOf(String symbol) {
+        return Currency.viopQuoteCurrencyOf(symbol).name();
     }
 
     @Override

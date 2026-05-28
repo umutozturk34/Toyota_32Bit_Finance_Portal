@@ -6,8 +6,13 @@ import com.finance.common.model.MarketType;
 
 import java.util.List;
 
+/**
+ * Read-side facade for one market: code lookup, paged search/count, and top movers. Implementations
+ * are dispatched by {@link #getType()} so callers stay market-agnostic.
+ */
 public interface MarketAssetProvider {
 
+    /** Market this provider serves. */
     MarketType getType();
 
     MarketAssetResponse getByCode(String code);
@@ -18,12 +23,15 @@ public interface MarketAssetProvider {
 
     long countBySearch(String searchTerm, MarketAssetFilters filters);
 
+    /** Largest movers; {@code gainers=false} returns losers. */
     List<MarketAssetResponse> getTopMovers(int limit, boolean gainers);
 
+    /** Per-grouping asset counts (e.g. by segment); empty unless the market overrides. */
     default List<GroupCount> getGroupCounts() {
         return List.of();
     }
 
+    /** Optional search facets; null/blank/empty fields mean "no constraint" per the {@code has*} checks. */
     record MarketAssetFilters(String segment, String subType,
                               java.util.List<String> subCategories,
                               java.util.List<Integer> riskValues) {

@@ -7,6 +7,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 
+/**
+ * Declares the Kafka topics this monolith owns so they are auto-created with the configured partitions,
+ * replicas and retention. Topic names and admin defaults come from shared configuration properties.
+ */
 @Configuration
 public class KafkaTopicsConfig {
 

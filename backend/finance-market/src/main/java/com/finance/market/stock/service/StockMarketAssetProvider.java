@@ -24,6 +24,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Read-side provider for BIST stocks: supports segment faceting, groups counts by segment, and
+ * excludes the main-index pseudo-asset from top movers.
+ */
 @Log4j2
 @Service
 public class StockMarketAssetProvider extends BaseTrackedMarketAssetProvider<Stock> {

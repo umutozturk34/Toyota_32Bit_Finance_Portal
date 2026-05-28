@@ -15,6 +15,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Aggregates per-bank currency/gold rates from all {@link BankRateProvider}s and upserts them, each
+ * row in its own REQUIRES_NEW transaction (via a self-reference) so one bad row does not roll back
+ * the batch. Also exposes lookups by currency/kind.
+ */
 @Log4j2
 @Service
 public class BankRatesService {
@@ -58,6 +63,7 @@ public class BankRatesService {
         return total;
     }
 
+    /** Upserts a single rate row in an independent transaction so its failure cannot abort the batch. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void upsertInNewTransaction(BankRateSnapshot s, LocalDateTime now) {
         upsert(s, now);

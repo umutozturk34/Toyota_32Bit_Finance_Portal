@@ -16,11 +16,21 @@ const cardVariants = {
 export default function NewsCard({ article, index }) {
     const navigate = useNavigate();
     const { t } = useTranslation();
-    const imgSrc = article.imageUrl || getFallbackImage(article.category, article.id ?? index);
+    const fallbackSrc = getFallbackImage(article.category, article.id ?? index);
+    const [imgSrc, setImgSrc] = useState(article.imageUrl || fallbackSrc);
     const [imgLoaded, setImgLoaded] = useState(false);
 
     const handleClick = () => {
         if (article.id) navigate(`/news/${article.id}`);
+    };
+
+    const handleImageError = () => {
+        if (imgSrc !== fallbackSrc) {
+            setImgSrc(fallbackSrc);
+            setImgLoaded(false);
+        } else {
+            setImgLoaded(true);
+        }
     };
 
     return (
@@ -34,30 +44,32 @@ export default function NewsCard({ article, index }) {
             className="group flex flex-col"
             aria-label={article.title}
         >
-            <div className="relative w-full h-44 overflow-hidden bg-surface">
+            <div className="relative w-full h-40 sm:h-44 overflow-hidden bg-surface">
                 <img
                     src={imgSrc}
                     alt={article.title}
+                    loading="lazy"
                     className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
                     onLoad={() => setImgLoaded(true)}
+                    onError={handleImageError}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-bg-elevated/80 via-transparent to-transparent" />
-                <div className="absolute bottom-2.5 left-3">
+                <div className="absolute bottom-2.5 left-3 max-w-[calc(100%-1.5rem)]">
                     <CategoryBadge category={article.category} />
                 </div>
             </div>
 
-            <div className="flex flex-col flex-1 p-4 gap-2.5">
-                <span className="text-accent text-[11px] font-semibold uppercase tracking-widest leading-none">
+            <div className="flex flex-col flex-1 p-3.5 sm:p-4 gap-2 sm:gap-2.5 min-w-0">
+                <span className="text-accent text-[11px] font-semibold uppercase tracking-widest leading-none truncate">
                     {article.sourceName}
                 </span>
 
-                <h3 className="text-fg text-[14px] font-semibold leading-snug line-clamp-2 group-hover:text-accent-bright transition-colors duration-150">
+                <h3 className="text-fg text-[14px] font-semibold leading-snug line-clamp-2 break-words group-hover:text-accent-bright transition-colors duration-150">
                     {article.title}
                 </h3>
 
                 {article.description && (
-                    <p className="text-fg-muted text-xs leading-relaxed line-clamp-2">
+                    <p className="text-fg-muted text-xs leading-relaxed line-clamp-2 break-words">
                         {article.description.length > 120
                             ? article.description.substring(0, 120) + '…'
                             : article.description}
@@ -66,10 +78,10 @@ export default function NewsCard({ article, index }) {
 
                 <div className="flex-1" />
 
-                <div className="flex items-center justify-between pt-2.5 border-t border-border-default">
-                    <div className="flex items-center gap-1.5 text-fg-subtle text-[11px]">
-                        <Calendar size={11} strokeWidth={1.6} />
-                        <span>{formatDateTimeShort(article.publishedAt)}</span>
+                <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-border-default min-w-0">
+                    <div className="flex items-center gap-1.5 text-fg-subtle text-[11px] min-w-0">
+                        <Calendar size={11} strokeWidth={1.6} className="shrink-0" />
+                        <span className="truncate">{formatDateTimeShort(article.publishedAt)}</span>
                     </div>
                     <div className="flex items-center gap-1.5 text-accent text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                         <ChevronRight size={11} strokeWidth={2} />

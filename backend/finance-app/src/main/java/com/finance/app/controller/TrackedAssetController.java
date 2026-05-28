@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/** Authenticated read API for the tracked-asset registry: search/list and fetch a single asset by type+code. */
 @RestController
 @RequestMapping("/api/v1/tracked-assets")
 @RequiredArgsConstructor

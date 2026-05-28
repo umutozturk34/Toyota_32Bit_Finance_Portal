@@ -147,6 +147,28 @@ class RedisAssetSnapshotCacheTest {
     }
 
     @Test
+    void findByCode_derivesViopCurrencyFromSymbol_ignoringStoredParaBirimi() {
+        store.put("market:viop:snapshot:F_USDTRY0625",
+                "{\"symbol\":\"F_USDTRY0625\",\"lastPrice\":32.5,\"currency\":\"USD\"}");
+
+        Optional<AssetSnapshot> result = cache.findByCode(MarketType.VIOP, "F_USDTRY0625");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().currency()).isEqualTo("TRY");
+    }
+
+    @Test
+    void findByCode_resolvesForeignViopCurrencyFromSymbol() {
+        store.put("market:viop:snapshot:F_XAUUSD0625",
+                "{\"symbol\":\"F_XAUUSD0625\",\"lastPrice\":2300,\"currency\":\"TRY\"}");
+
+        Optional<AssetSnapshot> result = cache.findByCode(MarketType.VIOP, "F_XAUUSD0625");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().currency()).isEqualTo("USD");
+    }
+
+    @Test
     void findByCodes_returnsEmpty_whenInputEmpty() {
         Map<String, AssetSnapshot> result = cache.findByCodes(MarketType.CRYPTO, Set.of());
 

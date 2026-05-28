@@ -23,6 +23,11 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Drives the commodity refresh: loads the shared USD/TRY history once, then updates each tracked
+ * commodity that has a Yahoo symbol mapping (per-item failures isolated). Aborts when no symbols map
+ * or USD/TRY rates are unavailable, since TRY prices cannot be synthesised without them.
+ */
 @Log4j2
 @Service
 public class CommodityUpdateService implements MarketRefresher {

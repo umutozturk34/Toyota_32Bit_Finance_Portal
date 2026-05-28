@@ -108,19 +108,19 @@ function NotificationRow({ item, onRead, onDelete }) {
           : 'border-border-default bg-bg-elevated'
       }`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
         <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-surface ${tint}`}>
           <Icon className="h-3.5 w-3.5" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted">{label}</span>
-            <span className="text-[10px] text-fg-subtle">·</span>
-            <span className="text-[10px] text-fg-subtle">{relativeTime(item.createdAt)}</span>
-            {isUnread && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-accent animate-pulse-dot" />}
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 flex-wrap">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-fg-muted truncate max-w-full">{label}</span>
+            <span className="text-[10px] text-fg-subtle hidden sm:inline">·</span>
+            <span className="text-[10px] text-fg-subtle whitespace-nowrap">{relativeTime(item.createdAt)}</span>
+            {isUnread && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-accent animate-pulse-dot shrink-0" />}
           </div>
-          <h3 className="text-[13px] font-semibold text-fg truncate">{item.title}</h3>
-          <p className="text-xs text-fg-muted leading-relaxed mt-0.5">{item.body}</p>
+          <h3 className="text-[13px] font-semibold text-fg break-words line-clamp-2">{item.title}</h3>
+          <p className="text-xs text-fg-muted leading-relaxed mt-0.5 break-words">{item.body}</p>
         </div>
       </div>
 
@@ -218,7 +218,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
         headerActions={headerActions}
         closeLabel={t('notificationPanel.close', { defaultValue: 'close' })}
       >
-        <div className="px-5 py-2.5 border-b border-border-default shrink-0">
+        <div className="px-4 sm:px-5 py-2.5 border-b border-border-default shrink-0">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-fg-subtle pointer-events-none" />
             <input
@@ -244,7 +244,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border-default shrink-0">
+        <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3 border-b border-border-default shrink-0 flex-wrap">
           <div className="flex gap-0.5 rounded-lg border border-border-default bg-bg-elevated p-0.5">
             <Button
               variant="segment"
@@ -290,7 +290,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
           </div>
         </div>
 
-        <div className="px-5 py-3 space-y-2">
+        <div className="px-4 sm:px-5 py-3 space-y-2">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Spinner size="md" tone="accent" />

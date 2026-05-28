@@ -25,6 +25,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * A tracked macro/economic indicator (inflation, rate, deposit) defined by config and keyed by EVDS
+ * code, caching its last observed value/date for staleness checks and quick display.
+ */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -112,10 +116,12 @@ public class MacroIndicator {
         updatedAt = LocalDateTime.now();
     }
 
+    /** Whether the latest point is older than the frequency allows (a new observation is overdue). */
     public boolean isStale(LocalDate today) {
         return frequency.isStale(lastDate, today);
     }
 
+    /** Updates cached last value/date only when the observation is newer than the current latest. */
     public void recordObservation(LocalDate observedAt, BigDecimal value) {
         if (observedAt == null || value == null) {
             return;

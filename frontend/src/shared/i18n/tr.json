@@ -59,7 +59,14 @@
     "searchEllipsis": "Ara...",
     "collapse": "Küçült",
     "expand": "Büyüt",
-    "settings": "Ayarlar"
+    "settings": "Ayarlar",
+    "clearSearch": "Aramayı temizle",
+    "previousPage": "Önceki sayfa",
+    "nextPage": "Sonraki sayfa",
+    "openMenu": "Menüyü aç",
+    "toggleSortDirection": "Sıralama yönünü değiştir",
+    "unreadNotifications": "{{count}} okunmamış",
+    "riskLevel": "Risk {{value}}/{{max}}"
   },
   "numberFormat": {
     "thousand": " bin",
@@ -315,7 +322,8 @@
     "addPage": "Yeni sayfa",
     "newPageName": "Yeni sayfa",
     "deletePage": "Sayfayı sil",
-    "tabRenameHint": "Tıkla → adı düzenle"
+    "tabRenameHint": "Tıkla → adı düzenle",
+    "defaultName": "Anasayfa"
   },
   "widgetTray": {
     "widgetGallery": "Widget Galerisi",
@@ -784,6 +792,7 @@
       "openLabel": "Açılış",
       "highLabel": "En Yüksek",
       "lowLabel": "En Düşük",
+      "closeLabel": "Önceki Kapanış",
       "volumeLabel": "Hacim",
       "loading": "Hisse verileri yükleniyor…",
       "error": "Hisse senedi verileri yüklenirken hata oluştu",
@@ -880,6 +889,11 @@
       "updateStartedTitle": "Güncelleme Başlatıldı",
       "updateStarted": "Tahvil güncelleme başlatıldı",
       "updateErrorTitle": "Güncelleme Hatası",
+      "activeOnlyLabel": "Açık bonolar",
+      "activeOnlyTooltip": "Vade dolmamış bonolar",
+      "priceChartTitle": "Fiyat geçmişi",
+      "noPriceData": "Fiyat geçmişi yok",
+      "rateChartTitle": "Kupon oranı geçmişi",
       "sort": {
         "simpleYield": "Basit Getiri",
         "couponRate": "Kupon Oranı",
@@ -949,7 +963,13 @@
       "exitDateLabel": "Çıkış Tarihi",
       "statusCol": "Durum",
       "realReturnAbbr": "reel",
-      "realReturnTooltip": "Reel getiri (TÜFE etkisi düşülmüş)"
+      "realReturnTooltip": "Reel getiri (TÜFE etkisi düşülmüş)",
+      "viewOnMarket": "Pazar detayı"
+    },
+    "search": {
+      "title": "Pozisyon Ekle",
+      "subtitle": "Yeni bir varlık keşfedip detay sayfasından pozisyon ekleyebilirsin",
+      "placeholder": "Yeni pozisyon için ara..."
     },
     "allocation": {
       "title": "Dağılım",
@@ -1481,10 +1501,150 @@
     }
   },
   "onboarding": {
+    "landing": {
+      "title": "Finance Portal",
+      "subtitle": "Hoş geldin — birkaç ayar sonra hazırsın."
+    },
     "welcomeTitle": "Finance Portal'a Hoş Geldin",
     "welcomeSubtitle": "Piyasa verisi, portföy takibi ve bildirimleri tek arayüzde toplayan finans paneli.",
     "startCta": "Başlayalım",
     "dismissHint": "Bu pencereyi tekrar görmeyeceksin — Ayarlar'dan tüm seçenekleri yönetebilirsin.",
+    "skip": "Turu atla",
+    "continue": "Devam et",
+    "back": "Geri",
+    "next": "Sonraki",
+    "step": {
+      "preferences": {
+        "title": "Önce kendini ayarla",
+        "subtitle": "Tema ve dil tercihini şimdi seç — istediğin zaman değiştirebilirsin.",
+        "theme": "Tema",
+        "themeLight": "Aydınlık",
+        "themeDark": "Karanlık",
+        "language": "Dil"
+      }
+    },
+    "tour": {
+      "phaseLabel": "Adım 1 / 2 · Tercihler",
+      "finish": "Bitir",
+      "welcome": {
+        "title": "Tüm piyasalar tek yerde",
+        "desc": "Hisse, kripto, fon, döviz, emtia ve tahvili aynı arayüzde takip et. Birlikte birkaç dakikalık tura çıkalım — ESC ile çıkabilirsin."
+      },
+      "marketTabs": {
+        "title": "Piyasa sekmeleri",
+        "desc": "Genel Bakış öne çıkan varlıkları, Kurlar döviz ve emtia fiyatlarını, Göstergeler endeks ve makro verileri, Banka Faizleri ise mevduat oranlarını gösterir."
+      },
+      "marketSearch": {
+        "title": "Tek kutudan arama",
+        "desc": "Hisse, kripto, fon, döviz, emtia ya da VİOP fark etmez — sembol veya tam isim yaz, otomatik öneri listesinden seç ya da Enter ile doğrudan detay sayfasına git."
+      },
+      "widgetEdit": {
+        "title": "Anasayfayı kendine göre diz",
+        "desc": "Sağ üstteki düzenleme modunu aç, widget'ları sürükle-bırak ile taşı, yenilerini ekle veya kaldır; birden fazla sayfa oluşturup düzenlerini kalıcı olarak kaydedebilirsin."
+      },
+      "detailChart": {
+        "title": "Detay grafiği ve çizimler",
+        "desc": "Dönemi 1A–MAX arasında seç, mum/çizgi/alan görünümüne geç. Trendline, Fibonacci ve diğer çizim araçlarını kullan, çizimlerin kaydedilir."
+      },
+      "chartDrawing": {
+        "title": "Grafik üzerine çiz",
+        "desc": "Trendline ile yön çiz, Fibonacci ile geri çekilme seviyelerini bul, paralel kanallar ve yatay destek/direnç çizgileri ekleyebilirsin."
+      },
+      "fundDetail": {
+        "title": "Fon detay kartı",
+        "desc": "Örnek olarak ACD - İSTANBUL PORTFÖY İKİNCİ DEĞİŞKEN FON gibi karma fonlarda varlık dağılımı, dönemsel getiri, risk seviyesi ve KAP bağlantısını tek ekranda görürsün."
+      },
+      "fundAllocation": {
+        "title": "Varlık dağılımı grafiği",
+        "desc": "Fonun portföyündeki sınıf bazlı ağırlıkları gösteren halka grafik — dilime fareyle gelince yüzde ve sınıf adı merkezde belirir, listede de aynı satır vurgulanır."
+      },
+      "bondDetail": {
+        "title": "Tahvil ve bonolar",
+        "desc": "Sabit kuponlu devlet tahvilleri, kira sertifikaları ve değişken faizli türleri listeden seç; detay sayfasında kupon geçmişini, vade tarihini ve ihraç bilgilerini görürsün."
+      },
+      "bondDetailPage": {
+        "title": "Tahvil detay sayfası",
+        "desc": "Tahvilin baz fiyatı, kupon oranı, basit getirisi, vade tarihi ve sonraki kupon ödemesi bu kartta toplandı; üstte de fiyat geçmişi grafiği yer alır."
+      },
+      "bondCoupon": {
+        "title": "Kupon oranı grafiği",
+        "desc": "Kupon oranı için ayrı bir grafik var — fiyat grafiğinin altındaki başlık çubuğundan açıp kapatabilirsin, varsayılan olarak açık gelir."
+      },
+      "news": {
+        "title": "Piyasa haberleri",
+        "desc": "RSS kaynaklarından gelen başlıkları Borsa İstanbul, Kripto ve Genel Finans kategorilerine göre filtreleyip ilgili haberlere hızlıca ulaşabilirsin."
+      },
+      "analyticsScenario": {
+        "title": "Senaryo karşılaştır",
+        "desc": "Farklı varlıkları veya portföyleri seçtiğin geçmiş tarih aralığında yan yana koyup getiri ve volatilite farklarını buradan inceleyebilirsin."
+      },
+      "analyticsBeater": {
+        "title": "Enflasyon Yenenler",
+        "desc": "Seçtiğin dönemde TÜFE'yi geçen varlıkları otomatik tespit edip enflasyon karşısında reel getiri sağlayanları buradan listeleyebilirsin."
+      },
+      "portfolio": {
+        "title": "Portföyünü kur",
+        "desc": "Henüz portföyün yoksa buradan yeni bir tane oluştur; varsa arama kutusundan hisse, fon veya kripto seçip geçmiş tarihli lot bazlı (giriş tarihi + fiyat) pozisyon ekleyebilirsin."
+      },
+      "portfolioPdf": {
+        "title": "Portföyü PDF olarak indir",
+        "desc": "Varlık dağılımı pasta grafiği, zaman serisi performans grafiği, gerçekleşen kâr/zarar dökümü ve açık pozisyon listesi seçtiğin tema ve dile uygun tek bir PDF dosyasında toplanır."
+      },
+      "watchlist": {
+        "title": "Takip listeleri ve alarmlar",
+        "desc": "Birden fazla liste oluştur, her satıra alış üstü ve altı için fiyat eşiği gir, sınır aşıldığında e-posta bildirimi tetiklenir; satırları sürükle-bırak ile sırala."
+      },
+      "customLists": {
+        "title": "Özel listeler",
+        "desc": "Yeni liste oluştur kısayoluyla Kısa Vadeli, Riskli, Temettü gibi kategorik koleksiyonlar kur; her satıra fiyat eşiği girip aşıldığında mail bildirimini tetikleyebilirsin."
+      },
+      "notifications": {
+        "title": "Bildirim merkezi",
+        "desc": "Zile bas — okunmamış/tümü sekmeli son 20 bildirimi gör; uygulama içi ve e-posta ayrı kanal, kategori (fiyat, makro, haber, portföy) tercihleri ayarlar sayfasından detaylı yönetilir."
+      },
+      "settings": {
+        "title": "Ayarlar paneli",
+        "desc": "Tema, dil, varsayılan grafik aralığı (1A/3A/1Y/MAX), gösterim para birimi (TL/USD/EUR) ve saat dilimini seç; bildirimleri kategori bazında (fiyat, makro, haber, portföy) e-posta ve uygulama içi olarak ayrı aç/kapat."
+      },
+      "profile": {
+        "title": "Profil paneli",
+        "desc": "Ad ve e-postanı (eski + yeni adres kod doğrulamalı) güncelle, Keycloak üzerinden şifre değiştir, TOTP 2FA'yı QR ve kurtarma kodlarıyla kur, aktif cihaz oturumlarını gör ve sonlandır."
+      },
+      "outro": {
+        "title": "Tur tamamlandı",
+        "desc": "Tüm tercihlerini istediğin zaman sağ üstteki menüden değiştirebilirsin. İyi yatırımlar."
+      },
+      "farewell": {
+        "title": "Hoş geldin",
+        "subtitle": "Keyifli takipler dileriz, hep yanındayız."
+      },
+      "summary": {
+        "title": "Hazırsın",
+        "desc": "Piyasalar, portföy, takip listeleri ve bildirimleri gördün. Tüm tercihlerini istediğin zaman ayarlar ve profil panelinden yönetebilirsin.",
+        "closing": "Hepsi bu kadar — artık platformu rahatça kullanmaya başlayabilirsin.",
+        "cta": "Başla",
+        "features": {
+          "markets": "Piyasalar",
+          "portfolio": "Portföy",
+          "watchlist": "Takip listesi",
+          "notifications": "Bildirim",
+          "settings": "Ayarlar",
+          "profile": "Profil",
+          "drawing": "Çizim araçları",
+          "pdf": "PDF özet",
+          "scenarios": "Senaryolar"
+        }
+      },
+      "stepLabel": "Adım {{num}} / {{total}}",
+      "marketRates": {
+        "title": "Kurlar",
+        "desc": "USD/EUR/GBP gibi döviz çiftleri, altın ve gümüş emtiaları, TCMB efektif kurları ile banka mevduat faizlerini tek ekrandan günlük olarak takip edebilirsin."
+      },
+      "marketMacro": {
+        "title": "Göstergeler",
+        "desc": "TÜFE, ÜFE, politika faizi, TLREF, mevduat ortalama faizleri ve BIST 100, BIST 30 endekslerinin son değerleri ile yıllık değişimlerini tek bakışta görebilirsin."
+      }
+    },
     "highlights": {
       "multiMarket": {
         "title": "Çoklu Piyasa",
@@ -2091,7 +2251,16 @@
       "backfilledTooltip": "Aralık başına son bilinen değerle uzatıldı"
     },
     "returnsInCurrency": "Getiriler {{currency}} cinsinden",
-    "simulationRunning": "Simülasyon hesaplanıyor..."
+    "simulationRunning": "Simülasyon hesaplanıyor...",
+    "preset": {
+      "depositTry3m": "TRY 3A Mevduat",
+      "depositUsd3m": "USD 3A Mevduat",
+      "depositEur3m": "EUR 3A Mevduat",
+      "usdTry": "USD/TRY",
+      "eurTry": "EUR/TRY",
+      "gold": "Altın",
+      "silver": "Gümüş"
+    }
   },
   "pdf": {
     "report": {

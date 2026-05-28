@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
+/** Serves commodity candle history (TRY) for a tracked code over a preset period or explicit range. */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)

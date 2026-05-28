@@ -34,7 +34,7 @@ import { BOND_TYPE_COLORS } from './lib/bondConstants';
 
 const SORT_OPTION_IDS = ['simpleYield', 'couponRate', 'baseIndex', 'maturityEnd', 'seriesCode'];
 
-function BondCard({ bond, onClick }) {
+function BondCard({ bond, onClick, dataTour }) {
     const { t } = useTranslation();
     const localeTag = t('common.localeTag');
     const maturityDays = daysUntil(bond.maturityEnd);
@@ -47,6 +47,7 @@ function BondCard({ bond, onClick }) {
             layout
             role="button"
             tabIndex={0}
+            data-tour={dataTour}
             onClick={onClick}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
             className="rounded-2xl border border-border-default bg-bg-elevated card-hover transition-all duration-200 hover:border-accent/40 overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent/40"
@@ -57,16 +58,16 @@ function BondCard({ bond, onClick }) {
                         <span className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-accent/10 text-accent shrink-0">
                             <Landmark className="w-5 h-5 sm:w-6 sm:h-6" />
                         </span>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                             <h3 className="text-base sm:text-lg font-bold text-fg truncate">{bond.isinCode}</h3>
                             <span className="block text-xs sm:text-sm text-fg-muted truncate">{bond.seriesCode}</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap">
-                        <span className={`rounded-lg border px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold tracking-wider ${typeColor}`}>
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-wrap justify-end">
+                        <span className={`rounded-lg border px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-semibold tracking-wider whitespace-nowrap ${typeColor}`}>
                             {t(`market.bond.types.${bond.bondType}`, { defaultValue: bond.bondType })}
                         </span>
-                        <span className="font-mono text-lg sm:text-2xl font-bold text-fg">
+                        <span className="font-mono text-base sm:text-2xl font-bold text-fg tabular-nums">
                             {formatPrice(bond.baseIndex, localeTag)}
                         </span>
                         <ChevronRight className="h-4 w-4 text-fg-subtle" />
@@ -200,7 +201,7 @@ export default function BondsPage() {
     if (error) return <ErrorState message={t('market.bond.error')} onRetry={refetch} />;
 
     return (
-        <div className="space-y-6 py-6">
+        <div className="space-y-6 py-6" data-tour="bond-page-main">
             <PageHeader
                 icon={<Landmark className="h-5 w-5" />}
                 title={
@@ -217,7 +218,7 @@ export default function BondsPage() {
             />
 
             <div className="flex flex-wrap items-center gap-3">
-                <div className="w-48">
+                <div className="w-full sm:w-48">
                     <SearchInput
                         value={listParams.search}
                         onChange={listParams.setSearch}
@@ -258,13 +259,15 @@ export default function BondsPage() {
             </div>
 
             {bondTypes.length > 0 && (
-                <FilterTabs
-                    items={bondTypes.map(b => ({ type: b.type, count: b.count, label: t(`market.bond.types.${b.type}`, { defaultValue: b.type }) }))}
-                    activeId={typeFilter}
-                    onSelect={handleTypeFilter}
-                    allCount={bondTypes.reduce((sum, b) => sum + Number(b.count), 0)}
-                    layoutId="bond-type"
-                />
+                <div className="w-full min-w-0">
+                    <FilterTabs
+                        items={bondTypes.map(b => ({ type: b.type, count: b.count, label: t(`market.bond.types.${b.type}`, { defaultValue: b.type }) }))}
+                        activeId={typeFilter}
+                        onSelect={handleTypeFilter}
+                        allCount={bondTypes.reduce((sum, b) => sum + Number(b.count), 0)}
+                        layoutId="bond-type"
+                    />
+                </div>
             )}
 
             <AnimatePresence>
@@ -275,10 +278,11 @@ export default function BondsPage() {
                         animate="show"
                         className="flex flex-col gap-4 min-h-[600px]"
                     >
-                        {visibleBonds.map((bond) => (
+                        {visibleBonds.map((bond, i) => (
                             <BondCard
                                 key={bond.seriesCode}
                                 bond={bond}
+                                dataTour={i === 0 ? 'bond-list-first' : undefined}
                                 onClick={() => navigate(`/bonds/${encodeURIComponent(bond.seriesCode)}`)}
                             />
                         ))}

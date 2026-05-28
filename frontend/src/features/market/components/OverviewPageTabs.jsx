@@ -2,13 +2,22 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, X, Pencil, Check } from 'lucide-react';
+import { DEFAULT_PAGE_ID, DEFAULT_PAGE_NAME_SEED } from '../../../shared/hooks/useUserLayout';
 
 const MAX_NAME_LENGTH = 24;
 
+function resolvePageName(page, t) {
+  if (page.id === DEFAULT_PAGE_ID && page.name === DEFAULT_PAGE_NAME_SEED) {
+    return t('overviewPages.defaultName', { defaultValue: 'Anasayfa' });
+  }
+  return page.name;
+}
+
 function PageTab({ page, active, editMode, onSelect, onRename, onDelete, canDelete }) {
   const { t } = useTranslation();
+  const displayName = resolvePageName(page, t);
   const [renaming, setRenaming] = useState(false);
-  const [draft, setDraft] = useState(page.name);
+  const [draft, setDraft] = useState(displayName);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -35,7 +44,7 @@ function PageTab({ page, active, editMode, onSelect, onRename, onDelete, canDele
           onBlur={commitRename}
           onKeyDown={(e) => {
             if (e.key === 'Enter') commitRename();
-            else if (e.key === 'Escape') { setDraft(page.name); setRenaming(false); }
+            else if (e.key === 'Escape') { setDraft(displayName); setRenaming(false); }
           }}
           maxLength={MAX_NAME_LENGTH}
           className="font-display text-[12px] font-semibold bg-transparent border-none focus:outline-none text-fg w-[120px]"
@@ -62,10 +71,10 @@ function PageTab({ page, active, editMode, onSelect, onRename, onDelete, canDele
           ? 'border-accent bg-accent/15 text-accent shadow-sm shadow-accent/15'
           : 'border-border-default bg-bg-elevated text-fg-muted hover:text-fg hover:border-accent/40 hover:bg-accent/5'
       }`}
-      title={editMode && active ? t('overviewPages.tabRenameHint', { defaultValue: 'Tıkla → Yeniden adlandır' }) : page.name}
+      title={editMode && active ? t('overviewPages.tabRenameHint', { defaultValue: 'Tıkla → Yeniden adlandır' }) : displayName}
     >
       <span className="font-display text-[12px] font-semibold tracking-tight truncate max-w-[140px]">
-        {page.name}
+        {displayName}
       </span>
       {editMode && active && (
         <Pencil className="h-3 w-3 opacity-60 group-hover/tab:opacity-100 transition-opacity" />

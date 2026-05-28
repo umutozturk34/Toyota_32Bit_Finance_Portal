@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+/** Persistence for daily forex candles, queried by currency and date for history, pricing, and change. */
 @Repository
 public interface ForexCandleRepository extends JpaRepository<ForexCandle, Long> {
 

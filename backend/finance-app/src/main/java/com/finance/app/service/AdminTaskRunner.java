@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.Executor;
 
+/**
+ * Runs an admin task on the shared task executor under task-tracking, recording start/complete/fail and
+ * returning a started response immediately so the HTTP call doesn't block on the background work.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor

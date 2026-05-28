@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
+/** Serves fund unit-price candle history for a tracked fund over a preset period or explicit range. */
 @Log4j2
 @Service
 @RequiredArgsConstructor

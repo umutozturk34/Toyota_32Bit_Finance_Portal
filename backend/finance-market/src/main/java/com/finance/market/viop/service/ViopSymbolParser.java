@@ -10,6 +10,11 @@ import java.time.LocalDate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Decodes VIOP symbols into structured contract attributes. Options encode
+ * {@code O_<underlying><E|A><MM><YY><C|P><strike>}; futures encode
+ * {@code F_<underlying><MM><YY>}. Returns {@code null} for symbols matching neither shape.
+ */
 @Component
 public class ViopSymbolParser {
 
@@ -21,6 +26,7 @@ public class ViopSymbolParser {
             "^F_([A-Z0-9]+?)(\\d{2})(\\d{2})$"
     );
 
+    /** Parses underlying/expiry/strike/side from the symbol, or {@code null} if it is not a VIOP symbol. */
     public Parsed parse(String symbol) {
         if (symbol == null) return null;
         Matcher om = OPTION_PATTERN.matcher(symbol);
@@ -43,6 +49,7 @@ public class ViopSymbolParser {
         return null;
     }
 
+    /** VIOP contracts expire on the last calendar day of their expiry month. */
     public LocalDate impliedExpiry(int year, int month) {
         return LocalDate.of(year, month, 1).withDayOfMonth(LocalDate.of(year, month, 1).lengthOfMonth());
     }

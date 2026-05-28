@@ -73,7 +73,7 @@ class BondDataServiceTest {
 
         assertThatThrownBy(() -> service.updateBonds())
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("No bond snapshot data");
+                .hasMessageContaining("error.market.bondNoSnapshotData");
         verify(bondRateHistoryService, never()).processBatch(any(), any());
     }
 

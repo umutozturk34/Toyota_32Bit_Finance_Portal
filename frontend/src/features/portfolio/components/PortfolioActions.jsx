@@ -38,6 +38,7 @@ export default function PortfolioActions({
             disabled={pdfDisabled}
             title={pdfTitle}
             aria-disabled={pdfDisabled}
+            data-tour="portfolio-pdf"
             className={`group relative flex items-center gap-2 overflow-hidden rounded-lg border px-3 py-1.5 text-[12px] font-display font-semibold tracking-tight transition-all duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
               pdfPending
                 ? 'border-accent/40 bg-accent/5 text-fg'
@@ -71,11 +72,16 @@ export default function PortfolioActions({
             ) : (
               <Download className="h-3.5 w-3.5" />
             )}
-            <span className="relative tabular-nums">
+            <span className="relative tabular-nums hidden sm:inline">
               {pdfPending
                 ? `${(pdfElapsedMs / 1000).toFixed(1)}s · ${t('portfolio.actions.downloadPdfPending')}`
                 : t('portfolio.actions.downloadPdf')}
             </span>
+            {pdfPending && (
+              <span className="relative tabular-nums sm:hidden text-[11px]">
+                {(pdfElapsedMs / 1000).toFixed(1)}s
+              </span>
+            )}
             <style>{`
               @keyframes pdfSpin { to { transform: rotate(360deg); } }
               @keyframes pdfShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }

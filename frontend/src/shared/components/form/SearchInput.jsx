@@ -100,6 +100,7 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
       {local && (
         <button
           onClick={handleClear}
+          aria-label={t('common.clearSearch')}
           className="absolute right-2.5 inset-y-0 z-10 flex items-center text-fg-muted hover:text-fg transition-colors cursor-pointer bg-transparent border-none p-0"
         >
           <X className="h-3.5 w-3.5" />
@@ -115,7 +116,7 @@ export default function SearchInput({ value, onChange, placeholder, debounceMs =
               exit={{ opacity: 0, y: -4, scale: 0.98 }}
               transition={{ duration: 0.15 }}
               style={{ background: 'var(--color-bg-deep)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
-              className="absolute z-50 w-72 mt-1.5 rounded-xl border border-border-default shadow-xl overflow-hidden"
+              className="absolute z-50 left-0 right-0 sm:w-72 sm:right-auto mt-1.5 rounded-xl border border-border-default shadow-xl overflow-hidden"
             >
               <div className="overflow-y-auto max-h-[300px]">
                 {suggestions.map((asset, i) => {

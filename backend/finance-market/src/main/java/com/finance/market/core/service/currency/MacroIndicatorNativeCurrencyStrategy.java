@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 import java.util.EnumSet;
 import java.util.Set;
 
+/**
+ * Macro inflation/rate indicator native currency: TRY (index/percentage values reported in TRY terms).
+ */
 @Component
 public class MacroIndicatorNativeCurrencyStrategy implements NativeCurrencyStrategy {
 

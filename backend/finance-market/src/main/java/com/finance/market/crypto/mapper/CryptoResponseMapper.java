@@ -14,6 +14,7 @@ import org.mapstruct.Named;
 
 import java.util.List;
 
+/** MapStruct mapper from crypto entities/candles to API responses; price is the TRY value. */
 @Mapper(componentModel = "spring")
 public abstract class CryptoResponseMapper implements MarketMetadataBuilder<Crypto, CryptoMetadata> {
 

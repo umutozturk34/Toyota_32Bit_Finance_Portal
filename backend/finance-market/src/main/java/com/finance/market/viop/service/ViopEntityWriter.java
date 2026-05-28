@@ -28,6 +28,11 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Persists VIOP contracts from specs and live snapshots. Unknown symbols are bootstrapped by
+ * parsing the symbol (and auto-tracked); snapshot fields are applied only when present so partial
+ * upstream payloads never wipe existing data. Saved contracts are pushed to the snapshot cache.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -43,6 +48,7 @@ public class ViopEntityWriter implements MarketEntityWriter {
     private final ViopSymbolParser symbolParser;
     private final MarketCacheService<ViopContract> cacheService;
 
+    /** Applies contract specs onto existing contracts; symbols not yet stored are skipped. */
     @Transactional
     public int enrichSpecs(List<ViopContractSpec> specs) {
         int enriched = 0;
@@ -59,6 +65,7 @@ public class ViopEntityWriter implements MarketEntityWriter {
         return enriched;
     }
 
+    /** Applies a batch of live snapshots (bootstrapping new symbols); returns the symbols touched. */
     @Transactional
     public Set<String> applyBulkSnapshots(List<ViopQuoteSnapshot> snapshots) {
         Set<String> seen = new HashSet<>();
@@ -99,6 +106,7 @@ public class ViopEntityWriter implements MarketEntityWriter {
         return a.compareTo(b) == 0;
     }
 
+    /** Marks every currently-active contract absent from {@code activeSymbols} as inactive. */
     @Transactional
     public int deactivateNotIn(Set<String> activeSymbols) {
         List<ViopContract> all = repository.findAll();
@@ -115,6 +123,7 @@ public class ViopEntityWriter implements MarketEntityWriter {
         return deactivated;
     }
 
+    /** Applies one snapshot, bootstrapping the contract if unknown; throws if the symbol is unparseable. */
     @Transactional
     public ViopContract applySnapshot(String symbol, ViopQuoteSnapshot snap) {
         ViopContract entity = repository.findBySymbol(symbol)
@@ -140,6 +149,7 @@ public class ViopEntityWriter implements MarketEntityWriter {
         return expired.size();
     }
 
+    /** Creates a contract purely from its parsed symbol, registering and auto-tracking it. */
     private ViopContract bootstrapFromSymbol(String symbol) {
         ViopSymbolParser.Parsed parsed = symbolParser.parse(symbol);
         if (parsed == null) {
@@ -187,6 +197,7 @@ public class ViopEntityWriter implements MarketEntityWriter {
         }
     }
 
+    /** Copies present snapshot fields onto the entity and recomputes change vs. day close. */
     private void applySnapshot(ViopContract entity, ViopQuoteSnapshot snap) {
         backfillDisplayName(entity);
         if (snap.dayClose() != null) entity.setDayClose(snap.dayClose());
@@ -219,6 +230,7 @@ public class ViopEntityWriter implements MarketEntityWriter {
         }
     }
 
+    /** First strictly-positive candidate, used to pick a usable last price among fallbacks. */
     private static BigDecimal firstPositive(BigDecimal... candidates) {
         for (BigDecimal candidate : candidates) {
             if (candidate != null && candidate.signum() > 0) {

@@ -5,6 +5,7 @@ import { Layers, TrendingUp, TrendingDown } from 'lucide-react';
 import { STALE } from '../../shared/constants/query';
 import { viopService } from './services/viopService';
 import { formatPrice } from '../../shared/utils/formatters';
+import { viopQuoteCurrency } from '../../shared/utils/priceCurrency';
 import MarketListPage from '../../shared/components/market/MarketListPage';
 import AssetCard from '../../shared/components/asset/AssetCard';
 import AssetBuyButton from '../../shared/components/asset/AssetBuyButton';
@@ -96,7 +97,7 @@ export default function ViopPage() {
     const meta = contract.metadata || {};
     const displayName = buildViopName(meta, contract.code, t, i18n.language);
     const isOption = meta.kind === 'OPTION';
-    const currency = meta.currency || 'TRY';
+    const currency = viopQuoteCurrency(contract.code);
     const tradeable = contract.price != null;
     const categoryLabel = meta.category
       ? t(`viop.category.${meta.category}`, meta.category)

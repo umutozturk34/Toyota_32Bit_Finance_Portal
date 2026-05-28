@@ -2,6 +2,11 @@ package com.finance.common.dto.internal;
 
 import java.math.BigDecimal;
 
+/**
+ * Immutable point-in-time view of an asset's latest price and metadata as read from the snapshot
+ * cache. {@code priceTry} holds the cached price and {@code currency} its quote currency, which
+ * defaults to {@code TRY} via the convenience constructor.
+ */
 public record AssetSnapshot(
         String code,
         String name,

@@ -12,6 +12,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * Keeps the inflation-beater cache warm: precomputes every configured period × benchmark combination on
+ * startup and again on a daily cron (clearing first), so user requests hit a populated cache. Failures
+ * for individual combinations are logged and skipped rather than aborting the batch.
+ */
 @Log4j2
 @Component
 public class InflationBeaterScheduler {

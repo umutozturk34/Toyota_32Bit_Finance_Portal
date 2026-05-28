@@ -17,12 +17,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Maps EVDS rate-data rows into {@link ForexCandle}s and locates the latest/earliest dated rows.
+ * EVDS keys dots are converted to underscores, zero values are treated as missing, and prices are
+ * divided by the currency's quote unit so all rates share a single-unit basis.
+ */
 @Log4j2
 @Component
 public class ForexEvdsMapper {
 
     private static final DateTimeFormatter EVDS_DATE_FMT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
+    /** Builds candles for all dated rows that carry at least one non-zero price. */
     public List<ForexCandle> toCandles(Forex forex, ForexSerieMetadata metadata, EvdsDataResponse response, int scale) {
         if (response.items() == null || response.items().isEmpty()) return List.of();
 
@@ -60,6 +66,7 @@ public class ForexEvdsMapper {
         return candles;
     }
 
+    /** Scans from the end for the most recent row with any price, returning raw (unscaled) values. */
     public ItemRow extractLatestRow(EvdsDataResponse response, ForexSerieMetadata metadata) {
         if (response.items() == null || response.items().isEmpty()) return null;
         for (int i = response.items().size() - 1; i >= 0; i--) {
@@ -96,6 +103,7 @@ public class ForexEvdsMapper {
         }
     }
 
+    /** Parses a numeric EVDS cell, treating absent, blank, unparseable, and zero values as null. */
     private BigDecimal extractNonZero(Map<String, Object> item, String key) {
         Object raw = item.get(key);
         if (raw == null) return null;

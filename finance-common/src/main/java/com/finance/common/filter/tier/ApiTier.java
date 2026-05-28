@@ -9,6 +9,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
+/**
+ * Lowest-precedence catch-all tier: matches any request not claimed by a more specific tier and
+ * applies the general per-minute API limit, guaranteeing every {@code /api/} call has a policy.
+ */
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE)
 public class ApiTier implements RateLimitTier {

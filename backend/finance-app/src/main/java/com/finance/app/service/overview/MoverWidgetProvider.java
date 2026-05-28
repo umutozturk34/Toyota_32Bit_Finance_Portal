@@ -15,6 +15,10 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Provides the MOVERS widget (top gainers/losers for a market type), serving the precomputed top-movers
+ * cache first and falling back to a live provider query on a cache miss, capped at the configured limit.
+ */
 @Log4j2
 @Component
 public class MoverWidgetProvider implements OverviewWidgetProvider {

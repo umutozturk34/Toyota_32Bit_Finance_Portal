@@ -16,7 +16,7 @@ export default function AdminToolbar({ actions, updating, disabled = false }) {
                     onClick={handler}
                     disabled={updating[key] || disabled}
                     title={title}
-                    className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/10 px-4 py-2 text-sm text-accent-bright transition-colors duration-150 hover:bg-accent/20 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-md border border-accent/30 bg-accent/10 px-4 py-2 min-h-10 text-sm text-accent-bright transition-colors duration-150 hover:bg-accent/20 disabled:opacity-50"
                 >
                     {updating[key] ? (
                         <Spinner size="sm" tone="inherit" />

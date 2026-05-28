@@ -21,6 +21,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.ZoneId;
 
+/**
+ * Refreshes a single stock from Yahoo: fetches only the range needed since the last candle, saves a
+ * fresh snapshot when a quote is present (else keeps the existing one), upserts candles, and
+ * back-fills change. No-op when the market is closed and nothing is stored.
+ */
 @Log4j2
 @Component
 public class StockSnapshotProcessor implements MarketSnapshotProcessor {
@@ -51,6 +56,7 @@ public class StockSnapshotProcessor implements MarketSnapshotProcessor {
         this.appZone = ZoneId.of(appProperties.getTimezone());
     }
 
+    /** Refreshes the symbol's snapshot and candles, returning the number of candles persisted. */
     public int updateOne(String symbol) {
         String range = stockCandleRepository.findFirstByStockSymbolOrderByCandleDateDesc(symbol)
                 .map(lastCandle -> YahooRangePolicy.fromLastCandle(lastCandle.getCandleDate(), appZone, fallbackRange))

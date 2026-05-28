@@ -3,6 +3,10 @@ package com.finance.market.viop.dto;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+/**
+ * Live VIOP quote with day/week/month/year stats and contract limits; fields may be null when the
+ * upstream payload omits them, so writers apply only present values.
+ */
 public record ViopQuoteSnapshot(
         String symbol,
         Instant updatedAt,

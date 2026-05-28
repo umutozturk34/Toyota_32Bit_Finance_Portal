@@ -231,4 +231,170 @@ class ScenarioServiceTest {
         assertThat(series.points().get(1).value()).isEqualByComparingTo("18888.888889");
         assertThat(response.cpiGrowthPct()).isNull();
     }
+
+    @Test
+    void shouldComputeFundReturnFromNavUnitPriceMatchingComparePage() {
+        AnalyticsInstrument fund = new AnalyticsInstrument(AnalyticsInstrumentType.FUND, "PTE");
+        LocalDate start = LocalDate.of(2025, 5, 28);
+        LocalDate end = LocalDate.of(2026, 5, 28);
+        when(priceSeriesProvider.fetch(eq(fund), eq(start), eq(end), any())).thenReturn(pricedTry(List.of(
+                new HistoryPoint(LocalDate.of(2025, 6, 2), new BigDecimal("1.04")),
+                new HistoryPoint(LocalDate.of(2025, 12, 1), new BigDecimal("1.25")),
+                new HistoryPoint(LocalDate.of(2026, 5, 26), new BigDecimal("1.5482"))
+        )));
+        when(historyService.getMacroSeries(anyString(), any(), any())).thenReturn(List.of());
+
+        ScenarioResponse response = service.simulate(new ScenarioRequest(
+                new BigDecimal("10000"), start, end, List.of(fund)));
+
+        ScenarioSeries series = response.series().get(0);
+        assertThat(series.nominalReturnPct().doubleValue()).isCloseTo(48.86, within(0.05));
+        assertThat(series.partial()).isFalse();
+    }
+
+    @Test
+    void shouldSkipSplitAnomalyWhenChoosingFundBaseline() {
+        AnalyticsInstrument fund = new AnalyticsInstrument(AnalyticsInstrumentType.FUND, "PTE");
+        LocalDate start = LocalDate.of(2025, 5, 28);
+        LocalDate end = LocalDate.of(2026, 5, 28);
+        when(priceSeriesProvider.fetch(eq(fund), eq(start), eq(end), any())).thenReturn(pricedTry(List.of(
+                new HistoryPoint(LocalDate.of(2025, 6, 2), new BigDecimal("0.0104")),
+                new HistoryPoint(LocalDate.of(2025, 6, 3), new BigDecimal("1.04")),
+                new HistoryPoint(LocalDate.of(2025, 12, 1), new BigDecimal("1.25")),
+                new HistoryPoint(LocalDate.of(2026, 5, 26), new BigDecimal("1.5482"))
+        )));
+        when(historyService.getMacroSeries(anyString(), any(), any())).thenReturn(List.of());
+
+        ScenarioResponse response = service.simulate(new ScenarioRequest(
+                new BigDecimal("10000"), start, end, List.of(fund)));
+
+        ScenarioSeries series = response.series().get(0);
+        assertThat(series.nominalReturnPct().doubleValue()).isCloseTo(48.86, within(0.05));
+    }
+
+    @Test
+    void shouldComputeStockReturnFromCloseSeries() {
+        AnalyticsInstrument stock = new AnalyticsInstrument(AnalyticsInstrumentType.SPOT, "KCHOL.IS");
+        LocalDate start = LocalDate.of(2025, 5, 28);
+        LocalDate end = LocalDate.of(2026, 5, 28);
+        when(priceSeriesProvider.fetch(eq(stock), eq(start), eq(end), any())).thenReturn(pricedTry(List.of(
+                new HistoryPoint(LocalDate.of(2025, 6, 2), new BigDecimal("180.50")),
+                new HistoryPoint(LocalDate.of(2026, 5, 26), new BigDecimal("325.00"))
+        )));
+        when(historyService.getMacroSeries(anyString(), any(), any())).thenReturn(List.of());
+
+        ScenarioResponse response = service.simulate(new ScenarioRequest(
+                new BigDecimal("10000"), start, end, List.of(stock)));
+
+        ScenarioSeries series = response.series().get(0);
+        assertThat(series.nominalReturnPct().doubleValue()).isCloseTo(80.06, within(0.05));
+    }
+
+    @Test
+    void shouldSkipSplitAnomalyWhenChoosingStockBaseline() {
+        AnalyticsInstrument stock = new AnalyticsInstrument(AnalyticsInstrumentType.SPOT, "KGYO.IS");
+        LocalDate start = LocalDate.of(2025, 5, 28);
+        LocalDate end = LocalDate.of(2026, 5, 28);
+        when(priceSeriesProvider.fetch(eq(stock), eq(start), eq(end), any())).thenReturn(pricedTry(List.of(
+                new HistoryPoint(LocalDate.of(2025, 6, 2), new BigDecimal("50.00")),
+                new HistoryPoint(LocalDate.of(2025, 6, 3), new BigDecimal("5.00")),
+                new HistoryPoint(LocalDate.of(2025, 12, 1), new BigDecimal("6.20")),
+                new HistoryPoint(LocalDate.of(2026, 5, 26), new BigDecimal("8.50"))
+        )));
+        when(historyService.getMacroSeries(anyString(), any(), any())).thenReturn(List.of());
+
+        ScenarioResponse response = service.simulate(new ScenarioRequest(
+                new BigDecimal("10000"), start, end, List.of(stock)));
+
+        ScenarioSeries series = response.series().get(0);
+        assertThat(series.nominalReturnPct().doubleValue()).isCloseTo(70.0, within(0.5));
+    }
+
+    @Test
+    void shouldCaptureFxGainOnUsdForexPairInTry() {
+        AnalyticsInstrument forex = new AnalyticsInstrument(AnalyticsInstrumentType.FOREX, "USD");
+        LocalDate start = LocalDate.of(2025, 5, 28);
+        LocalDate end = LocalDate.of(2026, 5, 28);
+        when(priceSeriesProvider.fetch(eq(forex), eq(start), eq(end), any())).thenReturn(pricedTry(List.of(
+                new HistoryPoint(LocalDate.of(2025, 5, 30), new BigDecimal("30.00")),
+                new HistoryPoint(LocalDate.of(2026, 5, 26), new BigDecimal("45.00"))
+        )));
+        when(historyService.getMacroSeries(anyString(), any(), any())).thenReturn(List.of());
+
+        ScenarioResponse response = service.simulate(new ScenarioRequest(
+                new BigDecimal("10000"), start, end, List.of(forex)));
+
+        ScenarioSeries series = response.series().get(0);
+        assertThat(series.nominalReturnPct().doubleValue()).isCloseTo(50.0, within(0.05));
+    }
+
+    @Test
+    void shouldConvertCryptoUsdSeriesToTryForReturnCalc() {
+        AnalyticsInstrument crypto = new AnalyticsInstrument(AnalyticsInstrumentType.CRYPTO, "bitcoin");
+        LocalDate start = LocalDate.of(2025, 5, 28);
+        LocalDate end = LocalDate.of(2026, 5, 28);
+        when(priceSeriesProvider.fetch(eq(crypto), eq(start), eq(end), any())).thenReturn(pricedTry(List.of(
+                new HistoryPoint(LocalDate.of(2025, 5, 30), new BigDecimal("2000000")),
+                new HistoryPoint(LocalDate.of(2026, 5, 26), new BigDecimal("3500000"))
+        )));
+        when(historyService.getMacroSeries(anyString(), any(), any())).thenReturn(List.of());
+
+        ScenarioResponse response = service.simulate(new ScenarioRequest(
+                new BigDecimal("10000"), start, end, List.of(crypto)));
+
+        ScenarioSeries series = response.series().get(0);
+        assertThat(series.nominalReturnPct().doubleValue()).isCloseTo(75.0, within(0.05));
+    }
+
+    @Test
+    void shouldYieldZeroUsdReturnWhenStockGainExactlyMatchesFxDevaluation() {
+        AnalyticsInstrument stock = new AnalyticsInstrument(AnalyticsInstrumentType.SPOT, "XYZ.IS");
+        LocalDate start = LocalDate.of(2025, 5, 28);
+        LocalDate end = LocalDate.of(2026, 5, 28);
+        LocalDate p1 = LocalDate.of(2025, 6, 2);
+        LocalDate p2 = LocalDate.of(2026, 5, 26);
+        Map<LocalDate, BigDecimal> fx = new HashMap<>();
+        BigDecimal fxStart = BigDecimal.ONE.divide(new BigDecimal("30"), 12, java.math.RoundingMode.HALF_UP);
+        BigDecimal fxEnd = BigDecimal.ONE.divide(new BigDecimal("45"), 12, java.math.RoundingMode.HALF_UP);
+        fx.put(p1, fxStart);
+        fx.put(p2, fxEnd);
+        PricedSeries stockSeries = new PricedSeries(
+                List.of(new HistoryPoint(p1, new BigDecimal("100")),
+                        new HistoryPoint(p2, new BigDecimal("150"))),
+                Currency.TRY, Currency.USD, fxStart, fx);
+        when(priceSeriesProvider.fetch(eq(stock), eq(start), eq(end), eq(Currency.USD))).thenReturn(stockSeries);
+
+        ScenarioResponse response = service.simulate(new ScenarioRequest(
+                new BigDecimal("10000"), start, end, List.of(stock), Currency.USD));
+
+        ScenarioSeries series = response.series().get(0);
+        assertThat(series.nominalReturnPct().doubleValue()).isCloseTo(0.0, within(0.1));
+    }
+
+    @Test
+    void shouldCompound3MonthDepositRateOverHalfYearAtAnnualRate() {
+        AnalyticsInstrument deposit = new AnalyticsInstrument(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT06");
+        LocalDate start = LocalDate.of(2025, 5, 28);
+        LocalDate end = LocalDate.of(2026, 5, 28);
+        Map<LocalDate, BigDecimal> fx = new HashMap<>();
+        fx.put(LocalDate.of(2025, 6, 2), BigDecimal.ONE);
+        fx.put(LocalDate.of(2025, 12, 1), BigDecimal.ONE);
+        fx.put(LocalDate.of(2026, 5, 26), BigDecimal.ONE);
+        fx.put(end, BigDecimal.ONE);
+        PricedSeries depositSeries = new PricedSeries(
+                List.of(
+                        new HistoryPoint(LocalDate.of(2025, 6, 2), new BigDecimal("50.00")),
+                        new HistoryPoint(LocalDate.of(2025, 12, 1), new BigDecimal("48.00")),
+                        new HistoryPoint(LocalDate.of(2026, 5, 26), new BigDecimal("46.00"))
+                ),
+                Currency.TRY, Currency.TRY, BigDecimal.ONE, fx);
+        when(priceSeriesProvider.fetch(eq(deposit), eq(start), eq(end), any())).thenReturn(depositSeries);
+        when(historyService.getMacroSeries(anyString(), any(), any())).thenReturn(List.of());
+
+        ScenarioResponse response = service.simulate(new ScenarioRequest(
+                new BigDecimal("10000"), start, end, List.of(deposit)));
+
+        ScenarioSeries series = response.series().get(0);
+        assertThat(series.nominalReturnPct().doubleValue()).isBetween(45.0, 65.0);
+    }
 }

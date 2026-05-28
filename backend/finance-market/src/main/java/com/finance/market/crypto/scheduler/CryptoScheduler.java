@@ -11,6 +11,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/** Triggers crypto refreshes three times daily (morning/afternoon/evening) on configurable crons. */
 @Log4j2
 @Component
 public class CryptoScheduler extends AbstractMarketScheduler {

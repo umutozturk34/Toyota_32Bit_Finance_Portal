@@ -35,6 +35,14 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Write-side commands for portfolios and their spot lots: create/rename/delete portfolios and
+ * add/update/sell/reopen/delete positions. Every prices-in helper ({@link #toTryOnDate}) converts
+ * source currency to TRY once at the relevant date's FX rate before persisting, so stored figures
+ * are always TRY. Mutations publish a {@link PortfolioBackfillService.LotChangedEvent} so snapshots
+ * are recomputed from the affected date. VIOP positions are rejected here and handled by the
+ * dedicated derivative service.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -58,6 +66,11 @@ public class PortfolioCrudService {
                 .toList();
     }
 
+    /**
+     * Creates a portfolio, enforcing the per-user count cap and unique name.
+     *
+     * @throws com.finance.common.exception.BusinessException on cap reached or duplicate name
+     */
     @Transactional
     public PortfolioResponse createPortfolio(String userSub, PortfolioCreateRequest request) {
         long currentCount = portfolioRepository.countByUserSub(userSub);
@@ -83,6 +96,7 @@ public class PortfolioCrudService {
         return mapper.toPortfolioResponse(portfolioRepository.save(portfolio));
     }
 
+    /** Deletes the portfolio and cascades removal of its derivative/spot positions and all snapshots. */
     @Transactional
     public void deletePortfolio(String userSub, Long portfolioId) {
         Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
@@ -94,6 +108,11 @@ public class PortfolioCrudService {
         portfolioRepository.delete(portfolio);
     }
 
+    /**
+     * Adds a spot lot, validating limits and resolving the asset against the tracked catalog. Entry
+     * (and optional exit) prices are converted to TRY at their own dates before persisting; if both
+     * exit fields are present the lot is created already closed.
+     */
     @Transactional
     public PositionResponse addPosition(Long portfolioId, String userSub, PositionRequest request) {
         Portfolio portfolio = portfolioRepository.findByIdAndUserSub(portfolioId, userSub)
@@ -122,12 +141,14 @@ public class PortfolioCrudService {
         return mapper.toPositionResponseShell(saved);
     }
 
+    /** Edits a lot's entry; recompute is triggered from the earlier of the old and new entry dates. */
     @Transactional
     public PositionResponse updatePosition(Long portfolioId, Long positionId, String userSub, PositionRequest request) {
         PortfolioValidator.validateLot(request, portfolioProperties.getLotLimits());
         PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
         LocalDateTime previousEntry = position.getEntryDate();
-        position.updateLot(request.entryDate(), request.entryPrice(), request.quantity());
+        BigDecimal entryPriceTry = toTryOnDate(request.entryPrice(), request.priceCurrency(), request.entryDate());
+        position.updateLot(request.entryDate(), entryPriceTry, request.quantity());
         PortfolioPosition saved = positionRepository.save(position);
 
         publishLotChange(portfolioId, saved, earliestOf(previousEntry, saved.getEntryDate()), true);
@@ -150,6 +171,11 @@ public class PortfolioCrudService {
         publishLotChange(portfolioId, position, entryDate, false);
     }
 
+    /**
+     * Sells a spot lot. A full-quantity sell closes the lot in place; a partial sell carves off a new
+     * closed slice for the sold quantity and shrinks the remaining open lot. Exit price is converted
+     * to TRY at the exit date. VIOP is routed to the derivative close flow instead.
+     */
     @Transactional
     public PositionResponse sellPosition(Long portfolioId, Long positionId, String userSub, PositionSellRequest request) {
         PortfolioPosition position = loadOwnedPosition(portfolioId, positionId, userSub);
@@ -223,6 +249,7 @@ public class PortfolioCrudService {
         return a.isBefore(b) ? a : b;
     }
 
+    /** Converts a source-currency price to TRY at the given date's historical FX rate; passes through when already TRY or no currency given. */
     private BigDecimal toTryOnDate(BigDecimal price, String priceCurrency, LocalDateTime date) {
         if (price == null) return null;
         if (priceCurrency == null || priceCurrency.isBlank()) return price;

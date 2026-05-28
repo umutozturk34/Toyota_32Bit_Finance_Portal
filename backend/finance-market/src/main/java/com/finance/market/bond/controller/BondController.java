@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/** Authenticated read API for bonds: paged list/search, type counts, single bond, and rate history. */
 @RestController
 @RequestMapping("/api/v1/bonds")
 @RequiredArgsConstructor

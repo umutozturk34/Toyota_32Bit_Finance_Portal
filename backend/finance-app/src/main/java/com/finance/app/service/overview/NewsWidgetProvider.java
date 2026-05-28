@@ -18,6 +18,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Provides the NEWS widget: latest articles, optionally constrained to configured categories. With multiple
+ * categories it interleaves them round-robin and dedupes by article id so no single category dominates, up
+ * to the requested count.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor

@@ -37,12 +37,13 @@ export default function MarketListPage({
   errorMessage,
   emptyMessage,
   emptyHint,
-  gridClass = 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-[400px] content-start',
+  gridClass = 'grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-h-[400px] content-start',
   headerChildren,
   preGridChildren,
   filterShowAll = true,
   animatePresence = false,
   buyModalComponent: BuyModalComponent = MarketAddPositionModal,
+  dataTour,
 }) {
   const { t } = useTranslation();
   const { hasRole } = useAuth();
@@ -93,7 +94,7 @@ export default function MarketListPage({
   );
 
   return (
-    <div className="space-y-6 py-6">
+    <div className="space-y-6 py-6" data-tour={dataTour}>
       <PageHeader
         icon={icon}
         title={
@@ -112,7 +113,7 @@ export default function MarketListPage({
       {headerChildren}
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="w-48">
+        <div className="w-full sm:w-48">
           <SearchInput
             value={listParams.search}
             onChange={listParams.setSearch}
@@ -132,13 +133,15 @@ export default function MarketListPage({
           onDirectionChange={listParams.setDirection}
         />
         {filterConfig && filterConfig.tabItems.length > 0 && (
-          <FilterTabs
-            items={filterConfig.tabItems}
-            activeId={filterConfig.activeId}
-            onSelect={filterConfig.onSelect}
-            showAll={filterShowAll}
-            layoutId={filterConfig.layoutId}
-          />
+          <div className="w-full sm:w-auto sm:flex-1 min-w-0">
+            <FilterTabs
+              items={filterConfig.tabItems}
+              activeId={filterConfig.activeId}
+              onSelect={filterConfig.onSelect}
+              showAll={filterShowAll}
+              layoutId={filterConfig.layoutId}
+            />
+          </div>
         )}
       </div>
 

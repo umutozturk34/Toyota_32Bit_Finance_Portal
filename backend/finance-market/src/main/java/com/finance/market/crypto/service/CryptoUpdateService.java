@@ -31,6 +31,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Refreshes crypto snapshots and candle history. Candles come from Binance klines (mapped by
+ * CoinGecko id): a coin with too few or too-stale candles is fully reloaded page-by-page, otherwise
+ * only the gap since the last candle is fetched. Batch failures are isolated per coin.
+ */
 @Log4j2
 @Service
 public class CryptoUpdateService implements MarketRefresher {
@@ -119,6 +124,7 @@ public class CryptoUpdateService implements MarketRefresher {
         BatchLogHelper.logSummary(log, "Crypto candle update", result);
     }
 
+    /** Decides per coin whether to full-reload history or fetch only the gap, then persists candles. */
     private void updateCandlesForCoin(String coinId) {
         String binanceSymbol = cryptoSymbolResolver.resolveBinanceSymbol(coinId);
         if (binanceSymbol == null) {

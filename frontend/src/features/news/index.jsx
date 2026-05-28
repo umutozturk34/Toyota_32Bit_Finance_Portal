@@ -84,17 +84,17 @@ export default function News() {
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
             >
-                <div>
-                    <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-[-0.025em] text-fg sm:text-3xl">
-                        <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10 text-accent">
+                <div className="min-w-0">
+                    <h1 className="flex items-center gap-2.5 text-xl sm:text-2xl md:text-3xl font-bold tracking-[-0.025em] text-fg min-w-0">
+                        <span className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10 text-accent shrink-0">
                             <Newspaper size={20} />
                         </span>
-                        {t('news.title')}
+                        <span className="truncate">{t('news.title')}</span>
                     </h1>
-                    <p className="text-fg-muted text-sm mt-1 ml-12">
-                        {t('news.subtitle')}
+                    <p className="text-fg-muted text-sm mt-1 ml-12 flex flex-wrap items-baseline gap-x-2">
+                        <span>{t('news.subtitle')}</span>
                         {totalCount > 0 && (
-                            <span className="ml-2 text-fg-subtle">· {totalCount} {t('news.countLabel')}</span>
+                            <span className="text-fg-subtle whitespace-nowrap">· {totalCount} {t('news.countLabel')}</span>
                         )}
                     </p>
                 </div>
@@ -148,6 +148,7 @@ export default function News() {
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={`${activeTab}-${listParams.page}`}
+                        data-tour="news-list"
                         variants={containerVariants}
                         initial="hidden"
                         animate="show"

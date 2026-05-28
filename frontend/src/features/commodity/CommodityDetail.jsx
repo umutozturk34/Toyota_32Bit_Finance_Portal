@@ -15,12 +15,12 @@ function CommodityHeader({ asset }) {
   const subtitle = [asset.code, meta.unit].filter(Boolean).join(' · ');
   return (
     <>
-      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-400/10 text-orange-400 text-sm font-bold">
+      <span className="flex items-center justify-center w-8 h-8 shrink-0 rounded-full bg-orange-400/10 text-orange-400 text-sm font-bold">
         {(asset.code || '').slice(0, 3).toUpperCase()}
       </span>
-      <div>
-        <h1 className="text-xl font-bold text-fg">{display}</h1>
-        {subtitle && <p className="text-xs text-fg-muted">{subtitle}</p>}
+      <div className="min-w-0">
+        <h1 className="text-xl font-bold text-fg truncate">{display}</h1>
+        {subtitle && <p className="text-xs text-fg-muted truncate max-w-[12rem] sm:max-w-[18rem]">{subtitle}</p>}
       </div>
     </>
   );
@@ -59,6 +59,13 @@ function CommodityMetadata({ asset }) {
       meta.openPrice != null && { label: t('market.stock.openLabel'), value: money(meta.openPrice) },
       meta.dayHigh != null && { label: t('market.stock.highLabel'), value: money(meta.dayHigh), color: 'text-success' },
       meta.dayLow != null && { label: t('market.stock.lowLabel'), value: money(meta.dayLow), color: 'text-danger' },
+      (() => {
+        const p = Number(asset.price);
+        const c = Number(asset.changeAmount);
+        const derived = Number.isFinite(p) && Number.isFinite(c) ? p - c : null;
+        const close = meta.previousClose ?? derived;
+        return close != null ? { label: t('market.stock.closeLabel'), value: money(close, 'TRY') } : null;
+      })(),
       meta.volume != null && meta.volume > 0 && { label: t('market.stock.volumeLabel'), value: meta.volume.toLocaleString(localeTag) },
     ]} />
   );

@@ -16,6 +16,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * An ordered entry in a watchlist, linked to a {@link TrackedAsset}. The {@code marketType}/{@code assetCode}
+ * are transient convenience fields derived from the linked asset on load (see {@link #syncTransientsFromTrackedAsset()}).
+ */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

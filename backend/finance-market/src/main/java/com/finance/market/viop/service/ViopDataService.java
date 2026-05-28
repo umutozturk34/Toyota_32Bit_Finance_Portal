@@ -14,6 +14,11 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Orchestrates the VIOP refresh cycle: pull live snapshots, deactivate contracts that stopped
+ * trading, enrich specs and missing prices, expire matured contracts, and sync daily candles.
+ * Each step is resilient — failures for one symbol are logged and skipped, not propagated.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -51,6 +56,7 @@ public class ViopDataService implements MarketRefresher {
         log.info("VIOP contract refreshed: {}", code);
     }
 
+    /** Applies all live snapshots and returns the symbols that traded; empty when the market is closed. */
     public Set<String> refreshLiveSnapshots() {
         List<ViopQuoteSnapshot> snapshots = marketData.fetchAllLiveSnapshots();
         if (snapshots == null || snapshots.isEmpty()) {
@@ -73,6 +79,7 @@ public class ViopDataService implements MarketRefresher {
         return enriched;
     }
 
+    /** Fills in prices for active contracts that have none yet via per-symbol snapshot fetches. */
     public int enrichMissingPrices() {
         List<String> symbols = contractRepository.findActiveSymbolsWithoutPrice();
         int enriched = 0;
@@ -98,6 +105,10 @@ public class ViopDataService implements MarketRefresher {
         return lastUpdated != null && lastUpdated.toLocalDate().equals(today);
     }
 
+    /**
+     * Brings each active contract's candles up to yesterday, then adds today's candle only from a
+     * snapshot whose last price is actually from today (stale snapshots are skipped, not back-dated).
+     */
     public int syncCandlesFromLastStored() {
         List<com.finance.market.viop.model.ViopContract> active = contractRepository.findAll(
                 (root, query, cb) -> cb.isTrue(root.get("active")));

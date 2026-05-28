@@ -147,9 +147,10 @@ export default function TwoFactorPanel() {
                                         onClick={() => setRemoveTarget(device)}
                                         disabled={removeDevice.isPending}
                                         title={t('twoFactor.deviceRemoveAction')}
-                                        className="flex items-center justify-center w-7 h-7 rounded-md text-fg-muted hover:text-danger hover:bg-danger/10 bg-transparent border-none cursor-pointer transition-colors disabled:opacity-50"
+                                        aria-label={t('twoFactor.deviceRemoveAction')}
+                                        className="flex items-center justify-center w-9 h-9 sm:w-7 sm:h-7 rounded-md text-fg-muted hover:text-danger hover:bg-danger/10 bg-transparent border-none cursor-pointer transition-colors disabled:opacity-50 shrink-0"
                                     >
-                                        <Trash2 className="h-3.5 w-3.5" />
+                                        <Trash2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                                     </button>
                                 </li>
                             ))}

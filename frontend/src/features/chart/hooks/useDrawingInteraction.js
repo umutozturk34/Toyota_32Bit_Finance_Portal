@@ -79,7 +79,7 @@ const useDrawingInteraction = ({
             magnetManagerRef.current.destroy();
             magnetManagerRef.current = null;
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-once magnet manager create/destroy lifecycle; must not re-run on prop changes
     }, []);
 
     useEffect(() => {
@@ -98,7 +98,7 @@ const useDrawingInteraction = ({
         const mgr = magnetManagerRef.current;
         if (!mgr) return;
         mgr.setCandles(candleDataRef.current || []);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- candleDataRef read via ref intentionally; re-syncs only when data/symbol change
     }, [data, symbol]);
 
     useEffect(() => {

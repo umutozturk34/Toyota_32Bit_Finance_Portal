@@ -26,6 +26,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Wires the cross-module {@link HistoricalPricingPort} to the market module's per-type history providers,
+ * returning each asset's daily close series in TRY. CRYPTO and foreign-quoted VIOP series (native USD/EUR
+ * etc.) are converted to TRY using each date's closest-prior FX rate within a configured lookback window;
+ * tether/TRY assets and commodities are already TRY and pass through unchanged.
+ */
 @Log4j2
 @Component
 public class HistoricalPricingAdapter implements HistoricalPricingPort {
@@ -71,6 +77,11 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
         }
     }
 
+    /**
+     * Converts a native-currency series to TRY by multiplying each point by the closest-prior FX rate.
+     * Fetches FX from the window start minus the lookback so early points still find a prior rate; if the
+     * forex provider or rates are missing, the series is left in its native currency.
+     */
     private Map<LocalDate, BigDecimal> convertNativeSeriesToTry(Map<LocalDate, BigDecimal> nativeSeries,
                                                                   Currency nativeCurrency,
                                                                   LocalDate from, LocalDate to) {
@@ -96,6 +107,10 @@ public class HistoricalPricingAdapter implements HistoricalPricingPort {
         return Map.copyOf(result);
     }
 
+    /**
+     * Most recent FX rate on or before {@code target}, walking back up to the lookback window. Never uses
+     * a future/today rate for a past date; returns null if none found within the window.
+     */
     private BigDecimal closestPriorRate(Map<LocalDate, BigDecimal> rates, LocalDate target) {
         return Stream.iterate(target, d -> d.minusDays(1))
                 .limit(rateLookbackDays + 1L)

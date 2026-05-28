@@ -26,6 +26,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * REST API for a portfolio's derivative (VIOP future/option) positions: list, open, close, update an open or
+ * a closed position, reopen, and delete. All operations are scoped to the owning portfolio and JWT subject.
+ */
 @RestController
 @RequestMapping("/api/v1/portfolios/{portfolioId}/derivatives")
 @RequiredArgsConstructor
@@ -53,6 +57,7 @@ public class DerivativePositionController {
         return ApiResponse.success(translator.translate("api.derivative.opened"), created);
     }
 
+    /** Closes an open position (records the exit). Use the PUT variant to amend an already-closed position. */
     @PatchMapping("/{positionId}/close")
     public ApiResponse<DerivativePositionResponse> close(@PathVariable Long portfolioId,
                                                          @PathVariable Long positionId,
@@ -62,6 +67,7 @@ public class DerivativePositionController {
         return ApiResponse.success(translator.translate("api.derivative.closed"), updated);
     }
 
+    /** Amends the exit details of an already-closed position. */
     @PutMapping("/{positionId}/close")
     public ApiResponse<DerivativePositionResponse> updateClose(@PathVariable Long portfolioId,
                                                                 @PathVariable Long positionId,

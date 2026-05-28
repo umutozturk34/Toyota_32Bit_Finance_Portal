@@ -15,6 +15,11 @@ import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
 
+/**
+ * Shared {@link WebClient} baseline for outbound HTTP. Applies the configured connect/response
+ * timeouts and gzip, and installs a filter that injects the default User-Agent only when a request
+ * has not already set one, so per-call overrides are preserved.
+ */
 @Configuration
 @RequiredArgsConstructor
 public class WebClientBaseConfig {

@@ -45,7 +45,7 @@ export default function ConfirmDialog({
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -58,24 +58,25 @@ export default function ConfirmDialog({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 12 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className="relative w-full max-w-xs rounded-2xl border border-border-default modal-panel p-5 overflow-hidden"
+            className="relative w-full max-w-xs max-h-[90dvh] rounded-2xl border border-border-default modal-panel p-5 landscape:p-3.5 overflow-y-auto overflow-x-hidden"
           >
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-danger/40 to-transparent" />
 
             <button
               onClick={onCancel}
               disabled={loading}
+              aria-label={t('common.close')}
               className="absolute top-3 right-3 flex items-center justify-center w-7 h-7 rounded-lg text-fg-muted hover:text-fg hover:bg-surface transition-colors bg-transparent border-none cursor-pointer disabled:opacity-30"
             >
               <X className="h-3.5 w-3.5" />
             </button>
 
-            <div className="flex flex-col items-center gap-3 pt-1 pb-4">
+            <div className="flex flex-col items-center gap-3 landscape:gap-2 pt-1 pb-4 landscape:pb-3">
               <motion.div
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 20, delay: 0.05 }}
-                className={`flex items-center justify-center w-12 h-12 rounded-full ${v.iconBg}`}
+                className={`flex items-center justify-center w-12 h-12 landscape:w-10 landscape:h-10 rounded-full ${v.iconBg}`}
               >
                 <Icon className={`h-6 w-6 ${v.iconColor}`} />
               </motion.div>
@@ -91,14 +92,14 @@ export default function ConfirmDialog({
               <button
                 onClick={onCancel}
                 disabled={loading}
-                className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-all cursor-pointer disabled:opacity-50"
+                className="flex-1 min-h-10 rounded-lg py-2.5 text-sm font-semibold text-fg border border-border-default bg-bg-base hover:bg-surface transition-all cursor-pointer disabled:opacity-50"
               >
                 {cancelText}
               </button>
               <button
                 onClick={onConfirm}
                 disabled={loading}
-                className={`flex-1 rounded-lg py-2.5 text-sm font-semibold text-white ${v.btnBg} transition-all border-none cursor-pointer disabled:opacity-50`}
+                className={`flex-1 min-h-10 rounded-lg py-2.5 text-sm font-semibold text-white ${v.btnBg} transition-all border-none cursor-pointer disabled:opacity-50`}
               >
                 {loading ? t('confirmDialog.processing') : confirmText}
               </button>

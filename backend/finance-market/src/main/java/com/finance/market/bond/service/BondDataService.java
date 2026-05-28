@@ -12,6 +12,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Coordinates the bond refresh: fetch and filter the bond series, pull snapshots, then process them
+ * in chunks (each chunk's failure isolated and logged) to build rate history and classify each bond.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -28,7 +32,7 @@ public class BondDataService {
         List<BondSnapshotDto> allSnapshots = bondSnapshotService.fetchSnapshotData(bondSeries);
 
         if (allSnapshots.isEmpty()) {
-            throw new BusinessException("No bond snapshot data returned from EVDS");
+            throw new BusinessException("error.market.bondNoSnapshotData");
         }
 
         LocalDateTime now = LocalDateTime.now();

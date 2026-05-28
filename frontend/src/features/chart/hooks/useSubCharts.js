@@ -83,7 +83,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         });
         syncTimeScales(chartRef.current, rsiChart);
         return () => cleanupChart(rsiChartRef);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- imperative RSI sub-chart create+cleanup; isDark/height retinted by adjacent effects, candle data read via ref
     }, [hasRSI, rsiIndicator, data, isFullscreen]);
 
     useEffect(() => {
@@ -126,7 +126,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         });
         syncTimeScales(chartRef.current, macdChart);
         return () => cleanupChart(macdChartRef);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- imperative MACD sub-chart create+cleanup; isDark/height retinted by adjacent effects, candle data read via ref
     }, [hasMACD, macdIndicator, data, isFullscreen]);
 
     useEffect(() => {
@@ -144,7 +144,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         volSeries.setData(volumeDataRef.current);
         syncTimeScales(chartRef.current, volChart);
         return () => cleanupChart(volumeChartRef);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- imperative volume sub-chart create+cleanup; isDark/height retinted by adjacent effects, candle data read via ref
     }, [showVolume, data, isFullscreen]);
 
     useEffect(() => {
@@ -172,7 +172,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         }
         syncTimeScales(chartRef.current, chart);
         return () => cleanupChart(investorCountChartRef);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- imperative investor-count sub-chart create+cleanup; isDark/height retinted by adjacent effects, candle data read via ref
     }, [showInvestorCount, data, isFullscreen]);
 
     useEffect(() => {
@@ -200,7 +200,7 @@ const useSubCharts = ({ chartRef, candleDataRef, volumeDataRef, isDark, hasRSI, 
         }
         syncTimeScales(chartRef.current, chart);
         return () => cleanupChart(portfolioSizeChartRef);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- imperative portfolio-size sub-chart create+cleanup; isDark/height retinted by adjacent effects, candle data read via ref
     }, [showPortfolioSize, data, isFullscreen]);
 
     useEffect(() => {

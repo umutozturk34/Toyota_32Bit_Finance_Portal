@@ -9,14 +9,14 @@ export default function FilterTabs({ items, activeId, onSelect, allLabel, allCou
     : items;
 
   return (
-    <div className="inline-flex gap-1 rounded-2xl border border-border-default bg-bg-elevated backdrop-blur-md p-1">
+    <div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 sm:inline-flex sm:max-w-none">
       {allItems.map(({ type, count, label }) => {
         const active = activeId === type;
         return (
           <button
             key={type}
             onClick={() => onSelect(type)}
-            className="relative rounded-xl px-3.5 py-1.5 border-none cursor-pointer bg-transparent transition-colors"
+            className="relative shrink-0 rounded-xl px-3 sm:px-3.5 py-2 sm:py-1.5 min-h-9 sm:min-h-0 border-none cursor-pointer bg-transparent transition-colors"
           >
             {active && (
               <motion.span

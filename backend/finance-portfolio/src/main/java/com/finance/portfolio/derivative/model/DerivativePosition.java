@@ -28,6 +28,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * A hypothetical VIOP derivative lot (future/option) on a {@link ViopContract}, taken {@code LONG}
+ * or {@code SHORT} for {@code quantityLot} lots from {@code entryPrice} on {@code entryDate}.
+ * <p>{@code entryPrice}/{@code closePrice} are stored already converted to TRY at their respective
+ * dates' FX rates. PnL is delegated to {@link DerivativeDirection#pnlPerLot} scaled by the contract
+ * size and lot count. A position is open until {@code closeDate} is set; closing also records why
+ * via {@link DerivativeCloseReason}.
+ */
 @Getter
 @Builder
 @NoArgsConstructor
@@ -109,11 +117,13 @@ public class DerivativePosition {
         return closeDate == null;
     }
 
+    /** Margin tied up in TRY (initial margin × lots); null when contract margin is unknown. */
     public BigDecimal lockedMargin() {
         if (viopContract == null || viopContract.getInitialMargin() == null || quantityLot == null) return null;
         return viopContract.getInitialMargin().multiply(quantityLot);
     }
 
+    /** Notional exposure in TRY at entry (entry price × contract size × lots); null when inputs are missing. */
     public BigDecimal nominalExposure() {
         if (viopContract == null || entryPrice == null || quantityLot == null) return null;
         BigDecimal size = viopContract.getContractSize() != null
@@ -121,6 +131,10 @@ public class DerivativePosition {
         return entryPrice.multiply(size).multiply(quantityLot);
     }
 
+    /**
+     * PnL in TRY: realized against {@code closePrice} when closed, otherwise unrealized against
+     * {@code currentPrice}. Sign follows {@link DerivativeDirection}; null when no exit price is available.
+     */
     public BigDecimal realizedOrUnrealizedPnl(BigDecimal currentPrice) {
         BigDecimal exit = closePrice != null ? closePrice : currentPrice;
         if (exit == null || viopContract == null) return null;
@@ -128,6 +142,11 @@ public class DerivativePosition {
         return perLot != null ? perLot.multiply(quantityLot) : null;
     }
 
+    /**
+     * Closes the position; {@code price} must already be in TRY (converted at the close date's FX rate).
+     *
+     * @throws IllegalStateException if already closed
+     */
     public void closeWith(LocalDate date, BigDecimal price, DerivativeCloseReason reason) {
         if (!isOpen()) {
             throw new IllegalStateException("Position " + id + " is already closed");
@@ -137,16 +156,24 @@ public class DerivativePosition {
         this.closeReason = reason;
     }
 
+    /** Convenience close with reason {@link DerivativeCloseReason#USER_CLOSED}. */
     public void closeFull(LocalDate date, BigDecimal price) {
         closeWith(date, price, DerivativeCloseReason.USER_CLOSED);
     }
 
+    /** Clears close fields so an edit/reopen flow can re-derive them; unlike {@link #closeWith} this bypasses the open guard. */
     public void reopenForUpdate() {
         this.closeDate = null;
         this.closePrice = null;
         this.closeReason = null;
     }
 
+    /**
+     * Shrinks the remaining lot count for a partial close.
+     *
+     * @throws IllegalArgumentException if {@code soldQty} is non-positive
+     * @throws IllegalStateException if {@code soldQty} is not strictly less than the remaining lots
+     */
     public void reduceQuantity(BigDecimal soldQty) {
         if (soldQty == null || soldQty.signum() <= 0) {
             throw new IllegalArgumentException("soldQty must be positive");
@@ -157,6 +184,7 @@ public class DerivativePosition {
         this.quantityLot = quantityLot.subtract(soldQty);
     }
 
+    /** Replaces entry attributes wholesale (direction/date/price/lots); {@code entryPrice} expected in TRY. */
     public void updateEntry(DerivativeDirection direction, LocalDate entryDate,
                              BigDecimal entryPrice, BigDecimal quantityLot) {
         this.direction = direction;

@@ -17,6 +17,13 @@ import java.util.Set;
 import static com.finance.market.core.service.MarketProviderHelper.applyDisplayNames;
 import static com.finance.market.core.service.MarketProviderHelper.buildSort;
 
+/**
+ * Reusable {@link MarketAssetProvider} for tracked markets: scopes every query to the set of
+ * enabled tracked codes, builds search/sort specs from per-market field names, and overlays
+ * curated display names. Subclasses supply only the entity-specific field names and mapping.
+ *
+ * @param <T> the market's {@link BaseAsset} entity
+ */
 public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implements MarketAssetProvider {
 
     private final JpaSpecificationExecutor<T> repository;
@@ -28,14 +35,19 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
         this.trackedAssetQueryService = trackedAssetQueryService;
     }
 
+    /** Tracked-asset type whose enabled codes scope all queries. */
     protected abstract TrackedAssetType trackedAssetType();
 
+    /** Entity attribute holding the asset code (the in-clause / tracked-set key). */
     protected abstract String codeField();
 
+    /** Entity attributes searched by the contains filter. */
     protected abstract List<String> searchFields();
 
+    /** Entity attribute holding change percent (drives top-movers sort/sign filter). */
     protected abstract String changePercentField();
 
+    /** Entity attribute holding price. */
     protected abstract String priceField();
 
     protected String nameField() {
@@ -56,6 +68,7 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
 
     protected abstract List<MarketAssetResponse> mapToResponses(List<T> entities);
 
+    /** Hook for subclasses to AND market-specific facet predicates; no-op by default. */
     protected Specification<T> applyCustomFilters(Specification<T> spec, MarketAssetFilters filters) {
         return spec;
     }
@@ -90,6 +103,7 @@ public abstract class BaseTrackedMarketAssetProvider<T extends BaseAsset> implem
         return withDisplayNames(mapToResponses(entities));
     }
 
+    /** Extra constraint applied only to top-movers queries; matches everything by default. */
     protected Specification<T> topMoversAdditionalSpec() {
         return (root, query, cb) -> cb.conjunction();
     }

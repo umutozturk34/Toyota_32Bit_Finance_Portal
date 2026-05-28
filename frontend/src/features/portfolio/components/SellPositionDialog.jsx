@@ -195,6 +195,7 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
             min="0"
             max={totalQty}
             step="any"
+            inputMode="decimal"
             value={sellQty}
             onChange={(e) => setSellQty(e.target.value)}
             placeholder="0.00"
@@ -235,6 +236,7 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
             type="number"
             min="0"
             step="any"
+            inputMode="decimal"
             value={sellPrice}
             onChange={(e) => setSellPrice(e.target.value)}
             placeholder="0.00"
@@ -312,7 +314,7 @@ export default function SellPositionDialog({ portfolioId, position, onClose }) {
               )}
             </div>
             {realizedPnl != null && (
-              <p className={`text-xl font-bold font-mono ${pnlPositive ? 'text-success' : 'text-danger'}`}>
+              <p className={`text-lg sm:text-xl font-bold font-mono break-all ${pnlPositive ? 'text-success' : 'text-danger'}`}>
                 {pnlPositive ? '+' : ''}{money(realizedPnl, inputCurrency)}
               </p>
             )}

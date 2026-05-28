@@ -1,5 +1,7 @@
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import IconButton from '../buttons/IconButton';
 
 const SIZE_CLASSES = {
@@ -23,12 +25,14 @@ export default function BaseModal({
   size = 'sm',
   footer,
   children,
-  closeLabel = 'close',
+  closeLabel,
 }) {
-  return (
+  const { t } = useTranslation();
+  const closeText = closeLabel ?? t('common.close');
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -41,10 +45,10 @@ export default function BaseModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className={`relative w-full ${SIZE_CLASSES[size] ?? SIZE_CLASSES.sm} max-h-[90vh] rounded-2xl border border-border-default modal-panel p-4 sm:p-6 overflow-hidden flex flex-col`}
+            className={`relative w-full ${SIZE_CLASSES[size] ?? SIZE_CLASSES.sm} max-h-[90vh] max-h-[90dvh] landscape:max-h-[92dvh] rounded-2xl border border-border-default modal-panel p-4 landscape:p-3 sm:p-6 sm:landscape:p-5 overflow-hidden flex flex-col`}
           >
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
-            <div className="flex items-center justify-between mb-4 sm:mb-5 shrink-0">
+            <div className="flex items-center justify-between mb-4 landscape:mb-3 sm:mb-5 sm:landscape:mb-3 shrink-0">
               <div className="flex items-center gap-3 min-w-0">
                 {Icon && (
                   <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10 shrink-0">
@@ -61,7 +65,7 @@ export default function BaseModal({
                 size={8}
                 shape="square"
                 icon={<X className="h-4 w-4" />}
-                aria-label={closeLabel}
+                aria-label={closeText}
                 onClick={onClose}
               />
             </div>
@@ -70,6 +74,7 @@ export default function BaseModal({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

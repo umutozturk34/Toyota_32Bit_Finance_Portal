@@ -22,6 +22,7 @@ export default function useScrollRestoration() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
+    if (document.body.dataset.tourActive === '1') return undefined;
     const saved = consumeScroll(fullKey);
     if (!saved || !saved.y) return undefined;
 
@@ -64,11 +65,13 @@ export default function useScrollRestoration() {
         window.clearTimeout(debounceId);
         debounceId = null;
       }
+      if (document.body.dataset.tourActive === '1') return;
       try {
         saveScroll(fullKey, window.scrollY, document.documentElement.scrollHeight);
       } catch { /* swallow */ }
     };
     const queueSave = () => {
+      if (document.body.dataset.tourActive === '1') return;
       if (debounceId) window.clearTimeout(debounceId);
       debounceId = window.setTimeout(flush, TIMINGS.SCROLL_SAVE_DEBOUNCE_MS ?? 200);
     };

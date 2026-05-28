@@ -121,6 +121,11 @@ export function buildAssetChartOption(data, isDark, t, convertAt, displayCurrenc
     ] : [],
     tooltip: {
       trigger: 'axis',
+      confine: true,
+      position: (point, _params, _dom, _rect, size) => {
+        const x = Math.max(8, Math.min(point[0] - size.contentSize[0] / 2, size.viewSize[0] - size.contentSize[0] - 8));
+        return [x, 8];
+      },
       backgroundColor: tooltipBg,
       borderColor: tooltipBorder,
       textStyle: { color: tooltipFg, fontSize: 11 },

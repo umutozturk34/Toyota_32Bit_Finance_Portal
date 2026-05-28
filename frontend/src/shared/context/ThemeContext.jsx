@@ -1,9 +1,42 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { useUserPreferences, useUpdateUserPreferences } from '../hooks/useUserPreferences';
 import { useAuth } from '../../features/auth/useAuth';
 import { ThemeContext } from './useTheme';
 
 const THEME_KEY = 'finance-theme';
+const FADE_MS = 450;
+
+function runThemeTransition(nextTheme, apply) {
+    if (typeof document === 'undefined') {
+        apply();
+        return;
+    }
+    const root = document.documentElement;
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const onHomepage = root.dataset.themeFade === '1';
+    const commit = () => {
+        root.setAttribute('data-theme', nextTheme);
+        apply();
+    };
+
+    // In-app (heavy DOM) or reduced motion → instant, no jank
+    if (!onHomepage || reducedMotion) {
+        commit();
+        return;
+    }
+
+    // Homepage (light DOM) → rich View Transitions cross-fade
+    if (typeof document.startViewTransition === 'function') {
+        document.startViewTransition(() => flushSync(commit));
+        return;
+    }
+
+    // Homepage fallback (no View Transitions API) → CSS fade
+    root.classList.add('theme-switching');
+    commit();
+    window.setTimeout(() => root.classList.remove('theme-switching'), FADE_MS);
+}
 
 function resolveTheme(preference) {
     return preference === 'LIGHT' ? 'light' : 'dark';
@@ -102,19 +135,23 @@ export function ThemeProvider({ children }) {
     const themePreference = storedPreference;
     const theme = useMemo(() => resolveTheme(themePreference), [themePreference]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
     }, [theme]);
 
     const setThemePreference = (next) => {
         const previous = storedPreference;
-        setStoredPreferenceState(next);
-        persistTheme(resolveTheme(next));
+        runThemeTransition(resolveTheme(next), () => {
+            setStoredPreferenceState(next);
+            persistTheme(resolveTheme(next));
+        });
         if (isAuthenticated) {
             updatePreferences.mutate({ theme: next }, {
                 onError: () => {
-                    setStoredPreferenceState(previous);
-                    persistTheme(resolveTheme(previous));
+                    runThemeTransition(resolveTheme(previous), () => {
+                        setStoredPreferenceState(previous);
+                        persistTheme(resolveTheme(previous));
+                    });
                 },
             });
         }

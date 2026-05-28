@@ -164,7 +164,7 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
   }), [seriesData, totalValue, totalLabel, tooltipBg, tooltipBorder, tooltipFg, labelFg, labelMuted, ringStroke, money, moneyCompact, forPrint]);
 
   return (
-    <motion.div variants={cardVariants} initial="hidden" animate="show" className="space-y-4">
+    <motion.div variants={cardVariants} initial="hidden" animate="show" className="space-y-4 min-w-0">
       <div className="flex items-center gap-2">
         <PieChart className="h-4 w-4 text-accent" />
         <span className="text-sm font-semibold text-fg">{t('portfolio.allocation.title')}</span>

@@ -5,6 +5,10 @@ import lombok.*;
 
 import java.time.OffsetDateTime;
 
+/**
+ * Local mirror of a Keycloak user's enabled/disabled state, keyed by the JWT subject, used to
+ * authorize requests without a round-trip to the identity provider.
+ */
 @Getter
 @Setter
 @Builder

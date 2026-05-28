@@ -1,8 +1,11 @@
+// EVDS deposit maturity buckets (must match backend macro.yaml): MT06 is the all-maturity TOTAL.
 const MATURITY_TO_KEY = {
   MT01: '1m',
-  MT03: '3m',
-  MT06: '6m',
-  MT12: '1y',
+  MT02: '3m',
+  MT03: '6m',
+  MT04: '1y',
+  MT05: '1yPlus',
+  MT06: 'Total',
 };
 
 function depositI18nLabelKey(code) {

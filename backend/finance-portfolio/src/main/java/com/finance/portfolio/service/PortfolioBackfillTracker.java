@@ -19,6 +19,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * Tracks in-progress snapshot recomputation per portfolio and pushes live status to the UI over SSE.
+ * Holds the set of pending assets (Caffeine-cached, evicted after a TTL) and broadcasts a
+ * {@link BackfillStatusResponse} to subscribed emitters whenever a backfill starts or finishes.
+ */
 @Log4j2
 @Component
 public class PortfolioBackfillTracker {
@@ -53,6 +58,7 @@ public class PortfolioBackfillTracker {
                 .build();
     }
 
+    /** Marks an asset as backfilling and broadcasts the updated pending set to subscribers. */
     public void start(Long portfolioId, AssetType assetType, String assetCode) {
         PendingAsset key = new PendingAsset(assetType.name(), assetCode);
         states.asMap().compute(portfolioId, (id, prev) -> {
@@ -67,6 +73,7 @@ public class PortfolioBackfillTracker {
         broadcast(portfolioId);
     }
 
+    /** Clears an asset from the pending set (dropping portfolio state when none remain) and broadcasts. */
     public void finish(Long portfolioId, AssetType assetType, String assetCode) {
         PendingAsset key = new PendingAsset(assetType.name(), assetCode);
         states.asMap().computeIfPresent(portfolioId, (id, prev) -> {
@@ -76,6 +83,7 @@ public class PortfolioBackfillTracker {
         broadcast(portfolioId);
     }
 
+    /** Registers a never-timing-out SSE emitter for the portfolio and immediately sends the current status. */
     public SseEmitter subscribe(Long portfolioId) {
         SseEmitter emitter = new SseEmitter(0L);
         CopyOnWriteArrayList<SseEmitter> list = emitters.asMap()
@@ -88,6 +96,7 @@ public class PortfolioBackfillTracker {
         return emitter;
     }
 
+    /** Current backfill status for the portfolio: running flag, start time and the pending-asset list. */
     public BackfillStatusResponse snapshot(Long portfolioId) {
         PortfolioState state = states.getIfPresent(portfolioId);
         if (state == null) return new BackfillStatusResponse(false, null, List.of());

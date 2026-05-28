@@ -7,9 +7,9 @@ import { useMoney } from '../../../shared/hooks/useMoney';
 
 function Row({ label, value }) {
   return (
-    <div className="flex items-center justify-between text-xs">
-      <span className="text-fg-muted">{label}</span>
-      <span className="font-mono font-medium text-fg">{value}</span>
+    <div className="flex items-center justify-between gap-2 text-xs">
+      <span className="text-fg-muted shrink-0">{label}</span>
+      <span className="font-mono font-medium text-fg text-right break-all min-w-0">{value}</span>
     </div>
   );
 }

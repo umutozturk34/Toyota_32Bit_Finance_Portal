@@ -65,8 +65,12 @@ export function useRateHistory() {
 
   const rateAt = useCallback((currency, dateStr, field = 'sellingPrice') => {
     if (currency === 'TRY') return 1;
-    const historical = rateOn(data?.[currency], dateStr, field);
-    return historical ?? currentRates[currency] ?? null;
+    const series = data?.[currency];
+    const historical = rateOn(series, dateStr, field);
+    if (historical != null) return historical;
+    // Date precedes loaded history → use the earliest historical rate, never today's spot.
+    if (series && series.length > 0) return series[0][field] ?? series[0].sellingPrice;
+    return currentRates[currency] ?? null;
   }, [data, currentRates]);
 
   const resolveTarget = useCallback((base, natural) => {
@@ -89,8 +93,25 @@ export function useRateHistory() {
     return target === 'TRY' ? inTry : inTry / displayRate;
   }, [resolveTarget, rateAt]);
 
+  // Convert between two explicit currencies at a date, ignoring displayCurrency. Use when the caller
+  // already decided the target (e.g. Compare framing in a URL/deposit currency) rather than the
+  // per-series ORIGINAL/displayCurrency resolution that convertAt applies.
+  const convertBetween = useCallback((value, from, to, dateStr, rateField) => {
+    if (value == null) return null;
+    const num = Number(value);
+    if (!Number.isFinite(num)) return null;
+    const src = SUPPORTED.includes(from) ? from : 'TRY';
+    const dst = SUPPORTED.includes(to) ? to : 'TRY';
+    if (src === dst) return num;
+    const srcRate = rateAt(src, dateStr, rateField);
+    const dstRate = rateAt(dst, dateStr, rateField);
+    if (srcRate == null || dstRate == null) return num;
+    const inTry = src === 'TRY' ? num : num * srcRate;
+    return dst === 'TRY' ? inTry : inTry / dstRate;
+  }, [rateAt]);
+
   return useMemo(
-    () => ({ currency: displayCurrency, convertAt, rateAt, resolveTarget }),
-    [displayCurrency, convertAt, rateAt, resolveTarget],
+    () => ({ currency: displayCurrency, convertAt, convertBetween, rateAt, resolveTarget }),
+    [displayCurrency, convertAt, convertBetween, rateAt, resolveTarget],
   );
 }

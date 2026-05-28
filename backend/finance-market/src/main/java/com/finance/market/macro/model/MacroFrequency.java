@@ -3,6 +3,7 @@ package com.finance.market.macro.model;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
+/** Publish cadence of a macro indicator; defines when the last observation is considered stale. */
 public enum MacroFrequency {
     DAILY {
         @Override public boolean isStale(LocalDate lastObserved, LocalDate today) {

@@ -1,6 +1,7 @@
 function rawKind(type) {
-  if (type === 'MACRO_INFLATION') return 'index';
-  if (type === 'BOND' || type === 'MACRO_RATE' || type === 'MACRO_DEPOSIT') return 'rate';
+  // Deposits are shown as a compounded growth index (a multiplier), not a rate or a currency value.
+  if (type === 'MACRO_INFLATION' || type === 'MACRO_DEPOSIT') return 'index';
+  if (type === 'BOND' || type === 'MACRO_RATE') return 'rate';
   return 'price';
 }
 
@@ -65,7 +66,7 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency) {
     backgroundColor: 'transparent',
     animation: true,
     animationThreshold: 100000,
-    grid: { left: 56, right: 16, top: single ? 16 : 32, bottom: showZoom ? 64 : 32, containLabel: false },
+    grid: { left: 8, right: 12, top: single ? 16 : 32, bottom: showZoom ? 64 : 32, containLabel: true },
     legend: !single ? {
       type: 'scroll',
       top: 4,
@@ -88,6 +89,11 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency) {
     ] : undefined,
     tooltip: {
       trigger: 'axis',
+      confine: true,
+      position: (point, _params, _dom, _rect, size) => {
+        const x = Math.max(8, Math.min(point[0] - size.contentSize[0] / 2, size.viewSize[0] - size.contentSize[0] - 8));
+        return [x, 8];
+      },
       backgroundColor: tooltipBg, borderWidth: 0,
       textStyle: { color: tooltipFg, fontSize: 11 },
       formatter: (params) => {

@@ -10,6 +10,10 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+/**
+ * Builds a stock quote DTO from a Yahoo chart result, defaulting name to the symbol, exchange to
+ * BIST and currency to TRY, and deriving open/previous-close from the series when meta lacks them.
+ */
 @Component
 public class YahooStockQuoteMapper {
 

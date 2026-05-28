@@ -27,6 +27,11 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+/**
+ * Persists stock snapshots and candles. Resolves each stock's segment from its tracked-asset config
+ * (defaulting to EQUITY), validates inbound quotes, and back-fills change percent from candles only
+ * when missing.
+ */
 @Log4j2
 @Component
 public class StockEntityWriter implements MarketEntityWriter {

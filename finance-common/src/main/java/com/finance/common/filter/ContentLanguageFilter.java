@@ -12,6 +12,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Locale;
 
+/**
+ * Stamps the response with a {@code Content-Language} header (from the resolved request locale)
+ * after the chain runs, unless a downstream handler already set one.
+ */
 @Component
 public class ContentLanguageFilter extends OncePerRequestFilter {
 

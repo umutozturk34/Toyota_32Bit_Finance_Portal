@@ -359,7 +359,7 @@ class AllocationCalculatorTest {
 
     @Test
     void shouldConvertOpenDerivativePriceToTry_whenCurrencyIsNotTry() {
-        ViopContract c = contract("USDFUT", ViopContractKind.FUTURE, "1", "100", "USD");
+        ViopContract c = contract("F_XAUUSD0625", ViopContractKind.FUTURE, "1", "100", "USD");
         DerivativePosition dp = openDerivative(c, DerivativeDirection.LONG, "90", "1");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(dp));
@@ -368,12 +368,12 @@ class AllocationCalculatorTest {
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
 
-        assertThat(result).extracting(AllocationItem::label).contains("USDFUT");
+        assertThat(result).extracting(AllocationItem::label).contains("F_XAUUSD0625");
     }
 
     @Test
     void shouldFallbackToNativeWhenFxRateMissing_whenCurrencyIsNotTry() {
-        ViopContract c = contract("USDFUT", ViopContractKind.FUTURE, "1", "100", "USD");
+        ViopContract c = contract("F_XAUUSD0625", ViopContractKind.FUTURE, "1", "100", "USD");
         DerivativePosition dp = openDerivative(c, DerivativeDirection.LONG, "90", "1");
         when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
         when(derivativePositionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of(dp));
@@ -382,7 +382,7 @@ class AllocationCalculatorTest {
 
         List<AllocationItem> result = calculator.compute(PORTFOLIO_ID, null, null, null);
 
-        assertThat(result).extracting(AllocationItem::label).contains("USDFUT");
+        assertThat(result).extracting(AllocationItem::label).contains("F_XAUUSD0625");
     }
 
     @Test

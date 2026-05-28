@@ -3,6 +3,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
 import java.util.List;
+/**
+ * Maps the Yahoo Finance chart API response: meta (latest quote/day stats) plus parallel
+ * timestamp/OHLC arrays under {@code indicators.quote}. Unknown JSON fields are ignored; bars may
+ * contain nulls (gaps).
+ */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record YahooChartResponse(Chart chart) {
     @JsonIgnoreProperties(ignoreUnknown = true)

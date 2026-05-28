@@ -30,6 +30,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Facade over the per-type market providers, presenting one search/history/availability API across all
+ * asset classes (merging, filtering and sorting results spanning multiple types). As {@link MarketUpdatePort}
+ * it also write-through refreshes the top-movers (and stock index) caches when a market type updates.
+ */
 @Log4j2
 @Service
 public class UnifiedMarketService implements MarketUpdatePort {
@@ -49,6 +54,11 @@ public class UnifiedMarketService implements MarketUpdatePort {
         this.historicalPricingPort = historicalPricingPort;
     }
 
+    /**
+     * Unified search across the given market types. A non-blank {@code code} short-circuits to a single
+     * cross-type lookup; otherwise per-type results are merged, then the change-direction {@code filter} and
+     * {@code sort} are applied across the combined list before paging.
+     */
     public PagedResponse<MarketAssetResponse> search(List<MarketType> types, String code,
                                                      String segment, String subType, String search,
                                                      String sort, String direction,

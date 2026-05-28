@@ -21,6 +21,11 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.util.Optional;
 
+/**
+ * Admin commands for the tracked-asset registry (upsert/delete/reorder). Validates new assets exist
+ * before persisting, and schedules side effects (data refresh, cache clear, default-page refresh) only
+ * {@code afterCommit} so they never run against an uncommitted or rolled-back change.
+ */
 @Service
 @Log4j2
 @RequiredArgsConstructor
@@ -62,6 +67,10 @@ public class TrackedAssetAdminService {
         return data;
     }
 
+    /**
+     * Refresh is needed for a brand-new asset, or for crypto whose Binance symbol changed (so price data
+     * re-syncs); existing non-crypto edits don't warrant a data refetch.
+     */
     private boolean shouldRefreshAfterUpsert(TrackedAssetResponse previous, TrackedAssetResponse current) {
         if (previous == null) {
             return true;

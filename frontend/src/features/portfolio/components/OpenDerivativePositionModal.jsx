@@ -42,8 +42,7 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
   const symbol = (lockedContract?.symbol || lockedContract?.code || '').toUpperCase();
   const meta = lockedContract?.metadata || {};
   const isOption = meta.kind === 'OPTION';
-  const currency = meta.currency
-    || resolveNativeCurrency({ assetType: 'VIOP', assetCode: symbol, metadata: meta }, lockedContract);
+  const currency = resolveNativeCurrency({ assetType: 'VIOP', assetCode: symbol });
   const inputCurrency = displayCurrency === 'ORIGINAL' ? currency : displayCurrency;
 
   const isEditing = Boolean(editPosition);
@@ -242,7 +241,7 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
               <Hash className="h-3 w-3" /> {t('portfolio.derivatives.qty')}
             </span>
             <input
-              type="number" min="0.01" step="0.01" required value={quantityLot}
+              type="number" min="0.01" step="0.01" required inputMode="decimal" value={quantityLot}
               onChange={(e) => setQuantityLot(e.target.value)}
               className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono outline-none focus:ring-1 focus:ring-accent/50 transition-all"
             />
@@ -269,7 +268,7 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
             <Tag className="h-3 w-3" /> {priceLabel}
           </span>
           <input
-            type="number" step="0.0001" value={entryPrice}
+            type="number" step="0.0001" inputMode="decimal" value={entryPrice}
             onChange={(e) => { setEntryPrice(e.target.value); setEntryPriceTouched(true); }}
             placeholder={t('portfolio.derivatives.autoFromHistory')}
             className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"
@@ -277,9 +276,9 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
         </label>
 
         {notional != null && (
-          <div className="rounded-lg border border-accent/25 bg-accent/5 px-3 py-2 flex items-center justify-between text-xs">
-            <span className="font-semibold text-accent">{t('portfolio.derivatives.notional')}</span>
-            <span className="font-mono font-bold text-accent">{money(notional, inputCurrency)}</span>
+          <div className="rounded-lg border border-accent/25 bg-accent/5 px-3 py-2 flex items-center justify-between gap-2 text-xs">
+            <span className="font-semibold text-accent shrink-0">{t('portfolio.derivatives.notional')}</span>
+            <span className="font-mono font-bold text-accent break-all text-right min-w-0">{money(notional, inputCurrency)}</span>
           </div>
         )}
 
@@ -311,7 +310,7 @@ export default function OpenDerivativePositionModal({ portfolioId, isOpen, onClo
               <label className="space-y-1.5 block">
                 <span className="text-xs font-medium text-fg-muted">{t('portfolio.derivatives.closePrice')}</span>
                 <input
-                  type="number" step="0.0001" value={closePrice}
+                  type="number" step="0.0001" inputMode="decimal" value={closePrice}
                   onChange={(e) => { setClosePrice(e.target.value); setClosePriceTouched(true); }}
                   placeholder={t('portfolio.derivatives.autoFromHistory')}
                   className="w-full rounded-lg border border-border-default bg-bg-base px-3 py-2.5 text-sm text-fg font-mono placeholder:text-fg-subtle outline-none focus:ring-1 focus:ring-accent/50 transition-all"

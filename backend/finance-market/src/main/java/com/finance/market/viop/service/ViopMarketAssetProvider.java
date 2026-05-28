@@ -27,6 +27,10 @@ import java.util.stream.Collectors;
 
 import static com.finance.market.core.service.MarketProviderHelper.buildSort;
 
+/**
+ * Read-side {@link MarketAssetProvider} for VIOP. Always restricts to active, non-expired,
+ * tracked-enabled contracts; supports kind/category facets and groups counts by category.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -124,6 +128,7 @@ public class ViopMarketAssetProvider implements MarketAssetProvider {
         return (root, query, cb) -> root.get("symbol").in(enabled);
     }
 
+    /** Active contracts whose expiry is null or today-or-later (excludes matured contracts). */
     private Specification<ViopContract> activeNonExpired() {
         return (root, query, cb) -> cb.and(
                 cb.isTrue(root.get("active")),

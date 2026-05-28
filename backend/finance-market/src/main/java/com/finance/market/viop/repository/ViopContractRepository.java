@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/** Persistence for VIOP contracts, including queries for expired and price-missing active contracts. */
 public interface ViopContractRepository
         extends JpaRepository<ViopContract, Long>, JpaSpecificationExecutor<ViopContract> {
 
@@ -18,6 +19,7 @@ public interface ViopContractRepository
 
     List<ViopContract> findByKindAndActiveTrue(ViopContractKind kind);
 
+    /** Active contracts whose expiry has already passed (candidates for deactivation). */
     @Query("select c from ViopContract c where c.active = true and c.expiryDate < :today")
     List<ViopContract> findExpired(@Param("today") LocalDate today);
 

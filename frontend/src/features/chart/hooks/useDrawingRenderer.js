@@ -236,7 +236,7 @@ const useDrawingRenderer = ({
         if (mgr) {
             drawSnapIndicator(ctx, mgr.getSnap(), { width: rect.width, height: rect.height });
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- imperative canvas redraw; only stable refs/inline helpers omitted, every reactive drawing-state value is listed
     }, [drawings, fibTools, isDrawing, startPoint, currentPoint, activeTool, activeFibTool, chartCoordsToPixel, pixelToChartCoords, isDark, highlight]);
 
     return { renderDrawings };

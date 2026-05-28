@@ -13,6 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Exposes a portfolio's daily total-value-in-TRY series (from stored snapshots) so analytics can chart
+ * a portfolio alongside scenario instruments. Access is owner-scoped by {@code userSub}.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -21,6 +25,11 @@ public class PortfolioSeriesProvider {
     private final PortfolioRepository portfolioRepository;
     private final PortfolioDailySnapshotRepository dailySnapshotRepository;
 
+    /**
+     * Daily {@code totalValueTry} points over {@code [from, to]} for the owner's portfolio.
+     *
+     * @throws ResourceNotFoundException if the portfolio doesn't exist or isn't owned by {@code userSub}
+     */
     @Transactional(readOnly = true)
     public List<HistoryPoint> dailyValueSeries(Long portfolioId, String userSub, LocalDate from, LocalDate to) {
         portfolioRepository.findByIdAndUserSub(portfolioId, userSub)

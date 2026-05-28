@@ -10,6 +10,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+/**
+ * Locale resolver that prefers a supported {@code Accept-Language} header, then falls back to the
+ * authenticated JWT's {@code locale} claim (if supported), and finally the configured default.
+ * Only locales in the supported list are ever returned.
+ */
 public class JwtLocaleResolver extends AcceptHeaderLocaleResolver {
 
     private final List<Locale> supportedLocales;

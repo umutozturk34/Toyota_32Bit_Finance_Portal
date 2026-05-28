@@ -6,6 +6,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Portfolio-level daily roll-up in TRY: total market value, cost, total/daily PnL and percentages
+ * for one day. {@code cashTry} carries cumulative realized proceeds from closed positions (the model
+ * holds no real cash). Drives the performance/history charts.
+ */
 @Getter
 @Setter
 @Builder

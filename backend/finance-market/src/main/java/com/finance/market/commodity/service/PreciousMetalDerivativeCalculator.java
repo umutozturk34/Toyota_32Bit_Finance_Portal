@@ -27,6 +27,11 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
+/**
+ * Derives secondary commodities (e.g. gram gold from ounce gold) from a source commodity by
+ * dividing its TRY prices/candles by a configured divisor. Derivatives are auto-tracked and cached.
+ * Previous price is recomputed from the source's ounce-USD price at the prior USD/TRY rate.
+ */
 @Service
 @Log4j2
 public class PreciousMetalDerivativeCalculator {
@@ -60,14 +65,17 @@ public class PreciousMetalDerivativeCalculator {
         this.rules = List.copyOf(commodityProperties.getDerivatives());
     }
 
+    /** Whether the given commodity is a source that drives at least one derivative. */
     public boolean hasDerivatives(String commodityCode) {
         return rules.stream().anyMatch(r -> r.getSourceCode().equals(commodityCode));
     }
 
+    /** Whether the given commodity is itself a derivative produced by a rule. */
     public boolean isKnownDerivative(String commodityCode) {
         return rules.stream().anyMatch(r -> r.getDerivativeCode().equals(commodityCode));
     }
 
+    /** Recomputes all derivatives of {@code source} from its current snapshot; no-op if data is missing. */
     public void refreshDerivatives(Commodity source, BigDecimal usdTryCurrent, BigDecimal usdTryPrevious) {
         if (source == null || source.getCurrentPriceUsd() == null || usdTryCurrent == null) {
             log.debug("Skipping derivatives: missing source USD price or USDTRY rate for {}",
@@ -112,6 +120,7 @@ public class PreciousMetalDerivativeCalculator {
         regenerateDerivativeCandles(rule.getDerivativeCode(), sourceCandles, transform);
     }
 
+    /** Rebuilds a derivative's candles from its source's candles via {@code transform}, upserting by date. */
     private void regenerateDerivativeCandles(String derivativeCode, List<CommodityCandle> sourceCandles,
                                               UnaryOperator<BigDecimal> transform) {
         Commodity derivative = commodityRepository.findById(derivativeCode).orElse(null);

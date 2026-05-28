@@ -2,6 +2,11 @@ package com.finance.common.event;
 
 import java.util.function.Function;
 
+/**
+ * Logical event destinations, each bound to an accessor that yields the configured concrete topic
+ * name from {@link KafkaTopicsProperties}, so topic names stay configurable without changing
+ * producers/consumers.
+ */
 public enum EventTopic {
     MARKET_UPDATED(KafkaTopicsProperties::marketUpdated),
     NEWS_PUBLISHED(KafkaTopicsProperties::newsPublished),

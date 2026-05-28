@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import IconButton from '../buttons/IconButton';
 
 const cx = (...parts) => parts.filter(Boolean).join(' ');
@@ -24,9 +25,14 @@ export default function SideDrawer({
   footer,
   children,
   className,
-  closeLabel = 'close',
+  closeLabel,
+  closeAttr,
 }) {
+  const { t } = useTranslation();
+  const closeText = closeLabel ?? t('common.close');
   const sideConfig = SIDES[side] ?? SIDES.right;
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
+  const resolvedWidth = isMobile ? '100vw' : width;
   return (
     <AnimatePresence>
       {open && (
@@ -44,14 +50,14 @@ export default function SideDrawer({
             animate={{ x: 0 }}
             exit={sideConfig.exit}
             transition={{ duration: 0.32, ease: EASE }}
-            style={{ width }}
+            style={{ width: resolvedWidth }}
             className={cx(
-              'fixed top-0 bottom-0 z-[60] flex flex-col border-border-default bg-bg-deep w-full sm:w-auto',
+              'fixed top-0 bottom-0 z-[60] flex flex-col border-border-default bg-bg-deep',
               sideConfig.classes,
               className,
             )}
           >
-            <header className="flex items-center justify-between px-5 h-14 border-b border-border-default shrink-0">
+            <header className="flex items-center justify-between px-4 sm:px-5 h-14 landscape:h-12 sm:landscape:h-14 border-b border-border-default shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 {Icon && <Icon className={cx('h-4 w-4 shrink-0', iconTint)} />}
                 <div className="flex flex-col min-w-0">
@@ -66,8 +72,9 @@ export default function SideDrawer({
                   size={7}
                   shape="square"
                   icon={<X className="h-4 w-4" />}
-                  aria-label={closeLabel}
+                  aria-label={closeText}
                   onClick={onClose}
+                  {...(closeAttr ? { 'data-tour-close': closeAttr } : {})}
                 />
               </div>
             </header>

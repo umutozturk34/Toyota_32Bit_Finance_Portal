@@ -14,6 +14,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+/**
+ * Fund {@link TrackedAssetDataService}: validates a fund code against TEFAS before tracking and
+ * delegates refresh/cache work.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

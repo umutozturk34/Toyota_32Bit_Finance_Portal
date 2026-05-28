@@ -13,11 +13,21 @@ function buildEffective(trimmed, filterType, locale) {
   return { search, type };
 }
 
+function isExcludedType(type, excludeTypes) {
+  if (!type || excludeTypes.length === 0) return false;
+  for (const ex of excludeTypes) {
+    if (ex === type) return true;
+    if (ex === 'MACRO' && type.startsWith('MACRO_')) return true;
+  }
+  return false;
+}
+
 export default function useSearchSuggestions({
   query,
   filterType,
   suggestFn,
   excludeCodes = [],
+  excludeTypes = [],
   pageSize = 8,
   enabled = true,
   onClose,
@@ -51,9 +61,12 @@ export default function useSearchSuggestions({
   });
 
   const raw = suggestFn ? (data || []) : (data?.content || []);
-  const suggestions = excludeCodes.length > 0
+  const filteredByCode = excludeCodes.length > 0
     ? raw.filter(a => !excludeCodes.includes(a.code))
     : raw;
+  const suggestions = excludeTypes.length > 0
+    ? filteredByCode.filter(a => !isExcludedType(a.type, excludeTypes))
+    : filteredByCode;
 
   useEffect(() => {
     if (!onClose) return;

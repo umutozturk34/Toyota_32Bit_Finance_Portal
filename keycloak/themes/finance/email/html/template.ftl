@@ -9,6 +9,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="color-scheme" content="dark light">
     <meta name="supported-color-schemes" content="dark light">
+    <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
+    <meta name="x-apple-disable-message-reformatting">
     <title>Finance Portal</title>
     <style>
         body { margin:0; padding:0; width:100%; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; background:#070912; color:#dde3ee; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif; }
@@ -16,12 +18,41 @@
         img { border:0; outline:none; text-decoration:none; -ms-interpolation-mode:bicubic; display:block; }
         a { color:inherit; text-decoration:none; }
 
-        @media (max-width:620px) {
-            .container { width:100% !important; padding-left:18px !important; padding-right:18px !important; }
-            .hero-title { font-size:22px !important; }
-            .email-code { font-size:28px !important; letter-spacing:6px !important; }
-            .hero-pad { padding-left:24px !important; padding-right:24px !important; }
-            .body-pad { padding-left:24px !important; padding-right:24px !important; }
+        @media only screen and (max-width:600px) {
+            .container { width:100% !important; max-width:100% !important; padding-left:16px !important; padding-right:16px !important; }
+            .card { width:100% !important; max-width:100% !important; border-radius:14px !important; }
+            .wrapper { padding:24px 0 32px !important; }
+
+            .hero, .hero-pad { padding:24px 20px 8px !important; }
+            .hero-title { font-size:22px !important; line-height:1.3 !important; }
+            .hero-sub { font-size:14px !important; line-height:1.55 !important; }
+            .eyebrow { font-size:11px !important; letter-spacing:2px !important; }
+
+            .body-section, .body-pad { padding:14px 20px 4px !important; font-size:15px !important; line-height:1.6 !important; }
+            .body-section p { font-size:15px !important; line-height:1.6 !important; }
+
+            .divider { margin:0 20px !important; }
+
+            .cta-wrap { padding:8px 20px !important; }
+            .cta-table { width:100% !important; }
+            .cta-cell { width:100% !important; display:block !important; }
+            .email-cta { display:block !important; width:auto !important; padding:16px 24px !important; font-size:15px !important; min-height:44px !important; line-height:1.2 !important; box-sizing:border-box !important; text-align:center !important; }
+
+            .info-box { padding:12px 20px 4px !important; }
+            .info-card { padding:12px 14px !important; }
+            .info-card p { font-size:13.5px !important; line-height:1.6 !important; }
+
+            .code-block { padding:18px 20px 6px !important; }
+            .code-frame { padding:18px 12px !important; border-radius:12px !important; }
+            .email-code { font-size:26px !important; letter-spacing:5px !important; padding-left:5px !important; word-break:break-all !important; }
+
+            .meta-row { padding:14px 20px 18px !important; }
+            .meta-row .item { font-size:11px !important; }
+
+            .footer-card { padding:18px 20px 0 !important; }
+            .footer-card p { font-size:12px !important; line-height:1.6 !important; }
+
+            .brand-row { padding:0 16px 18px !important; }
         }
 
         .wrapper { background:#070912; padding:40px 0 56px; }

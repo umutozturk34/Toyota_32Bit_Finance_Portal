@@ -26,6 +26,13 @@ import java.time.Duration;
 import java.util.List;
 import java.util.function.Supplier;
 
+/**
+ * Per-subject, distributed rate-limiting filter backed by Bucket4j over Redis. Only {@code /api/}
+ * requests are filtered; for each it selects the first matching {@link RateLimitTier} (ordered),
+ * keys the bucket by authenticated subject (or {@code anonymous}) and tier, and either forwards the
+ * request with a remaining-tokens header or rejects with HTTP 429, a localized {@link ErrorResponse}
+ * and a {@code Retry-After} hint.
+ */
 @Log4j2
 public class RateLimitFilter extends OncePerRequestFilter {
 
@@ -93,6 +100,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
     }
 
+    /**
+     * Returns the first matching tier by bean order; throws if none matches, which should never
+     * happen because the lowest-precedence {@code ApiTier} is a catch-all.
+     */
     private RateLimitTier resolveTier(String path, String method) {
         return tiers.stream()
                 .filter(t -> t.matches(path, method))

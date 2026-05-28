@@ -146,7 +146,7 @@ export default function WatchPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" data-tour="watchlist-main">
       <PageHeader
         icon={<Eye className="h-5 w-5" />}
         title={t('watch.headerTitle')}
@@ -163,10 +163,10 @@ export default function WatchPage() {
 
       {isWatchlist && (
       <Card as="section" variant="elevated" radius="xl" padding="none" interactive>
-        <header className="flex items-center justify-between px-4 py-3 border-b border-border-default gap-3">
-          <div className="flex items-center gap-2 shrink-0">
-            <Star className="h-4 w-4 text-warning" />
-            <h2 className="text-sm font-bold text-fg tracking-tight">{t('watch.myLists')}</h2>
+        <header className="flex items-center justify-between px-3 sm:px-4 py-3 border-b border-border-default gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Star className="h-4 w-4 text-warning shrink-0" />
+            <h2 className="text-sm font-bold text-fg tracking-tight truncate">{t('watch.myLists')}</h2>
           </div>
           <motion.button
             onClick={() => setAddItemOpen(true)}
@@ -174,10 +174,11 @@ export default function WatchPage() {
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright shadow-lg shadow-accent/20 transition-colors border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label={t('watch.addAsset')}
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright shadow-lg shadow-accent/20 transition-colors border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
             <Plus className="h-3.5 w-3.5" />
-            {t('watch.addAsset')}
+            <span className="hidden sm:inline">{t('watch.addAsset')}</span>
           </motion.button>
         </header>
         <div className="px-4 py-3 border-b border-border-default">
@@ -265,11 +266,11 @@ export default function WatchPage() {
 
       {isAlerts && (
       <Card as="section" variant="elevated" radius="xl" padding="none" interactive>
-        <header className="flex items-center justify-between px-4 py-3 border-b border-border-default">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-accent" />
-            <h2 className="text-sm font-bold text-fg tracking-tight">{t('watch.tabs.alerts')}</h2>
-            <span className="text-[10px] font-mono text-fg-subtle px-1.5 py-0.5 rounded-md bg-surface">
+        <header className="flex items-center justify-between px-3 sm:px-4 py-3 border-b border-border-default gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <AlertCircle className="h-4 w-4 text-accent shrink-0" />
+            <h2 className="text-sm font-bold text-fg tracking-tight truncate">{t('watch.tabs.alerts')}</h2>
+            <span className="text-[10px] font-mono text-fg-subtle px-1.5 py-0.5 rounded-md bg-surface shrink-0">
               {alertItems.length}
             </span>
           </div>
@@ -278,10 +279,11 @@ export default function WatchPage() {
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright shadow-lg shadow-accent/20 transition-colors border-none cursor-pointer"
+            aria-label={t('watch.createAlert')}
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-accent hover:bg-accent-bright shadow-lg shadow-accent/20 transition-colors border-none cursor-pointer shrink-0"
           >
             <Plus className="h-3.5 w-3.5" />
-            {t('watch.createAlert')}
+            <span className="hidden sm:inline">{t('watch.createAlert')}</span>
           </motion.button>
         </header>
         <div className="hidden md:grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-4 px-4 py-2 border-b border-border-default text-[11px] font-semibold uppercase tracking-wide text-fg-muted">

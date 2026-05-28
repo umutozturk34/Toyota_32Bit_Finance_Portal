@@ -5,6 +5,11 @@ import com.finance.common.model.MarketType;
 import com.finance.shared.service.TaskTrackingService;
 import lombok.extern.log4j.Log4j2;
 
+/**
+ * Base for per-market schedulers: runs the market refresh inside task tracking, then fires
+ * post-refresh hooks (portfolio snapshot, market cache, event publish). Each hook is isolated so
+ * one failing hook never aborts the others or the run.
+ */
 @Log4j2
 public abstract class AbstractMarketScheduler {
 
@@ -20,6 +25,7 @@ public abstract class AbstractMarketScheduler {
 
     protected abstract void runRefresh();
 
+    /** Runs the tracked refresh and its post-refresh hooks under the given task type/description. */
     protected final void executeMarketUpdate(String taskType, String description) {
         taskTracker.runTracked(taskType, description, () -> {
             runRefresh();

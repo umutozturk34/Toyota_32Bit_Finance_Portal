@@ -20,6 +20,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Provides the BENCHMARK_BEATERS widget from cached inflation-beater rankings: on a cold cache it triggers
+ * an async warm and returns empty (the client retries), otherwise it applies the section's asset-type,
+ * verdict, sort-direction and limit filters to the cached entries.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -79,6 +84,10 @@ public class BenchmarkBeatersWidgetProvider implements OverviewWidgetProvider {
                 rows);
     }
 
+    /**
+     * Applies type/verdict filters and the limit. Entries arrive pre-sorted by excess return descending, so
+     * {@code ascending} simply reverses the list (worst-first) before filtering.
+     */
     private List<BenchmarkBeatersData.BeaterRow> filterAndLimit(List<InflationBeaterEntry> entries,
                                                                 Set<String> typeFilter,
                                                                 String verdict,

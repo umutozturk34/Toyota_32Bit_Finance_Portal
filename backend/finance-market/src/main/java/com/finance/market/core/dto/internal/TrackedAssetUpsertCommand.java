@@ -5,6 +5,7 @@ import com.finance.common.model.TrackedAssetType;
 import lombok.Builder;
 import lombok.Value;
 
+/** Internal command carrying the fields needed to create or update a tracked asset. */
 @Value
 @Builder
 public class TrackedAssetUpsertCommand {

@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 import java.util.EnumSet;
 import java.util.Set;
 
+/**
+ * Commodity native currency: always TRY, because commodity prices are cross-converted to TRY at
+ * ingest, so the code's USD/EUR suffix does not reflect the stored currency.
+ */
 @Component
 public class CommodityNativeCurrencyStrategy implements NativeCurrencyStrategy {
 
@@ -18,10 +22,8 @@ public class CommodityNativeCurrencyStrategy implements NativeCurrencyStrategy {
 
     @Override
     public Currency resolve(String code) {
-        if (code == null || code.isBlank()) return Currency.USD;
-        String upper = code.toUpperCase();
-        if (upper.endsWith("TRY") || upper.endsWith("TRYG")) return Currency.TRY;
-        if (upper.endsWith("EUR") || upper.endsWith("EURG")) return Currency.EUR;
-        return Currency.USD;
+        // Commodities are always cross-converted to TRY at ingest (PriceCrossCalculator.buildTryCandles),
+        // so the stored/native currency is TRY regardless of the code's USD/EUR suffix.
+        return Currency.TRY;
     }
 }

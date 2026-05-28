@@ -22,6 +22,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Scrapes per-bank buy/sell currency and gold rates from doviz.com. Each currency/gold instrument
+ * has a fixed slug (and anchor bank) whose page lists bank rows; gold pages without a bank table
+ * fall back to a single market quote. Network/parse failures degrade to an empty result per item.
+ */
 @Log4j2
 @Component
 public class DovizComBankRateProvider implements BankRateProvider {
@@ -225,6 +230,7 @@ public class DovizComBankRateProvider implements BankRateProvider {
         return parts[parts.length - 2];
     }
 
+    /** Parses a Turkish-locale number (thousands '.', decimal ','), returning null on failure. */
     private static BigDecimal parseNumber(String raw) {
         if (raw == null) return null;
         String cleaned = raw.replace(".", "").replace(',', '.').replaceAll("[^0-9.\\-]", "").trim();

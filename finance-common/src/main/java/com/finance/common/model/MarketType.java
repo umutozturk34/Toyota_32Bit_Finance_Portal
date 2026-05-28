@@ -1,5 +1,12 @@
 package com.finance.common.model;
 
+/**
+ * Catalog of market segments. Each constant carries the metadata needed to read a snapshot from
+ * Redis: {@code redisLabel} (the key segment used to build {@code market:<label>:snapshot:<code>}),
+ * {@code codeField} (the JSON property holding the asset code), and {@code primaryPriceField} with an
+ * optional {@code fallbackPriceField} read when the primary is absent. These field names are
+ * market-specific and reflect the JSON shape each provider publishes.
+ */
 public enum MarketType {
     STOCK("stock", "symbol", "currentPrice", null),
     CRYPTO("crypto", "id", "currentPriceTry", null),

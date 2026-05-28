@@ -16,6 +16,11 @@ import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+/**
+ * Shared persistent base for all market asset entities: name/image/last-updated plus change
+ * amount/percent, and a lazy link to the cross-module {@link Instrument} identity. Centralizes
+ * change computation and price-currency contract so each market subclass adds only its own fields.
+ */
 @Getter
 @Setter
 @SuperBuilder
@@ -53,12 +58,17 @@ public abstract class BaseAsset {
     @JoinColumn(name = "asset_id")
     private Instrument asset;
 
+    /** Recomputes change amount/percent from current vs. previous price. */
     public final void applyChange(BigDecimal current, BigDecimal previous, int scale) {
         PercentChangeCalculator.Result result = PercentChangeCalculator.compute(current, previous, scale);
         this.changeAmount = result.amount();
         this.changePercent = result.percent();
     }
 
+    /**
+     * Sets change amount/percent, preferring source-provided values when present and otherwise
+     * falling back to the computed current-vs-previous change.
+     */
     public final void applyChangePreferring(BigDecimal current, BigDecimal previous,
                                             BigDecimal preferredAmount, BigDecimal preferredPercent,
                                             int scale) {
@@ -67,17 +77,22 @@ public abstract class BaseAsset {
         this.changePercent = preferredPercent != null ? scaleValue(preferredPercent, scale) : computed.percent();
     }
 
+    /** Rounds all monetary fields to the given scale; subclass defines which fields. */
     public abstract void scaleFields(int scale);
 
+    /** Stable per-market asset code. */
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public abstract String getCode();
 
+    /** Display label: the asset name, falling back to its code. */
     public String resolveDisplayName() {
         return firstNonBlank(getName(), getCode());
     }
 
+    /** Current price in TRY. */
     public abstract BigDecimal getPriceTry();
 
+    /** Currency the asset's price is quoted in; TRY unless a market overrides (e.g. VIOP). */
     public String resolvePriceCurrency() {
         return "TRY";
     }

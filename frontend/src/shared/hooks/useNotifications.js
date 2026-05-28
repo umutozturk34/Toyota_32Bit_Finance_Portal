@@ -39,8 +39,26 @@ export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: notificationService.markRead,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    // Mark the row read in place across cached pages instead of invalidating the list. Auto-read
+    // fires per visible row, so refetching the whole infinite query each time churned it — it
+    // dropped in-flight fetchNextPage calls (pagination stalled) and emptied the unread view.
+    onMutate: (id) => {
+      const now = new Date().toISOString();
+      queryClient.setQueriesData({ queryKey: ['notifications'] }, (old) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((p) => (p?.content
+            ? { ...p, content: p.content.map((n) => (n.id === id && n.readAt == null ? { ...n, readAt: now } : n)) }
+            : p)),
+        };
+      });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        predicate: (q) => q.queryKey[0] === 'notifications'
+          && q.queryKey[q.queryKey.length - 1] === 'unread-count',
+      });
     },
   });
 }

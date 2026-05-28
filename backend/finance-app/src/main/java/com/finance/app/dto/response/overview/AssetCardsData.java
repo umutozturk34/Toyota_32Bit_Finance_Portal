@@ -4,6 +4,7 @@ import com.finance.market.core.dto.response.MarketAssetResponse;
 
 import java.util.List;
 
+/** ASSET_CARDS widget payload: the resolved market assets to display as cards. */
 public record AssetCardsData(List<MarketAssetResponse> items) implements WidgetData {
 
     @Override

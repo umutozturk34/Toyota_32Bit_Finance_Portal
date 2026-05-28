@@ -12,15 +12,15 @@ function CryptoHeader({ asset }) {
   return (
     <>
       {asset.image ? (
-        <img src={asset.image} alt={meta.symbol} className="w-8 h-8 rounded-full" />
+        <img src={asset.image} alt={meta.symbol} className="w-8 h-8 shrink-0 rounded-full" />
       ) : (
-        <span className="flex items-center justify-center w-8 h-8 rounded-full bg-warning/10 text-warning text-sm font-bold">
+        <span className="flex items-center justify-center w-8 h-8 shrink-0 rounded-full bg-warning/10 text-warning text-sm font-bold">
           {(meta.symbol || asset.code || '').slice(0, 2).toUpperCase()}
         </span>
       )}
-      <div>
-        <h1 className="text-xl font-bold text-fg">{meta.symbol || asset.code}</h1>
-        <p className="text-xs text-fg-muted">{asset.name}</p>
+      <div className="min-w-0">
+        <h1 className="text-xl font-bold text-fg truncate">{meta.symbol || asset.code}</h1>
+        <p className="text-xs text-fg-muted truncate max-w-[12rem] sm:max-w-[18rem]">{asset.name}</p>
       </div>
     </>
   );

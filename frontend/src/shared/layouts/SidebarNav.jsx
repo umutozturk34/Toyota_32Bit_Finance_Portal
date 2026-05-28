@@ -1,4 +1,5 @@
 import { useState, useLayoutEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight } from 'lucide-react';
@@ -172,7 +173,7 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
       <button
         ref={buttonRef}
         type="button"
-        title={t(group.labelKey)}
+        title={open ? undefined : t(group.labelKey)}
         onMouseEnter={openNow}
         onMouseLeave={scheduleClose}
         onFocus={openNow}
@@ -195,7 +196,8 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
           <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_6px_rgba(99,102,241,0.6)]" />
         )}
       </button>
-      <AnimatePresence>
+      {createPortal(
+        <AnimatePresence>
         {open && (
           <motion.div
             initial={{ opacity: 0, x: -10, scale: 0.96 }}
@@ -213,8 +215,9 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
               background: 'var(--color-bg-deep)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
+              zIndex: 1000,
             }}
-            className="z-[80] rounded-2xl border border-border-default min-w-[260px] overflow-hidden"
+            className="rounded-2xl border border-border-default min-w-[260px] overflow-hidden"
           >
             <div className="h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
             <div className="px-4 pt-3 pb-2.5 flex items-center gap-2 border-b border-border-default/40">
@@ -283,7 +286,9 @@ function NavGroupCollapsed({ group, t, isActive, hasActive }) {
             <div className="h-px bg-gradient-to-r from-transparent via-border-default/50 to-transparent" />
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+        document.body,
+      )}
     </>
   );
 }

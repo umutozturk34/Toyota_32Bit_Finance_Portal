@@ -8,6 +8,10 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 
+/**
+ * Builds {@link ViopQuoteSnapshot}s from the two upstream shapes: the rich OneEndeks JSON and the
+ * sparse scraped HTML row (which carries only last/change/volume, so day close is back-derived).
+ */
 @Component
 public class ViopSnapshotMapper {
 
@@ -41,6 +45,7 @@ public class ViopSnapshotMapper {
         );
     }
 
+    /** Builds a snapshot from a scraped row; derives previous day close as {@code last - changeAbs}. */
     public ViopQuoteSnapshot fromHtmlRow(String symbol, BigDecimal lastPrice,
                                          BigDecimal changePct, BigDecimal changeAbs,
                                          BigDecimal volumeTry, BigDecimal volumeLot,

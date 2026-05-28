@@ -9,6 +9,10 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
+/**
+ * Builds a human-readable VIOP contract label (Turkish-localized expiry), e.g.
+ * "USDTRY Call 35 · 30 Haz 25" for options or "XU030 Vadeli · …" for futures.
+ */
 public final class ViopDisplayNameBuilder {
 
     private static final DateTimeFormatter EXPIRY_FMT =
@@ -16,6 +20,7 @@ public final class ViopDisplayNameBuilder {
 
     private ViopDisplayNameBuilder() { }
 
+    /** Composes the label from available parts; returns {@code null} when nothing is renderable. */
     public static String build(ViopContractKind kind, String underlying, ViopOptionSide optionSide,
                                 BigDecimal strikePrice, LocalDate expiryDate) {
         if (kind == null) return null;

@@ -5,6 +5,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.Map;
+/**
+ * Uniform error envelope returned by {@link com.finance.common.exception.GlobalExceptionHandler},
+ * carrying a localized message, a stable machine-readable {@code errorCode}, the request path and an
+ * optional per-field {@code validationErrors} map. Use the {@code of} factories to build instances.
+ */
 @Data
 @Builder
 @NoArgsConstructor

@@ -122,6 +122,20 @@ export default function OverviewWidgetCanvas({
 
   const isMobile = width > 0 && width < 768;
 
+  const mobileOrderedSections = useMemo(() => {
+    const sortByPosition = (a, b) => {
+      const ay = typeof a.y === 'number' ? a.y : 0;
+      const by = typeof b.y === 'number' ? b.y : 0;
+      if (ay !== by) return ay - by;
+      const ax = typeof a.x === 'number' ? a.x : 0;
+      const bx = typeof b.x === 'number' ? b.x : 0;
+      return ax - bx;
+    };
+    const others = sections.filter((s) => s.kind !== 'NEWS').sort(sortByPosition);
+    const news = sections.filter((s) => s.kind === 'NEWS').sort(sortByPosition);
+    return [...others, ...news];
+  }, [sections]);
+
   return (
     <div
       ref={containerRef}
@@ -131,16 +145,7 @@ export default function OverviewWidgetCanvas({
     >
       {isMobile && (
         <div className="flex flex-col gap-4 pb-4">
-          {[...sections]
-            .sort((a, b) => {
-              const ay = typeof a.y === 'number' ? a.y : 0;
-              const by = typeof b.y === 'number' ? b.y : 0;
-              if (ay !== by) return ay - by;
-              const ax = typeof a.x === 'number' ? a.x : 0;
-              const bx = typeof b.x === 'number' ? b.x : 0;
-              return ax - bx;
-            })
-            .map((section, i) => {
+          {mobileOrderedSections.map((section, i) => {
             const slot = mountSlotBySectionId.get(section.sectionId) ?? i;
             return (
               <div key={section.sectionId} className="h-full">

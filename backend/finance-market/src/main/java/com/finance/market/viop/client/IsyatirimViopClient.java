@@ -38,6 +38,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * İş Yatırım-backed {@link ViopMarketDataPort}: contract metadata and chart data come from JSON
+ * endpoints while bulk live quotes are scraped from the analysis page HTML. Calls carry a session
+ * cookie (refreshed once on 401/403) and are guarded by circuit-breaker/retry/rate-limiter.
+ */
 @Log4j2
 @Component
 public class IsyatirimViopClient implements ViopMarketDataPort {
@@ -184,6 +189,7 @@ public class IsyatirimViopClient implements ViopMarketDataPort {
         return points;
     }
 
+    /** Executes a session-cookie GET, refreshing the session and retrying once on 401/403. */
     private <T> T getWithSession(Function<UriBuilder, java.net.URI> uri,
                                  ParameterizedTypeReference<T> typeRef) {
         try {

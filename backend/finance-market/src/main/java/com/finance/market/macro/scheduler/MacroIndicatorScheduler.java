@@ -11,6 +11,10 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/**
+ * Daily macro refresh: re-syncs the indicator catalogue from config, fetches new observations, and
+ * publishes a {@link MacroIndicatorsUpdatedEvent} when any indicator changed.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor

@@ -11,6 +11,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
+/**
+ * Forex implementation of {@link TrackedAssetDataService}: validates a currency against EVDS's
+ * active list before tracking and delegates refresh/cache work to the update service and cache.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor

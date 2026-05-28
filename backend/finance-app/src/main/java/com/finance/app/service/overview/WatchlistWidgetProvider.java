@@ -25,6 +25,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Provides the WATCHLIST widget: resolves the configured watchlist (or the user's default), then enriches
+ * its items with live price/change snapshots batched per market type. Owner-scoped and read-only.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor

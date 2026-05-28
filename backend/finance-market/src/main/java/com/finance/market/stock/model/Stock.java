@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
+/** A BIST stock keyed by its symbol, priced in TRY ({@code currentPrice}), with day stats and segment. */
 @Getter
 @Setter
 @SuperBuilder

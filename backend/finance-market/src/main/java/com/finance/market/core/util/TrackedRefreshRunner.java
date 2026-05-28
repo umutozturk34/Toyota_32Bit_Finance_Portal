@@ -5,11 +5,13 @@ import org.apache.logging.log4j.Logger;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
+/** Normalizes a code and runs a snapshot refresh, logging only when the refresh reports success. */
 public final class TrackedRefreshRunner {
 
     private TrackedRefreshRunner() {
     }
 
+    /** Refreshes the normalized code's snapshot, skipping blanks and logging a successful refresh. */
     public static void refreshSnapshot(String code,
                                        UnaryOperator<String> normalizer,
                                        Predicate<String> refresh,

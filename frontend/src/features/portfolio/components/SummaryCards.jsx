@@ -16,6 +16,7 @@ const VALUE_CARD_DEFS = [
 ];
 
 function PnlCard({ label, value, percent, realValue, realPercent, hideReal, base = 'TRY' }) {
+  const { t } = useTranslation();
   const { format: money, formatCompact: moneyCompact } = useMoney();
   const bigMoney = (v) => moneyCompact(v, base, 100_000);
   const cls = getChangeClass(value);
@@ -52,7 +53,7 @@ function PnlCard({ label, value, percent, realValue, realPercent, hideReal, base
       </div>
       {hasReal && (
         <div className="flex items-baseline justify-between gap-2 pt-1 border-t border-border-default/40">
-          <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle">reel</span>
+          <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-fg-subtle">{t('portfolio.positions.realReturnAbbr', { defaultValue: 'reel' })}</span>
           <div className="flex items-baseline gap-1.5">
             <span className={`text-xs font-mono tabular-nums ${changeColors[realCls]} truncate`} title={money(realValue, base)}>
               {bigMoney(realValue)}

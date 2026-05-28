@@ -15,6 +15,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Base read-side provider for one macro {@link MacroCategory}, served from the in-memory indicator
+ * list (no candles). The response "price" is the indicator's last value; search supports Turkish/
+ * English aliases (e.g. "enflasyon"->TUFE) and display names are i18n-resolved via message source.
+ */
 @Log4j2
 public abstract class MacroMarketAssetProvider implements MarketAssetProvider {
 

@@ -19,6 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Default {@link TaskRefreshRegistry}: runs the per-type market refresher, then notifies the portfolio
+ * and market-cache ports and publishes a market/macro updated event. Downstream notification failures are
+ * logged and swallowed so the refresh itself still counts as done.
+ */
 @Log4j2
 @Component
 class DefaultTaskRefreshRegistry implements TaskRefreshRegistry {

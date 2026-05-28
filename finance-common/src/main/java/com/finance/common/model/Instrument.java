@@ -21,6 +21,11 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * Persistent registry of a tradable/observable asset, uniquely identified by its
+ * ({@link MarketType}, asset code) pair. Instances are created active and may be soft-disabled via
+ * {@link #deactivate()} rather than deleted, preserving referential history.
+ */
 @Getter
 @Setter
 @Builder

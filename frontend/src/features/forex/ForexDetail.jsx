@@ -13,12 +13,12 @@ function ForexHeader({ asset, code }) {
     <>
       {asset.image
         ? (/^https?:\/\//i.test(asset.image)
-            ? <img src={asset.image} alt={code} className="h-6 w-9 rounded-sm object-cover" />
-            : <span className="text-2xl leading-none">{asset.image}</span>)
-        : <span className="text-2xl">💱</span>}
-      <div>
-        <h1 className="text-xl font-bold text-fg">{base}/TRY</h1>
-        <p className="text-xs text-fg-muted">{asset.name}</p>
+            ? <img src={asset.image} alt={code} className="h-6 w-9 shrink-0 rounded-sm object-cover" />
+            : <span className="text-2xl leading-none shrink-0">{asset.image}</span>)
+        : <span className="text-2xl shrink-0">💱</span>}
+      <div className="min-w-0">
+        <h1 className="text-xl font-bold text-fg truncate">{base}/TRY</h1>
+        <p className="text-xs text-fg-muted truncate max-w-[12rem] sm:max-w-[18rem]">{asset.name}</p>
       </div>
     </>
   );

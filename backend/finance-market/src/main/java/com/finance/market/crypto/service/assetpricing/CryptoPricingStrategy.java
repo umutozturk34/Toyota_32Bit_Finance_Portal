@@ -12,6 +12,11 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.util.Set;
 
+/**
+ * Prices crypto in TRY from the cached snapshot's TRY price, falling back to the latest candle close
+ * converted at the current USD/TRY rate. Tether/USDT is treated as already TRY-quoted, so its close
+ * is not cross-converted.
+ */
 @Component
 public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
 
@@ -45,6 +50,7 @@ public class CryptoPricingStrategy extends BaseAssetPricingStrategy {
                 .orElse(current);
     }
 
+    /** Converts a USD candle close to TRY at the current spot, leaving tether/USDT closes as-is. */
     private BigDecimal convertCandleCloseToTry(String assetCode, BigDecimal close) {
         if (close == null) return null;
         if (assetCode == null) return close;

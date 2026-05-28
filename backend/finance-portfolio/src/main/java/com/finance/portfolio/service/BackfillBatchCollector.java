@@ -25,6 +25,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+/**
+ * Per-day building blocks for {@link PortfolioBackfillService}: collects a day's per-asset and
+ * aggregate snapshots into reusable batches, loads historical price series and prior snapshots, and
+ * resolves a day's price (entry price on the entry day, else the nearest price on or before the day
+ * within the configured lookback). Emits a pre-close + zero pair on a lot's exit day.
+ */
 @Component
 public class BackfillBatchCollector {
 
@@ -45,6 +51,7 @@ public class BackfillBatchCollector {
         this.priceLookbackDays = portfolioProperties.getBackfill().getPriceLookbackDays();
     }
 
+    /** Appends a single day's missing per-asset and/or aggregate rows to the batches, skipping work already persisted. */
     public void collectDay(Portfolio portfolio, LocalDate day,
                            List<PortfolioPosition> allPositions,
                            List<DerivativePosition> allDerivatives,
@@ -103,6 +110,7 @@ public class BackfillBatchCollector {
         }
     }
 
+    /** On a lot's exit day, emits a pre-close row (valued at exit price) plus a one-second-later zero row marking the holding gone. */
     public void collectClosingSnapshot(Long portfolioId, List<PortfolioPosition> scopedLots,
                                         LocalDate day, List<PortfolioAssetDailySnapshot> batch,
                                         Map<AssetKey, PortfolioAssetDailySnapshot> priorAssetByKey) {
@@ -159,6 +167,7 @@ public class BackfillBatchCollector {
         return result;
     }
 
+    /** Last persisted unit price (in TRY) before today per asset key, used as a fallback when live prices are missing. */
     public Map<AssetKey, BigDecimal> lastKnownPrices(Long portfolioId, Set<AssetKey> keys,
                                                       LocalDate today, Set<AssetKey> existingKeys) {
         Map<AssetKey, BigDecimal> result = new HashMap<>();
@@ -175,6 +184,7 @@ public class BackfillBatchCollector {
         return result;
     }
 
+    /** Resolves each asset's price for {@code day}: the entry price on its entry day, else the nearest historical price on or before it. */
     public Map<AssetKey, BigDecimal> pricesForDay(List<PortfolioPosition> positions, LocalDate day,
                                                    Map<AssetKey, Map<LocalDate, BigDecimal>> seriesByKey) {
         Map<AssetKey, BigDecimal> result = new HashMap<>();
@@ -220,6 +230,7 @@ public class BackfillBatchCollector {
         return grouped;
     }
 
+    /** Lots held on {@code day}: entered on or before it and not yet exited (exit strictly after the day). */
     public static List<PortfolioPosition> activePositionsOn(List<PortfolioPosition> all, LocalDate day) {
         return all.stream()
                 .filter(p -> p.getEntryDate() != null && !p.getEntryDate().toLocalDate().isAfter(day))

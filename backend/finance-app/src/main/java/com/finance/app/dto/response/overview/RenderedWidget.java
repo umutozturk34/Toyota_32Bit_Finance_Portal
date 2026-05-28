@@ -1,5 +1,6 @@
 package com.finance.app.dto.response.overview;
 
+/** A rendered overview widget: its section id, kind, order, and payload (null {@code data} = empty widget). */
 public record RenderedWidget(
         String sectionId,
         WidgetKind kind,

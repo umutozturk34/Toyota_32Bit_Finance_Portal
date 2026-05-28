@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 import java.util.EnumSet;
 import java.util.Set;
 
+/**
+ * Deposit-rate native currency, parsed from the EVDS series code: after the {@code TP.} prefix the
+ * leading 3-letter token (e.g. USD/EUR) names the deposit currency, defaulting to TRY otherwise.
+ */
 @Component
 public class DepositNativeCurrencyStrategy implements NativeCurrencyStrategy {
 
@@ -18,6 +22,7 @@ public class DepositNativeCurrencyStrategy implements NativeCurrencyStrategy {
         return EnumSet.of(MarketType.MACRO_DEPOSIT);
     }
 
+    /** Reads the 3-letter currency token following the {@code TP.} prefix; falls back to TRY when absent or unknown. */
     @Override
     public Currency resolve(String code) {
         if (code == null || code.isBlank() || !code.startsWith(DEPOSIT_PREFIX)) {

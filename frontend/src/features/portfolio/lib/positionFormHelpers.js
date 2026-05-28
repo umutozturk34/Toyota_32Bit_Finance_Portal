@@ -1,27 +1,21 @@
+import { viopQuoteCurrency } from '../../../shared/utils/priceCurrency';
+
 export const FRACTIONAL_TYPES = ['CRYPTO', 'FOREX', 'COMMODITY'];
-export const SUPPORTED_NATIVE = new Set(['TRY', 'USD', 'EUR']);
 export const ONE_HOUR_MS = 60 * 60 * 1000;
 
-export function resolveNativeCurrency(target, asset) {
+export function resolveNativeCurrency(target) {
   if (!target) return 'TRY';
   if (target.assetType === 'CRYPTO') {
     if ((target.assetCode || '').toLowerCase() === 'tether') return 'TRY';
     return 'USD';
   }
+  // VIOP quote currency = symbol date-stripped suffix (not PARA_BIRIMI metadata).
   if (target.assetType === 'VIOP') {
-    const meta = asset?.metadata?.currency || target.metadata?.currency;
-    if (SUPPORTED_NATIVE.has(meta)) return meta;
-    const code = (target.assetCode || '').toUpperCase();
-    if (code.endsWith('TRY')) return 'TRY';
-    if (code.endsWith('EUR')) return 'EUR';
-    if (code.endsWith('USD')) return 'USD';
-    return 'TRY';
+    return viopQuoteCurrency(target.assetCode);
   }
+  // Commodities are cross-converted to TRY at ingest, so prices are TRY.
   if (target.assetType === 'COMMODITY') {
-    const code = (target.assetCode || '').toUpperCase();
-    if (code.endsWith('TRY') || code.endsWith('TRYG')) return 'TRY';
-    if (code.endsWith('EUR') || code.endsWith('EURG')) return 'EUR';
-    return 'USD';
+    return 'TRY';
   }
   return 'TRY';
 }

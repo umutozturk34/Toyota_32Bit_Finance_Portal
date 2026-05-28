@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/** Read-side provider for commodities; supports segment faceting and groups counts by segment. */
 @Log4j2
 @Service
 public class CommodityMarketAssetProvider extends BaseTrackedMarketAssetProvider<Commodity> {

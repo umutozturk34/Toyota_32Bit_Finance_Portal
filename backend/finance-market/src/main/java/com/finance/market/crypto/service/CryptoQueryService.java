@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
+/** Serves crypto candle history for a tracked coin over a preset period or explicit range. */
 @Log4j2
 @Service
 @RequiredArgsConstructor

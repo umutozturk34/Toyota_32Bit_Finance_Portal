@@ -24,6 +24,11 @@ import java.util.Objects;
                 @Index(name = "idx_forex_candle_currency_date", columnList = "currency_code, candle_date")
         }
 )
+/**
+ * Daily forex rate snapshot (döviz and efektif buying/selling) for a currency, unique per
+ * (currency, date). The {@code currencyCode} column is read-only; the {@code forex} association
+ * owns the foreign key.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

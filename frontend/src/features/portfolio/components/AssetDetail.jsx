@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import useChartRange from '../../../shared/hooks/useChartRange';
-import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, Plus } from 'lucide-react';
+import { ArrowLeft, Hash, DollarSign, BarChart3, Wallet, Calendar, ExternalLink, Plus } from 'lucide-react';
 import { TrendingUp, TrendingDown } from '../../../shared/components/feedback/AnimatedIcons';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '../../../shared/context/useTheme';
@@ -24,6 +25,9 @@ import { LotsTable } from './LotsTable';
 
 const formatEntryDate = (v) => v ? new Date(v).toLocaleDateString(currentLocaleTag(), { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
+const TYPE_ROUTES = { STOCK: '/stocks', CRYPTO: '/crypto', FOREX: '/forex', FUND: '/funds', COMMODITY: '/commodities', VIOP: '/viop' };
+const marketHref = (type, code) => `${TYPE_ROUTES[type] ?? '/market'}/${encodeURIComponent(code)}`;
+
 const STAT_CARD_DEFS = [
   { key: 'quantity', labelKey: 'quantity', Icon: Hash, format: (v) => Number(v).toLocaleString(currentLocaleTag(), { maximumFractionDigits: 6 }) },
   { key: 'entryDate', labelKey: 'entryDate', Icon: Calendar, format: formatEntryDate },
@@ -43,6 +47,7 @@ function AssetChart({ data, isDark, t, convertAt, displayCurrency, nativeCurrenc
 
 export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onEditLot, onDeleteLot, onSellLot, onReopenLot, hasActiveDialog = false }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { isDark } = useTheme();
   const { format: money, formatCompact: moneyCompact } = useMoney();
   const bigMoney = (v) => moneyCompact(v, 'TRY', 100_000);
@@ -90,10 +95,10 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
 
   const entryDateIso = aggEntryDate ? new Date(aggEntryDate).toISOString().slice(0, 10) : null;
   const todayIso = new Date().toISOString().slice(0, 10);
-  const nativeCurrency = resolveNativeCurrency(
-    { assetType: asset?.type, assetCode: asset?.code, metadata: asset?.metadata },
-    asset,
-  );
+  const nativeCurrency = resolveNativeCurrency({
+    assetType: asset?.assetType,
+    assetCode: asset?.assetCode,
+  });
   const targetCurrency = displayCurrency === 'ORIGINAL' || !displayCurrency ? nativeCurrency : displayCurrency;
   const entryPriceConverted = entryDateIso ? convertAt(aggEntryPriceTry, 'TRY', entryDateIso) : null;
   const currentPriceConverted = convertAt(aggCurrentPriceTry, 'TRY', todayIso);
@@ -126,9 +131,9 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
         initial={{ opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className="flex items-center justify-between gap-3"
+        className="flex items-center justify-between gap-3 flex-wrap"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <IconButton
             variant="secondary"
             size={9}
@@ -136,9 +141,9 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
             icon={<ArrowLeft className="h-4 w-4" />}
             aria-label={t('common.back')}
             onClick={onBack}
-            className="hover:-translate-x-0.5"
+            className="hover:-translate-x-0.5 shrink-0"
           />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             {displayBadge ? (
               /^https?:\/\//i.test(displayBadge)
                 ? <img src={displayBadge} alt={displayLabel} className="w-10 h-10 rounded-xl" />
@@ -148,26 +153,37 @@ export default function AssetDetail({ portfolioId, asset, lots = [], onBack, onE
                 {displayBadgeText}
               </span>
             )}
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-fg">{displayLabel}</h1>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg sm:text-xl font-bold text-fg truncate max-w-[180px] sm:max-w-none">{displayLabel}</h1>
                 {lotCount > 1 && (
-                  <span className="inline-flex items-center rounded-md bg-accent/10 text-accent text-[10px] font-bold px-1.5 py-0.5">
+                  <span className="inline-flex items-center rounded-md bg-accent/10 text-accent text-[10px] font-bold px-1.5 py-0.5 shrink-0">
                     {t('assetDetail.lotCount', { count: lotCount, defaultValue: '{{count}} lot' })}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-fg-muted">{displaySub}</p>
+              <p className="text-xs text-fg-muted truncate">{displaySub}</p>
             </div>
           </div>
         </div>
-        <button
-          onClick={() => setAddLotOpen(true)}
-          className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white hover:bg-accent-bright transition-all border-none cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          {t('assetDetail.newLot')}
-        </button>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <button
+            type="button"
+            onClick={() => navigate(marketHref(asset.assetType, asset.assetCode))}
+            className="flex items-center gap-1.5 rounded-lg border border-border-default bg-bg-elevated px-2.5 sm:px-3 py-2 text-xs font-semibold text-fg-muted hover:text-accent hover:border-accent/40 hover:bg-accent/5 transition-all backdrop-blur-sm cursor-pointer"
+            title={t('portfolio.positions.viewOnMarket', { defaultValue: 'Pazar detayı' })}
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{t('portfolio.positions.viewOnMarket', { defaultValue: 'Pazar detayı' })}</span>
+          </button>
+          <button
+            onClick={() => setAddLotOpen(true)}
+            className="flex items-center gap-2 rounded-lg bg-accent px-3 sm:px-4 py-2 text-sm font-semibold text-white hover:bg-accent-bright transition-all border-none cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            {t('assetDetail.newLot')}
+          </button>
+        </div>
       </motion.div>
 
       <motion.div

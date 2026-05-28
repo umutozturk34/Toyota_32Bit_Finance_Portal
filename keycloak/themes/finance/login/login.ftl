@@ -32,10 +32,16 @@
 
                 <div class="form-group">
                     <label for="password">${msg("password")}</label>
-                    <input tabindex="2" id="password" name="password" type="password" autocomplete="off"
-                        aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
-                        placeholder="${msg("password")}"
-                    />
+                    <div class="fp-password-wrap">
+                        <input tabindex="2" id="password" name="password" type="password" autocomplete="off"
+                            aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>"
+                            placeholder="${msg("password")}"
+                        />
+                        <button type="button" class="fp-password-toggle" data-target="password" aria-label="${msg("showPassword")}" tabindex="-1">
+                            <svg class="fp-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg class="fp-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3.5 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">

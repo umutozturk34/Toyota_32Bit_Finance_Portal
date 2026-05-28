@@ -13,6 +13,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Persistence for per-asset {@link PortfolioAssetDailySnapshot} rows. Beyond range reads, it provides
+ * "latest per asset" / "latest per tracked asset before cutoff" lookups used for daily-delta baselines
+ * and aggregation, plus scoped deletes for backfill recomputation.
+ */
 @Repository
 public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<PortfolioAssetDailySnapshot, Long> {
 
@@ -24,6 +29,7 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
     Optional<PortfolioAssetDailySnapshot> findFirstByPortfolioIdAndAssetTypeAndAssetCodeAndCreatedAtLessThanOrderByCreatedAtDesc(
             Long portfolioId, AssetType assetType, String assetCode, LocalDateTime cutoff);
 
+    /** Most recent row before {@code cutoff} for each given tracked asset (used to seed backfill daily deltas). */
     @Query("""
             SELECT s FROM PortfolioAssetDailySnapshot s
             WHERE s.portfolioId = :pid
@@ -45,6 +51,7 @@ public interface PortfolioAssetDailySnapshotRepository extends JpaRepository<Por
     Optional<PortfolioAssetDailySnapshot> findFirstByPortfolioIdAndTrackedAssetIdAndCreatedAtGreaterThanOrderByCreatedAtAsc(
             Long portfolioId, Long trackedAssetId, LocalDateTime cutoff);
 
+    /** The single most recent row per (asset type, asset code) for the portfolio — its current per-asset state. */
     @Query("""
             SELECT s FROM PortfolioAssetDailySnapshot s
             WHERE s.portfolioId = :pid

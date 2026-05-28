@@ -2,6 +2,7 @@ package com.finance.notification.news;
 
 import com.finance.notification.config.NotificationDispatchProperties;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class NewsReader {
@@ -63,6 +65,7 @@ public class NewsReader {
                     List.copyOf(categorySet),
                     Collections.unmodifiableList(titles));
         } catch (DataAccessException ex) {
+            log.warn("News digest read failed cutoff={} cause={}", cutoff, ex.toString());
             return RecentNews.empty();
         }
     }

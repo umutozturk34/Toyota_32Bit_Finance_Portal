@@ -8,6 +8,7 @@ import LoadingState from '../../shared/components/feedback/LoadingState';
 import ErrorState from '../../shared/components/feedback/ErrorState';
 import SummaryCards from './components/SummaryCards';
 import PositionsTable from './components/PositionsTable';
+import PositionSearchBar from './components/PositionSearchBar';
 import AllocationChart from './components/AllocationChart';
 import RealizedPnlChart from './components/RealizedPnlChart';
 import PerformanceChart from './components/PerformanceChart';
@@ -165,12 +166,12 @@ export default function Portfolio() {
 
           {summary && <SummaryCards summary={summary} portfolioId={portfolio?.id} />}
 
-          <div className="flex gap-1 rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 w-fit">
+          <div className="flex max-w-full gap-1 overflow-x-auto rounded-xl border border-border-default bg-bg-elevated backdrop-blur-md p-1 w-fit">
             {tabs.map(({ id, label, Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className="relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer bg-transparent"
+                className="relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 sm:px-4 py-2 text-xs font-medium transition-all border-none cursor-pointer bg-transparent"
               >
                 {activeTab === id && (
                   <motion.span
@@ -189,10 +190,11 @@ export default function Portfolio() {
 
           <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
             <div className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 min-w-0">
                 <AllocationChart allocation={allocation} portfolioId={portfolio?.id} />
                 <RealizedPnlChart portfolioId={portfolio?.id} />
               </div>
+              <PositionSearchBar />
               <div className="min-w-0">
                 <PositionsTable
                   portfolioId={portfolio?.id}

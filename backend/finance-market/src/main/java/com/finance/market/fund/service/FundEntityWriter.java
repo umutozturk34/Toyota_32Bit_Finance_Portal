@@ -27,6 +27,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Persists fund snapshots and candles, auto-tracks newly seen funds, and recomputes change percent
+ * against the prior candle. Candle batches drop rows with no/zero price before an idempotent upsert.
+ */
 @Log4j2
 @Component
 public class FundEntityWriter implements MarketEntityWriter {
@@ -74,6 +78,7 @@ public class FundEntityWriter implements MarketEntityWriter {
         return toPersist;
     }
 
+    /** Recomputes change vs. the candle before {@code currentDate}; saves and returns true only if it changed. */
     public boolean refreshChangePercent(Fund fund, LocalDateTime currentDate) {
         if (fund.getPrice() == null || currentDate == null) return false;
         BigDecimal previousPrice = fundCandleRepository

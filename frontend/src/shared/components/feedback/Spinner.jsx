@@ -1,3 +1,5 @@
+import i18n from '../../i18n/config';
+
 const SIZE_CLASSES = {
   xs: 'h-2.5 w-2.5 border-[1.5px]',
   sm: 'h-4 w-4 border-2',
@@ -17,7 +19,7 @@ export default function Spinner({ size = 'sm', tone = 'accent', className, ...re
   return (
     <span
       role="status"
-      aria-label={rest['aria-label'] ?? 'loading'}
+      aria-label={rest['aria-label'] ?? i18n.t('common.loading')}
       className={cx(
         'inline-block rounded-full animate-spin',
         SIZE_CLASSES[size] ?? SIZE_CLASSES.sm,

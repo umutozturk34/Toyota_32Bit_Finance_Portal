@@ -25,10 +25,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Batch-fetches bond coupon-rate/price history from EVDS across multiple bonds at once: it unions
+ * each bond's date window, queries the combined .ORAN/price codes window-by-window, and maps results
+ * back per ISIN (skipping out-of-range and already-stored dates). Throws only if every window fails.
+ */
 @Component
 @Log4j2
 public class BondRateFetcher {
 
+    /** One bond's rate-history fetch target: its codes, entity, and date window to fill. */
     public record BondHistoryTarget(String isinCode, String priceCode, Bond bond,
                                      LocalDate startDate, LocalDate endDate) {}
 
@@ -49,6 +55,7 @@ public class BondRateFetcher {
         this.maxDaysPerRequest = bondProperties.getMaxDaysPerRequest();
     }
 
+    /** Fetches rate history for all targets, returning new (unstored) records keyed by ISIN. */
     public Map<String, List<BondRateHistory>> fetchBatch(List<BondHistoryTarget> targets) {
         Map<String, List<BondRateHistory>> byIsin = new HashMap<>();
         if (targets == null || targets.isEmpty()) return byIsin;

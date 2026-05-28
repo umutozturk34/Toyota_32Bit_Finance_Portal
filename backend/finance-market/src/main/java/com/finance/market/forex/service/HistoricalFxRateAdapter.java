@@ -18,6 +18,13 @@ import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+/**
+ * Date-accurate {@link FxRateProvider} backed by stored forex candles (reads {@code sellingPrice}).
+ * For a past date it uses that date's rate, falling back to the closest PRIOR available day
+ * ({@code headMap} ≤ target, {@code lastKey}) bounded by {@link FxProperties#getLookbackDays()};
+ * it never borrows a future date or today's spot for a past date. Cross-rates pivot through TRY
+ * (and X/TRY is the inverse of the TRY/X series). Per-pair series are Caffeine-cached.
+ */
 @Log4j2
 @Component
 public class HistoricalFxRateAdapter implements FxRateProvider {
@@ -54,6 +61,7 @@ public class HistoricalFxRateAdapter implements FxRateProvider {
         return closestPriorRate(series, date);
     }
 
+    /** Returns the rate series clipped to {@code [fromDate, toDate]} inclusive; identity pairs yield 1 per day. */
     @Override
     public SortedMap<LocalDate, BigDecimal> seriesAt(Currency from, Currency to,
                                                      LocalDate fromDate, LocalDate toDate) {
@@ -84,6 +92,10 @@ public class HistoricalFxRateAdapter implements FxRateProvider {
         return loaded;
     }
 
+    /**
+     * Builds the {@code from->to} series: X/TRY is read directly, TRY/X is the inverse of X/TRY,
+     * and a non-TRY pair is composed by crossing both legs through TRY.
+     */
     private SortedMap<LocalDate, BigDecimal> loadSeries(Currency from, Currency to) {
         if (from == Currency.TRY) {
             SortedMap<LocalDate, BigDecimal> reverse = loadSeries(to, Currency.TRY);
@@ -133,6 +145,10 @@ public class HistoricalFxRateAdapter implements FxRateProvider {
         return out;
     }
 
+    /**
+     * Picks the rate on {@code target} or the nearest earlier date, returning empty when the gap
+     * exceeds the configured lookback so stale rates are not silently applied.
+     */
     private Optional<BigDecimal> closestPriorRate(SortedMap<LocalDate, BigDecimal> series,
                                                   LocalDate target) {
         SortedMap<LocalDate, BigDecimal> head = series.headMap(target.plusDays(1));

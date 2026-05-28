@@ -16,6 +16,7 @@ import com.finance.portfolio.mapper.PortfolioResponseMapperImpl;
 import com.finance.portfolio.model.AssetType;
 import com.finance.portfolio.model.PortfolioPosition;
 import com.finance.portfolio.repository.PortfolioAssetDailySnapshotRepository;
+import com.finance.portfolio.repository.PortfolioDailySnapshotRepository;
 import com.finance.portfolio.repository.PortfolioPositionRepository;
 import com.finance.portfolio.service.support.CountingAssetPricingPort;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,7 @@ class PortfolioSummaryServiceTest {
 
     @Mock private PortfolioPositionRepository positionRepository;
     @Mock private PortfolioAssetDailySnapshotRepository assetSnapshotRepository;
+    @Mock private PortfolioDailySnapshotRepository portfolioSnapshotRepository;
     @Mock private DerivativePositionRepository derivativePositionRepository;
     @Mock private com.finance.market.viop.repository.ViopCandleRepository viopCandleRepository;
     @Mock private RealReturnCalculator realReturnCalculator;
@@ -56,8 +58,10 @@ class PortfolioSummaryServiceTest {
         MultiCurrencyPnlCalculator multiCurrency = new MultiCurrencyPnlCalculator(
                 (type, code, from, to) -> java.util.Map.of());
         service = new PortfolioSummaryService(counting, positionRepository, responseMapper,
-                assetSnapshotRepository, derivativePositionRepository, viopCandleRepository,
+                assetSnapshotRepository, portfolioSnapshotRepository, derivativePositionRepository, viopCandleRepository,
                 allocationCalculator, derivativeFormatter, realReturnCalculator, multiCurrency);
+        org.mockito.Mockito.lenient().when(portfolioSnapshotRepository.findRecentByPortfolioId(org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(java.util.List.of());
         org.mockito.Mockito.lenient().when(derivativePositionRepository.findOpenByPortfolio(org.mockito.ArgumentMatchers.anyLong()))
                 .thenReturn(java.util.List.of());
         org.mockito.Mockito.lenient().when(viopCandleRepository.findFirstBySymbolAndCloseGreaterThanOrderByCandleDateDesc(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any(java.math.BigDecimal.class)))
@@ -457,6 +461,38 @@ class PortfolioSummaryServiceTest {
         assertThat(result.lotCount()).isEqualTo(1);
         assertThat(result.totalQuantity()).isEqualByComparingTo("10");
         assertThat(result.totalMarketValueTry()).isEqualByComparingTo("600.0000");
+    }
+
+    @Test
+    void shouldFallBackToPortfolioSnapshotDelta_whenAssetSnapshotsHaveNullDailyPnl() {
+        counting.seedPrice("CRYPTO", "bitcoin", new BigDecimal("100000"));
+        when(positionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(stubPosition(AssetType.CRYPTO, "bitcoin",
+                        new BigDecimal("1"), new BigDecimal("98000"))));
+        when(assetSnapshotRepository.findLatestPerAsset(1L)).thenReturn(List.of());
+        com.finance.portfolio.model.PortfolioDailySnapshot latest = com.finance.portfolio.model.PortfolioDailySnapshot.builder()
+                .totalValueTry(new BigDecimal("100000.0000")).build();
+        com.finance.portfolio.model.PortfolioDailySnapshot prior = com.finance.portfolio.model.PortfolioDailySnapshot.builder()
+                .totalValueTry(new BigDecimal("97500.0000")).build();
+        when(portfolioSnapshotRepository.findRecentByPortfolioId(org.mockito.ArgumentMatchers.eq(1L), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(List.of(latest, prior));
+
+        PortfolioSummaryResponse summary = service.getSummary(1L, null);
+
+        assertThat(summary.dailyPnlTry()).isEqualByComparingTo(new BigDecimal("2500.0000"));
+    }
+
+    @Test
+    void shouldReturnNullDailyPnl_whenNoFallbackHistoryExists() {
+        counting.seedPrice("CRYPTO", "bitcoin", new BigDecimal("100000"));
+        when(positionRepository.findByPortfolioId(1L))
+                .thenReturn(List.of(stubPosition(AssetType.CRYPTO, "bitcoin",
+                        new BigDecimal("1"), new BigDecimal("98000"))));
+        when(assetSnapshotRepository.findLatestPerAsset(1L)).thenReturn(List.of());
+
+        PortfolioSummaryResponse summary = service.getSummary(1L, null);
+
+        assertThat(summary.dailyPnlTry()).isNull();
     }
 
     @Test

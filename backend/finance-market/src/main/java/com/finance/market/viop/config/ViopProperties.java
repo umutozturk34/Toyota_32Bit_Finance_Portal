@@ -4,6 +4,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 
+/**
+ * İş Yatırım VIOP integration settings (endpoint paths, user agent, session TTL, timeouts, max
+ * history years). The compact constructor supplies production defaults for any unset value.
+ */
 @ConfigurationProperties(prefix = "app.market.viop")
 public record ViopProperties(
         String baseUrl,

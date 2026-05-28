@@ -47,16 +47,17 @@ public class InflationBeaterService {
     private static final BigDecimal NOTIONAL_AMOUNT = new BigDecimal("10000");
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 
+    // Codes and labels follow macro.yaml: MT02=3M (M3), MT03=6M (M6), MT04=1Y (M12). MT12 does not
+    // exist in the config and must not be referenced.
     private static final List<CuratedAsset> CURATED_DEPOSITS = List.of(
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT01", "TRY 1H Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT03", "TRY 1M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT06", "TRY 3M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT12", "TRY 6M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT03", "USD 1M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT06", "USD 3M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT12", "USD 6M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.EURTAS.MT06", "EUR 3M Mevduat"),
-            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.EURTAS.MT12", "EUR 6M Mevduat")
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT02", "TRY 3M Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT03", "TRY 6M Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.TRYTAS.MT04", "TRY 1Y Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT02", "USD 3M Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT03", "USD 6M Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.USDTAS.MT04", "USD 1Y Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.EURTAS.MT02", "EUR 3M Mevduat"),
+            new CuratedAsset(AnalyticsInstrumentType.DEPOSIT, "TP.EURTAS.MT03", "EUR 6M Mevduat")
     );
 
     private static final Map<TrackedAssetType, AnalyticsInstrumentType> TYPE_MAP = Map.of(

@@ -96,6 +96,31 @@
             document.documentElement.setAttribute('data-theme', theme);
         })();
     </script>
+    <script>
+        (function() {
+            function bind() {
+                var toggles = document.querySelectorAll('.fp-password-toggle');
+                for (var i = 0; i < toggles.length; i++) {
+                    toggles[i].addEventListener('click', function() {
+                        var input = document.getElementById(this.getAttribute('data-target'));
+                        if (!input) return;
+                        var show = input.type === 'password';
+                        input.type = show ? 'text' : 'password';
+                        var eye = this.querySelector('.fp-eye');
+                        var eyeOff = this.querySelector('.fp-eye-off');
+                        if (eye) eye.style.display = show ? 'none' : '';
+                        if (eyeOff) eyeOff.style.display = show ? '' : 'none';
+                        this.setAttribute('aria-pressed', show ? 'true' : 'false');
+                    });
+                }
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', bind);
+            } else {
+                bind();
+            }
+        })();
+    </script>
 </body>
 </html>
 </#macro>

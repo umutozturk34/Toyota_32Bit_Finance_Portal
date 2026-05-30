@@ -10,6 +10,10 @@ on:
     types: [completed]
     branches: [main]
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -17,14 +21,20 @@ jobs:
     steps:
       - name: Roll forward
         uses: appleboy/ssh-action@v1
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.VDS_HOST }}
           username: ${{ secrets.VDS_USER }}
           key: ${{ secrets.VDS_SSH_KEY }}
+          envs: GHCR_TOKEN
           script: |
             set -e
             cd "${{ secrets.VDS_APP_DIR }}"
-            git pull --ff-only
+            git fetch origin main
+            git reset --hard origin/main
+            git clean -fd
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
             docker image prune -f

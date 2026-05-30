@@ -144,7 +144,7 @@ services:
       - finance-network
 
   pdf-service:
-    image: ${PDF_SERVICE_IMAGE:-finance-portal-pdf-service:latest}
+    image: ${PDF_SERVICE_IMAGE:-ghcr.io/umutozturk34/finance-portal-pdf-service:latest}
     build:
       context: ./pdf-service
     container_name: finance-pdf-service

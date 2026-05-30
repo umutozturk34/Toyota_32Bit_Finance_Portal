@@ -20,7 +20,7 @@
 		<repository>
 			<id>github</id>
 			<name>GitHub Packages</name>
-			<url>https://maven.pkg.github.com/umutozturk34/finance_portal</url>
+			<url>https://maven.pkg.github.com/umutozturk34/Toyota_32Bit_Finance_Portal</url>
 		</repository>
 	</distributionManagement>
 

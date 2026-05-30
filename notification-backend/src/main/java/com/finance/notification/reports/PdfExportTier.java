@@ -8,6 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
+/**
+ * Rate-limit tier for the PDF export endpoint, applying a low hourly quota to the expensive
+ * portfolio-pdf generation to protect the external pdf-service.
+ */
 @Component
 @Order(15)
 public class PdfExportTier implements RateLimitTier {

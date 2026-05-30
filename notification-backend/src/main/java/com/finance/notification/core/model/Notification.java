@@ -22,6 +22,10 @@ import org.hibernate.type.SqlTypes;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+/**
+ * A persisted in-app notification for one user. Unread state is the absence of {@code readAt}, and
+ * an optional {@code expiresAt} marks it stale. Type-specific data lives in the JSONB metadata map.
+ */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -83,6 +87,7 @@ public class Notification {
         return userSub.equals(candidateUserSub);
     }
 
+    /** Marks read on first call; idempotent so the original read timestamp is preserved. */
     public void markRead() {
         if (readAt == null) {
             readAt = LocalDateTime.now();

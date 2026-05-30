@@ -28,6 +28,11 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * A user's price alert on a tracked asset. The threshold is stored in the asset's native currency;
+ * {@code marketType}/{@code assetCode} are transient projections of the linked tracked asset. An
+ * alert evaluates only while active and untriggered, and deactivates itself once it fires.
+ */
 @Getter
 @Setter
 @Builder
@@ -104,6 +109,7 @@ public class PriceAlert {
         return active && triggeredAt == null;
     }
 
+    /** Returns whether the alert fires at {@code currentPrice} (TRY); false when ineligible or price is null. */
     public boolean evaluate(BigDecimal currentPrice) {
         if (!shouldEvaluate() || currentPrice == null) {
             return false;

@@ -2,6 +2,7 @@ package com.finance.notification.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/** Sizes and TTLs for the in-memory caches (event dedup, session tracker, Keycloak profiles). */
 @ConfigurationProperties("notification.cache")
 public record NotificationCacheProperties(
         long dedupMaxEntries,

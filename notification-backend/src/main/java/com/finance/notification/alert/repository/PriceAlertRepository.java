@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.math.BigDecimal;
 import java.util.List;
 
+/** Persistence for {@link PriceAlert}, including duplicate detection and per-user/per-market lookups. */
 public interface PriceAlertRepository extends JpaRepository<PriceAlert, Long> {
 
     Page<PriceAlert> findByUserSubOrderByCreatedAtDesc(String userSub, Pageable pageable);

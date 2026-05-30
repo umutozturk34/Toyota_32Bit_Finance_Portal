@@ -18,14 +18,16 @@
   "editUsernameAllowed": true,
   "sslRequired": "none",
   "smtpServer": {
-    "host": "mailpit",
-    "port": "1025",
-    "from": "noreply@finance.com",
+    "host": "${SPRING_MAIL_HOST}",
+    "port": "${SPRING_MAIL_PORT}",
+    "from": "${NOTIFICATION_FROM_ADDRESS}",
     "fromDisplayName": "Finance Portal",
-    "replyTo": "noreply@finance.com",
+    "replyTo": "${NOTIFICATION_FROM_ADDRESS}",
     "ssl": "false",
-    "starttls": "false",
-    "auth": "false"
+    "starttls": "${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE}",
+    "auth": "${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH}",
+    "user": "${SPRING_MAIL_USERNAME}",
+    "password": "${SPRING_MAIL_PASSWORD}"
   },
   "eventsEnabled": true,
   "eventsExpiration": 2592000,
@@ -123,6 +125,7 @@
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "redirectUris": [
+        "${FRONTEND_BASE_URL}/*",
         "http://localhost/*",
         "http://localhost:3000/*",
         "http://localhost:5173/*",
@@ -132,6 +135,7 @@
         "exp://*"
       ],
       "webOrigins": [
+        "${FRONTEND_BASE_URL}",
         "http://localhost",
         "http://localhost:3000",
         "http://localhost:5173",

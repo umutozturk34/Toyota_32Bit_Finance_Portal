@@ -4,6 +4,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 
+/**
+ * Bound {@code app.user-security.*} configuration governing the email-change verification flow
+ * (attempt cap, code length, TTL), password-reset link lifespan, and the Keycloak client/attribute
+ * names used when syncing theme and locale.
+ */
 @ConfigurationProperties("app.user-security")
 public record UserSecurityProperties(
         EmailChange emailChange,

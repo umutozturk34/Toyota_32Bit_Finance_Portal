@@ -13,6 +13,11 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
+/**
+ * Resolves market sessions from configured {@link MarketHoursProperties}, evaluating trading days and
+ * open/close times in each market's own zone. A schedule whose open equals close is treated as always
+ * open (e.g. 24/7 markets), and the next-transition search scans forward up to the configured lookahead.
+ */
 @Component
 @RequiredArgsConstructor
 public class DefaultMarketSessionResolver implements MarketSessionResolver {

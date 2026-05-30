@@ -8,6 +8,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
+/**
+ * Provides the primary {@link ObjectMapper}: ISO-8601 dates (not numeric timestamps) and lenient
+ * deserialization that ignores unknown fields, so payload schema additions stay backward-compatible.
+ */
 @Configuration
 public class NotificationJacksonConfig {
 

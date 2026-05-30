@@ -2,6 +2,11 @@ package com.finance.notification.core.model;
 
 import java.util.function.Predicate;
 
+/**
+ * The notification categories the service can emit. Each constant binds to the
+ * {@link NotificationPreference} flags that decide whether the email and in-app channels are wanted,
+ * keeping channel routing data-driven rather than branching per type.
+ */
 public enum NotificationType {
     PRICE_ALERT_FIRED(NotificationPreference::isEmailPriceAlerts, NotificationPreference::isInappPriceAlerts),
     WATCHLIST_DELTA(NotificationPreference::isEmailWatchlist, NotificationPreference::isInappWatchlist),

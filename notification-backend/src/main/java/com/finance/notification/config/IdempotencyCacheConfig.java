@@ -8,6 +8,11 @@ import org.springframework.context.annotation.Configuration;
 
 import java.time.Duration;
 
+/**
+ * Defines the per-consumer dedup caches of already-processed Kafka event ids. Each listener uses its
+ * own named cache so that consuming the same event on multiple topics doesn't suppress one another,
+ * giving each consumer independent at-most-once handling within the TTL window.
+ */
 @Configuration
 @RequiredArgsConstructor
 public class IdempotencyCacheConfig {

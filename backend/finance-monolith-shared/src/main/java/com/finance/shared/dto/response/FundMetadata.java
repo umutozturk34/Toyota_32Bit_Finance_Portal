@@ -3,6 +3,10 @@ package com.finance.shared.dto.response;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * Fund-specific {@link MarketAssetMetadata}: classification, size/investor stats, category ranking,
+ * trailing returns across windows, and asset-class allocation breakdown.
+ */
 public record FundMetadata(
         String fundType,
         BigDecimal portfolioSize,
@@ -25,5 +29,6 @@ public record FundMetadata(
         List<AllocationEntry> allocations
 ) implements MarketAssetMetadata {
 
+    /** One slice of a fund's portfolio: an asset class and its weight in percent. */
     public record AllocationEntry(String assetClass, BigDecimal percentage) {}
 }

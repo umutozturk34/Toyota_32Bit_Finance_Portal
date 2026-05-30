@@ -1,5 +1,9 @@
 package com.finance.shared.util;
 
+/**
+ * Central registry of Redis key names and prefixes shared across modules, keeping cache key
+ * conventions in one place so producers and consumers cannot drift apart.
+ */
 public final class RedisKeys {
 
     private static final String MARKET_PREFIX = "market:";
@@ -14,6 +18,7 @@ public final class RedisKeys {
     private RedisKeys() {
     }
 
+    /** Key prefix under which a market's per-asset snapshot hashes are stored (market label lowercased). */
     public static String marketSnapshotPrefix(String marketLabel) {
         return MARKET_PREFIX + marketLabel.toLowerCase() + SNAPSHOT_SUFFIX;
     }

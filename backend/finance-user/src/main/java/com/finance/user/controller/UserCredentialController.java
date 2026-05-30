@@ -24,6 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * REST API for the current user's security credentials: password change (via Keycloak action email),
+ * the code-verified email-change flow (initiate/confirm/pending/cancel), and two-factor management
+ * (status, disable, list/remove devices). All endpoints are authenticated and scoped to the JWT subject.
+ */
 @RestController
 @RequestMapping("/api/v1/user/credentials")
 @PreAuthorize("isAuthenticated()")

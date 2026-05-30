@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
+/** Payload for a fired price alert, carrying the triggering price and threshold for rendering. */
 public record PriceAlertPayload(
         Long alertId,
         MarketType marketType,

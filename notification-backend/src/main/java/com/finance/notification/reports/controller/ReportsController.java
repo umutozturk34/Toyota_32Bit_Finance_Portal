@@ -20,6 +20,10 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * Generates and streams a portfolio PDF report as a file download. Verifies the caller owns the
+ * requested portfolio (else 403) and forwards the caller's token so report data is fetched as them.
+ */
 @RestController
 @RequestMapping("/api/v1/reports")
 @RequiredArgsConstructor

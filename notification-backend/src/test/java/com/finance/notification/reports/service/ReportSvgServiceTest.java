@@ -161,7 +161,7 @@ class ReportSvgServiceTest {
 
         String result = service.allocationDonut(items, ReportPalette.DARK);
 
-        assertThat(result).contains("97%");
+        assertThat(result).contains("97,0%");
         assertThat(result).doesNotContain(">3%<");
     }
 
@@ -174,6 +174,19 @@ class ReportSvgServiceTest {
         String result = service.allocationDonut(items, ReportPalette.DARK);
 
         assertThat(result).contains("#cccccc");
+        assertThat(result).contains("100%");
+    }
+
+    @Test
+    void should_renderFullRing_when_singleAllocationIsHundredPercent() {
+        List<AllocationViewItem> items = List.of(
+                new AllocationViewItem("Crypto", new BigDecimal("100"), new BigDecimal("100"), "#5e6ad2"));
+
+        String result = service.allocationDonut(items, ReportPalette.DARK);
+
+        // A 360-degree arc is degenerate, so the full ring must be drawn as a stroked circle.
+        assertThat(result).contains("<circle");
+        assertThat(result).contains("#5e6ad2");
         assertThat(result).contains("100%");
     }
 }

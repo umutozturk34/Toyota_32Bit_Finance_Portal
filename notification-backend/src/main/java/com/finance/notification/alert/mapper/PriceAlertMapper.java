@@ -10,6 +10,10 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 
+/**
+ * MapStruct mapper between price alert entities, request DTOs, snapshot-enriched responses and the
+ * fired-alert notification payload.
+ */
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface PriceAlertMapper {
 

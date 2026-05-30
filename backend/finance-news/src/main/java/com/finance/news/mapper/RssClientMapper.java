@@ -17,6 +17,11 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Converts ROME {@code SyndFeed} entries into raw article data: extracts plain text and rich HTML
+ * content, resolves a cover image (enclosure/thumbnail/first inline img) and strips it from the body,
+ * derives a guid, and normalizes the publish date into the configured timezone.
+ */
 @Component
 @Log4j2
 public class RssClientMapper {
@@ -29,6 +34,7 @@ public class RssClientMapper {
         this.richHtmlMinLength = newsProperties.getMapping().getRichHtmlMinLength();
     }
 
+    /** Maps every feed entry that has both a title and a link into raw article data. */
     public List<RssArticleData> toArticleDataList(SyndFeed feed) {
         return feed.getEntries().stream()
                 .filter(entry -> entry.getTitle() != null && entry.getLink() != null)
@@ -86,6 +92,7 @@ public class RssClientMapper {
         return text != null && text.contains("<") && text.length() > richHtmlMinLength;
     }
 
+    /** Returns the first non-blank {@code content:encoded} body from standard contents or foreign markup. */
     private String extractContent(SyndEntry entry) {
         List<SyndContent> contents = entry.getContents();
         if (contents != null && !contents.isEmpty()) {
@@ -115,6 +122,7 @@ public class RssClientMapper {
         return null;
     }
 
+    /** Resolves a cover image from an image enclosure, else a media thumbnail/content or image element. */
     private String extractImageUrl(SyndEntry entry) {
         List<SyndEnclosure> enclosures = entry.getEnclosures();
         if (enclosures != null && !enclosures.isEmpty()) {

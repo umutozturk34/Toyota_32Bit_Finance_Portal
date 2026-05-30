@@ -7,6 +7,11 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Optional;
 
+/**
+ * Sort options for watchlist items. DB-backed sorts map to an entity field; price/change sorts have
+ * no DB column and instead supply a comparator applied after items are enriched with live snapshot
+ * data. Each constant is exactly one of the two.
+ */
 public enum WatchlistSortBy {
     CUSTOM("displayOrder", null),
     NAME("assetCode", null),

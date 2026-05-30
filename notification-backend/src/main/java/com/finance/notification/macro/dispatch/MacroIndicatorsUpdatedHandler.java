@@ -21,6 +21,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Renders the macro-indicators digest: sorts changes by largest absolute percent move, builds a
+ * localized title/body preview and a rich template model (per-row formatting, direction arrows,
+ * category accents and up/down summary counts) for the email view.
+ */
 @Component
 @RequiredArgsConstructor
 public class MacroIndicatorsUpdatedHandler implements NotificationHandler {

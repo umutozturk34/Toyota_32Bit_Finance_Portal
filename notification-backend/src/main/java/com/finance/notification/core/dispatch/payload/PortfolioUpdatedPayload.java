@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
+/** Payload reporting a user's refreshed portfolio totals and daily P/L across their portfolios. */
 public record PortfolioUpdatedPayload(
         BigDecimal totalValue,
         BigDecimal dailyPnl,

@@ -2,6 +2,7 @@ package com.finance.notification.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/** Keycloak admin-lookup tuning: user-search result cap and token-expiry fallback. */
 @ConfigurationProperties("notification.keycloak")
 public record NotificationKeycloakProperties(
         Integer searchMaxCap,

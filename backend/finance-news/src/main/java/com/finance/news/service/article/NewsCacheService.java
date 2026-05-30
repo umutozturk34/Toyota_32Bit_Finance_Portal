@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.util.Optional;
 
+/** Read-through Redis cache for single articles keyed by id, with a configurable TTL; misses load from the DB and backfill the cache. */
 @Service
 @Log4j2
 public class NewsCacheService {
@@ -38,6 +39,7 @@ public class NewsCacheService {
         this.cacheTtl = Duration.ofHours(newsProperties.getCacheTtlHours());
     }
 
+    /** Returns the cached article, falling back to the repository and caching the result on a miss. */
     public Optional<NewsArticle> getById(Long id) {
         String key = CACHE_ARTICLE + id;
         Object cached = redisTemplate.opsForValue().get(key);

@@ -5,6 +5,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Checks whether a portfolio belongs to a user, reading the replicated portfolios table directly. */
 @Service
 @RequiredArgsConstructor
 public class PortfolioOwnershipReader {

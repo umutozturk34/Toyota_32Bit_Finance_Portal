@@ -16,6 +16,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Admin-only REST API for user administration: paged listing/count and ban/unban (account
+ * enable/disable) of Keycloak users. All endpoints require the ADMIN role.
+ */
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @PreAuthorize("hasRole('ADMIN')")

@@ -9,6 +9,10 @@ import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
 
+/**
+ * Configures the shared Kafka error handler: fixed-interval retries, then routing the failed record
+ * to a per-topic {@code <topic>.dlq} dead-letter topic so poison messages don't block the partition.
+ */
 @Log4j2
 @Configuration
 @RequiredArgsConstructor

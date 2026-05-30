@@ -14,3 +14,29 @@ keycloak:
     cache-ttl-seconds: 15
     cache-max-size: 2000
     admin-role: ADMIN
+
+app:
+  security:
+    cors:
+      allowed-origin-patterns:
+        - http://localhost
+        - http://localhost:*
+        - http://127.0.0.1
+        - http://127.0.0.1:*
+        - ${FRONTEND_BASE_URL:http://localhost}
+      allowed-methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+        - PATCH
+      allowed-headers:
+        - Authorization
+        - Content-Type
+        - Cache-Control
+        - X-Requested-With
+      exposed-headers:
+        - Authorization
+      allow-credentials: true
+      max-age-seconds: 3600

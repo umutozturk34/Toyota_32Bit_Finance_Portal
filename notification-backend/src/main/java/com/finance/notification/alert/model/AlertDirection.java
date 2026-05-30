@@ -2,6 +2,11 @@ package com.finance.notification.alert.model;
 
 import java.math.BigDecimal;
 
+/**
+ * Trigger condition for a price alert. Absolute directions ({@code ABOVE}/{@code BELOW}) compare the
+ * current price to the threshold; percent directions compare the move from the reference price to a
+ * percentage threshold. Each constant supplies its own {@link #isFired} predicate.
+ */
 public enum AlertDirection {
     ABOVE(true) {
         @Override
@@ -52,5 +57,11 @@ public enum AlertDirection {
         return this == CHANGE_PCT_UP || this == CHANGE_PCT_DOWN;
     }
 
+    /**
+     * Whether the alert condition holds for this direction.
+     *
+     * @param lastPrice reference price for percent-based directions; ignored by absolute ones
+     * @param threshold absolute price or percentage move depending on the direction
+     */
     public abstract boolean isFired(BigDecimal currentPrice, BigDecimal lastPrice, BigDecimal threshold);
 }

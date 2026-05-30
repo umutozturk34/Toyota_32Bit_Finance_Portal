@@ -7,6 +7,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * News ingest and query settings: per-source article cap, cache TTL, per-category list limits, and
+ * mapping thresholds that decide when feed content is treated as rich HTML vs a short description.
+ */
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "app.news")

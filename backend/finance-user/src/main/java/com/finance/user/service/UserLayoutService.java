@@ -12,6 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Reads and saves a user's dashboard layout. Reads return an empty layout when none is stored; saves
+ * run the overview payload through all registered {@link OverviewSaveSanitizer}s before persisting.
+ */
 @Service
 @RequiredArgsConstructor
 public class UserLayoutService {
@@ -27,6 +31,7 @@ public class UserLayoutService {
                 .orElseGet(() -> mapper.toResponse(UserLayout.emptyFor(userSub)));
     }
 
+    /** Sanitizes the overview through the configured chain, then upserts and flushes the user's layout. */
     @Transactional
     public UserLayoutResponse saveOverview(String userSub, JsonNode overview) {
         JsonNode cleaned = overview != null ? overview : JsonNodeFactory.instance.objectNode();

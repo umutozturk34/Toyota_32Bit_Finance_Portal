@@ -19,6 +19,11 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
 
+/**
+ * Minute-by-minute scan that detects market open/close transitions by comparing each market's current
+ * session against the last-seen value in the tracker, firing an opened/closed fanout only on a real
+ * edge (and never on the first observation, which seeds the tracker without notifying).
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor

@@ -1,5 +1,6 @@
 package com.finance.notification.core.dto;
 
+/** Partial preference update; boxed booleans are nullable so only supplied flags are changed. */
 public record NotificationPreferenceUpdateRequest(
         Boolean emailEnabled,
         Boolean emailPriceAlerts,

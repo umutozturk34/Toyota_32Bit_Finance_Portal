@@ -22,6 +22,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+/**
+ * Fans a domain event out to many recipients by paging over notification-preference rows and
+ * delegating each page to the dispatcher's prepare/persist path. The bulk variant resolves payloads
+ * for a whole page at once; the per-recipient variant builds an optional payload per user (skipping
+ * those that yield none). Page-level prepare failures are counted, not propagated.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -33,6 +39,10 @@ public class NotificationFanoutService {
     private final UserPreferenceCacheService userPreferenceCacheService;
     private final UserStatusPort userStatus;
 
+    /**
+     * Fans out using a resolver that produces the payload map for an entire page in one call,
+     * keyed by user subject; recipients absent from the map are skipped.
+     */
     @Transactional
     public <P extends NotificationPayload> FanoutResult fanoutBulk(
             String eventLabel,
@@ -41,6 +51,10 @@ public class NotificationFanoutService {
         return runPaginated(pageFetcher, page -> processPage(eventLabel, page, pagePayloadResolver.apply(page)));
     }
 
+    /**
+     * Fans out using a per-recipient payload factory; a recipient for which the factory returns
+     * empty receives nothing.
+     */
     @Transactional
     public <P extends NotificationPayload> FanoutResult fanout(
             String eventLabel,
@@ -109,5 +123,6 @@ public class NotificationFanoutService {
         static final PageOutcome EMPTY = new PageOutcome(0, 0);
     }
 
+    /** Aggregate fanout outcome across all pages: deliverable rows versus per-recipient failures. */
     public record FanoutResult(int dispatched, int failed) {}
 }

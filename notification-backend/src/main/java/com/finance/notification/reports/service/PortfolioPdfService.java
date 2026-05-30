@@ -33,6 +33,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Builds the portfolio PDF report end to end: fetches report data, derives allocation/winners/losers
+ * view items, renders donut and performance SVG charts via {@link ReportSvgService}, processes the
+ * Thymeleaf HTML template (theme/locale/currency aware) and posts it to the external pdf-service to
+ * produce the PDF bytes. Empty portfolios are rejected and pipeline failures surface as
+ * {@link PdfGenerationException}.
+ */
 @Log4j2
 @Service
 public class PortfolioPdfService {
@@ -73,6 +80,14 @@ public class PortfolioPdfService {
         this.requestTimeout = Duration.ofMillis(this.requestTimeoutMs);
     }
 
+    /**
+     * Produces the portfolio report PDF for the given request.
+     *
+     * @param accessToken caller's bearer token, forwarded when fetching their portfolio data
+     * @return the rendered PDF bytes
+     * @throws BadRequestException when the portfolio has no positions
+     * @throws PdfGenerationException when data fetch, rendering or the pdf-service call fails
+     */
     public byte[] generate(PortfolioPdfRequest request, String userSub, String accessToken) {
         long start = System.currentTimeMillis();
         try {
@@ -194,6 +209,7 @@ public class PortfolioPdfService {
         return out;
     }
 
+    /** Builds the winners or losers list from realized P/L, sorted by magnitude with bar widths relative to the largest. */
     private List<RealizedViewItem> buildRealized(List<ReportAllocation> raw, boolean winners, Locale locale) {
         if (raw == null || raw.isEmpty()) return List.of();
         List<ReportAllocation> filtered = raw.stream()

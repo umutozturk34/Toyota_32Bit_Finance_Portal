@@ -22,6 +22,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST API over the authenticated user's in-app notifications: paged listing (optionally
+ * unread-only or text-searched), unread count, marking read (single/all) and deletion.
+ */
 @RestController
 @RequestMapping("/api/v1/notifications")
 @PreAuthorize("isAuthenticated()")

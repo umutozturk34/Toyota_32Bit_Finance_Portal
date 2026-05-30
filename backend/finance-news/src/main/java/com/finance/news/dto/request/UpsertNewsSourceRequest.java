@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
+/** Admin payload to create or update a news source; name and URL are required, the rest default. */
 @Getter
 @Setter
 public class UpsertNewsSourceRequest {

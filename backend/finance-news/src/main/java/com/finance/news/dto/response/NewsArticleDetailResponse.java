@@ -2,6 +2,7 @@ package com.finance.news.dto.response;
 
 import java.time.LocalDateTime;
 
+/** Full single-article view including body content and original link. */
 public record NewsArticleDetailResponse(
         Long id,
         String title,

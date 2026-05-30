@@ -8,6 +8,10 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
+/**
+ * Kafka consumer that seeds default notification preferences for each newly registered user, so they
+ * have a baseline before any notification is dispatched.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor

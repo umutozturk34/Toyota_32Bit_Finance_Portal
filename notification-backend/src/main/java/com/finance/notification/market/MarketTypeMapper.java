@@ -8,6 +8,10 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Translates the shared {@link MarketType} into this service's {@link SessionMarket}. Returns empty
+ * for market types with no session counterpart, letting callers skip session-scoped handling.
+ */
 public final class MarketTypeMapper {
 
     private static final Map<MarketType, SessionMarket> MAPPING = buildMapping();

@@ -5,6 +5,7 @@ import com.finance.notification.core.model.NotificationType;
 import java.util.HashMap;
 import java.util.Map;
 
+/** Payload signalling a market session closed. */
 public record MarketClosedPayload(String market) implements NotificationPayload {
 
     @Override

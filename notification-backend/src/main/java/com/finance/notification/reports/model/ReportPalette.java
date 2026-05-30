@@ -1,5 +1,9 @@
 package com.finance.notification.reports.model;
 
+/**
+ * Theme color palette for the PDF report (background, text, borders, success/danger accents).
+ * Provides DARK and LIGHT presets selected by theme name, defaulting to DARK.
+ */
 public record ReportPalette(
         String bg,
         String card,

@@ -16,11 +16,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * In-memory registry tracking long-running tasks (schedulers, manual triggers) across the monolith
+ * and streaming their state to subscribers over SSE. At most one task per type may run concurrently;
+ * starting a duplicate type throws. State and history live only in this process and are lost on restart.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
 public class TaskTrackingService {
 
+    /** Immutable snapshot of a tracked task's lifecycle; {@code completedAt}/{@code error} are null while running. */
     public record TaskInfo(String type, String status, String message,
                            Instant startedAt, Instant completedAt, String error) {
     }
@@ -34,6 +40,11 @@ public class TaskTrackingService {
         return runningTasks.containsKey(taskType);
     }
 
+    /**
+     * Registers a task as running and broadcasts the change.
+     *
+     * @throws com.finance.common.exception.TaskAlreadyRunningException if a task of this type is already running
+     */
     public TaskInfo startTask(String taskType, String message) {
         TaskInfo info = new TaskInfo(taskType, "RUNNING", message, Instant.now(), null, null);
         TaskInfo existing = runningTasks.putIfAbsent(taskType, info);
@@ -61,6 +72,7 @@ public class TaskTrackingService {
         broadcastStatus();
     }
 
+    /** Registers a non-timing-out SSE subscriber, immediately pushing the current status snapshot. */
     public SseEmitter subscribeToStatus() {
         SseEmitter emitter = new SseEmitter(0L);
         statusEmitters.add(emitter);
@@ -93,6 +105,10 @@ public class TaskTrackingService {
         }
     }
 
+    /**
+     * Runs {@code task} synchronously under start/complete/fail tracking; exceptions are caught,
+     * recorded as a failed task, and logged rather than propagated.
+     */
     public void runTracked(String taskType, String description, Runnable task) {
         TaskInfo started = startTask(taskType, description);
         try {
@@ -129,6 +145,7 @@ public class TaskTrackingService {
                 info.startedAt().toString(), completedAt, durationMs, info.error());
     }
 
+    /** Prepends to history, evicting oldest entries beyond the configured max-history bound. */
     private void addToHistory(TaskInfo info) {
         taskHistory.addFirst(info);
         while (taskHistory.size() > appProperties.getTask().getMaxHistory()) {

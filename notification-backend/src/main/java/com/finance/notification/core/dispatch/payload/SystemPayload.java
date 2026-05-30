@@ -5,6 +5,7 @@ import com.finance.notification.core.model.NotificationType;
 import java.util.HashMap;
 import java.util.Map;
 
+/** Payload for system/broadcast notifications, with an optional issuer for audit. */
 public record SystemPayload(
         String title,
         String body,

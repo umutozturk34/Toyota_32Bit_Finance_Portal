@@ -5,6 +5,11 @@ import com.finance.common.model.Currency;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+/**
+ * Currency-tagged monetary value object. Immutable; amounts are normalized to {@link #SCALE}
+ * decimals (HALF_UP) on construction. Arithmetic across differing currencies is rejected; use
+ * {@link #inCurrency} to convert first.
+ */
 public record Money(BigDecimal amount, Currency currency) {
 
     public static final int SCALE = 4;
@@ -52,6 +57,12 @@ public record Money(BigDecimal amount, Currency currency) {
         return new Money(amount.multiply(factor), currency);
     }
 
+    /**
+     * Converts to {@code target} at the given positive rate; returns {@code this} unchanged when
+     * already in the target currency.
+     *
+     * @throws IllegalArgumentException if the target is null or the rate is null/non-positive
+     */
     public Money inCurrency(Currency target, BigDecimal rate) {
         if (target == null) {
             throw new IllegalArgumentException("target currency cannot be null");

@@ -16,6 +16,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Returns the current open/closed session and next transition time for every tracked market, so
+ * clients can show live market-status. Markets with no resolvable session are omitted.
+ */
 @RestController
 @RequestMapping("/api/v1/market-status")
 @PreAuthorize("isAuthenticated()")

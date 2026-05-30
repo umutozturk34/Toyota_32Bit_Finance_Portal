@@ -16,6 +16,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Reads a digest of articles published within the configured recent window: total count, distinct
+ * categories and a few sample titles. Read failures degrade to an empty digest rather than failing
+ * the fanout.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -36,6 +41,7 @@ public class NewsReader {
     private final JdbcTemplate jdbcTemplate;
     private final NotificationDispatchProperties dispatchProperties;
 
+    /** Snapshot of recent news for the digest: total count plus distinct categories and sample titles. */
     public record RecentNews(int totalCount, List<String> categories, List<String> sampleTitles) {
         public static RecentNews empty() {
             return new RecentNews(0, List.of(), List.of());

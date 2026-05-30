@@ -10,6 +10,10 @@ import com.finance.news.model.NewsSource;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
+/**
+ * An ingested news article. The {@code link} is unique and acts as the natural dedup key alongside
+ * {@code guid}; {@code category} is assigned by the classifier at ingest time.
+ */
 @Entity
 @Getter
 @Setter
@@ -75,10 +79,12 @@ public class NewsArticle {
     @Column(name = "guid", length = 1024)
     private String guid;
 
+    /** Classifies and sets this article's category from its title/description, falling back to the source default. */
     public void resolveCategory(String defaultCategory) {
         this.category = NewsCategoryResolver.resolve(defaultCategory, this.title, this.description);
     }
 
+    /** True when missing a publish date or older than the given age in hours. */
     @JsonIgnore
     public boolean isStale(int maxAgeHours) {
         if (publishedAt == null) {
@@ -87,6 +93,7 @@ public class NewsArticle {
         return ChronoUnit.HOURS.between(publishedAt, LocalDateTime.now()) > maxAgeHours;
     }
 
+    /** Hours since publication, or {@code -1} when the publish date is unknown. */
     @JsonIgnore
     public long ageInHours() {
         if (publishedAt == null) {

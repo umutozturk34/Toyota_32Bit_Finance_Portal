@@ -20,6 +20,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Manages user preferences and keeps theme/locale in sync with Keycloak. First read lazily seeds a
+ * default row (hydrating theme/locale from Keycloak attributes) and publishes a {@code UserRegisteredEvent},
+ * effectively treating the initial preference fetch as user onboarding. Updates are partial and push
+ * theme/language back to Keycloak, failing the update if that sync fails.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -33,6 +39,10 @@ public class UserPreferenceService {
     private final UserSecurityProperties securityProperties;
     private final EventPublisherPort eventPublisher;
 
+    /**
+     * Returns the user's preferences, lazily creating the default row on first access (seeded from
+     * Keycloak attributes) and publishing a {@code UserRegisteredEvent} for downstream onboarding.
+     */
     @Transactional
     public UserPreferenceResponse getOrDefault(String userSub) {
         Optional<UserPreference> existing = repository.findById(userSub);
@@ -45,6 +55,7 @@ public class UserPreferenceService {
         return mapper.toResponse(saved);
     }
 
+    /** Best-effort override of the seed's theme/language from Keycloak attributes; failures leave defaults intact. */
     private void hydrateFromKeycloak(String userSub, UserPreference target) {
         try {
             keycloakAdminClient.getUserAttribute(userSub, securityProperties.keycloak().themeAttribute())
@@ -73,6 +84,10 @@ public class UserPreferenceService {
         return repository.findById(userSub).map(mapper::toResponse);
     }
 
+    /**
+     * Applies a partial preference update (null fields untouched). Language and theme are synced to
+     * Keycloak first; a sync failure aborts the whole update so persisted state never diverges.
+     */
     @Transactional
     public UserPreferenceResponse upsert(String userSub, UserPreferenceUpdateRequest request) {
         if (request.language() != null) {
@@ -88,6 +103,7 @@ public class UserPreferenceService {
         return mapper.toResponse(saved);
     }
 
+    /** Writes a single attribute to Keycloak, translating any failure into a business error to abort the update. */
     private void syncToKeycloak(String userSub, String attribute, String value) {
         try {
             keycloakAdminClient.setUserAttribute(userSub, attribute, value);

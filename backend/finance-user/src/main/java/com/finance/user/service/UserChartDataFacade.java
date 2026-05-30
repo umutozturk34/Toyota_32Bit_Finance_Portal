@@ -14,6 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
+/**
+ * Coordinates reads and writes of a user's chart preferences and drawings, enforcing the configured
+ * per-asset-type rules (allowed chart types, indicators, fib tools, drawing types, feature flags) and
+ * count limits before delegating the actual upsert to the underlying services.
+ */
 @Service
 @RequiredArgsConstructor
 public class UserChartDataFacade {
@@ -29,6 +34,7 @@ public class UserChartDataFacade {
         return new UserChartBundleResponse(prefs, drawings);
     }
 
+    /** Validates the config against asset-type rules and count limits, then upserts it. */
     public UserChartPreferenceResponse upsertPreferences(String userSub, TrackedAssetType type, String code,
                                                           JsonNode config) {
         validateAssetTypeRules(type, config);
@@ -36,6 +42,7 @@ public class UserChartDataFacade {
         return preferenceService.upsert(userSub, type, code, config);
     }
 
+    /** Validates the drawings against asset-type rules and the per-asset count limit, then upserts them. */
     public UserChartDrawingResponse upsertDrawings(String userSub, TrackedAssetType type, String code,
                                                     JsonNode drawings) {
         validateDrawingsAssetType(type, drawings);

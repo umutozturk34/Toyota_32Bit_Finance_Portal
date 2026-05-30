@@ -2,6 +2,7 @@ package com.finance.shared.dto.response;
 
 import java.math.BigDecimal;
 
+/** Commodity-specific {@link MarketAssetMetadata}: USD prices, trading unit, and intraday OHLC/volume. */
 public record CommodityMetadata(
         BigDecimal currentPriceUsd,
         BigDecimal previousPriceUsd,

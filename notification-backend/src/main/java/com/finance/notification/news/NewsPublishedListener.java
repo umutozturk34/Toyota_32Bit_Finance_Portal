@@ -14,6 +14,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
+/**
+ * Kafka consumer for news-published events. Deduplicates by event id, reads a fresh digest of recent
+ * articles (skipping fanout when none qualify), then fans the digest out to news-subscribed users.
+ */
 @Log4j2
 @Component
 public class NewsPublishedListener {

@@ -18,6 +18,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 
+/**
+ * Fetches and parses RSS/Atom feeds over the dedicated news {@code WebClient}, guarded by a circuit
+ * breaker and retry; wraps empty responses and any network/parse failure in {@link ExternalApiException}.
+ */
 @Component
 @Log4j2
 public class RssClient implements NewsSourceFetcher {

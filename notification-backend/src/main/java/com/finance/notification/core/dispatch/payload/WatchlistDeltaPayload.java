@@ -8,6 +8,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Payload describing notable price moves on a user's watchlist since they last viewed it, one
+ * {@link DeltaItem} per item that moved beyond the alert threshold.
+ */
 public record WatchlistDeltaPayload(
         Long watchlistId,
         String watchlistName,
@@ -16,6 +20,7 @@ public record WatchlistDeltaPayload(
         List<DeltaItem> items
 ) implements NotificationPayload {
 
+    /** A single watchlist item's move from its last-seen price to the current price. */
     public record DeltaItem(
             Long watchlistItemId,
             String assetCode,

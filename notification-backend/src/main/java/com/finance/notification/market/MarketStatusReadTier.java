@@ -10,6 +10,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
+/**
+ * Rate-limit tier for GET {@code /api/v1/market-status}, applying a configurable per-minute capacity
+ * to the frequently-polled market-status reads independently of the global limit.
+ */
 @Component
 @Order(22)
 @RequiredArgsConstructor

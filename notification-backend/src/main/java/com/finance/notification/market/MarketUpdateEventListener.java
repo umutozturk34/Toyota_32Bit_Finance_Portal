@@ -10,6 +10,11 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
+/**
+ * Kafka consumer that, on a market-data-updated event, triggers price-alert and watchlist evaluation
+ * for the affected market. Deduplicates by event id; runs in its own consumer group so it processes
+ * the same topic independently of the data-updated notification listener.
+ */
 @Log4j2
 @Component
 public class MarketUpdateEventListener {

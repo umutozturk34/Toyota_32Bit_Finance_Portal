@@ -5,11 +5,13 @@ import com.finance.news.model.NewsCategory;
 import java.util.List;
 import java.util.Map;
 
+/** Namespace for the classifier configuration types: the parsed runtime config, its raw JSON shape, and the rule-keyword buckets. */
 public final class NewsCategoryResolverConfig {
 
     private NewsCategoryResolverConfig() {
     }
 
+    /** Immutable, enum-keyed classifier config: per-category keywords, special rule keywords, and summary-diversity categories. */
     public record ResolverConfig(
             Map<NewsCategory, List<String>> categoryKeywords,
             RuleKeywords ruleKeywords,
@@ -17,12 +19,14 @@ public final class NewsCategoryResolverConfig {
     ) {
     }
 
+    /** Mutable JSON binding form with string-keyed categories, converted to {@link ResolverConfig} after loading. */
     public static class RawResolverConfig {
         public Map<String, List<String>> categoryKeywords;
         public RuleKeywords ruleKeywords;
         public List<String> summaryDiversityCategories;
     }
 
+    /** Named keyword buckets driving the classifier's strict rules (absolute crypto/parity, bond priority/context, macro policy, corporate signals). */
     public static class RuleKeywords {
         public List<String> summaryHint;
         public List<String> generalMarketBasket;

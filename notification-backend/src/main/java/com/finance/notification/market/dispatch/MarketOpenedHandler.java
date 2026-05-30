@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.Locale;
 import java.util.Map;
 
+/** Renders {@link NotificationType#MARKET_OPENED} notifications with a localized market label. */
 @Component
 @RequiredArgsConstructor
 public class MarketOpenedHandler implements NotificationHandler {

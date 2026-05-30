@@ -16,6 +16,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Renders {@link NotificationType#PORTFOLIO_UPDATED} notifications, choosing a morning/evening/default
+ * title from the event source and formatting total value and daily P/L into the localized body.
+ */
 @Component
 @RequiredArgsConstructor
 public class PortfolioUpdatedHandler implements NotificationHandler {

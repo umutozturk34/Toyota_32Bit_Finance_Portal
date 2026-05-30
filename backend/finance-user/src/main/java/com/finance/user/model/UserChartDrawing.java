@@ -28,6 +28,10 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 
+/**
+ * A user's saved chart annotations (trend lines, shapes) for one tracked asset, stored as opaque
+ * JSON. Unique per (user, tracked asset); the drawing payload's structure is owned by the frontend.
+ */
 @Getter
 @Setter
 @Builder

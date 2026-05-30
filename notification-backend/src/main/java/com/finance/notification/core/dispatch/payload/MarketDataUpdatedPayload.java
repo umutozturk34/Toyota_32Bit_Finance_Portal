@@ -5,6 +5,7 @@ import com.finance.notification.core.model.NotificationType;
 import java.util.HashMap;
 import java.util.Map;
 
+/** Payload signalling that a market's snapshot data was refreshed. */
 public record MarketDataUpdatedPayload(String market, String source) implements NotificationPayload {
 
     @Override

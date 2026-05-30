@@ -6,6 +6,11 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * Per-user application preferences keyed by Keycloak subject: theme, language, timezone, default
+ * chart range, and the onboarding-completed flag. One row per user; {@code onboardingCompleted}
+ * tracks whether the first-run onboarding flow has been finished.
+ */
 @Getter
 @Setter
 @Builder
@@ -56,6 +61,7 @@ public class UserPreference {
         updatedAt = LocalDateTime.now();
     }
 
+    /** Builds the default preference row for a new user: dark theme, Turkish, Europe/Istanbul, 1M range, onboarding not yet completed. */
     public static UserPreference defaultsFor(String userSub) {
         return UserPreference.builder()
                 .userSub(userSub)

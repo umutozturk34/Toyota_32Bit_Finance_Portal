@@ -19,6 +19,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Renders {@link NotificationType#WATCHLIST_DELTA} notifications: a localized title/body that varies
+ * for single vs multiple moved items (with a bounded body preview and "and N more"), plus a per-item
+ * template model with formatted price, last-seen price and signed delta percentage.
+ */
 @Component
 @RequiredArgsConstructor
 public class WatchlistDeltaHandler implements NotificationHandler {

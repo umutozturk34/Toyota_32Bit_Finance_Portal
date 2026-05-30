@@ -5,6 +5,11 @@ import lombok.extern.log4j.Log4j2;
 
 import java.util.List;
 
+/**
+ * Circuit-breaker guard for batch external-API updates: aborts a batch by throwing when the failure
+ * rate exceeds 50% on a sufficiently large sample, so transient noise is tolerated but a systemic
+ * outage fails fast instead of corrupting data with stale values.
+ */
 @Log4j2
 public final class BatchFailureGuard {
 
@@ -17,6 +22,12 @@ public final class BatchFailureGuard {
         check(successCount, failCount, failedItems, type, DEFAULT_MIN_SAMPLE);
     }
 
+    /**
+     * Aborts the batch when the failure rate exceeds the threshold and the sample reaches
+     * {@code minSample}.
+     *
+     * @throws com.finance.common.exception.BusinessException tagged {@code CRITICAL_API_FAILURE} when tripped
+     */
     public static void check(int successCount, int failCount,
                              List<String> failedItems, String type, int minSample) {
         int total = successCount + failCount;

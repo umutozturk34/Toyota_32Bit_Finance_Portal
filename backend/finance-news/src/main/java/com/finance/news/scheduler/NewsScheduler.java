@@ -10,6 +10,11 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+/**
+ * Triggers news ingestion three times daily (morning/afternoon/evening) on configurable crons. Each
+ * run is tracked as a task and, only when new articles were saved, publishes a {@link NewsPublishedEvent}
+ * to Kafka so downstream consumers can react.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -34,6 +39,7 @@ public class NewsScheduler {
         executeUpdate("scheduled-news-evening", "Scheduled evening news update (21:30)");
     }
 
+    /** Runs a tracked news update and emits a {@link NewsPublishedEvent} only if at least one new article was saved. */
     private void executeUpdate(String taskType, String description) {
         taskTracker.runTracked(taskType, description, () -> {
             int saved = newsDataService.updateNews();

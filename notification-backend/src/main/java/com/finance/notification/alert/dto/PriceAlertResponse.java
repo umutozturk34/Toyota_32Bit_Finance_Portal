@@ -6,6 +6,10 @@ import com.finance.notification.alert.model.AlertDirection;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Price alert as returned to the client, enriched with live snapshot data (current price, change,
+ * image) when available; snapshot-derived fields are null when no snapshot exists.
+ */
 public record PriceAlertResponse(
         Long id,
         MarketType marketType,

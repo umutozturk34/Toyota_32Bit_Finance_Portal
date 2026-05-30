@@ -139,7 +139,7 @@ export default function OverviewWidgetCanvas({
   return (
     <div
       ref={containerRef}
-      className="overview-canvas"
+      className={`overview-canvas${pendingDropSize ? ' is-dropping' : ''}`}
       onDragOver={handleDragOver}
       style={{ minHeight: width > 0 ? undefined : 600 }}
     >

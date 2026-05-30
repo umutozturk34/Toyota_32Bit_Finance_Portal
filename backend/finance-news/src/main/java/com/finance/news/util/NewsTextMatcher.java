@@ -7,6 +7,11 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+/**
+ * Turkish-aware text matching/scoring primitives for the classifier: lowercasing, tokenization, and
+ * keyword matching where short keywords require exact token hits while longer ones allow substring
+ * matches. Scoring weights short keywords and phrases more heavily.
+ */
 public final class NewsTextMatcher {
 
     private static final Locale TR = Locale.forLanguageTag("tr");
@@ -16,6 +21,7 @@ public final class NewsTextMatcher {
     private NewsTextMatcher() {
     }
 
+    /** Sets the keyword-length cutoff above which substring matching replaces exact-token matching. */
     static void overrideSubstringMatchThreshold(int threshold) {
         SUBSTRING_MATCH_THRESHOLD = threshold;
     }
@@ -45,6 +51,7 @@ public final class NewsTextMatcher {
         return tokens;
     }
 
+    /** Matches short keywords as exact tokens (avoiding false substrings) and longer ones as substrings. */
     public static boolean matchesKeyword(String text, Set<String> tokens, String keyword) {
         String normalized = normalize(keyword);
         if (normalized.isBlank()) {
@@ -77,6 +84,7 @@ public final class NewsTextMatcher {
         return count;
     }
 
+    /** Sums per-keyword weights for every matching keyword, giving a weighted relevance score. */
     public static int scoreKeywords(String text, Set<String> tokens, List<String> keywords) {
         int score = 0;
         for (String keyword : keywords) {
@@ -87,6 +95,7 @@ public final class NewsTextMatcher {
         return score;
     }
 
+    /** Weight: 3 for very short keywords, 2 for multi-word phrases, 1 for ordinary single words. */
     public static int keywordWeight(String keyword) {
         String normalized = normalize(keyword);
         if (normalized.length() <= 3) {

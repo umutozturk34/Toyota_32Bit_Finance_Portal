@@ -16,6 +16,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
+/**
+ * Kafka consumer that, on a market-data-updated event, notifies users subscribed to data updates for
+ * that session market. Deduplicates by event id and skips market types that have no session-market
+ * mapping. Runs in its own consumer group, separate from the alert/watchlist evaluation listener.
+ */
 @Log4j2
 @Component
 public class MarketDataUpdateListener {

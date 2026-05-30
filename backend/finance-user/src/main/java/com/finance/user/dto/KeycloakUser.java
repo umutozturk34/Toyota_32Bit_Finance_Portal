@@ -2,6 +2,7 @@ package com.finance.user.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+/** Deserialized Keycloak Admin REST user representation; unknown fields are ignored to tolerate API drift. */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record KeycloakUser(
         String id,

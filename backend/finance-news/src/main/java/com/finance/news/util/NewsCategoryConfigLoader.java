@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/** Loads the classifier's keyword/rule configuration from a bundled JSON resource into an immutable {@code ResolverConfig}. */
 public final class NewsCategoryConfigLoader {
 
     private static final String KEYWORDS_RESOURCE = "news-category-keywords.json";
@@ -18,6 +19,7 @@ public final class NewsCategoryConfigLoader {
     private NewsCategoryConfigLoader() {
     }
 
+    /** Reads and parses the keyword config resource; throws {@link IllegalStateException} if missing or unreadable. */
     public static NewsCategoryResolverConfig.ResolverConfig load() {
         try (InputStream in = NewsCategoryConfigLoader.class.getClassLoader()
                 .getResourceAsStream(KEYWORDS_RESOURCE)) {

@@ -16,6 +16,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST API for the authenticated user's per-channel/per-type notification preferences; the GET
+ * returns persisted preferences or defaults, and the PATCH performs a partial upsert.
+ */
 @RestController
 @RequestMapping("/api/v1/notification-preferences")
 @PreAuthorize("isAuthenticated()")

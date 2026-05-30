@@ -9,6 +9,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Resolves a source string to its configured slot by case-insensitive keyword containment.
+ * An unmatched source yields empty (logged), letting handlers fall back to a generic title.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor

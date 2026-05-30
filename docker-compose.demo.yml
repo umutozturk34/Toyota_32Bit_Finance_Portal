@@ -1,0 +1,61 @@
+# Demo / full-data mode (recommended) — layer this on top of the base file:
+#   docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d --build
+#
+# It adds a "demouser" account (realm-demo.json) and seeds ~4 years of market data
+# plus a sample Turkish-investor portfolio. The base file alone is "empty mode":
+#   docker compose up -d --build
+#
+# The seed only adds DATA tables; the schema and config rows (instruments,
+# tracked_assets, ...) stay owned by Flyway, so nothing here fights the migrator.
+services:
+  keycloak:
+    environment:
+      # The demo realm provisions the "demouser" account; its password must reach
+      # the Keycloak container or realm import fails the password policy.
+      DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-Demo123!}
+    volumes:
+      - ./keycloak/realm-demo.json:/opt/keycloak/data/import/realm-finance.json:ro
+
+  db-seed:
+    image: postgres:15-alpine
+    container_name: finance-db-seed
+    restart: "no"
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: finance_user
+      PGPASSWORD: ${DB_PASSWORD}
+      PGDATABASE: finance_db
+    volumes:
+      - ./seed:/seed:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+    command:
+      - |
+        set -e
+        SEEDED=$$(psql -tAc 'SELECT count(*) FROM stock_candles' 2>/dev/null | tr -dc '0-9')
+        if [ -n "$$SEEDED" ] && [ "$$SEEDED" != "0" ]; then
+          echo "[db-seed] market data already present ($$SEEDED stock candles), skipping."
+          exit 0
+        fi
+        echo "[db-seed] loading market data + demo portfolio (~1 minute)..."
+        { echo 'SET session_replication_role = replica;'; gunzip -c /seed/market_data.sql.gz; cat /seed/demo_portfolio.sql; } | psql -v ON_ERROR_STOP=1 -q
+        echo "[db-seed] done — log in as demouser to see the sample portfolio."
+    depends_on:
+      db:
+        condition: service_healthy
+      db-migrator:
+        condition: service_completed_successfully
+    networks:
+      - finance-network
+
+  backend:
+    depends_on:
+      db-seed:
+        condition: service_completed_successfully
+
+  notification-backend:
+    depends_on:
+      db-seed:
+        condition: service_completed_successfully

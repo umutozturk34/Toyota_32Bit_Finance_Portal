@@ -12,6 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
+/**
+ * Scheduled housekeeping that purges successfully SENT outbox rows older than the configured
+ * retention, keeping the outbox table from growing unbounded.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor

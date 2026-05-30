@@ -22,6 +22,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * WebClient that fetches the portfolio view (summary, positions, allocation) and performance series
+ * from the main backend on the caller's behalf (bearer token forwarded), assembling them into a
+ * {@link PortfolioReportBundle} for PDF rendering.
+ */
 @Log4j2
 @Component
 public class PortfolioDataClient {
@@ -81,6 +86,7 @@ public class PortfolioDataClient {
         }
     }
 
+    /** Generic wrapper mirroring the backend's standard API response shape. */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ApiEnvelope<T>(boolean success, String message, T data) {}
 

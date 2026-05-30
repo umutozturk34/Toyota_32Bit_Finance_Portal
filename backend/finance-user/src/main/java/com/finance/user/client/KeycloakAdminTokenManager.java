@@ -18,6 +18,11 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Caches and refreshes the Keycloak admin access token (held in an {@link AtomicReference}). Returns
+ * the cached token while still valid within the configured safety margin, otherwise fetches a fresh
+ * one via the password grant. {@link #invalidate()} forces a refetch after an upstream 401.
+ */
 @Log4j2
 @Component
 public class KeycloakAdminTokenManager {
@@ -32,6 +37,7 @@ public class KeycloakAdminTokenManager {
         this.properties = properties;
     }
 
+    /** Returns a valid admin token, refreshing the cache if the current one is missing or near expiry. */
     public String getToken() {
         TokenSnapshot current = snapshot.get();
         if (current != null && current.isValid(properties.getTokenSafetyMarginSeconds())) {

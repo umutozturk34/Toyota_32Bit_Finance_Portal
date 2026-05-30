@@ -5,6 +5,7 @@ import com.finance.notification.market.session.SessionMarket;
 
 import java.time.Instant;
 
+/** Current session state of a market plus when it next opens/closes; null transition means unknown. */
 public record MarketStatusResponse(
         SessionMarket market,
         MarketSession session,

@@ -9,6 +9,11 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.util.Optional;
 
+/**
+ * Remembers the last observed session per market (TTL-bounded Caffeine cache) so the scheduler can
+ * detect open/close edges across scans. An absent entry means no prior observation, suppressing a
+ * spurious transition on startup.
+ */
 @Log4j2
 @Component
 public class MarketSessionTracker {

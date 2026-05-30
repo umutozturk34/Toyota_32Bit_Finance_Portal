@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/** Bound {@code keycloak.admin.*} configuration: realm, admin credentials, token endpoint, and refresh safety margin for the admin client. */
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "keycloak.admin")

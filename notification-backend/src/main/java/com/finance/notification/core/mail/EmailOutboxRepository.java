@@ -11,6 +11,11 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
+/**
+ * Persistence for {@link EmailOutbox}. Provides the due-PENDING fetch (pessimistically locked,
+ * skip-locked via zero lock timeout so concurrent relay workers don't contend) and an atomic
+ * RELAYED-to-PROCESSING claim used to guarantee each row is sent by exactly one worker.
+ */
 public interface EmailOutboxRepository extends JpaRepository<EmailOutbox, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

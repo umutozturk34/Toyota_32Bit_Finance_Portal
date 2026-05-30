@@ -7,6 +7,29 @@ import { GiGoldBar } from 'react-icons/gi';
 import { useWidgetDefinitions } from '../../../shared/hooks/useWidgetDefinitions';
 import { localizeWatchlistName } from '../../../shared/utils/watchlistName';
 
+function setWidgetDragImage(e, label, accent) {
+  const chip = document.createElement('div');
+  chip.style.cssText = [
+    'position:fixed', 'top:-1000px', 'left:-1000px', 'z-index:-1',
+    'display:flex', 'align-items:center', 'gap:8px',
+    'padding:9px 14px 9px 10px', 'border-radius:11px',
+    'font-family:var(--font-display, ui-sans-serif, system-ui, sans-serif)',
+    'font-size:13px', 'font-weight:600', 'letter-spacing:-0.01em', 'white-space:nowrap',
+    'color:var(--color-fg, #e8e8f0)',
+    'background:rgba(18,19,30,0.97)',
+    `border:1px solid ${accent}66`,
+    `box-shadow:0 12px 34px rgba(0,0,0,0.5), 0 0 0 1px ${accent}33, 0 0 26px ${accent}55`,
+  ].join(';');
+  const swatch = document.createElement('span');
+  swatch.style.cssText = `width:18px;height:18px;border-radius:6px;flex:none;background:${accent}26;box-shadow:inset 0 0 0 1.6px ${accent}`;
+  const text = document.createElement('span');
+  text.textContent = label;
+  chip.append(swatch, text);
+  document.body.appendChild(chip);
+  e.dataTransfer.setDragImage(chip, 14, 20);
+  requestAnimationFrame(() => chip.remove());
+}
+
 const SINGLETON_TILE_BASES = [
   { id: 'tile-movers-stock', kind: 'MOVERS', labelKey: 'widgetTray.movers.STOCK', config: { market: 'STOCK' }, accent: '#10b981', Icon: TrendingUp },
   { id: 'tile-movers-crypto', kind: 'MOVERS', labelKey: 'widgetTray.movers.CRYPTO', config: { market: 'CRYPTO' }, accent: '#f59e0b', Icon: Bitcoin },
@@ -223,6 +246,7 @@ function DropdownTile({ tile, used, locked, maxWidgets, onAdd, onDragStart, onDr
     if (disabled) { e.preventDefault(); return; }
     e.dataTransfer.setData('application/x-widget-kind', tile.kind);
     e.dataTransfer.effectAllowed = 'copy';
+    setWidgetDragImage(e, tile.label, tile.accent);
     onDragStart(tile);
   };
   const handleClick = (e) => { if (!disabled) onAdd(tile, e.currentTarget); };
@@ -265,6 +289,7 @@ function AssetCardAddRow({ tile, maxAssetCards, locked, assetCardCount, onAdd, o
     if (locked) { e.preventDefault(); return; }
     e.dataTransfer.setData('application/x-widget-kind', tile.kind);
     e.dataTransfer.effectAllowed = 'copy';
+    setWidgetDragImage(e, t('widgetTray.addNewCard'), accent);
     onDragStart(tile);
   };
   const handleClick = (e) => { if (!locked) onAdd(tile, e.currentTarget); };

@@ -15,6 +15,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Reads the latest two observations of each requested macro indicator and computes the change
+ * between them. FLAT (no movement) indicators are dropped so only meaningful deltas are returned,
+ * and percent change is omitted when the previous value is missing or zero.
+ */
 @Service
 @RequiredArgsConstructor
 public class MacroIndicatorChangeReader {
@@ -42,6 +47,7 @@ public class MacroIndicatorChangeReader {
 
     private final JdbcTemplate jdbcTemplate;
 
+    /** A single indicator's move from its previous to its current observation, with computed deltas. */
     public record IndicatorChange(
             String code,
             String label,

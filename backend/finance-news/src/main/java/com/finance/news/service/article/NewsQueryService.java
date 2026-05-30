@@ -25,6 +25,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Read-side API for news: paged category/full-text search, cache-backed single-article lookup, and category counts. */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -62,6 +63,7 @@ public class NewsQueryService {
                 .toList();
     }
 
+    /** Composes optional category-equality and accent-insensitive multi-token search over title/description/content. */
     private Specification<NewsArticle> buildSpecification(String category, String searchTerm) {
         Specification<NewsArticle> spec = (root, query, cb) -> cb.conjunction();
 
@@ -81,6 +83,7 @@ public class NewsQueryService {
         return spec;
     }
 
+    /** Sorts by title when requested, otherwise by publish date; defaults to descending. */
     private Sort buildSort(String sortBy, String direction) {
         String field = "title".equals(sortBy) ? "title" : "publishedAt";
         Sort.Direction dir = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;

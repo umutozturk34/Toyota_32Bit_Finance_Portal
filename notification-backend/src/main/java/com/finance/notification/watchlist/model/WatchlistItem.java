@@ -29,6 +29,11 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+/**
+ * An asset on a watchlist. The optional {@code deltaThreshold} sets the percent move (vs the
+ * {@code lastSeenPrice} baseline) that triggers a delta notification, falling back to a global
+ * default; {@code marketType}/{@code assetCode} are transient projections of the tracked asset.
+ */
 @Getter
 @Setter
 @Builder
@@ -105,6 +110,7 @@ public class WatchlistItem {
         return userSub.equals(candidateUserSub);
     }
 
+    /** Percent change of the current price vs the baseline; empty when no usable baseline exists. */
     public Optional<BigDecimal> deltaPercent(BigDecimal currentPrice) {
         if (currentPrice == null || lastSeenPrice == null || lastSeenPrice.signum() == 0) {
             return Optional.empty();
@@ -115,6 +121,7 @@ public class WatchlistItem {
         return Optional.of(pct);
     }
 
+    /** Whether the move meets the item's threshold (or the global default); a zero threshold fires on any move. */
     public boolean exceedsThreshold(BigDecimal currentPrice, BigDecimal globalDefault) {
         BigDecimal effective = deltaThreshold != null ? deltaThreshold : globalDefault;
         return deltaPercent(currentPrice)
@@ -123,6 +130,7 @@ public class WatchlistItem {
                 .orElse(false);
     }
 
+    /** Resets the price baseline (and timestamp) used for the next delta evaluation; ignores null. */
     public void recordObservation(BigDecimal currentPrice) {
         if (currentPrice != null) {
             this.lastSeenPrice = currentPrice;

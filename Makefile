@@ -1,61 +1,55 @@
-.PHONY: up down build rebuild deploy-common logs ps clean help
+.PHONY: up down build rebuild deploy-common logs ps clean help demo empty reset
 
 SHELL := /bin/bash
 
 export GITHUB_TOKEN := $(shell gh auth token 2>/dev/null)
 
-COMMON_HASH := $(shell find finance-common/src finance-common/pom.xml -type f 2>/dev/null | sort | xargs md5 -q 2>/dev/null | md5 -q)
-DEPLOYED_HASH_FILE := .common-deployed-hash
-DEPLOYED_HASH := $(shell cat $(DEPLOYED_HASH_FILE) 2>/dev/null)
-
 help:
 	@echo "Finance Portal — common targets:"
-	@echo "  make up              start everything (auto-deploys finance-common if changed)"
+	@echo "  make demo            clone-and-run: seeded demo data + demo user (recommended, no token)"
+	@echo "  make empty           clone-and-run: clean database, no seed (no token)"
+	@echo "  make reset           stop and WIPE all data (start over / switch modes)"
+	@echo "  make up              start everything (builds finance-common from source, no token)"
 	@echo "  make down            stop everything"
-	@echo "  make build           build images (auto-deploys finance-common if changed)"
-	@echo "  make rebuild         force redeploy + rebuild + up"
-	@echo "  make deploy-common   manually publish finance-common to GitHub Packages"
+	@echo "  make build           build images (builds finance-common from source, no token)"
+	@echo "  make rebuild         rebuild from scratch + up"
+	@echo "  make deploy-common   publish finance-common to GitHub Packages (skips when source unchanged; maintainers / CI only)"
 	@echo "  make logs SERVICE=x  tail logs for a service"
 	@echo "  make ps              list running services"
 	@echo "  make clean           stop + remove images and volumes"
 
+# Everyday run/build targets. finance-common is compiled from source as the first layer of
+# the Docker build (see backend/Dockerfile), so these need no GitHub token and never publish
+# the package — a clean clone builds end-to-end on its own.
+up:
+	docker compose up -d --build
+
+build:
+	docker compose build
+
+rebuild:
+	docker compose build --no-cache
+	docker compose up -d
+
+down:
+	docker compose down
+
+# Maintainer / CI only: publish finance-common to GitHub Packages. Local runs never need this —
+# the images build finance-common from source, so this exists only to share the artifact.
+# Skips when finance-common source hasn't changed since the last successful publish — the
+# fingerprint is kept in `.common-deployed-hash` (gitignored).
 deploy-common:
 	@if [ -z "$(GITHUB_TOKEN)" ]; then \
 		echo "ERROR: GITHUB_TOKEN unavailable. Run: gh auth refresh -s write:packages,read:packages"; \
 		exit 1; \
 	fi
-	@echo "→ Deploying finance-common to GitHub Packages..."
-	@cd finance-common && mvn -B deploy -DskipTests
-	@echo "$(COMMON_HASH)" > $(DEPLOYED_HASH_FILE)
-	@echo "→ finance-common $(COMMON_HASH) published"
-
-deploy-common-if-changed:
-	@if [ "$(COMMON_HASH)" != "$(DEPLOYED_HASH)" ]; then \
-		$(MAKE) deploy-common; \
+	@hash=$$(find finance-common/src finance-common/pom.xml -type f 2>/dev/null | sort | xargs cat 2>/dev/null | shasum -a 256 | cut -d' ' -f1); \
+	if [ -f .common-deployed-hash ] && [ "$$(cat .common-deployed-hash)" = "$$hash" ]; then \
+		echo "→ finance-common unchanged since last deploy ($$hash), skipping."; \
 	else \
-		echo "→ finance-common unchanged, skip deploy"; \
+		echo "→ Deploying finance-common to GitHub Packages..."; \
+		(cd finance-common && mvn -B deploy -DskipTests) && printf '%s' "$$hash" > .common-deployed-hash && echo "→ finance-common $$hash published"; \
 	fi
-
-build: deploy-common-if-changed
-	@if [ -z "$(GITHUB_TOKEN)" ]; then \
-		echo "ERROR: GITHUB_TOKEN unavailable. Run: gh auth refresh -s write:packages,read:packages"; \
-		exit 1; \
-	fi
-	docker compose build
-
-up: deploy-common-if-changed
-	@if [ -z "$(GITHUB_TOKEN)" ]; then \
-		echo "ERROR: GITHUB_TOKEN unavailable. Run: gh auth refresh -s write:packages,read:packages"; \
-		exit 1; \
-	fi
-	docker compose up -d --build
-
-down:
-	docker compose down
-
-rebuild: deploy-common
-	docker compose build --no-cache
-	docker compose up -d
 
 logs:
 	docker compose logs -f $(SERVICE)
@@ -65,4 +59,16 @@ ps:
 
 clean:
 	docker compose down -v --rmi local
-	rm -f $(DEPLOYED_HASH_FILE)
+
+# --- Clone-and-run targets (seeded demo vs empty DB; same tokenless source build) ---
+.env:
+	@cp .env.example .env && echo ".env created from .env.example — add API keys there for data."
+
+demo: .env
+	docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d --build
+
+empty: .env
+	docker compose up -d --build
+
+reset:
+	docker compose -f docker-compose.yml -f docker-compose.demo.yml down -v

@@ -17,6 +17,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Renders a Thymeleaf email template (theme/locale-aware) and sends it via SMTP. Wrapped in a
+ * circuit breaker so a failing mail server fails fast, and all mail/messaging errors are rethrown as
+ * {@link MailDispatchException} for the consumer's retry handling.
+ */
 @Log4j2
 @Component("notificationMailSender")
 @RequiredArgsConstructor
@@ -59,6 +64,7 @@ public class MailSender {
         return templateEngine.process("email/" + templateName, ctx);
     }
 
+    /** Unchecked wrapper for SMTP/templating failures, signalling the send should be retried. */
     public static class MailDispatchException extends RuntimeException {
         public MailDispatchException(String message, Throwable cause) {
             super(message, cause);

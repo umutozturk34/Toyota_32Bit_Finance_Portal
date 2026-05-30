@@ -10,6 +10,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Builds self-contained SVG charts embedded in the portfolio PDF: a performance line chart with
+ * gridlines and date axis (line/fill colored green or red by overall trend), and an allocation donut.
+ * Colors come from the theme {@link ReportPalette}. Tiny donut slices are floored to a minimum
+ * visible fraction (with larger slices shrunk to compensate) so labels stay readable, while true
+ * percentages are still shown.
+ */
 @Service
 public class ReportSvgService {
 
@@ -24,6 +31,7 @@ public class ReportSvgService {
     private static final DateTimeFormatter X_LABEL_FMT = DateTimeFormatter.ofPattern("dd MMM");
     private static final DateTimeFormatter X_LABEL_MULTI_YEAR_FMT = DateTimeFormatter.ofPattern("MMM yy");
 
+    /** Renders the value-over-time line chart; returns an empty placeholder when fewer than two points exist. */
     public String performanceLineChart(List<PerformanceSeriesPoint> points, ReportPalette palette, Locale locale) {
         if (points == null || points.size() < 2) {
             return emptyPlaceholder(palette);
@@ -119,6 +127,7 @@ public class ReportSvgService {
         return svg.toString();
     }
 
+    /** Renders the allocation donut; returns an empty placeholder when there is no positive allocation. */
     public String allocationDonut(List<com.finance.notification.reports.view.AllocationViewItem> items, ReportPalette palette) {
         if (items == null || items.isEmpty()) return emptyPlaceholder(palette);
         double total = items.stream()
@@ -170,6 +179,17 @@ public class ReportSvgService {
             double frac = displayFracs[i];
             if (frac <= 0) continue;
             double next = angle + frac * 2 * Math.PI;
+            if (frac >= 0.9999) {
+                // A 360° arc is degenerate (start point == end point) and renders nothing, so draw
+                // the full donut ring as a thick-stroked circle instead.
+                double rMid = (rOuter + rInner) / 2.0;
+                svg.append("<circle cx=\"").append(fmt(cx)).append("\" cy=\"").append(fmt(cy))
+                        .append("\" r=\"").append(fmt(rMid)).append("\" fill=\"none\" stroke=\"")
+                        .append(items.get(i).color()).append("\" stroke-width=\"")
+                        .append(fmt(rOuter - rInner)).append("\"/>");
+                angle = next;
+                continue;
+            }
             int largeArc = frac > 0.5 ? 1 : 0;
             double x1o = cx + rOuter * Math.cos(angle);
             double y1o = cy + rOuter * Math.sin(angle);

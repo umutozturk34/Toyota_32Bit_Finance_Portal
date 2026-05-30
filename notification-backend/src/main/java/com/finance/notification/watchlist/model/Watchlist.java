@@ -20,6 +20,10 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
+/**
+ * A user's named watchlist. Each user has exactly one default list, and list names are unique per
+ * user. Holds no items directly; items reference it by id.
+ */
 @Getter
 @Setter
 @Builder

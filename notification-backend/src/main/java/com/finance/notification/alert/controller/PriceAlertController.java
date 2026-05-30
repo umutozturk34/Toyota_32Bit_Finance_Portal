@@ -26,6 +26,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * REST API for managing a user's price alerts. All endpoints are scoped to the authenticated
+ * caller's JWT subject; alerts created here are later evaluated against the market snapshot cache.
+ */
 @RestController
 @RequestMapping("/api/v1/price-alerts")
 @PreAuthorize("isAuthenticated()")
@@ -62,6 +66,10 @@ public class PriceAlertController {
         return ApiResponse.success(translator.translate("api.priceAlert.deleted"), null);
     }
 
+    /**
+     * Re-arms a previously triggered alert so it can fire again; rejected if an identical active
+     * alert already exists for the same asset, direction and threshold.
+     */
     @org.springframework.web.bind.annotation.PostMapping("/{id}/reactivate")
     public ApiResponse<PriceAlertResponse> reactivate(
             @AuthenticationPrincipal Jwt jwt,

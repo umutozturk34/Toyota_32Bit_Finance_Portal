@@ -2,6 +2,10 @@ package com.finance.shared.util;
 
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Standardizes the summary log lines emitted after a {@link BatchUpdateRunner} run, keeping the
+ * success/failure reporting format consistent across batch jobs.
+ */
 public final class BatchLogHelper {
 
     private BatchLogHelper() {

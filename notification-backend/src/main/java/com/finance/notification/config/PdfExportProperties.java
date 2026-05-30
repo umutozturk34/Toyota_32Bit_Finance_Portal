@@ -2,6 +2,10 @@ package com.finance.notification.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * PDF-export configuration: the upstream PDF service URL and request timeout, plus the frontend base
+ * URL used to build asset links in reports. Blank/absent values fall back to local defaults.
+ */
 @ConfigurationProperties("app")
 public record PdfExportProperties(
         Pdf pdf,

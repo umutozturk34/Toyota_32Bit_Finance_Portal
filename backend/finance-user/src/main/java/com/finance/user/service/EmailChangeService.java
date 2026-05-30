@@ -19,6 +19,12 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Drives the verified email-change flow. Initiation stores a bcrypt-hashed, time-limited code (one
+ * pending request per user) and publishes an event so the notification service mails the code to the
+ * new address. Confirmation validates expiry, the attempt cap, and the code before applying the new
+ * email in Keycloak. The plaintext code is never persisted, only emitted on the event.
+ */
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -32,6 +38,11 @@ public class EmailChangeService {
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final SecureRandom random = new SecureRandom();
 
+    /**
+     * Starts (or re-issues) an email change: rejects an unknown current email or a no-op same-address
+     * request, then upserts the pending request with a fresh hashed code and TTL, resetting the attempt
+     * counter only when the target address actually changed. Emits the code-requested event for delivery.
+     */
     @Transactional
     public void initiate(String userSub, String newEmail) {
         String oldEmail = keycloakClient.getEmail(userSub);
@@ -70,6 +81,11 @@ public class EmailChangeService {
         log.info("Email change initiated user={} expiresAt={}", userSub, expiresAt);
     }
 
+    /**
+     * Confirms a pending change: deletes and rejects on expiry or attempt-cap breach, increments the
+     * counter on a code mismatch (reporting remaining tries), and on success applies the new email to
+     * Keycloak and clears the request.
+     */
     @Transactional
     public void confirm(String userSub, String code) {
         EmailChangeRequest request = repository.findById(userSub)
@@ -110,6 +126,7 @@ public class EmailChangeService {
         return sb.toString();
     }
 
+    /** A user's outstanding email-change request exposed to callers: target address and expiry. */
     public record PendingState(String newEmail, OffsetDateTime expiresAt) {
     }
 }

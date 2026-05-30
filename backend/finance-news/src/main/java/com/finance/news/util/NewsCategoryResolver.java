@@ -14,6 +14,12 @@ import static com.finance.news.util.NewsTextMatcher.matchesAny;
 import static com.finance.news.util.NewsTextMatcher.scoreKeywords;
 import static com.finance.news.util.NewsTextMatcher.tokenize;
 
+/**
+ * Keyword-and-rule classifier that maps an article's title/description onto a {@link NewsCategory}.
+ * First applies high-confidence strict rules (absolute crypto/parity, bond, general-finance) and falls
+ * back to weighted keyword scoring, with a bonus for the source's default category. Keyword and rule
+ * lists are loaded once at class init; thresholds are overridable from configuration.
+ */
 @Log4j2
 public final class NewsCategoryResolver {
 
@@ -39,11 +45,13 @@ public final class NewsCategoryResolver {
     private NewsCategoryResolver() {
     }
 
+    /** Applies configured score thresholds at startup; package-private so only the config binder calls it. */
     static void overrideThresholds(int minScore, int categoryBonus) {
         MIN_SCORE_THRESHOLD = minScore;
         DEFAULT_CATEGORY_BONUS = categoryBonus;
     }
 
+    /** Classifies an article, applying strict rules first then scoring; returns {@code null} when nothing scores above threshold. */
     public static NewsCategory resolve(String defaultCategory, String title, String description) {
         String text = buildSearchText(title, description);
         if (text.isBlank()) {
@@ -61,6 +69,7 @@ public final class NewsCategoryResolver {
         return resolveByScore(text, tokens, defaultResolved);
     }
 
+    /** High-confidence overrides applied before scoring: crypto, parity, bond, then general-finance; null if none fire. */
     private static NewsCategory resolveByStrictRules(String text, Set<String> tokens,
                                                      NewsCategory defaultResolved) {
         if (matchesAny(text, tokens, ABSOLUTE_CRYPTO)
@@ -84,6 +93,7 @@ public final class NewsCategoryResolver {
         return null;
     }
 
+    /** Picks the highest-scoring category (gating company news, bonusing the default); null below the threshold. */
     private static NewsCategory resolveByScore(String text, Set<String> tokens,
                                                NewsCategory defaultResolved) {
         NewsCategory best = null;
@@ -118,6 +128,11 @@ public final class NewsCategoryResolver {
         return best;
     }
 
+    /**
+     * Bond rule: a priority keyword wins unless it is foreign-bond context or another category scores
+     * higher; otherwise requires enough domestic bond-context matches (fewer if the default is bonds)
+     * and excludes mixed parity-market recaps.
+     */
     private static boolean shouldClassifyAsBond(String text, Set<String> tokens,
                                                 NewsCategory defaultResolved,
                                                 NewsCategory sourceDefault) {
@@ -151,6 +166,7 @@ public final class NewsCategoryResolver {
         return matchesAny(text, tokens, FOREIGN_BOND_CONTEXT);
     }
 
+    /** True if any non-bond category outscores the bond score (plus default bonus), so bond should yield. */
     private static boolean hasStrongerCategory(String text, Set<String> tokens,
                                                NewsCategory sourceDefault) {
         int bondScore = scoreKeywords(text, tokens, KEYWORD_MAP.get(NewsCategory.TAHVIL_BONO));
@@ -165,6 +181,7 @@ public final class NewsCategoryResolver {
         return false;
     }
 
+    /** Gate for company-stock category: a definitive corporate signal, or at least two strong company hints. */
     private static boolean isStrongCompanyNews(String text, Set<String> tokens) {
         if (matchesAny(text, tokens, DEFINITIVE_CORPORATE)) {
             return true;
@@ -172,6 +189,7 @@ public final class NewsCategoryResolver {
         return countMatches(text, tokens, STRONG_COMPANY) >= 2;
     }
 
+    /** General-finance rule: mixed parity+other markets, a broad market recap, or a multi-market summary. */
     private static boolean shouldClassifyAsGeneralFinance(String text, Set<String> tokens) {
         return isMixedMarketWithParity(text, tokens)
                 || isBroadMarketRecap(text, tokens)
@@ -189,6 +207,7 @@ public final class NewsCategoryResolver {
         return countMatches(text, tokens, GENERAL_MARKET_BASKET) >= 3;
     }
 
+    /** True when a summary hint is present and the text spans at least three distinct market categories. */
     private static boolean isMarketSummary(String text, Set<String> tokens) {
         if (countMatches(text, tokens, SUMMARY_HINT) == 0) {
             return false;

@@ -25,6 +25,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Evaluates watchlist items for a market against the snapshot cache and notifies users when an item's
+ * price has moved beyond its delta threshold (falling back to the global default) since its last-seen
+ * baseline. Fired items reset their baseline; fires are grouped per (user, watchlist) into a single
+ * delta notification per group. Items with no baseline yet are seeded silently.
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -41,6 +47,11 @@ public class WatchlistEvaluator {
 
     private record GroupKey(String userSub, Long watchlistId) {}
 
+    /**
+     * Evaluates all items for the market and dispatches grouped delta notifications.
+     *
+     * @return the number of delta notifications successfully dispatched
+     */
     @Transactional
     public int evaluate(MarketType marketType) {
         List<WatchlistItem> items = watchlistService.itemsForMarket(marketType);

@@ -22,6 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+/**
+ * Persists prepared in-app notifications and email outbox rows in one transactional batch, then
+ * triggers side effects only after the transaction commits: SSE push to connected clients (off the
+ * dedicated executor) and a Kafka mail-dispatch event per outbox row. Outbox rows are marked
+ * RELAYED at save time since the relay is fired post-commit.
+ */
 @Log4j2
 @Service
 public class NotificationPersister {

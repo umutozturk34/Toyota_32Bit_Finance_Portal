@@ -13,6 +13,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Aggregates each user's latest portfolio daily snapshots for today into a single total value and
+ * daily P/L, summing across the user's portfolios. Daily P/L percent is computed against the prior
+ * value (total minus P/L) and omitted when that base is zero.
+ */
 @Service
 @RequiredArgsConstructor
 public class PortfolioSnapshotReader {
@@ -40,6 +45,7 @@ public class PortfolioSnapshotReader {
 
     private final JdbcTemplate jdbcTemplate;
 
+    /** A user's portfolios rolled up: total value, daily P/L (amount and percent) and portfolio count. */
     public record AggregatedSnapshot(BigDecimal totalValue, BigDecimal dailyPnl, BigDecimal dailyPnlPercent, int portfolioCount) {}
 
     @Transactional(readOnly = true)

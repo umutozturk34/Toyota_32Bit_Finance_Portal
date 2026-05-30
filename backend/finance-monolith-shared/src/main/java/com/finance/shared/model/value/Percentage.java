@@ -3,6 +3,10 @@ package com.finance.shared.model.value;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+/**
+ * Percentage value object where {@code value} is expressed in whole percent (e.g. {@code 12.5} means
+ * 12.5%, not 0.125). Immutable; normalized to {@link #SCALE} decimals (HALF_UP) on construction.
+ */
 public record Percentage(BigDecimal value) implements Comparable<Percentage> {
 
     public static final int SCALE = 4;
@@ -23,6 +27,7 @@ public record Percentage(BigDecimal value) implements Comparable<Percentage> {
         return new Percentage(new BigDecimal(value));
     }
 
+    /** Builds a percentage from a numerator/denominator ratio; yields {@link #ZERO} when the denominator is null or zero. */
     public static Percentage ofRatio(BigDecimal numerator, BigDecimal denominator) {
         if (denominator == null || denominator.signum() == 0) {
             return ZERO;
@@ -32,10 +37,12 @@ public record Percentage(BigDecimal value) implements Comparable<Percentage> {
         return new Percentage(ratio);
     }
 
+    /** Returns the value as a 0..1 fraction (i.e. percent / 100). */
     public BigDecimal asFraction() {
         return value.divide(BigDecimal.valueOf(100), SCALE + 2, RoundingMode.HALF_UP);
     }
 
+    /** Applies this percentage to a TRY amount, returning the proportional share. */
     public MoneyTRY applyTo(MoneyTRY amount) {
         return amount.multiply(asFraction());
     }

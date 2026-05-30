@@ -1,0 +1,30 @@
+name: Deploy to VDS
+
+# Triggered after CI succeeds on main (or manually). Pulls the new GHCR images and rolls the
+# stack forward over SSH. Required secrets + first-time setup: docs/documentation/ci-cd.pdf.
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Roll forward
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VDS_HOST }}
+          username: ${{ secrets.VDS_USER }}
+          key: ${{ secrets.VDS_SSH_KEY }}
+          script: |
+            set -e
+            cd "${{ secrets.VDS_APP_DIR }}"
+            git pull --ff-only
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+            docker image prune -f

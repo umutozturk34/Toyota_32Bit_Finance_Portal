@@ -13,6 +13,11 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * Holds the live SSE emitters per user so persisted notifications can be pushed in real time. A user
+ * may have several concurrent connections; emitters are tracked in a Caffeine cache that completes
+ * and evicts them on TTL/size pressure, and failed sends are dropped to keep the registry clean.
+ */
 @Log4j2
 @Component
 public class NotificationStreamRegistry {
@@ -36,6 +41,7 @@ public class NotificationStreamRegistry {
                 .build();
     }
 
+    /** Opens a new emitter for the user, wires its lifecycle callbacks and sends an init event. */
     public SseEmitter register(String userSub) {
         SseEmitter emitter = new SseEmitter(streamProperties.emitterTimeoutMs());
         CopyOnWriteArrayList<SseEmitter> list = emitters.asMap()
@@ -61,6 +67,7 @@ public class NotificationStreamRegistry {
         }
     }
 
+    /** Pushes an arbitrary named SSE event to the user (e.g. unread-count deltas, not just notifications). */
     public void publishToUser(String userSub, String eventName, Object payload) {
         CopyOnWriteArrayList<SseEmitter> list = emitters.getIfPresent(userSub);
         if (list == null || list.isEmpty()) return;

@@ -173,6 +173,7 @@ data plus a sample portfolio (first run takes a few minutes). When it settles, o
 make empty     # clean database (no seed, no demo user)
 make reset     # stop and WIPE all data (start over / switch modes)
 make down      # stop (keeps data)
+make help      # show all targets with one-line descriptions
 ```
 
 <details>
@@ -230,10 +231,10 @@ cd Toyota_32Bit_Finance_Portal
 cp .env.example .env   # edit: strong DB/Redis/Keycloak passwords, EVDS key, SMTP, real domain
 ```
 
-**3. Pull images + run (no Mailpit).** CI builds and pushes the images to GHCR; the server only pulls:
+**3. Pull images + run (no Mailpit).** CI builds and pushes the images to GHCR; the server only pulls
+them. The images are public, so no registry login is needed:
 
 ```bash
-echo "$GHCR_TOKEN" | docker login ghcr.io -u umutozturk34 --password-stdin   # private repo
 docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
@@ -244,8 +245,8 @@ Keycloak's hostname.
 
 **5. Automated deploys (CD).** [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) rolls the
 stack forward after CI passes on `main` (SSH → `git pull` → `compose pull` → `up -d`). Add these repo
-secrets: `VDS_HOST`, `VDS_USER`, `VDS_SSH_KEY`, `VDS_APP_DIR`. GHCR access is granted via the
-workflow's auto-issued `GITHUB_TOKEN`, so no extra PAT is needed.
+secrets: `VDS_HOST`, `VDS_USER`, `VDS_SSH_KEY`, `VDS_APP_DIR`. No registry token needed — the GHCR
+images are public.
 
 First boot runs the Flyway migrations and imports the Keycloak realm automatically; mail goes straight
 to your SMTP provider (the prod overlay excludes Mailpit).
@@ -269,7 +270,8 @@ Login runs through Keycloak. Demo credentials (in `.env`, intentionally visible 
 | URL | Service |
 |-----|---------|
 | http://localhost | Main app (Nginx gateway → frontend + API) |
-| http://localhost/swagger-ui/index.html | Swagger UI — interactive API |
+| http://localhost/swagger-ui/index.html | Swagger UI — main backend (`:8080`) interactive API |
+| http://localhost:8082/swagger-ui/index.html | Swagger UI — notification backend (`:8082`) interactive API |
 | http://localhost:8025 | Mailpit — all outgoing mail is captured here |
 | http://localhost:8180/auth | Keycloak admin console |
 | http://localhost:5601 | OpenSearch Dashboards (logs / traces) |

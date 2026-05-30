@@ -1,5 +1,5 @@
 # Production overlay — drops the Mailpit dev mail catcher. Real mail comes from SPRING_MAIL_*
-# in .env (drives both the app and Keycloak). Usage and setup: docs/CI_CD.md.
+# in .env (drives both the app and Keycloak). Usage and setup: docs/documentation/ci-cd.pdf.
 services:
   mailpit:
     profiles:

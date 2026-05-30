@@ -13,7 +13,7 @@ help:
 	@echo "  make down            stop everything"
 	@echo "  make build           build images (builds finance-common from source, no token)"
 	@echo "  make rebuild         rebuild from scratch + up"
-	@echo "  make deploy-common   publish finance-common to GitHub Packages (maintainers / CI only)"
+	@echo "  make deploy-common   publish finance-common to GitHub Packages (skips when source unchanged; maintainers / CI only)"
 	@echo "  make logs SERVICE=x  tail logs for a service"
 	@echo "  make ps              list running services"
 	@echo "  make clean           stop + remove images and volumes"
@@ -36,13 +36,20 @@ down:
 
 # Maintainer / CI only: publish finance-common to GitHub Packages. Local runs never need this —
 # the images build finance-common from source, so this exists only to share the artifact.
+# Skips when finance-common source hasn't changed since the last successful publish — the
+# fingerprint is kept in `.common-deployed-hash` (gitignored).
 deploy-common:
 	@if [ -z "$(GITHUB_TOKEN)" ]; then \
 		echo "ERROR: GITHUB_TOKEN unavailable. Run: gh auth refresh -s write:packages,read:packages"; \
 		exit 1; \
 	fi
-	@echo "→ Deploying finance-common to GitHub Packages..."
-	@cd finance-common && mvn -B deploy -DskipTests
+	@hash=$$(find finance-common/src finance-common/pom.xml -type f 2>/dev/null | sort | xargs cat 2>/dev/null | shasum -a 256 | cut -d' ' -f1); \
+	if [ -f .common-deployed-hash ] && [ "$$(cat .common-deployed-hash)" = "$$hash" ]; then \
+		echo "→ finance-common unchanged since last deploy ($$hash), skipping."; \
+	else \
+		echo "→ Deploying finance-common to GitHub Packages..."; \
+		(cd finance-common && mvn -B deploy -DskipTests) && printf '%s' "$$hash" > .common-deployed-hash && echo "→ finance-common $$hash published"; \
+	fi
 
 logs:
 	docker compose logs -f $(SERVICE)

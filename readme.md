@@ -325,31 +325,34 @@ Where each dataset comes from:
 ## Configuration
 
 Most behaviour is env-driven through the root `.env`; everything else lives in a predictable
-place per service. Each GIF below walks to a location; the path is printed right under it.
+place per service. Each GIF below walks to a location; the path is printed under it.
 
-**Main backend** (market / portfolio / user / news)
-
-<p align="center"><img src="docs/imagesandgifs/config-main-backend.gif" alt="Main backend config" width="820"/></p>
-
-`backend/finance-app/src/main/resources/`
-
-**Notification backend**
-
-<p align="center"><img src="docs/imagesandgifs/config-notification-backend.gif" alt="Notification backend config" width="820"/></p>
-
-`notification-backend/src/main/resources/`
-
-**Backend i18n** — error/notification message bundles
-
-<p align="center"><img src="docs/imagesandgifs/config-backend-i18n.gif" alt="Backend i18n bundles" width="820"/></p>
-
-`backend/*/src/main/resources/i18n/` · `notification-backend/src/main/resources/i18n/`
-
-**Frontend i18n** — UI translations (TR / EN)
-
-<p align="center"><img src="docs/imagesandgifs/config-frontend-i18n.gif" alt="Frontend i18n strings" width="820"/></p>
-
-`frontend/src/shared/i18n/tr.json` · `frontend/src/shared/i18n/en.json`
+<table>
+<tr>
+<td width="50%" align="center">
+<b>Main backend</b> (market / portfolio / user / news)<br/>
+<img src="docs/imagesandgifs/config-main-backend.gif" alt="Main backend config" width="100%"/><br/>
+<sub><code>backend/finance-app/src/main/resources/</code></sub>
+</td>
+<td width="50%" align="center">
+<b>Notification backend</b><br/>
+<img src="docs/imagesandgifs/config-notification-backend.gif" alt="Notification backend config" width="100%"/><br/>
+<sub><code>notification-backend/src/main/resources/</code></sub>
+</td>
+</tr>
+<tr>
+<td width="50%" align="center">
+<b>Backend i18n</b> — error / notification bundles<br/>
+<img src="docs/imagesandgifs/config-backend-i18n.gif" alt="Backend i18n bundles" width="100%"/><br/>
+<sub><code>backend/*/src/main/resources/i18n/</code> · <code>notification-backend/src/main/resources/i18n/</code></sub>
+</td>
+<td width="50%" align="center">
+<b>Frontend i18n</b> — UI translations (TR / EN)<br/>
+<img src="docs/imagesandgifs/config-frontend-i18n.gif" alt="Frontend i18n strings" width="100%"/><br/>
+<sub><code>frontend/src/shared/i18n/tr.json</code> · <code>frontend/src/shared/i18n/en.json</code></sub>
+</td>
+</tr>
+</table>
 
 **Infra / edge** — root `.env`, `docker-compose.yml`, `gateway/`, `keycloak/`, `data-prepper/`, `otel-config.yaml`
 

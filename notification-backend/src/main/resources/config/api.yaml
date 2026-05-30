@@ -8,7 +8,7 @@ springdoc:
     path: /swagger-ui.html
     tags-sorter: alpha
     operations-sorter: alpha
-    oauth2-redirect-url: ${SWAGGER_OAUTH2_REDIRECT:http://localhost:8082/swagger-ui/oauth2-redirect.html}
+    oauth2-redirect-url: ${SWAGGER_OAUTH2_REDIRECT:${FRONTEND_BASE_URL:http://localhost}/swagger-ui/oauth2-redirect.html}
     oauth:
       client-id: finance-frontend
       use-pkce-with-authorization-code-grant: true

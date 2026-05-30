@@ -433,12 +433,12 @@
     "willClose": "kapanır"
   },
   "home": {
-    "live": "Canlı piyasa verisi",
+    "live": "Çok varlıklı portföy",
     "heroTitle": {
-      "part1": "Tüm piyasalar tek portalda.",
-      "part2": "TRY'a çevrilmiş P&L ile."
+      "part1": "Türk piyasalarında portföy.",
+      "part2": "Tek ekran."
     },
-    "heroDescription": "BIST, TEFAS, döviz, emtia, tahvil, kripto ve VIOP — hipotetik portföy, gerçek tarihli kurla doğru K/Z, çok yıllı geçmiş ve günlük güncelleme.",
+    "heroDescription": "BIST · TEFAS · döviz · emtia · tahvil · kripto · VIOP. Hipotetik lot pozisyonlar, kâr/zarar her gün kendi kuruyla TRY'ye çevrilir, çok yıllı geçmiş.",
     "cta": {
       "createAccount": "Ücretsiz hesap oluştur",
       "signIn": "Giriş yap"

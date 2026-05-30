@@ -322,28 +322,32 @@ Where each dataset comes from:
 
 ## Configuration
 
-Want to change how it runs? Most behaviour is env-driven (the root `.env`); everything else lives in a
-predictable place per service, so you can retune the stack without touching code. Each GIF walks to a
-location; the path is noted right under it. **Record the GIFs at ~1280×800** (any 16:10 is fine) —
-they display at 820px wide.
+Most behaviour is env-driven through the root `.env`; everything else lives in a predictable
+place per service. Each GIF below walks to a location; the path is printed right under it.
 
 **Main backend** (market / portfolio / user / news)
 
-<!-- <p align="center"><img src="docs/imagesandgifs/config-main-backend.gif" alt="Main backend config" width="820"/></p> -->
+<p align="center"><img src="docs/imagesandgifs/config-main-backend.gif" alt="Main backend config" width="820"/></p>
 
 `backend/finance-app/src/main/resources/`
 
 **Notification backend**
 
-<!-- <p align="center"><img src="docs/imagesandgifs/config-notification-backend.gif" alt="Notification backend config" width="820"/></p> -->
+<p align="center"><img src="docs/imagesandgifs/config-notification-backend.gif" alt="Notification backend config" width="820"/></p>
 
 `notification-backend/src/main/resources/`
 
-**finance-common** (shared library)
+**Backend i18n** — error/notification message bundles
 
-<!-- <p align="center"><img src="docs/imagesandgifs/config-finance-common.gif" alt="finance-common config" width="820"/></p> -->
+<p align="center"><img src="docs/imagesandgifs/config-backend-i18n.gif" alt="Backend i18n bundles" width="820"/></p>
 
-`finance-common/src/main/resources/` · `finance-common/src/main/java/.../config/`
+`backend/*/src/main/resources/i18n/` · `notification-backend/src/main/resources/i18n/`
+
+**Frontend i18n** — UI translations (TR / EN)
+
+<p align="center"><img src="docs/imagesandgifs/config-frontend-i18n.gif" alt="Frontend i18n strings" width="820"/></p>
+
+`frontend/src/shared/i18n/tr.json` · `frontend/src/shared/i18n/en.json`
 
 **Infra / edge** — root `.env`, `docker-compose.yml`, `gateway/`, `keycloak/`, `data-prepper/`, `otel-config.yaml`
 

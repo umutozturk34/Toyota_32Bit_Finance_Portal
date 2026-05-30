@@ -433,12 +433,12 @@
     "willClose": "closes in"
   },
   "home": {
-    "live": "Live Market Intelligence",
+    "live": "Live market data",
     "heroTitle": {
-      "part1": "Markets, decoded.",
-      "part2": "In real time."
+      "part1": "All Turkish markets in one place.",
+      "part2": "With currency-correct P&L."
     },
-    "heroDescription": "One portal for stocks, crypto, forex & metals — with institutional-grade charts, enterprise SSO, and zero config.",
+    "heroDescription": "BIST, TEFAS, FX, commodities, bonds, crypto and VIOP — hypothetical-lot portfolio, P&L converted at each day's actual rate, multi-year history and daily refreshes.",
     "cta": {
       "createAccount": "Create free account",
       "signIn": "Sign in"
@@ -456,47 +456,47 @@
     },
     "features": {
       "security": {
-        "title": "Bank-Grade Security",
-        "description": "Keycloak SSO, LDAP federation, 2FA/TOTP — your credentials never touch our servers."
+        "title": "Keycloak Authentication",
+        "description": "Keycloak SSO with LDAP federation and TOTP 2FA. Passwords aren't stored in the app database."
       },
       "marketData": {
-        "title": "Live Market Data",
-        "description": "Real-time quotes across stocks, crypto, forex & metals with sub-second latency."
+        "title": "Multi-Asset Market Data",
+        "description": "Stocks, funds, FX, commodities, bonds, crypto and VIOP. Schedulers refresh on the TR market hours."
       },
       "charting": {
-        "title": "Advanced Charting",
-        "description": "TradingView charts with indicators, drawing tools, Fibonacci and compare mode."
+        "title": "TradingView Charts",
+        "description": "Built on Lightweight Charts — indicators, drawing tools, Fibonacci and compare mode."
       },
       "portfolio": {
-        "title": "Portfolio Tracking",
-        "description": "Build portfolios, track P&L, and monitor positions across every asset class."
+        "title": "Hypothetical-Lot Portfolio",
+        "description": "Multi-position open/closed lots, realized & unrealized P&L in TRY, allocation donut, performance curve and daily snapshots."
       }
     },
     "getStartedTag": "Get Started",
     "ctaSection": {
-      "heading": "Ready to trade smarter?",
-      "body": "Join in seconds — no credit card, no commitment."
+      "heading": "Create an account and try it.",
+      "body": "Browse the demo data as demouser or open your own account."
     },
     "footer": "© 2026 Finance Portal"
   },
   "register": {
     "subtitle": "Create your account",
-    "intro": "Join Finance Portal and start managing your financial data securely.",
+    "intro": "Sign up for Finance Portal through Keycloak with email verification.",
     "cta": "Register with Keycloak",
     "haveAccount": "Already have an account?",
     "loginHere": "Login here",
     "features": {
       "secureAuth": {
-        "title": "Secure Authentication",
-        "desc": "Enterprise-grade Keycloak security"
+        "title": "Keycloak Authentication",
+        "desc": "OIDC / JWT over the shared Keycloak realm"
       },
       "rbac": {
         "title": "Role-Based Access",
-        "desc": "Granular permission control"
+        "desc": "ADMIN and USER realm roles"
       },
       "twoFactor": {
-        "title": "2FA Support",
-        "desc": "Two-factor authentication ready"
+        "title": "TOTP 2FA",
+        "desc": "Optional, enable from account settings"
       }
     }
   },

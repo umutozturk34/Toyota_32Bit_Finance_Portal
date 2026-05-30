@@ -433,12 +433,12 @@
     "willClose": "kapanır"
   },
   "home": {
-    "live": "Canlı Piyasa Verisi",
+    "live": "Canlı piyasa verisi",
     "heroTitle": {
-      "part1": "Piyasalar, çözüldü.",
-      "part2": "Gerçek zamanlı."
+      "part1": "Tüm piyasalar tek portalda.",
+      "part2": "TRY'a çevrilmiş P&L ile."
     },
-    "heroDescription": "Hisse, kripto, döviz ve emtia için tek portal — kurumsal seviyede grafikler, kurumsal SSO ve sıfır konfigürasyon.",
+    "heroDescription": "BIST, TEFAS, döviz, emtia, tahvil, kripto ve VIOP — hipotetik portföy, gerçek tarihli kurla doğru K/Z, çok yıllı geçmiş ve günlük güncelleme.",
     "cta": {
       "createAccount": "Ücretsiz hesap oluştur",
       "signIn": "Giriş yap"
@@ -456,47 +456,47 @@
     },
     "features": {
       "security": {
-        "title": "Bankacılık Seviyesinde Güvenlik",
-        "description": "Keycloak SSO, LDAP federasyonu, 2FA/TOTP — kimlik bilgilerin sunucularımıza hiç dokunmaz."
+        "title": "Keycloak ile Kimlik Doğrulama",
+        "description": "Keycloak SSO, LDAP federasyonu ve TOTP 2FA. Şifreler uygulama veritabanına yazılmaz."
       },
       "marketData": {
-        "title": "Canlı Piyasa Verisi",
-        "description": "Hisse, kripto, döviz ve emtiada saniye altı gecikmeyle gerçek zamanlı fiyatlar."
+        "title": "Çok Varlıklı Piyasa Verisi",
+        "description": "Hisse, fon, döviz, emtia, tahvil, kripto ve VIOP. Schedulers TR piyasa saatlerine göre günlük günceller."
       },
       "charting": {
-        "title": "Gelişmiş Grafik",
-        "description": "TradingView grafikleri; göstergeler, çizim araçları, Fibonacci ve karşılaştırma modu."
+        "title": "TradingView Grafikleri",
+        "description": "Lightweight Charts altyapısı; göstergeler, çizim araçları, Fibonacci ve karşılaştırma modu."
       },
       "portfolio": {
-        "title": "Portföy Takibi",
-        "description": "Portföy oluştur, K/Z izle ve tüm varlık sınıflarındaki pozisyonlarını yönet."
+        "title": "Hipotetik Lot Portföy",
+        "description": "Çoklu pozisyon, gerçekleşmiş/gerçekleşmemiş K/Z (TRY), tahsis donutu, performans eğrisi ve günlük snapshot."
       }
     },
     "getStartedTag": "Başla",
     "ctaSection": {
-      "heading": "Daha akıllı işlem yapmaya hazır mısın?",
-      "body": "Saniyeler içinde katıl — kredi kartı yok, taahhüt yok."
+      "heading": "Hesap oluşturup dene.",
+      "body": "demouser ile demo veriyi gez veya kendi hesabını aç."
     },
     "footer": "© 2026 Finance Portal"
   },
   "register": {
     "subtitle": "Hesabını oluştur",
-    "intro": "Finance Portal'a katıl ve finansal verilerini güvenle yönetmeye başla.",
+    "intro": "Finance Portal'a kayıt ol — Keycloak üzerinden, e-posta doğrulamalı.",
     "cta": "Keycloak ile Kayıt Ol",
     "haveAccount": "Zaten hesabın var mı?",
     "loginHere": "Buradan giriş yap",
     "features": {
       "secureAuth": {
-        "title": "Güvenli Kimlik Doğrulama",
-        "desc": "Kurumsal seviyede Keycloak güvenliği"
+        "title": "Keycloak Kimlik Doğrulama",
+        "desc": "OIDC / JWT, ortak Keycloak realm üzerinden"
       },
       "rbac": {
         "title": "Rol Tabanlı Erişim",
-        "desc": "İnce taneli yetki kontrolü"
+        "desc": "ADMIN ve USER realm rolleri"
       },
       "twoFactor": {
-        "title": "2FA Desteği",
-        "desc": "İki faktörlü doğrulamaya hazır"
+        "title": "TOTP 2FA",
+        "desc": "Hesap ayarlarından isteğe bağlı aktif edilir"
       }
     }
   },

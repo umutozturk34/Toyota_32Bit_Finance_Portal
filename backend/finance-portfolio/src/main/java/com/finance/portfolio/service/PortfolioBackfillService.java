@@ -236,6 +236,19 @@ public class PortfolioBackfillService {
     }
 
     /**
+     * Backfills a portfolio's entire history in a fresh, per-portfolio serialized transaction. Used to
+     * seed snapshots for portfolios that entered the database outside the app's lot-change flow — e.g.
+     * the clone-and-run demo seed — which therefore never fired a {@link LotChangedEvent}. The open
+     * transaction also keeps lazy associations loadable when invoked off the request thread.
+     */
+    public void backfillEntirePortfolio(Long portfolioId, LocalDate from) {
+        if (from == null) return;
+        synchronized (lockFor(portfolioId)) {
+            transactionTemplate.executeWithoutResult(status -> backfillSinceDate(portfolioId, from));
+        }
+    }
+
+    /**
      * Rebuilds per-asset snapshots for a single spot asset from {@code from} through today, including
      * a closing (zero) row on the lot's exit day. Aborts (without deleting existing rows) if upstream
      * historical pricing is entirely unavailable for a range that should have history.

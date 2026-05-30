@@ -407,6 +407,30 @@ class PortfolioBackfillServiceTest {
         verify(dailySnapshotRepository, never()).saveAll(any());
     }
 
+    @Test
+    void shouldSkipEntireBackfill_whenFromIsNull() {
+        // Arrange / Act
+        service.backfillEntirePortfolio(PORTFOLIO_ID, null);
+
+        // Assert
+        verify(transactionManager, never()).getTransaction(any());
+        verify(portfolioRepository, never()).findById(any());
+    }
+
+    @Test
+    void shouldWrapBackfillInTransaction_whenFromProvided() {
+        // Arrange
+        when(portfolioRepository.findById(PORTFOLIO_ID)).thenReturn(Optional.of(portfolio()));
+        when(positionRepository.findByPortfolioId(PORTFOLIO_ID)).thenReturn(List.of());
+
+        // Act
+        service.backfillEntirePortfolio(PORTFOLIO_ID, LocalDate.now().minusDays(5));
+
+        // Assert
+        verify(transactionManager).getTransaction(any());
+        verify(portfolioRepository).findById(PORTFOLIO_ID);
+    }
+
     private static Portfolio portfolio() {
         return Portfolio.builder().id(PORTFOLIO_ID).userSub("user-1").build();
     }

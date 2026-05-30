@@ -60,6 +60,7 @@ import com.finance.shared.service.TaskTrackingService.TaskInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -70,10 +71,12 @@ import java.util.concurrent.Executor;
  * On startup, seeds market data for each asset class only when its tables are empty (idempotent
  * cold-start fetch), running fetches asynchronously. Forex is fetched before stocks/commodities since
  * those depend on FX rates; after each fetch it notifies the portfolio and market-cache ports.
+ * Set {@code app.market.init.enabled=false} (env {@code APP_MARKET_INIT_ENABLED}) to skip it entirely.
  */
 @Log4j2
 @Component
 @Order(1)
+@ConditionalOnProperty(name = "app.market.init.enabled", havingValue = "true", matchIfMissing = true)
 @RequiredArgsConstructor
 public class MarketDataInitializer implements CommandLineRunner {
 
@@ -108,62 +111,66 @@ public class MarketDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        init("crypto", MarketType.CRYPTO, cryptoRepository.count(), cryptoCandleRepository.count(), null,
-                cryptoDataService::refreshAll);
-
-        init("fund", MarketType.FUND, fundRepository.count(), fundCandleRepository.count(), null,
-                fundDataService::refreshAll);
-
-        init("bond", null, bondRepository.count(), 1, null, bondDataService::updateBonds);
-
-        init("macro", null, macroIndicatorRepository.count(), macroIndicatorPointRepository.count(), null, () -> {
+        // Cold-start fetch, throttled into small concurrent groups so a fresh empty database doesn't
+        // fire every provider at once and peg the CPU. Independent asset classes run two at a time;
+        // FX -> stock -> commodity stay one dependency-ordered group (stock and commodity convert
+        // through FX rates), preserved by running them in sequence.
+        InitSpec crypto = new InitSpec("crypto", MarketType.CRYPTO, cryptoRepository.count(), cryptoCandleRepository.count(), cryptoDataService::refreshAll);
+        InitSpec fund = new InitSpec("fund", MarketType.FUND, fundRepository.count(), fundCandleRepository.count(), fundDataService::refreshAll);
+        InitSpec bond = new InitSpec("bond", null, bondRepository.count(), 1, bondDataService::updateBonds);
+        InitSpec macro = new InitSpec("macro", null, macroIndicatorRepository.count(), macroIndicatorPointRepository.count(), () -> {
             macroRegistry.synchronizeFromConfig();
             macroFetcher.refreshAll();
         });
+        InitSpec viop = new InitSpec("viop", MarketType.VIOP, viopContractRepository.count(), 1, viopDataService::refreshAll);
+        InitSpec news = new InitSpec("news", null, articleRepository.count(), 1, newsDataService::updateNews);
+        InitSpec forex = new InitSpec("forex", MarketType.FOREX, forexRepository.count(), forexCandleRepository.count(), forexDataService::refreshAll);
+        InitSpec stock = new InitSpec("stock", MarketType.STOCK, stockRepository.count(), stockCandleRepository.count(), stockDataService::refreshAll);
+        InitSpec commodity = new InitSpec("commodity", MarketType.COMMODITY, commodityRepository.count(), commodityCandleRepository.count(), commodityDataService::refreshAll);
 
-        init("viop", MarketType.VIOP, viopContractRepository.count(), 1, null, viopDataService::refreshAll);
+        runGroup(crypto, fund)
+                .thenCompose(v -> runGroup(bond, macro))
+                .thenCompose(v -> runGroup(viop, news))
+                .thenCompose(v -> runOne(forex))
+                .thenCompose(v -> runOne(stock))
+                .thenCompose(v -> runOne(commodity));
+    }
 
-        init("news", null, articleRepository.count(), 1, null, newsDataService::updateNews);
+    private record InitSpec(String name, MarketType type, long snapshotCount, long candleCount, Runnable action) {
+    }
 
-        CompletableFuture<Void> forexFuture = init(
-                "forex", MarketType.FOREX, forexRepository.count(), forexCandleRepository.count(), null,
-                forexDataService::refreshAll);
-
-        CompletableFuture<Void> stockFuture = init(
-                "stock", MarketType.STOCK, stockRepository.count(), stockCandleRepository.count(), forexFuture,
-                stockDataService::refreshAll);
-
-        init("commodity", MarketType.COMMODITY, commodityRepository.count(), commodityCandleRepository.count(), stockFuture,
-                commodityDataService::refreshAll);
+    /** Runs every spec in the group concurrently and completes when all of them finish. */
+    private CompletableFuture<Void> runGroup(InitSpec... specs) {
+        CompletableFuture<?>[] futures = new CompletableFuture<?>[specs.length];
+        for (int i = 0; i < specs.length; i++) {
+            futures[i] = runOne(specs[i]);
+        }
+        return CompletableFuture.allOf(futures);
     }
 
     /**
-     * Runs {@code action} asynchronously only if either snapshot or candle data is missing, optionally
-     * waiting on a {@code prerequisite} fetch first; tracks the task and notifies dependent ports on success.
+     * Runs a single spec's fetch asynchronously when its data is missing; tracks the task and notifies
+     * dependent ports on success. Returns an already-completed future when the data already exists.
      */
-    private CompletableFuture<Void> init(String name, MarketType type, long snapshotCount, long candleCount,
-                                         CompletableFuture<?> prerequisite, Runnable action) {
-        if (snapshotCount > 0 && candleCount > 0) {
-            log.info("{} data exists - skipping init", name);
+    private CompletableFuture<Void> runOne(InitSpec spec) {
+        if (spec.snapshotCount() > 0 && spec.candleCount() > 0) {
+            log.info("{} data exists - skipping init", spec.name());
             return CompletableFuture.completedFuture(null);
         }
-        log.info("No {} data - starting initial fetch", name);
-        TaskInfo started = taskTracker.startTask("init-" + name, "Initial " + name + " data fetch");
+        log.info("No {} data - starting initial fetch", spec.name());
+        TaskInfo started = taskTracker.startTask("init-" + spec.name(), "Initial " + spec.name() + " data fetch");
         return CompletableFuture.runAsync(() -> {
             try {
-                if (prerequisite != null) {
-                    prerequisite.handle((r, ex) -> null).join();
+                spec.action().run();
+                if (spec.type() != null) {
+                    ports.portfolio().ifPresent(p -> p.onMarketUpdate(spec.type()));
+                    ports.market().ifPresent(p -> p.onMarketDataUpdated(spec.type()));
                 }
-                action.run();
-                if (type != null) {
-                    ports.portfolio().ifPresent(p -> p.onMarketUpdate(type));
-                    ports.market().ifPresent(p -> p.onMarketDataUpdated(type));
-                }
-                taskTracker.completeTask("init-" + name, started);
-                log.info("{} init completed", name);
+                taskTracker.completeTask("init-" + spec.name(), started);
+                log.info("{} init completed", spec.name());
             } catch (Exception e) {
-                taskTracker.failTask("init-" + name, started, e.getMessage());
-                log.error("{} init failed: {}", name, e.getMessage(), e);
+                taskTracker.failTask("init-" + spec.name(), started, e.getMessage());
+                log.error("{} init failed: {}", spec.name(), e.getMessage(), e);
             }
         }, taskExecutor);
     }

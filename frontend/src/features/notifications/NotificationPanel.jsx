@@ -171,8 +171,10 @@ export default function NotificationPanel({ isOpen, onClose }) {
   const sentinelRef = useRef(null);
 
   useEffect(() => {
+    // The panel stays mounted and preloads the "all" list, so the sentinel only enters the DOM when
+    // the drawer opens — depend on isOpen so the observer attaches then, not just on data/tab changes.
     const node = sentinelRef.current;
-    if (!node || !hasNextPage || isFetchingNextPage) return;
+    if (!isOpen || !node || !hasNextPage || isFetchingNextPage) return;
     let root = node.parentElement;
     while (root && root !== document.body) {
       const style = window.getComputedStyle(root);
@@ -188,7 +190,7 @@ export default function NotificationPanel({ isOpen, onClose }) {
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage, items.length]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, items.length, isOpen]);
 
   const headerActions = (
     <>

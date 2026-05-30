@@ -969,7 +969,8 @@
     "search": {
       "title": "Pozisyon Ekle",
       "subtitle": "Yeni bir varlık keşfedip detay sayfasından pozisyon ekleyebilirsin",
-      "placeholder": "Yeni pozisyon için ara..."
+      "placeholder": "Yeni pozisyon için ara...",
+      "addLabel": "Portföye ekle"
     },
     "allocation": {
       "title": "Dağılım",
@@ -1197,7 +1198,8 @@
     },
     "commodity": {
       "priceTry": "Fiyat (TRY)",
-      "priceUsd": "Fiyat (USD)"
+      "priceUsd": "Fiyat (USD)",
+      "price": "Fiyat ({{currency}})"
     },
     "compareAction": "Karşılaştır"
   },

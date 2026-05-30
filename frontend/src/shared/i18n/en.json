@@ -969,7 +969,8 @@
     "search": {
       "title": "Add Position",
       "subtitle": "Discover an asset and open a position from its market detail page",
-      "placeholder": "Search to add new position..."
+      "placeholder": "Search to add new position...",
+      "addLabel": "Add to portfolio"
     },
     "allocation": {
       "title": "Allocation",
@@ -1197,7 +1198,8 @@
     },
     "commodity": {
       "priceTry": "Price (TRY)",
-      "priceUsd": "Price (USD)"
+      "priceUsd": "Price (USD)",
+      "price": "Price ({{currency}})"
     },
     "compareAction": "Compare"
   },

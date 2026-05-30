@@ -433,12 +433,12 @@
     "willClose": "closes in"
   },
   "home": {
-    "live": "Live market data",
+    "live": "Multi-asset portfolio",
     "heroTitle": {
-      "part1": "All Turkish markets in one place.",
-      "part2": "With currency-correct P&L."
+      "part1": "A portfolio across Turkish markets.",
+      "part2": "On one screen."
     },
-    "heroDescription": "BIST, TEFAS, FX, commodities, bonds, crypto and VIOP — hypothetical-lot portfolio, P&L converted at each day's actual rate, multi-year history and daily refreshes.",
+    "heroDescription": "BIST · TEFAS · FX · commodities · bonds · crypto · VIOP. Hypothetical-lot positions, P&L converted to TRY at each day's actual rate, multi-year history.",
     "cta": {
       "createAccount": "Create free account",
       "signIn": "Sign in"

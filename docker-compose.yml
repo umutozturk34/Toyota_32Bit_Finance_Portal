@@ -124,7 +124,7 @@ services:
       OTEL_TRACES_EXPORTER: otlp
       SERVER_PORT: 8082
       APP_PDF_SERVICEURL: ${PDF_SERVICE_URL:-http://pdf-service:8080}
-      APP_FRONTENDBASEURL: ${FRONTEND_BASE_URL:-http://frontend}
+      APP_FRONTENDBASEURL: ${FRONTEND_BASE_URL:-http://localhost}
     env_file:
       - .env
     depends_on:
@@ -207,7 +207,7 @@ services:
     container_name: finance-keycloak
     restart: unless-stopped
     ports:
-      - "8180:8080"
+      - "127.0.0.1:8180:8080"
     environment:
       TZ: Europe/Istanbul
       KEYCLOAK_ADMIN: admin
@@ -221,6 +221,11 @@ services:
       KC_DB_PASSWORD: ${DB_PASSWORD}
       KC_PROXY: edge
       KC_HTTP_RELATIVE_PATH: /auth
+      # Frontend URL Keycloak announces in redirect_uri / iss / issuer — must match the
+      # public origin browsers see. Falls back to localhost for local dev; on VDS set
+      # VITE_KEYCLOAK_URL=https://your-domain/auth in .env so login redirects come back
+      # to the real host instead of localhost.
+      KC_HOSTNAME_URL: ${VITE_KEYCLOAK_URL:-http://localhost/auth}
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME_STRICT: "false"

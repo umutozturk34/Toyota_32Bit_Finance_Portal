@@ -644,18 +644,18 @@ button {
 }
 
 [data-theme="light"] .modal-overlay {
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.32);
 }
 
 [data-theme="light"] .modal-panel {
-  background: rgba(255, 255, 255, 0.42);
-  border-color: rgba(0, 82, 255, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(0, 82, 255, 0.16);
   box-shadow:
     0 0 60px rgba(0, 82, 255, 0.06),
-    0 24px 48px rgba(0, 40, 120, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+    0 24px 48px rgba(0, 40, 120, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 /* Rich theme cross-fade — only triggered on the landing page (light DOM) */
@@ -706,4 +706,19 @@ button {
 
 [data-theme="light"] select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+/* CSS-based fullscreen fallback for browsers without Fullscreen API (iOS Safari) */
+.chart-pseudo-fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999 !important;
+  background: var(--color-bg-base, #0a0e1a) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  width: 100vw !important;
+  height: 100vh !important;
 }

@@ -80,11 +80,23 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
     }, []);
 
     const toggleFullscreen = useCallback(() => {
-        if (document.fullscreenElement) {
-            document.exitFullscreen?.();
-        } else {
-            wrapperRef.current?.requestFullscreen?.();
+        const wrapper = wrapperRef.current;
+        if (!wrapper) return;
+        const nativeSupported = typeof wrapper.requestFullscreen === 'function'
+            && typeof document.exitFullscreen === 'function';
+        if (nativeSupported) {
+            if (document.fullscreenElement === wrapper) {
+                document.exitFullscreen?.();
+            } else {
+                wrapper.requestFullscreen?.().catch(() => {
+                    wrapper.classList.toggle('chart-pseudo-fullscreen');
+                    setIsFullscreen((prev) => !prev);
+                });
+            }
+            return;
         }
+        wrapper.classList.toggle('chart-pseudo-fullscreen');
+        setIsFullscreen((prev) => !prev);
     }, []);
 
     const isFund = assetType === 'FUND';
@@ -288,11 +300,16 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                             cursor: isAnyToolActive ? 'crosshair' : 'default',
                             zIndex: isAnyToolActive ? 10 : 1,
                             pointerEvents: isAnyToolActive ? 'auto' : 'none',
+                            touchAction: isAnyToolActive ? 'none' : 'auto',
                         }}
                         onMouseDown={handleMouseDown}
                         onMouseMove={handleMouseMove}
                         onMouseUp={handleMouseUp}
                         onMouseLeave={handleMouseLeave}
+                        onTouchStart={handleMouseDown}
+                        onTouchMove={handleMouseMove}
+                        onTouchEnd={handleMouseUp}
+                        onTouchCancel={handleMouseLeave}
                     />
                     <canvas
                         ref={freehandCanvasRef}

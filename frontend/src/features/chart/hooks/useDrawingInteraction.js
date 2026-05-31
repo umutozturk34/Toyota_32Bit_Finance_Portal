@@ -111,7 +111,8 @@ const useDrawingInteraction = ({
         const canvas = canvasOverlayRef.current;
         if (!canvas) return null;
         const rect = canvas.getBoundingClientRect();
-        return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        const point = e.touches?.[0] ?? e.changedTouches?.[0] ?? e;
+        return { x: point.clientX - rect.left, y: point.clientY - rect.top };
     };
 
     const handleMouseDown = (e) => {

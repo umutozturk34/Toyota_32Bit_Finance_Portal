@@ -7,8 +7,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="color-scheme" content="dark light">
-    <meta name="supported-color-schemes" content="dark light">
+    <meta name="color-scheme" content="${(theme == 'LIGHT')?then('only light', 'only dark')}">
+    <meta name="supported-color-schemes" content="${(theme == 'LIGHT')?then('only light', 'only dark')}">
     <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
     <meta name="x-apple-disable-message-reformatting">
     <title>Finance Portal</title>

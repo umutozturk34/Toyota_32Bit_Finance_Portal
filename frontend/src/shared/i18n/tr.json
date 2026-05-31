@@ -1324,7 +1324,13 @@
       "statAvg": "Ort",
       "tabAll": "Tümü",
       "points": "puan",
-      "searchPlaceholder": "Gösterge ara…"
+      "searchPlaceholder": "Gösterge ara…",
+      "maturityM1": "1 Ay",
+      "maturityM3": "3 Ay",
+      "maturityM6": "6 Ay",
+      "maturityM12": "1 Yıl",
+      "maturityM12_PLUS": "1 Yıl+",
+      "maturityTOTAL": "Toplam"
     },
     "editMode": "Düzenleme modu",
     "unsavedChanges": "Kaydedilmemiş değişiklikler",

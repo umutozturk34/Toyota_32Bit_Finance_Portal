@@ -7,7 +7,7 @@ import EmptyState from '../../../shared/components/feedback/EmptyState';
 import { DEPOSIT_CURRENCIES, DEPOSIT_MATURITY_ORDER } from '../constants';
 import { formatValue, themeFor } from '../utils';
 
-const MATURITY_LABEL = {
+const MATURITY_FALLBACK = {
   M1: '1M',
   M3: '3M',
   M6: '6M',
@@ -72,7 +72,7 @@ export default function DepositMatrix({ indicators, onOpen }) {
               </th>
               {DEPOSIT_MATURITY_ORDER.map((m) => (
                 <th key={m} className="text-center text-[10px] font-mono uppercase tracking-[0.14em] text-fg-muted py-1.5 px-1">
-                  {MATURITY_LABEL[m]}
+                  {t(`marketOverview.macro.maturity${m}`, { defaultValue: MATURITY_FALLBACK[m] })}
                 </th>
               ))}
             </tr>

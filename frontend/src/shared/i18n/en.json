@@ -1324,7 +1324,13 @@
       "statAvg": "Avg",
       "tabAll": "All",
       "points": "pts",
-      "searchPlaceholder": "Search indicator…"
+      "searchPlaceholder": "Search indicator…",
+      "maturityM1": "1M",
+      "maturityM3": "3M",
+      "maturityM6": "6M",
+      "maturityM12": "1Y",
+      "maturityM12_PLUS": "1Y+",
+      "maturityTOTAL": "Total"
     },
     "editMode": "Edit mode",
     "unsavedChanges": "Unsaved changes",

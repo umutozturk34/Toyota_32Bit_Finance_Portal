@@ -260,7 +260,7 @@ export default function OnboardingGate() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.55, duration: 0.5 }}
-                className="text-sm text-fg-muted text-center max-w-xs"
+                className="text-sm text-zinc-800 dark:text-zinc-200 text-center max-w-xs font-medium"
               >
                 {t('onboarding.landing.subtitle', { defaultValue: 'Hoş geldin — birkaç ayar sonra hazırsın.' })}
               </motion.p>
@@ -352,7 +352,7 @@ export default function OnboardingGate() {
             exit={{ opacity: 0, transition: { duration: 1.0, ease: [0.4, 0, 0.4, 1] } }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="fixed inset-0 z-[80] flex items-center justify-center"
-            style={{ backgroundColor: 'rgba(2, 6, 23, 0.85)' }}
+            style={{ backgroundColor: 'rgb(2, 6, 23)' }}
             aria-hidden="true"
           >
             <motion.div
@@ -371,8 +371,15 @@ export default function OnboardingGate() {
                 ✨
               </motion.span>
               <motion.h2
-                className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-center bg-gradient-to-r from-cyan-300 via-fuchsia-400 to-amber-300 bg-clip-text text-transparent drop-shadow-[0_0_24px_rgba(168,85,247,0.45)]"
-                style={{ backgroundSize: '200% 100%' }}
+                style={{
+                  color: '#f4f4f5',
+                  backgroundImage: 'linear-gradient(to right, #67e8f9, #e879f9, #fcd34d)',
+                  backgroundSize: '200% 100%',
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+                className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-center drop-shadow-[0_0_24px_rgba(168,85,247,0.45)]"
                 animate={{ backgroundPosition: ['0% 50%', '200% 50%'] }}
                 transition={{ duration: 3.2, repeat: Infinity, ease: 'linear' }}
               >
@@ -382,7 +389,8 @@ export default function OnboardingGate() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.6 }}
-                className="text-sm sm:text-base text-zinc-100/90 text-center max-w-xs leading-relaxed font-medium px-4"
+                style={{ color: '#e4e4e7' }}
+                className="text-sm sm:text-base text-center max-w-xs leading-relaxed font-medium px-4"
               >
                 {t('onboarding.tour.farewell.subtitle', {
                   defaultValue: 'Keyifli takipler dileriz, hep yanındayız.',

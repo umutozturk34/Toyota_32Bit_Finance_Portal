@@ -88,6 +88,22 @@ export default function ProductTour({ open, onFinish, onSkip }) {
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return undefined;
+    const sync = () => {
+      setViewport({ w: window.innerWidth, h: window.innerHeight });
+      measure();
+    };
+    const r1 = requestAnimationFrame(sync);
+    const t1 = setTimeout(sync, 80);
+    const t2 = setTimeout(sync, 200);
+    return () => {
+      cancelAnimationFrame(r1);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [open, stepIndex, measure]);
+
 
   useEffect(() => {
     if (!open) return undefined;

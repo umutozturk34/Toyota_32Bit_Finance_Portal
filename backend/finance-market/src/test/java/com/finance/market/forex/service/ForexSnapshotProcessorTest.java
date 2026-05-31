@@ -110,8 +110,9 @@ class ForexSnapshotProcessorTest {
         when(entityWriter.upsertForexShell(m)).thenReturn(existing);
         when(evdsMapper.toCandles(eq(existing), eq(m), any(), eq(4))).thenReturn(List.of(yesterday, today));
         when(evdsMapper.extractLatestRow(any(), eq(m))).thenReturn(latest);
-        when(forexCandleRepository.findTop2ByCurrencyCodeOrderByCandleDateDesc("USD"))
-                .thenReturn(List.of(today, yesterday));
+        when(forexCandleRepository.findFirstByCurrencyCodeAndCandleDateBeforeOrderByCandleDateDesc(
+                eq("USD"), any(LocalDateTime.class)))
+                .thenReturn(java.util.Optional.of(yesterday));
         when(entityWriter.saveSnapshot(existing)).thenReturn(existing);
 
         Forex result = processor.applyLatestSnapshot(m, response());
@@ -122,7 +123,7 @@ class ForexSnapshotProcessorTest {
     }
 
     @Test
-    void applyLatestSnapshot_skipsChange_whenSinglePriorCandle() {
+    void applyLatestSnapshot_skipsChange_whenNoPriorCandle() {
         ForexSerieMetadata m = meta("USD", false);
         Forex existing = forex("USD");
         existing.setSellingPrice(new BigDecimal("32.50"));
@@ -133,13 +134,15 @@ class ForexSnapshotProcessorTest {
         when(entityWriter.upsertForexShell(m)).thenReturn(existing);
         when(evdsMapper.toCandles(eq(existing), eq(m), any(), eq(4))).thenReturn(List.of(today));
         when(evdsMapper.extractLatestRow(any(), eq(m))).thenReturn(latest);
-        when(forexCandleRepository.findTop2ByCurrencyCodeOrderByCandleDateDesc("USD"))
-                .thenReturn(List.of(today));
+        when(forexCandleRepository.findFirstByCurrencyCodeAndCandleDateBeforeOrderByCandleDateDesc(
+                eq("USD"), any(LocalDateTime.class)))
+                .thenReturn(java.util.Optional.empty());
         when(entityWriter.saveSnapshot(existing)).thenReturn(existing);
 
         processor.applyLatestSnapshot(m, response());
 
-        verify(forexCandleRepository).findTop2ByCurrencyCodeOrderByCandleDateDesc("USD");
+        verify(forexCandleRepository).findFirstByCurrencyCodeAndCandleDateBeforeOrderByCandleDateDesc(
+                eq("USD"), any(LocalDateTime.class));
     }
 
     @Test

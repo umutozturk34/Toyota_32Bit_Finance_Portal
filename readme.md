@@ -9,6 +9,12 @@
 <p><b>A full-stack investing dashboard for the Turkish market.</b><br/>
 <sub>BIST stocks · Funds · Bonds · FX · Gold · crypto · VIOP — Portfolio, Currency-Correct P&amp;L.</sub></p>
 
+<p>
+  <a href="https://finport.dev"><img src="https://img.shields.io/badge/live_demo-finport.dev-0ea5e9?style=for-the-badge&logo=vercel&logoColor=white" alt="live demo"/></a>
+</p>
+
+<p><b>Live at <a href="https://finport.dev">finport.dev</a></b> — production-hosted instance. Inspect the app end-to-end without cloning. Sign up with any email or use the seeded <code>demouser</code>.</p>
+
 <p><img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2Fumutozturk34%2FToyota_32Bit_Finance_Portal&label=visitors&countColor=%237c3aed&style=flat-square" alt="visitors"/></p>
 
 <p><i>Built with the tools and technologies:</i></p>
@@ -215,6 +221,20 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 <details>
 <summary><b>Full VDS deployment + CI/CD</b></summary>
+
+The live instance at [finport.dev](https://finport.dev) runs on this exact stack:
+
+| Layer | Provider we use | What it does | Cost |
+|---|---|---|---|
+| **Compute (VDS)** | [**Contabo**](https://contabo.com) Cloud VPS — Ubuntu 24.04, ~16 GB RAM, x86 | Hosts every Docker container (backend, notification, frontend, Postgres, Keycloak, Kafka, OpenSearch, Redis, …) | ~$9–25/month |
+| **Domain + DNS + HTTPS** | [**Cloudflare**](https://cloudflare.com) — registrar + DNS + proxy | DNS records (A/CNAME/TXT for SPF, DKIM, DMARC); free TLS termination at the edge; DDoS protection; CDN cache | ~$10/year (domain only) |
+| **Outbound mail (SMTP relay)** | [**Brevo**](https://brevo.com) — free tier 300/day | Receives mail from the notification service over SMTP, DKIM-signs it for `finport.dev`, hands off to Gmail/Outlook MX servers with managed IP reputation | $0 |
+| **Image registry** | **GitHub Container Registry (GHCR)** | CI pushes versioned images here; the VDS pulls without registry login (images are public) | $0 |
+
+A different stack works just as well — these are the lowest-friction defaults that match the
+docs. Swap Contabo for Hetzner, Cloudflare for Namecheap+Let's Encrypt, Brevo for Resend / SES,
+nothing in the code changes. See [`docs/documentation/ci-cd.pdf`](docs/documentation/ci-cd.pdf)
+for the full one-hour walkthrough.
 
 **1. Server.** A Linux VDS with Docker + the Compose plugin, ~16 GB RAM (OpenSearch, Kafka, Keycloak
 and two JVM backends are memory-hungry), ports `80`/`443` open. Use an **x86/amd64** host so the

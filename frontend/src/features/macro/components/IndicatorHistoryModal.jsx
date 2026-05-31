@@ -431,5 +431,14 @@ function buildOption(seriesData, normalize, isDark, localeTag = localeTag) {
       splitLine: { lineStyle: { color: grid, type: 'dashed' } },
     },
     series,
+    media: [{
+      query: { maxWidth: 640 },
+      option: {
+        grid: { left: 32, right: 8, top: single ? 12 : 24, bottom: showZoom ? 56 : 24 },
+        legend: !single ? { top: 'bottom', left: 'center', orient: 'horizontal', textStyle: { fontSize: 9 } } : undefined,
+        xAxis: { axisLabel: { fontSize: 9, rotate: 30 } },
+        yAxis: { axisLabel: { fontSize: 9 } },
+      },
+    }],
   };
 }

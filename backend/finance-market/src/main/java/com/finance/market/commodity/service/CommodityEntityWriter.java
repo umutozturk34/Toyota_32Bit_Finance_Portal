@@ -49,10 +49,13 @@ public class CommodityEntityWriter implements MarketEntityWriter {
     }
 
     public boolean refreshChangePercentFromCandles(Commodity commodity, int scale) {
-        List<CommodityCandle> top2 = commodityCandleRepository
-                .findTop2ByCommodityCodeOrderByCandleDateDesc(commodity.getCommodityCode());
-        boolean changed = ChangeFromCandlesUpdater.applyFromTopTwoDescIfMissing(
-                commodity, commodity.getCurrentPrice(), top2, scale);
+        java.math.BigDecimal priorClose = commodityCandleRepository
+                .findFirstByCommodityCodeAndCandleDateBeforeOrderByCandleDateDesc(
+                        commodity.getCommodityCode(), java.time.LocalDate.now().atStartOfDay())
+                .map(CommodityCandle::getClose)
+                .orElse(null);
+        boolean changed = ChangeFromCandlesUpdater.applyFromPriorCloseIfMissing(
+                commodity, commodity.getCurrentPrice(), priorClose, scale);
         if (changed) commodityRepository.save(commodity);
         return changed;
     }

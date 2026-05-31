@@ -100,25 +100,40 @@ public class PortfolioBackfillService {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onLotChanged(LotChangedEvent event) {
         Long portfolioId = event.portfolioId();
+        long lockWaitStart = System.currentTimeMillis();
         synchronized (lockFor(portfolioId)) {
+            long lockWaitMs = System.currentTimeMillis() - lockWaitStart;
             if (event.visibleToUi()) tracker.start(portfolioId, event.assetType(), event.assetCode());
+            long workStart = System.currentTimeMillis();
             try {
                 transactionTemplate.executeWithoutResult(status -> {
                     boolean isViop = event.assetType() == AssetType.VIOP;
+                    long t0 = System.currentTimeMillis();
                     wipeDailySnapshotsFrom(portfolioId, event.fromDate());
+                    long t1 = System.currentTimeMillis();
                     if (!isViop) {
                         wipeAssetSnapshotsForAsset(portfolioId, event.assetType(),
                                 event.assetCode(), event.fromDate());
                         backfillAssetSinceDate(portfolioId, event.assetType(),
                                 event.assetCode(), event.fromDate());
                     }
+                    long t2 = System.currentTimeMillis();
                     rebuildDailyAggregatesFrom(portfolioId, event.fromDate());
+                    long t3 = System.currentTimeMillis();
                     snapshotToday(portfolioId);
+                    long t4 = System.currentTimeMillis();
+                    log.info("backfill timing portfolio={} asset={}:{} wipeDaily={}ms assetWork={}ms rebuildAgg={}ms snapshotToday={}ms",
+                            portfolioId, event.assetType(), event.assetCode(),
+                            t1 - t0, t2 - t1, t3 - t2, t4 - t3);
                 });
             } catch (Exception e) {
                 log.warn("Recompute failed for portfolio {} from {}: {}",
                         portfolioId, event.fromDate(), e.getMessage(), e);
             } finally {
+                long totalMs = System.currentTimeMillis() - workStart;
+                log.info("backfill done portfolio={} asset={}:{} lockWait={}ms work={}ms total={}ms",
+                        portfolioId, event.assetType(), event.assetCode(),
+                        lockWaitMs, totalMs, lockWaitMs + totalMs);
                 if (event.visibleToUi()) tracker.finish(portfolioId, event.assetType(), event.assetCode());
             }
         }

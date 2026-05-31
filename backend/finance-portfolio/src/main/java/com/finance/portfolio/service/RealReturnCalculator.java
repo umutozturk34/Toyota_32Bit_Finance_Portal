@@ -92,7 +92,7 @@ public class RealReturnCalculator {
 
         BigDecimal cpiLatest = cpiByDate.lastEntry().getValue();
         BigDecimal realCapitalBase = sumRealCapitalBase(positions, cpiByDate, cpiLatest);
-        if (realCapitalBase.signum() <= 0) return RealReturnSummary.EMPTY;
+        if (realCapitalBase == null || realCapitalBase.signum() <= 0) return RealReturnSummary.EMPTY;
 
         BigDecimal realPnl = totalValueTry.subtract(realCapitalBase).setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
         BigDecimal realPct = realPnl.multiply(HUNDRED).divide(realCapitalBase, MoneyScale.PRICE, RoundingMode.HALF_UP);
@@ -131,6 +131,11 @@ public class RealReturnCalculator {
         }
     }
 
+    /**
+     * Sums each position's CPI-deflated entry value. Returns {@code null} when any position's entry
+     * date sits before the CPI history starts: a partial base would be compared against the full
+     * portfolio's current value and yield a misleading real return, so the whole metric is suppressed.
+     */
     private BigDecimal sumRealCapitalBase(List<PortfolioPosition> positions,
                                           NavigableMap<LocalDate, BigDecimal> cpiByDate,
                                           BigDecimal cpiLatest) {
@@ -138,10 +143,10 @@ public class RealReturnCalculator {
         for (PortfolioPosition pos : positions) {
             if (pos.getEntryDate() == null) continue;
             BigDecimal cpiAtEntry = cpiOnOrBefore(cpiByDate, pos.getEntryDate().toLocalDate());
-            if (cpiAtEntry == null || cpiAtEntry.signum() <= 0) continue;
-            BigDecimal deflator = cpiLatest.divide(cpiAtEntry, RATIO_SCALE, RoundingMode.HALF_UP);
+            if (cpiAtEntry == null || cpiAtEntry.signum() <= 0) return null;
             BigDecimal entryValue = pos.entryValue();
             if (entryValue == null) continue;
+            BigDecimal deflator = cpiLatest.divide(cpiAtEntry, RATIO_SCALE, RoundingMode.HALF_UP);
             sum = sum.add(entryValue.multiply(deflator));
         }
         return sum.setScale(MoneyScale.PRICE, RoundingMode.HALF_UP);
@@ -149,7 +154,7 @@ public class RealReturnCalculator {
 
     private BigDecimal cpiOnOrBefore(NavigableMap<LocalDate, BigDecimal> cpiByDate, LocalDate date) {
         var entry = cpiByDate.floorEntry(date);
-        return entry != null ? entry.getValue() : cpiByDate.firstEntry().getValue();
+        return entry != null ? entry.getValue() : null;
     }
 
     private BigDecimal cpiGrowthPercent(NavigableMap<LocalDate, BigDecimal> cpiByDate,

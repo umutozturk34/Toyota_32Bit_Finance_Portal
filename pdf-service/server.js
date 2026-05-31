@@ -90,6 +90,9 @@ async function getBrowser() {
 }
 
 function scheduleIdleClose() {
+  if (IDLE_CLOSE_MS <= 0) {
+    return;
+  }
   if (idleTimer) {
     clearTimeout(idleTimer);
   }
@@ -241,6 +244,7 @@ app.post('/render', async (req, res) => {
 
 const server = app.listen(PORT, () => {
   log('info', 'pdf-service listening', { port: PORT });
+  getBrowser().catch((err) => log('warn', 'browser pre-warm failed', { error: String(err) }));
 });
 
 async function shutdown(signal) {

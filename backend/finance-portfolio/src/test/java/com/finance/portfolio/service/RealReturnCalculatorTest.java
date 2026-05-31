@@ -101,6 +101,43 @@ class RealReturnCalculatorTest {
         assertThat(result.cpiGrowthPercent()).isNull();
     }
 
+    @Test
+    void shouldReturnEmptyWhenAnyPositionPredatesCpiHistory() {
+        // CPI history starts in 2003, but a 1995 entry would silently fall back to the earliest CPI
+        // sample and report a wildly understated real return. The whole portfolio metric is
+        // suppressed instead of mixing a deflated and an undeflated base.
+        PortfolioPosition oldPosition = positionAt(LocalDateTime.of(1995, 6, 16, 0, 0), new BigDecimal("100"));
+        PortfolioPosition newPosition = positionAt(LocalDateTime.of(2023, 1, 1, 0, 0), new BigDecimal("100000"));
+        wireCpi(List.of(
+                pointMock(LocalDate.of(2003, 1, 1), new BigDecimal("100")),
+                pointMock(LocalDate.of(2026, 1, 1), new BigDecimal("3000"))));
+
+        RealReturnCalculator.RealReturnSummary result = calculator.compute(
+                List.of(oldPosition, newPosition), new BigDecimal("4000000"));
+
+        assertThat(result.realPnlTry()).isNull();
+        assertThat(result.realPnlPercent()).isNull();
+        assertThat(result.cpiGrowthPercent()).isNull();
+    }
+
+    @Test
+    void perPositionShouldSkipEntriesOlderThanCpiHistory() {
+        PortfolioPosition oldPosition = positionAt(LocalDateTime.of(1995, 6, 16, 0, 0), new BigDecimal("100"));
+        org.mockito.Mockito.lenient().when(oldPosition.getId()).thenReturn(1L);
+        PortfolioPosition newPosition = positionAt(LocalDateTime.of(2023, 1, 1, 0, 0), new BigDecimal("100000"));
+        org.mockito.Mockito.lenient().when(newPosition.getId()).thenReturn(2L);
+        wireCpi(List.of(
+                pointMock(LocalDate.of(2003, 1, 1), new BigDecimal("100")),
+                pointMock(LocalDate.of(2026, 1, 1), new BigDecimal("3000"))));
+
+        java.util.Map<Long, BigDecimal> result = calculator.computePerPosition(
+                List.of(oldPosition, newPosition),
+                java.util.Map.of(1L, new BigDecimal("4500"), 2L, new BigDecimal("180000")));
+
+        assertThat(result).doesNotContainKey(1L);
+        assertThat(result).containsKey(2L);
+    }
+
     private PortfolioPosition positionAt(LocalDateTime entryDate, BigDecimal entryValue) {
         PortfolioPosition position = mock(PortfolioPosition.class);
         org.mockito.Mockito.lenient().when(position.getEntryDate()).thenReturn(entryDate);

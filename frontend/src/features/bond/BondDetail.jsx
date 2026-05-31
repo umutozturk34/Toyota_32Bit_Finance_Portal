@@ -135,6 +135,15 @@ function buildLineOption({ history, valueKey, color, isDark, valueFormatter }) {
         },
       },
     }],
+    media: [{
+      query: { maxWidth: 640 },
+      option: {
+        grid: { left: 32, right: 8, top: 12, bottom: showZoom ? 44 : 18 },
+        xAxis: { axisLabel: { fontSize: 9, rotate: 30 } },
+        yAxis: { axisLabel: { fontSize: 9 } },
+        dataZoom: showZoom ? [{}, { height: 22, bottom: 4 }] : undefined,
+      },
+    }],
   };
 }
 
@@ -269,7 +278,7 @@ export default function BondDetail() {
           {historyLoading ? (
             <div className="h-72 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.chartLoading')}</div>
           ) : hasPrice ? (
-            <ReactECharts option={priceOption} style={{ height: '320px', width: '100%' }} opts={{ renderer: 'canvas' }} notMerge />
+            <ReactECharts option={priceOption} style={{ height: 'min(55vh, 320px)', minHeight: 220, width: '100%' }} opts={{ renderer: 'canvas' }} notMerge />
           ) : (
             <div className="h-72 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.noPriceData', { defaultValue: 'Fiyat geçmişi yok' })}</div>
           )}
@@ -306,7 +315,7 @@ export default function BondDetail() {
                   {historyLoading ? (
                     <div className="h-56 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.chartLoading')}</div>
                   ) : hasRate ? (
-                    <ReactECharts option={rateOption} style={{ height: '260px', width: '100%' }} opts={{ renderer: 'canvas' }} notMerge />
+                    <ReactECharts option={rateOption} style={{ height: 'min(45vh, 260px)', minHeight: 200, width: '100%' }} opts={{ renderer: 'canvas' }} notMerge />
                   ) : (
                     <div className="h-56 flex items-center justify-center text-fg-muted text-xs">{t('market.bond.noRateData')}</div>
                   )}

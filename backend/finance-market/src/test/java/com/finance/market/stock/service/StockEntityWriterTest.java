@@ -132,12 +132,11 @@ class StockEntityWriterTest {
     void refreshChangePercentFromCandles_persistsAndReturnsTrue_whenChangeApplied() {
         Stock stock = Stock.builder().symbol("THYAO.IS").build();
         stock.setCurrentPrice(new BigDecimal("100"));
-        StockCandle latest = new StockCandle();
-        latest.setClose(new BigDecimal("100"));
-        StockCandle previous = new StockCandle();
-        previous.setClose(new BigDecimal("95"));
-        when(stockCandleRepository.findTop2ByStockSymbolOrderByCandleDateDesc("THYAO.IS"))
-                .thenReturn(List.of(latest, previous));
+        StockCandle priorCandle = new StockCandle();
+        priorCandle.setClose(new BigDecimal("95"));
+        when(stockCandleRepository.findFirstByStockSymbolAndCandleDateBeforeOrderByCandleDateDesc(
+                eq("THYAO.IS"), any(java.time.LocalDateTime.class)))
+                .thenReturn(java.util.Optional.of(priorCandle));
 
         boolean changed = writer.refreshChangePercentFromCandles(stock);
 
@@ -146,13 +145,12 @@ class StockEntityWriterTest {
     }
 
     @Test
-    void refreshChangePercentFromCandles_returnsFalse_whenNoChange() {
+    void refreshChangePercentFromCandles_returnsFalse_whenNoPriorCandle() {
         Stock stock = Stock.builder().symbol("THYAO.IS").build();
         stock.setCurrentPrice(new BigDecimal("100"));
-        stock.setChangeAmount(BigDecimal.ZERO);
-        stock.setChangePercent(BigDecimal.ZERO);
-        when(stockCandleRepository.findTop2ByStockSymbolOrderByCandleDateDesc("THYAO.IS"))
-                .thenReturn(List.of());
+        when(stockCandleRepository.findFirstByStockSymbolAndCandleDateBeforeOrderByCandleDateDesc(
+                eq("THYAO.IS"), any(java.time.LocalDateTime.class)))
+                .thenReturn(java.util.Optional.empty());
 
         boolean changed = writer.refreshChangePercentFromCandles(stock);
 

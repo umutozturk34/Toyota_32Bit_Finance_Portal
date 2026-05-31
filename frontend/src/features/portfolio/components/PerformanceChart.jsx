@@ -221,6 +221,14 @@ function buildEChartsOption(data, color, palette, money, forPrint = false) {
       },
       emphasis: { focus: 'series' },
     }],
+    media: [{
+      query: { maxWidth: 640 },
+      option: {
+        grid: { left: 4, right: 8, top: 12, bottom: showZoom ? 80 : 32 },
+        xAxis: { axisLabel: { fontSize: 9, rotate: 35 } },
+        yAxis: { axisLabel: { fontSize: 9 } },
+      },
+    }],
   };
 }
 

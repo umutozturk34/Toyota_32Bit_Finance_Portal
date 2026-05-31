@@ -12,7 +12,10 @@ RUN --mount=type=cache,target=/root/.m2/repository \
 
 COPY notification-backend/pom.xml notification-backend/pom.xml
 COPY notification-backend/src notification-backend/src
-RUN --mount=type=cache,target=/root/.m2/repository \
+RUN --mount=type=secret,id=github_token,target=/run/secrets/github_token \
+    --mount=type=cache,target=/root/.m2/repository \
+    mkdir -p /root/.m2 && \
+    printf '<settings><servers><server><id>github</id><username>umutozturk34</username><password>%s</password></server></servers></settings>' "$(cat /run/secrets/github_token)" > /root/.m2/settings.xml && \
     cd notification-backend && mvn -B -U package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine

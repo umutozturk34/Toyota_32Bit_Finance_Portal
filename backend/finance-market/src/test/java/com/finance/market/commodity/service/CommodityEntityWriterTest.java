@@ -24,6 +24,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -79,10 +80,10 @@ class CommodityEntityWriterTest {
     void refreshChangePercentFromCandles_savesAndReturnsTrue_whenUpdateApplied() {
         Commodity commodity = commodityWithCode();
         commodity.setCurrentPrice(new BigDecimal("2500"));
-        CommodityCandle c1 = candle(new BigDecimal("2500"), LocalDateTime.now());
-        CommodityCandle c2 = candle(new BigDecimal("2400"), LocalDateTime.now().minusDays(1));
-        when(candleRepository.findTop2ByCommodityCodeOrderByCandleDateDesc(CODE))
-                .thenReturn(List.of(c1, c2));
+        CommodityCandle priorCandle = candle(new BigDecimal("2400"), LocalDateTime.now().minusDays(1));
+        when(candleRepository.findFirstByCommodityCodeAndCandleDateBeforeOrderByCandleDateDesc(
+                eq(CODE), any(LocalDateTime.class)))
+                .thenReturn(Optional.of(priorCandle));
 
         boolean changed = writer.refreshChangePercentFromCandles(commodity, 4);
 
@@ -91,10 +92,12 @@ class CommodityEntityWriterTest {
     }
 
     @Test
-    void refreshChangePercentFromCandles_returnsFalseAndSkipsSave_whenNotEnoughCandles() {
+    void refreshChangePercentFromCandles_returnsFalseAndSkipsSave_whenNoPriorCandle() {
         Commodity commodity = commodityWithCode();
         commodity.setCurrentPrice(new BigDecimal("2500"));
-        when(candleRepository.findTop2ByCommodityCodeOrderByCandleDateDesc(CODE)).thenReturn(List.of());
+        when(candleRepository.findFirstByCommodityCodeAndCandleDateBeforeOrderByCandleDateDesc(
+                eq(CODE), any(LocalDateTime.class)))
+                .thenReturn(Optional.empty());
 
         boolean changed = writer.refreshChangePercentFromCandles(commodity, 4);
 

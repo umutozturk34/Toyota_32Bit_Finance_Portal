@@ -29,4 +29,5 @@ public interface CommodityCandleRepository extends JpaRepository<CommodityCandle
     int deleteByCandleDateBefore(LocalDateTime cutoffDate);
 
     List<CommodityCandle> findTop2ByCommodityCodeOrderByCandleDateDesc(String commodityCode);
+    Optional<CommodityCandle> findFirstByCommodityCodeAndCandleDateBeforeOrderByCandleDateDesc(String commodityCode, LocalDateTime before);
 }

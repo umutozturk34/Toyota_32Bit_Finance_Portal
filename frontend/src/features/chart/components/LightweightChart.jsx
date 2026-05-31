@@ -276,7 +276,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                     isFullscreen={isFullscreen}
                     onToggleFullscreen={toggleFullscreen}
                 />
-                <div className="flex items-center gap-1 px-2 sm:px-3 py-1.5 border-b border-border-default bg-surface/40 overflow-x-auto scrollbar-thin">
+                <div className="flex items-center gap-1 flex-wrap sm:flex-nowrap px-2 sm:px-3 py-1.5 border-b border-border-default bg-surface/40 sm:overflow-x-auto scrollbar-thin">
                     <Calendar className="w-3 h-3 mr-1 text-fg-subtle shrink-0" />
                     {TIME_RANGES.map(({ id, labelKey }) => {
                         const isActive = timeRange === id;
@@ -284,7 +284,7 @@ const LightweightChart = ({ data, symbol, assetType = 'CRYPTO', compareDatas = [
                             <button
                                 key={id}
                                 onClick={() => onTimeRangeChange?.(id)}
-                                className={`shrink-0 min-h-[32px] px-2.5 py-1 rounded-md text-[11px] font-semibold tracking-wide border-none cursor-pointer transition-all duration-200 ${isActive ? 'bg-indigo-400/15 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.18)]' : 'bg-transparent text-fg-muted hover:text-fg hover:bg-surface'}`}
+                                className={`shrink-0 min-h-[32px] px-2 sm:px-2.5 py-1 rounded-md text-[10px] sm:text-[11px] font-semibold tracking-wide border-none cursor-pointer transition-all duration-200 ${isActive ? 'bg-indigo-400/15 text-indigo-400 shadow-[0_0_12px_rgba(99,102,241,0.18)]' : 'bg-transparent text-fg-muted hover:text-fg hover:bg-surface'}`}
                             >
                                 {t(labelKey)}
                             </button>

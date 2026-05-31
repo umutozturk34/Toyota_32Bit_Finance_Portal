@@ -75,6 +75,11 @@ public class AdminController {
         return taskTrackingService.subscribeToStatus();
     }
 
+    @GetMapping("/tasks/status")
+    public ApiResponse<com.finance.shared.dto.response.TaskStatusResponse> getTaskStatus() {
+        return ApiResponse.success(translator.translate("api.admin.taskStatusFetched"), taskTrackingService.getTypedStatus());
+    }
+
     private MarketType parseMarketType(String raw) {
         return EnumParser.parseOrBadRequest(MarketType.class, raw == null ? null : raw.toUpperCase(), "enum.field.marketType");
     }

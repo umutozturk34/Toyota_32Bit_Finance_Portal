@@ -12,6 +12,7 @@ import com.finance.common.exception.BusinessException;
 import com.finance.market.stock.mapper.StockMapper;
 import com.finance.market.stock.model.Stock;
 import com.finance.market.stock.model.StockCandle;
+import java.math.BigDecimal;
 import com.finance.common.model.MarketType;
 import com.finance.common.model.StockSegment;
 import com.finance.common.model.TrackedAssetType;
@@ -88,10 +89,13 @@ public class StockEntityWriter implements MarketEntityWriter {
     }
 
     public boolean refreshChangePercentFromCandles(Stock stock) {
-        List<StockCandle> top2 = stockCandleRepository
-                .findTop2ByStockSymbolOrderByCandleDateDesc(stock.getSymbol());
-        boolean changed = ChangeFromCandlesUpdater.applyFromTopTwoDescIfMissing(
-                stock, stock.getCurrentPrice(), top2, scale);
+        BigDecimal priorClose = stockCandleRepository
+                .findFirstByStockSymbolAndCandleDateBeforeOrderByCandleDateDesc(
+                        stock.getSymbol(), java.time.LocalDate.now().atStartOfDay())
+                .map(StockCandle::getClose)
+                .orElse(null);
+        boolean changed = ChangeFromCandlesUpdater.applyFromPriorCloseIfMissing(
+                stock, stock.getCurrentPrice(), priorClose, scale);
         if (changed) stockRepository.save(stock);
         return changed;
     }

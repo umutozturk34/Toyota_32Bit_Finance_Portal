@@ -23,8 +23,20 @@ function useTaskStatusStream(enabled) {
         if (!enabled) return undefined;
         let cancelled = false;
         let source;
+        let reconnectTimer = null;
+        let pollTimer = null;
+        let backoffMs = 1000;
 
-        (async () => {
+        async function fetchSnapshot() {
+            if (cancelled) return;
+            try {
+                const snap = await adminService.getTaskStatus();
+                if (!cancelled && snap) setStatus(snap);
+            } catch { /* fallback fetch failed, SSE remains the source of truth */ }
+        }
+
+        async function connect() {
+            if (cancelled) return;
             const token = await getToken();
             if (cancelled || !token) return;
             source = new EventSourcePolyfill('/api/v1/admin/tasks/stream', {
@@ -32,14 +44,28 @@ function useTaskStatusStream(enabled) {
                 heartbeatTimeout: 60_000,
             });
             source.addEventListener('task-status', (event) => {
-                try { setStatus(JSON.parse(event.data)); } catch { /* malformed payload */ }
+                try {
+                    setStatus(JSON.parse(event.data));
+                    backoffMs = 1000;
+                } catch { /* malformed payload */ }
             });
-            source.onerror = () => source.close();
-        })();
+            source.onerror = () => {
+                try { source.close(); } catch { /* noop */ }
+                if (cancelled) return;
+                reconnectTimer = setTimeout(connect, backoffMs);
+                backoffMs = Math.min(backoffMs * 2, 10_000);
+            };
+        }
+
+        connect();
+        // Safety-net poll every 8s in case SSE silently goes stale (proxy idle-close, sleep/wake).
+        pollTimer = setInterval(fetchSnapshot, 8_000);
 
         return () => {
             cancelled = true;
             if (source) source.close();
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+            if (pollTimer) clearInterval(pollTimer);
         };
     }, [enabled]);
 

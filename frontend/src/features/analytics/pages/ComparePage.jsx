@@ -76,6 +76,25 @@ export default function ComparePage() {
   );
   const [mode, setMode] = useSessionState('compare:mode', params.get('mode') || 'assets');
   const [selected, setSelected] = useSessionState('compare:selected', parseInitialSelection(params));
+
+  // Items restored from URL params arrive with name === code (parseInitialSelection cannot
+  // resolve portfolio names from an id alone); once the portfolio list loads we backfill the
+  // real names so chips and the chart legend display "Demo Portföy" instead of "3".
+  useEffect(() => {
+    if (!userPortfolios || userPortfolios.length === 0) return;
+    setSelected((prev) => {
+      let changed = false;
+      const next = prev.map((s) => {
+        if (s.type !== 'PORTFOLIO') return s;
+        if (s.name && s.name !== s.code) return s;
+        const p = userPortfolios.find((x) => String(x.id) === String(s.code));
+        if (!p || !p.name) return s;
+        changed = true;
+        return { ...s, name: p.name };
+      });
+      return changed ? next : prev;
+    });
+  }, [userPortfolios, setSelected]);
   const [rangeId, setRangeId] = useChartRange();
   const initialRangeRef = useRef(params.get('range'));
   const initialStartRef = useRef(params.get('start'));

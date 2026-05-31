@@ -161,6 +161,21 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
       },
       data: seriesData,
     }],
+    media: [{
+      query: { maxWidth: 640 },
+      option: {
+        series: [{
+          radius: ['50%', '74%'],
+          itemStyle: { borderWidth: 2 },
+          label: {
+            rich: {
+              label: { fontSize: 10, padding: [0, 0, 3, 0] },
+              value: { fontSize: 12 },
+            },
+          },
+        }],
+      },
+    }],
   }), [seriesData, totalValue, totalLabel, tooltipBg, tooltipBorder, tooltipFg, labelFg, labelMuted, ringStroke, money, moneyCompact, forPrint]);
 
   return (
@@ -196,7 +211,7 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
               key={`${isDark}-${activeTab}-${displayCurrency}-${forPrint}`}
               option={option}
               notMerge
-              style={forPrint ? { height: 260, width: '100%', pointerEvents: 'none' } : { height: 220 }}
+              style={forPrint ? { height: 260, width: '100%', pointerEvents: 'none' } : { height: 'min(40vh, 260px)', minHeight: 200, width: '100%' }}
               opts={{ renderer: forPrint ? 'svg' : 'canvas' }}
               onEvents={chartEvents}
             />

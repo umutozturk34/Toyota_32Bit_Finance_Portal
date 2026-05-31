@@ -66,6 +66,8 @@ export const adminService = {
     const response = await api.delete(`/admin/tracked-assets/${type}/${encodeURIComponent(code)}`);
     return response.data;
   },
+
+  getTaskStatus: () => api.get('/admin/tasks/status').then((r) => r.data.data),
 };
 
 export { trackedAssetService } from '../../../shared/services/marketService';

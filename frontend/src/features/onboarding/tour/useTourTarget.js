@@ -47,6 +47,7 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
   const targetRef = useRef(null);
   const prevCloseSelectorRef = useRef(null);
   const stepIdRef = useRef(null);
+  const resizeObserverRef = useRef(null);
 
   useEffect(() => {
     stepIdRef.current = step?.id ?? null;
@@ -195,7 +196,24 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
         const needsScroll = !fullyVisible
           && !fixedAncestor
           && typeof el.scrollIntoView === 'function';
+        const attachResizeObserver = (element) => {
+          if (resizeObserverRef.current) {
+            resizeObserverRef.current.disconnect();
+            resizeObserverRef.current = null;
+          }
+          if (typeof ResizeObserver === 'undefined') return;
+          const ro = new ResizeObserver(() => {
+            if (cancelled) return;
+            const r2 = element.getBoundingClientRect();
+            if (r2.width > 0 && r2.height > 0) {
+              setRectInfo({ rect: cushionRect(r2), stepId: step.id, status: 'found' });
+            }
+          });
+          ro.observe(element);
+          resizeObserverRef.current = ro;
+        };
         const scheduleResizeCatch = () => {
+          attachResizeObserver(el);
           actionTimer = window.setTimeout(() => {
             if (cancelled) return;
             const finalR = el.getBoundingClientRect();
@@ -276,6 +294,10 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
       if (closeTimer) window.clearTimeout(closeTimer);
       if (actionTimer) window.clearTimeout(actionTimer);
       cancelAnimationFrame(pollHandleRef.current);
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
     };
   }, [open, step, pathname, navigate, directionRef]);
 

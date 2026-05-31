@@ -87,5 +87,14 @@ function buildOption(scenario, isDark, displayCurrency) {
       },
     }),
     series,
+    media: [{
+      query: { maxWidth: 640 },
+      option: {
+        grid: { left: 4, right: 8, top: 28, bottom: showZoom ? 56 : 24 },
+        legend: { top: 'bottom', left: 'center', orient: 'horizontal', textStyle: { fontSize: 9 } },
+        xAxis: { axisLabel: { fontSize: 9, rotate: 30 } },
+        yAxis: { axisLabel: { fontSize: 9 } },
+      },
+    }],
   };
 }

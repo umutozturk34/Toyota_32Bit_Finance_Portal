@@ -40,14 +40,14 @@ public class PortfolioSnapshotBootstrap {
         List<Long> portfolioIds = positionRepository.findPortfolioIdsWithoutSnapshots();
         if (portfolioIds.isEmpty()) return;
         log.info("Bootstrap snapshot backfill for {} portfolio(s) without history: {}", portfolioIds.size(), portfolioIds);
-        for (Long portfolioId : portfolioIds) {
+        portfolioIds.parallelStream().forEach((Long portfolioId) -> {
             try {
                 LocalDate from = earliestEntryDate(portfolioId);
                 if (from != null) backfillService.backfillEntirePortfolio(portfolioId, from);
             } catch (Exception e) {
                 log.warn("Bootstrap backfill failed for portfolio {}: {}", portfolioId, e.getMessage(), e);
             }
-        }
+        });
     }
 
     private LocalDate earliestEntryDate(Long portfolioId) {

@@ -13,7 +13,7 @@
   <a href="https://finport.dev"><img src="https://img.shields.io/badge/live_demo-finport.dev-0ea5e9?style=for-the-badge&logo=vercel&logoColor=white" alt="live demo"/></a>
 </p>
 
-<p><b>Live at <a href="https://finport.dev">finport.dev</a></b> — production-hosted instance. Inspect the app end-to-end without cloning. Sign up with any email or use the seeded <code>demouser</code>.</p>
+<p><b>Live at <a href="https://finport.dev">finport.dev</a></b> — production-hosted instance. Inspect the app end-to-end without cloning. Register with any email to try it (the seeded <code>demouser</code> is for the local <code>make demo</code> overlay only, not for prod).</p>
 
 <p><img src="https://api.visitorbadge.io/api/visitors?path=https%3A%2F%2Fgithub.com%2Fumutozturk34%2FToyota_32Bit_Finance_Portal&label=visitors&countColor=%237c3aed&style=flat-square" alt="visitors"/></p>
 

@@ -197,11 +197,11 @@ function AllocationChart({ allocation, portfolioId, forPrint = false }) {
 
       <Card variant="elevated" radius="2xl" padding="lg" backdropBlur interactive={false}>
         {loading ? (
-          <div className="flex items-center justify-center h-80">
+          <div className="flex items-center justify-center" style={{ height: 'min(40vh, 260px)', minHeight: 200 }}>
             <Spinner size="md" tone="accent" />
           </div>
         ) : seriesData.length === 0 ? (
-          <div className="flex items-center justify-center h-80 text-sm text-fg-muted">
+          <div className="flex items-center justify-center text-sm text-fg-muted" style={{ height: 'min(40vh, 260px)', minHeight: 200 }}>
             {t('portfolio.allocation.empty')}
           </div>
         ) : (

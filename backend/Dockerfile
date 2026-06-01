@@ -31,8 +31,9 @@ COPY backend/finance-news/src backend/finance-news/src
 COPY backend/finance-portfolio/src backend/finance-portfolio/src
 COPY backend/finance-app/src backend/finance-app/src
 
-RUN --mount=type=cache,target=/root/.m2/repository \
-    cd backend && mvn -B -U clean package -DskipTests && \
+RUN --mount=type=secret,id=github_token,target=/run/secrets/github_token \
+    --mount=type=cache,target=/root/.m2/repository \
+    cd backend && mvn -B clean package -DskipTests && \
     cp finance-app/target/*.jar /app.jar
 
 FROM eclipse-temurin:21-jre-alpine

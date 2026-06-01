@@ -33,6 +33,8 @@ COPY backend/finance-app/src backend/finance-app/src
 
 RUN --mount=type=secret,id=github_token,target=/run/secrets/github_token \
     --mount=type=cache,target=/root/.m2/repository \
+    mkdir -p /root/.m2 && \
+    printf '<settings><servers><server><id>github</id><username>umutozturk34</username><password>%s</password></server></servers></settings>' "$(cat /run/secrets/github_token)" > /root/.m2/settings.xml && \
     cd backend && mvn -B clean package -DskipTests && \
     cp finance-app/target/*.jar /app.jar
 

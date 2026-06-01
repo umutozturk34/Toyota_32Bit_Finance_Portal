@@ -32,11 +32,20 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency) {
       const pct = basePoint !== 0 ? ((raw - basePoint) / Math.abs(basePoint)) * 100 : 0;
       return [new Date(p.date).getTime(), plotted, raw, pct];
     });
+    const kind = rawKind(ind.type);
+    // Step lines for sparse/published-snapshot data: CPI is monthly, policy rate /
+    // deposit rates are weekly or monthly. The published value is the canonical
+    // reading for the full period until the next reading, so render as a step
+    // function — horizontal line carries the last-known value until the next data
+    // point, eliminating empty gaps when zoomed in.
+    const isSparse = kind === 'index' || kind === 'rate';
     return {
       name: ind.displayName || ind.code,
       type: 'line',
-      smooth: data.length < 200,
+      smooth: !isSparse && data.length < 200,
+      step: isSparse ? 'end' : undefined,
       showSymbol: false,
+      connectNulls: true,
       sampling: 'lttb',
       data,
       itemStyle: { color },
@@ -50,7 +59,7 @@ export function buildOption(seriesData, normalize, isDark, targetCurrency) {
           ],
         },
       } : null,
-      _kind: rawKind(ind.type),
+      _kind: kind,
     };
   }).filter(Boolean);
 

@@ -114,11 +114,22 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
             };
         });
         candleDataRef.current = candleData;
+        // Dynamic priceFormat so sub-cent values (TRY pre-redenomination, cheap crypto)
+        // don't get rounded to 0 by Lightweight Charts default precision: 2.
+        const priceSamples = candleData.flatMap(c => [c.open, c.high, c.low, c.close,
+            c.sellingPrice, c.buyingPrice, c.bulletinPrice].filter(v => v != null && v > 0));
+        const minPrice = priceSamples.length ? Math.min(...priceSamples) : 1;
+        const priceFormat = minPrice < 0.001
+            ? { type: 'price', precision: 6, minMove: 0.000001 }
+            : minPrice < 0.1
+                ? { type: 'price', precision: 4, minMove: 0.0001 }
+                : { type: 'price', precision: 2, minMove: 0.01 };
         if (chartType === 'candle') {
             const candleSeries = chart.addSeries(CandlestickSeries, {
                 upColor: '#26a69a', downColor: '#ef5350',
                 borderUpColor: '#26a69a', borderDownColor: '#ef5350',
                 wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+                priceFormat,
             });
             candleSeriesRef.current = candleSeries;
             lineSeriesRef.current = null;
@@ -135,6 +146,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 lastValueVisible: true,
                 priceLineVisible: true,
                 title: t('chart.legend.price'),
+                priceFormat,
             });
             priceLine.setData(candleData.map(c => ({ time: c.time, value: c.close })));
             if (showSecondaryLines && !hasCompare && candleData.some(c => c.bulletinPrice != null)) {
@@ -167,6 +179,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 lastValueVisible: true,
                 priceLineVisible: true,
                 title: t('chart.legend.sell'),
+                priceFormat,
             });
             sellLine.setData(candleData
                 .filter(c => c.sellingPrice != null)
@@ -201,6 +214,7 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                 crosshairMarkerBackgroundColor: isDark ? '#050506' : '#ffffff',
                 lastValueVisible: true,
                 priceLineVisible: true,
+                priceFormat,
             });
             lineSeriesRef.current = lineSeries;
             candleSeriesRef.current = lineSeries;
@@ -290,6 +304,9 @@ const useChartCore = ({ data, symbol, chartType, isDark, indicators, renderDrawi
                     width: chartContainerRef.current.clientWidth,
                     height: chartContainerRef.current.clientHeight || 500,
                 });
+                // Repack candles into the new width so mobile container growth (e.g. rotation,
+                // fullscreen toggle, soft-keyboard close) re-expands plot content, not just canvas.
+                try { chart.timeScale().fitContent(); } catch { void 0; }
                 if (renderDrawingsRef.current) renderDrawingsRef.current();
             }
         };

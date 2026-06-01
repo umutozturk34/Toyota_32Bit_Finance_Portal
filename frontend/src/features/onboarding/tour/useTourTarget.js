@@ -18,6 +18,19 @@ function isInFixedAncestor(el) {
   return false;
 }
 
+function hasAnimatingAncestor(el) {
+  if (typeof Element === 'undefined' || typeof Element.prototype.getAnimations !== 'function') return false;
+  let node = el;
+  while (node && node !== document.body && node.nodeType === 1) {
+    const animations = node.getAnimations();
+    for (const a of animations) {
+      if (a.playState === 'running') return true;
+    }
+    node = node.parentElement;
+  }
+  return false;
+}
+
 function cushionRect(r) {
   return {
     top: r.top - RECT_CUSHION,
@@ -77,6 +90,7 @@ export default function useTourTarget({ open, step, pathname, navigate, directio
     if (!el) return;
     const r = el.getBoundingClientRect();
     if (r.width === 0 && r.height === 0) return;
+    if (hasAnimatingAncestor(el)) return;
     setRectInfo({ rect: cushionRect(r), stepId: stepIdRef.current, status: 'found' });
   }, []);
 

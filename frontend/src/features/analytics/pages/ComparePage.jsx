@@ -115,16 +115,16 @@ export default function ComparePage() {
     return set.size === 1 ? [...set][0] : null;
   }, [selected]);
   const targetCurrency = useMemo(() => {
-    if (useExplicitBounds && initialCurrencyRef.current) return initialCurrencyRef.current;
+    if (initialCurrencyRef.current) return initialCurrencyRef.current;
     if (depositFrameCurrency) return depositFrameCurrency;
     if (displayCurrency !== 'ORIGINAL') return displayCurrency;
     const first = selected.find((s) => !isMacro(s.type) && s.type !== 'PORTFOLIO');
     return first ? nativeCurrencyFor(first.type, first.code) : 'TRY';
-  }, [displayCurrency, selected, useExplicitBounds, depositFrameCurrency]);
+  }, [displayCurrency, selected, depositFrameCurrency]);
   // "Original" view (each series in its own native) only when no explicit currency is in effect:
   // a URL currency (USD/EUR beater) or a selected non-TRY deposit forces conversion to that currency.
   const originalView = displayCurrency === 'ORIGINAL'
-    && !(useExplicitBounds && initialCurrencyRef.current)
+    && !initialCurrencyRef.current
     && !depositFrameCurrency;
 
   useEffect(() => {
@@ -256,6 +256,11 @@ export default function ComparePage() {
 
   const convertedData = useMemo(() => {
     const todayIso = new Date().toISOString().slice(0, 10);
+    // When the page was opened with explicit start/end bounds (e.g. Beater hand-off
+    // pinning the user to a specific past window), forward-filling must stop at
+    // bounds.to — otherwise the last in-window value gets stamped across every day
+    // up to today, producing a flat tail that masquerades as "no price change".
+    const fillUntil = useExplicitBounds ? bounds.to : todayIso;
     return backfilledSeriesData.map((s) => {
       let pts = s.points || [];
       if (commonStartDate) {
@@ -282,11 +287,19 @@ export default function ComparePage() {
           return { ...p, value: converted ?? p.value };
         });
       }
-      pts = forwardFillDaily(pts, commonStartDate || bounds.from, todayIso);
-      pts = forwardFillToToday(pts);
+      // Forward-fill only makes sense for daily-frequency series with weekend/holiday
+      // gaps. Sparse macro readings (monthly CPI, weekly deposit rates) get smeared
+      // into every intervening day, making the "last published" value masquerade as
+      // fresh observations — e.g. April CPI looking like it was recorded every day
+      // through May. Step lines in the builder already carry the last value visually.
+      const isSparse = isMacro(s.indicator.type);
+      if (!isSparse) {
+        pts = forwardFillDaily(pts, commonStartDate || bounds.from, fillUntil);
+        if (!useExplicitBounds) pts = forwardFillToToday(pts);
+      }
       return { ...s, points: pts };
     });
-  }, [backfilledSeriesData, commonStartDate, originalView, targetCurrency, convertBetween, bounds.from]);
+  }, [backfilledSeriesData, commonStartDate, originalView, targetCurrency, convertBetween, bounds.from, bounds.to, useExplicitBounds]);
 
   const seriesData = convertedData;
 

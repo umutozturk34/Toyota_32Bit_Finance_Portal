@@ -110,9 +110,11 @@ class ForexSnapshotProcessorTest {
         when(entityWriter.upsertForexShell(m)).thenReturn(existing);
         when(evdsMapper.toCandles(eq(existing), eq(m), any(), eq(4))).thenReturn(List.of(yesterday, today));
         when(evdsMapper.extractLatestRow(any(), eq(m))).thenReturn(latest);
+        when(forexCandleRepository.findFirstByCurrencyCodeOrderByCandleDateDesc("USD"))
+                .thenReturn(Optional.of(today));
         when(forexCandleRepository.findFirstByCurrencyCodeAndCandleDateBeforeOrderByCandleDateDesc(
-                eq("USD"), any(LocalDateTime.class)))
-                .thenReturn(java.util.Optional.of(yesterday));
+                eq("USD"), eq(today.getCandleDate())))
+                .thenReturn(Optional.of(yesterday));
         when(entityWriter.saveSnapshot(existing)).thenReturn(existing);
 
         Forex result = processor.applyLatestSnapshot(m, response());
@@ -134,15 +136,17 @@ class ForexSnapshotProcessorTest {
         when(entityWriter.upsertForexShell(m)).thenReturn(existing);
         when(evdsMapper.toCandles(eq(existing), eq(m), any(), eq(4))).thenReturn(List.of(today));
         when(evdsMapper.extractLatestRow(any(), eq(m))).thenReturn(latest);
+        when(forexCandleRepository.findFirstByCurrencyCodeOrderByCandleDateDesc("USD"))
+                .thenReturn(Optional.of(today));
         when(forexCandleRepository.findFirstByCurrencyCodeAndCandleDateBeforeOrderByCandleDateDesc(
-                eq("USD"), any(LocalDateTime.class)))
-                .thenReturn(java.util.Optional.empty());
+                eq("USD"), eq(today.getCandleDate())))
+                .thenReturn(Optional.empty());
         when(entityWriter.saveSnapshot(existing)).thenReturn(existing);
 
         processor.applyLatestSnapshot(m, response());
 
         verify(forexCandleRepository).findFirstByCurrencyCodeAndCandleDateBeforeOrderByCandleDateDesc(
-                eq("USD"), any(LocalDateTime.class));
+                eq("USD"), eq(today.getCandleDate()));
     }
 
     @Test

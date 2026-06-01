@@ -11,8 +11,6 @@ import Spinner from '../../../shared/components/feedback/Spinner';
 import {
   backFillToWindowStart,
   fetchSeries,
-  forwardFillDaily,
-  forwardFillToToday,
   isMacro,
   rangeBounds,
 } from '../../analytics/lib/compareSeriesUtils';
@@ -86,12 +84,15 @@ export default function IndicatorHistoryModal({ indicator, onClose }) {
   );
 
   const seriesData = useMemo(() => {
-    const todayIso = new Date().toISOString().slice(0, 10);
     return rawSeriesData.map((s) => {
       let pts = s.points || [];
+      // Backfill is fine (anchor the line at the window start), but forward-fill
+      // would smear the last published reading into days that have no real
+      // observation yet — for monthly indicators like CPI that means showing
+      // the April value as if it had been "saved" into May. The chart's step
+      // line itself already carries the last value visually until the next
+      // point; we don't need to materialise fake daily points to do it.
       pts = backFillToWindowStart(pts, bounds.from);
-      pts = forwardFillDaily(pts, bounds.from, todayIso);
-      pts = forwardFillToToday(pts);
       return { ...s, points: pts };
     });
   }, [rawSeriesData, bounds.from]);

@@ -80,9 +80,12 @@ class CommodityEntityWriterTest {
     void refreshChangePercentFromCandles_savesAndReturnsTrue_whenUpdateApplied() {
         Commodity commodity = commodityWithCode();
         commodity.setCurrentPrice(new BigDecimal("2500"));
-        CommodityCandle priorCandle = candle(new BigDecimal("2400"), LocalDateTime.now().minusDays(1));
+        CommodityCandle latestCandle = candle(new BigDecimal("2500"), LocalDateTime.of(2026, 5, 26, 0, 0));
+        CommodityCandle priorCandle = candle(new BigDecimal("2400"), LocalDateTime.of(2026, 5, 25, 0, 0));
+        when(candleRepository.findFirstByCommodityCodeOrderByCandleDateDesc(CODE))
+                .thenReturn(Optional.of(latestCandle));
         when(candleRepository.findFirstByCommodityCodeAndCandleDateBeforeOrderByCandleDateDesc(
-                eq(CODE), any(LocalDateTime.class)))
+                eq(CODE), eq(latestCandle.getCandleDate())))
                 .thenReturn(Optional.of(priorCandle));
 
         boolean changed = writer.refreshChangePercentFromCandles(commodity, 4);
@@ -95,8 +98,24 @@ class CommodityEntityWriterTest {
     void refreshChangePercentFromCandles_returnsFalseAndSkipsSave_whenNoPriorCandle() {
         Commodity commodity = commodityWithCode();
         commodity.setCurrentPrice(new BigDecimal("2500"));
+        CommodityCandle latestCandle = candle(new BigDecimal("2500"), LocalDateTime.of(2026, 5, 26, 0, 0));
+        when(candleRepository.findFirstByCommodityCodeOrderByCandleDateDesc(CODE))
+                .thenReturn(Optional.of(latestCandle));
         when(candleRepository.findFirstByCommodityCodeAndCandleDateBeforeOrderByCandleDateDesc(
-                eq(CODE), any(LocalDateTime.class)))
+                eq(CODE), eq(latestCandle.getCandleDate())))
+                .thenReturn(Optional.empty());
+
+        boolean changed = writer.refreshChangePercentFromCandles(commodity, 4);
+
+        assertThat(changed).isFalse();
+        verify(commodityRepository, never()).save(any());
+    }
+
+    @Test
+    void refreshChangePercentFromCandles_returnsFalseAndSkipsSave_whenNoCandlesAtAll() {
+        Commodity commodity = commodityWithCode();
+        commodity.setCurrentPrice(new BigDecimal("2500"));
+        when(candleRepository.findFirstByCommodityCodeOrderByCandleDateDesc(CODE))
                 .thenReturn(Optional.empty());
 
         boolean changed = writer.refreshChangePercentFromCandles(commodity, 4);

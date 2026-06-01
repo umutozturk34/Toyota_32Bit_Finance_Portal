@@ -50,8 +50,10 @@ public class CommodityEntityWriter implements MarketEntityWriter {
 
     public boolean refreshChangePercentFromCandles(Commodity commodity, int scale) {
         java.math.BigDecimal priorClose = commodityCandleRepository
-                .findFirstByCommodityCodeAndCandleDateBeforeOrderByCandleDateDesc(
-                        commodity.getCommodityCode(), java.time.LocalDate.now().atStartOfDay())
+                .findFirstByCommodityCodeOrderByCandleDateDesc(commodity.getCommodityCode())
+                .flatMap(latest -> commodityCandleRepository
+                        .findFirstByCommodityCodeAndCandleDateBeforeOrderByCandleDateDesc(
+                                commodity.getCommodityCode(), latest.getCandleDate()))
                 .map(CommodityCandle::getClose)
                 .orElse(null);
         boolean changed = ChangeFromCandlesUpdater.applyFromPriorCloseIfMissing(

@@ -22,6 +22,15 @@ const ChartToolbar = ({
 }) => {
     const { t } = useTranslation();
     const magnetLabel = t(`chart.toolbar.magnet.${magnetMode}`);
+    // Dynamic precision: sub-cent values need more decimals so they don't collapse to "0.00".
+    const pricePrecision = (val) => {
+        const abs = Math.abs(Number(val));
+        if (!Number.isFinite(abs) || abs === 0) return 2;
+        if (abs < 0.001) return 6;
+        if (abs < 0.1) return 4;
+        return 2;
+    };
+    const fmtPrice = (val) => Number(val).toFixed(pricePrecision(val));
     const activeInstructionKey = activeTool === 'FREEHAND'
         ? 'chart.toolbar.activeInstruction.freehand'
         : (activeTool === 'TEXT' || activeTool === 'ICON')
@@ -146,14 +155,14 @@ const ChartToolbar = ({
                 if (crosshairData.open != null) {
                     return (
                         <div className="hidden sm:flex landscape:flex items-center gap-2 sm:gap-3 text-[11px] font-mono whitespace-nowrap shrink-0 pr-2 md:pr-32 lg:pr-2">
-                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.open')} <span className="text-fg">{Number(crosshairData.open).toFixed(2)}</span></span>
-                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.high')} <span className="text-[#10b981]">{Number(crosshairData.high).toFixed(2)}</span></span>
-                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.low')} <span className="text-[#ef4444]">{Number(crosshairData.low).toFixed(2)}</span></span>
-                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.close')} <span style={{ color: Number(crosshairData.close) >= Number(crosshairData.open) ? '#10b981' : '#ef4444' }}>{Number(crosshairData.close).toFixed(2)}</span></span>
+                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.open')} <span className="text-fg">{fmtPrice(crosshairData.open)}</span></span>
+                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.high')} <span className="text-[#10b981]">{fmtPrice(crosshairData.high)}</span></span>
+                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.low')} <span className="text-[#ef4444]">{fmtPrice(crosshairData.low)}</span></span>
+                            <span className="text-fg-muted">{t('chart.toolbar.crosshair.close')} <span style={{ color: Number(crosshairData.close) >= Number(crosshairData.open) ? '#10b981' : '#ef4444' }}>{fmtPrice(crosshairData.close)}</span></span>
                             {crosshairData.compares?.map((c) => (
                                 <span key={c.symbol} className="text-fg-muted flex items-center gap-1">
                                     <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
-                                    {c.symbol} <span style={{ color: c.color }}>{Number(c.value).toFixed(2)}</span>
+                                    {c.symbol} <span style={{ color: c.color }}>{fmtPrice(c.value)}</span>
                                 </span>
                             ))}
                         </div>
@@ -165,7 +174,7 @@ const ChartToolbar = ({
                             {crosshairData.compares.map((c) => (
                                 <span key={c.symbol} className="text-fg-muted flex items-center gap-1">
                                     <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
-                                    {c.symbol} <span style={{ color: c.color }}>{Number(c.value).toFixed(2)}</span>
+                                    {c.symbol} <span style={{ color: c.color }}>{fmtPrice(c.value)}</span>
                                 </span>
                             ))}
                         </div>

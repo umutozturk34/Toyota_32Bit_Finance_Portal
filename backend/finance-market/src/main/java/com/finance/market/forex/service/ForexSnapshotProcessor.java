@@ -108,15 +108,19 @@ public class ForexSnapshotProcessor implements MarketSnapshotProcessor {
     }
 
     /**
-     * Sets day change from the most recent candle strictly before today, using its selling price as
-     * the prior close. The "before today" cutoff is what keeps an intraday row for today (if any)
-     * from being mistaken for the previous close.
+     * Sets day change from the candle immediately preceding the latest stored candle. Anchoring on
+     * the latest stored date (rather than today) keeps the result meaningful on weekends and
+     * holidays: if the most recent data point is a Friday close, change is computed between Friday
+     * and the previous trading day instead of collapsing to zero against Friday itself.
      */
     private void applyChangeFromCandles(Forex forex) {
         if (forex.getSellingPrice() == null) return;
+        Optional<ForexCandle> latestCandle = forexCandleRepository
+                .findFirstByCurrencyCodeOrderByCandleDateDesc(forex.getCurrencyCode());
+        if (latestCandle.isEmpty()) return;
         BigDecimal previous = forexCandleRepository
                 .findFirstByCurrencyCodeAndCandleDateBeforeOrderByCandleDateDesc(
-                        forex.getCurrencyCode(), java.time.LocalDate.now().atStartOfDay())
+                        forex.getCurrencyCode(), latestCandle.get().getCandleDate())
                 .map(ForexCandle::getSellingPrice)
                 .orElse(null);
         if (previous == null) return;

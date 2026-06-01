@@ -62,7 +62,7 @@ export function useMoney() {
       notation: 'compact',
       style: 'currency',
       currency: effectiveCurrency,
-      maximumFractionDigits: 1,
+      maximumFractionDigits: 2,
     }).format(converted);
   }, [convert, format, resolveTarget, rates]);
 

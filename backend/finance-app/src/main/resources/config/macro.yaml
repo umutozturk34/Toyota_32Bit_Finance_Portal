@@ -27,15 +27,18 @@ app:
         frequency: DAILY
         prominent: false
 
+      # TCMB EVDS code naming is misleading: TP.TUFE1YI.T1 actually publishes Yİ-ÜFE
+      # (Domestic PPI) data, while TP.GENENDEKS.T1 publishes TÜFE (CPI). Verified against
+      # hakedis.org TÜİK reference values for April 2026: TÜFE=4028.47, Yİ-ÜFE=5308.46.
       - code: TP.TUFE1YI.T1
-        label: cpiIndex
+        label: ppiIndex
         category: INFLATION
         unit: INDEX
         frequency: MONTHLY
         prominent: true
 
       - code: TP.GENENDEKS.T1
-        label: ppiIndex
+        label: cpiIndex
         category: INFLATION
         unit: INDEX
         frequency: MONTHLY

@@ -136,7 +136,11 @@ export function ThemeProvider({ children }) {
     const theme = useMemo(() => resolveTheme(themePreference), [themePreference]);
 
     useLayoutEffect(() => {
-        document.documentElement.setAttribute('data-theme', theme);
+        const root = document.documentElement;
+        root.setAttribute('data-theme', theme);
+        // Inline color-scheme keeps Android Chrome's force-dark from re-applying
+        // when the user explicitly switches themes after first paint.
+        root.style.colorScheme = theme;
     }, [theme]);
 
     const setThemePreference = (next) => {

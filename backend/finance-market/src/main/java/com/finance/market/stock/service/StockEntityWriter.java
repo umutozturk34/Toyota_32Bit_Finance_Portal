@@ -21,6 +21,7 @@ import com.finance.market.stock.repository.StockCandleRepository;
 import com.finance.market.stock.repository.StockRepository;
 import com.finance.market.core.util.CandleBatchUpsertTemplate;
 import com.finance.market.core.util.ChangeFromCandlesUpdater;
+import com.finance.market.core.util.HistoricalSplitCorrector;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
@@ -90,8 +91,10 @@ public class StockEntityWriter implements MarketEntityWriter {
 
     public boolean refreshChangePercentFromCandles(Stock stock) {
         BigDecimal priorClose = stockCandleRepository
-                .findFirstByStockSymbolAndCandleDateBeforeOrderByCandleDateDesc(
-                        stock.getSymbol(), java.time.LocalDate.now().atStartOfDay())
+                .findFirstByStockSymbolOrderByCandleDateDesc(stock.getSymbol())
+                .flatMap(latest -> stockCandleRepository
+                        .findFirstByStockSymbolAndCandleDateBeforeOrderByCandleDateDesc(
+                                stock.getSymbol(), latest.getCandleDate()))
                 .map(StockCandle::getClose)
                 .orElse(null);
         boolean changed = ChangeFromCandlesUpdater.applyFromPriorCloseIfMissing(
@@ -101,8 +104,9 @@ public class StockEntityWriter implements MarketEntityWriter {
     }
 
     public int upsertCandles(String symbol, Stock stock, List<YahooCandleDto> candleDtos) {
+        List<YahooCandleDto> corrected = HistoricalSplitCorrector.correct(candleDtos);
         CandleBatchUpsertTemplate.UpsertResult<StockCandle> upsertResult = CandleBatchUpsertTemplate.upsert(
-                candleDtos,
+                corrected,
                 dto -> dto.candleDate().truncatedTo(ChronoUnit.DAYS),
                 keys -> stockCandleRepository.findByStockSymbolAndCandleDateIn(symbol, keys),
                 candle -> candle.getCandleDate().truncatedTo(ChronoUnit.DAYS),

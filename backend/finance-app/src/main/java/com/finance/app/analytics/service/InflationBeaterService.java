@@ -43,7 +43,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class InflationBeaterService {
 
-    private static final String DEFAULT_BENCHMARK = "TP.TUFE1YI.T1";
+    // TÜFE (consumer-price index) is the canonical inflation benchmark. The TCMB EVDS
+    // code naming is misleading: TP.GENENDEKS.T1 is TÜFE and TP.TUFE1YI.T1 is Yİ-ÜFE
+    // (verified against TÜİK published values).
+    private static final String DEFAULT_BENCHMARK = "TP.GENENDEKS.T1";
     private static final BigDecimal NOTIONAL_AMOUNT = new BigDecimal("10000");
     private static final BigDecimal HUNDRED = new BigDecimal("100");
 

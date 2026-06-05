@@ -81,8 +81,10 @@ public class PortfolioDataClient {
                         p.totalValueTry() != null ? p.totalValueTry().doubleValue() : 0d))
                 .toList();
         // Cost-based cumulative return % straight from the portfolio's pnlPercent — NOT a value index
-        // (value/first − 1), which lot additions over time would distort.
-        List<PerformanceSeriesPoint> returnSeries = safePerf.stream()
+        // (value/first − 1), which lot additions over time would distort. Leading synthetic-zero
+        // points are trimmed (see #trimLeadingZeroReturn) so the curve fills the chart instead of
+        // being squeezed into the tail.
+        List<PerformanceSeriesPoint> returnSeries = trimLeadingZeroReturn(safePerf).stream()
                 .map(p -> new PerformanceSeriesPoint(
                         p.timestamp(),
                         p.pnlPercent() != null ? p.pnlPercent().doubleValue() : 0d))
@@ -92,6 +94,28 @@ public class PortfolioDataClient {
         List<ReportAllocation> allocation = view != null && view.allocation() != null ? view.allocation() : List.of();
 
         return new PortfolioReportBundle(portfolioId, summary, allocation, realizedAllocation, positions, series, returnSeries);
+    }
+
+    /**
+     * Trims the leading run of synthetic-zero return points from the performance series. The 5Y
+     * window often opens with snapshots whose {@code pnlPercent} is guarded to exactly zero — dates
+     * before any lot was held, or older snapshots predating cost-basis tracking. Those flat-zero
+     * leaders squeeze the meaningful return curve into the chart's tail, making it look as if only
+     * the last weeks are plotted. Drop them, but keep the single 0% point immediately before the
+     * first real return so the line still starts from baseline. The value series is left untouched:
+     * its leading zeros are a genuine "not yet invested" value, not an artifact.
+     */
+    private static List<PerformanceRecord> trimLeadingZeroReturn(List<PerformanceRecord> perf) {
+        int firstReal = -1;
+        for (int i = 0; i < perf.size(); i++) {
+            BigDecimal pct = perf.get(i).pnlPercent();
+            if (pct != null && pct.signum() != 0) {
+                firstReal = i;
+                break;
+            }
+        }
+        if (firstReal <= 0) return perf;
+        return perf.subList(firstReal - 1, perf.size());
     }
 
     /**

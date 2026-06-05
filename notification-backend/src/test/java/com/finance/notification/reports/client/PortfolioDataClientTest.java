@@ -262,6 +262,72 @@ class PortfolioDataClientTest {
         assertThat(view.allocation()).isEmpty();
     }
 
+    @Test
+    void should_trimLeadingSyntheticZeroReturns_keepingBaselineAnchor_when_seriesOpensWithZeros() {
+        PortfolioDataClient client = buildClient();
+        queueStandardResponses(
+                "{\"success\":true,\"data\":null}",
+                "{\"success\":true,\"data\":[]}",
+                EMPTY_POSITIONS_PAGE,
+                """
+                {"success":true,"data":[
+                  {"timestamp":"2026-01-01T00:00:00","totalValueTry":1000,"pnlPercent":0},
+                  {"timestamp":"2026-01-02T00:00:00","totalValueTry":1000,"pnlPercent":0},
+                  {"timestamp":"2026-01-03T00:00:00","totalValueTry":1000,"pnlPercent":0},
+                  {"timestamp":"2026-01-04T00:00:00","totalValueTry":1100,"pnlPercent":10},
+                  {"timestamp":"2026-01-05T00:00:00","totalValueTry":1200,"pnlPercent":20}
+                ]}
+                """);
+
+        PortfolioReportBundle bundle = client.fetch(1L, "5Y", "tok");
+
+        // Value series keeps every point; return series drops the flat-zero lead but keeps one 0% anchor.
+        assertThat(bundle.performanceSeries()).hasSize(5);
+        assertThat(bundle.returnSeries()).hasSize(3);
+        assertThat(bundle.returnSeries().get(0).value()).isEqualTo(0d);
+        assertThat(bundle.returnSeries().get(1).value()).isEqualTo(10d);
+        assertThat(bundle.returnSeries().get(2).value()).isEqualTo(20d);
+    }
+
+    @Test
+    void should_keepEntireReturnSeries_when_everyPointIsZero() {
+        PortfolioDataClient client = buildClient();
+        queueStandardResponses(
+                "{\"success\":true,\"data\":null}",
+                "{\"success\":true,\"data\":[]}",
+                EMPTY_POSITIONS_PAGE,
+                """
+                {"success":true,"data":[
+                  {"timestamp":"2026-01-01T00:00:00","totalValueTry":1000,"pnlPercent":0},
+                  {"timestamp":"2026-01-02T00:00:00","totalValueTry":1000,"pnlPercent":0}
+                ]}
+                """);
+
+        PortfolioReportBundle bundle = client.fetch(1L, "5Y", "tok");
+
+        assertThat(bundle.returnSeries()).hasSize(2);
+    }
+
+    @Test
+    void should_notTrimReturnSeries_when_firstPointAlreadyNonZero() {
+        PortfolioDataClient client = buildClient();
+        queueStandardResponses(
+                "{\"success\":true,\"data\":null}",
+                "{\"success\":true,\"data\":[]}",
+                EMPTY_POSITIONS_PAGE,
+                """
+                {"success":true,"data":[
+                  {"timestamp":"2026-01-01T00:00:00","totalValueTry":1000,"pnlPercent":5},
+                  {"timestamp":"2026-01-02T00:00:00","totalValueTry":1100,"pnlPercent":10}
+                ]}
+                """);
+
+        PortfolioReportBundle bundle = client.fetch(1L, "5Y", "tok");
+
+        assertThat(bundle.returnSeries()).hasSize(2);
+        assertThat(bundle.returnSeries().get(0).value()).isEqualTo(5d);
+    }
+
     private ClientResponse jsonResponse(String body) {
         DefaultDataBufferFactory factory = new DefaultDataBufferFactory();
         DataBuffer buffer = factory.wrap(body.getBytes(StandardCharsets.UTF_8));

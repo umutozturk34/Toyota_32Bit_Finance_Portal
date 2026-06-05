@@ -39,7 +39,7 @@
             box-shadow: 0 6px 18px -4px rgba(99,102,241,0.5);
         }
         .brand-name { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; line-height: 1.1; color: [[${palette.fg}]]; }
-        .brand-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: 1.8px; text-transform: uppercase; margin-top: 5px; color: [[${palette.muted}]]; }
+        .brand-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: 0.2px; margin-top: 5px; color: [[${palette.muted}]]; }
         .brand-meta { font-size: 10px; color: [[${palette.subtle}]]; letter-spacing: 0.4px; }
 
         .card {
@@ -57,13 +57,12 @@
         .card-body { padding: 7px 14px 12px; }
         .card-title { margin: 0; font-size: 11.5px; font-weight: 700; letter-spacing: -0.2px; color: [[${palette.fg}]]; }
         .card-subtitle { margin: 3px 0 0; font-size: 10px; color: [[${palette.muted}]]; line-height: 1.4; }
-        .eyebrow { font-size: 8px; font-weight: 700; letter-spacing: 2px; color: #a78bfa; text-transform: uppercase; margin: 0 0 4px; }
 
         .hero-value {
             font-size: 22px; font-weight: 700; color: [[${palette.fg}]];
             line-height: 1.05; letter-spacing: -0.3px;
         }
-        .hero-label { font-size: 8.5px; font-weight: 700; letter-spacing: 1.3px; color: [[${palette.subtle}]]; text-transform: uppercase; margin-bottom: 4px; }
+        .hero-label { font-size: 8.5px; font-weight: 700; letter-spacing: 0.2px; color: [[${palette.subtle}]]; margin-bottom: 4px; }
         .hero-pill {
             display: inline-flex; align-items: center; gap: 4px;
             padding: 4px 9px; border-radius: 999px;
@@ -95,7 +94,7 @@
         }
         .alloc-bar div { height: 100%; }
         .alloc-table { width: 100%; border-collapse: collapse; margin-top: 0; }
-        .alloc-table th { text-align: left; padding: 0 4px 4px; font-size: 7.5px; font-weight: 700; letter-spacing: 0.5px; color: [[${palette.subtle}]]; text-transform: uppercase; }
+        .alloc-table th { text-align: left; padding: 0 4px 4px; font-size: 8.5px; font-weight: 700; letter-spacing: 0.2px; color: [[${palette.subtle}]]; }
         .alloc-table th.r, .alloc-table td.r { text-align: right; }
         .alloc-table td { padding: 3px 4px; font-size: 9.5px; color: [[${palette.fg}]]; }
         .alloc-table td.share { color: [[${palette.muted}]]; }
@@ -110,7 +109,7 @@
 
         .realized-grid { display: table; width: 100%; border-spacing: 24px 0; margin-left: -12px; margin-right: -12px; }
         .realized-col { display: table-cell; width: 50%; vertical-align: top; }
-        .realized-col-title { font-size: 10px; font-weight: 700; letter-spacing: 1.4px; color: [[${palette.subtle}]]; text-transform: uppercase; margin: 0 0 10px; }
+        .realized-col-title { font-size: 10px; font-weight: 700; letter-spacing: 0.2px; color: [[${palette.subtle}]]; margin: 0 0 10px; }
         .realized-row { margin-bottom: 12px; }
         .realized-line { display: flex; justify-content: space-between; font-size: 11.5px; }
         .realized-name { color: [[${palette.fg}]]; font-weight: 600; }
@@ -126,8 +125,8 @@
         .pos-card .card-body { overflow: visible; }
         .pos-table { width: 100%; border-collapse: collapse; }
         .pos-table th {
-            font-size: 8.5px; font-weight: 700; letter-spacing: 0.6px;
-            color: [[${palette.subtle}]]; text-transform: uppercase;
+            font-size: 8.5px; font-weight: 700; letter-spacing: 0.2px;
+            color: [[${palette.subtle}]];
             padding: 0 6px 10px; text-align: left;
             border-bottom: 1px solid [[${palette.border}]];
             white-space: nowrap;
@@ -159,7 +158,7 @@
             line-height: 1.55;
         }
         footer.report-footer .sent-tag {
-            font-weight: 700; letter-spacing: 1.2px; color: [[${palette.muted}]];
+            font-weight: 700; letter-spacing: 0.2px; color: [[${palette.muted}]];
         }
     </style>
 </head>
@@ -246,7 +245,6 @@
 <section class="card keep">
     <div class="card-bar"></div>
     <div class="card-head">
-        <p class="eyebrow" th:text="#{pdf.section.allocation}">ALLOCATION</p>
         <h2 class="card-title" th:text="#{pdf.section.allocation}">Asset Allocation</h2>
     </div>
     <div class="card-body">
@@ -286,7 +284,6 @@
 <section class="card keep">
     <div class="card-bar"></div>
     <div class="card-head">
-        <p class="eyebrow" th:text="#{pdf.section.performance}">PERFORMANCE</p>
         <h2 class="card-title" th:text="#{pdf.section.performance}">Portfolio Performance</h2>
         <div th:if="${summary != null and summary.totalPnlTry() != null}" style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <span class="num" style="font-size:16px;font-weight:700;color:[[${palette.fg}]];" th:text="${money.ofPrecise(summary.totalValueTry())}">₺ 0</span>
@@ -310,7 +307,6 @@
 <section class="card keep">
     <div class="card-bar"></div>
     <div class="card-head">
-        <p class="eyebrow" th:text="#{pdf.section.return}">RETURN</p>
         <h2 class="card-title" th:text="#{pdf.section.return}">Return (%)</h2>
         <div th:if="${summary != null and summary.pnlPercent() != null}" style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <span class="num" style="font-size:16px;font-weight:700;color:[[${palette.fg}]];" th:text="${#numbers.formatDecimal(summary.pnlPercent(), 1, decimalGroupSep, 2, decimalSep)} + '%'">0%</span>
@@ -328,7 +324,6 @@
 <section class="card keep">
     <div class="card-bar"></div>
     <div class="card-head">
-        <p class="eyebrow" th:text="#{pdf.section.realizedPnl}">REALIZED P&L</p>
         <h2 class="card-title" th:text="#{pdf.section.realizedPnl}">Realized Profit & Loss</h2>
     </div>
     <div class="card-body">
@@ -378,7 +373,6 @@
 <section class="card pos-card">
     <div class="card-bar"></div>
     <div class="card-head">
-        <p class="eyebrow" th:text="#{pdf.section.positions}">POSITIONS</p>
         <h2 class="card-title" th:text="#{pdf.section.positions}">Positions</h2>
     </div>
     <div class="card-body">

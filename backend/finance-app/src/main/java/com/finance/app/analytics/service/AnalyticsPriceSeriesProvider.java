@@ -100,7 +100,10 @@ public interface AnalyticsPriceSeriesProvider {
         /**
          * Per-date FX factor for {@code from→to} (1 when equal). Returns null when no rate is available
          * for that date so callers can skip the point rather than fabricate a value; only falls back to
-         * 1:1 if the converter bean is entirely absent.
+         * 1:1 if the converter bean is entirely absent. Uses the full-precision {@code rateAt} factor —
+         * not {@code convertAtDate} — because this factor is multiplied through a price ratio per day, so
+         * the 4-dp money rounding of a small inverse rate (TRY→USD ≈ 0.026) would inject ~0.2% drift
+         * that does not cancel across dates (a currency vs. itself would not stay flat).
          */
         private BigDecimal fxAt(Currency from, Currency to, LocalDate date) {
             if (from == null || to == null || from == to) return BigDecimal.ONE;
@@ -110,9 +113,9 @@ public interface AnalyticsPriceSeriesProvider {
                 return BigDecimal.ONE;
             }
             try {
-                return currencyConverter.convertAtDate(BigDecimal.ONE, from, to, date);
+                return currencyConverter.rateAt(from, to, date);
             } catch (FxRateUnavailableException e) {
-                log.debug("FX unavailable {}→{} on {}, treating as 1", from, to, date);
+                log.debug("FX unavailable {}→{} on {}, skipping point", from, to, date);
                 return null;
             }
         }

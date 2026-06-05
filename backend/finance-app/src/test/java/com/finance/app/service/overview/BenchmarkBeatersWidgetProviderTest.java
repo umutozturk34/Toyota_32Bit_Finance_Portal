@@ -64,7 +64,7 @@ class BenchmarkBeatersWidgetProviderTest {
     private InflationBeaterResponse response(List<InflationBeaterEntry> entries, BigDecimal benchmarkPct) {
         return new InflationBeaterResponse(
                 LocalDate.now().minusYears(1), LocalDate.now(),
-                "TP.TUFE1YI.T1", "TÜFE", benchmarkPct,
+                "TP.GENENDEKS.T1", "TÜFE", benchmarkPct,
                 (int) entries.stream().filter(InflationBeaterEntry::beatsBenchmark).count(),
                 entries.size(), Currency.TRY, entries);
     }
@@ -83,7 +83,7 @@ class BenchmarkBeatersWidgetProviderTest {
 
         BenchmarkBeatersData data = provider.fetch("user-1", section);
 
-        assertThat(data.benchmarkCode()).isEqualTo("TP.TUFE1YI.T1");
+        assertThat(data.benchmarkCode()).isEqualTo("TP.GENENDEKS.T1");
         assertThat(data.benchmarkReturnPct()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(data.period()).isEqualTo("1Y");
         assertThat(data.entries()).isEmpty();
@@ -91,14 +91,14 @@ class BenchmarkBeatersWidgetProviderTest {
 
     @Test
     void shouldUseDefaults_whenConfigEmpty() {
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(List.of(entry("A", new BigDecimal("50"), new BigDecimal("25"), true)),
                         new BigDecimal("25")));
 
         BenchmarkBeatersData data = provider.fetch("user-1", section);
 
         assertThat(data.period()).isEqualTo("1Y");
-        assertThat(data.benchmarkCode()).isEqualTo("TP.TUFE1YI.T1");
+        assertThat(data.benchmarkCode()).isEqualTo("TP.GENENDEKS.T1");
         assertThat(data.benchmarkReturnPct()).isEqualByComparingTo("25");
         assertThat(data.entries()).hasSize(1);
     }
@@ -120,31 +120,31 @@ class BenchmarkBeatersWidgetProviderTest {
 
     @Test
     void shouldFallbackToDefaults_whenConfigCarriesBlankStrings() {
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(List.of(), BigDecimal.ZERO));
 
         BenchmarkBeatersData data = provider.fetch("u",
                 sectionFor("{\"benchmarkCode\":\"   \",\"period\":\"  \"}"));
 
-        assertThat(data.benchmarkCode()).isEqualTo("TP.TUFE1YI.T1");
+        assertThat(data.benchmarkCode()).isEqualTo("TP.GENENDEKS.T1");
         assertThat(data.period()).isEqualTo("1Y");
     }
 
     @Test
     void shouldFallbackToDefaults_whenConfigCarriesNullNodes() {
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(List.of(), BigDecimal.ZERO));
 
         BenchmarkBeatersData data = provider.fetch("u",
                 sectionFor("{\"benchmarkCode\":null,\"period\":null,\"limit\":null,\"verdict\":null,\"sortDir\":null,\"assetType\":null}"));
 
-        assertThat(data.benchmarkCode()).isEqualTo("TP.TUFE1YI.T1");
+        assertThat(data.benchmarkCode()).isEqualTo("TP.GENENDEKS.T1");
         assertThat(data.period()).isEqualTo("1Y");
     }
 
     @Test
     void shouldDefaultBenchmarkReturnToZero_whenServiceReturnsNull() {
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(List.of(), null));
 
         BenchmarkBeatersData data = provider.fetch("u", section);
@@ -158,7 +158,7 @@ class BenchmarkBeatersWidgetProviderTest {
                 entryWithType(AnalyticsInstrumentType.SPOT, "S1", new BigDecimal("60"), new BigDecimal("30"), true),
                 entryWithType(AnalyticsInstrumentType.FOREX, "USD", new BigDecimal("40"), new BigDecimal("15"), true),
                 entryWithType(AnalyticsInstrumentType.CRYPTO, "BTC", new BigDecimal("90"), new BigDecimal("65"), true));
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(all, new BigDecimal("25")));
 
         BenchmarkBeatersData data = provider.fetch("u",
@@ -173,7 +173,7 @@ class BenchmarkBeatersWidgetProviderTest {
         List<InflationBeaterEntry> all = List.of(
                 entry("A", new BigDecimal("50"), new BigDecimal("25"), true),
                 entry("B", new BigDecimal("30"), new BigDecimal("5"), true));
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(all, new BigDecimal("25")));
 
         BenchmarkBeatersData data = provider.fetch("u",
@@ -188,7 +188,7 @@ class BenchmarkBeatersWidgetProviderTest {
                 entry("WIN1", new BigDecimal("60"), new BigDecimal("35"), true),
                 entry("LOSE1", new BigDecimal("5"), new BigDecimal("-20"), false),
                 entry("WIN2", new BigDecimal("40"), new BigDecimal("15"), true));
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(all, new BigDecimal("25")));
 
         BenchmarkBeatersData data = provider.fetch("u",
@@ -203,7 +203,7 @@ class BenchmarkBeatersWidgetProviderTest {
         List<InflationBeaterEntry> all = List.of(
                 entry("WIN", new BigDecimal("60"), new BigDecimal("35"), true),
                 entry("LOSE", new BigDecimal("5"), new BigDecimal("-20"), false));
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(all, new BigDecimal("25")));
 
         BenchmarkBeatersData data = provider.fetch("u",
@@ -218,7 +218,7 @@ class BenchmarkBeatersWidgetProviderTest {
         List<InflationBeaterEntry> all = List.of(
                 entry("WIN", new BigDecimal("60"), new BigDecimal("35"), true),
                 entry("LOSE", new BigDecimal("5"), new BigDecimal("-20"), false));
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(all, new BigDecimal("25")));
 
         BenchmarkBeatersData data = provider.fetch("u",
@@ -233,7 +233,7 @@ class BenchmarkBeatersWidgetProviderTest {
                 entry("FIRST", new BigDecimal("60"), new BigDecimal("35"), true),
                 entry("SECOND", new BigDecimal("30"), new BigDecimal("5"), true),
                 entry("THIRD", new BigDecimal("10"), new BigDecimal("-15"), false));
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(ordered, new BigDecimal("25")));
 
         BenchmarkBeatersData data = provider.fetch("u",
@@ -249,7 +249,7 @@ class BenchmarkBeatersWidgetProviderTest {
         for (int i = 0; i < 10; i++) {
             entries.add(entry("C" + i, new BigDecimal(50 - i), new BigDecimal(25 - i), i < 5));
         }
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(entries, new BigDecimal("25")));
 
         BenchmarkBeatersData data = provider.fetch("u",
@@ -264,7 +264,7 @@ class BenchmarkBeatersWidgetProviderTest {
         for (int i = 0; i < 30; i++) {
             entries.add(entry("C" + i, new BigDecimal(50 - i), new BigDecimal(25 - i), i < 5));
         }
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(entries, new BigDecimal("25")));
 
         BenchmarkBeatersData data = provider.fetch("u",
@@ -279,7 +279,7 @@ class BenchmarkBeatersWidgetProviderTest {
         for (int i = 0; i < 15; i++) {
             entries.add(entry("C" + i, new BigDecimal(50 - i), new BigDecimal(25 - i), true));
         }
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(entries, new BigDecimal("25")));
 
         BenchmarkBeatersData data = provider.fetch("u",
@@ -290,7 +290,7 @@ class BenchmarkBeatersWidgetProviderTest {
 
     @Test
     void shouldMapRowFields_whenEntriesPresent() {
-        when(inflationBeaterService.peekCache("1Y", "TP.TUFE1YI.T1"))
+        when(inflationBeaterService.peekCache("1Y", "TP.GENENDEKS.T1"))
                 .thenReturn(response(List.of(entryWithType(AnalyticsInstrumentType.CRYPTO, "BTC",
                                 new BigDecimal("90"), new BigDecimal("65"), true)),
                         new BigDecimal("25")));

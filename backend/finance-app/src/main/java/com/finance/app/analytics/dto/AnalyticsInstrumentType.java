@@ -36,10 +36,6 @@ public enum AnalyticsInstrumentType {
         return marketType;
     }
 
-    public Kind kind() {
-        return kind;
-    }
-
     /** True when this type has a market price series (and thus a non-null {@link MarketType}). */
     public boolean isMarketBacked() {
         return marketType != null;

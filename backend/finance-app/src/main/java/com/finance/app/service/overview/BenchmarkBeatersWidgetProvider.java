@@ -30,7 +30,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BenchmarkBeatersWidgetProvider implements OverviewWidgetProvider {
 
-    private static final String DEFAULT_BENCHMARK_CODE = "TP.TUFE1YI.T1";
+    // TP.GENENDEKS.T1 is the actual TÜFE (CPI) series despite the misleading TCMB EVDS code
+    // naming — TP.TUFE1YI.T1 is in fact Yİ-ÜFE (PPI). Must match InflationBeaterService.DEFAULT_BENCHMARK.
+    private static final String DEFAULT_BENCHMARK_CODE = "TP.GENENDEKS.T1";
     private static final String DEFAULT_PERIOD = "1Y";
     private static final int DEFAULT_LIMIT = 10;
     private static final int MIN_LIMIT = 5;

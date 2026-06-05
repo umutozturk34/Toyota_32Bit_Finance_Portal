@@ -84,16 +84,14 @@ public class OverviewLayoutReader {
 
     private ParseResult parse(JsonNode sectionsNode) {
         Set<String> allIds = new HashSet<>();
-        Set<WidgetKind> allKinds = new HashSet<>();
         LinkedHashMap<String, WidgetSection> dedup = new LinkedHashMap<>();
         int assetCardCount = 0;
         int maxAssetCards = defaults.maxAssetCardWidgetsPerLayout();
-        if (sectionsNode == null || !sectionsNode.isArray()) return new ParseResult(List.of(), allIds, allKinds);
+        if (sectionsNode == null || !sectionsNode.isArray()) return new ParseResult(List.of(), allIds);
         for (JsonNode entry : sectionsNode) {
             WidgetSection section = parseEntry(entry);
             if (section == null) continue;
             allIds.add(section.sectionId());
-            allKinds.add(section.kind());
             if (!entry.path("visible").asBoolean(true)) continue;
             if (section.kind() == WidgetKind.ASSET_CARDS) {
                 if (assetCardCount >= maxAssetCards) continue;
@@ -103,7 +101,7 @@ public class OverviewLayoutReader {
         }
         List<WidgetSection> visible = new ArrayList<>(dedup.values());
         visible.sort(Comparator.comparingInt(WidgetSection::order));
-        return new ParseResult(visible, allIds, allKinds);
+        return new ParseResult(visible, allIds);
     }
 
     private static String dedupKey(WidgetSection s) {
@@ -153,6 +151,6 @@ public class OverviewLayoutReader {
                 .orElse(null);
     }
 
-    private record ParseResult(List<WidgetSection> visible, Set<String> allIds, Set<WidgetKind> allKinds) {
+    private record ParseResult(List<WidgetSection> visible, Set<String> allIds) {
     }
 }

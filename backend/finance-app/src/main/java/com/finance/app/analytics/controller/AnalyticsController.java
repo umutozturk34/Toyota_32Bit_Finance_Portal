@@ -68,8 +68,19 @@ public class AnalyticsController {
             @AuthenticationPrincipal Jwt jwt,
             @PathVariable Long portfolioId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return ApiResponse.success(translator.translate("api.analytics.portfolioSeriesRetrieved"),
-                portfolioSeriesProvider.dailyValueSeries(portfolioId, jwt.getSubject(), from, to));
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @Parameter(description = "Return cumulative profit/loss in TRY (the Kâr/Zarar Total line) — takes precedence over twr")
+            @RequestParam(name = "pnl", defaultValue = "false") boolean pnl,
+            @Parameter(description = "Return a contribution-immune time-weighted-return index instead of raw value")
+            @RequestParam(name = "twr", defaultValue = "false") boolean twr) {
+        List<HistoryPoint> series;
+        if (pnl) {
+            series = portfolioSeriesProvider.dailyPnlSeries(portfolioId, jwt.getSubject(), from, to);
+        } else if (twr) {
+            series = portfolioSeriesProvider.dailyTwrSeries(portfolioId, jwt.getSubject(), from, to);
+        } else {
+            series = portfolioSeriesProvider.dailyValueSeries(portfolioId, jwt.getSubject(), from, to);
+        }
+        return ApiResponse.success(translator.translate("api.analytics.portfolioSeriesRetrieved"), series);
     }
 }

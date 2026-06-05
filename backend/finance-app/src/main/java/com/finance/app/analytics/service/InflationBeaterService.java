@@ -18,6 +18,7 @@ import com.finance.market.macro.model.MacroCategory;
 import com.finance.market.macro.model.MacroIndicator;
 import com.finance.market.macro.model.MacroUnit;
 import com.finance.market.macro.service.MacroIndicatorQueryService;
+import com.finance.shared.util.ReturnMath;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,8 @@ public class InflationBeaterService {
     private static final String DEFAULT_BENCHMARK = "TP.GENENDEKS.T1";
     private static final BigDecimal NOTIONAL_AMOUNT = new BigDecimal("10000");
     private static final BigDecimal HUNDRED = new BigDecimal("100");
+    // Excess decimals — matches ScenarioService RETURN_SCALE so excess and nominal share precision.
+    private static final int EXCESS_SCALE = 4;
 
     // Codes and labels follow macro.yaml: MT02=3M (M3), MT03=6M (M6), MT04=1Y (M12). MT12 does not
     // exist in the config and must not be referenced.
@@ -167,9 +170,14 @@ public class InflationBeaterService {
         boolean isIndex = benchmark.getUnit() == MacroUnit.INDEX
                 || benchmark.getUnit() == MacroUnit.NUMBER;
 
-        Currency comparisonCurrency = override != null
-                ? override
-                : resolveComparisonCurrency(benchmark, code);
+        // An INDEX/NUMBER benchmark's return is the raw TRY-basis index growth (computeIndexGrowthPct, no FX
+        // conversion), so the universe must be simulated in TRY too — otherwise a USD/EUR-framed nominal is
+        // compared against a TRY-basis CPI (~40%) and nearly the whole universe is wrongly flagged as not
+        // beating inflation. A non-TRY override is only coherent for rate-backed benchmarks, whose return is
+        // drawn from the same FX-framed scenario; force TRY for index benchmarks regardless of the override.
+        Currency comparisonCurrency = isIndex
+                ? Currency.TRY
+                : (override != null ? override : resolveComparisonCurrency(benchmark, code));
 
         List<CuratedAsset> universe = buildUniverse();
         log.info("Computing beaters period={} benchmark={} currency={} universeSize={}",
@@ -312,9 +320,11 @@ public class InflationBeaterService {
     private InflationBeaterEntry toEntry(ScenarioSeries series, BigDecimal benchmarkReturn,
                                          Map<String, String> nameLookup) {
         BigDecimal nominal = series.nominalReturnPct();
-        BigDecimal excess = nominal != null && benchmarkReturn != null
-                ? nominal.subtract(benchmarkReturn)
-                : null;
+        // Geometric (Fisher) excess: how much the asset REALLY beat the benchmark by in purchasing-power
+        // terms — ((1+nominal)/(1+benchmark)-1) — NOT the naive arithmetic nominal-benchmark, which
+        // overstates outperformance ~5x at Turkish inflation levels. The sign is identical, so the "beats"
+        // verdict and the excess-DESC ranking are unchanged; only the reported magnitude is corrected.
+        BigDecimal excess = ReturnMath.realExcessPct(nominal, benchmarkReturn, EXCESS_SCALE);
         boolean beats = excess != null && excess.signum() > 0;
         String key = series.instrument().type() + "|" + series.instrument().code();
         String name = nameLookup.getOrDefault(key, series.instrument().code());

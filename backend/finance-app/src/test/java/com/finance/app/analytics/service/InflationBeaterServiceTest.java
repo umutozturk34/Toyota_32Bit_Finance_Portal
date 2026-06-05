@@ -72,9 +72,11 @@ class InflationBeaterServiceTest {
         InflationBeaterResponse response = service.rank("1Y", null);
 
         assertThat(response.entries()).hasSize(3);
-        assertThat(response.entries().get(0).excessReturnPct()).isEqualByComparingTo("75");
-        assertThat(response.entries().get(1).excessReturnPct()).isEqualByComparingTo("25");
-        assertThat(response.entries().get(2).excessReturnPct()).isEqualByComparingTo("-15");
+        // Geometric (Fisher) excess vs CPI +25%: A +100% -> (2.00/1.25-1)=60; B +50% -> (1.50/1.25-1)=20;
+        // C +10% -> (1.10/1.25-1)=-12. DESC order and beats/loses sign are identical to the old naive form.
+        assertThat(response.entries().get(0).excessReturnPct()).isEqualByComparingTo("60");
+        assertThat(response.entries().get(1).excessReturnPct()).isEqualByComparingTo("20");
+        assertThat(response.entries().get(2).excessReturnPct()).isEqualByComparingTo("-12");
     }
 
     @Test
@@ -128,7 +130,8 @@ class InflationBeaterServiceTest {
 
         assertThat(response.benchmarkReturnPct()).isEqualByComparingTo("45");
         assertThat(response.entries()).hasSize(1);
-        assertThat(response.entries().get(0).excessReturnPct()).isEqualByComparingTo("15");
+        // Geometric excess: asset +60% vs policy-rate benchmark +45% -> (1.60/1.45-1) = 10.3448%.
+        assertThat(response.entries().get(0).excessReturnPct()).isEqualByComparingTo("10.3448");
     }
 
     @Test
@@ -163,8 +166,33 @@ class InflationBeaterServiceTest {
         assertThat(response.entries()).hasSize(1);
         assertThat(response.entries().get(0).code()).isEqualTo("BIST.XYZ");
         assertThat(response.entries().get(0).nominalReturnPct()).isEqualByComparingTo("0");
-        assertThat(response.entries().get(0).excessReturnPct()).isEqualByComparingTo("-5");
+        // Geometric excess: flat-in-USD asset 0% vs USD deposit +5% -> (1.00/1.05-1) = -4.7619%.
+        assertThat(response.entries().get(0).excessReturnPct()).isEqualByComparingTo("-4.7619");
         assertThat(response.entries().get(0).beatsBenchmark()).isFalse();
+    }
+
+    @Test
+    void shouldForceTryComparisonForIndexBenchmarkEvenWithNonTryOverride() {
+        // A CPI (INDEX) benchmark's return is raw TRY-basis index growth (computeIndexGrowthPct, no FX), so
+        // a non-TRY override must NOT frame the universe in USD/EUR — otherwise a USD nominal is compared
+        // against a ~TRY CPI and nearly everything is wrongly flagged as not beating inflation. The override
+        // is honored only for rate-backed benchmarks; an index benchmark forces a TRY comparison.
+        wireInflationBenchmark(new BigDecimal("30"));
+        ScenarioSeries asset = buildSeries(AnalyticsInstrumentType.SPOT, "A", new BigDecimal("40"));
+        when(scenarioService.simulate(any())).thenReturn(new ScenarioResponse(
+                new BigDecimal("10000"), LocalDate.now().minusYears(1), LocalDate.now(),
+                new BigDecimal("30"), com.finance.common.model.Currency.TRY, List.of(asset)));
+
+        InflationBeaterResponse response = service.rank("1Y", null, "USD");
+
+        ArgumentCaptor<ScenarioRequest> captor = ArgumentCaptor.forClass(ScenarioRequest.class);
+        verify(scenarioService).simulate(captor.capture());
+        assertThat(captor.getValue().targetCurrency()).isEqualTo(com.finance.common.model.Currency.TRY);
+        assertThat(response.comparisonCurrency()).isEqualTo(com.finance.common.model.Currency.TRY);
+        assertThat(response.benchmarkReturnPct()).isEqualByComparingTo("30");
+        // Geometric excess: asset +40% vs CPI +30% -> (1.40/1.30-1) = 7.6923%.
+        assertThat(response.entries().get(0).excessReturnPct()).isEqualByComparingTo("7.6923");
+        assertThat(response.entries().get(0).beatsBenchmark()).isTrue();
     }
 
     @Test

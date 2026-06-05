@@ -2,6 +2,12 @@ app:
   timezone: Europe/Istanbul
   scale: 4
 
+  demo:
+    # Activates DemoSeeder on startup, which provisions a deterministic Turkish-investor portfolio
+    # for the demouser account via the same service-layer commands a real user would issue. The
+    # demo Docker overlay sets this to true; non-demo deployments leave it false.
+    enabled: ${APP_DEMO_ENABLED:false}
+
   http:
     connect-timeout-ms: 10000
     read-timeout-ms: 30000

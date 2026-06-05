@@ -13,6 +13,7 @@ import com.finance.common.model.Currency;
 import com.finance.market.macro.model.MacroIndicator;
 import com.finance.market.macro.model.MacroUnit;
 import com.finance.market.macro.service.MacroIndicatorQueryService;
+import com.finance.shared.util.ReturnMath;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -36,7 +37,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ScenarioService {
 
-    private static final String CPI_CODE = "TP.TUFE1YI.T1";
+    // TP.GENENDEKS.T1 is the actual TÜFE (CPI) series — the misleading TCMB EVDS code naming
+    // makes TP.TUFE1YI.T1 look like CPI but it is Yİ-ÜFE (PPI). Real-return deflation needs CPI.
+    private static final String CPI_CODE = "TP.GENENDEKS.T1";
     private static final int RETURN_SCALE = 4;
     private static final int VALUE_SCALE = 6;
     private static final BigDecimal HUNDRED = new BigDecimal("100");
@@ -103,6 +106,11 @@ public class ScenarioService {
      */
     private boolean shouldCompound(AnalyticsInstrument instrument) {
         if (!instrument.type().isRateBacked()) return false;
+        // BOND is rate-backed but its series is coupon-YIELD history, not a deposit interest rate:
+        // compounding it would fabricate a deposit-like growth index from yields. Bond yields are rate
+        // levels (never compounded, never FX-converted — same as Compare's isRateLike path), so route
+        // BOND down the level path instead. The scenario UI already hides BOND; this guards a direct API call.
+        if (instrument.type() == AnalyticsInstrumentType.BOND) return false;
         if (instrument.type() == AnalyticsInstrumentType.MACRO
                 || instrument.type() == AnalyticsInstrumentType.DEPOSIT) {
             try {
@@ -123,13 +131,26 @@ public class ScenarioService {
         List<HistoryPoint> raw = series.rawPoints();
         int baselineIdx = pickBaselineIndex(raw);
         if (baselineIdx < 0) return emptySeries(instrument);
-        HistoryPoint baseline = raw.get(baselineIdx);
-        BigDecimal basePrice = baseline.value();
-        if (basePrice == null || basePrice.signum() <= 0) return emptySeries(instrument);
-
-        BigDecimal baseFx = series.fxAt(baseline.date());
-        if (baseFx == null) baseFx = series.baseFx();
-        if (baseFx == null || baseFx.signum() <= 0) return emptySeries(instrument);
+        // Advance to the first post-split point with BOTH a usable price and its OWN-date FX, so the price
+        // denominator (basePrice) and FX denominator (baseFx) share one anchor date. The old baseFx()
+        // fallback anchored FX at raw.get(0) while basePrice sat at a later split-adjusted baseline, scaling
+        // the whole USD/EUR level by fx(baseline)/fx(raw0). For native==target, fxAt is 1 on every date so
+        // the first valid point is the baseline (no-op).
+        HistoryPoint baseline = null;
+        BigDecimal basePrice = null;
+        BigDecimal baseFx = null;
+        for (int i = baselineIdx; i < raw.size(); i++) {
+            HistoryPoint p = raw.get(i);
+            if (p.value() == null || p.value().signum() <= 0) continue;
+            BigDecimal fx = series.fxAt(p.date());
+            if (fx == null || fx.signum() <= 0) continue;
+            baseline = p;
+            basePrice = p.value();
+            baseFx = fx;
+            baselineIdx = i;
+            break;
+        }
+        if (baseline == null) return emptySeries(instrument);
 
         List<ScenarioPoint> points = new ArrayList<>(raw.size() - baselineIdx);
         for (int i = baselineIdx; i < raw.size(); i++) {
@@ -145,9 +166,14 @@ public class ScenarioService {
         }
         if (points.isEmpty()) return emptySeries(instrument);
 
-        BigDecimal finalValue = points.get(points.size() - 1).value();
+        ScenarioPoint lastPlotted = points.get(points.size() - 1);
+        BigDecimal finalValue = lastPlotted.value();
         int threshold = analyticsProperties.scenario().partialThresholdDays();
-        boolean endsLate = raw.get(raw.size() - 1).date().isBefore(endDate.minusDays(threshold));
+        // endsLate must reflect the last point ACTUALLY plotted (the date finalValue is measured at), not
+        // the last raw observation: trailing points can be dropped when their FX is missing (e.g. forex
+        // candles lag a USD-native equity for recent days), leaving finalValue short of the window end. Using
+        // raw.last would then mark a truncated series as non-partial. Mirrors simulateRate's cursor check.
+        boolean endsLate = lastPlotted.date().isBefore(endDate.minusDays(threshold));
         boolean startsLate = baseline.date().isAfter(startDate.plusDays(threshold));
         return buildSeries(instrument, points, finalValue, amount, cpiGrowthRatio, nativeCurrency,
                 endsLate || startsLate);
@@ -185,7 +211,12 @@ public class ScenarioService {
                                         BigDecimal amount, LocalDate startDate, LocalDate endDate,
                                         BigDecimal cpiGrowthRatio, Currency nativeCurrency) {
         List<HistoryPoint> raw = series.rawPoints();
-        BigDecimal baseFx = series.baseFx();
+        // Anchor the FX round-trip to the scenario start (where the principal is placed), not the first
+        // rate observation: deposit rates are published periodically, so raw.get(0) can sit days/weeks
+        // after startDate — anchoring there converts the principal at the wrong day's FX. The provider
+        // seeds fxAt(start); fall back to the first-observation FX only if start has no rate.
+        BigDecimal baseFx = series.fxAt(startDate);
+        if (baseFx == null || baseFx.signum() <= 0) baseFx = series.baseFx();
         if (baseFx == null || baseFx.signum() <= 0) return emptySeries(instrument);
 
         List<ScenarioPoint> points = new ArrayList<>();
@@ -193,7 +224,15 @@ public class ScenarioService {
 
         LocalDate firstObservation = raw.get(0).date();
         if (startDate.isBefore(firstObservation)) {
-            points.add(new ScenarioPoint(firstObservation, amount));
+            // Value the lead-in point (no interest yet — first rate publishes at firstObservation) at its
+            // OWN date's FX, amount * fxAt(firstObservation)/baseFx, like every computed point — not raw
+            // amount. Otherwise an FX move over the publication lead-in is dropped and the next plotted
+            // point jumps. Falls back to amount when that day's FX is absent (exact in the TRY/TRY case).
+            BigDecimal leadFx = series.fxAt(firstObservation);
+            BigDecimal leadValue = leadFx != null
+                    ? amount.multiply(leadFx).divide(baseFx, VALUE_SCALE, RoundingMode.HALF_UP)
+                    : amount;
+            points.add(new ScenarioPoint(firstObservation, leadValue));
         }
 
         BigDecimal compoundFactor = BigDecimal.ONE;
@@ -216,6 +255,25 @@ public class ScenarioService {
                     .multiply(fxAtPoint)
                     .divide(baseFx, VALUE_SCALE, RoundingMode.HALF_UP);
             points.add(new ScenarioPoint(stepEnd, valueTarget));
+        }
+
+        // Carry the most recent published rate forward to the scenario end date: a deposit keeps
+        // accruing interest at its last-known rate until a newer rate is published, so the series must
+        // reach endDate rather than stopping at the final observation — otherwise the trailing publication
+        // gap (EVDS lag) silently drops days of interest and the line flat-lines / disappears early.
+        if (cursor.isBefore(endDate) && !raw.isEmpty()) {
+            BigDecimal lastRate = raw.get(raw.size() - 1).value();
+            long tailDays = ChronoUnit.DAYS.between(cursor, endDate);
+            BigDecimal fxAtEnd = series.fxAt(endDate);
+            if (lastRate != null && tailDays > 0 && fxAtEnd != null) {
+                compoundFactor = applyCompound(compoundFactor, lastRate, tailDays);
+                BigDecimal valueTarget = amount
+                        .multiply(compoundFactor)
+                        .multiply(fxAtEnd)
+                        .divide(baseFx, VALUE_SCALE, RoundingMode.HALF_UP);
+                points.add(new ScenarioPoint(endDate, valueTarget));
+                cursor = endDate;
+            }
         }
 
         if (points.size() <= 1) return emptySeries(instrument);
@@ -253,12 +311,15 @@ public class ScenarioService {
                 .divide(amount, RETURN_SCALE, RoundingMode.HALF_UP);
     }
 
-    /** Real return: deflates the final value by CPI growth before computing the percentage gain. */
+    /**
+     * Real return: the geometric (Fisher) excess of the nominal return over CPI growth, via the shared
+     * {@link ReturnMath#realExcessPct} — the same primitive the inflation-beater uses for its excess. Null
+     * when CPI is unavailable or the nominal is incomputable (null amount/value or zero amount).
+     */
     private BigDecimal computeRealPct(BigDecimal finalValue, BigDecimal amount, BigDecimal cpiGrowthRatio) {
-        if (finalValue == null || amount == null || amount.signum() == 0 || cpiGrowthRatio == null) return null;
-        BigDecimal realFinal = finalValue.divide(cpiGrowthRatio, VALUE_SCALE, RoundingMode.HALF_UP);
-        return realFinal.subtract(amount).multiply(HUNDRED)
-                .divide(amount, RETURN_SCALE, RoundingMode.HALF_UP);
+        if (cpiGrowthRatio == null) return null;
+        BigDecimal cpiGrowthPct = cpiGrowthRatio.subtract(BigDecimal.ONE).multiply(HUNDRED);
+        return ReturnMath.realExcessPct(computeNominalPct(finalValue, amount), cpiGrowthPct, RETURN_SCALE);
     }
 
     /**

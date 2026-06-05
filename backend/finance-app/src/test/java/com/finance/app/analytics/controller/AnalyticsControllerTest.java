@@ -113,10 +113,52 @@ class AnalyticsControllerTest {
                 new HistoryPoint(LocalDate.of(2024, 3, 1), new BigDecimal("12345")));
         when(portfolioSeriesProvider.dailyValueSeries(7L, "user-42", from, to)).thenReturn(expected);
 
-        ApiResponse<List<HistoryPoint>> response = controller.portfolioSeries(jwt, 7L, from, to);
+        ApiResponse<List<HistoryPoint>> response = controller.portfolioSeries(jwt, 7L, from, to, false, false);
 
         assertThat(response.getData()).isEqualTo(expected);
         assertThat(response.getMessage()).isEqualTo("tr:api.analytics.portfolioSeriesRetrieved");
         verify(portfolioSeriesProvider).dailyValueSeries(7L, "user-42", from, to);
+    }
+
+    @Test
+    void shouldDelegateToPnlSeries_whenPnlRequested() {
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .subject("user-42")
+                .claim("sub", "user-42")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(300))
+                .build();
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 6, 1);
+        List<HistoryPoint> expected = List.of(
+                new HistoryPoint(LocalDate.of(2024, 3, 1), new BigDecimal("450")));
+        when(portfolioSeriesProvider.dailyPnlSeries(7L, "user-42", from, to)).thenReturn(expected);
+
+        ApiResponse<List<HistoryPoint>> response = controller.portfolioSeries(jwt, 7L, from, to, true, false);
+
+        assertThat(response.getData()).isEqualTo(expected);
+        verify(portfolioSeriesProvider).dailyPnlSeries(7L, "user-42", from, to);
+    }
+
+    @Test
+    void shouldDelegateToTwrSeries_whenTwrRequested() {
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .subject("user-42")
+                .claim("sub", "user-42")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(300))
+                .build();
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 6, 1);
+        List<HistoryPoint> expected = List.of(
+                new HistoryPoint(LocalDate.of(2024, 3, 1), new BigDecimal("110")));
+        when(portfolioSeriesProvider.dailyTwrSeries(7L, "user-42", from, to)).thenReturn(expected);
+
+        ApiResponse<List<HistoryPoint>> response = controller.portfolioSeries(jwt, 7L, from, to, false, true);
+
+        assertThat(response.getData()).isEqualTo(expected);
+        verify(portfolioSeriesProvider).dailyTwrSeries(7L, "user-42", from, to);
     }
 }

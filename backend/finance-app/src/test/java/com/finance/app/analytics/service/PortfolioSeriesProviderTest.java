@@ -26,6 +26,7 @@ class PortfolioSeriesProviderTest {
 
     @Mock private PortfolioRepository portfolioRepository;
     @Mock private PortfolioDailySnapshotRepository dailySnapshotRepository;
+    @Mock private com.finance.portfolio.service.performance.PortfolioPerformanceService portfolioPerformanceService;
 
     @InjectMocks
     private PortfolioSeriesProvider provider;
@@ -100,5 +101,107 @@ class PortfolioSeriesProviderTest {
         List<HistoryPoint> series = provider.dailyValueSeries(7L, "u", from, to);
 
         assertThat(series).isEmpty();
+    }
+
+    private PortfolioDailySnapshot twrSnapshot(LocalDate date, BigDecimal totalValue, BigDecimal dailyPnlPercent) {
+        return PortfolioDailySnapshot.builder()
+                .snapshotDate(date)
+                .totalValueTry(totalValue)
+                .dailyPnlPercent(dailyPnlPercent)
+                .build();
+    }
+
+    @Test
+    void shouldChainDailyReturnsIntoTwrIndex_whenSnapshotsExist() {
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 6, 1);
+        when(portfolioRepository.findByIdAndUserSub(7L, "u"))
+                .thenReturn(Optional.of(new Portfolio()));
+        when(dailySnapshotRepository
+                .findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(7L, from, to))
+                .thenReturn(List.of(
+                        twrSnapshot(LocalDate.of(2024, 2, 1), new BigDecimal("100"), null),                  // base = value 100
+                        twrSnapshot(LocalDate.of(2024, 2, 2), new BigDecimal("999"), new BigDecimal("10")),   // +10% → 110
+                        twrSnapshot(LocalDate.of(2024, 2, 3), new BigDecimal("999"), new BigDecimal("-5"))));  // -5%  → 104.5
+
+        List<HistoryPoint> series = provider.dailyTwrSeries(7L, "u", from, to);
+
+        assertThat(series).hasSize(3);
+        assertThat(series.get(0).value()).isEqualByComparingTo("100");
+        assertThat(series.get(1).value()).isEqualByComparingTo("110");
+        assertThat(series.get(2).value()).isEqualByComparingTo("104.5");
+    }
+
+    @Test
+    void shouldRaiseNotFound_whenPortfolioMissingForTwr() {
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 6, 1);
+        when(portfolioRepository.findByIdAndUserSub(7L, "u")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> provider.dailyTwrSeries(7L, "u", from, to))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("error.portfolio.notFound");
+    }
+
+    private PortfolioDailySnapshot pnlSnapshot(LocalDate date, BigDecimal totalPnlTry) {
+        return PortfolioDailySnapshot.builder()
+                .snapshotDate(date)
+                .totalPnlTry(totalPnlTry)
+                .build();
+    }
+
+    @Test
+    void shouldMapCumulativePnlToHistoryPoints_whenPnlSeriesRequested() {
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 6, 1);
+        when(portfolioRepository.findByIdAndUserSub(7L, "u"))
+                .thenReturn(Optional.of(new Portfolio()));
+        when(dailySnapshotRepository
+                .findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(7L, from, to))
+                .thenReturn(List.of(
+                        pnlSnapshot(LocalDate.of(2024, 2, 1), new BigDecimal("0")),
+                        pnlSnapshot(LocalDate.of(2024, 3, 1), new BigDecimal("450")),
+                        pnlSnapshot(LocalDate.of(2024, 4, 1), new BigDecimal("-120"))));
+
+        List<HistoryPoint> series = provider.dailyPnlSeries(7L, "u", from, to);
+
+        assertThat(series).hasSize(3);
+        assertThat(series.get(0).value()).isEqualByComparingTo("0");
+        assertThat(series.get(1).value()).isEqualByComparingTo("450");
+        assertThat(series.get(2).value()).isEqualByComparingTo("-120");
+    }
+
+    @Test
+    void shouldRaiseNotFound_whenPortfolioMissingForPnl() {
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 6, 1);
+        when(portfolioRepository.findByIdAndUserSub(7L, "u")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> provider.dailyPnlSeries(7L, "u", from, to))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("error.portfolio.notFound");
+    }
+
+    @Test
+    void shouldAttachPerCurrencyPnl_toPnlSeriesPoints() {
+        LocalDate from = LocalDate.of(2024, 1, 1);
+        LocalDate to = LocalDate.of(2024, 6, 1);
+        LocalDate d = LocalDate.of(2024, 3, 1);
+        when(portfolioRepository.findByIdAndUserSub(7L, "u")).thenReturn(Optional.of(new Portfolio()));
+        when(dailySnapshotRepository.findByPortfolioIdAndSnapshotDateBetweenOrderBySnapshotDateAsc(7L, from, to))
+                .thenReturn(List.of(pnlSnapshot(d, new BigDecimal("450"))));
+        when(portfolioPerformanceService.dailyPnlByCcy(
+                org.mockito.ArgumentMatchers.eq(7L), org.mockito.ArgumentMatchers.anyList()))
+                .thenReturn(java.util.Map.of(d,
+                        java.util.Map.of("USD", new BigDecimal("12.5"), "EUR", new BigDecimal("11"))));
+
+        List<HistoryPoint> series = provider.dailyPnlSeries(7L, "u", from, to);
+
+        assertThat(series).hasSize(1);
+        // TRY P&L stays the stored scalar; the per-currency frame rides along so the compare overlay shows the
+        // cost-based foreign-currency P&L instead of a single-rate conversion of this TRY value.
+        assertThat(series.get(0).value()).isEqualByComparingTo("450");
+        assertThat(series.get(0).pnlByCcy()).containsEntry("USD", new BigDecimal("12.5"));
+        assertThat(series.get(0).pnlByCcy()).containsEntry("EUR", new BigDecimal("11"));
     }
 }
